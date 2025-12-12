@@ -15,7 +15,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("eNote.API")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+ad45161e2d7a68f4c6ede8becc8c1a0081f41d9a")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+43bb396abb999c51efe8e368479f71eb350dffd5")]
 [assembly: System.Reflection.AssemblyProductAttribute("eNote.API")]
 [assembly: System.Reflection.AssemblyTitleAttribute("eNote.API")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

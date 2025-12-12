@@ -1,0 +1,12 @@
+C:\Users\Tarik\Desktop\eNoteV2\eNote\eNote.Model\bin\Debug\net9.0\eNote.Model.deps.json
+C:\Users\Tarik\Desktop\eNoteV2\eNote\eNote.Model\bin\Debug\net9.0\eNote.Model.dll
+C:\Users\Tarik\Desktop\eNoteV2\eNote\eNote.Model\bin\Debug\net9.0\eNote.Model.pdb
+C:\Users\Tarik\Desktop\eNoteV2\eNote\eNote.Model\obj\Debug\net9.0\eNote.Model.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Tarik\Desktop\eNoteV2\eNote\eNote.Model\obj\Debug\net9.0\eNote.Model.AssemblyInfoInputs.cache
+C:\Users\Tarik\Desktop\eNoteV2\eNote\eNote.Model\obj\Debug\net9.0\eNote.Model.AssemblyInfo.cs
+C:\Users\Tarik\Desktop\eNoteV2\eNote\eNote.Model\obj\Debug\net9.0\eNote.Model.csproj.CoreCompileInputs.cache
+C:\Users\Tarik\Desktop\eNoteV2\eNote\eNote.Model\obj\Debug\net9.0\eNote.Model.sourcelink.json
+C:\Users\Tarik\Desktop\eNoteV2\eNote\eNote.Model\obj\Debug\net9.0\eNote.Model.dll
+C:\Users\Tarik\Desktop\eNoteV2\eNote\eNote.Model\obj\Debug\net9.0\refint\eNote.Model.dll
+C:\Users\Tarik\Desktop\eNoteV2\eNote\eNote.Model\obj\Debug\net9.0\eNote.Model.pdb
+C:\Users\Tarik\Desktop\eNoteV2\eNote\eNote.Model\obj\Debug\net9.0\ref\eNote.Model.dll

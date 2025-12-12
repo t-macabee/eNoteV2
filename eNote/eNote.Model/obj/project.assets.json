@@ -14,9 +14,9 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\Tarik\\Desktop\\eNoteV2\\eNote\\eNote.Model\\eNote.Model.csproj",
-      "projectName": "eNote.Model",
-      "projectPath": "C:\\Users\\Tarik\\Desktop\\eNoteV2\\eNote\\eNote.Model\\eNote.Model.csproj",
+      "projectUniqueName": "C:\\Users\\Tarik\\Desktop\\eNoteV2\\eNote\\eNote.Model\\eNote.Contracts.csproj",
+      "projectName": "eNote.Contracts",
+      "projectPath": "C:\\Users\\Tarik\\Desktop\\eNoteV2\\eNote\\eNote.Model\\eNote.Contracts.csproj",
       "packagesPath": "C:\\Users\\Tarik\\.nuget\\packages\\",
       "outputPath": "C:\\Users\\Tarik\\Desktop\\eNoteV2\\eNote\\eNote.Model\\obj\\",
       "projectStyle": "PackageReference",

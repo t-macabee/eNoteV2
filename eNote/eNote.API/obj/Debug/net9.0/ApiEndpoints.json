@@ -1,23 +1,37 @@
 [
   {
-    "ContainingType": "eNote.API.Controllers.WeatherForecastController",
-    "Method": "Get",
-    "RelativePath": "WeatherForecast",
-    "HttpMethod": "GET",
+    "ContainingType": "eNote.API.Controllers.AuthController",
+    "Method": "Login",
+    "RelativePath": "api/auth/login",
+    "HttpMethod": "POST",
     "IsController": true,
     "Order": 0,
-    "Parameters": [],
+    "Parameters": [
+      {
+        "Name": "model",
+        "Type": "eNote.Model.DTOs.Auth.LoginModel",
+        "IsRequired": true
+      }
+    ],
     "ReturnTypes": [
       {
-        "Type": "System.Collections.Generic.IEnumerable\u00601[[eNote.API.WeatherForecast, eNote.API, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "Type": "eNote.Model.DTOs.Auth.AuthResponse",
         "MediaTypes": [
           "text/plain",
           "application/json",
           "text/json"
         ],
         "StatusCode": 200
+      },
+      {
+        "Type": "Microsoft.AspNetCore.Mvc.ProblemDetails",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 401
       }
-    ],
-    "EndpointName": "GetWeatherForecast"
+    ]
   }
 ]
