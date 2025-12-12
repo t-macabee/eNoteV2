@@ -1,0 +1,57 @@
+# .NET Core / Visual Studio
+bin/
+obj/
+*.csproj.user
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+.vscode/
+.vs/
+*.log
+*.tmp
+*.cache
+*.pdb
+*.exe
+*.dll
+*.apk
+*.zip
+*.z01
+*.z02
+*.vsidx
+
+# Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+bld/
+[Bb]in/
+[Oo]bj/
+
+# Flutter specific
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+build/
+android/app/debug
+android/app/profile
+android/app/release
+ios/Flutter/Generated.xcconfig
+ios/Flutter/flutter_export_environment.sh
+ios/Runner/GeneratedPluginRegistrant.*
+
+# Environment files (keep these if you want, or remove later)
+.env
+appsettings.*.json
+
+# Misc
+*.swp
+*~
+.DS_Store
+Thumbs.db
