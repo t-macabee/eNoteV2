@@ -1,5 +1,5 @@
 using eNote.API.Extensions;
-using eNote.Infrastructure.Persistence;
+using eNote.Infrastructure.Data;
 using Mapster;
 using Microsoft.EntityFrameworkCore;
 

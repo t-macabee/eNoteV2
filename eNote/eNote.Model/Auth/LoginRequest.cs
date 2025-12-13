@@ -1,8 +1,8 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace eNote.Contracts.DTOs.Auth
+namespace eNote.Model.Auth
 {
-    public class LoginModel
+    public class LoginRequest
     {
         [Required(ErrorMessage = "Korisničko ime je obavezno.")] 
         public string Username { get; set; } = null!;

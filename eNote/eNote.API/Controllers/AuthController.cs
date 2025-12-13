@@ -1,5 +1,5 @@
-﻿using eNote.Application.Interfaces;
-using eNote.Contracts.DTOs.Auth;
+﻿using eNote.Model.Auth;
+using eNote.Service.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
 namespace eNote.API.Controllers
@@ -13,7 +13,7 @@ namespace eNote.API.Controllers
         [HttpPost("login")]
         [ProducesResponseType(typeof(AuthResponse), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        public async Task<IActionResult> Login(LoginModel model)
+        public async Task<IActionResult> Login(LoginRequest model)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);

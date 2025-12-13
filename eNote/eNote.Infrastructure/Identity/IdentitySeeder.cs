@@ -1,6 +1,6 @@
-﻿using eNote.Contracts.Constants;
-using eNote.Infrastructure.Persistence;
-using eNote.Infrastructure.Persistence.Entities;
+﻿using eNote.Infrastructure.Data;
+using eNote.Infrastructure.Data.Entities;
+using eNote.Model.Auth;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -10,11 +10,9 @@ namespace eNote.Infrastructure.Identity
     {
         public static async Task SeedRolesAndUsers(IServiceProvider serviceProvider)
         {
-            using var scope = serviceProvider.CreateScope();
-
-            var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<AppRole>>();
-            var userManager = scope.ServiceProvider.GetRequiredService<UserManager<AppUser>>();
-            var context = scope.ServiceProvider.GetRequiredService<ENoteContext>();
+            var roleManager = serviceProvider.GetRequiredService<RoleManager<AppRole>>();
+            var userManager = serviceProvider.GetRequiredService<UserManager<AppUser>>();
+            var context = serviceProvider.GetRequiredService<ENoteContext>();
 
             await SeedRoles(roleManager);
             await SeedUsers(userManager, context);
@@ -40,20 +38,16 @@ namespace eNote.Infrastructure.Identity
 
         private static async Task SeedUsers(UserManager<AppUser> userManager, ENoteContext context)
         {
-            var testUsers = new[]
-            {
-            ("administrator", "admin@enote.com",     AppRoles.Administrator),
-            ("instructor",    "instructor@enote.com",AppRoles.Instructor),
-            ("student",       "student@enote.com",   AppRoles.Student),
-            ("musicshop",     "shop@enote.com",      AppRoles.MusicShop)
-        };
+            var testUsers = new[] { //{ ("administrator", "admin@enote.com", AppRoles.Administrator), 
+                ("instructor", "instructor@enote.com",AppRoles.Instructor),
+                ("student", "student@enote.com", AppRoles.Student), 
+                ("musicshop", "shop@enote.com", AppRoles.MusicShop)
+            };
 
             foreach (var (username, email, role) in testUsers)
             {
                 if (await userManager.FindByNameAsync(username) != null)
-                    continue;
-
-                using var transaction = await context.Database.BeginTransactionAsync();
+                    continue;                
 
                 var user = new AppUser
                 {
@@ -63,7 +57,7 @@ namespace eNote.Infrastructure.Identity
                     Status = true
                 };
 
-                var createResult = await userManager.CreateAsync(user, "test123");
+                var createResult = await userManager.CreateAsync(user, "test1234");
 
                 if (!createResult.Succeeded)
                 {
@@ -72,6 +66,7 @@ namespace eNote.Infrastructure.Identity
                 }
 
                 var roleResult = await userManager.AddToRoleAsync(user, role);
+
                 if (!roleResult.Succeeded)
                 {
                     var errors = string.Join("; ", roleResult.Errors.Select(e => e.Description));
@@ -80,8 +75,7 @@ namespace eNote.Infrastructure.Identity
 
                 AddRoleProfile(context, user.Id, role);
 
-                await context.SaveChangesAsync();
-                await transaction.CommitAsync();
+                await context.SaveChangesAsync();                
             }
         }
 
@@ -89,29 +83,11 @@ namespace eNote.Infrastructure.Identity
         {
             switch (role)
             {
-                case AppRoles.Student:
-                    context.Students.Add(new Student
-                    {
-                        AppUserId = userId,
-                        EnrollmentDate = DateTime.UtcNow.AddMonths(-3)
-                    });
-                    break;
+                case AppRoles.Student: context.Students.Add(new Student{ AppUserId = userId, EnrollmentDate = DateTime.UtcNow.AddMonths(-3)}); break;
 
-                case AppRoles.Instructor:
-                    context.Instructors.Add(new Instructor
-                    {
-                        AppUserId = userId
-                    });
-                    break;
+                case AppRoles.Instructor: context.Instructors.Add(new Instructor { AppUserId = userId }); break;
 
-                case AppRoles.MusicShop:
-                    context.MusicShops.Add(new MusicShop
-                    {
-                        AppUserId = userId,
-                        StoreName = "Test Music Shop",
-                        BusinessHours = "09:00–17:00"
-                    });
-                    break;
+                case AppRoles.MusicShop: context.MusicShops.Add(new MusicShop { AppUserId = userId, StoreName = "Test Music Shop", BusinessHours = "09:00–17:00"}); break;
             }
         }
     }

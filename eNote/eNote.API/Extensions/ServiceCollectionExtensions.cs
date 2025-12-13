@@ -1,5 +1,6 @@
 ﻿using eNote.Application.Interfaces;
-using eNote.Application.Services;
+using eNote.Service.Interfaces;
+using eNote.Service.Services;
 
 namespace eNote.API.Extensions
 {

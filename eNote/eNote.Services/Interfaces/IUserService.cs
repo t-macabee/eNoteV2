@@ -1,9 +1,9 @@
-﻿using eNote.Contracts.DTOs.Auth;
+﻿using eNote.Model.Auth;
 
-namespace eNote.Application.Interfaces
+namespace eNote.Service.Interfaces
 {
     public interface IUserService
     {
-        Task<UserProfileResult?> GetCurrentUserAsync(int userId);
+        Task<UserProfileResponse?> GetCurrentUserAsync(int userId);
     }
 }

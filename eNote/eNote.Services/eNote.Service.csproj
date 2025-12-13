@@ -22,7 +22,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\eNote.Infrastructure\eNote.Infrastructure.csproj" />
-    <ProjectReference Include="..\eNote.Model\eNote.Contracts.csproj" />
+    <ProjectReference Include="..\eNote.Model\eNote.Model.csproj" />
   </ItemGroup>
 
 </Project>

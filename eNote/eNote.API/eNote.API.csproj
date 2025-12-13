@@ -28,6 +28,7 @@
   <ItemGroup>
     <ProjectReference Include="..\eNote.Model\eNote.Contracts.csproj" />
     <ProjectReference Include="..\eNote.Services\eNote.Application.csproj" />
+    <ProjectReference Include="..\eNote.Services\eNote.Service.csproj" />
   </ItemGroup>
 
 </Project>

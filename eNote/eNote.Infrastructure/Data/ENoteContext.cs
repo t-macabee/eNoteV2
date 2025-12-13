@@ -1,9 +1,9 @@
-﻿using eNote.Infrastructure.Identity;
-using eNote.Infrastructure.Persistence.Entities;
+﻿using eNote.Infrastructure.Data.Entities;
+using eNote.Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
-namespace eNote.Infrastructure.Persistence
+namespace eNote.Infrastructure.Data
 {
     public class ENoteContext(DbContextOptions<ENoteContext> options) : IdentityDbContext<AppUser, AppRole, int>(options)
     {

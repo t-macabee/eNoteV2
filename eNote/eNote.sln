@@ -5,9 +5,9 @@ VisualStudioVersion = 17.14.36705.20
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "eNote.API", "eNote.API\eNote.API.csproj", "{AD813745-0078-44E4-BD2E-3E21372DB3C3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "eNote.Contracts", "eNote.Model\eNote.Contracts.csproj", "{7019BADE-6F2E-414E-B824-FD50AAEB0565}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "eNote.Model", "eNote.Model\eNote.Model.csproj", "{7019BADE-6F2E-414E-B824-FD50AAEB0565}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "eNote.Application", "eNote.Services\eNote.Application.csproj", "{0810E749-A6D3-41F4-95C6-612DE8365BBC}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "eNote.Service", "eNote.Services\eNote.Service.csproj", "{0810E749-A6D3-41F4-95C6-612DE8365BBC}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "eNote.Infrastructure", "eNote.Infrastructure\eNote.Infrastructure.csproj", "{8427B1F9-1B38-484E-9D9E-00A063613742}"
 EndProject

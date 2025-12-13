@@ -1,5 +1,5 @@
-﻿using eNote.Infrastructure.Identity;
-using eNote.Infrastructure.Persistence;
+﻿using eNote.Infrastructure.Data;
+using eNote.Infrastructure.Identity;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;

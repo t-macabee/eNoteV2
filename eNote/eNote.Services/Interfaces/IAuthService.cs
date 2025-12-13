@@ -1,9 +1,9 @@
-﻿using eNote.Contracts.DTOs.Auth;
+﻿using eNote.Model.Auth;
 
-namespace eNote.Application.Interfaces
+namespace eNote.Service.Interfaces
 {
     public interface IAuthService
     {
-        Task<(AuthResponse? response, string? error)> Login(LoginModel model);
+        Task<(AuthResponse? response, string? error)> Login(LoginRequest model);
     }
 }

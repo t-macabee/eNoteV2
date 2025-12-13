@@ -1,4 +1,4 @@
-﻿using eNote.Infrastructure.Persistence.Entities;
+﻿using eNote.Infrastructure.Data.Entities;
 using Microsoft.AspNetCore.Identity;
 
 namespace eNote.Infrastructure.Identity

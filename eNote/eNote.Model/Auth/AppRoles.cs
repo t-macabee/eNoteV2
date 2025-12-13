@@ -1,4 +1,4 @@
-﻿namespace eNote.Contracts.Constants
+﻿namespace eNote.Model.Auth
 {
     public static class AppRoles
     {

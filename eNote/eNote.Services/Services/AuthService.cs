@@ -1,27 +1,27 @@
 ﻿using eNote.Application.Interfaces;
-using eNote.Contracts.DTOs.Auth;
 using eNote.Infrastructure.Identity;
+using eNote.Model.Auth;
+using eNote.Service.Interfaces;
 using Microsoft.AspNetCore.Identity;
 
-namespace eNote.Application.Services
+namespace eNote.Service.Services
 {
-    public class AuthService(UserManager<AppUser> userManager, SignInManager<AppUser> signInManager, ITokenService tokenService, IUserService userService) : IAuthService
+    public class AuthService(UserManager<AppUser> userManager, SignInManager<AppUser> signInManager, ITokenService tokenService) : IAuthService
     {
         private readonly UserManager<AppUser> _userManager = userManager;
         private readonly SignInManager<AppUser> _signInManager = signInManager;
         private readonly ITokenService _tokenService = tokenService;
-        private readonly IUserService _userService = userService;
 
-        public async Task<(AuthResponse? response, string? error)> Login(LoginModel model)
+        public async Task<(AuthResponse? response, string? error)> Login(LoginRequest model)
         {
-            var user = await _userManager.FindByNameAsync(model.Username);
+            var username = model.Username.Trim();
+
+            var user = await _userManager.FindByNameAsync(username);
 
             if (user == null || !user.Status)
                 return (null, "Pogrešno korisničko ime ili lozinka.");
 
-            var result = await _signInManager.CheckPasswordSignInAsync(user, model.Password, false);
-
-            if (!result.Succeeded)
+            if(!(await _signInManager.CheckPasswordSignInAsync(user, model.Password, false)).Succeeded)
                 return (null, "Pogrešno korisničko ime ili lozinka.");
 
             var roles = await _userManager.GetRolesAsync(user);

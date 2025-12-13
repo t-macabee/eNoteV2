@@ -6,7 +6,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 
-namespace eNote.Application.Services
+namespace eNote.Service.Services
 {
     public class TokenService(IConfiguration configuration) : ITokenService
     {
@@ -21,7 +21,8 @@ namespace eNote.Application.Services
                 new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };
 
-            claims.AddRange(roles.Select(r => new Claim(ClaimTypes.Role, r)));
+            foreach (var role in roles)
+                claims.Add(new Claim(ClaimTypes.Role, role));
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]!));
 
