@@ -1,6 +1,6 @@
-﻿using eNote.Infrastructure.Data;
-using eNote.Infrastructure.Data.Entities;
-using eNote.Model.Auth;
+﻿using eNote.Application.DTOs.Auth;
+using eNote.Domain.Entities;
+using eNote.Infrastructure.Data.Context;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -54,7 +54,7 @@ namespace eNote.Infrastructure.Identity
                     UserName = username,
                     Email = email,
                     EmailConfirmed = true,
-                    Status = true
+                    IsActive = true
                 };
 
                 var createResult = await userManager.CreateAsync(user, "test1234");
@@ -83,11 +83,14 @@ namespace eNote.Infrastructure.Identity
         {
             switch (role)
             {
-                case AppRoles.Student: context.Students.Add(new Student{ AppUserId = userId, EnrollmentDate = DateTime.UtcNow.AddMonths(-3)}); break;
+                case AppRoles.Student: context.Students.Add(new Student{ AppUserId = userId, EnrollmentDate = DateTime.UtcNow.AddMonths(-3)});
+                    break;
 
-                case AppRoles.Instructor: context.Instructors.Add(new Instructor { AppUserId = userId }); break;
+                case AppRoles.Instructor: context.Instructors.Add(new Instructor { AppUserId = userId }); 
+                    break;
 
-                case AppRoles.MusicShop: context.MusicShops.Add(new MusicShop { AppUserId = userId, StoreName = "Test Music Shop", BusinessHours = "09:00–17:00"}); break;
+                case AppRoles.MusicShop: context.MusicShops.Add(new MusicShop { AppUserId = userId, StoreName = "Test Music Shop", BusinessHours = "09:00–17:00"});
+                    break;
             }
         }
     }

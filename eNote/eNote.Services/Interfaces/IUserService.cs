@@ -1,6 +1,6 @@
-﻿using eNote.Model.Auth;
+﻿using eNote.Application.DTOs.Auth;
 
-namespace eNote.Service.Interfaces
+namespace eNote.Application.Interfaces
 {
     public interface IUserService
     {

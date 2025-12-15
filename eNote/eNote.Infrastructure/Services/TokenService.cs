@@ -1,23 +1,22 @@
 ﻿using eNote.Application.Interfaces;
-using eNote.Infrastructure.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 
-namespace eNote.Service.Services
+namespace eNote.Infrastructure.Services
 {
     public class TokenService(IConfiguration configuration) : ITokenService
     {
         private readonly IConfiguration _configuration = configuration;
 
-        public string GenerateToken(AppUser user, IList<string> roles)
+        public string GenerateToken(int userId, string username, IList<string> roles)
         {
             var claims = new List<Claim>
             {
-                new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-                new(JwtRegisteredClaimNames.UniqueName, user.UserName!),
+                new(JwtRegisteredClaimNames.Sub, userId.ToString()),
+                new(JwtRegisteredClaimNames.UniqueName, username),
                 new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };
 
@@ -36,7 +35,7 @@ namespace eNote.Service.Services
                 signingCredentials: creds
             );
 
-            return new JwtSecurityTokenHandler().WriteToken(token);        
+            return new JwtSecurityTokenHandler().WriteToken(token);
         }
     }
 }

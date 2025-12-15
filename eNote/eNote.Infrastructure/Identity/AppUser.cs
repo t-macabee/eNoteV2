@@ -1,4 +1,4 @@
-﻿using eNote.Infrastructure.Data.Entities;
+﻿using eNote.Domain.Entities;
 using Microsoft.AspNetCore.Identity;
 
 namespace eNote.Infrastructure.Identity
@@ -9,7 +9,7 @@ namespace eNote.Infrastructure.Identity
         public string? LastName { get; set; }
         public DateTime? DateOfBirth { get; set; }
         public byte[]? Picture { get; set; }
-        public bool Status { get; set; }
+        public bool IsActive { get; set; }
 
         public int? AddressId { get; set; }
         public Address? Address { get; set; }

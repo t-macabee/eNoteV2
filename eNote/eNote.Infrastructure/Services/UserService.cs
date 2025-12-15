@@ -1,14 +1,13 @@
-﻿using eNote.Infrastructure.Data;
+﻿using eNote.Application.DTOs.Auth;
+using eNote.Application.DTOs.Profiles;
+using eNote.Application.DTOs.Shared;
+using eNote.Application.Interfaces;
+using eNote.Infrastructure.Data.Context;
 using eNote.Infrastructure.Identity;
-using eNote.Model.Auth;
-using eNote.Model.Profiles;
-using eNote.Model.Shared;
-using eNote.Service.Interfaces;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
-namespace eNote.Service.Services
+namespace eNote.Infrastructure.Services
 {
     public class UserService(ENoteContext context, UserManager<AppUser> userManager) : IUserService
     {
@@ -19,7 +18,7 @@ namespace eNote.Service.Services
         {
             var user = await _context.Users.AsNoTracking().FirstOrDefaultAsync(x => x.Id == userId);
 
-            if (user == null || !user.Status)
+            if (user == null || !user.IsActive)
                 return null;
 
             var roles = await _userManager.GetRolesAsync(user);
@@ -53,45 +52,51 @@ namespace eNote.Service.Services
 
         private async Task<IUserProfile?> GetStudent(int userId)
         {
-            return await _context.Students
-           .AsNoTracking()
-           .Where(s => s.AppUserId == userId)
-           .Select(s => new StudentProfile(
-               s.Id,
-               s.EnrollmentDate,
-               s.AppUser.FirstName,
-               s.AppUser.LastName,
-               s.AppUser.DateOfBirth,
-               MapAddress(s.AppUser)
-           ))        
-           .FirstOrDefaultAsync();
+            return await (
+                from s in _context.Students.AsNoTracking()
+                join u in _context.Users.AsNoTracking()
+                    on s.AppUserId equals u.Id
+                where s.AppUserId == userId
+                select new StudentProfile(
+                    s.Id,
+                    s.EnrollmentDate,
+                    u.FirstName,
+                    u.LastName,
+                    u.DateOfBirth,
+                    MapAddress(u)
+                )
+            ).FirstOrDefaultAsync();
         }
 
         private async Task<IUserProfile?> GetInstructor(int userId)
         {
-            return await _context.Instructors
-                .AsNoTracking()
-                .Where(i => i.AppUserId == userId)
-                .Select(i => new InstructorProfile(
+            return await (
+                from i in _context.Instructors.AsNoTracking()
+                join u in _context.Users.AsNoTracking()
+                    on i.AppUserId equals u.Id
+                where i.AppUserId == userId
+                select new InstructorProfile(
                     i.Id,
-                    i.AppUser.FirstName,
-                    i.AppUser.LastName
-                ))
-                .FirstOrDefaultAsync();
+                    u.FirstName,
+                    u.LastName
+                )
+            ).FirstOrDefaultAsync();
         }
 
         private async Task<IUserProfile?> GetMusicShop(int userId)
         {
-            return await _context.MusicShops
-                .AsNoTracking()
-                .Where(m => m.AppUserId == userId)
-                .Select(m => new MusicShopProfile(
+            return await (
+                from m in _context.MusicShops.AsNoTracking()
+                join u in _context.Users.AsNoTracking()
+                    on m.AppUserId equals u.Id
+                where m.AppUserId == userId
+                select new MusicShopProfile(
                     m.Id,
                     m.StoreName,
                     m.BusinessHours,
-                    MapAddress(m.AppUser)
-                ))
-                .FirstOrDefaultAsync();
+                    MapAddress(u)
+                )
+            ).FirstOrDefaultAsync();
         }
 
         private static AddressDto? MapAddress(AppUser user)

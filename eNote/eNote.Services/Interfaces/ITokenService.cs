@@ -1,9 +1,7 @@
-﻿using eNote.Infrastructure.Identity;
-
-namespace eNote.Application.Interfaces
+﻿namespace eNote.Application.Interfaces
 {
     public interface ITokenService
     {
-        string GenerateToken(AppUser user, IList<string> roles);
+        string GenerateToken(int userId, string username, IList<string> roles);
     }
 }

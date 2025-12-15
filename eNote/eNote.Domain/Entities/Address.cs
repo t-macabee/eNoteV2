@@ -1,4 +1,4 @@
-﻿namespace eNote.Infrastructure.Data.Entities
+﻿namespace eNote.Domain.Entities
 {
     public class Address
     {

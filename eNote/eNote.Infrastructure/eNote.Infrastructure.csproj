@@ -17,7 +17,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\eNote.Model\eNote.Model.csproj" />
+    <ProjectReference Include="..\eNote.Domain\eNote.Domain.csproj" />
+    <ProjectReference Include="..\eNote.Services\eNote.Application.csproj" />
   </ItemGroup>
 
 </Project>
