@@ -1,11 +1,13 @@
 using eNote.API.Extensions;
+using eNote.Infrastructure.Data.Seed;
 using Mapster;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json.Serialization;
+using eNote.Infrastructure.Data.Context;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddDbContext<eNote.Infrastructure.Data.Context.ENoteContext>(options =>
+builder.Services.AddDbContext<ENoteContext>(options =>
     options.UseSqlServer(
         builder.Configuration.GetConnectionString("DefaultConnection"),
         sql => sql.MigrationsAssembly("eNote.Infrastructure")
@@ -27,10 +29,19 @@ var app = builder.Build();
 
 app.UseHttpsRedirection();
 
+app.UseStaticFiles();
+
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
-    await app.SeedDevelopmentDataAsync();
+
+    using var scope = app.Services.CreateScope();
+
+    var services = scope.ServiceProvider;
+    await IdentitySeed.SeedRolesAndUsers(services);
+
+    var context = services.GetRequiredService<ENoteContext>();
+    await DevelopmentDataSeed.SeedAsync(context);
 }
 
 app.UseAuthentication();

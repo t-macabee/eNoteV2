@@ -21,6 +21,8 @@ namespace eNote.Infrastructure.Data.Configurations
             builder.Property(i => i.Model).IsRequired().HasMaxLength(100);
             builder.Property(i => i.Manufacturer).IsRequired().HasMaxLength(100);
             builder.Property(i => i.Description).HasMaxLength(1000);
+
+            builder.Ignore(i => i.IsAvailable);
         }
     }
 }

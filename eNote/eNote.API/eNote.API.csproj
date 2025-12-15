@@ -30,4 +30,8 @@
     <ProjectReference Include="..\eNote.Infrastructure\eNote.Infrastructure.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="wwwroot\instruments\" />
+  </ItemGroup>
+
 </Project>

@@ -1,12 +1,13 @@
 ﻿using eNote.Application.DTOs.Auth;
 using eNote.Domain.Entities;
 using eNote.Infrastructure.Data.Context;
+using eNote.Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace eNote.Infrastructure.Identity
+namespace eNote.Infrastructure.Data.Seed
 {
-    public static class IdentitySeeder
+    public static class IdentitySeed
     {
         public static async Task SeedRolesAndUsers(IServiceProvider serviceProvider)
         {
@@ -20,7 +21,7 @@ namespace eNote.Infrastructure.Identity
 
         private static async Task SeedRoles(RoleManager<AppRole> roleManager)
         {
-            string[] roles = [ AppRoles.Administrator, AppRoles.Instructor, AppRoles.Student, AppRoles.MusicShop ];
+            string[] roles = [AppRoles.Administrator, AppRoles.Instructor, AppRoles.Student, AppRoles.MusicShop];
 
             foreach (var role in roles)
             {
@@ -40,14 +41,14 @@ namespace eNote.Infrastructure.Identity
         {
             var testUsers = new[] { //{ ("administrator", "admin@enote.com", AppRoles.Administrator), 
                 ("instructor", "instructor@enote.com",AppRoles.Instructor),
-                ("student", "student@enote.com", AppRoles.Student), 
+                ("student", "student@enote.com", AppRoles.Student),
                 ("musicshop", "shop@enote.com", AppRoles.MusicShop)
             };
 
             foreach (var (username, email, role) in testUsers)
             {
                 if (await userManager.FindByNameAsync(username) != null)
-                    continue;                
+                    continue;
 
                 var user = new AppUser
                 {
@@ -75,7 +76,7 @@ namespace eNote.Infrastructure.Identity
 
                 AddRoleProfile(context, user.Id, role);
 
-                await context.SaveChangesAsync();                
+                await context.SaveChangesAsync();
             }
         }
 
@@ -83,16 +84,30 @@ namespace eNote.Infrastructure.Identity
         {
             switch (role)
             {
-                case AppRoles.Student: context.Students.Add(new Student{ AppUserId = userId, EnrollmentDate = DateTime.UtcNow.AddMonths(-3)});
+                case AppRoles.Student:
+                    if (!context.Students.Any(x => x.AppUserId == userId))
+                        context.Students.Add(new Student
+                        {
+                            AppUserId = userId,
+                            EnrollmentDate = DateTime.UtcNow.AddMonths(-3)
+                        });
                     break;
 
-                case AppRoles.Instructor: context.Instructors.Add(new Instructor { AppUserId = userId }); 
+                case AppRoles.Instructor:
+                    if (!context.Instructors.Any(x => x.AppUserId == userId))
+                        context.Instructors.Add(new Instructor { AppUserId = userId });
                     break;
 
-                case AppRoles.MusicShop: context.MusicShops.Add(new MusicShop { AppUserId = userId, StoreName = "Test Music Shop", BusinessHours = "09:00–17:00"});
+                case AppRoles.MusicShop:
+                    if (!context.MusicShops.Any(x => x.AppUserId == userId))
+                        context.MusicShops.Add(new MusicShop
+                        {
+                            AppUserId = userId,
+                            StoreName = "Test Music Shop",
+                            BusinessHours = "09:00–17:00"
+                        });
                     break;
             }
         }
     }
 }
-
