@@ -26,9 +26,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\eNote.Infrastructure\eNote.Infrastructure.csproj" />    
-    <ProjectReference Include="..\eNote.Services\eNote.Application.csproj" />
-    <ProjectReference Include="..\eNote.Services\eNote.Application.csproj" />
+    <ProjectReference Include="..\eNote.Application\eNote.Application.csproj" />
+    <ProjectReference Include="..\eNote.Infrastructure\eNote.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

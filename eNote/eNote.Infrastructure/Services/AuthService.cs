@@ -5,21 +5,11 @@ using Microsoft.AspNetCore.Identity;
 
 namespace eNote.Infrastructure.Services
 {
-    public class AuthService : IAuthService
+    public class AuthService(UserManager<AppUser> userManager, SignInManager<AppUser> signInManager, ITokenService tokenService) : IAuthService
     {
-        private readonly UserManager<AppUser> _userManager;
-        private readonly SignInManager<AppUser> _signInManager;
-        private readonly ITokenService _tokenService;
-
-        public AuthService(
-            UserManager<AppUser> userManager,
-            SignInManager<AppUser> signInManager,
-            ITokenService tokenService)
-        {
-            _userManager = userManager;
-            _signInManager = signInManager;
-            _tokenService = tokenService;
-        }
+        private readonly UserManager<AppUser> _userManager = userManager;
+        private readonly SignInManager<AppUser> _signInManager = signInManager;
+        private readonly ITokenService _tokenService = tokenService;
 
         public async Task<(AuthResponse? response, string? error)> Login(LoginRequest model)
         {

@@ -1,5 +1,5 @@
 ﻿using eNote.Application.DTOs.Auth;
-using eNote.Application.DTOs.Profiles;
+using eNote.Application.DTOs.Profile;
 using eNote.Application.DTOs.Shared;
 using eNote.Application.Interfaces;
 using eNote.Infrastructure.Data.Context;

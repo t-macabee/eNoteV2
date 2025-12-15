@@ -1,16 +1,16 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace eNote.Model.Auth
+namespace eNote.Application.DTOs.Auth
 {
     public sealed class AuthResponse
     {
-        [JsonPropertyName("user_id")] 
+        [JsonPropertyName("user_id")]
         public int UserId { get; init; }
 
         [JsonPropertyName("username")]
         public string Username { get; init; } = null!;
 
-        [JsonPropertyName("roles")] 
+        [JsonPropertyName("roles")]
         public IReadOnlyList<string> Roles { get; init; } = new List<string>().AsReadOnly();
 
         [JsonPropertyName("status")]
