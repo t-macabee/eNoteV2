@@ -1,4 +1,4 @@
-﻿namespace eNote.Application.DTOs.Shared
+﻿namespace eNote.Application.Models.Shared
 {
     public record AddressDto(string City, string Street, string Number);
 }

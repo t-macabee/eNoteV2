@@ -1,8 +1,9 @@
-﻿namespace eNote.Domain.Entities
+﻿using eNote.Domain.Entities.Base;
+
+namespace eNote.Domain.Entities
 {
-    public class AssignmentSubmission
-    {
-        public int Id { get; set; }
+    public class AssignmentSubmission : BaseEntity
+    {        
         public int? Grade { get; set; }
         public DateTime? SubmittedAt { get; set; }
         public string? FilePath { get; set; } 

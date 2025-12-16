@@ -1,9 +1,9 @@
-﻿using eNote.Application.DTOs.Auth;
-using eNote.Application.Interfaces;
+﻿using eNote.Application.Interfaces;
+using eNote.Application.Models.Auth;
 using eNote.Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity;
 
-namespace eNote.Infrastructure.Services
+namespace eNote.Infrastructure.Services.Auth
 {
     public class AuthService(UserManager<AppUser> userManager, SignInManager<AppUser> signInManager, ITokenService tokenService) : IAuthService
     {

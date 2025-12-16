@@ -1,5 +1,7 @@
 ﻿using eNote.Application.Interfaces;
-using eNote.Infrastructure.Services;
+using eNote.Application.Services;
+using eNote.Infrastructure.Repositories;
+using eNote.Infrastructure.Services.Auth;
 using Microsoft.OpenApi.Models;
 
 namespace eNote.API.Extensions
@@ -9,8 +11,9 @@ namespace eNote.API.Extensions
         public static IServiceCollection AddApplicationServices(this IServiceCollection services)
         {
             services.AddScoped<IAuthService, AuthService>();
-            services.AddScoped<IUserService, UserService>();
             services.AddScoped<ITokenService, TokenService>();
+            services.AddScoped<IUserService, UserService>();
+            services.AddScoped<IUserRepository, UserRepository>();
 
             return services;
         }

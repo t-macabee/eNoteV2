@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace eNote.Application.DTOs.Auth
+namespace eNote.Application.Models.Auth
 {
     public class LoginRequest
     {

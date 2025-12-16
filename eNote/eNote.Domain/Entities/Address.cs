@@ -1,8 +1,9 @@
-﻿namespace eNote.Domain.Entities
+﻿using eNote.Domain.Entities.Base;
+
+namespace eNote.Domain.Entities
 {
-    public class Address
-    {
-        public int Id { get; set; }
+    public class Address : BaseEntity
+    {        
         public string City { get; set; } = null!;
         public string Street { get; set; } = null!;
         public string Number { get; set; } = null!;

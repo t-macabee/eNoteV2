@@ -1,10 +1,10 @@
-﻿using eNote.Domain.Enums;
+﻿using eNote.Domain.Entities.Base;
+using eNote.Domain.Enums;
 
 namespace eNote.Domain.Entities
 {
-    public class Enrollment
+    public class Enrollment : BaseEntity
     {
-        public int Id { get; set; }
         public EnrollmentStatus EnrollmentStatus { get; set; }
 
         public int StudentId { get; set; }

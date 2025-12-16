@@ -1,10 +1,10 @@
-﻿using eNote.Domain.Enums;
+﻿using eNote.Domain.Entities.Base;
+using eNote.Domain.Enums;
 
 namespace eNote.Domain.Entities
 {
-    public class Lecture
-    {
-        public int Id { get; set; }
+    public class Lecture : BaseEntity
+    {        
         public string Name { get; set; } = null!;
         public string Location { get; set; } = null!;
         public int Duration { get; set; }

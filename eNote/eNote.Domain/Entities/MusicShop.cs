@@ -1,8 +1,9 @@
-﻿namespace eNote.Domain.Entities
+﻿using eNote.Domain.Entities.Base;
+
+namespace eNote.Domain.Entities
 {
-    public class MusicShop
-    {
-        public int Id { get; set; }
+    public class MusicShop : BaseEntity
+    {        
         public string StoreName { get; set; } = null!;
         public string BusinessHours { get; set; } = null!;
 

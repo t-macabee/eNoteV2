@@ -1,10 +1,10 @@
-﻿using eNote.Domain.Enums;
+﻿using eNote.Domain.Entities.Base;
+using eNote.Domain.Enums;
 
 namespace eNote.Domain.Entities
 {
-    public class Instrument
+    public class Instrument : BaseEntity
     {
-        public int Id { get; set; }
         public string Model { get; set; } = null!;
         public string Manufacturer { get; set; } = null!;
         public string? Description { get; set; }

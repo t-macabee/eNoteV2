@@ -1,8 +1,9 @@
-﻿namespace eNote.Domain.Entities
+﻿using eNote.Domain.Entities.Base;
+
+namespace eNote.Domain.Entities
 {
-    public class InstrumentType
+    public class InstrumentType : BaseEntity
     {
-        public int Id { get; set; }
         public string Type { get; set; } = null!;
 
         public ICollection<Instrument> Instruments { get; set; } = new List<Instrument>();

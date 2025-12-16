@@ -1,8 +1,9 @@
-﻿namespace eNote.Domain.Entities
+﻿using eNote.Domain.Entities.Base;
+
+namespace eNote.Domain.Entities
 {
-    public class Assignment
+    public class Assignment : BaseEntity
     {
-        public int Id { get; set; }
         public string Title { get; set; } = null!;
         public string Description { get; set; } = null!;
         public DateTime DueAt { get; set; }

@@ -1,4 +1,4 @@
-﻿namespace eNote.Application.DTOs.Auth
+﻿namespace eNote.Application.Models.Auth
 {
     public static class AppRoles
     {

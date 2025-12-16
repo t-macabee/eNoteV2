@@ -1,10 +1,10 @@
-﻿using eNote.Domain.Enums;
+﻿using eNote.Domain.Entities.Base;
+using eNote.Domain.Enums;
 
 namespace eNote.Domain.Entities
 {
-    public class InstrumentRental
+    public class InstrumentRental : BaseEntity
     {
-        public int Id { get; set; }
         public decimal Price { get; set; }
         public string? Note { get; set; }
         public DateTime RentedAt { get; set; }

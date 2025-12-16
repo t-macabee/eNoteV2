@@ -1,11 +1,10 @@
-﻿using eNote.Application.DTOs.Auth;
+﻿using eNote.Application.Models.Auth;
 using eNote.Domain.Entities;
 using eNote.Infrastructure.Data.Context;
-using eNote.Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace eNote.Infrastructure.Data.Seed
+namespace eNote.Infrastructure.Identity
 {
     public static class IdentitySeed
     {

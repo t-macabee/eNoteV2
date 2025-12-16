@@ -1,4 +1,4 @@
-﻿using eNote.Application.DTOs.Auth;
+﻿using eNote.Application.Models.Auth;
 
 namespace eNote.Application.Interfaces
 {

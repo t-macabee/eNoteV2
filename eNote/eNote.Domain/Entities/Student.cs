@@ -1,8 +1,9 @@
-﻿namespace eNote.Domain.Entities
+﻿using eNote.Domain.Entities.Base;
+
+namespace eNote.Domain.Entities
 {
-    public class Student
-    {
-        public int Id { get; set; }
+    public class Student : BaseEntity
+    {        
         public DateTime EnrollmentDate { get; set; }
 
         public int AppUserId { get; set; }        

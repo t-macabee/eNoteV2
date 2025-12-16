@@ -5,7 +5,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 
-namespace eNote.Infrastructure.Services
+namespace eNote.Application.Services
 {
     public class TokenService(IConfiguration configuration) : ITokenService
     {

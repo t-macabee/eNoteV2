@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace eNote.Application.DTOs.Auth
+namespace eNote.Application.Models.Auth
 {
     public sealed class AuthResponse
     {
