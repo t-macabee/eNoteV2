@@ -8,12 +8,13 @@ using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Infrastructure.Services.Base
 {
-    public abstract class BaseService<TModel, TSearch, TDbEntity>(ENoteContext context, IMapper mapper) : IReadService<TModel, TSearch> where TModel : class where TDbEntity : class, IEntity where TSearch : BaseSearchObject
+    public abstract class BaseService<TModel, TSearch, TDbEntity>(ENoteContext context, IMapper mapper) 
+        : IReadService<TModel, TSearch> where TModel : class where TDbEntity : class, IEntity where TSearch : BaseSearchObject
     {
         protected readonly ENoteContext _context = context;
         protected readonly IMapper _mapper = mapper;
 
-        public async Task<TModel> GetByIdAsync(int id)
+        public virtual async Task<TModel> GetByIdAsync(int id)
         {
             var query = _context.Set<TDbEntity>().AsNoTracking();   
 
@@ -33,24 +34,29 @@ namespace eNote.Infrastructure.Services.Base
 
             query = AddFilter(search, query);
 
-            int totalCount = 0;
+            int? totalCount = null;
 
             if (search.IncludeTotalCount)
-            { 
+            {
                 totalCount = await query.CountAsync();
             }
 
-            query = query.Skip((search.Page - 1) * search.PageSize).Take(search.PageSize);
-            
+            var page = search.Page < 1 ? 1 : search.Page;
+
+            var pageSize = search.PageSize < 1 ? 20 : search.PageSize;
+
+            query = query.Skip((page - 1) * pageSize).Take(pageSize);
+
             var entities = await query.ToListAsync();
 
             var models = _mapper.Map<List<TModel>>(entities);
 
             return new PagedResult<TModel>
             {
-                ResultList = models,
-                Count = totalCount,
-                ReturnedCount = models.Count
+                Items = models,
+                Page = search.Page,
+                PageSize = search.PageSize,
+                TotalCount = totalCount
             };
         }
 

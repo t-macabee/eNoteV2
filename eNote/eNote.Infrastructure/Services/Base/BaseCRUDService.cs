@@ -10,7 +10,7 @@ namespace eNote.Infrastructure.Services.Base
     public abstract class BaseCRUDService<TModel, TSearch, TInsert, TUpdate, TDbEntity>(ENoteContext context, IMapper mapper) 
         : BaseService<TModel, TSearch, TDbEntity>(context, mapper), ICRUDService<TModel, TSearch, TInsert, TUpdate> where TModel : class where TSearch : BaseSearchObject where TDbEntity : class, IEntity
     {
-        public async Task<TModel> InsertAsync(TInsert request)
+        public virtual async Task<TModel> InsertAsync(TInsert request)
         {
             var entity = _mapper.Map<TDbEntity>(request);
 
@@ -25,12 +25,13 @@ namespace eNote.Infrastructure.Services.Base
 
         public virtual async Task<TModel> UpdateAsync(int id, TUpdate request)
         {
-            var entity = await _context.Set<TDbEntity>().FirstOrDefaultAsync(e => EF.Property<int>(e, "Id") == id) 
+            var entity = await _context.Set<TDbEntity>().FirstOrDefaultAsync(x => x.Id == id) 
                 ?? throw new KeyNotFoundException("ID nije pronađen.");
 
             _mapper.Map(request, entity);
 
             await BeforeUpdateAsync(request, entity);
+
             await _context.SaveChangesAsync();
 
             return _mapper.Map<TModel>(entity);
@@ -38,7 +39,7 @@ namespace eNote.Infrastructure.Services.Base
 
         public virtual async Task DeleteAsync(int id)
         {
-            var entity = await _context.Set<TDbEntity>().FirstOrDefaultAsync(e => EF.Property<int>(e, "Id") == id) 
+            var entity = await _context.Set<TDbEntity>().FirstOrDefaultAsync(x => x.Id == id) 
                 ?? throw new KeyNotFoundException("ID nije pronađen.");
 
             _context.Set<TDbEntity>().Remove(entity);
