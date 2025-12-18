@@ -9,15 +9,25 @@ namespace eNote.Infrastructure.Data.Seed
     {
         public static async Task SeedAsync(ENoteContext context)
         {
-            if (await context.Courses.AnyAsync())
-                return;
+            if (!await context.Courses.AnyAsync())
+            {
+                await SeedCourses(context);
+                await context.SaveChangesAsync();
+            }
 
-            await SeedCourses(context);
-            await SeedLectures(context);
-            await SeedInstruments(context);
+            if (!await context.Lectures.AnyAsync())
+            {
+                await SeedLectures(context);
+                await context.SaveChangesAsync(); 
+            }
 
-            await context.SaveChangesAsync();
+            if (!await context.Instruments.AnyAsync())
+            {
+                await SeedInstruments(context);
+                await context.SaveChangesAsync();
+            }
         }
+
 
         private static async Task SeedCourses(ENoteContext context)
         {

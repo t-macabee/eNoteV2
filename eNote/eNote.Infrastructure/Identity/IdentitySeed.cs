@@ -8,7 +8,7 @@ namespace eNote.Infrastructure.Identity
 {
     public static class IdentitySeed
     {
-        public static async Task SeedRolesAndUsers(IServiceProvider serviceProvider)
+        public static async Task SeedAsync(IServiceProvider serviceProvider)
         {
             var roleManager = serviceProvider.GetRequiredService<RoleManager<AppRole>>();
             var userManager = serviceProvider.GetRequiredService<UserManager<AppUser>>();

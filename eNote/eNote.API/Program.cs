@@ -39,7 +39,7 @@ if (app.Environment.IsDevelopment())
     using var scope = app.Services.CreateScope();
 
     var services = scope.ServiceProvider;
-    await IdentitySeed.SeedRolesAndUsers(services);
+    await IdentitySeed.SeedAsync(services);
 
     var context = services.GetRequiredService<ENoteContext>();
     await DevelopmentDataSeed.SeedAsync(context);
