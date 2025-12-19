@@ -11,10 +11,7 @@ namespace eNote.Application.Models.Auth
         public string Username { get; init; } = null!;
 
         [JsonPropertyName("roles")]
-        public IReadOnlyList<string> Roles { get; init; } = new List<string>().AsReadOnly();
-
-        [JsonPropertyName("status")]
-        public bool Status { get; init; }
+        public IReadOnlyList<string> Roles { get; init; } = Array.Empty<string>();
 
         [JsonPropertyName("token")]
         public string Token { get; init; } = null!;

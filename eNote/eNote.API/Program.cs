@@ -32,6 +32,8 @@ app.UseHttpsRedirection();
 
 app.UseStaticFiles();
 
+app.UseGlobalExceptionHandling();
+
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
