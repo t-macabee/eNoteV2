@@ -38,8 +38,7 @@ namespace eNote.Infrastructure.Services.Auth
             {
                 UserId = user.Id,
                 Username = user.UserName!,
-                Roles = roles.ToList().AsReadOnly(),
-                Status = user.IsActive,
+                Roles = roles.ToList().AsReadOnly(),                
                 Token = token
             }, null);
         }
