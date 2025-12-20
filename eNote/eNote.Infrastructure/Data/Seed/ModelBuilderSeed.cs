@@ -1,4 +1,5 @@
-﻿using eNote.Domain.Entities;
+﻿using eNote.Domain.Entities.Instruments;
+using eNote.Domain.Entities.Shared;
 using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Infrastructure.Data.Seed

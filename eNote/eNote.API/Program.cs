@@ -4,7 +4,6 @@ using Mapster;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json.Serialization;
 using eNote.Infrastructure.Data.Context;
-using eNote.Infrastructure.Identity;
 
 var builder = WebApplication.CreateBuilder(args);
 

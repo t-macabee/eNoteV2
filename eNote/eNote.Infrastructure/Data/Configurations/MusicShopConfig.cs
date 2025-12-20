@@ -1,4 +1,4 @@
-﻿using eNote.Domain.Entities;
+﻿using eNote.Domain.Entities.Users;
 using eNote.Infrastructure.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -11,10 +11,10 @@ namespace eNote.Infrastructure.Data.Configurations
         {
             builder.HasOne<AppUser>()
                 .WithOne()
-                .HasForeignKey<MusicShop>(m => m.AppUserId)
+                .HasForeignKey<MusicShop>(m => m.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            builder.HasIndex(m => m.AppUserId).IsUnique();
+            builder.HasIndex(m => m.UserId).IsUnique();
         }
     }
 }

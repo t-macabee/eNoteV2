@@ -13,7 +13,7 @@ namespace eNote.API.Controllers
         [HttpPost("login")]
         [ProducesResponseType(typeof(AuthResponse), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
-        public async Task<ActionResult<AuthResponse>> Login(LoginRequest model)
+        public async Task<ActionResult<AuthResponse>> Login([FromBody] LoginRequest model)
         {
             var (response, error) = await _authService.Login(model);
 

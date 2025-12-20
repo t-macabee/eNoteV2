@@ -1,4 +1,4 @@
-﻿using eNote.Domain.Entities;
+﻿using eNote.Domain.Entities.Lectures;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 

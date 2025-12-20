@@ -1,4 +1,4 @@
-﻿using eNote.Domain.Entities;
+﻿using eNote.Domain.Entities.Shared;
 using Microsoft.AspNetCore.Identity;
 
 namespace eNote.Infrastructure.Identity

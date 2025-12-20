@@ -1,7 +1,8 @@
 ﻿using eNote.Application.Interfaces;
+using eNote.Application.Interfaces.Abstractions;
 using eNote.Application.Services;
-using eNote.Infrastructure.Repositories;
-using eNote.Infrastructure.Services.Auth;
+using eNote.Infrastructure.Data.Context;
+using eNote.Infrastructure.Identity;
 using Microsoft.OpenApi.Models;
 
 namespace eNote.API.Extensions
@@ -13,7 +14,9 @@ namespace eNote.API.Extensions
             services.AddScoped<IAuthService, AuthService>();
             services.AddScoped<ITokenService, TokenService>();
             services.AddScoped<IUserService, UserService>();
-            services.AddScoped<IUserRepository, UserRepository>();
+
+            services.AddScoped<IUserIdentityService, UserIdentityService>();
+            services.AddScoped<IAppDbContext>(x => x.GetRequiredService<ENoteContext>());
 
             return services;
         }

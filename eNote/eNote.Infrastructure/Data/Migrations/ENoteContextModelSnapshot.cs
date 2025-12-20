@@ -125,7 +125,351 @@ namespace eNote.Infrastructure.Data.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("eNote.Domain.Entities.Address", b =>
+            modelBuilder.Entity("eNote.Domain.Entities.Courses.Course", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Description")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("EndDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("InstructorId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("Price")
+                        .HasColumnType("decimal(8,2)");
+
+                    b.Property<DateTime?>("StartDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("InstructorId");
+
+                    b.ToTable("Courses");
+                });
+
+            modelBuilder.Entity("eNote.Domain.Entities.Courses.Enrollment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CourseId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("EnrollmentStatus")
+                        .HasColumnType("int");
+
+                    b.Property<int>("StudentId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CourseId");
+
+                    b.HasIndex("StudentId", "CourseId")
+                        .IsUnique();
+
+                    b.ToTable("Enrollments");
+                });
+
+            modelBuilder.Entity("eNote.Domain.Entities.Instruments.Instrument", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("ImagePath")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("InstrumentTypeId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Manufacturer")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Model")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("MusicShopId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("InstrumentTypeId");
+
+                    b.HasIndex("MusicShopId");
+
+                    b.ToTable("Instruments");
+                });
+
+            modelBuilder.Entity("eNote.Domain.Entities.Instruments.InstrumentRental", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("InstrumentId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Note")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("Price")
+                        .HasColumnType("decimal(8,2)");
+
+                    b.Property<int>("RentalStatus")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("RentedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("ReturnedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("StudentId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("InstrumentId");
+
+                    b.HasIndex("StudentId");
+
+                    b.ToTable("InstrumentRentals");
+                });
+
+            modelBuilder.Entity("eNote.Domain.Entities.Instruments.InstrumentType", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("InstrumentTypes");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Type = "Žičani"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Type = "Udaraljke"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Type = "Limeni"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            Type = "Tipke"
+                        },
+                        new
+                        {
+                            Id = 5,
+                            Type = "Dodatna oprema"
+                        });
+                });
+
+            modelBuilder.Entity("eNote.Domain.Entities.Lectures.Assignment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("DueAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("LectureId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LectureId");
+
+                    b.ToTable("Assignments");
+                });
+
+            modelBuilder.Entity("eNote.Domain.Entities.Lectures.AssignmentSubmission", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AssignmentId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("FilePath")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int?>("Grade")
+                        .HasColumnType("int");
+
+                    b.Property<int>("StudentId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("SubmittedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AssignmentId");
+
+                    b.HasIndex("StudentId");
+
+                    b.ToTable("AssignmentSubmissions");
+                });
+
+            modelBuilder.Entity("eNote.Domain.Entities.Lectures.Attendance", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AttendanceStatus")
+                        .HasColumnType("int");
+
+                    b.Property<int>("LectureId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("StudentId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LectureId");
+
+                    b.HasIndex("StudentId", "LectureId")
+                        .IsUnique();
+
+                    b.ToTable("Attendances");
+                });
+
+            modelBuilder.Entity("eNote.Domain.Entities.Lectures.Lecture", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CourseId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Duration")
+                        .HasColumnType("int");
+
+                    b.Property<int>("LectureStatus")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("LectureTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("LectureType")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Location")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CourseId");
+
+                    b.ToTable("Lectures");
+                });
+
+            modelBuilder.Entity("eNote.Domain.Entities.Lectures.LectureNote", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("LectureId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LectureId");
+
+                    b.ToTable("LectureNotes");
+                });
+
+            modelBuilder.Entity("eNote.Domain.Entities.Shared.Address", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -190,7 +534,7 @@ namespace eNote.Infrastructure.Data.Migrations
                         });
                 });
 
-            modelBuilder.Entity("eNote.Domain.Entities.Assignment", b =>
+            modelBuilder.Entity("eNote.Domain.Entities.Users.Instructor", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -198,371 +542,24 @@ namespace eNote.Infrastructure.Data.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("DueAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("LectureId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("LectureId");
-
-                    b.ToTable("Assignments");
-                });
-
-            modelBuilder.Entity("eNote.Domain.Entities.AssignmentSubmission", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("AssignmentId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("FilePath")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<int?>("Grade")
-                        .HasColumnType("int");
-
-                    b.Property<int>("StudentId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime?>("SubmittedAt")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AssignmentId");
-
-                    b.HasIndex("StudentId");
-
-                    b.ToTable("AssignmentSubmissions");
-                });
-
-            modelBuilder.Entity("eNote.Domain.Entities.Attendance", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("AttendanceStatus")
-                        .HasColumnType("int");
-
-                    b.Property<int>("LectureId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("StudentId")
+                    b.Property<int>("UserId")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("LectureId");
-
-                    b.HasIndex("StudentId", "LectureId")
-                        .IsUnique();
-
-                    b.ToTable("Attendances");
-                });
-
-            modelBuilder.Entity("eNote.Domain.Entities.Course", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Description")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime?>("EndDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("InstructorId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<decimal>("Price")
-                        .HasColumnType("decimal(8,2)");
-
-                    b.Property<DateTime?>("StartDate")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("InstructorId");
-
-                    b.ToTable("Courses");
-                });
-
-            modelBuilder.Entity("eNote.Domain.Entities.Enrollment", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("CourseId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("EnrollmentStatus")
-                        .HasColumnType("int");
-
-                    b.Property<int>("StudentId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CourseId");
-
-                    b.HasIndex("StudentId", "CourseId")
-                        .IsUnique();
-
-                    b.ToTable("Enrollments");
-                });
-
-            modelBuilder.Entity("eNote.Domain.Entities.Instructor", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("AppUserId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AppUserId")
+                    b.HasIndex("UserId")
                         .IsUnique();
 
                     b.ToTable("Instructors");
                 });
 
-            modelBuilder.Entity("eNote.Domain.Entities.Instrument", b =>
+            modelBuilder.Entity("eNote.Domain.Entities.Users.MusicShop", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
-                    b.Property<string>("ImagePath")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("InstrumentTypeId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Manufacturer")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("Model")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<int>("MusicShopId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("InstrumentTypeId");
-
-                    b.HasIndex("MusicShopId");
-
-                    b.ToTable("Instruments");
-                });
-
-            modelBuilder.Entity("eNote.Domain.Entities.InstrumentRental", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("InstrumentId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Note")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<decimal>("Price")
-                        .HasColumnType("decimal(8,2)");
-
-                    b.Property<int>("RentalStatus")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("RentedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("ReturnedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("StudentId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("InstrumentId");
-
-                    b.HasIndex("StudentId");
-
-                    b.ToTable("InstrumentRentals");
-                });
-
-            modelBuilder.Entity("eNote.Domain.Entities.InstrumentType", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Type")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("InstrumentTypes");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            Type = "Žičani"
-                        },
-                        new
-                        {
-                            Id = 2,
-                            Type = "Udaraljke"
-                        },
-                        new
-                        {
-                            Id = 3,
-                            Type = "Limeni"
-                        },
-                        new
-                        {
-                            Id = 4,
-                            Type = "Tipke"
-                        },
-                        new
-                        {
-                            Id = 5,
-                            Type = "Dodatna oprema"
-                        });
-                });
-
-            modelBuilder.Entity("eNote.Domain.Entities.Lecture", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("CourseId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Duration")
-                        .HasColumnType("int");
-
-                    b.Property<int>("LectureStatus")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("LectureTime")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("LectureType")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Location")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CourseId");
-
-                    b.ToTable("Lectures");
-                });
-
-            modelBuilder.Entity("eNote.Domain.Entities.LectureNote", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Content")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("LectureId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("LectureId");
-
-                    b.ToTable("LectureNotes");
-                });
-
-            modelBuilder.Entity("eNote.Domain.Entities.MusicShop", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("AppUserId")
-                        .HasColumnType("int");
 
                     b.Property<string>("BusinessHours")
                         .IsRequired()
@@ -572,15 +569,18 @@ namespace eNote.Infrastructure.Data.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
-                    b.HasIndex("AppUserId")
+                    b.HasIndex("UserId")
                         .IsUnique();
 
                     b.ToTable("MusicShops");
                 });
 
-            modelBuilder.Entity("eNote.Domain.Entities.Student", b =>
+            modelBuilder.Entity("eNote.Domain.Entities.Users.Student", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -588,15 +588,15 @@ namespace eNote.Infrastructure.Data.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("AppUserId")
-                        .HasColumnType("int");
-
                     b.Property<DateTime>("EnrollmentDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
-                    b.HasIndex("AppUserId")
+                    b.HasIndex("UserId")
                         .IsUnique();
 
                     b.ToTable("Students");
@@ -771,58 +771,9 @@ namespace eNote.Infrastructure.Data.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("eNote.Domain.Entities.Assignment", b =>
+            modelBuilder.Entity("eNote.Domain.Entities.Courses.Course", b =>
                 {
-                    b.HasOne("eNote.Domain.Entities.Lecture", "Lecture")
-                        .WithMany("Assignments")
-                        .HasForeignKey("LectureId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Lecture");
-                });
-
-            modelBuilder.Entity("eNote.Domain.Entities.AssignmentSubmission", b =>
-                {
-                    b.HasOne("eNote.Domain.Entities.Assignment", "Assignment")
-                        .WithMany("AssignmentSubmissions")
-                        .HasForeignKey("AssignmentId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("eNote.Domain.Entities.Student", "Student")
-                        .WithMany("AssignmentSubmissions")
-                        .HasForeignKey("StudentId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Assignment");
-
-                    b.Navigation("Student");
-                });
-
-            modelBuilder.Entity("eNote.Domain.Entities.Attendance", b =>
-                {
-                    b.HasOne("eNote.Domain.Entities.Lecture", "Lecture")
-                        .WithMany("Attendances")
-                        .HasForeignKey("LectureId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("eNote.Domain.Entities.Student", "Student")
-                        .WithMany("Attendances")
-                        .HasForeignKey("StudentId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Lecture");
-
-                    b.Navigation("Student");
-                });
-
-            modelBuilder.Entity("eNote.Domain.Entities.Course", b =>
-                {
-                    b.HasOne("eNote.Domain.Entities.Instructor", "Instructor")
+                    b.HasOne("eNote.Domain.Entities.Users.Instructor", "Instructor")
                         .WithMany("Courses")
                         .HasForeignKey("InstructorId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -831,15 +782,15 @@ namespace eNote.Infrastructure.Data.Migrations
                     b.Navigation("Instructor");
                 });
 
-            modelBuilder.Entity("eNote.Domain.Entities.Enrollment", b =>
+            modelBuilder.Entity("eNote.Domain.Entities.Courses.Enrollment", b =>
                 {
-                    b.HasOne("eNote.Domain.Entities.Course", "Course")
+                    b.HasOne("eNote.Domain.Entities.Courses.Course", "Course")
                         .WithMany("Enrollments")
                         .HasForeignKey("CourseId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("eNote.Domain.Entities.Student", "Student")
+                    b.HasOne("eNote.Domain.Entities.Users.Student", "Student")
                         .WithMany("Enrollments")
                         .HasForeignKey("StudentId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -850,24 +801,15 @@ namespace eNote.Infrastructure.Data.Migrations
                     b.Navigation("Student");
                 });
 
-            modelBuilder.Entity("eNote.Domain.Entities.Instructor", b =>
+            modelBuilder.Entity("eNote.Domain.Entities.Instruments.Instrument", b =>
                 {
-                    b.HasOne("eNote.Infrastructure.Identity.AppUser", null)
-                        .WithOne()
-                        .HasForeignKey("eNote.Domain.Entities.Instructor", "AppUserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("eNote.Domain.Entities.Instrument", b =>
-                {
-                    b.HasOne("eNote.Domain.Entities.InstrumentType", "InstrumentType")
+                    b.HasOne("eNote.Domain.Entities.Instruments.InstrumentType", "InstrumentType")
                         .WithMany("Instruments")
                         .HasForeignKey("InstrumentTypeId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("eNote.Domain.Entities.MusicShop", "MusicShop")
+                    b.HasOne("eNote.Domain.Entities.Users.MusicShop", "MusicShop")
                         .WithMany()
                         .HasForeignKey("MusicShopId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -878,15 +820,15 @@ namespace eNote.Infrastructure.Data.Migrations
                     b.Navigation("MusicShop");
                 });
 
-            modelBuilder.Entity("eNote.Domain.Entities.InstrumentRental", b =>
+            modelBuilder.Entity("eNote.Domain.Entities.Instruments.InstrumentRental", b =>
                 {
-                    b.HasOne("eNote.Domain.Entities.Instrument", "Instrument")
+                    b.HasOne("eNote.Domain.Entities.Instruments.Instrument", "Instrument")
                         .WithMany("InstrumentRentals")
                         .HasForeignKey("InstrumentId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("eNote.Domain.Entities.Student", "Student")
+                    b.HasOne("eNote.Domain.Entities.Users.Student", "Student")
                         .WithMany("InstrumentRentals")
                         .HasForeignKey("StudentId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -897,9 +839,58 @@ namespace eNote.Infrastructure.Data.Migrations
                     b.Navigation("Student");
                 });
 
-            modelBuilder.Entity("eNote.Domain.Entities.Lecture", b =>
+            modelBuilder.Entity("eNote.Domain.Entities.Lectures.Assignment", b =>
                 {
-                    b.HasOne("eNote.Domain.Entities.Course", "Course")
+                    b.HasOne("eNote.Domain.Entities.Lectures.Lecture", "Lecture")
+                        .WithMany("Assignments")
+                        .HasForeignKey("LectureId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Lecture");
+                });
+
+            modelBuilder.Entity("eNote.Domain.Entities.Lectures.AssignmentSubmission", b =>
+                {
+                    b.HasOne("eNote.Domain.Entities.Lectures.Assignment", "Assignment")
+                        .WithMany("AssignmentSubmissions")
+                        .HasForeignKey("AssignmentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("eNote.Domain.Entities.Users.Student", "Student")
+                        .WithMany("AssignmentSubmissions")
+                        .HasForeignKey("StudentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Assignment");
+
+                    b.Navigation("Student");
+                });
+
+            modelBuilder.Entity("eNote.Domain.Entities.Lectures.Attendance", b =>
+                {
+                    b.HasOne("eNote.Domain.Entities.Lectures.Lecture", "Lecture")
+                        .WithMany("Attendances")
+                        .HasForeignKey("LectureId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("eNote.Domain.Entities.Users.Student", "Student")
+                        .WithMany("Attendances")
+                        .HasForeignKey("StudentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Lecture");
+
+                    b.Navigation("Student");
+                });
+
+            modelBuilder.Entity("eNote.Domain.Entities.Lectures.Lecture", b =>
+                {
+                    b.HasOne("eNote.Domain.Entities.Courses.Course", "Course")
                         .WithMany("Lectures")
                         .HasForeignKey("CourseId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -908,9 +899,9 @@ namespace eNote.Infrastructure.Data.Migrations
                     b.Navigation("Course");
                 });
 
-            modelBuilder.Entity("eNote.Domain.Entities.LectureNote", b =>
+            modelBuilder.Entity("eNote.Domain.Entities.Lectures.LectureNote", b =>
                 {
-                    b.HasOne("eNote.Domain.Entities.Lecture", "Lecture")
+                    b.HasOne("eNote.Domain.Entities.Lectures.Lecture", "Lecture")
                         .WithMany("LectureNotes")
                         .HasForeignKey("LectureId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -919,27 +910,36 @@ namespace eNote.Infrastructure.Data.Migrations
                     b.Navigation("Lecture");
                 });
 
-            modelBuilder.Entity("eNote.Domain.Entities.MusicShop", b =>
+            modelBuilder.Entity("eNote.Domain.Entities.Users.Instructor", b =>
                 {
                     b.HasOne("eNote.Infrastructure.Identity.AppUser", null)
                         .WithOne()
-                        .HasForeignKey("eNote.Domain.Entities.MusicShop", "AppUserId")
+                        .HasForeignKey("eNote.Domain.Entities.Users.Instructor", "UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("eNote.Domain.Entities.Student", b =>
+            modelBuilder.Entity("eNote.Domain.Entities.Users.MusicShop", b =>
                 {
                     b.HasOne("eNote.Infrastructure.Identity.AppUser", null)
                         .WithOne()
-                        .HasForeignKey("eNote.Domain.Entities.Student", "AppUserId")
+                        .HasForeignKey("eNote.Domain.Entities.Users.MusicShop", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("eNote.Domain.Entities.Users.Student", b =>
+                {
+                    b.HasOne("eNote.Infrastructure.Identity.AppUser", null)
+                        .WithOne()
+                        .HasForeignKey("eNote.Domain.Entities.Users.Student", "UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
             modelBuilder.Entity("eNote.Infrastructure.Identity.AppUser", b =>
                 {
-                    b.HasOne("eNote.Domain.Entities.Address", "Address")
+                    b.HasOne("eNote.Domain.Entities.Shared.Address", "Address")
                         .WithMany()
                         .HasForeignKey("AddressId")
                         .OnDelete(DeleteBehavior.Restrict);
@@ -947,34 +947,29 @@ namespace eNote.Infrastructure.Data.Migrations
                     b.Navigation("Address");
                 });
 
-            modelBuilder.Entity("eNote.Domain.Entities.Assignment", b =>
-                {
-                    b.Navigation("AssignmentSubmissions");
-                });
-
-            modelBuilder.Entity("eNote.Domain.Entities.Course", b =>
+            modelBuilder.Entity("eNote.Domain.Entities.Courses.Course", b =>
                 {
                     b.Navigation("Enrollments");
 
                     b.Navigation("Lectures");
                 });
 
-            modelBuilder.Entity("eNote.Domain.Entities.Instructor", b =>
-                {
-                    b.Navigation("Courses");
-                });
-
-            modelBuilder.Entity("eNote.Domain.Entities.Instrument", b =>
+            modelBuilder.Entity("eNote.Domain.Entities.Instruments.Instrument", b =>
                 {
                     b.Navigation("InstrumentRentals");
                 });
 
-            modelBuilder.Entity("eNote.Domain.Entities.InstrumentType", b =>
+            modelBuilder.Entity("eNote.Domain.Entities.Instruments.InstrumentType", b =>
                 {
                     b.Navigation("Instruments");
                 });
 
-            modelBuilder.Entity("eNote.Domain.Entities.Lecture", b =>
+            modelBuilder.Entity("eNote.Domain.Entities.Lectures.Assignment", b =>
+                {
+                    b.Navigation("AssignmentSubmissions");
+                });
+
+            modelBuilder.Entity("eNote.Domain.Entities.Lectures.Lecture", b =>
                 {
                     b.Navigation("Assignments");
 
@@ -983,7 +978,12 @@ namespace eNote.Infrastructure.Data.Migrations
                     b.Navigation("LectureNotes");
                 });
 
-            modelBuilder.Entity("eNote.Domain.Entities.Student", b =>
+            modelBuilder.Entity("eNote.Domain.Entities.Users.Instructor", b =>
+                {
+                    b.Navigation("Courses");
+                });
+
+            modelBuilder.Entity("eNote.Domain.Entities.Users.Student", b =>
                 {
                     b.Navigation("AssignmentSubmissions");
 
