@@ -1,8 +1,5 @@
-﻿using eNote.Domain.Entities.Instruments;
-using eNote.Domain.Entities.Courses;
-using eNote.Domain.Entities.Lectures;
+﻿using eNote.Domain.Entities;
 using eNote.Domain.Enums;
-using eNote.Infrastructure.Data.Context;
 using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Infrastructure.Data.Seed

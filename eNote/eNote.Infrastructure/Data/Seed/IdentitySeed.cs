@@ -1,6 +1,5 @@
 ﻿using eNote.Application.Constants;
 using eNote.Domain.Entities.Users;
-using eNote.Infrastructure.Data.Context;
 using eNote.Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;

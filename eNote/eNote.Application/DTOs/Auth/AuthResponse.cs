@@ -4,7 +4,7 @@ namespace eNote.Application.Models.Auth
 {
     public sealed class AuthResponse
     {
-        [JsonPropertyName("user_id")]
+        [JsonPropertyName("userId")]
         public int UserId { get; init; }
 
         [JsonPropertyName("username")]

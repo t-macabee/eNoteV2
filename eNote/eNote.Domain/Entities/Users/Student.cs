@@ -1,7 +1,4 @@
 ﻿using eNote.Domain.Entities.Base;
-using eNote.Domain.Entities.Courses;
-using eNote.Domain.Entities.Instruments;
-using eNote.Domain.Entities.Lectures;
 
 namespace eNote.Domain.Entities.Users
 {

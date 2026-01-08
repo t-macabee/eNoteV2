@@ -1,4 +1,4 @@
-﻿using eNote.Infrastructure.Data.Context;
+﻿using eNote.Infrastructure.Data;
 using eNote.Infrastructure.Identity;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;

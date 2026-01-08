@@ -1,7 +1,8 @@
 ﻿using eNote.Application.Interfaces;
-using eNote.Application.Interfaces.Abstractions;
+using eNote.Application.Interfaces.Identity;
+using eNote.Application.Interfaces.Ports;
 using eNote.Application.Services;
-using eNote.Infrastructure.Data.Context;
+using eNote.Infrastructure.Data;
 using eNote.Infrastructure.Identity;
 using Microsoft.OpenApi.Models;
 
@@ -14,6 +15,7 @@ namespace eNote.API.Extensions
             services.AddScoped<IAuthService, AuthService>();
             services.AddScoped<ITokenService, TokenService>();
             services.AddScoped<IUserService, UserService>();
+            services.AddScoped<IInstrumentService, InstrumentService>();
 
             services.AddScoped<IUserIdentityService, UserIdentityService>();
             services.AddScoped<IAppDbContext>(x => x.GetRequiredService<ENoteContext>());
@@ -23,35 +25,38 @@ namespace eNote.API.Extensions
 
         public static IServiceCollection AddOpenApiDocumentation(this IServiceCollection services)
         {
-            services.AddOpenApi(options =>
+            services.AddEndpointsApiExplorer();
+
+            services.AddSwaggerGen(options =>
             {
-                options.AddDocumentTransformer((document, _, _) =>
+                options.SwaggerDoc("v1", new()
                 {
-                    document.Info.Title = "eNote.API | v1";
-                    document.Info.Version = "1.0.0";
+                    Title = "eNote.API | v1",
+                    Version = "1.0.0"
+                });
 
-                    document.Components ??= new();
-                    document.Components.SecuritySchemes["Bearer"] = new OpenApiSecurityScheme
-                    {
-                        Type = SecuritySchemeType.Http,
-                        Scheme = "bearer",
-                        BearerFormat = "JWT",
-                        In = ParameterLocation.Header,
-                        Description = "Authorization: Bearer {JWT token}"
-                    };
+                options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+                {
+                    Type = SecuritySchemeType.Http,
+                    Scheme = "bearer",
+                    BearerFormat = "JWT",
+                    In = ParameterLocation.Header,
+                    Description = "Authorization: Bearer {JWT token}"
+                });
 
-                    document.SecurityRequirements.Add(new OpenApiSecurityRequirement
+                options.AddSecurityRequirement(new OpenApiSecurityRequirement
+                {
                     {
+                        new OpenApiSecurityScheme
                         {
-                            new OpenApiSecurityScheme
+                            Reference = new OpenApiReference
                             {
-                                Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
-                            },
-                            Array.Empty<string>()
-                        }
-                    });
-
-                    return Task.CompletedTask;
+                                Type = ReferenceType.SecurityScheme,
+                                Id = "Bearer"
+                            }
+                        },
+                        Array.Empty<string>()
+                    }
                 });
             });
 

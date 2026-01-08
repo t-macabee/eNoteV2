@@ -1,5 +1,5 @@
 ﻿using eNote.Application;
-using eNote.Application.Interfaces;
+using eNote.Application.Interfaces.Base;
 using eNote.Application.SearchObjects;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -7,11 +7,11 @@ using Microsoft.AspNetCore.Mvc;
 namespace eNote.API.Controllers
 {
     [ApiController]
-    [Authorize]
+    //[Authorize]
     [Route("api/[controller]")]
-    public abstract class ReadController<TModel, TSearch>(IReadService<TModel, TSearch> service) : ControllerBase where TSearch : BaseSearchObject
+    public abstract class ReadController<TModel, TSearch>(IService<TModel, TSearch> service) : ControllerBase where TSearch : BaseSearchObject
     {
-        protected readonly IReadService<TModel, TSearch> _service = service;
+        protected readonly IService<TModel, TSearch> _service = service;
 
         [HttpGet]
         public virtual async Task<ActionResult<PagedResult<TModel>>> GetAll(

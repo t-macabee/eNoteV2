@@ -3,7 +3,7 @@ using eNote.Infrastructure.Data.Seed;
 using Mapster;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json.Serialization;
-using eNote.Infrastructure.Data.Context;
+using eNote.Infrastructure.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,7 +23,7 @@ builder.Services
     .AddJsonOptions(x =>
         x.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
-builder.Services.AddMapster();
+builder.Services.AddMapping();
 
 var app = builder.Build();
 
@@ -35,7 +35,15 @@ app.UseGlobalExceptionHandling();
 
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
+    //app.MapOpenApi();
+
+    app.UseSwagger();
+
+    app.UseSwaggerUI(options =>
+    {
+        options.SwaggerEndpoint("/swagger/v1/swagger.json", "eNote API v1");
+    });
+
 
     using var scope = app.Services.CreateScope();
 

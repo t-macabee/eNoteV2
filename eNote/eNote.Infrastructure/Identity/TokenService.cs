@@ -1,4 +1,4 @@
-﻿using eNote.Application.Interfaces;
+﻿using eNote.Application.Interfaces.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;

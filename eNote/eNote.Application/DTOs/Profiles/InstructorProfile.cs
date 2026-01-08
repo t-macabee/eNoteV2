@@ -1,6 +1,4 @@
-﻿using eNote.Application.DTOs.Profiles;
-
-namespace eNote.Application.Models.Profile
+﻿namespace eNote.Application.DTOs.Profiles
 {
     public record InstructorProfile(int Id, string? FirstName, string? LastName) : IUserProfile;
 }

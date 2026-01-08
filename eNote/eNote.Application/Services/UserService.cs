@@ -1,10 +1,9 @@
 ﻿using eNote.Application.Constants;
+using eNote.Application.DTOs;
 using eNote.Application.DTOs.Profiles;
-using eNote.Application.DTOs.Users;
 using eNote.Application.Interfaces;
-using eNote.Application.Interfaces.Abstractions;
-using eNote.Application.Models.Profile;
-using eNote.Application.Models.Shared;
+using eNote.Application.Interfaces.Identity;
+using eNote.Application.Interfaces.Ports;
 using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Application.Services

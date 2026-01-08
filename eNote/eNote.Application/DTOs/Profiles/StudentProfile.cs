@@ -1,7 +1,4 @@
-﻿using eNote.Application.DTOs.Profiles;
-using eNote.Application.Models.Shared;
-
-namespace eNote.Application.Models.Profile
+﻿namespace eNote.Application.DTOs.Profiles
 {
     public record StudentProfile(int Id, DateTime EnrollmentDate, string? FirstName, string? LastName, DateTime? DateOfBirth, AddressDto? Address) : IUserProfile;
 }

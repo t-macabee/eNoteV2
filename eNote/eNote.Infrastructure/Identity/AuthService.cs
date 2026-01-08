@@ -1,4 +1,4 @@
-﻿using eNote.Application.Interfaces;
+﻿using eNote.Application.Interfaces.Identity;
 using eNote.Application.Models.Auth;
 using Microsoft.AspNetCore.Identity;
 

@@ -16,7 +16,8 @@
       },
       "dotnetRunMessages": true,
       "launchBrowser": true,
-      "launchUrl": "openapi/v1.json",
+      //"launchUrl": "openapi/v1.json",
+      "launchUrl": "swagger",
       "applicationUrl": "https://localhost:7239;http://localhost:5059"
     },
     "Container (Dockerfile)": {
