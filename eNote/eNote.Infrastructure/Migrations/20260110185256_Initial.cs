@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #pragma warning disable CA1814 // Prefer jagged arrays over multidimensional
 
-namespace eNote.Infrastructure.Data.Migrations
+namespace eNote.Infrastructure.Migrations
 {
     /// <inheritdoc />
     public partial class Initial : Migration
@@ -294,6 +294,7 @@ namespace eNote.Infrastructure.Data.Migrations
                     Manufacturer = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     Description = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
                     ImagePath = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false),
                     InstrumentTypeId = table.Column<int>(type: "int", nullable: false),
                     MusicShopId = table.Column<int>(type: "int", nullable: false)
                 },
@@ -372,7 +373,7 @@ namespace eNote.Infrastructure.Data.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    Price = table.Column<decimal>(type: "decimal(8,2)", nullable: false),
+                    Fee = table.Column<decimal>(type: "decimal(8,2)", nullable: false),
                     Note = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     RentedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     ReturnedAt = table.Column<DateTime>(type: "datetime2", nullable: true),

@@ -6,7 +6,7 @@ namespace eNote.Domain.Entities
 {
     public class InstrumentRental : BaseEntity
     {
-        public decimal Price { get; set; }
+        public decimal Fee { get; set; }
         public string? Note { get; set; }
         public DateTime RentedAt { get; set; }
         public DateTime? ReturnedAt { get; set; }

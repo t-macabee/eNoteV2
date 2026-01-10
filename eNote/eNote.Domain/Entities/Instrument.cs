@@ -10,7 +10,11 @@ namespace eNote.Domain.Entities
         public string Manufacturer { get; set; } = null!;
         public string? Description { get; set; }
         public string? ImagePath { get; set; }
-        public bool IsAvailable => !InstrumentRentals.Any(x => x.RentalStatus == InstrumentRentalStatus.Approved);
+
+        public bool IsActive { get; set; } = true;
+
+        public bool IsAvailable => 
+            IsActive && !InstrumentRentals.Any(x => x.RentalStatus == InstrumentRentalStatus.Approved);
 
         public int InstrumentTypeId { get; set; }
         public InstrumentType InstrumentType { get; set; } = null!;

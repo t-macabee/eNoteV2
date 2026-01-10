@@ -1,6 +1,5 @@
 ﻿using eNote.Application.Interfaces.Base;
 using eNote.Application.SearchObjects;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace eNote.API.Controllers

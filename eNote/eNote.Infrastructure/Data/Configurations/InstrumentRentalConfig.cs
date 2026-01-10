@@ -18,7 +18,7 @@ namespace eNote.Infrastructure.Data.Configurations
                    .HasForeignKey(x => x.InstrumentId)
                    .OnDelete(DeleteBehavior.Cascade);
 
-            builder.Property(x => x.Price).HasColumnType("decimal(8,2)");
+            builder.Property(x => x.Fee).HasColumnType("decimal(8,2)");
             builder.Property(x => x.RentalStatus).HasConversion<int>();                     
         }
     }

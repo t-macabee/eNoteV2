@@ -19,7 +19,10 @@ namespace eNote.Application.Services.Base
 
             query = AddIncludes(query);
 
-            var entity = await query.FirstOrDefaultAsync(x => x.Id == id) ?? throw new KeyNotFoundException("ID nije pronađen");
+            query = AddIdFilter(query);
+
+            var entity = await query.FirstOrDefaultAsync(x => x.Id == id)
+                ?? throw new KeyNotFoundException("ID nije pronađen");
 
             return _mapper.Map<TModel>(entity);
         }
@@ -59,6 +62,7 @@ namespace eNote.Application.Services.Base
         }
 
         protected virtual IQueryable<TDbEntity> AddFilter(TSearch search, IQueryable<TDbEntity> query) => query;
+        protected virtual IQueryable<TDbEntity> AddIdFilter(IQueryable<TDbEntity> query) => query;
         protected virtual IQueryable<TDbEntity> AddIncludes(IQueryable<TDbEntity> query) => query;
     }
 }

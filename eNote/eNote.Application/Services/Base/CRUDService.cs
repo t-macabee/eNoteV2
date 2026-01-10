@@ -18,21 +18,25 @@ namespace eNote.Application.Services.Base
             await BeforeInsertAsync(request, entity);
 
             _context.Set<TDbEntity>().Add(entity);
-
             await _context.SaveChangesAsync();
+
+            entity = await AfterSaveAsync(entity);
 
             return _mapper.Map<TModel>(entity);
         }
 
         public virtual async Task<TModel> UpdateAsync(int id, TUpdate request)
         {
-            var entity = await _context.Set<TDbEntity>().FirstOrDefaultAsync(x => x.Id == id) ?? throw new KeyNotFoundException("ID nije pronađen.");
+            var entity = await _context.Set<TDbEntity>()
+                .FirstOrDefaultAsync(x => x.Id == id)
+                ?? throw new KeyNotFoundException("ID nije pronađen.");
 
             _mapper.Map(request, entity);
 
             await BeforeUpdateAsync(request, entity);
-
             await _context.SaveChangesAsync();
+
+            entity = await AfterSaveAsync(entity);
 
             return _mapper.Map<TModel>(entity);
         }
@@ -48,5 +52,6 @@ namespace eNote.Application.Services.Base
 
         protected virtual Task BeforeInsertAsync(TInsert request, TDbEntity entity) => Task.CompletedTask;
         protected virtual Task BeforeUpdateAsync(TUpdate request, TDbEntity entity) => Task.CompletedTask;
+        protected virtual Task<TDbEntity> AfterSaveAsync(TDbEntity entity) => Task.FromResult(entity);
     }
 }
