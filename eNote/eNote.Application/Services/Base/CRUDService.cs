@@ -18,11 +18,12 @@ namespace eNote.Application.Services.Base
             await BeforeInsertAsync(request, entity);
 
             _context.Set<TDbEntity>().Add(entity);
+
             await _context.SaveChangesAsync();
 
             entity = await AfterSaveAsync(entity);
 
-            return _mapper.Map<TModel>(entity);
+            return MapEntityToModel(entity);
         }
 
         public virtual async Task<TModel> UpdateAsync(int id, TUpdate request)
@@ -34,11 +35,12 @@ namespace eNote.Application.Services.Base
             _mapper.Map(request, entity);
 
             await BeforeUpdateAsync(request, entity);
+
             await _context.SaveChangesAsync();
 
             entity = await AfterSaveAsync(entity);
 
-            return _mapper.Map<TModel>(entity);
+            return MapEntityToModel(entity);
         }
 
         public virtual async Task DeleteAsync(int id)

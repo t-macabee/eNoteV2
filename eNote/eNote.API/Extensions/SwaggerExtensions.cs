@@ -1,29 +1,10 @@
-﻿using eNote.Application.Interfaces;
-using eNote.Application.Interfaces.Identity;
-using eNote.Application.Interfaces.Ports;
-using eNote.Application.Services;
-using eNote.Infrastructure.Data;
-using eNote.Infrastructure.Identity;
-using Microsoft.OpenApi.Models;
+﻿using Microsoft.OpenApi.Models;
 
 namespace eNote.API.Extensions
 {
-    public static class ServiceCollectionExtensions
-    {       
-        public static IServiceCollection AddApplicationServices(this IServiceCollection services)
-        {
-            services.AddScoped<IAuthService, AuthService>();
-            services.AddScoped<ITokenService, TokenService>();
-            services.AddScoped<IUserService, UserService>();
-            services.AddScoped<IInstrumentService, InstrumentService>();
-
-            services.AddScoped<IUserIdentityService, UserIdentityService>();
-            services.AddScoped<IAppDbContext>(x => x.GetRequiredService<ENoteContext>());
-
-            return services;
-        }
-
-        public static IServiceCollection AddOpenApiDocumentation(this IServiceCollection services)
+    public static class SwaggerExtensions
+    {
+        public static IServiceCollection AddSwaggerDocumentation(this IServiceCollection services)
         {
             services.AddEndpointsApiExplorer();
 
@@ -61,6 +42,18 @@ namespace eNote.API.Extensions
             });
 
             return services;
+        }
+
+        public static WebApplication UseSwaggerDocumentation(this WebApplication app)
+        {
+            app.UseSwagger();
+
+            app.UseSwaggerUI(options =>
+            {
+                options.SwaggerEndpoint("/swagger/v1/swagger.json", "eNote API v1");
+            });
+
+            return app;
         }
     }
 }

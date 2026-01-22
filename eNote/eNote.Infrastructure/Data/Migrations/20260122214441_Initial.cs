@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #pragma warning disable CA1814 // Prefer jagged arrays over multidimensional
 
-namespace eNote.Infrastructure.Migrations
+namespace eNote.Infrastructure.Data.Migrations
 {
     /// <inheritdoc />
     public partial class Initial : Migration
@@ -49,7 +49,8 @@ namespace eNote.Infrastructure.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    Type = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false)
+                    Type = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    MonthlyFee = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -373,9 +374,11 @@ namespace eNote.Infrastructure.Migrations
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    Fee = table.Column<decimal>(type: "decimal(8,2)", nullable: false),
+                    Fee = table.Column<decimal>(type: "decimal(10,2)", precision: 10, scale: 2, nullable: false),
                     Note = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    RentedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    RequestedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    ApprovedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    PickedUpAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     ReturnedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     RentalStatus = table.Column<int>(type: "int", nullable: false),
                     StudentId = table.Column<int>(type: "int", nullable: false),
@@ -512,14 +515,14 @@ namespace eNote.Infrastructure.Migrations
 
             migrationBuilder.InsertData(
                 table: "InstrumentTypes",
-                columns: new[] { "Id", "Type" },
+                columns: new[] { "Id", "MonthlyFee", "Type" },
                 values: new object[,]
                 {
-                    { 1, "Žičani" },
-                    { 2, "Udaraljke" },
-                    { 3, "Limeni" },
-                    { 4, "Tipke" },
-                    { 5, "Dodatna oprema" }
+                    { 1, 0m, "Žičani" },
+                    { 2, 0m, "Udaraljke" },
+                    { 3, 0m, "Limeni" },
+                    { 4, 0m, "Tipke" },
+                    { 5, 0m, "Dodatna oprema" }
                 });
 
             migrationBuilder.CreateIndex(
@@ -617,7 +620,9 @@ namespace eNote.Infrastructure.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_InstrumentRentals_InstrumentId",
                 table: "InstrumentRentals",
-                column: "InstrumentId");
+                column: "InstrumentId",
+                unique: true,
+                filter: "[RentalStatus] IN (2, 3)");
 
             migrationBuilder.CreateIndex(
                 name: "IX_InstrumentRentals_StudentId",

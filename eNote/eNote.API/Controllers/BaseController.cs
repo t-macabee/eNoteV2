@@ -9,7 +9,7 @@ namespace eNote.API.Controllers
     [ApiController]
     //[Authorize]
     [Route("api/[controller]")]
-    public abstract class ReadController<TModel, TSearch>(IService<TModel, TSearch> service) : ControllerBase where TSearch : BaseSearchObject
+    public abstract class BaseController<TModel, TSearch>(IService<TModel, TSearch> service) : ControllerBase where TSearch : BaseSearchObject
     {
         protected readonly IService<TModel, TSearch> _service = service;
 

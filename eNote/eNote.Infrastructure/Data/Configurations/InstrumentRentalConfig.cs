@@ -1,4 +1,5 @@
 ﻿using eNote.Domain.Entities;
+using eNote.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -18,8 +19,17 @@ namespace eNote.Infrastructure.Data.Configurations
                    .HasForeignKey(x => x.InstrumentId)
                    .OnDelete(DeleteBehavior.Cascade);
 
-            builder.Property(x => x.Fee).HasColumnType("decimal(8,2)");
-            builder.Property(x => x.RentalStatus).HasConversion<int>();                     
+            builder.Property(x => x.Fee)
+                   .HasPrecision(10, 2)  
+                   .IsRequired();
+
+            builder.Property(x => x.RentalStatus)
+                .HasConversion<int>();
+
+            builder.HasIndex(x => x.InstrumentId)
+                .HasFilter(
+                    $"[{nameof(InstrumentRental.RentalStatus)}] IN ({(int)InstrumentRentalStatus.Approved}, {(int)InstrumentRentalStatus.Active})"
+                ).IsUnique();
         }
     }
 }

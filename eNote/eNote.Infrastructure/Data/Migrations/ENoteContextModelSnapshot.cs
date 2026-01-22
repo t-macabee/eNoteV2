@@ -8,7 +8,7 @@ using eNote.Infrastructure.Data;
 
 #nullable disable
 
-namespace eNote.Infrastructure.Migrations
+namespace eNote.Infrastructure.Data.Migrations
 {
     [DbContext(typeof(ENoteContext))]
     partial class ENoteContextModelSnapshot : ModelSnapshot
@@ -392,8 +392,12 @@ namespace eNote.Infrastructure.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<DateTime?>("ApprovedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<decimal>("Fee")
-                        .HasColumnType("decimal(8,2)");
+                        .HasPrecision(10, 2)
+                        .HasColumnType("decimal(10,2)");
 
                     b.Property<int>("InstrumentId")
                         .HasColumnType("int");
@@ -401,10 +405,13 @@ namespace eNote.Infrastructure.Migrations
                     b.Property<string>("Note")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<DateTime?>("PickedUpAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<int>("RentalStatus")
                         .HasColumnType("int");
 
-                    b.Property<DateTime>("RentedAt")
+                    b.Property<DateTime>("RequestedAt")
                         .HasColumnType("datetime2");
 
                     b.Property<DateTime?>("ReturnedAt")
@@ -415,7 +422,9 @@ namespace eNote.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("InstrumentId");
+                    b.HasIndex("InstrumentId")
+                        .IsUnique()
+                        .HasFilter("[RentalStatus] IN (2, 3)");
 
                     b.HasIndex("StudentId");
 
@@ -430,6 +439,10 @@ namespace eNote.Infrastructure.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<decimal>("MonthlyFee")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<string>("Type")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -443,26 +456,31 @@ namespace eNote.Infrastructure.Migrations
                         new
                         {
                             Id = 1,
+                            MonthlyFee = 0m,
                             Type = "Žičani"
                         },
                         new
                         {
                             Id = 2,
+                            MonthlyFee = 0m,
                             Type = "Udaraljke"
                         },
                         new
                         {
                             Id = 3,
+                            MonthlyFee = 0m,
                             Type = "Limeni"
                         },
                         new
                         {
                             Id = 4,
+                            MonthlyFee = 0m,
                             Type = "Tipke"
                         },
                         new
                         {
                             Id = 5,
+                            MonthlyFee = 0m,
                             Type = "Dodatna oprema"
                         });
                 });

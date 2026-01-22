@@ -9,7 +9,7 @@ namespace eNote.API.Extensions
 {
     public static class IdentityExtensions
     {
-        public static IServiceCollection AddAppIdentity(this IServiceCollection services)
+        public static IServiceCollection AddApplicationIdentity(this IServiceCollection services)
         {
             services.AddIdentityCore<AppUser>(options =>
             {

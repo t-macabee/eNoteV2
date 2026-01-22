@@ -1,26 +1,25 @@
 ﻿using eNote.Application.DTOs;
-using eNote.Application.Interfaces;
+using eNote.Application.Interfaces.Instruments;
 using eNote.Application.Interfaces.Ports;
 using eNote.Application.Requests.Instruments;
 using eNote.Application.SearchObjects;
 using eNote.Application.Services.Base;
+using eNote.Application.Services.Instruments.Rentals;
 using eNote.Domain.Entities;
 using eNote.Domain.Entities.Users;
 using eNote.Domain.Enums;
 using MapsterMapper;
 using Microsoft.EntityFrameworkCore;
 
-namespace eNote.Application.Services
+namespace eNote.Application.Services.Instruments
 {
     public class InstrumentService(IAppDbContext context, IMapper mapper)
-        : CRUDService<InstrumentDto, InstrumentSearchObject, InstrumentInsertRequest, InstrumentUpdateRequest, Instrument>(context, mapper), IInstrumentService
+        : CRUDService<InstrumentDto, InstrumentSearchObject, InstrumentCreateRequest, InstrumentUpdateRequest, Instrument>(context, mapper), IInstrumentService
     {
         protected override IQueryable<Instrument> AddIncludes(IQueryable<Instrument> query)
         {
-            return query                
-                .Include(x => x.MusicShop)
-                .Include(x => x.InstrumentType)
-                .Include(x => x.InstrumentRentals);
+            return query.WithInstrumentDetails();                
+               
         }
 
         protected override IQueryable<Instrument> AddFilter(InstrumentSearchObject search, IQueryable<Instrument> query)
@@ -42,15 +41,19 @@ namespace eNote.Application.Services
             if (search.IsAvailable.HasValue)
             {
                 if (search.IsAvailable.Value)
-                    query = query.Where(x => !x.InstrumentRentals.Any(x => x.RentalStatus == InstrumentRentalStatus.Approved));
+                    query = query.Where(x => !x.InstrumentRentals.Any(x => 
+                    x.RentalStatus == InstrumentRentalStatus.Approved || 
+                    x.RentalStatus == InstrumentRentalStatus.Active));
                 else
-                    query = query.Where(x => x.InstrumentRentals.Any(x => x.RentalStatus == InstrumentRentalStatus.Approved));                
+                    query = query.Where(x => x.InstrumentRentals.Any(x => 
+                    x.RentalStatus == InstrumentRentalStatus.Approved ||
+                    x.RentalStatus == InstrumentRentalStatus.Active));
             }
 
             return query;
         }        
 
-        protected override async Task BeforeInsertAsync(InstrumentInsertRequest request, Instrument entity)
+        protected override async Task BeforeInsertAsync(InstrumentCreateRequest request, Instrument entity)
         {
             var existingType = await _context.Set<InstrumentType>()
                 .AnyAsync(x => x.Id == request.InstrumentTypeId);
@@ -65,7 +68,7 @@ namespace eNote.Application.Services
                 throw new InvalidOperationException("Music shop ne postoji.");
 
             await base.BeforeInsertAsync(request, entity);
-        }        
+        }
 
         public override async Task DeleteAsync(int id)
         {
@@ -74,11 +77,13 @@ namespace eNote.Application.Services
                 .FirstOrDefaultAsync(x => x.Id == id)
                 ?? throw new KeyNotFoundException("ID nije pronađen.");
 
-            var approvedRental = await _context.Set<InstrumentRental>()
-                .AnyAsync(x => x.InstrumentId == id && x.RentalStatus == InstrumentRentalStatus.Approved);
+            var hasBlockingRental = await _context.Set<InstrumentRental>()
+                .AnyAsync(r => r.InstrumentId == id &&
+                (r.RentalStatus == InstrumentRentalStatus.Approved ||
+                r.RentalStatus == InstrumentRentalStatus.Active));
 
-            if (approvedRental)
-                throw new InvalidOperationException("Instrument se ne može obrisati jer je trenutno iznajmljen.");
+            if (hasBlockingRental)
+                throw new InvalidOperationException("Instrument se ne može obrisati jer je trenutno rezervisan ili iznajmljen.");
 
             instrument.IsActive = false;
 
@@ -87,10 +92,13 @@ namespace eNote.Application.Services
 
         protected override async Task<Instrument> AfterSaveAsync(Instrument entity)
         {
-            return await AddIncludes(_context.Set<Instrument>().AsNoTracking())
+            return await _context.Set<Instrument>()
+                .AsNoTracking()
+                .WithInstrumentDetails()
                 .FirstAsync(x => x.Id == entity.Id);
         }
 
-        protected override IQueryable<Instrument> AddIdFilter(IQueryable<Instrument> query) => query.Where(x => x.IsActive);
+        protected override IQueryable<Instrument> AddIdFilter(IQueryable<Instrument> query) 
+            => query.Where(x => x.IsActive);
     }
 }

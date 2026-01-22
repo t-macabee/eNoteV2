@@ -4,9 +4,9 @@ using MapsterMapper;
 
 namespace eNote.API.Extensions
 {
-    public static class MapsterServiceExtensions
+    public static class MapsterExtensions
     {
-        public static IServiceCollection AddMapping(this IServiceCollection services)
+        public static IServiceCollection AddMapsterMappings(this IServiceCollection services)
         {
             var config = new TypeAdapterConfig();
 

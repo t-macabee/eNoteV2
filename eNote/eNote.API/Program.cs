@@ -1,6 +1,4 @@
 using eNote.API.Extensions;
-using eNote.Infrastructure.Data.Seed;
-using Mapster;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json.Serialization;
 using eNote.Infrastructure.Data;
@@ -14,16 +12,18 @@ builder.Services.AddDbContext<ENoteContext>(options =>
     ));
 
 builder.Services
-    .AddAppIdentity()
+    .AddApplicationIdentity()
     .AddJwtAuthentication(builder.Configuration)
     .AddAuthorization()
     .AddApplicationServices()
-    .AddOpenApiDocumentation()
+    .AddSwaggerDocumentation();
+
+builder.Services
     .AddControllers()
     .AddJsonOptions(x =>
         x.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
-builder.Services.AddMapping();
+builder.Services.AddMapsterMappings();
 
 var app = builder.Build();
 
@@ -31,27 +31,13 @@ app.UseHttpsRedirection();
 
 app.UseStaticFiles();
 
-app.UseGlobalExceptionHandling();
+app.UseErrorHandling();
 
 if (app.Environment.IsDevelopment())
 {
-    //app.MapOpenApi();
+    app.UseSwaggerDocumentation();
 
-    app.UseSwagger();
-
-    app.UseSwaggerUI(options =>
-    {
-        options.SwaggerEndpoint("/swagger/v1/swagger.json", "eNote API v1");
-    });
-
-
-    using var scope = app.Services.CreateScope();
-
-    var services = scope.ServiceProvider;
-    await IdentitySeed.SeedAsync(services);
-
-    var context = services.GetRequiredService<ENoteContext>();
-    await DevelopmentDataSeed.SeedAsync(context);
+    await app.SeedDevelopmentData();   
 }
 
 app.UseAuthentication();

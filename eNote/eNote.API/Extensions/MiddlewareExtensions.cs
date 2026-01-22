@@ -3,9 +3,9 @@ using System.Text.Json;
 
 namespace eNote.API.Extensions
 {
-    public static class WebApplicationExtensions
+    public static class MiddlewareExtensions
     {
-        public static WebApplication UseGlobalExceptionHandling(this WebApplication app)
+        public static WebApplication UseErrorHandling(this WebApplication app)
         {
             app.UseExceptionHandler(errorApp =>
             {

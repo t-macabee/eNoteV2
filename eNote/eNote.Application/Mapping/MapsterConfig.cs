@@ -16,6 +16,12 @@ namespace eNote.Application.Mapping
                 .Map(dest => dest.MusicShop, src => src.MusicShop.StoreName)
                 .Map(dest => dest.ImagePath, src => src.ImagePath);
 
+            TypeAdapterConfig<InstrumentRental, InstrumentRentalDto>.NewConfig()
+                .Map(x => x.InstrumentModel, x => x.Instrument.Model)
+                .Map(x => x.InstrumentType, x => x.Instrument.InstrumentType.Type)
+                .Map(x => x.MusicShopId, x => x.Instrument.MusicShopId)
+                .Map(x => x.MusicShopName, x => x.Instrument.MusicShop.StoreName);
+
             config.NewConfig<InstrumentUpdateRequest, Instrument>()
                 .IgnoreNullValues(true);
         }

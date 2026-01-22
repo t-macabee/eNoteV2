@@ -1,6 +1,7 @@
 ﻿using eNote.Domain.Entities.Base;
 using eNote.Domain.Entities.Users;
 using eNote.Domain.Enums;
+using System.ComponentModel.DataAnnotations;
 
 namespace eNote.Domain.Entities
 {
@@ -10,11 +11,11 @@ namespace eNote.Domain.Entities
         public string Manufacturer { get; set; } = null!;
         public string? Description { get; set; }
         public string? ImagePath { get; set; }
-
         public bool IsActive { get; set; } = true;
 
         public bool IsAvailable => 
-            IsActive && !InstrumentRentals.Any(x => x.RentalStatus == InstrumentRentalStatus.Approved);
+            IsActive && !InstrumentRentals.Any(x => 
+            x.RentalStatus == InstrumentRentalStatus.Approved);
 
         public int InstrumentTypeId { get; set; }
         public InstrumentType InstrumentType { get; set; } = null!;

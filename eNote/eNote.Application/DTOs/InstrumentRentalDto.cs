@@ -1,0 +1,30 @@
+﻿using eNote.Domain.Enums;
+
+namespace eNote.Application.DTOs
+{
+    public class InstrumentRentalDto
+    {
+        public int Id { get; set; }
+
+        public int InstrumentId { get; set; }
+        public string InstrumentModel { get; set; } = null!;
+        public string InstrumentType { get; set; } = null!;
+
+        public int MusicShopId { get; set; }
+        public string MusicShopName { get; set; } = null!;
+
+        public int StudentId { get; set; }
+
+        public decimal MonthlyFee { get; set; }
+        public DateTime RequestedAt { get; set; }
+        public DateTime? ApprovedAt { get; set; }
+        public DateTime? PickedUpAt { get; set; }
+        public DateTime? ReturnedAt { get; set; }
+
+        public InstrumentRentalStatus RentalStatus { get; set; }
+        public string? Note { get; set; }
+        
+        public int? MonthsCharged { get; set; }
+        public decimal? TotalFee { get; set; }     
+    }
+}

@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace eNote.API.Controllers
 {    
     public abstract class CRUDController<TModel, TSearch, TInsert, TUpdate>(ICRUDService<TModel, TSearch, TInsert, TUpdate> service)
-        : ReadController<TModel, TSearch>(service) where TModel : class where TSearch : BaseSearchObject
+        : BaseController<TModel, TSearch>(service) where TModel : class where TSearch : BaseSearchObject
     {
         protected readonly ICRUDService<TModel, TSearch, TInsert, TUpdate> _crudService = service;
 

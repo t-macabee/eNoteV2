@@ -24,7 +24,7 @@ namespace eNote.Application.Services.Base
             var entity = await query.FirstOrDefaultAsync(x => x.Id == id)
                 ?? throw new KeyNotFoundException("ID nije pronađen");
 
-            return _mapper.Map<TModel>(entity);
+            return MapEntityToModel(entity);
         }
 
         public virtual async Task<PagedResult<TModel>> GetPagedAsync(TSearch search)
@@ -37,20 +37,15 @@ namespace eNote.Application.Services.Base
 
             int? totalCount = null;
 
-            if (search.IncludeTotalCount)
-            {
-                totalCount = await query.CountAsync();
-            }
-
+            if (search.IncludeTotalCount) totalCount = await query.CountAsync();
+            
             var page = search.Page < 1 ? 1 : search.Page;
 
-            var pageSize = search.PageSize < 1 ? 20 : search.PageSize;
+            var pageSize = search.PageSize < 1 ? 20 : search.PageSize;            
 
-            query = query.Skip((page - 1) * pageSize).Take(pageSize);
+            var entities = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
 
-            var entities = await query.ToListAsync();
-
-            var models = _mapper.Map<List<TModel>>(entities);
+            var models = entities.Select(MapEntityToModel).ToList();
 
             return new PagedResult<TModel>
             {
@@ -61,6 +56,7 @@ namespace eNote.Application.Services.Base
             };
         }
 
+        protected virtual TModel MapEntityToModel(TDbEntity entity) => _mapper.Map<TModel>(entity);
         protected virtual IQueryable<TDbEntity> AddFilter(TSearch search, IQueryable<TDbEntity> query) => query;
         protected virtual IQueryable<TDbEntity> AddIdFilter(IQueryable<TDbEntity> query) => query;
         protected virtual IQueryable<TDbEntity> AddIncludes(IQueryable<TDbEntity> query) => query;

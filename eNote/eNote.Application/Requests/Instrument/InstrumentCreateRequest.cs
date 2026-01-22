@@ -1,6 +1,6 @@
 ﻿namespace eNote.Application.Requests.Instruments
 {
-    public class InstrumentInsertRequest
+    public class InstrumentCreateRequest
     {
         public string Model { get; set; } = null!;
         public string Manufacturer { get; set; } = null!;

@@ -8,8 +8,11 @@ namespace eNote.Domain.Entities
     {
         public decimal Fee { get; set; }
         public string? Note { get; set; }
-        public DateTime RentedAt { get; set; }
+        public DateTime RequestedAt { get; set; }
+        public DateTime? ApprovedAt { get; set; }
+        public DateTime? PickedUpAt { get; set; }
         public DateTime? ReturnedAt { get; set; }
+
         public InstrumentRentalStatus RentalStatus { get; set; }
 
         public int StudentId { get; set; }
