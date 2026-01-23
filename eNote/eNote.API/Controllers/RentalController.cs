@@ -1,9 +1,8 @@
-﻿using eNote.Application;
+﻿using eNote.Application.Common.Paging;
 using eNote.Application.DTOs;
-using eNote.Application.Interfaces.Instruments.InstrumentRentals;
+using eNote.Application.Interfaces.InstrumentRentals;
 using eNote.Application.Requests.InstrumentRental;
 using eNote.Application.SearchObjects;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 
@@ -12,14 +11,9 @@ namespace eNote.API.Controllers
     [ApiController]
     [Route("api/rentals")]
     //[Authorize]  
-    public class RentalsController : ControllerBase
+    public class RentalsController(IRentalService rentalService) : ControllerBase
     {
-        private readonly IRentalService _rentalService;
-
-        public RentalsController(IRentalService rentalService)
-        {
-            _rentalService = rentalService;
-        }
+        private readonly IRentalService _rentalService = rentalService;
 
         [HttpGet("{id}")]
         public async Task<ActionResult<InstrumentRentalDto>> GetById(int id)

@@ -15,7 +15,8 @@ namespace eNote.Domain.Entities
 
         public bool IsAvailable => 
             IsActive && !InstrumentRentals.Any(x => 
-            x.RentalStatus == InstrumentRentalStatus.Approved);
+            x.RentalStatus == InstrumentRentalStatus.Approved ||
+            x.RentalStatus == InstrumentRentalStatus.Active);
 
         public int InstrumentTypeId { get; set; }
         public InstrumentType InstrumentType { get; set; } = null!;

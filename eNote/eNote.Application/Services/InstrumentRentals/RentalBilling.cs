@@ -2,7 +2,7 @@
 using eNote.Domain.Entities;
 using eNote.Domain.Enums;
 
-namespace eNote.Application.Services.Instruments.Rentals
+namespace eNote.Application.Services.InstrumentRentals
 {
     public static class RentalBilling
     {

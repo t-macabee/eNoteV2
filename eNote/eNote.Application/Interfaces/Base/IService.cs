@@ -1,4 +1,5 @@
-﻿using eNote.Application.SearchObjects;
+﻿using eNote.Application.Common.Paging;
+using eNote.Application.SearchObjects;
 
 namespace eNote.Application.Interfaces.Base
 {

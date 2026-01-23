@@ -1,4 +1,4 @@
-﻿using eNote.Application;
+﻿using eNote.Application.Common.Paging;
 using eNote.Application.Interfaces.Base;
 using eNote.Application.SearchObjects;
 using Microsoft.AspNetCore.Authorization;

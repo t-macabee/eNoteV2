@@ -1,9 +1,10 @@
-﻿using eNote.Application.DTOs;
-using eNote.Application.Interfaces.Instruments.InstrumentRentals;
+﻿using eNote.Application.Common.Paging;
+using eNote.Application.DTOs;
+using eNote.Application.Interfaces.InstrumentRentals;
 using eNote.Application.Requests.InstrumentRental;
 using eNote.Application.SearchObjects;
 
-namespace eNote.Application.Services.Instruments.Rentals
+namespace eNote.Application.Services.InstrumentRentals
 {
     public class RentalService(IRentalQueryService query, IRentalCommandService command) : IRentalService
     {

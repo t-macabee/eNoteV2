@@ -1,18 +1,22 @@
-﻿using eNote.Application.DTOs;
-using eNote.Application.Interfaces;
-using eNote.Application.Interfaces.Instruments.InstrumentRentals;
+﻿using eNote.Application.Common.Paging;
+using eNote.Application.Common.Queryable;
+using eNote.Application.Common.Time;
+using eNote.Application.DTOs;
+using eNote.Application.Interfaces.InstrumentRentals;
 using eNote.Application.Interfaces.Ports;
 using eNote.Application.SearchObjects;
 using eNote.Application.Services.Base;
-using eNote.Application.Services.Instruments.Rentals;
 using eNote.Domain.Entities;
 using MapsterMapper;
 using Microsoft.EntityFrameworkCore;
 
-namespace eNote.Application.Services.Instruments.Rentals
+namespace eNote.Application.Services.InstrumentRentals
 {
-    public class RentalQueryService(IAppDbContext context, IMapper mapper) : BaseService<InstrumentRentalDto, InstrumentRentalSearchObject, InstrumentRental>(context, mapper), IRentalQueryService
+    public class RentalQueryService(IAppDbContext context, IMapper mapper, IClock clock)
+        : BaseService<InstrumentRentalDto, InstrumentRentalSearchObject, InstrumentRental>(context, mapper), IRentalQueryService
     {
+        private readonly IClock _clock = clock;
+
         protected override IQueryable<InstrumentRental> AddIncludes(IQueryable<InstrumentRental> query) => query.WithRentalDetails();
 
         protected override IQueryable<InstrumentRental> AddFilter(InstrumentRentalSearchObject search, IQueryable<InstrumentRental> query)
@@ -30,7 +34,7 @@ namespace eNote.Application.Services.Instruments.Rentals
         {
             var result = _mapper.Map<InstrumentRentalDto>(entity);
 
-            RentalBilling.ApplyBilling(entity, result, DateTime.UtcNow);
+            RentalBilling.ApplyBilling(entity, result, _clock.UtcNow);
 
             return result;
         }       
@@ -69,7 +73,9 @@ namespace eNote.Application.Services.Instruments.Rentals
 
             query = AddFilter(searchObject, query);
 
-            return await PagedResultAsync(searchObject, query);
+            return await query
+                 .OrderByDescending(x => x.RequestedAt)
+                 .ToPagedResultAsync(searchObject.Page, searchObject.PageSize, searchObject.IncludeTotalCount, MapEntityToModel);
         }
 
         public async Task<PagedResult<InstrumentRentalDto>> GetPagedForShopAsync(int userId, InstrumentRentalSearchObject searchObject)
@@ -82,34 +88,9 @@ namespace eNote.Application.Services.Instruments.Rentals
 
             query = AddFilter(searchObject, query);
 
-            return await PagedResultAsync(searchObject, query);
-        }
-
-        private async Task<PagedResult<InstrumentRentalDto>> PagedResultAsync(InstrumentRentalSearchObject search, IQueryable<InstrumentRental> query)
-        {
-            int? totalCount = null;
-
-            if (search.IncludeTotalCount)
-                totalCount = await query.CountAsync();
-
-            var page = search.Page < 1 ? 1 : search.Page;
-            var pageSize = search.PageSize < 1 ? 20 : search.PageSize;
-
-            var entities = await query
-                .OrderByDescending(r => r.RequestedAt)
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .ToListAsync();
-
-            var items = entities.Select(MapEntityToModel).ToList();
-
-            return new PagedResult<InstrumentRentalDto>
-            {
-                Items = items,
-                Page = page,
-                PageSize = pageSize,
-                TotalCount = totalCount
-            };
+            return await query
+                 .OrderByDescending(x => x.RequestedAt)
+                 .ToPagedResultAsync(searchObject.Page, searchObject.PageSize, searchObject.IncludeTotalCount, MapEntityToModel);
         }        
     }    
 }

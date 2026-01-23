@@ -1,7 +1,7 @@
 ﻿using eNote.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
-namespace eNote.Application.Services.Instruments.Rentals
+namespace eNote.Application.Common.Queryable
 {
     public static class QueryableExtensions
     {

@@ -1,8 +1,9 @@
-﻿using eNote.Application.DTOs;
+﻿using eNote.Application.Common.Paging;
+using eNote.Application.DTOs;
 using eNote.Application.Interfaces.Base;
 using eNote.Application.SearchObjects;
 
-namespace eNote.Application.Interfaces.Instruments.InstrumentRentals
+namespace eNote.Application.Interfaces.InstrumentRentals
 {
     public interface IRentalQueryService : IService<InstrumentRentalDto, InstrumentRentalSearchObject>
     {

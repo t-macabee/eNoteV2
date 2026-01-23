@@ -1,10 +1,10 @@
-﻿using eNote.Application.DTOs;
+﻿using eNote.Application.Common.Queryable;
+using eNote.Application.DTOs;
 using eNote.Application.Interfaces.Instruments;
 using eNote.Application.Interfaces.Ports;
 using eNote.Application.Requests.Instruments;
 using eNote.Application.SearchObjects;
 using eNote.Application.Services.Base;
-using eNote.Application.Services.Instruments.Rentals;
 using eNote.Domain.Entities;
 using eNote.Domain.Entities.Users;
 using eNote.Domain.Enums;

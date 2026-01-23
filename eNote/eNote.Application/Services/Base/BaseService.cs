@@ -1,4 +1,6 @@
-﻿using eNote.Application.Interfaces.Base;
+﻿using eNote.Application.Common.Paging;
+using eNote.Application.Common.Time;
+using eNote.Application.Interfaces.Base;
 using eNote.Application.Interfaces.Ports;
 using eNote.Application.SearchObjects;
 using eNote.Domain.Entities.Base;
@@ -11,7 +13,7 @@ namespace eNote.Application.Services.Base
         : IService<TModel, TSearch> where TModel : class where TDbEntity : class, IEntity where TSearch : BaseSearchObject
     {
         protected readonly IAppDbContext _context = context;
-        protected readonly IMapper _mapper = mapper;
+        protected readonly IMapper _mapper = mapper;        
 
         public virtual async Task<TModel> GetByIdAsync(int id)
         {
@@ -32,28 +34,10 @@ namespace eNote.Application.Services.Base
             var query = _context.Set<TDbEntity>().AsNoTracking().AsQueryable();
 
             query = AddIncludes(query);
-
             query = AddFilter(search, query);
 
-            int? totalCount = null;
-
-            if (search.IncludeTotalCount) totalCount = await query.CountAsync();
-            
-            var page = search.Page < 1 ? 1 : search.Page;
-
-            var pageSize = search.PageSize < 1 ? 20 : search.PageSize;            
-
-            var entities = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
-
-            var models = entities.Select(MapEntityToModel).ToList();
-
-            return new PagedResult<TModel>
-            {
-                Items = models,
-                Page = page,
-                PageSize = pageSize,
-                TotalCount = totalCount
-            };
+            return await query
+                .ToPagedResultAsync(search.Page, search.PageSize, search.IncludeTotalCount, MapEntityToModel);
         }
 
         protected virtual TModel MapEntityToModel(TDbEntity entity) => _mapper.Map<TModel>(entity);
