@@ -20,7 +20,8 @@ namespace eNote.Application.Mapping
                 .Map(x => x.InstrumentModel, x => x.Instrument.Model)
                 .Map(x => x.InstrumentType, x => x.Instrument.InstrumentType.Type)
                 .Map(x => x.MusicShopId, x => x.Instrument.MusicShopId)
-                .Map(x => x.MusicShopName, x => x.Instrument.MusicShop.StoreName);
+                .Map(x => x.MusicShopName, x => x.Instrument.MusicShop.StoreName)
+                .Map(x => x.StudentProfileId, x => x.StudentProfileId);
 
             config.NewConfig<InstrumentUpdateRequest, Instrument>()
                 .IgnoreNullValues(true);

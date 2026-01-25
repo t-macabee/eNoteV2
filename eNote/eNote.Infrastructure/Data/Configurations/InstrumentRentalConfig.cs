@@ -9,9 +9,9 @@ namespace eNote.Infrastructure.Data.Configurations
     {
         public void Configure(EntityTypeBuilder<InstrumentRental> builder)
         {
-            builder.HasOne(x => x.Student)
+            builder.HasOne(x => x.StudentProfile)
                   .WithMany(s => s.InstrumentRentals)
-                  .HasForeignKey(x => x.StudentId)
+                  .HasForeignKey(x => x.StudentProfileId)
                   .OnDelete(DeleteBehavior.Restrict);
 
             builder.HasOne(x => x.Instrument)

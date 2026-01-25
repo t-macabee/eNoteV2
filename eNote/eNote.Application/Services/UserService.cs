@@ -40,7 +40,10 @@ namespace eNote.Application.Services
 
         private async Task<StudentProfile> BuildStudentProfile(int userId, UserIdentityDto user)
         {
-            var student = await _context.Students.AsNoTracking().FirstOrDefaultAsync(s => s.Id == userId) ?? throw new InvalidOperationException("Student profil nije pronađen.");
+            var student = await _context.Students
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.AppUserId == userId) 
+                ?? throw new InvalidOperationException("Student profil nije pronađen.");
 
             return new StudentProfile(
                 student.Id,
@@ -54,7 +57,10 @@ namespace eNote.Application.Services
 
         private async Task<InstructorProfile> BuildInstructorProfile(int userId, UserIdentityDto user)
         {
-            var instructor = await _context.Instructors.AsNoTracking().FirstOrDefaultAsync(i => i.Id == userId) ?? throw new InvalidOperationException("Instruktor profil nije pronađen.");
+            var instructor = await _context.Instructors
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.AppUserId == userId)
+                ?? throw new InvalidOperationException("Instruktor profil nije pronađen.");
 
             return new InstructorProfile(
                 instructor.Id,
@@ -65,7 +71,10 @@ namespace eNote.Application.Services
 
         private async Task<MusicShopProfile> BuildMusicShopProfile(int userId, UserIdentityDto user)
         {
-            var shop = await _context.MusicShops.AsNoTracking().FirstOrDefaultAsync(m => m.Id == userId) ?? throw new InvalidOperationException("Music shop profil nije pronađen.");
+            var shop = await _context.MusicShops
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.AppUserId == userId)
+                ?? throw new InvalidOperationException("Music shop profil nije pronađen.");
 
             return new MusicShopProfile(
                 shop.Id,

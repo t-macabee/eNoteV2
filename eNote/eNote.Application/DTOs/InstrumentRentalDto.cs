@@ -13,7 +13,7 @@ namespace eNote.Application.DTOs
         public int MusicShopId { get; set; }
         public string MusicShopName { get; set; } = null!;
 
-        public int StudentId { get; set; }
+        public int StudentProfileId { get; set; }
 
         public decimal MonthlyFee { get; set; }
         public DateTime RequestedAt { get; set; }

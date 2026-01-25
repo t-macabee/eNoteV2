@@ -17,7 +17,7 @@ namespace eNote.Application.Services.InstrumentRentals
         public Task<PagedResult<InstrumentRentalDto>> GetPagedForShopAsync(int userId, InstrumentRentalSearchObject searchObject) => _query.GetPagedForShopAsync(userId, searchObject);
         public Task<PagedResult<InstrumentRentalDto>> GetPagedForStudentAsync(int userId, InstrumentRentalSearchObject searchObject) => _query.GetPagedForStudentAsync(userId, searchObject);        
 
-        public Task<InstrumentRentalDto> CreateRequestAsync(int studentId, RentalCreateRequest request) => _command.CreateRequestAsync(studentId, request);
+        public Task<InstrumentRentalDto> CreateRequestAsync(int userId, RentalCreateRequest request) => _command.CreateRequestAsync(userId, request);
         public Task<InstrumentRentalDto> ApproveAsync(int rentalId, int userId, RentalStatusResponse response) => _command.ApproveAsync(rentalId, userId, response);
         public Task<InstrumentRentalDto> RejectAsync(int rentalId, int userId, RentalStatusResponse response) => _command.RejectAsync(rentalId, userId, response);
         public Task<InstrumentRentalDto> PickupAsync(int rentalId, int userId, RentalStatusResponse response) => _command.PickupAsync(rentalId, userId, response);

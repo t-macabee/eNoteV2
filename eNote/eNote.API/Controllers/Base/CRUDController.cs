@@ -2,7 +2,7 @@
 using eNote.Application.SearchObjects;
 using Microsoft.AspNetCore.Mvc;
 
-namespace eNote.API.Controllers
+namespace eNote.API.Controllers.Base
 {    
     public abstract class CRUDController<TModel, TSearch, TInsert, TUpdate>(ICRUDService<TModel, TSearch, TInsert, TUpdate> service)
         : BaseController<TModel, TSearch>(service) where TModel : class where TSearch : BaseSearchObject

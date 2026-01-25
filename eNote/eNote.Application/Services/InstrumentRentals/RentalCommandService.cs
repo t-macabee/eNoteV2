@@ -17,8 +17,13 @@ namespace eNote.Application.Services.InstrumentRentals
         private readonly IMapper _mapper = mapper;        
         private readonly IClock _clock = clock;        
 
-        public async Task<InstrumentRentalDto> CreateRequestAsync(int studentId, RentalCreateRequest request)
+        public async Task<InstrumentRentalDto> CreateRequestAsync(int userId, RentalCreateRequest request)
         {
+            var studentProfileId = await _context.Students
+                .Where(s => s.AppUserId == userId)
+                .Select(s => s.Id)
+                .SingleAsync();
+
             var instrument = await _context.Set<Instrument>()
                 .AsNoTracking()
                 .FirstOrDefaultAsync(x => x.Id == request.InstrumentId)
@@ -37,7 +42,7 @@ namespace eNote.Application.Services.InstrumentRentals
 
             var alreadyPending = await _context.Set<InstrumentRental>()
                 .AnyAsync(x => x.InstrumentId == request.InstrumentId
-                    && x.StudentId == studentId
+                    && x.StudentProfileId == studentProfileId
                     && x.RentalStatus == InstrumentRentalStatus.Pending);
 
             if (alreadyPending) 
@@ -46,7 +51,7 @@ namespace eNote.Application.Services.InstrumentRentals
             var rental = new InstrumentRental
             {
                 InstrumentId = request.InstrumentId,
-                StudentId = studentId,
+                StudentProfileId = studentProfileId,
                 Note = request.Note,
                 RequestedAt = _clock.UtcNow,
                 RentalStatus = InstrumentRentalStatus.Pending,
@@ -168,7 +173,7 @@ namespace eNote.Application.Services.InstrumentRentals
                 .FirstOrDefaultAsync(x => x.Id == rentalId)
                 ?? throw new KeyNotFoundException("Zahtjev nije pronađen.");
 
-            if (rental.Instrument?.MusicShopId != shopUserId)
+            if (rental.Instrument?.MusicShop.AppUserId != shopUserId)
                 throw new InvalidOperationException("Nemate pravo nad ovim zahtjevom.");
 
             return rental;

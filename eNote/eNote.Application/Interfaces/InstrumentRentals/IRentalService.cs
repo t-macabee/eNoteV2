@@ -13,7 +13,7 @@ namespace eNote.Application.Interfaces.InstrumentRentals
         Task<PagedResult<InstrumentRentalDto>> GetPagedForStudentAsync(int userId, InstrumentRentalSearchObject searchObject);
         Task<PagedResult<InstrumentRentalDto>> GetPagedForShopAsync(int userId, InstrumentRentalSearchObject searchObject);
 
-        Task<InstrumentRentalDto> CreateRequestAsync(int studentId, RentalCreateRequest request);
+        Task<InstrumentRentalDto> CreateRequestAsync(int userId, RentalCreateRequest request);
         Task<InstrumentRentalDto> ApproveAsync(int rentalId, int userId, RentalStatusResponse response);
         Task<InstrumentRentalDto> RejectAsync(int rentalId, int userId, RentalStatusResponse response);
         Task<InstrumentRentalDto> PickupAsync(int rentalId, int userId, RentalStatusResponse response);

@@ -36,11 +36,17 @@ namespace eNote.Application.Services.Base
             query = AddIncludes(query);
             query = AddFilter(search, query);
 
-            return await query
-                .ToPagedResultAsync(search.Page, search.PageSize, search.IncludeTotalCount, MapEntityToModel);
+            return await query.ToPagedResultAsync(
+                search.Page, 
+                search.PageSize, 
+                search.IncludeTotalCount, 
+                MapEntityToModel,
+                DefaultOrderBy
+            );
         }
 
         protected virtual TModel MapEntityToModel(TDbEntity entity) => _mapper.Map<TModel>(entity);
+        protected virtual Func<IQueryable<TDbEntity>, IOrderedQueryable<TDbEntity>>? DefaultOrderBy => null;
         protected virtual IQueryable<TDbEntity> AddFilter(TSearch search, IQueryable<TDbEntity> query) => query;
         protected virtual IQueryable<TDbEntity> AddIdFilter(IQueryable<TDbEntity> query) => query;
         protected virtual IQueryable<TDbEntity> AddIncludes(IQueryable<TDbEntity> query) => query;

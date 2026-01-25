@@ -6,10 +6,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Infrastructure.Identity
 {
-    public class UserIdentityService(UserManager<AppUser> userManager, IAppDbContext context) : IUserIdentityService
+    public class UserIdentityService(UserManager<AppUser> userManager) : IUserIdentityService
     {
         private readonly UserManager<AppUser> _userManager = userManager;
-        private readonly IAppDbContext _context = context;
+
 
         public async Task<UserIdentityDto?> GetUserAsync(int userId)
         {

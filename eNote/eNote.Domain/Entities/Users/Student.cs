@@ -4,14 +4,14 @@ namespace eNote.Domain.Entities.Users
 {
     public class Student : BaseEntity
     {        
-        public int UserId { get; set; }        
+        public int AppUserId { get; set; }        
         public DateTime EnrollmentDate { get; set; }
 
         protected Student() { }
 
-        public Student(int userId, DateTime enrollmentDate)
+        public Student(int appUserId, DateTime enrollmentDate)
         {
-            UserId = userId;
+            AppUserId = appUserId;
             EnrollmentDate = enrollmentDate;
         }
 

@@ -1,7 +1,6 @@
 ﻿using eNote.Domain.Entities.Base;
 using eNote.Domain.Entities.Users;
 using eNote.Domain.Enums;
-using System.ComponentModel.DataAnnotations;
 
 namespace eNote.Domain.Entities
 {
@@ -20,6 +19,7 @@ namespace eNote.Domain.Entities
 
         public int InstrumentTypeId { get; set; }
         public InstrumentType InstrumentType { get; set; } = null!;
+
         public int MusicShopId { get; set; }
         public MusicShop MusicShop { get; set; } = null!;
 

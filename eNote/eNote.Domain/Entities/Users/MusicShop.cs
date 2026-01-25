@@ -4,15 +4,15 @@ namespace eNote.Domain.Entities.Users
 {
     public class MusicShop : BaseEntity
     {        
-        public int UserId { get; set; }
+        public int AppUserId { get; set; }
         public string StoreName { get; set; } = null!;
         public string BusinessHours { get; set; } = null!;
 
-        protected MusicShop() { }
+        protected MusicShop() { }   
 
-        public MusicShop(int userId, string storeName, string businessHours)
+        public MusicShop(int appUserId, string storeName, string businessHours)
         {
-            UserId = userId;
+            AppUserId = appUserId;
             StoreName = storeName;
             BusinessHours = businessHours;
         }

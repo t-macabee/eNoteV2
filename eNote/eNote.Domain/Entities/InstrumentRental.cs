@@ -15,8 +15,9 @@ namespace eNote.Domain.Entities
 
         public InstrumentRentalStatus RentalStatus { get; set; }
 
-        public int StudentId { get; set; }
-        public Student Student { get; set; } = null!;
+        public int StudentProfileId { get; set; }
+        public Student StudentProfile { get; set; } = null!;
+
         public int InstrumentId { get; set; }
         public Instrument Instrument { get; set; } = null!;
     }

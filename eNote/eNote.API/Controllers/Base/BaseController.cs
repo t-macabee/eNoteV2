@@ -1,15 +1,13 @@
 ﻿using eNote.Application.Common.Paging;
 using eNote.Application.Interfaces.Base;
 using eNote.Application.SearchObjects;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace eNote.API.Controllers
+namespace eNote.API.Controllers.Base
 {
-    [ApiController]
     //[Authorize]
     [Route("api/[controller]")]
-    public abstract class BaseController<TModel, TSearch>(IService<TModel, TSearch> service) : ControllerBase where TSearch : BaseSearchObject
+    public abstract class BaseController<TModel, TSearch>(IService<TModel, TSearch> service) : CoreController where TSearch : BaseSearchObject
     {
         protected readonly IService<TModel, TSearch> _service = service;
 

@@ -45,7 +45,8 @@ namespace eNote.Application.Services.InstrumentRentals
 
             query = query.WithRentalDetails();
 
-            var entity = await query.FirstOrDefaultAsync(x => x.Id == rentalId && x.StudentId == userId)
+            var entity = await query
+                .FirstOrDefaultAsync(x => x.Id == rentalId && x.StudentProfile.AppUserId == userId)
                 ?? throw new KeyNotFoundException("ID nije pronađen");
 
             return MapEntityToModel(entity);
@@ -57,7 +58,8 @@ namespace eNote.Application.Services.InstrumentRentals
 
             query = query.WithRentalDetails();
 
-            var entity = await query.FirstOrDefaultAsync(x => x.Id == rentalId && x.Instrument.MusicShopId == userId)
+            var entity = await query
+                .FirstOrDefaultAsync(x => x.Id == rentalId && x.Instrument.MusicShop.AppUserId == userId)
                 ?? throw new KeyNotFoundException("ID nije pronađen");
 
             return MapEntityToModel(entity);
@@ -69,13 +71,19 @@ namespace eNote.Application.Services.InstrumentRentals
 
             query = query.WithRentalDetails();
 
-            query = query.Where(x => x.StudentId == userId);
+            query = query.Where(x => x.StudentProfile.AppUserId == userId);
 
             query = AddFilter(searchObject, query);
 
             return await query
                  .OrderByDescending(x => x.RequestedAt)
-                 .ToPagedResultAsync(searchObject.Page, searchObject.PageSize, searchObject.IncludeTotalCount, MapEntityToModel);
+                 .ToPagedResultAsync(
+                    searchObject.Page, 
+                    searchObject.PageSize, 
+                    searchObject.IncludeTotalCount, 
+                    MapEntityToModel,
+                    orderBy: x => x.OrderByDescending(r => r.RequestedAt)                    
+                 );
         }
 
         public async Task<PagedResult<InstrumentRentalDto>> GetPagedForShopAsync(int userId, InstrumentRentalSearchObject searchObject)
@@ -84,7 +92,7 @@ namespace eNote.Application.Services.InstrumentRentals
 
             query = query.WithRentalDetails();
 
-            query = query.Where(x => x.Instrument.MusicShopId == userId);
+            query = query.Where(x => x.Instrument.MusicShop.AppUserId == userId);
 
             query = AddFilter(searchObject, query);
 
