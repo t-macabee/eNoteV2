@@ -1,4 +1,4 @@
-﻿using eNote.Application.Interfaces.Ports;
+﻿using eNote.Application.Common.Persistence;
 using eNote.Domain.Entities;
 using eNote.Domain.Entities.Users;
 using eNote.Infrastructure.Data.Seed;

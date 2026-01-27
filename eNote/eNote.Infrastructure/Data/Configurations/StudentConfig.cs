@@ -11,10 +11,10 @@ namespace eNote.Infrastructure.Data.Configurations
         {
             builder.HasOne<AppUser>()          
                 .WithOne()
-                .HasForeignKey<Student>(s => s.UserId)
+                .HasForeignKey<Student>(s => s.AppUserId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            builder.HasIndex(s => s.UserId).IsUnique();
+            builder.HasIndex(s => s.AppUserId).IsUnique();
         }
     }
 }

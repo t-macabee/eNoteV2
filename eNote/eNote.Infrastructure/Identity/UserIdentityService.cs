@@ -1,6 +1,6 @@
-﻿using eNote.Application.DTOs;
-using eNote.Application.Interfaces.Identity;
-using eNote.Application.Interfaces.Ports;
+﻿using eNote.Application.Common.DTOs;
+using eNote.Application.Features.Users.DTOs;
+using eNote.Application.Features.Users.Services.Interfaces;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 

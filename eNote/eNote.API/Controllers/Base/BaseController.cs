@@ -1,6 +1,6 @@
 ﻿using eNote.Application.Common.Paging;
-using eNote.Application.Interfaces.Base;
-using eNote.Application.SearchObjects;
+using eNote.Application.Common.Search;
+using eNote.Application.Common.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
 namespace eNote.API.Controllers.Base

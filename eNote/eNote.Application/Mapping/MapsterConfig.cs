@@ -1,5 +1,7 @@
-﻿using eNote.Application.DTOs;
-using eNote.Application.Requests.Instruments;
+﻿using eNote.Application.Common.DTOs;
+using eNote.Application.Features.InstrumentRentals.DTOs;
+using eNote.Application.Features.Instruments.DTOs;
+using eNote.Application.Features.Instruments.Requests;
 using eNote.Domain.Entities;
 using Mapster;
 

@@ -85,18 +85,26 @@ namespace eNote.Infrastructure.Data.Seed
             switch (role)
             {
                 case AppRoles.Student:
-                    if (!context.Students.Any(x => x.UserId == userId))
-                        context.Students.Add(new Student(userId, DateTime.UtcNow.AddMonths(-3)));
+                    if (!context.Students.Any(x => x.AppUserId == userId))
+                    {
+                        context.Students.Add(
+                            new Student(userId, DateTime.UtcNow.AddMonths(-3))
+                        );
+                    }
                     break;
 
                 case AppRoles.Instructor:
-                    if (!context.Instructors.Any(x => x.UserId == userId))
-                        context.Instructors.Add(new Instructor(userId));
+                    if (!context.Instructors.Any(x => x.AppUserId == userId))
+                    {
+                        context.Instructors.Add(
+                            new Instructor(userId)
+                        );
+                    }
                     break;
 
 
                 case AppRoles.MusicShop:
-                    if (!context.MusicShops.Any(x => x.UserId == userId))
+                    if (!context.MusicShops.Any(x => x.AppUserId == userId))
                         context.MusicShops.Add(new MusicShop(userId, "Test Music Shop", "09:00–17:00"));
                     break;
             }

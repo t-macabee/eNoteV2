@@ -8,6 +8,7 @@ namespace eNote.Application.Common.Queryable
         public static IQueryable<InstrumentRental> WithRentalDetails(this IQueryable<InstrumentRental> query)
         {
             return query
+                .Include(s => s.StudentProfile)
                 .Include(r => r.Instrument)
                     .ThenInclude(i => i.InstrumentType)
                 .Include(r => r.Instrument)
