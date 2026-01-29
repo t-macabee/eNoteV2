@@ -10,7 +10,6 @@ namespace eNote.Infrastructure.Identity
     {
         private readonly UserManager<AppUser> _userManager = userManager;
 
-
         public async Task<UserIdentityDto?> GetUserAsync(int userId)
         {
             var user = await _userManager.Users.AsNoTracking().Include(u => u.Address).FirstOrDefaultAsync(u => u.Id == userId);

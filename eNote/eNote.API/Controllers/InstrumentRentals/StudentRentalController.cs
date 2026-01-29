@@ -4,10 +4,12 @@ using eNote.Application.Features.InstrumentRentals.DTOs;
 using eNote.Application.Features.InstrumentRentals.Requests;
 using eNote.Application.Features.InstrumentRentals.Search;
 using eNote.Application.Features.InstrumentRentals.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace eNote.API.Controllers.InstrumentRentals
 {
+    [Authorize]
     [Route("api/student/rentals")]
     public class StudentRentalController(IRentalService rentalService) : CoreController
     {

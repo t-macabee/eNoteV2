@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 
 namespace eNote.API.Controllers.Base
@@ -10,11 +11,11 @@ namespace eNote.API.Controllers.Base
         {
             get
             {
-                var userIdClaim = User.FindFirst("sub")?.Value
-                               ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                var id = User.FindFirstValue(JwtRegisteredClaimNames.Sub)
+                      ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-                if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
-                    throw new UnauthorizedAccessException("User ID not found in token.");
+                if (!int.TryParse(id, out var userId))
+                    throw new InvalidOperationException("Authenticated user has no valid user id claim.");
 
                 return userId;
             }

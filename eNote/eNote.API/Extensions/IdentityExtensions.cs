@@ -44,17 +44,7 @@ namespace eNote.API.Extensions
                         ValidAudience = config["Jwt:Audience"],
                         IssuerSigningKey = new SymmetricSecurityKey(key),
                         ClockSkew = TimeSpan.Zero
-                    };
-        
-                    options.Events = new JwtBearerEvents
-                    {
-                        OnAuthenticationFailed = ctx =>
-                        {
-                            ctx.NoResult();
-                            ctx.Response.StatusCode = StatusCodes.Status401Unauthorized;
-                            return ctx.Response.WriteAsync("Invalid or expired token.");
-                        }
-                    };
+                    };        
                 });
         
             return services;
