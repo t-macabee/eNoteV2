@@ -1,6 +1,7 @@
 using eNote.API.Extensions;
 using eNote.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
+using Scalar.AspNetCore;
 using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -15,8 +16,7 @@ builder.Services
     .AddApplicationIdentity()
     .AddJwtAuthentication(builder.Configuration)
     .AddAuthorization()
-    .AddApplicationServices()
-    .AddSwaggerDocumentation();
+    .AddApplicationServices();    
 
 builder.Services
     .AddControllers()
@@ -24,18 +24,18 @@ builder.Services
         x.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
 builder.Services.AddMapsterMappings();
+builder.Services.AddOpenApi();
 
 var app = builder.Build();
 
 app.UseHttpsRedirection();
-
 app.UseStaticFiles();
-
 app.UseErrorHandling();
 
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwaggerDocumentation();
+    app.MapOpenApi();
+    app.MapScalarApiReference();
 
     await app.SeedDevelopmentData();
 }
