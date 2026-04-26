@@ -10,9 +10,9 @@ namespace eNote.Infrastructure.Data.Configurations
         public void Configure(EntityTypeBuilder<InstrumentRental> builder)
         {
             builder.HasOne(x => x.StudentProfile)
-                  .WithMany(s => s.InstrumentRentals)
-                  .HasForeignKey(x => x.StudentProfileId)
-                  .OnDelete(DeleteBehavior.Restrict);
+                   .WithMany(s => s.InstrumentRentals)
+                   .HasForeignKey(x => x.StudentProfileId)
+                   .OnDelete(DeleteBehavior.Restrict);
 
             builder.HasOne(x => x.Instrument)
                    .WithMany(x => x.InstrumentRentals)
@@ -24,12 +24,12 @@ namespace eNote.Infrastructure.Data.Configurations
                    .IsRequired();
 
             builder.Property(x => x.RentalStatus)
-                .HasConversion<int>();
+                   .HasConversion<int>();
 
             builder.HasIndex(x => x.InstrumentId)
-                .HasFilter(
-                    $"[{nameof(InstrumentRental.RentalStatus)}] IN ({(int)InstrumentRentalStatus.Approved}, {(int)InstrumentRentalStatus.Active})"
-                ).IsUnique();
+                   .HasFilter(
+                        $"[{nameof(InstrumentRental.RentalStatus)}] IN ({(int)InstrumentRentalStatus.Approved}, {(int)InstrumentRentalStatus.Active})"
+                   ).IsUnique();
         }
     }
 }

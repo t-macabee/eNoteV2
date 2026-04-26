@@ -1,4 +1,4 @@
-﻿using eNote.Domain.Entities.Users;
+﻿using eNote.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Application.Common.Persistence
@@ -7,7 +7,8 @@ namespace eNote.Application.Common.Persistence
     {
         DbSet<Student> Students { get; }
         DbSet<Instructor> Instructors { get; }
-        DbSet<MusicShop> MusicShops { get; }
+        DbSet<MusicStore> MusicStores { get; }
+        DbSet<MusicStoreEmployee> StoreEmployees { get; }
 
         DbSet<TEntity> Set<TEntity>() where TEntity : class;
 

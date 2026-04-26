@@ -31,7 +31,7 @@ namespace eNote.Application.Common.Paging
 
             return new PagedResult<TModel>
             {
-                Items = [.. entities.Select(map)],
+                Items = entities.Select(map).ToList(),
                 Page = page,
                 PageSize = pageSize,
                 TotalCount = total

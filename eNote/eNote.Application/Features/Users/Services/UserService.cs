@@ -21,8 +21,8 @@ namespace eNote.Application.Features.Users.Services
 
             var roles = await _identity.GetRolesAsync(userId);
 
-            if (roles.Count == 0)
-                throw new InvalidOperationException("Korisnik nema dodijeljenu ulogu.");
+            if (roles.Count != 1)
+                throw new InvalidOperationException("Korisnik mora imati tačno jednu ulogu.");
 
             var role = roles[0];
 
@@ -30,7 +30,7 @@ namespace eNote.Application.Features.Users.Services
             {
                 AppRoles.Student => await BuildStudentProfile(userId, user),
                 AppRoles.Instructor => await BuildInstructorProfile(userId, user),
-                AppRoles.MusicShop => await BuildMusicShopProfile(userId, user),
+                AppRoles.StoreEmployee => await BuildMusicStoreProfile(userId, user),
                 _ => throw new InvalidOperationException("Nepoznata uloga.")
             };
 
@@ -68,14 +68,19 @@ namespace eNote.Application.Features.Users.Services
             );
         }
 
-        private async Task<MusicShopProfile> BuildMusicShopProfile(int userId, UserIdentityDto user)
+        private async Task<MusicStoreProfile> BuildMusicStoreProfile(int userId, UserIdentityDto user)
         {
-            var shop = await _context.MusicShops
+            var employee = await _context.StoreEmployees
                 .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.AppUserId == userId)
-                ?? throw new InvalidOperationException("Music shop profil nije pronađen.");
+                .FirstOrDefaultAsync(x => x.AppUserId == userId && x.IsActive)
+                ?? throw new InvalidOperationException("Profil uposlenika radnje nije pronađen."); 
 
-            return new MusicShopProfile(
+            var shop = await _context.MusicStores
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Id == employee.MusicStoreId)
+                ?? throw new InvalidOperationException("Radnja nije pronađena.");
+
+            return new MusicStoreProfile(
                 shop.Id,
                 shop.StoreName,
                 shop.BusinessHours,

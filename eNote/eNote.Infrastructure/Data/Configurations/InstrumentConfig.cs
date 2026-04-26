@@ -8,21 +8,21 @@ namespace eNote.Infrastructure.Data.Configurations
     {
         public void Configure(EntityTypeBuilder<Instrument> builder)
         {
-            builder.HasOne(x => x.MusicShop)
-                   .WithMany()
-                   .HasForeignKey(x => x.MusicShopId)
-                   .OnDelete(DeleteBehavior.Cascade);
+            builder.HasOne(x => x.MusicStore)
+                   .WithMany(x => x.Instruments)
+                   .HasForeignKey(x => x.MusicStoreId)
+                   .OnDelete(DeleteBehavior.Restrict);
 
             builder.HasOne(x => x.InstrumentType)
                    .WithMany(t => t.Instruments)
                    .HasForeignKey(x => x.InstrumentTypeId)
                    .OnDelete(DeleteBehavior.Restrict);
+                                  
+            builder.Property(x => x.Model).IsRequired().HasMaxLength(100);
+            builder.Property(x => x.Manufacturer).IsRequired().HasMaxLength(100);
+            builder.Property(x => x.Description).HasMaxLength(1000);
 
-            builder.Property(i => i.Model).IsRequired().HasMaxLength(100);
-            builder.Property(i => i.Manufacturer).IsRequired().HasMaxLength(100);
-            builder.Property(i => i.Description).HasMaxLength(1000);
-
-            builder.Ignore(i => i.IsAvailable);
+            builder.Ignore(x => x.IsAvailable);
         }
     }
 }

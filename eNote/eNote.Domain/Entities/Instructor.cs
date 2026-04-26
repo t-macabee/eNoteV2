@@ -1,6 +1,6 @@
 ﻿using eNote.Domain.Entities.Base;
 
-namespace eNote.Domain.Entities.Users
+namespace eNote.Domain.Entities
 {
     public class Instructor : BaseEntity
     { 

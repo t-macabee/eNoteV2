@@ -10,12 +10,12 @@ namespace eNote.Application.Features.InstrumentRentals.DTOs
         public string InstrumentModel { get; set; } = null!;
         public string InstrumentType { get; set; } = null!;
 
-        public int MusicShopId { get; set; }
-        public string MusicShopName { get; set; } = null!;
+        public int MusicStoreId { get; set; }
+        public string StoreName { get; set; } = null!;
 
         public int StudentProfileId { get; set; }
 
-        public decimal MonthlyFee { get; set; }
+        public decimal Fee { get; set; }
         public DateTime RequestedAt { get; set; }
         public DateTime? ApprovedAt { get; set; }
         public DateTime? PickedUpAt { get; set; }

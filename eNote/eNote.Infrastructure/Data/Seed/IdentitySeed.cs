@@ -1,5 +1,5 @@
 ﻿using eNote.Application.Constants;
-using eNote.Domain.Entities.Users;
+using eNote.Domain.Entities;
 using eNote.Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
@@ -20,7 +20,7 @@ namespace eNote.Infrastructure.Data.Seed
 
         private static async Task SeedRoles(RoleManager<AppRole> roleManager)
         {
-            string[] roles = [AppRoles.Administrator, AppRoles.Instructor, AppRoles.Student, AppRoles.MusicShop];
+            string[] roles = [AppRoles.Administrator, AppRoles.Instructor, AppRoles.Student, AppRoles.StoreEmployee];
 
             foreach (var role in roles)
             {
@@ -38,75 +38,129 @@ namespace eNote.Infrastructure.Data.Seed
 
         private static async Task SeedUsers(UserManager<AppUser> userManager, ENoteContext context)
         {
-            var testUsers = new[] { 
-                //("administrator", "admin@enote.com", AppRoles.Administrator), 
-                ("instructor", "instructor@enote.com",AppRoles.Instructor),
+            var testUsers = new[]
+            {
+                //("administrator", "admin@enote.com", AppRoles.Administrator),
+                ("instructor", "instructor@enote.com", AppRoles.Instructor),
                 ("student", "student@enote.com", AppRoles.Student),
-                ("musicshop", "shop@enote.com", AppRoles.MusicShop)
+                ("storeemployee", "storeEmployee@enote.com", AppRoles.StoreEmployee)
             };
 
             foreach (var (username, email, role) in testUsers)
             {
-                if (await userManager.FindByNameAsync(username) != null)
-                    continue;
+                var user = await userManager.FindByNameAsync(username);
 
-                var user = new AppUser
+                if (user == null)
                 {
-                    UserName = username,
-                    Email = email,
-                    EmailConfirmed = true,
-                    IsActive = true
-                };
+                    user = new AppUser
+                    {
+                        UserName = username,
+                        Email = email,
+                        EmailConfirmed = true,
+                        IsActive = true
+                    };
 
-                var createResult = await userManager.CreateAsync(user, "test1234");
+                    var createResult = await userManager.CreateAsync(user, "test1234");
 
-                if (!createResult.Succeeded)
+                    if (!createResult.Succeeded)
+                    {
+                        var errors = string.Join("; ", createResult.Errors.Select(e => e.Description));
+                        throw new Exception($"Error creating user {username}: {errors}");
+                    }
+                }
+                else
                 {
-                    var errors = string.Join("; ", createResult.Errors.Select(e => e.Description));
-                    throw new Exception($"Error creating user {username}: {errors}");
+                    if (user.Email != email)
+                    {
+                        user.Email = email;
+                        user.NormalizedEmail = userManager.NormalizeEmail(email);
+                    }
+
+                    if (!user.EmailConfirmed)
+                        user.EmailConfirmed = true;
+
+                    if (!user.IsActive)
+                        user.IsActive = true;
+
+                    var updateResult = await userManager.UpdateAsync(user);
+
+                    if (!updateResult.Succeeded)
+                    {
+                        var errors = string.Join("; ", updateResult.Errors.Select(e => e.Description));
+                        throw new Exception($"Error updating user {username}: {errors}");
+                    }
                 }
 
-                var roleResult = await userManager.AddToRoleAsync(user, role);
+                await EnsureOneRoleAsync(userManager, user, role);
 
-                if (!roleResult.Succeeded)
-                {
-                    var errors = string.Join("; ", roleResult.Errors.Select(e => e.Description));
-                    throw new Exception($"Error assigning role {role} to {username}: {errors}");
-                }
-
-                AddRoleProfile(context, user.Id, role);
+                EnsureRoleProfile(context, user.Id, role);
 
                 await context.SaveChangesAsync();
             }
         }
 
-        private static void AddRoleProfile(ENoteContext context, int userId, string role)
+        private static async Task EnsureOneRoleAsync(UserManager<AppUser> userManager, AppUser user, string intendedRole)
+        {
+            var currentRoles = await userManager.GetRolesAsync(user);
+            
+            var toRemove = currentRoles.Where(r => r != intendedRole).ToArray();
+
+            if (toRemove.Length > 0)
+            {
+                var removeResult = await userManager.RemoveFromRolesAsync(user, toRemove);
+
+                if (!removeResult.Succeeded)
+                {
+                    var errors = string.Join("; ", removeResult.Errors.Select(e => e.Description));
+                    throw new Exception($"Error removing roles from {user.UserName}: {errors}");
+                }
+            }
+            
+            if (!currentRoles.Contains(intendedRole))
+            {
+                var addResult = await userManager.AddToRoleAsync(user, intendedRole);
+
+                if (!addResult.Succeeded)
+                {
+                    var errors = string.Join("; ", addResult.Errors.Select(e => e.Description));
+                    throw new Exception($"Error assigning role {intendedRole} to {user.UserName}: {errors}");
+                }
+            }
+        }
+
+        private static void EnsureRoleProfile(ENoteContext context, int userId, string role)
         {
             switch (role)
             {
                 case AppRoles.Student:
                     if (!context.Students.Any(x => x.AppUserId == userId))
-                    {
-                        context.Students.Add(
-                            new Student(userId, DateTime.UtcNow.AddMonths(-3))
-                        );
-                    }
+                        context.Students.Add(new Student(userId, DateTime.UtcNow.AddMonths(-3)));
                     break;
 
                 case AppRoles.Instructor:
                     if (!context.Instructors.Any(x => x.AppUserId == userId))
+                        context.Instructors.Add(new Instructor(userId));
+                    break;
+
+                case AppRoles.StoreEmployee:
                     {
-                        context.Instructors.Add(
-                            new Instructor(userId)
-                        );
+                        var store = context.MusicStores.FirstOrDefault();
+
+                        if (store == null)
+                        {
+                            store = new MusicStore("Test Music Store", "09:00-17:00");
+                            context.MusicStores.Add(store);
+                            context.SaveChanges();
+                        }
+
+                        if (!context.StoreEmployees.Any(x => x.AppUserId == userId))
+                        {
+                            context.StoreEmployees.Add(
+                                new MusicStoreEmployee(userId, store.Id, true));
+                        }
+                        
+                        break;
                     }
-                    break;
-
-
-                case AppRoles.MusicShop:
-                    if (!context.MusicShops.Any(x => x.AppUserId == userId))
-                        context.MusicShops.Add(new MusicShop(userId, "Test Music Shop", "09:00–17:00"));
-                    break;
             }
         }
     }

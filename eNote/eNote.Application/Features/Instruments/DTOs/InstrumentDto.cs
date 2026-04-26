@@ -7,7 +7,7 @@
         public string Manufacturer { get; set; } = null!;
         public string? Description { get; set; }
         public string InstrumentType { get; set; } = null!;
-        public string MusicShop { get; set; } = null!;
+        public string MusicStore{ get; set; } = null!;
         public string? ImagePath { get; set; }
         public bool IsAvailable { get; set; }
     }

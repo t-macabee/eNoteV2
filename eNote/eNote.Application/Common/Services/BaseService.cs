@@ -2,7 +2,6 @@
 using eNote.Application.Common.Persistence;
 using eNote.Application.Common.Search;
 using eNote.Application.Common.Services.Interfaces;
-using eNote.Application.Common.Time;
 using eNote.Domain.Entities.Base;
 using MapsterMapper;
 using Microsoft.EntityFrameworkCore;

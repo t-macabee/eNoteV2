@@ -15,15 +15,16 @@ namespace eNote.Application.Mapping
 
             config.NewConfig<Instrument, InstrumentDto>()                
                 .Map(dest => dest.InstrumentType, src => src.InstrumentType.Type)
-                .Map(dest => dest.MusicShop, src => src.MusicShop.StoreName)
+                .Map(dest => dest.MusicStore, src => src.MusicStore.StoreName)
                 .Map(dest => dest.ImagePath, src => src.ImagePath);
 
             TypeAdapterConfig<InstrumentRental, InstrumentRentalDto>.NewConfig()
                 .Map(x => x.InstrumentModel, x => x.Instrument.Model)
                 .Map(x => x.InstrumentType, x => x.Instrument.InstrumentType.Type)
-                .Map(x => x.MusicShopId, x => x.Instrument.MusicShopId)
-                .Map(x => x.MusicShopName, x => x.Instrument.MusicShop.StoreName)
-                .Map(x => x.StudentProfileId, x => x.StudentProfileId);
+                .Map(x => x.MusicStoreId, x => x.Instrument.MusicStoreId)
+                .Map(x => x.StoreName, x => x.Instrument.MusicStore.StoreName)
+                .Map(x => x.StudentProfileId, x => x.StudentProfileId)
+                .Map(x => x.Fee, x => x.Fee);
 
             config.NewConfig<InstrumentUpdateRequest, Instrument>()
                 .IgnoreNullValues(true);

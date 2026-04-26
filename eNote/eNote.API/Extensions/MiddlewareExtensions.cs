@@ -25,7 +25,7 @@ namespace eNote.API.Extensions
 
                     var response = new
                     {
-                        error = app.Environment.IsDevelopment()? exception?.Message : "Došlo je do greške na serveru."
+                        error = app.Environment.IsDevelopment() ? exception?.Message : "Došlo je do greške na serveru."
                     };
 
                     await context.Response.WriteAsync(JsonSerializer.Serialize(response));

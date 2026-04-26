@@ -12,7 +12,7 @@ using eNote.Infrastructure.Data;
 namespace eNote.Infrastructure.Data.Migrations
 {
     [DbContext(typeof(ENoteContext))]
-    [Migration("20260127171128_Initial")]
+    [Migration("20260420143133_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -344,6 +344,25 @@ namespace eNote.Infrastructure.Data.Migrations
                     b.ToTable("Enrollments");
                 });
 
+            modelBuilder.Entity("eNote.Domain.Entities.Instructor", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AppUserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AppUserId")
+                        .IsUnique();
+
+                    b.ToTable("Instructors");
+                });
+
             modelBuilder.Entity("eNote.Domain.Entities.Instrument", b =>
                 {
                     b.Property<int>("Id")
@@ -375,14 +394,14 @@ namespace eNote.Infrastructure.Data.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<int>("MusicShopId")
+                    b.Property<int>("MusicStoreId")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
 
                     b.HasIndex("InstrumentTypeId");
 
-                    b.HasIndex("MusicShopId");
+                    b.HasIndex("MusicStoreId");
 
                     b.ToTable("Instruments");
                 });
@@ -558,53 +577,61 @@ namespace eNote.Infrastructure.Data.Migrations
                     b.ToTable("LectureNotes");
                 });
 
-            modelBuilder.Entity("eNote.Domain.Entities.Users.Instructor", b =>
+            modelBuilder.Entity("eNote.Domain.Entities.MusicStore", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("AppUserId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AppUserId")
-                        .IsUnique();
-
-                    b.ToTable("Instructors");
-                });
-
-            modelBuilder.Entity("eNote.Domain.Entities.Users.MusicShop", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("AppUserId")
-                        .HasColumnType("int");
 
                     b.Property<string>("BusinessHours")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<string>("StoreName")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("MusicStores");
+                });
+
+            modelBuilder.Entity("eNote.Domain.Entities.MusicStoreEmployee", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AppUserId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsManager")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("MusicStoreId")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
                     b.HasIndex("AppUserId")
                         .IsUnique();
 
-                    b.ToTable("MusicShops");
+                    b.HasIndex("MusicStoreId", "AppUserId")
+                        .IsUnique();
+
+                    b.ToTable("StoreEmployees");
                 });
 
-            modelBuilder.Entity("eNote.Domain.Entities.Users.Student", b =>
+            modelBuilder.Entity("eNote.Domain.Entities.Student", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -814,7 +841,7 @@ namespace eNote.Infrastructure.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("eNote.Domain.Entities.Users.Student", "Student")
+                    b.HasOne("eNote.Domain.Entities.Student", "Student")
                         .WithMany("AssignmentSubmissions")
                         .HasForeignKey("StudentId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -833,7 +860,7 @@ namespace eNote.Infrastructure.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("eNote.Domain.Entities.Users.Student", "Student")
+                    b.HasOne("eNote.Domain.Entities.Student", "Student")
                         .WithMany("Attendances")
                         .HasForeignKey("StudentId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -846,7 +873,7 @@ namespace eNote.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("eNote.Domain.Entities.Course", b =>
                 {
-                    b.HasOne("eNote.Domain.Entities.Users.Instructor", "Instructor")
+                    b.HasOne("eNote.Domain.Entities.Instructor", "Instructor")
                         .WithMany("Courses")
                         .HasForeignKey("InstructorId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -863,7 +890,7 @@ namespace eNote.Infrastructure.Data.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("eNote.Domain.Entities.Users.Student", "Student")
+                    b.HasOne("eNote.Domain.Entities.Student", "Student")
                         .WithMany("Enrollments")
                         .HasForeignKey("StudentId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -874,6 +901,15 @@ namespace eNote.Infrastructure.Data.Migrations
                     b.Navigation("Student");
                 });
 
+            modelBuilder.Entity("eNote.Domain.Entities.Instructor", b =>
+                {
+                    b.HasOne("eNote.Infrastructure.Identity.AppUser", null)
+                        .WithOne()
+                        .HasForeignKey("eNote.Domain.Entities.Instructor", "AppUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("eNote.Domain.Entities.Instrument", b =>
                 {
                     b.HasOne("eNote.Domain.Entities.InstrumentType", "InstrumentType")
@@ -882,15 +918,15 @@ namespace eNote.Infrastructure.Data.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("eNote.Domain.Entities.Users.MusicShop", "MusicShop")
-                        .WithMany()
-                        .HasForeignKey("MusicShopId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                    b.HasOne("eNote.Domain.Entities.MusicStore", "MusicStore")
+                        .WithMany("Instruments")
+                        .HasForeignKey("MusicStoreId")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("InstrumentType");
 
-                    b.Navigation("MusicShop");
+                    b.Navigation("MusicStore");
                 });
 
             modelBuilder.Entity("eNote.Domain.Entities.InstrumentRental", b =>
@@ -901,7 +937,7 @@ namespace eNote.Infrastructure.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("eNote.Domain.Entities.Users.Student", "StudentProfile")
+                    b.HasOne("eNote.Domain.Entities.Student", "StudentProfile")
                         .WithMany("InstrumentRentals")
                         .HasForeignKey("StudentProfileId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -934,29 +970,28 @@ namespace eNote.Infrastructure.Data.Migrations
                     b.Navigation("Lecture");
                 });
 
-            modelBuilder.Entity("eNote.Domain.Entities.Users.Instructor", b =>
+            modelBuilder.Entity("eNote.Domain.Entities.MusicStoreEmployee", b =>
                 {
                     b.HasOne("eNote.Infrastructure.Identity.AppUser", null)
-                        .WithOne()
-                        .HasForeignKey("eNote.Domain.Entities.Users.Instructor", "AppUserId")
+                        .WithMany()
+                        .HasForeignKey("AppUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("eNote.Domain.Entities.MusicStore", "MusicStore")
+                        .WithMany("Employees")
+                        .HasForeignKey("MusicStoreId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("MusicStore");
                 });
 
-            modelBuilder.Entity("eNote.Domain.Entities.Users.MusicShop", b =>
+            modelBuilder.Entity("eNote.Domain.Entities.Student", b =>
                 {
                     b.HasOne("eNote.Infrastructure.Identity.AppUser", null)
                         .WithOne()
-                        .HasForeignKey("eNote.Domain.Entities.Users.MusicShop", "AppUserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("eNote.Domain.Entities.Users.Student", b =>
-                {
-                    b.HasOne("eNote.Infrastructure.Identity.AppUser", null)
-                        .WithOne()
-                        .HasForeignKey("eNote.Domain.Entities.Users.Student", "AppUserId")
+                        .HasForeignKey("eNote.Domain.Entities.Student", "AppUserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
@@ -983,6 +1018,11 @@ namespace eNote.Infrastructure.Data.Migrations
                     b.Navigation("Lectures");
                 });
 
+            modelBuilder.Entity("eNote.Domain.Entities.Instructor", b =>
+                {
+                    b.Navigation("Courses");
+                });
+
             modelBuilder.Entity("eNote.Domain.Entities.Instrument", b =>
                 {
                     b.Navigation("InstrumentRentals");
@@ -1002,12 +1042,14 @@ namespace eNote.Infrastructure.Data.Migrations
                     b.Navigation("LectureNotes");
                 });
 
-            modelBuilder.Entity("eNote.Domain.Entities.Users.Instructor", b =>
+            modelBuilder.Entity("eNote.Domain.Entities.MusicStore", b =>
                 {
-                    b.Navigation("Courses");
+                    b.Navigation("Employees");
+
+                    b.Navigation("Instruments");
                 });
 
-            modelBuilder.Entity("eNote.Domain.Entities.Users.Student", b =>
+            modelBuilder.Entity("eNote.Domain.Entities.Student", b =>
                 {
                     b.Navigation("AssignmentSubmissions");
 

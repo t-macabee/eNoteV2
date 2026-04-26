@@ -26,11 +26,11 @@ namespace eNote.API.Extensions
 
             return services;
         }
-       
+
         public static IServiceCollection AddJwtAuthentication(this IServiceCollection services, IConfiguration config)
         {
             var key = Encoding.UTF8.GetBytes(config["Jwt:Key"]!);
-        
+
             services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 .AddJwtBearer(options =>
                 {
@@ -44,10 +44,10 @@ namespace eNote.API.Extensions
                         ValidAudience = config["Jwt:Audience"],
                         IssuerSigningKey = new SymmetricSecurityKey(key),
                         ClockSkew = TimeSpan.Zero
-                    };        
+                    };
                 });
-        
+
             return services;
-        }       
+        }
     }
 }

@@ -25,7 +25,7 @@ namespace eNote.Infrastructure.Identity
                 LastName = user.LastName,
                 DateOfBirth = user.DateOfBirth,
                 Address = user.Address == null
-                ? null 
+                ? null
                 : new AddressDto
                 {
                     City = user.Address.City,

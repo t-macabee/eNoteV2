@@ -8,9 +8,9 @@ namespace eNote.Application.Features.InstrumentRentals.Services.Interfaces
     public interface IRentalQueryService : IService<InstrumentRentalDto, InstrumentRentalSearchObject>
     {
         Task<InstrumentRentalDto> GetByIdForStudentAsync(int rentalId, int userId);
-        Task<InstrumentRentalDto> GetByIdForShopAsync(int rentalId, int userId);
+        Task<InstrumentRentalDto> GetByIdForStoreAsync(int rentalId, int userId);
 
         Task<PagedResult<InstrumentRentalDto>> GetPagedForStudentAsync(int userId, InstrumentRentalSearchObject searchObject);
-        Task<PagedResult<InstrumentRentalDto>> GetPagedForShopAsync(int userId, InstrumentRentalSearchObject searchObject);
+        Task<PagedResult<InstrumentRentalDto>> GetPagedForStoreAsync(int userId, InstrumentRentalSearchObject searchObject);
     }
 }

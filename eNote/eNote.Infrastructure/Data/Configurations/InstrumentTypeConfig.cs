@@ -9,12 +9,12 @@ namespace eNote.Infrastructure.Data.Configurations
         public void Configure(EntityTypeBuilder<InstrumentType> builder)
         {
             builder.Property(t => t.Type)
-                .IsRequired()
-                .HasMaxLength(100);
+                   .IsRequired()
+                   .HasMaxLength(100);
 
             builder.Property(t => t.MonthlyFee)
-                .IsRequired()
-                .HasPrecision(18, 2);
+                   .IsRequired()
+                   .HasPrecision(18, 2);
         }
     }
 }

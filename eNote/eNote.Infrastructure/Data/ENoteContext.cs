@@ -1,6 +1,5 @@
 ﻿using eNote.Application.Common.Persistence;
 using eNote.Domain.Entities;
-using eNote.Domain.Entities.Users;
 using eNote.Infrastructure.Data.Seed;
 using eNote.Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -24,7 +23,8 @@ namespace eNote.Infrastructure.Data
         public DbSet<InstrumentType> InstrumentTypes => Set<InstrumentType>();
         public DbSet<Lecture> Lectures => Set<Lecture>();
         public DbSet<LectureNote> LectureNotes => Set<LectureNote>();
-        public DbSet<MusicShop> MusicShops => Set<MusicShop>();        
+        public DbSet<MusicStore> MusicStores => Set<MusicStore>();                
+        public DbSet<MusicStoreEmployee> StoreEmployees => Set<MusicStoreEmployee>();
         public DbSet<Student> Students => Set<Student>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

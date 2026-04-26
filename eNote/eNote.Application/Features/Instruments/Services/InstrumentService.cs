@@ -5,53 +5,55 @@ using eNote.Application.Features.Instruments.DTOs;
 using eNote.Application.Features.Instruments.Requests;
 using eNote.Application.Features.Instruments.Search;
 using eNote.Application.Features.Instruments.Services.Interfaces;
+using eNote.Application.Features.MusicStores.Context.Services;
 using eNote.Domain.Entities;
-using eNote.Domain.Entities.Users;
 using eNote.Domain.Enums;
 using MapsterMapper;
 using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Application.Features.Instruments.Services
 {
-    public class InstrumentService(IAppDbContext context, IMapper mapper)
+    public class InstrumentService(IAppDbContext context, IMapper mapper, IMusicStoreContextService storeContext)
         : CRUDService<InstrumentDto, InstrumentSearchObject, InstrumentCreateRequest, InstrumentUpdateRequest, Instrument>(context, mapper), IInstrumentService
     {
+        private readonly IMusicStoreContextService _storeContext = storeContext;
+
         protected override IQueryable<Instrument> AddIncludes(IQueryable<Instrument> query)
         {
-            return query.WithInstrumentDetails();                
-               
+            return query.WithInstrumentDetails();
+
         }
 
         protected override IQueryable<Instrument> AddFilter(InstrumentSearchObject search, IQueryable<Instrument> query)
         {
             query = query.Where(x => x.IsActive);
 
-            if (!string.IsNullOrWhiteSpace(search.Model))            
-                query = query.Where(x => x.Model.Contains(search.Model));            
+            if (!string.IsNullOrWhiteSpace(search.Model))
+                query = query.Where(x => x.Model.Contains(search.Model));
 
-            if (!string.IsNullOrWhiteSpace(search.Manufacturer))            
-                query = query.Where(x => x.Manufacturer.Contains(search.Manufacturer));            
+            if (!string.IsNullOrWhiteSpace(search.Manufacturer))
+                query = query.Where(x => x.Manufacturer.Contains(search.Manufacturer));
 
-            if (search.InstrumentTypeId.HasValue)            
+            if (search.InstrumentTypeId.HasValue)
                 query = query.Where(x => x.InstrumentTypeId == search.InstrumentTypeId);
 
-            if (search.MusicShopId.HasValue)
-                query = query.Where(x => x.MusicShopId == search.MusicShopId);
+            if (search.MusicStoreId.HasValue)
+                query = query.Where(x => x.MusicStoreId == search.MusicStoreId);
 
             if (search.IsAvailable.HasValue)
             {
                 if (search.IsAvailable.Value)
-                    query = query.Where(x => !x.InstrumentRentals.Any(x => 
-                    x.RentalStatus == InstrumentRentalStatus.Approved || 
+                    query = query.Where(x => !x.InstrumentRentals.Any(x =>
+                    x.RentalStatus == InstrumentRentalStatus.Approved ||
                     x.RentalStatus == InstrumentRentalStatus.Active));
                 else
-                    query = query.Where(x => x.InstrumentRentals.Any(x => 
+                    query = query.Where(x => x.InstrumentRentals.Any(x =>
                     x.RentalStatus == InstrumentRentalStatus.Approved ||
                     x.RentalStatus == InstrumentRentalStatus.Active));
             }
 
             return query;
-        }        
+        }
 
         protected override async Task BeforeInsertAsync(InstrumentCreateRequest request, Instrument entity)
         {
@@ -61,8 +63,8 @@ namespace eNote.Application.Features.Instruments.Services
             if (!existingType)
                 throw new InvalidOperationException("Vrsta instrumenta ne postoji.");
 
-            var existingShop = await _context.Set<MusicShop>()
-                .AnyAsync(x => x.Id == request.MusicShopId);
+            var existingShop = await _context.Set<MusicStore>()
+                .AnyAsync(x => x.Id == request.MusicStoreId);
 
             if (!existingShop)
                 throw new InvalidOperationException("Music shop ne postoji.");
@@ -98,7 +100,7 @@ namespace eNote.Application.Features.Instruments.Services
                 .FirstAsync(x => x.Id == entity.Id);
         }
 
-        protected override IQueryable<Instrument> AddIdFilter(IQueryable<Instrument> query) 
+        protected override IQueryable<Instrument> AddIdFilter(IQueryable<Instrument> query)
             => query.Where(x => x.IsActive);
     }
 }

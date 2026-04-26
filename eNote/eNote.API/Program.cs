@@ -1,7 +1,7 @@
 using eNote.API.Extensions;
+using eNote.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json.Serialization;
-using eNote.Infrastructure.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -37,7 +37,7 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwaggerDocumentation();
 
-    await app.SeedDevelopmentData();   
+    await app.SeedDevelopmentData();
 }
 
 app.UseAuthentication();

@@ -1,10 +1,11 @@
 ﻿using eNote.Application.Common.Persistence;
 using eNote.Application.Common.Time;
 using eNote.Application.Features.Auth.Services.Interfaces;
-using eNote.Application.Features.InstrumentRentals.Services;
 using eNote.Application.Features.InstrumentRentals.Services.Interfaces;
+using eNote.Application.Features.InstrumentRentals.Services;
 using eNote.Application.Features.Instruments.Services;
 using eNote.Application.Features.Instruments.Services.Interfaces;
+using eNote.Application.Features.MusicStores.Context.Services;
 using eNote.Application.Features.Users.Services;
 using eNote.Application.Features.Users.Services.Interfaces;
 using eNote.Infrastructure.Data;
@@ -25,11 +26,11 @@ namespace eNote.API.Extensions
             services.AddScoped<IUserIdentityService, UserIdentityService>();
 
             services.AddScoped<IInstrumentService, InstrumentService>();
-            services.AddScoped<IRentalService, RentalService>();
             services.AddScoped<IRentalQueryService, RentalQueryService>();
             services.AddScoped<IRentalCommandService, RentalCommandService>();
 
             services.AddScoped<IAppDbContext>(x => x.GetRequiredService<ENoteContext>());
+            services.AddScoped<IMusicStoreContextService, MusicStoreContextService>();
 
             return services;
         }       

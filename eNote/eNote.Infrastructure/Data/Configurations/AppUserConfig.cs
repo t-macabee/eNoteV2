@@ -9,9 +9,9 @@ namespace eNote.Infrastructure.Data.Configurations
         public void Configure(EntityTypeBuilder<AppUser> builder)
         {
             builder.HasOne(u => u.Address)
-                .WithMany()
-                .HasForeignKey(u => u.AddressId)
-                .OnDelete(DeleteBehavior.Restrict);
+                   .WithMany()
+                   .HasForeignKey(u => u.AddressId)
+                   .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

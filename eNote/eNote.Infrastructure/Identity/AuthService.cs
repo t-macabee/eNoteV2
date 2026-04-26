@@ -1,6 +1,6 @@
 ﻿using eNote.Application.Features.Auth.DTOs;
-using eNote.Application.Features.Auth.Requests;
 using eNote.Application.Features.Auth.Services.Interfaces;
+using eNote.Application.Features.Auth.Requests;
 using Microsoft.AspNetCore.Identity;
 
 namespace eNote.Infrastructure.Identity
@@ -16,6 +16,7 @@ namespace eNote.Infrastructure.Identity
             var username = model.Username.Trim();
 
             var user = await _userManager.FindByNameAsync(username);
+
             if (user == null || !user.IsActive)
                 return (null, "Pogrešno korisničko ime ili lozinka.");
 
@@ -26,13 +27,16 @@ namespace eNote.Infrastructure.Identity
 
             var roles = await _userManager.GetRolesAsync(user);
 
+            if (roles.Count != 1)
+                return (null, "Korisnički račun nije ispravno konfigurisan (uloge). Kontaktirajte administratora.");
+
             var token = _tokenService.GenerateToken(user.Id, user.UserName!, roles);
 
             return (new AuthResponse
             {
                 UserId = user.Id,
                 Username = user.UserName!,
-                Roles = roles.ToList().AsReadOnly(),                
+                Roles = roles.ToList().AsReadOnly(),
                 Token = token
             }, null);
         }

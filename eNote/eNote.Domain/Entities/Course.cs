@@ -1,5 +1,4 @@
 ﻿using eNote.Domain.Entities.Base;
-using eNote.Domain.Entities.Users;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace eNote.Domain.Entities

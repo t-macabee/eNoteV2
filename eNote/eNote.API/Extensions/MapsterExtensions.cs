@@ -11,7 +11,7 @@ namespace eNote.API.Extensions
             var config = new TypeAdapterConfig();
 
             MapsterConfig.RegisterMappings(config);
-            config.Compile();            
+            config.Compile();
 
             services.AddSingleton(config);
             services.AddScoped<IMapper, ServiceMapper>();
