@@ -8,6 +8,5 @@
         public string? ImagePath { get; set; }
 
         public int InstrumentTypeId { get; set; }
-        public int MusicStoreId { get; set; }
     }
 }

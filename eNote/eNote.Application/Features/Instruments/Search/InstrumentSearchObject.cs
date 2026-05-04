@@ -8,6 +8,5 @@ namespace eNote.Application.Features.Instruments.Search
         public string? Manufacturer { get; set; }
         public bool? IsAvailable { get; set; }
         public int? InstrumentTypeId { get; set; }
-        public int? MusicStoreId { get; set; }
     }
 }

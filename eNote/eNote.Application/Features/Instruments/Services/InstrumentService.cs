@@ -1,4 +1,5 @@
-﻿using eNote.Application.Common.Persistence;
+﻿using eNote.Application.Common.Paging;
+using eNote.Application.Common.Persistence;
 using eNote.Application.Common.Queryable;
 using eNote.Application.Common.Services;
 using eNote.Application.Features.Instruments.DTOs;
@@ -18,11 +19,94 @@ namespace eNote.Application.Features.Instruments.Services
     {
         private readonly IMusicStoreContextService _storeContext = storeContext;
 
-        protected override IQueryable<Instrument> AddIncludes(IQueryable<Instrument> query)
+        public async Task<InstrumentDto> GetByIdAsync(int id, int employeeAppUserId)
         {
-            return query.WithInstrumentDetails();
+            var storeId = await _storeContext.GetActiveStoreAsync(employeeAppUserId);
 
+            var query = AddIncludes(_context.Set<Instrument>().
+                AsNoTracking()
+                .Where(x => x.MusicStoreId == storeId));
+
+            query = AddIdFilter(query);
+
+            var entity = await query.
+                FirstOrDefaultAsync(x => x.Id == id) 
+                ?? throw new KeyNotFoundException("ID nije pronađen.");
+
+            return MapEntityToModel(entity);
         }
+
+        public async Task<PagedResult<InstrumentDto>> GetPagedAsync(InstrumentSearchObject search, int employeeAppUserId)
+        {
+            var storeId = await _storeContext.GetActiveStoreAsync(employeeAppUserId);
+
+            var query = _context.Set<Instrument>()
+                .AsNoTracking()
+                .Where(x => x.MusicStoreId == storeId);
+
+            query = AddIncludes(query);
+            query = AddFilter(search, query);
+
+            return await query.ToPagedResultAsync(search.Page, search.PageSize, search.IncludeTotalCount, MapEntityToModel);
+        }
+
+        public async Task<InstrumentDto> InsertAsync(InstrumentCreateRequest request, int employeeAppUserId)
+        {
+            var storeId = await _storeContext.GetActiveStoreAsync(employeeAppUserId);
+            var entity = _mapper.Map<Instrument>(request);
+
+            entity.MusicStoreId = storeId;
+            await BeforeInsertAsync(request, entity);
+
+            _context.Set<Instrument>().Add(entity);
+            await _context.SaveChangesAsync();
+
+            entity = await AfterSaveAsync(entity);
+            return MapEntityToModel(entity);
+        }
+
+        public async Task<InstrumentDto> UpdateAsync(int id, InstrumentUpdateRequest request, int employeeAppUserId)
+        {
+            var storeId = await _storeContext.GetActiveStoreAsync(employeeAppUserId);
+
+            var entity = await _context.Set<Instrument>().FirstOrDefaultAsync(x => x.Id == id && x.MusicStoreId == storeId) ?? throw new KeyNotFoundException("ID nije pronađen.");
+
+            _mapper.Map(request, entity);
+
+            await BeforeUpdateAsync(request, entity);
+            await _context.SaveChangesAsync();
+
+            entity = await AfterSaveAsync(entity);
+            return MapEntityToModel(entity);
+        }
+
+        public async Task DeleteAsync(int id, int employeeAppUserId)
+        {
+            var storeId = await _storeContext.GetActiveStoreAsync(employeeAppUserId);
+
+            var instrument = await _context.Set<Instrument>()
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(x => x.Id == id && x.MusicStoreId == storeId)
+                ?? throw new KeyNotFoundException("ID nije pronađen.");
+
+            var hasBlockingRental = await _context.Set<InstrumentRental>()
+                .AnyAsync(r => r.InstrumentId == id &&
+                               (r.RentalStatus == InstrumentRentalStatus.Approved ||
+                                r.RentalStatus == InstrumentRentalStatus.Active));
+
+            if (hasBlockingRental)
+                throw new InvalidOperationException("Instrument se ne može obrisati jer je trenutno rezervisan ili iznajmljen.");
+
+            instrument.IsActive = false;
+            await _context.SaveChangesAsync();
+        }
+
+        public override Task<InstrumentDto> GetByIdAsync(int id) => throw new InvalidOperationException("Koristite GetByIdAsync(id, employeeAppUserId) za pristup instrumentima radnje.");
+        public override Task<PagedResult<InstrumentDto>> GetPagedAsync(InstrumentSearchObject search) => throw new InvalidOperationException("Koristite GetPagedAsync(search, employeeAppUserId) za listu instrumenata radnje.");
+        public override Task<InstrumentDto> InsertAsync(InstrumentCreateRequest request) => throw new InvalidOperationException("Koristite InsertAsync(request, employeeAppUserId) za kreiranje instrumenta u radnji.");
+        public override Task<InstrumentDto> UpdateAsync(int id, InstrumentUpdateRequest request) => throw new InvalidOperationException("Koristite UpdateAsync(id, request, employeeAppUserId) za izmjenu instrumenta radnje.");
+        public override Task DeleteAsync(int id) => throw new InvalidOperationException("Koristite DeleteAsync(id, employeeAppUserId) za brisanje instrumenta radnje.");
+        protected override IQueryable<Instrument> AddIncludes(IQueryable<Instrument> query) => query.WithInstrumentDetails();
 
         protected override IQueryable<Instrument> AddFilter(InstrumentSearchObject search, IQueryable<Instrument> query)
         {
@@ -37,19 +121,16 @@ namespace eNote.Application.Features.Instruments.Services
             if (search.InstrumentTypeId.HasValue)
                 query = query.Where(x => x.InstrumentTypeId == search.InstrumentTypeId);
 
-            if (search.MusicStoreId.HasValue)
-                query = query.Where(x => x.MusicStoreId == search.MusicStoreId);
-
             if (search.IsAvailable.HasValue)
             {
                 if (search.IsAvailable.Value)
                     query = query.Where(x => !x.InstrumentRentals.Any(x =>
-                    x.RentalStatus == InstrumentRentalStatus.Approved ||
-                    x.RentalStatus == InstrumentRentalStatus.Active));
+                        x.RentalStatus == InstrumentRentalStatus.Approved ||
+                        x.RentalStatus == InstrumentRentalStatus.Active));
                 else
                     query = query.Where(x => x.InstrumentRentals.Any(x =>
-                    x.RentalStatus == InstrumentRentalStatus.Approved ||
-                    x.RentalStatus == InstrumentRentalStatus.Active));
+                        x.RentalStatus == InstrumentRentalStatus.Approved ||
+                        x.RentalStatus == InstrumentRentalStatus.Active));
             }
 
             return query;
@@ -63,33 +144,7 @@ namespace eNote.Application.Features.Instruments.Services
             if (!existingType)
                 throw new InvalidOperationException("Vrsta instrumenta ne postoji.");
 
-            var existingShop = await _context.Set<MusicStore>()
-                .AnyAsync(x => x.Id == request.MusicStoreId);
-
-            if (!existingShop)
-                throw new InvalidOperationException("Music shop ne postoji.");
-
             await base.BeforeInsertAsync(request, entity);
-        }
-
-        public override async Task DeleteAsync(int id)
-        {
-            var instrument = await _context.Set<Instrument>()
-                .IgnoreQueryFilters()
-                .FirstOrDefaultAsync(x => x.Id == id)
-                ?? throw new KeyNotFoundException("ID nije pronađen.");
-
-            var hasBlockingRental = await _context.Set<InstrumentRental>()
-                .AnyAsync(r => r.InstrumentId == id &&
-                (r.RentalStatus == InstrumentRentalStatus.Approved ||
-                r.RentalStatus == InstrumentRentalStatus.Active));
-
-            if (hasBlockingRental)
-                throw new InvalidOperationException("Instrument se ne može obrisati jer je trenutno rezervisan ili iznajmljen.");
-
-            instrument.IsActive = false;
-
-            await _context.SaveChangesAsync();
         }
 
         protected override async Task<Instrument> AfterSaveAsync(Instrument entity)
@@ -100,7 +155,6 @@ namespace eNote.Application.Features.Instruments.Services
                 .FirstAsync(x => x.Id == entity.Id);
         }
 
-        protected override IQueryable<Instrument> AddIdFilter(IQueryable<Instrument> query)
-            => query.Where(x => x.IsActive);
+        protected override IQueryable<Instrument> AddIdFilter(IQueryable<Instrument> query) => query.Where(x => x.IsActive);
     }
 }
