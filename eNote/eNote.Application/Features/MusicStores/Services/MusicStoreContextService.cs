@@ -1,7 +1,8 @@
 ﻿using eNote.Application.Common.Persistence;
+using eNote.Application.Features.MusicStores.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
-namespace eNote.Application.Features.MusicStores.Context.Services
+namespace eNote.Application.Features.MusicStores.Services
 {
     public sealed class MusicStoreContextService(IAppDbContext context) : IMusicStoreContextService
     {

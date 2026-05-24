@@ -6,7 +6,7 @@ using eNote.Application.Common.Time;
 using eNote.Application.Features.InstrumentRentals.DTOs;
 using eNote.Application.Features.InstrumentRentals.Search;
 using eNote.Application.Features.InstrumentRentals.Services.Interfaces;
-using eNote.Application.Features.MusicStores.Context.Services;
+using eNote.Application.Features.MusicStores.Services.Interfaces;
 using eNote.Domain.Entities;
 using Mapster;
 using MapsterMapper;

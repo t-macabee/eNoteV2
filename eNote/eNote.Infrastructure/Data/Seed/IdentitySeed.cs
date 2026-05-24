@@ -2,6 +2,7 @@
 using eNote.Domain.Entities;
 using eNote.Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace eNote.Infrastructure.Data.Seed
@@ -38,6 +39,8 @@ namespace eNote.Infrastructure.Data.Seed
 
         private static async Task SeedUsers(UserManager<AppUser> userManager, ENoteContext context)
         {
+            var defaultStoreId = await EnsureDefaultStoreAsync(context);
+
             var testUsers = new[]
             {
                 //("administrator", "admin@enote.com", AppRoles.Administrator),
@@ -93,7 +96,7 @@ namespace eNote.Infrastructure.Data.Seed
 
                 await EnsureOneRoleAsync(userManager, user, role);
 
-                EnsureRoleProfile(context, user.Id, role);
+                EnsureRoleProfile(context, user.Id, role, defaultStoreId);
 
                 await context.SaveChangesAsync();
             }
@@ -128,7 +131,7 @@ namespace eNote.Infrastructure.Data.Seed
             }
         }
 
-        private static void EnsureRoleProfile(ENoteContext context, int userId, string role)
+        private static void EnsureRoleProfile(ENoteContext context, int userId, string role, int defaultStoreId)
         {
             switch (role)
             {
@@ -144,24 +147,43 @@ namespace eNote.Infrastructure.Data.Seed
 
                 case AppRoles.StoreEmployee:
                     {
-                        var store = context.MusicStores.FirstOrDefault();
+                        var employees = context.StoreEmployees
+                            .Where(x => x.AppUserId == userId)
+                            .ToList();
 
-                        if (store == null)
-                        {
-                            store = new MusicStore("Test Music Store", "09:00-17:00");
-                            context.MusicStores.Add(store);
-                            context.SaveChanges();
-                        }
-
-                        if (!context.StoreEmployees.Any(x => x.AppUserId == userId))
+                        if (employees.Count == 0)
                         {
                             context.StoreEmployees.Add(
-                                new MusicStoreEmployee(userId, store.Id, true));
+                                new MusicStoreEmployee(userId, defaultStoreId, true));
+                            break;
                         }
-                        
+
+                        // Keep exactly one active employee-store membership for predictable auth context.
+                        var activeEmployees = employees.Where(x => x.IsActive).ToList();
+                        var primary = activeEmployees.FirstOrDefault() ?? employees[0];
+                        primary.IsActive = true;
+
+                        foreach (var employee in employees.Where(x => x.Id != primary.Id))
+                            employee.IsActive = false;
+
                         break;
                     }
             }
+        }
+
+        private static async Task<int> EnsureDefaultStoreAsync(ENoteContext context)
+        {
+            var storeId = await context.MusicStores
+                .Select(x => (int?)x.Id)
+                .FirstOrDefaultAsync();
+
+            if (storeId.HasValue)
+                return storeId.Value;
+
+            var store = new MusicStore("Test Music Store", "09:00-17:00");
+            context.MusicStores.Add(store);
+            await context.SaveChangesAsync();
+            return store.Id;
         }
     }
 }

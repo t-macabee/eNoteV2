@@ -1,4 +1,4 @@
-﻿namespace eNote.Application.Features.MusicStores.Context.Services
+﻿namespace eNote.Application.Features.MusicStores.Services.Interfaces
 {
     public interface IMusicStoreContextService
     {

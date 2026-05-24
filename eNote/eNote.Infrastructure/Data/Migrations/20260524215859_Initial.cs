@@ -371,6 +371,43 @@ namespace eNote.Infrastructure.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Announcement",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Title = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: false),
+                    Content = table.Column<string>(type: "nvarchar(4000)", maxLength: 4000, nullable: false),
+                    PublishedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    CreatedById = table.Column<int>(type: "int", nullable: false),
+                    CourseId = table.Column<int>(type: "int", nullable: true),
+                    MusicStoreId = table.Column<int>(type: "int", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Announcement", x => x.Id);
+                    table.CheckConstraint("CK_Announcement_Scope", "([CourseId] IS NOT NULL AND [MusicStoreId] IS NULL) OR ([CourseId] IS NULL AND [MusicStoreId] IS NOT NULL)");
+                    table.ForeignKey(
+                        name: "FK_Announcement_AspNetUsers_CreatedById",
+                        column: x => x.CreatedById,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Announcement_Courses_CourseId",
+                        column: x => x.CourseId,
+                        principalTable: "Courses",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Announcement_MusicStores_MusicStoreId",
+                        column: x => x.MusicStoreId,
+                        principalTable: "MusicStores",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Enrollments",
                 columns: table => new
                 {
@@ -547,6 +584,26 @@ namespace eNote.Infrastructure.Data.Migrations
                 });
 
             migrationBuilder.CreateIndex(
+                name: "IX_Announcement_CourseId",
+                table: "Announcement",
+                column: "CourseId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Announcement_CreatedById",
+                table: "Announcement",
+                column: "CreatedById");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Announcement_MusicStoreId",
+                table: "Announcement",
+                column: "MusicStoreId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Announcement_PublishedAt",
+                table: "Announcement",
+                column: "PublishedAt");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_AspNetRoleClaims_RoleId",
                 table: "AspNetRoleClaims",
                 column: "RoleId");
@@ -692,6 +749,9 @@ namespace eNote.Infrastructure.Data.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropTable(
+                name: "Announcement");
+
             migrationBuilder.DropTable(
                 name: "AspNetRoleClaims");
 

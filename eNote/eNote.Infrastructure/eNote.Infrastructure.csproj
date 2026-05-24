@@ -23,4 +23,8 @@
     <ProjectReference Include="..\eNote.Domain\eNote.Domain.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Data\Migrations\" />
+  </ItemGroup>
+
 </Project>
