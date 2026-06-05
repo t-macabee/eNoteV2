@@ -1,7 +1,6 @@
 ﻿using eNote.Application.Common.DTOs;
-using eNote.Application.Features.InstrumentRentals.DTOs;
-using eNote.Application.Features.Instruments.DTOs;
-using eNote.Application.Features.Instruments.Requests;
+using eNote.Application.Features.InstrumentRentals;
+using eNote.Application.Features.Instruments;
 using eNote.Domain.Entities;
 using Mapster;
 
@@ -13,7 +12,7 @@ namespace eNote.Application.Mapping
         {
             config.NewConfig<Address, AddressDto>();
 
-            config.NewConfig<Instrument, InstrumentDto>()                
+            config.NewConfig<Instrument, InstrumentDto>()
                 .Map(dest => dest.InstrumentType, src => src.InstrumentType.Type)
                 .Map(dest => dest.MusicStore, src => src.MusicStore.StoreName)
                 .Map(dest => dest.ImagePath, src => src.ImagePath);

@@ -1,7 +1,4 @@
-﻿using eNote.Application.Features.InstrumentRentals.DTOs;
-using eNote.Application.Features.InstrumentRentals.Requests;
-
-namespace eNote.Application.Features.InstrumentRentals.Services.Interfaces
+﻿namespace eNote.Application.Features.InstrumentRentals.Services.Interfaces
 {
     public interface IRentalCommandService
     {

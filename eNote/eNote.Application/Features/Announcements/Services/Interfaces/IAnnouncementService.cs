@@ -1,7 +1,4 @@
-﻿using eNote.Application.Features.Announcements.DTOs;
-using eNote.Application.Features.Announcements.Requests;
-
-namespace eNote.Application.Features.Announcements.Services.Interfaces
+﻿namespace eNote.Application.Features.Announcements.Services.Interfaces
 {
     public interface IAnnouncementService
     {

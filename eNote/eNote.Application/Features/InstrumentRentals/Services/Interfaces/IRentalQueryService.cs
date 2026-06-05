@@ -1,11 +1,9 @@
 ﻿using eNote.Application.Common.Paging;
-using eNote.Application.Common.Services.Interfaces;
-using eNote.Application.Features.InstrumentRentals.DTOs;
 using eNote.Application.Features.InstrumentRentals.Search;
 
 namespace eNote.Application.Features.InstrumentRentals.Services.Interfaces
 {
-    public interface IRentalQueryService : IService<InstrumentRentalDto, InstrumentRentalSearchObject>
+    public interface IRentalQueryService
     {
         Task<InstrumentRentalDto> GetByIdForStudentAsync(int rentalId, int userId);
         Task<InstrumentRentalDto> GetByIdForStoreAsync(int rentalId, int userId);

@@ -5,13 +5,7 @@ namespace eNote.Application.Common.Paging
     public static class PagingExtensions
     {
         public static async Task<PagedResult<TModel>> ToPagedResultAsync<TEntity, TModel>
-            (this IQueryable<TEntity> query, 
-            int page, 
-            int pageSize, 
-            bool includeTotalCount, 
-            Func<TEntity, TModel> map,
-            Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>>? orderBy = null,
-            CancellationToken ct = default)
+            (this IQueryable<TEntity> query, int page, int pageSize, bool includeTotalCount, Func<TEntity, TModel> map, Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>>? orderBy = null, CancellationToken ct = default)
         {
             int? total = null;
 

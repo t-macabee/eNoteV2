@@ -1,6 +1,4 @@
 ﻿using eNote.Application.Common.Paging;
-using eNote.Application.Features.Instruments.DTOs;
-using eNote.Application.Features.Instruments.Requests;
 using eNote.Application.Features.Instruments.Search;
 
 namespace eNote.Application.Features.Instruments.Services.Interfaces

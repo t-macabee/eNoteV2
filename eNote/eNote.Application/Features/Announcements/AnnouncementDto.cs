@@ -1,6 +1,6 @@
-﻿using eNote.Domain.Enums;
+using eNote.Domain.Enums;
 
-namespace eNote.Application.Features.Announcements.DTOs
+namespace eNote.Application.Features.Announcements
 {
     public class AnnouncementDto
     {

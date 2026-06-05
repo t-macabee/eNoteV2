@@ -2,8 +2,6 @@
 using eNote.Application.Common.Persistence;
 using eNote.Application.Common.Queryable;
 using eNote.Application.Common.Services;
-using eNote.Application.Features.Instruments.DTOs;
-using eNote.Application.Features.Instruments.Requests;
 using eNote.Application.Features.Instruments.Search;
 using eNote.Application.Features.Instruments.Services.Interfaces;
 using eNote.Application.Features.MusicStores.Services.Interfaces;
@@ -14,8 +12,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Application.Features.Instruments.Services
 {
-    public class InstrumentService(IAppDbContext context, IMapper mapper, IMusicStoreContextService storeContext)
-        : CRUDService<InstrumentDto, InstrumentSearchObject, InstrumentCreateRequest, InstrumentUpdateRequest, Instrument>(context, mapper), IInstrumentService
+    public class InstrumentService(IAppDbContext context, IMapper mapper, IMusicStoreContextService storeContext) : EntityServiceCore<InstrumentDto, InstrumentSearchObject, Instrument>(context, mapper), IInstrumentService
     {
         private readonly IMusicStoreContextService _storeContext = storeContext;
 
@@ -23,14 +20,14 @@ namespace eNote.Application.Features.Instruments.Services
         {
             var storeId = await _storeContext.GetActiveStoreAsync(employeeAppUserId);
 
-            var query = AddIncludes(_context.Set<Instrument>().
-                AsNoTracking()
+            var query = AddIncludes(_context.Set<Instrument>()
+                .AsNoTracking()
                 .Where(x => x.MusicStoreId == storeId));
 
             query = AddIdFilter(query);
 
             var entity = await query.
-                FirstOrDefaultAsync(x => x.Id == id) 
+                FirstOrDefaultAsync(x => x.Id == id)
                 ?? throw new KeyNotFoundException("ID nije pronađen.");
 
             return MapEntityToModel(entity);
@@ -62,6 +59,7 @@ namespace eNote.Application.Features.Instruments.Services
             await _context.SaveChangesAsync();
 
             entity = await AfterSaveAsync(entity);
+
             return MapEntityToModel(entity);
         }
 
@@ -77,6 +75,7 @@ namespace eNote.Application.Features.Instruments.Services
             await _context.SaveChangesAsync();
 
             entity = await AfterSaveAsync(entity);
+
             return MapEntityToModel(entity);
         }
 
@@ -98,14 +97,10 @@ namespace eNote.Application.Features.Instruments.Services
                 throw new InvalidOperationException("Instrument se ne može obrisati jer je trenutno rezervisan ili iznajmljen.");
 
             instrument.IsActive = false;
+
             await _context.SaveChangesAsync();
         }
 
-        public override Task<InstrumentDto> GetByIdAsync(int id) => throw new InvalidOperationException("Koristite GetByIdAsync(id, employeeAppUserId) za pristup instrumentima radnje.");
-        public override Task<PagedResult<InstrumentDto>> GetPagedAsync(InstrumentSearchObject search) => throw new InvalidOperationException("Koristite GetPagedAsync(search, employeeAppUserId) za listu instrumenata radnje.");
-        public override Task<InstrumentDto> InsertAsync(InstrumentCreateRequest request) => throw new InvalidOperationException("Koristite InsertAsync(request, employeeAppUserId) za kreiranje instrumenta u radnji.");
-        public override Task<InstrumentDto> UpdateAsync(int id, InstrumentUpdateRequest request) => throw new InvalidOperationException("Koristite UpdateAsync(id, request, employeeAppUserId) za izmjenu instrumenta radnje.");
-        public override Task DeleteAsync(int id) => throw new InvalidOperationException("Koristite DeleteAsync(id, employeeAppUserId) za brisanje instrumenta radnje.");
         protected override IQueryable<Instrument> AddIncludes(IQueryable<Instrument> query) => query.WithInstrumentDetails();
 
         protected override IQueryable<Instrument> AddFilter(InstrumentSearchObject search, IQueryable<Instrument> query)
@@ -136,18 +131,18 @@ namespace eNote.Application.Features.Instruments.Services
             return query;
         }
 
-        protected override async Task BeforeInsertAsync(InstrumentCreateRequest request, Instrument entity)
+        protected virtual Task BeforeUpdateAsync(InstrumentUpdateRequest request, Instrument entity) => Task.CompletedTask;
+
+        protected virtual async Task BeforeInsertAsync(InstrumentCreateRequest request, Instrument entity)
         {
             var existingType = await _context.Set<InstrumentType>()
                 .AnyAsync(x => x.Id == request.InstrumentTypeId);
 
             if (!existingType)
                 throw new InvalidOperationException("Vrsta instrumenta ne postoji.");
-
-            await base.BeforeInsertAsync(request, entity);
         }
 
-        protected override async Task<Instrument> AfterSaveAsync(Instrument entity)
+        protected virtual async Task<Instrument> AfterSaveAsync(Instrument entity)
         {
             return await _context.Set<Instrument>()
                 .AsNoTracking()

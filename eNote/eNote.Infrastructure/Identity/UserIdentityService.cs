@@ -1,5 +1,5 @@
 ﻿using eNote.Application.Common.DTOs;
-using eNote.Application.Features.Users.DTOs;
+using eNote.Application.Features.Users;
 using eNote.Application.Features.Users.Services.Interfaces;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;

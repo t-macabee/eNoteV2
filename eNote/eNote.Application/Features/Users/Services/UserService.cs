@@ -1,6 +1,5 @@
 ﻿using eNote.Application.Common.Persistence;
 using eNote.Application.Constants;
-using eNote.Application.Features.Users.DTOs;
 using eNote.Application.Features.Users.Profiles;
 using eNote.Application.Features.Users.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -41,7 +40,7 @@ namespace eNote.Application.Features.Users.Services
         {
             var student = await _context.Students
                 .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.AppUserId == userId) 
+                .FirstOrDefaultAsync(x => x.AppUserId == userId)
                 ?? throw new InvalidOperationException("Student profil nije pronađen.");
 
             return new StudentProfile(
@@ -73,7 +72,7 @@ namespace eNote.Application.Features.Users.Services
             var employee = await _context.StoreEmployees
                 .AsNoTracking()
                 .FirstOrDefaultAsync(x => x.AppUserId == userId && x.IsActive)
-                ?? throw new InvalidOperationException("Profil uposlenika radnje nije pronađen."); 
+                ?? throw new InvalidOperationException("Profil uposlenika radnje nije pronađen.");
 
             var shop = await _context.MusicStores
                 .AsNoTracking()

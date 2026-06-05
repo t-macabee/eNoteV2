@@ -1,6 +1,4 @@
-﻿using eNote.Application.Features.Users.DTOs;
-
-namespace eNote.Application.Features.Users.Services.Interfaces
+﻿namespace eNote.Application.Features.Users.Services.Interfaces
 {
     public interface IUserService
     {

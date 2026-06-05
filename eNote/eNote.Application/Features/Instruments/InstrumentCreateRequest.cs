@@ -1,4 +1,4 @@
-﻿namespace eNote.Application.Features.Instruments.Requests
+namespace eNote.Application.Features.Instruments
 {
     public class InstrumentCreateRequest
     {

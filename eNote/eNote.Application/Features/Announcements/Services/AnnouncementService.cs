@@ -1,7 +1,5 @@
 ﻿using eNote.Application.Common.Persistence;
 using eNote.Application.Common.Time;
-using eNote.Application.Features.Announcements.DTOs;
-using eNote.Application.Features.Announcements.Requests;
 using eNote.Application.Features.Announcements.Services.Interfaces;
 using eNote.Application.Features.MusicStores.Services.Interfaces;
 using eNote.Domain.Entities;
@@ -61,7 +59,7 @@ namespace eNote.Application.Features.Announcements.Services
                 .Take(50)
                 .ToListAsync();
 
-            return items.Select(MapToDto).ToList();
+            return [.. items.Select(MapToDto)];
         }
 
         public async Task<AnnouncementDto> CreateForCourseAsync(int userId, int courseId, AnnouncementCreateRequest request)
@@ -95,7 +93,7 @@ namespace eNote.Application.Features.Announcements.Services
                 .OrderByDescending(a => a.PublishedAt)
                 .ToListAsync();
 
-            return items.Select(MapToDto).ToList();
+            return [.. items.Select(MapToDto)];
         }
 
         public async Task<AnnouncementDto> CreateForStoreAsync(int userId, AnnouncementCreateRequest request)
@@ -129,7 +127,7 @@ namespace eNote.Application.Features.Announcements.Services
                 .OrderByDescending(a => a.PublishedAt)
                 .ToListAsync();
 
-            return items.Select(MapToDto).ToList();
+            return [.. items.Select(MapToDto)];
         }
 
         private async Task EnsureInstructorOwnsCourseAsync(int userId, int courseId)

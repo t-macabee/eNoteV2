@@ -1,8 +1,6 @@
 using eNote.Application.Common.Persistence;
 using eNote.Application.Common.Queryable;
 using eNote.Application.Common.Time;
-using eNote.Application.Features.InstrumentRentals.DTOs;
-using eNote.Application.Features.InstrumentRentals.Requests;
 using eNote.Application.Features.InstrumentRentals.Services.Interfaces;
 using eNote.Application.Features.MusicStores.Services.Interfaces;
 using eNote.Domain.Entities;

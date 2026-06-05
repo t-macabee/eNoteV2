@@ -1,7 +1,4 @@
-﻿using eNote.Application.Features.Auth.DTOs;
-using eNote.Application.Features.Auth.Requests;
-
-namespace eNote.Application.Features.Auth.Services.Interfaces
+﻿namespace eNote.Application.Features.Auth.Services.Interfaces
 {
     public interface IAuthService
     {

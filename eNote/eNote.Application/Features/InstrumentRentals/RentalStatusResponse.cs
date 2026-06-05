@@ -1,4 +1,4 @@
-﻿namespace eNote.Application.Features.InstrumentRentals.Requests
+namespace eNote.Application.Features.InstrumentRentals
 {
     public class RentalStatusResponse
     {

@@ -1,4 +1,4 @@
-﻿namespace eNote.Application.Features.Instruments.DTOs
+namespace eNote.Application.Features.Instruments
 {
     public class InstrumentDto
     {

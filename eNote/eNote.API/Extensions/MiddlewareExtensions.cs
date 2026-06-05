@@ -20,6 +20,7 @@ namespace eNote.API.Extensions
                         KeyNotFoundException => StatusCodes.Status404NotFound,
                         UnauthorizedAccessException => StatusCodes.Status401Unauthorized,
                         ArgumentException => StatusCodes.Status400BadRequest,
+                        InvalidOperationException => StatusCodes.Status400BadRequest,
                         _ => StatusCodes.Status500InternalServerError
                     };
 

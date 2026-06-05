@@ -9,8 +9,6 @@
         public int Count => Items.Count;
         public int? TotalCount { get; init; }
 
-        public int? TotalPages => TotalCount.HasValue && PageSize > 0
-                ? (int)Math.Ceiling((double)TotalCount / PageSize) 
-                : null;
+        public int? TotalPages => TotalCount.HasValue && PageSize > 0 ? (int)Math.Ceiling((double)TotalCount / PageSize) : null;
     }
 }

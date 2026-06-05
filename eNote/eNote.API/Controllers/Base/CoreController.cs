@@ -1,10 +1,12 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 
 namespace eNote.API.Controllers.Base
 {
     [ApiController]
+    [Authorize]
     public abstract class CoreController : ControllerBase
     {
         protected int CurrentUserId

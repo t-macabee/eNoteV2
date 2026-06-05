@@ -1,63 +1,15 @@
-﻿using eNote.Application.Features.InstrumentRentals.DTOs;
-using eNote.Domain.Entities;
+﻿using eNote.Domain.Entities;
 using eNote.Domain.Enums;
 
 namespace eNote.Application.Features.InstrumentRentals.Services
 {
     public static class RentalBilling
     {
-        public readonly record struct BillingResult(int? MonthsCharged, int? DaysCharged, decimal? DailyFee, decimal? TotalFee, bool IsProrated);
-
-        public static BillingResult Calculate(InstrumentRental rental, DateTime nowUtc)
-        { 
-            if(!rental.PickedUpAt.HasValue)
-                return new BillingResult(null, null, null, null, false);
-
-            if (rental.RentalStatus is not (InstrumentRentalStatus.Active or InstrumentRentalStatus.Completed or InstrumentRentalStatus.ReturnedEarly))
-            {
-                return new BillingResult(null, null, null, null, false);
-            }
-
-            var start = rental.PickedUpAt.Value;
-            var end = rental.ReturnedAt ?? nowUtc;
-
-            if(end < start) 
-                end = start;
-
-            var totalDays = (end - start).TotalDays;
-            var daysCharged = (int)Math.Ceiling(totalDays);
-
-            if(daysCharged < 1)
-                daysCharged = 1;
-
-            var monthlyFee = rental.Fee;
-
-            if (rental.RentalStatus == InstrumentRentalStatus.ReturnedEarly)
-            {
-                var dailyFee = monthlyFee / 30m;
-                var prorated = daysCharged * dailyFee;
-                var totalFee = prorated > monthlyFee ? monthlyFee : prorated;
-
-                return new BillingResult(
-                    MonthsCharged: null, DaysCharged: daysCharged, DailyFee: decimal.Round(dailyFee, 2), TotalFee: decimal.Round(totalFee, 2), IsProrated: true
-                );
-            }
-
-            var monthsCharged = (int)Math.Ceiling((end - start).TotalDays / 30.0);
-
-            if(monthsCharged < 1) 
-                monthsCharged = 1;
-
-            return new BillingResult(
-                MonthsCharged: monthsCharged, DaysCharged: null, DailyFee: null, TotalFee: monthsCharged * monthlyFee, IsProrated: false
-            );
-        }
-
         public static void ApplyBilling(InstrumentRental rental, InstrumentRentalDto dto, DateTime nowUtc)
         {
             dto.Fee = rental.Fee;
 
-            var result = Calculate(rental, nowUtc);
+            var result = Calculate(rental.Fee, rental.PickedUpAt, rental.ReturnedAt, rental.RentalStatus, nowUtc);
 
             dto.MonthsCharged = result.MonthsCharged;
             dto.DaysCharged = result.DaysCharged;
@@ -66,54 +18,38 @@ namespace eNote.Application.Features.InstrumentRentals.Services
             dto.TotalFee = result.TotalFee;
         }
 
-        public static void ApplyBillingFromDto(InstrumentRentalDto dto, DateTime nowUtc)
+        private static BillingResult Calculate(decimal fee, DateTime? pickedUpAt, DateTime? returnedAt, InstrumentRentalStatus status, DateTime nowUtc)
         {
-            if (!dto.PickedUpAt.HasValue)
-            {
-                dto.MonthsCharged = null;
-                dto.DaysCharged = null;
-                dto.DailyFee = null;
-                dto.IsProrated = false;
-                dto.TotalFee = null;
-                return;
-            }
+            if (!pickedUpAt.HasValue)
+                return new BillingResult(null, null, null, null, false);
 
-            if (dto.RentalStatus is not (InstrumentRentalStatus.Active or InstrumentRentalStatus.Completed or InstrumentRentalStatus.ReturnedEarly))
-            {
-                dto.MonthsCharged = null;
-                dto.DaysCharged = null;
-                dto.DailyFee = null;
-                dto.IsProrated = false;
-                dto.TotalFee = null;
-                return;
-            }
+            if (status is not (InstrumentRentalStatus.Active or InstrumentRentalStatus.Completed or InstrumentRentalStatus.ReturnedEarly))
+                return new BillingResult(null, null, null, null, false);
 
-            var start = dto.PickedUpAt.Value;
-            var end = dto.ReturnedAt ?? nowUtc;
+            var start = pickedUpAt.Value;
+            var end = returnedAt ?? nowUtc;
 
             if (end < start)
                 end = start;
 
-            var totalDays = (end - start).TotalDays;
-            var daysCharged = (int)Math.Ceiling(totalDays);
+            var daysCharged = (int)Math.Ceiling((end - start).TotalDays);
 
             if (daysCharged < 1)
                 daysCharged = 1;
 
-            var monthlyFee = dto.Fee;
-
-            if (dto.RentalStatus == InstrumentRentalStatus.ReturnedEarly)
+            if (status == InstrumentRentalStatus.ReturnedEarly)
             {
-                var dailyFee = monthlyFee / 30m;
+                var dailyFee = fee / 30m;
                 var prorated = daysCharged * dailyFee;
-                var totalFee = prorated > monthlyFee ? monthlyFee : prorated;
+                var totalFee = prorated > fee ? fee : prorated;
 
-                dto.MonthsCharged = null;
-                dto.DaysCharged = daysCharged;
-                dto.DailyFee = decimal.Round(dailyFee, 2);
-                dto.IsProrated = true;
-                dto.TotalFee = decimal.Round(totalFee, 2);
-                return;
+                return new BillingResult(
+                    MonthsCharged: null,
+                    DaysCharged: daysCharged,
+                    DailyFee: decimal.Round(dailyFee, 2),
+                    TotalFee: decimal.Round(totalFee, 2),
+                    IsProrated: true
+                );
             }
 
             var monthsCharged = (int)Math.Ceiling((end - start).TotalDays / 30.0);
@@ -121,11 +57,15 @@ namespace eNote.Application.Features.InstrumentRentals.Services
             if (monthsCharged < 1)
                 monthsCharged = 1;
 
-            dto.MonthsCharged = monthsCharged;
-            dto.DaysCharged = null;
-            dto.DailyFee = null;
-            dto.IsProrated = false;
-            dto.TotalFee = monthsCharged * monthlyFee;
+            return new BillingResult(
+                MonthsCharged: monthsCharged,
+                DaysCharged: null,
+                DailyFee: null,
+                TotalFee: monthsCharged * fee,
+                IsProrated: false
+            );
         }
+
+        private readonly record struct BillingResult(int? MonthsCharged, int? DaysCharged, decimal? DailyFee, decimal? TotalFee, bool IsProrated);
     }
 }

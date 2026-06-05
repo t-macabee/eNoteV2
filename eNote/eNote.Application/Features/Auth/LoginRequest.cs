@@ -1,6 +1,6 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
-namespace eNote.Application.Features.Auth.Requests
+namespace eNote.Application.Features.Auth
 {
     public class LoginRequest
     {

@@ -1,6 +1,5 @@
-﻿using eNote.Application.Features.Auth.DTOs;
+﻿using eNote.Application.Features.Auth;
 using eNote.Application.Features.Auth.Services.Interfaces;
-using eNote.Application.Features.Auth.Requests;
 using Microsoft.AspNetCore.Identity;
 
 namespace eNote.Infrastructure.Identity

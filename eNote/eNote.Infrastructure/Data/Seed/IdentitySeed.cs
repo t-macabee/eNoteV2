@@ -157,8 +157,7 @@ namespace eNote.Infrastructure.Data.Seed
                                 new MusicStoreEmployee(userId, defaultStoreId, true));
                             break;
                         }
-
-                        // Keep exactly one active employee-store membership for predictable auth context.
+                        
                         var activeEmployees = employees.Where(x => x.IsActive).ToList();
                         var primary = activeEmployees.FirstOrDefault() ?? employees[0];
                         primary.IsActive = true;

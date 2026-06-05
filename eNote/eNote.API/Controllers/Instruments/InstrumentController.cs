@@ -1,15 +1,12 @@
 ﻿using eNote.API.Controllers.Base;
 using eNote.Application.Common.Paging;
-using eNote.Application.Features.Instruments.DTOs;
-using eNote.Application.Features.Instruments.Requests;
+using eNote.Application.Features.Instruments;
 using eNote.Application.Features.Instruments.Search;
 using eNote.Application.Features.Instruments.Services.Interfaces;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace eNote.API.Controllers.Instruments
 {
-    [Authorize]
     [Route("api/instruments")]
     public sealed class InstrumentController(IInstrumentService instrumentService) : CoreController
     {
