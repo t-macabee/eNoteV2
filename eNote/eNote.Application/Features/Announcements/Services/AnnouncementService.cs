@@ -1,4 +1,5 @@
-﻿using eNote.Application.Common.Persistence;
+﻿using eNote.Application.Common.Exceptions;
+using eNote.Application.Common.Persistence;
 using eNote.Application.Common.Time;
 using eNote.Application.Features.Announcements.Services.Interfaces;
 using eNote.Application.Features.MusicStores.Services.Interfaces;
@@ -33,7 +34,7 @@ namespace eNote.Application.Features.Announcements.Services
                 .SingleOrDefaultAsync();
 
             if (studentId == 0)
-                throw new InvalidOperationException("Student profil nije pronađen.");
+                throw new BusinessException("Student profil nije pronađen.");
 
             var enrolledCourseIds = await _context.Set<Enrollment>()
                 .AsNoTracking()
@@ -137,7 +138,7 @@ namespace eNote.Application.Features.Announcements.Services
                 .AnyAsync(c => c.Id == courseId && c.Instructor.AppUserId == userId);
 
             if (!ownsCourse)
-                throw new UnauthorizedAccessException("Nemate pravo objavljivati obavijesti za ovaj kurs.");
+                throw new BusinessException("Nemate pravo objavljivati obavijesti za ovaj kurs.");
         }
 
         private async Task<AnnouncementDto> LoadDtoAsync(int announcementId)
@@ -147,7 +148,7 @@ namespace eNote.Application.Features.Announcements.Services
                 .Include(a => a.Course)
                 .Include(a => a.MusicStore)
                 .FirstOrDefaultAsync(a => a.Id == announcementId)
-                ?? throw new KeyNotFoundException("Obavijest nije pronađena.");
+                ?? throw new NotFoundException("Obavijest nije pronađena.");
 
             return MapToDto(entity);
         }

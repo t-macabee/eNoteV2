@@ -1,4 +1,5 @@
-﻿using eNote.Application.Common.Paging;
+﻿using eNote.Application.Common.Exceptions;
+using eNote.Application.Common.Paging;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Common.Queryable;
 using eNote.Application.Common.Services;
@@ -45,7 +46,7 @@ namespace eNote.Application.Features.InstrumentRentals.Services
                 .AsNoTracking()
                 .WithRentalDetails()
                 .FirstOrDefaultAsync(x => x.Id == rentalId && x.StudentProfile.AppUserId == userId)
-                ?? throw new KeyNotFoundException("ID nije pronađen");
+                ?? throw new NotFoundException("ID nije pronađen");
 
             return MapEntityToModel(entity);
         }
@@ -58,7 +59,7 @@ namespace eNote.Application.Features.InstrumentRentals.Services
                 .AsNoTracking()
                 .WithRentalDetails()
                 .FirstOrDefaultAsync(x => x.Id == rentalId && x.Instrument.MusicStoreId == storeId)
-                ?? throw new KeyNotFoundException("ID nije pronađen");
+                ?? throw new NotFoundException("ID nije pronađen");
 
             return MapEntityToModel(entity);
         }

@@ -1,3 +1,4 @@
+using eNote.Application.Common.Exceptions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 
@@ -11,6 +12,10 @@ namespace eNote.API.Filters
 
             var status = exception switch
             {
+                NotFoundException => StatusCodes.Status404NotFound,
+                ConflictException => StatusCodes.Status409Conflict,
+                BusinessException => StatusCodes.Status400BadRequest,
+                AuthorizationException => StatusCodes.Status403Forbidden,
                 KeyNotFoundException => StatusCodes.Status404NotFound,
                 UnauthorizedAccessException => StatusCodes.Status401Unauthorized,
                 ArgumentException => StatusCodes.Status400BadRequest,

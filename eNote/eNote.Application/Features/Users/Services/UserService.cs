@@ -1,4 +1,5 @@
-﻿using eNote.Application.Common.Persistence;
+﻿using eNote.Application.Common.Exceptions;
+using eNote.Application.Common.Persistence;
 using eNote.Application.Constants;
 using eNote.Application.Features.Users.Profiles;
 using eNote.Application.Features.Users.Services.Interfaces;
@@ -21,7 +22,7 @@ namespace eNote.Application.Features.Users.Services
             var roles = await _identity.GetRolesAsync(userId);
 
             if (roles.Count != 1)
-                throw new InvalidOperationException("Korisnik mora imati tačno jednu ulogu.");
+                throw new BusinessException("Korisnik mora imati tačno jednu ulogu.");
 
             var role = roles[0];
 
@@ -30,7 +31,7 @@ namespace eNote.Application.Features.Users.Services
                 AppRoles.Student => await BuildStudentProfile(userId, user),
                 AppRoles.Instructor => await BuildInstructorProfile(userId, user),
                 AppRoles.StoreEmployee => await BuildMusicStoreProfile(userId, user),
-                _ => throw new InvalidOperationException("Nepoznata uloga.")
+                _ => throw new BusinessException("Nepoznata uloga.")
             };
 
             return new UserProfileResponse(role, profile);
@@ -41,7 +42,7 @@ namespace eNote.Application.Features.Users.Services
             var student = await _context.Students
                 .AsNoTracking()
                 .FirstOrDefaultAsync(x => x.AppUserId == userId)
-                ?? throw new InvalidOperationException("Student profil nije pronađen.");
+                ?? throw new BusinessException("Student profil nije pronađen.");
 
             return new StudentProfile(
                 student.Id,
@@ -58,7 +59,7 @@ namespace eNote.Application.Features.Users.Services
             var instructor = await _context.Instructors
                 .AsNoTracking()
                 .FirstOrDefaultAsync(x => x.AppUserId == userId)
-                ?? throw new InvalidOperationException("Instruktor profil nije pronađen.");
+                ?? throw new BusinessException("Instruktor profil nije pronađen.");
 
             return new InstructorProfile(
                 instructor.Id,
@@ -72,12 +73,12 @@ namespace eNote.Application.Features.Users.Services
             var employee = await _context.StoreEmployees
                 .AsNoTracking()
                 .FirstOrDefaultAsync(x => x.AppUserId == userId && x.IsActive)
-                ?? throw new InvalidOperationException("Profil uposlenika radnje nije pronađen.");
+                ?? throw new BusinessException("Profil uposlenika radnje nije pronađen.");
 
             var shop = await _context.MusicStores
                 .AsNoTracking()
                 .FirstOrDefaultAsync(x => x.Id == employee.MusicStoreId)
-                ?? throw new InvalidOperationException("Radnja nije pronađena.");
+                ?? throw new BusinessException("Radnja nije pronađena.");
 
             return new MusicStoreProfile(
                 shop.Id,

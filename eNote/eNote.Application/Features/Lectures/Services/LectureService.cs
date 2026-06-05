@@ -2,19 +2,21 @@ using eNote.Application.Common.Paging;
 using eNote.Application.Common.Persistence;
 using eNote.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace eNote.Application.Features.Lectures.Services
 {
-    public class LectureService(IAppDbContext context) : ILectureService
+    public class LectureService(IAppDbContext context, Microsoft.Extensions.Logging.ILogger<LectureService> logger) : ILectureService
     {
         private readonly IAppDbContext _context = context;
+        private readonly Microsoft.Extensions.Logging.ILogger<LectureService> _logger = logger;
 
         public async Task<LectureDto> GetByIdAsync(int id, int requesterId)
         {
             var entity = await _context.Set<Lecture>()
                 .Include(x => x.Attendances)
                 .FirstOrDefaultAsync(x => x.Id == id)
-                ?? throw new KeyNotFoundException("Lecture not found");
+                ?? throw new eNote.Application.Common.Exceptions.NotFoundException("Lecture not found");
 
             return Map(entity);
         }
@@ -46,9 +48,7 @@ namespace eNote.Application.Features.Lectures.Services
 
             if (courseId != 0)
             {
-                var course = await _context.Set<Course>().FirstOrDefaultAsync(c => c.Id == courseId && c.Instructor.AppUserId == teacherId);
-                if (course == null)
-                    throw new UnauthorizedAccessException("You don't own the course specified.");
+                var course = await _context.Set<Course>().FirstOrDefaultAsync(c => c.Id == courseId && c.Instructor.AppUserId == teacherId) ?? throw new UnauthorizedAccessException("You don't own the course specified.");
             }
 
             var entity = new Lecture
@@ -77,9 +77,9 @@ namespace eNote.Application.Features.Lectures.Services
                 ?? throw new KeyNotFoundException("Lecture not found");
 
             if (lecture.IsCancelled)
-                throw new InvalidOperationException("Lecture is cancelled.");
+                throw new eNote.Application.Common.Exceptions.BusinessException("Lecture is cancelled.");
 
-            var student = await _context.Students.FirstOrDefaultAsync(s => s.AppUserId == studentUserId) ?? throw new InvalidOperationException("Student profile not found.");
+            var student = await _context.Students.FirstOrDefaultAsync(s => s.AppUserId == studentUserId) ?? throw new eNote.Application.Common.Exceptions.BusinessException("Student profile not found.");
 
             var existing = lecture.Attendances.FirstOrDefault(x => x.StudentId == student.Id);
 
@@ -87,7 +87,7 @@ namespace eNote.Application.Features.Lectures.Services
             {
                 var confirmedCount = lecture.Attendances.Count(a => a.AttendanceStatus == Domain.Enums.AttendanceStatus.Present);
                 if (lecture.Capacity.HasValue && confirmedCount >= lecture.Capacity.Value && (existing == null || existing.AttendanceStatus != Domain.Enums.AttendanceStatus.Present))
-                    throw new InvalidOperationException("Lecture is full.");
+                    throw new eNote.Application.Common.Exceptions.ConflictException("Lecture is full.");
 
                 if (existing == null)
                 {
@@ -100,11 +100,18 @@ namespace eNote.Application.Features.Lectures.Services
             }
             else
             {
-                if (existing != null)
-                    existing.AttendanceStatus = Domain.Enums.AttendanceStatus.Absent;
+                existing?.AttendanceStatus = Domain.Enums.AttendanceStatus.Absent;
             }
 
-            await _context.SaveChangesAsync();
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException ex)
+            {
+                _logger.LogWarning(ex, "Concurrency conflict while RSVPing for lecture {LectureId} by student user {StudentUserId}", lectureId, studentUserId);
+                throw new eNote.Application.Common.Exceptions.ConflictException("Lecture reservation conflict. Please try again.");
+            }
 
             var resp = new RsvpResponse { LectureId = lecture.Id, StudentId = student.Id, Confirmed = request.Confirm };
             return resp;

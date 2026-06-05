@@ -1,4 +1,5 @@
-﻿using eNote.Application.Constants;
+﻿using eNote.Application.Common.Exceptions;
+using eNote.Application.Constants;
 using eNote.Domain.Entities;
 using eNote.Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity;
@@ -31,7 +32,7 @@ namespace eNote.Infrastructure.Data.Seed
                     if (!result.Succeeded)
                     {
                         var errors = string.Join("; ", result.Errors.Select(e => e.Description));
-                        throw new Exception($"Greška pri kreiranju uloge {role}: {errors}");
+                        throw new BusinessException($"Greška pri kreiranju uloge {role}: {errors}");
                     }
                 }
             }
@@ -68,7 +69,7 @@ namespace eNote.Infrastructure.Data.Seed
                     if (!createResult.Succeeded)
                     {
                         var errors = string.Join("; ", createResult.Errors.Select(e => e.Description));
-                        throw new Exception($"Error creating user {username}: {errors}");
+                        throw new BusinessException($"Error creating user {username}: {errors}");
                     }
                 }
                 else
@@ -90,7 +91,7 @@ namespace eNote.Infrastructure.Data.Seed
                     if (!updateResult.Succeeded)
                     {
                         var errors = string.Join("; ", updateResult.Errors.Select(e => e.Description));
-                        throw new Exception($"Error updating user {username}: {errors}");
+                        throw new BusinessException($"Error updating user {username}: {errors}");
                     }
                 }
 
@@ -115,7 +116,7 @@ namespace eNote.Infrastructure.Data.Seed
                 if (!removeResult.Succeeded)
                 {
                     var errors = string.Join("; ", removeResult.Errors.Select(e => e.Description));
-                    throw new Exception($"Error removing roles from {user.UserName}: {errors}");
+                    throw new BusinessException($"Error removing roles from {user.UserName}: {errors}");
                 }
             }
             
@@ -126,7 +127,7 @@ namespace eNote.Infrastructure.Data.Seed
                 if (!addResult.Succeeded)
                 {
                     var errors = string.Join("; ", addResult.Errors.Select(e => e.Description));
-                    throw new Exception($"Error assigning role {intendedRole} to {user.UserName}: {errors}");
+                    throw new BusinessException($"Error assigning role {intendedRole} to {user.UserName}: {errors}");
                 }
             }
         }

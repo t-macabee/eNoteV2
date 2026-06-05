@@ -1,3 +1,4 @@
+using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Common.Queryable;
 using eNote.Application.Common.Time;
@@ -27,10 +28,10 @@ namespace eNote.Application.Features.InstrumentRentals.Services
             var instrument = await _context.Set<Instrument>()
                 .AsNoTracking()
                 .FirstOrDefaultAsync(x => x.Id == request.InstrumentId)
-                ?? throw new KeyNotFoundException("Instrument nije pronađen.");
+                ?? throw new NotFoundException("Instrument nije pronađen.");
 
             if (!instrument.IsActive)
-                throw new InvalidOperationException("Instrument nije aktivan.");
+                throw new BusinessException("Instrument nije aktivan.");
 
             var locked = await _context.Set<InstrumentRental>().
                 AnyAsync(x => x.InstrumentId == request.InstrumentId &&
@@ -38,7 +39,7 @@ namespace eNote.Application.Features.InstrumentRentals.Services
                      x.RentalStatus == InstrumentRentalStatus.Active));
 
             if (locked)
-                throw new InvalidOperationException("Instrument je rezervisan ili već iznajmljen.");
+                throw new BusinessException("Instrument je rezervisan ili već iznajmljen.");
 
             var alreadyPending = await _context.Set<InstrumentRental>()
                 .AnyAsync(x => x.InstrumentId == request.InstrumentId
@@ -46,7 +47,7 @@ namespace eNote.Application.Features.InstrumentRentals.Services
                     && x.RentalStatus == InstrumentRentalStatus.Pending);
 
             if (alreadyPending)
-                throw new InvalidOperationException("Već imate zahtjev na čekanju za ovaj instrument.");
+                throw new BusinessException("Već imate zahtjev na čekanju za ovaj instrument.");
 
             var rental = new InstrumentRental
             {
@@ -74,10 +75,10 @@ namespace eNote.Application.Features.InstrumentRentals.Services
             {
 
                 if (r.RentalStatus != InstrumentRentalStatus.Pending)
-                    throw new InvalidOperationException("Samo zahtjev na čekanju može biti odobren.");
+                    throw new BusinessException("Samo zahtjev na čekanju može biti odobren.");
 
                 if (!r.Instrument.IsActive)
-                    throw new InvalidOperationException("Instrument nije aktivan.");
+                    throw new BusinessException("Instrument nije aktivan.");
 
                 var conflict = await _context.Set<InstrumentRental>()
                     .AnyAsync(x => x.InstrumentId == r.InstrumentId && x.Id != r.Id &&
@@ -85,7 +86,7 @@ namespace eNote.Application.Features.InstrumentRentals.Services
                          x.RentalStatus == InstrumentRentalStatus.Active));
 
                 if (conflict)
-                    throw new InvalidOperationException("Instrument je već rezervisan ili iznajmljen.");
+                    throw new BusinessException("Instrument je već rezervisan ili iznajmljen.");
             }, applyChanges: r =>
             {
 
@@ -104,7 +105,7 @@ namespace eNote.Application.Features.InstrumentRentals.Services
             {
 
                 if (r.RentalStatus != InstrumentRentalStatus.Pending)
-                    throw new InvalidOperationException("Samo zahtjev na čekanju se može odbiti.");
+                    throw new BusinessException("Samo zahtjev na čekanju se može odbiti.");
             }, applyChanges: r =>
             {
                 r.RentalStatus = InstrumentRentalStatus.Rejected;
@@ -121,7 +122,7 @@ namespace eNote.Application.Features.InstrumentRentals.Services
                 RequireNotSet(r.PickedUpAt, "Instrument je već preuzet.");
 
                 if (!r.Instrument.IsActive)
-                    throw new InvalidOperationException("Instrument nije aktivan.");
+                    throw new BusinessException("Instrument nije aktivan.");
             },
             applyChanges: r =>
             {
@@ -156,7 +157,7 @@ namespace eNote.Application.Features.InstrumentRentals.Services
             var rental = await LoadForStudentAsync(rentalId, userId);
 
             if (rental.RentalStatus is not (InstrumentRentalStatus.Pending or InstrumentRentalStatus.Approved))
-                throw new InvalidOperationException("Samo zahtjev na čekanju ili odobren zahtjev se može otkazati.");
+                throw new BusinessException("Samo zahtjev na čekanju ili odobren zahtjev se može otkazati.");
 
             RequireNotSet(rental.PickedUpAt, "Instrument je već preuzet, otkazivanje nije moguće.");
 
@@ -176,7 +177,7 @@ namespace eNote.Application.Features.InstrumentRentals.Services
                 RequireNotSet(r.ReturnedAt, "Rental je već završen.");
 
                 if (!r.PickedUpAt.HasValue)
-                    throw new InvalidOperationException("Instrument nije preuzet.");
+                    throw new BusinessException("Instrument nije preuzet.");
             }, applyChanges: r =>
             {
                 r.ReturnedAt = _clock.UtcNow;
@@ -192,13 +193,13 @@ namespace eNote.Application.Features.InstrumentRentals.Services
             var rental = await _context.Set<InstrumentRental>()
                 .WithRentalDetails()
                 .FirstOrDefaultAsync(x => x.Id == rentalId)
-                ?? throw new KeyNotFoundException("Zahtjev nije pronađen.");
+                ?? throw new NotFoundException("Zahtjev nije pronađen.");
 
             if (rental.Instrument == null)
-                throw new InvalidOperationException("Instrument nije pronađen za ovaj zahtjev ");
+                throw new BusinessException("Instrument nije pronađen za ovaj zahtjev ");
 
             if (rental.Instrument.MusicStoreId != storeId)
-                throw new InvalidOperationException("Nemate pravo nad ovim zahtjevom.");
+                throw new BusinessException("Nemate pravo nad ovim zahtjevom.");
 
             return rental;
         }
@@ -208,10 +209,10 @@ namespace eNote.Application.Features.InstrumentRentals.Services
             var rental = await _context.Set<InstrumentRental>()
                 .WithRentalDetails()
                 .FirstOrDefaultAsync(x => x.Id == rentalId)
-                ?? throw new KeyNotFoundException("Zahtjev nije pronađen.");
+                ?? throw new NotFoundException("Zahtjev nije pronađen.");
 
             if (rental.StudentProfile.AppUserId != userId)
-                throw new InvalidOperationException("Nemate pravo nad ovim zahtjevom.");
+                throw new BusinessException("Nemate pravo nad ovim zahtjevom.");
 
             return rental;
         }
@@ -222,7 +223,7 @@ namespace eNote.Application.Features.InstrumentRentals.Services
                 .AsNoTracking()
                 .WithRentalDetails()
                 .FirstOrDefaultAsync(x => x.Id == rentalId)
-                ?? throw new KeyNotFoundException("Zahtjev nije pronađen nakon ažuriranja.");
+                ?? throw new NotFoundException("Zahtjev nije pronađen nakon ažuriranja.");
 
             var result = _mapper.Map<InstrumentRentalDto>(entity);
 
@@ -258,14 +259,14 @@ namespace eNote.Application.Features.InstrumentRentals.Services
 
         private static void RequireStatus(InstrumentRental rental, InstrumentRentalStatus expected, string message)
         {
-            if (rental.RentalStatus != expected)
-                throw new InvalidOperationException(message);
+                if (rental.RentalStatus != expected)
+                throw new BusinessException(message);
         }
 
         private static void RequireNotSet(DateTime? value, string message)
         {
             if (value.HasValue)
-                throw new InvalidOperationException(message);
+                throw new BusinessException(message);
         }
 
         private async Task SaveWithLockConflictMessageAsync(string message)
@@ -276,7 +277,7 @@ namespace eNote.Application.Features.InstrumentRentals.Services
             }
             catch (DbUpdateException)
             {
-                throw new InvalidOperationException(message);
+                throw new BusinessException(message);
             }
         }
     }

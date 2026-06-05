@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Diagnostics;
+﻿using eNote.Application.Common.Exceptions;
+using Microsoft.AspNetCore.Diagnostics;
 using System.Text.Json;
 
 namespace eNote.API.Extensions
@@ -17,10 +18,12 @@ namespace eNote.API.Extensions
 
                     context.Response.StatusCode = exception switch
                     {
-                        KeyNotFoundException => StatusCodes.Status404NotFound,
+                        NotFoundException => StatusCodes.Status404NotFound,
+                        ConflictException => StatusCodes.Status409Conflict,
+                        BusinessException => StatusCodes.Status400BadRequest,
+                        AuthorizationException => StatusCodes.Status403Forbidden,
                         UnauthorizedAccessException => StatusCodes.Status401Unauthorized,
                         ArgumentException => StatusCodes.Status400BadRequest,
-                        InvalidOperationException => StatusCodes.Status400BadRequest,
                         _ => StatusCodes.Status500InternalServerError
                     };
 

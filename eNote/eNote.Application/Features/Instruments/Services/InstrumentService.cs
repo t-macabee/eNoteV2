@@ -28,7 +28,7 @@ namespace eNote.Application.Features.Instruments.Services
 
             var entity = await query.
                 FirstOrDefaultAsync(x => x.Id == id)
-                ?? throw new KeyNotFoundException("ID nije pronađen.");
+                ?? throw new eNote.Application.Common.Exceptions.NotFoundException("ID nije pronađen.");
 
             return MapEntityToModel(entity);
         }
@@ -67,7 +67,7 @@ namespace eNote.Application.Features.Instruments.Services
         {
             var storeId = await _storeContext.GetActiveStoreAsync(employeeAppUserId);
 
-            var entity = await _context.Set<Instrument>().FirstOrDefaultAsync(x => x.Id == id && x.MusicStoreId == storeId) ?? throw new KeyNotFoundException("ID nije pronađen.");
+            var entity = await _context.Set<Instrument>().FirstOrDefaultAsync(x => x.Id == id && x.MusicStoreId == storeId) ?? throw new eNote.Application.Common.Exceptions.NotFoundException("ID nije pronađen.");
 
             _mapper.Map(request, entity);
 
@@ -86,7 +86,7 @@ namespace eNote.Application.Features.Instruments.Services
             var instrument = await _context.Set<Instrument>()
                 .IgnoreQueryFilters()
                 .FirstOrDefaultAsync(x => x.Id == id && x.MusicStoreId == storeId)
-                ?? throw new KeyNotFoundException("ID nije pronađen.");
+                ?? throw new eNote.Application.Common.Exceptions.NotFoundException("ID nije pronađen.");
 
             var hasBlockingRental = await _context.Set<InstrumentRental>()
                 .AnyAsync(r => r.InstrumentId == id &&
@@ -94,7 +94,7 @@ namespace eNote.Application.Features.Instruments.Services
                                 r.RentalStatus == InstrumentRentalStatus.Active));
 
             if (hasBlockingRental)
-                throw new InvalidOperationException("Instrument se ne može obrisati jer je trenutno rezervisan ili iznajmljen.");
+                throw new eNote.Application.Common.Exceptions.BusinessException("Instrument se ne može obrisati jer je trenutno rezervisan ili iznajmljen.");
 
             instrument.IsActive = false;
 
@@ -139,7 +139,7 @@ namespace eNote.Application.Features.Instruments.Services
                 .AnyAsync(x => x.Id == request.InstrumentTypeId);
 
             if (!existingType)
-                throw new InvalidOperationException("Vrsta instrumenta ne postoji.");
+                throw new eNote.Application.Common.Exceptions.BusinessException("Vrsta instrumenta ne postoji.");
         }
 
         protected virtual async Task<Instrument> AfterSaveAsync(Instrument entity)
