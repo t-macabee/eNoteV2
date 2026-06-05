@@ -19,6 +19,7 @@ namespace eNote.Infrastructure.Data.Configurations
                    .OnDelete(DeleteBehavior.Cascade);
 
             builder.Property(x => x.Price).HasColumnType("decimal(8,2)");
+            builder.Property(x => x.IsPublished).IsRequired().HasDefaultValue(false);
         }        
     }
 }

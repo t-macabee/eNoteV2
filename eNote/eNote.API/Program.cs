@@ -22,8 +22,10 @@ builder.Services
 builder.Services.AddScoped<HttpResponseExceptionFilter>();
 
 builder.Services
-    .AddControllers(options => options.Filters.AddService<HttpResponseExceptionFilter>())
-    .AddJsonOptions(x => x.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
+    .AddControllers(options => 
+        options.Filters.AddService<HttpResponseExceptionFilter>())
+    .AddJsonOptions(x => 
+        x.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
 builder.Services.AddMapsterMappings();
 builder.Services.AddOpenApi();

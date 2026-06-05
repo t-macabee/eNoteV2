@@ -10,6 +10,7 @@ namespace eNote.Domain.Entities
         public decimal Price { get; set; }        
         public DateTime? StartDate { get; set; }
         public DateTime? EndDate { get; set; }
+        public bool IsPublished { get; set; }
         [NotMapped]
         public int? EnrolledCount => Enrollments.Count;
 

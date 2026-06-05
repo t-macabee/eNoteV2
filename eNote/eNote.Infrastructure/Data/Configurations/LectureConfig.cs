@@ -19,6 +19,8 @@ namespace eNote.Infrastructure.Data.Configurations
             builder.Property(p => p.LectureType).HasConversion<int>();
             builder.Property(p => p.LectureStatus).HasConversion<int>();
             builder.Property(p => p.LectureTime).IsRequired();
+            builder.Property(p => p.Capacity).IsRequired(false);
+            builder.Property(p => p.IsCancelled).IsRequired().HasDefaultValue(false);
         }
     }
 }

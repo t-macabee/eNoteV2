@@ -7,6 +7,8 @@ namespace eNote.Application.Common.Persistence
     {
         DbSet<Student> Students { get; }
         DbSet<Instructor> Instructors { get; }
+        DbSet<Lecture> Lectures { get; }
+        DbSet<Attendance> Attendances { get; }
         DbSet<MusicStore> MusicStores { get; }
         DbSet<MusicStoreEmployee> StoreEmployees { get; }
 
