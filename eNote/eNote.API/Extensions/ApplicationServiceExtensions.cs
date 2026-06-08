@@ -1,23 +1,24 @@
-﻿using eNote.Application.Common.Persistence;
+﻿using eNote.API.Filters;
+using eNote.Application.Common.Persistence;
 using eNote.Application.Common.Time;
-using eNote.Application.Features.Auth.Services.Interfaces;
-using eNote.Application.Features.InstrumentRentals.Services.Interfaces;
-using eNote.Application.Features.InstrumentRentals.Services;
 using eNote.Application.Features.Announcements.Services;
 using eNote.Application.Features.Announcements.Services.Interfaces;
+using eNote.Application.Features.Auth.Services.Interfaces;
+using eNote.Application.Features.InstrumentRentals.Services;
+using eNote.Application.Features.InstrumentRentals.Services.Interfaces;
 using eNote.Application.Features.Instruments.Services;
 using eNote.Application.Features.Instruments.Services.Interfaces;
+using eNote.Application.Features.MusicStores.Services;
+using eNote.Application.Features.MusicStores.Services.Interfaces;
 using eNote.Application.Features.Users.Services;
 using eNote.Application.Features.Users.Services.Interfaces;
 using eNote.Infrastructure.Data;
 using eNote.Infrastructure.Identity;
-using eNote.Application.Features.MusicStores.Services;
-using eNote.Application.Features.MusicStores.Services.Interfaces;
 
 namespace eNote.API.Extensions
 {
     public static class ApplicationServiceExtensions
-    {       
+    {
         public static IServiceCollection AddApplicationServices(this IServiceCollection services)
         {
             services.AddSingleton<IClock, SystemClock>();
@@ -27,6 +28,7 @@ namespace eNote.API.Extensions
 
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<IUserIdentityService, UserIdentityService>();
+            services.AddScoped<HttpResponseExceptionFilter>();
 
             services.AddScoped<IInstrumentService, InstrumentService>();
             services.AddScoped<IRentalQueryService, RentalQueryService>();
@@ -38,6 +40,6 @@ namespace eNote.API.Extensions
             services.AddScoped<IMusicStoreContextService, MusicStoreContextService>();
 
             return services;
-        }       
+        }
     }
 }

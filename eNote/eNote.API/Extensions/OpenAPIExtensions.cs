@@ -21,6 +21,7 @@ namespace eNote.API.Extensions
     internal sealed class OpenApiPatcherMiddleware(RequestDelegate next)
     {
         private readonly RequestDelegate _next = next;
+        private static readonly JsonSerializerOptions _serializerOptions = new() { WriteIndented = true };
 
         public async Task InvokeAsync(HttpContext context)
         {
@@ -31,17 +32,13 @@ namespace eNote.API.Extensions
             }
 
             var originalBody = context.Response.Body;
-
             await using var mem = new MemoryStream();
 
             context.Response.Body = mem;
-
             await _next(context);
 
             mem.Seek(0, SeekOrigin.Begin);
-
             using var reader = new StreamReader(mem);
-
             var body = await reader.ReadToEndAsync();
 
             context.Response.Body = originalBody;
@@ -95,8 +92,9 @@ namespace eNote.API.Extensions
                     }
                 }
 
-                var output = JsonSerializer.Serialize(node, options: new JsonSerializerOptions { WriteIndented = true });
+                var output = JsonSerializer.Serialize(node, _serializerOptions);
                 context.Response.ContentLength = Encoding.UTF8.GetByteCount(output);
+
                 await context.Response.WriteAsync(output);
             }
             catch

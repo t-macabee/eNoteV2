@@ -1,4 +1,5 @@
-﻿using eNote.Application.Common.Paging;
+﻿using eNote.Application.Common.Exceptions;
+using eNote.Application.Common.Paging;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Common.Queryable;
 using eNote.Application.Common.Services;
@@ -28,7 +29,17 @@ namespace eNote.Application.Features.Instruments.Services
 
             var entity = await query.
                 FirstOrDefaultAsync(x => x.Id == id)
-                ?? throw new eNote.Application.Common.Exceptions.NotFoundException("ID nije pronađen.");
+                ?? throw new NotFoundException("ID nije pronađen.");
+
+            return MapEntityToModel(entity);
+        }
+
+        public async Task<InstrumentDto> GetPublicByIdAsync(int id)
+        {
+            var entity = await AddIncludes(_context.Set<Instrument>().AsNoTracking())
+                .Where(x => x.IsActive)
+                .FirstOrDefaultAsync(x => x.Id == id)
+                ?? throw new NotFoundException("ID nije pronađen.");
 
             return MapEntityToModel(entity);
         }
@@ -42,6 +53,25 @@ namespace eNote.Application.Features.Instruments.Services
                 .Where(x => x.MusicStoreId == storeId);
 
             query = AddIncludes(query);
+            query = AddFilter(search, query);
+
+            return await query.ToPagedResultAsync(search.Page, search.PageSize, search.IncludeTotalCount, MapEntityToModel);
+        }
+
+        public async Task<PagedResult<InstrumentDto>> GetPublicPagedAsync(InstrumentSearchObject search)
+        {
+            var query = _context.Set<Instrument>().AsNoTracking();
+
+            query = AddIncludes(query);            
+            query = query.Where(x => x.IsActive);
+
+            if (search.IsAvailable.HasValue && search.IsAvailable.Value)
+            {
+                query = query.Where(x => !x.InstrumentRentals.Any(r =>
+                    r.RentalStatus == InstrumentRentalStatus.Approved ||
+                    r.RentalStatus == InstrumentRentalStatus.Active));
+            }
+
             query = AddFilter(search, query);
 
             return await query.ToPagedResultAsync(search.Page, search.PageSize, search.IncludeTotalCount, MapEntityToModel);

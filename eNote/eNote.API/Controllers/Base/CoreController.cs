@@ -17,7 +17,7 @@ namespace eNote.API.Controllers.Base
                       ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
 
                 if (!int.TryParse(id, out var userId))
-                    throw new InvalidOperationException("Authenticated user has no valid user id claim.");
+                    throw new eNote.Application.Common.Exceptions.AuthenticationException("Authenticated user has no valid user id claim.");
 
                 return userId;
             }

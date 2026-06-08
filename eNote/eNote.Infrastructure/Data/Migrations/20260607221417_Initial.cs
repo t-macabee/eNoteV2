@@ -324,6 +324,7 @@ namespace eNote.Infrastructure.Data.Migrations
                     Price = table.Column<decimal>(type: "decimal(8,2)", nullable: false),
                     StartDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     EndDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    IsPublished = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
                     InstructorId = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
@@ -446,6 +447,9 @@ namespace eNote.Infrastructure.Data.Migrations
                     LectureTime = table.Column<DateTime>(type: "datetime2", nullable: false),
                     LectureType = table.Column<int>(type: "int", nullable: false),
                     LectureStatus = table.Column<int>(type: "int", nullable: false),
+                    Capacity = table.Column<int>(type: "int", nullable: true),
+                    IsCancelled = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
+                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: true),
                     CourseId = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
