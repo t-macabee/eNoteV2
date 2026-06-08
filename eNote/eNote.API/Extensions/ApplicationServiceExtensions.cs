@@ -4,10 +4,12 @@ using eNote.Application.Common.Time;
 using eNote.Application.Features.Announcements.Services;
 using eNote.Application.Features.Announcements.Services.Interfaces;
 using eNote.Application.Features.Auth.Services.Interfaces;
+using eNote.Application.Features.Courses.Services;
 using eNote.Application.Features.InstrumentRentals.Services;
 using eNote.Application.Features.InstrumentRentals.Services.Interfaces;
 using eNote.Application.Features.Instruments.Services;
 using eNote.Application.Features.Instruments.Services.Interfaces;
+using eNote.Application.Features.Lectures.Services;
 using eNote.Application.Features.MusicStores.Services;
 using eNote.Application.Features.MusicStores.Services.Interfaces;
 using eNote.Application.Features.Users.Services;
@@ -28,16 +30,18 @@ namespace eNote.API.Extensions
 
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<IUserIdentityService, UserIdentityService>();
-            services.AddScoped<HttpResponseExceptionFilter>();
 
             services.AddScoped<IInstrumentService, InstrumentService>();
             services.AddScoped<IRentalQueryService, RentalQueryService>();
             services.AddScoped<IRentalCommandService, RentalCommandService>();
 
             services.AddScoped<IAnnouncementService, AnnouncementService>();
+            services.AddScoped<ICourseService, CourseService>();
+            services.AddScoped<ILectureService, LectureService>();
 
             services.AddScoped<IAppDbContext>(x => x.GetRequiredService<ENoteContext>());
             services.AddScoped<IMusicStoreContextService, MusicStoreContextService>();
+            services.AddScoped<HttpResponseExceptionFilter>();
 
             return services;
         }

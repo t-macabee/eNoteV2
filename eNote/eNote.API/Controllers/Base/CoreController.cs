@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using eNote.Application.Common.Exceptions;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -17,7 +18,7 @@ namespace eNote.API.Controllers.Base
                       ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
 
                 if (!int.TryParse(id, out var userId))
-                    throw new eNote.Application.Common.Exceptions.AuthenticationException("Authenticated user has no valid user id claim.");
+                    throw new AuthenticationException("Authenticated user has no valid user id claim.");
 
                 return userId;
             }
