@@ -1,21 +1,8 @@
-﻿using eNote.API.Filters;
-using eNote.Application.Common.Persistence;
+﻿using eNote.Application.Common.Persistence;
 using eNote.Application.Common.Time;
-using eNote.Application.Features.Announcements.Services;
-using eNote.Application.Features.Announcements.Services.Interfaces;
-using eNote.Application.Features.Auth.Services.Interfaces;
-using eNote.Application.Features.Courses.Services;
-using eNote.Application.Features.InstrumentRentals.Services;
-using eNote.Application.Features.InstrumentRentals.Services.Interfaces;
-using eNote.Application.Features.Instruments.Services;
-using eNote.Application.Features.Instruments.Services.Interfaces;
-using eNote.Application.Features.Lectures.Services;
-using eNote.Application.Features.MusicStores.Services;
-using eNote.Application.Features.MusicStores.Services.Interfaces;
-using eNote.Application.Features.Users.Services;
-using eNote.Application.Features.Users.Services.Interfaces;
 using eNote.Infrastructure.Data;
 using eNote.Infrastructure.Identity;
+using Scrutor;
 
 namespace eNote.API.Extensions
 {
@@ -25,23 +12,13 @@ namespace eNote.API.Extensions
         {
             services.AddSingleton<IClock, SystemClock>();
 
-            services.AddScoped<IAuthService, AuthService>();
-            services.AddScoped<ITokenService, TokenService>();
-
-            services.AddScoped<IUserService, UserService>();
-            services.AddScoped<IUserIdentityService, UserIdentityService>();
-
-            services.AddScoped<IInstrumentService, InstrumentService>();
-            services.AddScoped<IRentalQueryService, RentalQueryService>();
-            services.AddScoped<IRentalCommandService, RentalCommandService>();
-
-            services.AddScoped<IAnnouncementService, AnnouncementService>();
-            services.AddScoped<ICourseService, CourseService>();
-            services.AddScoped<ILectureService, LectureService>();
+            services.Scan(scan => scan
+                .FromAssemblyOf<AuthService>()
+                .AddClasses(classes => classes.Where(type => type.Name.EndsWith("Service") && !type.IsAbstract))
+                .AsImplementedInterfaces()
+                .WithScopedLifetime());
 
             services.AddScoped<IAppDbContext>(x => x.GetRequiredService<ENoteContext>());
-            services.AddScoped<IMusicStoreContextService, MusicStoreContextService>();
-            services.AddScoped<HttpResponseExceptionFilter>();
 
             return services;
         }

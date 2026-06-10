@@ -19,9 +19,7 @@ namespace eNote.Infrastructure.Data.Configurations
                    .HasForeignKey(x => x.InstrumentId)
                    .OnDelete(DeleteBehavior.Cascade);
 
-            builder.Property(x => x.Fee)
-                   .HasPrecision(10, 2)  
-                   .IsRequired();
+            builder.Property(x => x.Fee).HasDecimalPrecision(10, 2).IsRequired();
 
             builder.Property(x => x.RentalStatus)
                    .HasConversion<int>();

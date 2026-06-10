@@ -1,3 +1,4 @@
+using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Paging;
 using eNote.Application.Common.Persistence;
 using eNote.Domain.Entities;
@@ -6,7 +7,7 @@ using Microsoft.Extensions.Logging;
 
 namespace eNote.Application.Features.Courses.Services
 {
-    public class CourseService(IAppDbContext context, Microsoft.Extensions.Logging.ILogger<CourseService> logger) : ICourseService
+    public class CourseService(IAppDbContext context, ILogger<CourseService> logger) : ICourseService
     {
         private readonly IAppDbContext _context = context;
         private readonly Microsoft.Extensions.Logging.ILogger<CourseService> _logger = logger;
@@ -16,7 +17,7 @@ namespace eNote.Application.Features.Courses.Services
             var entity = await _context.Set<Course>()
                 .Include(c => c.Enrollments)
                 .FirstOrDefaultAsync(c => c.Id == id)
-                ?? throw new eNote.Application.Common.Exceptions.NotFoundException("Course not found");
+                ?? throw new NotFoundException("Course not found");
 
             return Map(entity);
         }
@@ -44,8 +45,7 @@ namespace eNote.Application.Features.Courses.Services
 
         public async Task<CourseDto> CreateAsync(int instructorUserId, CourseCreateRequest request)
         {
-            var instructor = await _context.Instructors.FirstOrDefaultAsync(i => i.AppUserId == instructorUserId)
-                ?? throw new eNote.Application.Common.Exceptions.BusinessException("Instructor profile not found.");
+            var instructor = await UserProfileHelper.GetInstructorByUserIdAsync(_context, instructorUserId);
 
             _logger.LogInformation("Creating course {CourseName} by instructor user {InstructorUserId}", request.Name, instructorUserId);
 
@@ -70,11 +70,10 @@ namespace eNote.Application.Features.Courses.Services
 
         public async Task EnrollAsync(int courseId, int studentUserId)
         {
-            var student = await _context.Students.FirstOrDefaultAsync(s => s.AppUserId == studentUserId)
-                ?? throw new eNote.Application.Common.Exceptions.BusinessException("Student profile not found.");
+            var student = await UserProfileHelper.GetStudentByUserIdAsync(_context, studentUserId);
 
             var course = await _context.Set<Course>().Include(c => c.Enrollments).FirstOrDefaultAsync(c => c.Id == courseId)
-                ?? throw new eNote.Application.Common.Exceptions.NotFoundException("Course not found");
+                ?? throw new NotFoundException("Course not found");
 
             var existing = course.Enrollments.FirstOrDefault(e => e.StudentId == student.Id && e.EnrollmentStatus == Domain.Enums.EnrollmentStatus.Active);
             if (existing != null)

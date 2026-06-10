@@ -20,10 +20,7 @@ namespace eNote.Application.Features.InstrumentRentals.Services
 
         public async Task<InstrumentRentalDto> CreateRequestAsync(int userId, RentalCreateRequest request)
         {
-            var studentProfileId = await _context.Students
-                .Where(s => s.AppUserId == userId)
-                .Select(s => s.Id)
-                .SingleAsync();
+            var studentProfileId = (await UserProfileHelper.GetStudentByUserIdAsync(_context, userId)).Id;
 
             var instrument = await _context.Set<Instrument>()
                 .AsNoTracking()

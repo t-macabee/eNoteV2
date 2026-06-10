@@ -1,5 +1,6 @@
 ﻿using eNote.Application.Common.Persistence;
 using eNote.Application.Features.MusicStores.Services.Interfaces;
+using eNote.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Application.Features.MusicStores.Services
@@ -10,7 +11,7 @@ namespace eNote.Application.Features.MusicStores.Services
 
         public async Task<int> GetActiveStoreAsync(int appUserId, CancellationToken ct = default)
         {
-            var activeStore = await _context.StoreEmployees
+            var activeStore = await _context.Set<MusicStoreEmployee>()
                 .AsNoTracking()
                 .Where(x => x.AppUserId == appUserId && x.IsActive)
                 .Select(x => x.MusicStoreId)

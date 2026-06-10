@@ -8,13 +8,8 @@ namespace eNote.Infrastructure.Data.Configurations
     {
         public void Configure(EntityTypeBuilder<InstrumentType> builder)
         {
-            builder.Property(t => t.Type)
-                   .IsRequired()
-                   .HasMaxLength(100);
-
-            builder.Property(t => t.MonthlyFee)
-                   .IsRequired()
-                   .HasPrecision(18, 2);
+            builder.Property(t => t.Type).HasStringConfig(100, true);
+            builder.Property(t => t.MonthlyFee).HasDecimalPrecision(18, 2);
         }
     }
 }

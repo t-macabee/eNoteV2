@@ -13,7 +13,7 @@ namespace eNote.Infrastructure.Data.Configurations
                    .HasForeignKey(n => n.LectureId)
                    .OnDelete(DeleteBehavior.Cascade);
 
-            builder.Property(n => n.Title).IsRequired().HasMaxLength(200);
+            builder.Property(n => n.Title).HasStringConfig(200, true);
             builder.Property(n => n.Content).IsRequired();
             builder.Property(n => n.CreatedAt).IsRequired();
         }

@@ -2,7 +2,6 @@
 using eNote.Application.Common.Paging;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Common.Queryable;
-using eNote.Application.Common.Services;
 using eNote.Application.Common.Time;
 using eNote.Application.Features.InstrumentRentals.Search;
 using eNote.Application.Features.InstrumentRentals.Services.Interfaces;
@@ -13,15 +12,16 @@ using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Application.Features.InstrumentRentals.Services
 {
-    public class RentalQueryService(IAppDbContext context, IMapper mapper, IClock clock, IMusicStoreContextService storeContext)
-        : EntityServiceCore<InstrumentRentalDto, InstrumentRentalSearchObject, InstrumentRental>(context, mapper), IRentalQueryService
+    public class RentalQueryService(IAppDbContext context, IMapper mapper, IClock clock, IMusicStoreContextService storeContext) : IRentalQueryService
     {
+        private readonly IAppDbContext _context = context;
+        private readonly IMapper _mapper = mapper;
         private readonly IClock _clock = clock;
         private readonly IMusicStoreContextService _storeContext = storeContext;
 
-        protected override IQueryable<InstrumentRental> AddIncludes(IQueryable<InstrumentRental> query) => query.WithRentalDetails();
+        private IQueryable<InstrumentRental> AddIncludes(IQueryable<InstrumentRental> query) => query.WithRentalDetails();
 
-        protected override IQueryable<InstrumentRental> AddFilter(InstrumentRentalSearchObject search, IQueryable<InstrumentRental> query)
+        private IQueryable<InstrumentRental> AddFilter(InstrumentRentalSearchObject search, IQueryable<InstrumentRental> query)
         {
             if (search.InstrumentId.HasValue)
                 query = query.Where(x => x.InstrumentId == search.InstrumentId.Value);
@@ -32,7 +32,7 @@ namespace eNote.Application.Features.InstrumentRentals.Services
             return query;
         }
 
-        protected override InstrumentRentalDto MapEntityToModel(InstrumentRental entity)
+        private InstrumentRentalDto MapEntityToModel(InstrumentRental entity)
         {
             var result = _mapper.Map<InstrumentRentalDto>(entity);
             RentalBilling.ApplyBilling(entity, result, _clock.UtcNow);

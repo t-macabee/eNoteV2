@@ -1,11 +1,9 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
-
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
-
   <ItemGroup>
     <PackageReference Include="Mapster" Version="10.0.7" />
     <PackageReference Include="Microsoft.Data.SqlClient" Version="7.0.1" />
@@ -15,9 +13,7 @@
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.19.1" />
     <PackageReference Include="System.Security.Cryptography.Xml" Version="10.0.8" />
   </ItemGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\eNote.Domain\eNote.Domain.csproj" />
   </ItemGroup>
-
 </Project>

@@ -13,14 +13,14 @@ namespace eNote.Infrastructure.Data.Configurations
                    .HasForeignKey(p => p.CourseId)
                    .OnDelete(DeleteBehavior.Cascade);
 
-            builder.Property(p => p.Name).IsRequired().HasMaxLength(200);
-            builder.Property(p => p.Location).IsRequired().HasMaxLength(200);
+            builder.Property(p => p.Name).HasStringConfig(200, true);
+            builder.Property(p => p.Location).HasStringConfig(200, true);
             builder.Property(p => p.Duration).IsRequired();
             builder.Property(p => p.LectureType).HasConversion<int>();
             builder.Property(p => p.LectureStatus).HasConversion<int>();
             builder.Property(p => p.LectureTime).IsRequired();
             builder.Property(p => p.Capacity).IsRequired(false);
-            builder.Property(p => p.IsCancelled).IsRequired().HasDefaultValue(false);
+            builder.Property(p => p.IsCancelled).HasDefaultFalse();
             builder.Property(p => p.RowVersion).IsRowVersion();
         }
     }

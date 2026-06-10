@@ -8,7 +8,7 @@ namespace eNote.API.Extensions
     {
         public static WebApplication UseErrorHandling(this WebApplication app)
         {
-            app.UseExceptionHandler(errorApp =>
+            _ = app.UseExceptionHandler(errorApp =>
             {
                 errorApp.Run(async context =>
                 {
@@ -16,46 +16,39 @@ namespace eNote.API.Extensions
 
                     var exception = context.Features.Get<IExceptionHandlerFeature>()?.Error;
 
-                    context.Response.StatusCode = exception switch
+                    var (statusCode, errorCode, message) = exception switch
                     {
-                        NotFoundException => StatusCodes.Status404NotFound,
-                        ConflictException => StatusCodes.Status409Conflict,
-                        BusinessException => StatusCodes.Status400BadRequest,
-                        AuthorizationException => StatusCodes.Status403Forbidden,
-                        AuthenticationException => StatusCodes.Status401Unauthorized,
-                        ArgumentException => StatusCodes.Status400BadRequest,
-                        _ => StatusCodes.Status500InternalServerError
+                        AppException appEx => (appEx.StatusCode, appEx.ErrorCode, appEx.Message),
+                        ArgumentException => (400, "error.bad_request", exception?.Message ?? "Bad request."),
+                        _ => (500, "error.internal", "Došlo je do greške na serveru.")
                     };
 
-                    var env = app.Environment.EnvironmentName;
-                    var errorCode = (exception is IHasErrorCode coded) ? coded.Code : "error.internal";
-                    var message = env == "Development" ? exception?.Message : (exception is IHasErrorCode ? GetDefaultMessageForCode(errorCode) : "Došlo je do greške na serveru.");
+                    context.Response.StatusCode = statusCode;
 
-                    var response = new
+                    var logger = app.Services.GetService<ILogger<WebApplication>>();
+                    logger?.LogError(exception, "Unhandled exception caught by middleware");
+
+                    var response = new ErrorResponse
                     {
-                        status = context.Response.StatusCode,
-                        code = errorCode,
-                        message
+                        Status = statusCode,
+                        Code = errorCode,
+                        Message = message
                     };
 
                     await context.Response.WriteAsync(JsonSerializer.Serialize(response));
                 });
             });
-
+    
             return app;
-        }
-
-        private static string GetDefaultMessageForCode(string code)
-        {
-            return code switch
-            {
-                NotFoundException.DefaultCode => NotFoundException.DefaultMessage,
-                BusinessException.DefaultCode => BusinessException.DefaultMessage,
-                ConflictException.DefaultCode => ConflictException.DefaultMessage,
-                AuthorizationException.DefaultCode => AuthorizationException.DefaultMessage,
-                AuthenticationException.DefaultCode => AuthenticationException.DefaultMessage,
-                _ => "Došlo je do greške na serveru."
-            };
-        }
     }
+ 
+    private record ErrorResponse
+    {
+        public int Status { get; init; }
+        public string Code { get; init; } = string.Empty;
+        public string Message { get; init; } = string.Empty;
+    }
+    
+}
+
 }

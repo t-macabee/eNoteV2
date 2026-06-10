@@ -3,6 +3,7 @@ using eNote.Application.Common.Persistence;
 using eNote.Application.Constants;
 using eNote.Application.Features.Users.Profiles;
 using eNote.Application.Features.Users.Services.Interfaces;
+using eNote.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Application.Features.Users.Services
@@ -39,10 +40,7 @@ namespace eNote.Application.Features.Users.Services
 
         private async Task<StudentProfile> BuildStudentProfile(int userId, UserIdentityDto user)
         {
-            var student = await _context.Students
-                .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.AppUserId == userId)
-                ?? throw new BusinessException("Student profil nije pronađen.");
+            var student = await UserProfileHelper.GetStudentByUserIdAsync(_context, userId);
 
             return new StudentProfile(
                 student.Id,
@@ -56,10 +54,7 @@ namespace eNote.Application.Features.Users.Services
 
         private async Task<InstructorProfile> BuildInstructorProfile(int userId, UserIdentityDto user)
         {
-            var instructor = await _context.Instructors
-                .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.AppUserId == userId)
-                ?? throw new BusinessException("Instruktor profil nije pronađen.");
+            var instructor = await UserProfileHelper.GetInstructorByUserIdAsync(_context, userId);
 
             return new InstructorProfile(
                 instructor.Id,
@@ -70,12 +65,9 @@ namespace eNote.Application.Features.Users.Services
 
         private async Task<MusicStoreProfile> BuildMusicStoreProfile(int userId, UserIdentityDto user)
         {
-            var employee = await _context.StoreEmployees
-                .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.AppUserId == userId && x.IsActive)
-                ?? throw new BusinessException("Profil uposlenika radnje nije pronađen.");
+            var employee = await UserProfileHelper.GetActiveEmployeeByUserIdAsync(_context, userId);
 
-            var shop = await _context.MusicStores
+            var shop = await _context.Set<MusicStore>()
                 .AsNoTracking()
                 .FirstOrDefaultAsync(x => x.Id == employee.MusicStoreId)
                 ?? throw new BusinessException("Radnja nije pronađena.");

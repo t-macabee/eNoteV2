@@ -27,11 +27,13 @@ namespace eNote.Infrastructure.Identity
 
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
+            var expirationDays = _configuration.GetValue<int>("Jwt:ExpirationDays", 7);
+
             var token = new JwtSecurityToken(
                 issuer: _configuration["Jwt:Issuer"],
                 audience: _configuration["Jwt:Audience"],
                 claims: claims,
-                expires: DateTime.UtcNow.AddDays(7),
+                expires: DateTime.UtcNow.AddDays(expirationDays),
                 signingCredentials: creds
             );
 

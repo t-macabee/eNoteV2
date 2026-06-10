@@ -1,13 +1,5 @@
-namespace eNote.Application.Common.Exceptions
-{
-    public class ConflictException : Exception, IHasErrorCode
-    {
-        public const string DefaultMessage = "Conflict occurred.";
-        public const string DefaultCode = "error.conflict";
+namespace eNote.Application.Common.Exceptions;
 
-        public string Code => DefaultCode;
-
-        public ConflictException() : base(DefaultMessage) { }
-        public ConflictException(string message) : base(message) { }
-    }
+public class ConflictException(string? message = null) : AppException(409, "error.conflict", message)
+{  
 }

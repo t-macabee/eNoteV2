@@ -79,7 +79,7 @@ namespace eNote.Application.Features.Lectures.Services
             if (lecture.IsCancelled)
                 throw new eNote.Application.Common.Exceptions.BusinessException("Lecture is cancelled.");
 
-            var student = await _context.Students.FirstOrDefaultAsync(s => s.AppUserId == studentUserId) ?? throw new eNote.Application.Common.Exceptions.BusinessException("Student profile not found.");
+            var student = await UserProfileHelper.GetStudentByUserIdAsync(_context, studentUserId);
 
             var existing = lecture.Attendances.FirstOrDefault(x => x.StudentId == student.Id);
 

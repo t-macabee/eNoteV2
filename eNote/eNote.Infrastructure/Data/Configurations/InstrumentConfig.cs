@@ -18,8 +18,8 @@ namespace eNote.Infrastructure.Data.Configurations
                    .HasForeignKey(x => x.InstrumentTypeId)
                    .OnDelete(DeleteBehavior.Restrict);
                                   
-            builder.Property(x => x.Model).IsRequired().HasMaxLength(100);
-            builder.Property(x => x.Manufacturer).IsRequired().HasMaxLength(100);
+            builder.Property(x => x.Model).HasStringConfig(100, true);
+            builder.Property(x => x.Manufacturer).HasStringConfig(100, true);
             builder.Property(x => x.Description).HasMaxLength(1000);
 
             builder.Ignore(x => x.IsAvailable);

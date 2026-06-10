@@ -8,13 +8,8 @@ namespace eNote.Infrastructure.Data.Configurations
     {
         public void Configure(EntityTypeBuilder<MusicStore> builder)
         {
-            builder.Property(m => m.StoreName)
-                   .IsRequired()
-                   .HasMaxLength(100);
-
-            builder.Property(m => m.BusinessHours)
-                   .IsRequired()
-                   .HasMaxLength(50);
+            builder.Property(m => m.StoreName).HasStringConfig(100, true);
+            builder.Property(m => m.BusinessHours).HasStringConfig(50, true);
 
             builder.HasMany(x => x.Employees)
                    .WithOne(e => e.MusicStore)

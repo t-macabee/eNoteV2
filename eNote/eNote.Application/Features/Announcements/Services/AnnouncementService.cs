@@ -28,7 +28,7 @@ namespace eNote.Application.Features.Announcements.Services
 
         public async Task<IReadOnlyList<AnnouncementDto>> GetFeedForStudentAsync(int userId)
         {
-            var studentId = await _context.Students
+            var studentId = await _context.Set<Student>()
                 .Where(s => s.AppUserId == userId)
                 .Select(s => s.Id)
                 .SingleOrDefaultAsync();

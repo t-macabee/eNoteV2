@@ -2,7 +2,6 @@
 using eNote.Application.Common.Paging;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Common.Queryable;
-using eNote.Application.Common.Services;
 using eNote.Application.Features.Instruments.Search;
 using eNote.Application.Features.Instruments.Services.Interfaces;
 using eNote.Application.Features.MusicStores.Services.Interfaces;
@@ -13,9 +12,13 @@ using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Application.Features.Instruments.Services
 {
-    public class InstrumentService(IAppDbContext context, IMapper mapper, IMusicStoreContextService storeContext) : EntityServiceCore<InstrumentDto, InstrumentSearchObject, Instrument>(context, mapper), IInstrumentService
+    public class InstrumentService(IAppDbContext context, IMapper mapper, IMusicStoreContextService storeContext) : IInstrumentService
     {
+        private readonly IAppDbContext _context = context;
+        private readonly IMapper _mapper = mapper;
         private readonly IMusicStoreContextService _storeContext = storeContext;
+
+        private InstrumentDto MapEntityToModel(Instrument entity) => _mapper.Map<InstrumentDto>(entity);
 
         public async Task<InstrumentDto> GetByIdAsync(int id, int employeeAppUserId)
         {
@@ -131,9 +134,9 @@ namespace eNote.Application.Features.Instruments.Services
             await _context.SaveChangesAsync();
         }
 
-        protected override IQueryable<Instrument> AddIncludes(IQueryable<Instrument> query) => query.WithInstrumentDetails();
+        private IQueryable<Instrument> AddIncludes(IQueryable<Instrument> query) => query.WithInstrumentDetails();
 
-        protected override IQueryable<Instrument> AddFilter(InstrumentSearchObject search, IQueryable<Instrument> query)
+        private IQueryable<Instrument> AddFilter(InstrumentSearchObject search, IQueryable<Instrument> query)
         {
             query = query.Where(x => x.IsActive);
 
@@ -161,9 +164,9 @@ namespace eNote.Application.Features.Instruments.Services
             return query;
         }
 
-        protected virtual Task BeforeUpdateAsync(InstrumentUpdateRequest request, Instrument entity) => Task.CompletedTask;
+        private Task BeforeUpdateAsync(InstrumentUpdateRequest request, Instrument entity) => Task.CompletedTask;
 
-        protected virtual async Task BeforeInsertAsync(InstrumentCreateRequest request, Instrument entity)
+        private async Task BeforeInsertAsync(InstrumentCreateRequest request, Instrument entity)
         {
             var existingType = await _context.Set<InstrumentType>()
                 .AnyAsync(x => x.Id == request.InstrumentTypeId);
@@ -172,7 +175,7 @@ namespace eNote.Application.Features.Instruments.Services
                 throw new eNote.Application.Common.Exceptions.BusinessException("Vrsta instrumenta ne postoji.");
         }
 
-        protected virtual async Task<Instrument> AfterSaveAsync(Instrument entity)
+        private async Task<Instrument> AfterSaveAsync(Instrument entity)
         {
             return await _context.Set<Instrument>()
                 .AsNoTracking()
@@ -180,6 +183,6 @@ namespace eNote.Application.Features.Instruments.Services
                 .FirstAsync(x => x.Id == entity.Id);
         }
 
-        protected override IQueryable<Instrument> AddIdFilter(IQueryable<Instrument> query) => query.Where(x => x.IsActive);
+        private IQueryable<Instrument> AddIdFilter(IQueryable<Instrument> query) => query.Where(x => x.IsActive);
     }
 }

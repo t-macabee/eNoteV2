@@ -16,11 +16,14 @@ namespace eNote.Infrastructure.Data.Seed
             var userManager = serviceProvider.GetRequiredService<UserManager<AppUser>>();
             var context = serviceProvider.GetRequiredService<ENoteContext>();
 
-            await SeedRoles(roleManager);
-            await SeedUsers(userManager, context);
+            await RoleSeed.SeedRoles(roleManager);
+            await UserSeed.SeedUsers(userManager, context);
         }
+    }
 
-        private static async Task SeedRoles(RoleManager<AppRole> roleManager)
+    internal static class RoleSeed
+    {
+        public static async Task SeedRoles(RoleManager<AppRole> roleManager)
         {
             string[] roles = [AppRoles.Administrator, AppRoles.Instructor, AppRoles.Student, AppRoles.StoreEmployee];
 
@@ -37,10 +40,13 @@ namespace eNote.Infrastructure.Data.Seed
                 }
             }
         }
+    }
 
-        private static async Task SeedUsers(UserManager<AppUser> userManager, ENoteContext context)
+    internal static class UserSeed
+    {
+        public static async Task SeedUsers(UserManager<AppUser> userManager, ENoteContext context)
         {
-            var defaultStoreId = await EnsureDefaultStoreAsync(context);
+            var defaultStoreId = await StoreSeed.EnsureDefaultStoreAsync(context);
 
             var testUsers = new[]
             {
@@ -97,7 +103,7 @@ namespace eNote.Infrastructure.Data.Seed
 
                 await EnsureOneRoleAsync(userManager, user, role);
 
-                EnsureRoleProfile(context, user.Id, role, defaultStoreId);
+                ProfileSeed.EnsureRoleProfile(context, user.Id, role, defaultStoreId);
 
                 await context.SaveChangesAsync();
             }
@@ -106,7 +112,7 @@ namespace eNote.Infrastructure.Data.Seed
         private static async Task EnsureOneRoleAsync(UserManager<AppUser> userManager, AppUser user, string intendedRole)
         {
             var currentRoles = await userManager.GetRolesAsync(user);
-            
+
             var toRemove = currentRoles.Where(r => r != intendedRole).ToArray();
 
             if (toRemove.Length > 0)
@@ -119,7 +125,7 @@ namespace eNote.Infrastructure.Data.Seed
                     throw new BusinessException($"Error removing roles from {user.UserName}: {errors}");
                 }
             }
-            
+
             if (!currentRoles.Contains(intendedRole))
             {
                 var addResult = await userManager.AddToRoleAsync(user, intendedRole);
@@ -131,34 +137,37 @@ namespace eNote.Infrastructure.Data.Seed
                 }
             }
         }
+    }
 
-        private static void EnsureRoleProfile(ENoteContext context, int userId, string role, int defaultStoreId)
+    internal static class ProfileSeed
+    {
+        public static void EnsureRoleProfile(ENoteContext context, int userId, string role, int defaultStoreId)
         {
             switch (role)
             {
                 case AppRoles.Student:
-                    if (!context.Students.Any(x => x.AppUserId == userId))
-                        context.Students.Add(new Student(userId, DateTime.UtcNow.AddMonths(-3)));
+                    if (!context.Set<Student>().Any(x => x.AppUserId == userId))
+                        context.Set<Student>().Add(new Student(userId, DateTime.UtcNow.AddMonths(-3)));
                     break;
 
                 case AppRoles.Instructor:
-                    if (!context.Instructors.Any(x => x.AppUserId == userId))
-                        context.Instructors.Add(new Instructor(userId));
+                    if (!context.Set<Instructor>().Any(x => x.AppUserId == userId))
+                        context.Set<Instructor>().Add(new Instructor(userId));
                     break;
 
                 case AppRoles.StoreEmployee:
                     {
-                        var employees = context.StoreEmployees
+                        var employees = context.Set<MusicStoreEmployee>()
                             .Where(x => x.AppUserId == userId)
                             .ToList();
 
                         if (employees.Count == 0)
                         {
-                            context.StoreEmployees.Add(
+                            context.Set<MusicStoreEmployee>().Add(
                                 new MusicStoreEmployee(userId, defaultStoreId, true));
                             break;
                         }
-                        
+
                         var activeEmployees = employees.Where(x => x.IsActive).ToList();
                         var primary = activeEmployees.FirstOrDefault() ?? employees[0];
                         primary.IsActive = true;
@@ -170,10 +179,13 @@ namespace eNote.Infrastructure.Data.Seed
                     }
             }
         }
+    }
 
-        private static async Task<int> EnsureDefaultStoreAsync(ENoteContext context)
+    internal static class StoreSeed
+    {
+        public static async Task<int> EnsureDefaultStoreAsync(ENoteContext context)
         {
-            var storeId = await context.MusicStores
+            var storeId = await context.Set<MusicStore>()
                 .Select(x => (int?)x.Id)
                 .FirstOrDefaultAsync();
 
@@ -181,7 +193,7 @@ namespace eNote.Infrastructure.Data.Seed
                 return storeId.Value;
 
             var store = new MusicStore("Test Music Store", "09:00-17:00");
-            context.MusicStores.Add(store);
+            context.Set<MusicStore>().Add(store);
             await context.SaveChangesAsync();
             return store.Id;
         }

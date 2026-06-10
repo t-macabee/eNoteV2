@@ -9,8 +9,8 @@ namespace eNote.Infrastructure.Data.Configurations
     {
         public void Configure(EntityTypeBuilder<MusicStoreEmployee> builder)
         { 
-            builder.HasIndex(x => x.AppUserId).IsUnique();
-            builder.HasIndex(x => new { x.MusicStoreId, x.AppUserId}).IsUnique();
+            builder.HasUniqueIndex(nameof(MusicStoreEmployee.AppUserId));
+            builder.HasUniqueIndex(nameof(MusicStoreEmployee.MusicStoreId), nameof(MusicStoreEmployee.AppUserId));
 
             builder.Property(x => x.IsManager).IsRequired();
             builder.Property(x => x.IsActive).IsRequired();

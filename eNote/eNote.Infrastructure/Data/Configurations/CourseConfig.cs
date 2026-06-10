@@ -18,8 +18,8 @@ namespace eNote.Infrastructure.Data.Configurations
                    .HasForeignKey(x => x.CourseId)
                    .OnDelete(DeleteBehavior.Cascade);
 
-            builder.Property(x => x.Price).HasColumnType("decimal(8,2)");
-            builder.Property(x => x.IsPublished).IsRequired().HasDefaultValue(false);
+            builder.Property(x => x.Price).HasDecimalConfig();
+            builder.Property(x => x.IsPublished).HasDefaultFalse();
         }        
     }
 }

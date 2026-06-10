@@ -9,8 +9,8 @@ namespace eNote.Infrastructure.Data.Configurations
     {
         public void Configure(EntityTypeBuilder<Announcement> builder)
         {
-            builder.Property(x => x.Title).IsRequired().HasMaxLength(150);
-            builder.Property(x => x.Content).IsRequired().HasMaxLength(4000);
+            builder.Property(x => x.Title).HasStringConfig(150, true);
+            builder.Property(x => x.Content).HasStringConfig(4000, true);
 
             builder.HasOne<AppUser>()
                 .WithMany()

@@ -1,5 +1,4 @@
 using eNote.API.Extensions;
-using eNote.API.Filters;
 using eNote.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
@@ -19,10 +18,8 @@ builder.Services
     .AddAuthorization()
     .AddApplicationServices();
 
-builder.Services.AddLocalization();
-
 builder.Services
-    .AddControllers(options => options.Filters.AddService<HttpResponseExceptionFilter>())
+    .AddControllers()
     .AddJsonOptions(x => x.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
 builder.Services.AddMapsterMappings();
@@ -36,7 +33,6 @@ app.UseErrorHandling();
 
 if (app.Environment.IsDevelopment())
 {
-    app.UseOpenApiPatcher();
     app.MapOpenApi();
     app.MapScalarApiReference();
 

@@ -1,13 +1,5 @@
-namespace eNote.Application.Common.Exceptions
+namespace eNote.Application.Common.Exceptions;
+
+public class AuthorizationException(string? message = null) : AppException(403, "error.forbidden", message)
 {
-    public class AuthorizationException : Exception, IHasErrorCode
-    {
-        public const string DefaultMessage = "Forbidden.";
-        public const string DefaultCode = "error.forbidden";
-
-        public string Code => DefaultCode;
-
-        public AuthorizationException() : base(DefaultMessage) { }
-        public AuthorizationException(string message) : base(message) { }
-    }
 }

@@ -1,13 +1,5 @@
-namespace eNote.Application.Common.Exceptions
+namespace eNote.Application.Common.Exceptions;
+
+public class NotFoundException(string? message = null) : AppException(404, "error.not_found", message)
 {
-    public class NotFoundException : Exception, IHasErrorCode
-    {
-        public const string DefaultMessage = "Resource not found.";
-        public const string DefaultCode = "error.not_found";
-
-        public string Code => DefaultCode;
-
-        public NotFoundException() : base(DefaultMessage) { }
-        public NotFoundException(string message) : base(message) { }
-    }
 }
