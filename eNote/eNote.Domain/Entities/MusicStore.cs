@@ -2,7 +2,7 @@
 
 namespace eNote.Domain.Entities
 {
-    public class MusicStore : BaseEntity
+    public class MusicStore : AuditableEntity
     {        
         public string StoreName { get; set; } = null!;
         public string BusinessHours { get; set; } = null!;

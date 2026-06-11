@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace eNote.Domain.Entities
 {
-    public class Course : BaseEntity
+    public class Course : AuditableEntity
     {
         public string Name { get; set; } = null!;
         public string? Description { get; set; }

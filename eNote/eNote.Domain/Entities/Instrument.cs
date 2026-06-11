@@ -3,7 +3,7 @@ using eNote.Domain.Enums;
 
 namespace eNote.Domain.Entities
 {
-    public class Instrument : BaseEntity
+    public class Instrument : AuditableEntity
     {
         public string Model { get; set; } = null!;
         public string Manufacturer { get; set; } = null!;

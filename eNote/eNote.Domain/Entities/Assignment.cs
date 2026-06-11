@@ -2,7 +2,7 @@
 
 namespace eNote.Domain.Entities
 {
-    public class Assignment : BaseEntity
+    public class Assignment : AuditableEntity
     {
         public string Title { get; set; } = null!;
         public string Description { get; set; } = null!;

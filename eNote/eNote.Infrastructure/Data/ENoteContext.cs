@@ -4,6 +4,7 @@ using eNote.Infrastructure.Data.Seed;
 using eNote.Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace eNote.Infrastructure.Data
 {
@@ -16,6 +17,11 @@ namespace eNote.Infrastructure.Data
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(ENoteContext).Assembly);
 
             ModelBuilderSeed.Seed(modelBuilder);
-        }        
+        }
+
+        public async Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default)
+        {
+            return await Database.BeginTransactionAsync(cancellationToken);
+        }
     }
 }

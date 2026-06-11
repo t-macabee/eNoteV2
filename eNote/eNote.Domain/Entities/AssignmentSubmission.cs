@@ -2,7 +2,7 @@
 
 namespace eNote.Domain.Entities
 {
-    public class AssignmentSubmission : BaseEntity
+    public class AssignmentSubmission : AuditableEntity
     {        
         public int? Grade { get; set; }
         public DateTime? SubmittedAt { get; set; }

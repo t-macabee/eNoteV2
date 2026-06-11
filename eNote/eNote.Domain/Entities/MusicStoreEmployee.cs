@@ -2,7 +2,7 @@
 
 namespace eNote.Domain.Entities
 {
-    public class MusicStoreEmployee : BaseEntity
+    public class MusicStoreEmployee : AuditableEntity
     {
         public int AppUserId { get; set; }
         public int MusicStoreId{ get; set; }

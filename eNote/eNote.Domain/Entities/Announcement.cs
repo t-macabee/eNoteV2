@@ -2,13 +2,11 @@
 
 namespace eNote.Domain.Entities
 {
-    public class Announcement : BaseEntity
+    public class Announcement : AuditableEntity
     {
         public string Title { get; set; } = null!;
         public string Content { get; set; } = null!;
         public DateTime PublishedAt { get; set; } = DateTime.UtcNow;
-
-        public int CreatedById { get; set; }
 
         public int? CourseId { get; set; }
         public Course? Course { get; set; }

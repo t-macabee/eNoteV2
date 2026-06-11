@@ -2,7 +2,7 @@
 
 namespace eNote.Domain.Entities
 {
-    public class Instructor : BaseEntity
+    public class Instructor : AuditableEntity
     { 
         public int AppUserId { get; set; }
 

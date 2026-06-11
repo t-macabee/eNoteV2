@@ -20,169 +20,263 @@ namespace eNote.Application.Features.InstrumentRentals.Services
 
         public async Task<InstrumentRentalDto> CreateRequestAsync(int userId, RentalCreateRequest request)
         {
-            var studentProfileId = (await UserProfileHelper.GetStudentByUserIdAsync(_context, userId)).Id;
-
-            var instrument = await _context.Set<Instrument>()
-                .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.Id == request.InstrumentId)
-                ?? throw new NotFoundException("Instrument nije pronađen.");
-
-            if (!instrument.IsActive)
-                throw new BusinessException("Instrument nije aktivan.");
-
-            var locked = await _context.Set<InstrumentRental>().
-                AnyAsync(x => x.InstrumentId == request.InstrumentId &&
-                    (x.RentalStatus == InstrumentRentalStatus.Approved ||
-                     x.RentalStatus == InstrumentRentalStatus.Active));
-
-            if (locked)
-                throw new BusinessException("Instrument je rezervisan ili već iznajmljen.");
-
-            var alreadyPending = await _context.Set<InstrumentRental>()
-                .AnyAsync(x => x.InstrumentId == request.InstrumentId
-                    && x.StudentProfileId == studentProfileId
-                    && x.RentalStatus == InstrumentRentalStatus.Pending);
-
-            if (alreadyPending)
-                throw new BusinessException("Već imate zahtjev na čekanju za ovaj instrument.");
-
-            var rental = new InstrumentRental
+            using var transaction = await _context.BeginTransactionAsync();
+            try
             {
-                InstrumentId = request.InstrumentId,
-                StudentProfileId = studentProfileId,
-                Note = request.Note,
-                RequestedAt = _clock.UtcNow,
-                RentalStatus = InstrumentRentalStatus.Pending,
+                var studentProfileId = (await UserProfileHelper.GetStudentByUserIdAsync(_context, userId)).Id;
 
-                Fee = 0m,
-                ApprovedAt = null,
-                PickedUpAt = null,
-                ReturnedAt = null
-            };
+                var instrument = await _context.Set<Instrument>()
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(x => x.Id == request.InstrumentId)
+                    ?? throw new NotFoundException("Instrument nije pronađen.");
 
-            _context.Set<InstrumentRental>().Add(rental);
+                if (!instrument.IsActive)
+                    throw new BusinessException("Instrument nije aktivan.");
 
-            await _context.SaveChangesAsync();
-            return await LoadDtoAsync(rental.Id);
+                var locked = await _context.Set<InstrumentRental>().
+                    AnyAsync(x => x.InstrumentId == request.InstrumentId &&
+                        (x.RentalStatus == InstrumentRentalStatus.Approved ||
+                         x.RentalStatus == InstrumentRentalStatus.Active));
+
+                if (locked)
+                    throw new BusinessException("Instrument je rezervisan ili već iznajmljen.");
+
+                var alreadyPending = await _context.Set<InstrumentRental>()
+                    .AnyAsync(x => x.InstrumentId == request.InstrumentId
+                        && x.StudentProfileId == studentProfileId
+                        && x.RentalStatus == InstrumentRentalStatus.Pending);
+
+                if (alreadyPending)
+                    throw new BusinessException("Već imate zahtjev na čekanju za ovaj instrument.");
+
+                var rental = new InstrumentRental
+                {
+                    InstrumentId = request.InstrumentId,
+                    StudentProfileId = studentProfileId,
+                    Note = request.Note,
+                    RequestedAt = _clock.UtcNow,
+                    RentalStatus = InstrumentRentalStatus.Pending,
+
+                    Fee = 0m,
+                    ApprovedAt = null,
+                    PickedUpAt = null,
+                    ReturnedAt = null,
+                    CreatedAt = _clock.UtcNow,
+                    CreatedById = userId
+                };
+
+                _context.Set<InstrumentRental>().Add(rental);
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+                return await LoadDtoAsync(rental.Id);
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
 
         public async Task<InstrumentRentalDto> ApproveAsync(int rentalId, int userId, RentalStatusResponse response)
         {
-            return await ProcessStoreActionAsync(rentalId, userId, validateAsync: async r =>
+            using var transaction = await _context.BeginTransactionAsync();
+            try
             {
+                var result = await ProcessStoreActionAsync(rentalId, userId, validateAsync: async r =>
+                {
 
-                if (r.RentalStatus != InstrumentRentalStatus.Pending)
-                    throw new BusinessException("Samo zahtjev na čekanju može biti odobren.");
+                    if (r.RentalStatus != InstrumentRentalStatus.Pending)
+                        throw new BusinessException("Samo zahtjev na čekanju može biti odobren.");
 
-                if (!r.Instrument.IsActive)
-                    throw new BusinessException("Instrument nije aktivan.");
+                    if (!r.Instrument.IsActive)
+                        throw new BusinessException("Instrument nije aktivan.");
 
-                var conflict = await _context.Set<InstrumentRental>()
-                    .AnyAsync(x => x.InstrumentId == r.InstrumentId && x.Id != r.Id &&
-                        (x.RentalStatus == InstrumentRentalStatus.Approved ||
-                         x.RentalStatus == InstrumentRentalStatus.Active));
+                    var conflict = await _context.Set<InstrumentRental>()
+                        .AnyAsync(x => x.InstrumentId == r.InstrumentId && x.Id != r.Id &&
+                            (x.RentalStatus == InstrumentRentalStatus.Approved ||
+                             x.RentalStatus == InstrumentRentalStatus.Active));
 
-                if (conflict)
-                    throw new BusinessException("Instrument je već rezervisan ili iznajmljen.");
-            }, applyChanges: r =>
+                    if (conflict)
+                        throw new BusinessException("Instrument je već rezervisan ili iznajmljen.");
+                }, applyChanges: r =>
+                {
+
+                    r.Fee = r.Instrument.InstrumentType.MonthlyFee;
+                    r.ApprovedAt = _clock.UtcNow;
+                    r.RentalStatus = InstrumentRentalStatus.Approved;
+                    r.UpdatedAt = _clock.UtcNow;
+                    r.UpdatedById = userId;
+
+                    ApplyNote(response, r);
+                }, concurrencyMessage: "Instrument je već rezervisan ili iznajmljen."
+                );
+                
+                await transaction.CommitAsync();
+                return result;
+            }
+            catch
             {
-
-                r.Fee = r.Instrument.InstrumentType.MonthlyFee;
-                r.ApprovedAt = _clock.UtcNow;
-                r.RentalStatus = InstrumentRentalStatus.Approved;
-
-                ApplyNote(response, r);
-            }, concurrencyMessage: "Instrument je već rezervisan ili iznajmljen."
-            );
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
 
         public async Task<InstrumentRentalDto> RejectAsync(int rentalId, int userId, RentalStatusResponse response)
         {
-            return await ProcessStoreActionAsync(rentalId, userId, validateAsync: async r =>
+            using var transaction = await _context.BeginTransactionAsync();
+            try
             {
+                var result = await ProcessStoreActionAsync(rentalId, userId, validateAsync: async r =>
+                {
 
-                if (r.RentalStatus != InstrumentRentalStatus.Pending)
-                    throw new BusinessException("Samo zahtjev na čekanju se može odbiti.");
-            }, applyChanges: r =>
+                    if (r.RentalStatus != InstrumentRentalStatus.Pending)
+                        throw new BusinessException("Samo zahtjev na čekanju se može odbiti.");
+                }, applyChanges: r =>
+                {
+                    r.RentalStatus = InstrumentRentalStatus.Rejected;
+                    r.UpdatedAt = _clock.UtcNow;
+                    r.UpdatedById = userId;
+                    ApplyNote(response, r);
+                },
+                concurrencyMessage: null);
+                
+                await transaction.CommitAsync();
+                return result;
+            }
+            catch
             {
-                r.RentalStatus = InstrumentRentalStatus.Rejected;
-                ApplyNote(response, r);
-            },
-            concurrencyMessage: null);
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
 
         public async Task<InstrumentRentalDto> PickupAsync(int rentalId, int userId, RentalStatusResponse response)
         {
-            return await ProcessStoreActionAsync(rentalId, userId, validateAsync: async r =>
+            using var transaction = await _context.BeginTransactionAsync();
+            try
             {
-                RequireStatus(r, InstrumentRentalStatus.Approved, "Samo odobren rental se može preuzeti.");
-                RequireNotSet(r.PickedUpAt, "Instrument je već preuzet.");
+                var result = await ProcessStoreActionAsync(rentalId, userId, validateAsync: async r =>
+                {
+                    RequireStatus(r, InstrumentRentalStatus.Approved, "Samo odobren rental se može preuzeti.");
+                    RequireNotSet(r.PickedUpAt, "Instrument je već preuzet.");
 
-                if (!r.Instrument.IsActive)
-                    throw new BusinessException("Instrument nije aktivan.");
-            },
-            applyChanges: r =>
+                    if (!r.Instrument.IsActive)
+                        throw new BusinessException("Instrument nije aktivan.");
+                },
+                applyChanges: r =>
+                {
+                    r.PickedUpAt = _clock.UtcNow;
+                    r.RentalStatus = InstrumentRentalStatus.Active;
+                    r.UpdatedAt = _clock.UtcNow;
+                    r.UpdatedById = userId;
+
+                    ApplyNote(response, r);
+                },
+                concurrencyMessage: "Instrument je već rezervisan ili iznajmljen.");
+                
+                await transaction.CommitAsync();
+                return result;
+            }
+            catch
             {
-                r.PickedUpAt = _clock.UtcNow;
-                r.RentalStatus = InstrumentRentalStatus.Active;
-
-                ApplyNote(response, r);
-            },
-            concurrencyMessage: "Instrument je već rezervisan ili iznajmljen.");
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
 
         public async Task<InstrumentRentalDto> CompleteAsync(int rentalId, int userId, RentalStatusResponse response)
         {
-            return await ProcessStoreActionAsync(rentalId, userId,
-                validateAsync: async r =>
-                {
-                    RequireStatus(r, InstrumentRentalStatus.Active, "Samo aktivno iznajmljivanje se može završiti.");
-                    RequireNotSet(r.ReturnedAt, "Iznajmljivanje je već završeno.");
-                },
-                applyChanges: r =>
-                {
-                    r.ReturnedAt = _clock.UtcNow;
-                    r.RentalStatus = InstrumentRentalStatus.Completed;
+            using var transaction = await _context.BeginTransactionAsync();
+            try
+            {
+                var result = await ProcessStoreActionAsync(rentalId, userId,
+                    validateAsync: async r =>
+                    {
+                        RequireStatus(r, InstrumentRentalStatus.Active, "Samo aktivno iznajmljivanje se može završiti.");
+                        RequireNotSet(r.ReturnedAt, "Iznajmljivanje je već završeno.");
+                    },
+                    applyChanges: r =>
+                    {
+                        r.ReturnedAt = _clock.UtcNow;
+                        r.RentalStatus = InstrumentRentalStatus.Completed;
+                        r.UpdatedAt = _clock.UtcNow;
+                        r.UpdatedById = userId;
 
-                    ApplyNote(response, r);
-                },
-                concurrencyMessage: null);
+                        ApplyNote(response, r);
+                    },
+                    concurrencyMessage: null);
+                
+                await transaction.CommitAsync();
+                return result;
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
 
         public async Task<InstrumentRentalDto> CancelAsync(int rentalId, int userId, RentalStatusResponse response)
         {
-            var rental = await LoadForStudentAsync(rentalId, userId);
+            using var transaction = await _context.BeginTransactionAsync();
+            try
+            {
+                var rental = await LoadForStudentAsync(rentalId, userId);
 
-            if (rental.RentalStatus is not (InstrumentRentalStatus.Pending or InstrumentRentalStatus.Approved))
-                throw new BusinessException("Samo zahtjev na čekanju ili odobren zahtjev se može otkazati.");
+                if (rental.RentalStatus is not (InstrumentRentalStatus.Pending or InstrumentRentalStatus.Approved))
+                    throw new BusinessException("Samo zahtjev na čekanju ili odobren zahtjev se može otkazati.");
 
-            RequireNotSet(rental.PickedUpAt, "Instrument je već preuzet, otkazivanje nije moguće.");
+                RequireNotSet(rental.PickedUpAt, "Instrument je već preuzet, otkazivanje nije moguće.");
 
-            rental.RentalStatus = InstrumentRentalStatus.Canceled;
+                rental.RentalStatus = InstrumentRentalStatus.Canceled;
+                rental.UpdatedAt = _clock.UtcNow;
+                rental.UpdatedById = userId;
 
-            ApplyNote(response, rental);
+                ApplyNote(response, rental);
 
-            await _context.SaveChangesAsync();
-            return await LoadDtoAsync(rental.Id);
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+                return await LoadDtoAsync(rental.Id);
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
 
         public async Task<InstrumentRentalDto> ReturnEarlyAsync(int rentalId, int userId, RentalStatusResponse response)
         {
-            return await ProcessStoreActionAsync(rentalId, userId, validateAsync: async r =>
+            using var transaction = await _context.BeginTransactionAsync();
+            try
             {
-                RequireStatus(r, InstrumentRentalStatus.Active, "Samo aktivno iznajmljivanje se može prijevremeno završiti.");
-                RequireNotSet(r.ReturnedAt, "Rental je već završen.");
+                var result = await ProcessStoreActionAsync(rentalId, userId, validateAsync: async r =>
+                {
+                    RequireStatus(r, InstrumentRentalStatus.Active, "Samo aktivno iznajmljivanje se može prijevremeno završiti.");
+                    RequireNotSet(r.ReturnedAt, "Rental je već završen.");
 
-                if (!r.PickedUpAt.HasValue)
-                    throw new BusinessException("Instrument nije preuzet.");
-            }, applyChanges: r =>
+                    if (!r.PickedUpAt.HasValue)
+                        throw new BusinessException("Instrument nije preuzet.");
+                }, applyChanges: r =>
+                {
+                    r.ReturnedAt = _clock.UtcNow;
+                    r.RentalStatus = InstrumentRentalStatus.ReturnedEarly;
+                    r.UpdatedAt = _clock.UtcNow;
+                    r.UpdatedById = userId;
+                    ApplyNote(response, r);
+                },
+                    concurrencyMessage: null
+                );
+                
+                await transaction.CommitAsync();
+                return result;
+            }
+            catch
             {
-                r.ReturnedAt = _clock.UtcNow;
-                r.RentalStatus = InstrumentRentalStatus.ReturnedEarly;
-                ApplyNote(response, r);
-            },
-                concurrencyMessage: null
-            );
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
 
         private async Task<InstrumentRental> LoadForStoreAsync(int rentalId, int storeId)

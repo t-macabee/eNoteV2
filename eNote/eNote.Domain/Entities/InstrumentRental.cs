@@ -3,7 +3,7 @@ using eNote.Domain.Enums;
 
 namespace eNote.Domain.Entities
 {
-    public class InstrumentRental : BaseEntity
+    public class InstrumentRental : AuditableEntity
     {
         public decimal Fee { get; set; }
         public string? Note { get; set; }
