@@ -1,7 +1,7 @@
-﻿using eNote.Domain.Entities;
+using eNote.Domain.Entities;
 using eNote.Domain.Enums;
 
-namespace eNote.Application.Features.InstrumentRentals.Services
+namespace eNote.Application.Features.InstrumentRentals.Billing
 {
     public static class RentalBilling
     {
@@ -27,6 +27,7 @@ namespace eNote.Application.Features.InstrumentRentals.Services
                 return new BillingResult(null, null, null, null, false);
 
             var start = pickedUpAt.Value;
+
             var end = returnedAt ?? nowUtc;
 
             if (end < start)

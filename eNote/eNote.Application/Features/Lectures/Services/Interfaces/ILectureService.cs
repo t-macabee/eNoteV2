@@ -1,6 +1,6 @@
 using eNote.Application.Common.Paging;
 
-namespace eNote.Application.Features.Lectures.Services
+namespace eNote.Application.Features.Lectures.Services.Interfaces
 {
     public interface ILectureService
     {
@@ -8,12 +8,5 @@ namespace eNote.Application.Features.Lectures.Services
         Task<PagedResult<LectureDto>> GetPagedAsync(int page, int pageSize, int requesterId);
         Task<LectureDto> CreateAsync(int teacherId, LectureCreateRequest request);
         Task<RsvpResponse> RsvpAsync(int lectureId, int studentUserId, RsvpRequest request);
-    }
-
-    public class RsvpResponse
-    {
-        public int LectureId { get; set; }
-        public int StudentId { get; set; }
-        public bool Confirmed { get; set; }
     }
 }

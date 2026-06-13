@@ -14,10 +14,10 @@ namespace eNote.Infrastructure.Data.Configurations
                    .OnDelete(DeleteBehavior.Cascade);
 
             builder.HasOne(s => s.Student)
-                   .WithMany(s => s.AssignmentSubmissions) 
+                   .WithMany(s => s.AssignmentSubmissions)
                    .HasForeignKey(s => s.StudentId)
                    .OnDelete(DeleteBehavior.Restrict);
-            
+
             builder.Property(s => s.Grade).HasDefaultValue(null);
             builder.Property(s => s.FilePath).HasMaxLength(500);
         }

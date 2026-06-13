@@ -7,12 +7,12 @@ namespace eNote.Application.Common.Exceptions
 
         private static string GetDefaultMessage(int statusCode) => statusCode switch
         {
-            400 => "Bad request.",
+            400 => Localization.Messages.BadRequest,
             401 => "Niste autorizovani.",
             403 => "Nemate pristup ovom resursu.",
-            404 => "ID nije pronađen.",
+            404 => Localization.Messages.NotFound,
             409 => "Sukob resursa.",
-            _ => "Došlo je do greške na serveru."
+            _ => Localization.Messages.InternalError
         };
     }
-}   
+}

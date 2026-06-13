@@ -14,11 +14,14 @@ This repository contains the eNote API project used for the seminar.
 - SMTP__HOST, SMTP__PORT, SMTP__USER, SMTP__PASS - SMTP settings (if used)
 
 ## Run locally
-1. Restore packages: `dotnet restore`
-2. Update database and run migrations:
-   - `dotnet ef migrations add YourMigrationName -s eNote.API -p eNote.Infrastructure`
-   - `dotnet ef database update -s eNote.API -p eNote.Infrastructure`
-3. Run the API: `dotnet run --project eNote.API`
+1. Copy `.env.example` to `.env` and set `ConnectionStrings__DefaultConnection`.
+   - **Local SQL Server (Windows auth):** `Server=localhost;Database=IB150057;Trusted_Connection=True;...`
+   - **Docker SQL Server:** start `docker compose up -d` in this folder, then use the Docker connection string from `.env.example`.
+2. Restore packages: `dotnet restore`
+3. Update database: `dotnet ef database update -s eNote.API -p eNote.Infrastructure`
+4. Run the API: `dotnet run --project eNote.API`
+
+Seed users (Development only): `instructor` / `student` / `storeemployee` — password `Test1234!`
 
 ## Notes
 - Secrets should be provided via environment variables or a secret store; do not hardcode them in appsettings.json.

@@ -11,5 +11,5 @@ namespace eNote.Application.Features.Users
         public DateTime? DateOfBirth { get; set; }
         public AddressDto? Address { get; set; }
         public bool IsActive { get; set; }
-    }    
+    }
 }

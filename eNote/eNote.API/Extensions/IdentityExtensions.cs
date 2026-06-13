@@ -1,8 +1,12 @@
-﻿using eNote.Infrastructure.Data;
+﻿using eNote.Application.Common.Localization;
+using eNote.Application.Features.Auth.Services.Interfaces;
+using eNote.Infrastructure.Data;
 using eNote.Infrastructure.Identity;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using System.Text;
 
 namespace eNote.API.Extensions
@@ -45,6 +49,23 @@ namespace eNote.API.Extensions
                         ValidAudience = config["Jwt:Audience"],
                         IssuerSigningKey = new SymmetricSecurityKey(key),
                         ClockSkew = TimeSpan.Zero
+                    };
+
+                    options.Events = new JwtBearerEvents
+                    {
+                        OnTokenValidated = async context =>
+                        {
+                            var jti = context.Principal?.FindFirstValue(JwtRegisteredClaimNames.Jti);
+
+                            if (string.IsNullOrWhiteSpace(jti))
+                                return;
+
+                            var revocation = context.HttpContext.RequestServices
+                                .GetRequiredService<ITokenRevocationService>();
+
+                            if (await revocation.IsRevokedAsync(jti, context.HttpContext.RequestAborted))
+                                context.Fail(Messages.TokenRevoked);
+                        }
                     };
                 });
 

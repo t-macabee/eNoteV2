@@ -1,35 +1,33 @@
-﻿using eNote.Application.Features.Auth;
+﻿using eNote.Application.Common.Localization;
+using eNote.Application.Features.Auth;
 using eNote.Application.Features.Auth.Services.Interfaces;
+using eNote.Application.Features.Users.Services.Interfaces;
 using Microsoft.AspNetCore.Identity;
 
 namespace eNote.Infrastructure.Identity
 {
-    public class AuthService(UserManager<AppUser> userManager, SignInManager<AppUser> signInManager, ITokenService tokenService) : IAuthService
+    public class AuthService(UserManager<AppUser> userManager, SignInManager<AppUser> signInManager, ITokenService tokenService, IUserService userService, ITokenRevocationService tokenRevocationService) : IAuthService
     {
-        private readonly UserManager<AppUser> _userManager = userManager;
-        private readonly SignInManager<AppUser> _signInManager = signInManager;
-        private readonly ITokenService _tokenService = tokenService;
-
         public async Task<(AuthResponse? response, string? error)> Login(LoginRequest model)
         {
             var username = model.Username.Trim();
 
-            var user = await _userManager.FindByNameAsync(username);
+            var user = await userManager.FindByNameAsync(username);
 
             if (user == null || !user.IsActive)
-                return (null, "Pogrešno korisničko ime ili lozinka.");
+                return (null, Messages.InvalidCredentials);
 
-            var result = await _signInManager.CheckPasswordSignInAsync(user, model.Password, lockoutOnFailure: false);
+            var result = await signInManager.CheckPasswordSignInAsync(user, model.Password, lockoutOnFailure: false);
 
             if (!result.Succeeded)
-                return (null, "Pogrešno korisničko ime ili lozinka.");
+                return (null, Messages.InvalidCredentials);
 
-            var roles = await _userManager.GetRolesAsync(user);
+            var roles = await userManager.GetRolesAsync(user);
 
             if (roles.Count != 1)
-                return (null, "Korisnički račun nije ispravno konfigurisan (uloge). Kontaktirajte administratora.");
+                return (null, Messages.RoleMisconfigured);
 
-            var token = _tokenService.GenerateToken(user.Id, user.UserName!, roles);
+            var token = tokenService.GenerateToken(user.Id, user.UserName!, roles);
 
             return (new AuthResponse
             {
@@ -39,5 +37,32 @@ namespace eNote.Infrastructure.Identity
                 Token = token
             }, null);
         }
+
+        public async Task<(AuthResponse? response, string? error)> Register(RegisterRequest model)
+        {
+            var (_, error) = await userService.RegisterStudentAsync(model);
+
+            if (error is not null)
+                return (null, error);
+
+            var user = await userManager.FindByNameAsync(model.Username.Trim());
+
+            if (user is null)
+                return (null, Messages.InternalError);
+
+            var roles = await userManager.GetRolesAsync(user);
+
+            var token = tokenService.GenerateToken(user.Id, user.UserName!, roles);
+
+            return (new AuthResponse
+            {
+                UserId = user.Id,
+                Username = user.UserName!,
+                Roles = roles.ToList().AsReadOnly(),
+                Token = token
+            }, null);
+        }
+
+        public Task LogoutAsync(string jti, DateTime expiresAtUtc, CancellationToken cancellationToken = default) => tokenRevocationService.RevokeAsync(jti, expiresAtUtc, cancellationToken);
     }
 }

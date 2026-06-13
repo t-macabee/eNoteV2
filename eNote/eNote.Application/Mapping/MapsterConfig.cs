@@ -6,9 +6,9 @@ using Mapster;
 
 namespace eNote.Application.Mapping
 {
-    public static class MapsterConfig
+    public sealed class MapsterConfig : IRegister
     {
-        public static void RegisterMappings(TypeAdapterConfig config)
+        public void Register(TypeAdapterConfig config)
         {
             config.NewConfig<Address, AddressDto>();
 
@@ -25,8 +25,9 @@ namespace eNote.Application.Mapping
                 .Map(x => x.StudentProfileId, x => x.StudentProfileId)
                 .Map(x => x.Fee, x => x.Fee);
 
-            config.NewConfig<InstrumentUpdateRequest, Instrument>()
-                .IgnoreNullValues(true);
+            config.NewConfig<InstrumentUpdateRequest, Instrument>().IgnoreNullValues(true);
+
+            config.Compile();
         }
     }
 }

@@ -3,12 +3,12 @@
 namespace eNote.Domain.Entities
 {
     public class Instructor : AuditableEntity
-    { 
+    {
         public int AppUserId { get; set; }
 
         protected Instructor() { }
 
-        public Instructor(int appUserId)         
+        public Instructor(int appUserId)
         {
             AppUserId = appUserId;
         }

@@ -1,4 +1,5 @@
 ﻿using eNote.Application.Common.Exceptions;
+using eNote.Application.Common.Localization;
 using Microsoft.AspNetCore.Diagnostics;
 using System.Text.Json;
 
@@ -19,8 +20,8 @@ namespace eNote.API.Extensions
                     var (statusCode, errorCode, message) = exception switch
                     {
                         AppException appEx => (appEx.StatusCode, appEx.ErrorCode, appEx.Message),
-                        ArgumentException => (400, "error.bad_request", exception?.Message ?? "Bad request."),
-                        _ => (500, "error.internal", "Došlo je do greške na serveru.")
+                        ArgumentException => (400, "error.bad_request", exception?.Message ?? Messages.BadRequest),
+                        _ => (500, "error.internal", Messages.InternalError)
                     };
 
                     context.Response.StatusCode = statusCode;
@@ -38,17 +39,15 @@ namespace eNote.API.Extensions
                     await context.Response.WriteAsync(JsonSerializer.Serialize(response));
                 });
             });
-    
-            return app;
-    }
- 
-    private record ErrorResponse
-    {
-        public int Status { get; init; }
-        public string Code { get; init; } = string.Empty;
-        public string Message { get; init; } = string.Empty;
-    }
-    
-}
 
+            return app;
+        }
+
+        private record ErrorResponse
+        {
+            public int Status { get; init; }
+            public string Code { get; init; } = string.Empty;
+            public string Message { get; init; } = string.Empty;
+        }
+    }
 }

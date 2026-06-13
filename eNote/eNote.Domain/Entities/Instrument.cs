@@ -11,8 +11,8 @@ namespace eNote.Domain.Entities
         public string? ImagePath { get; set; }
         public bool IsActive { get; set; } = true;
 
-        public bool IsAvailable => 
-            IsActive && !InstrumentRentals.Any(x => 
+        public bool IsAvailable =>
+            IsActive && !InstrumentRentals.Any(x =>
             x.RentalStatus == InstrumentRentalStatus.Approved ||
             x.RentalStatus == InstrumentRentalStatus.Active);
 
@@ -23,5 +23,5 @@ namespace eNote.Domain.Entities
         public MusicStore MusicStore { get; set; } = null!;
 
         public ICollection<InstrumentRental> InstrumentRentals { get; set; } = new List<InstrumentRental>();
-    }    
+    }
 }

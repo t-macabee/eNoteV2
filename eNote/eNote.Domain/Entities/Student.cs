@@ -3,8 +3,8 @@
 namespace eNote.Domain.Entities
 {
     public class Student : AuditableEntity
-    {        
-        public int AppUserId { get; set; }        
+    {
+        public int AppUserId { get; set; }
         public DateTime EnrollmentDate { get; set; }
 
         protected Student() { }

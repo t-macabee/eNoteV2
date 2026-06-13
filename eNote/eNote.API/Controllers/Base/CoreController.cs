@@ -1,4 +1,5 @@
 ﻿using eNote.Application.Common.Exceptions;
+using eNote.Application.Common.Localization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.IdentityModel.Tokens.Jwt;
@@ -18,9 +19,26 @@ namespace eNote.API.Controllers.Base
                       ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
 
                 if (!int.TryParse(id, out var userId))
-                    throw new AuthenticationException("Authenticated user has no valid user id claim.");
+                    throw new AuthenticationException(Messages.InvalidUserClaim);
 
                 return userId;
+            }
+        }
+
+        protected string CurrentTokenJti =>
+            User.FindFirstValue(JwtRegisteredClaimNames.Jti)
+            ?? throw new AuthenticationException(Messages.InvalidUserClaim);
+
+        protected DateTime CurrentTokenExpiresAtUtc
+        {
+            get
+            {
+                var exp = User.FindFirstValue(JwtRegisteredClaimNames.Exp);
+
+                if (exp is null || !long.TryParse(exp, out var unixSeconds))
+                    throw new AuthenticationException(Messages.InvalidUserClaim);
+
+                return DateTimeOffset.FromUnixTimeSeconds(unixSeconds).UtcDateTime;
             }
         }
     }

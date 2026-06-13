@@ -9,11 +9,10 @@ namespace eNote.Application.Common.Paging
         {
             int? total = null;
 
-            if (includeTotalCount) 
+            if (includeTotalCount)
                 total = await query.CountAsync(ct);
 
-            page = page < 1 ? 1 : page;
-            pageSize = pageSize < 1 ? 20 : pageSize;
+            (page, pageSize) = PagingLimits.Normalize(page, pageSize);
 
             if (orderBy is not null)
                 query = orderBy(query);
@@ -25,7 +24,7 @@ namespace eNote.Application.Common.Paging
 
             return new PagedResult<TModel>
             {
-                Items = entities.Select(map).ToList(),
+                Items = [.. entities.Select(map)],
                 Page = page,
                 PageSize = pageSize,
                 TotalCount = total

@@ -17,7 +17,7 @@ namespace eNote.Infrastructure.Data.Configurations
                    .WithMany(t => t.Instruments)
                    .HasForeignKey(x => x.InstrumentTypeId)
                    .OnDelete(DeleteBehavior.Restrict);
-                                  
+
             builder.Property(x => x.Model).HasStringConfig(100, true);
             builder.Property(x => x.Manufacturer).HasStringConfig(100, true);
             builder.Property(x => x.Description).HasMaxLength(1000);

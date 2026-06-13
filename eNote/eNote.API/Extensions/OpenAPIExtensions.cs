@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.OpenApi;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.OpenApi;
 using Microsoft.OpenApi;
 
 namespace eNote.API.Extensions
@@ -10,6 +11,7 @@ namespace eNote.API.Extensions
             services.AddOpenApi(options =>
             {
                 options.AddDocumentTransformer<BearerSecurityTransformer>();
+                options.AddOperationTransformer<AnonymousOperationTransformer>();
             });
 
             return services;
@@ -29,14 +31,35 @@ namespace eNote.API.Extensions
                 Type = SecuritySchemeType.Http,
                 Scheme = "bearer",
                 BearerFormat = "JWT",
-                Description = "Enter your valid JSON Web Token (JWT) here."
+                Description = "Unesite važeći JSON Web Token (JWT)."
             });
 
-                document.Security = [new OpenApiSecurityRequirement
+            document.Security =
+            [
+                new OpenApiSecurityRequirement
                 {
                     [new OpenApiSecuritySchemeReference("Bearer", document)] = []
                 }
             ];
+
+            return Task.CompletedTask;
+        }
+    }
+
+    public sealed class AnonymousOperationTransformer : IOpenApiOperationTransformer
+    {
+        public Task TransformAsync(OpenApiOperation operation, OpenApiOperationTransformerContext context, CancellationToken cancellationToken)
+        {
+            var metadata = context.Description.ActionDescriptor.EndpointMetadata;
+
+            if (metadata.Any(m => m is IAllowAnonymous))
+            {
+                operation.Security = [];
+                return Task.CompletedTask;
+            }
+
+            if (!metadata.Any(m => m is IAuthorizeData))
+                operation.Security = [];
 
             return Task.CompletedTask;
         }

@@ -1,6 +1,9 @@
 ﻿using eNote.Application.Common.Exceptions;
+using eNote.Application.Common.Localization;
 using eNote.Application.Common.Persistence;
+using eNote.Application.Common.Time;
 using eNote.Application.Constants;
+using eNote.Application.Features.Auth;
 using eNote.Application.Features.Users.Profiles;
 using eNote.Application.Features.Users.Services.Interfaces;
 using eNote.Domain.Entities;
@@ -8,22 +11,19 @@ using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Application.Features.Users.Services
 {
-    public class UserService(IAppDbContext context, IUserIdentityService identity) : IUserService
+    public class UserService(IAppDbContext context, IUserIdentityService identity, IUserAccountService accountService, IClock clock) : IUserService
     {
-        private readonly IAppDbContext _context = context;
-        private readonly IUserIdentityService _identity = identity;
-
         public async Task<UserProfileResponse?> GetCurrentUserAsync(int userId)
         {
-            var user = await _identity.GetUserAsync(userId);
+            var user = await identity.GetUserAsync(userId);
 
             if (user == null || !user.IsActive)
                 return null;
 
-            var roles = await _identity.GetRolesAsync(userId);
+            var roles = await identity.GetRolesAsync(userId);
 
             if (roles.Count != 1)
-                throw new BusinessException("Korisnik mora imati tačno jednu ulogu.");
+                throw new BusinessException(Messages.UserSingleRoleRequired);
 
             var role = roles[0];
 
@@ -32,15 +32,140 @@ namespace eNote.Application.Features.Users.Services
                 AppRoles.Student => await BuildStudentProfile(userId, user),
                 AppRoles.Instructor => await BuildInstructorProfile(userId, user),
                 AppRoles.StoreEmployee => await BuildMusicStoreProfile(userId, user),
-                _ => throw new BusinessException("Nepoznata uloga.")
+                _ => throw new BusinessException(Messages.UnknownRole)
             };
 
             return new UserProfileResponse(role, profile);
         }
 
+        public async Task<(UserProfileResponse? Profile, string? Error)> RegisterStudentAsync(RegisterRequest request)
+        {
+            var createResult = await accountService.CreateUserAsync(
+                request.Username,
+                request.Email,
+                request.Password,
+                request.FirstName,
+                request.LastName);
+
+            if (createResult.UserId is null)
+                return (null, createResult.Error);
+
+            var userId = createResult.UserId.Value;
+
+            var (Success, Error) = await accountService.AssignSingleRoleAsync(userId, AppRoles.Student);
+
+            if (!Success)
+                return (null, Error);
+
+            EnsureRoleProfile(userId, AppRoles.Student, musicStoreId: null);
+
+            await context.SaveChangesAsync();
+
+            var profile = await GetCurrentUserAsync(userId);
+
+            return (profile, null);
+        }
+
+        public async Task<(int UserId, string? Error)> ProvisionUserAsync(UserProvisionRequest request)
+        {
+            var username = request.Username.Trim();
+
+            var existingUserId = await accountService.FindUserIdByUsernameAsync(username);
+
+            int userId;
+
+            if (existingUserId.HasValue)
+            {
+                userId = existingUserId.Value;
+
+                var updateResult = await accountService.UpdateExistingUserAsync(
+                    userId,
+                    request.Email,
+                    request.FirstName,
+                    request.LastName);
+
+                if (!updateResult.Success)
+                    return (userId, updateResult.Error);
+            }
+            else
+            {
+                var createResult = await accountService.CreateUserAsync(
+                    username,
+                    request.Email,
+                    request.Password,
+                    request.FirstName,
+                    request.LastName);
+
+                if (createResult.UserId is null)
+                    return (0, createResult.Error);
+
+                userId = createResult.UserId.Value;
+            }
+
+            var (Success, Error) = await accountService.AssignSingleRoleAsync(userId, request.Role);
+
+            if (!Success)
+                return (userId, Error);
+
+            var storeId = request.MusicStoreId ?? await ResolveDefaultStoreIdAsync(request.Role);
+
+            EnsureRoleProfile(userId, request.Role, storeId);
+
+            await context.SaveChangesAsync();
+
+            return (userId, null);
+        }
+
+        private async Task<int?> ResolveDefaultStoreIdAsync(string role)
+        {
+            if (role != AppRoles.StoreEmployee)
+                return null;
+
+            return await context.Set<MusicStore>()
+                .Select(x => (int?)x.Id)
+                .FirstOrDefaultAsync();
+        }
+
+        private void EnsureRoleProfile(int userId, string role, int? musicStoreId)
+        {
+            switch (role)
+            {
+                case AppRoles.Student:
+                    if (!context.Set<Student>().Any(x => x.AppUserId == userId))
+                        context.Set<Student>().Add(new Student(userId, clock.UtcNow));
+                    break;
+
+                case AppRoles.Instructor:
+                    if (!context.Set<Instructor>().Any(x => x.AppUserId == userId))
+                        context.Set<Instructor>().Add(new Instructor(userId));
+                    break;
+
+                case AppRoles.StoreEmployee when musicStoreId.HasValue:
+                    {
+                        var employees = context.Set<MusicStoreEmployee>()
+                            .Where(x => x.AppUserId == userId)
+                            .ToList();
+
+                        if (employees.Count == 0)
+                        {
+                            context.Set<MusicStoreEmployee>().Add(new MusicStoreEmployee(userId, musicStoreId.Value, true));
+                            break;
+                        }
+
+                        var primary = employees.FirstOrDefault(x => x.IsActive) ?? employees[0];
+                        primary.IsActive = true;
+
+                        foreach (var employee in employees.Where(x => x.Id != primary.Id))
+                            employee.IsActive = false;
+
+                        break;
+                    }
+            }
+        }
+
         private async Task<StudentProfile> BuildStudentProfile(int userId, UserIdentityDto user)
         {
-            var student = await UserProfileHelper.GetStudentByUserIdAsync(_context, userId);
+            var student = await UserProfileHelper.GetStudentByUserIdAsync(context, userId);
 
             return new StudentProfile(
                 student.Id,
@@ -54,7 +179,7 @@ namespace eNote.Application.Features.Users.Services
 
         private async Task<InstructorProfile> BuildInstructorProfile(int userId, UserIdentityDto user)
         {
-            var instructor = await UserProfileHelper.GetInstructorByUserIdAsync(_context, userId);
+            var instructor = await UserProfileHelper.GetInstructorByUserIdAsync(context, userId);
 
             return new InstructorProfile(
                 instructor.Id,
@@ -65,12 +190,12 @@ namespace eNote.Application.Features.Users.Services
 
         private async Task<MusicStoreProfile> BuildMusicStoreProfile(int userId, UserIdentityDto user)
         {
-            var employee = await UserProfileHelper.GetActiveEmployeeByUserIdAsync(_context, userId);
+            var employee = await UserProfileHelper.GetActiveEmployeeByUserIdAsync(context, userId);
 
-            var shop = await _context.Set<MusicStore>()
+            var shop = await context.Set<MusicStore>()
                 .AsNoTracking()
                 .FirstOrDefaultAsync(x => x.Id == employee.MusicStoreId)
-                ?? throw new BusinessException("Radnja nije pronađena.");
+                ?? throw new BusinessException(Messages.StoreNotFound);
 
             return new MusicStoreProfile(
                 shop.Id,

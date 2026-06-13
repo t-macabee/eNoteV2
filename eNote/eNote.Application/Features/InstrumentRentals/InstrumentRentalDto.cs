@@ -24,10 +24,10 @@ namespace eNote.Application.Features.InstrumentRentals
         public InstrumentRentalStatus RentalStatus { get; set; }
         public string? Note { get; set; }
 
-        public int? MonthsCharged { get; set; }      
-        public int? DaysCharged { get; set; }        
-        public decimal? DailyFee { get; set; }       
-        public bool IsProrated { get; set; }         
+        public int? MonthsCharged { get; set; }
+        public int? DaysCharged { get; set; }
+        public decimal? DailyFee { get; set; }
+        public bool IsProrated { get; set; }
         public decimal? TotalFee { get; set; }
     }
 }

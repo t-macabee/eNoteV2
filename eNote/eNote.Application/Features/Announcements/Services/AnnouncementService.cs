@@ -1,4 +1,5 @@
 ﻿using eNote.Application.Common.Exceptions;
+using eNote.Application.Common.Localization;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Common.Time;
 using eNote.Application.Features.Announcements.Services.Interfaces;
@@ -9,15 +10,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Application.Features.Announcements.Services
 {
-    public class AnnouncementService(
-        IAppDbContext context,
-        IClock clock,
-        IMusicStoreContextService storeContext) : IAnnouncementService
+    public class AnnouncementService(IAppDbContext context, IClock clock, IMusicStoreContextService storeContext) : IAnnouncementService
     {
-        private readonly IAppDbContext _context = context;
-        private readonly IClock _clock = clock;
-        private readonly IMusicStoreContextService _storeContext = storeContext;
-
         private static readonly InstrumentRentalStatus[] StoreAudienceRentalStatuses =
         [
             InstrumentRentalStatus.Approved,
@@ -28,28 +22,28 @@ namespace eNote.Application.Features.Announcements.Services
 
         public async Task<IReadOnlyList<AnnouncementDto>> GetFeedForStudentAsync(int userId)
         {
-            var studentId = await _context.Set<Student>()
+            var studentId = await context.Set<Student>()
                 .Where(s => s.AppUserId == userId)
                 .Select(s => s.Id)
                 .SingleOrDefaultAsync();
 
             if (studentId == 0)
-                throw new BusinessException("Student profil nije pronađen.");
+                throw new BusinessException(Messages.StudentProfileNotFound);
 
-            var enrolledCourseIds = await _context.Set<Enrollment>()
+            var enrolledCourseIds = await context.Set<Enrollment>()
                 .AsNoTracking()
                 .Where(e => e.StudentId == studentId && e.EnrollmentStatus == EnrollmentStatus.Active)
                 .Select(e => e.CourseId)
                 .ToListAsync();
 
-            var storeIds = await _context.Set<InstrumentRental>()
+            var storeIds = await context.Set<InstrumentRental>()
                 .AsNoTracking()
                 .Where(r => r.StudentProfileId == studentId && StoreAudienceRentalStatuses.Contains(r.RentalStatus))
                 .Select(r => r.Instrument.MusicStoreId)
                 .Distinct()
                 .ToListAsync();
 
-            var items = await _context.Set<Announcement>()
+            var items = await context.Set<Announcement>()
                 .AsNoTracking()
                 .Include(a => a.Course)
                 .Include(a => a.MusicStore)
@@ -71,14 +65,15 @@ namespace eNote.Application.Features.Announcements.Services
             {
                 Title = request.Title.Trim(),
                 Content = request.Content.Trim(),
-                PublishedAt = _clock.UtcNow,
+                PublishedAt = clock.UtcNow,
                 CreatedById = userId,
                 CourseId = courseId,
                 MusicStoreId = null
             };
 
-            _context.Set<Announcement>().Add(entity);
-            await _context.SaveChangesAsync();
+            context.Set<Announcement>().Add(entity);
+
+            await context.SaveChangesAsync();
 
             return await LoadDtoAsync(entity.Id);
         }
@@ -87,7 +82,7 @@ namespace eNote.Application.Features.Announcements.Services
         {
             await EnsureInstructorOwnsCourseAsync(userId, courseId);
 
-            var items = await _context.Set<Announcement>()
+            var items = await context.Set<Announcement>()
                 .AsNoTracking()
                 .Include(a => a.Course)
                 .Where(a => a.CourseId == courseId)
@@ -99,29 +94,29 @@ namespace eNote.Application.Features.Announcements.Services
 
         public async Task<AnnouncementDto> CreateForStoreAsync(int userId, AnnouncementCreateRequest request)
         {
-            var storeId = await _storeContext.GetActiveStoreAsync(userId);
+            var storeId = await storeContext.GetActiveStoreAsync(userId);
 
             var entity = new Announcement
             {
                 Title = request.Title.Trim(),
                 Content = request.Content.Trim(),
-                PublishedAt = _clock.UtcNow,
+                PublishedAt = clock.UtcNow,
                 CreatedById = userId,
                 CourseId = null,
                 MusicStoreId = storeId
             };
 
-            _context.Set<Announcement>().Add(entity);
-            await _context.SaveChangesAsync();
+            context.Set<Announcement>().Add(entity);
+            await context.SaveChangesAsync();
 
             return await LoadDtoAsync(entity.Id);
         }
 
         public async Task<IReadOnlyList<AnnouncementDto>> GetForStoreAsync(int userId)
         {
-            var storeId = await _storeContext.GetActiveStoreAsync(userId);
+            var storeId = await storeContext.GetActiveStoreAsync(userId);
 
-            var items = await _context.Set<Announcement>()
+            var items = await context.Set<Announcement>()
                 .AsNoTracking()
                 .Include(a => a.MusicStore)
                 .Where(a => a.MusicStoreId == storeId)
@@ -133,22 +128,22 @@ namespace eNote.Application.Features.Announcements.Services
 
         private async Task EnsureInstructorOwnsCourseAsync(int userId, int courseId)
         {
-            var ownsCourse = await _context.Set<Course>()
+            var ownsCourse = await context.Set<Course>()
                 .AsNoTracking()
                 .AnyAsync(c => c.Id == courseId && c.Instructor.AppUserId == userId);
 
             if (!ownsCourse)
-                throw new BusinessException("Nemate pravo objavljivati obavijesti za ovaj kurs.");
+                throw new BusinessException(Messages.AnnouncementCourseForbidden);
         }
 
         private async Task<AnnouncementDto> LoadDtoAsync(int announcementId)
         {
-            var entity = await _context.Set<Announcement>()
+            var entity = await context.Set<Announcement>()
                 .AsNoTracking()
                 .Include(a => a.Course)
                 .Include(a => a.MusicStore)
                 .FirstOrDefaultAsync(a => a.Id == announcementId)
-                ?? throw new NotFoundException("Obavijest nije pronađena.");
+                ?? throw new NotFoundException(Messages.AnnouncementNotFound);
 
             return MapToDto(entity);
         }

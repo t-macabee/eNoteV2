@@ -5,7 +5,7 @@ namespace eNote.Domain.Entities
     public class MusicStoreEmployee : AuditableEntity
     {
         public int AppUserId { get; set; }
-        public int MusicStoreId{ get; set; }
+        public int MusicStoreId { get; set; }
 
         public bool IsManager { get; set; }
         public bool IsActive { get; set; } = true;

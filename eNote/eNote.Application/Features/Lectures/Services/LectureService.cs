@@ -1,29 +1,32 @@
+using eNote.Application.Common.Exceptions;
+using eNote.Application.Common.Localization;
 using eNote.Application.Common.Paging;
 using eNote.Application.Common.Persistence;
+using eNote.Application.Features.Lectures.Services.Interfaces;
+using eNote.Application.Features.Users;
 using eNote.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace eNote.Application.Features.Lectures.Services
 {
-    public class LectureService(IAppDbContext context, Microsoft.Extensions.Logging.ILogger<LectureService> logger) : ILectureService
+    public class LectureService(IAppDbContext context, ILogger<LectureService> logger) : ILectureService
     {
-        private readonly IAppDbContext _context = context;
-        private readonly Microsoft.Extensions.Logging.ILogger<LectureService> _logger = logger;
-
         public async Task<LectureDto> GetByIdAsync(int id, int requesterId)
         {
-            var entity = await _context.Set<Lecture>()
+            var entity = await context.Set<Lecture>()
                 .Include(x => x.Attendances)
                 .FirstOrDefaultAsync(x => x.Id == id)
-                ?? throw new eNote.Application.Common.Exceptions.NotFoundException("Lecture not found");
+                ?? throw new NotFoundException(Messages.LectureNotFound);
 
             return Map(entity);
         }
 
         public async Task<PagedResult<LectureDto>> GetPagedAsync(int page, int pageSize, int requesterId)
         {
-            var query = _context.Set<Lecture>().AsNoTracking();
+            (page, pageSize) = PagingLimits.Normalize(page, pageSize);
+
+            var query = context.Set<Lecture>().AsNoTracking();
 
             var items = await query
                 .OrderByDescending(x => x.LectureTime)
@@ -38,7 +41,7 @@ namespace eNote.Application.Features.Lectures.Services
                 Items = models,
                 Page = page,
                 PageSize = pageSize,
-                TotalCount = await _context.Set<Lecture>().CountAsync()
+                TotalCount = await context.Set<Lecture>().CountAsync()
             };
         }
 
@@ -48,7 +51,9 @@ namespace eNote.Application.Features.Lectures.Services
 
             if (courseId != 0)
             {
-                var course = await _context.Set<Course>().FirstOrDefaultAsync(c => c.Id == courseId && c.Instructor.AppUserId == teacherId) ?? throw new UnauthorizedAccessException("You don't own the course specified.");
+                _ = await context.Set<Course>()
+                    .FirstOrDefaultAsync(c => c.Id == courseId && c.Instructor.AppUserId == teacherId)
+                    ?? throw new AuthorizationException(Messages.CourseNotOwned);
             }
 
             var entity = new Lecture
@@ -63,31 +68,33 @@ namespace eNote.Application.Features.Lectures.Services
                 CourseId = request.CourseId ?? 0
             };
 
-            _context.Set<Lecture>().Add(entity);
-            await _context.SaveChangesAsync();
+            context.Set<Lecture>().Add(entity);
+
+            await context.SaveChangesAsync();
 
             return Map(entity);
         }
 
         public async Task<RsvpResponse> RsvpAsync(int lectureId, int studentUserId, RsvpRequest request)
         {
-            var lecture = await _context.Set<Lecture>()
+            var lecture = await context.Set<Lecture>()
                 .Include(x => x.Attendances)
                 .FirstOrDefaultAsync(x => x.Id == lectureId)
-                ?? throw new KeyNotFoundException("Lecture not found");
+                ?? throw new NotFoundException(Messages.LectureNotFound);
 
             if (lecture.IsCancelled)
-                throw new eNote.Application.Common.Exceptions.BusinessException("Lecture is cancelled.");
+                throw new BusinessException(Messages.LectureCancelled);
 
-            var student = await UserProfileHelper.GetStudentByUserIdAsync(_context, studentUserId);
+            var student = await UserProfileHelper.GetStudentByUserIdAsync(context, studentUserId);
 
             var existing = lecture.Attendances.FirstOrDefault(x => x.StudentId == student.Id);
 
             if (request.Confirm)
             {
                 var confirmedCount = lecture.Attendances.Count(a => a.AttendanceStatus == Domain.Enums.AttendanceStatus.Present);
+
                 if (lecture.Capacity.HasValue && confirmedCount >= lecture.Capacity.Value && (existing == null || existing.AttendanceStatus != Domain.Enums.AttendanceStatus.Present))
-                    throw new eNote.Application.Common.Exceptions.ConflictException("Lecture is full.");
+                    throw new ConflictException(Messages.LectureFull);
 
                 if (existing == null)
                 {
@@ -105,16 +112,16 @@ namespace eNote.Application.Features.Lectures.Services
 
             try
             {
-                await _context.SaveChangesAsync();
+                await context.SaveChangesAsync();
             }
             catch (DbUpdateConcurrencyException ex)
             {
-                _logger.LogWarning(ex, "Concurrency conflict while RSVPing for lecture {LectureId} by student user {StudentUserId}", lectureId, studentUserId);
-                throw new eNote.Application.Common.Exceptions.ConflictException("Lecture reservation conflict. Please try again.");
+                logger.LogWarning(ex, "Concurrency conflict while RSVPing for lecture {LectureId} by student user {StudentUserId}", lectureId, studentUserId);
+
+                throw new ConflictException(Messages.LectureRsvpConflict);
             }
 
-            var resp = new RsvpResponse { LectureId = lecture.Id, StudentId = student.Id, Confirmed = request.Confirm };
-            return resp;
+            return new RsvpResponse { LectureId = lecture.Id, StudentId = student.Id, Confirmed = request.Confirm };
         }
 
         private static LectureDto Map(Lecture e)

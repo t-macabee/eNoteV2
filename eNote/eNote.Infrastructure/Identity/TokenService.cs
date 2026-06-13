@@ -9,8 +9,6 @@ namespace eNote.Infrastructure.Identity
 {
     public class TokenService(IConfiguration configuration) : ITokenService
     {
-        private readonly IConfiguration _configuration = configuration;
-
         public string GenerateToken(int userId, string username, IList<string> roles)
         {
             var claims = new List<Claim>
@@ -23,15 +21,15 @@ namespace eNote.Infrastructure.Identity
             foreach (var role in roles)
                 claims.Add(new Claim(ClaimTypes.Role, role));
 
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]!));
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["Jwt:Key"]!));
 
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
-            var expirationDays = _configuration.GetValue<int>("Jwt:ExpirationDays", 7);
+            var expirationDays = configuration.GetValue<int>("Jwt:ExpirationDays", 7);
 
             var token = new JwtSecurityToken(
-                issuer: _configuration["Jwt:Issuer"],
-                audience: _configuration["Jwt:Audience"],
+                issuer: configuration["Jwt:Issuer"],
+                audience: configuration["Jwt:Audience"],
                 claims: claims,
                 expires: DateTime.UtcNow.AddDays(expirationDays),
                 signingCredentials: creds

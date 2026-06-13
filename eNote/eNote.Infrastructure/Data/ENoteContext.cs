@@ -1,5 +1,4 @@
 ﻿using eNote.Application.Common.Persistence;
-using eNote.Domain.Entities;
 using eNote.Infrastructure.Data.Seed;
 using eNote.Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;

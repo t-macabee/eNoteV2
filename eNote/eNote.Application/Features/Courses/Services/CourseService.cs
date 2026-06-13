@@ -1,6 +1,9 @@
 using eNote.Application.Common.Exceptions;
+using eNote.Application.Common.Localization;
 using eNote.Application.Common.Paging;
 using eNote.Application.Common.Persistence;
+using eNote.Application.Features.Courses.Services.Interfaces;
+using eNote.Application.Features.Users;
 using eNote.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -9,22 +12,21 @@ namespace eNote.Application.Features.Courses.Services
 {
     public class CourseService(IAppDbContext context, ILogger<CourseService> logger) : ICourseService
     {
-        private readonly IAppDbContext _context = context;
-        private readonly Microsoft.Extensions.Logging.ILogger<CourseService> _logger = logger;
-
         public async Task<CourseDto> GetByIdAsync(int id, int requesterId)
         {
-            var entity = await _context.Set<Course>()
+            var entity = await context.Set<Course>()
                 .Include(c => c.Enrollments)
                 .FirstOrDefaultAsync(c => c.Id == id)
-                ?? throw new NotFoundException("Course not found");
+                ?? throw new NotFoundException(Messages.CourseNotFound);
 
             return Map(entity);
         }
 
         public async Task<PagedResult<CourseDto>> GetPagedAsync(int page, int pageSize, int requesterId)
         {
-            var query = _context.Set<Course>().AsNoTracking();
+            (page, pageSize) = PagingLimits.Normalize(page, pageSize);
+
+            var query = context.Set<Course>().AsNoTracking();
 
             var items = await query
                 .OrderByDescending(x => x.StartDate)
@@ -39,15 +41,15 @@ namespace eNote.Application.Features.Courses.Services
                 Items = models,
                 Page = page,
                 PageSize = pageSize,
-                TotalCount = await _context.Set<Course>().CountAsync()
+                TotalCount = await context.Set<Course>().CountAsync()
             };
         }
 
         public async Task<CourseDto> CreateAsync(int instructorUserId, CourseCreateRequest request)
         {
-            var instructor = await UserProfileHelper.GetInstructorByUserIdAsync(_context, instructorUserId);
+            var instructor = await UserProfileHelper.GetInstructorByUserIdAsync(context, instructorUserId);
 
-            _logger.LogInformation("Creating course {CourseName} by instructor user {InstructorUserId}", request.Name, instructorUserId);
+            logger.LogInformation("Creating course {CourseName} by instructor user {InstructorUserId}", request.Name, instructorUserId);
 
             var entity = new Course
             {
@@ -60,22 +62,27 @@ namespace eNote.Application.Features.Courses.Services
                 InstructorId = instructor.Id
             };
 
-            _context.Set<Course>().Add(entity);
-            await _context.SaveChangesAsync();
+            context.Set<Course>().Add(entity);
 
-            _logger.LogInformation("Course {CourseId} created by instructor user {InstructorUserId}", entity.Id, instructorUserId);
+            await context.SaveChangesAsync();
+
+            logger.LogInformation("Course {CourseId} created by instructor user {InstructorUserId}", entity.Id, instructorUserId);
 
             return Map(entity);
         }
 
         public async Task EnrollAsync(int courseId, int studentUserId)
         {
-            var student = await UserProfileHelper.GetStudentByUserIdAsync(_context, studentUserId);
+            var student = await UserProfileHelper.GetStudentByUserIdAsync(context, studentUserId);
 
-            var course = await _context.Set<Course>().Include(c => c.Enrollments).FirstOrDefaultAsync(c => c.Id == courseId)
-                ?? throw new NotFoundException("Course not found");
+            var course = await context.Set<Course>()
+                .Include(c => c.Enrollments)
+                .FirstOrDefaultAsync(c => c.Id == courseId)
+                ?? throw new NotFoundException(Messages.CourseNotFound);
 
-            var existing = course.Enrollments.FirstOrDefault(e => e.StudentId == student.Id && e.EnrollmentStatus == Domain.Enums.EnrollmentStatus.Active);
+            var existing = course.Enrollments
+                .FirstOrDefault(e => e.StudentId == student.Id && e.EnrollmentStatus == Domain.Enums.EnrollmentStatus.Active);
+
             if (existing != null)
                 return;
 
@@ -86,10 +93,11 @@ namespace eNote.Application.Features.Courses.Services
                 EnrollmentStatus = Domain.Enums.EnrollmentStatus.Active
             };
 
-            _context.Set<Enrollment>().Add(enrollment);
-            await _context.SaveChangesAsync();
+            context.Set<Enrollment>().Add(enrollment);
 
-            _logger.LogInformation("Student {StudentUserId} enrolled in course {CourseId}", studentUserId, courseId);
+            await context.SaveChangesAsync();
+
+            logger.LogInformation("Student {StudentUserId} enrolled in course {CourseId}", studentUserId, courseId);
         }
 
         private static CourseDto Map(Course e)

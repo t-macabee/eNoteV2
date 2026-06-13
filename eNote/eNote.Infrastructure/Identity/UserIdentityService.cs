@@ -8,11 +8,12 @@ namespace eNote.Infrastructure.Identity
 {
     public class UserIdentityService(UserManager<AppUser> userManager) : IUserIdentityService
     {
-        private readonly UserManager<AppUser> _userManager = userManager;
-
         public async Task<UserIdentityDto?> GetUserAsync(int userId)
         {
-            var user = await _userManager.Users.AsNoTracking().Include(u => u.Address).FirstOrDefaultAsync(u => u.Id == userId);
+            var user = await userManager.Users
+                .AsNoTracking()
+                .Include(u => u.Address)
+                .FirstOrDefaultAsync(u => u.Id == userId);
 
             if (user == null)
                 return null;
@@ -38,12 +39,12 @@ namespace eNote.Infrastructure.Identity
 
         public async Task<IReadOnlyList<string>> GetRolesAsync(int userId)
         {
-            var user = await _userManager.FindByIdAsync(userId.ToString());
+            var user = await userManager.FindByIdAsync(userId.ToString());
 
             if (user == null)
                 return [];
 
-            return [.. await _userManager.GetRolesAsync(user)];
+            return [.. await userManager.GetRolesAsync(user)];
         }
     }
 }

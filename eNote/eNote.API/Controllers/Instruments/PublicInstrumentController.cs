@@ -12,19 +12,17 @@ namespace eNote.API.Controllers.Instruments
     [Route("api/instruments/public")]
     public sealed class PublicInstrumentController(IInstrumentService instrumentService) : ControllerBase
     {
-        private readonly IInstrumentService _instrumentService = instrumentService;
-
         [HttpGet]
         public async Task<ActionResult<PagedResult<InstrumentDto>>> GetAll([FromQuery] InstrumentSearchObject search)
         {
-            var result = await _instrumentService.GetPublicPagedAsync(search);
+            var result = await instrumentService.GetPublicPagedAsync(search);
             return Ok(result);
         }
 
         [HttpGet("{id:int}")]
         public async Task<ActionResult<InstrumentDto>> GetById(int id)
         {
-            var result = await _instrumentService.GetPublicByIdAsync(id);
+            var result = await instrumentService.GetPublicByIdAsync(id);
             return Ok(result);
         }
     }

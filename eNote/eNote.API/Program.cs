@@ -4,10 +4,11 @@ using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
 using System.Text.Json.Serialization;
 
+eNote.API.Extensions.ConfigurationExtensions.LoadDotEnv();
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Load .env file
-DotNetEnv.Env.Load();
+builder.Configuration.ValidateRequiredSettings();
 
 builder.Services.AddDbContext<ENoteContext>(options =>
     options.UseSqlServer(
@@ -19,23 +20,28 @@ builder.Services
     .AddApplicationIdentity()
     .AddJwtAuthentication(builder.Configuration)
     .AddAuthorization()
-    .AddApplicationServices();
+    .AddApplicationServices()
+    .AddApplicationCors(builder.Configuration);
 
 builder.Services
     .AddControllers()
     .AddJsonOptions(x => x.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
 builder.Services.AddMapsterMappings();
-builder.Services.AddOpenApi();
+builder.Services.AddScalarDocumentation();
 
 var app = builder.Build();
 
-app.UseHttpsRedirection();
+if (!app.Environment.IsDevelopment())
+    app.UseHttpsRedirection();
+
 app.UseStaticFiles();
+app.UseCors(CorsExtensions.PolicyName);
 app.UseErrorHandling();
 
 if (app.Environment.IsDevelopment())
 {
+    app.MapGet("/", () => Results.Redirect("/scalar")).ExcludeFromDescription();
     app.MapOpenApi();
     app.MapScalarApiReference();
 

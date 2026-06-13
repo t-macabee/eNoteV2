@@ -14,7 +14,7 @@ namespace eNote.Infrastructure.Data.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
-                name: "Addresses",
+                name: "Address",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
@@ -25,7 +25,7 @@ namespace eNote.Infrastructure.Data.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Addresses", x => x.Id);
+                    table.PrimaryKey("PK_Address", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -44,7 +44,7 @@ namespace eNote.Infrastructure.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "InstrumentTypes",
+                name: "InstrumentType",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
@@ -54,21 +54,40 @@ namespace eNote.Infrastructure.Data.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_InstrumentTypes", x => x.Id);
+                    table.PrimaryKey("PK_InstrumentType", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
-                name: "MusicStores",
+                name: "MusicStore",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     StoreName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    BusinessHours = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false)
+                    BusinessHours = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedById = table.Column<int>(type: "int", nullable: true),
+                    UpdatedById = table.Column<int>(type: "int", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_MusicStores", x => x.Id);
+                    table.PrimaryKey("PK_MusicStore", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "RevokedToken",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Jti = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: false),
+                    ExpiresAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    RevokedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_RevokedToken", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -102,9 +121,9 @@ namespace eNote.Infrastructure.Data.Migrations
                 {
                     table.PrimaryKey("PK_AspNetUsers", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_AspNetUsers_Addresses_AddressId",
+                        name: "FK_AspNetUsers_Address_AddressId",
                         column: x => x.AddressId,
-                        principalTable: "Addresses",
+                        principalTable: "Address",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
@@ -131,7 +150,7 @@ namespace eNote.Infrastructure.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Instruments",
+                name: "Instrument",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
@@ -142,21 +161,25 @@ namespace eNote.Infrastructure.Data.Migrations
                     ImagePath = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
                     InstrumentTypeId = table.Column<int>(type: "int", nullable: false),
-                    MusicStoreId = table.Column<int>(type: "int", nullable: false)
+                    MusicStoreId = table.Column<int>(type: "int", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedById = table.Column<int>(type: "int", nullable: true),
+                    UpdatedById = table.Column<int>(type: "int", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Instruments", x => x.Id);
+                    table.PrimaryKey("PK_Instrument", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Instruments_InstrumentTypes_InstrumentTypeId",
+                        name: "FK_Instrument_InstrumentType_InstrumentTypeId",
                         column: x => x.InstrumentTypeId,
-                        principalTable: "InstrumentTypes",
+                        principalTable: "InstrumentType",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "FK_Instruments_MusicStores_MusicStoreId",
+                        name: "FK_Instrument_MusicStore_MusicStoreId",
                         column: x => x.MusicStoreId,
-                        principalTable: "MusicStores",
+                        principalTable: "MusicStore",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
@@ -247,18 +270,22 @@ namespace eNote.Infrastructure.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Instructors",
+                name: "Instructor",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    AppUserId = table.Column<int>(type: "int", nullable: false)
+                    AppUserId = table.Column<int>(type: "int", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedById = table.Column<int>(type: "int", nullable: true),
+                    UpdatedById = table.Column<int>(type: "int", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Instructors", x => x.Id);
+                    table.PrimaryKey("PK_Instructor", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Instructors_AspNetUsers_AppUserId",
+                        name: "FK_Instructor_AspNetUsers_AppUserId",
                         column: x => x.AppUserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
@@ -266,7 +293,7 @@ namespace eNote.Infrastructure.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "StoreEmployees",
+                name: "MusicStoreEmployee",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
@@ -274,39 +301,47 @@ namespace eNote.Infrastructure.Data.Migrations
                     AppUserId = table.Column<int>(type: "int", nullable: false),
                     MusicStoreId = table.Column<int>(type: "int", nullable: false),
                     IsManager = table.Column<bool>(type: "bit", nullable: false),
-                    IsActive = table.Column<bool>(type: "bit", nullable: false)
+                    IsActive = table.Column<bool>(type: "bit", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedById = table.Column<int>(type: "int", nullable: true),
+                    UpdatedById = table.Column<int>(type: "int", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_StoreEmployees", x => x.Id);
+                    table.PrimaryKey("PK_MusicStoreEmployee", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_StoreEmployees_AspNetUsers_AppUserId",
+                        name: "FK_MusicStoreEmployee_AspNetUsers_AppUserId",
                         column: x => x.AppUserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "FK_StoreEmployees_MusicStores_MusicStoreId",
+                        name: "FK_MusicStoreEmployee_MusicStore_MusicStoreId",
                         column: x => x.MusicStoreId,
-                        principalTable: "MusicStores",
+                        principalTable: "MusicStore",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
-                name: "Students",
+                name: "Student",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     AppUserId = table.Column<int>(type: "int", nullable: false),
-                    EnrollmentDate = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    EnrollmentDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedById = table.Column<int>(type: "int", nullable: true),
+                    UpdatedById = table.Column<int>(type: "int", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Students", x => x.Id);
+                    table.PrimaryKey("PK_Student", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Students_AspNetUsers_AppUserId",
+                        name: "FK_Student_AspNetUsers_AppUserId",
                         column: x => x.AppUserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
@@ -314,7 +349,7 @@ namespace eNote.Infrastructure.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Courses",
+                name: "Course",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
@@ -325,21 +360,25 @@ namespace eNote.Infrastructure.Data.Migrations
                     StartDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     EndDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     IsPublished = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
-                    InstructorId = table.Column<int>(type: "int", nullable: false)
+                    InstructorId = table.Column<int>(type: "int", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedById = table.Column<int>(type: "int", nullable: true),
+                    UpdatedById = table.Column<int>(type: "int", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Courses", x => x.Id);
+                    table.PrimaryKey("PK_Course", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Courses_Instructors_InstructorId",
+                        name: "FK_Course_Instructor_InstructorId",
                         column: x => x.InstructorId,
-                        principalTable: "Instructors",
+                        principalTable: "Instructor",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
-                name: "InstrumentRentals",
+                name: "InstrumentRental",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
@@ -352,21 +391,25 @@ namespace eNote.Infrastructure.Data.Migrations
                     ReturnedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     RentalStatus = table.Column<int>(type: "int", nullable: false),
                     StudentProfileId = table.Column<int>(type: "int", nullable: false),
-                    InstrumentId = table.Column<int>(type: "int", nullable: false)
+                    InstrumentId = table.Column<int>(type: "int", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedById = table.Column<int>(type: "int", nullable: true),
+                    UpdatedById = table.Column<int>(type: "int", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_InstrumentRentals", x => x.Id);
+                    table.PrimaryKey("PK_InstrumentRental", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_InstrumentRentals_Instruments_InstrumentId",
+                        name: "FK_InstrumentRental_Instrument_InstrumentId",
                         column: x => x.InstrumentId,
-                        principalTable: "Instruments",
+                        principalTable: "Instrument",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_InstrumentRentals_Students_StudentProfileId",
+                        name: "FK_InstrumentRental_Student_StudentProfileId",
                         column: x => x.StudentProfileId,
-                        principalTable: "Students",
+                        principalTable: "Student",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
@@ -380,9 +423,12 @@ namespace eNote.Infrastructure.Data.Migrations
                     Title = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: false),
                     Content = table.Column<string>(type: "nvarchar(4000)", maxLength: 4000, nullable: false),
                     PublishedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    CreatedById = table.Column<int>(type: "int", nullable: false),
                     CourseId = table.Column<int>(type: "int", nullable: true),
-                    MusicStoreId = table.Column<int>(type: "int", nullable: true)
+                    MusicStoreId = table.Column<int>(type: "int", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedById = table.Column<int>(type: "int", nullable: true),
+                    UpdatedById = table.Column<int>(type: "int", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -395,48 +441,52 @@ namespace eNote.Infrastructure.Data.Migrations
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "FK_Announcement_Courses_CourseId",
+                        name: "FK_Announcement_Course_CourseId",
                         column: x => x.CourseId,
-                        principalTable: "Courses",
+                        principalTable: "Course",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_Announcement_MusicStores_MusicStoreId",
+                        name: "FK_Announcement_MusicStore_MusicStoreId",
                         column: x => x.MusicStoreId,
-                        principalTable: "MusicStores",
+                        principalTable: "MusicStore",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
-                name: "Enrollments",
+                name: "Enrollment",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     EnrollmentStatus = table.Column<int>(type: "int", nullable: false),
                     StudentId = table.Column<int>(type: "int", nullable: false),
-                    CourseId = table.Column<int>(type: "int", nullable: false)
+                    CourseId = table.Column<int>(type: "int", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedById = table.Column<int>(type: "int", nullable: true),
+                    UpdatedById = table.Column<int>(type: "int", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Enrollments", x => x.Id);
+                    table.PrimaryKey("PK_Enrollment", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Enrollments_Courses_CourseId",
+                        name: "FK_Enrollment_Course_CourseId",
                         column: x => x.CourseId,
-                        principalTable: "Courses",
+                        principalTable: "Course",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "FK_Enrollments_Students_StudentId",
+                        name: "FK_Enrollment_Student_StudentId",
                         column: x => x.StudentId,
-                        principalTable: "Students",
+                        principalTable: "Student",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
-                name: "Lectures",
+                name: "Lecture",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
@@ -450,21 +500,25 @@ namespace eNote.Infrastructure.Data.Migrations
                     Capacity = table.Column<int>(type: "int", nullable: true),
                     IsCancelled = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
                     RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: true),
-                    CourseId = table.Column<int>(type: "int", nullable: false)
+                    CourseId = table.Column<int>(type: "int", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedById = table.Column<int>(type: "int", nullable: true),
+                    UpdatedById = table.Column<int>(type: "int", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Lectures", x => x.Id);
+                    table.PrimaryKey("PK_Lecture", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Lectures_Courses_CourseId",
+                        name: "FK_Lecture_Course_CourseId",
                         column: x => x.CourseId,
-                        principalTable: "Courses",
+                        principalTable: "Course",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
-                name: "Assignments",
+                name: "Assignment",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
@@ -472,70 +526,81 @@ namespace eNote.Infrastructure.Data.Migrations
                     Title = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
                     Description = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     DueAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    LectureId = table.Column<int>(type: "int", nullable: false)
+                    LectureId = table.Column<int>(type: "int", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedById = table.Column<int>(type: "int", nullable: true),
+                    UpdatedById = table.Column<int>(type: "int", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Assignments", x => x.Id);
+                    table.PrimaryKey("PK_Assignment", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Assignments_Lectures_LectureId",
+                        name: "FK_Assignment_Lecture_LectureId",
                         column: x => x.LectureId,
-                        principalTable: "Lectures",
+                        principalTable: "Lecture",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
-                name: "Attendances",
+                name: "Attendance",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     AttendanceStatus = table.Column<int>(type: "int", nullable: false),
                     StudentId = table.Column<int>(type: "int", nullable: false),
-                    LectureId = table.Column<int>(type: "int", nullable: false)
+                    LectureId = table.Column<int>(type: "int", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedById = table.Column<int>(type: "int", nullable: true),
+                    UpdatedById = table.Column<int>(type: "int", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Attendances", x => x.Id);
+                    table.PrimaryKey("PK_Attendance", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Attendances_Lectures_LectureId",
+                        name: "FK_Attendance_Lecture_LectureId",
                         column: x => x.LectureId,
-                        principalTable: "Lectures",
+                        principalTable: "Lecture",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_Attendances_Students_StudentId",
+                        name: "FK_Attendance_Student_StudentId",
                         column: x => x.StudentId,
-                        principalTable: "Students",
+                        principalTable: "Student",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
-                name: "LectureNotes",
+                name: "LectureNote",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Title = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
                     Content = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    LectureId = table.Column<int>(type: "int", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    LectureId = table.Column<int>(type: "int", nullable: false)
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedById = table.Column<int>(type: "int", nullable: true),
+                    UpdatedById = table.Column<int>(type: "int", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_LectureNotes", x => x.Id);
+                    table.PrimaryKey("PK_LectureNote", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_LectureNotes_Lectures_LectureId",
+                        name: "FK_LectureNote_Lecture_LectureId",
                         column: x => x.LectureId,
-                        principalTable: "Lectures",
+                        principalTable: "Lecture",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
-                name: "AssignmentSubmissions",
+                name: "AssignmentSubmission",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
@@ -544,27 +609,31 @@ namespace eNote.Infrastructure.Data.Migrations
                     SubmittedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     FilePath = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
                     AssignmentId = table.Column<int>(type: "int", nullable: false),
-                    StudentId = table.Column<int>(type: "int", nullable: false)
+                    StudentId = table.Column<int>(type: "int", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedById = table.Column<int>(type: "int", nullable: true),
+                    UpdatedById = table.Column<int>(type: "int", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_AssignmentSubmissions", x => x.Id);
+                    table.PrimaryKey("PK_AssignmentSubmission", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_AssignmentSubmissions_Assignments_AssignmentId",
+                        name: "FK_AssignmentSubmission_Assignment_AssignmentId",
                         column: x => x.AssignmentId,
-                        principalTable: "Assignments",
+                        principalTable: "Assignment",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_AssignmentSubmissions_Students_StudentId",
+                        name: "FK_AssignmentSubmission_Student_StudentId",
                         column: x => x.StudentId,
-                        principalTable: "Students",
+                        principalTable: "Student",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.InsertData(
-                table: "Addresses",
+                table: "Address",
                 columns: new[] { "Id", "City", "Number", "Street" },
                 values: new object[,]
                 {
@@ -576,7 +645,7 @@ namespace eNote.Infrastructure.Data.Migrations
                 });
 
             migrationBuilder.InsertData(
-                table: "InstrumentTypes",
+                table: "InstrumentType",
                 columns: new[] { "Id", "MonthlyFee", "Type" },
                 values: new object[,]
                 {
@@ -652,100 +721,106 @@ namespace eNote.Infrastructure.Data.Migrations
                 filter: "[NormalizedUserName] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Assignments_LectureId",
-                table: "Assignments",
+                name: "IX_Assignment_LectureId",
+                table: "Assignment",
                 column: "LectureId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_AssignmentSubmissions_AssignmentId",
-                table: "AssignmentSubmissions",
+                name: "IX_AssignmentSubmission_AssignmentId",
+                table: "AssignmentSubmission",
                 column: "AssignmentId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_AssignmentSubmissions_StudentId",
-                table: "AssignmentSubmissions",
+                name: "IX_AssignmentSubmission_StudentId",
+                table: "AssignmentSubmission",
                 column: "StudentId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Attendances_LectureId",
-                table: "Attendances",
+                name: "IX_Attendance_LectureId",
+                table: "Attendance",
                 column: "LectureId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Attendances_StudentId_LectureId",
-                table: "Attendances",
+                name: "IX_Attendance_StudentId_LectureId",
+                table: "Attendance",
                 columns: new[] { "StudentId", "LectureId" },
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_Courses_InstructorId",
-                table: "Courses",
+                name: "IX_Course_InstructorId",
+                table: "Course",
                 column: "InstructorId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Enrollments_CourseId",
-                table: "Enrollments",
+                name: "IX_Enrollment_CourseId",
+                table: "Enrollment",
                 column: "CourseId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Enrollments_StudentId_CourseId",
-                table: "Enrollments",
+                name: "IX_Enrollment_StudentId_CourseId",
+                table: "Enrollment",
                 columns: new[] { "StudentId", "CourseId" },
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_Instructors_AppUserId",
-                table: "Instructors",
+                name: "IX_Instructor_AppUserId",
+                table: "Instructor",
                 column: "AppUserId",
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_InstrumentRentals_InstrumentId",
-                table: "InstrumentRentals",
+                name: "IX_Instrument_InstrumentTypeId",
+                table: "Instrument",
+                column: "InstrumentTypeId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Instrument_MusicStoreId",
+                table: "Instrument",
+                column: "MusicStoreId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_InstrumentRental_InstrumentId",
+                table: "InstrumentRental",
                 column: "InstrumentId",
                 unique: true,
                 filter: "[RentalStatus] IN (2, 3)");
 
             migrationBuilder.CreateIndex(
-                name: "IX_InstrumentRentals_StudentProfileId",
-                table: "InstrumentRentals",
+                name: "IX_InstrumentRental_StudentProfileId",
+                table: "InstrumentRental",
                 column: "StudentProfileId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Instruments_InstrumentTypeId",
-                table: "Instruments",
-                column: "InstrumentTypeId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Instruments_MusicStoreId",
-                table: "Instruments",
-                column: "MusicStoreId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_LectureNotes_LectureId",
-                table: "LectureNotes",
-                column: "LectureId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Lectures_CourseId",
-                table: "Lectures",
+                name: "IX_Lecture_CourseId",
+                table: "Lecture",
                 column: "CourseId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_StoreEmployees_AppUserId",
-                table: "StoreEmployees",
+                name: "IX_LectureNote_LectureId",
+                table: "LectureNote",
+                column: "LectureId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_MusicStoreEmployee_AppUserId",
+                table: "MusicStoreEmployee",
                 column: "AppUserId",
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_StoreEmployees_MusicStoreId_AppUserId",
-                table: "StoreEmployees",
+                name: "IX_MusicStoreEmployee_MusicStoreId_AppUserId",
+                table: "MusicStoreEmployee",
                 columns: new[] { "MusicStoreId", "AppUserId" },
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_Students_AppUserId",
-                table: "Students",
+                name: "IX_RevokedToken_Jti",
+                table: "RevokedToken",
+                column: "Jti",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Student_AppUserId",
+                table: "Student",
                 column: "AppUserId",
                 unique: true);
         }
@@ -772,55 +847,58 @@ namespace eNote.Infrastructure.Data.Migrations
                 name: "AspNetUserTokens");
 
             migrationBuilder.DropTable(
-                name: "AssignmentSubmissions");
+                name: "AssignmentSubmission");
 
             migrationBuilder.DropTable(
-                name: "Attendances");
+                name: "Attendance");
 
             migrationBuilder.DropTable(
-                name: "Enrollments");
+                name: "Enrollment");
 
             migrationBuilder.DropTable(
-                name: "InstrumentRentals");
+                name: "InstrumentRental");
 
             migrationBuilder.DropTable(
-                name: "LectureNotes");
+                name: "LectureNote");
 
             migrationBuilder.DropTable(
-                name: "StoreEmployees");
+                name: "MusicStoreEmployee");
+
+            migrationBuilder.DropTable(
+                name: "RevokedToken");
 
             migrationBuilder.DropTable(
                 name: "AspNetRoles");
 
             migrationBuilder.DropTable(
-                name: "Assignments");
+                name: "Assignment");
 
             migrationBuilder.DropTable(
-                name: "Instruments");
+                name: "Instrument");
 
             migrationBuilder.DropTable(
-                name: "Students");
+                name: "Student");
 
             migrationBuilder.DropTable(
-                name: "Lectures");
+                name: "Lecture");
 
             migrationBuilder.DropTable(
-                name: "InstrumentTypes");
+                name: "InstrumentType");
 
             migrationBuilder.DropTable(
-                name: "MusicStores");
+                name: "MusicStore");
 
             migrationBuilder.DropTable(
-                name: "Courses");
+                name: "Course");
 
             migrationBuilder.DropTable(
-                name: "Instructors");
+                name: "Instructor");
 
             migrationBuilder.DropTable(
                 name: "AspNetUsers");
 
             migrationBuilder.DropTable(
-                name: "Addresses");
+                name: "Address");
         }
     }
 }

@@ -1,8 +1,8 @@
 ﻿using eNote.Application.Common.Persistence;
 using eNote.Application.Common.Time;
+using eNote.Application.Features.Courses.Services;
 using eNote.Infrastructure.Data;
 using eNote.Infrastructure.Identity;
-using Scrutor;
 
 namespace eNote.API.Extensions
 {
@@ -13,7 +13,7 @@ namespace eNote.API.Extensions
             services.AddSingleton<IClock, SystemClock>();
 
             services.Scan(scan => scan
-                .FromAssemblyOf<AuthService>()
+                .FromAssembliesOf(typeof(AuthService), typeof(CourseService))
                 .AddClasses(classes => classes.Where(type => type.Name.EndsWith("Service") && !type.IsAbstract))
                 .AsImplementedInterfaces()
                 .WithScopedLifetime());

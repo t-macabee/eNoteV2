@@ -1,6 +1,6 @@
 using eNote.Application.Common.Paging;
 
-namespace eNote.Application.Features.Courses.Services
+namespace eNote.Application.Features.Courses.Services.Interfaces
 {
     public interface ICourseService
     {

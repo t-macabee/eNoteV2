@@ -8,7 +8,7 @@ namespace eNote.Infrastructure.Data.Configurations
     public class MusicStoreEmployeeConfig : IEntityTypeConfiguration<MusicStoreEmployee>
     {
         public void Configure(EntityTypeBuilder<MusicStoreEmployee> builder)
-        { 
+        {
             builder.HasUniqueIndex(nameof(MusicStoreEmployee.AppUserId));
             builder.HasUniqueIndex(nameof(MusicStoreEmployee.MusicStoreId), nameof(MusicStoreEmployee.AppUserId));
 
@@ -24,6 +24,6 @@ namespace eNote.Infrastructure.Data.Configurations
                    .WithMany()
                    .HasForeignKey(x => x.AppUserId)
                    .OnDelete(DeleteBehavior.Restrict);
-        }        
+        }
     }
 }

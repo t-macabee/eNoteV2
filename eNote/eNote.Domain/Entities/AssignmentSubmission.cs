@@ -3,10 +3,10 @@
 namespace eNote.Domain.Entities
 {
     public class AssignmentSubmission : AuditableEntity
-    {        
+    {
         public int? Grade { get; set; }
         public DateTime? SubmittedAt { get; set; }
-        public string? FilePath { get; set; } 
+        public string? FilePath { get; set; }
 
         public int AssignmentId { get; set; }
         public Assignment Assignment { get; set; } = null!;

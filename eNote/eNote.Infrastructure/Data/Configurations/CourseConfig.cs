@@ -20,6 +20,6 @@ namespace eNote.Infrastructure.Data.Configurations
 
             builder.Property(x => x.Price).HasDecimalConfig();
             builder.Property(x => x.IsPublished).HasDefaultFalse();
-        }        
+        }
     }
 }
