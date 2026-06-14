@@ -33,7 +33,8 @@ namespace eNote.Infrastructure.Data.Seed
                     Price = 800,
                     InstructorId = instructorId,
                     StartDate = new DateTime(2024, 8, 10),
-                    EndDate = new DateTime(2024, 10, 10)
+                    EndDate = new DateTime(2024, 10, 10),
+                    IsPublished = true
                 },
                 new Course
                 {
@@ -42,7 +43,8 @@ namespace eNote.Infrastructure.Data.Seed
                     Price = 800,
                     InstructorId = instructorId,
                     StartDate = new DateTime(2024, 9, 12),
-                    EndDate = new DateTime(2024, 10, 12)
+                    EndDate = new DateTime(2024, 10, 12),
+                    IsPublished = true
                 }
             );
 

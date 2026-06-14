@@ -5,6 +5,7 @@ using eNote.Application.Common.Persistence;
 using eNote.Application.Features.Courses.Services.Interfaces;
 using eNote.Application.Features.Users;
 using eNote.Domain.Entities;
+using eNote.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -12,37 +13,67 @@ namespace eNote.Application.Features.Courses.Services
 {
     public class CourseService(IAppDbContext context, ILogger<CourseService> logger) : ICourseService
     {
-        public async Task<CourseDto> GetByIdAsync(int id, int requesterId)
+        public async Task<CourseDto> GetByIdForInstructorAsync(int id, int instructorUserId)
         {
+            var instructor = await UserProfileHelper.GetInstructorByUserIdAsync(context, instructorUserId);
+
             var entity = await context.Set<Course>()
                 .Include(c => c.Enrollments)
-                .FirstOrDefaultAsync(c => c.Id == id)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(c => c.Id == id && c.InstructorId == instructor.Id)
                 ?? throw new NotFoundException(Messages.CourseNotFound);
 
             return Map(entity);
         }
 
-        public async Task<PagedResult<CourseDto>> GetPagedAsync(int page, int pageSize, int requesterId)
+        public async Task<CourseDto> GetByIdForStudentAsync(int id, int studentUserId)
         {
-            (page, pageSize) = PagingLimits.Normalize(page, pageSize);
+            var student = await UserProfileHelper.GetStudentByUserIdAsync(context, studentUserId);
 
-            var query = context.Set<Course>().AsNoTracking();
+            var entity = await context.Set<Course>()
+                .Include(c => c.Enrollments)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(c =>
+                    c.Id == id &&
+                    (c.IsPublished ||
+                     c.Enrollments.Any(e =>
+                         e.StudentId == student.Id &&
+                         e.EnrollmentStatus == EnrollmentStatus.Active)))
+                ?? throw new NotFoundException(Messages.CourseNotFound);
 
-            var items = await query
-                .OrderByDescending(x => x.StartDate)
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .ToListAsync();
+            return Map(entity);
+        }
 
-            var models = items.Select(Map).ToList();
+        public async Task<PagedResult<CourseDto>> GetPagedForInstructorAsync(int instructorUserId, int page, int pageSize)
+        {
+            var instructor = await UserProfileHelper.GetInstructorByUserIdAsync(context, instructorUserId);
 
-            return new PagedResult<CourseDto>
-            {
-                Items = models,
-                Page = page,
-                PageSize = pageSize,
-                TotalCount = await context.Set<Course>().CountAsync()
-            };
+            var query = context.Set<Course>()
+                .AsNoTracking()
+                .Include(c => c.Enrollments)
+                .Where(c => c.InstructorId == instructor.Id);
+
+            return await query.ToPagedResultAsync(
+                page,
+                pageSize,
+                includeTotalCount: true,
+                Map,
+                q => q.OrderByDescending(x => x.StartDate));
+        }
+
+        public async Task<PagedResult<CourseDto>> GetPagedForStudentAsync(int page, int pageSize)
+        {
+            var query = context.Set<Course>()
+                .AsNoTracking()
+                .Include(c => c.Enrollments)
+                .Where(c => c.IsPublished);
+
+            return await query.ToPagedResultAsync(
+                page,
+                pageSize,
+                includeTotalCount: true,
+                Map,
+                q => q.OrderByDescending(x => x.StartDate));
         }
 
         public async Task<CourseDto> CreateAsync(int instructorUserId, CourseCreateRequest request)
@@ -77,11 +108,11 @@ namespace eNote.Application.Features.Courses.Services
 
             var course = await context.Set<Course>()
                 .Include(c => c.Enrollments)
-                .FirstOrDefaultAsync(c => c.Id == courseId)
+                .FirstOrDefaultAsync(c => c.Id == courseId && c.IsPublished)
                 ?? throw new NotFoundException(Messages.CourseNotFound);
 
             var existing = course.Enrollments
-                .FirstOrDefault(e => e.StudentId == student.Id && e.EnrollmentStatus == Domain.Enums.EnrollmentStatus.Active);
+                .FirstOrDefault(e => e.StudentId == student.Id && e.EnrollmentStatus == EnrollmentStatus.Active);
 
             if (existing != null)
                 return;
@@ -90,7 +121,7 @@ namespace eNote.Application.Features.Courses.Services
             {
                 CourseId = course.Id,
                 StudentId = student.Id,
-                EnrollmentStatus = Domain.Enums.EnrollmentStatus.Active
+                EnrollmentStatus = EnrollmentStatus.Active
             };
 
             context.Set<Enrollment>().Add(enrollment);

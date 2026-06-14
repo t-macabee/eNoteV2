@@ -4,8 +4,10 @@ namespace eNote.Application.Features.Lectures.Services.Interfaces
 {
     public interface ILectureService
     {
-        Task<LectureDto> GetByIdAsync(int id, int requesterId);
-        Task<PagedResult<LectureDto>> GetPagedAsync(int page, int pageSize, int requesterId);
+        Task<PagedResult<LectureDto>> GetPagedForInstructorAsync(int instructorUserId, int page, int pageSize);
+        Task<PagedResult<LectureDto>> GetPagedForStudentAsync(int page, int pageSize);
+        Task<LectureDto> GetByIdForInstructorAsync(int id, int instructorUserId);
+        Task<LectureDto> GetByIdForStudentAsync(int id, int studentUserId);
         Task<LectureDto> CreateAsync(int teacherId, LectureCreateRequest request);
         Task<RsvpResponse> RsvpAsync(int lectureId, int studentUserId, RsvpRequest request);
     }

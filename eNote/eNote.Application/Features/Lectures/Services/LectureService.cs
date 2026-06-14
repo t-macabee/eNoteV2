@@ -5,6 +5,7 @@ using eNote.Application.Common.Persistence;
 using eNote.Application.Features.Lectures.Services.Interfaces;
 using eNote.Application.Features.Users;
 using eNote.Domain.Entities;
+using eNote.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -12,37 +13,62 @@ namespace eNote.Application.Features.Lectures.Services
 {
     public class LectureService(IAppDbContext context, ILogger<LectureService> logger) : ILectureService
     {
-        public async Task<LectureDto> GetByIdAsync(int id, int requesterId)
+        public async Task<LectureDto> GetByIdForInstructorAsync(int id, int instructorUserId)
         {
+            var instructor = await UserProfileHelper.GetInstructorByUserIdAsync(context, instructorUserId);
+
             var entity = await context.Set<Lecture>()
                 .Include(x => x.Attendances)
-                .FirstOrDefaultAsync(x => x.Id == id)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Id == id && x.Course.InstructorId == instructor.Id)
                 ?? throw new NotFoundException(Messages.LectureNotFound);
 
             return Map(entity);
         }
 
-        public async Task<PagedResult<LectureDto>> GetPagedAsync(int page, int pageSize, int requesterId)
+        public async Task<LectureDto> GetByIdForStudentAsync(int id, int studentUserId)
         {
-            (page, pageSize) = PagingLimits.Normalize(page, pageSize);
+            _ = await UserProfileHelper.GetStudentByUserIdAsync(context, studentUserId);
 
-            var query = context.Set<Lecture>().AsNoTracking();
+            var entity = await context.Set<Lecture>()
+                .Include(x => x.Attendances)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Id == id && x.Course.IsPublished && !x.IsCancelled)
+                ?? throw new NotFoundException(Messages.LectureNotFound);
 
-            var items = await query
-                .OrderByDescending(x => x.LectureTime)
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .ToListAsync();
+            return Map(entity);
+        }
 
-            var models = items.Select(Map).ToList();
+        public async Task<PagedResult<LectureDto>> GetPagedForInstructorAsync(int instructorUserId, int page, int pageSize)
+        {
+            var instructor = await UserProfileHelper.GetInstructorByUserIdAsync(context, instructorUserId);
 
-            return new PagedResult<LectureDto>
-            {
-                Items = models,
-                Page = page,
-                PageSize = pageSize,
-                TotalCount = await context.Set<Lecture>().CountAsync()
-            };
+            var query = context.Set<Lecture>()
+                .AsNoTracking()
+                .Include(x => x.Attendances)
+                .Where(x => x.Course.InstructorId == instructor.Id);
+
+            return await query.ToPagedResultAsync(
+                page,
+                pageSize,
+                includeTotalCount: true,
+                Map,
+                q => q.OrderByDescending(x => x.LectureTime));
+        }
+
+        public async Task<PagedResult<LectureDto>> GetPagedForStudentAsync(int page, int pageSize)
+        {
+            var query = context.Set<Lecture>()
+                .AsNoTracking()
+                .Include(x => x.Attendances)
+                .Where(x => x.Course.IsPublished && !x.IsCancelled);
+
+            return await query.ToPagedResultAsync(
+                page,
+                pageSize,
+                includeTotalCount: true,
+                Map,
+                q => q.OrderByDescending(x => x.LectureTime));
         }
 
         public async Task<LectureDto> CreateAsync(int teacherId, LectureCreateRequest request)
@@ -63,7 +89,7 @@ namespace eNote.Application.Features.Lectures.Services
                 LectureTime = request.LectureTime,
                 Duration = request.Duration,
                 Capacity = request.Capacity,
-                LectureStatus = Domain.Enums.LectureStatus.Scheduled,
+                LectureStatus = LectureStatus.Scheduled,
                 IsCancelled = false,
                 CourseId = request.CourseId ?? 0
             };
@@ -79,7 +105,8 @@ namespace eNote.Application.Features.Lectures.Services
         {
             var lecture = await context.Set<Lecture>()
                 .Include(x => x.Attendances)
-                .FirstOrDefaultAsync(x => x.Id == lectureId)
+                .Include(x => x.Course)
+                .FirstOrDefaultAsync(x => x.Id == lectureId && x.Course.IsPublished)
                 ?? throw new NotFoundException(Messages.LectureNotFound);
 
             if (lecture.IsCancelled)
@@ -91,23 +118,23 @@ namespace eNote.Application.Features.Lectures.Services
 
             if (request.Confirm)
             {
-                var confirmedCount = lecture.Attendances.Count(a => a.AttendanceStatus == Domain.Enums.AttendanceStatus.Present);
+                var confirmedCount = lecture.Attendances.Count(a => a.AttendanceStatus == AttendanceStatus.Present);
 
-                if (lecture.Capacity.HasValue && confirmedCount >= lecture.Capacity.Value && (existing == null || existing.AttendanceStatus != Domain.Enums.AttendanceStatus.Present))
+                if (lecture.Capacity.HasValue && confirmedCount >= lecture.Capacity.Value && (existing == null || existing.AttendanceStatus != AttendanceStatus.Present))
                     throw new ConflictException(Messages.LectureFull);
 
                 if (existing == null)
                 {
-                    lecture.Attendances.Add(new Attendance { StudentId = student.Id, LectureId = lecture.Id, AttendanceStatus = Domain.Enums.AttendanceStatus.Present });
+                    lecture.Attendances.Add(new Attendance { StudentId = student.Id, LectureId = lecture.Id, AttendanceStatus = AttendanceStatus.Present });
                 }
                 else
                 {
-                    existing.AttendanceStatus = Domain.Enums.AttendanceStatus.Present;
+                    existing.AttendanceStatus = AttendanceStatus.Present;
                 }
             }
             else
             {
-                existing?.AttendanceStatus = Domain.Enums.AttendanceStatus.Absent;
+                existing?.AttendanceStatus = AttendanceStatus.Absent;
             }
 
             try
@@ -135,7 +162,7 @@ namespace eNote.Application.Features.Lectures.Services
                 Duration = e.Duration,
                 Capacity = e.Capacity,
                 IsCancelled = e.IsCancelled,
-                AttendeeCount = e.Attendances?.Count(a => a.AttendanceStatus == Domain.Enums.AttendanceStatus.Present) ?? 0
+                AttendeeCount = e.Attendances?.Count(a => a.AttendanceStatus == AttendanceStatus.Present) ?? 0
             };
         }
     }
