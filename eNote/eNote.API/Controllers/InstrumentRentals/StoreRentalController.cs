@@ -13,18 +13,18 @@ namespace eNote.API.Controllers.InstrumentRentals
     [Route("api/shop/rentals")]
     public sealed class StoreRentalController(IRentalQueryService queryService, IRentalCommandService commandService) : CoreController
     {
+        [HttpGet]
+        public async Task<ActionResult<PagedResult<InstrumentRentalDto>>> GetPaged([FromQuery] InstrumentRentalSearchObject search)
+        {
+            var result = await queryService.GetPagedForStoreAsync(CurrentUserId, search);
+            return Ok(result);
+        }
+
         [HttpGet("{id:int}")]
         public async Task<ActionResult<InstrumentRentalDto>> GetById(int id)
         {
             var dto = await queryService.GetByIdForStoreAsync(id, CurrentUserId);
             return Ok(dto);
-        }
-
-        [HttpGet]
-        public async Task<ActionResult<PagedResult<InstrumentRentalDto>>> GetShopRentals([FromQuery] InstrumentRentalSearchObject search)
-        {
-            var result = await queryService.GetPagedForStoreAsync(CurrentUserId, search);
-            return Ok(result);
         }
 
         [HttpPost("{id:int}/approve")]

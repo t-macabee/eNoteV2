@@ -32,5 +32,19 @@ namespace eNote.API.Controllers.Courses
             var dto = await service.CreateAsync(CurrentUserId, request);
             return Ok(dto);
         }
+
+        [HttpPut("{id:int}")]
+        public async Task<ActionResult<CourseDto>> Update(int id, [FromBody] CourseUpdateRequest request)
+        {
+            var dto = await service.UpdateAsync(id, CurrentUserId, request);
+            return Ok(dto);
+        }
+
+        [HttpDelete("{id:int}")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            await service.DeleteAsync(id, CurrentUserId);
+            return NoContent();
+        }
     }
 }

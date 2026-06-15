@@ -11,8 +11,15 @@ namespace eNote.API.Controllers.InstrumentRentals
 {
     [Authorize(Roles = AppRoles.Student)]
     [Route("api/student/rentals")]
-    public class StudentRentalController(IRentalQueryService queryService, IRentalCommandService commandService) : CoreController
+    public sealed class StudentRentalController(IRentalQueryService queryService, IRentalCommandService commandService) : CoreController
     {
+        [HttpGet]
+        public async Task<ActionResult<PagedResult<InstrumentRentalDto>>> GetPaged([FromQuery] InstrumentRentalSearchObject search)
+        {
+            var result = await queryService.GetPagedForStudentAsync(CurrentUserId, search);
+            return Ok(result);
+        }
+
         [HttpGet("{id:int}")]
         public async Task<ActionResult<InstrumentRentalDto>> GetById(int id)
         {
@@ -20,15 +27,8 @@ namespace eNote.API.Controllers.InstrumentRentals
             return Ok(dto);
         }
 
-        [HttpGet]
-        public async Task<ActionResult<PagedResult<InstrumentRentalDto>>> GetMyRentals([FromQuery] InstrumentRentalSearchObject search)
-        {
-            var result = await queryService.GetPagedForStudentAsync(CurrentUserId, search);
-            return Ok(result);
-        }
-
         [HttpPost]
-        public async Task<ActionResult<InstrumentRentalDto>> CreateRequest([FromBody] RentalCreateRequest request)
+        public async Task<ActionResult<InstrumentRentalDto>> Create([FromBody] RentalCreateRequest request)
         {
             var dto = await commandService.CreateRequestAsync(CurrentUserId, request);
             return Ok(dto);

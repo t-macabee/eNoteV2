@@ -16,8 +16,7 @@ namespace eNote.Infrastructure.Data
                 .Build();
 
             var connectionString = configuration.GetConnectionString("DefaultConnection")
-                ?? throw new InvalidOperationException(
-                    "ConnectionStrings__DefaultConnection is missing. Set it in .env or environment variables.");
+                ?? throw new InvalidOperationException("ConnectionStrings__DefaultConnection is missing. Set it in .env or environment variables.");
 
             var optionsBuilder = new DbContextOptionsBuilder<ENoteContext>();
 

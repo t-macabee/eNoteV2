@@ -4,7 +4,10 @@ namespace eNote.API.Extensions
     {
         public const string PolicyName = "ENoteCors";
 
-        public static IServiceCollection AddApplicationCors(this IServiceCollection services, IConfiguration configuration)
+        public static IServiceCollection AddApplicationCors(
+            this IServiceCollection services,
+            IConfiguration configuration,
+            IWebHostEnvironment environment)
         {
             var origins = configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
                 ?? configuration["Cors:AllowedOrigins"]?.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
@@ -16,10 +19,16 @@ namespace eNote.API.Extensions
                 {
                     if (origins.Length == 0)
                     {
-                        policy.AllowAnyOrigin()
-                              .AllowAnyHeader()
-                              .AllowAnyMethod();
-                        return;
+                        if (environment.IsDevelopment())
+                        {
+                            policy.AllowAnyOrigin()
+                                  .AllowAnyHeader()
+                                  .AllowAnyMethod();
+                            return;
+                        }
+
+                        throw new InvalidOperationException(
+                            "Cors:AllowedOrigins must be configured for non-development environments.");
                     }
 
                     policy.WithOrigins(origins)

@@ -24,5 +24,19 @@ namespace eNote.API.Controllers.Announcements
             var result = await announcementService.CreateForCourseAsync(CurrentUserId, courseId, request);
             return Ok(result);
         }
+
+        [HttpPut("{announcementId:int}")]
+        public async Task<ActionResult<AnnouncementDto>> Update(int courseId, int announcementId, [FromBody] AnnouncementUpdateRequest request)
+        {
+            var result = await announcementService.UpdateForCourseAsync(CurrentUserId, courseId, announcementId, request);
+            return Ok(result);
+        }
+
+        [HttpDelete("{announcementId:int}")]
+        public async Task<IActionResult> Delete(int courseId, int announcementId)
+        {
+            await announcementService.DeleteForCourseAsync(CurrentUserId, courseId, announcementId);
+            return NoContent();
+        }
     }
 }

@@ -10,11 +10,11 @@ using Microsoft.AspNetCore.Mvc;
 namespace eNote.API.Controllers.Instruments
 {
     [Authorize(Roles = AppRoles.StoreEmployee)]
-    [Route("api/instruments")]
+    [Route("api/shop/instruments")]
     public sealed class InstrumentController(IInstrumentService instrumentService) : CoreController
     {
         [HttpGet]
-        public async Task<ActionResult<PagedResult<InstrumentDto>>> GetAll([FromQuery] InstrumentSearchObject search)
+        public async Task<ActionResult<PagedResult<InstrumentDto>>> GetPaged([FromQuery] InstrumentSearchObject search)
         {
             var result = await instrumentService.GetPagedAsync(search, CurrentUserId);
             return Ok(result);
@@ -28,9 +28,9 @@ namespace eNote.API.Controllers.Instruments
         }
 
         [HttpPost]
-        public async Task<ActionResult<InstrumentDto>> Insert([FromBody] InstrumentCreateRequest request)
+        public async Task<ActionResult<InstrumentDto>> Create([FromBody] InstrumentCreateRequest request)
         {
-            var result = await instrumentService.InsertAsync(request, CurrentUserId);
+            var result = await instrumentService.CreateAsync(request, CurrentUserId);
             return Ok(result);
         }
 

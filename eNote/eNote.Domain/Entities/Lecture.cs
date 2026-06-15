@@ -13,6 +13,7 @@ namespace eNote.Domain.Entities
         public LectureStatus LectureStatus { get; set; }
         public int? Capacity { get; set; }
         public bool IsCancelled { get; set; }
+        public bool IsActive { get; set; } = true;
         public byte[]? RowVersion { get; set; }
 
         public int CourseId { get; set; }

@@ -50,6 +50,7 @@ ios/Runner/GeneratedPluginRegistrant.*
 # Environment files (keep these if you want, or remove later)
 .env
 appsettings.*.json
+!appsettings.Development.json
 
 # Misc
 *.swp

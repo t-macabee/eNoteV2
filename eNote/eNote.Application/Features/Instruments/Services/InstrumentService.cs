@@ -73,7 +73,7 @@ namespace eNote.Application.Features.Instruments.Services
             return await query.ToPagedResultAsync(search.Page, search.PageSize, search.IncludeTotalCount, MapEntityToModel);
         }
 
-        public async Task<InstrumentDto> InsertAsync(InstrumentCreateRequest request, int employeeAppUserId)
+        public async Task<InstrumentDto> CreateAsync(InstrumentCreateRequest request, int employeeAppUserId)
         {
             var storeId = await storeContext.GetActiveStoreAsync(employeeAppUserId);
 
@@ -81,7 +81,7 @@ namespace eNote.Application.Features.Instruments.Services
 
             entity.MusicStoreId = storeId;
 
-            await BeforeInsertAsync(request, entity);
+            await BeforeCreateAsync(request, entity);
 
             context.Set<Instrument>().Add(entity);
 
@@ -168,7 +168,7 @@ namespace eNote.Application.Features.Instruments.Services
             return Task.CompletedTask;
         }
 
-        private async Task BeforeInsertAsync(InstrumentCreateRequest request, Instrument entity)
+        private async Task BeforeCreateAsync(InstrumentCreateRequest request, Instrument entity)
         {
             var existingType = await context
                 .Set<InstrumentType>()

@@ -13,7 +13,7 @@ namespace eNote.API.Controllers.Instruments
     public sealed class PublicInstrumentController(IInstrumentService instrumentService) : ControllerBase
     {
         [HttpGet]
-        public async Task<ActionResult<PagedResult<InstrumentDto>>> GetAll([FromQuery] InstrumentSearchObject search)
+        public async Task<ActionResult<PagedResult<InstrumentDto>>> GetPaged([FromQuery] InstrumentSearchObject search)
         {
             var result = await instrumentService.GetPublicPagedAsync(search);
             return Ok(result);

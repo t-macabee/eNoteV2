@@ -55,6 +55,13 @@ namespace eNote.Application.Common.Localization
         public const string AnnouncementNotFound = "Obavijest nije pronađena.";
         public const string AnnouncementCourseForbidden = "Nemate pravo objavljivati obavijesti za ovaj kurs.";
 
+        public const string AssignmentNotFound = "Zadatak nije pronađen.";
+        public const string AssignmentAlreadySubmitted = "Zadatak je već predan.";
+        public const string AssignmentSubmissionNotFound = "Predaja zadatka nije pronađena.";
+        public const string AssignmentInvalidGrade = "Ocjena mora biti izmedju 0 i 100.";
+        public const string LectureNoteNotFound = "Bilješka predavanja nije pronađena.";
+        public const string StudentNotEnrolled = "Student nije upisan na kurs.";
+
         public static string RoleCreateFailed(string role, string errors) =>
             $"Greška pri kreiranju uloge {role}: {errors}";
 

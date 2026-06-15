@@ -32,5 +32,40 @@ namespace eNote.API.Controllers.Lectures
             var dto = await service.CreateAsync(CurrentUserId, request);
             return Ok(dto);
         }
+
+        [HttpPut("{id:int}")]
+        public async Task<ActionResult<LectureDto>> Update(int id, [FromBody] LectureUpdateRequest request)
+        {
+            var dto = await service.UpdateAsync(id, CurrentUserId, request);
+            return Ok(dto);
+        }
+
+        [HttpDelete("{id:int}")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            await service.DeleteAsync(id, CurrentUserId);
+            return NoContent();
+        }
+
+        [HttpPost("{id:int}/cancel")]
+        public async Task<ActionResult<LectureDto>> Cancel(int id)
+        {
+            var dto = await service.CancelAsync(id, CurrentUserId);
+            return Ok(dto);
+        }
+
+        [HttpGet("{id:int}/attendance")]
+        public async Task<ActionResult<PagedResult<AttendanceDto>>> GetAttendance(int id, int page = 1, int pageSize = 20)
+        {
+            var result = await service.GetAttendanceAsync(id, CurrentUserId, page, pageSize);
+            return Ok(result);
+        }
+
+        [HttpPut("{id:int}/attendance")]
+        public async Task<ActionResult<AttendanceDto>> MarkAttendance(int id, [FromBody] MarkAttendanceRequest request)
+        {
+            var dto = await service.MarkAttendanceAsync(id, CurrentUserId, request);
+            return Ok(dto);
+        }
     }
 }

@@ -1,6 +1,48 @@
 @eNote.API_HostAddress = http://localhost:5059
+@token = {{login.response.body.token}}
 
-GET {{eNote.API_HostAddress}}/weatherforecast/
-Accept: application/json
+### Auth
+# @name login
+POST {{eNote.API_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "instructor",
+  "password": "Test1234!"
+}
 
 ###
+GET {{eNote.API_HostAddress}}/api/instructor/lectures?page=1&pageSize=20
+Authorization: Bearer {{token}}
+
+###
+GET {{eNote.API_HostAddress}}/api/instructor/lectures/1/assignments?page=1&pageSize=20
+Authorization: Bearer {{token}}
+
+###
+GET {{eNote.API_HostAddress}}/api/instructor/lectures/1/notes?page=1&pageSize=20
+Authorization: Bearer {{token}}
+
+###
+GET {{eNote.API_HostAddress}}/api/instructor/lectures/1/attendance?page=1&pageSize=20
+Authorization: Bearer {{token}}
+
+###
+# @name studentLogin
+POST {{eNote.API_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "student",
+  "password": "Test1234!"
+}
+
+###
+@studentToken = {{studentLogin.response.body.token}}
+
+GET {{eNote.API_HostAddress}}/api/student/assignments?page=1&pageSize=20
+Authorization: Bearer {{studentToken}}
+
+###
+GET {{eNote.API_HostAddress}}/api/student/lectures/1/notes?page=1&pageSize=20
+Authorization: Bearer {{studentToken}}

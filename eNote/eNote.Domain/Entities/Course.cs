@@ -11,6 +11,7 @@ namespace eNote.Domain.Entities
         public DateTime? StartDate { get; set; }
         public DateTime? EndDate { get; set; }
         public bool IsPublished { get; set; }
+        public bool IsActive { get; set; } = true;
         [NotMapped]
         public int? EnrolledCount => Enrollments.Count;
 

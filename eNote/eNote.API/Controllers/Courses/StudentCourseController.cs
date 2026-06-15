@@ -30,7 +30,14 @@ namespace eNote.API.Controllers.Courses
         public async Task<IActionResult> Enroll(int id)
         {
             await service.EnrollAsync(id, CurrentUserId);
-            return Ok();
+            return NoContent();
+        }
+
+        [HttpPost("{id:int}/unenroll")]
+        public async Task<IActionResult> Unenroll(int id)
+        {
+            await service.UnenrollAsync(id, CurrentUserId);
+            return NoContent();
         }
     }
 }

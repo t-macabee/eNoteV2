@@ -212,6 +212,11 @@ namespace eNote.Infrastructure.Data.Migrations
                     b.Property<int?>("CreatedById")
                         .HasColumnType("int");
 
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
                     b.Property<int?>("MusicStoreId")
                         .HasColumnType("int");
 
@@ -265,6 +270,11 @@ namespace eNote.Infrastructure.Data.Migrations
 
                     b.Property<DateTime>("DueAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
 
                     b.Property<int>("LectureId")
                         .HasColumnType("int");
@@ -393,6 +403,11 @@ namespace eNote.Infrastructure.Data.Migrations
 
                     b.Property<int>("InstructorId")
                         .HasColumnType("int");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
 
                     b.Property<bool>("IsPublished")
                         .ValueGeneratedOnAdd()
@@ -683,6 +698,11 @@ namespace eNote.Infrastructure.Data.Migrations
                     b.Property<int>("Duration")
                         .HasColumnType("int");
 
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
                     b.Property<bool>("IsCancelled")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bit")
@@ -742,6 +762,11 @@ namespace eNote.Infrastructure.Data.Migrations
 
                     b.Property<int?>("CreatedById")
                         .HasColumnType("int");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
 
                     b.Property<int>("LectureId")
                         .HasColumnType("int");

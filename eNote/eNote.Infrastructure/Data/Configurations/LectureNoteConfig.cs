@@ -16,6 +16,7 @@ namespace eNote.Infrastructure.Data.Configurations
             builder.Property(n => n.Title).HasStringConfig(200, true);
             builder.Property(n => n.Content).IsRequired();
             builder.Property(n => n.CreatedAt).IsRequired();
+            builder.Property(n => n.IsActive).HasDefaultValue(true);
         }
     }
 }
