@@ -16,28 +16,28 @@ namespace eNote.API.Controllers.InstrumentRentals
         [HttpGet]
         public async Task<ActionResult<PagedResult<InstrumentRentalDto>>> GetPaged([FromQuery] InstrumentRentalSearchObject search)
         {
-            var result = await queryService.GetPagedForStudentAsync(CurrentUserId, search);
+            var result = await queryService.GetPagedForStudentAsync(search);
             return Ok(result);
         }
 
         [HttpGet("{id:int}")]
         public async Task<ActionResult<InstrumentRentalDto>> GetById(int id)
         {
-            var dto = await queryService.GetByIdForStudentAsync(id, CurrentUserId);
+            var dto = await queryService.GetByIdForStudentAsync(id);
             return Ok(dto);
         }
 
         [HttpPost]
         public async Task<ActionResult<InstrumentRentalDto>> Create([FromBody] RentalCreateRequest request)
         {
-            var dto = await commandService.CreateRequestAsync(CurrentUserId, request);
+            var dto = await commandService.CreateRequestAsync(request);
             return CreatedAtAction(nameof(GetById), new { id = dto.Id }, dto);
         }
 
         [HttpPost("{id:int}/cancel")]
         public async Task<ActionResult<InstrumentRentalDto>> Cancel(int id, [FromBody] RentalStatusResponse response)
         {
-            var dto = await commandService.CancelAsync(id, CurrentUserId, response);
+            var dto = await commandService.CancelAsync(id, response);
             return Ok(dto);
         }
     }

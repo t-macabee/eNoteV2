@@ -11,9 +11,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Application.Features.Users.Services
 {
-    public class UserService(IAppDbContext context, IUserIdentityService identity, IUserAccountService accountService, IClock clock) : IUserService
+    public class UserService(IAppDbContext context, IUserIdentityService identity, IUserAccountService accountService, IClock clock, eNote.Application.Common.Interfaces.ICurrentUserService currentUserService) : IUserService
     {
-        public async Task<UserProfileResponse?> GetCurrentUserAsync(int userId)
+        public Task<UserProfileResponse?> GetCurrentUserAsync() => GetUserAsync(currentUserService.UserId);
+
+        public async Task<UserProfileResponse?> GetUserAsync(int userId)
         {
             var user = await identity.GetUserAsync(userId);
 
@@ -61,7 +63,7 @@ namespace eNote.Application.Features.Users.Services
 
             await context.SaveChangesAsync();
 
-            var profile = await GetCurrentUserAsync(userId);
+            var profile = await GetUserAsync(userId);
 
             return (profile, null);
         }

@@ -22,14 +22,14 @@ namespace eNote.API.Controllers.Lectures
         [HttpGet("{id:int}")]
         public async Task<ActionResult<LectureDto>> GetById(int id)
         {
-            var dto = await service.GetByIdForStudentAsync(id, CurrentUserId);
+            var dto = await service.GetByIdForStudentAsync(id);
             return Ok(dto);
         }
 
         [HttpPost("{id:int}/rsvp")]
         public async Task<ActionResult<RsvpResponse>> Rsvp(int id, [FromBody] RsvpRequest request)
         {
-            var response = await service.RsvpAsync(id, CurrentUserId, request);
+            var response = await service.RsvpAsync(id, request);
             return Ok(response);
         }
     }

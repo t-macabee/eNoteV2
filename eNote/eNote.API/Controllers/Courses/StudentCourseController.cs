@@ -22,21 +22,21 @@ namespace eNote.API.Controllers.Courses
         [HttpGet("{id:int}")]
         public async Task<ActionResult<CourseDto>> GetById(int id)
         {
-            var dto = await service.GetByIdForStudentAsync(id, CurrentUserId);
+            var dto = await service.GetByIdForStudentAsync(id);
             return Ok(dto);
         }
 
         [HttpPost("{id:int}/enroll")]
         public async Task<IActionResult> Enroll(int id)
         {
-            await service.EnrollAsync(id, CurrentUserId);
+            await service.EnrollAsync(id);
             return NoContent();
         }
 
         [HttpPost("{id:int}/unenroll")]
         public async Task<IActionResult> Unenroll(int id)
         {
-            await service.UnenrollAsync(id, CurrentUserId);
+            await service.UnenrollAsync(id);
             return NoContent();
         }
     }

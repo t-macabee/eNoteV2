@@ -1,4 +1,5 @@
 ﻿using eNote.Application.Common.Exceptions;
+using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Paging;
 using eNote.Application.Common.Persistence;
@@ -14,13 +15,13 @@ using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Application.Features.Instruments.Services
 {
-    public class InstrumentService(IAppDbContext context, IMapper mapper, IMusicStoreContextService storeContext) : IInstrumentService
+    public class InstrumentService(IAppDbContext context, IMapper mapper, IMusicStoreContextService storeContext, ICurrentUserService currentUserService) : IInstrumentService
     {
         private InstrumentDto MapEntityToModel(Instrument entity) => mapper.Map<InstrumentDto>(entity);
 
-        public async Task<InstrumentDto> GetByIdAsync(int id, int employeeAppUserId)
+        public async Task<InstrumentDto> GetByIdAsync(int id)
         {
-            var employee = await EnsureStoreAccessAsync(employeeAppUserId);
+            var employee = await EnsureStoreAccessAsync();
 
             var query = AddIncludes(context.Set<Instrument>()
                 .AsNoTracking()
@@ -42,9 +43,9 @@ namespace eNote.Application.Features.Instruments.Services
             return MapEntityToModel(entity);
         }
 
-        public async Task<PagedResult<InstrumentDto>> GetPagedAsync(InstrumentSearchObject search, int employeeAppUserId)
+        public async Task<PagedResult<InstrumentDto>> GetPagedAsync(InstrumentSearchObject search)
         {
-            var employee = await EnsureStoreAccessAsync(employeeAppUserId);
+            var employee = await EnsureStoreAccessAsync();
 
             var query = context.Set<Instrument>()
                 .AsNoTracking()
@@ -73,9 +74,9 @@ namespace eNote.Application.Features.Instruments.Services
             return await query.ToPagedResultAsync(search.Page, search.PageSize, search.IncludeTotalCount, MapEntityToModel);
         }
 
-        public async Task<InstrumentDto> CreateAsync(InstrumentCreateRequest request, int employeeAppUserId)
+        public async Task<InstrumentDto> CreateAsync(InstrumentCreateRequest request)
         {
-            var employee = await EnsureStoreAccessAsync(employeeAppUserId);
+            var employee = await EnsureStoreAccessAsync();
 
             var entity = mapper.Map<Instrument>(request);
 
@@ -92,9 +93,9 @@ namespace eNote.Application.Features.Instruments.Services
             return MapEntityToModel(entity);
         }
 
-        public async Task<InstrumentDto> UpdateAsync(int id, InstrumentUpdateRequest request, int employeeAppUserId)
+        public async Task<InstrumentDto> UpdateAsync(int id, InstrumentUpdateRequest request)
         {
-            var employee = await EnsureStoreAccessAsync(employeeAppUserId);
+            var employee = await EnsureStoreAccessAsync();
 
             var entity = await context.Set<Instrument>()
                 .FirstOrDefaultAsync(x => x.Id == id && x.MusicStoreId == employee.MusicStoreId)
@@ -111,9 +112,9 @@ namespace eNote.Application.Features.Instruments.Services
             return MapEntityToModel(entity);
         }
 
-        public async Task DeleteAsync(int id, int employeeAppUserId)
+        public async Task DeleteAsync(int id)
         {
-            var employee = await EnsureStoreAccessAsync(employeeAppUserId);
+            var employee = await EnsureStoreAccessAsync();
 
             var instrument = await context.Set<Instrument>()
                 .FirstOrDefaultAsync(x => x.Id == id && x.MusicStoreId == employee.MusicStoreId)
@@ -132,13 +133,13 @@ namespace eNote.Application.Features.Instruments.Services
             await context.SaveChangesAsync();
         }
 
-        private async Task<MusicStoreEmployee> EnsureStoreAccessAsync(int employeeAppUserId)
+        private async Task<MusicStoreEmployee> EnsureStoreAccessAsync()
         {
-            var employee = await UserProfileHelper.GetActiveEmployeeByUserIdAsync(context, employeeAppUserId);
-            var activeStoreId = await storeContext.GetActiveStoreAsync(employeeAppUserId);
+            var employee = await UserProfileHelper.GetActiveEmployeeByUserIdAsync(context, currentUserService.UserId);
+            var activeStoreId = await storeContext.GetActiveStoreAsync(currentUserService.UserId);
             
             if (employee.MusicStoreId != activeStoreId) 
-                throw new AuthorizationException(Messages.StoreNotOwned);
+                throw new AuthorizationException(Messages.RentalAccessDenied);
                 
             return employee;
         }

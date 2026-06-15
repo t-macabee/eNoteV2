@@ -15,49 +15,49 @@ namespace eNote.API.Controllers.Assignments
         [HttpGet]
         public async Task<ActionResult<PagedResult<AssignmentDto>>> GetForLecture(int lectureId, int page = 1, int pageSize = 20)
         {
-            var result = await service.GetForLectureAsync(lectureId, CurrentUserId, page, pageSize);
+            var result = await service.GetForLectureAsync(lectureId, page, pageSize);
             return Ok(result);
         }
 
         [HttpGet("{assignmentId:int}")]
         public async Task<ActionResult<AssignmentDto>> GetById(int lectureId, int assignmentId)
         {
-            var dto = await service.GetByIdForInstructorAsync(lectureId, assignmentId, CurrentUserId);
+            var dto = await service.GetByIdForInstructorAsync(lectureId, assignmentId);
             return Ok(dto);
         }
 
         [HttpPost]
         public async Task<ActionResult<AssignmentDto>> Create(int lectureId, [FromBody] AssignmentCreateRequest request)
         {
-            var dto = await service.CreateAsync(lectureId, CurrentUserId, request);
+            var dto = await service.CreateAsync(lectureId, request);
             return CreatedAtAction(nameof(GetById), new { lectureId, assignmentId = dto.Id }, dto);
         }
 
         [HttpPut("{assignmentId:int}")]
         public async Task<ActionResult<AssignmentDto>> Update(int lectureId, int assignmentId, [FromBody] AssignmentUpdateRequest request)
         {
-            var dto = await service.UpdateAsync(lectureId, assignmentId, CurrentUserId, request);
+            var dto = await service.UpdateAsync(lectureId, assignmentId, request);
             return Ok(dto);
         }
 
         [HttpDelete("{assignmentId:int}")]
         public async Task<IActionResult> Delete(int lectureId, int assignmentId)
         {
-            await service.DeleteAsync(lectureId, assignmentId, CurrentUserId);
+            await service.DeleteAsync(lectureId, assignmentId);
             return NoContent();
         }
 
         [HttpGet("{assignmentId:int}/submissions")]
         public async Task<ActionResult<PagedResult<AssignmentSubmissionDto>>> GetSubmissions(int lectureId, int assignmentId, int page = 1, int pageSize = 20)
         {
-            var result = await service.GetSubmissionsAsync(lectureId, assignmentId, CurrentUserId, page, pageSize);
+            var result = await service.GetSubmissionsAsync(lectureId, assignmentId, page, pageSize);
             return Ok(result);
         }
 
         [HttpPut("{assignmentId:int}/submissions/{submissionId:int}/grade")]
         public async Task<ActionResult<AssignmentSubmissionDto>> Grade(int lectureId, int assignmentId, int submissionId, [FromBody] GradeAssignmentRequest request)
         {
-            var dto = await service.GradeAsync(lectureId, assignmentId, submissionId, CurrentUserId, request);
+            var dto = await service.GradeAsync(lectureId, assignmentId, submissionId, request);
             return Ok(dto);
         }
     }

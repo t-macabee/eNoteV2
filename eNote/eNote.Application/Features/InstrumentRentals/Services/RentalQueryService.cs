@@ -1,4 +1,5 @@
 ﻿using eNote.Application.Common.Exceptions;
+using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Paging;
 using eNote.Application.Common.Persistence;
@@ -14,7 +15,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Application.Features.InstrumentRentals.Services
 {
-    public class RentalQueryService(IAppDbContext context, IMapper mapper, IClock clock, IMusicStoreContextService storeContext) : IRentalQueryService
+    public class RentalQueryService(IAppDbContext context, IMapper mapper, IClock clock, IMusicStoreContextService storeContext, ICurrentUserService currentUserService) : IRentalQueryService
     {
         private static IQueryable<InstrumentRental> AddIncludes(IQueryable<InstrumentRental> query) => query.WithRentalDetails();
 
@@ -38,20 +39,20 @@ namespace eNote.Application.Features.InstrumentRentals.Services
             return result;
         }
 
-        public async Task<InstrumentRentalDto> GetByIdForStudentAsync(int rentalId, int userId)
+        public async Task<InstrumentRentalDto> GetByIdForStudentAsync(int rentalId)
         {
             var entity = await context.Set<InstrumentRental>()
                 .AsNoTracking()
                 .WithRentalDetails()
-                .FirstOrDefaultAsync(x => x.Id == rentalId && x.StudentProfile.AppUserId == userId)
+                .FirstOrDefaultAsync(x => x.Id == rentalId && x.StudentProfile.AppUserId == currentUserService.UserId)
                 ?? throw new NotFoundException(Messages.NotFound);
 
             return MapEntityToModel(entity);
         }
 
-        public async Task<InstrumentRentalDto> GetByIdForStoreAsync(int rentalId, int userId)
+        public async Task<InstrumentRentalDto> GetByIdForStoreAsync(int rentalId)
         {
-            var storeId = await storeContext.GetActiveStoreAsync(userId);
+            var storeId = await storeContext.GetActiveStoreAsync(currentUserService.UserId);
 
             var entity = await context.Set<InstrumentRental>()
                 .AsNoTracking()
@@ -62,11 +63,11 @@ namespace eNote.Application.Features.InstrumentRentals.Services
             return MapEntityToModel(entity);
         }
 
-        public async Task<PagedResult<InstrumentRentalDto>> GetPagedForStudentAsync(int userId, InstrumentRentalSearchObject searchObject)
+        public async Task<PagedResult<InstrumentRentalDto>> GetPagedForStudentAsync(InstrumentRentalSearchObject searchObject)
         {
             var query = context.Set<InstrumentRental>()
                 .AsNoTracking()
-                .Where(x => x.StudentProfile.AppUserId == userId);
+                .Where(x => x.StudentProfile.AppUserId == currentUserService.UserId);
 
             query = AddIncludes(query);
 
@@ -82,9 +83,9 @@ namespace eNote.Application.Features.InstrumentRentals.Services
                 );
         }
 
-        public async Task<PagedResult<InstrumentRentalDto>> GetPagedForStoreAsync(int userId, InstrumentRentalSearchObject searchObject)
+        public async Task<PagedResult<InstrumentRentalDto>> GetPagedForStoreAsync(InstrumentRentalSearchObject searchObject)
         {
-            var storeId = await storeContext.GetActiveStoreAsync(userId);
+            var storeId = await storeContext.GetActiveStoreAsync(currentUserService.UserId);
 
             var query = context.Set<InstrumentRental>()
                 .AsNoTracking()

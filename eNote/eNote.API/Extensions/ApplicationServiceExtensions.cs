@@ -11,6 +11,9 @@ namespace eNote.API.Extensions
     {
         public static IServiceCollection AddApplicationServices(this IServiceCollection services)
         {
+            services.AddHttpContextAccessor();
+            services.AddScoped<eNote.Application.Common.Interfaces.ICurrentUserService, eNote.API.Services.CurrentUserService>();
+
             services.AddSingleton<IClock, SystemClock>();
             services.AddScoped<IRentalStateMachine, RentalStateMachine>();
             services.Scan(scan => scan

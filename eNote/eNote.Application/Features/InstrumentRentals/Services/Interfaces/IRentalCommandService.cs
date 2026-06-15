@@ -2,12 +2,12 @@
 {
     public interface IRentalCommandService
     {
-        Task<InstrumentRentalDto> CreateRequestAsync(int userId, RentalCreateRequest request);
-        Task<InstrumentRentalDto> ApproveAsync(int rentalId, int userId, RentalStatusResponse response);
-        Task<InstrumentRentalDto> RejectAsync(int rentalId, int userId, RentalStatusResponse response);
-        Task<InstrumentRentalDto> PickupAsync(int rentalId, int userId, RentalStatusResponse response);
-        Task<InstrumentRentalDto> CompleteAsync(int rentalId, int userId, RentalStatusResponse response);
-        Task<InstrumentRentalDto> CancelAsync(int rentalId, int userId, RentalStatusResponse response);
-        Task<InstrumentRentalDto> ReturnEarlyAsync(int rentalId, int userId, RentalStatusResponse response);
+        Task<InstrumentRentalDto> CreateRequestAsync(RentalCreateRequest request);
+        Task<InstrumentRentalDto> ApproveAsync(int rentalId, RentalStatusResponse response);
+        Task<InstrumentRentalDto> RejectAsync(int rentalId, RentalStatusResponse response);
+        Task<InstrumentRentalDto> PickupAsync(int rentalId, RentalStatusResponse response);
+        Task<InstrumentRentalDto> CompleteAsync(int rentalId, RentalStatusResponse response);
+        Task<InstrumentRentalDto> CancelAsync(int rentalId, RentalStatusResponse response);
+        Task<InstrumentRentalDto> ReturnEarlyAsync(int rentalId, RentalStatusResponse response);
     }
 }

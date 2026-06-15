@@ -15,56 +15,56 @@ namespace eNote.API.Controllers.Lectures
         [HttpGet]
         public async Task<ActionResult<PagedResult<LectureDto>>> GetMyLectures(int page = 1, int pageSize = 20)
         {
-            var result = await service.GetPagedForInstructorAsync(CurrentUserId, page, pageSize);
+            var result = await service.GetPagedForInstructorAsync(page, pageSize);
             return Ok(result);
         }
 
         [HttpGet("{id:int}")]
         public async Task<ActionResult<LectureDto>> GetById(int id)
         {
-            var dto = await service.GetByIdForInstructorAsync(id, CurrentUserId);
+            var dto = await service.GetByIdForInstructorAsync(id);
             return Ok(dto);
         }
 
         [HttpPost]
         public async Task<ActionResult<LectureDto>> Create([FromBody] LectureCreateRequest request)
         {
-            var dto = await service.CreateAsync(CurrentUserId, request);
+            var dto = await service.CreateAsync(request);
             return CreatedAtAction(nameof(GetById), new { id = dto.Id }, dto);
         }
 
         [HttpPut("{id:int}")]
         public async Task<ActionResult<LectureDto>> Update(int id, [FromBody] LectureUpdateRequest request)
         {
-            var dto = await service.UpdateAsync(id, CurrentUserId, request);
+            var dto = await service.UpdateAsync(id, request);
             return Ok(dto);
         }
 
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> Delete(int id)
         {
-            await service.DeleteAsync(id, CurrentUserId);
+            await service.DeleteAsync(id);
             return NoContent();
         }
 
         [HttpPost("{id:int}/cancel")]
         public async Task<ActionResult<LectureDto>> Cancel(int id)
         {
-            var dto = await service.CancelAsync(id, CurrentUserId);
+            var dto = await service.CancelAsync(id);
             return Ok(dto);
         }
 
         [HttpGet("{id:int}/attendance")]
         public async Task<ActionResult<PagedResult<AttendanceDto>>> GetAttendance(int id, int page = 1, int pageSize = 20)
         {
-            var result = await service.GetAttendanceAsync(id, CurrentUserId, page, pageSize);
+            var result = await service.GetAttendanceAsync(id, page, pageSize);
             return Ok(result);
         }
 
         [HttpPut("{id:int}/attendance")]
         public async Task<ActionResult<AttendanceDto>> MarkAttendance(int id, [FromBody] MarkAttendanceRequest request)
         {
-            var dto = await service.MarkAttendanceAsync(id, CurrentUserId, request);
+            var dto = await service.MarkAttendanceAsync(id, request);
             return Ok(dto);
         }
     }

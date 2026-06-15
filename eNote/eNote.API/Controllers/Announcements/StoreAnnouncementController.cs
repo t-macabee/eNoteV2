@@ -14,28 +14,28 @@ namespace eNote.API.Controllers.Announcements
         [HttpGet]
         public async Task<ActionResult<IReadOnlyList<AnnouncementDto>>> GetForStore()
         {
-            var result = await announcementService.GetForStoreAsync(CurrentUserId);
+            var result = await announcementService.GetForStoreAsync();
             return Ok(result);
         }
 
         [HttpPost]
         public async Task<ActionResult<AnnouncementDto>> Create([FromBody] AnnouncementCreateRequest request)
         {
-            var result = await announcementService.CreateForStoreAsync(CurrentUserId, request);
+            var result = await announcementService.CreateForStoreAsync(request);
             return StatusCode(201, result);
         }
 
         [HttpPut("{announcementId:int}")]
         public async Task<ActionResult<AnnouncementDto>> Update(int announcementId, [FromBody] AnnouncementUpdateRequest request)
         {
-            var result = await announcementService.UpdateForStoreAsync(CurrentUserId, announcementId, request);
+            var result = await announcementService.UpdateForStoreAsync(announcementId, request);
             return Ok(result);
         }
 
         [HttpDelete("{announcementId:int}")]
         public async Task<IActionResult> Delete(int announcementId)
         {
-            await announcementService.DeleteForStoreAsync(CurrentUserId, announcementId);
+            await announcementService.DeleteForStoreAsync(announcementId);
             return NoContent();
         }
     }

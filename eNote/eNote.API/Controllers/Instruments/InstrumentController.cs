@@ -16,35 +16,35 @@ namespace eNote.API.Controllers.Instruments
         [HttpGet]
         public async Task<ActionResult<PagedResult<InstrumentDto>>> GetPaged([FromQuery] InstrumentSearchObject search)
         {
-            var result = await instrumentService.GetPagedAsync(search, CurrentUserId);
+            var result = await instrumentService.GetPagedAsync(search);
             return Ok(result);
         }
 
         [HttpGet("{id:int}")]
         public async Task<ActionResult<InstrumentDto>> GetById(int id)
         {
-            var result = await instrumentService.GetByIdAsync(id, CurrentUserId);
+            var result = await instrumentService.GetByIdAsync(id);
             return Ok(result);
         }
 
         [HttpPost]
         public async Task<ActionResult<InstrumentDto>> Create([FromBody] InstrumentCreateRequest request)
         {
-            var result = await instrumentService.CreateAsync(request, CurrentUserId);
+            var result = await instrumentService.CreateAsync(request);
             return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
         }
 
         [HttpPut("{id:int}")]
         public async Task<ActionResult<InstrumentDto>> Update(int id, [FromBody] InstrumentUpdateRequest request)
         {
-            var result = await instrumentService.UpdateAsync(id, request, CurrentUserId);
+            var result = await instrumentService.UpdateAsync(id, request);
             return Ok(result);
         }
 
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> Delete(int id)
         {
-            await instrumentService.DeleteAsync(id, CurrentUserId);
+            await instrumentService.DeleteAsync(id);
             return NoContent();
         }
     }

@@ -1,4 +1,5 @@
 using eNote.Application.Common.Exceptions;
+using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Common.Queryable;
@@ -15,15 +16,15 @@ using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Application.Features.InstrumentRentals.Services
 {
-    public class RentalCommandService(IAppDbContext context, IMapper mapper, IClock clock, IMusicStoreContextService storeContext, IRentalStateMachine stateMachine) : IRentalCommandService
+    public class RentalCommandService(IAppDbContext context, IMapper mapper, IClock clock, IMusicStoreContextService storeContext, IRentalStateMachine stateMachine, ICurrentUserService currentUserService) : IRentalCommandService
     {
-        public async Task<InstrumentRentalDto> CreateRequestAsync(int userId, RentalCreateRequest request)
+        public async Task<InstrumentRentalDto> CreateRequestAsync(RentalCreateRequest request)
         {
             using var transaction = await context.BeginTransactionAsync();
 
             try
             {
-                var studentProfileId = (await UserProfileHelper.GetStudentByUserIdAsync(context, userId)).Id;
+                var studentProfileId = (await UserProfileHelper.GetStudentByUserIdAsync(context, currentUserService.UserId)).Id;
 
                 var instrument = await context.Set<Instrument>()
                     .AsNoTracking()
@@ -58,7 +59,7 @@ namespace eNote.Application.Features.InstrumentRentals.Services
                     PickedUpAt = null,
                     ReturnedAt = null,
                     CreatedAt = clock.UtcNow,
-                    CreatedById = userId
+                    CreatedById = currentUserService.UserId
                 };
 
                 context.Set<InstrumentRental>().Add(rental);
@@ -76,21 +77,21 @@ namespace eNote.Application.Features.InstrumentRentals.Services
             }
         }
 
-        public async Task<InstrumentRentalDto> ApproveAsync(int rentalId, int userId, RentalStatusResponse response) => await ExecuteStoreTransitionAsync(rentalId, userId, RentalTrigger.Approve, response);
-        public async Task<InstrumentRentalDto> RejectAsync(int rentalId, int userId, RentalStatusResponse response) => await ExecuteStoreTransitionAsync(rentalId, userId, RentalTrigger.Reject, response);
-        public async Task<InstrumentRentalDto> PickupAsync(int rentalId, int userId, RentalStatusResponse response) => await ExecuteStoreTransitionAsync(rentalId, userId, RentalTrigger.Pickup, response);
-        public async Task<InstrumentRentalDto> CompleteAsync(int rentalId, int userId, RentalStatusResponse response) => await ExecuteStoreTransitionAsync(rentalId, userId, RentalTrigger.Complete, response);
-        public async Task<InstrumentRentalDto> ReturnEarlyAsync(int rentalId, int userId, RentalStatusResponse response) => await ExecuteStoreTransitionAsync(rentalId, userId, RentalTrigger.ReturnEarly, response);
+        public async Task<InstrumentRentalDto> ApproveAsync(int rentalId, RentalStatusResponse response) => await ExecuteStoreTransitionAsync(rentalId, RentalTrigger.Approve, response);
+        public async Task<InstrumentRentalDto> RejectAsync(int rentalId, RentalStatusResponse response) => await ExecuteStoreTransitionAsync(rentalId, RentalTrigger.Reject, response);
+        public async Task<InstrumentRentalDto> PickupAsync(int rentalId, RentalStatusResponse response) => await ExecuteStoreTransitionAsync(rentalId, RentalTrigger.Pickup, response);
+        public async Task<InstrumentRentalDto> CompleteAsync(int rentalId, RentalStatusResponse response) => await ExecuteStoreTransitionAsync(rentalId, RentalTrigger.Complete, response);
+        public async Task<InstrumentRentalDto> ReturnEarlyAsync(int rentalId, RentalStatusResponse response) => await ExecuteStoreTransitionAsync(rentalId, RentalTrigger.ReturnEarly, response);
 
-        public async Task<InstrumentRentalDto> CancelAsync(int rentalId, int userId, RentalStatusResponse response)
+        public async Task<InstrumentRentalDto> CancelAsync(int rentalId, RentalStatusResponse response)
         {
             using var transaction = await context.BeginTransactionAsync();
 
             try
             {
-                var rental = await LoadForStudentAsync(rentalId, userId);
+                var rental = await LoadForStudentAsync(rentalId, currentUserService.UserId);
 
-                var result = await ExecuteTransitionAsync(rental, RentalTrigger.Cancel, RentalActor.Student, userId, response);
+                var result = await ExecuteTransitionAsync(rental, RentalTrigger.Cancel, RentalActor.Student, currentUserService.UserId, response);
 
                 await transaction.CommitAsync();
 
@@ -103,17 +104,17 @@ namespace eNote.Application.Features.InstrumentRentals.Services
             }
         }
 
-        private async Task<InstrumentRentalDto> ExecuteStoreTransitionAsync(int rentalId, int userId, RentalTrigger trigger, RentalStatusResponse response)
+        private async Task<InstrumentRentalDto> ExecuteStoreTransitionAsync(int rentalId, RentalTrigger trigger, RentalStatusResponse response)
         {
             using var transaction = await context.BeginTransactionAsync();
 
             try
             {
-                var storeId = await storeContext.GetActiveStoreAsync(userId);
+                var storeId = await storeContext.GetActiveStoreAsync(currentUserService.UserId);
 
                 var rental = await LoadForStoreAsync(rentalId, storeId);
 
-                var result = await ExecuteTransitionAsync(rental, trigger, RentalActor.StoreEmployee, userId, response);
+                var result = await ExecuteTransitionAsync(rental, trigger, RentalActor.StoreEmployee, currentUserService.UserId, response);
 
                 await transaction.CommitAsync();
 

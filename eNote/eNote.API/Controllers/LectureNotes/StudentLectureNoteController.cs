@@ -15,14 +15,14 @@ namespace eNote.API.Controllers.LectureNotes
         [HttpGet]
         public async Task<ActionResult<PagedResult<LectureNoteDto>>> GetForLecture(int lectureId, int page = 1, int pageSize = 20)
         {
-            var result = await service.GetForStudentAsync(lectureId, CurrentUserId, page, pageSize);
+            var result = await service.GetForStudentAsync(lectureId, page, pageSize);
             return Ok(result);
         }
 
         [HttpGet("{noteId:int}")]
         public async Task<ActionResult<LectureNoteDto>> GetById(int lectureId, int noteId)
         {
-            var dto = await service.GetByIdForStudentAsync(lectureId, noteId, CurrentUserId);
+            var dto = await service.GetByIdForStudentAsync(lectureId, noteId);
             return Ok(dto);
         }
     }

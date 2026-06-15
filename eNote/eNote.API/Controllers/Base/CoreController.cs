@@ -11,20 +11,6 @@ namespace eNote.API.Controllers.Base
     [Authorize]
     public abstract class CoreController : ControllerBase
     {
-        protected int CurrentUserId
-        {
-            get
-            {
-                var id = User.FindFirstValue(JwtRegisteredClaimNames.Sub)
-                      ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-                if (!int.TryParse(id, out var userId))
-                    throw new AuthenticationException(Messages.InvalidUserClaim);
-
-                return userId;
-            }
-        }
-
         protected string CurrentTokenJti =>
             User.FindFirstValue(JwtRegisteredClaimNames.Jti)
             ?? throw new AuthenticationException(Messages.InvalidUserClaim);

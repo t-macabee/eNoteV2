@@ -5,12 +5,12 @@ namespace eNote.Application.Features.Instruments.Services.Interfaces
 {
     public interface IInstrumentService
     {
-        Task<InstrumentDto> GetByIdAsync(int id, int employeeAppUserId);
+        Task<InstrumentDto> GetByIdAsync(int id);
         Task<InstrumentDto> GetPublicByIdAsync(int id);
-        Task<PagedResult<InstrumentDto>> GetPagedAsync(InstrumentSearchObject search, int employeeAppUserId);
+        Task<PagedResult<InstrumentDto>> GetPagedAsync(InstrumentSearchObject search);
         Task<PagedResult<InstrumentDto>> GetPublicPagedAsync(InstrumentSearchObject search);
-        Task<InstrumentDto> CreateAsync(InstrumentCreateRequest request, int employeeAppUserId);
-        Task<InstrumentDto> UpdateAsync(int id, InstrumentUpdateRequest request, int employeeAppUserId);
-        Task DeleteAsync(int id, int employeeAppUserId);
+        Task<InstrumentDto> CreateAsync(InstrumentCreateRequest request);
+        Task<InstrumentDto> UpdateAsync(int id, InstrumentUpdateRequest request);
+        Task DeleteAsync(int id);
     }
 }

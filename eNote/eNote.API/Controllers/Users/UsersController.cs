@@ -13,7 +13,7 @@ namespace eNote.API.Controllers.Users
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<UserProfileResponse>> GetCurrentUser()
         {
-            var profile = await userService.GetCurrentUserAsync(CurrentUserId);
+            var profile = await userService.GetCurrentUserAsync();
 
             if (profile is null)
                 return NotFound();

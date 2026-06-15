@@ -1,4 +1,5 @@
 using eNote.Application.Common.Exceptions;
+using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Paging;
 using eNote.Application.Common.Persistence;
@@ -12,29 +13,38 @@ using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Application.Features.Assignments.Services
 {
-    public class AssignmentService(IAppDbContext context, IClock clock, IUserIdentityService identity) : IAssignmentService
+    public class AssignmentService(IAppDbContext context, IClock clock, IUserIdentityService identity, ICurrentUserService currentUserService) : IAssignmentService
     {
-        public async Task<PagedResult<AssignmentDto>> GetForLectureAsync(int lectureId, int instructorUserId, int page, int pageSize)
+        public async Task<PagedResult<AssignmentDto>> GetForLectureAsync(int lectureId, int page, int pageSize)
         {
-            await EnsureInstructorOwnsLectureAsync(lectureId, instructorUserId);
+            var instructor = await UserProfileHelper.GetInstructorByUserIdAsync(context, currentUserService.UserId);
 
             var query = context.Set<Assignment>()
                 .AsNoTracking()
-                .Where(x => x.LectureId == lectureId && x.IsActive);
+                .Where(x => x.LectureId == lectureId && x.Lecture.Course.InstructorId == instructor.Id);
 
-            return await query.ToPagedResultAsync(page, pageSize, includeTotalCount: true, Map, q => q.OrderBy(x => x.DueAt));
+            return await query.ToPagedResultAsync(
+                page,
+                pageSize,
+                includeTotalCount: true,
+                Map,
+                q => q.OrderBy(x => x.DueAt));
         }
 
-        public async Task<AssignmentDto> GetByIdForInstructorAsync(int lectureId, int assignmentId, int instructorUserId)
+        public async Task<AssignmentDto> GetByIdForInstructorAsync(int lectureId, int assignmentId)
         {
-            var entity = await GetAssignmentForInstructorAsync(lectureId, assignmentId, instructorUserId);
-
+            var entity = await GetAssignmentForInstructorAsync(lectureId, assignmentId);
             return Map(entity);
         }
 
-        public async Task<AssignmentDto> CreateAsync(int lectureId, int instructorUserId, AssignmentCreateRequest request)
+        public async Task<AssignmentDto> CreateAsync(int lectureId, AssignmentCreateRequest request)
         {
-            await EnsureInstructorOwnsLectureAsync(lectureId, instructorUserId);
+            var instructor = await UserProfileHelper.GetInstructorByUserIdAsync(context, currentUserService.UserId);
+
+            _ = await context.Set<Lecture>()
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Id == lectureId && x.Course.InstructorId == instructor.Id)
+                ?? throw new AuthorizationException(Messages.CourseNotOwned);
 
             var entity = new Assignment
             {
@@ -42,7 +52,7 @@ namespace eNote.Application.Features.Assignments.Services
                 Description = request.Description.Trim(),
                 DueAt = request.DueAt,
                 LectureId = lectureId,
-                CreatedById = instructorUserId
+                CreatedById = currentUserService.UserId
             };
 
             context.Set<Assignment>().Add(entity);
@@ -51,34 +61,34 @@ namespace eNote.Application.Features.Assignments.Services
             return Map(entity);
         }
 
-        public async Task<AssignmentDto> UpdateAsync(int lectureId, int assignmentId, int instructorUserId, AssignmentUpdateRequest request)
+        public async Task<AssignmentDto> UpdateAsync(int lectureId, int assignmentId, AssignmentUpdateRequest request)
         {
-            var entity = await GetAssignmentForInstructorTrackedAsync(lectureId, assignmentId, instructorUserId);
+            var entity = await GetAssignmentForInstructorAsync(lectureId, assignmentId, track: true);
 
             entity.Title = request.Title.Trim();
             entity.Description = request.Description.Trim();
             entity.DueAt = request.DueAt;
             entity.UpdatedAt = clock.UtcNow;
-            entity.UpdatedById = instructorUserId;
+            entity.UpdatedById = currentUserService.UserId;
 
             await context.SaveChangesAsync();
 
             return Map(entity);
         }
 
-        public async Task DeleteAsync(int lectureId, int assignmentId, int instructorUserId)
+        public async Task DeleteAsync(int lectureId, int assignmentId)
         {
-            var entity = await GetAssignmentForInstructorTrackedAsync(lectureId, assignmentId, instructorUserId);
+            var entity = await GetAssignmentForInstructorAsync(lectureId, assignmentId, track: true);
 
             entity.IsActive = false;
             entity.UpdatedAt = clock.UtcNow;
-            entity.UpdatedById = instructorUserId;
+            entity.UpdatedById = currentUserService.UserId;
             await context.SaveChangesAsync();
         }
 
-        public async Task<PagedResult<AssignmentDto>> GetForStudentAsync(int studentUserId, int page, int pageSize)
+        public async Task<PagedResult<AssignmentDto>> GetForStudentAsync(int page, int pageSize)
         {
-            var student = await UserProfileHelper.GetStudentByUserIdAsync(context, studentUserId);
+            var student = await UserProfileHelper.GetStudentByUserIdAsync(context, currentUserService.UserId);
 
             var enrolledCourseIds = await context.Set<Enrollment>()
                 .AsNoTracking()
@@ -88,47 +98,31 @@ namespace eNote.Application.Features.Assignments.Services
 
             var query = context.Set<Assignment>()
                 .AsNoTracking()
-                .Where(x =>
-                    x.IsActive &&
-                    enrolledCourseIds.Contains(x.Lecture.CourseId) &&
-                    x.Lecture.IsActive &&
-                    !x.Lecture.IsCancelled
-                );
+                .Where(x => enrolledCourseIds.Contains(x.Lecture.CourseId) && !x.Lecture.IsCancelled);
 
-            return await query.ToPagedResultAsync(page, pageSize, includeTotalCount: true, Map, q => q.OrderBy(x => x.DueAt));
+            return await query.ToPagedResultAsync(
+                page,
+                pageSize,
+                includeTotalCount: true,
+                Map,
+                q => q.OrderBy(x => x.DueAt));
         }
 
-        public async Task<AssignmentDto> GetByIdForStudentAsync(int assignmentId, int studentUserId)
+        public async Task<AssignmentDto> GetByIdForStudentAsync(int assignmentId)
         {
-            var student = await UserProfileHelper.GetStudentByUserIdAsync(context, studentUserId);
+            var student = await UserProfileHelper.GetStudentByUserIdAsync(context, currentUserService.UserId);
 
-            var entity = await context.Set<Assignment>()
-                .AsNoTracking()
-                .FirstOrDefaultAsync(x =>
-                    x.Id == assignmentId &&
-                    x.IsActive &&
-                    x.Lecture.IsActive &&
-                    x.Lecture.Course.Enrollments.Any(e =>
-                        e.StudentId == student.Id &&
-                        e.EnrollmentStatus == EnrollmentStatus.Active))
+            var entity = await GetStudentAssignmentQuery(student.Id, assignmentId).AsNoTracking().FirstOrDefaultAsync()
                 ?? throw new NotFoundException(Messages.AssignmentNotFound);
 
             return Map(entity);
         }
 
-        public async Task<AssignmentSubmissionDto> SubmitAsync(int assignmentId, int studentUserId, AssignmentSubmitRequest request)
+        public async Task<AssignmentSubmissionDto> SubmitAsync(int assignmentId, AssignmentSubmitRequest request)
         {
-            var student = await UserProfileHelper.GetStudentByUserIdAsync(context, studentUserId);
+            var student = await UserProfileHelper.GetStudentByUserIdAsync(context, currentUserService.UserId);
 
-            var assignment = await context.Set<Assignment>()
-                .Include(x => x.AssignmentSubmissions)
-                .FirstOrDefaultAsync(x =>
-                    x.Id == assignmentId &&
-                    x.IsActive &&
-                    x.Lecture.IsActive &&
-                    x.Lecture.Course.Enrollments.Any(e =>
-                        e.StudentId == student.Id &&
-                        e.EnrollmentStatus == EnrollmentStatus.Active))
+            var assignment = await GetStudentAssignmentQuery(student.Id, assignmentId).Include(x => x.AssignmentSubmissions).FirstOrDefaultAsync()
                 ?? throw new NotFoundException(Messages.AssignmentNotFound);
 
             var existing = assignment.AssignmentSubmissions.FirstOrDefault(x => x.StudentId == student.Id);
@@ -142,7 +136,7 @@ namespace eNote.Application.Features.Assignments.Services
                 {
                     AssignmentId = assignment.Id,
                     StudentId = student.Id,
-                    CreatedById = studentUserId
+                    CreatedById = currentUserService.UserId
                 };
                 assignment.AssignmentSubmissions.Add(existing);
             }
@@ -150,16 +144,16 @@ namespace eNote.Application.Features.Assignments.Services
             existing.SubmittedAt = clock.UtcNow;
             existing.FilePath = request.FilePath?.Trim();
             existing.UpdatedAt = clock.UtcNow;
-            existing.UpdatedById = studentUserId;
+            existing.UpdatedById = currentUserService.UserId;
 
             await context.SaveChangesAsync();
 
             return MapSubmission(existing, student, await UserProfileHelper.GetStudentDisplayNameAsync(identity, student));
         }
 
-        public async Task<PagedResult<AssignmentSubmissionDto>> GetSubmissionsAsync(int lectureId, int assignmentId, int instructorUserId, int page, int pageSize)
+        public async Task<PagedResult<AssignmentSubmissionDto>> GetSubmissionsAsync(int lectureId, int assignmentId, int page, int pageSize)
         {
-            await GetAssignmentForInstructorAsync(lectureId, assignmentId, instructorUserId);
+            await GetAssignmentForInstructorAsync(lectureId, assignmentId);
 
             var query = context.Set<AssignmentSubmission>()
                 .AsNoTracking()
@@ -175,9 +169,7 @@ namespace eNote.Application.Features.Assignments.Services
                 .Take(pageSize)
                 .ToListAsync();
 
-            var items = new List<AssignmentSubmissionDto>();
-            foreach (var submission in submissions)
-                items.Add(await MapSubmissionAsync(submission, submission.Student));
+            var items = (await Task.WhenAll(submissions.Select(x => MapSubmissionAsync(x, x.Student)))).ToList();
 
             return new PagedResult<AssignmentSubmissionDto>
             {
@@ -188,12 +180,12 @@ namespace eNote.Application.Features.Assignments.Services
             };
         }
 
-        public async Task<AssignmentSubmissionDto> GradeAsync(int lectureId, int assignmentId, int submissionId, int instructorUserId, GradeAssignmentRequest request)
+        public async Task<AssignmentSubmissionDto> GradeAsync(int lectureId, int assignmentId, int submissionId, GradeAssignmentRequest request)
         {
             if (request.Grade is < 0 or > 100)
                 throw new BusinessException(Messages.AssignmentInvalidGrade);
 
-            await GetAssignmentForInstructorAsync(lectureId, assignmentId, instructorUserId);
+            await GetAssignmentForInstructorAsync(lectureId, assignmentId);
 
             var submission = await context.Set<AssignmentSubmission>()
                 .Include(x => x.Student)
@@ -202,40 +194,24 @@ namespace eNote.Application.Features.Assignments.Services
 
             submission.Grade = request.Grade;
             submission.UpdatedAt = clock.UtcNow;
-            submission.UpdatedById = instructorUserId;
+            submission.UpdatedById = currentUserService.UserId;
 
             await context.SaveChangesAsync();
 
             return await MapSubmissionAsync(submission, submission.Student);
         }
 
-        private async Task<Assignment> GetAssignmentForInstructorAsync(int lectureId, int assignmentId, int instructorUserId)
+        private async Task<Assignment> GetAssignmentForInstructorAsync(int lectureId, int assignmentId, bool track = false)
         {
-            await EnsureInstructorOwnsLectureAsync(lectureId, instructorUserId);
-
-            return await context.Set<Assignment>()
-                .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.Id == assignmentId && x.LectureId == lectureId && x.IsActive)
-                ?? throw new NotFoundException(Messages.AssignmentNotFound);
+            var instructor = await UserProfileHelper.GetInstructorByUserIdAsync(context, currentUserService.UserId);
+            var query = context.Set<Assignment>().Where(x => x.Id == assignmentId && x.LectureId == lectureId && x.Lecture.Course.InstructorId == instructor.Id);
+            return await (track ? query : query.AsNoTracking()).FirstOrDefaultAsync() ?? throw new NotFoundException(Messages.AssignmentNotFound);
         }
 
-        private async Task<Assignment> GetAssignmentForInstructorTrackedAsync(int lectureId, int assignmentId, int instructorUserId)
-        {
-            await EnsureInstructorOwnsLectureAsync(lectureId, instructorUserId);
-
-            return await context.Set<Assignment>().FirstOrDefaultAsync(x => x.Id == assignmentId && x.LectureId == lectureId && x.IsActive)
-                ?? throw new NotFoundException(Messages.AssignmentNotFound);
-        }
-
-        private async Task EnsureInstructorOwnsLectureAsync(int lectureId, int instructorUserId)
-        {
-            var instructor = await UserProfileHelper.GetInstructorByUserIdAsync(context, instructorUserId);
-
-            _ = await context.Set<Lecture>()
-                .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.Id == lectureId && x.Course.InstructorId == instructor.Id && x.IsActive)
-                ?? throw new AuthorizationException(Messages.CourseNotOwned);
-        }
+        private IQueryable<Assignment> GetStudentAssignmentQuery(int studentId, int assignmentId) =>
+            context.Set<Assignment>()
+                .Where(x => x.Id == assignmentId && 
+                            x.Lecture.Course.Enrollments.Any(e => e.StudentId == studentId && e.EnrollmentStatus == EnrollmentStatus.Active));
 
         private static AssignmentDto Map(Assignment entity) => new()
         {
@@ -248,7 +224,10 @@ namespace eNote.Application.Features.Assignments.Services
 
         private async Task<AssignmentSubmissionDto> MapSubmissionAsync(AssignmentSubmission submission, Student student)
         {
-            return MapSubmission(submission, student, await UserProfileHelper.GetStudentDisplayNameAsync(identity, student));
+            return MapSubmission(
+                submission,
+                student,
+                await UserProfileHelper.GetStudentDisplayNameAsync(identity, student));
         }
 
         private static AssignmentSubmissionDto MapSubmission(AssignmentSubmission submission, Student student, string studentName) => new()

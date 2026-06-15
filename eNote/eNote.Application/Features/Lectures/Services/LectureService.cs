@@ -1,4 +1,5 @@
 using eNote.Application.Common.Exceptions;
+using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Paging;
 using eNote.Application.Common.Persistence;
@@ -13,17 +14,17 @@ using Microsoft.Extensions.Logging;
 
 namespace eNote.Application.Features.Lectures.Services
 {
-    public class LectureService(IAppDbContext context, IClock clock, IUserIdentityService identity, ILogger<LectureService> logger) : ILectureService
+    public class LectureService(IAppDbContext context, IClock clock, IUserIdentityService identity, ILogger<LectureService> logger, ICurrentUserService currentUserService) : ILectureService
     {
-        public async Task<LectureDto> GetByIdForInstructorAsync(int id, int instructorUserId)
+        public async Task<LectureDto> GetByIdForInstructorAsync(int id)
         {
-            var entity = await GetLectureForInstructorAsync(id, instructorUserId);
+            var entity = await GetLectureForInstructorAsync(id, currentUserService.UserId);
             return Map(entity);
         }
 
-        public async Task<LectureDto> GetByIdForStudentAsync(int id, int studentUserId)
+        public async Task<LectureDto> GetByIdForStudentAsync(int id)
         {
-            _ = await UserProfileHelper.GetStudentByUserIdAsync(context, studentUserId);
+            _ = await UserProfileHelper.GetStudentByUserIdAsync(context, currentUserService.UserId);
 
             var entity = await context.Set<Lecture>()
                 .Include(x => x.Attendances)
@@ -37,9 +38,9 @@ namespace eNote.Application.Features.Lectures.Services
             return Map(entity);
         }
 
-        public async Task<PagedResult<LectureDto>> GetPagedForInstructorAsync(int instructorUserId, int page, int pageSize)
+        public async Task<PagedResult<LectureDto>> GetPagedForInstructorAsync(int page, int pageSize)
         {
-            var instructor = await UserProfileHelper.GetInstructorByUserIdAsync(context, instructorUserId);
+            var instructor = await UserProfileHelper.GetInstructorByUserIdAsync(context, currentUserService.UserId);
 
             var query = context.Set<Lecture>()
                 .AsNoTracking()
@@ -69,14 +70,14 @@ namespace eNote.Application.Features.Lectures.Services
                 q => q.OrderByDescending(x => x.LectureTime));
         }
 
-        public async Task<LectureDto> CreateAsync(int teacherId, LectureCreateRequest request)
+        public async Task<LectureDto> CreateAsync(LectureCreateRequest request)
         {
             var courseId = request.CourseId ?? 0;
 
             if (courseId != 0)
             {
                 _ = await context.Set<Course>()
-                    .FirstOrDefaultAsync(c => c.Id == courseId && c.Instructor.AppUserId == teacherId)
+                    .FirstOrDefaultAsync(c => c.Id == courseId && c.Instructor.AppUserId == currentUserService.UserId)
                     ?? throw new AuthorizationException(Messages.CourseNotOwned);
             }
 
@@ -90,7 +91,7 @@ namespace eNote.Application.Features.Lectures.Services
                 LectureStatus = LectureStatus.Scheduled,
                 IsCancelled = false,
                 CourseId = request.CourseId ?? 0,
-                CreatedById = teacherId
+                CreatedById = currentUserService.UserId
             };
 
             context.Set<Lecture>().Add(entity);
@@ -100,9 +101,9 @@ namespace eNote.Application.Features.Lectures.Services
             return Map(entity);
         }
 
-        public async Task<LectureDto> UpdateAsync(int id, int instructorUserId, LectureUpdateRequest request)
+        public async Task<LectureDto> UpdateAsync(int id, LectureUpdateRequest request)
         {
-            var entity = await GetLectureForInstructorAsync(id, instructorUserId, track: true);
+            var entity = await GetLectureForInstructorAsync(id, currentUserService.UserId, track: true);
 
             if (entity.IsCancelled)
                 throw new BusinessException(Messages.LectureCancelled);
@@ -113,29 +114,29 @@ namespace eNote.Application.Features.Lectures.Services
             entity.Duration = request.Duration;
             entity.Capacity = request.Capacity;
             entity.UpdatedAt = clock.UtcNow;
-            entity.UpdatedById = instructorUserId;
+            entity.UpdatedById = currentUserService.UserId;
 
             await context.SaveChangesAsync();
 
             return Map(entity);
         }
 
-        public async Task DeleteAsync(int id, int instructorUserId)
+        public async Task DeleteAsync(int id)
         {
-            var entity = await GetLectureForInstructorAsync(id, instructorUserId, track: true);
+            var entity = await GetLectureForInstructorAsync(id, currentUserService.UserId, track: true);
 
             entity.IsActive = false;
             entity.UpdatedAt = clock.UtcNow;
-            entity.UpdatedById = instructorUserId;
+            entity.UpdatedById = currentUserService.UserId;
 
             await context.SaveChangesAsync();
 
-            logger.LogInformation("Lecture {LectureId} soft-deleted by instructor user {InstructorUserId}", id, instructorUserId);
+            logger.LogInformation("Lecture {LectureId} soft-deleted by instructor user {InstructorUserId}", id, currentUserService.UserId);
         }
 
-        public async Task<LectureDto> CancelAsync(int id, int instructorUserId)
+        public async Task<LectureDto> CancelAsync(int id)
         {
-            var entity = await GetLectureForInstructorAsync(id, instructorUserId, track: true);
+            var entity = await GetLectureForInstructorAsync(id, currentUserService.UserId, track: true);
 
             if (entity.IsCancelled)
                 throw new BusinessException(Messages.LectureCancelled);
@@ -143,14 +144,14 @@ namespace eNote.Application.Features.Lectures.Services
             entity.IsCancelled = true;
             entity.LectureStatus = LectureStatus.Cancelled;
             entity.UpdatedAt = clock.UtcNow;
-            entity.UpdatedById = instructorUserId;
+            entity.UpdatedById = currentUserService.UserId;
 
             await context.SaveChangesAsync();
 
             return Map(entity);
         }
 
-        public async Task<RsvpResponse> RsvpAsync(int lectureId, int studentUserId, RsvpRequest request)
+        public async Task<RsvpResponse> RsvpAsync(int lectureId, RsvpRequest request)
         {
             var lecture = await context.Set<Lecture>()
                 .Include(x => x.Attendances)
@@ -163,7 +164,7 @@ namespace eNote.Application.Features.Lectures.Services
             if (lecture.IsCancelled)
                 throw new BusinessException(Messages.LectureCancelled);
 
-            var student = await UserProfileHelper.GetStudentByUserIdAsync(context, studentUserId);
+            var student = await UserProfileHelper.GetStudentByUserIdAsync(context, currentUserService.UserId);
 
             var existing = lecture.Attendances.FirstOrDefault(x => x.StudentId == student.Id);
 
@@ -194,7 +195,7 @@ namespace eNote.Application.Features.Lectures.Services
             }
             catch (DbUpdateConcurrencyException ex)
             {
-                logger.LogWarning(ex, "Concurrency conflict while RSVPing for lecture {LectureId} by student user {StudentUserId}", lectureId, studentUserId);
+                logger.LogWarning(ex, "Concurrency conflict while RSVPing for lecture {LectureId} by student user {StudentUserId}", lectureId, currentUserService.UserId);
 
                 throw new ConflictException(Messages.LectureRsvpConflict);
             }
@@ -202,9 +203,9 @@ namespace eNote.Application.Features.Lectures.Services
             return new RsvpResponse { LectureId = lecture.Id, StudentId = student.Id, Confirmed = request.Confirm };
         }
 
-        public async Task<PagedResult<AttendanceDto>> GetAttendanceAsync(int lectureId, int instructorUserId, int page, int pageSize)
+        public async Task<PagedResult<AttendanceDto>> GetAttendanceAsync(int lectureId, int page, int pageSize)
         {
-            await GetLectureForInstructorAsync(lectureId, instructorUserId);
+            await GetLectureForInstructorAsync(lectureId, currentUserService.UserId);
 
             var query = context.Set<Attendance>()
                 .AsNoTracking()
@@ -237,9 +238,9 @@ namespace eNote.Application.Features.Lectures.Services
             };
         }
 
-        public async Task<AttendanceDto> MarkAttendanceAsync(int lectureId, int instructorUserId, MarkAttendanceRequest request)
+        public async Task<AttendanceDto> MarkAttendanceAsync(int lectureId, MarkAttendanceRequest request)
         {
-            var lecture = await GetLectureForInstructorAsync(lectureId, instructorUserId, track: true);
+            var lecture = await GetLectureForInstructorAsync(lectureId, currentUserService.UserId, track: true);
 
             if (lecture.IsCancelled)
                 throw new BusinessException(Messages.LectureCancelled);
@@ -263,14 +264,14 @@ namespace eNote.Application.Features.Lectures.Services
                     LectureId = lecture.Id,
                     StudentId = request.StudentId,
                     AttendanceStatus = request.AttendanceStatus,
-                    CreatedById = instructorUserId
+                    CreatedById = currentUserService.UserId
                 };
                 lecture.Attendances.Add(attendance);
             }
             else
             {
                 attendance.AttendanceStatus = request.AttendanceStatus;
-                attendance.UpdatedById = instructorUserId;
+                attendance.UpdatedById = currentUserService.UserId;
             }
 
             await context.SaveChangesAsync();
@@ -287,9 +288,9 @@ namespace eNote.Application.Features.Lectures.Services
             };
         }
 
-        private async Task<Lecture> GetLectureForInstructorAsync(int lectureId, int instructorUserId, bool track = false)
+        private async Task<Lecture> GetLectureForInstructorAsync(int lectureId, int userId, bool track = false)
         {
-            var instructor = await UserProfileHelper.GetInstructorByUserIdAsync(context, instructorUserId);
+            var instructor = await UserProfileHelper.GetInstructorByUserIdAsync(context, userId);
             var query = context.Set<Lecture>()
                 .Include(x => x.Attendances)
                 .Where(x => x.Id == lectureId && x.Course.InstructorId == instructor.Id);

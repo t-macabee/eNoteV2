@@ -14,7 +14,7 @@ namespace eNote.API.Controllers.Announcements
         [HttpGet]
         public async Task<ActionResult<IReadOnlyList<AnnouncementDto>>> GetFeed()
         {
-            var result = await announcementService.GetFeedForStudentAsync(CurrentUserId);
+            var result = await announcementService.GetFeedForStudentAsync();
             return Ok(result);
         }
     }
