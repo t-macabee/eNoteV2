@@ -30,7 +30,7 @@ namespace eNote.API.Controllers.Courses
         public async Task<ActionResult<CourseDto>> Create([FromBody] CourseCreateRequest request)
         {
             var dto = await service.CreateAsync(CurrentUserId, request);
-            return Ok(dto);
+            return CreatedAtAction(nameof(GetById), new { id = dto.Id }, dto);
         }
 
         [HttpPut("{id:int}")]

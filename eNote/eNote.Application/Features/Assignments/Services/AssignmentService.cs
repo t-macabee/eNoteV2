@@ -22,17 +22,13 @@ namespace eNote.Application.Features.Assignments.Services
                 .AsNoTracking()
                 .Where(x => x.LectureId == lectureId && x.IsActive);
 
-            return await query.ToPagedResultAsync(
-                page,
-                pageSize,
-                includeTotalCount: true,
-                Map,
-                q => q.OrderBy(x => x.DueAt));
+            return await query.ToPagedResultAsync(page, pageSize, includeTotalCount: true, Map, q => q.OrderBy(x => x.DueAt));
         }
 
         public async Task<AssignmentDto> GetByIdForInstructorAsync(int lectureId, int assignmentId, int instructorUserId)
         {
             var entity = await GetAssignmentForInstructorAsync(lectureId, assignmentId, instructorUserId);
+
             return Map(entity);
         }
 
@@ -96,14 +92,10 @@ namespace eNote.Application.Features.Assignments.Services
                     x.IsActive &&
                     enrolledCourseIds.Contains(x.Lecture.CourseId) &&
                     x.Lecture.IsActive &&
-                    !x.Lecture.IsCancelled);
+                    !x.Lecture.IsCancelled
+                );
 
-            return await query.ToPagedResultAsync(
-                page,
-                pageSize,
-                includeTotalCount: true,
-                Map,
-                q => q.OrderBy(x => x.DueAt));
+            return await query.ToPagedResultAsync(page, pageSize, includeTotalCount: true, Map, q => q.OrderBy(x => x.DueAt));
         }
 
         public async Task<AssignmentDto> GetByIdForStudentAsync(int assignmentId, int studentUserId)
@@ -231,8 +223,7 @@ namespace eNote.Application.Features.Assignments.Services
         {
             await EnsureInstructorOwnsLectureAsync(lectureId, instructorUserId);
 
-            return await context.Set<Assignment>()
-                .FirstOrDefaultAsync(x => x.Id == assignmentId && x.LectureId == lectureId && x.IsActive)
+            return await context.Set<Assignment>().FirstOrDefaultAsync(x => x.Id == assignmentId && x.LectureId == lectureId && x.IsActive)
                 ?? throw new NotFoundException(Messages.AssignmentNotFound);
         }
 
@@ -257,10 +248,7 @@ namespace eNote.Application.Features.Assignments.Services
 
         private async Task<AssignmentSubmissionDto> MapSubmissionAsync(AssignmentSubmission submission, Student student)
         {
-            return MapSubmission(
-                submission,
-                student,
-                await UserProfileHelper.GetStudentDisplayNameAsync(identity, student));
+            return MapSubmission(submission, student, await UserProfileHelper.GetStudentDisplayNameAsync(identity, student));
         }
 
         private static AssignmentSubmissionDto MapSubmission(AssignmentSubmission submission, Student student, string studentName) => new()

@@ -12,6 +12,7 @@ namespace eNote.Infrastructure.Data.Configurations
             builder.Property(x => x.Title).HasStringConfig(150, true);
             builder.Property(x => x.Content).HasStringConfig(4000, true);
             builder.Property(x => x.IsActive).HasDefaultValue(true);
+            builder.HasQueryFilter(x => x.IsActive);
 
             builder.HasOne<AppUser>()
                 .WithMany()

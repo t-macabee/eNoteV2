@@ -22,6 +22,7 @@ namespace eNote.Infrastructure.Data.Configurations
             builder.Property(p => p.Capacity).IsRequired(false);
             builder.Property(p => p.IsCancelled).HasDefaultFalse();
             builder.Property(p => p.IsActive).HasDefaultValue(true);
+            builder.HasQueryFilter(p => p.IsActive);
             builder.Property(p => p.RowVersion).IsRowVersion();
         }
     }

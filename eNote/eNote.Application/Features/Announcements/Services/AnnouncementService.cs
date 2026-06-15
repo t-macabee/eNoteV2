@@ -4,6 +4,7 @@ using eNote.Application.Common.Persistence;
 using eNote.Application.Common.Time;
 using eNote.Application.Features.Announcements.Services.Interfaces;
 using eNote.Application.Features.MusicStores.Services.Interfaces;
+using eNote.Application.Features.Users;
 using eNote.Domain.Entities;
 using eNote.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
@@ -47,10 +48,8 @@ namespace eNote.Application.Features.Announcements.Services
                 .AsNoTracking()
                 .Include(a => a.Course)
                 .Include(a => a.MusicStore)
-                .Where(a =>
-                    a.IsActive &&
-                    ((a.CourseId != null && enrolledCourseIds.Contains(a.CourseId.Value)) ||
-                     (a.MusicStoreId != null && storeIds.Contains(a.MusicStoreId.Value))))
+                .Where(a => (a.CourseId != null && enrolledCourseIds.Contains(a.CourseId.Value)) ||
+                            (a.MusicStoreId != null && storeIds.Contains(a.MusicStoreId.Value)))
                 .OrderByDescending(a => a.PublishedAt)
                 .Take(50)
                 .ToListAsync();
@@ -60,7 +59,14 @@ namespace eNote.Application.Features.Announcements.Services
 
         public async Task<AnnouncementDto> CreateForCourseAsync(int userId, int courseId, AnnouncementCreateRequest request)
         {
-            await EnsureInstructorOwnsCourseAsync(userId, courseId);
+            var instructor = await UserProfileHelper.GetInstructorByUserIdAsync(context, userId);
+
+            var ownsCourse = await context.Set<Course>()
+                .AsNoTracking()
+                .AnyAsync(c => c.Id == courseId && c.InstructorId == instructor.Id);
+
+            if (!ownsCourse)
+                throw new BusinessException(Messages.AnnouncementCourseForbidden);
 
             var entity = new Announcement
             {
@@ -81,12 +87,7 @@ namespace eNote.Application.Features.Announcements.Services
 
         public async Task<IReadOnlyList<AnnouncementDto>> GetForCourseAsync(int userId, int courseId)
         {
-            await EnsureInstructorOwnsCourseAsync(userId, courseId);
-
-            var items = await context.Set<Announcement>()
-                .AsNoTracking()
-                .Include(a => a.Course)
-                .Where(a => a.CourseId == courseId && a.IsActive)
+            var items = await GetCourseAnnouncementQuery(userId, courseId)
                 .OrderByDescending(a => a.PublishedAt)
                 .ToListAsync();
 
@@ -95,10 +96,8 @@ namespace eNote.Application.Features.Announcements.Services
 
         public async Task<AnnouncementDto> UpdateForCourseAsync(int userId, int courseId, int announcementId, AnnouncementUpdateRequest request)
         {
-            await EnsureInstructorOwnsCourseAsync(userId, courseId);
-
-            var entity = await context.Set<Announcement>()
-                .FirstOrDefaultAsync(a => a.Id == announcementId && a.CourseId == courseId && a.IsActive)
+            var entity = await GetCourseAnnouncementQuery(userId, courseId, track: true)
+                .FirstOrDefaultAsync(a => a.Id == announcementId)
                 ?? throw new NotFoundException(Messages.AnnouncementNotFound);
 
             entity.Title = request.Title.Trim();
@@ -113,10 +112,8 @@ namespace eNote.Application.Features.Announcements.Services
 
         public async Task DeleteForCourseAsync(int userId, int courseId, int announcementId)
         {
-            await EnsureInstructorOwnsCourseAsync(userId, courseId);
-
-            var entity = await context.Set<Announcement>()
-                .FirstOrDefaultAsync(a => a.Id == announcementId && a.CourseId == courseId && a.IsActive)
+            var entity = await GetCourseAnnouncementQuery(userId, courseId, track: true)
+                .FirstOrDefaultAsync(a => a.Id == announcementId)
                 ?? throw new NotFoundException(Messages.AnnouncementNotFound);
 
             entity.IsActive = false;
@@ -153,7 +150,7 @@ namespace eNote.Application.Features.Announcements.Services
             var items = await context.Set<Announcement>()
                 .AsNoTracking()
                 .Include(a => a.MusicStore)
-                .Where(a => a.MusicStoreId == storeId && a.IsActive)
+                .Where(a => a.MusicStoreId == storeId)
                 .OrderByDescending(a => a.PublishedAt)
                 .ToListAsync();
 
@@ -165,7 +162,7 @@ namespace eNote.Application.Features.Announcements.Services
             var storeId = await storeContext.GetActiveStoreAsync(userId);
 
             var entity = await context.Set<Announcement>()
-                .FirstOrDefaultAsync(a => a.Id == announcementId && a.MusicStoreId == storeId && a.IsActive)
+                .FirstOrDefaultAsync(a => a.Id == announcementId && a.MusicStoreId == storeId)
                 ?? throw new NotFoundException(Messages.AnnouncementNotFound);
 
             entity.Title = request.Title.Trim();
@@ -183,7 +180,7 @@ namespace eNote.Application.Features.Announcements.Services
             var storeId = await storeContext.GetActiveStoreAsync(userId);
 
             var entity = await context.Set<Announcement>()
-                .FirstOrDefaultAsync(a => a.Id == announcementId && a.MusicStoreId == storeId && a.IsActive)
+                .FirstOrDefaultAsync(a => a.Id == announcementId && a.MusicStoreId == storeId)
                 ?? throw new NotFoundException(Messages.AnnouncementNotFound);
 
             entity.IsActive = false;
@@ -193,14 +190,13 @@ namespace eNote.Application.Features.Announcements.Services
             await context.SaveChangesAsync();
         }
 
-        private async Task EnsureInstructorOwnsCourseAsync(int userId, int courseId)
+        private IQueryable<Announcement> GetCourseAnnouncementQuery(int instructorUserId, int courseId, bool track = false)
         {
-            var ownsCourse = await context.Set<Course>()
-                .AsNoTracking()
-                .AnyAsync(c => c.Id == courseId && c.IsActive && c.Instructor.AppUserId == userId);
+            var query = context.Set<Announcement>()
+                .Include(a => a.Course)
+                .Where(a => a.CourseId == courseId && a.Course.Instructor.AppUserId == instructorUserId);
 
-            if (!ownsCourse)
-                throw new BusinessException(Messages.AnnouncementCourseForbidden);
+            return track ? query : query.AsNoTracking();
         }
 
         private async Task<AnnouncementDto> LoadDtoAsync(int announcementId)
@@ -209,7 +205,7 @@ namespace eNote.Application.Features.Announcements.Services
                 .AsNoTracking()
                 .Include(a => a.Course)
                 .Include(a => a.MusicStore)
-                .FirstOrDefaultAsync(a => a.Id == announcementId && a.IsActive)
+                .FirstOrDefaultAsync(a => a.Id == announcementId)
                 ?? throw new NotFoundException(Messages.AnnouncementNotFound);
 
             return MapToDto(entity);

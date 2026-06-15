@@ -53,7 +53,7 @@ namespace eNote.Application.Features.Courses.Services
             var query = context.Set<Course>()
                 .AsNoTracking()
                 .Include(c => c.Enrollments)
-                .Where(c => c.InstructorId == instructor.Id && c.IsActive);
+                .Where(c => c.InstructorId == instructor.Id);
 
             return await query.ToPagedResultAsync(
                 page,
@@ -68,7 +68,7 @@ namespace eNote.Application.Features.Courses.Services
             var query = context.Set<Course>()
                 .AsNoTracking()
                 .Include(c => c.Enrollments)
-                .Where(c => c.IsPublished && c.IsActive);
+                .Where(c => c.IsPublished);
 
             return await query.ToPagedResultAsync(
                 page,
@@ -142,7 +142,7 @@ namespace eNote.Application.Features.Courses.Services
             entity.UpdatedAt = clock.UtcNow;
             entity.UpdatedById = instructorUserId;
 
-            foreach (var lecture in entity.Lectures.Where(l => l.IsActive))
+            foreach (var lecture in entity.Lectures)
             {
                 lecture.IsActive = false;
                 lecture.UpdatedAt = clock.UtcNow;

@@ -31,7 +31,7 @@ namespace eNote.API.Controllers.InstrumentRentals
         public async Task<ActionResult<InstrumentRentalDto>> Create([FromBody] RentalCreateRequest request)
         {
             var dto = await commandService.CreateRequestAsync(CurrentUserId, request);
-            return Ok(dto);
+            return CreatedAtAction(nameof(GetById), new { id = dto.Id }, dto);
         }
 
         [HttpPost("{id:int}/cancel")]

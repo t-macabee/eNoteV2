@@ -6,6 +6,7 @@ using eNote.Application.Common.Queryable;
 using eNote.Application.Features.Instruments.Search;
 using eNote.Application.Features.Instruments.Services.Interfaces;
 using eNote.Application.Features.MusicStores.Services.Interfaces;
+using eNote.Application.Features.Users;
 using eNote.Domain.Entities;
 using eNote.Domain.Enums;
 using MapsterMapper;
@@ -19,11 +20,11 @@ namespace eNote.Application.Features.Instruments.Services
 
         public async Task<InstrumentDto> GetByIdAsync(int id, int employeeAppUserId)
         {
-            var storeId = await storeContext.GetActiveStoreAsync(employeeAppUserId);
+            var employee = await EnsureStoreAccessAsync(employeeAppUserId);
 
             var query = AddIncludes(context.Set<Instrument>()
                 .AsNoTracking()
-                .Where(x => x.MusicStoreId == storeId && x.IsActive));
+                .Where(x => x.MusicStoreId == employee.MusicStoreId));
 
             var entity = await query
                 .FirstOrDefaultAsync(x => x.Id == id)
@@ -35,7 +36,7 @@ namespace eNote.Application.Features.Instruments.Services
         public async Task<InstrumentDto> GetPublicByIdAsync(int id)
         {
             var entity = await AddIncludes(context.Set<Instrument>().AsNoTracking())
-                .FirstOrDefaultAsync(x => x.Id == id && x.IsActive)
+                .FirstOrDefaultAsync(x => x.Id == id)
                 ?? throw new NotFoundException(Messages.NotFound);
 
             return MapEntityToModel(entity);
@@ -43,11 +44,11 @@ namespace eNote.Application.Features.Instruments.Services
 
         public async Task<PagedResult<InstrumentDto>> GetPagedAsync(InstrumentSearchObject search, int employeeAppUserId)
         {
-            var storeId = await storeContext.GetActiveStoreAsync(employeeAppUserId);
+            var employee = await EnsureStoreAccessAsync(employeeAppUserId);
 
             var query = context.Set<Instrument>()
                 .AsNoTracking()
-                .Where(x => x.MusicStoreId == storeId && x.IsActive);
+                .Where(x => x.MusicStoreId == employee.MusicStoreId);
 
             query = AddIncludes(query);
 
@@ -58,8 +59,7 @@ namespace eNote.Application.Features.Instruments.Services
 
         public async Task<PagedResult<InstrumentDto>> GetPublicPagedAsync(InstrumentSearchObject search)
         {
-            var query = AddIncludes(context.Set<Instrument>().AsNoTracking())
-                .Where(x => x.IsActive);
+            var query = AddIncludes(context.Set<Instrument>().AsNoTracking());
 
             if (search.IsAvailable.HasValue && search.IsAvailable.Value)
             {
@@ -75,11 +75,11 @@ namespace eNote.Application.Features.Instruments.Services
 
         public async Task<InstrumentDto> CreateAsync(InstrumentCreateRequest request, int employeeAppUserId)
         {
-            var storeId = await storeContext.GetActiveStoreAsync(employeeAppUserId);
+            var employee = await EnsureStoreAccessAsync(employeeAppUserId);
 
             var entity = mapper.Map<Instrument>(request);
 
-            entity.MusicStoreId = storeId;
+            entity.MusicStoreId = employee.MusicStoreId;
 
             await BeforeCreateAsync(request, entity);
 
@@ -94,10 +94,10 @@ namespace eNote.Application.Features.Instruments.Services
 
         public async Task<InstrumentDto> UpdateAsync(int id, InstrumentUpdateRequest request, int employeeAppUserId)
         {
-            var storeId = await storeContext.GetActiveStoreAsync(employeeAppUserId);
+            var employee = await EnsureStoreAccessAsync(employeeAppUserId);
 
             var entity = await context.Set<Instrument>()
-                .FirstOrDefaultAsync(x => x.Id == id && x.MusicStoreId == storeId && x.IsActive)
+                .FirstOrDefaultAsync(x => x.Id == id && x.MusicStoreId == employee.MusicStoreId)
                 ?? throw new NotFoundException(Messages.NotFound);
 
             mapper.Map(request, entity);
@@ -113,10 +113,10 @@ namespace eNote.Application.Features.Instruments.Services
 
         public async Task DeleteAsync(int id, int employeeAppUserId)
         {
-            var storeId = await storeContext.GetActiveStoreAsync(employeeAppUserId);
+            var employee = await EnsureStoreAccessAsync(employeeAppUserId);
 
             var instrument = await context.Set<Instrument>()
-                .FirstOrDefaultAsync(x => x.Id == id && x.MusicStoreId == storeId && x.IsActive)
+                .FirstOrDefaultAsync(x => x.Id == id && x.MusicStoreId == employee.MusicStoreId)
                 ?? throw new NotFoundException(Messages.NotFound);
 
             var hasBlockingRental = await context.Set<InstrumentRental>()
@@ -130,6 +130,17 @@ namespace eNote.Application.Features.Instruments.Services
             instrument.IsActive = false;
 
             await context.SaveChangesAsync();
+        }
+
+        private async Task<MusicStoreEmployee> EnsureStoreAccessAsync(int employeeAppUserId)
+        {
+            var employee = await UserProfileHelper.GetActiveEmployeeByUserIdAsync(context, employeeAppUserId);
+            var activeStoreId = await storeContext.GetActiveStoreAsync(employeeAppUserId);
+            
+            if (employee.MusicStoreId != activeStoreId) 
+                throw new AuthorizationException(Messages.StoreNotOwned);
+                
+            return employee;
         }
 
         private static IQueryable<Instrument> AddIncludes(IQueryable<Instrument> query)

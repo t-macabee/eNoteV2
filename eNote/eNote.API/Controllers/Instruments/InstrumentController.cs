@@ -31,7 +31,7 @@ namespace eNote.API.Controllers.Instruments
         public async Task<ActionResult<InstrumentDto>> Create([FromBody] InstrumentCreateRequest request)
         {
             var result = await instrumentService.CreateAsync(request, CurrentUserId);
-            return Ok(result);
+            return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
         }
 
         [HttpPut("{id:int}")]

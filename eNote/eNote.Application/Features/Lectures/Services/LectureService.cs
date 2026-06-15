@@ -17,14 +17,7 @@ namespace eNote.Application.Features.Lectures.Services
     {
         public async Task<LectureDto> GetByIdForInstructorAsync(int id, int instructorUserId)
         {
-            var instructor = await UserProfileHelper.GetInstructorByUserIdAsync(context, instructorUserId);
-
-            var entity = await context.Set<Lecture>()
-                .Include(x => x.Attendances)
-                .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.Id == id && x.Course.InstructorId == instructor.Id && x.IsActive)
-                ?? throw new NotFoundException(Messages.LectureNotFound);
-
+            var entity = await GetLectureForInstructorAsync(id, instructorUserId);
             return Map(entity);
         }
 
@@ -37,8 +30,6 @@ namespace eNote.Application.Features.Lectures.Services
                 .AsNoTracking()
                 .FirstOrDefaultAsync(x =>
                     x.Id == id &&
-                    x.IsActive &&
-                    x.Course.IsActive &&
                     x.Course.IsPublished &&
                     !x.IsCancelled)
                 ?? throw new NotFoundException(Messages.LectureNotFound);
@@ -53,7 +44,7 @@ namespace eNote.Application.Features.Lectures.Services
             var query = context.Set<Lecture>()
                 .AsNoTracking()
                 .Include(x => x.Attendances)
-                .Where(x => x.Course.InstructorId == instructor.Id && x.IsActive);
+                .Where(x => x.Course.InstructorId == instructor.Id);
 
             return await query.ToPagedResultAsync(
                 page,
@@ -68,7 +59,7 @@ namespace eNote.Application.Features.Lectures.Services
             var query = context.Set<Lecture>()
                 .AsNoTracking()
                 .Include(x => x.Attendances)
-                .Where(x => x.IsActive && x.Course.IsActive && x.Course.IsPublished && !x.IsCancelled);
+                .Where(x => x.Course.IsPublished && !x.IsCancelled);
 
             return await query.ToPagedResultAsync(
                 page,
@@ -85,7 +76,7 @@ namespace eNote.Application.Features.Lectures.Services
             if (courseId != 0)
             {
                 _ = await context.Set<Course>()
-                    .FirstOrDefaultAsync(c => c.Id == courseId && c.Instructor.AppUserId == teacherId && c.IsActive)
+                    .FirstOrDefaultAsync(c => c.Id == courseId && c.Instructor.AppUserId == teacherId)
                     ?? throw new AuthorizationException(Messages.CourseNotOwned);
             }
 
@@ -111,12 +102,7 @@ namespace eNote.Application.Features.Lectures.Services
 
         public async Task<LectureDto> UpdateAsync(int id, int instructorUserId, LectureUpdateRequest request)
         {
-            var instructor = await UserProfileHelper.GetInstructorByUserIdAsync(context, instructorUserId);
-
-            var entity = await context.Set<Lecture>()
-                .Include(x => x.Attendances)
-                .FirstOrDefaultAsync(x => x.Id == id && x.Course.InstructorId == instructor.Id && x.IsActive)
-                ?? throw new NotFoundException(Messages.LectureNotFound);
+            var entity = await GetLectureForInstructorAsync(id, instructorUserId, track: true);
 
             if (entity.IsCancelled)
                 throw new BusinessException(Messages.LectureCancelled);
@@ -136,11 +122,7 @@ namespace eNote.Application.Features.Lectures.Services
 
         public async Task DeleteAsync(int id, int instructorUserId)
         {
-            var instructor = await UserProfileHelper.GetInstructorByUserIdAsync(context, instructorUserId);
-
-            var entity = await context.Set<Lecture>()
-                .FirstOrDefaultAsync(x => x.Id == id && x.Course.InstructorId == instructor.Id && x.IsActive)
-                ?? throw new NotFoundException(Messages.LectureNotFound);
+            var entity = await GetLectureForInstructorAsync(id, instructorUserId, track: true);
 
             entity.IsActive = false;
             entity.UpdatedAt = clock.UtcNow;
@@ -153,12 +135,7 @@ namespace eNote.Application.Features.Lectures.Services
 
         public async Task<LectureDto> CancelAsync(int id, int instructorUserId)
         {
-            var instructor = await UserProfileHelper.GetInstructorByUserIdAsync(context, instructorUserId);
-
-            var entity = await context.Set<Lecture>()
-                .Include(x => x.Attendances)
-                .FirstOrDefaultAsync(x => x.Id == id && x.Course.InstructorId == instructor.Id && x.IsActive)
-                ?? throw new NotFoundException(Messages.LectureNotFound);
+            var entity = await GetLectureForInstructorAsync(id, instructorUserId, track: true);
 
             if (entity.IsCancelled)
                 throw new BusinessException(Messages.LectureCancelled);
@@ -180,8 +157,6 @@ namespace eNote.Application.Features.Lectures.Services
                 .Include(x => x.Course)
                 .FirstOrDefaultAsync(x =>
                     x.Id == lectureId &&
-                    x.IsActive &&
-                    x.Course.IsActive &&
                     x.Course.IsPublished)
                 ?? throw new NotFoundException(Messages.LectureNotFound);
 
@@ -229,12 +204,7 @@ namespace eNote.Application.Features.Lectures.Services
 
         public async Task<PagedResult<AttendanceDto>> GetAttendanceAsync(int lectureId, int instructorUserId, int page, int pageSize)
         {
-            var instructor = await UserProfileHelper.GetInstructorByUserIdAsync(context, instructorUserId);
-
-            _ = await context.Set<Lecture>()
-                .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.Id == lectureId && x.Course.InstructorId == instructor.Id && x.IsActive)
-                ?? throw new NotFoundException(Messages.LectureNotFound);
+            await GetLectureForInstructorAsync(lectureId, instructorUserId);
 
             var query = context.Set<Attendance>()
                 .AsNoTracking()
@@ -250,17 +220,13 @@ namespace eNote.Application.Features.Lectures.Services
                 .Take(pageSize)
                 .ToListAsync();
 
-            var items = new List<AttendanceDto>();
-            foreach (var attendance in attendances)
+            var items = (await Task.WhenAll(attendances.Select(async a => new AttendanceDto
             {
-                items.Add(new AttendanceDto
-                {
-                    Id = attendance.Id,
-                    StudentId = attendance.StudentId,
-                    StudentName = await UserProfileHelper.GetStudentDisplayNameAsync(identity, attendance.Student),
-                    AttendanceStatus = attendance.AttendanceStatus
-                });
-            }
+                Id = a.Id,
+                StudentId = a.StudentId,
+                StudentName = await UserProfileHelper.GetStudentDisplayNameAsync(identity, a.Student),
+                AttendanceStatus = a.AttendanceStatus
+            }))).ToList();
 
             return new PagedResult<AttendanceDto>
             {
@@ -273,13 +239,7 @@ namespace eNote.Application.Features.Lectures.Services
 
         public async Task<AttendanceDto> MarkAttendanceAsync(int lectureId, int instructorUserId, MarkAttendanceRequest request)
         {
-            var instructor = await UserProfileHelper.GetInstructorByUserIdAsync(context, instructorUserId);
-
-            var lecture = await context.Set<Lecture>()
-                .Include(x => x.Attendances)
-                    .ThenInclude(a => a.Student)
-                .FirstOrDefaultAsync(x => x.Id == lectureId && x.Course.InstructorId == instructor.Id && x.IsActive)
-                ?? throw new NotFoundException(Messages.LectureNotFound);
+            var lecture = await GetLectureForInstructorAsync(lectureId, instructorUserId, track: true);
 
             if (lecture.IsCancelled)
                 throw new BusinessException(Messages.LectureCancelled);
@@ -325,6 +285,17 @@ namespace eNote.Application.Features.Lectures.Services
                 StudentName = await UserProfileHelper.GetStudentDisplayNameAsync(identity, student),
                 AttendanceStatus = attendance.AttendanceStatus
             };
+        }
+
+        private async Task<Lecture> GetLectureForInstructorAsync(int lectureId, int instructorUserId, bool track = false)
+        {
+            var instructor = await UserProfileHelper.GetInstructorByUserIdAsync(context, instructorUserId);
+            var query = context.Set<Lecture>()
+                .Include(x => x.Attendances)
+                .Where(x => x.Id == lectureId && x.Course.InstructorId == instructor.Id);
+                
+            return await (track ? query : query.AsNoTracking()).FirstOrDefaultAsync() 
+                ?? throw new NotFoundException(Messages.LectureNotFound);
         }
 
         private static LectureDto Map(Lecture e)

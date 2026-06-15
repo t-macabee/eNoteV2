@@ -22,7 +22,7 @@ namespace eNote.API.Controllers.Announcements
         public async Task<ActionResult<AnnouncementDto>> Create(int courseId, [FromBody] AnnouncementCreateRequest request)
         {
             var result = await announcementService.CreateForCourseAsync(CurrentUserId, courseId, request);
-            return Ok(result);
+            return StatusCode(201, result);
         }
 
         [HttpPut("{announcementId:int}")]
