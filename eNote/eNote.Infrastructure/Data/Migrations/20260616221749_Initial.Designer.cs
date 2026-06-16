@@ -12,7 +12,7 @@ using eNote.Infrastructure.Data;
 namespace eNote.Infrastructure.Data.Migrations
 {
     [DbContext(typeof(ENoteContext))]
-    [Migration("20260616161734_Initial")]
+    [Migration("20260616221749_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -422,7 +422,8 @@ namespace eNote.Infrastructure.Data.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<decimal>("Price")
-                        .HasColumnType("decimal(8,2)");
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<DateTime?>("StartDate")
                         .HasColumnType("datetime2");
@@ -576,6 +577,9 @@ namespace eNote.Infrastructure.Data.Migrations
                     b.Property<DateTime?>("ApprovedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<int?>("ApprovedById")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -595,8 +599,17 @@ namespace eNote.Infrastructure.Data.Migrations
                     b.Property<DateTime?>("PickedUpAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<DateTime?>("RejectedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("RejectedById")
+                        .HasColumnType("int");
+
                     b.Property<int>("RentalStatus")
                         .HasColumnType("int");
+
+                    b.Property<string>("RequestNote")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("RequestedAt")
                         .HasColumnType("datetime2");

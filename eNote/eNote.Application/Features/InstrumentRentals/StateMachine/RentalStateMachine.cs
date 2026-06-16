@@ -102,8 +102,7 @@ namespace eNote.Application.Features.InstrumentRentals.StateMachine
                 },
                 Apply: (rental, context, time) =>
                 {
-                    var note = !string.IsNullOrWhiteSpace(context.Response?.Note) ? context.Response.Note : rental.Note;
-                    rental.Approve(rental.Instrument.InstrumentType.MonthlyFee, note, time.UtcNow);
+                    rental.Approve(rental.Instrument.InstrumentType.MonthlyFee, context.Response?.Note, time.UtcNow, context.UserId);
                     ApplyAuditFields(rental, context, time);
                 },
                 UsesInstrumentLock: true),
@@ -116,8 +115,7 @@ namespace eNote.Application.Features.InstrumentRentals.StateMachine
                 GuardAsync: null,
                 Apply: (rental, context, time) =>
                 {
-                    var note = !string.IsNullOrWhiteSpace(context.Response?.Note) ? context.Response.Note : rental.Note;
-                    rental.Reject(time.UtcNow, note);
+                    rental.Reject(time.UtcNow, context.Response?.Note, context.UserId);
                     ApplyAuditFields(rental, context, time);
                 },
                 UsesInstrumentLock: false),

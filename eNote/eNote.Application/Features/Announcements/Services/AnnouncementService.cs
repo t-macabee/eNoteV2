@@ -1,9 +1,9 @@
 ﻿using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Localization;
+using eNote.Application.Common.Paging;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Common.Time;
-using eNote.Application.Features.Announcements.Services;
 using eNote.Application.Features.MusicStores.Services;
 using eNote.Application.Features.Users.Services;
 using eNote.Domain.Entities;
@@ -22,7 +22,7 @@ namespace eNote.Application.Features.Announcements.Services
             InstrumentRentalStatus.ReturnedEarly
         ];
 
-        public async Task<IReadOnlyList<AnnouncementDto>> GetFeedForStudentAsync()
+        public async Task<PagedResult<AnnouncementDto>> GetFeedForStudentAsync(int page, int pageSize)
         {
             var studentId = (await resolver.GetStudentAsync(currentUserService.UserId)).Id;
 
@@ -39,17 +39,14 @@ namespace eNote.Application.Features.Announcements.Services
                 .Distinct()
                 .ToListAsync();
 
-            var items = await context.Set<Announcement>()
+            var query = context.Set<Announcement>()
                 .AsNoTracking()
                 .Include(a => a.Course)
                 .Include(a => a.MusicStore)
                 .Where(a => (a.CourseId != null && enrolledCourseIds.Contains(a.CourseId.Value)) ||
-                            (a.MusicStoreId != null && storeIds.Contains(a.MusicStoreId.Value)))
-                .OrderByDescending(a => a.PublishedAt)
-                .Take(50)
-                .ToListAsync();
+                            (a.MusicStoreId != null && storeIds.Contains(a.MusicStoreId.Value)));
 
-            return [.. items.Select(MapToDto)];
+            return await query.ToPagedResultAsync(page, pageSize, includeTotalCount: true, MapToDto, q => q.OrderByDescending(x => x.PublishedAt));
         }
 
         public async Task<AnnouncementDto> CreateForCourseAsync(int courseId, AnnouncementRequest request)
@@ -89,13 +86,9 @@ namespace eNote.Application.Features.Announcements.Services
             return MapToDto(entity);
         }
 
-        public async Task<IReadOnlyList<AnnouncementDto>> GetForCourseAsync(int courseId)
+        public async Task<PagedResult<AnnouncementDto>> GetForCourseAsync(int courseId, int page, int pageSize)
         {
-            var items = await GetCourseAnnouncementQuery(courseId)
-                .OrderByDescending(a => a.PublishedAt)
-                .ToListAsync();
-
-            return [.. items.Select(MapToDto)];
+            return await GetCourseAnnouncementQuery(courseId).ToPagedResultAsync(page, pageSize, includeTotalCount: true, MapToDto, q => q.OrderByDescending(x => x.PublishedAt));
         }
 
         public async Task<AnnouncementDto> UpdateForCourseAsync(int courseId, int announcementId, AnnouncementRequest request)
@@ -152,18 +145,15 @@ namespace eNote.Application.Features.Announcements.Services
             return MapToDto(entity);
         }
 
-        public async Task<IReadOnlyList<AnnouncementDto>> GetForStoreAsync()
+        public async Task<PagedResult<AnnouncementDto>> GetForStoreAsync(int page, int pageSize)
         {
             var storeId = await storeContext.GetActiveStoreAsync(currentUserService.UserId);
 
-            var items = await context.Set<Announcement>()
+            return await context.Set<Announcement>()
                 .AsNoTracking()
                 .Include(a => a.MusicStore)
                 .Where(a => a.MusicStoreId == storeId)
-                .OrderByDescending(a => a.PublishedAt)
-                .ToListAsync();
-
-            return [.. items.Select(MapToDto)];
+                .ToPagedResultAsync(page, pageSize, includeTotalCount: true, MapToDto, q => q.OrderByDescending(x => x.PublishedAt));
         }
 
         public async Task<AnnouncementDto> UpdateForStoreAsync(int announcementId, AnnouncementRequest request)

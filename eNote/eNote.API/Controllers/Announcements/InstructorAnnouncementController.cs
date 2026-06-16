@@ -1,4 +1,5 @@
 using eNote.API.Controllers.Base;
+using eNote.Application.Common.Paging;
 using eNote.Application.Constants;
 using eNote.Application.Features.Announcements;
 using eNote.Application.Features.Announcements.Services;
@@ -12,9 +13,9 @@ namespace eNote.API.Controllers.Announcements
     public sealed class InstructorAnnouncementController(IAnnouncementService announcementService) : CoreController
     {
         [HttpGet]
-        public async Task<ActionResult<IReadOnlyList<AnnouncementDto>>> GetForCourse(int courseId)
+        public async Task<ActionResult<PagedResult<AnnouncementDto>>> GetForCourse(int courseId, int page = 1, int pageSize = 20)
         {
-            var result = await announcementService.GetForCourseAsync(courseId);
+            var result = await announcementService.GetForCourseAsync(courseId, page, pageSize);
             return Ok(result);
         }
 

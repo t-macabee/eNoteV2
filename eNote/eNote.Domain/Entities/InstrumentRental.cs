@@ -6,12 +6,22 @@ namespace eNote.Domain.Entities
     public class InstrumentRental : AuditableEntity
     {
         public decimal Fee { get; private set; }
+
+        /// Originalna poruka koju je student dostavio uz zahtjev za najam
+
+        public string? RequestNote { get; private set; }
+
+        /// Najnovija bilješka koju je trgovina ostavila prilikom posljednje promjene stanja
         public string? Note { get; private set; }
 
         public DateTime RequestedAt { get; private set; }
         public DateTime? ApprovedAt { get; private set; }
+        public DateTime? RejectedAt { get; private set; }
         public DateTime? PickedUpAt { get; private set; }
         public DateTime? ReturnedAt { get; private set; }
+
+        public int? ApprovedById { get; private set; }
+        public int? RejectedById { get; private set; }
 
         public InstrumentRentalStatus RentalStatus { get; private set; }
 
@@ -28,22 +38,24 @@ namespace eNote.Domain.Entities
             InstrumentId = instrumentId;
             StudentProfileId = studentProfileId;
             RequestedAt = requestedAt;
-            Note = note;
+            RequestNote = note;
             RentalStatus = InstrumentRentalStatus.Pending;
         }
 
-        public void Approve(decimal fee, string? note, DateTime approvedAt)
+        public void Approve(decimal fee, string? note, DateTime approvedAt, int approvedById)
         {
             Fee = fee;
             Note = note;
             ApprovedAt = approvedAt;
+            ApprovedById = approvedById;
             RentalStatus = InstrumentRentalStatus.Approved;
         }
 
-        public void Reject(DateTime returnedAt, string? note)
+        public void Reject(DateTime rejectedAt, string? note, int rejectedById)
         {
             Note = note;
-            ReturnedAt = returnedAt;
+            RejectedAt = rejectedAt;
+            RejectedById = rejectedById;
             RentalStatus = InstrumentRentalStatus.Rejected;
         }
 
