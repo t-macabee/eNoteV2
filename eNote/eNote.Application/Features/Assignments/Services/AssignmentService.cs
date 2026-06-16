@@ -83,15 +83,12 @@ namespace eNote.Application.Features.Assignments.Services
         {
             var student = await UserProfileHelper.GetStudentByUserIdAsync(context, currentUserService.UserId);
 
-            var enrolledCourseIds = await context.Set<Enrollment>()
-                .AsNoTracking()
-                .Where(e => e.StudentId == student.Id && e.EnrollmentStatus == EnrollmentStatus.Active)
-                .Select(e => e.CourseId)
-                .ToListAsync();
-
             var query = context.Set<Assignment>()
                 .AsNoTracking()
-                .Where(x => enrolledCourseIds.Contains(x.Lecture.CourseId) && x.Lecture.LectureStatus != LectureStatus.Cancelled);
+                .Where(x => x.Lecture.LectureStatus != LectureStatus.Cancelled &&
+                            x.Lecture.Course.Enrollments.Any(e =>
+                                e.StudentId == student.Id &&
+                                e.EnrollmentStatus == EnrollmentStatus.Active));
 
             return await query.ToPagedResultAsync(page, pageSize, includeTotalCount: true, Map, q => q.OrderBy(x => x.DueAt));
         }

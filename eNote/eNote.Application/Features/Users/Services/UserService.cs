@@ -59,7 +59,7 @@ namespace eNote.Application.Features.Users.Services
             if (!Success)
                 return (null, Error);
 
-            EnsureRoleProfile(userId, AppRoles.Student, musicStoreId: null);
+            await EnsureRoleProfileAsync(userId, AppRoles.Student, musicStoreId: null);
 
             await context.SaveChangesAsync();
 
@@ -111,7 +111,7 @@ namespace eNote.Application.Features.Users.Services
 
             var storeId = request.MusicStoreId ?? await ResolveDefaultStoreIdAsync(request.Role);
 
-            EnsureRoleProfile(userId, request.Role, storeId);
+            await EnsureRoleProfileAsync(userId, request.Role, storeId);
 
             await context.SaveChangesAsync();
 
@@ -128,25 +128,25 @@ namespace eNote.Application.Features.Users.Services
                 .FirstOrDefaultAsync();
         }
 
-        private void EnsureRoleProfile(int userId, string role, int? musicStoreId)
+        private async Task EnsureRoleProfileAsync(int userId, string role, int? musicStoreId)
         {
             switch (role)
             {
                 case AppRoles.Student:
-                    if (!context.Set<Student>().Any(x => x.AppUserId == userId))
+                    if (!await context.Set<Student>().AnyAsync(x => x.AppUserId == userId))
                         context.Set<Student>().Add(new Student(userId, clock.UtcNow));
                     break;
 
                 case AppRoles.Instructor:
-                    if (!context.Set<Instructor>().Any(x => x.AppUserId == userId))
+                    if (!await context.Set<Instructor>().AnyAsync(x => x.AppUserId == userId))
                         context.Set<Instructor>().Add(new Instructor(userId));
                     break;
 
                 case AppRoles.StoreEmployee when musicStoreId.HasValue:
                     {
-                        var employees = context.Set<MusicStoreEmployee>()
+                        var employees = await context.Set<MusicStoreEmployee>()
                             .Where(x => x.AppUserId == userId)
-                            .ToList();
+                            .ToListAsync();
 
                         if (employees.Count == 0)
                         {
