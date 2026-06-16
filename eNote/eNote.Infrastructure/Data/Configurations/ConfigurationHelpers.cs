@@ -14,11 +14,6 @@ namespace eNote.Infrastructure.Data.Configurations
             return propertyBuilder;
         }
 
-        public static PropertyBuilder<decimal> HasDecimalConfig(this PropertyBuilder<decimal> propertyBuilder, int precision = 8, int scale = 2)
-        {
-            return propertyBuilder.HasColumnType($"decimal({precision},{scale})");
-        }
-
         public static PropertyBuilder<decimal> HasDecimalPrecision(this PropertyBuilder<decimal> propertyBuilder, int precision = 18, int scale = 2)
         {
             return propertyBuilder.HasPrecision(precision, scale);
@@ -42,11 +37,6 @@ namespace eNote.Infrastructure.Data.Configurations
         public static IndexBuilder HasUniqueIndex(this EntityTypeBuilder builder, params string[] propertyNames)
         {
             return builder.HasIndex(propertyNames).IsUnique();
-        }
-
-        public static PropertyBuilder<T> HasEnumConversion<T>(this PropertyBuilder<T> propertyBuilder) where T : struct, Enum
-        {
-            return propertyBuilder.HasConversion<int>();
         }
     }
 }

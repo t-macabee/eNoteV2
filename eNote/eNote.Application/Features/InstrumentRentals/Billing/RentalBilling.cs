@@ -5,6 +5,7 @@ namespace eNote.Application.Features.InstrumentRentals.Billing
 {
     public static class RentalBilling
     {
+        private const int DaysPerBillingCycle = 30;
         public static void ApplyBilling(InstrumentRental rental, InstrumentRentalDto dto, DateTime nowUtc)
         {
             dto.Fee = rental.Fee;
@@ -40,7 +41,7 @@ namespace eNote.Application.Features.InstrumentRentals.Billing
 
             if (status == InstrumentRentalStatus.ReturnedEarly)
             {
-                var dailyFee = fee / 30m;
+                var dailyFee = fee / DaysPerBillingCycle;
                 var prorated = daysCharged * dailyFee;
                 var totalFee = prorated > fee ? fee : prorated;
 
@@ -53,7 +54,7 @@ namespace eNote.Application.Features.InstrumentRentals.Billing
                 );
             }
 
-            var monthsCharged = (int)Math.Ceiling((end - start).TotalDays / 30.0);
+            var monthsCharged = (int)Math.Ceiling((end - start).TotalDays / DaysPerBillingCycle);
 
             if (monthsCharged < 1)
                 monthsCharged = 1;

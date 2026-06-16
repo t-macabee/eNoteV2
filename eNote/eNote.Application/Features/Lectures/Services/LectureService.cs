@@ -24,8 +24,6 @@ namespace eNote.Application.Features.Lectures.Services
 
         public async Task<LectureDto> GetByIdForStudentAsync(int id)
         {
-            _ = await UserProfileHelper.GetStudentByUserIdAsync(context, currentUserService.UserId);
-
             var entity = await context.Set<Lecture>()
                 .Include(x => x.Attendances)
                 .AsNoTracking()

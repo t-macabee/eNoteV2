@@ -18,7 +18,7 @@ namespace eNote.Infrastructure.Data.Configurations
                    .HasForeignKey(x => x.CourseId)
                    .OnDelete(DeleteBehavior.Cascade);
 
-            builder.Property(x => x.Price).HasDecimalConfig();
+            builder.Property(x => x.Price).HasDecimalPrecision();
             builder.Property(x => x.IsPublished).HasDefaultFalse();
             builder.Property(x => x.IsActive).HasDefaultValue(true);
             builder.HasQueryFilter(x => x.IsActive);
