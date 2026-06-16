@@ -18,6 +18,7 @@ namespace eNote.Application.Features.Lectures.Services
         public async Task<LectureDto> GetByIdForInstructorAsync(int id)
         {
             var entity = await GetLectureForInstructorAsync(id, currentUserService.UserId);
+
             return Map(entity);
         }
 
@@ -196,31 +197,15 @@ namespace eNote.Application.Features.Lectures.Services
                 .Include(x => x.Student)
                 .Where(x => x.LectureId == lectureId);
 
-            (page, pageSize) = PagingLimits.Normalize(page, pageSize);
-
-            var total = await query.CountAsync();
-
-            var attendances = await query
-                .OrderBy(x => x.StudentId)
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .ToListAsync();
-
-            var items = (await Task.WhenAll(attendances.Select(async a => new AttendanceDto
-            {
-                Id = a.Id,
-                StudentId = a.StudentId,
-                StudentName = await UserProfileHelper.GetStudentDisplayNameAsync(identity, a.Student),
-                AttendanceStatus = a.AttendanceStatus
-            }))).ToList();
-
-            return new PagedResult<AttendanceDto>
-            {
-                Items = items,
-                Page = page,
-                PageSize = pageSize,
-                TotalCount = total
-            };
+            return await query.ToPagedResultAsync(page, pageSize, includeTotalCount: true,
+                async a => new AttendanceDto
+                {
+                    Id = a.Id,
+                    StudentId = a.StudentId,
+                    StudentName = await UserProfileHelper.GetStudentDisplayNameAsync(identity, a.Student),
+                    AttendanceStatus = a.AttendanceStatus
+                },
+                q => q.OrderBy(x => x.StudentId));
         }
 
         public async Task<AttendanceDto> MarkAttendanceAsync(int lectureId, MarkAttendanceRequest request)

@@ -145,25 +145,9 @@ namespace eNote.Application.Features.Assignments.Services
                 .Include(x => x.Student)
                 .Where(x => x.AssignmentId == assignmentId);
 
-            (page, pageSize) = PagingLimits.Normalize(page, pageSize);
-
-            var total = await query.CountAsync();
-
-            var submissions = await query
-                .OrderBy(x => x.StudentId)
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .ToListAsync();
-
-            var items = (await Task.WhenAll(submissions.Select(x => MapSubmissionAsync(x, x.Student)))).ToList();
-
-            return new PagedResult<AssignmentSubmissionDto>
-            {
-                Items = items,
-                Page = page,
-                PageSize = pageSize,
-                TotalCount = total
-            };
+            return await query.ToPagedResultAsync(page, pageSize, includeTotalCount: true,
+                x => MapSubmissionAsync(x, x.Student),
+                q => q.OrderBy(x => x.StudentId));
         }
 
         public async Task<AssignmentSubmissionDto> GradeAsync(int lectureId, int assignmentId, int submissionId, GradeAssignmentRequest request)
