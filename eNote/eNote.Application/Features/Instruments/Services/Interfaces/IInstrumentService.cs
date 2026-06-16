@@ -12,5 +12,6 @@ namespace eNote.Application.Features.Instruments.Services
         Task<InstrumentDto> CreateAsync(InstrumentCreateRequest request);
         Task<InstrumentDto> UpdateAsync(int id, InstrumentUpdateRequest request);
         Task DeleteAsync(int id);
+        Task<InstrumentDto> UploadImageAsync(int id, Stream stream, string fileName, string contentType, CancellationToken ct = default);
     }
 }

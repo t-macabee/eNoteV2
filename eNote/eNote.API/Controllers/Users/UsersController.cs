@@ -20,5 +20,31 @@ namespace eNote.API.Controllers.Users
 
             return Ok(profile);
         }
+
+        [HttpPut("me")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileRequest request)
+        {
+            var (success, error) = await userService.UpdateProfileAsync(request);
+
+            if (!success)
+                return BadRequest(new { message = error });
+
+            return NoContent();
+        }
+
+        [HttpPut("me/password")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
+        {
+            var (success, error) = await userService.ChangePasswordAsync(request);
+
+            if (!success)
+                return BadRequest(new { message = error });
+
+            return NoContent();
+        }
     }
 }

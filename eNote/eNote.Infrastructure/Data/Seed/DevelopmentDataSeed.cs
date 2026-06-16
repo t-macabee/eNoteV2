@@ -1,6 +1,7 @@
 ﻿using eNote.Domain.Entities;
 using eNote.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
 
 namespace eNote.Infrastructure.Data.Seed
 {
@@ -11,6 +12,7 @@ namespace eNote.Infrastructure.Data.Seed
             await CourseSeed.SeedCourses(context);
             await LectureSeed.SeedLectures(context);
             await InstrumentSeed.SeedInstruments(context);
+            await EnrollmentSeed.SeedEnrollments(context);
         }
     }
 
@@ -169,5 +171,33 @@ namespace eNote.Infrastructure.Data.Seed
             new Instrument("Rocker 15", "Orange", "Idealno je za kućne probe i manje nastupe, nudeći niz tonova od čistog do prljavog sa jednostavnim i preglednim kontrolama.", "instruments/rocker-15.webp", typeId, shopId),
             new Instrument("Katana-100 MkII", "Boss", "Moderno digitalno pojačalo koje kombinuje veliku snagu sa nevjerovatnom svestranošću.", "instruments/katana-100.webp", typeId, shopId)
         ];
+    }
+
+    internal static class EnrollmentSeed
+    {
+        public static async Task SeedEnrollments(ENoteContext context)
+        {
+            if (await context.Set<Enrollment>().AnyAsync())
+                return;
+
+            var studentId = await context.Set<Student>()
+                .Select(s => s.Id)
+                .FirstOrDefaultAsync();
+
+            if (studentId == 0)
+                return;
+
+            var courseIds = await context.Set<Course>()
+                .Where(c => c.IsPublished)
+                .Select(c => c.Id)
+                .ToListAsync();
+
+            var enrollments = courseIds
+                .Select(courseId => new Enrollment(studentId, courseId, EnrollmentStatus.Active))
+                .ToList();
+
+            context.Set<Enrollment>().AddRange(enrollments);
+            await context.SaveChangesAsync();
+        }
     }
 }

@@ -3,6 +3,7 @@ using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Paging;
 using eNote.Application.Common.Persistence;
+using eNote.Application.Features.LectureNotes.Search;
 using eNote.Application.Features.LectureNotes.Services;
 using eNote.Application.Features.Users.Services;
 using eNote.Domain.Entities;
@@ -13,7 +14,7 @@ namespace eNote.Application.Features.LectureNotes.Services
 {
     public class LectureNoteService(IAppDbContext context, IUserContextResolver resolver, ICurrentUserService currentUserService) : ILectureNoteService
     {
-        public async Task<PagedResult<LectureNoteDto>> GetForLectureAsync(int lectureId, int page, int pageSize)
+        public async Task<PagedResult<LectureNoteDto>> GetForLectureAsync(int lectureId, LectureNoteSearchObject search)
         {
             var instructor = await resolver.GetInstructorAsync(currentUserService.UserId);
 
@@ -21,7 +22,10 @@ namespace eNote.Application.Features.LectureNotes.Services
                 .AsNoTracking()
                 .Where(x => x.LectureId == lectureId && x.Lecture.Course.InstructorId == instructor.Id);
 
-            return await query.ToPagedResultAsync(page, pageSize, includeTotalCount: true, Map, q => q.OrderByDescending(x => x.CreatedAt));
+            if (!string.IsNullOrWhiteSpace(search.Title))
+                query = query.Where(x => x.Title.Contains(search.Title));
+
+            return await query.ToPagedResultAsync(search.Page, search.PageSize, search.IncludeTotalCount, Map, q => q.OrderByDescending(x => x.CreatedAt));
         }
 
         public async Task<LectureNoteDto> GetByIdForInstructorAsync(int lectureId, int noteId)
@@ -75,7 +79,7 @@ namespace eNote.Application.Features.LectureNotes.Services
             await context.SaveChangesAsync();
         }
 
-        public async Task<PagedResult<LectureNoteDto>> GetForStudentAsync(int lectureId, int page, int pageSize)
+        public async Task<PagedResult<LectureNoteDto>> GetForStudentAsync(int lectureId, LectureNoteSearchObject search)
         {
             var student = await resolver.GetStudentAsync(currentUserService.UserId);
 
@@ -86,7 +90,10 @@ namespace eNote.Application.Features.LectureNotes.Services
                             x.Lecture.LectureStatus != LectureStatus.Cancelled &&
                             x.Lecture.Course.Enrollments.Any(e => e.StudentId == student.Id && e.EnrollmentStatus == EnrollmentStatus.Active));
 
-            return await query.ToPagedResultAsync(page, pageSize, includeTotalCount: true, Map, q => q.OrderByDescending(x => x.CreatedAt));
+            if (!string.IsNullOrWhiteSpace(search.Title))
+                query = query.Where(x => x.Title.Contains(search.Title));
+
+            return await query.ToPagedResultAsync(search.Page, search.PageSize, search.IncludeTotalCount, Map, q => q.OrderByDescending(x => x.CreatedAt));
         }
 
         public async Task<LectureNoteDto> GetByIdForStudentAsync(int lectureId, int noteId)

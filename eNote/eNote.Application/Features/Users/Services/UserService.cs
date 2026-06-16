@@ -1,4 +1,4 @@
-using eNote.Application.Common.Exceptions;
+﻿using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Common.Time;
@@ -68,10 +68,15 @@ namespace eNote.Application.Features.Users.Services
             return (profile, null);
         }
 
+        public Task<(bool Success, string? Error)> UpdateProfileAsync(UpdateProfileRequest request)
+            => accountService.UpdateExistingUserAsync(currentUserService.UserId, request.Email, request.FirstName, request.LastName);
+
+        public Task<(bool Success, string? Error)> ChangePasswordAsync(ChangePasswordRequest request)
+            => accountService.ChangePasswordAsync(currentUserService.UserId, request.CurrentPassword, request.NewPassword);
+
         public async Task<(int UserId, string? Error)> ProvisionUserAsync(UserProvisionRequest request)
         {
             var username = request.Username.Trim();
-
             var existingUserId = await accountService.FindUserIdByUsernameAsync(username);
 
             int userId;

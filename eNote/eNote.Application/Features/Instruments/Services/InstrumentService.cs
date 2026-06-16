@@ -1,4 +1,4 @@
-using eNote.Application.Common.Exceptions;
+﻿using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Paging;
@@ -13,7 +13,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Application.Features.Instruments.Services
 {
-    public class InstrumentService(IAppDbContext context, IMapper mapper, IUserContextResolver resolver, ICurrentUserService currentUserService) : IInstrumentService
+    public class InstrumentService(IAppDbContext context, IMapper mapper, IUserContextResolver resolver, ICurrentUserService currentUserService, IFileStorageService fileStorage) : IInstrumentService
     {
         private InstrumentDto MapEntityToModel(Instrument entity) => mapper.Map<InstrumentDto>(entity);
 
@@ -121,6 +121,24 @@ namespace eNote.Application.Features.Instruments.Services
             await context.SaveChangesAsync();
             entity = await AfterSaveAsync(entity);
 
+            return MapEntityToModel(entity);
+        }
+
+        public async Task<InstrumentDto> UploadImageAsync(int id, Stream stream, string fileName, string contentType, CancellationToken ct = default)
+        {
+            var employee = await EnsureStoreAccessAsync();
+
+            var entity = await context.Set<Instrument>()
+                .FirstOrDefaultAsync(x => x.Id == id && x.MusicStoreId == employee.MusicStoreId, ct)
+                ?? throw new NotFoundException(Messages.InstrumentNotFound);
+
+            var path = await fileStorage.SaveAsync(stream, fileName, contentType, "instruments", ct);
+
+            entity.UpdateDetails(entity.Model, entity.Manufacturer, entity.Description, path, entity.InstrumentTypeId);
+
+            await context.SaveChangesAsync(ct);
+
+            entity = await AfterSaveAsync(entity);
             return MapEntityToModel(entity);
         }
 

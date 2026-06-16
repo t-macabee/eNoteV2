@@ -26,6 +26,8 @@ namespace eNote.API.Extensions
                 .AsImplementedInterfaces()
                 .WithScopedLifetime());
 
+            services.AddScoped<IFileStorageService, LocalFileStorageService>();
+
             services.AddScoped<IAppDbContext>(x => x.GetRequiredService<ENoteContext>());
 
             return services;

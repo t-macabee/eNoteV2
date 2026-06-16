@@ -4,6 +4,7 @@ using eNote.Application.Common.Localization;
 using eNote.Application.Common.Paging;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Common.Time;
+using eNote.Application.Features.Assignments.Search;
 using eNote.Application.Features.Assignments.Services;
 using eNote.Application.Features.Users.Services;
 using eNote.Domain.Entities;
@@ -14,7 +15,7 @@ namespace eNote.Application.Features.Assignments.Services
 {
     public class AssignmentService(IAppDbContext context, IClock clock, IUserContextResolver resolver, ICurrentUserService currentUserService) : IAssignmentService
     {
-        public async Task<PagedResult<AssignmentDto>> GetForLectureAsync(int lectureId, int page, int pageSize)
+        public async Task<PagedResult<AssignmentDto>> GetForLectureAsync(int lectureId, AssignmentSearchObject search)
         {
             var instructor = await resolver.GetInstructorAsync(currentUserService.UserId);
 
@@ -22,7 +23,16 @@ namespace eNote.Application.Features.Assignments.Services
                 .AsNoTracking()
                 .Where(x => x.LectureId == lectureId && x.Lecture.Course.InstructorId == instructor.Id);
 
-            return await query.ToPagedResultAsync(page, pageSize, includeTotalCount: true, Map, q => q.OrderBy(x => x.DueAt));
+            if (!string.IsNullOrWhiteSpace(search.Title))
+                query = query.Where(x => x.Title.Contains(search.Title));
+
+            if (search.DueAfter.HasValue)
+                query = query.Where(x => x.DueAt >= search.DueAfter.Value);
+
+            if (search.DueBefore.HasValue)
+                query = query.Where(x => x.DueAt <= search.DueBefore.Value);
+
+            return await query.ToPagedResultAsync(search.Page, search.PageSize, search.IncludeTotalCount, Map, q => q.OrderBy(x => x.DueAt));
         }
 
         public async Task<AssignmentDto> GetByIdForInstructorAsync(int lectureId, int assignmentId)
@@ -78,7 +88,7 @@ namespace eNote.Application.Features.Assignments.Services
             await context.SaveChangesAsync();
         }
 
-        public async Task<PagedResult<AssignmentDto>> GetForStudentAsync(int page, int pageSize)
+        public async Task<PagedResult<AssignmentDto>> GetForStudentAsync(AssignmentSearchObject search)
         {
             var student = await resolver.GetStudentAsync(currentUserService.UserId);
 
@@ -89,7 +99,16 @@ namespace eNote.Application.Features.Assignments.Services
                                 e.StudentId == student.Id &&
                                 e.EnrollmentStatus == EnrollmentStatus.Active));
 
-            return await query.ToPagedResultAsync(page, pageSize, includeTotalCount: true, Map, q => q.OrderBy(x => x.DueAt));
+            if (!string.IsNullOrWhiteSpace(search.Title))
+                query = query.Where(x => x.Title.Contains(search.Title));
+
+            if (search.DueAfter.HasValue)
+                query = query.Where(x => x.DueAt >= search.DueAfter.Value);
+
+            if (search.DueBefore.HasValue)
+                query = query.Where(x => x.DueAt <= search.DueBefore.Value);
+
+            return await query.ToPagedResultAsync(search.Page, search.PageSize, search.IncludeTotalCount, Map, q => q.OrderBy(x => x.DueAt));
         }
 
         public async Task<AssignmentDto> GetByIdForStudentAsync(int assignmentId)

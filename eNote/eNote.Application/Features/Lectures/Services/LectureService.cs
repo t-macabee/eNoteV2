@@ -3,6 +3,7 @@ using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Paging;
 using eNote.Application.Common.Persistence;
+using eNote.Application.Features.Lectures.Search;
 using eNote.Application.Features.Lectures.Services;
 using eNote.Application.Features.Users.Services;
 
@@ -36,7 +37,7 @@ namespace eNote.Application.Features.Lectures.Services
             return Map(entity);
         }
 
-        public async Task<PagedResult<LectureDto>> GetPagedForInstructorAsync(int page, int pageSize)
+        public async Task<PagedResult<LectureDto>> GetPagedForInstructorAsync(LectureSearchObject search)
         {
             var instructor = await resolver.GetInstructorAsync(currentUserService.UserId);
 
@@ -45,17 +46,41 @@ namespace eNote.Application.Features.Lectures.Services
                 .Include(x => x.Attendances)
                 .Where(x => x.Course.InstructorId == instructor.Id);
 
-            return await query.ToPagedResultAsync(page, pageSize, includeTotalCount: true, Map, q => q.OrderByDescending(x => x.LectureTime));
+            query = ApplyFilters(query, search);
+
+            return await query.ToPagedResultAsync(search.Page, search.PageSize, search.IncludeTotalCount, Map, q => q.OrderByDescending(x => x.LectureTime));
         }
 
-        public async Task<PagedResult<LectureDto>> GetPagedForStudentAsync(int page, int pageSize)
+        public async Task<PagedResult<LectureDto>> GetPagedForStudentAsync(LectureSearchObject search)
         {
             var query = context.Set<Lecture>()
                 .AsNoTracking()
                 .Include(x => x.Attendances)
                 .Where(x => x.Course.IsPublished && x.LectureStatus != LectureStatus.Cancelled);
 
-            return await query.ToPagedResultAsync(page, pageSize, includeTotalCount: true, Map, q => q.OrderByDescending(x => x.LectureTime));
+            query = ApplyFilters(query, search);
+
+            return await query.ToPagedResultAsync(search.Page, search.PageSize, search.IncludeTotalCount, Map, q => q.OrderByDescending(x => x.LectureTime));
+        }
+
+        private static IQueryable<Lecture> ApplyFilters(IQueryable<Lecture> query, LectureSearchObject search)
+        {
+            if (!string.IsNullOrWhiteSpace(search.Name))
+                query = query.Where(x => x.Name.Contains(search.Name));
+
+            if (search.LectureType.HasValue)
+                query = query.Where(x => x.LectureType == search.LectureType.Value);
+
+            if (search.CourseId.HasValue)
+                query = query.Where(x => x.CourseId == search.CourseId.Value);
+
+            if (search.From.HasValue)
+                query = query.Where(x => x.LectureTime >= search.From.Value);
+
+            if (search.To.HasValue)
+                query = query.Where(x => x.LectureTime <= search.To.Value);
+
+            return query;
         }
 
         public async Task<LectureDto> CreateAsync(LectureCreateRequest request)

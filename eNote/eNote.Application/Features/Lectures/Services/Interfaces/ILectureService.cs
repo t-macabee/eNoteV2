@@ -1,11 +1,12 @@
 using eNote.Application.Common.Paging;
+using eNote.Application.Features.Lectures.Search;
 
 namespace eNote.Application.Features.Lectures.Services
 {
     public interface ILectureService
     {
-        Task<PagedResult<LectureDto>> GetPagedForInstructorAsync(int page, int pageSize);
-        Task<PagedResult<LectureDto>> GetPagedForStudentAsync(int page, int pageSize);
+        Task<PagedResult<LectureDto>> GetPagedForInstructorAsync(LectureSearchObject search);
+        Task<PagedResult<LectureDto>> GetPagedForStudentAsync(LectureSearchObject search);
         Task<LectureDto> GetByIdForInstructorAsync(int id);
         Task<LectureDto> GetByIdForStudentAsync(int id);
         Task<LectureDto> CreateAsync(LectureCreateRequest request);

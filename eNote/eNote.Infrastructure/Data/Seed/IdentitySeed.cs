@@ -27,6 +27,7 @@ namespace eNote.Infrastructure.Data.Seed
 
             var testUsers = new[]
             {
+                ("admin", "admin@enote.com", AppRoles.Administrator, (int?)null),
                 ("instructor", "instructor@enote.com", AppRoles.Instructor, (int?)null),
                 ("student", "student@enote.com", AppRoles.Student, (int?)null),
                 ("storeemployee", "storeEmployee@enote.com", AppRoles.StoreEmployee, (int?)defaultStoreId)

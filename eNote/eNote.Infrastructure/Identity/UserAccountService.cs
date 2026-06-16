@@ -83,6 +83,21 @@ namespace eNote.Infrastructure.Identity
             return (true, null);
         }
 
+        public async Task<(bool Success, string? Error)> ChangePasswordAsync(int userId, string currentPassword, string newPassword)
+        {
+            var user = await userManager.FindByIdAsync(userId.ToString());
+
+            if (user is null)
+                return (false, Messages.NotFound);
+
+            var result = await userManager.ChangePasswordAsync(user, currentPassword, newPassword);
+
+            if (!result.Succeeded)
+                return (false, string.Join("; ", result.Errors.Select(e => e.Description)));
+
+            return (true, null);
+        }
+
         public async Task<(bool Success, string? Error)> UpdateExistingUserAsync(int userId, string email, string? firstName, string? lastName)
         {
             var user = await userManager.FindByIdAsync(userId.ToString());

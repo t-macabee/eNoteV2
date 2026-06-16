@@ -3,6 +3,7 @@ using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Paging;
 using eNote.Application.Common.Persistence;
+using eNote.Application.Features.Courses.Search;
 using eNote.Application.Features.Courses.Services;
 using eNote.Application.Features.Users.Services;
 using eNote.Domain.Entities;
@@ -46,7 +47,7 @@ namespace eNote.Application.Features.Courses.Services
             return mapper.Map<CourseDto>(entity);
         }
 
-        public async Task<PagedResult<CourseDto>> GetPagedForInstructorAsync(int page, int pageSize)
+        public async Task<PagedResult<CourseDto>> GetPagedForInstructorAsync(CourseSearchObject search)
         {
             var instructor = await resolver.GetInstructorAsync(currentUserService.UserId);
 
@@ -55,17 +56,26 @@ namespace eNote.Application.Features.Courses.Services
                 .Include(c => c.Enrollments)
                 .Where(c => c.InstructorId == instructor.Id);
 
-            return await query.ToPagedResultAsync(page, pageSize, includeTotalCount: true, mapper.Map<CourseDto>, q => q.OrderByDescending(x => x.StartDate));
+            if (!string.IsNullOrWhiteSpace(search.Name))
+                query = query.Where(c => c.Name.Contains(search.Name));
+
+            if (search.IsPublished.HasValue)
+                query = query.Where(c => c.IsPublished == search.IsPublished.Value);
+
+            return await query.ToPagedResultAsync(search.Page, search.PageSize, search.IncludeTotalCount, mapper.Map<CourseDto>, q => q.OrderByDescending(x => x.StartDate));
         }
 
-        public async Task<PagedResult<CourseDto>> GetPagedForStudentAsync(int page, int pageSize)
+        public async Task<PagedResult<CourseDto>> GetPagedForStudentAsync(CourseSearchObject search)
         {
             var query = context.Set<Course>()
                 .AsNoTracking()
                 .Include(c => c.Enrollments)
                 .Where(c => c.IsPublished);
 
-            return await query.ToPagedResultAsync(page, pageSize, includeTotalCount: true, mapper.Map<CourseDto>, q => q.OrderByDescending(x => x.StartDate));
+            if (!string.IsNullOrWhiteSpace(search.Name))
+                query = query.Where(c => c.Name.Contains(search.Name));
+
+            return await query.ToPagedResultAsync(search.Page, search.PageSize, search.IncludeTotalCount, mapper.Map<CourseDto>, q => q.OrderByDescending(x => x.StartDate));
         }
 
         public async Task<CourseDto> CreateAsync(CourseRequest request)

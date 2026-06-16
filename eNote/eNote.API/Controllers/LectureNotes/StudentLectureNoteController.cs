@@ -2,6 +2,7 @@ using eNote.API.Controllers.Base;
 using eNote.Application.Common.Paging;
 using eNote.Application.Constants;
 using eNote.Application.Features.LectureNotes;
+using eNote.Application.Features.LectureNotes.Search;
 using eNote.Application.Features.LectureNotes.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -13,9 +14,9 @@ namespace eNote.API.Controllers.LectureNotes
     public sealed class StudentLectureNoteController(ILectureNoteService service) : CoreController
     {
         [HttpGet]
-        public async Task<ActionResult<PagedResult<LectureNoteDto>>> GetForLecture(int lectureId, int page = 1, int pageSize = 20)
+        public async Task<ActionResult<PagedResult<LectureNoteDto>>> GetForLecture(int lectureId, [FromQuery] LectureNoteSearchObject search)
         {
-            var result = await service.GetForStudentAsync(lectureId, page, pageSize);
+            var result = await service.GetForStudentAsync(lectureId, search);
             return Ok(result);
         }
 

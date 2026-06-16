@@ -2,6 +2,7 @@ using eNote.API.Controllers.Base;
 using eNote.Application.Common.Paging;
 using eNote.Application.Constants;
 using eNote.Application.Features.Assignments;
+using eNote.Application.Features.Assignments.Search;
 using eNote.Application.Features.Assignments.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -13,9 +14,9 @@ namespace eNote.API.Controllers.Assignments
     public sealed class InstructorAssignmentController(IAssignmentService service) : CoreController
     {
         [HttpGet]
-        public async Task<ActionResult<PagedResult<AssignmentDto>>> GetForLecture(int lectureId, int page = 1, int pageSize = 20)
+        public async Task<ActionResult<PagedResult<AssignmentDto>>> GetForLecture(int lectureId, [FromQuery] AssignmentSearchObject search)
         {
-            var result = await service.GetForLectureAsync(lectureId, page, pageSize);
+            var result = await service.GetForLectureAsync(lectureId, search);
             return Ok(result);
         }
 

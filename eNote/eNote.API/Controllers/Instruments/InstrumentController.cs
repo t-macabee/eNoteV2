@@ -41,6 +41,15 @@ namespace eNote.API.Controllers.Instruments
             return Ok(result);
         }
 
+        [HttpPost("{id:int}/image")]
+        [ProducesResponseType(typeof(InstrumentDto), StatusCodes.Status200OK)]
+        public async Task<ActionResult<InstrumentDto>> UploadImage(int id, IFormFile file, CancellationToken ct)
+        {
+            await using var stream = file.OpenReadStream();
+            var result = await instrumentService.UploadImageAsync(id, stream, file.FileName, file.ContentType, ct);
+            return Ok(result);
+        }
+
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> Delete(int id)
         {
