@@ -2,13 +2,12 @@ using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Persistence;
-using eNote.Application.Common.Queryable;
 using eNote.Application.Common.Time;
 using eNote.Application.Features.InstrumentRentals.Billing;
 using eNote.Application.Features.InstrumentRentals.Services.Interfaces;
 using eNote.Application.Features.InstrumentRentals.StateMachine;
 using eNote.Application.Features.MusicStores.Services.Interfaces;
-using eNote.Application.Features.Users;
+using eNote.Application.Features.Users.Services.Interfaces;
 using eNote.Domain.Entities;
 using eNote.Domain.Enums;
 using MapsterMapper;
@@ -16,12 +15,12 @@ using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Application.Features.InstrumentRentals.Services
 {
-    public class RentalCommandService(IAppDbContext context, IMapper mapper, IClock clock, IMusicStoreContextService storeContext, IRentalStateMachine stateMachine, ICurrentUserService currentUserService) : IRentalCommandService
+    public class RentalCommandService(IAppDbContext context, IMapper mapper, IClock clock, IUserContextResolver resolver, IMusicStoreContextService storeContext, IRentalStateMachine stateMachine, ICurrentUserService currentUserService) : IRentalCommandService
     {
         public Task<InstrumentRentalDto> CreateRequestAsync(RentalCreateRequest request) =>
             ExecuteInTransactionAsync(async () =>
             {
-                var studentProfileId = (await UserProfileHelper.GetStudentByUserIdAsync(context, currentUserService.UserId)).Id;
+                var studentProfileId = (await resolver.GetStudentAsync(currentUserService.UserId)).Id;
 
                 _ = await context.Set<Instrument>()
                     .AsNoTracking()

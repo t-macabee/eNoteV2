@@ -4,19 +4,20 @@ using eNote.Application.Common.Localization;
 using eNote.Application.Common.Paging;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Features.Courses.Services.Interfaces;
-using eNote.Application.Features.Users;
+using eNote.Application.Features.Users.Services.Interfaces;
 using eNote.Domain.Entities;
 using eNote.Domain.Enums;
+using MapsterMapper;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace eNote.Application.Features.Courses.Services
 {
-    public class CourseService(IAppDbContext context, ICurrentUserService currentUserService, ILogger<CourseService> logger) : ICourseService
+    public class CourseService(IAppDbContext context, IMapper mapper, IUserContextResolver resolver, ICurrentUserService currentUserService, ILogger<CourseService> logger) : ICourseService
     {
         public async Task<CourseDto> GetByIdForInstructorAsync(int id)
         {
-            var instructor = await UserProfileHelper.GetInstructorByUserIdAsync(context, currentUserService.UserId);
+            var instructor = await resolver.GetInstructorAsync(currentUserService.UserId);
 
             var entity = await context.Set<Course>()
                 .Include(c => c.Enrollments)
@@ -24,12 +25,12 @@ namespace eNote.Application.Features.Courses.Services
                 .FirstOrDefaultAsync(c => c.Id == id && c.InstructorId == instructor.Id)
                 ?? throw new NotFoundException(Messages.CourseNotFound);
 
-            return Map(entity);
+            return mapper.Map<CourseDto>(entity);
         }
 
         public async Task<CourseDto> GetByIdForStudentAsync(int id)
         {
-            var student = await UserProfileHelper.GetStudentByUserIdAsync(context, currentUserService.UserId);
+            var student = await resolver.GetStudentAsync(currentUserService.UserId);
 
             var entity = await context.Set<Course>()
                 .Include(c => c.Enrollments)
@@ -42,19 +43,19 @@ namespace eNote.Application.Features.Courses.Services
                          e.EnrollmentStatus == EnrollmentStatus.Active)))
                 ?? throw new NotFoundException(Messages.CourseNotFound);
 
-            return Map(entity);
+            return mapper.Map<CourseDto>(entity);
         }
 
         public async Task<PagedResult<CourseDto>> GetPagedForInstructorAsync(int page, int pageSize)
         {
-            var instructor = await UserProfileHelper.GetInstructorByUserIdAsync(context, currentUserService.UserId);
+            var instructor = await resolver.GetInstructorAsync(currentUserService.UserId);
 
             var query = context.Set<Course>()
                 .AsNoTracking()
                 .Include(c => c.Enrollments)
                 .Where(c => c.InstructorId == instructor.Id);
 
-            return await query.ToPagedResultAsync(page, pageSize, includeTotalCount: true, Map, q => q.OrderByDescending(x => x.StartDate));
+            return await query.ToPagedResultAsync(page, pageSize, includeTotalCount: true, mapper.Map<CourseDto>, q => q.OrderByDescending(x => x.StartDate));
         }
 
         public async Task<PagedResult<CourseDto>> GetPagedForStudentAsync(int page, int pageSize)
@@ -64,12 +65,12 @@ namespace eNote.Application.Features.Courses.Services
                 .Include(c => c.Enrollments)
                 .Where(c => c.IsPublished);
 
-            return await query.ToPagedResultAsync(page, pageSize, includeTotalCount: true, Map, q => q.OrderByDescending(x => x.StartDate));
+            return await query.ToPagedResultAsync(page, pageSize, includeTotalCount: true, mapper.Map<CourseDto>, q => q.OrderByDescending(x => x.StartDate));
         }
 
         public async Task<CourseDto> CreateAsync(CourseCreateRequest request)
         {
-            var instructor = await UserProfileHelper.GetInstructorByUserIdAsync(context, currentUserService.UserId);
+            var instructor = await resolver.GetInstructorAsync(currentUserService.UserId);
 
             logger.LogInformation("Creating course {CourseName} by instructor user {InstructorUserId}", request.Name, currentUserService.UserId);
 
@@ -89,12 +90,12 @@ namespace eNote.Application.Features.Courses.Services
 
             logger.LogInformation("Course {CourseId} created by instructor user {InstructorUserId}", entity.Id, currentUserService.UserId);
 
-            return Map(entity);
+            return mapper.Map<CourseDto>(entity);
         }
 
         public async Task<CourseDto> UpdateAsync(int id, CourseUpdateRequest request)
         {
-            var instructor = await UserProfileHelper.GetInstructorByUserIdAsync(context, currentUserService.UserId);
+            var instructor = await resolver.GetInstructorAsync(currentUserService.UserId);
 
             var entity = await context.Set<Course>()
                 .Include(c => c.Enrollments)
@@ -113,12 +114,12 @@ namespace eNote.Application.Features.Courses.Services
 
             await context.SaveChangesAsync();
 
-            return Map(entity);
+            return mapper.Map<CourseDto>(entity);
         }
 
         public async Task DeleteAsync(int id)
         {
-            var instructor = await UserProfileHelper.GetInstructorByUserIdAsync(context, currentUserService.UserId);
+            var instructor = await resolver.GetInstructorAsync(currentUserService.UserId);
 
             var entity = await context.Set<Course>()
                 .Include(c => c.Lectures)
@@ -141,7 +142,7 @@ namespace eNote.Application.Features.Courses.Services
 
         public async Task EnrollAsync(int courseId)
         {
-            var student = await UserProfileHelper.GetStudentByUserIdAsync(context, currentUserService.UserId);
+            var student = await resolver.GetStudentAsync(currentUserService.UserId);
 
             var course = await context.Set<Course>()
                 .Include(c => c.Enrollments)
@@ -162,7 +163,7 @@ namespace eNote.Application.Features.Courses.Services
 
         public async Task UnenrollAsync(int courseId)
         {
-            var student = await UserProfileHelper.GetStudentByUserIdAsync(context, currentUserService.UserId);
+            var student = await resolver.GetStudentAsync(currentUserService.UserId);
 
             var enrollment = await context.Set<Enrollment>()
                 .FirstOrDefaultAsync(e =>
@@ -178,20 +179,5 @@ namespace eNote.Application.Features.Courses.Services
             logger.LogInformation("Student {StudentUserId} unenrolled from course {CourseId}", currentUserService.UserId, courseId);
         }
 
-        private static CourseDto Map(Course e)
-        {
-            return new CourseDto
-            {
-                Id = e.Id,
-                Name = e.Name,
-                Description = e.Description,
-                Price = e.Price,
-                StartDate = e.StartDate,
-                EndDate = e.EndDate,
-                IsPublished = e.IsPublished,
-                EnrolledCount = e.Enrollments?.Count(x => x.EnrollmentStatus == EnrollmentStatus.Active) ?? 0,
-                InstructorId = e.InstructorId
-            };
-        }
     }
 }

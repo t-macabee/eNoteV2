@@ -1,4 +1,4 @@
-﻿using eNote.Application.Common.DTOs;
+﻿using eNote.Application.Features.Users;
 
 namespace eNote.Application.Features.Users.Profiles
 {

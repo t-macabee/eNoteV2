@@ -1,5 +1,3 @@
-using eNote.Application.Common.DTOs;
-
 namespace eNote.Application.Features.Users
 {
     public class UserIdentityDto

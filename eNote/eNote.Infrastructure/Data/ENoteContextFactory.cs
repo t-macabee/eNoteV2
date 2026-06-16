@@ -1,4 +1,5 @@
 using DotNetEnv;
+using eNote.Application.Common.Time;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration;
@@ -22,7 +23,7 @@ namespace eNote.Infrastructure.Data
 
             optionsBuilder.UseSqlServer(connectionString, sql => sql.MigrationsAssembly("eNote.Infrastructure"));
 
-            return new ENoteContext(optionsBuilder.Options);
+            return new ENoteContext(optionsBuilder.Options, new SystemClock());
         }
 
         private static void LoadDotEnv()

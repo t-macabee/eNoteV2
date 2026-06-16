@@ -5,14 +5,14 @@ using eNote.Application.Common.Persistence;
 using eNote.Application.Common.Time;
 using eNote.Application.Features.Announcements.Services.Interfaces;
 using eNote.Application.Features.MusicStores.Services.Interfaces;
-using eNote.Application.Features.Users;
+using eNote.Application.Features.Users.Services.Interfaces;
 using eNote.Domain.Entities;
 using eNote.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Application.Features.Announcements.Services
 {
-    public class AnnouncementService(IAppDbContext context, IClock clock, IMusicStoreContextService storeContext, ICurrentUserService currentUserService) : IAnnouncementService
+    public class AnnouncementService(IAppDbContext context, IClock clock, IUserContextResolver resolver, IMusicStoreContextService storeContext, ICurrentUserService currentUserService) : IAnnouncementService
     {
         private static readonly InstrumentRentalStatus[] StoreAudienceRentalStatuses =
         [
@@ -24,13 +24,7 @@ namespace eNote.Application.Features.Announcements.Services
 
         public async Task<IReadOnlyList<AnnouncementDto>> GetFeedForStudentAsync()
         {
-            var studentId = await context.Set<Student>()
-                .Where(s => s.AppUserId == currentUserService.UserId)
-                .Select(s => s.Id)
-                .SingleOrDefaultAsync();
-
-            if (studentId == 0)
-                throw new BusinessException(Messages.StudentProfileNotFound);
+            var studentId = (await resolver.GetStudentAsync(currentUserService.UserId)).Id;
 
             var enrolledCourseIds = await context.Set<Enrollment>()
                 .AsNoTracking()
@@ -60,7 +54,7 @@ namespace eNote.Application.Features.Announcements.Services
 
         public async Task<AnnouncementDto> CreateForCourseAsync(int courseId, AnnouncementCreateRequest request)
         {
-            var instructor = await UserProfileHelper.GetInstructorByUserIdAsync(context, currentUserService.UserId);
+            var instructor = await resolver.GetInstructorAsync(currentUserService.UserId);
 
             var ownsCourse = await context.Set<Course>()
                 .AsNoTracking()

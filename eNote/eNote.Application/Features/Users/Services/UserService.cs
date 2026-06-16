@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Application.Features.Users.Services
 {
-    public class UserService(IAppDbContext context, IUserIdentityService identity, IUserAccountService accountService, IClock clock, eNote.Application.Common.Interfaces.ICurrentUserService currentUserService) : IUserService
+    public class UserService(IAppDbContext context, IUserIdentityService identity, IUserContextResolver resolver, IUserAccountService accountService, IClock clock, eNote.Application.Common.Interfaces.ICurrentUserService currentUserService) : IUserService
     {
         public Task<UserProfileResponse?> GetCurrentUserAsync() => GetUserAsync(currentUserService.UserId);
 
@@ -167,7 +167,7 @@ namespace eNote.Application.Features.Users.Services
 
         private async Task<StudentProfile> BuildStudentProfile(int userId, UserIdentityDto user)
         {
-            var student = await UserProfileHelper.GetStudentByUserIdAsync(context, userId);
+            var student = await resolver.GetStudentAsync(userId);
 
             return new StudentProfile(
                 student.Id,
@@ -181,7 +181,7 @@ namespace eNote.Application.Features.Users.Services
 
         private async Task<InstructorProfile> BuildInstructorProfile(int userId, UserIdentityDto user)
         {
-            var instructor = await UserProfileHelper.GetInstructorByUserIdAsync(context, userId);
+            var instructor = await resolver.GetInstructorAsync(userId);
 
             return new InstructorProfile(
                 instructor.Id,
@@ -192,7 +192,7 @@ namespace eNote.Application.Features.Users.Services
 
         private async Task<MusicStoreProfile> BuildMusicStoreProfile(int userId, UserIdentityDto user)
         {
-            var employee = await UserProfileHelper.GetActiveEmployeeByUserIdAsync(context, userId);
+            var employee = await resolver.GetActiveEmployeeAsync(userId);
 
             var shop = await context.Set<MusicStore>()
                 .AsNoTracking()

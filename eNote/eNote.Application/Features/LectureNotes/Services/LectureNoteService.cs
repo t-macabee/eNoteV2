@@ -4,18 +4,18 @@ using eNote.Application.Common.Localization;
 using eNote.Application.Common.Paging;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Features.LectureNotes.Services.Interfaces;
-using eNote.Application.Features.Users;
+using eNote.Application.Features.Users.Services.Interfaces;
 using eNote.Domain.Entities;
 using eNote.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Application.Features.LectureNotes.Services
 {
-    public class LectureNoteService(IAppDbContext context, ICurrentUserService currentUserService) : ILectureNoteService
+    public class LectureNoteService(IAppDbContext context, IUserContextResolver resolver, ICurrentUserService currentUserService) : ILectureNoteService
     {
         public async Task<PagedResult<LectureNoteDto>> GetForLectureAsync(int lectureId, int page, int pageSize)
         {
-            var instructor = await UserProfileHelper.GetInstructorByUserIdAsync(context, currentUserService.UserId);
+            var instructor = await resolver.GetInstructorAsync(currentUserService.UserId);
 
             var query = context.Set<LectureNote>()
                 .AsNoTracking()
@@ -33,7 +33,7 @@ namespace eNote.Application.Features.LectureNotes.Services
 
         public async Task<LectureNoteDto> CreateAsync(int lectureId, LectureNoteCreateRequest request)
         {
-            var instructor = await UserProfileHelper.GetInstructorByUserIdAsync(context, currentUserService.UserId);
+            var instructor = await resolver.GetInstructorAsync(currentUserService.UserId);
 
             _ = await context.Set<Lecture>()
                 .AsNoTracking()
@@ -77,7 +77,7 @@ namespace eNote.Application.Features.LectureNotes.Services
 
         public async Task<PagedResult<LectureNoteDto>> GetForStudentAsync(int lectureId, int page, int pageSize)
         {
-            var student = await UserProfileHelper.GetStudentByUserIdAsync(context, currentUserService.UserId);
+            var student = await resolver.GetStudentAsync(currentUserService.UserId);
 
             var query = context.Set<LectureNote>()
                 .AsNoTracking()
@@ -91,7 +91,7 @@ namespace eNote.Application.Features.LectureNotes.Services
 
         public async Task<LectureNoteDto> GetByIdForStudentAsync(int lectureId, int noteId)
         {
-            var student = await UserProfileHelper.GetStudentByUserIdAsync(context, currentUserService.UserId);
+            var student = await resolver.GetStudentAsync(currentUserService.UserId);
 
             var entity = await context.Set<LectureNote>()
                 .AsNoTracking()
@@ -107,7 +107,7 @@ namespace eNote.Application.Features.LectureNotes.Services
 
         private async Task<LectureNote> GetNoteForInstructorAsync(int lectureId, int noteId, int instructorUserId, bool track = false)
         {
-            var instructor = await UserProfileHelper.GetInstructorByUserIdAsync(context, instructorUserId);
+            var instructor = await resolver.GetInstructorAsync(instructorUserId);
 
             var query = context.Set<LectureNote>()
                 .Where(x => x.Id == noteId && x.LectureId == lectureId && x.Lecture.Course.InstructorId == instructor.Id);

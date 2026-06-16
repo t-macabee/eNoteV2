@@ -3,10 +3,9 @@ using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Paging;
 using eNote.Application.Common.Persistence;
-using eNote.Application.Common.Queryable;
 using eNote.Application.Features.Instruments.Search;
 using eNote.Application.Features.Instruments.Services.Interfaces;
-using eNote.Application.Features.Users;
+using eNote.Application.Features.Users.Services.Interfaces;
 using eNote.Domain.Entities;
 using eNote.Domain.Enums;
 using MapsterMapper;
@@ -14,7 +13,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Application.Features.Instruments.Services
 {
-    public class InstrumentService(IAppDbContext context, IMapper mapper, ICurrentUserService currentUserService) : IInstrumentService
+    public class InstrumentService(IAppDbContext context, IMapper mapper, IUserContextResolver resolver, ICurrentUserService currentUserService) : IInstrumentService
     {
         private InstrumentDto MapEntityToModel(Instrument entity) => mapper.Map<InstrumentDto>(entity);
 
@@ -146,8 +145,8 @@ namespace eNote.Application.Features.Instruments.Services
             await context.SaveChangesAsync();
         }
 
-        private async Task<MusicStoreEmployee> EnsureStoreAccessAsync() =>
-            await UserProfileHelper.GetActiveEmployeeByUserIdAsync(context, currentUserService.UserId);
+        private Task<MusicStoreEmployee> EnsureStoreAccessAsync() =>
+            resolver.GetActiveEmployeeAsync(currentUserService.UserId);
 
         private static IQueryable<Instrument> AddIncludes(IQueryable<Instrument> query)
         {

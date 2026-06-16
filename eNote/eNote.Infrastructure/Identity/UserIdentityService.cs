@@ -1,5 +1,4 @@
-﻿using eNote.Application.Common.DTOs;
-using eNote.Application.Features.Users;
+﻿using eNote.Application.Features.Users;
 using eNote.Application.Features.Users.Services.Interfaces;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -35,6 +34,33 @@ namespace eNote.Infrastructure.Identity
                 },
                 IsActive = user.IsActive
             };
+        }
+
+        public async Task<IReadOnlyDictionary<int, UserIdentityDto>> GetUsersBulkAsync(IEnumerable<int> userIds)
+        {
+            var ids = userIds.ToHashSet();
+
+            var users = await userManager.Users
+                .AsNoTracking()
+                .Include(u => u.Address)
+                .Where(u => ids.Contains(u.Id))
+                .ToListAsync();
+
+            return users.ToDictionary(u => u.Id, u => new UserIdentityDto
+            {
+                Id = u.Id,
+                Username = u.UserName!,
+                FirstName = u.FirstName,
+                LastName = u.LastName,
+                DateOfBirth = u.DateOfBirth,
+                Address = u.Address == null ? null : new AddressDto
+                {
+                    City = u.Address.City,
+                    Street = u.Address.Street,
+                    Number = u.Address.Number
+                },
+                IsActive = u.IsActive
+            });
         }
 
         public async Task<IReadOnlyList<string>> GetRolesAsync(int userId)
