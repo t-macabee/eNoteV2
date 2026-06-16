@@ -2,7 +2,7 @@
 {
     public enum AnnouncementScope
     {
-        Course = 1,    
+        Course = 1,
         MusicStore = 2
     }
 }

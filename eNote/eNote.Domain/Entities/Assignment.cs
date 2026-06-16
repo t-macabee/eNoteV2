@@ -4,14 +4,37 @@ namespace eNote.Domain.Entities
 {
     public class Assignment : AuditableEntity
     {
-        public string Title { get; set; } = null!;
-        public string Description { get; set; } = null!;
-        public DateTime DueAt { get; set; }
-        public bool IsActive { get; set; } = true;
+        public string Title { get; private set; } = null!;
+        public string Description { get; private set; } = null!;
+        public DateTime DueAt { get; private set; }
+        public bool IsActive { get; private set; } = true;
 
-        public int LectureId { get; set; }
-        public Lecture Lecture { get; set; } = null!;
+        public int LectureId { get; private set; }
+        public Lecture Lecture { get; private set; } = null!;
 
-        public ICollection<AssignmentSubmission> AssignmentSubmissions { get; set; } = new List<AssignmentSubmission>();
+        public ICollection<AssignmentSubmission> AssignmentSubmissions { get; private set; } = new List<AssignmentSubmission>();
+
+        protected Assignment() { }
+
+        public Assignment(string title, string description, DateTime dueAt, int lectureId)
+        {
+            Title = title;
+            Description = description;
+            DueAt = dueAt;
+            LectureId = lectureId;
+            IsActive = true;
+        }
+
+        public void UpdateDetails(string title, string description, DateTime dueAt)
+        {
+            Title = title;
+            Description = description;
+            DueAt = dueAt;
+        }
+
+        public void SoftDelete()
+        {
+            IsActive = false;
+        }
     }
 }

@@ -4,8 +4,8 @@ namespace eNote.Domain.Entities
 {
     public class Student : AuditableEntity
     {
-        public int AppUserId { get; set; }
-        public DateTime EnrollmentDate { get; set; }
+        public int AppUserId { get; private set; }
+        public DateTime EnrollmentDate { get; private set; }
 
         protected Student() { }
 
@@ -15,9 +15,9 @@ namespace eNote.Domain.Entities
             EnrollmentDate = enrollmentDate;
         }
 
-        public ICollection<Attendance> Attendances { get; set; } = new List<Attendance>();
-        public ICollection<Enrollment> Enrollments { get; set; } = new List<Enrollment>();
-        public ICollection<InstrumentRental> InstrumentRentals { get; set; } = new List<InstrumentRental>();
-        public ICollection<AssignmentSubmission> AssignmentSubmissions { get; set; } = new List<AssignmentSubmission>();
+        public ICollection<Attendance> Attendances { get; private set; } = new List<Attendance>();
+        public ICollection<Enrollment> Enrollments { get; private set; } = new List<Enrollment>();
+        public ICollection<InstrumentRental> InstrumentRentals { get; private set; } = new List<InstrumentRental>();
+        public ICollection<AssignmentSubmission> AssignmentSubmissions { get; private set; } = new List<AssignmentSubmission>();
     }
 }

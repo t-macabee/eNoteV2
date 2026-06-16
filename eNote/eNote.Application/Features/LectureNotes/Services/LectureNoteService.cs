@@ -22,17 +22,13 @@ namespace eNote.Application.Features.LectureNotes.Services
                 .AsNoTracking()
                 .Where(x => x.LectureId == lectureId && x.Lecture.Course.InstructorId == instructor.Id);
 
-            return await query.ToPagedResultAsync(
-                page,
-                pageSize,
-                includeTotalCount: true,
-                Map,
-                q => q.OrderByDescending(x => x.CreatedAt));
+            return await query.ToPagedResultAsync(page, pageSize, includeTotalCount: true, Map, q => q.OrderByDescending(x => x.CreatedAt));
         }
 
         public async Task<LectureNoteDto> GetByIdForInstructorAsync(int lectureId, int noteId)
         {
             var entity = await GetNoteForInstructorAsync(lectureId, noteId, currentUserService.UserId);
+
             return Map(entity);
         }
 
@@ -43,15 +39,14 @@ namespace eNote.Application.Features.LectureNotes.Services
             _ = await context.Set<Lecture>()
                 .AsNoTracking()
                 .FirstOrDefaultAsync(x => x.Id == lectureId && x.Course.InstructorId == instructor.Id)
-                ?? throw new eNote.Application.Common.Exceptions.AuthorizationException(Messages.CourseNotOwned);
+                ?? throw new AuthorizationException(Messages.CourseNotOwned);
 
-            var entity = new LectureNote
-            {
-                Title = request.Title.Trim(),
-                Content = request.Content.Trim(),
-                LectureId = lectureId,
-                CreatedById = currentUserService.UserId
-            };
+            var entity = new LectureNote(
+                request.Title.Trim(),
+                request.Content.Trim(),
+                lectureId
+            );
+            entity.CreatedById = currentUserService.UserId;
 
             context.Set<LectureNote>().Add(entity);
             await context.SaveChangesAsync();
@@ -63,8 +58,7 @@ namespace eNote.Application.Features.LectureNotes.Services
         {
             var entity = await GetNoteForInstructorAsync(lectureId, noteId, currentUserService.UserId, track: true);
 
-            entity.Title = request.Title.Trim();
-            entity.Content = request.Content.Trim();
+            entity.UpdateDetails(request.Title.Trim(), request.Content.Trim());
             entity.UpdatedAt = clock.UtcNow;
             entity.UpdatedById = currentUserService.UserId;
 
@@ -77,7 +71,7 @@ namespace eNote.Application.Features.LectureNotes.Services
         {
             var entity = await GetNoteForInstructorAsync(lectureId, noteId, currentUserService.UserId, track: true);
 
-            entity.IsActive = false;
+            entity.SoftDelete();
             entity.UpdatedAt = clock.UtcNow;
             entity.UpdatedById = currentUserService.UserId;
 
@@ -90,17 +84,12 @@ namespace eNote.Application.Features.LectureNotes.Services
 
             var query = context.Set<LectureNote>()
                 .AsNoTracking()
-                .Where(x => x.LectureId == lectureId && 
-                            x.Lecture.Course.IsPublished && 
-                            !x.Lecture.IsCancelled && 
+                .Where(x => x.LectureId == lectureId &&
+                            x.Lecture.Course.IsPublished &&
+                            x.Lecture.LectureStatus != LectureStatus.Cancelled &&
                             x.Lecture.Course.Enrollments.Any(e => e.StudentId == student.Id && e.EnrollmentStatus == EnrollmentStatus.Active));
 
-            return await query.ToPagedResultAsync(
-                page,
-                pageSize,
-                includeTotalCount: true,
-                Map,
-                q => q.OrderByDescending(x => x.CreatedAt));
+            return await query.ToPagedResultAsync(page, pageSize, includeTotalCount: true, Map, q => q.OrderByDescending(x => x.CreatedAt));
         }
 
         public async Task<LectureNoteDto> GetByIdForStudentAsync(int lectureId, int noteId)
@@ -109,12 +98,12 @@ namespace eNote.Application.Features.LectureNotes.Services
 
             var entity = await context.Set<LectureNote>()
                 .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.Id == noteId && 
-                                          x.LectureId == lectureId && 
-                                          x.Lecture.Course.IsPublished && 
-                                          !x.Lecture.IsCancelled && 
+                .FirstOrDefaultAsync(x => x.Id == noteId &&
+                                          x.LectureId == lectureId &&
+                                          x.Lecture.Course.IsPublished &&
+                                          x.Lecture.LectureStatus != LectureStatus.Cancelled &&
                                           x.Lecture.Course.Enrollments.Any(e => e.StudentId == student.Id && e.EnrollmentStatus == EnrollmentStatus.Active))
-                ?? throw new eNote.Application.Common.Exceptions.NotFoundException(Messages.LectureNoteNotFound);
+                ?? throw new NotFoundException(Messages.LectureNoteNotFound);
 
             return Map(entity);
         }
@@ -122,8 +111,13 @@ namespace eNote.Application.Features.LectureNotes.Services
         private async Task<LectureNote> GetNoteForInstructorAsync(int lectureId, int noteId, int instructorUserId, bool track = false)
         {
             var instructor = await UserProfileHelper.GetInstructorByUserIdAsync(context, instructorUserId);
-            var query = context.Set<LectureNote>().Where(x => x.Id == noteId && x.LectureId == lectureId && x.Lecture.Course.InstructorId == instructor.Id);
-            return await (track ? query : query.AsNoTracking()).FirstOrDefaultAsync() ?? throw new NotFoundException(Messages.LectureNoteNotFound);
+
+            var query = context.Set<LectureNote>()
+                .Where(x => x.Id == noteId && x.LectureId == lectureId && x.Lecture.Course.InstructorId == instructor.Id);
+
+            return await (track ? query : query.AsNoTracking())
+                .FirstOrDefaultAsync() 
+                ?? throw new NotFoundException(Messages.LectureNoteNotFound);
         }
 
         private static LectureNoteDto Map(LectureNote entity) => new()

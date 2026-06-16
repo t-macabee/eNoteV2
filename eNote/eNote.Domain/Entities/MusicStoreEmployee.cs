@@ -4,11 +4,13 @@ namespace eNote.Domain.Entities
 {
     public class MusicStoreEmployee : AuditableEntity
     {
-        public int AppUserId { get; set; }
-        public int MusicStoreId { get; set; }
+        public int AppUserId { get; private set; }
+        public int MusicStoreId { get; private set; }
 
-        public bool IsManager { get; set; }
+        public bool IsManager { get; private set; }
         public bool IsActive { get; set; } = true;
+
+        public MusicStore MusicStore { get; private set; } = null!;
 
         protected MusicStoreEmployee() { }
 
@@ -18,7 +20,5 @@ namespace eNote.Domain.Entities
             MusicStoreId = musicStoreId;
             IsManager = isManager;
         }
-
-        public MusicStore MusicStore { get; set; } = null!;
     }
 }

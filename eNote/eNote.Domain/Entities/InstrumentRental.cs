@@ -5,20 +5,74 @@ namespace eNote.Domain.Entities
 {
     public class InstrumentRental : AuditableEntity
     {
-        public decimal Fee { get; set; }
-        public string? Note { get; set; }
+        public decimal Fee { get; private set; }
+        public string? Note { get; private set; }
 
-        public DateTime RequestedAt { get; set; }
-        public DateTime? ApprovedAt { get; set; }
-        public DateTime? PickedUpAt { get; set; }
-        public DateTime? ReturnedAt { get; set; }
+        public DateTime RequestedAt { get; private set; }
+        public DateTime? ApprovedAt { get; private set; }
+        public DateTime? PickedUpAt { get; private set; }
+        public DateTime? ReturnedAt { get; private set; }
 
-        public InstrumentRentalStatus RentalStatus { get; set; }
+        public InstrumentRentalStatus RentalStatus { get; private set; }
 
-        public int StudentProfileId { get; set; }
-        public Student StudentProfile { get; set; } = null!;
+        public int StudentProfileId { get; private set; }
+        public Student StudentProfile { get; private set; } = null!;
 
-        public int InstrumentId { get; set; }
-        public Instrument Instrument { get; set; } = null!;
+        public int InstrumentId { get; private set; }
+        public Instrument Instrument { get; private set; } = null!;
+
+        protected InstrumentRental() { }
+
+        public InstrumentRental(int instrumentId, int studentProfileId, DateTime requestedAt, string? note)
+        {
+            InstrumentId = instrumentId;
+            StudentProfileId = studentProfileId;
+            RequestedAt = requestedAt;
+            Note = note;
+            RentalStatus = InstrumentRentalStatus.Pending;
+        }
+
+        public void Approve(decimal fee, string? note, DateTime approvedAt)
+        {
+            Fee = fee;
+            Note = note;
+            ApprovedAt = approvedAt;
+            RentalStatus = InstrumentRentalStatus.Approved;
+        }
+
+        public void Reject(DateTime returnedAt, string? note)
+        {
+            Note = note;
+            ReturnedAt = returnedAt;
+            RentalStatus = InstrumentRentalStatus.Rejected;
+        }
+
+        public void Cancel(DateTime returnedAt, string? note)
+        {
+            Note = note;
+            ReturnedAt = returnedAt;
+            RentalStatus = InstrumentRentalStatus.Canceled;
+        }
+
+        public void Pickup(DateTime pickedUpAt, string? note = null)
+        {
+            PickedUpAt = pickedUpAt;
+            RentalStatus = InstrumentRentalStatus.Active;
+            if (note != null) Note = note;
+        }
+
+        public void Complete(DateTime returnedAt, string? note)
+        {
+            Note = note;
+            ReturnedAt = returnedAt;
+            RentalStatus = InstrumentRentalStatus.Completed;
+        }
+
+        public void ReturnEarly(DateTime returnedAt, string? note)
+        {
+            Note = note;
+            ReturnedAt = returnedAt;
+            RentalStatus = InstrumentRentalStatus.ReturnedEarly;
+        }
     }
 }

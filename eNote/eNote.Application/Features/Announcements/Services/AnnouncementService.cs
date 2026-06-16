@@ -69,18 +69,17 @@ namespace eNote.Application.Features.Announcements.Services
             if (!ownsCourse)
                 throw new BusinessException(Messages.AnnouncementCourseForbidden);
 
-            var entity = new Announcement
+            var entity = new Announcement(
+                request.Title.Trim(),
+                request.Content.Trim(),
+                courseId,
+                null
+            )
             {
-                Title = request.Title.Trim(),
-                Content = request.Content.Trim(),
-                PublishedAt = clock.UtcNow,
-                CreatedById = currentUserService.UserId,
-                CourseId = courseId,
-                MusicStoreId = null
+                CreatedById = currentUserService.UserId
             };
 
             context.Set<Announcement>().Add(entity);
-
             await context.SaveChangesAsync();
 
             return await LoadDtoAsync(entity.Id);
@@ -101,8 +100,7 @@ namespace eNote.Application.Features.Announcements.Services
                 .FirstOrDefaultAsync(a => a.Id == announcementId)
                 ?? throw new NotFoundException(Messages.AnnouncementNotFound);
 
-            entity.Title = request.Title.Trim();
-            entity.Content = request.Content.Trim();
+            entity.UpdateDetails(request.Title.Trim(), request.Content.Trim());
             entity.UpdatedAt = clock.UtcNow;
             entity.UpdatedById = currentUserService.UserId;
 
@@ -117,7 +115,7 @@ namespace eNote.Application.Features.Announcements.Services
                 .FirstOrDefaultAsync(a => a.Id == announcementId)
                 ?? throw new NotFoundException(Messages.AnnouncementNotFound);
 
-            entity.IsActive = false;
+            entity.SoftDelete();
             entity.UpdatedAt = clock.UtcNow;
             entity.UpdatedById = currentUserService.UserId;
 
@@ -128,14 +126,9 @@ namespace eNote.Application.Features.Announcements.Services
         {
             var storeId = await storeContext.GetActiveStoreAsync(currentUserService.UserId);
 
-            var entity = new Announcement
+            var entity = new Announcement(request.Title.Trim(), request.Content.Trim(), null, storeId)
             {
-                Title = request.Title.Trim(),
-                Content = request.Content.Trim(),
-                PublishedAt = clock.UtcNow,
-                CreatedById = currentUserService.UserId,
-                CourseId = null,
-                MusicStoreId = storeId
+                CreatedById = currentUserService.UserId
             };
 
             context.Set<Announcement>().Add(entity);
@@ -166,8 +159,7 @@ namespace eNote.Application.Features.Announcements.Services
                 .FirstOrDefaultAsync(a => a.Id == announcementId && a.MusicStoreId == storeId)
                 ?? throw new NotFoundException(Messages.AnnouncementNotFound);
 
-            entity.Title = request.Title.Trim();
-            entity.Content = request.Content.Trim();
+            entity.UpdateDetails(request.Title.Trim(), request.Content.Trim());
             entity.UpdatedAt = clock.UtcNow;
             entity.UpdatedById = currentUserService.UserId;
 
@@ -184,7 +176,7 @@ namespace eNote.Application.Features.Announcements.Services
                 .FirstOrDefaultAsync(a => a.Id == announcementId && a.MusicStoreId == storeId)
                 ?? throw new NotFoundException(Messages.AnnouncementNotFound);
 
-            entity.IsActive = false;
+            entity.SoftDelete();
             entity.UpdatedAt = clock.UtcNow;
             entity.UpdatedById = currentUserService.UserId;
 
@@ -195,7 +187,8 @@ namespace eNote.Application.Features.Announcements.Services
         {
             var query = context.Set<Announcement>()
                 .Include(a => a.Course)
-                .Where(a => a.CourseId == courseId && a.Course.Instructor.AppUserId == currentUserService.UserId);
+                .Where(a => a.CourseId == courseId && a.Course != null
+                && a.Course.Instructor.AppUserId == currentUserService.UserId);
 
             return track ? query : query.AsNoTracking();
         }
@@ -214,9 +207,7 @@ namespace eNote.Application.Features.Announcements.Services
 
         private static AnnouncementDto MapToDto(Announcement entity)
         {
-            var scope = entity.CourseId.HasValue
-                ? AnnouncementScope.Course
-                : AnnouncementScope.MusicStore;
+            var scope = entity.CourseId.HasValue? AnnouncementScope.Course: AnnouncementScope.MusicStore;
 
             return new AnnouncementDto
             {

@@ -25,29 +25,13 @@ namespace eNote.Infrastructure.Data.Seed
                 .Select(i => i.Id)
                 .FirstAsync();
 
-            context.Set<Course>().AddRange(
-                new Course
-                {
-                    Name = "Osnove teorije muzike",
-                    Description = "Uvod u osnove teorije muzike.",
-                    Price = 800,
-                    InstructorId = instructorId,
-                    StartDate = new DateTime(2024, 8, 10),
-                    EndDate = new DateTime(2024, 10, 10),
-                    IsPublished = true
-                },
-                new Course
-                {
-                    Name = "Napredne tehnike gitare",
-                    Description = "Napredne tehnike i improvizacija.",
-                    Price = 800,
-                    InstructorId = instructorId,
-                    StartDate = new DateTime(2024, 9, 12),
-                    EndDate = new DateTime(2024, 10, 12),
-                    IsPublished = true
-                }
-            );
+            var c1 = new Course("Osnove teorije muzike", "Uvod u osnove teorije muzike.", 800, new DateTime(2024, 8, 10), new DateTime(2024, 10, 10), instructorId);
+            c1.SetPublishedStatus(true);
 
+            var c2 = new Course("Napredne tehnike gitare", "Napredne tehnike i improvizacija.", 800, new DateTime(2024, 9, 12), new DateTime(2024, 10, 12), instructorId);
+            c2.SetPublishedStatus(true);
+
+            context.Set<Course>().AddRange(c1, c2);
             await context.SaveChangesAsync();
         }
     }
@@ -68,26 +52,8 @@ namespace eNote.Infrastructure.Data.Seed
                 return;
 
             context.AddRange(
-                new Lecture
-                {
-                    Name = "Uvodno predavanje",
-                    Location = "Amfiteatar gradskog BKC-a",
-                    Duration = 90,
-                    LectureTime = new DateTime(2024, 8, 11, 19, 30, 0),
-                    CourseId = courses[0].Id,
-                    LectureType = LectureType.Theoretical,
-                    LectureStatus = LectureStatus.Scheduled
-                },
-                new Lecture
-                {
-                    Name = "Uvodno predavanje",
-                    Location = "Amfiteatar gradskog BKC-a",
-                    Duration = 60,
-                    LectureTime = new DateTime(2024, 8, 19, 19, 30, 0),
-                    CourseId = courses[1].Id,
-                    LectureType = LectureType.Theoretical,
-                    LectureStatus = LectureStatus.Scheduled
-                }
+                new Lecture("Uvodno predavanje", "Amfiteatar gradskog BKC-a", 90, new DateTime(2024, 8, 11, 19, 30, 0), LectureType.Theoretical, null, courses[0].Id),
+                new Lecture("Uvodno predavanje", "Amfiteatar gradskog BKC-a", 60, new DateTime(2024, 8, 19, 19, 30, 0), LectureType.Theoretical, null, courses[1].Id)
             );
 
             await context.SaveChangesAsync();
@@ -149,123 +115,19 @@ namespace eNote.Infrastructure.Data.Seed
     {
         public static Instrument[] GetInstruments(int shopId, int typeId) =>
         [
-            new Instrument
-            {
-                Manufacturer = "Fender",
-                Model = "Stratocaster",
-                Description = "Klasična električna gitara poznata po svojoj svestranosti i glatkoj svirljivosti.",
-                MusicStoreId = shopId,
-                InstrumentTypeId = typeId,
-                ImagePath = "instruments/strat.webp"
-            },
-            new Instrument
-            {
-                Manufacturer = "Gibson",
-                Model = "Les Paul",
-                Description = "Legendarna električna gitara omiljena zbog bogatog tona i održavanja.",
-                MusicStoreId = shopId,
-                InstrumentTypeId = typeId,
-                ImagePath = "instruments/les-paul.webp"
-            },
-            new Instrument
-            {
-                Manufacturer = "Ibanez",
-                Model = "RG",
-                Description = "Visokoperformansna električna gitara popularna među rok i metal sviračima.",
-                MusicStoreId = shopId,
-                InstrumentTypeId = typeId,
-                ImagePath = "instruments/rg.webp"
-            },
-            new Instrument
-            {
-                Manufacturer = "PRS",
-                Model = "Custom 24",
-                Description = "Visokokvalitetna električna gitara poznata po svojoj prelijepoj izradi i zvuku.",
-                MusicStoreId = shopId,
-                InstrumentTypeId = typeId,
-                ImagePath = "instruments/prs.webp"
-            },
-            new Instrument
-            {
-                Manufacturer = "Yamaha",
-                Model = "Pacifica",
-                Description = "Svestrana električna gitara pogodna za različite žanrove.",
-                MusicStoreId = shopId,
-                InstrumentTypeId = typeId,
-                ImagePath = "instruments/pacifica.webp"
-            },
-            new Instrument
-            {
-                Manufacturer = "Jackson",
-                Model = "Dinky",
-                Description = "Električna gitara dizajnirana za brzo sviranje i snažan zvuk.",
-                MusicStoreId = shopId,
-                InstrumentTypeId = typeId,
-                ImagePath = "instruments/dinky.webp"
-            },
-            new Instrument
-            {
-                Manufacturer = "Taylor",
-                Model = "214ce",
-                Description = "Svestrana i lijepo izrađena akustična gitara, poznata po svom svijetlom i artikulisanom tonu.",
-                MusicStoreId = shopId,
-                InstrumentTypeId = typeId,
-                ImagePath = "instruments/214ce.webp"
-            },
-            new Instrument
-            {
-                Manufacturer = "Martin",
-                Model = "D-28",
-                Description = "Ikonična dreadnought gitara sa bogatom historijom, poznata po svom dubokom, rezonantnom basu i jasnim visokim tonovima.",
-                MusicStoreId = shopId,
-                InstrumentTypeId = typeId,
-                ImagePath = "instruments/d-28.webp"
-            },
-            new Instrument
-            {
-                Manufacturer = "Gibson",
-                Model = "J-45",
-                Description = "Često nazivan \"radnim konjem\" među akustičnim gitarama, ovaj dreadnought sa zaobljenim ramenima pruža topao, blag ton koji je savršen za kantautore.",
-                MusicStoreId = shopId,
-                InstrumentTypeId = typeId,
-                ImagePath = "instruments/j-45.webp"
-            },
-            new Instrument
-            {
-                Manufacturer = "Seagull",
-                Model = "S6",
-                Description = "S6 proizvodi topao, bogat zvuk sa blago rustičnim karakterom, što je čini omiljenom među muzičarima koji sviraju folk i roots muziku.",
-                MusicStoreId = shopId,
-                InstrumentTypeId = typeId,
-                ImagePath = "instruments/s6.webp"
-            },
-            new Instrument
-            {
-                Manufacturer = "Fender",
-                Model = "Precision Bass",
-                Description = "Industrijski standard bas gitara poznata po dubokom, udarnom zvuku.",
-                MusicStoreId = shopId,
-                InstrumentTypeId = typeId,
-                ImagePath = "instruments/precision.webp"
-            },
-            new Instrument
-            {
-                Manufacturer = "Gibson",
-                Model = "Thunderbird",
-                Description = "Ikonična bas gitara poznata po jedinstvenom dizajnu i snažnom zvuku.",
-                MusicStoreId = shopId,
-                InstrumentTypeId = typeId,
-                ImagePath = "instruments/thunderbird.webp"
-            },
-            new Instrument
-            {
-                Manufacturer = "Music Man",
-                Model = "StingRay",
-                Description = "Legendarna električna bas gitara, prepoznatljiva po svom moćnom, artikulisanom zvuku, elegantnom dizajnu i vrhunskoj svirljivosti.",
-                MusicStoreId = shopId,
-                InstrumentTypeId = typeId,
-                ImagePath = "instruments/stingray.webp"
-            }
+            new Instrument("Stratocaster", "Fender", "Klasična električna gitara poznata po svojoj svestranosti i glatkoj svirljivosti.", "instruments/strat.webp", typeId, shopId),
+            new Instrument("Les Paul", "Gibson", "Legendarna električna gitara omiljena zbog bogatog tona i održavanja.", "instruments/les-paul.webp", typeId, shopId),
+            new Instrument("RG", "Ibanez", "Visokoperformansna električna gitara popularna među rok i metal sviračima.", "instruments/rg.webp", typeId, shopId),
+            new Instrument("Custom 24", "PRS", "Visokokvalitetna električna gitara poznata po svojoj prelijepoj izradi i zvuku.", "instruments/prs.webp", typeId, shopId),
+            new Instrument("Pacifica", "Yamaha", "Svestrana električna gitara pogodna za različite žanrove.", "instruments/pacifica.webp", typeId, shopId),
+            new Instrument("Dinky", "Jackson", "Električna gitara dizajnirana za brzo sviranje i snažan zvuk.", "instruments/dinky.webp", typeId, shopId),
+            new Instrument("214ce", "Taylor", "Svestrana i lijepo izrađena akustična gitara, poznata po svom svijetlom i artikulisanom tonu.", "instruments/214ce.webp", typeId, shopId),
+            new Instrument("D-28", "Martin", "Ikonična dreadnought gitara sa bogatom historijom, poznata po svom dubokom, rezonantnom basu i jasnim visokim tonovima.", "instruments/d-28.webp", typeId, shopId),
+            new Instrument("J-45", "Gibson", "Često nazivan \"radnim konjem\" među akustičnim gitarama, ovaj dreadnought sa zaobljenim ramenima pruža topao, blag ton koji je savršen za kantautore.", "instruments/j-45.webp", typeId, shopId),
+            new Instrument("S6", "Seagull", "S6 proizvodi topao, bogat zvuk sa blago rustičnim karakterom, što je čini omiljenom među muzičarima koji sviraju folk i roots muziku.", "instruments/s6.webp", typeId, shopId),
+            new Instrument("Precision Bass", "Fender", "Industrijski standard bas gitara poznata po dubokom, udarnom zvuku.", "instruments/precision.webp", typeId, shopId),
+            new Instrument("Thunderbird", "Gibson", "Ikonična bas gitara poznata po jedinstvenom dizajnu i snažnom zvuku.", "instruments/thunderbird.webp", typeId, shopId),
+            new Instrument("StingRay", "Music Man", "Legendarna električna bas gitara, prepoznatljiva po svom moćnom, artikulisanom zvuku, elegantnom dizajnu i vrhunskoj svirljivosti.", "instruments/stingray.webp", typeId, shopId)
         ];
     }
 
@@ -273,33 +135,9 @@ namespace eNote.Infrastructure.Data.Seed
     {
         public static Instrument[] GetInstruments(int shopId, int typeId) =>
         [
-            new Instrument
-            {
-                Manufacturer = "Pearl",
-                Model = "Export",
-                Description = "Pristupačan bubanj set savršen za početnike i srednje napredne bubnjare.",
-                MusicStoreId = shopId,
-                InstrumentTypeId = typeId,
-                ImagePath = "instruments/export.webp"
-            },
-            new Instrument
-            {
-                Manufacturer = "Tama",
-                Model = "Imperialstar",
-                Description = "Svestran bubanj set sa izvrsnom izradom i zvukom.",
-                MusicStoreId = shopId,
-                InstrumentTypeId = typeId,
-                ImagePath = "instruments/imperialstar.webp"
-            },
-            new Instrument
-            {
-                Manufacturer = "Ludwig",
-                Model = "Breakbeats",
-                Description = "Kompaktni bubanj set dizajniran za prenosivost i odličan ton.",
-                MusicStoreId = shopId,
-                InstrumentTypeId = typeId,
-                ImagePath = "instruments/breakbeats.webp"
-            }
+            new Instrument("Export", "Pearl", "Pristupačan bubanj set savršen za početnike i srednje napredne bubnjare.", "instruments/export.webp", typeId, shopId),
+            new Instrument("Imperialstar", "Tama", "Svestran bubanj set sa izvrsnom izradom i zvukom.", "instruments/imperialstar.webp", typeId, shopId),
+            new Instrument("Breakbeats", "Ludwig", "Kompaktni bubanj set dizajniran za prenosivost i odličan ton.", "instruments/breakbeats.webp", typeId, shopId)
         ];
     }
 
@@ -307,24 +145,8 @@ namespace eNote.Infrastructure.Data.Seed
     {
         public static Instrument[] GetInstruments(int shopId, int typeId) =>
         [
-            new Instrument
-            {
-                Manufacturer = "Yamaha",
-                Model = "YAS-280",
-                Description = "Popularni saksofon među studentima i srednje naprednim sviračima.",
-                MusicStoreId = shopId,
-                InstrumentTypeId = typeId,
-                ImagePath = "instruments/yas.webp"
-            },
-            new Instrument
-            {
-                Manufacturer = "Bach",
-                Model = "Stradivarius",
-                Description = "Profesionalni trombon poznat po bogatom tonu i preciznoj intonaciji.",
-                MusicStoreId = shopId,
-                InstrumentTypeId = typeId,
-                ImagePath = "instruments/stradivarius.webp"
-            }
+            new Instrument("YAS-280", "Yamaha", "Popularni saksofon među studentima i srednje naprednim sviračima.", "instruments/yas.webp", typeId, shopId),
+            new Instrument("Stradivarius", "Bach", "Profesionalni trombon poznat po bogatom tonu i preciznoj intonaciji.", "instruments/stradivarius.webp", typeId, shopId)
         ];
     }
 
@@ -332,24 +154,8 @@ namespace eNote.Infrastructure.Data.Seed
     {
         public static Instrument[] GetInstruments(int shopId, int typeId) =>
         [
-            new Instrument
-            {
-                Manufacturer = "Korg",
-                Model = "Minilogue",
-                Description = "Analogni sintisajzer poznat po svom bogatom, toplom zvuku.",
-                MusicStoreId = shopId,
-                InstrumentTypeId = typeId,
-                ImagePath = "instruments/minilogue.webp"
-            },
-            new Instrument
-            {
-                Manufacturer = "Roland",
-                Model = "Juno-DS",
-                Description = "Svestrani sintisajzer popularan za žive nastupe i studijsku upotrebu.",
-                MusicStoreId = shopId,
-                InstrumentTypeId = typeId,
-                ImagePath = "instruments/juno-ds.webp"
-            }
+            new Instrument("Minilogue", "Korg", "Analogni sintisajzer poznat po svom bogatom, toplom zvuku.", "instruments/minilogue.webp", typeId, shopId),
+            new Instrument("Juno-DS", "Roland", "Svestrani sintisajzer popularan za žive nastupe i studijsku upotrebu.", "instruments/juno-ds.webp", typeId, shopId)
         ];
     }
 
@@ -357,51 +163,11 @@ namespace eNote.Infrastructure.Data.Seed
     {
         public static Instrument[] GetInstruments(int shopId, int typeId) =>
         [
-            new Instrument
-            {
-                Manufacturer = "Fender",
-                Model = "Blues Junior IV",
-                Description = "Kompaktno, ali snažno cijevno pojačalo koje pruža klasičan Fender ton sa dodanom modernom svestranošću.",
-                MusicStoreId = shopId,
-                InstrumentTypeId = typeId,
-                ImagePath = "instruments/blues-junior.webp"
-            },
-            new Instrument
-            {
-                Manufacturer = "Marshall",
-                Model = "DSL40CR-DS",
-                Description = "Vrlo svestrano cijevno pojačalo koje nudi sve, od klasične rock distorzije do žestokih solaža.",
-                MusicStoreId = shopId,
-                InstrumentTypeId = typeId,
-                ImagePath = "instruments/dsl40cr.webp"
-            },
-            new Instrument
-            {
-                Manufacturer = "Vox",
-                Model = "AC15C1",
-                Description = "Poznato po svojim svijetlim čistim tonovima i karakterističnom \"Top Boost\" overdrive efektu, savršeno je za one koji traže vintage britanski zvuk.",
-                MusicStoreId = shopId,
-                InstrumentTypeId = typeId,
-                ImagePath = "instruments/ac15c1.webp"
-            },
-            new Instrument
-            {
-                Manufacturer = "Orange",
-                Model = "Rocker 15",
-                Description = "Idealno je za kućne probe i manje nastupe, nudeći niz tonova od čistog do prljavog sa jednostavnim i preglednim kontrolama.",
-                MusicStoreId = shopId,
-                InstrumentTypeId = typeId,
-                ImagePath = "instruments/rocker-15.webp"
-            },
-            new Instrument
-            {
-                Manufacturer = "Boss",
-                Model = "Katana-100 MkII",
-                Description = "Moderno digitalno pojačalo koje kombinuje veliku snagu sa nevjerovatnom svestranošću.",
-                MusicStoreId = shopId,
-                InstrumentTypeId = typeId,
-                ImagePath = "instruments/katana-100.webp"
-            }
+            new Instrument("Blues Junior IV", "Fender", "Kompaktno, ali snažno cijevno pojačalo koje pruža klasičan Fender ton sa dodanom modernom svestranošću.", "instruments/blues-junior.webp", typeId, shopId),
+            new Instrument("DSL40CR-DS", "Marshall", "Vrlo svestrano cijevno pojačalo koje nudi sve, od klasične rock distorzije do žestokih solaža.", "instruments/dsl40cr.webp", typeId, shopId),
+            new Instrument("AC15C1", "Vox", "Poznato po svojim svijetlim čistim tonovima i karakterističnom \"Top Boost\" overdrive efektu, savršeno je za one koji traže vintage britanski zvuk.", "instruments/ac15c1.webp", typeId, shopId),
+            new Instrument("Rocker 15", "Orange", "Idealno je za kućne probe i manje nastupe, nudeći niz tonova od čistog do prljavog sa jednostavnim i preglednim kontrolama.", "instruments/rocker-15.webp", typeId, shopId),
+            new Instrument("Katana-100 MkII", "Boss", "Moderno digitalno pojačalo koje kombinuje veliku snagu sa nevjerovatnom svestranošću.", "instruments/katana-100.webp", typeId, shopId)
         ];
     }
 }

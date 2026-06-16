@@ -55,12 +55,7 @@ namespace eNote.Application.Features.Courses.Services
                 .Include(c => c.Enrollments)
                 .Where(c => c.InstructorId == instructor.Id);
 
-            return await query.ToPagedResultAsync(
-                page,
-                pageSize,
-                includeTotalCount: true,
-                Map,
-                q => q.OrderByDescending(x => x.StartDate));
+            return await query.ToPagedResultAsync(page, pageSize, includeTotalCount: true, Map, q => q.OrderByDescending(x => x.StartDate));
         }
 
         public async Task<PagedResult<CourseDto>> GetPagedForStudentAsync(int page, int pageSize)
@@ -70,12 +65,7 @@ namespace eNote.Application.Features.Courses.Services
                 .Include(c => c.Enrollments)
                 .Where(c => c.IsPublished);
 
-            return await query.ToPagedResultAsync(
-                page,
-                pageSize,
-                includeTotalCount: true,
-                Map,
-                q => q.OrderByDescending(x => x.StartDate));
+            return await query.ToPagedResultAsync(page, pageSize, includeTotalCount: true, Map, q => q.OrderByDescending(x => x.StartDate));
         }
 
         public async Task<CourseDto> CreateAsync(CourseCreateRequest request)
@@ -84,20 +74,18 @@ namespace eNote.Application.Features.Courses.Services
 
             logger.LogInformation("Creating course {CourseName} by instructor user {InstructorUserId}", request.Name, currentUserService.UserId);
 
-            var entity = new Course
-            {
-                Name = request.Name.Trim(),
-                Description = request.Description?.Trim(),
-                Price = request.Price,
-                StartDate = request.StartDate,
-                EndDate = request.EndDate,
-                IsPublished = request.IsPublished,
-                InstructorId = instructor.Id,
-                CreatedById = currentUserService.UserId
-            };
+            var entity = new Course(
+                request.Name.Trim(),
+                request.Description?.Trim(),
+                request.Price,
+                request.StartDate,
+                request.EndDate,
+                instructor.Id
+            );
+            entity.SetPublishedStatus(request.IsPublished);
+            entity.CreatedById = currentUserService.UserId;
 
             context.Set<Course>().Add(entity);
-
             await context.SaveChangesAsync();
 
             logger.LogInformation("Course {CourseId} created by instructor user {InstructorUserId}", entity.Id, currentUserService.UserId);
@@ -114,12 +102,14 @@ namespace eNote.Application.Features.Courses.Services
                 .FirstOrDefaultAsync(c => c.Id == id && c.InstructorId == instructor.Id)
                 ?? throw new NotFoundException(Messages.CourseNotFound);
 
-            entity.Name = request.Name.Trim();
-            entity.Description = request.Description?.Trim();
-            entity.Price = request.Price;
-            entity.StartDate = request.StartDate;
-            entity.EndDate = request.EndDate;
-            entity.IsPublished = request.IsPublished;
+            entity.UpdateDetails(
+                request.Name.Trim(),
+                request.Description?.Trim(),
+                request.Price,
+                request.StartDate,
+                request.EndDate
+            );
+            entity.SetPublishedStatus(request.IsPublished);
             entity.UpdatedAt = clock.UtcNow;
             entity.UpdatedById = currentUserService.UserId;
 
@@ -137,14 +127,13 @@ namespace eNote.Application.Features.Courses.Services
                 .FirstOrDefaultAsync(c => c.Id == id && c.InstructorId == instructor.Id)
                 ?? throw new NotFoundException(Messages.CourseNotFound);
 
-            entity.IsActive = false;
-            entity.IsPublished = false;
+            entity.SoftDelete();
             entity.UpdatedAt = clock.UtcNow;
             entity.UpdatedById = currentUserService.UserId;
 
             foreach (var lecture in entity.Lectures)
             {
-                lecture.IsActive = false;
+                lecture.SoftDelete();
                 lecture.UpdatedAt = clock.UtcNow;
                 lecture.UpdatedById = currentUserService.UserId;
             }
@@ -163,21 +152,13 @@ namespace eNote.Application.Features.Courses.Services
                 .FirstOrDefaultAsync(c => c.Id == courseId && c.IsPublished)
                 ?? throw new NotFoundException(Messages.CourseNotFound);
 
-            var existing = course.Enrollments
-                .FirstOrDefault(e => e.StudentId == student.Id && e.EnrollmentStatus == EnrollmentStatus.Active);
+            var existing = course.Enrollments.FirstOrDefault(e => e.StudentId == student.Id && e.EnrollmentStatus == EnrollmentStatus.Active);
 
-            if (existing != null)
-                return;
+            if (existing != null) return;
 
-            var enrollment = new Enrollment
-            {
-                CourseId = course.Id,
-                StudentId = student.Id,
-                EnrollmentStatus = EnrollmentStatus.Active
-            };
+            var enrollment = new Enrollment(student.Id, course.Id, EnrollmentStatus.Active);
 
             context.Set<Enrollment>().Add(enrollment);
-
             await context.SaveChangesAsync();
 
             logger.LogInformation("Student {StudentUserId} enrolled in course {CourseId}", currentUserService.UserId, courseId);
@@ -194,7 +175,7 @@ namespace eNote.Application.Features.Courses.Services
                     e.EnrollmentStatus == EnrollmentStatus.Active)
                 ?? throw new BusinessException(Messages.StudentNotEnrolled);
 
-            enrollment.EnrollmentStatus = EnrollmentStatus.Canceled;
+            enrollment.UpdateStatus(EnrollmentStatus.Canceled);
             enrollment.UpdatedAt = clock.UtcNow;
 
             await context.SaveChangesAsync();

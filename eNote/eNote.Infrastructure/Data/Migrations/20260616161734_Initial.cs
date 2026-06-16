@@ -500,7 +500,6 @@ namespace eNote.Infrastructure.Data.Migrations
                     LectureType = table.Column<int>(type: "int", nullable: false),
                     LectureStatus = table.Column<int>(type: "int", nullable: false),
                     Capacity = table.Column<int>(type: "int", nullable: true),
-                    IsCancelled = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
                     IsActive = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
                     RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: true),
                     CourseId = table.Column<int>(type: "int", nullable: false),

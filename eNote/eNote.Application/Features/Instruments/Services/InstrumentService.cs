@@ -52,7 +52,6 @@ namespace eNote.Application.Features.Instruments.Services
                 .Where(x => x.MusicStoreId == employee.MusicStoreId);
 
             query = AddIncludes(query);
-
             query = AddFilter(search, query);
 
             return await query.ToPagedResultAsync(search.Page, search.PageSize, search.IncludeTotalCount, MapEntityToModel);
@@ -78,16 +77,19 @@ namespace eNote.Application.Features.Instruments.Services
         {
             var employee = await EnsureStoreAccessAsync();
 
-            var entity = mapper.Map<Instrument>(request);
+            var entity = new Instrument(
+                request.Model.Trim(),
+                request.Manufacturer.Trim(),
+                request.Description?.Trim(),
+                request.ImagePath?.Trim(),
+                request.InstrumentTypeId,
+                employee.MusicStoreId
+            );
 
-            entity.MusicStoreId = employee.MusicStoreId;
-
-            await BeforeCreateAsync(request, entity);
-
+            await BeforeCreateAsync(request);
             context.Set<Instrument>().Add(entity);
 
             await context.SaveChangesAsync();
-
             entity = await AfterSaveAsync(entity);
 
             return MapEntityToModel(entity);
@@ -101,12 +103,15 @@ namespace eNote.Application.Features.Instruments.Services
                 .FirstOrDefaultAsync(x => x.Id == id && x.MusicStoreId == employee.MusicStoreId)
                 ?? throw new NotFoundException(Messages.NotFound);
 
-            mapper.Map(request, entity);
-
-            await BeforeUpdateAsync(request, entity);
+            entity.UpdateDetails(
+                request.Model?.Trim() ?? entity.Model,
+                request.Manufacturer?.Trim() ?? entity.Manufacturer,
+                request.Description?.Trim() ?? entity.Description,
+                request.ImagePath?.Trim() ?? entity.ImagePath,
+                entity.InstrumentTypeId
+            );
 
             await context.SaveChangesAsync();
-
             entity = await AfterSaveAsync(entity);
 
             return MapEntityToModel(entity);
@@ -128,7 +133,7 @@ namespace eNote.Application.Features.Instruments.Services
             if (hasBlockingRental)
                 throw new BusinessException(Messages.InstrumentDeleteBlocked);
 
-            instrument.IsActive = false;
+            instrument.SoftDelete();
 
             await context.SaveChangesAsync();
         }
@@ -136,11 +141,12 @@ namespace eNote.Application.Features.Instruments.Services
         private async Task<MusicStoreEmployee> EnsureStoreAccessAsync()
         {
             var employee = await UserProfileHelper.GetActiveEmployeeByUserIdAsync(context, currentUserService.UserId);
+
             var activeStoreId = await storeContext.GetActiveStoreAsync(currentUserService.UserId);
-            
-            if (employee.MusicStoreId != activeStoreId) 
+
+            if (employee.MusicStoreId != activeStoreId)
                 throw new AuthorizationException(Messages.RentalAccessDenied);
-                
+
             return employee;
         }
 
@@ -175,12 +181,7 @@ namespace eNote.Application.Features.Instruments.Services
             return query;
         }
 
-        private static Task BeforeUpdateAsync(InstrumentUpdateRequest request, Instrument entity)
-        {
-            return Task.CompletedTask;
-        }
-
-        private async Task BeforeCreateAsync(InstrumentCreateRequest request, Instrument entity)
+        private async Task BeforeCreateAsync(InstrumentCreateRequest request)
         {
             var existingType = await context
                 .Set<InstrumentType>()

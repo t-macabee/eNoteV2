@@ -4,15 +4,38 @@ namespace eNote.Domain.Entities
 {
     public class Announcement : AuditableEntity
     {
-        public string Title { get; set; } = null!;
-        public string Content { get; set; } = null!;
-        public DateTime PublishedAt { get; set; } = DateTime.UtcNow;
-        public bool IsActive { get; set; } = true;
+        public string Title { get; private set; } = null!;
+        public string Content { get; private set; } = null!;
+        public DateTime PublishedAt { get; private set; } = DateTime.UtcNow;
+        public bool IsActive { get; private set; } = true;
 
-        public int? CourseId { get; set; }
-        public Course? Course { get; set; }
+        public int? CourseId { get; private set; }
+        public Course? Course { get; private set; }
 
-        public int? MusicStoreId { get; set; }
-        public MusicStore? MusicStore { get; set; }
+        public int? MusicStoreId { get; private set; }
+        public MusicStore? MusicStore { get; private set; }
+
+        protected Announcement() { }
+
+        public Announcement(string title, string content, int? courseId, int? musicStoreId)
+        {
+            Title = title;
+            Content = content;
+            CourseId = courseId;
+            MusicStoreId = musicStoreId;
+            PublishedAt = DateTime.UtcNow;
+            IsActive = true;
+        }
+
+        public void UpdateDetails(string title, string content)
+        {
+            Title = title;
+            Content = content;
+        }
+
+        public void SoftDelete()
+        {
+            IsActive = false;
+        }
     }
 }

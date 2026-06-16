@@ -89,12 +89,6 @@ namespace eNote.Application.Features.InstrumentRentals.StateMachine
             rental.UpdatedById = context.UserId;
         }
 
-        private static void ApplyNote(RentalTransitionContext context, InstrumentRental rental)
-        {
-            if (!string.IsNullOrWhiteSpace(context.Response?.Note))
-                rental.Note = context.Response.Note;
-        }
-
         private static IReadOnlyList<TransitionDefinition> CreateTransitions() =>
         [
             new(
@@ -109,11 +103,9 @@ namespace eNote.Application.Features.InstrumentRentals.StateMachine
                 },
                 Apply: (rental, context, time) =>
                 {
-                    rental.Fee = rental.Instrument.InstrumentType.MonthlyFee;
-                    rental.ApprovedAt = time.UtcNow;
-                    rental.RentalStatus = InstrumentRentalStatus.Approved;
+                    var note = !string.IsNullOrWhiteSpace(context.Response?.Note) ? context.Response.Note : rental.Note;
+                    rental.Approve(rental.Instrument.InstrumentType.MonthlyFee, note, time.UtcNow);
                     ApplyAuditFields(rental, context, time);
-                    ApplyNote(context, rental);
                 },
                 UsesInstrumentLock: true),
 
@@ -125,9 +117,9 @@ namespace eNote.Application.Features.InstrumentRentals.StateMachine
                 GuardAsync: null,
                 Apply: (rental, context, time) =>
                 {
-                    rental.RentalStatus = InstrumentRentalStatus.Rejected;
+                    var note = !string.IsNullOrWhiteSpace(context.Response?.Note) ? context.Response.Note : rental.Note;
+                    rental.Reject(time.UtcNow, note);
                     ApplyAuditFields(rental, context, time);
-                    ApplyNote(context, rental);
                 },
                 UsesInstrumentLock: false),
 
@@ -143,9 +135,9 @@ namespace eNote.Application.Features.InstrumentRentals.StateMachine
                 },
                 Apply: (rental, context, time) =>
                 {
-                    rental.RentalStatus = InstrumentRentalStatus.Canceled;
+                    var note = !string.IsNullOrWhiteSpace(context.Response?.Note) ? context.Response.Note : rental.Note;
+                    rental.Cancel(time.UtcNow, note);
                     ApplyAuditFields(rental, context, time);
-                    ApplyNote(context, rental);
                 },
                 UsesInstrumentLock: false),
 
@@ -165,10 +157,9 @@ namespace eNote.Application.Features.InstrumentRentals.StateMachine
                 },
                 Apply: (rental, context, time) =>
                 {
-                    rental.PickedUpAt = time.UtcNow;
-                    rental.RentalStatus = InstrumentRentalStatus.Active;
+                    var note = !string.IsNullOrWhiteSpace(context.Response?.Note) ? context.Response.Note : rental.Note;
+                    rental.Pickup(time.UtcNow, note);
                     ApplyAuditFields(rental, context, time);
-                    ApplyNote(context, rental);
                 },
                 UsesInstrumentLock: true),
 
@@ -184,9 +175,9 @@ namespace eNote.Application.Features.InstrumentRentals.StateMachine
                 },
                 Apply: (rental, context, time) =>
                 {
-                    rental.RentalStatus = InstrumentRentalStatus.Canceled;
+                    var note = !string.IsNullOrWhiteSpace(context.Response?.Note) ? context.Response.Note : rental.Note;
+                    rental.Cancel(time.UtcNow, note);
                     ApplyAuditFields(rental, context, time);
-                    ApplyNote(context, rental);
                 },
                 UsesInstrumentLock: false),
 
@@ -202,10 +193,9 @@ namespace eNote.Application.Features.InstrumentRentals.StateMachine
                 },
                 Apply: (rental, context, time) =>
                 {
-                    rental.ReturnedAt = time.UtcNow;
-                    rental.RentalStatus = InstrumentRentalStatus.Completed;
+                    var note = !string.IsNullOrWhiteSpace(context.Response?.Note) ? context.Response.Note : rental.Note;
+                    rental.Complete(time.UtcNow, note);
                     ApplyAuditFields(rental, context, time);
-                    ApplyNote(context, rental);
                 },
                 UsesInstrumentLock: false),
 
@@ -222,16 +212,15 @@ namespace eNote.Application.Features.InstrumentRentals.StateMachine
                 },
                 Apply: (rental, context, time) =>
                 {
-                    rental.ReturnedAt = time.UtcNow;
-                    rental.RentalStatus = InstrumentRentalStatus.ReturnedEarly;
+                    var note = !string.IsNullOrWhiteSpace(context.Response?.Note) ? context.Response.Note : rental.Note;
+                    rental.ReturnEarly(time.UtcNow, note);
                     ApplyAuditFields(rental, context, time);
-                    ApplyNote(context, rental);
                 },
                 UsesInstrumentLock: false),
         ];
 
         private sealed record TransitionDefinition(
-            InstrumentRentalStatus From, RentalTrigger Trigger, InstrumentRentalStatus To, RentalActor[] Actors, 
+            InstrumentRentalStatus From, RentalTrigger Trigger, InstrumentRentalStatus To, RentalActor[] Actors,
             Func<InstrumentRental, RentalTransitionContext, CancellationToken, Task>? GuardAsync, Action<InstrumentRental,
             RentalTransitionContext, IClock> Apply, bool UsesInstrumentLock
         );

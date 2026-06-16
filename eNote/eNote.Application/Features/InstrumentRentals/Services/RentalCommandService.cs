@@ -47,25 +47,13 @@ namespace eNote.Application.Features.InstrumentRentals.Services
                 if (alreadyPending)
                     throw new BusinessException(Messages.RentalPendingRequired);
 
-                var rental = new InstrumentRental
+                var rental = new InstrumentRental(request.InstrumentId, studentProfileId, clock.UtcNow, request.Note)
                 {
-                    InstrumentId = request.InstrumentId,
-                    StudentProfileId = studentProfileId,
-                    Note = request.Note,
-                    RequestedAt = clock.UtcNow,
-                    RentalStatus = InstrumentRentalStatus.Pending,
-                    Fee = 0m,
-                    ApprovedAt = null,
-                    PickedUpAt = null,
-                    ReturnedAt = null,
-                    CreatedAt = clock.UtcNow,
                     CreatedById = currentUserService.UserId
                 };
 
                 context.Set<InstrumentRental>().Add(rental);
-
                 await context.SaveChangesAsync();
-
                 await transaction.CommitAsync();
 
                 return await LoadDtoAsync(rental.Id);
@@ -86,11 +74,9 @@ namespace eNote.Application.Features.InstrumentRentals.Services
         public async Task<InstrumentRentalDto> CancelAsync(int rentalId, RentalStatusResponse response)
         {
             using var transaction = await context.BeginTransactionAsync();
-
             try
             {
                 var rental = await LoadForStudentAsync(rentalId, currentUserService.UserId);
-
                 var result = await ExecuteTransitionAsync(rental, RentalTrigger.Cancel, RentalActor.Student, currentUserService.UserId, response);
 
                 await transaction.CommitAsync();
@@ -107,13 +93,10 @@ namespace eNote.Application.Features.InstrumentRentals.Services
         private async Task<InstrumentRentalDto> ExecuteStoreTransitionAsync(int rentalId, RentalTrigger trigger, RentalStatusResponse response)
         {
             using var transaction = await context.BeginTransactionAsync();
-
             try
             {
                 var storeId = await storeContext.GetActiveStoreAsync(currentUserService.UserId);
-
                 var rental = await LoadForStoreAsync(rentalId, storeId);
-
                 var result = await ExecuteTransitionAsync(rental, trigger, RentalActor.StoreEmployee, currentUserService.UserId, response);
 
                 await transaction.CommitAsync();
@@ -185,7 +168,6 @@ namespace eNote.Application.Features.InstrumentRentals.Services
                 ?? throw new NotFoundException(Messages.RentalNotFoundAfterUpdate);
 
             var result = mapper.Map<InstrumentRentalDto>(entity);
-
             RentalBilling.ApplyBilling(entity, result, clock.UtcNow);
 
             return result;

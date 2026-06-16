@@ -4,8 +4,8 @@ namespace eNote.Domain.Entities
 {
     public class MusicStore : AuditableEntity
     {
-        public string StoreName { get; set; } = null!;
-        public string BusinessHours { get; set; } = null!;
+        public string StoreName { get; private set; } = null!;
+        public string BusinessHours { get; private set; } = null!;
 
         protected MusicStore() { }
 
@@ -15,7 +15,7 @@ namespace eNote.Domain.Entities
             BusinessHours = businessHours;
         }
 
-        public ICollection<MusicStoreEmployee> Employees { get; set; } = new List<MusicStoreEmployee>();
-        public ICollection<Instrument> Instruments { get; set; } = new List<Instrument>();
+        public ICollection<MusicStoreEmployee> Employees { get; private set; } = new List<MusicStoreEmployee>();
+        public ICollection<Instrument> Instruments { get; private set; } = new List<Instrument>();
     }
 }
