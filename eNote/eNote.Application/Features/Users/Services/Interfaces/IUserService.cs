@@ -1,6 +1,6 @@
-﻿using eNote.Application.Features.Auth;
+using eNote.Application.Features.Auth;
 
-namespace eNote.Application.Features.Users.Services.Interfaces
+namespace eNote.Application.Features.Users.Services
 {
     public interface IUserService
     {

@@ -1,7 +1,7 @@
-﻿using eNote.Application.Common.Paging;
+using eNote.Application.Common.Paging;
 using eNote.Application.Features.InstrumentRentals.Search;
 
-namespace eNote.Application.Features.InstrumentRentals.Services.Interfaces
+namespace eNote.Application.Features.InstrumentRentals.Services
 {
     public interface IRentalQueryService
     {

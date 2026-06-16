@@ -2,7 +2,7 @@ using eNote.API.Controllers.Base;
 using eNote.Application.Common.Paging;
 using eNote.Application.Constants;
 using eNote.Application.Features.LectureNotes;
-using eNote.Application.Features.LectureNotes.Services.Interfaces;
+using eNote.Application.Features.LectureNotes.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -27,14 +27,14 @@ namespace eNote.API.Controllers.LectureNotes
         }
 
         [HttpPost]
-        public async Task<ActionResult<LectureNoteDto>> Create(int lectureId, [FromBody] LectureNoteCreateRequest request)
+        public async Task<ActionResult<LectureNoteDto>> Create(int lectureId, [FromBody] LectureNoteRequest request)
         {
             var dto = await service.CreateAsync(lectureId, request);
             return CreatedAtAction(nameof(GetById), new { lectureId, noteId = dto.Id }, dto);
         }
 
         [HttpPut("{noteId:int}")]
-        public async Task<ActionResult<LectureNoteDto>> Update(int lectureId, int noteId, [FromBody] LectureNoteUpdateRequest request)
+        public async Task<ActionResult<LectureNoteDto>> Update(int lectureId, int noteId, [FromBody] LectureNoteRequest request)
         {
             var dto = await service.UpdateAsync(lectureId, noteId, request);
             return Ok(dto);

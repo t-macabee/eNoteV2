@@ -61,5 +61,36 @@ namespace eNote.Application.Common.Paging
                 TotalCount = total
             };
         }
+
+        public static async Task<PagedResult<TModel>> ToPagedResultAsync<TEntity, TCtx, TModel>
+            (this IQueryable<TEntity> query, int page, int pageSize, bool includeTotalCount,
+            Func<IReadOnlyList<TEntity>, Task<TCtx>> loadContext, Func<TEntity, TCtx, TModel> map,
+            Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>>? orderBy = null, CancellationToken ct = default)
+        {
+            int? total = null;
+
+            if (includeTotalCount)
+                total = await query.CountAsync(ct);
+
+            (page, pageSize) = PagingLimits.Normalize(page, pageSize);
+
+            if (orderBy is not null)
+                query = orderBy(query);
+
+            var entities = await query
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync(ct);
+
+            var ctx = await loadContext(entities);
+
+            return new PagedResult<TModel>
+            {
+                Items = [.. entities.Select(e => map(e, ctx))],
+                Page = page,
+                PageSize = pageSize,
+                TotalCount = total
+            };
+        }
     }
 }

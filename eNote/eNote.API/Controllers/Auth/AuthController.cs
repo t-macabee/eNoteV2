@@ -1,6 +1,6 @@
-﻿using eNote.API.Controllers.Base;
+using eNote.API.Controllers.Base;
 using eNote.Application.Features.Auth;
-using eNote.Application.Features.Auth.Services.Interfaces;
+using eNote.Application.Features.Auth.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 

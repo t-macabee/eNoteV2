@@ -1,4 +1,4 @@
-﻿namespace eNote.Application.Features.InstrumentRentals.Services.Interfaces
+namespace eNote.Application.Features.InstrumentRentals.Services
 {
     public interface IRentalCommandService
     {

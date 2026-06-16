@@ -3,9 +3,9 @@ using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Common.Time;
-using eNote.Application.Features.Announcements.Services.Interfaces;
-using eNote.Application.Features.MusicStores.Services.Interfaces;
-using eNote.Application.Features.Users.Services.Interfaces;
+using eNote.Application.Features.Announcements.Services;
+using eNote.Application.Features.MusicStores.Services;
+using eNote.Application.Features.Users.Services;
 using eNote.Domain.Entities;
 using eNote.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
@@ -52,7 +52,7 @@ namespace eNote.Application.Features.Announcements.Services
             return [.. items.Select(MapToDto)];
         }
 
-        public async Task<AnnouncementDto> CreateForCourseAsync(int courseId, AnnouncementCreateRequest request)
+        public async Task<AnnouncementDto> CreateForCourseAsync(int courseId, AnnouncementRequest request)
         {
             var instructor = await resolver.GetInstructorAsync(currentUserService.UserId);
 
@@ -80,6 +80,15 @@ namespace eNote.Application.Features.Announcements.Services
             return await LoadDtoAsync(entity.Id);
         }
 
+        public async Task<AnnouncementDto> GetByIdForCourseAsync(int courseId, int announcementId)
+        {
+            var entity = await GetCourseAnnouncementQuery(courseId)
+                .FirstOrDefaultAsync(a => a.Id == announcementId)
+                ?? throw new NotFoundException(Messages.AnnouncementNotFound);
+
+            return MapToDto(entity);
+        }
+
         public async Task<IReadOnlyList<AnnouncementDto>> GetForCourseAsync(int courseId)
         {
             var items = await GetCourseAnnouncementQuery(courseId)
@@ -89,7 +98,7 @@ namespace eNote.Application.Features.Announcements.Services
             return [.. items.Select(MapToDto)];
         }
 
-        public async Task<AnnouncementDto> UpdateForCourseAsync(int courseId, int announcementId, AnnouncementUpdateRequest request)
+        public async Task<AnnouncementDto> UpdateForCourseAsync(int courseId, int announcementId, AnnouncementRequest request)
         {
             var entity = await GetCourseAnnouncementQuery(courseId, track: true)
                 .FirstOrDefaultAsync(a => a.Id == announcementId)
@@ -115,7 +124,7 @@ namespace eNote.Application.Features.Announcements.Services
             await context.SaveChangesAsync();
         }
 
-        public async Task<AnnouncementDto> CreateForStoreAsync(AnnouncementCreateRequest request)
+        public async Task<AnnouncementDto> CreateForStoreAsync(AnnouncementRequest request)
         {
             var storeId = await storeContext.GetActiveStoreAsync(currentUserService.UserId);
 
@@ -128,6 +137,19 @@ namespace eNote.Application.Features.Announcements.Services
             await context.SaveChangesAsync();
 
             return await LoadDtoAsync(entity.Id);
+        }
+
+        public async Task<AnnouncementDto> GetByIdForStoreAsync(int announcementId)
+        {
+            var storeId = await storeContext.GetActiveStoreAsync(currentUserService.UserId);
+
+            var entity = await context.Set<Announcement>()
+                .AsNoTracking()
+                .Include(a => a.MusicStore)
+                .FirstOrDefaultAsync(a => a.Id == announcementId && a.MusicStoreId == storeId)
+                ?? throw new NotFoundException(Messages.AnnouncementNotFound);
+
+            return MapToDto(entity);
         }
 
         public async Task<IReadOnlyList<AnnouncementDto>> GetForStoreAsync()
@@ -144,7 +166,7 @@ namespace eNote.Application.Features.Announcements.Services
             return [.. items.Select(MapToDto)];
         }
 
-        public async Task<AnnouncementDto> UpdateForStoreAsync(int announcementId, AnnouncementUpdateRequest request)
+        public async Task<AnnouncementDto> UpdateForStoreAsync(int announcementId, AnnouncementRequest request)
         {
             var storeId = await storeContext.GetActiveStoreAsync(currentUserService.UserId);
 

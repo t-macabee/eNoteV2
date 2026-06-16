@@ -3,8 +3,8 @@ using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Paging;
 using eNote.Application.Common.Persistence;
-using eNote.Application.Features.LectureNotes.Services.Interfaces;
-using eNote.Application.Features.Users.Services.Interfaces;
+using eNote.Application.Features.LectureNotes.Services;
+using eNote.Application.Features.Users.Services;
 using eNote.Domain.Entities;
 using eNote.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
@@ -31,7 +31,7 @@ namespace eNote.Application.Features.LectureNotes.Services
             return Map(entity);
         }
 
-        public async Task<LectureNoteDto> CreateAsync(int lectureId, LectureNoteCreateRequest request)
+        public async Task<LectureNoteDto> CreateAsync(int lectureId, LectureNoteRequest request)
         {
             var instructor = await resolver.GetInstructorAsync(currentUserService.UserId);
 
@@ -53,7 +53,7 @@ namespace eNote.Application.Features.LectureNotes.Services
             return Map(entity);
         }
 
-        public async Task<LectureNoteDto> UpdateAsync(int lectureId, int noteId, LectureNoteUpdateRequest request)
+        public async Task<LectureNoteDto> UpdateAsync(int lectureId, int noteId, LectureNoteRequest request)
         {
             var entity = await GetNoteForInstructorAsync(lectureId, noteId, currentUserService.UserId, track: true);
 

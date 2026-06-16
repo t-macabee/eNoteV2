@@ -1,7 +1,7 @@
-﻿using eNote.Application.Common.Paging;
+using eNote.Application.Common.Paging;
 using eNote.Application.Features.Instruments.Search;
 
-namespace eNote.Application.Features.Instruments.Services.Interfaces
+namespace eNote.Application.Features.Instruments.Services
 {
     public interface IInstrumentService
     {

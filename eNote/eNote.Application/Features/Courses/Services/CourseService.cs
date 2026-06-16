@@ -3,8 +3,8 @@ using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Paging;
 using eNote.Application.Common.Persistence;
-using eNote.Application.Features.Courses.Services.Interfaces;
-using eNote.Application.Features.Users.Services.Interfaces;
+using eNote.Application.Features.Courses.Services;
+using eNote.Application.Features.Users.Services;
 using eNote.Domain.Entities;
 using eNote.Domain.Enums;
 using MapsterMapper;
@@ -68,7 +68,7 @@ namespace eNote.Application.Features.Courses.Services
             return await query.ToPagedResultAsync(page, pageSize, includeTotalCount: true, mapper.Map<CourseDto>, q => q.OrderByDescending(x => x.StartDate));
         }
 
-        public async Task<CourseDto> CreateAsync(CourseCreateRequest request)
+        public async Task<CourseDto> CreateAsync(CourseRequest request)
         {
             var instructor = await resolver.GetInstructorAsync(currentUserService.UserId);
 
@@ -93,7 +93,7 @@ namespace eNote.Application.Features.Courses.Services
             return mapper.Map<CourseDto>(entity);
         }
 
-        public async Task<CourseDto> UpdateAsync(int id, CourseUpdateRequest request)
+        public async Task<CourseDto> UpdateAsync(int id, CourseRequest request)
         {
             var instructor = await resolver.GetInstructorAsync(currentUserService.UserId);
 

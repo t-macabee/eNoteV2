@@ -1,7 +1,7 @@
-﻿using eNote.Application.Common.Exceptions;
+using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Persistence;
-using eNote.Application.Features.MusicStores.Services.Interfaces;
+using eNote.Application.Features.MusicStores.Services;
 using eNote.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 

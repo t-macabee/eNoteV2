@@ -1,7 +1,7 @@
 using eNote.API.Controllers.Base;
 using eNote.Application.Constants;
 using eNote.Application.Features.Announcements;
-using eNote.Application.Features.Announcements.Services.Interfaces;
+using eNote.Application.Features.Announcements.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -18,15 +18,22 @@ namespace eNote.API.Controllers.Announcements
             return Ok(result);
         }
 
+        [HttpGet("{announcementId:int}")]
+        public async Task<ActionResult<AnnouncementDto>> GetById(int announcementId)
+        {
+            var result = await announcementService.GetByIdForStoreAsync(announcementId);
+            return Ok(result);
+        }
+
         [HttpPost]
-        public async Task<ActionResult<AnnouncementDto>> Create([FromBody] AnnouncementCreateRequest request)
+        public async Task<ActionResult<AnnouncementDto>> Create([FromBody] AnnouncementRequest request)
         {
             var result = await announcementService.CreateForStoreAsync(request);
-            return StatusCode(201, result);
+            return CreatedAtAction(nameof(GetById), new { announcementId = result.Id }, result);
         }
 
         [HttpPut("{announcementId:int}")]
-        public async Task<ActionResult<AnnouncementDto>> Update(int announcementId, [FromBody] AnnouncementUpdateRequest request)
+        public async Task<ActionResult<AnnouncementDto>> Update(int announcementId, [FromBody] AnnouncementRequest request)
         {
             var result = await announcementService.UpdateForStoreAsync(announcementId, request);
             return Ok(result);

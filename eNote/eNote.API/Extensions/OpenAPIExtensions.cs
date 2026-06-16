@@ -18,7 +18,7 @@ namespace eNote.API.Extensions
         }
     }
 
-    public class BearerSecurityTransformer : IOpenApiDocumentTransformer
+    public sealed class BearerSecurityTransformer : IOpenApiDocumentTransformer
     {
         public Task TransformAsync(OpenApiDocument document, OpenApiDocumentTransformerContext context, CancellationToken cancellationToken)
         {

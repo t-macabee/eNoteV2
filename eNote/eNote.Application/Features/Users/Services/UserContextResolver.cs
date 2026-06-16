@@ -1,6 +1,6 @@
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Persistence;
-using eNote.Application.Features.Users.Services.Interfaces;
+using eNote.Application.Features.Users.Services;
 using eNote.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
@@ -29,12 +29,22 @@ namespace eNote.Application.Features.Users.Services
         public async Task<string> GetStudentDisplayNameAsync(Student student)
         {
             var user = await identity.GetUserAsync(student.AppUserId);
+            return user is null ? $"Student {student.Id}" : FormatName(user);
+        }
 
-            if (user is null)
-                return $"Student {student.Id}";
+        public async Task<IReadOnlyDictionary<int, string>> GetStudentDisplayNamesAsync(IEnumerable<Student> students)
+        {
+            var list = students.ToList();
+            var users = await identity.GetUsersBulkAsync(list.Select(s => s.AppUserId));
 
+            return list.ToDictionary(
+                s => s.Id,
+                s => users.TryGetValue(s.AppUserId, out var user) ? FormatName(user) : $"Student {s.Id}");
+        }
+
+        private static string FormatName(UserIdentityDto user)
+        {
             var fullName = $"{user.FirstName} {user.LastName}".Trim();
-
             return string.IsNullOrWhiteSpace(fullName) ? user.Username : fullName;
         }
     }

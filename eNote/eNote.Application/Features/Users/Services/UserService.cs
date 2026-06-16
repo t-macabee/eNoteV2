@@ -1,11 +1,11 @@
-﻿using eNote.Application.Common.Exceptions;
+using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Common.Time;
 using eNote.Application.Constants;
 using eNote.Application.Features.Auth;
 using eNote.Application.Features.Users.Profiles;
-using eNote.Application.Features.Users.Services.Interfaces;
+using eNote.Application.Features.Users.Services;
 using eNote.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 

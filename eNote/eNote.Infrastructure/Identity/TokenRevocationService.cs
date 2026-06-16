@@ -1,6 +1,6 @@
 using eNote.Application.Common.Persistence;
 using eNote.Application.Common.Time;
-using eNote.Application.Features.Auth.Services.Interfaces;
+using eNote.Application.Features.Auth.Services;
 using eNote.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 

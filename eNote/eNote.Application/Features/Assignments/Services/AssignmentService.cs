@@ -4,8 +4,8 @@ using eNote.Application.Common.Localization;
 using eNote.Application.Common.Paging;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Common.Time;
-using eNote.Application.Features.Assignments.Services.Interfaces;
-using eNote.Application.Features.Users.Services.Interfaces;
+using eNote.Application.Features.Assignments.Services;
+using eNote.Application.Features.Users.Services;
 using eNote.Domain.Entities;
 using eNote.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
@@ -32,7 +32,7 @@ namespace eNote.Application.Features.Assignments.Services
             return Map(entity);
         }
 
-        public async Task<AssignmentDto> CreateAsync(int lectureId, AssignmentCreateRequest request)
+        public async Task<AssignmentDto> CreateAsync(int lectureId, AssignmentRequest request)
         {
             var instructor = await resolver.GetInstructorAsync(currentUserService.UserId);
 
@@ -52,7 +52,7 @@ namespace eNote.Application.Features.Assignments.Services
             return Map(entity);
         }
 
-        public async Task<AssignmentDto> UpdateAsync(int lectureId, int assignmentId, AssignmentUpdateRequest request)
+        public async Task<AssignmentDto> UpdateAsync(int lectureId, int assignmentId, AssignmentRequest request)
         {
             var entity = await GetAssignmentForInstructorAsync(lectureId, assignmentId, track: true);
 
@@ -145,15 +145,13 @@ namespace eNote.Application.Features.Assignments.Services
                 .Where(x => x.AssignmentId == assignmentId);
 
             return await query.ToPagedResultAsync(page, pageSize, includeTotalCount: true,
-                x => MapSubmissionAsync(x, x.Student),
+                items => resolver.GetStudentDisplayNamesAsync(items.Select(x => x.Student)),
+                (x, names) => MapSubmission(x, x.Student, names.GetValueOrDefault(x.StudentId, $"Student {x.StudentId}")),
                 q => q.OrderBy(x => x.StudentId));
         }
 
         public async Task<AssignmentSubmissionDto> GradeAsync(int lectureId, int assignmentId, int submissionId, GradeAssignmentRequest request)
         {
-            if (request.Grade is < 0 or > 100)
-                throw new BusinessException(Messages.AssignmentInvalidGrade);
-
             await GetAssignmentForInstructorAsync(lectureId, assignmentId);
 
             var submission = await context.Set<AssignmentSubmission>()

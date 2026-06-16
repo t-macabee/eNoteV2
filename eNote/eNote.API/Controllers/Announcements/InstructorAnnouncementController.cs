@@ -1,7 +1,7 @@
 using eNote.API.Controllers.Base;
 using eNote.Application.Constants;
 using eNote.Application.Features.Announcements;
-using eNote.Application.Features.Announcements.Services.Interfaces;
+using eNote.Application.Features.Announcements.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -18,15 +18,22 @@ namespace eNote.API.Controllers.Announcements
             return Ok(result);
         }
 
+        [HttpGet("{announcementId:int}")]
+        public async Task<ActionResult<AnnouncementDto>> GetById(int courseId, int announcementId)
+        {
+            var result = await announcementService.GetByIdForCourseAsync(courseId, announcementId);
+            return Ok(result);
+        }
+
         [HttpPost]
-        public async Task<ActionResult<AnnouncementDto>> Create(int courseId, [FromBody] AnnouncementCreateRequest request)
+        public async Task<ActionResult<AnnouncementDto>> Create(int courseId, [FromBody] AnnouncementRequest request)
         {
             var result = await announcementService.CreateForCourseAsync(courseId, request);
-            return StatusCode(201, result);
+            return CreatedAtAction(nameof(GetById), new { courseId, announcementId = result.Id }, result);
         }
 
         [HttpPut("{announcementId:int}")]
-        public async Task<ActionResult<AnnouncementDto>> Update(int courseId, int announcementId, [FromBody] AnnouncementUpdateRequest request)
+        public async Task<ActionResult<AnnouncementDto>> Update(int courseId, int announcementId, [FromBody] AnnouncementRequest request)
         {
             var result = await announcementService.UpdateForCourseAsync(courseId, announcementId, request);
             return Ok(result);

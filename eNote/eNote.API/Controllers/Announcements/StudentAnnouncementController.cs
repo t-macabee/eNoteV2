@@ -1,7 +1,7 @@
 using eNote.API.Controllers.Base;
 using eNote.Application.Constants;
 using eNote.Application.Features.Announcements;
-using eNote.Application.Features.Announcements.Services.Interfaces;
+using eNote.Application.Features.Announcements.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 

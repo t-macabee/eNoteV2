@@ -3,8 +3,8 @@ using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Paging;
 using eNote.Application.Common.Persistence;
-using eNote.Application.Features.Lectures.Services.Interfaces;
-using eNote.Application.Features.Users.Services.Interfaces;
+using eNote.Application.Features.Lectures.Services;
+using eNote.Application.Features.Users.Services;
 
 using eNote.Domain.Entities;
 using eNote.Domain.Enums;
@@ -198,11 +198,12 @@ namespace eNote.Application.Features.Lectures.Services
                 .Where(x => x.LectureId == lectureId);
 
             return await query.ToPagedResultAsync(page, pageSize, includeTotalCount: true,
-                async a => new AttendanceDto
+                items => resolver.GetStudentDisplayNamesAsync(items.Select(a => a.Student)),
+                (a, names) => new AttendanceDto
                 {
                     Id = a.Id,
                     StudentId = a.StudentId,
-                    StudentName = await resolver.GetStudentDisplayNameAsync(a.Student),
+                    StudentName = names.GetValueOrDefault(a.StudentId, $"Student {a.StudentId}"),
                     AttendanceStatus = a.AttendanceStatus
                 },
                 q => q.OrderBy(x => x.StudentId));

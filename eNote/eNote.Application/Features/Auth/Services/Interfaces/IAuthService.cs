@@ -1,4 +1,4 @@
-﻿namespace eNote.Application.Features.Auth.Services.Interfaces
+namespace eNote.Application.Features.Auth.Services
 {
     public interface IAuthService
     {

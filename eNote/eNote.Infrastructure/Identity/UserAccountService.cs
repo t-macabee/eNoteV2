@@ -1,5 +1,5 @@
 using eNote.Application.Common.Localization;
-using eNote.Application.Features.Users.Services.Interfaces;
+using eNote.Application.Features.Users.Services;
 using Microsoft.AspNetCore.Identity;
 
 namespace eNote.Infrastructure.Identity

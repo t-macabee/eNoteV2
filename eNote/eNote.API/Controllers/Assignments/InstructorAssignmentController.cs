@@ -2,7 +2,7 @@ using eNote.API.Controllers.Base;
 using eNote.Application.Common.Paging;
 using eNote.Application.Constants;
 using eNote.Application.Features.Assignments;
-using eNote.Application.Features.Assignments.Services.Interfaces;
+using eNote.Application.Features.Assignments.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -27,14 +27,14 @@ namespace eNote.API.Controllers.Assignments
         }
 
         [HttpPost]
-        public async Task<ActionResult<AssignmentDto>> Create(int lectureId, [FromBody] AssignmentCreateRequest request)
+        public async Task<ActionResult<AssignmentDto>> Create(int lectureId, [FromBody] AssignmentRequest request)
         {
             var dto = await service.CreateAsync(lectureId, request);
             return CreatedAtAction(nameof(GetById), new { lectureId, assignmentId = dto.Id }, dto);
         }
 
         [HttpPut("{assignmentId:int}")]
-        public async Task<ActionResult<AssignmentDto>> Update(int lectureId, int assignmentId, [FromBody] AssignmentUpdateRequest request)
+        public async Task<ActionResult<AssignmentDto>> Update(int lectureId, int assignmentId, [FromBody] AssignmentRequest request)
         {
             var dto = await service.UpdateAsync(lectureId, assignmentId, request);
             return Ok(dto);
