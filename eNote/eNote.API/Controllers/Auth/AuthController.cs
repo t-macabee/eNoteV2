@@ -1,16 +1,13 @@
-﻿using eNote.Application.Common.Localization;
+﻿using eNote.API.Controllers.Base;
 using eNote.Application.Features.Auth;
 using eNote.Application.Features.Auth.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
 
 namespace eNote.API.Controllers.Auth
 {
-    [ApiController]
     [Route("api/auth")]
-    public class AuthController(IAuthService authService) : ControllerBase
+    public class AuthController(IAuthService authService) : CoreController
     {
         [AllowAnonymous]
         [HttpPost("login")]
@@ -40,20 +37,11 @@ namespace eNote.API.Controllers.Auth
             return Ok(response);
         }
 
-        [Authorize]
         [HttpPost("logout")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         public async Task<IActionResult> Logout()
         {
-            var jti = User.FindFirstValue(JwtRegisteredClaimNames.Jti);
-            var exp = User.FindFirstValue(JwtRegisteredClaimNames.Exp);
-
-            if (string.IsNullOrWhiteSpace(jti) || exp is null || !long.TryParse(exp, out var unixSeconds))
-                return BadRequest(new { message = Messages.BadRequest });
-
-            var expiresAt = DateTimeOffset.FromUnixTimeSeconds(unixSeconds).UtcDateTime;
-            await authService.LogoutAsync(jti, expiresAt, HttpContext.RequestAborted);
-
+            await authService.LogoutAsync(CurrentTokenJti, CurrentTokenExpiresAtUtc, HttpContext.RequestAborted);
             return NoContent();
         }
     }
