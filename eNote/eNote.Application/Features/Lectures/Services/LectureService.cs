@@ -3,7 +3,6 @@ using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Paging;
 using eNote.Application.Common.Persistence;
-using eNote.Application.Common.Time;
 using eNote.Application.Features.Lectures.Services.Interfaces;
 using eNote.Application.Features.Users;
 using eNote.Application.Features.Users.Services.Interfaces;
@@ -14,7 +13,7 @@ using Microsoft.Extensions.Logging;
 
 namespace eNote.Application.Features.Lectures.Services
 {
-    public class LectureService(IAppDbContext context, IClock clock, IUserIdentityService identity, ILogger<LectureService> logger, ICurrentUserService currentUserService) : ILectureService
+    public class LectureService(IAppDbContext context, IUserIdentityService identity, ILogger<LectureService> logger, ICurrentUserService currentUserService) : ILectureService
     {
         public async Task<LectureDto> GetByIdForInstructorAsync(int id)
         {
@@ -101,7 +100,6 @@ namespace eNote.Application.Features.Lectures.Services
                 request.LectureTime,
                 request.Capacity
             );
-            entity.UpdatedAt = clock.UtcNow;
             entity.UpdatedById = currentUserService.UserId;
 
             await context.SaveChangesAsync();
@@ -114,7 +112,6 @@ namespace eNote.Application.Features.Lectures.Services
             var entity = await GetLectureForInstructorAsync(id, currentUserService.UserId, track: true);
 
             entity.SoftDelete();
-            entity.UpdatedAt = clock.UtcNow;
             entity.UpdatedById = currentUserService.UserId;
 
             await context.SaveChangesAsync();
@@ -130,7 +127,6 @@ namespace eNote.Application.Features.Lectures.Services
                 throw new BusinessException(Messages.LectureCancelled);
 
             entity.Cancel();
-            entity.UpdatedAt = clock.UtcNow;
             entity.UpdatedById = currentUserService.UserId;
 
             await context.SaveChangesAsync();

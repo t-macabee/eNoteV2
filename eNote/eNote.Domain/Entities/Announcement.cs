@@ -6,7 +6,7 @@ namespace eNote.Domain.Entities
     {
         public string Title { get; private set; } = null!;
         public string Content { get; private set; } = null!;
-        public DateTime PublishedAt { get; private set; } = DateTime.UtcNow;
+        public DateTime PublishedAt { get; private set; }
         public bool IsActive { get; private set; } = true;
 
         public int? CourseId { get; private set; }
@@ -17,13 +17,13 @@ namespace eNote.Domain.Entities
 
         protected Announcement() { }
 
-        public Announcement(string title, string content, int? courseId, int? musicStoreId)
+        public Announcement(string title, string content, int? courseId, int? musicStoreId, DateTime publishedAt)
         {
             Title = title;
             Content = content;
             CourseId = courseId;
             MusicStoreId = musicStoreId;
-            PublishedAt = DateTime.UtcNow;
+            PublishedAt = publishedAt;
             IsActive = true;
         }
 

@@ -3,7 +3,6 @@ using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Paging;
 using eNote.Application.Common.Persistence;
-using eNote.Application.Common.Time;
 using eNote.Application.Features.Courses.Services.Interfaces;
 using eNote.Application.Features.Users;
 using eNote.Domain.Entities;
@@ -13,7 +12,7 @@ using Microsoft.Extensions.Logging;
 
 namespace eNote.Application.Features.Courses.Services
 {
-    public class CourseService(IAppDbContext context, IClock clock, ICurrentUserService currentUserService, ILogger<CourseService> logger) : ICourseService
+    public class CourseService(IAppDbContext context, ICurrentUserService currentUserService, ILogger<CourseService> logger) : ICourseService
     {
         public async Task<CourseDto> GetByIdForInstructorAsync(int id)
         {
@@ -110,7 +109,6 @@ namespace eNote.Application.Features.Courses.Services
                 request.EndDate
             );
             entity.SetPublishedStatus(request.IsPublished);
-            entity.UpdatedAt = clock.UtcNow;
             entity.UpdatedById = currentUserService.UserId;
 
             await context.SaveChangesAsync();
@@ -128,13 +126,11 @@ namespace eNote.Application.Features.Courses.Services
                 ?? throw new NotFoundException(Messages.CourseNotFound);
 
             entity.SoftDelete();
-            entity.UpdatedAt = clock.UtcNow;
             entity.UpdatedById = currentUserService.UserId;
 
             foreach (var lecture in entity.Lectures)
             {
                 lecture.SoftDelete();
-                lecture.UpdatedAt = clock.UtcNow;
                 lecture.UpdatedById = currentUserService.UserId;
             }
 
@@ -176,7 +172,6 @@ namespace eNote.Application.Features.Courses.Services
                 ?? throw new BusinessException(Messages.StudentNotEnrolled);
 
             enrollment.UpdateStatus(EnrollmentStatus.Canceled);
-            enrollment.UpdatedAt = clock.UtcNow;
 
             await context.SaveChangesAsync();
 

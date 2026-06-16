@@ -73,7 +73,8 @@ namespace eNote.Application.Features.Announcements.Services
                 request.Title.Trim(),
                 request.Content.Trim(),
                 courseId,
-                null
+                null,
+                clock.UtcNow
             )
             {
                 CreatedById = currentUserService.UserId
@@ -101,7 +102,6 @@ namespace eNote.Application.Features.Announcements.Services
                 ?? throw new NotFoundException(Messages.AnnouncementNotFound);
 
             entity.UpdateDetails(request.Title.Trim(), request.Content.Trim());
-            entity.UpdatedAt = clock.UtcNow;
             entity.UpdatedById = currentUserService.UserId;
 
             await context.SaveChangesAsync();
@@ -116,7 +116,6 @@ namespace eNote.Application.Features.Announcements.Services
                 ?? throw new NotFoundException(Messages.AnnouncementNotFound);
 
             entity.SoftDelete();
-            entity.UpdatedAt = clock.UtcNow;
             entity.UpdatedById = currentUserService.UserId;
 
             await context.SaveChangesAsync();
@@ -126,7 +125,7 @@ namespace eNote.Application.Features.Announcements.Services
         {
             var storeId = await storeContext.GetActiveStoreAsync(currentUserService.UserId);
 
-            var entity = new Announcement(request.Title.Trim(), request.Content.Trim(), null, storeId)
+            var entity = new Announcement(request.Title.Trim(), request.Content.Trim(), null, storeId, clock.UtcNow)
             {
                 CreatedById = currentUserService.UserId
             };
@@ -160,7 +159,6 @@ namespace eNote.Application.Features.Announcements.Services
                 ?? throw new NotFoundException(Messages.AnnouncementNotFound);
 
             entity.UpdateDetails(request.Title.Trim(), request.Content.Trim());
-            entity.UpdatedAt = clock.UtcNow;
             entity.UpdatedById = currentUserService.UserId;
 
             await context.SaveChangesAsync();
@@ -177,7 +175,6 @@ namespace eNote.Application.Features.Announcements.Services
                 ?? throw new NotFoundException(Messages.AnnouncementNotFound);
 
             entity.SoftDelete();
-            entity.UpdatedAt = clock.UtcNow;
             entity.UpdatedById = currentUserService.UserId;
 
             await context.SaveChangesAsync();

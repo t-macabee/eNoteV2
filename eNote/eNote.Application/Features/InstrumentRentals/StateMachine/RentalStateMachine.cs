@@ -85,7 +85,6 @@ namespace eNote.Application.Features.InstrumentRentals.StateMachine
 
         private static void ApplyAuditFields(InstrumentRental rental, RentalTransitionContext context, IClock time)
         {
-            rental.UpdatedAt = time.UtcNow;
             rental.UpdatedById = context.UserId;
         }
 

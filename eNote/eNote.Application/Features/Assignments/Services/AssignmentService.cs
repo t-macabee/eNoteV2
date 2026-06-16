@@ -62,7 +62,6 @@ namespace eNote.Application.Features.Assignments.Services
                 request.Description.Trim(),
                 request.DueAt
             );
-            entity.UpdatedAt = clock.UtcNow;
             entity.UpdatedById = currentUserService.UserId;
 
             await context.SaveChangesAsync();
@@ -75,7 +74,6 @@ namespace eNote.Application.Features.Assignments.Services
             var entity = await GetAssignmentForInstructorAsync(lectureId, assignmentId, track: true);
 
             entity.SoftDelete();
-            entity.UpdatedAt = clock.UtcNow;
             entity.UpdatedById = currentUserService.UserId;
 
             await context.SaveChangesAsync();
@@ -134,7 +132,6 @@ namespace eNote.Application.Features.Assignments.Services
             }
 
             existing.Submit(request.FilePath?.Trim(), clock.UtcNow);
-            existing.UpdatedAt = clock.UtcNow;
             existing.UpdatedById = currentUserService.UserId;
 
             await context.SaveChangesAsync();
@@ -185,7 +182,6 @@ namespace eNote.Application.Features.Assignments.Services
                 ?? throw new NotFoundException(Messages.AssignmentSubmissionNotFound);
 
             submission.SetGrade(request.Grade);
-            submission.UpdatedAt = clock.UtcNow;
             submission.UpdatedById = currentUserService.UserId;
 
             await context.SaveChangesAsync();

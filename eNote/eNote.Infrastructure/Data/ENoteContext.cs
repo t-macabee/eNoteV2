@@ -1,4 +1,6 @@
 ﻿using eNote.Application.Common.Persistence;
+using eNote.Application.Common.Time;
+using eNote.Domain.Entities.Base;
 using eNote.Infrastructure.Data.Seed;
 using eNote.Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -7,7 +9,7 @@ using Microsoft.EntityFrameworkCore.Storage;
 
 namespace eNote.Infrastructure.Data
 {
-    public class ENoteContext(DbContextOptions<ENoteContext> options) : IdentityDbContext<AppUser, AppRole, int>(options), IAppDbContext
+    public class ENoteContext(DbContextOptions<ENoteContext> options, IClock clock) : IdentityDbContext<AppUser, AppRole, int>(options), IAppDbContext
     {
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -16,6 +18,22 @@ namespace eNote.Infrastructure.Data
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(ENoteContext).Assembly);
 
             ModelBuilderSeed.Seed(modelBuilder);
+        }
+
+        public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+        {
+            var now = clock.UtcNow;
+
+            foreach (var entry in ChangeTracker.Entries<AuditableEntity>())
+            {
+                if (entry.State == EntityState.Added)
+                    entry.Entity.CreatedAt = now;
+
+                if (entry.State == EntityState.Modified)
+                    entry.Entity.UpdatedAt = now;
+            }
+
+            return await base.SaveChangesAsync(cancellationToken);
         }
 
         public async Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default)

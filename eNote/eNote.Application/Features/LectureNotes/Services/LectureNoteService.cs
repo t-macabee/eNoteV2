@@ -3,7 +3,6 @@ using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Paging;
 using eNote.Application.Common.Persistence;
-using eNote.Application.Common.Time;
 using eNote.Application.Features.LectureNotes.Services.Interfaces;
 using eNote.Application.Features.Users;
 using eNote.Domain.Entities;
@@ -12,7 +11,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Application.Features.LectureNotes.Services
 {
-    public class LectureNoteService(IAppDbContext context, IClock clock, ICurrentUserService currentUserService) : ILectureNoteService
+    public class LectureNoteService(IAppDbContext context, ICurrentUserService currentUserService) : ILectureNoteService
     {
         public async Task<PagedResult<LectureNoteDto>> GetForLectureAsync(int lectureId, int page, int pageSize)
         {
@@ -59,7 +58,6 @@ namespace eNote.Application.Features.LectureNotes.Services
             var entity = await GetNoteForInstructorAsync(lectureId, noteId, currentUserService.UserId, track: true);
 
             entity.UpdateDetails(request.Title.Trim(), request.Content.Trim());
-            entity.UpdatedAt = clock.UtcNow;
             entity.UpdatedById = currentUserService.UserId;
 
             await context.SaveChangesAsync();
@@ -72,7 +70,6 @@ namespace eNote.Application.Features.LectureNotes.Services
             var entity = await GetNoteForInstructorAsync(lectureId, noteId, currentUserService.UserId, track: true);
 
             entity.SoftDelete();
-            entity.UpdatedAt = clock.UtcNow;
             entity.UpdatedById = currentUserService.UserId;
 
             await context.SaveChangesAsync();

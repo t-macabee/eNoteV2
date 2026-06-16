@@ -1,4 +1,5 @@
-﻿using eNote.Application.Features.Auth.Services.Interfaces;
+﻿using eNote.Application.Common.Time;
+using eNote.Application.Features.Auth.Services.Interfaces;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
@@ -7,7 +8,7 @@ using System.Text;
 
 namespace eNote.Infrastructure.Identity
 {
-    public class TokenService(IConfiguration configuration) : ITokenService
+    public class TokenService(IConfiguration configuration, IClock clock) : ITokenService
     {
         public string GenerateToken(int userId, string username, IList<string> roles)
         {
@@ -31,7 +32,7 @@ namespace eNote.Infrastructure.Identity
                 issuer: configuration["Jwt:Issuer"],
                 audience: configuration["Jwt:Audience"],
                 claims: claims,
-                expires: DateTime.UtcNow.AddDays(expirationDays),
+                expires: clock.UtcNow.AddDays(expirationDays),
                 signingCredentials: creds
             );
 
