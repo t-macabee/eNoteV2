@@ -1,3 +1,4 @@
+using eNote.Domain.Enums;
 using System.ComponentModel.DataAnnotations;
 
 namespace eNote.Application.Features.Lectures
@@ -15,6 +16,9 @@ namespace eNote.Application.Features.Lectures
 
         [Required]
         public int Duration { get; set; }
+
+        [Required]
+        public LectureType LectureType { get; set; }
 
         public int? Capacity { get; set; }
         public int? CourseId { get; set; }

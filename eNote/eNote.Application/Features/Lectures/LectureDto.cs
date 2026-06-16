@@ -1,3 +1,5 @@
+using eNote.Domain.Enums;
+
 namespace eNote.Application.Features.Lectures
 {
     public class LectureDto
@@ -8,6 +10,8 @@ namespace eNote.Application.Features.Lectures
         public DateTime LectureTime { get; set; }
         public int Duration { get; set; }
         public int? Capacity { get; set; }
+        public LectureType LectureType { get; set; }
+        public LectureStatus LectureStatus { get; set; }
         public bool IsCancelled { get; set; }
         public int AttendeeCount { get; set; }
     }

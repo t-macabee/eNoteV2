@@ -74,7 +74,7 @@ namespace eNote.Application.Features.Lectures.Services
                 request.Location.Trim(),
                 request.Duration,
                 request.LectureTime,
-                default,
+                request.LectureType,
                 request.Capacity,
                 request.CourseId ?? 0
             );
@@ -297,6 +297,8 @@ namespace eNote.Application.Features.Lectures.Services
                 LectureTime = e.LectureTime,
                 Duration = e.Duration,
                 Capacity = e.Capacity,
+                LectureType = e.LectureType,
+                LectureStatus = e.LectureStatus,
                 IsCancelled = e.IsCancelled,
                 AttendeeCount = e.Attendances?.Count(a => a.AttendanceStatus == AttendanceStatus.Present) ?? 0
             };

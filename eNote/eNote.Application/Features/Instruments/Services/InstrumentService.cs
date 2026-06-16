@@ -103,12 +103,21 @@ namespace eNote.Application.Features.Instruments.Services
                 .FirstOrDefaultAsync(x => x.Id == id && x.MusicStoreId == employee.MusicStoreId)
                 ?? throw new NotFoundException(Messages.NotFound);
 
+            if (request.InstrumentTypeId.HasValue)
+            {
+                var typeExists = await context.Set<InstrumentType>()
+                    .AnyAsync(x => x.Id == request.InstrumentTypeId.Value);
+
+                if (!typeExists)
+                    throw new BusinessException(Messages.InstrumentTypeNotFound);
+            }
+
             entity.UpdateDetails(
                 request.Model?.Trim() ?? entity.Model,
                 request.Manufacturer?.Trim() ?? entity.Manufacturer,
                 request.Description?.Trim() ?? entity.Description,
                 request.ImagePath?.Trim() ?? entity.ImagePath,
-                entity.InstrumentTypeId
+                request.InstrumentTypeId ?? entity.InstrumentTypeId
             );
 
             await context.SaveChangesAsync();
