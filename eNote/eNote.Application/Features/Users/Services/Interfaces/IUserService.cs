@@ -1,6 +1,6 @@
 using eNote.Application.Features.Auth;
 
-namespace eNote.Application.Features.Users.Services
+namespace eNote.Application.Features.Users.Services.Interfaces
 {
     public interface IUserService
     {
@@ -10,5 +10,6 @@ namespace eNote.Application.Features.Users.Services
         Task<(int UserId, string? Error)> ProvisionUserAsync(UserProvisionRequest request);
         Task<(bool Success, string? Error)> UpdateProfileAsync(UpdateProfileRequest request);
         Task<(bool Success, string? Error)> ChangePasswordAsync(ChangePasswordRequest request);
+        Task UpdateMembershipAsync(int userId, UpdateMembershipRequest request);
     }
 }

@@ -1,12 +1,13 @@
 using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Persistence;
+using Microsoft.EntityFrameworkCore;
 using eNote.Application.Common.Time;
 using eNote.Application.Constants;
 using eNote.Application.Features.Auth;
 using eNote.Application.Features.Users.Profiles;
 using eNote.Domain.Entities;
-using Microsoft.EntityFrameworkCore;
+using eNote.Application.Features.Users.Services.Interfaces;
 
 namespace eNote.Application.Features.Users.Services
 {
@@ -73,6 +74,16 @@ namespace eNote.Application.Features.Users.Services
             UserProfileResponse? profile = await GetUserAsync(userId);
 
             return (profile, null);
+        }
+
+        public async Task UpdateMembershipAsync(int userId, UpdateMembershipRequest request)
+        {
+            var student = await context.Set<Student>()
+                .FirstOrDefaultAsync(s => s.AppUserId == userId)
+                ?? throw new NotFoundException(Messages.StudentProfileNotFound);
+
+            student.UpdateMembership(request.PaidUntil);
+            await context.SaveChangesAsync();
         }
 
         public Task<(bool Success, string? Error)> UpdateProfileAsync(UpdateProfileRequest request)
@@ -203,7 +214,8 @@ namespace eNote.Application.Features.Users.Services
                 user.FirstName,
                 user.LastName,
                 user.DateOfBirth,
-                user.Address
+                user.Address,
+                student.MembershipPaidUntil
             );
         }
 

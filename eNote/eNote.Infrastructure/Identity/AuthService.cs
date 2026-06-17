@@ -1,7 +1,7 @@
 using eNote.Application.Common.Localization;
 using eNote.Application.Features.Auth;
 using eNote.Application.Features.Auth.Services;
-using eNote.Application.Features.Users.Services;
+using eNote.Application.Features.Users.Services.Interfaces;
 using Microsoft.AspNetCore.Identity;
 
 namespace eNote.Infrastructure.Identity

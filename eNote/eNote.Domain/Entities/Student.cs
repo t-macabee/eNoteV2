@@ -17,10 +17,17 @@ namespace eNote.Domain.Entities
         {
         }
 
+        public DateTime? MembershipPaidUntil { get; private set; }
+
         public Student(int appUserId, DateTime enrollmentDate)
         {
             AppUserId = appUserId;
             EnrollmentDate = enrollmentDate;
+        }
+
+        public void UpdateMembership(DateTime? paidUntil)
+        {
+            MembershipPaidUntil = paidUntil;
         }
 
         public ICollection<Attendance> Attendances { get; private set; } = new List<Attendance>();
