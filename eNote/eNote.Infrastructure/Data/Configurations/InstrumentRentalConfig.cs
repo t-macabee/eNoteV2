@@ -9,6 +9,8 @@ namespace eNote.Infrastructure.Data.Configurations
     {
         public void Configure(EntityTypeBuilder<InstrumentRental> builder)
         {
+            builder.HasQueryFilter(r => r.Instrument.IsActive);
+
             builder.HasOne(x => x.StudentProfile)
                    .WithMany(s => s.InstrumentRentals)
                    .HasForeignKey(x => x.StudentProfileId)

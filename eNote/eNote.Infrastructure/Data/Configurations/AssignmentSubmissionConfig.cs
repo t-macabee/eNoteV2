@@ -8,6 +8,8 @@ namespace eNote.Infrastructure.Data.Configurations
     {
         public void Configure(EntityTypeBuilder<AssignmentSubmission> builder)
         {
+            builder.HasQueryFilter(s => s.Assignment.IsActive);
+
             builder.HasOne(s => s.Assignment)
                    .WithMany(a => a.AssignmentSubmissions)
                    .HasForeignKey(s => s.AssignmentId)

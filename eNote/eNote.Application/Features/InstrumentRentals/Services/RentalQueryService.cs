@@ -1,11 +1,11 @@
-using eNote.Application.Common.Exceptions;
+﻿using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Paging;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Common.Time;
 using eNote.Application.Features.InstrumentRentals.Billing;
-using eNote.Application.Features.InstrumentRentals.Search;
+using eNote.Application.Features.InstrumentRentals;
 using eNote.Application.Features.MusicStores.Services;
 using eNote.Domain.Entities;
 using MapsterMapper;

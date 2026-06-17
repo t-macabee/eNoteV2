@@ -58,9 +58,12 @@ namespace eNote.Application.Common.Localization
         public const string AssignmentNotFound = "Zadatak nije pronađen.";
         public const string AssignmentAlreadySubmitted = "Zadatak je već predan.";
         public const string AssignmentSubmissionNotFound = "Predaja zadatka nije pronađena.";
-        public const string AssignmentInvalidGrade = "Ocjena mora biti izmedju 0 i 100.";
+        public const string AssignmentInvalidGrade = "Ocjena mora biti između 0 i 100.";
         public const string LectureNoteNotFound = "Bilješka predavanja nije pronađena.";
         public const string StudentNotEnrolled = "Student nije upisan na kurs.";
+
+        public const string FileTooLarge = "Veličina fajla prelazi maksimalno dozvoljenih 5 MB.";
+        public const string InvalidFileFormat = "Dozvoljeni formati su JPEG, PNG i WebP.";
 
         public static string RoleCreateFailed(string role, string errors) =>
             $"Greška pri kreiranju uloge {role}: {errors}";

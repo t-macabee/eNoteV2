@@ -1,7 +1,7 @@
-using eNote.Application.Common.Search;
+﻿using eNote.Application.Common.Search;
 using eNote.Domain.Enums;
 
-namespace eNote.Application.Features.InstrumentRentals.Search
+namespace eNote.Application.Features.InstrumentRentals
 {
     public class InstrumentRentalSearchObject : BaseSearchObject
     {

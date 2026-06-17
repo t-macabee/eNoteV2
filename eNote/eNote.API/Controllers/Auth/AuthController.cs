@@ -1,12 +1,15 @@
 using eNote.API.Controllers.Base;
+using eNote.API.Extensions;
 using eNote.Application.Features.Auth;
 using eNote.Application.Features.Auth.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace eNote.API.Controllers.Auth
 {
     [Route("api/auth")]
+    [EnableRateLimiting(RateLimitingExtensions.AuthPolicy)]
     public class AuthController(IAuthService authService) : CoreController
     {
         [AllowAnonymous]

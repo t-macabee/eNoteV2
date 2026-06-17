@@ -1,63 +1,60 @@
 using eNote.API.Extensions;
-using eNote.Infrastructure.Data;
-using Microsoft.EntityFrameworkCore;
-using Scalar.AspNetCore;
+using Serilog;
 using System.Text.Json.Serialization;
 
 eNote.API.Extensions.ConfigurationExtensions.LoadDotEnv();
 
-WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+Log.Logger = new LoggerConfiguration()
+    .WriteTo.Console()
+    .CreateBootstrapLogger();
+
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Host.UseApplicationLogging();
 
 builder.Configuration.ValidateRequiredSettings();
 
-builder.Services.AddDbContext<ENoteContext>(options =>
-    options.UseSqlServer(
-        builder.Configuration.GetConnectionString("DefaultConnection"),
-        sql => sql.MigrationsAssembly("eNote.Infrastructure")));
-
 builder.Services
+    .AddApplicationDatabase(builder.Configuration)
     .AddApplicationIdentity()
     .AddJwtAuthentication(builder.Configuration)
     .AddAuthorization()
     .AddApplicationServices()
-    .AddApplicationCors(builder.Configuration, builder.Environment);
+    .AddApplicationCors(builder.Configuration, builder.Environment)
+    .AddApplicationRateLimiting()
+    .AddResponseCompression(opts => opts.EnableForHttps = true)
+    .AddMapsterMappings()
+    .AddScalarDocumentation();
 
 builder.Services
     .AddControllers()
     .AddJsonOptions(x => x.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
-builder.Services.AddMapsterMappings();
-builder.Services.AddScalarDocumentation();
+builder.Services.AddHealthChecks();
 
-WebApplication app = builder.Build();
+var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())
 {
     app.UseHttpsRedirection();
+    app.UseResponseCompression();
 }
-
 app.UseStaticFiles();
 app.UseCors(CorsExtensions.PolicyName);
 app.UseErrorHandling();
 
 if (app.Environment.IsDevelopment())
 {
-    using (IServiceScope scope = app.Services.CreateScope())
-    {
-        ENoteContext context = scope.ServiceProvider.GetRequiredService<ENoteContext>();
-        await context.Database.MigrateAsync();
-    }
-
-    app.MapGet("/", () => Results.Redirect("/scalar")).ExcludeFromDescription();
-    app.MapOpenApi();
-    app.MapScalarApiReference();
-
+    await app.MigrateAsync();
+    app.MapScalarDocumentation();
     await app.SeedDevelopmentData();
 }
 
+app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.MapHealthChecks("/health").AllowAnonymous();
 app.MapControllers();
 
 app.Run();

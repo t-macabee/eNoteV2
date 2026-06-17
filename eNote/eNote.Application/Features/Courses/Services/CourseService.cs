@@ -1,9 +1,9 @@
-using eNote.Application.Common.Exceptions;
+﻿using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Paging;
 using eNote.Application.Common.Persistence;
-using eNote.Application.Features.Courses.Search;
+using eNote.Application.Features.Courses;
 using eNote.Application.Features.Users.Services;
 using eNote.Domain.Entities;
 using eNote.Domain.Enums;

@@ -25,6 +25,7 @@ namespace eNote.Infrastructure.Data.Seed
             }
 
             int instructorId = await context.Set<Instructor>()
+                .OrderBy(i => i.Id)
                 .Select(i => i.Id)
                 .FirstAsync();
 
@@ -77,6 +78,7 @@ namespace eNote.Infrastructure.Data.Seed
             }
 
             int shopId = await context.Set<MusicStore>()
+                .OrderBy(s => s.Id)
                 .Select(s => s.Id)
                 .FirstAsync();
 
@@ -190,6 +192,7 @@ namespace eNote.Infrastructure.Data.Seed
             }
 
             int studentId = await context.Set<Student>()
+                .OrderBy(s => s.Id)
                 .Select(s => s.Id)
                 .FirstOrDefaultAsync();
 

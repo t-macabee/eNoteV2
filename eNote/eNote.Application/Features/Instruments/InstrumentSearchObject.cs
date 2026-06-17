@@ -1,6 +1,6 @@
-using eNote.Application.Common.Search;
+﻿using eNote.Application.Common.Search;
 
-namespace eNote.Application.Features.Instruments.Search
+namespace eNote.Application.Features.Instruments
 {
     public class InstrumentSearchObject : BaseSearchObject
     {

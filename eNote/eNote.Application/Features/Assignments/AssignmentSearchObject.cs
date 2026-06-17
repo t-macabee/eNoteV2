@@ -1,6 +1,6 @@
-using eNote.Application.Common.Search;
+﻿using eNote.Application.Common.Search;
 
-namespace eNote.Application.Features.Assignments.Search
+namespace eNote.Application.Features.Assignments
 {
     public class AssignmentSearchObject : BaseSearchObject
     {

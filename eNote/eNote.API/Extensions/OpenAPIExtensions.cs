@@ -1,11 +1,20 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.OpenApi;
 using Microsoft.OpenApi;
+using Scalar.AspNetCore;
 
 namespace eNote.API.Extensions
 {
     public static class OpenAPIExtensions
     {
+        public static WebApplication MapScalarDocumentation(this WebApplication app)
+        {
+            app.MapGet("/", () => Results.Redirect("/scalar")).ExcludeFromDescription();
+            app.MapOpenApi();
+            app.MapScalarApiReference();
+            return app;
+        }
+
         public static IServiceCollection AddScalarDocumentation(this IServiceCollection services)
         {
             services.AddOpenApi(options =>

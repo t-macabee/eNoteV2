@@ -1,5 +1,5 @@
-using eNote.Application.Common.Paging;
-using eNote.Application.Features.Lectures.Search;
+﻿using eNote.Application.Common.Paging;
+using eNote.Application.Features.Lectures;
 
 namespace eNote.Application.Features.Lectures.Services
 {

@@ -42,6 +42,11 @@ namespace eNote.Infrastructure.Identity
         {
             var ids = userIds.ToHashSet();
 
+            if (ids.Count == 0)
+            {
+                return new Dictionary<int, UserIdentityDto>();
+            }
+
             List<AppUser> users = await userManager.Users
                 .AsNoTracking()
                 .Include(u => u.Address)

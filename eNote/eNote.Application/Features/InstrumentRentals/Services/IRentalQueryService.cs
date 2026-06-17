@@ -1,5 +1,5 @@
-using eNote.Application.Common.Paging;
-using eNote.Application.Features.InstrumentRentals.Search;
+﻿using eNote.Application.Common.Paging;
+using eNote.Application.Features.InstrumentRentals;
 
 namespace eNote.Application.Features.InstrumentRentals.Services
 {

@@ -8,6 +8,8 @@ namespace eNote.Infrastructure.Data.Configurations
     {
         public void Configure(EntityTypeBuilder<Enrollment> builder)
         {
+            builder.HasQueryFilter(e => e.Course.IsActive);
+
             builder.HasOne(x => x.Student)
                    .WithMany(s => s.Enrollments)
                    .HasForeignKey(x => x.StudentId)

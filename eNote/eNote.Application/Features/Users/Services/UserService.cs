@@ -1,13 +1,13 @@
 using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Persistence;
-using Microsoft.EntityFrameworkCore;
 using eNote.Application.Common.Time;
 using eNote.Application.Constants;
 using eNote.Application.Features.Auth;
 using eNote.Application.Features.Users.Profiles;
-using eNote.Domain.Entities;
 using eNote.Application.Features.Users.Services.Interfaces;
+using eNote.Domain.Entities;
+using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Application.Features.Users.Services
 {
@@ -38,6 +38,7 @@ namespace eNote.Application.Features.Users.Services
                 AppRoles.Student => await BuildStudentProfile(userId, user),
                 AppRoles.Instructor => await BuildInstructorProfile(userId, user),
                 AppRoles.StoreEmployee => await BuildMusicStoreProfile(userId, user),
+                AppRoles.Administrator => new AdminProfile(user.FirstName, user.LastName),
                 _ => throw new BusinessException(Messages.UnknownRole)
             };
 

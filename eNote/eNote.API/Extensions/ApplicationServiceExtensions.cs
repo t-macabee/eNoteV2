@@ -1,17 +1,28 @@
+using eNote.API.Services;
 using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Common.Time;
 using eNote.Application.Features.Courses.Services;
 using eNote.Application.Features.InstrumentRentals.StateMachine;
 using eNote.Application.Features.Users.Services;
-using eNote.API.Services;
 using eNote.Infrastructure.Data;
 using eNote.Infrastructure.Identity;
+using Microsoft.EntityFrameworkCore;
 
 namespace eNote.API.Extensions
 {
     public static class ApplicationServiceExtensions
     {
+        public static IServiceCollection AddApplicationDatabase(this IServiceCollection services, IConfiguration configuration)
+        {
+            services.AddDbContext<ENoteContext>(options =>
+                options.UseSqlServer(
+                    configuration.GetConnectionString("DefaultConnection"),
+                    sql => sql.MigrationsAssembly("eNote.Infrastructure")));
+
+            return services;
+        }
+
         public static IServiceCollection AddApplicationServices(this IServiceCollection services)
         {
             services.AddHttpContextAccessor();
@@ -26,6 +37,7 @@ namespace eNote.API.Extensions
                 .AsImplementedInterfaces()
                 .WithScopedLifetime());
 
+            services.AddMemoryCache();
             services.AddScoped<IFileStorageService, LocalFileStorageService>();
 
             services.AddScoped<IAppDbContext>(x => x.GetRequiredService<ENoteContext>());
