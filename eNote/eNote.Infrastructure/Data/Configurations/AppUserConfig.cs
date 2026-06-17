@@ -1,4 +1,4 @@
-﻿using eNote.Infrastructure.Identity;
+using eNote.Infrastructure.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 

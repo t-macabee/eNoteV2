@@ -1,4 +1,4 @@
-﻿namespace eNote.Application.Constants
+namespace eNote.Application.Constants
 {
     public static class AppRoles
     {

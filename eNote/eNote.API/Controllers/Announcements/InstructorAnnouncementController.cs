@@ -15,28 +15,32 @@ namespace eNote.API.Controllers.Announcements
         [HttpGet]
         public async Task<ActionResult<PagedResult<AnnouncementDto>>> GetForCourse(int courseId, int page = 1, int pageSize = 20)
         {
-            var result = await announcementService.GetForCourseAsync(courseId, page, pageSize);
+            PagedResult<AnnouncementDto> result = await announcementService.GetForCourseAsync(courseId, page, pageSize);
             return Ok(result);
         }
 
         [HttpGet("{announcementId:int}")]
         public async Task<ActionResult<AnnouncementDto>> GetById(int courseId, int announcementId)
         {
-            var result = await announcementService.GetByIdForCourseAsync(courseId, announcementId);
+            AnnouncementDto result = await announcementService.GetByIdForCourseAsync(courseId, announcementId);
             return Ok(result);
         }
 
         [HttpPost]
         public async Task<ActionResult<AnnouncementDto>> Create(int courseId, [FromBody] AnnouncementRequest request)
         {
-            var result = await announcementService.CreateForCourseAsync(courseId, request);
-            return CreatedAtAction(nameof(GetById), new { courseId, announcementId = result.Id }, result);
+            AnnouncementDto result = await announcementService.CreateForCourseAsync(courseId, request);
+            return CreatedAtAction(nameof(GetById), new
+            {
+                courseId,
+                announcementId = result.Id
+            }, result);
         }
 
         [HttpPut("{announcementId:int}")]
         public async Task<ActionResult<AnnouncementDto>> Update(int courseId, int announcementId, [FromBody] AnnouncementRequest request)
         {
-            var result = await announcementService.UpdateForCourseAsync(courseId, announcementId, request);
+            AnnouncementDto result = await announcementService.UpdateForCourseAsync(courseId, announcementId, request);
             return Ok(result);
         }
 

@@ -6,7 +6,6 @@ using eNote.Application.Common.Persistence;
 using eNote.Application.Common.Time;
 using eNote.Application.Features.InstrumentRentals.Billing;
 using eNote.Application.Features.InstrumentRentals.Search;
-using eNote.Application.Features.InstrumentRentals.Services;
 using eNote.Application.Features.MusicStores.Services;
 using eNote.Domain.Entities;
 using MapsterMapper;
@@ -21,17 +20,21 @@ namespace eNote.Application.Features.InstrumentRentals.Services
         private static IQueryable<InstrumentRental> AddFilter(InstrumentRentalSearchObject search, IQueryable<InstrumentRental> query)
         {
             if (search.InstrumentId.HasValue)
+            {
                 query = query.Where(x => x.InstrumentId == search.InstrumentId.Value);
+            }
 
             if (search.RentalStatus.HasValue)
+            {
                 query = query.Where(x => x.RentalStatus == search.RentalStatus.Value);
+            }
 
             return query;
         }
 
         private InstrumentRentalDto MapEntityToModel(InstrumentRental entity)
         {
-            var result = mapper.Map<InstrumentRentalDto>(entity);
+            InstrumentRentalDto result = mapper.Map<InstrumentRentalDto>(entity);
 
             RentalBilling.ApplyBilling(entity, result, clock.UtcNow);
 
@@ -40,7 +43,7 @@ namespace eNote.Application.Features.InstrumentRentals.Services
 
         public async Task<InstrumentRentalDto> GetByIdForStudentAsync(int rentalId)
         {
-            var entity = await context.Set<InstrumentRental>()
+            InstrumentRental entity = await context.Set<InstrumentRental>()
                 .AsNoTracking()
                 .WithRentalDetails()
                 .FirstOrDefaultAsync(x => x.Id == rentalId && x.StudentProfile.AppUserId == currentUserService.UserId)
@@ -51,9 +54,9 @@ namespace eNote.Application.Features.InstrumentRentals.Services
 
         public async Task<InstrumentRentalDto> GetByIdForStoreAsync(int rentalId)
         {
-            var storeId = await storeContext.GetActiveStoreAsync(currentUserService.UserId);
+            int storeId = await storeContext.GetActiveStoreAsync(currentUserService.UserId);
 
-            var entity = await context.Set<InstrumentRental>()
+            InstrumentRental entity = await context.Set<InstrumentRental>()
                 .AsNoTracking()
                 .WithRentalDetails()
                 .FirstOrDefaultAsync(x => x.Id == rentalId && x.Instrument.MusicStoreId == storeId)
@@ -64,7 +67,7 @@ namespace eNote.Application.Features.InstrumentRentals.Services
 
         public async Task<PagedResult<InstrumentRentalDto>> GetPagedForStudentAsync(InstrumentRentalSearchObject searchObject)
         {
-            var query = context.Set<InstrumentRental>()
+            IQueryable<InstrumentRental> query = context.Set<InstrumentRental>()
                 .AsNoTracking()
                 .Where(x => x.StudentProfile.AppUserId == currentUserService.UserId);
 
@@ -84,9 +87,9 @@ namespace eNote.Application.Features.InstrumentRentals.Services
 
         public async Task<PagedResult<InstrumentRentalDto>> GetPagedForStoreAsync(InstrumentRentalSearchObject searchObject)
         {
-            var storeId = await storeContext.GetActiveStoreAsync(currentUserService.UserId);
+            int storeId = await storeContext.GetActiveStoreAsync(currentUserService.UserId);
 
-            var query = context.Set<InstrumentRental>()
+            IQueryable<InstrumentRental> query = context.Set<InstrumentRental>()
                 .AsNoTracking()
                 .Where(x => x.Instrument.MusicStoreId == storeId);
 

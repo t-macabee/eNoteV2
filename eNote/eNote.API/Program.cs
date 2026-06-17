@@ -6,7 +6,7 @@ using System.Text.Json.Serialization;
 
 eNote.API.Extensions.ConfigurationExtensions.LoadDotEnv();
 
-var builder = WebApplication.CreateBuilder(args);
+WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 builder.Configuration.ValidateRequiredSettings();
 
@@ -29,10 +29,12 @@ builder.Services
 builder.Services.AddMapsterMappings();
 builder.Services.AddScalarDocumentation();
 
-var app = builder.Build();
+WebApplication app = builder.Build();
 
 if (!app.Environment.IsDevelopment())
+{
     app.UseHttpsRedirection();
+}
 
 app.UseStaticFiles();
 app.UseCors(CorsExtensions.PolicyName);
@@ -40,9 +42,9 @@ app.UseErrorHandling();
 
 if (app.Environment.IsDevelopment())
 {
-    using (var scope = app.Services.CreateScope())
+    using (IServiceScope scope = app.Services.CreateScope())
     {
-        var context = scope.ServiceProvider.GetRequiredService<ENoteContext>();
+        ENoteContext context = scope.ServiceProvider.GetRequiredService<ENoteContext>();
         await context.Database.MigrateAsync();
     }
 

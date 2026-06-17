@@ -15,7 +15,7 @@ namespace eNote.API.Controllers.Announcements
         [HttpGet]
         public async Task<ActionResult<PagedResult<AnnouncementDto>>> GetFeed(int page = 1, int pageSize = 20)
         {
-            var result = await announcementService.GetFeedForStudentAsync(page, pageSize);
+            PagedResult<AnnouncementDto> result = await announcementService.GetFeedForStudentAsync(page, pageSize);
             return Ok(result);
         }
     }

@@ -16,21 +16,21 @@ namespace eNote.API.Controllers.Assignments
         [HttpGet]
         public async Task<ActionResult<PagedResult<AssignmentDto>>> GetMyAssignments([FromQuery] AssignmentSearchObject search)
         {
-            var result = await service.GetForStudentAsync(search);
+            PagedResult<AssignmentDto> result = await service.GetForStudentAsync(search);
             return Ok(result);
         }
 
         [HttpGet("{id:int}")]
         public async Task<ActionResult<AssignmentDto>> GetById(int id)
         {
-            var dto = await service.GetByIdForStudentAsync(id);
+            AssignmentDto dto = await service.GetByIdForStudentAsync(id);
             return Ok(dto);
         }
 
         [HttpPost("{id:int}/submit")]
         public async Task<ActionResult<AssignmentSubmissionDto>> Submit(int id, [FromBody] AssignmentSubmitRequest request)
         {
-            var dto = await service.SubmitAsync(id, request);
+            AssignmentSubmissionDto dto = await service.SubmitAsync(id, request);
             return Ok(dto);
         }
     }

@@ -10,7 +10,7 @@ namespace eNote.Application.Features.InstrumentRentals.Billing
         {
             dto.Fee = rental.Fee;
 
-            var result = Calculate(rental.Fee, rental.PickedUpAt, rental.ReturnedAt, rental.RentalStatus, nowUtc);
+            BillingResult result = Calculate(rental.Fee, rental.PickedUpAt, rental.ReturnedAt, rental.RentalStatus, nowUtc);
 
             dto.MonthsCharged = result.MonthsCharged;
             dto.DaysCharged = result.DaysCharged;
@@ -22,28 +22,36 @@ namespace eNote.Application.Features.InstrumentRentals.Billing
         private static BillingResult Calculate(decimal fee, DateTime? pickedUpAt, DateTime? returnedAt, InstrumentRentalStatus status, DateTime nowUtc)
         {
             if (!pickedUpAt.HasValue)
+            {
                 return new BillingResult(null, null, null, null, false);
+            }
 
             if (status is not (InstrumentRentalStatus.Active or InstrumentRentalStatus.Completed or InstrumentRentalStatus.ReturnedEarly))
+            {
                 return new BillingResult(null, null, null, null, false);
+            }
 
-            var start = pickedUpAt.Value;
+            DateTime start = pickedUpAt.Value;
 
-            var end = returnedAt ?? nowUtc;
+            DateTime end = returnedAt ?? nowUtc;
 
             if (end < start)
+            {
                 end = start;
+            }
 
-            var daysCharged = (int)Math.Ceiling((end - start).TotalDays);
+            int daysCharged = (int)Math.Ceiling((end - start).TotalDays);
 
             if (daysCharged < 1)
+            {
                 daysCharged = 1;
+            }
 
             if (status == InstrumentRentalStatus.ReturnedEarly)
             {
-                var dailyFee = fee / DaysPerBillingCycle;
-                var prorated = daysCharged * dailyFee;
-                var totalFee = prorated > fee ? fee : prorated;
+                decimal dailyFee = fee / DaysPerBillingCycle;
+                decimal prorated = daysCharged * dailyFee;
+                decimal totalFee = prorated > fee ? fee : prorated;
 
                 return new BillingResult(
                     MonthsCharged: null,
@@ -54,10 +62,12 @@ namespace eNote.Application.Features.InstrumentRentals.Billing
                 );
             }
 
-            var monthsCharged = (int)Math.Ceiling((end - start).TotalDays / DaysPerBillingCycle);
+            int monthsCharged = (int)Math.Ceiling((end - start).TotalDays / DaysPerBillingCycle);
 
             if (monthsCharged < 1)
+            {
                 monthsCharged = 1;
+            }
 
             return new BillingResult(
                 MonthsCharged: monthsCharged,

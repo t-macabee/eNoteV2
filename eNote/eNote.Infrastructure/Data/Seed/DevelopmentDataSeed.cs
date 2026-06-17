@@ -1,7 +1,6 @@
-﻿using eNote.Domain.Entities;
+using eNote.Domain.Entities;
 using eNote.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
-using System.Linq;
 
 namespace eNote.Infrastructure.Data.Seed
 {
@@ -21,9 +20,11 @@ namespace eNote.Infrastructure.Data.Seed
         public static async Task SeedCourses(ENoteContext context)
         {
             if (await context.Set<Course>().AnyAsync())
+            {
                 return;
+            }
 
-            var instructorId = await context.Set<Instructor>()
+            int instructorId = await context.Set<Instructor>()
                 .Select(i => i.Id)
                 .FirstAsync();
 
@@ -43,15 +44,19 @@ namespace eNote.Infrastructure.Data.Seed
         public static async Task SeedLectures(ENoteContext context)
         {
             if (await context.Set<Lecture>().AnyAsync())
+            {
                 return;
+            }
 
-            var courses = await context.Set<Course>()
+            List<Course> courses = await context.Set<Course>()
                 .OrderBy(c => c.Id)
                 .Take(2)
                 .ToListAsync();
 
             if (courses.Count < 2)
+            {
                 return;
+            }
 
             context.AddRange(
                 new Lecture("Uvodno predavanje", "Amfiteatar gradskog BKC-a", 90, new DateTime(2024, 8, 11, 19, 30, 0), LectureType.Theoretical, null, courses[0].Id),
@@ -67,38 +72,40 @@ namespace eNote.Infrastructure.Data.Seed
         public static async Task SeedInstruments(ENoteContext context)
         {
             if (await context.Set<Instrument>().AnyAsync())
+            {
                 return;
+            }
 
-            var shopId = await context.Set<MusicStore>()
+            int shopId = await context.Set<MusicStore>()
                 .Select(s => s.Id)
                 .FirstAsync();
 
-            var stringTypeId = await context.Set<InstrumentType>()
+            int stringTypeId = await context.Set<InstrumentType>()
                 .Where(x => x.Type == "Žičani")
                 .Select(x => x.Id)
                 .FirstAsync();
 
-            var percussionTypeId = await context.Set<InstrumentType>()
+            int percussionTypeId = await context.Set<InstrumentType>()
                 .Where(x => x.Type == "Udaraljke")
                 .Select(x => x.Id)
                 .FirstAsync();
 
-            var brassTypeId = await context.Set<InstrumentType>()
+            int brassTypeId = await context.Set<InstrumentType>()
                 .Where(x => x.Type == "Limeni")
                 .Select(x => x.Id)
                 .FirstAsync();
 
-            var keysTypeId = await context.Set<InstrumentType>()
+            int keysTypeId = await context.Set<InstrumentType>()
                 .Where(x => x.Type == "Tipke")
                 .Select(x => x.Id)
                 .FirstAsync();
 
-            var accessoriesTypeId = await context.Set<InstrumentType>()
+            int accessoriesTypeId = await context.Set<InstrumentType>()
                 .Where(x => x.Type == "Dodatna oprema")
                 .Select(x => x.Id)
                 .FirstAsync();
 
-            var allInstruments = new[]
+            Instrument[] allInstruments = new[]
             {
                 StringInstruments.GetInstruments(shopId, stringTypeId),
                 PercussionInstruments.GetInstruments(shopId, percussionTypeId),
@@ -178,16 +185,20 @@ namespace eNote.Infrastructure.Data.Seed
         public static async Task SeedEnrollments(ENoteContext context)
         {
             if (await context.Set<Enrollment>().AnyAsync())
+            {
                 return;
+            }
 
-            var studentId = await context.Set<Student>()
+            int studentId = await context.Set<Student>()
                 .Select(s => s.Id)
                 .FirstOrDefaultAsync();
 
             if (studentId == 0)
+            {
                 return;
+            }
 
-            var courseIds = await context.Set<Course>()
+            List<int> courseIds = await context.Set<Course>()
                 .Where(c => c.IsPublished)
                 .Select(c => c.Id)
                 .ToListAsync();

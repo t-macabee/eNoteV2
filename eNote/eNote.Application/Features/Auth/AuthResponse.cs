@@ -5,7 +5,10 @@ namespace eNote.Application.Features.Auth
     public sealed class AuthResponse
     {
         [JsonPropertyName("userId")]
-        public int UserId { get; init; }
+        public int UserId
+        {
+            get; init;
+        }
 
         [JsonPropertyName("username")]
         public string Username { get; init; } = null!;

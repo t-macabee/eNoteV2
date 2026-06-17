@@ -13,10 +13,12 @@ namespace eNote.Application.Features.InstrumentRentals.StateMachine
 
         public async Task<RentalTransitionResult> FireAsync(InstrumentRental rental, RentalTrigger trigger, RentalTransitionContext context, CancellationToken cancellationToken = default)
         {
-            var transition = FindTransition(rental.RentalStatus, trigger, context.Actor) ?? throw new BusinessException(GetInvalidTransitionMessage(trigger, context.Actor));
+            TransitionDefinition transition = FindTransition(rental.RentalStatus, trigger, context.Actor) ?? throw new BusinessException(GetInvalidTransitionMessage(trigger, context.Actor));
 
             if (transition.GuardAsync is not null)
+            {
                 await transition.GuardAsync(rental, context, cancellationToken);
+            }
 
             transition.Apply(rental, context, clock);
 
@@ -29,7 +31,9 @@ namespace eNote.Application.Features.InstrumentRentals.StateMachine
         private static string GetInvalidTransitionMessage(RentalTrigger trigger, RentalActor actor)
         {
             if (Transitions.Any(t => t.Trigger == trigger && t.Actors.Contains(actor)))
+            {
                 return GetWrongStateMessage(trigger);
+            }
 
             return Messages.RentalAccessDenied;
         }
@@ -47,7 +51,7 @@ namespace eNote.Application.Features.InstrumentRentals.StateMachine
 
         private static async Task GuardNoInstrumentLockConflictAsync(InstrumentRental rental, RentalTransitionContext context, CancellationToken cancellationToken)
         {
-            var conflict = await context.Db.Set<InstrumentRental>()
+            bool conflict = await context.Db.Set<InstrumentRental>()
                 .AnyAsync(x =>
                     x.InstrumentId == rental.InstrumentId &&
                     x.Id != rental.Id &&
@@ -56,31 +60,41 @@ namespace eNote.Application.Features.InstrumentRentals.StateMachine
                     cancellationToken);
 
             if (conflict)
+            {
                 throw new BusinessException(Messages.InstrumentReservedOrRented);
+            }
         }
 
         private static void GuardInstrumentActive(InstrumentRental rental)
         {
             if (!rental.Instrument.IsActive)
+            {
                 throw new BusinessException(Messages.InstrumentInactive);
+            }
         }
 
         private static void GuardNotPickedUp(InstrumentRental rental)
         {
             if (rental.PickedUpAt.HasValue)
+            {
                 throw new BusinessException(Messages.RentalCancelBlockedAfterPickup);
+            }
         }
 
         private static void GuardNotReturned(InstrumentRental rental)
         {
             if (rental.ReturnedAt.HasValue)
+            {
                 throw new BusinessException(Messages.RentalAlreadyCompleted);
+            }
         }
 
         private static void GuardPickedUp(InstrumentRental rental)
         {
             if (!rental.PickedUpAt.HasValue)
+            {
                 throw new BusinessException(Messages.RentalNotPickedUp);
+            }
         }
 
         private static void ApplyAuditFields(InstrumentRental rental, RentalTransitionContext context, IClock time)
@@ -132,7 +146,7 @@ namespace eNote.Application.Features.InstrumentRentals.StateMachine
                 },
                 Apply: (rental, context, time) =>
                 {
-                    var note = !string.IsNullOrWhiteSpace(context.Response?.Note) ? context.Response.Note : rental.Note;
+                    string? note = !string.IsNullOrWhiteSpace(context.Response?.Note) ? context.Response.Note : rental.Note;
                     rental.Cancel(time.UtcNow, note);
                     ApplyAuditFields(rental, context, time);
                 },
@@ -147,14 +161,11 @@ namespace eNote.Application.Features.InstrumentRentals.StateMachine
                 {
                     GuardInstrumentActive(rental);
 
-                    if (rental.PickedUpAt.HasValue)
-                        throw new BusinessException(Messages.RentalAlreadyPickedUp);
-
-                    await GuardNoInstrumentLockConflictAsync(rental, context, ct);
+                    if (rental.PickedUpAt.HasValue) { throw new BusinessException(Messages.RentalAlreadyPickedUp); } await GuardNoInstrumentLockConflictAsync(rental, context, ct);
                 },
                 Apply: (rental, context, time) =>
                 {
-                    var note = !string.IsNullOrWhiteSpace(context.Response?.Note) ? context.Response.Note : rental.Note;
+                    string? note = !string.IsNullOrWhiteSpace(context.Response?.Note) ? context.Response.Note : rental.Note;
                     rental.Pickup(time.UtcNow, note);
                     ApplyAuditFields(rental, context, time);
                 },
@@ -172,7 +183,7 @@ namespace eNote.Application.Features.InstrumentRentals.StateMachine
                 },
                 Apply: (rental, context, time) =>
                 {
-                    var note = !string.IsNullOrWhiteSpace(context.Response?.Note) ? context.Response.Note : rental.Note;
+                    string? note = !string.IsNullOrWhiteSpace(context.Response?.Note) ? context.Response.Note : rental.Note;
                     rental.Cancel(time.UtcNow, note);
                     ApplyAuditFields(rental, context, time);
                 },
@@ -190,7 +201,7 @@ namespace eNote.Application.Features.InstrumentRentals.StateMachine
                 },
                 Apply: (rental, context, time) =>
                 {
-                    var note = !string.IsNullOrWhiteSpace(context.Response?.Note) ? context.Response.Note : rental.Note;
+                    string? note = !string.IsNullOrWhiteSpace(context.Response?.Note) ? context.Response.Note : rental.Note;
                     rental.Complete(time.UtcNow, note);
                     ApplyAuditFields(rental, context, time);
                 },
@@ -209,7 +220,7 @@ namespace eNote.Application.Features.InstrumentRentals.StateMachine
                 },
                 Apply: (rental, context, time) =>
                 {
-                    var note = !string.IsNullOrWhiteSpace(context.Response?.Note) ? context.Response.Note : rental.Note;
+                    string? note = !string.IsNullOrWhiteSpace(context.Response?.Note) ? context.Response.Note : rental.Note;
                     rental.ReturnEarly(time.UtcNow, note);
                     ApplyAuditFields(rental, context, time);
                 },

@@ -1,4 +1,4 @@
-﻿using eNote.Application.Mapping;
+using eNote.Application.Mapping;
 using Mapster;
 
 namespace eNote.API.Extensions

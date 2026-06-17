@@ -1,19 +1,30 @@
-﻿using eNote.Domain.Entities.Base;
+using eNote.Domain.Entities.Base;
 using eNote.Domain.Enums;
 
 namespace eNote.Domain.Entities
 {
     public class Enrollment : AuditableEntity
     {
-        public EnrollmentStatus EnrollmentStatus { get; private set; }
+        public EnrollmentStatus EnrollmentStatus
+        {
+            get; private set;
+        }
 
-        public int StudentId { get; private set; }
+        public int StudentId
+        {
+            get; private set;
+        }
         public Student Student { get; private set; } = null!;
 
-        public int CourseId { get; private set; }
+        public int CourseId
+        {
+            get; private set;
+        }
         public Course Course { get; private set; } = null!;
 
-        protected Enrollment() { }
+        protected Enrollment()
+        {
+        }
 
         public Enrollment(int studentId, int courseId, EnrollmentStatus status)
         {

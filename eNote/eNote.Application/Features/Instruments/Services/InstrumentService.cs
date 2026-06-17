@@ -1,10 +1,9 @@
-﻿using eNote.Application.Common.Exceptions;
+using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Paging;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Features.Instruments.Search;
-using eNote.Application.Features.Instruments.Services;
 using eNote.Application.Features.Users.Services;
 using eNote.Domain.Entities;
 using eNote.Domain.Enums;
@@ -19,13 +18,13 @@ namespace eNote.Application.Features.Instruments.Services
 
         public async Task<InstrumentDto> GetByIdAsync(int id)
         {
-            var employee = await EnsureStoreAccessAsync();
+            MusicStoreEmployee employee = await EnsureStoreAccessAsync();
 
-            var query = AddIncludes(context.Set<Instrument>()
+            IQueryable<Instrument> query = AddIncludes(context.Set<Instrument>()
                 .AsNoTracking()
                 .Where(x => x.MusicStoreId == employee.MusicStoreId));
 
-            var entity = await query
+            Instrument entity = await query
                 .FirstOrDefaultAsync(x => x.Id == id)
                 ?? throw new NotFoundException(Messages.NotFound);
 
@@ -34,7 +33,7 @@ namespace eNote.Application.Features.Instruments.Services
 
         public async Task<InstrumentDto> GetPublicByIdAsync(int id)
         {
-            var entity = await AddIncludes(context.Set<Instrument>().AsNoTracking())
+            Instrument entity = await AddIncludes(context.Set<Instrument>().AsNoTracking())
                 .FirstOrDefaultAsync(x => x.Id == id)
                 ?? throw new NotFoundException(Messages.NotFound);
 
@@ -43,9 +42,9 @@ namespace eNote.Application.Features.Instruments.Services
 
         public async Task<PagedResult<InstrumentDto>> GetPagedAsync(InstrumentSearchObject search)
         {
-            var employee = await EnsureStoreAccessAsync();
+            MusicStoreEmployee employee = await EnsureStoreAccessAsync();
 
-            var query = context.Set<Instrument>()
+            IQueryable<Instrument> query = context.Set<Instrument>()
                 .AsNoTracking()
                 .Where(x => x.MusicStoreId == employee.MusicStoreId);
 
@@ -57,7 +56,7 @@ namespace eNote.Application.Features.Instruments.Services
 
         public async Task<PagedResult<InstrumentDto>> GetPublicPagedAsync(InstrumentSearchObject search)
         {
-            var query = AddIncludes(context.Set<Instrument>().AsNoTracking());
+            IQueryable<Instrument> query = AddIncludes(context.Set<Instrument>().AsNoTracking());
 
             if (search.IsAvailable.HasValue && search.IsAvailable.Value)
             {
@@ -73,7 +72,7 @@ namespace eNote.Application.Features.Instruments.Services
 
         public async Task<InstrumentDto> CreateAsync(InstrumentCreateRequest request)
         {
-            var employee = await EnsureStoreAccessAsync();
+            MusicStoreEmployee employee = await EnsureStoreAccessAsync();
 
             var entity = new Instrument(
                 request.Model.Trim(),
@@ -95,19 +94,21 @@ namespace eNote.Application.Features.Instruments.Services
 
         public async Task<InstrumentDto> UpdateAsync(int id, InstrumentUpdateRequest request)
         {
-            var employee = await EnsureStoreAccessAsync();
+            MusicStoreEmployee employee = await EnsureStoreAccessAsync();
 
-            var entity = await context.Set<Instrument>()
+            Instrument entity = await context.Set<Instrument>()
                 .FirstOrDefaultAsync(x => x.Id == id && x.MusicStoreId == employee.MusicStoreId)
                 ?? throw new NotFoundException(Messages.NotFound);
 
             if (request.InstrumentTypeId.HasValue)
             {
-                var typeExists = await context.Set<InstrumentType>()
+                bool typeExists = await context.Set<InstrumentType>()
                     .AnyAsync(x => x.Id == request.InstrumentTypeId.Value);
 
                 if (!typeExists)
+                {
                     throw new BusinessException(Messages.InstrumentTypeNotFound);
+                }
             }
 
             entity.UpdateDetails(
@@ -126,13 +127,13 @@ namespace eNote.Application.Features.Instruments.Services
 
         public async Task<InstrumentDto> UploadImageAsync(int id, Stream stream, string fileName, string contentType, CancellationToken ct = default)
         {
-            var employee = await EnsureStoreAccessAsync();
+            MusicStoreEmployee employee = await EnsureStoreAccessAsync();
 
-            var entity = await context.Set<Instrument>()
+            Instrument entity = await context.Set<Instrument>()
                 .FirstOrDefaultAsync(x => x.Id == id && x.MusicStoreId == employee.MusicStoreId, ct)
                 ?? throw new NotFoundException(Messages.InstrumentNotFound);
 
-            var path = await fileStorage.SaveAsync(stream, fileName, contentType, "instruments", ct);
+            string path = await fileStorage.SaveAsync(stream, fileName, contentType, "instruments", ct);
 
             entity.UpdateDetails(entity.Model, entity.Manufacturer, entity.Description, path, entity.InstrumentTypeId);
 
@@ -144,19 +145,21 @@ namespace eNote.Application.Features.Instruments.Services
 
         public async Task DeleteAsync(int id)
         {
-            var employee = await EnsureStoreAccessAsync();
+            MusicStoreEmployee employee = await EnsureStoreAccessAsync();
 
-            var instrument = await context.Set<Instrument>()
+            Instrument instrument = await context.Set<Instrument>()
                 .FirstOrDefaultAsync(x => x.Id == id && x.MusicStoreId == employee.MusicStoreId)
                 ?? throw new NotFoundException(Messages.NotFound);
 
-            var hasBlockingRental = await context.Set<InstrumentRental>()
+            bool hasBlockingRental = await context.Set<InstrumentRental>()
                 .AnyAsync(r => r.InstrumentId == id &&
                                (r.RentalStatus == InstrumentRentalStatus.Approved ||
                                 r.RentalStatus == InstrumentRentalStatus.Active));
 
             if (hasBlockingRental)
+            {
                 throw new BusinessException(Messages.InstrumentDeleteBlocked);
+            }
 
             instrument.SoftDelete();
 
@@ -174,24 +177,34 @@ namespace eNote.Application.Features.Instruments.Services
         private static IQueryable<Instrument> AddFilter(InstrumentSearchObject search, IQueryable<Instrument> query)
         {
             if (!string.IsNullOrWhiteSpace(search.Model))
+            {
                 query = query.Where(x => x.Model.Contains(search.Model));
+            }
 
             if (!string.IsNullOrWhiteSpace(search.Manufacturer))
+            {
                 query = query.Where(x => x.Manufacturer.Contains(search.Manufacturer));
+            }
 
             if (search.InstrumentTypeId.HasValue)
+            {
                 query = query.Where(x => x.InstrumentTypeId == search.InstrumentTypeId);
+            }
 
             if (search.IsAvailable.HasValue)
             {
                 if (search.IsAvailable.Value)
+                {
                     query = query.Where(x => !x.InstrumentRentals.Any(r =>
                         r.RentalStatus == InstrumentRentalStatus.Approved ||
                         r.RentalStatus == InstrumentRentalStatus.Active));
+                }
                 else
+                {
                     query = query.Where(x => x.InstrumentRentals.Any(r =>
                         r.RentalStatus == InstrumentRentalStatus.Approved ||
                         r.RentalStatus == InstrumentRentalStatus.Active));
+                }
             }
 
             return query;
@@ -199,12 +212,14 @@ namespace eNote.Application.Features.Instruments.Services
 
         private async Task BeforeCreateAsync(InstrumentCreateRequest request)
         {
-            var existingType = await context
+            bool existingType = await context
                 .Set<InstrumentType>()
                 .AnyAsync(x => x.Id == request.InstrumentTypeId);
 
             if (!existingType)
+            {
                 throw new BusinessException(Messages.InstrumentTypeNotFound);
+            }
         }
 
         private async Task<Instrument> AfterSaveAsync(Instrument entity)

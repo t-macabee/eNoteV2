@@ -9,7 +9,7 @@ namespace eNote.API.Extensions
             IConfiguration configuration,
             IWebHostEnvironment environment)
         {
-            var origins = configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
+            string[] origins = configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
                 ?? configuration["Cors:AllowedOrigins"]?.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
                 ?? [];
 

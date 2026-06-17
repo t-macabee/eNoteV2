@@ -1,11 +1,10 @@
-﻿using eNote.Application.Common.Exceptions;
+using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Common.Time;
 using eNote.Application.Constants;
 using eNote.Application.Features.Auth;
 using eNote.Application.Features.Users.Profiles;
-using eNote.Application.Features.Users.Services;
 using eNote.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
@@ -17,17 +16,21 @@ namespace eNote.Application.Features.Users.Services
 
         public async Task<UserProfileResponse?> GetUserAsync(int userId)
         {
-            var user = await identity.GetUserAsync(userId);
+            UserIdentityDto? user = await identity.GetUserAsync(userId);
 
             if (user == null || !user.IsActive)
+            {
                 return null;
+            }
 
-            var roles = await identity.GetRolesAsync(userId);
+            IReadOnlyList<string> roles = await identity.GetRolesAsync(userId);
 
             if (roles.Count != 1)
+            {
                 throw new BusinessException(Messages.UserSingleRoleRequired);
+            }
 
-            var role = roles[0];
+            string role = roles[0];
 
             IUserProfile profile = role switch
             {
@@ -42,7 +45,7 @@ namespace eNote.Application.Features.Users.Services
 
         public async Task<(UserProfileResponse? Profile, string? Error)> RegisterStudentAsync(RegisterRequest request)
         {
-            var createResult = await accountService.CreateUserAsync(
+            (int? UserId, string? Error) createResult = await accountService.CreateUserAsync(
                 request.Username,
                 request.Email,
                 request.Password,
@@ -50,20 +53,24 @@ namespace eNote.Application.Features.Users.Services
                 request.LastName);
 
             if (createResult.UserId is null)
+            {
                 return (null, createResult.Error);
+            }
 
-            var userId = createResult.UserId.Value;
+            int userId = createResult.UserId.Value;
 
-            var (Success, Error) = await accountService.AssignSingleRoleAsync(userId, AppRoles.Student);
+            (bool Success, string? Error) = await accountService.AssignSingleRoleAsync(userId, AppRoles.Student);
 
             if (!Success)
+            {
                 return (null, Error);
+            }
 
             await EnsureRoleProfileAsync(userId, AppRoles.Student, musicStoreId: null);
 
             await context.SaveChangesAsync();
 
-            var profile = await GetUserAsync(userId);
+            UserProfileResponse? profile = await GetUserAsync(userId);
 
             return (profile, null);
         }
@@ -76,8 +83,8 @@ namespace eNote.Application.Features.Users.Services
 
         public async Task<(int UserId, string? Error)> ProvisionUserAsync(UserProvisionRequest request)
         {
-            var username = request.Username.Trim();
-            var existingUserId = await accountService.FindUserIdByUsernameAsync(username);
+            string username = request.Username.Trim();
+            int? existingUserId = await accountService.FindUserIdByUsernameAsync(username);
 
             int userId;
 
@@ -85,18 +92,20 @@ namespace eNote.Application.Features.Users.Services
             {
                 userId = existingUserId.Value;
 
-                var updateResult = await accountService.UpdateExistingUserAsync(
+                (bool Success, string? Error) updateResult = await accountService.UpdateExistingUserAsync(
                     userId,
                     request.Email,
                     request.FirstName,
                     request.LastName);
 
                 if (!updateResult.Success)
+                {
                     return (userId, updateResult.Error);
+                }
             }
             else
             {
-                var createResult = await accountService.CreateUserAsync(
+                (int? UserId, string? Error) createResult = await accountService.CreateUserAsync(
                     username,
                     request.Email,
                     request.Password,
@@ -104,17 +113,21 @@ namespace eNote.Application.Features.Users.Services
                     request.LastName);
 
                 if (createResult.UserId is null)
+                {
                     return (0, createResult.Error);
+                }
 
                 userId = createResult.UserId.Value;
             }
 
-            var (Success, Error) = await accountService.AssignSingleRoleAsync(userId, request.Role);
+            (bool Success, string? Error) = await accountService.AssignSingleRoleAsync(userId, request.Role);
 
             if (!Success)
+            {
                 return (userId, Error);
+            }
 
-            var storeId = request.MusicStoreId ?? await ResolveDefaultStoreIdAsync(request.Role);
+            int? storeId = request.MusicStoreId ?? await ResolveDefaultStoreIdAsync(request.Role);
 
             await EnsureRoleProfileAsync(userId, request.Role, storeId);
 
@@ -126,7 +139,9 @@ namespace eNote.Application.Features.Users.Services
         private async Task<int?> ResolveDefaultStoreIdAsync(string role)
         {
             if (role != AppRoles.StoreEmployee)
+            {
                 return null;
+            }
 
             return await context.Set<MusicStore>()
                 .Select(x => (int?)x.Id)
@@ -139,17 +154,23 @@ namespace eNote.Application.Features.Users.Services
             {
                 case AppRoles.Student:
                     if (!await context.Set<Student>().AnyAsync(x => x.AppUserId == userId))
+                    {
                         context.Set<Student>().Add(new Student(userId, clock.UtcNow));
+                    }
+
                     break;
 
                 case AppRoles.Instructor:
                     if (!await context.Set<Instructor>().AnyAsync(x => x.AppUserId == userId))
+                    {
                         context.Set<Instructor>().Add(new Instructor(userId));
+                    }
+
                     break;
 
                 case AppRoles.StoreEmployee when musicStoreId.HasValue:
                     {
-                        var employees = await context.Set<MusicStoreEmployee>()
+                        List<MusicStoreEmployee> employees = await context.Set<MusicStoreEmployee>()
                             .Where(x => x.AppUserId == userId)
                             .ToListAsync();
 
@@ -159,11 +180,13 @@ namespace eNote.Application.Features.Users.Services
                             break;
                         }
 
-                        var primary = employees.FirstOrDefault(x => x.IsActive) ?? employees[0];
+                        MusicStoreEmployee primary = employees.FirstOrDefault(x => x.IsActive) ?? employees[0];
                         primary.IsActive = true;
 
-                        foreach (var employee in employees.Where(x => x.Id != primary.Id))
+                        foreach (MusicStoreEmployee? employee in employees.Where(x => x.Id != primary.Id))
+                        {
                             employee.IsActive = false;
+                        }
 
                         break;
                     }
@@ -172,7 +195,7 @@ namespace eNote.Application.Features.Users.Services
 
         private async Task<StudentProfile> BuildStudentProfile(int userId, UserIdentityDto user)
         {
-            var student = await resolver.GetStudentAsync(userId);
+            Student student = await resolver.GetStudentAsync(userId);
 
             return new StudentProfile(
                 student.Id,
@@ -186,7 +209,7 @@ namespace eNote.Application.Features.Users.Services
 
         private async Task<InstructorProfile> BuildInstructorProfile(int userId, UserIdentityDto user)
         {
-            var instructor = await resolver.GetInstructorAsync(userId);
+            Instructor instructor = await resolver.GetInstructorAsync(userId);
 
             return new InstructorProfile(
                 instructor.Id,
@@ -197,9 +220,9 @@ namespace eNote.Application.Features.Users.Services
 
         private async Task<MusicStoreProfile> BuildMusicStoreProfile(int userId, UserIdentityDto user)
         {
-            var employee = await resolver.GetActiveEmployeeAsync(userId);
+            MusicStoreEmployee employee = await resolver.GetActiveEmployeeAsync(userId);
 
-            var shop = await context.Set<MusicStore>()
+            MusicStore shop = await context.Set<MusicStore>()
                 .AsNoTracking()
                 .FirstOrDefaultAsync(x => x.Id == employee.MusicStoreId)
                 ?? throw new BusinessException(Messages.StoreNotFound);

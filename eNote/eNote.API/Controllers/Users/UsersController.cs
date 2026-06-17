@@ -13,10 +13,12 @@ namespace eNote.API.Controllers.Users
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<UserProfileResponse>> GetCurrentUser()
         {
-            var profile = await userService.GetCurrentUserAsync();
+            UserProfileResponse? profile = await userService.GetCurrentUserAsync();
 
             if (profile is null)
+            {
                 return NotFound();
+            }
 
             return Ok(profile);
         }
@@ -26,10 +28,15 @@ namespace eNote.API.Controllers.Users
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileRequest request)
         {
-            var (success, error) = await userService.UpdateProfileAsync(request);
+            (bool success, string? error) = await userService.UpdateProfileAsync(request);
 
             if (!success)
-                return BadRequest(new { message = error });
+            {
+                return BadRequest(new
+                {
+                    message = error
+                });
+            }
 
             return NoContent();
         }
@@ -39,10 +46,15 @@ namespace eNote.API.Controllers.Users
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
         {
-            var (success, error) = await userService.ChangePasswordAsync(request);
+            (bool success, string? error) = await userService.ChangePasswordAsync(request);
 
             if (!success)
-                return BadRequest(new { message = error });
+            {
+                return BadRequest(new
+                {
+                    message = error
+                });
+            }
 
             return NoContent();
         }

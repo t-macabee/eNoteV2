@@ -4,6 +4,9 @@ namespace eNote.Application.Features.LectureNotes.Search
 {
     public class LectureNoteSearchObject : BaseSearchObject
     {
-        public string? Title { get; set; }
+        public string? Title
+        {
+            get; set;
+        }
     }
 }

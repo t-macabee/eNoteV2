@@ -10,24 +10,29 @@ namespace eNote.Infrastructure.Identity
     {
         public async Task<(AuthResponse? response, string? error)> Login(LoginRequest model)
         {
-            var username = model.Username.Trim();
-
-            var user = await userManager.FindByNameAsync(username);
+            string username = model.Username.Trim();
+            AppUser? user = await userManager.FindByNameAsync(username);
 
             if (user == null || !user.IsActive)
+            {
                 return (null, Messages.InvalidCredentials);
+            }
 
-            var result = await signInManager.CheckPasswordSignInAsync(user, model.Password, lockoutOnFailure: false);
+            SignInResult result = await signInManager.CheckPasswordSignInAsync(user, model.Password, lockoutOnFailure: false);
 
             if (!result.Succeeded)
+            {
                 return (null, Messages.InvalidCredentials);
+            }
 
-            var roles = await userManager.GetRolesAsync(user);
+            IList<string> roles = await userManager.GetRolesAsync(user);
 
             if (roles.Count != 1)
+            {
                 return (null, Messages.RoleMisconfigured);
+            }
 
-            var token = tokenService.GenerateToken(user.Id, user.UserName!, roles);
+            string token = tokenService.GenerateToken(user.Id, user.UserName!, roles);
 
             return (new AuthResponse
             {
@@ -40,19 +45,23 @@ namespace eNote.Infrastructure.Identity
 
         public async Task<(AuthResponse? response, string? error)> Register(RegisterRequest model)
         {
-            var (_, error) = await userService.RegisterStudentAsync(model);
+            (Application.Features.Users.UserProfileResponse _, string? error) = await userService.RegisterStudentAsync(model);
 
             if (error is not null)
+            {
                 return (null, error);
+            }
 
-            var user = await userManager.FindByNameAsync(model.Username.Trim());
+            AppUser? user = await userManager.FindByNameAsync(model.Username.Trim());
 
             if (user is null)
+            {
                 return (null, Messages.InternalError);
+            }
 
-            var roles = await userManager.GetRolesAsync(user);
+            IList<string> roles = await userManager.GetRolesAsync(user);
 
-            var token = tokenService.GenerateToken(user.Id, user.UserName!, roles);
+            string token = tokenService.GenerateToken(user.Id, user.UserName!, roles);
 
             return (new AuthResponse
             {

@@ -9,13 +9,15 @@ namespace eNote.Infrastructure.Identity
     {
         public async Task<UserIdentityDto?> GetUserAsync(int userId)
         {
-            var user = await userManager.Users
+            AppUser? user = await userManager.Users
                 .AsNoTracking()
                 .Include(u => u.Address)
                 .FirstOrDefaultAsync(u => u.Id == userId);
 
             if (user == null)
+            {
                 return null;
+            }
 
             return new UserIdentityDto
             {
@@ -40,7 +42,7 @@ namespace eNote.Infrastructure.Identity
         {
             var ids = userIds.ToHashSet();
 
-            var users = await userManager.Users
+            List<AppUser> users = await userManager.Users
                 .AsNoTracking()
                 .Include(u => u.Address)
                 .Where(u => ids.Contains(u.Id))
@@ -65,10 +67,12 @@ namespace eNote.Infrastructure.Identity
 
         public async Task<IReadOnlyList<string>> GetRolesAsync(int userId)
         {
-            var user = await userManager.FindByIdAsync(userId.ToString());
+            AppUser? user = await userManager.FindByIdAsync(userId.ToString());
 
             if (user == null)
+            {
                 return [];
+            }
 
             return [.. await userManager.GetRolesAsync(user)];
         }

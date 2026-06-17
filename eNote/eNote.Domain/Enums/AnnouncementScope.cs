@@ -1,4 +1,4 @@
-﻿namespace eNote.Domain.Enums
+namespace eNote.Domain.Enums
 {
     public enum AnnouncementScope
     {

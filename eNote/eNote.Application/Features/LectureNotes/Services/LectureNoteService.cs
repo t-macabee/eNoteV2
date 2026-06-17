@@ -4,7 +4,6 @@ using eNote.Application.Common.Localization;
 using eNote.Application.Common.Paging;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Features.LectureNotes.Search;
-using eNote.Application.Features.LectureNotes.Services;
 using eNote.Application.Features.Users.Services;
 using eNote.Domain.Entities;
 using eNote.Domain.Enums;
@@ -16,28 +15,30 @@ namespace eNote.Application.Features.LectureNotes.Services
     {
         public async Task<PagedResult<LectureNoteDto>> GetForLectureAsync(int lectureId, LectureNoteSearchObject search)
         {
-            var instructor = await resolver.GetInstructorAsync(currentUserService.UserId);
+            Instructor instructor = await resolver.GetInstructorAsync(currentUserService.UserId);
 
-            var query = context.Set<LectureNote>()
+            IQueryable<LectureNote> query = context.Set<LectureNote>()
                 .AsNoTracking()
                 .Where(x => x.LectureId == lectureId && x.Lecture.Course.InstructorId == instructor.Id);
 
             if (!string.IsNullOrWhiteSpace(search.Title))
+            {
                 query = query.Where(x => x.Title.Contains(search.Title));
+            }
 
             return await query.ToPagedResultAsync(search.Page, search.PageSize, search.IncludeTotalCount, Map, q => q.OrderByDescending(x => x.CreatedAt));
         }
 
         public async Task<LectureNoteDto> GetByIdForInstructorAsync(int lectureId, int noteId)
         {
-            var entity = await GetNoteForInstructorAsync(lectureId, noteId, currentUserService.UserId);
+            LectureNote entity = await GetNoteForInstructorAsync(lectureId, noteId, currentUserService.UserId);
 
             return Map(entity);
         }
 
         public async Task<LectureNoteDto> CreateAsync(int lectureId, LectureNoteRequest request)
         {
-            var instructor = await resolver.GetInstructorAsync(currentUserService.UserId);
+            Instructor instructor = await resolver.GetInstructorAsync(currentUserService.UserId);
 
             _ = await context.Set<Lecture>()
                 .AsNoTracking()
@@ -59,7 +60,7 @@ namespace eNote.Application.Features.LectureNotes.Services
 
         public async Task<LectureNoteDto> UpdateAsync(int lectureId, int noteId, LectureNoteRequest request)
         {
-            var entity = await GetNoteForInstructorAsync(lectureId, noteId, currentUserService.UserId, track: true);
+            LectureNote entity = await GetNoteForInstructorAsync(lectureId, noteId, currentUserService.UserId, track: true);
 
             entity.UpdateDetails(request.Title.Trim(), request.Content.Trim());
             entity.UpdatedById = currentUserService.UserId;
@@ -71,7 +72,7 @@ namespace eNote.Application.Features.LectureNotes.Services
 
         public async Task DeleteAsync(int lectureId, int noteId)
         {
-            var entity = await GetNoteForInstructorAsync(lectureId, noteId, currentUserService.UserId, track: true);
+            LectureNote entity = await GetNoteForInstructorAsync(lectureId, noteId, currentUserService.UserId, track: true);
 
             entity.SoftDelete();
             entity.UpdatedById = currentUserService.UserId;
@@ -81,9 +82,9 @@ namespace eNote.Application.Features.LectureNotes.Services
 
         public async Task<PagedResult<LectureNoteDto>> GetForStudentAsync(int lectureId, LectureNoteSearchObject search)
         {
-            var student = await resolver.GetStudentAsync(currentUserService.UserId);
+            Student student = await resolver.GetStudentAsync(currentUserService.UserId);
 
-            var query = context.Set<LectureNote>()
+            IQueryable<LectureNote> query = context.Set<LectureNote>()
                 .AsNoTracking()
                 .Where(x => x.LectureId == lectureId &&
                             x.Lecture.Course.IsPublished &&
@@ -91,16 +92,18 @@ namespace eNote.Application.Features.LectureNotes.Services
                             x.Lecture.Course.Enrollments.Any(e => e.StudentId == student.Id && e.EnrollmentStatus == EnrollmentStatus.Active));
 
             if (!string.IsNullOrWhiteSpace(search.Title))
+            {
                 query = query.Where(x => x.Title.Contains(search.Title));
+            }
 
             return await query.ToPagedResultAsync(search.Page, search.PageSize, search.IncludeTotalCount, Map, q => q.OrderByDescending(x => x.CreatedAt));
         }
 
         public async Task<LectureNoteDto> GetByIdForStudentAsync(int lectureId, int noteId)
         {
-            var student = await resolver.GetStudentAsync(currentUserService.UserId);
+            Student student = await resolver.GetStudentAsync(currentUserService.UserId);
 
-            var entity = await context.Set<LectureNote>()
+            LectureNote entity = await context.Set<LectureNote>()
                 .AsNoTracking()
                 .FirstOrDefaultAsync(x => x.Id == noteId &&
                                           x.LectureId == lectureId &&
@@ -114,13 +117,13 @@ namespace eNote.Application.Features.LectureNotes.Services
 
         private async Task<LectureNote> GetNoteForInstructorAsync(int lectureId, int noteId, int instructorUserId, bool track = false)
         {
-            var instructor = await resolver.GetInstructorAsync(instructorUserId);
+            Instructor instructor = await resolver.GetInstructorAsync(instructorUserId);
 
-            var query = context.Set<LectureNote>()
+            IQueryable<LectureNote> query = context.Set<LectureNote>()
                 .Where(x => x.Id == noteId && x.LectureId == lectureId && x.Lecture.Course.InstructorId == instructor.Id);
 
             return await (track ? query : query.AsNoTracking())
-                .FirstOrDefaultAsync() 
+                .FirstOrDefaultAsync()
                 ?? throw new NotFoundException(Messages.LectureNoteNotFound);
         }
 

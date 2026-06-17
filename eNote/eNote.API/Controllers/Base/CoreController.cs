@@ -1,4 +1,4 @@
-﻿using eNote.Application.Common.Exceptions;
+using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Localization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -19,10 +19,12 @@ namespace eNote.API.Controllers.Base
         {
             get
             {
-                var exp = User.FindFirstValue(JwtRegisteredClaimNames.Exp);
+                string? exp = User.FindFirstValue(JwtRegisteredClaimNames.Exp);
 
-                if (exp is null || !long.TryParse(exp, out var unixSeconds))
+                if (exp is null || !long.TryParse(exp, out long unixSeconds))
+                {
                     throw new AuthenticationException(Messages.InvalidUserClaim);
+                }
 
                 return DateTimeOffset.FromUnixTimeSeconds(unixSeconds).UtcDateTime;
             }

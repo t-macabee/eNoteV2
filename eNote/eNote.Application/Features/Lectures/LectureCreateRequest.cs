@@ -12,15 +12,30 @@ namespace eNote.Application.Features.Lectures
         public string Location { get; set; } = null!;
 
         [Required]
-        public DateTime LectureTime { get; set; }
+        public DateTime LectureTime
+        {
+            get; set;
+        }
 
         [Required]
-        public int Duration { get; set; }
+        public int Duration
+        {
+            get; set;
+        }
 
         [Required]
-        public LectureType LectureType { get; set; }
+        public LectureType LectureType
+        {
+            get; set;
+        }
 
-        public int? Capacity { get; set; }
-        public int? CourseId { get; set; }
+        public int? Capacity
+        {
+            get; set;
+        }
+        public int? CourseId
+        {
+            get; set;
+        }
     }
 }

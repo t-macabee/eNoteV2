@@ -1,4 +1,4 @@
-﻿namespace eNote.Application.Common.Search
+namespace eNote.Application.Common.Search
 {
     public class BaseSearchObject
     {

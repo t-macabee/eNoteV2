@@ -15,28 +15,31 @@ namespace eNote.API.Controllers.Announcements
         [HttpGet]
         public async Task<ActionResult<PagedResult<AnnouncementDto>>> GetForStore(int page = 1, int pageSize = 20)
         {
-            var result = await announcementService.GetForStoreAsync(page, pageSize);
+            PagedResult<AnnouncementDto> result = await announcementService.GetForStoreAsync(page, pageSize);
             return Ok(result);
         }
 
         [HttpGet("{announcementId:int}")]
         public async Task<ActionResult<AnnouncementDto>> GetById(int announcementId)
         {
-            var result = await announcementService.GetByIdForStoreAsync(announcementId);
+            AnnouncementDto result = await announcementService.GetByIdForStoreAsync(announcementId);
             return Ok(result);
         }
 
         [HttpPost]
         public async Task<ActionResult<AnnouncementDto>> Create([FromBody] AnnouncementRequest request)
         {
-            var result = await announcementService.CreateForStoreAsync(request);
-            return CreatedAtAction(nameof(GetById), new { announcementId = result.Id }, result);
+            AnnouncementDto result = await announcementService.CreateForStoreAsync(request);
+            return CreatedAtAction(nameof(GetById), new
+            {
+                announcementId = result.Id
+            }, result);
         }
 
         [HttpPut("{announcementId:int}")]
         public async Task<ActionResult<AnnouncementDto>> Update(int announcementId, [FromBody] AnnouncementRequest request)
         {
-            var result = await announcementService.UpdateForStoreAsync(announcementId, request);
+            AnnouncementDto result = await announcementService.UpdateForStoreAsync(announcementId, request);
             return Ok(result);
         }
 

@@ -1,4 +1,4 @@
-﻿using eNote.Domain.Entities.Base;
+using eNote.Domain.Entities.Base;
 
 namespace eNote.Domain.Entities
 {
@@ -7,7 +7,9 @@ namespace eNote.Domain.Entities
         public string StoreName { get; private set; } = null!;
         public string BusinessHours { get; private set; } = null!;
 
-        protected MusicStore() { }
+        protected MusicStore()
+        {
+        }
 
         public MusicStore(string storeName, string businessHours)
         {

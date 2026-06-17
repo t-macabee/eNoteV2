@@ -8,9 +8,15 @@ namespace eNote.Infrastructure.Data.Configurations
         public static PropertyBuilder<string> HasStringConfig(this PropertyBuilder<string> propertyBuilder, int? maxLength = null, bool isRequired = false)
         {
             if (isRequired)
+            {
                 propertyBuilder.IsRequired();
+            }
+
             if (maxLength.HasValue)
+            {
                 propertyBuilder.HasMaxLength(maxLength.Value);
+            }
+
             return propertyBuilder;
         }
 

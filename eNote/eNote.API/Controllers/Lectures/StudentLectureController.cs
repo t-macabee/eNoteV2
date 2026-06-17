@@ -16,21 +16,21 @@ namespace eNote.API.Controllers.Lectures
         [HttpGet]
         public async Task<ActionResult<PagedResult<LectureDto>>> GetAvailable([FromQuery] LectureSearchObject search)
         {
-            var result = await service.GetPagedForStudentAsync(search);
+            PagedResult<LectureDto> result = await service.GetPagedForStudentAsync(search);
             return Ok(result);
         }
 
         [HttpGet("{id:int}")]
         public async Task<ActionResult<LectureDto>> GetById(int id)
         {
-            var dto = await service.GetByIdForStudentAsync(id);
+            LectureDto dto = await service.GetByIdForStudentAsync(id);
             return Ok(dto);
         }
 
         [HttpPost("{id:int}/rsvp")]
         public async Task<ActionResult<RsvpResponse>> Rsvp(int id, [FromBody] RsvpRequest request)
         {
-            var response = await service.RsvpAsync(id, request);
+            RsvpResponse response = await service.RsvpAsync(id, request);
             return Ok(response);
         }
     }

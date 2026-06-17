@@ -10,7 +10,7 @@ namespace eNote.API.Extensions
 
             while (directory is not null)
             {
-                var envFile = Path.Combine(directory.FullName, ".env");
+                string envFile = Path.Combine(directory.FullName, ".env");
 
                 if (File.Exists(envFile))
                 {
@@ -27,19 +27,29 @@ namespace eNote.API.Extensions
             var errors = new List<string>();
 
             if (string.IsNullOrWhiteSpace(configuration.GetConnectionString("DefaultConnection")))
+            {
                 errors.Add("ConnectionStrings__DefaultConnection");
+            }
 
-            var jwtKey = configuration["Jwt:Key"];
+            string? jwtKey = configuration["Jwt:Key"];
             if (string.IsNullOrWhiteSpace(jwtKey))
+            {
                 errors.Add("JWT__Key");
+            }
             else if (jwtKey.Length < 32)
+            {
                 errors.Add("JWT__Key (minimum 32 characters)");
+            }
 
             if (string.IsNullOrWhiteSpace(configuration["Jwt:Issuer"]))
+            {
                 errors.Add("JWT__Issuer");
+            }
 
             if (string.IsNullOrWhiteSpace(configuration["Jwt:Audience"]))
+            {
                 errors.Add("JWT__Audience");
+            }
 
             if (errors.Count > 0)
             {

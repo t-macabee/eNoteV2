@@ -1,4 +1,4 @@
-﻿using eNote.Domain.Entities.Base;
+using eNote.Domain.Entities.Base;
 
 namespace eNote.Domain.Entities
 {
@@ -9,10 +9,15 @@ namespace eNote.Domain.Entities
 
         public bool IsActive { get; private set; } = true;
 
-        public int LectureId { get; private set; }
+        public int LectureId
+        {
+            get; private set;
+        }
         public Lecture Lecture { get; private set; } = null!;
 
-        protected LectureNote() { }
+        protected LectureNote()
+        {
+        }
 
         public LectureNote(string title, string content, int lectureId)
         {

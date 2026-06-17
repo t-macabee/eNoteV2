@@ -12,11 +12,11 @@ namespace eNote.Infrastructure.Data
         {
             LoadDotEnv();
 
-            var configuration = new ConfigurationBuilder()
+            IConfigurationRoot configuration = new ConfigurationBuilder()
                 .AddEnvironmentVariables()
                 .Build();
 
-            var connectionString = configuration.GetConnectionString("DefaultConnection")
+            string connectionString = configuration.GetConnectionString("DefaultConnection")
                 ?? throw new InvalidOperationException("ConnectionStrings__DefaultConnection is missing. Set it in .env or environment variables.");
 
             var optionsBuilder = new DbContextOptionsBuilder<ENoteContext>();
@@ -32,7 +32,7 @@ namespace eNote.Infrastructure.Data
 
             while (directory is not null)
             {
-                var envFile = Path.Combine(directory.FullName, ".env");
+                string envFile = Path.Combine(directory.FullName, ".env");
 
                 if (File.Exists(envFile))
                 {

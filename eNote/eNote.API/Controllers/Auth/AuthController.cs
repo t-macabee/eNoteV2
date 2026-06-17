@@ -15,10 +15,15 @@ namespace eNote.API.Controllers.Auth
         [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
         public async Task<ActionResult<AuthResponse>> Login([FromBody] LoginRequest model)
         {
-            var (response, error) = await authService.Login(model);
+            (AuthResponse? response, string? error) = await authService.Login(model);
 
             if (response is null)
-                return Unauthorized(new { message = error });
+            {
+                return Unauthorized(new
+                {
+                    message = error
+                });
+            }
 
             return Ok(response);
         }
@@ -29,10 +34,15 @@ namespace eNote.API.Controllers.Auth
         [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
         public async Task<ActionResult<AuthResponse>> Register([FromBody] RegisterRequest model)
         {
-            var (response, error) = await authService.Register(model);
+            (AuthResponse? response, string? error) = await authService.Register(model);
 
             if (response is null)
-                return BadRequest(new { message = error });
+            {
+                return BadRequest(new
+                {
+                    message = error
+                });
+            }
 
             return Ok(response);
         }

@@ -1,6 +1,5 @@
 using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Interfaces;
-using Microsoft.AspNetCore.Hosting;
 
 namespace eNote.API.Services
 {
@@ -13,13 +12,16 @@ namespace eNote.API.Services
             await ValidateMagicBytesAsync(stream);
 
             if (!AllowedContentTypes.Contains(contentType.ToLowerInvariant()))
+            {
                 throw new BusinessException("Only JPEG, PNG, and WebP images are allowed.");
+            }
 
-            var uploadsRoot = Path.Combine(env.WebRootPath ?? Path.Combine(env.ContentRootPath, "wwwroot"), "uploads", subfolder);
+            string uploadsRoot = Path.Combine(env.WebRootPath ?? Path.Combine(env.ContentRootPath, "wwwroot"), "uploads", subfolder);
             Directory.CreateDirectory(uploadsRoot);
 
-            var ext = Path.GetExtension(fileName).ToLowerInvariant();
+            string ext = Path.GetExtension(fileName).ToLowerInvariant();
             if (string.IsNullOrEmpty(ext) || ext is not (".jpg" or ".jpeg" or ".png" or ".webp"))
+            {
                 ext = contentType switch
                 {
                     "image/jpeg" => ".jpg",
@@ -27,12 +29,13 @@ namespace eNote.API.Services
                     "image/webp" => ".webp",
                     _ => ".bin"
                 };
+            }
 
-            var uniqueName = $"{Guid.NewGuid()}{ext}";
-            var fullPath = Path.Combine(uploadsRoot, uniqueName);
+            string uniqueName = $"{Guid.NewGuid()}{ext}";
+            string fullPath = Path.Combine(uploadsRoot, uniqueName);
 
             stream.Position = 0;
-            await using var fileStream = File.Create(fullPath);
+            await using FileStream fileStream = File.Create(fullPath);
             await stream.CopyToAsync(fileStream, ct);
 
             return $"/uploads/{subfolder}/{uniqueName}";
@@ -40,18 +43,22 @@ namespace eNote.API.Services
 
         private static async Task ValidateMagicBytesAsync(Stream stream)
         {
-            var header = new byte[4];
-            var read = await stream.ReadAsync(header.AsMemory(0, 4));
+            byte[] header = new byte[4];
+            int read = await stream.ReadAsync(header.AsMemory(0, 4));
 
             if (read < 3)
+            {
                 throw new BusinessException("File is too small to be a valid image.");
+            }
 
-            var isJpeg = header[0] == 0xFF && header[1] == 0xD8 && header[2] == 0xFF;
-            var isPng  = header[0] == 0x89 && header[1] == 0x50 && header[2] == 0x4E && header[3] == 0x47;
-            var isRiff = header[0] == 0x52 && header[1] == 0x49 && header[2] == 0x46 && header[3] == 0x46; // WebP starts with RIFF
+            bool isJpeg = header[0] == 0xFF && header[1] == 0xD8 && header[2] == 0xFF;
+            bool isPng = header[0] == 0x89 && header[1] == 0x50 && header[2] == 0x4E && header[3] == 0x47;
+            bool isRiff = header[0] == 0x52 && header[1] == 0x49 && header[2] == 0x46 && header[3] == 0x46; // WebP starts with RIFF
 
             if (!isJpeg && !isPng && !isRiff)
+            {
                 throw new BusinessException("Only JPEG, PNG, and WebP images are allowed.");
+            }
         }
     }
 }

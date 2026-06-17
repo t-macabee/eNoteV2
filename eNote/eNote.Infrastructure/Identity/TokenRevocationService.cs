@@ -11,12 +11,17 @@ namespace eNote.Infrastructure.Identity
         public async Task RevokeAsync(string jti, DateTime expiresAt, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(jti))
+            {
                 return;
+            }
 
-            var exists = await context.Set<RevokedToken>().AnyAsync(x => x.Jti == jti, cancellationToken);
+            bool exists = await context.Set<RevokedToken>()
+                .AnyAsync(x => x.Jti == jti, cancellationToken);
 
             if (exists)
+            {
                 return;
+            }
 
             context.Set<RevokedToken>().Add(new RevokedToken
             {
@@ -31,7 +36,9 @@ namespace eNote.Infrastructure.Identity
         public async Task<bool> IsRevokedAsync(string jti, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(jti))
+            {
                 return false;
+            }
 
             return await context.Set<RevokedToken>()
                 .AsNoTracking()

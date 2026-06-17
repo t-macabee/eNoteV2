@@ -16,28 +16,31 @@ namespace eNote.API.Controllers.Courses
         [HttpGet]
         public async Task<ActionResult<PagedResult<CourseDto>>> GetMyCourses([FromQuery] CourseSearchObject search)
         {
-            var result = await service.GetPagedForInstructorAsync(search);
+            PagedResult<CourseDto> result = await service.GetPagedForInstructorAsync(search);
             return Ok(result);
         }
 
         [HttpGet("{id:int}")]
         public async Task<ActionResult<CourseDto>> GetById(int id)
         {
-            var dto = await service.GetByIdForInstructorAsync(id);
+            CourseDto dto = await service.GetByIdForInstructorAsync(id);
             return Ok(dto);
         }
 
         [HttpPost]
         public async Task<ActionResult<CourseDto>> Create([FromBody] CourseRequest request)
         {
-            var dto = await service.CreateAsync(request);
-            return CreatedAtAction(nameof(GetById), new { id = dto.Id }, dto);
+            CourseDto dto = await service.CreateAsync(request);
+            return CreatedAtAction(nameof(GetById), new
+            {
+                id = dto.Id
+            }, dto);
         }
 
         [HttpPut("{id:int}")]
         public async Task<ActionResult<CourseDto>> Update(int id, [FromBody] CourseRequest request)
         {
-            var dto = await service.UpdateAsync(id, request);
+            CourseDto dto = await service.UpdateAsync(id, request);
             return Ok(dto);
         }
 

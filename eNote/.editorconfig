@@ -1,0 +1,26 @@
+root = true
+
+[*.cs]
+
+# Basic settings
+indent_style = space
+indent_size = 4
+insert_final_newline = true
+charset = utf-8
+
+# Force Allman bracing
+csharp_new_line_before_open_brace = all
+csharp_style_braces = allman
+
+# Force braces on control blocks
+csharp_prefer_braces = true:suggestion
+csharp_prefer_simple_if_else = false:suggestion
+
+# Method & class formatting
+csharp_prefer_wrap_before_first_declaration = true:suggestion
+csharp_maximum_line_length = 140
+
+# Spacing
+csharp_space_after_keywords_in_control_flow_statements = true
+csharp_space_between_method_declaration_name_and_open_parenthesis = false
+csharp_space_before_open_brace = true

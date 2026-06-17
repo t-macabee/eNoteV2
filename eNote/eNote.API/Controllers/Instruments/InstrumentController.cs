@@ -16,28 +16,31 @@ namespace eNote.API.Controllers.Instruments
         [HttpGet]
         public async Task<ActionResult<PagedResult<InstrumentDto>>> GetPaged([FromQuery] InstrumentSearchObject search)
         {
-            var result = await instrumentService.GetPagedAsync(search);
+            PagedResult<InstrumentDto> result = await instrumentService.GetPagedAsync(search);
             return Ok(result);
         }
 
         [HttpGet("{id:int}")]
         public async Task<ActionResult<InstrumentDto>> GetById(int id)
         {
-            var result = await instrumentService.GetByIdAsync(id);
+            InstrumentDto result = await instrumentService.GetByIdAsync(id);
             return Ok(result);
         }
 
         [HttpPost]
         public async Task<ActionResult<InstrumentDto>> Create([FromBody] InstrumentCreateRequest request)
         {
-            var result = await instrumentService.CreateAsync(request);
-            return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
+            InstrumentDto result = await instrumentService.CreateAsync(request);
+            return CreatedAtAction(nameof(GetById), new
+            {
+                id = result.Id
+            }, result);
         }
 
         [HttpPut("{id:int}")]
         public async Task<ActionResult<InstrumentDto>> Update(int id, [FromBody] InstrumentUpdateRequest request)
         {
-            var result = await instrumentService.UpdateAsync(id, request);
+            InstrumentDto result = await instrumentService.UpdateAsync(id, request);
             return Ok(result);
         }
 
@@ -45,8 +48,8 @@ namespace eNote.API.Controllers.Instruments
         [ProducesResponseType(typeof(InstrumentDto), StatusCodes.Status200OK)]
         public async Task<ActionResult<InstrumentDto>> UploadImage(int id, IFormFile file, CancellationToken ct)
         {
-            await using var stream = file.OpenReadStream();
-            var result = await instrumentService.UploadImageAsync(id, stream, file.FileName, file.ContentType, ct);
+            await using Stream stream = file.OpenReadStream();
+            InstrumentDto result = await instrumentService.UploadImageAsync(id, stream, file.FileName, file.ContentType, ct);
             return Ok(result);
         }
 

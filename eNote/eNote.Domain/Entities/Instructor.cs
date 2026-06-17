@@ -1,12 +1,17 @@
-﻿using eNote.Domain.Entities.Base;
+using eNote.Domain.Entities.Base;
 
 namespace eNote.Domain.Entities
 {
     public class Instructor : AuditableEntity
     {
-        public int AppUserId { get; private set; }
+        public int AppUserId
+        {
+            get; private set;
+        }
 
-        protected Instructor() { }
+        protected Instructor()
+        {
+        }
 
         public Instructor(int appUserId)
         {

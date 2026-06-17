@@ -11,6 +11,9 @@ namespace eNote.Application.Features.Assignments
         public string Description { get; set; } = null!;
 
         [Required]
-        public DateTime DueAt { get; set; }
+        public DateTime DueAt
+        {
+            get; set;
+        }
     }
 }

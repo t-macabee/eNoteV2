@@ -1,4 +1,4 @@
-﻿namespace eNote.Application.Common.Time
+namespace eNote.Application.Common.Time
 {
     public sealed class SystemClock : IClock
     {

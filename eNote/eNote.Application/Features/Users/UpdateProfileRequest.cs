@@ -7,7 +7,13 @@ namespace eNote.Application.Features.Users
         [Required]
         [EmailAddress]
         public string Email { get; set; } = null!;
-        public string? FirstName { get; set; }
-        public string? LastName { get; set; }
+        public string? FirstName
+        {
+            get; set;
+        }
+        public string? LastName
+        {
+            get; set;
+        }
     }
 }

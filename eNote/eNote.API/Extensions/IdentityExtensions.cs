@@ -34,7 +34,7 @@ namespace eNote.API.Extensions
 
         public static IServiceCollection AddJwtAuthentication(this IServiceCollection services, IConfiguration config)
         {
-            var key = Encoding.UTF8.GetBytes(config["Jwt:Key"]!);
+            byte[] key = Encoding.UTF8.GetBytes(config["Jwt:Key"]!);
 
             services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 .AddJwtBearer(options =>
@@ -56,16 +56,20 @@ namespace eNote.API.Extensions
                     {
                         OnTokenValidated = async context =>
                         {
-                            var jti = context.Principal?.FindFirstValue(JwtRegisteredClaimNames.Jti);
+                            string? jti = context.Principal?.FindFirstValue(JwtRegisteredClaimNames.Jti);
 
                             if (string.IsNullOrWhiteSpace(jti))
+                            {
                                 return;
+                            }
 
-                            var revocation = context.HttpContext.RequestServices
+                            ITokenRevocationService revocation = context.HttpContext.RequestServices
                                 .GetRequiredService<ITokenRevocationService>();
 
                             if (await revocation.IsRevokedAsync(jti, context.HttpContext.RequestAborted))
+                            {
                                 context.Fail(Messages.TokenRevoked);
+                            }
                         }
                     };
                 });

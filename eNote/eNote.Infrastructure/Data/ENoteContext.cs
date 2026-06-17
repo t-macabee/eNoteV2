@@ -1,10 +1,11 @@
-﻿using eNote.Application.Common.Persistence;
+using eNote.Application.Common.Persistence;
 using eNote.Application.Common.Time;
 using eNote.Domain.Entities.Base;
 using eNote.Infrastructure.Data.Seed;
 using eNote.Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Storage;
 
 namespace eNote.Infrastructure.Data
@@ -22,15 +23,19 @@ namespace eNote.Infrastructure.Data
 
         public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
-            var now = clock.UtcNow;
+            DateTime now = clock.UtcNow;
 
-            foreach (var entry in ChangeTracker.Entries<AuditableEntity>())
+            foreach (EntityEntry<AuditableEntity> entry in ChangeTracker.Entries<AuditableEntity>())
             {
                 if (entry.State == EntityState.Added)
+                {
                     entry.Entity.CreatedAt = now;
+                }
 
                 if (entry.State == EntityState.Modified)
+                {
                     entry.Entity.UpdatedAt = now;
+                }
             }
 
             return await base.SaveChangesAsync(cancellationToken);

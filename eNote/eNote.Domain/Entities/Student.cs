@@ -1,13 +1,21 @@
-﻿using eNote.Domain.Entities.Base;
+using eNote.Domain.Entities.Base;
 
 namespace eNote.Domain.Entities
 {
     public class Student : AuditableEntity
     {
-        public int AppUserId { get; private set; }
-        public DateTime EnrollmentDate { get; private set; }
+        public int AppUserId
+        {
+            get; private set;
+        }
+        public DateTime EnrollmentDate
+        {
+            get; private set;
+        }
 
-        protected Student() { }
+        protected Student()
+        {
+        }
 
         public Student(int appUserId, DateTime enrollmentDate)
         {

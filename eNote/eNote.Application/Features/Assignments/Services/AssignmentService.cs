@@ -5,7 +5,6 @@ using eNote.Application.Common.Paging;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Common.Time;
 using eNote.Application.Features.Assignments.Search;
-using eNote.Application.Features.Assignments.Services;
 using eNote.Application.Features.Users.Services;
 using eNote.Domain.Entities;
 using eNote.Domain.Enums;
@@ -17,34 +16,40 @@ namespace eNote.Application.Features.Assignments.Services
     {
         public async Task<PagedResult<AssignmentDto>> GetForLectureAsync(int lectureId, AssignmentSearchObject search)
         {
-            var instructor = await resolver.GetInstructorAsync(currentUserService.UserId);
+            Instructor instructor = await resolver.GetInstructorAsync(currentUserService.UserId);
 
-            var query = context.Set<Assignment>()
+            IQueryable<Assignment> query = context.Set<Assignment>()
                 .AsNoTracking()
                 .Where(x => x.LectureId == lectureId && x.Lecture.Course.InstructorId == instructor.Id);
 
             if (!string.IsNullOrWhiteSpace(search.Title))
+            {
                 query = query.Where(x => x.Title.Contains(search.Title));
+            }
 
             if (search.DueAfter.HasValue)
+            {
                 query = query.Where(x => x.DueAt >= search.DueAfter.Value);
+            }
 
             if (search.DueBefore.HasValue)
+            {
                 query = query.Where(x => x.DueAt <= search.DueBefore.Value);
+            }
 
             return await query.ToPagedResultAsync(search.Page, search.PageSize, search.IncludeTotalCount, Map, q => q.OrderBy(x => x.DueAt));
         }
 
         public async Task<AssignmentDto> GetByIdForInstructorAsync(int lectureId, int assignmentId)
         {
-            var entity = await GetAssignmentForInstructorAsync(lectureId, assignmentId);
+            Assignment entity = await GetAssignmentForInstructorAsync(lectureId, assignmentId);
 
             return Map(entity);
         }
 
         public async Task<AssignmentDto> CreateAsync(int lectureId, AssignmentRequest request)
         {
-            var instructor = await resolver.GetInstructorAsync(currentUserService.UserId);
+            Instructor instructor = await resolver.GetInstructorAsync(currentUserService.UserId);
 
             _ = await context.Set<Lecture>()
                 .AsNoTracking()
@@ -64,7 +69,7 @@ namespace eNote.Application.Features.Assignments.Services
 
         public async Task<AssignmentDto> UpdateAsync(int lectureId, int assignmentId, AssignmentRequest request)
         {
-            var entity = await GetAssignmentForInstructorAsync(lectureId, assignmentId, track: true);
+            Assignment entity = await GetAssignmentForInstructorAsync(lectureId, assignmentId, track: true);
 
             entity.UpdateDetails(
                 request.Title.Trim(),
@@ -80,7 +85,7 @@ namespace eNote.Application.Features.Assignments.Services
 
         public async Task DeleteAsync(int lectureId, int assignmentId)
         {
-            var entity = await GetAssignmentForInstructorAsync(lectureId, assignmentId, track: true);
+            Assignment entity = await GetAssignmentForInstructorAsync(lectureId, assignmentId, track: true);
 
             entity.SoftDelete();
             entity.UpdatedById = currentUserService.UserId;
@@ -90,9 +95,9 @@ namespace eNote.Application.Features.Assignments.Services
 
         public async Task<PagedResult<AssignmentDto>> GetForStudentAsync(AssignmentSearchObject search)
         {
-            var student = await resolver.GetStudentAsync(currentUserService.UserId);
+            Student student = await resolver.GetStudentAsync(currentUserService.UserId);
 
-            var query = context.Set<Assignment>()
+            IQueryable<Assignment> query = context.Set<Assignment>()
                 .AsNoTracking()
                 .Where(x => x.Lecture.LectureStatus != LectureStatus.Cancelled &&
                             x.Lecture.Course.Enrollments.Any(e =>
@@ -100,22 +105,28 @@ namespace eNote.Application.Features.Assignments.Services
                                 e.EnrollmentStatus == EnrollmentStatus.Active));
 
             if (!string.IsNullOrWhiteSpace(search.Title))
+            {
                 query = query.Where(x => x.Title.Contains(search.Title));
+            }
 
             if (search.DueAfter.HasValue)
+            {
                 query = query.Where(x => x.DueAt >= search.DueAfter.Value);
+            }
 
             if (search.DueBefore.HasValue)
+            {
                 query = query.Where(x => x.DueAt <= search.DueBefore.Value);
+            }
 
             return await query.ToPagedResultAsync(search.Page, search.PageSize, search.IncludeTotalCount, Map, q => q.OrderBy(x => x.DueAt));
         }
 
         public async Task<AssignmentDto> GetByIdForStudentAsync(int assignmentId)
         {
-            var student = await resolver.GetStudentAsync(currentUserService.UserId);
+            Student student = await resolver.GetStudentAsync(currentUserService.UserId);
 
-            var entity = await GetStudentAssignmentQuery(student.Id, assignmentId)
+            Assignment entity = await GetStudentAssignmentQuery(student.Id, assignmentId)
                 .AsNoTracking()
                 .FirstOrDefaultAsync()
                 ?? throw new NotFoundException(Messages.AssignmentNotFound);
@@ -125,17 +136,19 @@ namespace eNote.Application.Features.Assignments.Services
 
         public async Task<AssignmentSubmissionDto> SubmitAsync(int assignmentId, AssignmentSubmitRequest request)
         {
-            var student = await resolver.GetStudentAsync(currentUserService.UserId);
+            Student student = await resolver.GetStudentAsync(currentUserService.UserId);
 
-            var assignment = await GetStudentAssignmentQuery(student.Id, assignmentId)
+            Assignment assignment = await GetStudentAssignmentQuery(student.Id, assignmentId)
                 .Include(x => x.AssignmentSubmissions)
                 .FirstOrDefaultAsync()
                 ?? throw new NotFoundException(Messages.AssignmentNotFound);
 
-            var existing = assignment.AssignmentSubmissions.FirstOrDefault(x => x.StudentId == student.Id);
+            AssignmentSubmission? existing = assignment.AssignmentSubmissions.FirstOrDefault(x => x.StudentId == student.Id);
 
             if (existing?.SubmittedAt is not null)
+            {
                 throw new ConflictException(Messages.AssignmentAlreadySubmitted);
+            }
 
             if (existing is null)
             {
@@ -158,7 +171,7 @@ namespace eNote.Application.Features.Assignments.Services
         {
             await GetAssignmentForInstructorAsync(lectureId, assignmentId);
 
-            var query = context.Set<AssignmentSubmission>()
+            IQueryable<AssignmentSubmission> query = context.Set<AssignmentSubmission>()
                 .AsNoTracking()
                 .Include(x => x.Student)
                 .Where(x => x.AssignmentId == assignmentId);
@@ -173,7 +186,7 @@ namespace eNote.Application.Features.Assignments.Services
         {
             await GetAssignmentForInstructorAsync(lectureId, assignmentId);
 
-            var submission = await context.Set<AssignmentSubmission>()
+            AssignmentSubmission submission = await context.Set<AssignmentSubmission>()
                 .Include(x => x.Student)
                 .FirstOrDefaultAsync(x => x.Id == submissionId && x.AssignmentId == assignmentId)
                 ?? throw new NotFoundException(Messages.AssignmentSubmissionNotFound);
@@ -188,14 +201,14 @@ namespace eNote.Application.Features.Assignments.Services
 
         private async Task<Assignment> GetAssignmentForInstructorAsync(int lectureId, int assignmentId, bool track = false)
         {
-            var instructor = await resolver.GetInstructorAsync(currentUserService.UserId);
+            Instructor instructor = await resolver.GetInstructorAsync(currentUserService.UserId);
 
-            var query = context.Set<Assignment>()
-                .Where(x => x.Id == assignmentId && x.LectureId == lectureId 
+            IQueryable<Assignment> query = context.Set<Assignment>()
+                .Where(x => x.Id == assignmentId && x.LectureId == lectureId
                 && x.Lecture.Course.InstructorId == instructor.Id);
 
             return await (track ? query : query.AsNoTracking())
-                .FirstOrDefaultAsync() 
+                .FirstOrDefaultAsync()
                 ?? throw new NotFoundException(Messages.AssignmentNotFound);
         }
 

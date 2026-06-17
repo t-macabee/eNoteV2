@@ -16,10 +16,12 @@ namespace eNote.API.Controllers.Admin
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<UserProfileResponse>> GetById(int id)
         {
-            var profile = await userService.GetUserAsync(id);
+            UserProfileResponse? profile = await userService.GetUserAsync(id);
 
             if (profile is null)
+            {
                 return NotFound();
+            }
 
             return Ok(profile);
         }
@@ -29,12 +31,23 @@ namespace eNote.API.Controllers.Admin
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<ActionResult> Provision([FromBody] UserProvisionRequest request)
         {
-            var (userId, error) = await userService.ProvisionUserAsync(request);
+            (int userId, string? error) = await userService.ProvisionUserAsync(request);
 
             if (error is not null)
-                return BadRequest(new { message = error });
+            {
+                return BadRequest(new
+                {
+                    message = error
+                });
+            }
 
-            return CreatedAtAction(nameof(GetById), new { id = userId }, new { userId });
+            return CreatedAtAction(nameof(GetById), new
+            {
+                id = userId
+            }, new
+            {
+                userId
+            });
         }
     }
 }

@@ -15,14 +15,14 @@ namespace eNote.API.Controllers.Instruments
         [HttpGet]
         public async Task<ActionResult<PagedResult<InstrumentDto>>> GetPaged([FromQuery] InstrumentSearchObject search)
         {
-            var result = await instrumentService.GetPublicPagedAsync(search);
+            PagedResult<InstrumentDto> result = await instrumentService.GetPublicPagedAsync(search);
             return Ok(result);
         }
 
         [HttpGet("{id:int}")]
         public async Task<ActionResult<InstrumentDto>> GetById(int id)
         {
-            var result = await instrumentService.GetPublicByIdAsync(id);
+            InstrumentDto result = await instrumentService.GetPublicByIdAsync(id);
             return Ok(result);
         }
     }

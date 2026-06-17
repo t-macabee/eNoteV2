@@ -1,4 +1,4 @@
-﻿using eNote.Application.Features.Courses;
+using eNote.Application.Features.Courses;
 using eNote.Application.Features.InstrumentRentals;
 using eNote.Application.Features.Instruments;
 using eNote.Domain.Entities;
@@ -12,7 +12,7 @@ namespace eNote.Application.Mapping
         public void Register(TypeAdapterConfig config)
         {
             config.NewConfig<Course, CourseDto>()
-                .Map(dest => dest.EnrolledCount, src => src.Enrollments == null 
+                .Map(dest => dest.EnrolledCount, src => src.Enrollments == null
                 ? 0 : src.Enrollments.Count(e => e.EnrollmentStatus == EnrollmentStatus.Active));
 
             config.NewConfig<Instrument, InstrumentDto>()

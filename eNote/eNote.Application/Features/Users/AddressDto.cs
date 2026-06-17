@@ -1,4 +1,4 @@
-﻿namespace eNote.Application.Features.Users
+namespace eNote.Application.Features.Users
 {
     public class AddressDto
     {

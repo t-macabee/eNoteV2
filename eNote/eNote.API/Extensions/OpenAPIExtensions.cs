@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.OpenApi;
 using Microsoft.OpenApi;
 
@@ -50,7 +50,7 @@ namespace eNote.API.Extensions
     {
         public Task TransformAsync(OpenApiOperation operation, OpenApiOperationTransformerContext context, CancellationToken cancellationToken)
         {
-            var metadata = context.Description.ActionDescriptor.EndpointMetadata;
+            IList<object> metadata = context.Description.ActionDescriptor.EndpointMetadata;
 
             if (metadata.Any(m => m is IAllowAnonymous))
             {
@@ -59,7 +59,9 @@ namespace eNote.API.Extensions
             }
 
             if (!metadata.Any(m => m is IAuthorizeData))
+            {
                 operation.Security = [];
+            }
 
             return Task.CompletedTask;
         }

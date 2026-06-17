@@ -16,28 +16,32 @@ namespace eNote.API.Controllers.LectureNotes
         [HttpGet]
         public async Task<ActionResult<PagedResult<LectureNoteDto>>> GetForLecture(int lectureId, [FromQuery] LectureNoteSearchObject search)
         {
-            var result = await service.GetForLectureAsync(lectureId, search);
+            PagedResult<LectureNoteDto> result = await service.GetForLectureAsync(lectureId, search);
             return Ok(result);
         }
 
         [HttpGet("{noteId:int}")]
         public async Task<ActionResult<LectureNoteDto>> GetById(int lectureId, int noteId)
         {
-            var dto = await service.GetByIdForInstructorAsync(lectureId, noteId);
+            LectureNoteDto dto = await service.GetByIdForInstructorAsync(lectureId, noteId);
             return Ok(dto);
         }
 
         [HttpPost]
         public async Task<ActionResult<LectureNoteDto>> Create(int lectureId, [FromBody] LectureNoteRequest request)
         {
-            var dto = await service.CreateAsync(lectureId, request);
-            return CreatedAtAction(nameof(GetById), new { lectureId, noteId = dto.Id }, dto);
+            LectureNoteDto dto = await service.CreateAsync(lectureId, request);
+            return CreatedAtAction(nameof(GetById), new
+            {
+                lectureId,
+                noteId = dto.Id
+            }, dto);
         }
 
         [HttpPut("{noteId:int}")]
         public async Task<ActionResult<LectureNoteDto>> Update(int lectureId, int noteId, [FromBody] LectureNoteRequest request)
         {
-            var dto = await service.UpdateAsync(lectureId, noteId, request);
+            LectureNoteDto dto = await service.UpdateAsync(lectureId, noteId, request);
             return Ok(dto);
         }
 

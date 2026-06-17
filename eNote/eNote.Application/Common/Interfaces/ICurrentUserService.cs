@@ -2,7 +2,13 @@ namespace eNote.Application.Common.Interfaces
 {
     public interface ICurrentUserService
     {
-        int UserId { get; }
-        bool IsAuthenticated { get; }
+        int UserId
+        {
+            get;
+        }
+        bool IsAuthenticated
+        {
+            get;
+        }
     }
 }
