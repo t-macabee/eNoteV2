@@ -19,13 +19,12 @@ namespace eNote.Application.Mapping
                 .Map(dest => dest.InstrumentType, src => src.InstrumentType.Type)
                 .Map(dest => dest.MusicStore, src => src.MusicStore.StoreName);
 
-            TypeAdapterConfig<InstrumentRental, InstrumentRentalDto>.NewConfig()
+            config.NewConfig<InstrumentRental, InstrumentRentalDto>()
                 .Map(x => x.InstrumentModel, x => x.Instrument.Model)
                 .Map(x => x.InstrumentType, x => x.Instrument.InstrumentType.Type)
                 .Map(x => x.MusicStoreId, x => x.Instrument.MusicStoreId)
                 .Map(x => x.StoreName, x => x.Instrument.MusicStore.StoreName)
-                .Map(x => x.StudentProfileId, x => x.StudentProfileId)
-                .Map(x => x.Fee, x => x.Fee);
+                .Map(x => x.StudentUserId, x => x.StudentProfile.AppUserId);
 
             config.Compile();
         }

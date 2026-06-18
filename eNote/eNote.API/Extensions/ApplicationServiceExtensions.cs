@@ -7,6 +7,7 @@ using eNote.Application.Features.InstrumentRentals.StateMachine;
 using eNote.Application.Features.Users.Services;
 using eNote.Infrastructure.Data;
 using eNote.Infrastructure.Identity;
+using eNote.Infrastructure.Messaging;
 using Microsoft.EntityFrameworkCore;
 
 namespace eNote.API.Extensions
@@ -39,6 +40,7 @@ namespace eNote.API.Extensions
 
             services.AddMemoryCache();
             services.AddScoped<IFileStorageService, LocalFileStorageService>();
+            services.AddScoped<IRentalEventPublisher, RentalEventPublisher>();
 
             services.AddScoped<IAppDbContext>(x => x.GetRequiredService<ENoteContext>());
 

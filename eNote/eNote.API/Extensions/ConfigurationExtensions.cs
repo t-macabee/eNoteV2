@@ -1,4 +1,5 @@
 using DotNetEnv;
+using eNote.Infrastructure.Messaging;
 
 namespace eNote.API.Extensions
 {
@@ -15,6 +16,7 @@ namespace eNote.API.Extensions
                 if (File.Exists(envFile))
                 {
                     Env.Load(envFile);
+
                     return;
                 }
 
@@ -51,10 +53,14 @@ namespace eNote.API.Extensions
                 errors.Add("JWT__Audience");
             }
 
+            if (!RabbitMqConfiguration.IsConfigured(configuration))
+            {
+                errors.Add("RabbitMQ__Host (or RabbitMQ__User)");
+            }
+
             if (errors.Count > 0)
             {
-                throw new InvalidOperationException(
-                    "Missing or invalid required configuration values: " + string.Join(", ", errors));
+                throw new InvalidOperationException("Missing or invalid required configuration values: " + string.Join(", ", errors));
             }
         }
     }

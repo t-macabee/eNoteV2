@@ -13,6 +13,8 @@
   <ItemGroup>
     <PackageReference Include="DotNetEnv" Version="3.2.0" />
     <PackageReference Include="Mapster" Version="10.0.8" />
+    <PackageReference Include="MassTransit" Version="8.3.6" />
+    <PackageReference Include="MassTransit.RabbitMQ" Version="8.3.6" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.9" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.9" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.9" />
@@ -25,6 +27,7 @@
   <ItemGroup>
     <ProjectReference Include="..\eNote.Application\eNote.Application.csproj" />
     <ProjectReference Include="..\eNote.Domain\eNote.Domain.csproj" />
+    <ProjectReference Include="..\eNote.Contracts\eNote.Contracts.csproj" />
   </ItemGroup>
 
   <ItemGroup>
