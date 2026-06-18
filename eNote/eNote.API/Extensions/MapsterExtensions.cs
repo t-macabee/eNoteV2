@@ -1,21 +1,18 @@
-using eNote.Application.Mapping;
 using Mapster;
 
-namespace eNote.API.Extensions
+namespace eNote.API.Extensions;
+
+public static class MapsterExtensions
 {
-    public static class MapsterExtensions
+    public static IServiceCollection AddMapsterMappings(this IServiceCollection services)
     {
-        public static IServiceCollection AddMapsterMappings(this IServiceCollection services)
-        {
-            var config = new TypeAdapterConfig();
+        var config = new TypeAdapterConfig();
 
-            config.Scan(typeof(MapsterConfig).Assembly);
+        config.Scan(typeof(eNote.Application.Mapping.MapsterConfig).Assembly);
 
-            services.AddSingleton(config);
+        services.AddSingleton(config);
+        services.AddMapster();
 
-            services.AddMapster();
-
-            return services;
-        }
+        return services;
     }
 }

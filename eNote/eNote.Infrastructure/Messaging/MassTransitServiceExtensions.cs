@@ -1,16 +1,19 @@
-using eNote.Infrastructure.Messaging;
-using eNote.Worker.Consumers;
 using MassTransit;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 
-namespace eNote.Worker.Extensions;
+namespace eNote.Infrastructure.Messaging;
 
-public static class MassTransitExtensions
+public static class MassTransitServiceExtensions
 {
-    public static IServiceCollection AddWorkerMassTransit(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddRabbitMqMassTransit(
+        this IServiceCollection services,
+        IConfiguration configuration,
+        Action<IBusRegistrationConfigurator>? configureBus = null)
     {
         services.AddMassTransit(x =>
         {
-            x.AddConsumer<RentalStatusChangedConsumer>();
+            configureBus?.Invoke(x);
 
             x.UsingRabbitMq((context, cfg) =>
             {

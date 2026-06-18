@@ -1,10 +1,10 @@
 using DotNetEnv;
 
-namespace eNote.Worker.Extensions;
+namespace eNote.Infrastructure.Configuration;
 
-public static class ConfigurationExtensions
+public static class DotEnvConfiguration
 {
-    public static void LoadDotEnv()
+    public static void Load()
     {
         var directory = new DirectoryInfo(Directory.GetCurrentDirectory());
 

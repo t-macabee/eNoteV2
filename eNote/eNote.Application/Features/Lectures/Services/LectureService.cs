@@ -7,18 +7,19 @@ using eNote.Application.Features.Users.Services;
 
 using eNote.Domain.Entities;
 using eNote.Domain.Enums;
+using MapsterMapper;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace eNote.Application.Features.Lectures.Services
 {
-    public class LectureService(IAppDbContext context, IUserContextResolver resolver, ILogger<LectureService> logger, ICurrentUserService currentUserService) : ILectureService
+    public class LectureService(IAppDbContext context, IUserContextResolver resolver, ILogger<LectureService> logger, ICurrentUserService currentUserService, IMapper mapper) : ILectureService
     {
         public async Task<LectureDto> GetByIdForInstructorAsync(int id)
         {
             Lecture entity = await GetLectureForInstructorAsync(id, currentUserService.UserId);
 
-            return Map(entity);
+            return mapper.Map<LectureDto>(entity);
         }
 
         public async Task<LectureDto> GetByIdForStudentAsync(int id)
@@ -32,7 +33,7 @@ namespace eNote.Application.Features.Lectures.Services
                     x.LectureStatus != LectureStatus.Cancelled)
                 ?? throw new NotFoundException(Messages.LectureNotFound);
 
-            return Map(entity);
+            return mapper.Map<LectureDto>(entity);
         }
 
         public async Task<PagedResult<LectureDto>> GetPagedForInstructorAsync(LectureSearchObject search)
@@ -44,9 +45,9 @@ namespace eNote.Application.Features.Lectures.Services
                 .Include(x => x.Attendances)
                 .Where(x => x.Course.InstructorId == instructor.Id);
 
-            query = ApplyFilters(query, search);
+            query = query.ApplySearch(search);
 
-            return await query.ToPagedResultAsync(search.Page, search.PageSize, search.IncludeTotalCount, Map, q => q.OrderByDescending(x => x.LectureTime));
+            return await query.ToPagedResultAsync(search.Page, search.PageSize, search.IncludeTotalCount, entity => mapper.Map<LectureDto>(entity), q => q.OrderByDescending(x => x.LectureTime));
         }
 
         public async Task<PagedResult<LectureDto>> GetPagedForStudentAsync(LectureSearchObject search)
@@ -56,39 +57,9 @@ namespace eNote.Application.Features.Lectures.Services
                 .Include(x => x.Attendances)
                 .Where(x => x.Course.IsPublished && x.LectureStatus != LectureStatus.Cancelled);
 
-            query = ApplyFilters(query, search);
+            query = query.ApplySearch(search);
 
-            return await query.ToPagedResultAsync(search.Page, search.PageSize, search.IncludeTotalCount, Map, q => q.OrderByDescending(x => x.LectureTime));
-        }
-
-        private static IQueryable<Lecture> ApplyFilters(IQueryable<Lecture> query, LectureSearchObject search)
-        {
-            if (!string.IsNullOrWhiteSpace(search.Name))
-            {
-                query = query.Where(x => x.Name.Contains(search.Name));
-            }
-
-            if (search.LectureType.HasValue)
-            {
-                query = query.Where(x => x.LectureType == search.LectureType.Value);
-            }
-
-            if (search.CourseId.HasValue)
-            {
-                query = query.Where(x => x.CourseId == search.CourseId.Value);
-            }
-
-            if (search.From.HasValue)
-            {
-                query = query.Where(x => x.LectureTime >= search.From.Value);
-            }
-
-            if (search.To.HasValue)
-            {
-                query = query.Where(x => x.LectureTime <= search.To.Value);
-            }
-
-            return query;
+            return await query.ToPagedResultAsync(search.Page, search.PageSize, search.IncludeTotalCount, entity => mapper.Map<LectureDto>(entity), q => q.OrderByDescending(x => x.LectureTime));
         }
 
         public async Task<LectureDto> CreateAsync(LectureCreateRequest request)
@@ -109,7 +80,7 @@ namespace eNote.Application.Features.Lectures.Services
             context.Set<Lecture>().Add(entity);
             await context.SaveChangesAsync();
 
-            return Map(entity);
+            return mapper.Map<LectureDto>(entity);
         }
 
         public async Task<LectureDto> UpdateAsync(int id, LectureUpdateRequest request)
@@ -132,7 +103,7 @@ namespace eNote.Application.Features.Lectures.Services
 
             await context.SaveChangesAsync();
 
-            return Map(entity);
+            return mapper.Map<LectureDto>(entity);
         }
 
         public async Task DeleteAsync(int id)
@@ -161,7 +132,7 @@ namespace eNote.Application.Features.Lectures.Services
 
             await context.SaveChangesAsync();
 
-            return Map(entity);
+            return mapper.Map<LectureDto>(entity);
         }
 
         public async Task<RsvpResponse> RsvpAsync(int lectureId, RsvpRequest request)
@@ -306,21 +277,5 @@ namespace eNote.Application.Features.Lectures.Services
                 ?? throw new NotFoundException(Messages.LectureNotFound);
         }
 
-        private static LectureDto Map(Lecture e)
-        {
-            return new LectureDto
-            {
-                Id = e.Id,
-                Name = e.Name,
-                Location = e.Location,
-                LectureTime = e.LectureTime,
-                Duration = e.Duration,
-                Capacity = e.Capacity,
-                LectureType = e.LectureType,
-                LectureStatus = e.LectureStatus,
-                IsCancelled = e.IsCancelled,
-                AttendeeCount = e.Attendances?.Count(a => a.AttendanceStatus == AttendanceStatus.Present) ?? 0
-            };
-        }
     }
 }

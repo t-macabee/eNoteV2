@@ -1,67 +1,49 @@
-using DotNetEnv;
+using eNote.Infrastructure.Configuration;
 using eNote.Infrastructure.Messaging;
 
-namespace eNote.API.Extensions
+namespace eNote.API.Extensions;
+
+public static class ConfigurationExtensions
 {
-    public static class ConfigurationExtensions
+    public static void LoadDotEnv() => DotEnvConfiguration.Load();
+
+    public static void ValidateRequiredSettings(this IConfiguration configuration)
     {
-        public static void LoadDotEnv()
+        var errors = new List<string>();
+
+        if (string.IsNullOrWhiteSpace(configuration.GetConnectionString("DefaultConnection")))
         {
-            var directory = new DirectoryInfo(Directory.GetCurrentDirectory());
-
-            while (directory is not null)
-            {
-                string envFile = Path.Combine(directory.FullName, ".env");
-
-                if (File.Exists(envFile))
-                {
-                    Env.Load(envFile);
-
-                    return;
-                }
-
-                directory = directory.Parent;
-            }
+            errors.Add("ConnectionStrings__DefaultConnection");
         }
 
-        public static void ValidateRequiredSettings(this IConfiguration configuration)
+        string? jwtKey = configuration["Jwt:Key"];
+        if (string.IsNullOrWhiteSpace(jwtKey))
         {
-            var errors = new List<string>();
+            errors.Add("JWT__Key");
+        }
+        else if (jwtKey.Length < 32)
+        {
+            errors.Add("JWT__Key (minimum 32 characters)");
+        }
 
-            if (string.IsNullOrWhiteSpace(configuration.GetConnectionString("DefaultConnection")))
-            {
-                errors.Add("ConnectionStrings__DefaultConnection");
-            }
+        if (string.IsNullOrWhiteSpace(configuration["Jwt:Issuer"]))
+        {
+            errors.Add("JWT__Issuer");
+        }
 
-            string? jwtKey = configuration["Jwt:Key"];
-            if (string.IsNullOrWhiteSpace(jwtKey))
-            {
-                errors.Add("JWT__Key");
-            }
-            else if (jwtKey.Length < 32)
-            {
-                errors.Add("JWT__Key (minimum 32 characters)");
-            }
+        if (string.IsNullOrWhiteSpace(configuration["Jwt:Audience"]))
+        {
+            errors.Add("JWT__Audience");
+        }
 
-            if (string.IsNullOrWhiteSpace(configuration["Jwt:Issuer"]))
-            {
-                errors.Add("JWT__Issuer");
-            }
+        if (!RabbitMqConfiguration.IsConfigured(configuration))
+        {
+            errors.Add("RabbitMQ__Host (or RabbitMQ__User)");
+        }
 
-            if (string.IsNullOrWhiteSpace(configuration["Jwt:Audience"]))
-            {
-                errors.Add("JWT__Audience");
-            }
-
-            if (!RabbitMqConfiguration.IsConfigured(configuration))
-            {
-                errors.Add("RabbitMQ__Host (or RabbitMQ__User)");
-            }
-
-            if (errors.Count > 0)
-            {
-                throw new InvalidOperationException("Missing or invalid required configuration values: " + string.Join(", ", errors));
-            }
+        if (errors.Count > 0)
+        {
+            throw new InvalidOperationException("Missing or invalid required configuration values: " + string.Join(", ", errors));
         }
     }
 }

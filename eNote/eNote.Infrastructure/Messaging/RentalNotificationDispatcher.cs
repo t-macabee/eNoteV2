@@ -7,16 +7,16 @@ using MassTransit;
 
 namespace eNote.Infrastructure.Messaging;
 
-public sealed class RentalEventPublisher(IPublishEndpoint publishEndpoint, IClock clock) : IRentalEventPublisher
+public sealed class RentalNotificationDispatcher(IPublishEndpoint publishEndpoint, IClock clock) : IRentalNotificationDispatcher
 {
-    public Task PublishCreatedAsync(InstrumentRentalDto rental, int studentUserId, CancellationToken cancellationToken = default)
+    public Task DispatchCreatedAsync(InstrumentRentalDto rental, int studentUserId, CancellationToken cancellationToken = default)
     {
         var message = new RentalStatusChanged(rental.Id, studentUserId, studentUserId, rental.RentalStatus.ToString(), rental.InstrumentModel, "Zahtjev za iznajmljivanje poslan", $"Vaš zahtjev za instrument {rental.InstrumentModel} je poslan prodavnici {rental.StoreName} i čeka odobrenje.", clock.UtcNow);
 
         return publishEndpoint.Publish(message, cancellationToken);
     }
 
-    public Task PublishTransitionAsync(InstrumentRentalDto rental, RentalTrigger trigger, int actorUserId, CancellationToken cancellationToken = default)
+    public Task DispatchTransitionAsync(InstrumentRentalDto rental, RentalTrigger trigger, int actorUserId, CancellationToken cancellationToken = default)
     {
         (string title, string body) = BuildNotificationContent(rental, trigger);
 
@@ -26,7 +26,6 @@ public sealed class RentalEventPublisher(IPublishEndpoint publishEndpoint, ICloc
     }
 
     private static (string Title, string Body) BuildNotificationContent(InstrumentRentalDto rental, RentalTrigger trigger) =>
-
         trigger switch
         {
             RentalTrigger.Approve =>
@@ -41,7 +40,6 @@ public sealed class RentalEventPublisher(IPublishEndpoint publishEndpoint, ICloc
                 ("Zahtjev otkazan", $"Vaš zahtjev za instrument {rental.InstrumentModel} je otkazan."),
             RentalTrigger.ReturnEarly =>
                 ("Instrument vraćen prije roka", $"Instrument {rental.InstrumentModel} je vraćen prije planiranog roka."),
-
             _ => ("Status iznajmljivanja promijenjen", $"Status iznajmljivanja za instrument {rental.InstrumentModel} je ažuriran.")
         };
 }

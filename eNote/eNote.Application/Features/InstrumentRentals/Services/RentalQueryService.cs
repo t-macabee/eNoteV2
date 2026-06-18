@@ -16,21 +16,6 @@ namespace eNote.Application.Features.InstrumentRentals.Services
     {
         private static IQueryable<InstrumentRental> AddIncludes(IQueryable<InstrumentRental> query) => query.WithRentalDetails();
 
-        private static IQueryable<InstrumentRental> AddFilter(InstrumentRentalSearchObject search, IQueryable<InstrumentRental> query)
-        {
-            if (search.InstrumentId.HasValue)
-            {
-                query = query.Where(x => x.InstrumentId == search.InstrumentId.Value);
-            }
-
-            if (search.RentalStatus.HasValue)
-            {
-                query = query.Where(x => x.RentalStatus == search.RentalStatus.Value);
-            }
-
-            return query;
-        }
-
         private InstrumentRentalDto MapEntityToModel(InstrumentRental entity)
         {
             InstrumentRentalDto result = mapper.Map<InstrumentRentalDto>(entity);
@@ -71,8 +56,7 @@ namespace eNote.Application.Features.InstrumentRentals.Services
                 .Where(x => x.StudentProfile.AppUserId == currentUserService.UserId);
 
             query = AddIncludes(query);
-
-            query = AddFilter(searchObject, query);
+            query = query.ApplySearch(searchObject);
 
             return await query
                 .OrderByDescending(x => x.RequestedAt)
@@ -93,8 +77,7 @@ namespace eNote.Application.Features.InstrumentRentals.Services
                 .Where(x => x.Instrument.MusicStoreId == storeId);
 
             query = AddIncludes(query);
-
-            query = AddFilter(searchObject, query);
+            query = query.ApplySearch(searchObject);
 
             return await query
                 .OrderByDescending(x => x.RequestedAt)

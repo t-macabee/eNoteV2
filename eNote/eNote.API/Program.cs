@@ -24,6 +24,7 @@ builder.Services
     .AddApplicationRateLimiting()
     .AddResponseCompression(opts => opts.EnableForHttps = true)
     .AddMapsterMappings()
+    .AddApplicationValidation()
     .AddScalarDocumentation();
 
 builder.Services

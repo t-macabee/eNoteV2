@@ -1,10 +1,11 @@
 using eNote.Application.Common.Time;
+using eNote.Infrastructure.Configuration;
 using eNote.Infrastructure.Data;
 using eNote.Infrastructure.Messaging;
-using eNote.Worker.Extensions;
+using eNote.Worker.Consumers;
 using Microsoft.EntityFrameworkCore;
 
-eNote.Worker.Extensions.ConfigurationExtensions.LoadDotEnv();
+DotEnvConfiguration.Load();
 
 var builder = Host.CreateApplicationBuilder(args);
 
@@ -27,7 +28,7 @@ builder.Services.AddSingleton<IClock, SystemClock>();
 builder.Services.AddDbContext<ENoteContext>(options =>
     options.UseSqlServer(connectionString, sql => sql.MigrationsAssembly("eNote.Infrastructure")));
 
-builder.Services.AddWorkerMassTransit(builder.Configuration);
+builder.Services.AddRabbitMqMassTransit(builder.Configuration, bus => bus.AddConsumer<RentalStatusChangedConsumer>());
 
 var host = builder.Build();
 host.Run();

@@ -1,0 +1,15 @@
+using eNote.Application.Features.Lectures;
+using FluentValidation;
+
+namespace eNote.Application.Validation;
+
+public sealed class LectureCreateRequestValidator : AbstractValidator<LectureCreateRequest>
+{
+    public LectureCreateRequestValidator()
+    {
+        RuleFor(x => x.Name).NotEmpty();
+        RuleFor(x => x.Location).NotEmpty();
+        RuleFor(x => x.LectureTime).NotEmpty();
+        RuleFor(x => x.Duration).GreaterThan(0);
+    }
+}

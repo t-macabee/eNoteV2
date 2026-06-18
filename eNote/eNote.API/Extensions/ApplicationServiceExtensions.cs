@@ -40,7 +40,7 @@ namespace eNote.API.Extensions
 
             services.AddMemoryCache();
             services.AddScoped<IFileStorageService, LocalFileStorageService>();
-            services.AddScoped<IRentalEventPublisher, RentalEventPublisher>();
+            services.AddScoped<IRentalNotificationDispatcher, RentalNotificationDispatcher>();
 
             services.AddScoped<IAppDbContext>(x => x.GetRequiredService<ENoteContext>());
 

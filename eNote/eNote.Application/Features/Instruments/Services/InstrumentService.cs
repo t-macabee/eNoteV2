@@ -13,8 +13,6 @@ namespace eNote.Application.Features.Instruments.Services
 {
     public class InstrumentService(IAppDbContext context, IMapper mapper, IUserContextResolver resolver, ICurrentUserService currentUserService, IFileStorageService fileStorage) : IInstrumentService
     {
-        private InstrumentDto MapEntityToModel(Instrument entity) => mapper.Map<InstrumentDto>(entity);
-
         public async Task<InstrumentDto> GetByIdAsync(int id)
         {
             MusicStoreEmployee employee = await EnsureStoreAccessAsync();
@@ -27,7 +25,7 @@ namespace eNote.Application.Features.Instruments.Services
                 .FirstOrDefaultAsync(x => x.Id == id)
                 ?? throw new NotFoundException(Messages.NotFound);
 
-            return MapEntityToModel(entity);
+            return mapper.Map<InstrumentDto>(entity);
         }
 
         public async Task<InstrumentDto> GetPublicByIdAsync(int id)
@@ -36,7 +34,7 @@ namespace eNote.Application.Features.Instruments.Services
                 .FirstOrDefaultAsync(x => x.Id == id)
                 ?? throw new NotFoundException(Messages.NotFound);
 
-            return MapEntityToModel(entity);
+            return mapper.Map<InstrumentDto>(entity);
         }
 
         public async Task<PagedResult<InstrumentDto>> GetPagedAsync(InstrumentSearchObject search)
@@ -48,25 +46,17 @@ namespace eNote.Application.Features.Instruments.Services
                 .Where(x => x.MusicStoreId == employee.MusicStoreId);
 
             query = AddIncludes(query);
-            query = AddFilter(search, query);
+            query = query.ApplySearch(search);
 
-            return await query.ToPagedResultAsync(search.Page, search.PageSize, search.IncludeTotalCount, MapEntityToModel);
+            return await query.ToPagedResultAsync(search.Page, search.PageSize, search.IncludeTotalCount, entity => mapper.Map<InstrumentDto>(entity));
         }
 
         public async Task<PagedResult<InstrumentDto>> GetPublicPagedAsync(InstrumentSearchObject search)
         {
             IQueryable<Instrument> query = AddIncludes(context.Set<Instrument>().AsNoTracking());
+            query = query.ApplySearch(search);
 
-            if (search.IsAvailable.HasValue && search.IsAvailable.Value)
-            {
-                query = query.Where(x => !x.InstrumentRentals.Any(r =>
-                    r.RentalStatus == InstrumentRentalStatus.Approved ||
-                    r.RentalStatus == InstrumentRentalStatus.Active));
-            }
-
-            query = AddFilter(search, query);
-
-            return await query.ToPagedResultAsync(search.Page, search.PageSize, search.IncludeTotalCount, MapEntityToModel);
+            return await query.ToPagedResultAsync(search.Page, search.PageSize, search.IncludeTotalCount, entity => mapper.Map<InstrumentDto>(entity));
         }
 
         public async Task<InstrumentDto> CreateAsync(InstrumentCreateRequest request)
@@ -81,7 +71,7 @@ namespace eNote.Application.Features.Instruments.Services
             await context.SaveChangesAsync();
             entity = await AfterSaveAsync(entity);
 
-            return MapEntityToModel(entity);
+            return mapper.Map<InstrumentDto>(entity);
         }
 
         public async Task<InstrumentDto> UpdateAsync(int id, InstrumentUpdateRequest request)
@@ -114,7 +104,7 @@ namespace eNote.Application.Features.Instruments.Services
             await context.SaveChangesAsync();
             entity = await AfterSaveAsync(entity);
 
-            return MapEntityToModel(entity);
+            return mapper.Map<InstrumentDto>(entity);
         }
 
         public async Task<InstrumentDto> UploadImageAsync(int id, Stream stream, string fileName, string contentType, CancellationToken ct = default)
@@ -132,7 +122,7 @@ namespace eNote.Application.Features.Instruments.Services
             await context.SaveChangesAsync(ct);
 
             entity = await AfterSaveAsync(entity);
-            return MapEntityToModel(entity);
+            return mapper.Map<InstrumentDto>(entity);
         }
 
         public async Task DeleteAsync(int id)
@@ -164,42 +154,6 @@ namespace eNote.Application.Features.Instruments.Services
         private static IQueryable<Instrument> AddIncludes(IQueryable<Instrument> query)
         {
             return query.WithInstrumentDetails();
-        }
-
-        private static IQueryable<Instrument> AddFilter(InstrumentSearchObject search, IQueryable<Instrument> query)
-        {
-            if (!string.IsNullOrWhiteSpace(search.Model))
-            {
-                query = query.Where(x => x.Model.Contains(search.Model));
-            }
-
-            if (!string.IsNullOrWhiteSpace(search.Manufacturer))
-            {
-                query = query.Where(x => x.Manufacturer.Contains(search.Manufacturer));
-            }
-
-            if (search.InstrumentTypeId.HasValue)
-            {
-                query = query.Where(x => x.InstrumentTypeId == search.InstrumentTypeId);
-            }
-
-            if (search.IsAvailable.HasValue)
-            {
-                if (search.IsAvailable.Value)
-                {
-                    query = query.Where(x => !x.InstrumentRentals.Any(r =>
-                        r.RentalStatus == InstrumentRentalStatus.Approved ||
-                        r.RentalStatus == InstrumentRentalStatus.Active));
-                }
-                else
-                {
-                    query = query.Where(x => x.InstrumentRentals.Any(r =>
-                        r.RentalStatus == InstrumentRentalStatus.Approved ||
-                        r.RentalStatus == InstrumentRentalStatus.Active));
-                }
-            }
-
-            return query;
         }
 
         private async Task BeforeCreateAsync(InstrumentCreateRequest request)

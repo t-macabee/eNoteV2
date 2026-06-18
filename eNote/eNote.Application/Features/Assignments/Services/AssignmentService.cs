@@ -7,11 +7,12 @@ using eNote.Application.Common.Time;
 using eNote.Application.Features.Users.Services;
 using eNote.Domain.Entities;
 using eNote.Domain.Enums;
+using MapsterMapper;
 using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Application.Features.Assignments.Services
 {
-    public class AssignmentService(IAppDbContext context, IClock clock, IUserContextResolver resolver, ICurrentUserService currentUserService) : IAssignmentService
+    public class AssignmentService(IAppDbContext context, IClock clock, IUserContextResolver resolver, ICurrentUserService currentUserService, IMapper mapper) : IAssignmentService
     {
         public async Task<PagedResult<AssignmentDto>> GetForLectureAsync(int lectureId, AssignmentSearchObject search)
         {
@@ -21,29 +22,16 @@ namespace eNote.Application.Features.Assignments.Services
                 .AsNoTracking()
                 .Where(x => x.LectureId == lectureId && x.Lecture.Course.InstructorId == instructor.Id);
 
-            if (!string.IsNullOrWhiteSpace(search.Title))
-            {
-                query = query.Where(x => x.Title.Contains(search.Title));
-            }
+            query = query.ApplySearch(search);
 
-            if (search.DueAfter.HasValue)
-            {
-                query = query.Where(x => x.DueAt >= search.DueAfter.Value);
-            }
-
-            if (search.DueBefore.HasValue)
-            {
-                query = query.Where(x => x.DueAt <= search.DueBefore.Value);
-            }
-
-            return await query.ToPagedResultAsync(search.Page, search.PageSize, search.IncludeTotalCount, Map, q => q.OrderBy(x => x.DueAt));
+            return await query.ToPagedResultAsync(search.Page, search.PageSize, search.IncludeTotalCount, mapper.Map<AssignmentDto>, q => q.OrderBy(x => x.DueAt));
         }
 
         public async Task<AssignmentDto> GetByIdForInstructorAsync(int lectureId, int assignmentId)
         {
             Assignment entity = await GetAssignmentForInstructorAsync(lectureId, assignmentId);
 
-            return Map(entity);
+            return mapper.Map<AssignmentDto>(entity);
         }
 
         public async Task<AssignmentDto> CreateAsync(int lectureId, AssignmentRequest request)
@@ -63,7 +51,7 @@ namespace eNote.Application.Features.Assignments.Services
             context.Set<Assignment>().Add(entity);
             await context.SaveChangesAsync();
 
-            return Map(entity);
+            return mapper.Map<AssignmentDto>(entity);
         }
 
         public async Task<AssignmentDto> UpdateAsync(int lectureId, int assignmentId, AssignmentRequest request)
@@ -79,7 +67,7 @@ namespace eNote.Application.Features.Assignments.Services
 
             await context.SaveChangesAsync();
 
-            return Map(entity);
+            return mapper.Map<AssignmentDto>(entity);
         }
 
         public async Task DeleteAsync(int lectureId, int assignmentId)
@@ -103,22 +91,9 @@ namespace eNote.Application.Features.Assignments.Services
                                 e.StudentId == student.Id &&
                                 e.EnrollmentStatus == EnrollmentStatus.Active));
 
-            if (!string.IsNullOrWhiteSpace(search.Title))
-            {
-                query = query.Where(x => x.Title.Contains(search.Title));
-            }
+            query = query.ApplySearch(search);
 
-            if (search.DueAfter.HasValue)
-            {
-                query = query.Where(x => x.DueAt >= search.DueAfter.Value);
-            }
-
-            if (search.DueBefore.HasValue)
-            {
-                query = query.Where(x => x.DueAt <= search.DueBefore.Value);
-            }
-
-            return await query.ToPagedResultAsync(search.Page, search.PageSize, search.IncludeTotalCount, Map, q => q.OrderBy(x => x.DueAt));
+            return await query.ToPagedResultAsync(search.Page, search.PageSize, search.IncludeTotalCount, mapper.Map<AssignmentDto>, q => q.OrderBy(x => x.DueAt));
         }
 
         public async Task<AssignmentDto> GetByIdForStudentAsync(int assignmentId)
@@ -130,7 +105,7 @@ namespace eNote.Application.Features.Assignments.Services
                 .FirstOrDefaultAsync()
                 ?? throw new NotFoundException(Messages.AssignmentNotFound);
 
-            return Map(entity);
+            return mapper.Map<AssignmentDto>(entity);
         }
 
         public async Task<AssignmentSubmissionDto> SubmitAsync(int assignmentId, AssignmentSubmitRequest request)
@@ -215,15 +190,6 @@ namespace eNote.Application.Features.Assignments.Services
             context.Set<Assignment>()
             .Where(x => x.Id == assignmentId && x.Lecture.Course.Enrollments
             .Any(e => e.StudentId == studentId && e.EnrollmentStatus == EnrollmentStatus.Active));
-
-        private static AssignmentDto Map(Assignment entity) => new()
-        {
-            Id = entity.Id,
-            Title = entity.Title,
-            Description = entity.Description,
-            DueAt = entity.DueAt,
-            LectureId = entity.LectureId
-        };
 
         private async Task<AssignmentSubmissionDto> MapSubmissionAsync(AssignmentSubmission submission, Student student)
         {

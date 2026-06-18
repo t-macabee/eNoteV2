@@ -54,15 +54,7 @@ namespace eNote.Application.Features.Courses.Services
                 .Include(c => c.Enrollments)
                 .Where(c => c.InstructorId == instructor.Id);
 
-            if (!string.IsNullOrWhiteSpace(search.Name))
-            {
-                query = query.Where(c => c.Name.Contains(search.Name));
-            }
-
-            if (search.IsPublished.HasValue)
-            {
-                query = query.Where(c => c.IsPublished == search.IsPublished.Value);
-            }
+            query = query.ApplySearch(search);
 
             return await query.ToPagedResultAsync(search.Page, search.PageSize, search.IncludeTotalCount, mapper.Map<CourseDto>, q => q.OrderByDescending(x => x.StartDate));
         }
@@ -74,10 +66,7 @@ namespace eNote.Application.Features.Courses.Services
                 .Include(c => c.Enrollments)
                 .Where(c => c.IsPublished);
 
-            if (!string.IsNullOrWhiteSpace(search.Name))
-            {
-                query = query.Where(c => c.Name.Contains(search.Name));
-            }
+            query = query.ApplySearch(search);
 
             return await query.ToPagedResultAsync(search.Page, search.PageSize, search.IncludeTotalCount, mapper.Map<CourseDto>, q => q.OrderByDescending(x => x.StartDate));
         }

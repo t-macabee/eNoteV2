@@ -15,7 +15,7 @@ using Microsoft.EntityFrameworkCore.Storage;
 
 namespace eNote.Application.Features.InstrumentRentals.Services
 {
-    public class RentalCommandService(IAppDbContext context, IMapper mapper, IClock clock, IUserContextResolver resolver, IMusicStoreContextService storeContext, IRentalStateMachine stateMachine, ICurrentUserService currentUserService, IRentalEventPublisher eventPublisher) : IRentalCommandService
+    public class RentalCommandService(IAppDbContext context, IMapper mapper, IClock clock, IUserContextResolver resolver, IMusicStoreContextService storeContext, IRentalStateMachine stateMachine, ICurrentUserService currentUserService, IRentalNotificationDispatcher notificationDispatcher) : IRentalCommandService
     {
         public async Task<InstrumentRentalDto> CreateRequestAsync(RentalCreateRequest request)
         {
@@ -59,7 +59,7 @@ namespace eNote.Application.Features.InstrumentRentals.Services
                 return await LoadDtoAsync(rental.Id);
             });
 
-            await eventPublisher.PublishCreatedAsync(dto, currentUserService.UserId);
+            await notificationDispatcher.DispatchCreatedAsync(dto, currentUserService.UserId);
 
             return dto;
         }
@@ -88,14 +88,14 @@ namespace eNote.Application.Features.InstrumentRentals.Services
                 return await ExecuteTransitionAsync(rental, RentalTrigger.Cancel, RentalActor.Student, currentUserService.UserId, response);
             });
 
-            await eventPublisher.PublishTransitionAsync(dto, RentalTrigger.Cancel, currentUserService.UserId);
+            await notificationDispatcher.DispatchTransitionAsync(dto, RentalTrigger.Cancel, currentUserService.UserId);
 
             return dto;
         }
 
         private async Task<InstrumentRentalDto> PublishAfterTransitionAsync(InstrumentRentalDto dto, RentalTrigger trigger)
         {
-            await eventPublisher.PublishTransitionAsync(dto, trigger, currentUserService.UserId);
+            await notificationDispatcher.DispatchTransitionAsync(dto, trigger, currentUserService.UserId);
 
             return dto;
         }
