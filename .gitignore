@@ -10,6 +10,8 @@
 
 # Visual Studio
 .vs/
+*.vsidx
+*.csproj.user
 
 # Environment & secrets
 .env
