@@ -1,9 +1,8 @@
-﻿using eNote.Application.Common.Exceptions;
+using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Paging;
 using eNote.Application.Common.Persistence;
-using eNote.Application.Features.LectureNotes;
 using eNote.Application.Features.Users.Services;
 using eNote.Domain.Entities;
 using eNote.Domain.Enums;
@@ -45,11 +44,7 @@ namespace eNote.Application.Features.LectureNotes.Services
                 .FirstOrDefaultAsync(x => x.Id == lectureId && x.Course.InstructorId == instructor.Id)
                 ?? throw new AuthorizationException(Messages.CourseNotOwned);
 
-            var entity = new LectureNote(
-                request.Title.Trim(),
-                request.Content.Trim(),
-                lectureId
-            );
+            var entity = new LectureNote(request.Title.Trim(), request.Content.Trim(), lectureId);
             entity.CreatedById = currentUserService.UserId;
 
             context.Set<LectureNote>().Add(entity);

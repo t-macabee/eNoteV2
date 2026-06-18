@@ -11,10 +11,7 @@ public sealed class RentalEventPublisher(IPublishEndpoint publishEndpoint, ICloc
 {
     public Task PublishCreatedAsync(InstrumentRentalDto rental, int studentUserId, CancellationToken cancellationToken = default)
     {
-        var message = new RentalStatusChanged(
-            rental.Id, studentUserId, studentUserId, rental.RentalStatus.ToString(), rental.InstrumentModel,
-            "Zahtjev za iznajmljivanje poslan", $"Vaš zahtjev za instrument {rental.InstrumentModel} je poslan prodavnici {rental.StoreName} i čeka odobrenje.", clock.UtcNow
-        );
+        var message = new RentalStatusChanged(rental.Id, studentUserId, studentUserId, rental.RentalStatus.ToString(), rental.InstrumentModel, "Zahtjev za iznajmljivanje poslan", $"Vaš zahtjev za instrument {rental.InstrumentModel} je poslan prodavnici {rental.StoreName} i čeka odobrenje.", clock.UtcNow);
 
         return publishEndpoint.Publish(message, cancellationToken);
     }

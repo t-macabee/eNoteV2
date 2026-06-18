@@ -1,9 +1,8 @@
-﻿using eNote.Application.Common.Exceptions;
+using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Paging;
 using eNote.Application.Common.Persistence;
-using eNote.Application.Features.Lectures;
 using eNote.Application.Features.Users.Services;
 
 using eNote.Domain.Entities;
@@ -103,15 +102,7 @@ namespace eNote.Application.Features.Lectures.Services
                     ?? throw new AuthorizationException(Messages.CourseNotOwned);
             }
 
-            var entity = new Lecture(
-                request.Name.Trim(),
-                request.Location.Trim(),
-                request.Duration,
-                request.LectureTime,
-                request.LectureType,
-                request.Capacity,
-                request.CourseId ?? 0
-            );
+            var entity = new Lecture(request.Name.Trim(), request.Location.Trim(), request.Duration, request.LectureTime, request.LectureType, request.Capacity, request.CourseId ?? 0);
 
             entity.CreatedById = currentUserService.UserId;
 

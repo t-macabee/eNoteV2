@@ -5,70 +5,29 @@ namespace eNote.Domain.Entities
 {
     public class InstrumentRental : AuditableEntity
     {
-        public decimal Fee
-        {
-            get; private set;
-        }
-
-        /// Originalna poruka koju je student dostavio uz zahtjev za najam
-
-        public string? RequestNote
-        {
-            get; private set;
-        }
-
-        /// Najnovija bilješka koju je trgovina ostavila prilikom posljednje promjene stanja
-        public string? Note
-        {
-            get; private set;
-        }
-
-        public DateTime RequestedAt
-        {
-            get; private set;
-        }
-        public DateTime? ApprovedAt
-        {
-            get; private set;
-        }
-        public DateTime? RejectedAt
-        {
-            get; private set;
-        }
-        public DateTime? PickedUpAt
-        {
-            get; private set;
-        }
-        public DateTime? ReturnedAt
-        {
-            get; private set;
-        }
-
-        public int? ApprovedById
-        {
-            get; private set;
-        }
-        public int? RejectedById
-        {
-            get; private set;
-        }
-
-        public InstrumentRentalStatus RentalStatus
-        {
-            get; private set;
-        }
-
-        public int StudentProfileId
-        {
-            get; private set;
-        }
+        public int StudentProfileId { get; private set; }
         public Student StudentProfile { get; private set; } = null!;
-
-        public int InstrumentId
-        {
-            get; private set;
-        }
+        public int InstrumentId { get; private set; }
         public Instrument Instrument { get; private set; } = null!;
+
+        public InstrumentRentalStatus RentalStatus { get; private set; }
+
+        // Originalna poruka koju je student dostavio uz zahtjev za najam
+        public string? RequestNote { get; private set; }
+
+        // Najnovija bilješka koju je trgovina ostavila prilikom posljednje promjene stanja
+        public string? Note { get; private set; }
+
+        public DateTime RequestedAt { get; private set; }
+        public DateTime? ApprovedAt { get; private set; }
+        public DateTime? RejectedAt { get; private set; }
+        public DateTime? PickedUpAt { get; private set; }
+        public DateTime? ReturnedAt { get; private set; }
+
+        public int? ApprovedById { get; private set; }
+        public int? RejectedById { get; private set; }
+
+        public decimal Fee { get; private set; }
 
         protected InstrumentRental()
         {

@@ -6,13 +6,7 @@ namespace eNote.Application.Features.InstrumentRentals
     {
         [Required]
         [Range(1, int.MaxValue)]
-        public int InstrumentId
-        {
-            get; set;
-        }
-        public string? Note
-        {
-            get; set;
-        }
+        public int InstrumentId { get; set; }
+        public string? Note { get; set; }
     }
 }

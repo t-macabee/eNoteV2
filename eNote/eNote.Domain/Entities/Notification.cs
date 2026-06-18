@@ -3,17 +3,13 @@ namespace eNote.Domain.Entities;
 public class Notification
 {
     public int Id { get; private set; }
-
     public int UserId { get; private set; }
-
     public int? RentalId { get; private set; }
 
     public string Title { get; private set; } = null!;
-
     public string Body { get; private set; } = null!;
 
     public bool IsRead { get; private set; }
-
     public DateTime CreatedAt { get; private set; }
 
     protected Notification()

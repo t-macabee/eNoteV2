@@ -1,5 +1,4 @@
-﻿using eNote.Application.Common.Paging;
-using eNote.Application.Features.LectureNotes;
+using eNote.Application.Common.Paging;
 
 namespace eNote.Application.Features.LectureNotes.Services
 {

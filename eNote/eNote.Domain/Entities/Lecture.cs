@@ -5,40 +5,21 @@ namespace eNote.Domain.Entities
 {
     public class Lecture : AuditableEntity
     {
+        public int CourseId { get; private set; }
+        public Course Course { get; private set; } = null!;
+
         public string Name { get; private set; } = null!;
         public string Location { get; private set; } = null!;
-        public int Duration
-        {
-            get; private set;
-        }
-        public DateTime LectureTime
-        {
-            get; private set;
-        }
-        public LectureType LectureType
-        {
-            get; private set;
-        }
-        public LectureStatus LectureStatus
-        {
-            get; private set;
-        }
-        public int? Capacity
-        {
-            get; private set;
-        }
+        public LectureType LectureType { get; private set; }
+
+        public DateTime LectureTime { get; private set; }
+        public int Duration { get; private set; }
+        public int? Capacity { get; private set; }
+
+        public LectureStatus LectureStatus { get; private set; }
         public bool IsCancelled => LectureStatus == LectureStatus.Cancelled;
         public bool IsActive { get; private set; } = true;
-        public byte[]? RowVersion
-        {
-            get; set;
-        }
-
-        public int CourseId
-        {
-            get; private set;
-        }
-        public Course Course { get; private set; } = null!;
+        public byte[]? RowVersion { get; set; }
 
         public ICollection<Attendance> Attendances { get; private set; } = new List<Attendance>();
         public ICollection<LectureNote> LectureNotes { get; private set; } = new List<LectureNote>();

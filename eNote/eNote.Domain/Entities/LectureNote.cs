@@ -4,16 +4,12 @@ namespace eNote.Domain.Entities
 {
     public class LectureNote : AuditableEntity
     {
+        public int LectureId { get; private set; }
+        public Lecture Lecture { get; private set; } = null!;
+
         public string Title { get; private set; } = null!;
         public string Content { get; private set; } = null!;
-
         public bool IsActive { get; private set; } = true;
-
-        public int LectureId
-        {
-            get; private set;
-        }
-        public Lecture Lecture { get; private set; } = null!;
 
         protected LectureNote()
         {

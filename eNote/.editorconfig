@@ -2,19 +2,20 @@ root = true
 
 [*.cs]
 
-# Basic settings
 indent_style = space
 indent_size = 4
 insert_final_newline = true
 charset = utf-8
-max_line_length = 140
+max_line_length = 180
 
 # Allman bracing
 csharp_new_line_before_open_brace = all
-
-# Always use braces on control blocks
 csharp_prefer_braces = true:suggestion
 
-# Spacing
 csharp_space_after_keywords_in_control_flow_statements = true
 csharp_space_between_method_declaration_name_and_open_parenthesis = false
+
+csharp_preserve_single_line_blocks = true
+csharp_preserve_single_line_statements = true
+csharp_wrapping_arguments = do_not_wrap
+csharp_wrapping_method_parameters = do_not_wrap

@@ -1,9 +1,8 @@
-﻿using eNote.Application.Common.Exceptions;
+using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Paging;
 using eNote.Application.Common.Persistence;
-using eNote.Application.Features.Instruments;
 using eNote.Application.Features.Users.Services;
 using eNote.Domain.Entities;
 using eNote.Domain.Enums;
@@ -74,14 +73,7 @@ namespace eNote.Application.Features.Instruments.Services
         {
             MusicStoreEmployee employee = await EnsureStoreAccessAsync();
 
-            var entity = new Instrument(
-                request.Model.Trim(),
-                request.Manufacturer.Trim(),
-                request.Description?.Trim(),
-                request.ImagePath?.Trim(),
-                request.InstrumentTypeId,
-                employee.MusicStoreId
-            );
+            var entity = new Instrument(request.Model.Trim(), request.Manufacturer.Trim(), request.Description?.Trim(), request.ImagePath?.Trim(), request.InstrumentTypeId, employee.MusicStoreId);
 
             await BeforeCreateAsync(request);
             context.Set<Instrument>().Add(entity);

@@ -27,8 +27,7 @@ namespace eNote.API.Extensions
                             return;
                         }
 
-                        throw new InvalidOperationException(
-                            "Cors:AllowedOrigins must be configured for non-development environments.");
+                        throw new InvalidOperationException("Cors:AllowedOrigins must be configured for non-development environments.");
                     }
 
                     policy.WithOrigins(origins)

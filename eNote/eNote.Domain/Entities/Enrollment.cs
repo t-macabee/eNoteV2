@@ -5,22 +5,12 @@ namespace eNote.Domain.Entities
 {
     public class Enrollment : AuditableEntity
     {
-        public EnrollmentStatus EnrollmentStatus
-        {
-            get; private set;
-        }
-
-        public int StudentId
-        {
-            get; private set;
-        }
+        public int StudentId { get; private set; }
         public Student Student { get; private set; } = null!;
-
-        public int CourseId
-        {
-            get; private set;
-        }
+        public int CourseId { get; private set; }
         public Course Course { get; private set; } = null!;
+
+        public EnrollmentStatus EnrollmentStatus { get; private set; }
 
         protected Enrollment()
         {

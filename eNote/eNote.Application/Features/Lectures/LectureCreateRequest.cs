@@ -7,35 +7,17 @@ namespace eNote.Application.Features.Lectures
     {
         [Required]
         public string Name { get; set; } = null!;
-
         [Required]
         public string Location { get; set; } = null!;
+        [Required]
+        public LectureType LectureType { get; set; }
 
         [Required]
-        public DateTime LectureTime
-        {
-            get; set;
-        }
-
+        public DateTime LectureTime { get; set; }
         [Required]
-        public int Duration
-        {
-            get; set;
-        }
+        public int Duration { get; set; }
+        public int? Capacity { get; set; }
 
-        [Required]
-        public LectureType LectureType
-        {
-            get; set;
-        }
-
-        public int? Capacity
-        {
-            get; set;
-        }
-        public int? CourseId
-        {
-            get; set;
-        }
+        public int? CourseId { get; set; }
     }
 }

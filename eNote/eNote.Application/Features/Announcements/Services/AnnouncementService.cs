@@ -62,13 +62,7 @@ namespace eNote.Application.Features.Announcements.Services
                 throw new BusinessException(Messages.AnnouncementCourseForbidden);
             }
 
-            var entity = new Announcement(
-                request.Title.Trim(),
-                request.Content.Trim(),
-                courseId,
-                null,
-                clock.UtcNow
-            )
+            var entity = new Announcement(request.Title.Trim(), request.Content.Trim(), courseId, null, clock.UtcNow)
             {
                 CreatedById = currentUserService.UserId
             };

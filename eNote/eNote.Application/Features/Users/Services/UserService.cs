@@ -209,26 +209,14 @@ namespace eNote.Application.Features.Users.Services
         {
             Student student = await resolver.GetStudentAsync(userId);
 
-            return new StudentProfile(
-                student.Id,
-                student.EnrollmentDate,
-                user.FirstName,
-                user.LastName,
-                user.DateOfBirth,
-                user.Address,
-                student.MembershipPaidUntil
-            );
+            return new StudentProfile(student.Id, student.EnrollmentDate, user.FirstName, user.LastName, user.DateOfBirth, user.Address, student.MembershipPaidUntil);
         }
 
         private async Task<InstructorProfile> BuildInstructorProfile(int userId, UserIdentityDto user)
         {
             Instructor instructor = await resolver.GetInstructorAsync(userId);
 
-            return new InstructorProfile(
-                instructor.Id,
-                user.FirstName,
-                user.LastName
-            );
+            return new InstructorProfile(instructor.Id, user.FirstName, user.LastName);
         }
 
         private async Task<MusicStoreProfile> BuildMusicStoreProfile(int userId, UserIdentityDto user)
@@ -240,12 +228,7 @@ namespace eNote.Application.Features.Users.Services
                 .FirstOrDefaultAsync(x => x.Id == employee.MusicStoreId)
                 ?? throw new BusinessException(Messages.StoreNotFound);
 
-            return new MusicStoreProfile(
-                shop.Id,
-                shop.StoreName,
-                shop.BusinessHours,
-                user.Address
-            );
+            return new MusicStoreProfile(shop.Id, shop.StoreName, shop.BusinessHours, user.Address);
         }
     }
 }

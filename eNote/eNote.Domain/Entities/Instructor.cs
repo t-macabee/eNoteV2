@@ -4,10 +4,9 @@ namespace eNote.Domain.Entities
 {
     public class Instructor : AuditableEntity
     {
-        public int AppUserId
-        {
-            get; private set;
-        }
+        public int AppUserId { get; private set; }
+
+        public ICollection<Course> Courses { get; private set; } = new List<Course>();
 
         protected Instructor()
         {
@@ -17,7 +16,5 @@ namespace eNote.Domain.Entities
         {
             AppUserId = appUserId;
         }
-
-        public ICollection<Course> Courses { get; private set; } = new List<Course>();
     }
 }

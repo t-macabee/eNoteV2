@@ -14,8 +14,7 @@ namespace eNote.API.Controllers.Courses
         [HttpGet]
         public async Task<ActionResult<IReadOnlyList<CourseRankingEntryDto>>> GetRanking(int courseId)
         {
-            var result = await rankingService.GetForStudentAsync(courseId);
-            return Ok(result);
+            return Ok(await rankingService.GetForStudentAsync(courseId));
         }
     }
 }

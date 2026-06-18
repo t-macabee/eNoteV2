@@ -53,13 +53,7 @@ namespace eNote.Application.Features.InstrumentRentals.Billing
                 decimal prorated = daysCharged * dailyFee;
                 decimal totalFee = prorated > fee ? fee : prorated;
 
-                return new BillingResult(
-                    MonthsCharged: null,
-                    DaysCharged: daysCharged,
-                    DailyFee: decimal.Round(dailyFee, 2),
-                    TotalFee: decimal.Round(totalFee, 2),
-                    IsProrated: true
-                );
+                return new BillingResult(MonthsCharged: null, DaysCharged: daysCharged, DailyFee: decimal.Round(dailyFee, 2), TotalFee: decimal.Round(totalFee, 2), IsProrated: true);
             }
 
             int monthsCharged = (int)Math.Ceiling((end - start).TotalDays / DaysPerBillingCycle);
@@ -69,13 +63,7 @@ namespace eNote.Application.Features.InstrumentRentals.Billing
                 monthsCharged = 1;
             }
 
-            return new BillingResult(
-                MonthsCharged: monthsCharged,
-                DaysCharged: null,
-                DailyFee: null,
-                TotalFee: monthsCharged * fee,
-                IsProrated: false
-            );
+            return new BillingResult(MonthsCharged: monthsCharged, DaysCharged: null, DailyFee: null, TotalFee: monthsCharged * fee, IsProrated: false);
         }
 
         private readonly record struct BillingResult(int? MonthsCharged, int? DaysCharged, decimal? DailyFee, decimal? TotalFee, bool IsProrated);
