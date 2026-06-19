@@ -60,7 +60,7 @@ namespace eNote.Infrastructure.Identity
             }
 
             IList<string> currentRoles = await userManager.GetRolesAsync(user);
-            string[] toRemove = currentRoles.Where(r => r != role).ToArray();
+            string[] toRemove = [.. currentRoles.Where(r => r != role)];
 
             if (toRemove.Length > 0)
             {

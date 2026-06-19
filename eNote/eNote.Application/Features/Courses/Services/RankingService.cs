@@ -57,31 +57,26 @@ namespace eNote.Application.Features.Courses.Services
                 return [];
             }
 
-            HashSet<int> studentIds = enrolledStudents.Select(s => s.Id).ToHashSet();
+            HashSet<int> studentIds = [.. enrolledStudents.Select(s => s.Id)];
 
             Dictionary<int, StudentGradeStats> gradeData = await context.Set<AssignmentSubmission>()
                 .AsNoTracking()
-                .Where(s => s.Grade != null &&
-                            s.Assignment.Lecture.CourseId == courseId &&
-                            studentIds.Contains(s.StudentId))
+                .Where(s => s.Grade != null && s.Assignment.Lecture.CourseId == courseId && studentIds.Contains(s.StudentId))
                 .GroupBy(s => s.StudentId)
-                .Select(g => new StudentGradeStats(
-                    g.Key,
-                    g.Average(x => (double?)x.Grade),
-                    g.Count()))
-                .ToDictionaryAsync(x => x.StudentId);
+                .Select(g => 
+                    new StudentGradeStats(g.Key,
+                        g.Average(x => (double?)x.Grade),
+                        g.Count()))
+                    .ToDictionaryAsync(x => x.StudentId);
 
             IReadOnlyDictionary<int, string> nameMap = await resolver.GetStudentDisplayNamesAsync(enrolledStudents);
 
-            List<CourseRankingEntryDto> ranked = enrolledStudents
+            List<CourseRankingEntryDto> ranked = [.. enrolledStudents
                 .Select(s =>
                 {
                     bool hasGrades = gradeData.TryGetValue(s.Id, out StudentGradeStats? gradeStats);
-                    return new RankedStudentEntry(
-                        s,
-                        hasGrades ? gradeStats!.Average : null,
-                        hasGrades ? gradeStats!.Count : 0,
-                        nameMap.GetValueOrDefault(s.Id, $"Student {s.Id}"));
+
+                    return new RankedStudentEntry(s, hasGrades ? gradeStats!.Average : null, hasGrades ? gradeStats!.Count : 0, nameMap.GetValueOrDefault(s.Id, $"Student {s.Id}"));
                 })
                 .OrderByDescending(x => x.Average)
                 .ThenBy(x => x.Student.Id)
@@ -92,8 +87,7 @@ namespace eNote.Application.Features.Courses.Services
                     StudentName = x.Name,
                     AverageGrade = x.Average.HasValue ? Math.Round(x.Average.Value, 2) : null,
                     GradedSubmissions = x.Count
-                })
-                .ToList();
+                })];
 
             return ranked;
         }

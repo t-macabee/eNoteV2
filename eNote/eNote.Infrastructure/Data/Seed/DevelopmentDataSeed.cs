@@ -107,14 +107,14 @@ namespace eNote.Infrastructure.Data.Seed
                 .Select(x => x.Id)
                 .FirstAsync();
 
-            Instrument[] allInstruments = new[]
+            Instrument[] allInstruments = [.. new[]
             {
                 StringInstruments.GetInstruments(shopId, stringTypeId),
                 PercussionInstruments.GetInstruments(shopId, percussionTypeId),
                 BrassInstruments.GetInstruments(shopId, brassTypeId),
                 KeysInstruments.GetInstruments(shopId, keysTypeId),
                 AccessoriesInstruments.GetInstruments(shopId, accessoriesTypeId)
-            }.SelectMany(x => x).ToArray();
+            }.SelectMany(x => x)];
 
             context.Set<Instrument>().AddRange(allInstruments);
 
@@ -206,9 +206,7 @@ namespace eNote.Infrastructure.Data.Seed
                 .Select(c => c.Id)
                 .ToListAsync();
 
-            List<Enrollment> enrollments = courseIds
-                .Select(courseId => new Enrollment(studentId, courseId, EnrollmentStatus.Active))
-                .ToList();
+            List<Enrollment> enrollments = [.. courseIds.Select(courseId => new Enrollment(studentId, courseId, EnrollmentStatus.Active))];
 
             context.Set<Enrollment>().AddRange(enrollments);
             await context.SaveChangesAsync();

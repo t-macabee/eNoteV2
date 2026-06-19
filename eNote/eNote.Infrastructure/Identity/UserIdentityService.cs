@@ -40,7 +40,7 @@ namespace eNote.Infrastructure.Identity
 
         public async Task<IReadOnlyDictionary<int, UserIdentityDto>> GetUsersBulkAsync(IEnumerable<int> userIds)
         {
-            HashSet<int> ids = userIds.ToHashSet();
+            HashSet<int> ids = [.. userIds];
 
             if (ids.Count == 0)
             {
