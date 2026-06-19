@@ -1,6 +1,6 @@
-namespace eNote.Infrastructure.Messaging;
-
 using Microsoft.Extensions.Configuration;
+
+namespace eNote.Infrastructure.Messaging;
 
 public static class RabbitMqConfiguration
 {

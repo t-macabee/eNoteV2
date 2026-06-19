@@ -4,16 +4,18 @@ using eNote.Infrastructure.Data;
 using eNote.Infrastructure.Messaging;
 using eNote.Worker.Consumers;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Hosting;
 
 DotEnvConfiguration.Load();
 
-var builder = Host.CreateApplicationBuilder(args);
+HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
 
 builder.Configuration
     .AddEnvironmentVariables()
     .AddCommandLine(args);
 
 string? connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+
 if (string.IsNullOrWhiteSpace(connectionString))
 {
     throw new InvalidOperationException("ConnectionStrings__DefaultConnection is required.");
@@ -30,5 +32,5 @@ builder.Services.AddDbContext<ENoteContext>(options =>
 
 builder.Services.AddRabbitMqMassTransit(builder.Configuration, bus => bus.AddConsumer<RentalStatusChangedConsumer>());
 
-var host = builder.Build();
+IHost host = builder.Build();
 host.Run();

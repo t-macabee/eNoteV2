@@ -12,6 +12,7 @@ namespace eNote.API.Extensions
             app.MapGet("/", () => Results.Redirect("/scalar")).ExcludeFromDescription();
             app.MapOpenApi();
             app.MapScalarApiReference();
+
             return app;
         }
 
@@ -32,7 +33,6 @@ namespace eNote.API.Extensions
         public Task TransformAsync(OpenApiDocument document, OpenApiDocumentTransformerContext context, CancellationToken cancellationToken)
         {
             document.Components ??= new OpenApiComponents();
-
             document.Components.SecuritySchemes ??= new Dictionary<string, IOpenApiSecurityScheme>();
 
             document.Components.SecuritySchemes.Add("Bearer", new OpenApiSecurityScheme
@@ -64,6 +64,7 @@ namespace eNote.API.Extensions
             if (metadata.Any(m => m is IAllowAnonymous))
             {
                 operation.Security = [];
+
                 return Task.CompletedTask;
             }
 

@@ -13,9 +13,9 @@ namespace eNote.Application.Features.Courses.Services
     {
         public async Task<IReadOnlyList<CourseRankingEntryDto>> GetForInstructorAsync(int courseId)
         {
-            var instructor = await resolver.GetInstructorAsync(currentUserService.UserId);
+            Instructor instructor = await resolver.GetInstructorAsync(currentUserService.UserId);
 
-            var courseExists = await context.Set<Course>()
+            bool courseExists = await context.Set<Course>()
                 .AnyAsync(c => c.Id == courseId && c.InstructorId == instructor.Id);
 
             if (!courseExists)
@@ -28,9 +28,9 @@ namespace eNote.Application.Features.Courses.Services
 
         public async Task<IReadOnlyList<CourseRankingEntryDto>> GetForStudentAsync(int courseId)
         {
-            var student = await resolver.GetStudentAsync(currentUserService.UserId);
+            Student student = await resolver.GetStudentAsync(currentUserService.UserId);
 
-            var isEnrolled = await context.Set<Enrollment>()
+            bool isEnrolled = await context.Set<Enrollment>()
                 .AnyAsync(e => e.CourseId == courseId &&
                                e.StudentId == student.Id &&
                                e.EnrollmentStatus == EnrollmentStatus.Active);
@@ -45,7 +45,7 @@ namespace eNote.Application.Features.Courses.Services
 
         private async Task<IReadOnlyList<CourseRankingEntryDto>> BuildRankingAsync(int courseId)
         {
-            var enrolledStudents = await context.Set<Enrollment>()
+            List<Student> enrolledStudents = await context.Set<Enrollment>()
                 .AsNoTracking()
                 .Where(e => e.CourseId == courseId && e.EnrollmentStatus == EnrollmentStatus.Active)
                 .Include(e => e.Student)
@@ -57,35 +57,31 @@ namespace eNote.Application.Features.Courses.Services
                 return [];
             }
 
-            var studentIds = enrolledStudents.Select(s => s.Id).ToHashSet();
+            HashSet<int> studentIds = enrolledStudents.Select(s => s.Id).ToHashSet();
 
-            var gradeData = await context.Set<AssignmentSubmission>()
+            Dictionary<int, StudentGradeStats> gradeData = await context.Set<AssignmentSubmission>()
                 .AsNoTracking()
                 .Where(s => s.Grade != null &&
                             s.Assignment.Lecture.CourseId == courseId &&
                             studentIds.Contains(s.StudentId))
                 .GroupBy(s => s.StudentId)
-                .Select(g => new
-                {
-                    StudentId = g.Key,
-                    Average = g.Average(x => (double?)x.Grade),
-                    Count = g.Count()
-                })
+                .Select(g => new StudentGradeStats(
+                    g.Key,
+                    g.Average(x => (double?)x.Grade),
+                    g.Count()))
                 .ToDictionaryAsync(x => x.StudentId);
 
-            var nameMap = await resolver.GetStudentDisplayNamesAsync(enrolledStudents);
+            IReadOnlyDictionary<int, string> nameMap = await resolver.GetStudentDisplayNamesAsync(enrolledStudents);
 
-            var ranked = enrolledStudents
+            List<CourseRankingEntryDto> ranked = enrolledStudents
                 .Select(s =>
                 {
-                    var hasGrades = gradeData.TryGetValue(s.Id, out var g);
-                    return new
-                    {
-                        Student = s,
-                        Average = hasGrades ? g!.Average : null,
-                        Count = hasGrades ? g!.Count : 0,
-                        Name = nameMap.GetValueOrDefault(s.Id, $"Student {s.Id}")
-                    };
+                    bool hasGrades = gradeData.TryGetValue(s.Id, out StudentGradeStats? gradeStats);
+                    return new RankedStudentEntry(
+                        s,
+                        hasGrades ? gradeStats!.Average : null,
+                        hasGrades ? gradeStats!.Count : 0,
+                        nameMap.GetValueOrDefault(s.Id, $"Student {s.Id}"));
                 })
                 .OrderByDescending(x => x.Average)
                 .ThenBy(x => x.Student.Id)
@@ -101,5 +97,9 @@ namespace eNote.Application.Features.Courses.Services
 
             return ranked;
         }
+
+        private sealed record StudentGradeStats(int StudentId, double? Average, int Count);
+
+        private sealed record RankedStudentEntry(Student Student, double? Average, int Count, string Name);
     }
 }

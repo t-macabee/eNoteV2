@@ -9,8 +9,11 @@ namespace eNote.API.Extensions
         public static async Task<WebApplication> MigrateAsync(this WebApplication app)
         {
             using IServiceScope scope = app.Services.CreateScope();
+
             ENoteContext context = scope.ServiceProvider.GetRequiredService<ENoteContext>();
+
             await context.Database.MigrateAsync();
+
             return app;
         }
 
@@ -19,9 +22,11 @@ namespace eNote.API.Extensions
             using IServiceScope scope = app.Services.CreateScope();
 
             IServiceProvider services = scope.ServiceProvider;
+
             await IdentitySeed.SeedAsync(services);
 
             ENoteContext context = services.GetRequiredService<ENoteContext>();
+
             await DevelopmentDataSeed.SeedAsync(context);
 
             return app;

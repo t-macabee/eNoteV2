@@ -206,7 +206,7 @@ namespace eNote.Infrastructure.Data.Seed
                 .Select(c => c.Id)
                 .ToListAsync();
 
-            var enrollments = courseIds
+            List<Enrollment> enrollments = courseIds
                 .Select(courseId => new Enrollment(studentId, courseId, EnrollmentStatus.Active))
                 .ToList();
 

@@ -10,6 +10,7 @@ namespace eNote.Application.Features.Assignments
         public string? FilePath { get; set; }
 
         public DateTime? SubmittedAt { get; set; }
+
         public int? Grade { get; set; }
     }
 }

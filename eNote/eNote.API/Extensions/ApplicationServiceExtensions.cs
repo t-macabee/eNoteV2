@@ -17,28 +17,27 @@ namespace eNote.API.Extensions
         public static IServiceCollection AddApplicationDatabase(this IServiceCollection services, IConfiguration configuration)
         {
             services.AddDbContext<ENoteContext>(options =>
-                options.UseSqlServer(
-                    configuration.GetConnectionString("DefaultConnection"),
-                    sql => sql.MigrationsAssembly("eNote.Infrastructure")));
+                options.UseSqlServer(configuration.GetConnectionString("DefaultConnection"),
+                sql => sql.MigrationsAssembly("eNote.Infrastructure")));
 
             return services;
         }
 
         public static IServiceCollection AddApplicationServices(this IServiceCollection services)
         {
+            services.AddMemoryCache();
             services.AddHttpContextAccessor();
-            services.AddScoped<ICurrentUserService, CurrentUserService>();
-
             services.AddSingleton<IClock, SystemClock>();
-            services.AddScoped<IUserContextResolver, UserContextResolver>();
-            services.AddScoped<IRentalStateMachine, RentalStateMachine>();
+
             services.Scan(scan => scan
                 .FromAssembliesOf(typeof(AuthService), typeof(CourseService))
                 .AddClasses(classes => classes.Where(type => type.Name.EndsWith("Service") && !type.IsAbstract))
                 .AsImplementedInterfaces()
                 .WithScopedLifetime());
 
-            services.AddMemoryCache();
+            services.AddScoped<ICurrentUserService, CurrentUserService>();
+            services.AddScoped<IUserContextResolver, UserContextResolver>();
+            services.AddScoped<IRentalStateMachine, RentalStateMachine>();
             services.AddScoped<IFileStorageService, LocalFileStorageService>();
             services.AddScoped<IRentalNotificationDispatcher, RentalNotificationDispatcher>();
 

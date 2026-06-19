@@ -13,8 +13,8 @@ namespace eNote.API.Services
             get
             {
                 ClaimsPrincipal? user = httpContextAccessor.HttpContext?.User;
-                string? id = user?.FindFirstValue(JwtRegisteredClaimNames.Sub)
-                      ?? user?.FindFirstValue(ClaimTypes.NameIdentifier);
+
+                string? id = user?.FindFirstValue(JwtRegisteredClaimNames.Sub) ?? user?.FindFirstValue(ClaimTypes.NameIdentifier);
 
                 if (!int.TryParse(id, out int userId))
                 {

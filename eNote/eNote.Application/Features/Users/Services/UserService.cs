@@ -79,7 +79,7 @@ namespace eNote.Application.Features.Users.Services
 
         public async Task UpdateMembershipAsync(int userId, UpdateMembershipRequest request)
         {
-            var student = await context.Set<Student>()
+            Student student = await context.Set<Student>()
                 .FirstOrDefaultAsync(s => s.AppUserId == userId)
                 ?? throw new NotFoundException(Messages.StudentProfileNotFound);
 

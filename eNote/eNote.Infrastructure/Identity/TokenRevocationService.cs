@@ -18,13 +18,14 @@ namespace eNote.Infrastructure.Identity
                 return;
             }
 
-            var ttl = expiresAt - clock.UtcNow;
+            TimeSpan ttl = expiresAt - clock.UtcNow;
+
             if (ttl > TimeSpan.Zero)
             {
                 cache.Set(Key(jti), true, ttl);
             }
 
-            var exists = await context.Set<RevokedToken>()
+            bool exists = await context.Set<RevokedToken>()
                 .AnyAsync(x => x.Jti == jti, cancellationToken);
 
             if (exists)
@@ -54,7 +55,7 @@ namespace eNote.Infrastructure.Identity
                 return true;
             }
 
-            var revoked = await context.Set<RevokedToken>()
+            bool revoked = await context.Set<RevokedToken>()
                 .AsNoTracking()
                 .AnyAsync(x => x.Jti == jti && x.ExpiresAt > clock.UtcNow, cancellationToken);
 

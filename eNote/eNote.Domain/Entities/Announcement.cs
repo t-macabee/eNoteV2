@@ -11,6 +11,7 @@ namespace eNote.Domain.Entities
 
         public string Title { get; private set; } = null!;
         public string Content { get; private set; } = null!;
+
         public DateTime PublishedAt { get; private set; }
         public bool IsActive { get; private set; } = true;
 

@@ -11,11 +11,7 @@ namespace eNote.Domain.Entities
         public Instrument Instrument { get; private set; } = null!;
 
         public InstrumentRentalStatus RentalStatus { get; private set; }
-
-        // Originalna poruka koju je student dostavio uz zahtjev za najam
         public string? RequestNote { get; private set; }
-
-        // Najnovija bilješka koju je trgovina ostavila prilikom posljednje promjene stanja
         public string? Note { get; private set; }
 
         public DateTime RequestedAt { get; private set; }

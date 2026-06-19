@@ -6,7 +6,7 @@ public static class DotEnvConfiguration
 {
     public static void Load()
     {
-        var directory = new DirectoryInfo(Directory.GetCurrentDirectory());
+        DirectoryInfo directory = new DirectoryInfo(Directory.GetCurrentDirectory());
 
         while (directory is not null)
         {

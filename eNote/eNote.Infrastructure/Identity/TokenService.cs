@@ -26,6 +26,7 @@ namespace eNote.Infrastructure.Identity
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["Jwt:Key"]!));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
             int expirationDays = configuration.GetValue<int>("Jwt:ExpirationDays", 7);
 
             var token = new JwtSecurityToken(

@@ -27,6 +27,7 @@ namespace eNote.API.Extensions
                     context.Response.StatusCode = statusCode;
 
                     ILogger<WebApplication>? logger = context.RequestServices.GetService<ILogger<WebApplication>>();
+
                     logger?.LogError(exception, "Unhandled exception caught by middleware");
 
                     var response = new ErrorResponse
@@ -46,6 +47,7 @@ namespace eNote.API.Extensions
         private record ErrorResponse
         {
             public int Status { get; init; }
+
             public string Code { get; init; } = string.Empty;
             public string Message { get; init; } = string.Empty;
         }

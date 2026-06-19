@@ -1,4 +1,4 @@
-﻿using eNote.Application.Common.Paging;
+using eNote.Application.Common.Paging;
 using eNote.Application.Features.Instruments;
 using eNote.Application.Features.Instruments.Services;
 using Microsoft.AspNetCore.Authorization;

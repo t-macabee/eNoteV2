@@ -40,6 +40,7 @@ namespace eNote.API.Extensions
                 .AddJwtBearer(options =>
                 {
                     options.MapInboundClaims = false;
+
                     options.TokenValidationParameters = new TokenValidationParameters
                     {
                         ValidateIssuer = true,
@@ -63,8 +64,7 @@ namespace eNote.API.Extensions
                                 return;
                             }
 
-                            ITokenRevocationService revocation = context.HttpContext.RequestServices
-                                .GetRequiredService<ITokenRevocationService>();
+                            ITokenRevocationService revocation = context.HttpContext.RequestServices.GetRequiredService<ITokenRevocationService>();
 
                             if (await revocation.IsRevokedAsync(jti, context.HttpContext.RequestAborted))
                             {

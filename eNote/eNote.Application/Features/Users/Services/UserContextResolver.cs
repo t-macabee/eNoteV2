@@ -33,7 +33,7 @@ namespace eNote.Application.Features.Users.Services
 
         public async Task<IReadOnlyDictionary<int, string>> GetStudentDisplayNamesAsync(IEnumerable<Student> students)
         {
-            var list = students.ToList();
+            List<Student> list = students.ToList();
             IReadOnlyDictionary<int, UserIdentityDto> users = await identity.GetUsersBulkAsync(list.Select(s => s.AppUserId));
 
             return list.ToDictionary(
