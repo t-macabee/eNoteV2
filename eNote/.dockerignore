@@ -1,0 +1,11 @@
+**/bin/
+**/obj/
+**/.vs/
+**/.vscode/
+**/.cursor/
+**/.env
+**/logs/
+**/*.log
+**/*.user
+**/*.suo
+**/TestResults/
