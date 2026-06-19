@@ -55,6 +55,18 @@ namespace eNote.API.Extensions
 
                     options.Events = new JwtBearerEvents
                     {
+                        OnMessageReceived = context =>
+                        {
+                            string? accessToken = context.Request.Query["access_token"];
+                            PathString path = context.HttpContext.Request.Path;
+
+                            if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs"))
+                            {
+                                context.Token = accessToken;
+                            }
+
+                            return Task.CompletedTask;
+                        },
                         OnTokenValidated = async context =>
                         {
                             string? jti = context.Principal?.FindFirstValue(JwtRegisteredClaimNames.Jti);

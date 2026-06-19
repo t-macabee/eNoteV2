@@ -4,6 +4,7 @@ using eNote.Application.Features.InstrumentRentals;
 using eNote.Application.Features.Instruments;
 using eNote.Application.Features.LectureNotes;
 using eNote.Application.Features.Lectures;
+using eNote.Application.Features.Notifications;
 using eNote.Domain.Entities;
 using eNote.Domain.Enums;
 using Mapster;
@@ -37,6 +38,8 @@ public sealed class MapsterConfig : IRegister
             .Map(dest => dest.AttendeeCount, src => src.Attendances == null
                 ? 0
                 : src.Attendances.Count(a => a.AttendanceStatus == AttendanceStatus.Present));
+
+        config.NewConfig<Notification, NotificationDto>();
 
         config.Compile();
     }

@@ -32,6 +32,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\eNote.Application\eNote.Application.csproj" />
+    <ProjectReference Include="..\eNote.Contracts\eNote.Contracts.csproj" />
     <ProjectReference Include="..\eNote.Infrastructure\eNote.Infrastructure.csproj" />
   </ItemGroup>
 

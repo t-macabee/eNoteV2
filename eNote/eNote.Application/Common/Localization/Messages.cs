@@ -52,6 +52,8 @@ namespace eNote.Application.Common.Localization
         public const string RentalInstrumentMissing = "Instrument nije pronađen za ovaj zahtjev.";
         public const string RentalAccessDenied = "Nemate pravo nad ovim zahtjevom.";
 
+        public const string NotificationNotFound = "Notifikacija nije pronađena.";
+
         public const string AnnouncementNotFound = "Obavijest nije pronađena.";
         public const string AnnouncementCourseForbidden = "Nemate pravo objavljivati obavijesti za ovaj kurs.";
 

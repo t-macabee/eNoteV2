@@ -75,9 +75,24 @@ List endpoints support `page` and `pageSize` (default `page=1`, `pageSize=20`, m
 
 ## Messaging
 
-Rental status changes are published to RabbitMQ after the API transaction commits. The **Worker** consumes `RentalStatusChanged` events and persists rows in the `Notification` table.
+Rental status changes are published to RabbitMQ after the API transaction commits. The **Worker** consumes `RentalStatusChanged` events and persists rows in the `Notification` table. The **API** pushes the same event to connected students over SignalR.
+
+### Student notifications (REST)
+
+| Method | Route | Description |
+|--------|-------|-------------|
+| `GET` | `/api/student/notifications` | Paged list (`page`, `pageSize`, optional `isRead`) |
+| `GET` | `/api/student/notifications/unread-count` | Unread count for polling |
+| `PATCH` | `/api/student/notifications/{id}/read` | Mark one notification read |
+| `PATCH` | `/api/student/notifications/read-all` | Mark all read |
+
+### SignalR (real-time)
+
+- Hub: `/hubs/notifications`
+- Pass JWT as query `access_token` (browser clients) or `Authorization` header
+- Event: `ReceiveNotification` with `{ rentalId, title, body, createdAt }`
 
 ## Notes
 
 - After schema changes, add EF migrations from the Infrastructure project (`-p eNote.Infrastructure`, startup project `-s eNote.API`).
-- Recommender, Notifications API, Flutter client, and Docker Compose are planned in later phases.
+- Recommender, Flutter client, and Docker Compose are planned in later phases.

@@ -1,4 +1,5 @@
 using eNote.API.Extensions;
+using eNote.API.Hubs;
 using Serilog;
 using System.Text.Json.Serialization;
 
@@ -25,6 +26,7 @@ builder.Services
     .AddResponseCompression(opts => opts.EnableForHttps = true)
     .AddMapsterMappings()
     .AddApplicationValidation()
+    .AddApplicationSignalR()
     .AddScalarDocumentation();
 
 builder.Services
@@ -57,5 +59,6 @@ app.UseAuthorization();
 
 app.MapHealthChecks("/health").AllowAnonymous();
 app.MapControllers();
+app.MapHub<NotificationHub>(NotificationHub.HubPath);
 
 app.Run();
