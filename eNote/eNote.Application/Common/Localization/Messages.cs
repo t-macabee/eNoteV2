@@ -23,9 +23,10 @@ namespace eNote.Application.Common.Localization
         public const string ActiveEmployeeStoreNotFound = "Profil uposlenika radnje nije pronađen ili nije aktivan.";
 
         public const string CourseNotFound = "Kurs nije pronađen.";
+        public const string CourseIdRequired = "Kurs je obavezan.";
+        public const string CourseNotOwned = "Niste vlasnik navedenog kursa.";
 
         public const string LectureNotFound = "Predavanje nije pronađeno.";
-        public const string CourseNotOwned = "Niste vlasnik navedenog kursa.";
         public const string LectureCancelled = "Predavanje je otkazano.";
         public const string LectureFull = "Predavanje je popunjeno.";
         public const string LectureRsvpConflict = "Sukob pri rezervaciji predavanja. Pokušajte ponovo.";
@@ -64,6 +65,7 @@ namespace eNote.Application.Common.Localization
         public const string LectureNoteNotFound = "Bilješka predavanja nije pronađena.";
         public const string StudentNotEnrolled = "Student nije upisan na kurs.";
 
+        public const string FileNotProvided = "Fajl nije priložen.";
         public const string FileTooLarge = "Veličina fajla prelazi maksimalno dozvoljenih 5 MB.";
         public const string InvalidFileFormat = "Dozvoljeni formati su JPEG, PNG i WebP.";
 

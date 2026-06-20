@@ -47,7 +47,8 @@ namespace eNote.Application.Features.Lectures.Services
 
             query = query.ApplySearch(search);
 
-            return await query.ToPagedResultAsync(search.Page, search.PageSize, search.IncludeTotalCount, entity => mapper.Map<LectureDto>(entity), q => q.OrderByDescending(x => x.LectureTime));
+            return await query.ToPagedResultAsync(search.Page, search.PageSize, search.IncludeTotalCount, entity =>
+                mapper.Map<LectureDto>(entity), q => q.OrderByDescending(x => x.LectureTime));
         }
 
         public async Task<PagedResult<LectureDto>> GetPagedForStudentAsync(LectureSearchObject search)
@@ -59,21 +60,19 @@ namespace eNote.Application.Features.Lectures.Services
 
             query = query.ApplySearch(search);
 
-            return await query.ToPagedResultAsync(search.Page, search.PageSize, search.IncludeTotalCount, entity => mapper.Map<LectureDto>(entity), q => q.OrderByDescending(x => x.LectureTime));
+            return await query.ToPagedResultAsync(search.Page, search.PageSize, search.IncludeTotalCount, entity =>
+                mapper.Map<LectureDto>(entity), q => q.OrderByDescending(x => x.LectureTime));
         }
 
         public async Task<LectureDto> CreateAsync(LectureCreateRequest request)
         {
-            int courseId = request.CourseId ?? 0;
+            int courseId = request.CourseId;
 
-            if (courseId != 0)
-            {
-                _ = await context.Set<Course>()
-                    .FirstOrDefaultAsync(c => c.Id == courseId && c.Instructor.AppUserId == currentUserService.UserId)
-                    ?? throw new AuthorizationException(Messages.CourseNotOwned);
-            }
+            _ = await context.Set<Course>()
+                .FirstOrDefaultAsync(c => c.Id == courseId && c.Instructor.AppUserId == currentUserService.UserId)
+                ?? throw new AuthorizationException(Messages.CourseNotOwned);
 
-            var entity = new Lecture(request.Name.Trim(), request.Location.Trim(), request.Duration, request.LectureTime, request.LectureType, request.Capacity, request.CourseId ?? 0);
+            var entity = new Lecture(request.Name.Trim(), request.Location.Trim(), request.Duration, request.LectureTime, request.LectureType, request.Capacity, courseId);
 
             entity.CreatedById = currentUserService.UserId;
 

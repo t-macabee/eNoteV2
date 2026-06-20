@@ -17,6 +17,7 @@
 .env
 .env.*
 !.env.example
+!.env.docker.example
 appsettings.*.local.json
 appsettings.Local.json
 secrets.json

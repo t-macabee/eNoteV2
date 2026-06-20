@@ -15,6 +15,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "eNote.Contracts", "eNote.Co
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "eNote.Worker", "eNote.Worker\eNote.Worker.csproj", "{9992C5AE-C748-4799-8567-5C4F2DF93501}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "eNote.Tests", "eNote.Tests\eNote.Tests.csproj", "{E632BD1D-F18A-4C69-929C-32FD97E48568}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -97,6 +99,18 @@ Global
 		{9992C5AE-C748-4799-8567-5C4F2DF93501}.Release|x64.Build.0 = Release|Any CPU
 		{9992C5AE-C748-4799-8567-5C4F2DF93501}.Release|x86.ActiveCfg = Release|Any CPU
 		{9992C5AE-C748-4799-8567-5C4F2DF93501}.Release|x86.Build.0 = Release|Any CPU
+		{E632BD1D-F18A-4C69-929C-32FD97E48568}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E632BD1D-F18A-4C69-929C-32FD97E48568}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E632BD1D-F18A-4C69-929C-32FD97E48568}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{E632BD1D-F18A-4C69-929C-32FD97E48568}.Debug|x64.Build.0 = Debug|Any CPU
+		{E632BD1D-F18A-4C69-929C-32FD97E48568}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{E632BD1D-F18A-4C69-929C-32FD97E48568}.Debug|x86.Build.0 = Debug|Any CPU
+		{E632BD1D-F18A-4C69-929C-32FD97E48568}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E632BD1D-F18A-4C69-929C-32FD97E48568}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E632BD1D-F18A-4C69-929C-32FD97E48568}.Release|x64.ActiveCfg = Release|Any CPU
+		{E632BD1D-F18A-4C69-929C-32FD97E48568}.Release|x64.Build.0 = Release|Any CPU
+		{E632BD1D-F18A-4C69-929C-32FD97E48568}.Release|x86.ActiveCfg = Release|Any CPU
+		{E632BD1D-F18A-4C69-929C-32FD97E48568}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

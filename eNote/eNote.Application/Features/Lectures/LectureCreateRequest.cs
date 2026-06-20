@@ -18,6 +18,8 @@ namespace eNote.Application.Features.Lectures
         public int Duration { get; set; }
         public int? Capacity { get; set; }
 
-        public int? CourseId { get; set; }
+        [Required]
+        [Range(1, int.MaxValue)]
+        public int CourseId { get; set; }
     }
 }

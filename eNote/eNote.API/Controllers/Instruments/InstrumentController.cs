@@ -1,4 +1,5 @@
 using eNote.API.Controllers.Base;
+using eNote.Application.Common.Localization;
 using eNote.Application.Common.Paging;
 using eNote.Application.Constants;
 using eNote.Application.Features.Instruments;
@@ -45,8 +46,14 @@ namespace eNote.API.Controllers.Instruments
 
         [HttpPost("{id:int}/image")]
         [ProducesResponseType(typeof(InstrumentDto), StatusCodes.Status200OK)]
-        public async Task<ActionResult<InstrumentDto>> UploadImage(int id, IFormFile file, CancellationToken ct)
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<ActionResult<InstrumentDto>> UploadImage(int id, IFormFile? file, CancellationToken ct)
         {
+            if (file is null || file.Length == 0)
+            {
+                return BadRequest(new { message = Messages.FileNotProvided });
+            }
+
             await using Stream stream = file.OpenReadStream();
             InstrumentDto result = await instrumentService.UploadImageAsync(id, stream, file.FileName, file.ContentType, ct);
             return Ok(result);
