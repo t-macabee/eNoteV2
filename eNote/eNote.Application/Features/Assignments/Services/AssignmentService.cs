@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Application.Features.Assignments.Services
 {
-    public class AssignmentService(IAppDbContext context, IClock clock, IUserContextResolver resolver, ICurrentUserService currentUserService, IMapper mapper) : IAssignmentService
+    public class AssignmentService(IAppDbContext context, IClock clock, IUserContextResolver resolver, ICurrentUserService currentUserService, IMapper mapper, IFileStorageService fileStorage) : IAssignmentService
     {
         public async Task<PagedResult<AssignmentDto>> GetForLectureAsync(int lectureId, AssignmentSearchObject search)
         {
@@ -124,6 +124,11 @@ namespace eNote.Application.Features.Assignments.Services
                 throw new ConflictException(Messages.AssignmentAlreadySubmitted);
             }
 
+            if (clock.UtcNow > assignment.DueAt)
+            {
+                throw new BusinessException(Messages.AssignmentPastDue);
+            }
+
             if (existing is null)
             {
                 existing = new AssignmentSubmission(assignment.Id, student.Id)
@@ -139,6 +144,13 @@ namespace eNote.Application.Features.Assignments.Services
             await context.SaveChangesAsync();
 
             return MapSubmission(existing, student, await resolver.GetStudentDisplayNameAsync(student));
+        }
+
+        public async Task<AssignmentSubmissionDto> SubmitWithFileAsync(int assignmentId, Stream stream, string fileName, string contentType, CancellationToken ct = default)
+        {
+            string path = await fileStorage.SaveAssignmentAsync(stream, fileName, contentType, ct);
+
+            return await SubmitAsync(assignmentId, new AssignmentSubmitRequest { FilePath = path });
         }
 
         public async Task<PagedResult<AssignmentSubmissionDto>> GetSubmissionsAsync(int lectureId, int assignmentId, int page, int pageSize)

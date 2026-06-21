@@ -158,7 +158,9 @@ public sealed class RecommendationService(IAppDbContext context, IMapper mapper,
 
         List<int> similarStudentIds = await context.Set<InstrumentRental>()
             .AsNoTracking()
-            .Where(x => rentedInstrumentIds.Contains(x.InstrumentId) && x.StudentProfileId != studentId && RentalHistoryStatuses.Contains(x.RentalStatus))
+            .Where(x => rentedInstrumentIds.Contains(x.InstrumentId) 
+                && x.StudentProfileId != studentId 
+                && RentalHistoryStatuses.Contains(x.RentalStatus))
             .Select(x => x.StudentProfileId)
             .Distinct()
             .ToListAsync(cancellationToken);

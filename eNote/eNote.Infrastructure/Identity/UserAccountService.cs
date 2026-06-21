@@ -1,6 +1,7 @@
 using eNote.Application.Common.Localization;
 using eNote.Application.Features.Users.Services;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Infrastructure.Identity
 {
@@ -146,6 +147,11 @@ namespace eNote.Infrastructure.Identity
             }
 
             return (true, null);
+        }
+
+        public async Task<bool> IsAddressInUseAsync(int addressId)
+        {
+            return await userManager.Users.AnyAsync(u => u.AddressId == addressId);
         }
     }
 }

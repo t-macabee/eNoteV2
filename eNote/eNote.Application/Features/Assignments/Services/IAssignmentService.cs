@@ -12,6 +12,7 @@ namespace eNote.Application.Features.Assignments.Services
         Task<PagedResult<AssignmentDto>> GetForStudentAsync(AssignmentSearchObject search);
         Task<AssignmentDto> GetByIdForStudentAsync(int assignmentId);
         Task<AssignmentSubmissionDto> SubmitAsync(int assignmentId, AssignmentSubmitRequest request);
+        Task<AssignmentSubmissionDto> SubmitWithFileAsync(int assignmentId, Stream stream, string fileName, string contentType, CancellationToken ct = default);
         Task<PagedResult<AssignmentSubmissionDto>> GetSubmissionsAsync(int lectureId, int assignmentId, int page, int pageSize);
         Task<AssignmentSubmissionDto> GradeAsync(int lectureId, int assignmentId, int submissionId, GradeAssignmentRequest request);
     }

@@ -152,6 +152,18 @@ namespace eNote.Application.Features.Lectures.Services
 
             Student student = await resolver.GetStudentAsync(currentUserService.UserId);
 
+            bool isEnrolled = await context.Set<Enrollment>()
+                .AsNoTracking()
+                .AnyAsync(e =>
+                    e.StudentId == student.Id &&
+                    e.CourseId == lecture.CourseId &&
+                    e.EnrollmentStatus == EnrollmentStatus.Active);
+
+            if (!isEnrolled)
+            {
+                throw new BusinessException(Messages.StudentNotEnrolled);
+            }
+
             Attendance? existing = lecture.Attendances.FirstOrDefault(x => x.StudentId == student.Id);
 
             if (request.Confirm)

@@ -4,16 +4,19 @@ using eNote.Application.Features.InstrumentRentals;
 using eNote.Application.Features.InstrumentRentals.StateMachine;
 using eNote.Contracts.Rentals;
 using MassTransit;
+using Microsoft.Extensions.Logging;
 
 namespace eNote.Infrastructure.Messaging;
 
-public sealed class RentalNotificationDispatcher(IPublishEndpoint publishEndpoint, IClock clock) : IRentalNotificationDispatcher
+public sealed class RentalNotificationDispatcher(IPublishEndpoint publishEndpoint, IClock clock, ILogger<RentalNotificationDispatcher> logger) : IRentalNotificationDispatcher
 {
+    private const int MaxPublishAttempts = 3;
+
     public Task DispatchCreatedAsync(InstrumentRentalDto rental, int studentUserId, CancellationToken cancellationToken = default)
     {
         var message = new RentalStatusChanged(rental.Id, studentUserId, studentUserId, rental.RentalStatus.ToString(), rental.InstrumentModel, "Zahtjev za iznajmljivanje poslan", $"Vaš zahtjev za instrument {rental.InstrumentModel} je poslan prodavnici {rental.StoreName} i čeka odobrenje.", clock.UtcNow);
 
-        return publishEndpoint.Publish(message, cancellationToken);
+        return PublishWithRetryAsync(message, rental.Id, cancellationToken);
     }
 
     public Task DispatchTransitionAsync(InstrumentRentalDto rental, RentalTrigger trigger, int actorUserId, CancellationToken cancellationToken = default)
@@ -22,7 +25,29 @@ public sealed class RentalNotificationDispatcher(IPublishEndpoint publishEndpoin
 
         var message = new RentalStatusChanged(rental.Id, rental.StudentUserId, actorUserId, rental.RentalStatus.ToString(), rental.InstrumentModel, title, body, clock.UtcNow);
 
-        return publishEndpoint.Publish(message, cancellationToken);
+        return PublishWithRetryAsync(message, rental.Id, cancellationToken);
+    }
+
+    private async Task PublishWithRetryAsync(RentalStatusChanged message, int rentalId, CancellationToken cancellationToken)
+    {
+        for (int attempt = 1; attempt <= MaxPublishAttempts; attempt++)
+        {
+            try
+            {
+                await publishEndpoint.Publish(message, cancellationToken);
+                return;
+            }
+            catch (Exception ex) when (attempt < MaxPublishAttempts)
+            {
+                logger.LogWarning(ex, "RabbitMQ publish attempt {Attempt}/{MaxAttempts} failed for rental {RentalId}.", attempt, MaxPublishAttempts, rentalId);
+                await Task.Delay(TimeSpan.FromMilliseconds(200 * attempt), cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "RabbitMQ publish failed after {MaxAttempts} attempts for rental {RentalId}.", MaxPublishAttempts, rentalId);
+                throw;
+            }
+        }
     }
 
     private static (string Title, string Body) BuildNotificationContent(InstrumentRentalDto rental, RentalTrigger trigger) =>

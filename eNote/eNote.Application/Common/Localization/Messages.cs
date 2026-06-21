@@ -64,6 +64,16 @@ namespace eNote.Application.Common.Localization
         public const string AssignmentInvalidGrade = "Ocjena mora biti između 0 i 100.";
         public const string LectureNoteNotFound = "Bilješka predavanja nije pronađena.";
         public const string StudentNotEnrolled = "Student nije upisan na kurs.";
+        public const string MembershipInactive = "Članarina nije aktivna. Kontaktirajte administratora.";
+        public const string AssignmentPastDue = "Rok za predaju zadatka je istekao.";
+
+        public const string AddressNotFound = "Adresa nije pronađena.";
+        public const string AddressDeleteBlocked = "Adresa se ne može obrisati jer je povezana s korisnikom.";
+        public const string InstrumentTypeDeleteBlocked = "Vrsta instrumenta se ne može obrisati jer je u upotrebi.";
+        public const string MusicStoreDeleteBlocked = "Radnja se ne može obrisati jer sadrži instrumente ili zaposlenike.";
+
+        public const string PasswordResetEmailSent = "Ako nalog postoji, poslat je token za reset lozinke.";
+        public const string PasswordResetFailed = "Reset lozinke nije uspio. Provjerite token i pokušajte ponovo.";
 
         public const string FileNotProvided = "Fajl nije priložen.";
         public const string FileTooLarge = "Veličina fajla prelazi maksimalno dozvoljenih 5 MB.";

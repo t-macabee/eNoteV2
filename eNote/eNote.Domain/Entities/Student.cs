@@ -27,5 +27,10 @@ namespace eNote.Domain.Entities
         {
             MembershipPaidUntil = paidUntil;
         }
+
+        public bool HasActiveMembership(DateTime utcNow)
+        {
+            return MembershipPaidUntil.HasValue && MembershipPaidUntil.Value.Date >= utcNow.Date;
+        }
     }
 }

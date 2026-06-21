@@ -12,6 +12,31 @@ namespace eNote.Infrastructure.Data.Seed
             await LectureSeed.SeedLectures(context);
             await InstrumentSeed.SeedInstruments(context);
             await EnrollmentSeed.SeedEnrollments(context);
+            await StudentMembershipSeed.SeedMemberships(context);
+        }
+    }
+
+    internal static class StudentMembershipSeed
+    {
+        public static async Task SeedMemberships(ENoteContext context)
+        {
+            List<Student> students = await context.Set<Student>()
+                .Where(s => s.MembershipPaidUntil == null)
+                .ToListAsync();
+
+            if (students.Count == 0)
+            {
+                return;
+            }
+
+            DateTime paidUntil = DateTime.UtcNow.AddYears(1);
+
+            foreach (Student student in students)
+            {
+                student.UpdateMembership(paidUntil);
+            }
+
+            await context.SaveChangesAsync();
         }
     }
 

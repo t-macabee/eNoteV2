@@ -73,5 +73,44 @@ namespace eNote.Infrastructure.Identity
         }
 
         public Task LogoutAsync(string jti, DateTime expiresAtUtc, CancellationToken cancellationToken = default) => tokenRevocationService.RevokeAsync(jti, expiresAtUtc, cancellationToken);
+
+        public async Task<ForgotPasswordResponse> ForgotPasswordAsync(ForgotPasswordRequest request, bool includeDevToken, CancellationToken cancellationToken = default)
+        {
+            string email = request.Email.Trim();
+            AppUser? user = await userManager.FindByEmailAsync(email);
+
+            if (user is null || !user.IsActive)
+            {
+                return new ForgotPasswordResponse { Message = Messages.PasswordResetEmailSent };
+            }
+
+            string token = await userManager.GeneratePasswordResetTokenAsync(user);
+
+            return new ForgotPasswordResponse
+            {
+                Message = Messages.PasswordResetEmailSent,
+                ResetToken = includeDevToken ? token : null
+            };
+        }
+
+        public async Task<(bool Success, string? Error)> ResetPasswordAsync(ResetPasswordRequest request, CancellationToken cancellationToken = default)
+        {
+            AppUser? user = await userManager.FindByEmailAsync(request.Email.Trim());
+
+            if (user is null || !user.IsActive)
+            {
+                return (false, Messages.PasswordResetFailed);
+            }
+
+            IdentityResult result = await userManager.ResetPasswordAsync(user, request.Token, request.NewPassword);
+
+            if (!result.Succeeded)
+            {
+                string errors = string.Join("; ", result.Errors.Select(e => e.Description));
+                return (false, Messages.PasswordResetFailed + " " + errors);
+            }
+
+            return (true, null);
+        }
     }
 }

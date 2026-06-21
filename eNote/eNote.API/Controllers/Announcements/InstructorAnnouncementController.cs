@@ -1,4 +1,5 @@
 using eNote.API.Controllers.Base;
+using eNote.Application.Common.Localization;
 using eNote.Application.Common.Paging;
 using eNote.Application.Constants;
 using eNote.Application.Features.Announcements;
@@ -49,6 +50,23 @@ namespace eNote.API.Controllers.Announcements
         {
             await announcementService.DeleteForCourseAsync(courseId, announcementId);
             return NoContent();
+        }
+
+        [HttpPost("{announcementId:int}/image")]
+        [ProducesResponseType(typeof(AnnouncementDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<ActionResult<AnnouncementDto>> UploadImage(int courseId, int announcementId, IFormFile? file, CancellationToken ct)
+        {
+            if (file is null || file.Length == 0)
+            {
+                return BadRequest(new { message = Messages.FileNotProvided });
+            }
+
+            await using Stream stream = file.OpenReadStream();
+
+            AnnouncementDto result = await announcementService.UploadImageForCourseAsync(courseId, announcementId, stream, file.FileName, file.ContentType, ct);
+
+            return Ok(result);
         }
     }
 }

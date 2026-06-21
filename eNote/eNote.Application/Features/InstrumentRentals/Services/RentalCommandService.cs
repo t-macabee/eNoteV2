@@ -21,7 +21,14 @@ namespace eNote.Application.Features.InstrumentRentals.Services
         {
             InstrumentRentalDto dto = await ExecuteInTransactionAsync(async () =>
             {
-                int studentProfileId = (await resolver.GetStudentAsync(currentUserService.UserId)).Id;
+                Student student = await resolver.GetStudentAsync(currentUserService.UserId);
+
+                if (!student.HasActiveMembership(clock.UtcNow))
+                {
+                    throw new BusinessException(Messages.MembershipInactive);
+                }
+
+                int studentProfileId = student.Id;
 
                 _ = await context.Set<Instrument>()
                     .AsNoTracking()

@@ -19,5 +19,11 @@ namespace eNote.Domain.Entities
             StoreName = storeName;
             BusinessHours = businessHours;
         }
+
+        public void UpdateDetails(string storeName, string businessHours)
+        {
+            StoreName = storeName;
+            BusinessHours = businessHours;
+        }
     }
 }

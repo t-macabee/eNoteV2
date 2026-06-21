@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Application.Features.Announcements.Services
 {
-    public class AnnouncementService(IAppDbContext context, IClock clock, IUserContextResolver resolver, IMusicStoreContextService storeContext, ICurrentUserService currentUserService) : IAnnouncementService
+    public class AnnouncementService(IAppDbContext context, IClock clock, IUserContextResolver resolver, IMusicStoreContextService storeContext, ICurrentUserService currentUserService, IFileStorageService fileStorage) : IAnnouncementService
     {
         private static readonly InstrumentRentalStatus[] StoreAudienceRentalStatuses =
         [
@@ -182,6 +182,38 @@ namespace eNote.Application.Features.Announcements.Services
             await context.SaveChangesAsync();
         }
 
+        public async Task<AnnouncementDto> UploadImageForCourseAsync(int courseId, int announcementId, Stream stream, string fileName, string contentType, CancellationToken ct = default)
+        {
+            Announcement entity = await GetCourseAnnouncementQuery(courseId, track: true)
+                .FirstOrDefaultAsync(a => a.Id == announcementId, ct)
+                ?? throw new NotFoundException(Messages.AnnouncementNotFound);
+
+            string path = await fileStorage.SaveAsync(stream, fileName, contentType, "announcements", ct);
+            entity.SetImagePath(path);
+            entity.UpdatedById = currentUserService.UserId;
+
+            await context.SaveChangesAsync(ct);
+
+            return await LoadDtoAsync(entity.Id);
+        }
+
+        public async Task<AnnouncementDto> UploadImageForStoreAsync(int announcementId, Stream stream, string fileName, string contentType, CancellationToken ct = default)
+        {
+            int storeId = await storeContext.GetActiveStoreAsync(currentUserService.UserId);
+
+            Announcement entity = await context.Set<Announcement>()
+                .FirstOrDefaultAsync(a => a.Id == announcementId && a.MusicStoreId == storeId, ct)
+                ?? throw new NotFoundException(Messages.AnnouncementNotFound);
+
+            string path = await fileStorage.SaveAsync(stream, fileName, contentType, "announcements", ct);
+            entity.SetImagePath(path);
+            entity.UpdatedById = currentUserService.UserId;
+
+            await context.SaveChangesAsync(ct);
+
+            return await LoadDtoAsync(entity.Id);
+        }
+
         private IQueryable<Announcement> GetCourseAnnouncementQuery(int courseId, bool track = false)
         {
             IQueryable<Announcement> query = context.Set<Announcement>()
@@ -213,6 +245,7 @@ namespace eNote.Application.Features.Announcements.Services
                 Id = entity.Id,
                 Title = entity.Title,
                 Content = entity.Content,
+                ImagePath = entity.ImagePath,
                 PublishedAt = entity.PublishedAt,
                 Scope = scope,
                 CourseId = entity.CourseId,

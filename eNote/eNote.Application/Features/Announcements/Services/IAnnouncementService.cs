@@ -15,5 +15,7 @@ namespace eNote.Application.Features.Announcements.Services
         Task<PagedResult<AnnouncementDto>> GetForStoreAsync(int page, int pageSize);
         Task<AnnouncementDto> UpdateForStoreAsync(int announcementId, AnnouncementRequest request);
         Task DeleteForStoreAsync(int announcementId);
+        Task<AnnouncementDto> UploadImageForCourseAsync(int courseId, int announcementId, Stream stream, string fileName, string contentType, CancellationToken ct = default);
+        Task<AnnouncementDto> UploadImageForStoreAsync(int announcementId, Stream stream, string fileName, string contentType, CancellationToken ct = default);
     }
 }

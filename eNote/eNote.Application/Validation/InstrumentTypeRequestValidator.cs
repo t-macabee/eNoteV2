@@ -1,0 +1,13 @@
+using eNote.Application.Features.ReferenceData.InstrumentTypes;
+using FluentValidation;
+
+namespace eNote.Application.Validation;
+
+public sealed class InstrumentTypeRequestValidator : AbstractValidator<InstrumentTypeRequest>
+{
+    public InstrumentTypeRequestValidator()
+    {
+        RuleFor(x => x.Type).NotEmpty().MaximumLength(100);
+        RuleFor(x => x.MonthlyFee).GreaterThanOrEqualTo(0);
+    }
+}

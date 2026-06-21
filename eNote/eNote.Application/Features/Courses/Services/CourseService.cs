@@ -3,6 +3,7 @@ using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Paging;
 using eNote.Application.Common.Persistence;
+using eNote.Application.Common.Time;
 using eNote.Application.Features.Users.Services;
 using eNote.Domain.Entities;
 using eNote.Domain.Enums;
@@ -12,7 +13,7 @@ using Microsoft.Extensions.Logging;
 
 namespace eNote.Application.Features.Courses.Services
 {
-    public class CourseService(IAppDbContext context, IMapper mapper, IUserContextResolver resolver, ICurrentUserService currentUserService, ILogger<CourseService> logger) : ICourseService
+    public class CourseService(IAppDbContext context, IMapper mapper, IClock clock, IUserContextResolver resolver, ICurrentUserService currentUserService, ILogger<CourseService> logger) : ICourseService
     {
         public async Task<CourseDto> GetByIdForInstructorAsync(int id)
         {
@@ -139,6 +140,11 @@ namespace eNote.Application.Features.Courses.Services
         public async Task EnrollAsync(int courseId)
         {
             Student student = await resolver.GetStudentAsync(currentUserService.UserId);
+
+            if (!student.HasActiveMembership(clock.UtcNow))
+            {
+                throw new BusinessException(Messages.MembershipInactive);
+            }
 
             Course course = await context.Set<Course>()
                 .Include(c => c.Enrollments)
