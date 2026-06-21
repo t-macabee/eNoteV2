@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 namespace eNote.Application.Features.ReferenceData.InstrumentTypes;
 
 public sealed class InstrumentTypeService(IAppDbContext context)
-    : ReferenceCrudService<InstrumentType, InstrumentTypeDto, InstrumentTypeRequest>(context), IInstrumentTypeService
+    : ReferenceCrudService<InstrumentType, InstrumentTypeDto, InstrumentTypeRequest, InstrumentTypeSearchObject>(context), IInstrumentTypeService
 {
     protected override string NotFoundMessage => Messages.InstrumentTypeNotFound;
 
@@ -29,6 +29,9 @@ public sealed class InstrumentTypeService(IAppDbContext context)
         entity.Type = request.Type.Trim();
         entity.MonthlyFee = request.MonthlyFee;
     }
+
+    protected override IQueryable<InstrumentType> ApplySearch(IQueryable<InstrumentType> query, InstrumentTypeSearchObject search) =>
+        query.ApplySearch(search);
 
     protected override IOrderedQueryable<InstrumentType> Order(IQueryable<InstrumentType> query) =>
         query.OrderBy(x => x.Type);

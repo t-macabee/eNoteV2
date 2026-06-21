@@ -12,9 +12,9 @@ namespace eNote.API.Controllers.Admin;
 public sealed class AdminMusicStoreController(IMusicStoreService service) : CoreController
 {
     [HttpGet]
-    public async Task<ActionResult<PagedResult<MusicStoreDto>>> GetPaged(int page = 1, int pageSize = 20)
+    public async Task<ActionResult<PagedResult<MusicStoreDto>>> GetPaged([FromQuery] MusicStoreSearchObject search)
     {
-        var result = await service.GetPagedAsync(page, pageSize);
+        var result = await service.GetPagedAsync(search);
         return Ok(result);
     }
 

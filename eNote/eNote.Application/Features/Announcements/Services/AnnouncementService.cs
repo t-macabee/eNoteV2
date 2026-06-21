@@ -19,25 +19,19 @@ namespace eNote.Application.Features.Announcements.Services
         {
             var studentId = (await resolver.GetStudentAsync(currentUserService.UserId)).Id;
 
-            var enrolledCourseIds = await context.Set<Enrollment>()
-                .AsNoTracking()
-                .Where(e => e.StudentId == studentId && e.EnrollmentStatus == EnrollmentStatus.Active)
-                .Select(e => e.CourseId)
-                .ToListAsync();
-
-            var storeIds = await context.Set<InstrumentRental>()
-                .AsNoTracking()
-                .Where(r => r.StudentProfileId == studentId && InstrumentRentalStatusSets.History.Contains(r.RentalStatus))
-                .Select(r => r.Instrument.MusicStoreId)
-                .Distinct()
-                .ToListAsync();
-
             var query = context.Set<Announcement>()
                 .AsNoTracking()
                 .Include(a => a.Course)
                 .Include(a => a.MusicStore)
-                .Where(a => (a.CourseId != null && enrolledCourseIds.Contains(a.CourseId.Value)) ||
-                            (a.MusicStoreId != null && storeIds.Contains(a.MusicStoreId.Value)));
+                .Where(a =>
+                    (a.CourseId != null && context.Set<Enrollment>().Any(e =>
+                        e.StudentId == studentId &&
+                        e.EnrollmentStatus == EnrollmentStatus.Active &&
+                        e.CourseId == a.CourseId)) ||
+                    (a.MusicStoreId != null && context.Set<InstrumentRental>().Any(r =>
+                        r.StudentProfileId == studentId &&
+                        InstrumentRentalStatusSets.History.Contains(r.RentalStatus) &&
+                        r.Instrument.MusicStoreId == a.MusicStoreId)));
 
             return await query.ToPagedResultAsync(page, pageSize, includeTotalCount: true, MapToDto, q => q.OrderByDescending(x => x.PublishedAt));
         }

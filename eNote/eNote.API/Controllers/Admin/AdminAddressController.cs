@@ -12,9 +12,9 @@ namespace eNote.API.Controllers.Admin;
 public sealed class AdminAddressController(IAddressService service) : CoreController
 {
     [HttpGet]
-    public async Task<ActionResult<PagedResult<AddressReferenceDto>>> GetPaged(int page = 1, int pageSize = 20)
+    public async Task<ActionResult<PagedResult<AddressReferenceDto>>> GetPaged([FromQuery] AddressSearchObject search)
     {
-        var result = await service.GetPagedAsync(page, pageSize);
+        var result = await service.GetPagedAsync(search);
         return Ok(result);
     }
 

@@ -106,7 +106,6 @@ namespace eNote.Application.Features.InstrumentRentals.StateMachine
             new(
                 From: InstrumentRentalStatus.Pending,
                 Trigger: RentalTrigger.Approve,
-                To: InstrumentRentalStatus.Approved,
                 Actors: [RentalActor.StoreEmployee],
                 GuardAsync: async (rental, context, ct) =>
                 {
@@ -123,7 +122,6 @@ namespace eNote.Application.Features.InstrumentRentals.StateMachine
             new(
                 From: InstrumentRentalStatus.Pending,
                 Trigger: RentalTrigger.Reject,
-                To: InstrumentRentalStatus.Rejected,
                 Actors: [RentalActor.StoreEmployee],
                 GuardAsync: null,
                 Apply: (rental, context, time) =>
@@ -136,7 +134,6 @@ namespace eNote.Application.Features.InstrumentRentals.StateMachine
             new(
                 From: InstrumentRentalStatus.Pending,
                 Trigger: RentalTrigger.Cancel,
-                To: InstrumentRentalStatus.Canceled,
                 Actors: [RentalActor.Student],
                 GuardAsync: (rental, _, _) =>
                 {
@@ -154,7 +151,6 @@ namespace eNote.Application.Features.InstrumentRentals.StateMachine
             new(
                 From: InstrumentRentalStatus.Approved,
                 Trigger: RentalTrigger.Pickup,
-                To: InstrumentRentalStatus.Active,
                 Actors: [RentalActor.StoreEmployee],
                 GuardAsync: async (rental, context, ct) =>
                 {
@@ -173,7 +169,6 @@ namespace eNote.Application.Features.InstrumentRentals.StateMachine
             new(
                 From: InstrumentRentalStatus.Approved,
                 Trigger: RentalTrigger.Cancel,
-                To: InstrumentRentalStatus.Canceled,
                 Actors: [RentalActor.Student],
                 GuardAsync: (rental, _, _) =>
                 {
@@ -191,7 +186,6 @@ namespace eNote.Application.Features.InstrumentRentals.StateMachine
             new(
                 From: InstrumentRentalStatus.Active,
                 Trigger: RentalTrigger.Complete,
-                To: InstrumentRentalStatus.Completed,
                 Actors: [RentalActor.StoreEmployee],
                 GuardAsync: (rental, _, _) =>
                 {
@@ -209,7 +203,6 @@ namespace eNote.Application.Features.InstrumentRentals.StateMachine
             new(
                 From: InstrumentRentalStatus.Active,
                 Trigger: RentalTrigger.ReturnEarly,
-                To: InstrumentRentalStatus.ReturnedEarly,
                 Actors: [RentalActor.StoreEmployee],
                 GuardAsync: (rental, _, _) =>
                 {
@@ -227,7 +220,7 @@ namespace eNote.Application.Features.InstrumentRentals.StateMachine
         ];
 
         private sealed record TransitionDefinition(
-            InstrumentRentalStatus From, RentalTrigger Trigger, InstrumentRentalStatus To, RentalActor[] Actors,
+            InstrumentRentalStatus From, RentalTrigger Trigger, RentalActor[] Actors,
             Func<InstrumentRental, RentalTransitionContext, CancellationToken, Task>? GuardAsync, Action<InstrumentRental,
             RentalTransitionContext, IClock> Apply, bool UsesInstrumentLock
         );

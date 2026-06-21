@@ -104,7 +104,7 @@ public sealed class AssignmentService(
         return mapper.Map<AssignmentDto>(entity);
     }
 
-    public async Task<AssignmentSubmissionDto> SubmitAsync(int assignmentId, AssignmentSubmitRequest request)
+    private async Task<AssignmentSubmissionDto> SubmitAsync(int assignmentId, AssignmentSubmitRequest request)
     {
         var student = await resolver.GetStudentAsync(currentUserService.UserId);
 

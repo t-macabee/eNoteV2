@@ -18,7 +18,12 @@ namespace eNote.Infrastructure.Identity
                 return (null, Messages.InvalidCredentials);
             }
 
-            var result = await signInManager.CheckPasswordSignInAsync(user, model.Password, lockoutOnFailure: false);
+            var result = await signInManager.CheckPasswordSignInAsync(user, model.Password, lockoutOnFailure: true);
+
+            if (result.IsLockedOut)
+            {
+                return (null, Messages.AccountLocked);
+            }
 
             if (!result.Succeeded)
             {

@@ -1,13 +1,15 @@
-﻿using eNote.Application.Common.Exceptions;
+using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Paging;
 using eNote.Application.Common.Persistence;
+using eNote.Application.Common.Search;
 using eNote.Domain.Entities.Base;
 using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Application.Features.ReferenceData;
 
-public abstract class ReferenceCrudService<TEntity, TDto, TRequest>(IAppDbContext context)
+public abstract class ReferenceCrudService<TEntity, TDto, TRequest, TSearch>(IAppDbContext context)
     where TEntity : BaseEntity
+    where TSearch : BaseSearchObject
 {
     protected IAppDbContext Db => context;
 
@@ -16,13 +18,13 @@ public abstract class ReferenceCrudService<TEntity, TDto, TRequest>(IAppDbContex
     protected abstract TEntity CreateEntity(TRequest request);
     protected abstract void ApplyUpdate(TEntity entity, TRequest request);
     protected abstract IOrderedQueryable<TEntity> Order(IQueryable<TEntity> query);
+    protected abstract IQueryable<TEntity> ApplySearch(IQueryable<TEntity> query, TSearch search);
     protected virtual Task EnsureDeletableAsync(TEntity entity, CancellationToken ct = default) =>
         Task.CompletedTask;
 
-    public Task<PagedResult<TDto>> GetPagedAsync(int page, int pageSize) =>
-        Db.Set<TEntity>()
-            .AsNoTracking()
-            .ToPagedResultAsync(page, pageSize, includeTotalCount: true, Map, Order);
+    public Task<PagedResult<TDto>> GetPagedAsync(TSearch search) =>
+        Order(ApplySearch(Db.Set<TEntity>().AsNoTracking(), search))
+            .ToPagedResultAsync(search.Page, search.PageSize, search.IncludeTotalCount, Map);
 
     public async Task<TDto> GetByIdAsync(int id)
     {

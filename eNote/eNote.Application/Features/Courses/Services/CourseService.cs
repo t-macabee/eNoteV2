@@ -164,17 +164,32 @@ public sealed class CourseService(
             throw new BusinessException(Messages.MembershipInactive);
         }
 
-        var course = await context.Set<Course>()
-            .Include(c => c.Enrollments)
+        _ = await context.Set<Course>()
+            .AsNoTracking()
             .FirstOrDefaultAsync(c => c.Id == courseId && c.IsPublished)
             ?? throw new NotFoundException(Messages.CourseNotFound);
 
-        if (course.Enrollments.Any(e => e.StudentId == student.Id && e.EnrollmentStatus == EnrollmentStatus.Active))
+        var enrollment = await context.Set<Enrollment>()
+            .FirstOrDefaultAsync(e => e.StudentId == student.Id && e.CourseId == courseId);
+
+        if (enrollment?.EnrollmentStatus == EnrollmentStatus.Active)
         {
             return;
         }
 
-        context.Set<Enrollment>().Add(new Enrollment(student.Id, course.Id, EnrollmentStatus.Active));
+        if (enrollment?.EnrollmentStatus == EnrollmentStatus.Canceled)
+        {
+            enrollment.UpdateStatus(EnrollmentStatus.Active);
+            enrollment.UpdatedById = currentUserService.UserId;
+        }
+        else
+        {
+            context.Set<Enrollment>().Add(new Enrollment(student.Id, courseId, EnrollmentStatus.Active)
+            {
+                CreatedById = currentUserService.UserId
+            });
+        }
+
         await context.SaveChangesAsync();
 
         logger.LogInformation("Student {StudentUserId} enrolled in course {CourseId}", currentUserService.UserId, courseId);

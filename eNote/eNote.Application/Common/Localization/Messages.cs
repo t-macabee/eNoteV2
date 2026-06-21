@@ -7,6 +7,7 @@ namespace eNote.Application.Common.Localization
         public const string InternalError = "Došlo je do greške na serveru.";
 
         public const string InvalidCredentials = "Pogrešno korisničko ime ili lozinka.";
+        public const string AccountLocked = "Nalog je privremeno zaključan. Pokušajte ponovo kasnije.";
         public const string UsernameTaken = "Korisničko ime je već zauzeto.";
         public const string EmailTaken = "Email adresa je već registrovana.";
         public const string TokenRevoked = "Token je opozvan.";

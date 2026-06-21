@@ -12,9 +12,9 @@ namespace eNote.API.Controllers.Admin;
 public sealed class AdminInstrumentTypeController(IInstrumentTypeService service) : CoreController
 {
     [HttpGet]
-    public async Task<ActionResult<PagedResult<InstrumentTypeDto>>> GetPaged(int page = 1, int pageSize = 20)
+    public async Task<ActionResult<PagedResult<InstrumentTypeDto>>> GetPaged([FromQuery] InstrumentTypeSearchObject search)
     {
-        var result = await service.GetPagedAsync(page, pageSize);
+        var result = await service.GetPagedAsync(search);
         return Ok(result);
     }
 

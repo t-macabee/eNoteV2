@@ -4,7 +4,7 @@ namespace eNote.Application.Features.ReferenceData.Addresses;
 
 public interface IAddressService
 {
-    Task<PagedResult<AddressReferenceDto>> GetPagedAsync(int page, int pageSize);
+    Task<PagedResult<AddressReferenceDto>> GetPagedAsync(AddressSearchObject search);
     Task<AddressReferenceDto> GetByIdAsync(int id);
     Task<AddressReferenceDto> CreateAsync(AddressRequest request);
     Task<AddressReferenceDto> UpdateAsync(int id, AddressRequest request);

@@ -66,11 +66,12 @@ namespace eNote.Application.Features.Courses.Services
             IReadOnlyDictionary<int, string> nameMap = await resolver.GetStudentDisplayNamesAsync(enrolledStudents);
 
             List<CourseRankingEntryDto> ranked = [.. enrolledStudents
+                .Where(s => gradeData.ContainsKey(s.Id))
                 .Select(s =>
                 {
-                    var hasGrades = gradeData.TryGetValue(s.Id, out StudentGradeStats? gradeStats);
+                    var gradeStats = gradeData[s.Id];
 
-                    return new RankedStudentEntry(s, hasGrades ? gradeStats!.Average : null, hasGrades ? gradeStats!.Count : 0, nameMap.GetValueOrDefault(s.Id, $"Student {s.Id}"));
+                    return new RankedStudentEntry(s, gradeStats.Average, gradeStats.Count, nameMap.GetValueOrDefault(s.Id, $"Student {s.Id}"));
                 })
                 .OrderByDescending(x => x.Average)
                 .ThenBy(x => x.Student.Id)
@@ -79,7 +80,7 @@ namespace eNote.Application.Features.Courses.Services
                     Rank = i + 1,
                     StudentId = x.Student.Id,
                     StudentName = x.Name,
-                    AverageGrade = x.Average.HasValue ? Math.Round(x.Average.Value, 2) : null,
+                    AverageGrade = x.Average.HasValue ? Math.Round(x.Average!.Value, 2) : null,
                     GradedSubmissions = x.Count
                 })];
 

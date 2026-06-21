@@ -18,6 +18,7 @@ public sealed class RecommendationService(IAppDbContext context, IMapper mapper,
     private const double ViewWeight = 0.30;
     private const double SimilarityWeight = 0.20;
     private const double PopularityWeight = 0.10;
+    private const int CandidatePoolSize = 80;
 
     public async Task<IReadOnlyList<InstrumentRecommendationDto>> GetRecommendedInstrumentsAsync(int count = 5, CancellationToken cancellationToken = default)
     {
@@ -26,17 +27,6 @@ public sealed class RecommendationService(IAppDbContext context, IMapper mapper,
         var student = await resolver.GetStudentAsync(currentUserService.UserId);
 
         var userId = currentUserService.UserId;
-
-        var candidates = await context.Set<Instrument>()
-            .AsNoTracking()
-            .WithInstrumentDetails()
-            .Where(x => x.IsActive)
-            .ToListAsync(cancellationToken);
-
-        if (candidates.Count == 0)
-        {
-            return [];
-        }
 
         var userRentals = await context.Set<InstrumentRental>()
             .AsNoTracking()
@@ -79,6 +69,16 @@ public sealed class RecommendationService(IAppDbContext context, IMapper mapper,
             .FirstOrDefault();
 
         var collaborativeInstrumentIds = await BuildCollaborativeInstrumentIdsAsync(student.Id, rentedInstrumentIds, cancellationToken);
+
+        var preferredTypeIds = userTypeCounts.Keys.ToList();
+
+        var candidates = await LoadCandidateInstrumentsAsync(
+            preferredTypeIds, collaborativeInstrumentIds, count, cancellationToken);
+
+        if (candidates.Count == 0)
+        {
+            return [];
+        }
 
         List<ScoredRecommendation> scored = [];
 
@@ -139,6 +139,60 @@ public sealed class RecommendationService(IAppDbContext context, IMapper mapper,
         }
 
         await context.SaveChangesAsync(cancellationToken);
+    }
+
+    private async Task<List<Instrument>> LoadCandidateInstrumentsAsync(
+        IReadOnlyList<int> preferredTypeIds,
+        HashSet<int> collaborativeInstrumentIds,
+        int count,
+        CancellationToken cancellationToken)
+    {
+        var poolSize = Math.Max(count * 12, CandidatePoolSize);
+
+        var popularIds = await context.Set<InstrumentRental>()
+            .AsNoTracking()
+            .Where(x => InstrumentRentalStatusSets.History.Contains(x.RentalStatus))
+            .GroupBy(x => x.InstrumentId)
+            .OrderByDescending(g => g.Count())
+            .Select(g => g.Key)
+            .Take(poolSize / 2)
+            .ToListAsync(cancellationToken);
+
+        List<int> preferredIds = preferredTypeIds.Count == 0
+            ? []
+            : await context.Set<Instrument>()
+                .AsNoTracking()
+                .Where(x => x.IsActive && preferredTypeIds.Contains(x.InstrumentTypeId))
+                .OrderBy(x => x.Id)
+                .Select(x => x.Id)
+                .Take(poolSize / 2)
+                .ToListAsync(cancellationToken);
+
+        var candidateIds = preferredIds
+            .Concat(collaborativeInstrumentIds)
+            .Concat(popularIds)
+            .Distinct()
+            .Take(poolSize)
+            .ToList();
+
+        if (candidateIds.Count < count)
+        {
+            var fillerIds = await context.Set<Instrument>()
+                .AsNoTracking()
+                .Where(x => x.IsActive && !candidateIds.Contains(x.Id))
+                .OrderBy(x => x.Id)
+                .Select(x => x.Id)
+                .Take(poolSize - candidateIds.Count)
+                .ToListAsync(cancellationToken);
+
+            candidateIds.AddRange(fillerIds);
+        }
+
+        return await context.Set<Instrument>()
+            .AsNoTracking()
+            .WithInstrumentDetails()
+            .Where(x => candidateIds.Contains(x.Id) && x.IsActive)
+            .ToListAsync(cancellationToken);
     }
 
     private async Task<HashSet<int>> BuildCollaborativeInstrumentIdsAsync(int studentId, HashSet<int> rentedInstrumentIds, CancellationToken cancellationToken)
@@ -234,32 +288,32 @@ public sealed class RecommendationService(IAppDbContext context, IMapper mapper,
 
         if (rentalScore >= 0.5 && preferredTypeId == instrument.InstrumentTypeId)
         {
-            reasons.Add($"Na osnovu vaÅ¡e historije najma ({instrument.InstrumentType.Type}).");
+            reasons.Add($"Na osnovu vaše historije najma ({instrument.InstrumentType.Type}).");
         }
 
         if (collaborativeInstrumentIds.Contains(instrument.Id))
         {
-            reasons.Add("Studenti sa sliÄnim izborima najma biraju ovaj instrument.");
+            reasons.Add("Studenti sa sličnim izborima najma biraju ovaj instrument.");
         }
 
         if (viewScore >= 0.5)
         {
-            reasons.Add("Pregledali ste ovaj instrument ili sliÄne modele.");
+            reasons.Add("Pregledali ste ovaj instrument ili slične modele.");
         }
 
         if (similarityScore >= 0.6)
         {
-            reasons.Add("SliÄan vaÅ¡im prethodnim izborima proizvoÄ‘aÄa ili vrste.");
+            reasons.Add("Sličan vašim prethodnim izborima proizvođača ili vrste.");
         }
 
         if (popularityScore >= 0.5)
         {
-            reasons.Add("Popularan meÄ‘u studentima.");
+            reasons.Add("Popularan među studentima.");
         }
 
         if (reasons.Count == 0)
         {
-            reasons.Add("PreporuÄeno na osnovu dostupnosti i ukupnog interesovanja.");
+            reasons.Add("Preporučeno na osnovu dostupnosti i ukupnog interesovanja.");
         }
 
         return reasons;
