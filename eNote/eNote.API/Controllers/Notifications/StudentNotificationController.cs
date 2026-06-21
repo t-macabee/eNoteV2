@@ -1,4 +1,4 @@
-using eNote.API.Controllers.Base;
+﻿using eNote.API.Controllers.Base;
 using eNote.Application.Common.Paging;
 using eNote.Application.Constants;
 using eNote.Application.Features.Notifications;
@@ -15,28 +15,28 @@ namespace eNote.API.Controllers.Notifications
         [HttpGet]
         public async Task<ActionResult<PagedResult<NotificationDto>>> GetPaged([FromQuery] NotificationSearchObject search)
         {
-            PagedResult<NotificationDto> result = await notificationService.GetPagedAsync(search);
+            var result = await notificationService.GetPagedAsync(search);
             return Ok(result);
         }
 
         [HttpGet("unread-count")]
         public async Task<ActionResult<NotificationUnreadCountDto>> GetUnreadCount()
         {
-            NotificationUnreadCountDto result = await notificationService.GetUnreadCountAsync();
+            var result = await notificationService.GetUnreadCountAsync();
             return Ok(result);
         }
 
         [HttpPatch("{id:int}/read")]
         public async Task<ActionResult<NotificationDto>> MarkRead(int id)
         {
-            NotificationDto result = await notificationService.MarkReadAsync(id);
+            var result = await notificationService.MarkReadAsync(id);
             return Ok(result);
         }
 
         [HttpPatch("read-all")]
         public async Task<ActionResult<NotificationUnreadCountDto>> MarkAllRead()
         {
-            NotificationUnreadCountDto result = await notificationService.MarkAllReadAsync();
+            var result = await notificationService.MarkAllReadAsync();
             return Ok(result);
         }
     }

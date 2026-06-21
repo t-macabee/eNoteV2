@@ -19,7 +19,7 @@ namespace eNote.Infrastructure.Identity
                 new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };
 
-            foreach (string role in roles)
+            foreach (var role in roles)
             {
                 claims.Add(new Claim(ClaimTypes.Role, role));
             }
@@ -27,7 +27,7 @@ namespace eNote.Infrastructure.Identity
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["Jwt:Key"]!));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
-            int expirationDays = configuration.GetValue<int>("Jwt:ExpirationDays", 7);
+            var expirationDays = configuration.GetValue<int>("Jwt:ExpirationDays", 7);
 
             var token = new JwtSecurityToken(
                 issuer: configuration["Jwt:Issuer"],

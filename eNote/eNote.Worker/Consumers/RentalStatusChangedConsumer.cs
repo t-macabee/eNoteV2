@@ -1,4 +1,4 @@
-using eNote.Contracts.Rentals;
+﻿using eNote.Contracts.Rentals;
 using eNote.Domain.Entities;
 using eNote.Infrastructure.Data;
 using MassTransit;
@@ -12,9 +12,9 @@ public sealed class RentalStatusChangedConsumer(
 {
     public async Task Consume(ConsumeContext<RentalStatusChanged> context)
     {
-        RentalStatusChanged message = context.Message;
+        var message = context.Message;
 
-        bool exists = await dbContext.Set<Notification>()
+        var exists = await dbContext.Set<Notification>()
             .AnyAsync(x => x.UserId == message.StudentUserId && x.RentalId == message.RentalId && x.Title == message.Title, context.CancellationToken);
 
         if (exists)

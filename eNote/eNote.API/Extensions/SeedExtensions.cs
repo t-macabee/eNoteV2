@@ -1,4 +1,4 @@
-using eNote.Infrastructure.Data;
+﻿using eNote.Infrastructure.Data;
 using eNote.Infrastructure.Data.Seed;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,7 +10,7 @@ namespace eNote.API.Extensions
         {
             using IServiceScope scope = app.Services.CreateScope();
 
-            ENoteContext context = scope.ServiceProvider.GetRequiredService<ENoteContext>();
+            var context = scope.ServiceProvider.GetRequiredService<ENoteContext>();
 
             await context.Database.MigrateAsync();
 
@@ -21,11 +21,11 @@ namespace eNote.API.Extensions
         {
             using IServiceScope scope = app.Services.CreateScope();
 
-            IServiceProvider services = scope.ServiceProvider;
+            var services = scope.ServiceProvider;
 
             await IdentitySeed.SeedAsync(services);
 
-            ENoteContext context = services.GetRequiredService<ENoteContext>();
+            var context = services.GetRequiredService<ENoteContext>();
 
             await DevelopmentDataSeed.SeedAsync(context);
 

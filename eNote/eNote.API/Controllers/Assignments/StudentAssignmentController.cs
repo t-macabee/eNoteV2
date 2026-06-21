@@ -1,4 +1,4 @@
-using eNote.API.Controllers.Base;
+﻿using eNote.API.Controllers.Base;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Paging;
 using eNote.Application.Constants;
@@ -16,14 +16,14 @@ namespace eNote.API.Controllers.Assignments
         [HttpGet]
         public async Task<ActionResult<PagedResult<AssignmentDto>>> GetMyAssignments([FromQuery] AssignmentSearchObject search)
         {
-            PagedResult<AssignmentDto> result = await service.GetForStudentAsync(search);
+            var result = await service.GetForStudentAsync(search);
             return Ok(result);
         }
 
         [HttpGet("{id:int}")]
         public async Task<ActionResult<AssignmentDto>> GetById(int id)
         {
-            AssignmentDto dto = await service.GetByIdForStudentAsync(id);
+            var dto = await service.GetByIdForStudentAsync(id);
             return Ok(dto);
         }
 
@@ -38,7 +38,7 @@ namespace eNote.API.Controllers.Assignments
             }
 
             await using Stream stream = file.OpenReadStream();
-            AssignmentSubmissionDto dto = await service.SubmitWithFileAsync(id, stream, file.FileName, file.ContentType, ct);
+            var dto = await service.SubmitWithFileAsync(id, stream, file.FileName, file.ContentType, ct);
             return Ok(dto);
         }
     }

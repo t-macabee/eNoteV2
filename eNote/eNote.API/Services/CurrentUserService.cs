@@ -1,4 +1,4 @@
-using eNote.Application.Common.Exceptions;
+﻿using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Localization;
 using System.IdentityModel.Tokens.Jwt;
@@ -12,11 +12,11 @@ namespace eNote.API.Services
         {
             get
             {
-                ClaimsPrincipal? user = httpContextAccessor.HttpContext?.User;
+                var user = httpContextAccessor.HttpContext?.User;
 
-                string? id = user?.FindFirstValue(JwtRegisteredClaimNames.Sub) ?? user?.FindFirstValue(ClaimTypes.NameIdentifier);
+                var id = user?.FindFirstValue(JwtRegisteredClaimNames.Sub) ?? user?.FindFirstValue(ClaimTypes.NameIdentifier);
 
-                if (!int.TryParse(id, out int userId))
+                if (!int.TryParse(id, out var userId))
                 {
                     throw new AuthenticationException(Messages.InvalidUserClaim);
                 }

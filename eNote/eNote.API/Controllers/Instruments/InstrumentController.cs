@@ -1,4 +1,4 @@
-using eNote.API.Controllers.Base;
+﻿using eNote.API.Controllers.Base;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Paging;
 using eNote.Application.Constants;
@@ -16,21 +16,21 @@ namespace eNote.API.Controllers.Instruments
         [HttpGet]
         public async Task<ActionResult<PagedResult<InstrumentDto>>> GetPaged([FromQuery] InstrumentSearchObject search)
         {
-            PagedResult<InstrumentDto> result = await instrumentService.GetPagedAsync(search);
+            var result = await instrumentService.GetPagedAsync(search);
             return Ok(result);
         }
 
         [HttpGet("{id:int}")]
         public async Task<ActionResult<InstrumentDto>> GetById(int id)
         {
-            InstrumentDto result = await instrumentService.GetByIdAsync(id);
+            var result = await instrumentService.GetByIdAsync(id);
             return Ok(result);
         }
 
         [HttpPost]
         public async Task<ActionResult<InstrumentDto>> Create([FromBody] InstrumentCreateRequest request)
         {
-            InstrumentDto result = await instrumentService.CreateAsync(request);
+            var result = await instrumentService.CreateAsync(request);
             return CreatedAtAction(nameof(GetById), new
             {
                 id = result.Id
@@ -40,7 +40,7 @@ namespace eNote.API.Controllers.Instruments
         [HttpPut("{id:int}")]
         public async Task<ActionResult<InstrumentDto>> Update(int id, [FromBody] InstrumentUpdateRequest request)
         {
-            InstrumentDto result = await instrumentService.UpdateAsync(id, request);
+            var result = await instrumentService.UpdateAsync(id, request);
             return Ok(result);
         }
 
@@ -55,7 +55,7 @@ namespace eNote.API.Controllers.Instruments
             }
 
             await using Stream stream = file.OpenReadStream();
-            InstrumentDto result = await instrumentService.UploadImageAsync(id, stream, file.FileName, file.ContentType, ct);
+            var result = await instrumentService.UploadImageAsync(id, stream, file.FileName, file.ContentType, ct);
             return Ok(result);
         }
 

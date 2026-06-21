@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Application.Common.Paging
 {
@@ -22,7 +22,7 @@ namespace eNote.Application.Common.Paging
                 query = orderBy(query);
             }
 
-            List<TEntity> entities = await query
+            var entities = await query
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync(ct);
@@ -54,12 +54,12 @@ namespace eNote.Application.Common.Paging
                 query = orderBy(query);
             }
 
-            List<TEntity> entities = await query
+            var entities = await query
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync(ct);
 
-            TModel[] items = await Task.WhenAll(entities.Select(mapAsync));
+            var items = await Task.WhenAll(entities.Select(mapAsync));
 
             return new PagedResult<TModel>
             {
@@ -89,12 +89,12 @@ namespace eNote.Application.Common.Paging
                 query = orderBy(query);
             }
 
-            List<TEntity> entities = await query
+            var entities = await query
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync(ct);
 
-            TCtx? ctx = await loadContext(entities);
+            var ctx = await loadContext(entities);
 
             return new PagedResult<TModel>
             {

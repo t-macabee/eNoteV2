@@ -1,4 +1,4 @@
-using eNote.Application.Common.Exceptions;
+﻿using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Localization;
 using Microsoft.AspNetCore.Diagnostics;
 using System.Text.Json;
@@ -15,9 +15,9 @@ namespace eNote.API.Extensions
                 {
                     context.Response.ContentType = "application/json";
 
-                    Exception? exception = context.Features.Get<IExceptionHandlerFeature>()?.Error;
+                    var exception = context.Features.Get<IExceptionHandlerFeature>()?.Error;
 
-                    (int statusCode, string? errorCode, string? message) = exception switch
+                    (var statusCode, var errorCode, var message) = exception switch
                     {
                         AppException appEx => (appEx.StatusCode, appEx.ErrorCode, appEx.Message),
                         ArgumentException => (400, "error.bad_request", exception?.Message ?? Messages.BadRequest),
@@ -26,7 +26,7 @@ namespace eNote.API.Extensions
 
                     context.Response.StatusCode = statusCode;
 
-                    ILogger<WebApplication>? logger = context.RequestServices.GetService<ILogger<WebApplication>>();
+                    var logger = context.RequestServices.GetService<ILogger<WebApplication>>();
 
                     logger?.LogError(exception, "Unhandled exception caught by middleware");
 

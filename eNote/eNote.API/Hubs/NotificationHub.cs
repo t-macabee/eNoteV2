@@ -15,9 +15,9 @@ public sealed class NotificationHub : Hub
 
     public override async Task OnConnectedAsync()
     {
-        string? userIdValue = Context.User?.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+        var userIdValue = Context.User?.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
 
-        if (int.TryParse(userIdValue, out int userId))
+        if (int.TryParse(userIdValue, out var userId))
         {
             await Groups.AddToGroupAsync(Context.ConnectionId, UserGroup(userId));
         }

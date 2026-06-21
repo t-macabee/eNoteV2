@@ -1,4 +1,4 @@
-using eNote.Application.Common.Persistence;
+﻿using eNote.Application.Common.Persistence;
 using eNote.Application.Common.Time;
 using eNote.Domain.Entities.Base;
 using eNote.Infrastructure.Data.Seed;
@@ -23,7 +23,7 @@ namespace eNote.Infrastructure.Data
 
         public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
-            DateTime now = clock.UtcNow;
+            var now = clock.UtcNow;
 
             foreach (EntityEntry<AuditableEntity> entry in ChangeTracker.Entries<AuditableEntity>())
             {

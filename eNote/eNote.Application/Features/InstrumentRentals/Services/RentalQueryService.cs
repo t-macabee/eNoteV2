@@ -1,4 +1,4 @@
-using eNote.Application.Common.Exceptions;
+﻿using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Paging;
@@ -10,83 +10,62 @@ using eNote.Domain.Entities;
 using MapsterMapper;
 using Microsoft.EntityFrameworkCore;
 
-namespace eNote.Application.Features.InstrumentRentals.Services
+namespace eNote.Application.Features.InstrumentRentals.Services;
+
+public sealed class RentalQueryService(
+    IAppDbContext context,
+    IMapper mapper,
+    IClock clock,
+    IMusicStoreContextService storeContext,
+    ICurrentUserService currentUserService) : IRentalQueryService
 {
-    public class RentalQueryService(IAppDbContext context, IMapper mapper, IClock clock, IMusicStoreContextService storeContext, ICurrentUserService currentUserService) : IRentalQueryService
+    public async Task<InstrumentRentalDto> GetByIdForStudentAsync(int rentalId) =>
+        MapEntityToModel(await FindRentalAsync(
+            context.Set<InstrumentRental>()
+                .Where(x => x.Id == rentalId && x.StudentProfile.AppUserId == currentUserService.UserId)));
+
+    public async Task<InstrumentRentalDto> GetByIdForStoreAsync(int rentalId)
     {
-        private static IQueryable<InstrumentRental> AddIncludes(IQueryable<InstrumentRental> query) => query.WithRentalDetails();
+        var storeId = await storeContext.GetActiveStoreAsync(currentUserService.UserId);
 
-        private InstrumentRentalDto MapEntityToModel(InstrumentRental entity)
-        {
-            InstrumentRentalDto result = mapper.Map<InstrumentRentalDto>(entity);
+        return MapEntityToModel(await FindRentalAsync(
+            context.Set<InstrumentRental>()
+                .Where(x => x.Id == rentalId && x.Instrument.MusicStoreId == storeId)));
+    }
 
-            RentalBilling.ApplyBilling(entity, result, clock.UtcNow);
+    public Task<PagedResult<InstrumentRentalDto>> GetPagedForStudentAsync(InstrumentRentalSearchObject search) =>
+        GetPagedAsync(
+            context.Set<InstrumentRental>()
+                .Where(x => x.StudentProfile.AppUserId == currentUserService.UserId),
+            search);
 
-            return result;
-        }
+    public async Task<PagedResult<InstrumentRentalDto>> GetPagedForStoreAsync(InstrumentRentalSearchObject search)
+    {
+        var storeId = await storeContext.GetActiveStoreAsync(currentUserService.UserId);
 
-        public async Task<InstrumentRentalDto> GetByIdForStudentAsync(int rentalId)
-        {
-            InstrumentRental entity = await context.Set<InstrumentRental>()
-                .AsNoTracking()
-                .WithRentalDetails()
-                .FirstOrDefaultAsync(x => x.Id == rentalId && x.StudentProfile.AppUserId == currentUserService.UserId)
-                ?? throw new NotFoundException(Messages.NotFound);
+        return await GetPagedAsync(
+            context.Set<InstrumentRental>().Where(x => x.Instrument.MusicStoreId == storeId),
+            search);
+    }
 
-            return MapEntityToModel(entity);
-        }
+    private async Task<PagedResult<InstrumentRentalDto>> GetPagedAsync(
+        IQueryable<InstrumentRental> query,
+        InstrumentRentalSearchObject search) =>
+        await query
+            .AsNoTracking()
+            .WithRentalDetails()
+            .ApplySearch(search)
+            .OrderByDescending(x => x.RequestedAt)
+            .ToPagedResultAsync(search.Page, search.PageSize, search.IncludeTotalCount, MapEntityToModel);
 
-        public async Task<InstrumentRentalDto> GetByIdForStoreAsync(int rentalId)
-        {
-            int storeId = await storeContext.GetActiveStoreAsync(currentUserService.UserId);
+    private async Task<InstrumentRental> FindRentalAsync(IQueryable<InstrumentRental> query) =>
+        await query.AsNoTracking().WithRentalDetails().FirstOrDefaultAsync()
+        ?? throw new NotFoundException(Messages.NotFound);
 
-            InstrumentRental entity = await context.Set<InstrumentRental>()
-                .AsNoTracking()
-                .WithRentalDetails()
-                .FirstOrDefaultAsync(x => x.Id == rentalId && x.Instrument.MusicStoreId == storeId)
-                ?? throw new NotFoundException(Messages.NotFound);
-
-            return MapEntityToModel(entity);
-        }
-
-        public async Task<PagedResult<InstrumentRentalDto>> GetPagedForStudentAsync(InstrumentRentalSearchObject searchObject)
-        {
-            IQueryable<InstrumentRental> query = context.Set<InstrumentRental>()
-                .AsNoTracking()
-                .Where(x => x.StudentProfile.AppUserId == currentUserService.UserId);
-
-            query = AddIncludes(query);
-            query = query.ApplySearch(searchObject);
-
-            return await query
-                .OrderByDescending(x => x.RequestedAt)
-                .ToPagedResultAsync(
-                    searchObject.Page,
-                    searchObject.PageSize,
-                    searchObject.IncludeTotalCount,
-                    MapEntityToModel
-                );
-        }
-
-        public async Task<PagedResult<InstrumentRentalDto>> GetPagedForStoreAsync(InstrumentRentalSearchObject searchObject)
-        {
-            int storeId = await storeContext.GetActiveStoreAsync(currentUserService.UserId);
-
-            IQueryable<InstrumentRental> query = context.Set<InstrumentRental>()
-                .AsNoTracking()
-                .Where(x => x.Instrument.MusicStoreId == storeId);
-
-            query = AddIncludes(query);
-            query = query.ApplySearch(searchObject);
-
-            return await query
-                .OrderByDescending(x => x.RequestedAt)
-                .ToPagedResultAsync(
-                    searchObject.Page,
-                    searchObject.PageSize,
-                    searchObject.IncludeTotalCount,
-                    MapEntityToModel
-                );
-        }
+    private InstrumentRentalDto MapEntityToModel(InstrumentRental entity)
+    {
+        var result = mapper.Map<InstrumentRentalDto>(entity);
+        RentalBilling.ApplyBilling(entity, result, clock.UtcNow);
+        return result;
     }
 }

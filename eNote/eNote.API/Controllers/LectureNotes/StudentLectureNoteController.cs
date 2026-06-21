@@ -1,4 +1,4 @@
-using eNote.API.Controllers.Base;
+﻿using eNote.API.Controllers.Base;
 using eNote.Application.Common.Paging;
 using eNote.Application.Constants;
 using eNote.Application.Features.LectureNotes;
@@ -15,14 +15,14 @@ namespace eNote.API.Controllers.LectureNotes
         [HttpGet]
         public async Task<ActionResult<PagedResult<LectureNoteDto>>> GetForLecture(int lectureId, [FromQuery] LectureNoteSearchObject search)
         {
-            PagedResult<LectureNoteDto> result = await service.GetForStudentAsync(lectureId, search);
+            var result = await service.GetForStudentAsync(lectureId, search);
             return Ok(result);
         }
 
         [HttpGet("{noteId:int}")]
         public async Task<ActionResult<LectureNoteDto>> GetById(int lectureId, int noteId)
         {
-            LectureNoteDto dto = await service.GetByIdForStudentAsync(lectureId, noteId);
+            var dto = await service.GetByIdForStudentAsync(lectureId, noteId);
             return Ok(dto);
         }
     }

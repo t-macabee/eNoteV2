@@ -13,7 +13,7 @@ builder.Configuration
     .AddEnvironmentVariables()
     .AddCommandLine(args);
 
-string? connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
 if (string.IsNullOrWhiteSpace(connectionString))
 {

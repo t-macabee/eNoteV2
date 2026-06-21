@@ -1,7 +1,9 @@
-using eNote.Application.Common.Exceptions;
+﻿using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Persistence;
+using eNote.Application.Features.Instructors;
+using eNote.Application.Features.Students;
 using eNote.Application.Features.Users.Services;
 using eNote.Domain.Entities;
 using eNote.Domain.Enums;
@@ -9,16 +11,13 @@ using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Application.Features.Courses.Services
 {
-    public class RankingService(IAppDbContext context, IUserContextResolver resolver, ICurrentUserService currentUserService) : IRankingService
+    public class RankingService(IAppDbContext context, IUserContextResolver resolver, IInstructorAccessService instructorAccess, ICurrentUserService currentUserService) : IRankingService
     {
         public async Task<IReadOnlyList<CourseRankingEntryDto>> GetForInstructorAsync(int courseId)
         {
-            Instructor instructor = await resolver.GetInstructorAsync(currentUserService.UserId);
+            var instructor = await instructorAccess.GetInstructorAsync(currentUserService.UserId);
 
-            bool courseExists = await context.Set<Course>()
-                .AnyAsync(c => c.Id == courseId && c.InstructorId == instructor.Id);
-
-            if (!courseExists)
+            if (!await instructorAccess.OwnsCourseAsync(courseId, instructor.Id))
             {
                 throw new NotFoundException(Messages.CourseNotFound);
             }
@@ -28,14 +27,9 @@ namespace eNote.Application.Features.Courses.Services
 
         public async Task<IReadOnlyList<CourseRankingEntryDto>> GetForStudentAsync(int courseId)
         {
-            Student student = await resolver.GetStudentAsync(currentUserService.UserId);
+            var student = await resolver.GetStudentAsync(currentUserService.UserId);
 
-            bool isEnrolled = await context.Set<Enrollment>()
-                .AnyAsync(e => e.CourseId == courseId &&
-                               e.StudentId == student.Id &&
-                               e.EnrollmentStatus == EnrollmentStatus.Active);
-
-            if (!isEnrolled)
+            if (!await context.IsEnrolledInCourseAsync(student.Id, courseId))
             {
                 throw new AuthorizationException(Messages.StudentNotEnrolled);
             }
@@ -45,7 +39,7 @@ namespace eNote.Application.Features.Courses.Services
 
         private async Task<IReadOnlyList<CourseRankingEntryDto>> BuildRankingAsync(int courseId)
         {
-            List<Student> enrolledStudents = await context.Set<Enrollment>()
+            var enrolledStudents = await context.Set<Enrollment>()
                 .AsNoTracking()
                 .Where(e => e.CourseId == courseId && e.EnrollmentStatus == EnrollmentStatus.Active)
                 .Include(e => e.Student)
@@ -74,7 +68,7 @@ namespace eNote.Application.Features.Courses.Services
             List<CourseRankingEntryDto> ranked = [.. enrolledStudents
                 .Select(s =>
                 {
-                    bool hasGrades = gradeData.TryGetValue(s.Id, out StudentGradeStats? gradeStats);
+                    var hasGrades = gradeData.TryGetValue(s.Id, out StudentGradeStats? gradeStats);
 
                     return new RankedStudentEntry(s, hasGrades ? gradeStats!.Average : null, hasGrades ? gradeStats!.Count : 0, nameMap.GetValueOrDefault(s.Id, $"Student {s.Id}"));
                 })

@@ -1,16 +1,13 @@
 using eNote.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
-namespace eNote.Application.Features.InstrumentRentals
+namespace eNote.Application.Features.InstrumentRentals;
+
+public static class RentalQueryableExtensions
 {
-    public static class RentalQueryableExtensions
-    {
-        public static IQueryable<InstrumentRental> WithRentalDetails(this IQueryable<InstrumentRental> query) =>
-            query
-                .Include(s => s.StudentProfile)
-                .Include(r => r.Instrument)
-                    .ThenInclude(i => i.InstrumentType)
-                .Include(r => r.Instrument)
-                    .ThenInclude(i => i.MusicStore);
-    }
+    public static IQueryable<InstrumentRental> WithRentalDetails(this IQueryable<InstrumentRental> query) =>
+        query
+            .Include(s => s.StudentProfile)
+            .Include(r => r.Instrument).ThenInclude(i => i.InstrumentType)
+            .Include(r => r.Instrument).ThenInclude(i => i.MusicStore);
 }

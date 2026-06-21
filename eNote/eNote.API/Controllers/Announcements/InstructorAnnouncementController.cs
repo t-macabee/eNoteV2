@@ -1,4 +1,4 @@
-using eNote.API.Controllers.Base;
+﻿using eNote.API.Controllers.Base;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Paging;
 using eNote.Application.Constants;
@@ -16,21 +16,21 @@ namespace eNote.API.Controllers.Announcements
         [HttpGet]
         public async Task<ActionResult<PagedResult<AnnouncementDto>>> GetForCourse(int courseId, int page = 1, int pageSize = 20)
         {
-            PagedResult<AnnouncementDto> result = await announcementService.GetForCourseAsync(courseId, page, pageSize);
+            var result = await announcementService.GetForCourseAsync(courseId, page, pageSize);
             return Ok(result);
         }
 
         [HttpGet("{announcementId:int}")]
         public async Task<ActionResult<AnnouncementDto>> GetById(int courseId, int announcementId)
         {
-            AnnouncementDto result = await announcementService.GetByIdForCourseAsync(courseId, announcementId);
+            var result = await announcementService.GetByIdForCourseAsync(courseId, announcementId);
             return Ok(result);
         }
 
         [HttpPost]
         public async Task<ActionResult<AnnouncementDto>> Create(int courseId, [FromBody] AnnouncementRequest request)
         {
-            AnnouncementDto result = await announcementService.CreateForCourseAsync(courseId, request);
+            var result = await announcementService.CreateForCourseAsync(courseId, request);
             return CreatedAtAction(nameof(GetById), new
             {
                 courseId,
@@ -41,7 +41,7 @@ namespace eNote.API.Controllers.Announcements
         [HttpPut("{announcementId:int}")]
         public async Task<ActionResult<AnnouncementDto>> Update(int courseId, int announcementId, [FromBody] AnnouncementRequest request)
         {
-            AnnouncementDto result = await announcementService.UpdateForCourseAsync(courseId, announcementId, request);
+            var result = await announcementService.UpdateForCourseAsync(courseId, announcementId, request);
             return Ok(result);
         }
 
@@ -64,7 +64,7 @@ namespace eNote.API.Controllers.Announcements
 
             await using Stream stream = file.OpenReadStream();
 
-            AnnouncementDto result = await announcementService.UploadImageForCourseAsync(courseId, announcementId, stream, file.FileName, file.ContentType, ct);
+            var result = await announcementService.UploadImageForCourseAsync(courseId, announcementId, stream, file.FileName, file.ContentType, ct);
 
             return Ok(result);
         }

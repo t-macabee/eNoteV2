@@ -1,292 +1,282 @@
-using eNote.Application.Common.Exceptions;
+﻿using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Paging;
 using eNote.Application.Common.Persistence;
+using eNote.Application.Features.Instructors;
+using eNote.Application.Features.Students;
 using eNote.Application.Features.Users.Services;
-
 using eNote.Domain.Entities;
 using eNote.Domain.Enums;
 using MapsterMapper;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
-namespace eNote.Application.Features.Lectures.Services
+namespace eNote.Application.Features.Lectures.Services;
+
+public sealed class LectureService(
+    IAppDbContext context,
+    IUserContextResolver resolver,
+    IInstructorAccessService instructorAccess,
+    ILogger<LectureService> logger,
+    ICurrentUserService currentUserService,
+    IMapper mapper) : ILectureService
 {
-    public class LectureService(IAppDbContext context, IUserContextResolver resolver, ILogger<LectureService> logger, ICurrentUserService currentUserService, IMapper mapper) : ILectureService
+    public async Task<LectureDto> GetByIdForInstructorAsync(int id)
     {
-        public async Task<LectureDto> GetByIdForInstructorAsync(int id)
-        {
-            Lecture entity = await GetLectureForInstructorAsync(id, currentUserService.UserId);
+        var instructor = await instructorAccess.GetInstructorAsync(currentUserService.UserId);
+        var entity = await instructorAccess.GetOwnedLectureAsync(id, instructor.Id, includeAttendances: true);
+        return mapper.Map<LectureDto>(entity);
+    }
 
-            return mapper.Map<LectureDto>(entity);
+    public async Task<LectureDto> GetByIdForStudentAsync(int id)
+    {
+        var entity = await context.Set<Lecture>()
+            .Include(x => x.Attendances)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x =>
+                x.Id == id &&
+                x.Course.IsPublished &&
+                x.LectureStatus != LectureStatus.Cancelled)
+            ?? throw new NotFoundException(Messages.LectureNotFound);
+
+        return mapper.Map<LectureDto>(entity);
+    }
+
+    public async Task<PagedResult<LectureDto>> GetPagedForInstructorAsync(LectureSearchObject search)
+    {
+        var instructor = await instructorAccess.GetInstructorAsync(currentUserService.UserId);
+
+        var query = instructorAccess.LecturesFor(instructor.Id)
+            .AsNoTracking()
+            .Include(x => x.Attendances)
+            .ApplySearch(search);
+
+        return await query.ToPagedResultAsync(
+            search.Page, search.PageSize, search.IncludeTotalCount,
+            mapper.Map<LectureDto>,
+            q => q.OrderByDescending(x => x.LectureTime));
+    }
+
+    public async Task<PagedResult<LectureDto>> GetPagedForStudentAsync(LectureSearchObject search)
+    {
+        var query = context.Set<Lecture>()
+            .AsNoTracking()
+            .Include(x => x.Attendances)
+            .Where(x => x.Course.IsPublished && x.LectureStatus != LectureStatus.Cancelled)
+            .ApplySearch(search);
+
+        return await query.ToPagedResultAsync(
+            search.Page, search.PageSize, search.IncludeTotalCount,
+            mapper.Map<LectureDto>,
+            q => q.OrderByDescending(x => x.LectureTime));
+    }
+
+    public async Task<LectureDto> CreateAsync(LectureCreateRequest request)
+    {
+        var instructor = await instructorAccess.GetInstructorAsync(currentUserService.UserId);
+        await instructorAccess.EnsureOwnsCourseAsync(request.CourseId, instructor.Id);
+
+        var entity = new Lecture(
+            request.Name.Trim(),
+            request.Location.Trim(),
+            request.Duration,
+            request.LectureTime,
+            request.LectureType,
+            request.Capacity,
+            request.CourseId)
+        {
+            CreatedById = currentUserService.UserId
+        };
+
+        context.Set<Lecture>().Add(entity);
+        await context.SaveChangesAsync();
+
+        return mapper.Map<LectureDto>(entity);
+    }
+
+    public async Task<LectureDto> UpdateAsync(int id, LectureUpdateRequest request)
+    {
+        var instructor = await instructorAccess.GetInstructorAsync(currentUserService.UserId);
+        var entity = await instructorAccess.GetOwnedLectureAsync(id, instructor.Id, track: true);
+
+        if (entity.IsCancelled)
+        {
+            throw new BusinessException(Messages.LectureCancelled);
         }
 
-        public async Task<LectureDto> GetByIdForStudentAsync(int id)
-        {
-            Lecture entity = await context.Set<Lecture>()
-                .Include(x => x.Attendances)
-                .AsNoTracking()
-                .FirstOrDefaultAsync(x =>
-                    x.Id == id &&
-                    x.Course.IsPublished &&
-                    x.LectureStatus != LectureStatus.Cancelled)
-                ?? throw new NotFoundException(Messages.LectureNotFound);
+        entity.UpdateDetails(
+            request.Name.Trim(),
+            request.Location.Trim(),
+            request.Duration,
+            request.LectureTime,
+            request.Capacity);
+        entity.UpdatedById = currentUserService.UserId;
 
-            return mapper.Map<LectureDto>(entity);
+        await context.SaveChangesAsync();
+
+        return mapper.Map<LectureDto>(entity);
+    }
+
+    public async Task DeleteAsync(int id)
+    {
+        var instructor = await instructorAccess.GetInstructorAsync(currentUserService.UserId);
+        var entity = await instructorAccess.GetOwnedLectureAsync(id, instructor.Id, track: true);
+
+        entity.SoftDelete();
+        entity.UpdatedById = currentUserService.UserId;
+
+        await context.SaveChangesAsync();
+
+        logger.LogInformation("Lecture {LectureId} soft-deleted by instructor user {InstructorUserId}", id, currentUserService.UserId);
+    }
+
+    public async Task<LectureDto> CancelAsync(int id)
+    {
+        var instructor = await instructorAccess.GetInstructorAsync(currentUserService.UserId);
+        var entity = await instructorAccess.GetOwnedLectureAsync(id, instructor.Id, track: true);
+
+        if (entity.IsCancelled)
+        {
+            throw new BusinessException(Messages.LectureCancelled);
         }
 
-        public async Task<PagedResult<LectureDto>> GetPagedForInstructorAsync(LectureSearchObject search)
+        entity.Cancel();
+        entity.UpdatedById = currentUserService.UserId;
+
+        await context.SaveChangesAsync();
+
+        return mapper.Map<LectureDto>(entity);
+    }
+
+    public async Task<RsvpResponse> RsvpAsync(int lectureId, RsvpRequest request)
+    {
+        var lecture = await context.Set<Lecture>()
+            .Include(x => x.Attendances)
+            .Include(x => x.Course)
+            .FirstOrDefaultAsync(x =>
+                x.Id == lectureId &&
+                x.Course.IsPublished &&
+                x.LectureStatus != LectureStatus.Cancelled)
+            ?? throw new NotFoundException(Messages.LectureNotFound);
+
+        if (lecture.IsCancelled)
         {
-            Instructor instructor = await resolver.GetInstructorAsync(currentUserService.UserId);
-
-            IQueryable<Lecture> query = context.Set<Lecture>()
-                .AsNoTracking()
-                .Include(x => x.Attendances)
-                .Where(x => x.Course.InstructorId == instructor.Id);
-
-            query = query.ApplySearch(search);
-
-            return await query.ToPagedResultAsync(search.Page, search.PageSize, search.IncludeTotalCount, entity =>
-                mapper.Map<LectureDto>(entity), q => q.OrderByDescending(x => x.LectureTime));
+            throw new BusinessException(Messages.LectureCancelled);
         }
 
-        public async Task<PagedResult<LectureDto>> GetPagedForStudentAsync(LectureSearchObject search)
+        var student = await resolver.GetStudentAsync(currentUserService.UserId);
+
+        if (!await context.IsEnrolledInCourseAsync(student.Id, lecture.CourseId))
         {
-            IQueryable<Lecture> query = context.Set<Lecture>()
-                .AsNoTracking()
-                .Include(x => x.Attendances)
-                .Where(x => x.Course.IsPublished && x.LectureStatus != LectureStatus.Cancelled);
-
-            query = query.ApplySearch(search);
-
-            return await query.ToPagedResultAsync(search.Page, search.PageSize, search.IncludeTotalCount, entity =>
-                mapper.Map<LectureDto>(entity), q => q.OrderByDescending(x => x.LectureTime));
+            throw new BusinessException(Messages.StudentNotEnrolled);
         }
 
-        public async Task<LectureDto> CreateAsync(LectureCreateRequest request)
+        var existing = lecture.Attendances.FirstOrDefault(x => x.StudentId == student.Id);
+
+        if (request.Confirm)
         {
-            int courseId = request.CourseId;
+            var confirmedCount = lecture.Attendances.Count(a => a.AttendanceStatus == AttendanceStatus.Present);
 
-            _ = await context.Set<Course>()
-                .FirstOrDefaultAsync(c => c.Id == courseId && c.Instructor.AppUserId == currentUserService.UserId)
-                ?? throw new AuthorizationException(Messages.CourseNotOwned);
-
-            var entity = new Lecture(request.Name.Trim(), request.Location.Trim(), request.Duration, request.LectureTime, request.LectureType, request.Capacity, courseId);
-
-            entity.CreatedById = currentUserService.UserId;
-
-            context.Set<Lecture>().Add(entity);
-            await context.SaveChangesAsync();
-
-            return mapper.Map<LectureDto>(entity);
-        }
-
-        public async Task<LectureDto> UpdateAsync(int id, LectureUpdateRequest request)
-        {
-            Lecture entity = await GetLectureForInstructorAsync(id, currentUserService.UserId, track: true);
-
-            if (entity.IsCancelled)
+            if (lecture.Capacity.HasValue && confirmedCount >= lecture.Capacity.Value &&
+                (existing is null || existing.AttendanceStatus != AttendanceStatus.Present))
             {
-                throw new BusinessException(Messages.LectureCancelled);
+                throw new ConflictException(Messages.LectureFull);
             }
 
-            entity.UpdateDetails(
-                request.Name.Trim(),
-                request.Location.Trim(),
-                request.Duration,
-                request.LectureTime,
-                request.Capacity
-            );
-            entity.UpdatedById = currentUserService.UserId;
-
-            await context.SaveChangesAsync();
-
-            return mapper.Map<LectureDto>(entity);
-        }
-
-        public async Task DeleteAsync(int id)
-        {
-            Lecture entity = await GetLectureForInstructorAsync(id, currentUserService.UserId, track: true);
-
-            entity.SoftDelete();
-            entity.UpdatedById = currentUserService.UserId;
-
-            await context.SaveChangesAsync();
-
-            logger.LogInformation("Lecture {LectureId} soft-deleted by instructor user {InstructorUserId}", id, currentUserService.UserId);
-        }
-
-        public async Task<LectureDto> CancelAsync(int id)
-        {
-            Lecture entity = await GetLectureForInstructorAsync(id, currentUserService.UserId, track: true);
-
-            if (entity.IsCancelled)
+            if (existing is null)
             {
-                throw new BusinessException(Messages.LectureCancelled);
-            }
-
-            entity.Cancel();
-            entity.UpdatedById = currentUserService.UserId;
-
-            await context.SaveChangesAsync();
-
-            return mapper.Map<LectureDto>(entity);
-        }
-
-        public async Task<RsvpResponse> RsvpAsync(int lectureId, RsvpRequest request)
-        {
-            Lecture lecture = await context.Set<Lecture>()
-                .Include(x => x.Attendances)
-                .Include(x => x.Course)
-                .FirstOrDefaultAsync(x =>
-                    x.Id == lectureId &&
-                    x.Course.IsPublished &&
-                    x.LectureStatus != LectureStatus.Cancelled)
-                ?? throw new NotFoundException(Messages.LectureNotFound);
-
-            if (lecture.IsCancelled)
-            {
-                throw new BusinessException(Messages.LectureCancelled);
-            }
-
-            Student student = await resolver.GetStudentAsync(currentUserService.UserId);
-
-            bool isEnrolled = await context.Set<Enrollment>()
-                .AsNoTracking()
-                .AnyAsync(e =>
-                    e.StudentId == student.Id &&
-                    e.CourseId == lecture.CourseId &&
-                    e.EnrollmentStatus == EnrollmentStatus.Active);
-
-            if (!isEnrolled)
-            {
-                throw new BusinessException(Messages.StudentNotEnrolled);
-            }
-
-            Attendance? existing = lecture.Attendances.FirstOrDefault(x => x.StudentId == student.Id);
-
-            if (request.Confirm)
-            {
-                int confirmedCount = lecture.Attendances.Count(a => a.AttendanceStatus == AttendanceStatus.Present);
-
-                if (lecture.Capacity.HasValue && confirmedCount >= lecture.Capacity.Value && (existing == null || existing.AttendanceStatus != AttendanceStatus.Present))
-                {
-                    throw new ConflictException(Messages.LectureFull);
-                }
-
-                if (existing == null)
-                {
-                    lecture.Attendances.Add(new Attendance(student.Id, lecture.Id, AttendanceStatus.Present));
-                }
-                else
-                {
-                    existing.UpdateStatus(AttendanceStatus.Present);
-                }
+                lecture.Attendances.Add(new Attendance(student.Id, lecture.Id, AttendanceStatus.Present));
             }
             else
             {
-                existing?.UpdateStatus(AttendanceStatus.Absent);
+                existing.UpdateStatus(AttendanceStatus.Present);
             }
-
-            try
-            {
-                await context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException ex)
-            {
-                logger.LogWarning(ex, "Concurrency conflict while RSVPing for lecture {LectureId} by student user {StudentUserId}", lectureId, currentUserService.UserId);
-
-                throw new ConflictException(Messages.LectureRsvpConflict);
-            }
-
-            return new RsvpResponse { LectureId = lecture.Id, StudentId = student.Id, Confirmed = request.Confirm };
+        }
+        else
+        {
+            existing?.UpdateStatus(AttendanceStatus.Absent);
         }
 
-        public async Task<PagedResult<AttendanceDto>> GetAttendanceAsync(int lectureId, int page, int pageSize)
+        try
         {
-            await GetLectureForInstructorAsync(lectureId, currentUserService.UserId);
-
-            IQueryable<Attendance> query = context.Set<Attendance>()
-                .AsNoTracking()
-                .Include(x => x.Student)
-                .Where(x => x.LectureId == lectureId);
-
-            return await query.ToPagedResultAsync(page, pageSize, includeTotalCount: true,
-                items => resolver.GetStudentDisplayNamesAsync(items.Select(a => a.Student)),
-                (a, names) => new AttendanceDto
-                {
-                    Id = a.Id,
-                    StudentId = a.StudentId,
-                    StudentName = names.GetValueOrDefault(a.StudentId, $"Student {a.StudentId}"),
-                    AttendanceStatus = a.AttendanceStatus
-                },
-                q => q.OrderBy(x => x.StudentId));
-        }
-
-        public async Task<AttendanceDto> MarkAttendanceAsync(int lectureId, MarkAttendanceRequest request)
-        {
-            Lecture lecture = await GetLectureForInstructorAsync(lectureId, currentUserService.UserId, track: true);
-
-            if (lecture.IsCancelled)
-            {
-                throw new BusinessException(Messages.LectureCancelled);
-            }
-
-            bool isEnrolled = await context.Set<Enrollment>()
-                .AsNoTracking()
-                .AnyAsync(e =>
-                    e.StudentId == request.StudentId &&
-                    e.CourseId == lecture.CourseId &&
-                    e.EnrollmentStatus == EnrollmentStatus.Active);
-
-            if (!isEnrolled)
-            {
-                throw new BusinessException(Messages.StudentNotEnrolled);
-            }
-
-            Attendance? attendance = lecture.Attendances.FirstOrDefault(x => x.StudentId == request.StudentId);
-
-            if (attendance is null)
-            {
-                attendance = new Attendance(request.StudentId, lecture.Id, request.AttendanceStatus)
-                {
-                    CreatedById = currentUserService.UserId
-                };
-                lecture.Attendances.Add(attendance);
-            }
-            else
-            {
-                attendance.UpdateStatus(request.AttendanceStatus);
-                attendance.UpdatedById = currentUserService.UserId;
-            }
-
             await context.SaveChangesAsync();
+        }
+        catch (DbUpdateConcurrencyException ex)
+        {
+            logger.LogWarning(ex, "Concurrency conflict while RSVPing for lecture {LectureId} by student user {StudentUserId}", lectureId, currentUserService.UserId);
+            throw new ConflictException(Messages.LectureRsvpConflict);
+        }
 
-            Student student = attendance.Student ?? await context.Set<Student>()
-                .AsNoTracking()
-                .FirstAsync(x => x.Id == attendance.StudentId);
+        return new RsvpResponse { LectureId = lecture.Id, StudentId = student.Id, Confirmed = request.Confirm };
+    }
 
-            return new AttendanceDto
+    public async Task<PagedResult<AttendanceDto>> GetAttendanceAsync(int lectureId, int page, int pageSize)
+    {
+        var instructor = await instructorAccess.GetInstructorAsync(currentUserService.UserId);
+        await instructorAccess.EnsureOwnsLectureAsync(lectureId, instructor.Id);
+
+        var query = context.Set<Attendance>()
+            .AsNoTracking()
+            .Include(x => x.Student)
+            .Where(x => x.LectureId == lectureId);
+
+        return await query.ToPagedResultAsync(
+            page, pageSize, includeTotalCount: true,
+            items => resolver.GetStudentDisplayNamesAsync(items.Select(a => a.Student)),
+            (a, names) => new AttendanceDto
             {
-                Id = attendance.Id,
-                StudentId = attendance.StudentId,
-                StudentName = await resolver.GetStudentDisplayNameAsync(student),
-                AttendanceStatus = attendance.AttendanceStatus
+                Id = a.Id,
+                StudentId = a.StudentId,
+                StudentName = names.GetValueOrDefault(a.StudentId, $"Student {a.StudentId}"),
+                AttendanceStatus = a.AttendanceStatus
+            },
+            q => q.OrderBy(x => x.StudentId));
+    }
+
+    public async Task<AttendanceDto> MarkAttendanceAsync(int lectureId, MarkAttendanceRequest request)
+    {
+        var instructor = await instructorAccess.GetInstructorAsync(currentUserService.UserId);
+        var lecture = await instructorAccess.GetOwnedLectureAsync(lectureId, instructor.Id, track: true, includeAttendances: true);
+
+        if (lecture.IsCancelled)
+        {
+            throw new BusinessException(Messages.LectureCancelled);
+        }
+
+        if (!await context.IsEnrolledInCourseAsync(request.StudentId, lecture.CourseId))
+        {
+            throw new BusinessException(Messages.StudentNotEnrolled);
+        }
+
+        var attendance = lecture.Attendances.FirstOrDefault(x => x.StudentId == request.StudentId);
+
+        if (attendance is null)
+        {
+            attendance = new Attendance(request.StudentId, lecture.Id, request.AttendanceStatus)
+            {
+                CreatedById = currentUserService.UserId
             };
+            lecture.Attendances.Add(attendance);
         }
-
-        private async Task<Lecture> GetLectureForInstructorAsync(int lectureId, int userId, bool track = false)
+        else
         {
-            Instructor instructor = await resolver.GetInstructorAsync(userId);
-
-            IQueryable<Lecture> query = context.Set<Lecture>()
-                .Include(x => x.Attendances)
-                .Where(x => x.Id == lectureId && x.Course.InstructorId == instructor.Id);
-
-            return await (track ? query : query.AsNoTracking()).FirstOrDefaultAsync()
-                ?? throw new NotFoundException(Messages.LectureNotFound);
+            attendance.UpdateStatus(request.AttendanceStatus);
+            attendance.UpdatedById = currentUserService.UserId;
         }
 
+        await context.SaveChangesAsync();
+
+        var student = attendance.Student ?? await context.Set<Student>()
+            .AsNoTracking()
+            .FirstAsync(x => x.Id == attendance.StudentId);
+
+        return new AttendanceDto
+        {
+            Id = attendance.Id,
+            StudentId = attendance.StudentId,
+            StudentName = await resolver.GetStudentDisplayNameAsync(student),
+            AttendanceStatus = attendance.AttendanceStatus
+        };
     }
 }

@@ -6,7 +6,7 @@ namespace eNote.API.Extensions
 
         public static IServiceCollection AddApplicationCors(this IServiceCollection services, IConfiguration configuration, IWebHostEnvironment environment)
         {
-            string[] origins = configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
+            var origins = configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
                 ?? configuration["Cors:AllowedOrigins"]?.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries) ?? [];
 
             services.AddCors(options =>

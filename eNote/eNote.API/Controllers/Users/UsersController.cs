@@ -1,4 +1,4 @@
-using eNote.API.Controllers.Base;
+﻿using eNote.API.Controllers.Base;
 using eNote.Application.Features.Users;
 using eNote.Application.Features.Users.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
@@ -13,7 +13,7 @@ namespace eNote.API.Controllers.Users
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<UserProfileResponse>> GetCurrentUser()
         {
-            UserProfileResponse? profile = await userService.GetCurrentUserAsync();
+            var profile = await userService.GetCurrentUserAsync();
 
             if (profile is null)
             {
@@ -28,7 +28,7 @@ namespace eNote.API.Controllers.Users
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileRequest request)
         {
-            (bool success, string? error) = await userService.UpdateProfileAsync(request);
+            (var success, var error) = await userService.UpdateProfileAsync(request);
 
             if (!success)
             {
@@ -46,7 +46,7 @@ namespace eNote.API.Controllers.Users
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
         {
-            (bool success, string? error) = await userService.ChangePasswordAsync(request);
+            (var success, var error) = await userService.ChangePasswordAsync(request);
 
             if (!success)
             {

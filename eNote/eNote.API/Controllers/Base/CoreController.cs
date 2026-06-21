@@ -19,9 +19,9 @@ namespace eNote.API.Controllers.Base
         {
             get
             {
-                string? exp = User.FindFirstValue(JwtRegisteredClaimNames.Exp);
+                var exp = User.FindFirstValue(JwtRegisteredClaimNames.Exp);
 
-                if (exp is null || !long.TryParse(exp, out long unixSeconds))
+                if (exp is null || !long.TryParse(exp, out var unixSeconds))
                 {
                     throw new AuthenticationException(Messages.InvalidUserClaim);
                 }

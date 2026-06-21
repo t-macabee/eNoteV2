@@ -1,4 +1,4 @@
-using eNote.API.Controllers.Base;
+﻿using eNote.API.Controllers.Base;
 using eNote.Application.Common.Paging;
 using eNote.Application.Constants;
 using eNote.Application.Features.Announcements;
@@ -15,7 +15,7 @@ namespace eNote.API.Controllers.Announcements
         [HttpGet]
         public async Task<ActionResult<PagedResult<AnnouncementDto>>> GetFeed(int page = 1, int pageSize = 20)
         {
-            PagedResult<AnnouncementDto> result = await announcementService.GetFeedForStudentAsync(page, pageSize);
+            var result = await announcementService.GetFeedForStudentAsync(page, pageSize);
             return Ok(result);
         }
     }

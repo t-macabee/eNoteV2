@@ -19,33 +19,32 @@ namespace eNote.Application.Features.InstrumentRentals.Services
     {
         public async Task<InstrumentRentalDto> CreateRequestAsync(RentalCreateRequest request)
         {
-            InstrumentRentalDto dto = await ExecuteInTransactionAsync(async () =>
+            var dto = await ExecuteInTransactionAsync(async () =>
             {
-                Student student = await resolver.GetStudentAsync(currentUserService.UserId);
+                var student = await resolver.GetStudentAsync(currentUserService.UserId);
 
                 if (!student.HasActiveMembership(clock.UtcNow))
                 {
                     throw new BusinessException(Messages.MembershipInactive);
                 }
 
-                int studentProfileId = student.Id;
+                var studentProfileId = student.Id;
 
                 _ = await context.Set<Instrument>()
                     .AsNoTracking()
                     .FirstOrDefaultAsync(x => x.Id == request.InstrumentId && x.IsActive)
                     ?? throw new NotFoundException(Messages.InstrumentNotFound);
 
-                bool locked = await context.Set<InstrumentRental>()
+                var locked = await context.Set<InstrumentRental>()
                     .AnyAsync(x => x.InstrumentId == request.InstrumentId &&
-                        (x.RentalStatus == InstrumentRentalStatus.Approved ||
-                         x.RentalStatus == InstrumentRentalStatus.Active));
+                        InstrumentRentalStatusSets.Blocking.Contains(x.RentalStatus));
 
                 if (locked)
                 {
                     throw new BusinessException(Messages.InstrumentReservedOrRented);
                 }
 
-                bool alreadyPending = await context.Set<InstrumentRental>()
+                var alreadyPending = await context.Set<InstrumentRental>()
                     .AnyAsync(x => x.InstrumentId == request.InstrumentId
                         && x.StudentProfileId == studentProfileId
                         && x.RentalStatus == InstrumentRentalStatus.Pending);
@@ -88,9 +87,9 @@ namespace eNote.Application.Features.InstrumentRentals.Services
 
         public async Task<InstrumentRentalDto> CancelAsync(int rentalId, RentalStatusResponse response)
         {
-            InstrumentRentalDto dto = await ExecuteInTransactionAsync(async () =>
+            var dto = await ExecuteInTransactionAsync(async () =>
             {
-                InstrumentRental rental = await LoadForStudentAsync(rentalId, currentUserService.UserId);
+                var rental = await LoadForStudentAsync(rentalId, currentUserService.UserId);
 
                 return await ExecuteTransitionAsync(rental, RentalTrigger.Cancel, RentalActor.Student, currentUserService.UserId, response);
             });
@@ -109,9 +108,9 @@ namespace eNote.Application.Features.InstrumentRentals.Services
 
         private Task<InstrumentRentalDto> ExecuteStoreTransitionAsync(int rentalId, RentalTrigger trigger, RentalStatusResponse response) => ExecuteInTransactionAsync(async () =>
         {
-            int storeId = await storeContext.GetActiveStoreAsync(currentUserService.UserId);
+            var storeId = await storeContext.GetActiveStoreAsync(currentUserService.UserId);
 
-            InstrumentRental rental = await LoadForStoreAsync(rentalId, storeId);
+            var rental = await LoadForStoreAsync(rentalId, storeId);
 
             return await ExecuteTransitionAsync(rental, trigger, RentalActor.StoreEmployee, currentUserService.UserId, response);
         });
@@ -126,7 +125,7 @@ namespace eNote.Application.Features.InstrumentRentals.Services
                 Response = response
             };
 
-            RentalTransitionResult result = await stateMachine.FireAsync(rental, trigger, transitionContext);
+            var result = await stateMachine.FireAsync(rental, trigger, transitionContext);
 
             if (result.UsesInstrumentLock)
             {
@@ -142,7 +141,7 @@ namespace eNote.Application.Features.InstrumentRentals.Services
 
         private async Task<InstrumentRental> LoadForStoreAsync(int rentalId, int storeId)
         {
-            InstrumentRental rental = await context.Set<InstrumentRental>()
+            var rental = await context.Set<InstrumentRental>()
                 .WithRentalDetails()
                 .FirstOrDefaultAsync(x => x.Id == rentalId)
                 ?? throw new NotFoundException(Messages.RentalNotFound);
@@ -157,7 +156,7 @@ namespace eNote.Application.Features.InstrumentRentals.Services
 
         private async Task<InstrumentRental> LoadForStudentAsync(int rentalId, int userId)
         {
-            InstrumentRental rental = await context.Set<InstrumentRental>()
+            var rental = await context.Set<InstrumentRental>()
                 .WithRentalDetails()
                 .FirstOrDefaultAsync(x => x.Id == rentalId)
                 ?? throw new NotFoundException(Messages.RentalNotFound);
@@ -172,13 +171,13 @@ namespace eNote.Application.Features.InstrumentRentals.Services
 
         private async Task<InstrumentRentalDto> LoadDtoAsync(int rentalId)
         {
-            InstrumentRental entity = await context.Set<InstrumentRental>()
+            var entity = await context.Set<InstrumentRental>()
                 .AsNoTracking()
                 .WithRentalDetails()
                 .FirstOrDefaultAsync(x => x.Id == rentalId)
                 ?? throw new NotFoundException(Messages.RentalNotFoundAfterUpdate);
 
-            InstrumentRentalDto result = mapper.Map<InstrumentRentalDto>(entity);
+            var result = mapper.Map<InstrumentRentalDto>(entity);
 
             RentalBilling.ApplyBilling(entity, result, clock.UtcNow);
 
@@ -203,7 +202,7 @@ namespace eNote.Application.Features.InstrumentRentals.Services
 
             try
             {
-                T? result = await action();
+                var result = await action();
                 await transaction.CommitAsync();
 
                 return result;

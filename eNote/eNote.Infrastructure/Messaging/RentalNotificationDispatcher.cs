@@ -21,7 +21,7 @@ public sealed class RentalNotificationDispatcher(IPublishEndpoint publishEndpoin
 
     public Task DispatchTransitionAsync(InstrumentRentalDto rental, RentalTrigger trigger, int actorUserId, CancellationToken cancellationToken = default)
     {
-        (string title, string body) = BuildNotificationContent(rental, trigger);
+        (var title, var body) = BuildNotificationContent(rental, trigger);
 
         var message = new RentalStatusChanged(rental.Id, rental.StudentUserId, actorUserId, rental.RentalStatus.ToString(), rental.InstrumentModel, title, body, clock.UtcNow);
 
@@ -30,7 +30,7 @@ public sealed class RentalNotificationDispatcher(IPublishEndpoint publishEndpoin
 
     private async Task PublishWithRetryAsync(RentalStatusChanged message, int rentalId, CancellationToken cancellationToken)
     {
-        for (int attempt = 1; attempt <= MaxPublishAttempts; attempt++)
+        for (var attempt = 1; attempt <= MaxPublishAttempts; attempt++)
         {
             try
             {

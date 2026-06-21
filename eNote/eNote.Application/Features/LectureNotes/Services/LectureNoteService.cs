@@ -1,121 +1,111 @@
-using eNote.Application.Common.Exceptions;
+﻿using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Paging;
 using eNote.Application.Common.Persistence;
+using eNote.Application.Features.Instructors;
+using eNote.Application.Features.Students;
 using eNote.Application.Features.Users.Services;
 using eNote.Domain.Entities;
-using eNote.Domain.Enums;
 using MapsterMapper;
 using Microsoft.EntityFrameworkCore;
 
-namespace eNote.Application.Features.LectureNotes.Services
+namespace eNote.Application.Features.LectureNotes.Services;
+
+public sealed class LectureNoteService(
+    IAppDbContext context,
+    IUserContextResolver resolver,
+    IInstructorAccessService instructorAccess,
+    ICurrentUserService currentUserService,
+    IMapper mapper) : ILectureNoteService
 {
-    public class LectureNoteService(IAppDbContext context, IUserContextResolver resolver, ICurrentUserService currentUserService, IMapper mapper) : ILectureNoteService
+    public async Task<PagedResult<LectureNoteDto>> GetForLectureAsync(int lectureId, LectureNoteSearchObject search)
     {
-        public async Task<PagedResult<LectureNoteDto>> GetForLectureAsync(int lectureId, LectureNoteSearchObject search)
+        var instructor = await instructorAccess.GetInstructorAsync(currentUserService.UserId);
+
+        var query = instructorAccess.LectureNotesForLecture(lectureId, instructor.Id)
+            .AsNoTracking()
+            .ApplySearch(search);
+
+        return await query.ToPagedResultAsync(
+            search.Page, search.PageSize, search.IncludeTotalCount,
+            mapper.Map<LectureNoteDto>,
+            q => q.OrderByDescending(x => x.CreatedAt));
+    }
+
+    public async Task<LectureNoteDto> GetByIdForInstructorAsync(int lectureId, int noteId) =>
+        mapper.Map<LectureNoteDto>(await GetOwnedNoteAsync(lectureId, noteId));
+
+    public async Task<LectureNoteDto> CreateAsync(int lectureId, LectureNoteRequest request)
+    {
+        var instructor = await instructorAccess.GetInstructorAsync(currentUserService.UserId);
+        await instructorAccess.EnsureOwnsLectureAsync(lectureId, instructor.Id);
+
+        var entity = new LectureNote(request.Title.Trim(), request.Content.Trim(), lectureId)
         {
-            Instructor instructor = await resolver.GetInstructorAsync(currentUserService.UserId);
+            CreatedById = currentUserService.UserId
+        };
 
-            IQueryable<LectureNote> query = context.Set<LectureNote>()
-                .AsNoTracking()
-                .Where(x => x.LectureId == lectureId && x.Lecture.Course.InstructorId == instructor.Id);
+        context.Set<LectureNote>().Add(entity);
+        await context.SaveChangesAsync();
 
-            query = query.ApplySearch(search);
+        return mapper.Map<LectureNoteDto>(entity);
+    }
 
-            return await query.ToPagedResultAsync(search.Page, search.PageSize, search.IncludeTotalCount, entity => mapper.Map<LectureNoteDto>(entity), q => q.OrderByDescending(x => x.CreatedAt));
-        }
+    public async Task<LectureNoteDto> UpdateAsync(int lectureId, int noteId, LectureNoteRequest request)
+    {
+        var entity = await GetOwnedNoteAsync(lectureId, noteId, track: true);
 
-        public async Task<LectureNoteDto> GetByIdForInstructorAsync(int lectureId, int noteId)
-        {
-            LectureNote entity = await GetNoteForInstructorAsync(lectureId, noteId, currentUserService.UserId);
+        entity.UpdateDetails(request.Title.Trim(), request.Content.Trim());
+        entity.UpdatedById = currentUserService.UserId;
 
-            return mapper.Map<LectureNoteDto>(entity);
-        }
+        await context.SaveChangesAsync();
 
-        public async Task<LectureNoteDto> CreateAsync(int lectureId, LectureNoteRequest request)
-        {
-            Instructor instructor = await resolver.GetInstructorAsync(currentUserService.UserId);
+        return mapper.Map<LectureNoteDto>(entity);
+    }
 
-            _ = await context.Set<Lecture>()
-                .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.Id == lectureId && x.Course.InstructorId == instructor.Id)
-                ?? throw new AuthorizationException(Messages.CourseNotOwned);
+    public async Task DeleteAsync(int lectureId, int noteId)
+    {
+        var entity = await GetOwnedNoteAsync(lectureId, noteId, track: true);
 
-            var entity = new LectureNote(request.Title.Trim(), request.Content.Trim(), lectureId);
-            entity.CreatedById = currentUserService.UserId;
+        entity.SoftDelete();
+        entity.UpdatedById = currentUserService.UserId;
 
-            context.Set<LectureNote>().Add(entity);
-            await context.SaveChangesAsync();
+        await context.SaveChangesAsync();
+    }
 
-            return mapper.Map<LectureNoteDto>(entity);
-        }
+    public async Task<PagedResult<LectureNoteDto>> GetForStudentAsync(int lectureId, LectureNoteSearchObject search)
+    {
+        var student = await resolver.GetStudentAsync(currentUserService.UserId);
 
-        public async Task<LectureNoteDto> UpdateAsync(int lectureId, int noteId, LectureNoteRequest request)
-        {
-            LectureNote entity = await GetNoteForInstructorAsync(lectureId, noteId, currentUserService.UserId, track: true);
+        var query = context.Set<LectureNote>()
+            .AsNoTracking()
+            .ForEnrolledStudent(student.Id)
+            .Where(x => x.LectureId == lectureId)
+            .ApplySearch(search);
 
-            entity.UpdateDetails(request.Title.Trim(), request.Content.Trim());
-            entity.UpdatedById = currentUserService.UserId;
+        return await query.ToPagedResultAsync(
+            search.Page, search.PageSize, search.IncludeTotalCount,
+            mapper.Map<LectureNoteDto>,
+            q => q.OrderByDescending(x => x.CreatedAt));
+    }
 
-            await context.SaveChangesAsync();
+    public async Task<LectureNoteDto> GetByIdForStudentAsync(int lectureId, int noteId)
+    {
+        var student = await resolver.GetStudentAsync(currentUserService.UserId);
 
-            return mapper.Map<LectureNoteDto>(entity);
-        }
+        var entity = await context.Set<LectureNote>()
+            .AsNoTracking()
+            .ForEnrolledStudent(student.Id)
+            .FirstOrDefaultAsync(x => x.Id == noteId && x.LectureId == lectureId)
+            ?? throw new NotFoundException(Messages.LectureNoteNotFound);
 
-        public async Task DeleteAsync(int lectureId, int noteId)
-        {
-            LectureNote entity = await GetNoteForInstructorAsync(lectureId, noteId, currentUserService.UserId, track: true);
+        return mapper.Map<LectureNoteDto>(entity);
+    }
 
-            entity.SoftDelete();
-            entity.UpdatedById = currentUserService.UserId;
-
-            await context.SaveChangesAsync();
-        }
-
-        public async Task<PagedResult<LectureNoteDto>> GetForStudentAsync(int lectureId, LectureNoteSearchObject search)
-        {
-            Student student = await resolver.GetStudentAsync(currentUserService.UserId);
-
-            IQueryable<LectureNote> query = context.Set<LectureNote>()
-                .AsNoTracking()
-                .Where(x => x.LectureId == lectureId &&
-                            x.Lecture.Course.IsPublished &&
-                            x.Lecture.LectureStatus != LectureStatus.Cancelled &&
-                            x.Lecture.Course.Enrollments.Any(e => e.StudentId == student.Id && e.EnrollmentStatus == EnrollmentStatus.Active));
-
-            query = query.ApplySearch(search);
-
-            return await query.ToPagedResultAsync(search.Page, search.PageSize, search.IncludeTotalCount, entity => mapper.Map<LectureNoteDto>(entity), q => q.OrderByDescending(x => x.CreatedAt));
-        }
-
-        public async Task<LectureNoteDto> GetByIdForStudentAsync(int lectureId, int noteId)
-        {
-            Student student = await resolver.GetStudentAsync(currentUserService.UserId);
-
-            LectureNote entity = await context.Set<LectureNote>()
-                .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.Id == noteId &&
-                                          x.LectureId == lectureId &&
-                                          x.Lecture.Course.IsPublished &&
-                                          x.Lecture.LectureStatus != LectureStatus.Cancelled &&
-                                          x.Lecture.Course.Enrollments.Any(e => e.StudentId == student.Id && e.EnrollmentStatus == EnrollmentStatus.Active))
-                ?? throw new NotFoundException(Messages.LectureNoteNotFound);
-
-            return mapper.Map<LectureNoteDto>(entity);
-        }
-
-        private async Task<LectureNote> GetNoteForInstructorAsync(int lectureId, int noteId, int instructorUserId, bool track = false)
-        {
-            Instructor instructor = await resolver.GetInstructorAsync(instructorUserId);
-
-            IQueryable<LectureNote> query = context.Set<LectureNote>()
-                .Where(x => x.Id == noteId && x.LectureId == lectureId && x.Lecture.Course.InstructorId == instructor.Id);
-
-            return await (track ? query : query.AsNoTracking())
-                .FirstOrDefaultAsync()
-                ?? throw new NotFoundException(Messages.LectureNoteNotFound);
-        }
-
+    private async Task<LectureNote> GetOwnedNoteAsync(int lectureId, int noteId, bool track = false)
+    {
+        var instructor = await instructorAccess.GetInstructorAsync(currentUserService.UserId);
+        return await instructorAccess.GetOwnedLectureNoteAsync(lectureId, noteId, instructor.Id, track);
     }
 }

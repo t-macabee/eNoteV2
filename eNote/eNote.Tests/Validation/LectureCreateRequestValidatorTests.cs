@@ -14,11 +14,11 @@ public sealed class LectureCreateRequestValidatorTests
     [Fact]
     public void Validate_RejectsMissingCourseId()
     {
-        LectureCreateRequest request = ValidRequest();
+        var request = ValidRequest();
 
         request.CourseId = 0;
 
-        ValidationResult result = _validator.Validate(request);
+        var result = _validator.Validate(request);
 
         Assert.False(result.IsValid);
         Assert.Contains(result.Errors, e => e.PropertyName == nameof(LectureCreateRequest.CourseId));
@@ -28,7 +28,7 @@ public sealed class LectureCreateRequestValidatorTests
     [Fact]
     public void Validate_AcceptsRequestWithCourseId()
     {
-        ValidationResult result = _validator.Validate(ValidRequest());
+        var result = _validator.Validate(ValidRequest());
 
         Assert.True(result.IsValid);
         Assert.Empty(result.Errors);

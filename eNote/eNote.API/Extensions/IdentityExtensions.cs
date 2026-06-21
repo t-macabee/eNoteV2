@@ -1,4 +1,4 @@
-using eNote.Application.Common.Localization;
+﻿using eNote.Application.Common.Localization;
 using eNote.Application.Features.Auth.Services;
 using eNote.Infrastructure.Data;
 using eNote.Infrastructure.Identity;
@@ -34,7 +34,7 @@ namespace eNote.API.Extensions
 
         public static IServiceCollection AddJwtAuthentication(this IServiceCollection services, IConfiguration config)
         {
-            byte[] key = Encoding.UTF8.GetBytes(config["Jwt:Key"]!);
+            var key = Encoding.UTF8.GetBytes(config["Jwt:Key"]!);
 
             services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 .AddJwtBearer(options =>
@@ -57,8 +57,8 @@ namespace eNote.API.Extensions
                     {
                         OnMessageReceived = context =>
                         {
-                            string? accessToken = context.Request.Query["access_token"];
-                            PathString path = context.HttpContext.Request.Path;
+                            var accessToken = context.Request.Query["access_token"];
+                            var path = context.HttpContext.Request.Path;
 
                             if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs"))
                             {
@@ -69,14 +69,14 @@ namespace eNote.API.Extensions
                         },
                         OnTokenValidated = async context =>
                         {
-                            string? jti = context.Principal?.FindFirstValue(JwtRegisteredClaimNames.Jti);
+                            var jti = context.Principal?.FindFirstValue(JwtRegisteredClaimNames.Jti);
 
                             if (string.IsNullOrWhiteSpace(jti))
                             {
                                 return;
                             }
 
-                            ITokenRevocationService revocation = context.HttpContext.RequestServices.GetRequiredService<ITokenRevocationService>();
+                            var revocation = context.HttpContext.RequestServices.GetRequiredService<ITokenRevocationService>();
 
                             if (await revocation.IsRevokedAsync(jti, context.HttpContext.RequestAborted))
                             {

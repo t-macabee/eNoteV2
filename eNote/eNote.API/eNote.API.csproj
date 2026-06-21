@@ -2,6 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>14</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>0f577651-b884-469f-ae81-3009c48afed5</UserSecretsId>
@@ -12,20 +13,19 @@
     <PackageReference Include="FluentValidation.AspNetCore" Version="11.3.1" />
     <PackageReference Include="Mapster" Version="10.0.8" />
     <PackageReference Include="Mapster.DependencyInjection" Version="10.0.8" />
-    <PackageReference Include="MassTransit.RabbitMQ" Version="8.3.6" />
+    <PackageReference Include="MassTransit.RabbitMQ" Version="9.1.2" />
     <PackageReference Include="Scrutor" Version="7.0.0" />
 
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.9" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.9" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.9" />
-    <PackageReference Include="Microsoft.OpenApi" Version="2.3.9" />
 
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.9">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="8.19.1" />
-    <PackageReference Include="Scalar.AspNetCore" Version="2.16.3" />
+    <PackageReference Include="Scalar.AspNetCore" Version="2.16.4" />
     <PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
     <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
   </ItemGroup>

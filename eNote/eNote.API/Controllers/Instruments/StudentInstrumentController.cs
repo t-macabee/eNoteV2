@@ -1,4 +1,4 @@
-using eNote.API.Controllers.Base;
+﻿using eNote.API.Controllers.Base;
 using eNote.Application.Constants;
 using eNote.Application.Features.Recommendations;
 using eNote.Application.Features.Recommendations.Services;
@@ -14,7 +14,7 @@ namespace eNote.API.Controllers.Instruments
         [HttpGet("recommended")]
         public async Task<ActionResult<IReadOnlyList<InstrumentRecommendationDto>>> GetRecommended([FromQuery] int count = 5)
         {
-            IReadOnlyList<InstrumentRecommendationDto> result = await recommendationService.GetRecommendedInstrumentsAsync(count);
+            var result = await recommendationService.GetRecommendedInstrumentsAsync(count);
             return Ok(result);
         }
 

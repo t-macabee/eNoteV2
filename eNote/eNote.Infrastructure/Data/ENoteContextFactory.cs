@@ -1,4 +1,4 @@
-using DotNetEnv;
+﻿using DotNetEnv;
 using eNote.Application.Common.Time;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
@@ -12,11 +12,11 @@ namespace eNote.Infrastructure.Data
         {
             LoadDotEnv();
 
-            IConfigurationRoot configuration = new ConfigurationBuilder()
+            var configuration = new ConfigurationBuilder()
                 .AddEnvironmentVariables()
                 .Build();
 
-            string connectionString = configuration.GetConnectionString("DefaultConnection")
+            var connectionString = configuration.GetConnectionString("DefaultConnection")
                 ?? throw new InvalidOperationException("ConnectionStrings__DefaultConnection is missing. Set it in .env or environment variables.");
 
             var optionsBuilder = new DbContextOptionsBuilder<ENoteContext>();
@@ -31,7 +31,7 @@ namespace eNote.Infrastructure.Data
 
             while (directory is not null)
             {
-                string envFile = Path.Combine(directory.FullName, ".env");
+                var envFile = Path.Combine(directory.FullName, ".env");
 
                 if (File.Exists(envFile))
                 {

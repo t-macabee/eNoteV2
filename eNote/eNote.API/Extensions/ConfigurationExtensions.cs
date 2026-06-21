@@ -16,7 +16,7 @@ public static class ConfigurationExtensions
             errors.Add("ConnectionStrings__DefaultConnection");
         }
 
-        string? jwtKey = configuration["Jwt:Key"];
+        var jwtKey = configuration["Jwt:Key"];
 
         if (string.IsNullOrWhiteSpace(jwtKey))
         {

@@ -1,4 +1,4 @@
-using eNote.API.Controllers.Base;
+﻿using eNote.API.Controllers.Base;
 using eNote.Application.Common.Paging;
 using eNote.Application.Constants;
 using eNote.Application.Features.Courses;
@@ -15,21 +15,21 @@ namespace eNote.API.Controllers.Courses
         [HttpGet]
         public async Task<ActionResult<PagedResult<CourseDto>>> GetMyCourses([FromQuery] CourseSearchObject search)
         {
-            PagedResult<CourseDto> result = await service.GetPagedForInstructorAsync(search);
+            var result = await service.GetPagedForInstructorAsync(search);
             return Ok(result);
         }
 
         [HttpGet("{id:int}")]
         public async Task<ActionResult<CourseDto>> GetById(int id)
         {
-            CourseDto dto = await service.GetByIdForInstructorAsync(id);
+            var dto = await service.GetByIdForInstructorAsync(id);
             return Ok(dto);
         }
 
         [HttpPost]
         public async Task<ActionResult<CourseDto>> Create([FromBody] CourseRequest request)
         {
-            CourseDto dto = await service.CreateAsync(request);
+            var dto = await service.CreateAsync(request);
             return CreatedAtAction(nameof(GetById), new
             {
                 id = dto.Id
@@ -39,7 +39,7 @@ namespace eNote.API.Controllers.Courses
         [HttpPut("{id:int}")]
         public async Task<ActionResult<CourseDto>> Update(int id, [FromBody] CourseRequest request)
         {
-            CourseDto dto = await service.UpdateAsync(id, request);
+            var dto = await service.UpdateAsync(id, request);
             return Ok(dto);
         }
 

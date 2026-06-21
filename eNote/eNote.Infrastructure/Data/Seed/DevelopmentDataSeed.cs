@@ -1,4 +1,4 @@
-using eNote.Domain.Entities;
+﻿using eNote.Domain.Entities;
 using eNote.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 
@@ -20,7 +20,7 @@ namespace eNote.Infrastructure.Data.Seed
     {
         public static async Task SeedMemberships(ENoteContext context)
         {
-            List<Student> students = await context.Set<Student>()
+            var students = await context.Set<Student>()
                 .Where(s => s.MembershipPaidUntil == null)
                 .ToListAsync();
 
@@ -29,7 +29,7 @@ namespace eNote.Infrastructure.Data.Seed
                 return;
             }
 
-            DateTime paidUntil = DateTime.UtcNow.AddYears(1);
+            var paidUntil = DateTime.UtcNow.AddYears(1);
 
             foreach (Student student in students)
             {
@@ -49,7 +49,7 @@ namespace eNote.Infrastructure.Data.Seed
                 return;
             }
 
-            int instructorId = await context.Set<Instructor>()
+            var instructorId = await context.Set<Instructor>()
                 .OrderBy(i => i.Id)
                 .Select(i => i.Id)
                 .FirstAsync();
@@ -74,7 +74,7 @@ namespace eNote.Infrastructure.Data.Seed
                 return;
             }
 
-            List<Course> courses = await context.Set<Course>()
+            var courses = await context.Set<Course>()
                 .OrderBy(c => c.Id)
                 .Take(2)
                 .ToListAsync();
@@ -102,32 +102,32 @@ namespace eNote.Infrastructure.Data.Seed
                 return;
             }
 
-            int shopId = await context.Set<MusicStore>()
+            var shopId = await context.Set<MusicStore>()
                 .OrderBy(s => s.Id)
                 .Select(s => s.Id)
                 .FirstAsync();
 
-            int stringTypeId = await context.Set<InstrumentType>()
-                .Where(x => x.Type == "Žičani")
+            var stringTypeId = await context.Set<InstrumentType>()
+                .Where(x => x.Type == "Å½iÄani")
                 .Select(x => x.Id)
                 .FirstAsync();
 
-            int percussionTypeId = await context.Set<InstrumentType>()
+            var percussionTypeId = await context.Set<InstrumentType>()
                 .Where(x => x.Type == "Udaraljke")
                 .Select(x => x.Id)
                 .FirstAsync();
 
-            int brassTypeId = await context.Set<InstrumentType>()
+            var brassTypeId = await context.Set<InstrumentType>()
                 .Where(x => x.Type == "Limeni")
                 .Select(x => x.Id)
                 .FirstAsync();
 
-            int keysTypeId = await context.Set<InstrumentType>()
+            var keysTypeId = await context.Set<InstrumentType>()
                 .Where(x => x.Type == "Tipke")
                 .Select(x => x.Id)
                 .FirstAsync();
 
-            int accessoriesTypeId = await context.Set<InstrumentType>()
+            var accessoriesTypeId = await context.Set<InstrumentType>()
                 .Where(x => x.Type == "Dodatna oprema")
                 .Select(x => x.Id)
                 .FirstAsync();
@@ -151,19 +151,19 @@ namespace eNote.Infrastructure.Data.Seed
     {
         public static Instrument[] GetInstruments(int shopId, int typeId) =>
         [
-            new Instrument("Stratocaster", "Fender", "Klasična električna gitara poznata po svojoj svestranosti i glatkoj svirljivosti.", "instruments/strat.webp", typeId, shopId),
-            new Instrument("Les Paul", "Gibson", "Legendarna električna gitara omiljena zbog bogatog tona i održavanja.", "instruments/les-paul.webp", typeId, shopId),
-            new Instrument("RG", "Ibanez", "Visokoperformansna električna gitara popularna među rok i metal sviračima.", "instruments/rg.webp", typeId, shopId),
-            new Instrument("Custom 24", "PRS", "Visokokvalitetna električna gitara poznata po svojoj prelijepoj izradi i zvuku.", "instruments/prs.webp", typeId, shopId),
-            new Instrument("Pacifica", "Yamaha", "Svestrana električna gitara pogodna za različite žanrove.", "instruments/pacifica.webp", typeId, shopId),
-            new Instrument("Dinky", "Jackson", "Električna gitara dizajnirana za brzo sviranje i snažan zvuk.", "instruments/dinky.webp", typeId, shopId),
-            new Instrument("214ce", "Taylor", "Svestrana i lijepo izrađena akustična gitara, poznata po svom svijetlom i artikulisanom tonu.", "instruments/214ce.webp", typeId, shopId),
-            new Instrument("D-28", "Martin", "Ikonična dreadnought gitara sa bogatom historijom, poznata po svom dubokom, rezonantnom basu i jasnim visokim tonovima.", "instruments/d-28.webp", typeId, shopId),
-            new Instrument("J-45", "Gibson", "Često nazivan \"radnim konjem\" među akustičnim gitarama, ovaj dreadnought sa zaobljenim ramenima pruža topao, blag ton koji je savršen za kantautore.", "instruments/j-45.webp", typeId, shopId),
-            new Instrument("S6", "Seagull", "S6 proizvodi topao, bogat zvuk sa blago rustičnim karakterom, što je čini omiljenom među muzičarima koji sviraju folk i roots muziku.", "instruments/s6.webp", typeId, shopId),
+            new Instrument("Stratocaster", "Fender", "KlasiÄna elektriÄna gitara poznata po svojoj svestranosti i glatkoj svirljivosti.", "instruments/strat.webp", typeId, shopId),
+            new Instrument("Les Paul", "Gibson", "Legendarna elektriÄna gitara omiljena zbog bogatog tona i odrÅ¾avanja.", "instruments/les-paul.webp", typeId, shopId),
+            new Instrument("RG", "Ibanez", "Visokoperformansna elektriÄna gitara popularna meÄ‘u rok i metal sviraÄima.", "instruments/rg.webp", typeId, shopId),
+            new Instrument("Custom 24", "PRS", "Visokokvalitetna elektriÄna gitara poznata po svojoj prelijepoj izradi i zvuku.", "instruments/prs.webp", typeId, shopId),
+            new Instrument("Pacifica", "Yamaha", "Svestrana elektriÄna gitara pogodna za razliÄite Å¾anrove.", "instruments/pacifica.webp", typeId, shopId),
+            new Instrument("Dinky", "Jackson", "ElektriÄna gitara dizajnirana za brzo sviranje i snaÅ¾an zvuk.", "instruments/dinky.webp", typeId, shopId),
+            new Instrument("214ce", "Taylor", "Svestrana i lijepo izraÄ‘ena akustiÄna gitara, poznata po svom svijetlom i artikulisanom tonu.", "instruments/214ce.webp", typeId, shopId),
+            new Instrument("D-28", "Martin", "IkoniÄna dreadnought gitara sa bogatom historijom, poznata po svom dubokom, rezonantnom basu i jasnim visokim tonovima.", "instruments/d-28.webp", typeId, shopId),
+            new Instrument("J-45", "Gibson", "ÄŒesto nazivan \"radnim konjem\" meÄ‘u akustiÄnim gitarama, ovaj dreadnought sa zaobljenim ramenima pruÅ¾a topao, blag ton koji je savrÅ¡en za kantautore.", "instruments/j-45.webp", typeId, shopId),
+            new Instrument("S6", "Seagull", "S6 proizvodi topao, bogat zvuk sa blago rustiÄnim karakterom, Å¡to je Äini omiljenom meÄ‘u muziÄarima koji sviraju folk i roots muziku.", "instruments/s6.webp", typeId, shopId),
             new Instrument("Precision Bass", "Fender", "Industrijski standard bas gitara poznata po dubokom, udarnom zvuku.", "instruments/precision.webp", typeId, shopId),
-            new Instrument("Thunderbird", "Gibson", "Ikonična bas gitara poznata po jedinstvenom dizajnu i snažnom zvuku.", "instruments/thunderbird.webp", typeId, shopId),
-            new Instrument("StingRay", "Music Man", "Legendarna električna bas gitara, prepoznatljiva po svom moćnom, artikulisanom zvuku, elegantnom dizajnu i vrhunskoj svirljivosti.", "instruments/stingray.webp", typeId, shopId)
+            new Instrument("Thunderbird", "Gibson", "IkoniÄna bas gitara poznata po jedinstvenom dizajnu i snaÅ¾nom zvuku.", "instruments/thunderbird.webp", typeId, shopId),
+            new Instrument("StingRay", "Music Man", "Legendarna elektriÄna bas gitara, prepoznatljiva po svom moÄ‡nom, artikulisanom zvuku, elegantnom dizajnu i vrhunskoj svirljivosti.", "instruments/stingray.webp", typeId, shopId)
         ];
     }
 
@@ -171,9 +171,9 @@ namespace eNote.Infrastructure.Data.Seed
     {
         public static Instrument[] GetInstruments(int shopId, int typeId) =>
         [
-            new Instrument("Export", "Pearl", "Pristupačan bubanj set savršen za početnike i srednje napredne bubnjare.", "instruments/export.webp", typeId, shopId),
+            new Instrument("Export", "Pearl", "PristupaÄan bubanj set savrÅ¡en za poÄetnike i srednje napredne bubnjare.", "instruments/export.webp", typeId, shopId),
             new Instrument("Imperialstar", "Tama", "Svestran bubanj set sa izvrsnom izradom i zvukom.", "instruments/imperialstar.webp", typeId, shopId),
-            new Instrument("Breakbeats", "Ludwig", "Kompaktni bubanj set dizajniran za prenosivost i odličan ton.", "instruments/breakbeats.webp", typeId, shopId)
+            new Instrument("Breakbeats", "Ludwig", "Kompaktni bubanj set dizajniran za prenosivost i odliÄan ton.", "instruments/breakbeats.webp", typeId, shopId)
         ];
     }
 
@@ -181,7 +181,7 @@ namespace eNote.Infrastructure.Data.Seed
     {
         public static Instrument[] GetInstruments(int shopId, int typeId) =>
         [
-            new Instrument("YAS-280", "Yamaha", "Popularni saksofon među studentima i srednje naprednim sviračima.", "instruments/yas.webp", typeId, shopId),
+            new Instrument("YAS-280", "Yamaha", "Popularni saksofon meÄ‘u studentima i srednje naprednim sviraÄima.", "instruments/yas.webp", typeId, shopId),
             new Instrument("Stradivarius", "Bach", "Profesionalni trombon poznat po bogatom tonu i preciznoj intonaciji.", "instruments/stradivarius.webp", typeId, shopId)
         ];
     }
@@ -191,7 +191,7 @@ namespace eNote.Infrastructure.Data.Seed
         public static Instrument[] GetInstruments(int shopId, int typeId) =>
         [
             new Instrument("Minilogue", "Korg", "Analogni sintisajzer poznat po svom bogatom, toplom zvuku.", "instruments/minilogue.webp", typeId, shopId),
-            new Instrument("Juno-DS", "Roland", "Svestrani sintisajzer popularan za žive nastupe i studijsku upotrebu.", "instruments/juno-ds.webp", typeId, shopId)
+            new Instrument("Juno-DS", "Roland", "Svestrani sintisajzer popularan za Å¾ive nastupe i studijsku upotrebu.", "instruments/juno-ds.webp", typeId, shopId)
         ];
     }
 
@@ -199,11 +199,11 @@ namespace eNote.Infrastructure.Data.Seed
     {
         public static Instrument[] GetInstruments(int shopId, int typeId) =>
         [
-            new Instrument("Blues Junior IV", "Fender", "Kompaktno, ali snažno cijevno pojačalo koje pruža klasičan Fender ton sa dodanom modernom svestranošću.", "instruments/blues-junior.webp", typeId, shopId),
-            new Instrument("DSL40CR-DS", "Marshall", "Vrlo svestrano cijevno pojačalo koje nudi sve, od klasične rock distorzije do žestokih solaža.", "instruments/dsl40cr.webp", typeId, shopId),
-            new Instrument("AC15C1", "Vox", "Poznato po svojim svijetlim čistim tonovima i karakterističnom \"Top Boost\" overdrive efektu, savršeno je za one koji traže vintage britanski zvuk.", "instruments/ac15c1.webp", typeId, shopId),
-            new Instrument("Rocker 15", "Orange", "Idealno je za kućne probe i manje nastupe, nudeći niz tonova od čistog do prljavog sa jednostavnim i preglednim kontrolama.", "instruments/rocker-15.webp", typeId, shopId),
-            new Instrument("Katana-100 MkII", "Boss", "Moderno digitalno pojačalo koje kombinuje veliku snagu sa nevjerovatnom svestranošću.", "instruments/katana-100.webp", typeId, shopId)
+            new Instrument("Blues Junior IV", "Fender", "Kompaktno, ali snaÅ¾no cijevno pojaÄalo koje pruÅ¾a klasiÄan Fender ton sa dodanom modernom svestranoÅ¡Ä‡u.", "instruments/blues-junior.webp", typeId, shopId),
+            new Instrument("DSL40CR-DS", "Marshall", "Vrlo svestrano cijevno pojaÄalo koje nudi sve, od klasiÄne rock distorzije do Å¾estokih solaÅ¾a.", "instruments/dsl40cr.webp", typeId, shopId),
+            new Instrument("AC15C1", "Vox", "Poznato po svojim svijetlim Äistim tonovima i karakteristiÄnom \"Top Boost\" overdrive efektu, savrÅ¡eno je za one koji traÅ¾e vintage britanski zvuk.", "instruments/ac15c1.webp", typeId, shopId),
+            new Instrument("Rocker 15", "Orange", "Idealno je za kuÄ‡ne probe i manje nastupe, nudeÄ‡i niz tonova od Äistog do prljavog sa jednostavnim i preglednim kontrolama.", "instruments/rocker-15.webp", typeId, shopId),
+            new Instrument("Katana-100 MkII", "Boss", "Moderno digitalno pojaÄalo koje kombinuje veliku snagu sa nevjerovatnom svestranoÅ¡Ä‡u.", "instruments/katana-100.webp", typeId, shopId)
         ];
     }
 
@@ -216,7 +216,7 @@ namespace eNote.Infrastructure.Data.Seed
                 return;
             }
 
-            int studentId = await context.Set<Student>()
+            var studentId = await context.Set<Student>()
                 .OrderBy(s => s.Id)
                 .Select(s => s.Id)
                 .FirstOrDefaultAsync();
@@ -226,7 +226,7 @@ namespace eNote.Infrastructure.Data.Seed
                 return;
             }
 
-            List<int> courseIds = await context.Set<Course>()
+            var courseIds = await context.Set<Course>()
                 .Where(c => c.IsPublished)
                 .Select(c => c.Id)
                 .ToListAsync();

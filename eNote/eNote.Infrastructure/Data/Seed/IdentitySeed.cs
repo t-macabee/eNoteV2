@@ -1,4 +1,4 @@
-using eNote.Application.Common.Exceptions;
+﻿using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Localization;
 using eNote.Application.Constants;
 using eNote.Application.Features.Users;
@@ -15,15 +15,15 @@ namespace eNote.Infrastructure.Data.Seed
     {
         public static async Task SeedAsync(IServiceProvider serviceProvider)
         {
-            RoleManager<AppRole> roleManager = serviceProvider.GetRequiredService<RoleManager<AppRole>>();
+            var roleManager = serviceProvider.GetRequiredService<RoleManager<AppRole>>();
 
-            ENoteContext context = serviceProvider.GetRequiredService<ENoteContext>();
+            var context = serviceProvider.GetRequiredService<ENoteContext>();
 
-            IUserService userService = serviceProvider.GetRequiredService<IUserService>();
+            var userService = serviceProvider.GetRequiredService<IUserService>();
 
             await RoleSeed.SeedRoles(roleManager);
 
-            int defaultStoreId = await StoreSeed.EnsureDefaultStoreAsync(context);
+            var defaultStoreId = await StoreSeed.EnsureDefaultStoreAsync(context);
 
             (string, string, string, int?)[] testUsers = new[]
             {
@@ -33,9 +33,9 @@ namespace eNote.Infrastructure.Data.Seed
                 ("storeemployee", "storeEmployee@enote.com", AppRoles.StoreEmployee, (int?)defaultStoreId)
             };
 
-            foreach ((string? username, string? email, string? role, int? storeId) in testUsers)
+            foreach ((var username, var email, var role, var storeId) in testUsers)
             {
-                (int _, string? error) = await userService.ProvisionUserAsync(new UserProvisionRequest
+                (var _, var error) = await userService.ProvisionUserAsync(new UserProvisionRequest
                 {
                     Username = username,
                     Email = email,
@@ -58,15 +58,15 @@ namespace eNote.Infrastructure.Data.Seed
         {
             string[] roles = [AppRoles.Administrator, AppRoles.Instructor, AppRoles.Student, AppRoles.StoreEmployee];
 
-            foreach (string role in roles)
+            foreach (var role in roles)
             {
                 if (!await roleManager.RoleExistsAsync(role))
                 {
-                    IdentityResult result = await roleManager.CreateAsync(new AppRole { Name = role });
+                    var result = await roleManager.CreateAsync(new AppRole { Name = role });
 
                     if (!result.Succeeded)
                     {
-                        string errors = string.Join("; ", result.Errors.Select(e => e.Description));
+                        var errors = string.Join("; ", result.Errors.Select(e => e.Description));
 
                         throw new BusinessException(Messages.RoleCreateFailed(role, errors));
                     }
@@ -79,7 +79,7 @@ namespace eNote.Infrastructure.Data.Seed
     {
         public static async Task<int> EnsureDefaultStoreAsync(ENoteContext context)
         {
-            int? storeId = await context.Set<MusicStore>()
+            var storeId = await context.Set<MusicStore>()
                 .OrderBy(x => x.Id)
                 .Select(x => (int?)x.Id)
                 .FirstOrDefaultAsync();

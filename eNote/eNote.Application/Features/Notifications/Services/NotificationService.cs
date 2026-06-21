@@ -1,4 +1,4 @@
-using eNote.Application.Common.Exceptions;
+﻿using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Paging;
@@ -13,9 +13,9 @@ public sealed class NotificationService(IAppDbContext context, IMapper mapper, I
 {
     public async Task<PagedResult<NotificationDto>> GetPagedAsync(NotificationSearchObject search, CancellationToken cancellationToken = default)
     {
-        int userId = currentUserService.UserId;
+        var userId = currentUserService.UserId;
 
-        IQueryable<Notification> query = context.Set<Notification>()
+        var query = context.Set<Notification>()
             .AsNoTracking()
             .Where(x => x.UserId == userId);
 
@@ -32,9 +32,9 @@ public sealed class NotificationService(IAppDbContext context, IMapper mapper, I
 
     public async Task<NotificationUnreadCountDto> GetUnreadCountAsync(CancellationToken cancellationToken = default)
     {
-        int userId = currentUserService.UserId;
+        var userId = currentUserService.UserId;
 
-        int count = await context.Set<Notification>()
+        var count = await context.Set<Notification>()
             .AsNoTracking()
             .CountAsync(x => x.UserId == userId && !x.IsRead, cancellationToken);
 
@@ -43,9 +43,9 @@ public sealed class NotificationService(IAppDbContext context, IMapper mapper, I
 
     public async Task<NotificationDto> MarkReadAsync(int id, CancellationToken cancellationToken = default)
     {
-        int userId = currentUserService.UserId;
+        var userId = currentUserService.UserId;
 
-        Notification notification = await context.Set<Notification>()
+        var notification = await context.Set<Notification>()
             .FirstOrDefaultAsync(x => x.Id == id && x.UserId == userId, cancellationToken)
             ?? throw new NotFoundException(Messages.NotificationNotFound);
 
@@ -60,7 +60,7 @@ public sealed class NotificationService(IAppDbContext context, IMapper mapper, I
 
     public async Task<NotificationUnreadCountDto> MarkAllReadAsync(CancellationToken cancellationToken = default)
     {
-        int userId = currentUserService.UserId;
+        var userId = currentUserService.UserId;
 
         await context.Set<Notification>()
             .Where(x => x.UserId == userId && !x.IsRead)

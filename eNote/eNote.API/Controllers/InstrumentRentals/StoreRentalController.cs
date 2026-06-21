@@ -1,4 +1,4 @@
-using eNote.API.Controllers.Base;
+﻿using eNote.API.Controllers.Base;
 using eNote.Application.Common.Paging;
 using eNote.Application.Constants;
 using eNote.Application.Features.InstrumentRentals;
@@ -15,49 +15,49 @@ namespace eNote.API.Controllers.InstrumentRentals
         [HttpGet]
         public async Task<ActionResult<PagedResult<InstrumentRentalDto>>> GetPaged([FromQuery] InstrumentRentalSearchObject search)
         {
-            PagedResult<InstrumentRentalDto> result = await queryService.GetPagedForStoreAsync(search);
+            var result = await queryService.GetPagedForStoreAsync(search);
             return Ok(result);
         }
 
         [HttpGet("{id:int}")]
         public async Task<ActionResult<InstrumentRentalDto>> GetById(int id)
         {
-            InstrumentRentalDto dto = await queryService.GetByIdForStoreAsync(id);
+            var dto = await queryService.GetByIdForStoreAsync(id);
             return Ok(dto);
         }
 
         [HttpPost("{id:int}/approve")]
         public async Task<ActionResult<InstrumentRentalDto>> Approve(int id, [FromBody] RentalStatusResponse response)
         {
-            InstrumentRentalDto dto = await commandService.ApproveAsync(id, response);
+            var dto = await commandService.ApproveAsync(id, response);
             return Ok(dto);
         }
 
         [HttpPost("{id:int}/reject")]
         public async Task<ActionResult<InstrumentRentalDto>> Reject(int id, [FromBody] RentalStatusResponse response)
         {
-            InstrumentRentalDto dto = await commandService.RejectAsync(id, response);
+            var dto = await commandService.RejectAsync(id, response);
             return Ok(dto);
         }
 
         [HttpPost("{id:int}/pickup")]
         public async Task<ActionResult<InstrumentRentalDto>> Pickup(int id, [FromBody] RentalStatusResponse response)
         {
-            InstrumentRentalDto dto = await commandService.PickupAsync(id, response);
+            var dto = await commandService.PickupAsync(id, response);
             return Ok(dto);
         }
 
         [HttpPost("{id:int}/complete")]
         public async Task<ActionResult<InstrumentRentalDto>> Complete(int id, [FromBody] RentalStatusResponse response)
         {
-            InstrumentRentalDto dto = await commandService.CompleteAsync(id, response);
+            var dto = await commandService.CompleteAsync(id, response);
             return Ok(dto);
         }
 
         [HttpPost("{id:int}/return-early")]
         public async Task<ActionResult<InstrumentRentalDto>> ReturnEarly(int id, [FromBody] RentalStatusResponse response)
         {
-            InstrumentRentalDto dto = await commandService.ReturnEarlyAsync(id, response);
+            var dto = await commandService.ReturnEarlyAsync(id, response);
             return Ok(dto);
         }
     }

@@ -1,4 +1,4 @@
-using eNote.API.Hubs;
+﻿using eNote.API.Hubs;
 using eNote.Application.Features.Notifications;
 using eNote.Contracts.Rentals;
 using MassTransit;
@@ -10,9 +10,9 @@ public sealed class RentalStatusChangedPushConsumer(IHubContext<NotificationHub>
 {
     public async Task Consume(ConsumeContext<RentalStatusChanged> context)
     {
-        RentalStatusChanged message = context.Message;
+        var message = context.Message;
 
-        NotificationPushDto payload = new()
+        var payload = new NotificationPushDto()
         {
             RentalId = message.RentalId,
             Title = message.Title,

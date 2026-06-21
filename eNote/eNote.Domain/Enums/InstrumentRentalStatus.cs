@@ -1,13 +1,12 @@
-namespace eNote.Domain.Enums
+namespace eNote.Domain.Enums;
+
+public enum InstrumentRentalStatus
 {
-    public enum InstrumentRentalStatus
-    {
-        Pending = 1,
-        Approved = 2,
-        Active = 3,
-        Completed = 4,
-        Rejected = 5,
-        Canceled = 6,
-        ReturnedEarly = 7
-    }
+    Pending = 1,
+    Approved = 2,
+    Active = 3,
+    Completed = 4,
+    Rejected = 5,
+    Canceled = 6,
+    ReturnedEarly = 7
 }

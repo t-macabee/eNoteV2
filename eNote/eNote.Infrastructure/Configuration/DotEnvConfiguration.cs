@@ -10,7 +10,7 @@ public static class DotEnvConfiguration
 
         while (directory is not null)
         {
-            string envFile = Path.Combine(directory.FullName, ".env");
+            var envFile = Path.Combine(directory.FullName, ".env");
 
             if (File.Exists(envFile))
             {

@@ -10,7 +10,7 @@ namespace eNote.Application.Features.MusicStores.Services
     {
         public async Task<int> GetActiveStoreAsync(int appUserId, CancellationToken ct = default)
         {
-            int activeStore = await context.Set<MusicStoreEmployee>()
+            var activeStore = await context.Set<MusicStoreEmployee>()
                 .AsNoTracking()
                 .Where(x => x.AppUserId == appUserId && x.IsActive)
                 .Select(x => x.MusicStoreId)

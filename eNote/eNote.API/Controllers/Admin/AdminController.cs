@@ -1,4 +1,4 @@
-using eNote.API.Controllers.Base;
+﻿using eNote.API.Controllers.Base;
 using eNote.Application.Constants;
 using eNote.Application.Features.Users;
 using eNote.Application.Features.Users.Services.Interfaces;
@@ -16,7 +16,7 @@ namespace eNote.API.Controllers.Admin
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<UserProfileResponse>> GetById(int id)
         {
-            UserProfileResponse? profile = await userService.GetUserAsync(id);
+            var profile = await userService.GetUserAsync(id);
 
             if (profile is null)
             {
@@ -31,7 +31,7 @@ namespace eNote.API.Controllers.Admin
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<ActionResult> Provision([FromBody] UserProvisionRequest request)
         {
-            (int userId, string? error) = await userService.ProvisionUserAsync(request);
+            (var userId, var error) = await userService.ProvisionUserAsync(request);
 
             if (error is not null)
             {

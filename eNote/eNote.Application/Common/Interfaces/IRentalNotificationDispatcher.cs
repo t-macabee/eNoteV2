@@ -1,4 +1,4 @@
-using eNote.Application.Features.InstrumentRentals;
+﻿using eNote.Application.Features.InstrumentRentals;
 using eNote.Application.Features.InstrumentRentals.StateMachine;
 
 namespace eNote.Application.Common.Interfaces;

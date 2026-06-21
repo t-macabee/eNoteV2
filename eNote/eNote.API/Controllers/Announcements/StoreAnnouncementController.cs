@@ -1,4 +1,4 @@
-using eNote.API.Controllers.Base;
+﻿using eNote.API.Controllers.Base;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Paging;
 using eNote.Application.Constants;
@@ -16,21 +16,21 @@ namespace eNote.API.Controllers.Announcements
         [HttpGet]
         public async Task<ActionResult<PagedResult<AnnouncementDto>>> GetForStore(int page = 1, int pageSize = 20)
         {
-            PagedResult<AnnouncementDto> result = await announcementService.GetForStoreAsync(page, pageSize);
+            var result = await announcementService.GetForStoreAsync(page, pageSize);
             return Ok(result);
         }
 
         [HttpGet("{announcementId:int}")]
         public async Task<ActionResult<AnnouncementDto>> GetById(int announcementId)
         {
-            AnnouncementDto result = await announcementService.GetByIdForStoreAsync(announcementId);
+            var result = await announcementService.GetByIdForStoreAsync(announcementId);
             return Ok(result);
         }
 
         [HttpPost]
         public async Task<ActionResult<AnnouncementDto>> Create([FromBody] AnnouncementRequest request)
         {
-            AnnouncementDto result = await announcementService.CreateForStoreAsync(request);
+            var result = await announcementService.CreateForStoreAsync(request);
             return CreatedAtAction(nameof(GetById), new
             {
                 announcementId = result.Id
@@ -40,7 +40,7 @@ namespace eNote.API.Controllers.Announcements
         [HttpPut("{announcementId:int}")]
         public async Task<ActionResult<AnnouncementDto>> Update(int announcementId, [FromBody] AnnouncementRequest request)
         {
-            AnnouncementDto result = await announcementService.UpdateForStoreAsync(announcementId, request);
+            var result = await announcementService.UpdateForStoreAsync(announcementId, request);
             return Ok(result);
         }
 
@@ -63,7 +63,7 @@ namespace eNote.API.Controllers.Announcements
 
             await using Stream stream = file.OpenReadStream();
 
-            AnnouncementDto result = await announcementService.UploadImageForStoreAsync(announcementId, stream, file.FileName, file.ContentType, ct);
+            var result = await announcementService.UploadImageForStoreAsync(announcementId, stream, file.FileName, file.ContentType, ct);
 
             return Ok(result);
         }
