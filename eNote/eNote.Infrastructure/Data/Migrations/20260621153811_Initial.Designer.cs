@@ -12,7 +12,7 @@ using eNote.Infrastructure.Data;
 namespace eNote.Infrastructure.Data.Migrations
 {
     [DbContext(typeof(ENoteContext))]
-    [Migration("20260619223445_Initial")]
+    [Migration("20260621153811_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -214,6 +214,10 @@ namespace eNote.Infrastructure.Data.Migrations
 
                     b.Property<int?>("CreatedById")
                         .HasColumnType("int");
+
+                    b.Property<string>("ImagePath")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
                     b.Property<bool>("IsActive")
                         .ValueGeneratedOnAdd()

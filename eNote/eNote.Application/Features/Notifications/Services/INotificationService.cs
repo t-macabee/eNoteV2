@@ -1,5 +1,4 @@
 using eNote.Application.Common.Paging;
-using eNote.Application.Features.Notifications;
 
 namespace eNote.Application.Features.Notifications.Services;
 

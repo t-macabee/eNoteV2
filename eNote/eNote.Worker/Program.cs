@@ -4,7 +4,6 @@ using eNote.Infrastructure.Data;
 using eNote.Infrastructure.Messaging;
 using eNote.Worker.Consumers;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Hosting;
 
 DotEnvConfiguration.Load();
 

@@ -1,5 +1,4 @@
 using eNote.Domain.Entities;
-using eNote.Domain.Enums;
 
 namespace eNote.Application.Features.Lectures;
 

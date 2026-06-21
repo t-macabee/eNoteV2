@@ -89,7 +89,7 @@ namespace eNote.Infrastructure.Data.Seed
                 return storeId.Value;
             }
 
-            MusicStore store = new MusicStore("Test Music Store", "09:00-17:00");
+            var store = new MusicStore("Test Music Store", "09:00-17:00");
 
             context.Set<MusicStore>().Add(store);
 

@@ -63,7 +63,7 @@ namespace eNote.Application.Features.Courses.Services
                 .AsNoTracking()
                 .Where(s => s.Grade != null && s.Assignment.Lecture.CourseId == courseId && studentIds.Contains(s.StudentId))
                 .GroupBy(s => s.StudentId)
-                .Select(g => 
+                .Select(g =>
                     new StudentGradeStats(g.Key,
                         g.Average(x => (double?)x.Grade),
                         g.Count()))

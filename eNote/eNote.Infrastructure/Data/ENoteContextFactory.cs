@@ -19,7 +19,7 @@ namespace eNote.Infrastructure.Data
             string connectionString = configuration.GetConnectionString("DefaultConnection")
                 ?? throw new InvalidOperationException("ConnectionStrings__DefaultConnection is missing. Set it in .env or environment variables.");
 
-            DbContextOptionsBuilder<ENoteContext> optionsBuilder = new DbContextOptionsBuilder<ENoteContext>();
+            var optionsBuilder = new DbContextOptionsBuilder<ENoteContext>();
             optionsBuilder.UseSqlServer(connectionString, sql => sql.MigrationsAssembly("eNote.Infrastructure"));
 
             return new ENoteContext(optionsBuilder.Options, new SystemClock());
@@ -27,7 +27,7 @@ namespace eNote.Infrastructure.Data
 
         private static void LoadDotEnv()
         {
-            DirectoryInfo directory = new DirectoryInfo(Directory.GetCurrentDirectory());
+            var directory = new DirectoryInfo(Directory.GetCurrentDirectory());
 
             while (directory is not null)
             {

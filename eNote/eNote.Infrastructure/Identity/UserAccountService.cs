@@ -29,7 +29,7 @@ namespace eNote.Infrastructure.Identity
                 return (null, Messages.EmailTaken);
             }
 
-            AppUser user = new AppUser
+            var user = new AppUser
             {
                 UserName = normalizedUsername,
                 Email = normalizedEmail,
