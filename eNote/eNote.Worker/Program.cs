@@ -3,6 +3,7 @@ using eNote.Infrastructure.Configuration;
 using eNote.Infrastructure.Data;
 using eNote.Infrastructure.Messaging;
 using eNote.Worker.Consumers;
+using eNote.Worker.Services;
 using Microsoft.EntityFrameworkCore;
 
 DotEnvConfiguration.Load();
@@ -30,6 +31,7 @@ builder.Services.AddDbContext<ENoteContext>(options =>
     options.UseSqlServer(connectionString, sql => sql.MigrationsAssembly("eNote.Infrastructure")));
 
 builder.Services.AddRabbitMqMassTransit(builder.Configuration, bus => bus.AddConsumer<RentalStatusChangedConsumer>());
+builder.Services.AddHostedService<RentalNotificationOutboxProcessor>();
 
 IHost host = builder.Build();
 host.Run();

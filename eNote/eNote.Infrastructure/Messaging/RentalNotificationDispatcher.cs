@@ -1,16 +1,25 @@
+using System.Text.Json;
 using eNote.Application.Common.Interfaces;
+using eNote.Application.Common.Persistence;
 using eNote.Application.Common.Time;
 using eNote.Application.Features.InstrumentRentals;
 using eNote.Application.Features.InstrumentRentals.StateMachine;
 using eNote.Contracts.Rentals;
+using eNote.Domain.Entities;
 using MassTransit;
 using Microsoft.Extensions.Logging;
 
 namespace eNote.Infrastructure.Messaging;
 
-public sealed class RentalNotificationDispatcher(IPublishEndpoint publishEndpoint, IClock clock, ILogger<RentalNotificationDispatcher> logger) : IRentalNotificationDispatcher
+public sealed class RentalNotificationDispatcher(
+    IPublishEndpoint publishEndpoint,
+    IAppDbContext context,
+    IClock clock,
+    ILogger<RentalNotificationDispatcher> logger) : IRentalNotificationDispatcher
 {
     private const int MaxPublishAttempts = 3;
+
+    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     public Task DispatchCreatedAsync(InstrumentRentalDto rental, int studentUserId, CancellationToken cancellationToken = default)
     {
@@ -30,6 +39,8 @@ public sealed class RentalNotificationDispatcher(IPublishEndpoint publishEndpoin
 
     private async Task PublishWithRetryAsync(RentalStatusChanged message, int rentalId, CancellationToken cancellationToken)
     {
+        Exception? lastException = null;
+
         for (var attempt = 1; attempt <= MaxPublishAttempts; attempt++)
         {
             try
@@ -39,15 +50,32 @@ public sealed class RentalNotificationDispatcher(IPublishEndpoint publishEndpoin
             }
             catch (Exception ex) when (attempt < MaxPublishAttempts)
             {
+                lastException = ex;
                 logger.LogWarning(ex, "RabbitMQ publish attempt {Attempt}/{MaxAttempts} failed for rental {RentalId}.", attempt, MaxPublishAttempts, rentalId);
                 await Task.Delay(TimeSpan.FromMilliseconds(200 * attempt), cancellationToken);
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "RabbitMQ publish failed after {MaxAttempts} attempts for rental {RentalId}.", MaxPublishAttempts, rentalId);
-                throw;
+                lastException = ex;
             }
         }
+
+        logger.LogError(lastException, "RabbitMQ publish failed after {MaxAttempts} attempts for rental {RentalId}. Queuing to outbox.", MaxPublishAttempts, rentalId);
+
+        await EnqueueOutboxAsync(message, lastException, cancellationToken);
+    }
+
+    private async Task EnqueueOutboxAsync(RentalStatusChanged message, Exception? error, CancellationToken cancellationToken)
+    {
+        var entry = new RentalNotificationOutbox
+        {
+            PayloadJson = JsonSerializer.Serialize(message, JsonOptions),
+            Attempts = MaxPublishAttempts,
+            LastError = error?.Message?[..Math.Min(error.Message.Length, 2000)]
+        };
+
+        context.Set<RentalNotificationOutbox>().Add(entry);
+        await context.SaveChangesAsync(cancellationToken);
     }
 
     private static (string Title, string Body) BuildNotificationContent(InstrumentRentalDto rental, RentalTrigger trigger) =>

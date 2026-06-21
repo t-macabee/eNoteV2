@@ -7,6 +7,7 @@ using eNote.Domain.Entities;
 using eNote.Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace eNote.Infrastructure.Data.Seed
@@ -20,6 +21,8 @@ namespace eNote.Infrastructure.Data.Seed
             var context = serviceProvider.GetRequiredService<ENoteContext>();
 
             var userService = serviceProvider.GetRequiredService<IUserService>();
+            var configuration = serviceProvider.GetRequiredService<IConfiguration>();
+            var defaultPassword = configuration["Seed:DefaultPassword"] ?? "Test1234!";
 
             await RoleSeed.SeedRoles(roleManager);
 
@@ -39,7 +42,7 @@ namespace eNote.Infrastructure.Data.Seed
                 {
                     Username = username,
                     Email = email,
-                    Password = "Test1234!",
+                    Password = defaultPassword,
                     Role = role,
                     MusicStoreId = storeId
                 });

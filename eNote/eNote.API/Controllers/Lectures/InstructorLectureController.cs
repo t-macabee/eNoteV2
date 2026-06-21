@@ -3,6 +3,7 @@ using eNote.Application.Common.Paging;
 using eNote.Application.Constants;
 using eNote.Application.Features.Lectures;
 using eNote.Application.Features.Lectures.Services;
+using eNote.Application.Features.Reports.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -10,7 +11,7 @@ namespace eNote.API.Controllers.Lectures
 {
     [Authorize(Roles = AppRoles.Instructor)]
     [Route("api/instructor/lectures")]
-    public sealed class InstructorLectureController(ILectureService service) : CoreController
+    public sealed class InstructorLectureController(ILectureService service, IReportService reportService) : CoreController
     {
         [HttpGet]
         public async Task<ActionResult<PagedResult<LectureDto>>> GetMyLectures([FromQuery] LectureSearchObject search)
@@ -55,6 +56,13 @@ namespace eNote.API.Controllers.Lectures
         {
             var dto = await service.CancelAsync(id);
             return Ok(dto);
+        }
+
+        [HttpGet("{id:int}/attendance/report")]
+        public async Task<IActionResult> GetAttendanceReport(int id, CancellationToken cancellationToken)
+        {
+            var pdf = await reportService.GenerateLectureAttendancePdfAsync(id, cancellationToken);
+            return File(pdf, "application/pdf", $"lecture-{id}-attendance.pdf");
         }
 
         [HttpGet("{id:int}/attendance")]

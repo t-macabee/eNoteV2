@@ -25,11 +25,11 @@ namespace eNote.Infrastructure.Data.Seed
         private static void SeedInstrumentTypes(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<InstrumentType>().HasData(
-                new InstrumentType { Id = 1, Type = "Žičani" },
-                new InstrumentType { Id = 2, Type = "Udaraljke" },
-                new InstrumentType { Id = 3, Type = "Limeni" },
-                new InstrumentType { Id = 4, Type = "Tipke" },
-                new InstrumentType { Id = 5, Type = "Dodatna oprema" }
+                new InstrumentType { Id = 1, Type = "Žičani", MonthlyFee = 45m },
+                new InstrumentType { Id = 2, Type = "Udaraljke", MonthlyFee = 35m },
+                new InstrumentType { Id = 3, Type = "Limeni", MonthlyFee = 55m },
+                new InstrumentType { Id = 4, Type = "Tipke", MonthlyFee = 65m },
+                new InstrumentType { Id = 5, Type = "Dodatna oprema", MonthlyFee = 15m }
             );
         }
     }

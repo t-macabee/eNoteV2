@@ -3,6 +3,7 @@ using eNote.Application.Common.Paging;
 using eNote.Application.Constants;
 using eNote.Application.Features.InstrumentRentals;
 using eNote.Application.Features.InstrumentRentals.Services;
+using eNote.Application.Features.Reports.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -10,8 +11,15 @@ namespace eNote.API.Controllers.InstrumentRentals
 {
     [Authorize(Roles = AppRoles.StoreEmployee)]
     [Route("api/shop/rentals")]
-    public sealed class StoreRentalController(IRentalQueryService queryService, IRentalCommandService commandService) : CoreController
+    public sealed class StoreRentalController(IRentalQueryService queryService, IRentalCommandService commandService, IReportService reportService) : CoreController
     {
+        [HttpGet("report")]
+        public async Task<IActionResult> GetRentalReport(CancellationToken cancellationToken)
+        {
+            var pdf = await reportService.GenerateStoreRentalSummaryPdfAsync(cancellationToken);
+            return File(pdf, "application/pdf", "store-rentals.pdf");
+        }
+
         [HttpGet]
         public async Task<ActionResult<PagedResult<InstrumentRentalDto>>> GetPaged([FromQuery] InstrumentRentalSearchObject search)
         {

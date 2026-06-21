@@ -38,7 +38,8 @@ public sealed class AddressService(IAppDbContext context, IUserAccountService ac
         query.ApplySearch(search);
 
     protected override IOrderedQueryable<Address> Order(IQueryable<Address> query) =>
-        query.OrderBy(x => x.City).ThenBy(x => x.Street);
+        query.OrderBy(x => x.City)
+        .ThenBy(x => x.Street);
 
     protected override async Task EnsureDeletableAsync(Address entity, CancellationToken ct = default)
     {
