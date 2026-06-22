@@ -11,7 +11,10 @@ namespace eNote.API.Controllers.Lectures
 {
     [Authorize(Roles = AppRoles.Instructor)]
     [Route("api/instructor/lectures")]
-    public sealed class InstructorLectureController(ILectureService service, IReportService reportService) : CoreController
+    public sealed class InstructorLectureController(
+        ILectureService service,
+        ILectureAttendanceService attendanceService,
+        IReportService reportService) : CoreController
     {
         [HttpGet]
         public async Task<ActionResult<PagedResult<LectureDto>>> GetMyLectures([FromQuery] LectureSearchObject search)
@@ -68,14 +71,14 @@ namespace eNote.API.Controllers.Lectures
         [HttpGet("{id:int}/attendance")]
         public async Task<ActionResult<PagedResult<AttendanceDto>>> GetAttendance(int id, int page = 1, int pageSize = 20)
         {
-            var result = await service.GetAttendanceAsync(id, page, pageSize);
+            var result = await attendanceService.GetAttendanceAsync(id, page, pageSize);
             return Ok(result);
         }
 
         [HttpPut("{id:int}/attendance")]
         public async Task<ActionResult<AttendanceDto>> MarkAttendance(int id, [FromBody] MarkAttendanceRequest request)
         {
-            var dto = await service.MarkAttendanceAsync(id, request);
+            var dto = await attendanceService.MarkAttendanceAsync(id, request);
             return Ok(dto);
         }
     }

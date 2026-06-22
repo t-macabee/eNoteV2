@@ -22,9 +22,7 @@ public sealed class NotificationService(IAppDbContext context, IMapper mapper, I
         query = query.ApplySearch(search);
 
         return await query.ToPagedResultAsync(
-            search.Page,
-            search.PageSize,
-            search.IncludeTotalCount,
+            search,
             mapper.Map<NotificationDto>,
             q => q.OrderByDescending(x => x.CreatedAt),
             cancellationToken);

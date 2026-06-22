@@ -50,19 +50,5 @@ namespace eNote.API.Controllers.Assignments
             await service.DeleteAsync(lectureId, assignmentId);
             return NoContent();
         }
-
-        [HttpGet("{assignmentId:int}/submissions")]
-        public async Task<ActionResult<PagedResult<AssignmentSubmissionDto>>> GetSubmissions(int lectureId, int assignmentId, int page = 1, int pageSize = 20)
-        {
-            var result = await service.GetSubmissionsAsync(lectureId, assignmentId, page, pageSize);
-            return Ok(result);
-        }
-
-        [HttpPut("{assignmentId:int}/submissions/{submissionId:int}/grade")]
-        public async Task<ActionResult<AssignmentSubmissionDto>> Grade(int lectureId, int assignmentId, int submissionId, [FromBody] GradeAssignmentRequest request)
-        {
-            var dto = await service.GradeAsync(lectureId, assignmentId, submissionId, request);
-            return Ok(dto);
-        }
     }
 }

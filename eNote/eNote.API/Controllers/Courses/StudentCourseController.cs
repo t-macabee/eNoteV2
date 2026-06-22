@@ -10,7 +10,9 @@ namespace eNote.API.Controllers.Courses
 {
     [Authorize(Roles = AppRoles.Student)]
     [Route("api/student/courses")]
-    public sealed class StudentCourseController(ICourseService service) : CoreController
+    public sealed class StudentCourseController(
+        ICourseService service,
+        ICourseEnrollmentService enrollmentService) : CoreController
     {
         [HttpGet]
         public async Task<ActionResult<PagedResult<CourseDto>>> GetPublished([FromQuery] CourseSearchObject search)
@@ -29,14 +31,14 @@ namespace eNote.API.Controllers.Courses
         [HttpPost("{id:int}/enroll")]
         public async Task<IActionResult> Enroll(int id)
         {
-            await service.EnrollAsync(id);
+            await enrollmentService.EnrollAsync(id);
             return NoContent();
         }
 
         [HttpPost("{id:int}/unenroll")]
         public async Task<IActionResult> Unenroll(int id)
         {
-            await service.UnenrollAsync(id);
+            await enrollmentService.UnenrollAsync(id);
             return NoContent();
         }
     }

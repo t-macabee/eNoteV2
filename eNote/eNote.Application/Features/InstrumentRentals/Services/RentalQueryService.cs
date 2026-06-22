@@ -56,7 +56,7 @@ public sealed class RentalQueryService(
             .WithRentalDetails()
             .ApplySearch(search)
             .OrderByDescending(x => x.RequestedAt)
-            .ToPagedResultAsync(search.Page, search.PageSize, search.IncludeTotalCount, MapEntityToModel);
+            .ToPagedResultAsync(search, MapEntityToModel);
 
     private async Task<InstrumentRental> FindRentalAsync(IQueryable<InstrumentRental> query) =>
         await query.AsNoTracking().WithRentalDetails().FirstOrDefaultAsync()

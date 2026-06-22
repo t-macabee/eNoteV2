@@ -51,9 +51,7 @@ public sealed class InstrumentService(
             .WithInstrumentDetails()
             .ApplySearch(search);
 
-        return await query.ToPagedResultAsync(
-            search.Page, search.PageSize, search.IncludeTotalCount,
-            mapper.Map<InstrumentDto>);
+        return await query.ToPagedResultAsync(search, mapper.Map<InstrumentDto>);
     }
 
     public async Task<PagedResult<InstrumentDto>> GetPublicPagedAsync(InstrumentSearchObject search)
@@ -63,9 +61,7 @@ public sealed class InstrumentService(
             .WithInstrumentDetails()
             .ApplySearch(search);
 
-        return await query.ToPagedResultAsync(
-            search.Page, search.PageSize, search.IncludeTotalCount,
-            mapper.Map<InstrumentDto>);
+        return await query.ToPagedResultAsync(search, mapper.Map<InstrumentDto>);
     }
 
     public async Task<InstrumentDto> CreateAsync(InstrumentCreateRequest request)

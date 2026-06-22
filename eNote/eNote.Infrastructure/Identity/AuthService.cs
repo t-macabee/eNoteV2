@@ -1,7 +1,7 @@
 using eNote.Application.Common.Localization;
 using eNote.Application.Features.Auth;
 using eNote.Application.Features.Auth.Services;
-using eNote.Application.Features.Users.Services.Interfaces;
+using eNote.Application.Features.Users.Services;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Hosting;
@@ -13,7 +13,7 @@ public class AuthService(
     UserManager<AppUser> userManager,
     SignInManager<AppUser> signInManager,
     ITokenService tokenService,
-    IUserService userService,
+    IUserProvisioningService userProvisioning,
     ITokenRevocationService tokenRevocationService,
     IWebHostEnvironment environment,
     ILogger<AuthService> logger) : IAuthService
@@ -60,7 +60,7 @@ public class AuthService(
 
     public async Task<(AuthResponse? response, string? error)> Register(RegisterRequest model)
     {
-        (_, var error) = await userService.RegisterStudentAsync(model);
+        (_, var error) = await userProvisioning.RegisterStudentAsync(model);
 
         if (error is not null)
         {

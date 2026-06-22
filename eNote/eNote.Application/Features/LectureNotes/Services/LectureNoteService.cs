@@ -27,10 +27,7 @@ public sealed class LectureNoteService(
             .AsNoTracking()
             .ApplySearch(search);
 
-        return await query.ToPagedResultAsync(
-            search.Page, search.PageSize, search.IncludeTotalCount,
-            mapper.Map<LectureNoteDto>,
-            q => q.OrderByDescending(x => x.CreatedAt));
+        return await query.ToPagedResultAsync(search, mapper.Map<LectureNoteDto>, q => q.OrderByDescending(x => x.CreatedAt));
     }
 
     public async Task<LectureNoteDto> GetByIdForInstructorAsync(int lectureId, int noteId) =>
@@ -84,10 +81,7 @@ public sealed class LectureNoteService(
             .Where(x => x.LectureId == lectureId)
             .ApplySearch(search);
 
-        return await query.ToPagedResultAsync(
-            search.Page, search.PageSize, search.IncludeTotalCount,
-            mapper.Map<LectureNoteDto>,
-            q => q.OrderByDescending(x => x.CreatedAt));
+        return await query.ToPagedResultAsync(search, mapper.Map<LectureNoteDto>, q => q.OrderByDescending(x => x.CreatedAt));
     }
 
     public async Task<LectureNoteDto> GetByIdForStudentAsync(int lectureId, int noteId)

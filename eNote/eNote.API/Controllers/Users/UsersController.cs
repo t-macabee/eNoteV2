@@ -1,19 +1,21 @@
 ﻿using eNote.API.Controllers.Base;
 using eNote.Application.Features.Users;
-using eNote.Application.Features.Users.Services.Interfaces;
+using eNote.Application.Features.Users.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace eNote.API.Controllers.Users
 {
     [Route("api/users")]
-    public sealed class UsersController(IUserService userService) : CoreController
+    public sealed class UsersController(
+        IUserProfileService profileService,
+        IUserSelfService selfService) : CoreController
     {
         [HttpGet("me")]
         [ProducesResponseType(typeof(UserProfileResponse), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<UserProfileResponse>> GetCurrentUser()
         {
-            var profile = await userService.GetCurrentUserAsync();
+            var profile = await profileService.GetCurrentUserAsync();
 
             if (profile is null)
             {
@@ -28,7 +30,7 @@ namespace eNote.API.Controllers.Users
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileRequest request)
         {
-            (var success, var error) = await userService.UpdateProfileAsync(request);
+            (var success, var error) = await selfService.UpdateProfileAsync(request);
 
             if (!success)
             {
@@ -56,7 +58,7 @@ namespace eNote.API.Controllers.Users
             using var buffer = new MemoryStream();
             await stream.CopyToAsync(buffer);
 
-            (var success, var error) = await userService.UpdatePictureAsync(buffer.ToArray());
+            (var success, var error) = await selfService.UpdatePictureAsync(buffer.ToArray());
 
             if (!success)
             {
@@ -72,7 +74,7 @@ namespace eNote.API.Controllers.Users
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetPicture()
         {
-            (var data, var contentType) = await userService.GetPictureAsync();
+            (var data, var contentType) = await selfService.GetPictureAsync();
 
             if (data is null || contentType is null)
             {
@@ -87,7 +89,7 @@ namespace eNote.API.Controllers.Users
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> DeletePicture()
         {
-            (var success, var error) = await userService.DeletePictureAsync();
+            (var success, var error) = await selfService.DeletePictureAsync();
 
             if (!success)
             {
@@ -102,7 +104,7 @@ namespace eNote.API.Controllers.Users
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
         {
-            (var success, var error) = await userService.ChangePasswordAsync(request);
+            (var success, var error) = await selfService.ChangePasswordAsync(request);
 
             if (!success)
             {

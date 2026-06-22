@@ -1,4 +1,4 @@
-﻿using eNote.API.Controllers.Base;
+using eNote.API.Controllers.Base;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Paging;
 using eNote.Application.Constants;
@@ -11,7 +11,7 @@ namespace eNote.API.Controllers.Instruments
 {
     [Authorize(Roles = AppRoles.StoreEmployee)]
     [Route("api/shop/instruments")]
-    public sealed class InstrumentController(IInstrumentService instrumentService) : CoreController
+    public sealed class StoreInstrumentController(IInstrumentService instrumentService) : CoreController
     {
         [HttpGet]
         public async Task<ActionResult<PagedResult<InstrumentDto>>> GetPaged([FromQuery] InstrumentSearchObject search)

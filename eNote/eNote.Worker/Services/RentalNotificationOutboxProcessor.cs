@@ -49,6 +49,15 @@ public sealed class RentalNotificationOutboxProcessor(
             .Take(BatchSize)
             .ToListAsync(cancellationToken);
 
+        if (pending.Count == 0)
+        {
+            logger.LogDebug("Rental notification outbox batch found no pending entries.");
+            return;
+        }
+
+        var publishedCount = 0;
+        var failedCount = 0;
+
         foreach (var entry in pending)
         {
             try
@@ -60,18 +69,23 @@ public sealed class RentalNotificationOutboxProcessor(
 
                 entry.PublishedAt = clock.UtcNow;
                 entry.LastError = null;
+                publishedCount++;
             }
             catch (Exception ex)
             {
+                failedCount++;
                 entry.Attempts++;
                 entry.LastError = ex.Message[..Math.Min(ex.Message.Length, 2000)];
                 logger.LogWarning(ex, "Failed to publish outbox entry {OutboxId}.", entry.Id);
             }
         }
 
-        if (pending.Count > 0)
-        {
-            await dbContext.SaveChangesAsync(cancellationToken);
-        }
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        logger.LogInformation(
+            "Rental notification outbox batch processed {PendingCount} entries: {PublishedCount} published, {FailedCount} failed.",
+            pending.Count,
+            publishedCount,
+            failedCount);
     }
 }

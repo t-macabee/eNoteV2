@@ -12,8 +12,5 @@ namespace eNote.Application.Features.Lectures.Services
         Task<LectureDto> UpdateAsync(int id, LectureUpdateRequest request);
         Task DeleteAsync(int id);
         Task<LectureDto> CancelAsync(int id);
-        Task<RsvpResponse> RsvpAsync(int lectureId, RsvpRequest request);
-        Task<PagedResult<AttendanceDto>> GetAttendanceAsync(int lectureId, int page, int pageSize);
-        Task<AttendanceDto> MarkAttendanceAsync(int lectureId, MarkAttendanceRequest request);
     }
 }

@@ -11,7 +11,5 @@ namespace eNote.Application.Features.Courses.Services
         Task<CourseDto> CreateAsync(CourseRequest request);
         Task<CourseDto> UpdateAsync(int id, CourseRequest request);
         Task DeleteAsync(int id);
-        Task EnrollAsync(int courseId);
-        Task UnenrollAsync(int courseId);
     }
 }

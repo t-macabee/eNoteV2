@@ -62,28 +62,29 @@ namespace eNote.Application.Features.InstrumentRentals.Services
                 context.Set<InstrumentRental>().Add(rental);
                 await context.SaveChangesAsync();
 
-                return await LoadDtoAsync(rental.Id);
-            });
+                var dto = await LoadDtoAsync(rental.Id);
+                await notificationDispatcher.DispatchCreatedAsync(dto, currentUserService.UserId);
 
-            await notificationDispatcher.DispatchCreatedAsync(dto, currentUserService.UserId);
+                return dto;
+            });
 
             return dto;
         }
 
         public async Task<InstrumentRentalDto> ApproveAsync(int rentalId, RentalStatusResponse response) =>
-            await PublishAfterTransitionAsync(await ExecuteStoreTransitionAsync(rentalId, RentalTrigger.Approve, response), RentalTrigger.Approve);
+            await ExecuteStoreTransitionAsync(rentalId, RentalTrigger.Approve, response);
 
         public async Task<InstrumentRentalDto> RejectAsync(int rentalId, RentalStatusResponse response) =>
-            await PublishAfterTransitionAsync(await ExecuteStoreTransitionAsync(rentalId, RentalTrigger.Reject, response), RentalTrigger.Reject);
+            await ExecuteStoreTransitionAsync(rentalId, RentalTrigger.Reject, response);
 
         public async Task<InstrumentRentalDto> PickupAsync(int rentalId, RentalStatusResponse response) =>
-            await PublishAfterTransitionAsync(await ExecuteStoreTransitionAsync(rentalId, RentalTrigger.Pickup, response), RentalTrigger.Pickup);
+            await ExecuteStoreTransitionAsync(rentalId, RentalTrigger.Pickup, response);
 
         public async Task<InstrumentRentalDto> CompleteAsync(int rentalId, RentalStatusResponse response) =>
-            await PublishAfterTransitionAsync(await ExecuteStoreTransitionAsync(rentalId, RentalTrigger.Complete, response), RentalTrigger.Complete);
+            await ExecuteStoreTransitionAsync(rentalId, RentalTrigger.Complete, response);
 
         public async Task<InstrumentRentalDto> ReturnEarlyAsync(int rentalId, RentalStatusResponse response) =>
-            await PublishAfterTransitionAsync(await ExecuteStoreTransitionAsync(rentalId, RentalTrigger.ReturnEarly, response), RentalTrigger.ReturnEarly);
+            await ExecuteStoreTransitionAsync(rentalId, RentalTrigger.ReturnEarly, response);
 
         public async Task<InstrumentRentalDto> CancelAsync(int rentalId, RentalStatusResponse response)
         {
@@ -91,17 +92,11 @@ namespace eNote.Application.Features.InstrumentRentals.Services
             {
                 var rental = await LoadForStudentAsync(rentalId, currentUserService.UserId);
 
-                return await ExecuteTransitionAsync(rental, RentalTrigger.Cancel, RentalActor.Student, currentUserService.UserId, response);
+                var dto = await ExecuteTransitionAsync(rental, RentalTrigger.Cancel, RentalActor.Student, currentUserService.UserId, response);
+                await notificationDispatcher.DispatchTransitionAsync(dto, RentalTrigger.Cancel, currentUserService.UserId);
+
+                return dto;
             });
-
-            await notificationDispatcher.DispatchTransitionAsync(dto, RentalTrigger.Cancel, currentUserService.UserId);
-
-            return dto;
-        }
-
-        private async Task<InstrumentRentalDto> PublishAfterTransitionAsync(InstrumentRentalDto dto, RentalTrigger trigger)
-        {
-            await notificationDispatcher.DispatchTransitionAsync(dto, trigger, currentUserService.UserId);
 
             return dto;
         }
@@ -112,7 +107,10 @@ namespace eNote.Application.Features.InstrumentRentals.Services
 
             var rental = await LoadForStoreAsync(rentalId, storeId);
 
-            return await ExecuteTransitionAsync(rental, trigger, RentalActor.StoreEmployee, currentUserService.UserId, response);
+            var dto = await ExecuteTransitionAsync(rental, trigger, RentalActor.StoreEmployee, currentUserService.UserId, response);
+            await notificationDispatcher.DispatchTransitionAsync(dto, trigger, currentUserService.UserId);
+
+            return dto;
         });
 
         private async Task<InstrumentRentalDto> ExecuteTransitionAsync(InstrumentRental rental, RentalTrigger trigger, RentalActor actor, int userId, RentalStatusResponse? response)

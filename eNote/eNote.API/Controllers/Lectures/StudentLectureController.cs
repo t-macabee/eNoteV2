@@ -10,7 +10,9 @@ namespace eNote.API.Controllers.Lectures
 {
     [Authorize(Roles = AppRoles.Student)]
     [Route("api/student/lectures")]
-    public sealed class StudentLectureController(ILectureService service) : CoreController
+    public sealed class StudentLectureController(
+        ILectureService service,
+        ILectureAttendanceService attendanceService) : CoreController
     {
         [HttpGet]
         public async Task<ActionResult<PagedResult<LectureDto>>> GetAvailable([FromQuery] LectureSearchObject search)
@@ -29,7 +31,7 @@ namespace eNote.API.Controllers.Lectures
         [HttpPost("{id:int}/rsvp")]
         public async Task<ActionResult<RsvpResponse>> Rsvp(int id, [FromBody] RsvpRequest request)
         {
-            var response = await service.RsvpAsync(id, request);
+            var response = await attendanceService.RsvpAsync(id, request);
             return Ok(response);
         }
     }

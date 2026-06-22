@@ -1,0 +1,128 @@
+using eNote.Application.Common.Exceptions;
+using eNote.Application.Common.Interfaces;
+using eNote.Application.Common.Time;
+using eNote.Application.Features.Courses.Services;
+using eNote.Application.Features.Users.Services;
+using eNote.Domain.Entities;
+using eNote.Domain.Enums;
+using eNote.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
+using Xunit;
+
+namespace eNote.Tests.Courses;
+
+public sealed class CourseEnrollmentServiceTests
+{
+    private static readonly DateTime Now = new(2026, 6, 22, 12, 0, 0, DateTimeKind.Utc);
+
+    [Fact]
+    public async Task EnrollAsync_CreatesActiveEnrollment_ForPublishedCourse()
+    {
+        await using var context = CreateContext();
+        var (student, course) = await SeedStudentAndCourseAsync(context, hasActiveMembership: true);
+        var service = CreateService(context, student);
+
+        await service.EnrollAsync(course.Id);
+
+        var enrollment = await context.Set<Enrollment>().SingleAsync(x => x.StudentId == student.Id && x.CourseId == course.Id);
+        Assert.Equal(EnrollmentStatus.Active, enrollment.EnrollmentStatus);
+        Assert.Equal(student.AppUserId, enrollment.CreatedById);
+    }
+
+    [Fact]
+    public async Task EnrollAsync_ReactivatesCanceledEnrollment()
+    {
+        await using var context = CreateContext();
+        var (student, course) = await SeedStudentAndCourseAsync(context, hasActiveMembership: true);
+        context.Set<Enrollment>().Add(new Enrollment(student.Id, course.Id, EnrollmentStatus.Canceled));
+        await context.SaveChangesAsync();
+        var service = CreateService(context, student);
+
+        await service.EnrollAsync(course.Id);
+
+        var enrollment = await context.Set<Enrollment>().SingleAsync(x => x.StudentId == student.Id && x.CourseId == course.Id);
+        Assert.Equal(EnrollmentStatus.Active, enrollment.EnrollmentStatus);
+        Assert.Equal(student.AppUserId, enrollment.UpdatedById);
+    }
+
+    [Fact]
+    public async Task UnenrollAsync_CancelsActiveEnrollment()
+    {
+        await using var context = CreateContext();
+        var (student, course) = await SeedStudentAndCourseAsync(context, hasActiveMembership: true);
+        context.Set<Enrollment>().Add(new Enrollment(student.Id, course.Id, EnrollmentStatus.Active));
+        await context.SaveChangesAsync();
+        var service = CreateService(context, student);
+
+        await service.UnenrollAsync(course.Id);
+
+        var enrollment = await context.Set<Enrollment>().SingleAsync(x => x.StudentId == student.Id && x.CourseId == course.Id);
+        Assert.Equal(EnrollmentStatus.Canceled, enrollment.EnrollmentStatus);
+    }
+
+    [Fact]
+    public async Task EnrollAsync_Throws_WhenMembershipIsInactive()
+    {
+        await using var context = CreateContext();
+        var (student, course) = await SeedStudentAndCourseAsync(context, hasActiveMembership: false);
+        var service = CreateService(context, student);
+
+        await Assert.ThrowsAsync<BusinessException>(() => service.EnrollAsync(course.Id));
+    }
+
+    private static ENoteContext CreateContext()
+    {
+        var options = new DbContextOptionsBuilder<ENoteContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options;
+
+        return new ENoteContext(options, new FixedClock(Now));
+    }
+
+    private static async Task<(Student Student, Course Course)> SeedStudentAndCourseAsync(ENoteContext context, bool hasActiveMembership)
+    {
+        var student = new Student(appUserId: 100, enrollmentDate: Now.AddMonths(-1));
+        student.UpdateMembership(hasActiveMembership ? Now.AddDays(1) : Now.AddDays(-1));
+
+        var instructor = new Instructor(appUserId: 200);
+        context.Set<Student>().Add(student);
+        context.Set<Instructor>().Add(instructor);
+        await context.SaveChangesAsync();
+
+        var course = new Course("Theory", null, 10, null, null, instructor.Id);
+        course.SetPublishedStatus(true);
+        context.Set<Course>().Add(course);
+        await context.SaveChangesAsync();
+
+        return (student, course);
+    }
+
+    private static CourseEnrollmentService CreateService(ENoteContext context, Student student) =>
+        new(
+            context,
+            new FixedClock(Now),
+            new StubUserContextResolver(student),
+            new TestCurrentUserService(student.AppUserId),
+            NullLogger<CourseEnrollmentService>.Instance);
+
+    private sealed class FixedClock(DateTime utcNow) : IClock
+    {
+        public DateTime UtcNow => utcNow;
+    }
+
+    private sealed class TestCurrentUserService(int userId) : ICurrentUserService
+    {
+        public int UserId => userId;
+        public bool IsAuthenticated => true;
+    }
+
+    private sealed class StubUserContextResolver(Student student) : IUserContextResolver
+    {
+        public Task<Student> GetStudentAsync(int userId) => Task.FromResult(student);
+        public Task<Instructor> GetInstructorAsync(int userId) => throw new NotSupportedException();
+        public Task<MusicStoreEmployee> GetActiveEmployeeAsync(int userId) => throw new NotSupportedException();
+        public Task<string> GetStudentDisplayNameAsync(Student student) => throw new NotSupportedException();
+        public Task<IReadOnlyDictionary<int, string>> GetStudentDisplayNamesAsync(IEnumerable<Student> students) => throw new NotSupportedException();
+    }
+}

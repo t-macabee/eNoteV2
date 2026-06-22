@@ -2,7 +2,7 @@
 using eNote.Application.Common.Localization;
 using eNote.Application.Constants;
 using eNote.Application.Features.Users;
-using eNote.Application.Features.Users.Services.Interfaces;
+using eNote.Application.Features.Users.Services;
 using eNote.Domain.Entities;
 using eNote.Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity;
@@ -20,7 +20,7 @@ namespace eNote.Infrastructure.Data.Seed
 
             var context = serviceProvider.GetRequiredService<ENoteContext>();
 
-            var userService = serviceProvider.GetRequiredService<IUserService>();
+            var provisioningService = serviceProvider.GetRequiredService<IUserProvisioningService>();
             var configuration = serviceProvider.GetRequiredService<IConfiguration>();
             var defaultPassword = configuration["Seed:DefaultPassword"] ?? "Test1234!";
 
@@ -38,7 +38,7 @@ namespace eNote.Infrastructure.Data.Seed
 
             foreach ((var username, var email, var role, var storeId) in testUsers)
             {
-                (var _, var error) = await userService.ProvisionUserAsync(new UserProvisionRequest
+                (var _, var error) = await provisioningService.ProvisionUserAsync(new UserProvisionRequest
                 {
                     Username = username,
                     Email = email,

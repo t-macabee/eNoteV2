@@ -1,7 +1,7 @@
-﻿using eNote.API.Controllers.Base;
+using eNote.API.Controllers.Base;
 using eNote.Application.Constants;
 using eNote.Application.Features.Users;
-using eNote.Application.Features.Users.Services.Interfaces;
+using eNote.Application.Features.Users.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -9,14 +9,16 @@ namespace eNote.API.Controllers.Admin
 {
     [Authorize(Roles = AppRoles.Administrator)]
     [Route("api/admin/users")]
-    public sealed class AdminController(IUserService userService) : CoreController
+    public sealed class AdminUsersController(
+        IUserProfileService profileService,
+        IUserProvisioningService provisioningService) : CoreController
     {
         [HttpGet("{id:int}")]
         [ProducesResponseType(typeof(UserProfileResponse), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<UserProfileResponse>> GetById(int id)
         {
-            var profile = await userService.GetUserAsync(id);
+            var profile = await profileService.GetUserAsync(id);
 
             if (profile is null)
             {
@@ -31,7 +33,7 @@ namespace eNote.API.Controllers.Admin
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<ActionResult> Provision([FromBody] UserProvisionRequest request)
         {
-            (var userId, var error) = await userService.ProvisionUserAsync(request);
+            (var userId, var error) = await provisioningService.ProvisionUserAsync(request);
 
             if (error is not null)
             {
@@ -55,7 +57,7 @@ namespace eNote.API.Controllers.Admin
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> UpdateMembership(int id, [FromBody] UpdateMembershipRequest request)
         {
-            await userService.UpdateMembershipAsync(id, request);
+            await provisioningService.UpdateMembershipAsync(id, request);
             return NoContent();
         }
     }

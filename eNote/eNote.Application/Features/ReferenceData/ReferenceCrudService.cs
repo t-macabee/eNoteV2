@@ -20,7 +20,8 @@ public abstract class ReferenceCrudService<TEntity, TDto, TRequest, TSearch>(IAp
     protected virtual Task EnsureDeletableAsync(TEntity entity, CancellationToken ct = default) =>
         Task.CompletedTask;
 
-    public Task<PagedResult<TDto>> GetPagedAsync(TSearch search) => Order(ApplySearch(Db.Set<TEntity>().AsNoTracking(), search)).ToPagedResultAsync(search.Page, search.PageSize, search.IncludeTotalCount, Map);
+    public Task<PagedResult<TDto>> GetPagedAsync(TSearch search) =>
+        Order(ApplySearch(Db.Set<TEntity>().AsNoTracking(), search)).ToPagedResultAsync(search, Map);
 
     public async Task<TDto> GetByIdAsync(int id)
     {

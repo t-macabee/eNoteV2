@@ -33,7 +33,7 @@ builder.Services
     .AddControllers()
     .AddJsonOptions(x => x.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
-builder.Services.AddHealthChecks();
+builder.Services.AddApplicationHealthChecks();
 
 WebApplication app = builder.Build();
 
