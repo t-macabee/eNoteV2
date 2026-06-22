@@ -85,13 +85,10 @@ public sealed class RecommendationService(IAppDbContext context, IMapper mapper,
         foreach (Instrument instrument in candidates)
         {
             var rentalScore = ComputeRentalScore(instrument, userTypeCounts, collaborativeInstrumentIds);
-
             var viewScore = ComputeViewScore(instrument, viewMap, maxUserViews, userTypeCounts);
 
             var similarityScore = ComputeSimilarityScore(instrument, preferredTypeId, preferredManufacturer);
-
             var popularityScore = maxGlobalRentals == 0 ? 0 : (double)globalRentalCounts.GetValueOrDefault(instrument.Id) / maxGlobalRentals;
-
             var totalScore = rentalScore * RentalWeight + viewScore * ViewWeight + similarityScore * SimilarityWeight + popularityScore * PopularityWeight;
 
             var reasons = BuildReasons(rentalScore, viewScore, similarityScore, popularityScore, instrument, preferredTypeId, collaborativeInstrumentIds);
@@ -141,11 +138,7 @@ public sealed class RecommendationService(IAppDbContext context, IMapper mapper,
         await context.SaveChangesAsync(cancellationToken);
     }
 
-    private async Task<List<Instrument>> LoadCandidateInstrumentsAsync(
-        IReadOnlyList<int> preferredTypeIds,
-        HashSet<int> collaborativeInstrumentIds,
-        int count,
-        CancellationToken cancellationToken)
+    private async Task<List<Instrument>> LoadCandidateInstrumentsAsync(IReadOnlyList<int> preferredTypeIds, HashSet<int> collaborativeInstrumentIds, int count, CancellationToken cancellationToken)
     {
         var poolSize = Math.Max(count * 12, CandidatePoolSize);
 
@@ -158,9 +151,7 @@ public sealed class RecommendationService(IAppDbContext context, IMapper mapper,
             .Take(poolSize / 2)
             .ToListAsync(cancellationToken);
 
-        List<int> preferredIds = preferredTypeIds.Count == 0
-            ? []
-            : await context.Set<Instrument>()
+        List<int> preferredIds = preferredTypeIds.Count == 0 ? [] : await context.Set<Instrument>()
                 .AsNoTracking()
                 .Where(x => x.IsActive && preferredTypeIds.Contains(x.InstrumentTypeId))
                 .OrderBy(x => x.Id)

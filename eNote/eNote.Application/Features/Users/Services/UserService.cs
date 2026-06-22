@@ -69,7 +69,6 @@ namespace eNote.Application.Features.Users.Services
             }
 
             await EnsureRoleProfileAsync(userId, AppRoles.Student, musicStoreId: null);
-
             await context.SaveChangesAsync();
 
             var profile = await GetUserAsync(userId);
@@ -84,6 +83,7 @@ namespace eNote.Application.Features.Users.Services
                 ?? throw new NotFoundException(Messages.StudentProfileNotFound);
 
             student.UpdateMembership(request.PaidUntil);
+
             await context.SaveChangesAsync();
         }
 
@@ -165,8 +165,7 @@ namespace eNote.Application.Features.Users.Services
             }
 
             return await context.Set<MusicStore>()
-                .Select(x => (int?)x.Id)
-                .FirstOrDefaultAsync();
+                .Select(x => (int?)x.Id).FirstOrDefaultAsync();
         }
 
         private async Task EnsureRoleProfileAsync(int userId, string role, int? musicStoreId)

@@ -7,9 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Application.Features.ReferenceData;
 
-public abstract class ReferenceCrudService<TEntity, TDto, TRequest, TSearch>(IAppDbContext context)
-    where TEntity : BaseEntity
-    where TSearch : BaseSearchObject
+public abstract class ReferenceCrudService<TEntity, TDto, TRequest, TSearch>(IAppDbContext context) where TEntity : BaseEntity where TSearch : BaseSearchObject
 {
     protected IAppDbContext Db => context;
 
@@ -22,9 +20,7 @@ public abstract class ReferenceCrudService<TEntity, TDto, TRequest, TSearch>(IAp
     protected virtual Task EnsureDeletableAsync(TEntity entity, CancellationToken ct = default) =>
         Task.CompletedTask;
 
-    public Task<PagedResult<TDto>> GetPagedAsync(TSearch search) =>
-        Order(ApplySearch(Db.Set<TEntity>().AsNoTracking(), search))
-            .ToPagedResultAsync(search.Page, search.PageSize, search.IncludeTotalCount, Map);
+    public Task<PagedResult<TDto>> GetPagedAsync(TSearch search) => Order(ApplySearch(Db.Set<TEntity>().AsNoTracking(), search)).ToPagedResultAsync(search.Page, search.PageSize, search.IncludeTotalCount, Map);
 
     public async Task<TDto> GetByIdAsync(int id)
     {
@@ -39,8 +35,10 @@ public abstract class ReferenceCrudService<TEntity, TDto, TRequest, TSearch>(IAp
     public async Task<TDto> CreateAsync(TRequest request)
     {
         var entity = CreateEntity(request);
+
         Db.Set<TEntity>().Add(entity);
         await Db.SaveChangesAsync();
+
         return Map(entity);
     }
 
@@ -52,6 +50,7 @@ public abstract class ReferenceCrudService<TEntity, TDto, TRequest, TSearch>(IAp
 
         ApplyUpdate(entity, request);
         await Db.SaveChangesAsync();
+
         return Map(entity);
     }
 
@@ -63,6 +62,7 @@ public abstract class ReferenceCrudService<TEntity, TDto, TRequest, TSearch>(IAp
 
         await EnsureDeletableAsync(entity);
         Db.Set<TEntity>().Remove(entity);
+
         await Db.SaveChangesAsync();
     }
 }

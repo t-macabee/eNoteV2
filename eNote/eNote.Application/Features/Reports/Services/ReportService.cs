@@ -1,6 +1,4 @@
-using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Interfaces;
-using eNote.Application.Common.Localization;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Common.Time;
 using eNote.Application.Features.Courses.Services;
@@ -18,14 +16,7 @@ using QuestPDF.Infrastructure;
 
 namespace eNote.Application.Features.Reports.Services;
 
-public sealed class ReportService(
-    IAppDbContext context,
-    IClock clock,
-    IRankingService rankingService,
-    IInstructorAccessService instructorAccess,
-    IMusicStoreContextService storeContext,
-    IUserContextResolver resolver,
-    ICurrentUserService currentUserService) : IReportService
+public sealed class ReportService(IAppDbContext context, IClock clock, IRankingService rankingService, IInstructorAccessService instructorAccess, IMusicStoreContextService storeContext, IUserContextResolver resolver, ICurrentUserService currentUserService) : IReportService
 {
     static ReportService()
     {
@@ -40,8 +31,7 @@ public sealed class ReportService(
             .AsNoTracking()
             .Where(c => c.Id == courseId)
             .Select(c => c.Name)
-            .FirstOrDefaultAsync(cancellationToken)
-            ?? $"Kurs {courseId}";
+            .FirstOrDefaultAsync(cancellationToken) ?? $"Kurs {courseId}";
 
         return Document.Create(container =>
         {
@@ -82,14 +72,13 @@ public sealed class ReportService(
 
     public async Task<byte[]> GenerateStoreRentalSummaryPdfAsync(CancellationToken cancellationToken = default)
     {
-        var storeId = await storeContext.GetActiveStoreAsync(currentUserService.UserId);
+        var storeId = await storeContext.GetActiveStoreAsync(currentUserService.UserId, cancellationToken);
 
         var storeName = await context.Set<MusicStore>()
             .AsNoTracking()
             .Where(s => s.Id == storeId)
             .Select(s => s.StoreName)
-            .FirstOrDefaultAsync(cancellationToken)
-            ?? $"Prodavnica {storeId}";
+            .FirstOrDefaultAsync(cancellationToken) ?? $"Prodavnica {storeId}";
 
         var rentals = await context.Set<InstrumentRental>()
             .AsNoTracking()
@@ -151,16 +140,10 @@ public sealed class ReportService(
         var instructor = await instructorAccess.GetInstructorAsync(currentUserService.UserId);
         var lecture = await instructorAccess.GetOwnedLectureAsync(lectureId, instructor.Id, includeAttendances: true);
 
-        var nameMap = await resolver.GetStudentDisplayNamesAsync(
-            lecture.Attendances.Select(a => a.Student).Where(s => s is not null)!);
+        var nameMap = await resolver.GetStudentDisplayNamesAsync(lecture.Attendances.Select(a => a.Student).Where(s => s is not null)!);
 
-        var rows = lecture.Attendances
-            .OrderBy(a => a.StudentId)
-            .Select(a => new AttendanceRow(
-                a.StudentId,
-                nameMap.GetValueOrDefault(a.StudentId, $"Student {a.StudentId}"),
-                a.AttendanceStatus))
-            .ToList();
+        var rows = lecture.Attendances.OrderBy(a => a.StudentId).Select(a => 
+            new AttendanceRow(a.StudentId, nameMap.GetValueOrDefault(a.StudentId, $"Student {a.StudentId}"), a.AttendanceStatus)).ToList();
 
         return Document.Create(container =>
         {
@@ -197,8 +180,7 @@ public sealed class ReportService(
         }).GeneratePdf();
     }
 
-    private static IContainer CellStyle(IContainer container) =>
-        container.BorderBottom(1).BorderColor(Colors.Grey.Lighten2).PaddingVertical(4).PaddingHorizontal(2);
+    private static IContainer CellStyle(IContainer container) => container.BorderBottom(1).BorderColor(Colors.Grey.Lighten2).PaddingVertical(4).PaddingHorizontal(2);
 
     private sealed record AttendanceRow(int StudentId, string StudentName, AttendanceStatus Status);
 }

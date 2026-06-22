@@ -2,7 +2,7 @@ namespace eNote.Application.Features.Users
 {
     public class UpdateMembershipRequest
     {
-        // Null clears the membership (marks as unpaid)
+        // Null briše članstvo (označava kao neplaćeno)
         public DateTime? PaidUntil { get; set; }
     }
 }

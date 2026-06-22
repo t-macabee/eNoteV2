@@ -7,8 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Application.Features.ReferenceData.Addresses;
 
-public sealed class AddressService(IAppDbContext context, IUserAccountService accountService)
-    : ReferenceCrudService<Address, AddressReferenceDto, AddressRequest, AddressSearchObject>(context), IAddressService
+public sealed class AddressService(IAppDbContext context, IUserAccountService accountService) : ReferenceCrudService<Address, AddressReferenceDto, AddressRequest, AddressSearchObject>(context), IAddressService
 {
     protected override string NotFoundMessage => Messages.AddressNotFound;
 
@@ -34,12 +33,8 @@ public sealed class AddressService(IAppDbContext context, IUserAccountService ac
         entity.Number = request.Number.Trim();
     }
 
-    protected override IQueryable<Address> ApplySearch(IQueryable<Address> query, AddressSearchObject search) =>
-        query.ApplySearch(search);
-
-    protected override IOrderedQueryable<Address> Order(IQueryable<Address> query) =>
-        query.OrderBy(x => x.City)
-        .ThenBy(x => x.Street);
+    protected override IQueryable<Address> ApplySearch(IQueryable<Address> query, AddressSearchObject search) => query.ApplySearch(search);
+    protected override IOrderedQueryable<Address> Order(IQueryable<Address> query) => query.OrderBy(x => x.City).ThenBy(x => x.Street);
 
     protected override async Task EnsureDeletableAsync(Address entity, CancellationToken ct = default)
     {

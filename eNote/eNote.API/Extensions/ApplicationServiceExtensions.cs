@@ -38,7 +38,6 @@ namespace eNote.API.Extensions
             services.AddScoped<ICurrentUserService, CurrentUserService>();
             services.AddScoped<IUserContextResolver, UserContextResolver>();
             services.AddScoped<IRentalStateMachine, RentalStateMachine>();
-            services.AddScoped<IFileStorageService, LocalFileStorageService>();
             services.AddScoped<IRentalNotificationDispatcher, RentalNotificationDispatcher>();
 
             services.AddScoped<IAppDbContext>(x => x.GetRequiredService<ENoteContext>());

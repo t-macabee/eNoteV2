@@ -57,7 +57,6 @@ public sealed class RentalStateMachineTests
             Db = new NoConflictDbContext()
         };
 
-        await Assert.ThrowsAsync<BusinessException>(() =>
-            _stateMachine.FireAsync(rental, RentalTrigger.Pickup, context));
+        await Assert.ThrowsAsync<BusinessException>(() => _stateMachine.FireAsync(rental, RentalTrigger.Pickup, context));
     }
 }

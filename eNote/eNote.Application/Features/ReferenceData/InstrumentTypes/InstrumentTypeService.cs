@@ -30,11 +30,8 @@ public sealed class InstrumentTypeService(IAppDbContext context)
         entity.MonthlyFee = request.MonthlyFee;
     }
 
-    protected override IQueryable<InstrumentType> ApplySearch(IQueryable<InstrumentType> query, InstrumentTypeSearchObject search) =>
-        query.ApplySearch(search);
-
-    protected override IOrderedQueryable<InstrumentType> Order(IQueryable<InstrumentType> query) =>
-        query.OrderBy(x => x.Type);
+    protected override IQueryable<InstrumentType> ApplySearch(IQueryable<InstrumentType> query, InstrumentTypeSearchObject search) => query.ApplySearch(search);
+    protected override IOrderedQueryable<InstrumentType> Order(IQueryable<InstrumentType> query) => query.OrderBy(x => x.Type);
 
     protected override async Task EnsureDeletableAsync(InstrumentType entity, CancellationToken ct = default)
     {

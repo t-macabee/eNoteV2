@@ -16,8 +16,10 @@ public sealed class MapsterConfig : IRegister
     public void Register(TypeAdapterConfig config)
     {
         config.NewConfig<Course, CourseDto>()
-            .Map(dest => dest.EnrolledCount, src => src.Enrollments == null
-                ? 0 : src.Enrollments.Count(e => e.EnrollmentStatus == EnrollmentStatus.Active));
+            .Map(dest => dest.EnrolledCount, src => src.Enrollments == null ? 0 : src.Enrollments.Count(e => e.EnrollmentStatus == EnrollmentStatus.Active));
+
+        config.NewConfig<Lecture, LectureDto>()
+            .Map(dest => dest.AttendeeCount, src => src.Attendances == null ? 0 : src.Attendances.Count(a => a.AttendanceStatus == AttendanceStatus.Present));
 
         config.NewConfig<Instrument, InstrumentDto>()
             .Map(dest => dest.InstrumentType, src => src.InstrumentType.Type)
@@ -31,14 +33,7 @@ public sealed class MapsterConfig : IRegister
             .Map(x => x.StudentUserId, x => x.StudentProfile.AppUserId);
 
         config.NewConfig<Assignment, AssignmentDto>();
-
-        config.NewConfig<LectureNote, LectureNoteDto>();
-
-        config.NewConfig<Lecture, LectureDto>()
-            .Map(dest => dest.AttendeeCount, src => src.Attendances == null
-                ? 0
-                : src.Attendances.Count(a => a.AttendanceStatus == AttendanceStatus.Present));
-
+        config.NewConfig<LectureNote, LectureNoteDto>();     
         config.NewConfig<Notification, NotificationDto>();
 
         config.Compile();

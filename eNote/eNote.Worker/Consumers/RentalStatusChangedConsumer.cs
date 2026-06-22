@@ -6,16 +6,16 @@ using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Worker.Consumers;
 
-public sealed class RentalStatusChangedConsumer(
-    ENoteContext dbContext,
-    ILogger<RentalStatusChangedConsumer> logger) : IConsumer<RentalStatusChanged>
+public sealed class RentalStatusChangedConsumer(ENoteContext dbContext, ILogger<RentalStatusChangedConsumer> logger) : IConsumer<RentalStatusChanged>
 {
     public async Task Consume(ConsumeContext<RentalStatusChanged> context)
     {
         var message = context.Message;
 
         var exists = await dbContext.Set<Notification>()
-            .AnyAsync(x => x.UserId == message.StudentUserId && x.RentalId == message.RentalId && x.Title == message.Title, context.CancellationToken);
+            .AnyAsync(x => x.UserId == message.StudentUserId &&
+            x.RentalId == message.RentalId &&
+            x.Title == message.Title, context.CancellationToken);
 
         if (exists)
         {
