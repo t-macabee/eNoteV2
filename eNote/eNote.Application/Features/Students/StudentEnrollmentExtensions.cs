@@ -13,6 +13,14 @@ public static class StudentEnrollmentExtensions
             e.CourseId == courseId &&
             e.EnrollmentStatus == EnrollmentStatus.Active);
 
+    public static IQueryable<Lecture> ForEnrolledStudent(this IQueryable<Lecture> query, int studentId) =>
+        query.Where(x =>
+            x.Course.IsPublished &&
+            x.LectureStatus != LectureStatus.Cancelled &&
+            x.Course.Enrollments.Any(e =>
+                e.StudentId == studentId &&
+                e.EnrollmentStatus == EnrollmentStatus.Active));
+
     public static IQueryable<LectureNote> ForEnrolledStudent(this IQueryable<LectureNote> query, int studentId) =>
         query.Where(x =>
             x.Lecture.Course.IsPublished &&

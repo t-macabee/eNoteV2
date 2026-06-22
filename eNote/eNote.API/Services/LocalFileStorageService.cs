@@ -69,7 +69,7 @@ namespace eNote.API.Services
             await using FileStream fileStream = File.Create(fullPath);
             await stream.CopyToAsync(fileStream, ct);
 
-            return $"/uploads/{subfolder}/{uniqueName}";
+            return $"/api/uploads/{subfolder}/{uniqueName}";
         }
 
         private static async Task ValidateImageMagicBytesAsync(Stream stream)

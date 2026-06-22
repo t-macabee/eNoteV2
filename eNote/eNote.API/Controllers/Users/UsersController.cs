@@ -41,6 +41,62 @@ namespace eNote.API.Controllers.Users
             return NoContent();
         }
 
+        [HttpPut("me/picture")]
+        [RequestSizeLimit(5 * 1024 * 1024)]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> UploadPicture(IFormFile file)
+        {
+            if (file.Length == 0)
+            {
+                return BadRequest(new { message = "No file uploaded." });
+            }
+
+            await using var stream = file.OpenReadStream();
+            using var buffer = new MemoryStream();
+            await stream.CopyToAsync(buffer);
+
+            (var success, var error) = await userService.UpdatePictureAsync(buffer.ToArray());
+
+            if (!success)
+            {
+                return BadRequest(new { message = error });
+            }
+
+            return NoContent();
+        }
+
+        [HttpGet("me/picture")]
+        [Produces("image/jpeg", "image/png", "image/webp")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> GetPicture()
+        {
+            (var data, var contentType) = await userService.GetPictureAsync();
+
+            if (data is null || contentType is null)
+            {
+                return NotFound();
+            }
+
+            return File(data, contentType);
+        }
+
+        [HttpDelete("me/picture")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> DeletePicture()
+        {
+            (var success, var error) = await userService.DeletePictureAsync();
+
+            if (!success)
+            {
+                return BadRequest(new { message = error });
+            }
+
+            return NoContent();
+        }
+
         [HttpPut("me/password")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]

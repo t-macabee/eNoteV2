@@ -31,13 +31,13 @@ public sealed class LectureService(
 
     public async Task<LectureDto> GetByIdForStudentAsync(int id)
     {
+        var student = await resolver.GetStudentAsync(currentUserService.UserId);
+
         var entity = await context.Set<Lecture>()
             .Include(x => x.Attendances)
             .AsNoTracking()
-            .FirstOrDefaultAsync(x =>
-                x.Id == id &&
-                x.Course.IsPublished &&
-                x.LectureStatus != LectureStatus.Cancelled)
+            .ForEnrolledStudent(student.Id)
+            .FirstOrDefaultAsync(x => x.Id == id)
             ?? throw new NotFoundException(Messages.LectureNotFound);
 
         return mapper.Map<LectureDto>(entity);
@@ -60,10 +60,12 @@ public sealed class LectureService(
 
     public async Task<PagedResult<LectureDto>> GetPagedForStudentAsync(LectureSearchObject search)
     {
+        var student = await resolver.GetStudentAsync(currentUserService.UserId);
+
         var query = context.Set<Lecture>()
             .AsNoTracking()
             .Include(x => x.Attendances)
-            .Where(x => x.Course.IsPublished && x.LectureStatus != LectureStatus.Cancelled)
+            .ForEnrolledStudent(student.Id)
             .ApplySearch(search);
 
         return await query.ToPagedResultAsync(

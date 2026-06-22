@@ -10,7 +10,7 @@ namespace eNote.API.Controllers.Auth
 {
     [Route("api/auth")]
     [EnableRateLimiting(RateLimitingExtensions.AuthPolicy)]
-    public class AuthController(IAuthService authService, IWebHostEnvironment environment) : CoreController
+    public class AuthController(IAuthService authService) : CoreController
     {
         [AllowAnonymous]
         [HttpPost("login")]
@@ -55,7 +55,7 @@ namespace eNote.API.Controllers.Auth
         [ProducesResponseType(typeof(ForgotPasswordResponse), StatusCodes.Status200OK)]
         public async Task<ActionResult<ForgotPasswordResponse>> ForgotPassword([FromBody] ForgotPasswordRequest request)
         {
-            var response = await authService.ForgotPasswordAsync(request, environment.IsDevelopment(), HttpContext.RequestAborted);
+            var response = await authService.ForgotPasswordAsync(request, HttpContext.RequestAborted);
             return Ok(response);
         }
 

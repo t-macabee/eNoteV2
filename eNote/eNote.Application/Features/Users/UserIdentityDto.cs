@@ -10,6 +10,7 @@ namespace eNote.Application.Features.Users
         public AddressDto? Address { get; set; }
 
         public DateTime? DateOfBirth { get; set; }
+        public bool HasPicture { get; set; }
 
         public bool IsActive { get; set; }
     }
