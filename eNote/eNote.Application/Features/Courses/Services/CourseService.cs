@@ -129,18 +129,18 @@ public sealed class CourseService(
         var instructor = await instructorAccess.GetInstructorAsync(currentUserService.UserId);
 
         var entity = await instructorAccess.CoursesFor(instructor.Id)
-            .Include(c => c.Lectures)
             .FirstOrDefaultAsync(c => c.Id == id)
             ?? throw new NotFoundException(Messages.CourseNotFound);
 
         entity.SoftDelete();
         entity.UpdatedById = currentUserService.UserId;
 
-        foreach (Lecture lecture in entity.Lectures)
-        {
-            lecture.SoftDelete();
-            lecture.UpdatedById = currentUserService.UserId;
-        }
+        await context.Set<Lecture>()
+            .Where(l => l.CourseId == id)
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(l => l.IsActive, false)
+                .SetProperty(l => l.IsPublished, false)
+                .SetProperty(l => l.UpdatedById, currentUserService.UserId));
 
         await context.SaveChangesAsync();
 

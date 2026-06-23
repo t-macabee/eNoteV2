@@ -1,3 +1,4 @@
+using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Localization;
 using eNote.Application.Features.Auth;
 using eNote.Application.Features.Auth.Services;
@@ -18,73 +19,78 @@ public class AuthService(
     IWebHostEnvironment environment,
     ILogger<AuthService> logger) : IAuthService
 {
-    public async Task<(AuthResponse? response, string? error)> Login(LoginRequest model)
+    public async Task<AuthResponse> LoginAsync(LoginRequest model)
     {
-        var username = model.Username.Trim();
-        var user = await userManager.FindByNameAsync(username);
+        string username = model.Username.Trim();
+        AppUser? user = await userManager.FindByNameAsync(username);
 
         if (user == null || !user.IsActive)
         {
-            return (null, Messages.InvalidCredentials);
+            throw new AuthenticationException(Messages.InvalidCredentials);
         }
 
-        var result = await signInManager.CheckPasswordSignInAsync(user, model.Password, lockoutOnFailure: true);
+        SignInResult result = await signInManager.CheckPasswordSignInAsync(user, model.Password, lockoutOnFailure: true);
 
-        if (result.IsLockedOut)
+        if (result.IsLockedOut || await userManager.IsLockedOutAsync(user))
         {
-            return (null, Messages.AccountLocked);
+            throw new AuthenticationException(Messages.AccountLocked);
         }
 
         if (!result.Succeeded)
         {
-            return (null, Messages.InvalidCredentials);
+            throw new AuthenticationException(Messages.InvalidCredentials);
         }
 
-        var roles = await userManager.GetRolesAsync(user);
+        IList<string> roles = await userManager.GetRolesAsync(user);
 
         if (roles.Count != 1)
         {
-            return (null, Messages.RoleMisconfigured);
+            throw new BusinessException(Messages.UserSingleRoleRequired);
         }
 
-        var token = tokenService.GenerateToken(user.Id, user.UserName!, roles);
+        string token = tokenService.GenerateToken(user.Id, user.UserName!, roles);
 
-        return (new AuthResponse
+        return new AuthResponse
         {
             UserId = user.Id,
             Username = user.UserName!,
             Roles = roles.ToList().AsReadOnly(),
             Token = token
-        }, null);
+        };
     }
 
-    public async Task<(AuthResponse? response, string? error)> Register(RegisterRequest model)
+    public async Task<AuthResponse> RegisterAsync(RegisterRequest model)
     {
         (_, var error) = await userProvisioning.RegisterStudentAsync(model);
 
         if (error is not null)
         {
-            return (null, error);
+            if (error == Messages.UsernameTaken || error == Messages.EmailTaken)
+            {
+                throw new ConflictException(Messages.UsernameTaken);
+            }
+
+            throw new BusinessException(error);
         }
 
-        var user = await userManager.FindByNameAsync(model.Username.Trim());
+        AppUser? user = await userManager.FindByNameAsync(model.Username.Trim());
 
         if (user is null)
         {
-            return (null, Messages.InternalError);
+            throw new BusinessException(Messages.InternalError);
         }
 
-        var roles = await userManager.GetRolesAsync(user);
+        IList<string> roles = await userManager.GetRolesAsync(user);
 
-        var token = tokenService.GenerateToken(user.Id, user.UserName!, roles);
+        string token = tokenService.GenerateToken(user.Id, user.UserName!, roles);
 
-        return (new AuthResponse
+        return new AuthResponse
         {
             UserId = user.Id,
             Username = user.UserName!,
             Roles = roles.ToList().AsReadOnly(),
             Token = token
-        }, null);
+        };
     }
 
     public Task LogoutAsync(string jti, DateTime expiresAtUtc, CancellationToken cancellationToken = default) =>
@@ -92,15 +98,15 @@ public class AuthService(
 
     public async Task<ForgotPasswordResponse> ForgotPasswordAsync(ForgotPasswordRequest request, CancellationToken cancellationToken = default)
     {
-        var email = request.Email.Trim();
-        var user = await userManager.FindByEmailAsync(email);
+        string email = request.Email.Trim();
+        AppUser? user = await userManager.FindByEmailAsync(email);
 
         if (user is null || !user.IsActive)
         {
             return new ForgotPasswordResponse { Message = Messages.PasswordResetEmailSent };
         }
 
-        var token = await userManager.GeneratePasswordResetTokenAsync(user);
+        string token = await userManager.GeneratePasswordResetTokenAsync(user);
 
         if (environment.IsDevelopment())
         {
@@ -110,23 +116,21 @@ public class AuthService(
         return new ForgotPasswordResponse { Message = Messages.PasswordResetEmailSent };
     }
 
-    public async Task<(bool Success, string? Error)> ResetPasswordAsync(ResetPasswordRequest request, CancellationToken cancellationToken = default)
+    public async Task ResetPasswordAsync(ResetPasswordRequest request, CancellationToken cancellationToken = default)
     {
-        var user = await userManager.FindByEmailAsync(request.Email.Trim());
+        AppUser? user = await userManager.FindByEmailAsync(request.Email.Trim());
 
         if (user is null || !user.IsActive)
         {
-            return (false, Messages.PasswordResetFailed);
+            throw new BusinessException(Messages.PasswordResetFailed);
         }
 
-        var result = await userManager.ResetPasswordAsync(user, request.Token, request.NewPassword);
+        IdentityResult result = await userManager.ResetPasswordAsync(user, request.Token, request.NewPassword);
 
         if (!result.Succeeded)
         {
-            var errors = string.Join("; ", result.Errors.Select(e => e.Description));
-            return (false, Messages.PasswordResetFailed + " " + errors);
+            string errors = string.Join("; ", result.Errors.Select(e => e.Description));
+            throw new BusinessException(Messages.PasswordResetFailed + " " + errors);
         }
-
-        return (true, null);
     }
 }
