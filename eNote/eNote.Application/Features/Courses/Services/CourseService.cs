@@ -13,13 +13,7 @@ using Microsoft.Extensions.Logging;
 
 namespace eNote.Application.Features.Courses.Services;
 
-public sealed class CourseService(
-    IAppDbContext context,
-    IMapper mapper,
-    IUserContextResolver resolver,
-    IInstructorAccessService instructorAccess,
-    ICurrentUserService currentUserService,
-    ILogger<CourseService> logger) : ICourseService
+public sealed class CourseService(IAppDbContext context, IMapper mapper, IUserContextResolver resolver, IInstructorAccessService instructorAccess, ICurrentUserService currentUserService, ILogger<CourseService> logger) : ICourseService
 {
     public async Task<CourseDto> GetByIdForInstructorAsync(int id)
     {
@@ -41,13 +35,7 @@ public sealed class CourseService(
         var entity = await context.Set<Course>()
             .Include(c => c.Enrollments)
             .AsNoTracking()
-            .FirstOrDefaultAsync(c =>
-                c.Id == id &&
-                (c.IsPublished ||
-                 c.Enrollments.Any(e =>
-                     e.StudentId == student.Id &&
-                     e.EnrollmentStatus == EnrollmentStatus.Active)))
-            ?? throw new NotFoundException(Messages.CourseNotFound);
+            .FirstOrDefaultAsync(c => c.Id == id && (c.IsPublished || c.Enrollments.Any(e => e.StudentId == student.Id && e.EnrollmentStatus == EnrollmentStatus.Active))) ?? throw new NotFoundException(Messages.CourseNotFound);
 
         return mapper.Map<CourseDto>(entity);
     }
@@ -107,15 +95,9 @@ public sealed class CourseService(
 
         var entity = await instructorAccess.CoursesFor(instructor.Id)
             .Include(c => c.Enrollments)
-            .FirstOrDefaultAsync(c => c.Id == id)
-            ?? throw new NotFoundException(Messages.CourseNotFound);
+            .FirstOrDefaultAsync(c => c.Id == id) ?? throw new NotFoundException(Messages.CourseNotFound);
 
-        entity.UpdateDetails(
-            request.Name.Trim(),
-            request.Description?.Trim(),
-            request.Price,
-            request.StartDate,
-            request.EndDate);
+        entity.UpdateDetails(request.Name.Trim(), request.Description?.Trim(), request.Price, request.StartDate, request.EndDate);
         entity.SetPublishedStatus(request.IsPublished);
         entity.UpdatedById = currentUserService.UserId;
 
@@ -128,19 +110,15 @@ public sealed class CourseService(
     {
         var instructor = await instructorAccess.GetInstructorAsync(currentUserService.UserId);
 
-        var entity = await instructorAccess.CoursesFor(instructor.Id)
-            .FirstOrDefaultAsync(c => c.Id == id)
-            ?? throw new NotFoundException(Messages.CourseNotFound);
+        var entity = await instructorAccess.CoursesFor(instructor.Id).FirstOrDefaultAsync(c => c.Id == id) ?? throw new NotFoundException(Messages.CourseNotFound);
 
         entity.SoftDelete();
         entity.UpdatedById = currentUserService.UserId;
 
         await context.Set<Lecture>()
             .Where(l => l.CourseId == id)
-            .ExecuteUpdateAsync(s => s
-                .SetProperty(l => l.IsActive, false)
-                .SetProperty(l => l.IsPublished, false)
-                .SetProperty(l => l.UpdatedById, currentUserService.UserId));
+            .ExecuteUpdateAsync(s => s.SetProperty(l => l.IsActive, false)
+            .SetProperty(l => l.UpdatedById, currentUserService.UserId));
 
         await context.SaveChangesAsync();
 

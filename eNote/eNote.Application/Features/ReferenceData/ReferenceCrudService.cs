@@ -7,7 +7,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Application.Features.ReferenceData;
 
-public abstract class ReferenceCrudService<TEntity, TDto, TRequest, TSearch>(IAppDbContext context) where TEntity : BaseEntity where TSearch : BaseSearchObject
+public abstract class ReferenceCrudService<TEntity, TDto, TRequest, TSearch>(IAppDbContext context)
+    : IReferenceCrudService<TDto, TRequest, TSearch>
+    where TEntity : BaseEntity
+    where TSearch : BaseSearchObject
 {
     protected IAppDbContext Db => context;
 
