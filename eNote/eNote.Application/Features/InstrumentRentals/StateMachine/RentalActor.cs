@@ -1,8 +1,7 @@
-namespace eNote.Application.Features.InstrumentRentals.StateMachine
+namespace eNote.Application.Features.InstrumentRentals.StateMachine;
+
+public enum RentalActor
 {
-    public enum RentalActor
-    {
-        StoreEmployee,
-        Student
-    }
+    StoreEmployee,
+    Student
 }

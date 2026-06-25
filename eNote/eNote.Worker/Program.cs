@@ -29,6 +29,7 @@ if (!RabbitMqConfiguration.IsConfigured(builder.Configuration))
 builder.Services.AddSingleton<IClock, SystemClock>();
 builder.Services.AddDbContext<ENoteContext>(options =>
     options.UseSqlServer(connectionString, sql => sql.MigrationsAssembly("eNote.Infrastructure")));
+builder.Services.AddScoped<eNote.Application.Common.Persistence.IAppDbContext>(sp => sp.GetRequiredService<ENoteContext>());
 
 builder.Services.AddRabbitMqMassTransit(builder.Configuration, bus => bus.AddConsumer<RentalStatusChangedConsumer>());
 builder.Services.AddHostedService<RentalNotificationOutboxProcessor>();

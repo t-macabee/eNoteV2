@@ -33,7 +33,7 @@ public sealed class MapsterConfig : IRegister
             .Map(x => x.StudentUserId, x => x.StudentProfile.AppUserId);
 
         config.NewConfig<Assignment, AssignmentDto>();
-        config.NewConfig<LectureNote, LectureNoteDto>();     
+        config.NewConfig<LectureNote, LectureNoteDto>();
         config.NewConfig<Notification, NotificationDto>();
 
         config.Compile();

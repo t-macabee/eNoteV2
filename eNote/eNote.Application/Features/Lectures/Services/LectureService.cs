@@ -23,8 +23,8 @@ public sealed class LectureService(
 {
     public async Task<LectureDto> GetByIdForInstructorAsync(int id)
     {
-        var instructor = await instructorAccess.GetInstructorAsync(currentUserService.UserId);
-        var entity = await instructorAccess.GetOwnedLectureAsync(id, instructor.Id, includeAttendances: true);
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUserService.UserId);
+        var entity = await instructorAccess.GetOwnedLectureAsync(id, instructorId, includeAttendances: true);
         return mapper.Map<LectureDto>(entity);
     }
 
@@ -44,9 +44,9 @@ public sealed class LectureService(
 
     public async Task<PagedResult<LectureDto>> GetPagedForInstructorAsync(LectureSearchObject search)
     {
-        var instructor = await instructorAccess.GetInstructorAsync(currentUserService.UserId);
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUserService.UserId);
 
-        var query = instructorAccess.LecturesFor(instructor.Id)
+        var query = instructorAccess.LecturesFor(instructorId)
             .AsNoTracking()
             .Include(x => x.Attendances)
             .ApplySearch(search);
@@ -69,8 +69,8 @@ public sealed class LectureService(
 
     public async Task<LectureDto> CreateAsync(LectureCreateRequest request)
     {
-        var instructor = await instructorAccess.GetInstructorAsync(currentUserService.UserId);
-        await instructorAccess.EnsureOwnsCourseAsync(request.CourseId, instructor.Id);
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUserService.UserId);
+        await instructorAccess.EnsureOwnsCourseAsync(request.CourseId, instructorId);
 
         var entity = new Lecture(
             request.Name.Trim(),
@@ -92,8 +92,8 @@ public sealed class LectureService(
 
     public async Task<LectureDto> UpdateAsync(int id, LectureUpdateRequest request)
     {
-        var instructor = await instructorAccess.GetInstructorAsync(currentUserService.UserId);
-        var entity = await instructorAccess.GetOwnedLectureAsync(id, instructor.Id, track: true);
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUserService.UserId);
+        var entity = await instructorAccess.GetOwnedLectureAsync(id, instructorId, track: true);
 
         if (entity.IsCancelled)
         {
@@ -115,8 +115,8 @@ public sealed class LectureService(
 
     public async Task DeleteAsync(int id)
     {
-        var instructor = await instructorAccess.GetInstructorAsync(currentUserService.UserId);
-        var entity = await instructorAccess.GetOwnedLectureAsync(id, instructor.Id, track: true);
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUserService.UserId);
+        var entity = await instructorAccess.GetOwnedLectureAsync(id, instructorId, track: true);
 
         entity.SoftDelete();
         entity.UpdatedById = currentUserService.UserId;
@@ -128,8 +128,8 @@ public sealed class LectureService(
 
     public async Task<LectureDto> CancelAsync(int id)
     {
-        var instructor = await instructorAccess.GetInstructorAsync(currentUserService.UserId);
-        var entity = await instructorAccess.GetOwnedLectureAsync(id, instructor.Id, track: true);
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUserService.UserId);
+        var entity = await instructorAccess.GetOwnedLectureAsync(id, instructorId, track: true);
 
         if (entity.IsCancelled)
         {

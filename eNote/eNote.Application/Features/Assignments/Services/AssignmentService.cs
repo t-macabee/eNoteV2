@@ -21,9 +21,9 @@ public sealed class AssignmentService(
 {
     public async Task<PagedResult<AssignmentDto>> GetForLectureAsync(int lectureId, AssignmentSearchObject search)
     {
-        var instructor = await instructorAccess.GetInstructorAsync(currentUserService.UserId);
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUserService.UserId);
 
-        var query = instructorAccess.AssignmentsForLecture(lectureId, instructor.Id)
+        var query = instructorAccess.AssignmentsForLecture(lectureId, instructorId)
             .AsNoTracking()
             .ApplySearch(search);
 
@@ -35,8 +35,8 @@ public sealed class AssignmentService(
 
     public async Task<AssignmentDto> CreateAsync(int lectureId, AssignmentRequest request)
     {
-        var instructor = await instructorAccess.GetInstructorAsync(currentUserService.UserId);
-        await instructorAccess.EnsureOwnsLectureAsync(lectureId, instructor.Id);
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUserService.UserId);
+        await instructorAccess.EnsureOwnsLectureAsync(lectureId, instructorId);
 
         var entity = new Assignment(request.Title.Trim(), request.Description.Trim(), request.DueAt, lectureId)
         {
@@ -87,7 +87,8 @@ public sealed class AssignmentService(
     {
         var student = await resolver.GetStudentAsync(currentUserService.UserId);
 
-        var entity = await StudentAssignmentQuery(student.Id, assignmentId)
+        var entity = await context.Set<Assignment>()
+            .ForEnrolledStudentById(student.Id, assignmentId)
             .AsNoTracking()
             .FirstOrDefaultAsync()
             ?? throw new NotFoundException(Messages.AssignmentNotFound);
@@ -97,12 +98,7 @@ public sealed class AssignmentService(
 
     private async Task<Assignment> GetOwnedAssignmentAsync(int lectureId, int assignmentId, bool track = false)
     {
-        var instructor = await instructorAccess.GetInstructorAsync(currentUserService.UserId);
-        return await instructorAccess.GetOwnedAssignmentAsync(lectureId, assignmentId, instructor.Id, track);
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUserService.UserId);
+        return await instructorAccess.GetOwnedAssignmentAsync(lectureId, assignmentId, instructorId, track);
     }
-
-    private IQueryable<Assignment> StudentAssignmentQuery(int studentId, int assignmentId) =>
-        context.Set<Assignment>()
-            .ForEnrolledStudent(studentId)
-            .Where(x => x.Id == assignmentId);
 }

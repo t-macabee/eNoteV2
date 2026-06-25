@@ -17,9 +17,9 @@ public sealed class CourseService(IAppDbContext context, IMapper mapper, IUserCo
 {
     public async Task<CourseDto> GetByIdForInstructorAsync(int id)
     {
-        var instructor = await instructorAccess.GetInstructorAsync(currentUserService.UserId);
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUserService.UserId);
 
-        var entity = await instructorAccess.CoursesFor(instructor.Id)
+        var entity = await instructorAccess.CoursesFor(instructorId)
             .AsNoTracking()
             .Include(c => c.Enrollments)
             .FirstOrDefaultAsync(c => c.Id == id)
@@ -42,9 +42,9 @@ public sealed class CourseService(IAppDbContext context, IMapper mapper, IUserCo
 
     public async Task<PagedResult<CourseDto>> GetPagedForInstructorAsync(CourseSearchObject search)
     {
-        var instructor = await instructorAccess.GetInstructorAsync(currentUserService.UserId);
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUserService.UserId);
 
-        var query = instructorAccess.CoursesFor(instructor.Id)
+        var query = instructorAccess.CoursesFor(instructorId)
             .AsNoTracking()
             .Include(c => c.Enrollments)
             .ApplySearch(search);
@@ -65,7 +65,7 @@ public sealed class CourseService(IAppDbContext context, IMapper mapper, IUserCo
 
     public async Task<CourseDto> CreateAsync(CourseRequest request)
     {
-        var instructor = await instructorAccess.GetInstructorAsync(currentUserService.UserId);
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUserService.UserId);
 
         logger.LogInformation("Creating course {CourseName} by instructor user {InstructorUserId}", request.Name, currentUserService.UserId);
 
@@ -75,7 +75,7 @@ public sealed class CourseService(IAppDbContext context, IMapper mapper, IUserCo
             request.Price,
             request.StartDate,
             request.EndDate,
-            instructor.Id)
+            instructorId)
         {
             CreatedById = currentUserService.UserId
         };
@@ -91,9 +91,9 @@ public sealed class CourseService(IAppDbContext context, IMapper mapper, IUserCo
 
     public async Task<CourseDto> UpdateAsync(int id, CourseRequest request)
     {
-        var instructor = await instructorAccess.GetInstructorAsync(currentUserService.UserId);
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUserService.UserId);
 
-        var entity = await instructorAccess.CoursesFor(instructor.Id)
+        var entity = await instructorAccess.CoursesFor(instructorId)
             .Include(c => c.Enrollments)
             .FirstOrDefaultAsync(c => c.Id == id) ?? throw new NotFoundException(Messages.CourseNotFound);
 
@@ -108,9 +108,9 @@ public sealed class CourseService(IAppDbContext context, IMapper mapper, IUserCo
 
     public async Task DeleteAsync(int id)
     {
-        var instructor = await instructorAccess.GetInstructorAsync(currentUserService.UserId);
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUserService.UserId);
 
-        var entity = await instructorAccess.CoursesFor(instructor.Id).FirstOrDefaultAsync(c => c.Id == id) ?? throw new NotFoundException(Messages.CourseNotFound);
+        var entity = await instructorAccess.CoursesFor(instructorId).FirstOrDefaultAsync(c => c.Id == id) ?? throw new NotFoundException(Messages.CourseNotFound);
 
         entity.SoftDelete();
         entity.UpdatedById = currentUserService.UserId;

@@ -2,21 +2,20 @@ using eNote.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace eNote.Infrastructure.Data.Configurations
-{
-    public sealed class AssignmentConfig : IEntityTypeConfiguration<Assignment>
-    {
-        public void Configure(EntityTypeBuilder<Assignment> builder)
-        {
-            builder.HasOne(a => a.Lecture)
-                   .WithMany(l => l.Assignments)
-                   .HasForeignKey(a => a.LectureId)
-                   .OnDelete(DeleteBehavior.Cascade);
+namespace eNote.Infrastructure.Data.Configurations;
 
-            builder.Property(a => a.Title).HasStringConfig(200, true);
-            builder.Property(a => a.Description).IsRequired();
-            builder.Property(a => a.IsActive).HasDefaultValue(true);
-            builder.HasQueryFilter(a => a.IsActive);
-        }
+public sealed class AssignmentConfig : IEntityTypeConfiguration<Assignment>
+{
+    public void Configure(EntityTypeBuilder<Assignment> builder)
+    {
+        builder.HasOne(a => a.Lecture)
+               .WithMany(l => l.Assignments)
+               .HasForeignKey(a => a.LectureId)
+               .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Property(a => a.Title).HasStringConfig(200, true);
+        builder.Property(a => a.Description).IsRequired();
+        builder.Property(a => a.IsActive).HasDefaultValue(true);
+        builder.HasQueryFilter(a => a.IsActive);
     }
 }

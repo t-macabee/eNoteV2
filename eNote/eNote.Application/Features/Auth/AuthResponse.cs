@@ -1,19 +1,18 @@
 using System.Text.Json.Serialization;
 
-namespace eNote.Application.Features.Auth
+namespace eNote.Application.Features.Auth;
+
+public sealed class AuthResponse
 {
-    public sealed class AuthResponse
-    {
-        [JsonPropertyName("userId")]
-        public int UserId { get; init; }
+    [JsonPropertyName("userId")]
+    public int UserId { get; init; }
 
-        [JsonPropertyName("username")]
-        public string Username { get; init; } = null!;
+    [JsonPropertyName("username")]
+    public string Username { get; init; } = null!;
 
-        [JsonPropertyName("roles")]
-        public IReadOnlyList<string> Roles { get; init; } = Array.Empty<string>();
+    [JsonPropertyName("roles")]
+    public IReadOnlyList<string> Roles { get; init; } = Array.Empty<string>();
 
-        [JsonPropertyName("token")]
-        public string Token { get; init; } = null!;
-    }
+    [JsonPropertyName("token")]
+    public string Token { get; init; } = null!;
 }

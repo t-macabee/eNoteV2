@@ -46,8 +46,8 @@ public sealed class FileAccessService(
 
         if (roles.Contains(AppRoles.Instructor))
         {
-            var instructor = await instructorAccess.GetInstructorAsync(userId);
-            return submission.Assignment.Lecture.Course.InstructorId == instructor.Id;
+            var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(userId);
+            return submission.Assignment.Lecture.Course.InstructorId == instructorId;
         }
 
         return false;

@@ -10,95 +10,94 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace eNote.Infrastructure.Data.Seed
+namespace eNote.Infrastructure.Data.Seed;
+
+public static class IdentitySeed
 {
-    public static class IdentitySeed
+    public static async Task SeedAsync(IServiceProvider serviceProvider)
     {
-        public static async Task SeedAsync(IServiceProvider serviceProvider)
+        var roleManager = serviceProvider.GetRequiredService<RoleManager<AppRole>>();
+
+        var context = serviceProvider.GetRequiredService<ENoteContext>();
+
+        var provisioningService = serviceProvider.GetRequiredService<IUserProvisioningService>();
+        var configuration = serviceProvider.GetRequiredService<IConfiguration>();
+        var defaultPassword = configuration["Seed:DefaultPassword"] ?? "Test1234!";
+
+        await RoleSeed.SeedRoles(roleManager);
+
+        var defaultStoreId = await StoreSeed.EnsureDefaultStoreAsync(context);
+
+        (string, string, string, int?)[] testUsers = new[]
         {
-            var roleManager = serviceProvider.GetRequiredService<RoleManager<AppRole>>();
+            ("admin", "admin@enote.com", AppRoles.Administrator, (int?)null),
+            ("instructor", "instructor@enote.com", AppRoles.Instructor, (int?)null),
+            ("student", "student@enote.com", AppRoles.Student, (int?)null),
+            ("storeemployee", "storeEmployee@enote.com", AppRoles.StoreEmployee, (int?)defaultStoreId)
+        };
 
-            var context = serviceProvider.GetRequiredService<ENoteContext>();
-
-            var provisioningService = serviceProvider.GetRequiredService<IUserProvisioningService>();
-            var configuration = serviceProvider.GetRequiredService<IConfiguration>();
-            var defaultPassword = configuration["Seed:DefaultPassword"] ?? "Test1234!";
-
-            await RoleSeed.SeedRoles(roleManager);
-
-            var defaultStoreId = await StoreSeed.EnsureDefaultStoreAsync(context);
-
-            (string, string, string, int?)[] testUsers = new[]
+        foreach ((var username, var email, var role, var storeId) in testUsers)
+        {
+            (var _, var error) = await provisioningService.ProvisionUserAsync(new UserProvisionRequest
             {
-                ("admin", "admin@enote.com", AppRoles.Administrator, (int?)null),
-                ("instructor", "instructor@enote.com", AppRoles.Instructor, (int?)null),
-                ("student", "student@enote.com", AppRoles.Student, (int?)null),
-                ("storeemployee", "storeEmployee@enote.com", AppRoles.StoreEmployee, (int?)defaultStoreId)
-            };
+                Username = username,
+                Email = email,
+                Password = defaultPassword,
+                Role = role,
+                MusicStoreId = storeId
+            });
 
-            foreach ((var username, var email, var role, var storeId) in testUsers)
+            if (error is not null)
             {
-                (var _, var error) = await provisioningService.ProvisionUserAsync(new UserProvisionRequest
-                {
-                    Username = username,
-                    Email = email,
-                    Password = defaultPassword,
-                    Role = role,
-                    MusicStoreId = storeId
-                });
+                throw new BusinessException(error);
+            }
+        }
+    }
+}
 
-                if (error is not null)
+internal static class RoleSeed
+{
+    public static async Task SeedRoles(RoleManager<AppRole> roleManager)
+    {
+        string[] roles = [AppRoles.Administrator, AppRoles.Instructor, AppRoles.Student, AppRoles.StoreEmployee];
+
+        foreach (var role in roles)
+        {
+            if (!await roleManager.RoleExistsAsync(role))
+            {
+                var result = await roleManager.CreateAsync(new AppRole { Name = role });
+
+                if (!result.Succeeded)
                 {
-                    throw new BusinessException(error);
+                    var errors = string.Join("; ", result.Errors.Select(e => e.Description));
+
+                    throw new BusinessException(Messages.RoleCreateFailed(role, errors));
                 }
             }
         }
     }
+}
 
-    internal static class RoleSeed
+internal static class StoreSeed
+{
+    public static async Task<int> EnsureDefaultStoreAsync(ENoteContext context)
     {
-        public static async Task SeedRoles(RoleManager<AppRole> roleManager)
+        var storeId = await context.Set<MusicStore>()
+            .OrderBy(x => x.Id)
+            .Select(x => (int?)x.Id)
+            .FirstOrDefaultAsync();
+
+        if (storeId.HasValue)
         {
-            string[] roles = [AppRoles.Administrator, AppRoles.Instructor, AppRoles.Student, AppRoles.StoreEmployee];
-
-            foreach (var role in roles)
-            {
-                if (!await roleManager.RoleExistsAsync(role))
-                {
-                    var result = await roleManager.CreateAsync(new AppRole { Name = role });
-
-                    if (!result.Succeeded)
-                    {
-                        var errors = string.Join("; ", result.Errors.Select(e => e.Description));
-
-                        throw new BusinessException(Messages.RoleCreateFailed(role, errors));
-                    }
-                }
-            }
+            return storeId.Value;
         }
-    }
 
-    internal static class StoreSeed
-    {
-        public static async Task<int> EnsureDefaultStoreAsync(ENoteContext context)
-        {
-            var storeId = await context.Set<MusicStore>()
-                .OrderBy(x => x.Id)
-                .Select(x => (int?)x.Id)
-                .FirstOrDefaultAsync();
+        var store = new MusicStore("Test Music Store", "09:00-17:00");
 
-            if (storeId.HasValue)
-            {
-                return storeId.Value;
-            }
+        context.Set<MusicStore>().Add(store);
 
-            var store = new MusicStore("Test Music Store", "09:00-17:00");
+        await context.SaveChangesAsync();
 
-            context.Set<MusicStore>().Add(store);
-
-            await context.SaveChangesAsync();
-
-            return store.Id;
-        }
+        return store.Id;
     }
 }

@@ -1,10 +1,9 @@
-namespace eNote.Application.Constants
+namespace eNote.Application.Constants;
+
+public static class AppRoles
 {
-    public static class AppRoles
-    {
-        public const string Administrator = "Administrator";
-        public const string Instructor = "Instructor";
-        public const string Student = "Student";
-        public const string StoreEmployee = "StoreEmployee";
-    }
+    public const string Administrator = "Administrator";
+    public const string Instructor = "Instructor";
+    public const string Student = "Student";
+    public const string StoreEmployee = "StoreEmployee";
 }

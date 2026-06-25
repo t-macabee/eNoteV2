@@ -5,16 +5,16 @@ using eNote.Application.Features.Courses.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace eNote.API.Controllers.Courses
+namespace eNote.API.Controllers.Courses;
+
+[Authorize(Roles = AppRoles.Student)]
+[Route("api/student/courses/{courseId:int}/ranking")]
+public sealed class StudentRankingController(IRankingService rankingService) : CoreController
 {
-    [Authorize(Roles = AppRoles.Student)]
-    [Route("api/student/courses/{courseId:int}/ranking")]
-    public sealed class StudentRankingController(IRankingService rankingService) : CoreController
+    [HttpGet]
+    [ProducesResponseType(typeof(IReadOnlyList<CourseRankingEntryDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IReadOnlyList<CourseRankingEntryDto>>> GetRanking(int courseId)
     {
-        [HttpGet]
-        public async Task<ActionResult<IReadOnlyList<CourseRankingEntryDto>>> GetRanking(int courseId)
-        {
-            return Ok(await rankingService.GetForStudentAsync(courseId));
-        }
+        return Ok(await rankingService.GetForStudentAsync(courseId));
     }
 }

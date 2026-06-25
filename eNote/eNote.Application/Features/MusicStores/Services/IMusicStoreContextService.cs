@@ -1,7 +1,6 @@
-namespace eNote.Application.Features.MusicStores.Services
+namespace eNote.Application.Features.MusicStores.Services;
+
+public interface IMusicStoreContextService
 {
-    public interface IMusicStoreContextService
-    {
-        Task<int> GetActiveStoreAsync(int appUserId, CancellationToken ct = default);
-    }
+    Task<int> GetActiveStoreAsync(int appUserId, CancellationToken ct = default);
 }

@@ -2,22 +2,21 @@ using eNote.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace eNote.Infrastructure.Data.Configurations
-{
-    public sealed class LectureNoteConfig : IEntityTypeConfiguration<LectureNote>
-    {
-        public void Configure(EntityTypeBuilder<LectureNote> builder)
-        {
-            builder.HasOne(n => n.Lecture)
-                   .WithMany(p => p.LectureNotes)
-                   .HasForeignKey(n => n.LectureId)
-                   .OnDelete(DeleteBehavior.Cascade);
+namespace eNote.Infrastructure.Data.Configurations;
 
-            builder.Property(n => n.Title).HasStringConfig(200, true);
-            builder.Property(n => n.Content).IsRequired();
-            builder.Property(n => n.CreatedAt).IsRequired();
-            builder.Property(n => n.IsActive).HasDefaultValue(true);
-            builder.HasQueryFilter(n => n.IsActive);
-        }
+public sealed class LectureNoteConfig : IEntityTypeConfiguration<LectureNote>
+{
+    public void Configure(EntityTypeBuilder<LectureNote> builder)
+    {
+        builder.HasOne(n => n.Lecture)
+               .WithMany(p => p.LectureNotes)
+               .HasForeignKey(n => n.LectureId)
+               .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Property(n => n.Title).HasStringConfig(200, true);
+        builder.Property(n => n.Content).IsRequired();
+        builder.Property(n => n.CreatedAt).IsRequired();
+        builder.Property(n => n.IsActive).HasDefaultValue(true);
+        builder.HasQueryFilter(n => n.IsActive);
     }
 }

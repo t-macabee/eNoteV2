@@ -82,10 +82,10 @@ public sealed class LectureAttendanceService(
         return new RsvpResponse { LectureId = lecture.Id, StudentId = student.Id, Confirmed = request.Confirm };
     }
 
-    public async Task<PagedResult<AttendanceDto>> GetAttendanceAsync(int lectureId, int page, int pageSize)
+    public async Task<PagedResult<AttendanceDto>> GetAttendanceAsync(int lectureId, AttendanceSearchObject search)
     {
-        var instructor = await instructorAccess.GetInstructorAsync(currentUserService.UserId);
-        await instructorAccess.EnsureOwnsLectureAsync(lectureId, instructor.Id);
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUserService.UserId);
+        await instructorAccess.EnsureOwnsLectureAsync(lectureId, instructorId);
 
         var query = context.Set<Attendance>()
             .AsNoTracking()
@@ -93,7 +93,7 @@ public sealed class LectureAttendanceService(
             .Where(x => x.LectureId == lectureId);
 
         return await query.ToPagedResultAsync(
-            page, pageSize, includeTotalCount: true,
+            search,
             items => resolver.GetStudentDisplayNamesAsync(items.Select(a => a.Student)),
             (a, names) => new AttendanceDto
             {
@@ -107,8 +107,8 @@ public sealed class LectureAttendanceService(
 
     public async Task<AttendanceDto> MarkAttendanceAsync(int lectureId, MarkAttendanceRequest request)
     {
-        var instructor = await instructorAccess.GetInstructorAsync(currentUserService.UserId);
-        var lecture = await instructorAccess.GetOwnedLectureAsync(lectureId, instructor.Id, track: true, includeAttendances: true);
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUserService.UserId);
+        var lecture = await instructorAccess.GetOwnedLectureAsync(lectureId, instructorId, track: true, includeAttendances: true);
 
         if (lecture.IsCancelled)
         {

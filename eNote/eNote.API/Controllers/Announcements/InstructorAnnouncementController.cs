@@ -7,66 +7,70 @@ using eNote.Application.Features.Announcements.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace eNote.API.Controllers.Announcements
+namespace eNote.API.Controllers.Announcements;
+
+[Authorize(Roles = AppRoles.Instructor)]
+[Route("api/instructor/courses/{courseId:int}/announcements")]
+public sealed class InstructorAnnouncementController(ICourseAnnouncementService announcementService) : CoreController
 {
-    [Authorize(Roles = AppRoles.Instructor)]
-    [Route("api/instructor/courses/{courseId:int}/announcements")]
-    public sealed class InstructorAnnouncementController(IAnnouncementService announcementService) : CoreController
+    [HttpGet]
+    [ProducesResponseType(typeof(PagedResult<AnnouncementDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<PagedResult<AnnouncementDto>>> GetForCourse(int courseId, [FromQuery] AnnouncementSearchObject search)
     {
-        [HttpGet]
-        public async Task<ActionResult<PagedResult<AnnouncementDto>>> GetForCourse(int courseId, int page = 1, int pageSize = 20)
+        var result = await announcementService.GetForCourseAsync(courseId, search);
+        return Ok(result);
+    }
+
+    [HttpGet("{announcementId:int}")]
+    [ProducesResponseType(typeof(AnnouncementDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<AnnouncementDto>> GetById(int courseId, int announcementId)
+    {
+        var result = await announcementService.GetByIdForCourseAsync(courseId, announcementId);
+        return Ok(result);
+    }
+
+    [HttpPost]
+    [ProducesResponseType(typeof(AnnouncementDto), StatusCodes.Status201Created)]
+    public async Task<ActionResult<AnnouncementDto>> Create(int courseId, [FromBody] AnnouncementRequest request)
+    {
+        var result = await announcementService.CreateForCourseAsync(courseId, request);
+        return CreatedAtAction(nameof(GetById), new
         {
-            var result = await announcementService.GetForCourseAsync(courseId, page, pageSize);
-            return Ok(result);
+            courseId,
+            announcementId = result.Id
+        }, result);
+    }
+
+    [HttpPut("{announcementId:int}")]
+    [ProducesResponseType(typeof(AnnouncementDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<AnnouncementDto>> Update(int courseId, int announcementId, [FromBody] AnnouncementRequest request)
+    {
+        var result = await announcementService.UpdateForCourseAsync(courseId, announcementId, request);
+        return Ok(result);
+    }
+
+    [HttpDelete("{announcementId:int}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> Delete(int courseId, int announcementId)
+    {
+        await announcementService.DeleteForCourseAsync(courseId, announcementId);
+        return NoContent();
+    }
+
+    [HttpPost("{announcementId:int}/image")]
+    [ProducesResponseType(typeof(AnnouncementDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<AnnouncementDto>> UploadImage(int courseId, int announcementId, IFormFile? file, CancellationToken ct)
+    {
+        if (file is null || file.Length == 0)
+        {
+            return BadRequest(new { message = Messages.FileNotProvided });
         }
 
-        [HttpGet("{announcementId:int}")]
-        public async Task<ActionResult<AnnouncementDto>> GetById(int courseId, int announcementId)
-        {
-            var result = await announcementService.GetByIdForCourseAsync(courseId, announcementId);
-            return Ok(result);
-        }
+        await using Stream stream = file.OpenReadStream();
 
-        [HttpPost]
-        public async Task<ActionResult<AnnouncementDto>> Create(int courseId, [FromBody] AnnouncementRequest request)
-        {
-            var result = await announcementService.CreateForCourseAsync(courseId, request);
-            return CreatedAtAction(nameof(GetById), new
-            {
-                courseId,
-                announcementId = result.Id
-            }, result);
-        }
+        var result = await announcementService.UploadImageForCourseAsync(courseId, announcementId, stream, file.FileName, file.ContentType, ct);
 
-        [HttpPut("{announcementId:int}")]
-        public async Task<ActionResult<AnnouncementDto>> Update(int courseId, int announcementId, [FromBody] AnnouncementRequest request)
-        {
-            var result = await announcementService.UpdateForCourseAsync(courseId, announcementId, request);
-            return Ok(result);
-        }
-
-        [HttpDelete("{announcementId:int}")]
-        public async Task<IActionResult> Delete(int courseId, int announcementId)
-        {
-            await announcementService.DeleteForCourseAsync(courseId, announcementId);
-            return NoContent();
-        }
-
-        [HttpPost("{announcementId:int}/image")]
-        [ProducesResponseType(typeof(AnnouncementDto), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<ActionResult<AnnouncementDto>> UploadImage(int courseId, int announcementId, IFormFile? file, CancellationToken ct)
-        {
-            if (file is null || file.Length == 0)
-            {
-                return BadRequest(new { message = Messages.FileNotProvided });
-            }
-
-            await using Stream stream = file.OpenReadStream();
-
-            var result = await announcementService.UploadImageForCourseAsync(courseId, announcementId, stream, file.FileName, file.ContentType, ct);
-
-            return Ok(result);
-        }
+        return Ok(result);
     }
 }

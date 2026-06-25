@@ -1,12 +1,11 @@
 using eNote.Application.Common.Search;
 
-namespace eNote.Application.Features.Assignments
-{
-    public class AssignmentSearchObject : BaseSearchObject
-    {
-        public string? Title { get; set; }
+namespace eNote.Application.Features.Assignments;
 
-        public DateTime? DueAfter { get; set; }
-        public DateTime? DueBefore { get; set; }
-    }
+public class AssignmentSearchObject : BaseSearchObject
+{
+    public string? Title { get; set; }
+
+    public DateTime? DueAfter { get; set; }
+    public DateTime? DueBefore { get; set; }
 }

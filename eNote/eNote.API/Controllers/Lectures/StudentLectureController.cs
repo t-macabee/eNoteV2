@@ -6,33 +6,35 @@ using eNote.Application.Features.Lectures.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace eNote.API.Controllers.Lectures
+namespace eNote.API.Controllers.Lectures;
+
+[Authorize(Roles = AppRoles.Student)]
+[Route("api/student/lectures")]
+public sealed class StudentLectureController(
+    ILectureService service,
+    ILectureAttendanceService attendanceService) : CoreController
 {
-    [Authorize(Roles = AppRoles.Student)]
-    [Route("api/student/lectures")]
-    public sealed class StudentLectureController(
-        ILectureService service,
-        ILectureAttendanceService attendanceService) : CoreController
+    [HttpGet]
+    [ProducesResponseType(typeof(PagedResult<LectureDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<PagedResult<LectureDto>>> GetAvailable([FromQuery] LectureSearchObject search)
     {
-        [HttpGet]
-        public async Task<ActionResult<PagedResult<LectureDto>>> GetAvailable([FromQuery] LectureSearchObject search)
-        {
-            var result = await service.GetPagedForStudentAsync(search);
-            return Ok(result);
-        }
+        var result = await service.GetPagedForStudentAsync(search);
+        return Ok(result);
+    }
 
-        [HttpGet("{id:int}")]
-        public async Task<ActionResult<LectureDto>> GetById(int id)
-        {
-            var dto = await service.GetByIdForStudentAsync(id);
-            return Ok(dto);
-        }
+    [HttpGet("{id:int}")]
+    [ProducesResponseType(typeof(LectureDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<LectureDto>> GetById(int id)
+    {
+        var dto = await service.GetByIdForStudentAsync(id);
+        return Ok(dto);
+    }
 
-        [HttpPost("{id:int}/rsvp")]
-        public async Task<ActionResult<RsvpResponse>> Rsvp(int id, [FromBody] RsvpRequest request)
-        {
-            var response = await attendanceService.RsvpAsync(id, request);
-            return Ok(response);
-        }
+    [HttpPost("{id:int}/rsvp")]
+    [ProducesResponseType(typeof(RsvpResponse), StatusCodes.Status200OK)]
+    public async Task<ActionResult<RsvpResponse>> Rsvp(int id, [FromBody] RsvpRequest request)
+    {
+        var response = await attendanceService.RsvpAsync(id, request);
+        return Ok(response);
     }
 }

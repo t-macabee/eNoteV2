@@ -1,7 +1,6 @@
-namespace eNote.Application.Features.Auth.Services
+namespace eNote.Application.Features.Auth.Services;
+
+public interface ITokenService
 {
-    public interface ITokenService
-    {
-        string GenerateToken(int userId, string username, IList<string> roles);
-    }
+    string GenerateToken(int userId, string username, IList<string> roles);
 }

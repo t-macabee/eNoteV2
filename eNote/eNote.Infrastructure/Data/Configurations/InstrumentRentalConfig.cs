@@ -3,33 +3,32 @@ using eNote.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace eNote.Infrastructure.Data.Configurations
+namespace eNote.Infrastructure.Data.Configurations;
+
+public sealed class InstrumentRentalConfig : IEntityTypeConfiguration<InstrumentRental>
 {
-    public sealed class InstrumentRentalConfig : IEntityTypeConfiguration<InstrumentRental>
+    public void Configure(EntityTypeBuilder<InstrumentRental> builder)
     {
-        public void Configure(EntityTypeBuilder<InstrumentRental> builder)
-        {
-            builder.HasQueryFilter(r => r.Instrument.IsActive);
+        builder.HasQueryFilter(r => r.Instrument.IsActive);
 
-            builder.HasOne(x => x.StudentProfile)
-                   .WithMany(s => s.InstrumentRentals)
-                   .HasForeignKey(x => x.StudentProfileId)
-                   .OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne(x => x.StudentProfile)
+               .WithMany(s => s.InstrumentRentals)
+               .HasForeignKey(x => x.StudentProfileId)
+               .OnDelete(DeleteBehavior.Restrict);
 
-            builder.HasOne(x => x.Instrument)
-                   .WithMany(x => x.InstrumentRentals)
-                   .HasForeignKey(x => x.InstrumentId)
-                   .OnDelete(DeleteBehavior.Cascade);
+        builder.HasOne(x => x.Instrument)
+               .WithMany(x => x.InstrumentRentals)
+               .HasForeignKey(x => x.InstrumentId)
+               .OnDelete(DeleteBehavior.Cascade);
 
-            builder.Property(x => x.Fee).HasDecimalPrecision(10, 2).IsRequired();
+        builder.Property(x => x.Fee).HasDecimalPrecision(10, 2).IsRequired();
 
-            builder.Property(x => x.RentalStatus)
-                   .HasConversion<int>();
+        builder.Property(x => x.RentalStatus)
+               .HasConversion<int>();
 
-            builder.HasIndex(x => x.InstrumentId)
-                   .HasFilter(
-                        $"[{nameof(InstrumentRental.RentalStatus)}] IN ({(int)InstrumentRentalStatus.Approved}, {(int)InstrumentRentalStatus.Active})"
-                   ).IsUnique();
-        }
+        builder.HasIndex(x => x.InstrumentId)
+               .HasFilter(
+                    $"[{nameof(InstrumentRental.RentalStatus)}] IN ({(int)InstrumentRentalStatus.Approved}, {(int)InstrumentRentalStatus.Active})"
+               ).IsUnique();
     }
 }

@@ -1,9 +1,8 @@
-namespace eNote.Domain.Enums
+namespace eNote.Domain.Enums;
+
+public enum AttendanceStatus
 {
-    public enum AttendanceStatus
-    {
-        Pending = 1,
-        Present = 2,
-        Absent = 3
-    }
+    Pending = 1,
+    Present = 2,
+    Absent = 3
 }

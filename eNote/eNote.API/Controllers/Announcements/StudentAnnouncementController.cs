@@ -6,17 +6,17 @@ using eNote.Application.Features.Announcements.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace eNote.API.Controllers.Announcements
+namespace eNote.API.Controllers.Announcements;
+
+[Authorize(Roles = AppRoles.Student)]
+[Route("api/student/announcements")]
+public sealed class StudentAnnouncementController(IStudentAnnouncementService announcementService) : CoreController
 {
-    [Authorize(Roles = AppRoles.Student)]
-    [Route("api/student/announcements")]
-    public sealed class StudentAnnouncementController(IAnnouncementService announcementService) : CoreController
+    [HttpGet]
+    [ProducesResponseType(typeof(PagedResult<AnnouncementDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<PagedResult<AnnouncementDto>>> GetFeed([FromQuery] AnnouncementSearchObject search)
     {
-        [HttpGet]
-        public async Task<ActionResult<PagedResult<AnnouncementDto>>> GetFeed(int page = 1, int pageSize = 20)
-        {
-            var result = await announcementService.GetFeedForStudentAsync(page, pageSize);
-            return Ok(result);
-        }
+        var result = await announcementService.GetFeedForStudentAsync(search);
+        return Ok(result);
     }
 }

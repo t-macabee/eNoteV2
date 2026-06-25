@@ -4,25 +4,26 @@ using eNote.Application.Features.Instruments.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace eNote.API.Controllers.Instruments
-{
-    [ApiController]
-    [AllowAnonymous]
-    [Route("api/instruments/public")]
-    public sealed class PublicInstrumentController(IInstrumentService instrumentService) : ControllerBase
-    {
-        [HttpGet]
-        public async Task<ActionResult<PagedResult<InstrumentDto>>> GetPaged([FromQuery] InstrumentSearchObject search)
-        {
-            var result = await instrumentService.GetPublicPagedAsync(search);
-            return Ok(result);
-        }
+namespace eNote.API.Controllers.Instruments;
 
-        [HttpGet("{id:int}")]
-        public async Task<ActionResult<InstrumentDto>> GetById(int id)
-        {
-            var result = await instrumentService.GetPublicByIdAsync(id);
-            return Ok(result);
-        }
+[ApiController]
+[AllowAnonymous]
+[Route("api/instruments/public")]
+public sealed class PublicInstrumentController(IInstrumentService instrumentService) : ControllerBase
+{
+    [HttpGet]
+    [ProducesResponseType(typeof(PagedResult<InstrumentDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<PagedResult<InstrumentDto>>> GetPaged([FromQuery] InstrumentSearchObject search)
+    {
+        var result = await instrumentService.GetPublicPagedAsync(search);
+        return Ok(result);
+    }
+
+    [HttpGet("{id:int}")]
+    [ProducesResponseType(typeof(InstrumentDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<InstrumentDto>> GetById(int id)
+    {
+        var result = await instrumentService.GetPublicByIdAsync(id);
+        return Ok(result);
     }
 }

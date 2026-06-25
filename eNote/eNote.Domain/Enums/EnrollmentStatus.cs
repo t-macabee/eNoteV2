@@ -1,9 +1,8 @@
-namespace eNote.Domain.Enums
+namespace eNote.Domain.Enums;
+
+public enum EnrollmentStatus
 {
-    public enum EnrollmentStatus
-    {
-        Active = 1,
-        Completed = 2,
-        Canceled = 3
-    }
+    Active = 1,
+    Completed = 2,
+    Canceled = 3
 }

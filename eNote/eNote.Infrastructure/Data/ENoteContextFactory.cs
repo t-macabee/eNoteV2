@@ -4,43 +4,42 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration;
 
-namespace eNote.Infrastructure.Data
+namespace eNote.Infrastructure.Data;
+
+public sealed class ENoteContextFactory : IDesignTimeDbContextFactory<ENoteContext>
 {
-    public sealed class ENoteContextFactory : IDesignTimeDbContextFactory<ENoteContext>
+    public ENoteContext CreateDbContext(string[] args)
     {
-        public ENoteContext CreateDbContext(string[] args)
+        LoadDotEnv();
+
+        var configuration = new ConfigurationBuilder()
+            .AddEnvironmentVariables()
+            .Build();
+
+        var connectionString = configuration.GetConnectionString("DefaultConnection")
+            ?? throw new InvalidOperationException("ConnectionStrings__DefaultConnection is missing. Set it in .env or environment variables.");
+
+        var optionsBuilder = new DbContextOptionsBuilder<ENoteContext>();
+        optionsBuilder.UseSqlServer(connectionString, sql => sql.MigrationsAssembly("eNote.Infrastructure"));
+
+        return new ENoteContext(optionsBuilder.Options, new SystemClock());
+    }
+
+    private static void LoadDotEnv()
+    {
+        var directory = new DirectoryInfo(Directory.GetCurrentDirectory());
+
+        while (directory is not null)
         {
-            LoadDotEnv();
+            var envFile = Path.Combine(directory.FullName, ".env");
 
-            var configuration = new ConfigurationBuilder()
-                .AddEnvironmentVariables()
-                .Build();
-
-            var connectionString = configuration.GetConnectionString("DefaultConnection")
-                ?? throw new InvalidOperationException("ConnectionStrings__DefaultConnection is missing. Set it in .env or environment variables.");
-
-            var optionsBuilder = new DbContextOptionsBuilder<ENoteContext>();
-            optionsBuilder.UseSqlServer(connectionString, sql => sql.MigrationsAssembly("eNote.Infrastructure"));
-
-            return new ENoteContext(optionsBuilder.Options, new SystemClock());
-        }
-
-        private static void LoadDotEnv()
-        {
-            var directory = new DirectoryInfo(Directory.GetCurrentDirectory());
-
-            while (directory is not null)
+            if (File.Exists(envFile))
             {
-                var envFile = Path.Combine(directory.FullName, ".env");
-
-                if (File.Exists(envFile))
-                {
-                    Env.Load(envFile);
-                    return;
-                }
-
-                directory = directory.Parent;
+                Env.Load(envFile);
+                return;
             }
+
+            directory = directory.Parent;
         }
     }
 }

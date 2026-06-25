@@ -2,34 +2,33 @@
 using eNote.Infrastructure.Data.Seed;
 using Microsoft.EntityFrameworkCore;
 
-namespace eNote.API.Extensions
+namespace eNote.API.Extensions;
+
+public static class SeedExtensions
 {
-    public static class SeedExtensions
+    public static async Task<WebApplication> MigrateAsync(this WebApplication app)
     {
-        public static async Task<WebApplication> MigrateAsync(this WebApplication app)
-        {
-            using IServiceScope scope = app.Services.CreateScope();
+        using IServiceScope scope = app.Services.CreateScope();
 
-            var context = scope.ServiceProvider.GetRequiredService<ENoteContext>();
+        var context = scope.ServiceProvider.GetRequiredService<ENoteContext>();
 
-            await context.Database.MigrateAsync();
+        await context.Database.MigrateAsync();
 
-            return app;
-        }
+        return app;
+    }
 
-        public static async Task<WebApplication> SeedDevelopmentData(this WebApplication app)
-        {
-            using IServiceScope scope = app.Services.CreateScope();
+    public static async Task<WebApplication> SeedDevelopmentData(this WebApplication app)
+    {
+        using IServiceScope scope = app.Services.CreateScope();
 
-            var services = scope.ServiceProvider;
+        var services = scope.ServiceProvider;
 
-            await IdentitySeed.SeedAsync(services);
+        await IdentitySeed.SeedAsync(services);
 
-            var context = services.GetRequiredService<ENoteContext>();
+        var context = services.GetRequiredService<ENoteContext>();
 
-            await DevelopmentDataSeed.SeedAsync(context);
+        await DevelopmentDataSeed.SeedAsync(context);
 
-            return app;
-        }
+        return app;
     }
 }

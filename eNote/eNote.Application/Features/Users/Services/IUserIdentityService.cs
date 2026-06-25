@@ -1,9 +1,8 @@
-namespace eNote.Application.Features.Users.Services
+namespace eNote.Application.Features.Users.Services;
+
+public interface IUserIdentityService
 {
-    public interface IUserIdentityService
-    {
-        Task<UserIdentityDto?> GetUserAsync(int userId);
-        Task<IReadOnlyDictionary<int, UserIdentityDto>> GetUsersBulkAsync(IEnumerable<int> userIds);
-        Task<IReadOnlyList<string>> GetRolesAsync(int userId);
-    }
+    Task<UserIdentityDto?> GetUserAsync(int userId);
+    Task<IReadOnlyDictionary<int, UserIdentityDto>> GetUsersBulkAsync(IEnumerable<int> userIds);
+    Task<IReadOnlyList<string>> GetRolesAsync(int userId);
 }

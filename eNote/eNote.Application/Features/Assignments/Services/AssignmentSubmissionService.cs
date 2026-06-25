@@ -26,7 +26,7 @@ public sealed class AssignmentSubmissionService(
         return await SubmitAsync(assignmentId, new AssignmentSubmitRequest { FilePath = path });
     }
 
-    public async Task<PagedResult<AssignmentSubmissionDto>> GetSubmissionsAsync(int lectureId, int assignmentId, int page, int pageSize)
+    public async Task<PagedResult<AssignmentSubmissionDto>> GetSubmissionsAsync(int lectureId, int assignmentId, SubmissionSearchObject search)
     {
         await GetOwnedAssignmentAsync(lectureId, assignmentId);
 
@@ -36,7 +36,7 @@ public sealed class AssignmentSubmissionService(
             .Where(x => x.AssignmentId == assignmentId);
 
         return await query.ToPagedResultAsync(
-            page, pageSize, includeTotalCount: true,
+            search,
             items => resolver.GetStudentDisplayNamesAsync(items.Select(x => x.Student)),
             (x, names) => MapSubmission(x, x.Student, names.GetValueOrDefault(x.StudentId, $"Student {x.StudentId}")),
             q => q.OrderBy(x => x.StudentId));
@@ -63,7 +63,8 @@ public sealed class AssignmentSubmissionService(
     {
         var student = await resolver.GetStudentAsync(currentUserService.UserId);
 
-        var assignment = await StudentAssignmentQuery(student.Id, assignmentId)
+        var assignment = await context.Set<Assignment>()
+            .ForEnrolledStudentById(student.Id, assignmentId)
             .Include(x => x.AssignmentSubmissions)
             .FirstOrDefaultAsync()
             ?? throw new NotFoundException(Messages.AssignmentNotFound);
@@ -99,15 +100,9 @@ public sealed class AssignmentSubmissionService(
 
     private async Task<Assignment> GetOwnedAssignmentAsync(int lectureId, int assignmentId)
     {
-        var instructor = await instructorAccess.GetInstructorAsync(currentUserService.UserId);
-        return await instructorAccess.GetOwnedAssignmentAsync(lectureId, assignmentId, instructor.Id);
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUserService.UserId);
+        return await instructorAccess.GetOwnedAssignmentAsync(lectureId, assignmentId, instructorId);
     }
-
-    private IQueryable<Assignment> StudentAssignmentQuery(int studentId, int assignmentId) =>
-        context.Set<Assignment>()
-            .ForEnrolledStudent(studentId)
-            .Where(x => x.Id == assignmentId);
-
     private static AssignmentSubmissionDto MapSubmission(AssignmentSubmission submission, Student student, string studentName) => new()
     {
         Id = submission.Id,

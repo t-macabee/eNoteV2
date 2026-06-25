@@ -10,6 +10,7 @@ namespace eNote.Application.Features.Instructors;
 public sealed class InstructorAccessService(IAppDbContext context, IUserContextResolver resolver) : IInstructorAccessService
 {
     public Task<Instructor> GetInstructorAsync(int userId) => resolver.GetInstructorAsync(userId);
+    public async Task<int> GetCurrentInstructorIdAsync(int appUserId) => (await GetInstructorAsync(appUserId)).Id;
 
     public Task<bool> OwnsCourseAsync(int courseId, int instructorId) =>
         context.Set<Course>().AnyAsync(c => c.Id == courseId && c.InstructorId == instructorId);

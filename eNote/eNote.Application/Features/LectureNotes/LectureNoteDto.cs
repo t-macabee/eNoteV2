@@ -1,11 +1,10 @@
-namespace eNote.Application.Features.LectureNotes
-{
-    public class LectureNoteDto
-    {
-        public int Id { get; set; }
-        public int LectureId { get; set; }
+namespace eNote.Application.Features.LectureNotes;
 
-        public string Title { get; set; } = null!;
-        public string Content { get; set; } = null!;
-    }
+public class LectureNoteDto
+{
+    public int Id { get; set; }
+    public int LectureId { get; set; }
+
+    public string Title { get; set; } = null!;
+    public string Content { get; set; } = null!;
 }

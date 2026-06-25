@@ -137,12 +137,12 @@ public sealed class ReportService(IAppDbContext context, IClock clock, IRankingS
 
     public async Task<byte[]> GenerateLectureAttendancePdfAsync(int lectureId, CancellationToken cancellationToken = default)
     {
-        var instructor = await instructorAccess.GetInstructorAsync(currentUserService.UserId);
-        var lecture = await instructorAccess.GetOwnedLectureAsync(lectureId, instructor.Id, includeAttendances: true);
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUserService.UserId);
+        var lecture = await instructorAccess.GetOwnedLectureAsync(lectureId, instructorId, includeAttendances: true);
 
         var nameMap = await resolver.GetStudentDisplayNamesAsync(lecture.Attendances.Select(a => a.Student).Where(s => s is not null)!);
 
-        var rows = lecture.Attendances.OrderBy(a => a.StudentId).Select(a => 
+        var rows = lecture.Attendances.OrderBy(a => a.StudentId).Select(a =>
             new AttendanceRow(a.StudentId, nameMap.GetValueOrDefault(a.StudentId, $"Student {a.StudentId}"), a.AttendanceStatus)).ToList();
 
         return Document.Create(container =>

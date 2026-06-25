@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Infrastructure.Identity;
 
-public class UserAccountService(UserManager<AppUser> userManager) : IUserAccountService
+public sealed class UserAccountService(UserManager<AppUser> userManager) : IUserAccountService
 {
     private const int MaxPictureSizeBytes = 5 * 1024 * 1024;
 

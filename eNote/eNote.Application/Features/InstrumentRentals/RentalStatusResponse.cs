@@ -1,7 +1,6 @@
-namespace eNote.Application.Features.InstrumentRentals
+namespace eNote.Application.Features.InstrumentRentals;
+
+public class RentalStatusResponse
 {
-    public class RentalStatusResponse
-    {
-        public string? Note { get; set; }
-    }
+    public string? Note { get; set; }
 }

@@ -10,7 +10,7 @@ using Microsoft.Extensions.Logging;
 
 namespace eNote.Infrastructure.Identity;
 
-public class AuthService(
+public sealed class AuthService(
     UserManager<AppUser> userManager,
     SignInManager<AppUser> signInManager,
     ITokenService tokenService,
@@ -21,7 +21,7 @@ public class AuthService(
 {
     public async Task<AuthResponse> LoginAsync(LoginRequest model)
     {
-        string username = model.Username.Trim();
+        var username = model.Username.Trim();
         AppUser? user = await userManager.FindByNameAsync(username);
 
         if (user == null || !user.IsActive)
@@ -48,7 +48,7 @@ public class AuthService(
             throw new BusinessException(Messages.UserSingleRoleRequired);
         }
 
-        string token = tokenService.GenerateToken(user.Id, user.UserName!, roles);
+        var token = tokenService.GenerateToken(user.Id, user.UserName!, roles);
 
         return new AuthResponse
         {
@@ -82,7 +82,7 @@ public class AuthService(
 
         IList<string> roles = await userManager.GetRolesAsync(user);
 
-        string token = tokenService.GenerateToken(user.Id, user.UserName!, roles);
+        var token = tokenService.GenerateToken(user.Id, user.UserName!, roles);
 
         return new AuthResponse
         {
@@ -98,7 +98,7 @@ public class AuthService(
 
     public async Task<ForgotPasswordResponse> ForgotPasswordAsync(ForgotPasswordRequest request, CancellationToken cancellationToken = default)
     {
-        string email = request.Email.Trim();
+        var email = request.Email.Trim();
         AppUser? user = await userManager.FindByEmailAsync(email);
 
         if (user is null || !user.IsActive)
@@ -106,7 +106,7 @@ public class AuthService(
             return new ForgotPasswordResponse { Message = Messages.PasswordResetEmailSent };
         }
 
-        string token = await userManager.GeneratePasswordResetTokenAsync(user);
+        var token = await userManager.GeneratePasswordResetTokenAsync(user);
 
         if (environment.IsDevelopment())
         {
@@ -129,7 +129,7 @@ public class AuthService(
 
         if (!result.Succeeded)
         {
-            string errors = string.Join("; ", result.Errors.Select(e => e.Description));
+            var errors = string.Join("; ", result.Errors.Select(e => e.Description));
             throw new BusinessException(Messages.PasswordResetFailed + " " + errors);
         }
     }

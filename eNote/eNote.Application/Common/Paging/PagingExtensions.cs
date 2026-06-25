@@ -1,128 +1,127 @@
 ﻿using eNote.Application.Common.Search;
 using Microsoft.EntityFrameworkCore;
 
-namespace eNote.Application.Common.Paging
+namespace eNote.Application.Common.Paging;
+
+public static class PagingExtensions
 {
-    public static class PagingExtensions
+    public static async Task<PagedResult<TModel>> ToPagedResultAsync<TEntity, TModel>
+        (this IQueryable<TEntity> query, int page, int pageSize, bool includeTotalCount,
+        Func<TEntity, TModel> map, Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>>? orderBy = null, CancellationToken ct = default)
     {
-        public static async Task<PagedResult<TModel>> ToPagedResultAsync<TEntity, TModel>
-            (this IQueryable<TEntity> query, int page, int pageSize, bool includeTotalCount,
-            Func<TEntity, TModel> map, Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>>? orderBy = null, CancellationToken ct = default)
+        int? total = null;
+
+        if (includeTotalCount)
         {
-            int? total = null;
-
-            if (includeTotalCount)
-            {
-                total = await query.CountAsync(ct);
-            }
-
-            (page, pageSize) = PagingLimits.Normalize(page, pageSize);
-
-            if (orderBy is not null)
-            {
-                query = orderBy(query);
-            }
-
-            var entities = await query
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .ToListAsync(ct);
-
-            return new PagedResult<TModel>
-            {
-                Items = [.. entities.Select(map)],
-                Page = page,
-                PageSize = pageSize,
-                TotalCount = total
-            };
+            total = await query.CountAsync(ct);
         }
 
-        public static Task<PagedResult<TModel>> ToPagedResultAsync<TEntity, TSearch, TModel>
-            (this IQueryable<TEntity> query, TSearch search, Func<TEntity, TModel> map,
-            Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>>? orderBy = null, CancellationToken ct = default)
-            where TSearch : BaseSearchObject =>
-            query.ToPagedResultAsync(search.Page, search.PageSize, search.IncludeTotalCount, map, orderBy, ct);
+        (page, pageSize) = PagingLimits.Normalize(page, pageSize);
 
-        public static async Task<PagedResult<TModel>> ToPagedResultAsync<TEntity, TModel>
-            (this IQueryable<TEntity> query, int page, int pageSize, bool includeTotalCount,
-            Func<TEntity, Task<TModel>> mapAsync, Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>>? orderBy = null, CancellationToken ct = default)
+        if (orderBy is not null)
         {
-            int? total = null;
-
-            if (includeTotalCount)
-            {
-                total = await query.CountAsync(ct);
-            }
-
-            (page, pageSize) = PagingLimits.Normalize(page, pageSize);
-
-            if (orderBy is not null)
-            {
-                query = orderBy(query);
-            }
-
-            var entities = await query
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .ToListAsync(ct);
-
-            var items = await Task.WhenAll(entities.Select(mapAsync));
-
-            return new PagedResult<TModel>
-            {
-                Items = [.. items],
-                Page = page,
-                PageSize = pageSize,
-                TotalCount = total
-            };
+            query = orderBy(query);
         }
 
-        public static Task<PagedResult<TModel>> ToPagedResultAsync<TEntity, TSearch, TModel>
-            (this IQueryable<TEntity> query, TSearch search, Func<TEntity, Task<TModel>> mapAsync,
-            Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>>? orderBy = null, CancellationToken ct = default)
-            where TSearch : BaseSearchObject =>
-            query.ToPagedResultAsync(search.Page, search.PageSize, search.IncludeTotalCount, mapAsync, orderBy, ct);
+        var entities = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(ct);
 
-        public static async Task<PagedResult<TModel>> ToPagedResultAsync<TEntity, TCtx, TModel>
-            (this IQueryable<TEntity> query, int page, int pageSize, bool includeTotalCount,
-            Func<IReadOnlyList<TEntity>, Task<TCtx>> loadContext, Func<TEntity, TCtx, TModel> map,
-            Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>>? orderBy = null, CancellationToken ct = default)
+        return new PagedResult<TModel>
         {
-            int? total = null;
-
-            if (includeTotalCount)
-            {
-                total = await query.CountAsync(ct);
-            }
-
-            (page, pageSize) = PagingLimits.Normalize(page, pageSize);
-
-            if (orderBy is not null)
-            {
-                query = orderBy(query);
-            }
-
-            var entities = await query
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .ToListAsync(ct);
-
-            var ctx = await loadContext(entities);
-
-            return new PagedResult<TModel>
-            {
-                Items = [.. entities.Select(e => map(e, ctx))],
-                Page = page,
-                PageSize = pageSize,
-                TotalCount = total
-            };
-        }
-
-        public static Task<PagedResult<TModel>> ToPagedResultAsync<TEntity, TSearch, TCtx, TModel>
-            (this IQueryable<TEntity> query, TSearch search, Func<IReadOnlyList<TEntity>, Task<TCtx>> loadContext,
-            Func<TEntity, TCtx, TModel> map, Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>>? orderBy = null,
-            CancellationToken ct = default)
-            where TSearch : BaseSearchObject =>
-            query.ToPagedResultAsync(search.Page, search.PageSize, search.IncludeTotalCount, loadContext, map, orderBy, ct);
+            Items = [.. entities.Select(map)],
+            Page = page,
+            PageSize = pageSize,
+            TotalCount = total
+        };
     }
+
+    public static Task<PagedResult<TModel>> ToPagedResultAsync<TEntity, TSearch, TModel>
+        (this IQueryable<TEntity> query, TSearch search, Func<TEntity, TModel> map,
+        Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>>? orderBy = null, CancellationToken ct = default)
+        where TSearch : BaseSearchObject =>
+        query.ToPagedResultAsync(search.Page, search.PageSize, search.IncludeTotalCount, map, orderBy, ct);
+
+    public static async Task<PagedResult<TModel>> ToPagedResultAsync<TEntity, TModel>
+        (this IQueryable<TEntity> query, int page, int pageSize, bool includeTotalCount,
+        Func<TEntity, Task<TModel>> mapAsync, Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>>? orderBy = null, CancellationToken ct = default)
+    {
+        int? total = null;
+
+        if (includeTotalCount)
+        {
+            total = await query.CountAsync(ct);
+        }
+
+        (page, pageSize) = PagingLimits.Normalize(page, pageSize);
+
+        if (orderBy is not null)
+        {
+            query = orderBy(query);
+        }
+
+        var entities = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(ct);
+
+        var items = await Task.WhenAll(entities.Select(mapAsync));
+
+        return new PagedResult<TModel>
+        {
+            Items = [.. items],
+            Page = page,
+            PageSize = pageSize,
+            TotalCount = total
+        };
+    }
+
+    public static Task<PagedResult<TModel>> ToPagedResultAsync<TEntity, TSearch, TModel>
+        (this IQueryable<TEntity> query, TSearch search, Func<TEntity, Task<TModel>> mapAsync,
+        Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>>? orderBy = null, CancellationToken ct = default)
+        where TSearch : BaseSearchObject =>
+        query.ToPagedResultAsync(search.Page, search.PageSize, search.IncludeTotalCount, mapAsync, orderBy, ct);
+
+    public static async Task<PagedResult<TModel>> ToPagedResultAsync<TEntity, TCtx, TModel>
+        (this IQueryable<TEntity> query, int page, int pageSize, bool includeTotalCount,
+        Func<IReadOnlyList<TEntity>, Task<TCtx>> loadContext, Func<TEntity, TCtx, TModel> map,
+        Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>>? orderBy = null, CancellationToken ct = default)
+    {
+        int? total = null;
+
+        if (includeTotalCount)
+        {
+            total = await query.CountAsync(ct);
+        }
+
+        (page, pageSize) = PagingLimits.Normalize(page, pageSize);
+
+        if (orderBy is not null)
+        {
+            query = orderBy(query);
+        }
+
+        var entities = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(ct);
+
+        var ctx = await loadContext(entities);
+
+        return new PagedResult<TModel>
+        {
+            Items = [.. entities.Select(e => map(e, ctx))],
+            Page = page,
+            PageSize = pageSize,
+            TotalCount = total
+        };
+    }
+
+    public static Task<PagedResult<TModel>> ToPagedResultAsync<TEntity, TSearch, TCtx, TModel>
+        (this IQueryable<TEntity> query, TSearch search, Func<IReadOnlyList<TEntity>, Task<TCtx>> loadContext,
+        Func<TEntity, TCtx, TModel> map, Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>>? orderBy = null,
+        CancellationToken ct = default)
+        where TSearch : BaseSearchObject =>
+        query.ToPagedResultAsync(search.Page, search.PageSize, search.IncludeTotalCount, loadContext, map, orderBy, ct);
 }

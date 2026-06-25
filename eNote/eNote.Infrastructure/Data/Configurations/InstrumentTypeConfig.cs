@@ -2,14 +2,13 @@ using eNote.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace eNote.Infrastructure.Data.Configurations
+namespace eNote.Infrastructure.Data.Configurations;
+
+public sealed class InstrumentTypeConfig : IEntityTypeConfiguration<InstrumentType>
 {
-    public sealed class InstrumentTypeConfig : IEntityTypeConfiguration<InstrumentType>
+    public void Configure(EntityTypeBuilder<InstrumentType> builder)
     {
-        public void Configure(EntityTypeBuilder<InstrumentType> builder)
-        {
-            builder.Property(t => t.Type).HasStringConfig(100, true);
-            builder.Property(t => t.MonthlyFee).HasDecimalPrecision(18, 2);
-        }
+        builder.Property(t => t.Type).HasStringConfig(100, true);
+        builder.Property(t => t.MonthlyFee).HasDecimalPrecision(18, 2);
     }
 }

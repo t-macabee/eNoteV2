@@ -5,29 +5,28 @@ using Microsoft.AspNetCore.Mvc;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 
-namespace eNote.API.Controllers.Base
+namespace eNote.API.Controllers.Base;
+
+[ApiController]
+[Authorize]
+public abstract class CoreController : ControllerBase
 {
-    [ApiController]
-    [Authorize]
-    public abstract class CoreController : ControllerBase
+    protected string CurrentTokenJti =>
+        User.FindFirstValue(JwtRegisteredClaimNames.Jti)
+        ?? throw new AuthenticationException(Messages.InvalidUserClaim);
+
+    protected DateTime CurrentTokenExpiresAtUtc
     {
-        protected string CurrentTokenJti =>
-            User.FindFirstValue(JwtRegisteredClaimNames.Jti)
-            ?? throw new AuthenticationException(Messages.InvalidUserClaim);
-
-        protected DateTime CurrentTokenExpiresAtUtc
+        get
         {
-            get
+            var exp = User.FindFirstValue(JwtRegisteredClaimNames.Exp);
+
+            if (exp is null || !long.TryParse(exp, out var unixSeconds))
             {
-                var exp = User.FindFirstValue(JwtRegisteredClaimNames.Exp);
-
-                if (exp is null || !long.TryParse(exp, out var unixSeconds))
-                {
-                    throw new AuthenticationException(Messages.InvalidUserClaim);
-                }
-
-                return DateTimeOffset.FromUnixTimeSeconds(unixSeconds).UtcDateTime;
+                throw new AuthenticationException(Messages.InvalidUserClaim);
             }
+
+            return DateTimeOffset.FromUnixTimeSeconds(unixSeconds).UtcDateTime;
         }
     }
 }

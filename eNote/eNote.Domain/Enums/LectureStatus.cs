@@ -1,9 +1,8 @@
-namespace eNote.Domain.Enums
+namespace eNote.Domain.Enums;
+
+public enum LectureStatus
 {
-    public enum LectureStatus
-    {
-        Scheduled = 1,
-        Held = 2,
-        Cancelled = 3
-    }
+    Scheduled = 1,
+    Held = 2,
+    Cancelled = 3
 }

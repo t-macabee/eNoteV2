@@ -1,13 +1,12 @@
-namespace eNote.Application.Features.Assignments
+namespace eNote.Application.Features.Assignments;
+
+public class AssignmentDto
 {
-    public class AssignmentDto
-    {
-        public int Id { get; set; }
-        public int LectureId { get; set; }
+    public int Id { get; set; }
+    public int LectureId { get; set; }
 
-        public string Title { get; set; } = null!;
-        public string Description { get; set; } = null!;
+    public string Title { get; set; } = null!;
+    public string Description { get; set; } = null!;
 
-        public DateTime DueAt { get; set; }
-    }
+    public DateTime DueAt { get; set; }
 }

@@ -1,12 +1,11 @@
-namespace eNote.Application.Features.InstrumentRentals.StateMachine
+namespace eNote.Application.Features.InstrumentRentals.StateMachine;
+
+public enum RentalTrigger
 {
-    public enum RentalTrigger
-    {
-        Approve,
-        Reject,
-        Pickup,
-        Complete,
-        Cancel,
-        ReturnEarly
-    }
+    Approve,
+    Reject,
+    Pickup,
+    Complete,
+    Cancel,
+    ReturnEarly
 }

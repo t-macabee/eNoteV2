@@ -87,3 +87,6 @@ ios/Runner/GeneratedPluginRegistrant.*
 *.zip
 *.apk
 /task.txt
+.aider*
+# Added by code-review-graph
+.code-review-graph/

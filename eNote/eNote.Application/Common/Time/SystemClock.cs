@@ -1,7 +1,6 @@
-namespace eNote.Application.Common.Time
+namespace eNote.Application.Common.Time;
+
+public sealed class SystemClock : IClock
 {
-    public sealed class SystemClock : IClock
-    {
-        public DateTime UtcNow => DateTime.UtcNow;
-    }
+    public DateTime UtcNow => DateTime.UtcNow;
 }

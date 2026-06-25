@@ -1,0 +1,644 @@
+# Bounded Context: Courses
+Total Files Contained: 16
+---
+
+## File: eNote\eNote.Application\Features\Courses\CourseDto.cs
+```cs
+namespace eNote.Application.Features.Courses;
+
+public class CourseDto
+{
+    public int Id { get; set; }
+    public int InstructorId { get; set; }
+
+    public string Name { get; set; } = null!;
+    public string? Description { get; set; }
+    public bool IsPublished { get; set; }
+
+    public DateTime? StartDate { get; set; }
+    public DateTime? EndDate { get; set; }
+
+    public decimal Price { get; set; }
+
+    public int EnrolledCount { get; set; }
+}
+
+```
+
+## File: eNote\eNote.Application\Features\Courses\CourseMappingConfig.cs
+```cs
+using eNote.Domain.Entities;
+using eNote.Domain.Enums;
+using Mapster;
+
+namespace eNote.Application.Features.Courses;
+
+public sealed class CourseMappingConfig : IRegister
+{
+    public void Register(TypeAdapterConfig config)
+    {
+        config.NewConfig<Course, CourseDto>()
+            .Map(dest => dest.EnrolledCount, src => src.Enrollments == null ? 0 : src.Enrollments.Count(e => e.EnrollmentStatus == EnrollmentStatus.Active));
+    }
+}
+
+```
+
+## File: eNote\eNote.Application\Features\Courses\CourseRankingEntryDto.cs
+```cs
+namespace eNote.Application.Features.Courses;
+
+public class CourseRankingEntryDto
+{
+    public int Rank { get; set; }
+    public int StudentId { get; set; }
+
+    public string StudentName { get; set; } = null!;
+
+    public double? AverageGrade { get; set; }
+    public int GradedSubmissions { get; set; }
+}
+
+```
+
+## File: eNote\eNote.Application\Features\Courses\CourseRequest.cs
+```cs
+using System.ComponentModel.DataAnnotations;
+
+namespace eNote.Application.Features.Courses;
+
+public class CourseRequest
+{
+    [Required]
+    public string Name { get; set; } = null!;
+    public string? Description { get; set; }
+
+    [Range(0, double.MaxValue, ErrorMessage = "Price must be non-negative.")]
+    public decimal Price { get; set; }
+
+    public DateTime? StartDate { get; set; }
+    public DateTime? EndDate { get; set; }
+    public bool IsPublished { get; set; }
+}
+
+```
+
+## File: eNote\eNote.Application\Features\Courses\CourseSearchExtensions.cs
+```cs
+using eNote.Application.Common.Search;
+using eNote.Domain.Entities;
+
+namespace eNote.Application.Features.Courses;
+
+public static class CourseSearchExtensions
+{
+    public static IQueryable<Course> ApplySearch(this IQueryable<Course> query, CourseSearchObject search) =>
+        query
+            .WhereContainsIf(search.Name, c => c.Name.Contains(search.Name!))
+            .WhereEqualsIf(search.IsPublished, c => c.IsPublished == search.IsPublished!.Value);
+}
+```
+
+## File: eNote\eNote.Application\Features\Courses\CourseSearchObject.cs
+```cs
+using eNote.Application.Common.Search;
+
+namespace eNote.Application.Features.Courses;
+
+public class CourseSearchObject : BaseSearchObject
+{
+    public string? Name { get; set; }
+    public bool? IsPublished { get; set; }
+}
+
+```
+
+## File: eNote\eNote.Application\Features\Courses\Services\CourseEnrollmentService.cs
+```cs
+using eNote.Application.Common.Exceptions;
+using eNote.Application.Common.Interfaces;
+using eNote.Application.Common.Localization;
+using eNote.Application.Common.Persistence;
+using eNote.Application.Common.Time;
+using eNote.Application.Features.Users.Services;
+using eNote.Domain.Entities;
+using eNote.Domain.Enums;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+
+namespace eNote.Application.Features.Courses.Services;
+
+public sealed class CourseEnrollmentService(
+    IAppDbContext context,
+    IClock clock,
+    IUserContextResolver resolver,
+    ICurrentUserService currentUserService,
+    ILogger<CourseEnrollmentService> logger) : ICourseEnrollmentService
+{
+    public async Task EnrollAsync(int courseId)
+    {
+        var student = await resolver.GetStudentAsync(currentUserService.UserId);
+
+        if (!student.HasActiveMembership(clock.UtcNow))
+        {
+            throw new BusinessException(Messages.MembershipInactive);
+        }
+
+        _ = await context.Set<Course>()
+            .AsNoTracking()
+            .FirstOrDefaultAsync(c => c.Id == courseId && c.IsPublished)
+            ?? throw new NotFoundException(Messages.CourseNotFound);
+
+        var enrollment = await context.Set<Enrollment>()
+            .FirstOrDefaultAsync(e => e.StudentId == student.Id && e.CourseId == courseId);
+
+        if (enrollment?.EnrollmentStatus == EnrollmentStatus.Active)
+        {
+            return;
+        }
+
+        if (enrollment?.EnrollmentStatus == EnrollmentStatus.Canceled)
+        {
+            enrollment.UpdateStatus(EnrollmentStatus.Active);
+            enrollment.UpdatedById = currentUserService.UserId;
+        }
+        else
+        {
+            context.Set<Enrollment>().Add(new Enrollment(student.Id, courseId, EnrollmentStatus.Active)
+            {
+                CreatedById = currentUserService.UserId
+            });
+        }
+
+        await context.SaveChangesAsync();
+
+        logger.LogInformation("Student {StudentUserId} enrolled in course {CourseId}", currentUserService.UserId, courseId);
+    }
+
+    public async Task UnenrollAsync(int courseId)
+    {
+        var student = await resolver.GetStudentAsync(currentUserService.UserId);
+
+        var enrollment = await context.Set<Enrollment>()
+            .FirstOrDefaultAsync(e =>
+                e.CourseId == courseId &&
+                e.StudentId == student.Id &&
+                e.EnrollmentStatus == EnrollmentStatus.Active)
+            ?? throw new BusinessException(Messages.StudentNotEnrolled);
+
+        enrollment.UpdateStatus(EnrollmentStatus.Canceled);
+        await context.SaveChangesAsync();
+
+        logger.LogInformation("Student {StudentUserId} unenrolled from course {CourseId}", currentUserService.UserId, courseId);
+    }
+}
+
+```
+
+## File: eNote\eNote.Application\Features\Courses\Services\CourseService.cs
+```cs
+﻿using eNote.Application.Common.Exceptions;
+using eNote.Application.Common.Interfaces;
+using eNote.Application.Common.Localization;
+using eNote.Application.Common.Paging;
+using eNote.Application.Common.Persistence;
+using eNote.Application.Features.Instructors;
+using eNote.Application.Features.Users.Services;
+using eNote.Domain.Entities;
+using eNote.Domain.Enums;
+using MapsterMapper;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+
+namespace eNote.Application.Features.Courses.Services;
+
+public sealed class CourseService(IAppDbContext context, IMapper mapper, IUserContextResolver resolver, IInstructorAccessService instructorAccess, ICurrentUserService currentUserService, ILogger<CourseService> logger) : ICourseService
+{
+    public async Task<CourseDto> GetByIdForInstructorAsync(int id)
+    {
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUserService.UserId);
+
+        var entity = await instructorAccess.CoursesFor(instructorId)
+            .AsNoTracking()
+            .Include(c => c.Enrollments)
+            .FirstOrDefaultAsync(c => c.Id == id)
+            ?? throw new NotFoundException(Messages.CourseNotFound);
+
+        return mapper.Map<CourseDto>(entity);
+    }
+
+    public async Task<CourseDto> GetByIdForStudentAsync(int id)
+    {
+        var student = await resolver.GetStudentAsync(currentUserService.UserId);
+
+        var entity = await context.Set<Course>()
+            .Include(c => c.Enrollments)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(c => c.Id == id && (c.IsPublished || c.Enrollments.Any(e => e.StudentId == student.Id && e.EnrollmentStatus == EnrollmentStatus.Active))) ?? throw new NotFoundException(Messages.CourseNotFound);
+
+        return mapper.Map<CourseDto>(entity);
+    }
+
+    public async Task<PagedResult<CourseDto>> GetPagedForInstructorAsync(CourseSearchObject search)
+    {
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUserService.UserId);
+
+        var query = instructorAccess.CoursesFor(instructorId)
+            .AsNoTracking()
+            .Include(c => c.Enrollments)
+            .ApplySearch(search);
+
+        return await query.ToPagedResultAsync(search, mapper.Map<CourseDto>, q => q.OrderByDescending(x => x.StartDate));
+    }
+
+    public async Task<PagedResult<CourseDto>> GetPagedForStudentAsync(CourseSearchObject search)
+    {
+        var query = context.Set<Course>()
+            .AsNoTracking()
+            .Include(c => c.Enrollments)
+            .Where(c => c.IsPublished)
+            .ApplySearch(search);
+
+        return await query.ToPagedResultAsync(search, mapper.Map<CourseDto>, q => q.OrderByDescending(x => x.StartDate));
+    }
+
+    public async Task<CourseDto> CreateAsync(CourseRequest request)
+    {
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUserService.UserId);
+
+        logger.LogInformation("Creating course {CourseName} by instructor user {InstructorUserId}", request.Name, currentUserService.UserId);
+
+        var entity = new Course(
+            request.Name.Trim(),
+            request.Description?.Trim(),
+            request.Price,
+            request.StartDate,
+            request.EndDate,
+            instructorId)
+        {
+            CreatedById = currentUserService.UserId
+        };
+        entity.SetPublishedStatus(request.IsPublished);
+
+        context.Set<Course>().Add(entity);
+        await context.SaveChangesAsync();
+
+        logger.LogInformation("Course {CourseId} created by instructor user {InstructorUserId}", entity.Id, currentUserService.UserId);
+
+        return mapper.Map<CourseDto>(entity);
+    }
+
+    public async Task<CourseDto> UpdateAsync(int id, CourseRequest request)
+    {
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUserService.UserId);
+
+        var entity = await instructorAccess.CoursesFor(instructorId)
+            .Include(c => c.Enrollments)
+            .FirstOrDefaultAsync(c => c.Id == id) ?? throw new NotFoundException(Messages.CourseNotFound);
+
+        entity.UpdateDetails(request.Name.Trim(), request.Description?.Trim(), request.Price, request.StartDate, request.EndDate);
+        entity.SetPublishedStatus(request.IsPublished);
+        entity.UpdatedById = currentUserService.UserId;
+
+        await context.SaveChangesAsync();
+
+        return mapper.Map<CourseDto>(entity);
+    }
+
+    public async Task DeleteAsync(int id)
+    {
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUserService.UserId);
+
+        var entity = await instructorAccess.CoursesFor(instructorId).FirstOrDefaultAsync(c => c.Id == id) ?? throw new NotFoundException(Messages.CourseNotFound);
+
+        entity.SoftDelete();
+        entity.UpdatedById = currentUserService.UserId;
+
+        await context.Set<Lecture>()
+            .Where(l => l.CourseId == id)
+            .ExecuteUpdateAsync(s => s.SetProperty(l => l.IsActive, false)
+            .SetProperty(l => l.UpdatedById, currentUserService.UserId));
+
+        await context.SaveChangesAsync();
+
+        logger.LogInformation("Course {CourseId} soft-deleted by instructor user {InstructorUserId}", id, currentUserService.UserId);
+    }
+}
+
+```
+
+## File: eNote\eNote.Application\Features\Courses\Services\ICourseEnrollmentService.cs
+```cs
+namespace eNote.Application.Features.Courses.Services;
+
+public interface ICourseEnrollmentService
+{
+    Task EnrollAsync(int courseId);
+    Task UnenrollAsync(int courseId);
+}
+
+```
+
+## File: eNote\eNote.Application\Features\Courses\Services\ICourseService.cs
+```cs
+using eNote.Application.Common.Paging;
+
+namespace eNote.Application.Features.Courses.Services;
+
+public interface ICourseService
+{
+    Task<PagedResult<CourseDto>> GetPagedForInstructorAsync(CourseSearchObject search);
+    Task<PagedResult<CourseDto>> GetPagedForStudentAsync(CourseSearchObject search);
+    Task<CourseDto> GetByIdForInstructorAsync(int id);
+    Task<CourseDto> GetByIdForStudentAsync(int id);
+    Task<CourseDto> CreateAsync(CourseRequest request);
+    Task<CourseDto> UpdateAsync(int id, CourseRequest request);
+    Task DeleteAsync(int id);
+}
+
+```
+
+## File: eNote\eNote.Application\Features\Courses\Services\IRankingService.cs
+```cs
+namespace eNote.Application.Features.Courses.Services;
+
+public interface IRankingService
+{
+    Task<IReadOnlyList<CourseRankingEntryDto>> GetForInstructorAsync(int courseId);
+    Task<IReadOnlyList<CourseRankingEntryDto>> GetForStudentAsync(int courseId);
+}
+
+```
+
+## File: eNote\eNote.Application\Features\Courses\Services\RankingService.cs
+```cs
+﻿using eNote.Application.Common.Exceptions;
+using eNote.Application.Common.Interfaces;
+using eNote.Application.Common.Localization;
+using eNote.Application.Common.Persistence;
+using eNote.Application.Features.Instructors;
+using eNote.Application.Features.Students;
+using eNote.Application.Features.Users.Services;
+using eNote.Domain.Entities;
+using eNote.Domain.Enums;
+using Microsoft.EntityFrameworkCore;
+
+namespace eNote.Application.Features.Courses.Services;
+
+public sealed class RankingService(IAppDbContext context, IUserContextResolver resolver, IInstructorAccessService instructorAccess, ICurrentUserService currentUserService) : IRankingService
+{
+    public async Task<IReadOnlyList<CourseRankingEntryDto>> GetForInstructorAsync(int courseId)
+    {
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUserService.UserId);
+
+        if (!await instructorAccess.OwnsCourseAsync(courseId, instructorId))
+        {
+            throw new NotFoundException(Messages.CourseNotFound);
+        }
+
+        return await BuildRankingAsync(courseId);
+    }
+
+    public async Task<IReadOnlyList<CourseRankingEntryDto>> GetForStudentAsync(int courseId)
+    {
+        var student = await resolver.GetStudentAsync(currentUserService.UserId);
+
+        if (!await context.IsEnrolledInCourseAsync(student.Id, courseId))
+        {
+            throw new AuthorizationException(Messages.StudentNotEnrolled);
+        }
+
+        return await BuildRankingAsync(courseId);
+    }
+
+    private async Task<IReadOnlyList<CourseRankingEntryDto>> BuildRankingAsync(int courseId)
+    {
+        var enrolledStudents = await context.Set<Enrollment>()
+            .AsNoTracking()
+            .Where(e => e.CourseId == courseId && e.EnrollmentStatus == EnrollmentStatus.Active)
+            .Include(e => e.Student)
+            .Select(e => e.Student)
+            .ToListAsync();
+
+        if (enrolledStudents.Count == 0)
+        {
+            return [];
+        }
+
+        HashSet<int> studentIds = [.. enrolledStudents.Select(s => s.Id)];
+
+        Dictionary<int, StudentGradeStats> gradeData = await context.Set<AssignmentSubmission>()
+            .AsNoTracking()
+            .Where(s => s.Grade != null && s.Assignment.Lecture.CourseId == courseId && studentIds.Contains(s.StudentId))
+            .GroupBy(s => s.StudentId)
+            .Select(g =>
+                new StudentGradeStats(g.Key,
+                    g.Average(x => (double?)x.Grade),
+                    g.Count()))
+                .ToDictionaryAsync(x => x.StudentId);
+
+        IReadOnlyDictionary<int, string> nameMap = await resolver.GetStudentDisplayNamesAsync(enrolledStudents);
+
+        List<CourseRankingEntryDto> ranked = [.. enrolledStudents
+            .Where(s => gradeData.ContainsKey(s.Id))
+            .Select(s =>
+            {
+                var gradeStats = gradeData[s.Id];
+
+                return new RankedStudentEntry(s, gradeStats.Average, gradeStats.Count, nameMap.GetValueOrDefault(s.Id, $"Student {s.Id}"));
+            })
+            .OrderByDescending(x => x.Average)
+            .ThenBy(x => x.Student.Id)
+            .Select((x, i) => new CourseRankingEntryDto
+            {
+                Rank = i + 1,
+                StudentId = x.Student.Id,
+                StudentName = x.Name,
+                AverageGrade = x.Average.HasValue ? Math.Round(x.Average!.Value, 2) : null,
+                GradedSubmissions = x.Count
+            })];
+
+        return ranked;
+    }
+
+    private sealed record StudentGradeStats(int StudentId, double? Average, int Count);
+
+    private sealed record RankedStudentEntry(Student Student, double? Average, int Count, string Name);
+}
+
+```
+
+## File: eNote\eNote.API\Controllers\Courses\InstructorCourseController.cs
+```cs
+﻿using eNote.API.Controllers.Base;
+using eNote.Application.Common.Paging;
+using eNote.Application.Constants;
+using eNote.Application.Features.Courses;
+using eNote.Application.Features.Courses.Services;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+
+namespace eNote.API.Controllers.Courses;
+
+[Authorize(Roles = AppRoles.Instructor)]
+[Route("api/instructor/courses")]
+public sealed class InstructorCourseController(ICourseService service) : CoreController
+{
+    [HttpGet]
+    [ProducesResponseType(typeof(PagedResult<CourseDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<PagedResult<CourseDto>>> GetMyCourses([FromQuery] CourseSearchObject search)
+    {
+        var result = await service.GetPagedForInstructorAsync(search);
+        return Ok(result);
+    }
+
+    [HttpGet("{id:int}")]
+    [ProducesResponseType(typeof(CourseDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<CourseDto>> GetById(int id)
+    {
+        var dto = await service.GetByIdForInstructorAsync(id);
+        return Ok(dto);
+    }
+
+    [HttpPost]
+    [ProducesResponseType(typeof(CourseDto), StatusCodes.Status201Created)]
+    public async Task<ActionResult<CourseDto>> Create([FromBody] CourseRequest request)
+    {
+        var dto = await service.CreateAsync(request);
+        return CreatedAtAction(nameof(GetById), new
+        {
+            id = dto.Id
+        }, dto);
+    }
+
+    [HttpPut("{id:int}")]
+    [ProducesResponseType(typeof(CourseDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<CourseDto>> Update(int id, [FromBody] CourseRequest request)
+    {
+        var dto = await service.UpdateAsync(id, request);
+        return Ok(dto);
+    }
+
+    [HttpDelete("{id:int}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> Delete(int id)
+    {
+        await service.DeleteAsync(id);
+        return NoContent();
+    }
+}
+
+```
+
+## File: eNote\eNote.API\Controllers\Courses\InstructorRankingController.cs
+```cs
+using eNote.API.Controllers.Base;
+using eNote.Application.Constants;
+using eNote.Application.Features.Courses;
+using eNote.Application.Features.Courses.Services;
+using eNote.Application.Features.Reports.Services;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+
+namespace eNote.API.Controllers.Courses;
+
+[Authorize(Roles = AppRoles.Instructor)]
+[Route("api/instructor/courses/{courseId:int}/ranking")]
+public sealed class InstructorRankingController(IRankingService rankingService, IReportService reportService) : CoreController
+{
+    [HttpGet]
+    [ProducesResponseType(typeof(IReadOnlyList<CourseRankingEntryDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IReadOnlyList<CourseRankingEntryDto>>> GetRanking(int courseId)
+    {
+        return Ok(await rankingService.GetForInstructorAsync(courseId));
+    }
+
+    [HttpGet("report")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetRankingReport(int courseId, CancellationToken cancellationToken)
+    {
+        var pdf = await reportService.GenerateCourseRankingPdfAsync(courseId, cancellationToken);
+        return File(pdf, "application/pdf", $"course-{courseId}-ranking.pdf");
+    }
+}
+
+```
+
+## File: eNote\eNote.API\Controllers\Courses\StudentCourseController.cs
+```cs
+﻿using eNote.API.Controllers.Base;
+using eNote.Application.Common.Paging;
+using eNote.Application.Constants;
+using eNote.Application.Features.Courses;
+using eNote.Application.Features.Courses.Services;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+
+namespace eNote.API.Controllers.Courses;
+
+[Authorize(Roles = AppRoles.Student)]
+[Route("api/student/courses")]
+public sealed class StudentCourseController(
+    ICourseService service,
+    ICourseEnrollmentService enrollmentService) : CoreController
+{
+    [HttpGet]
+    [ProducesResponseType(typeof(PagedResult<CourseDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<PagedResult<CourseDto>>> GetPublished([FromQuery] CourseSearchObject search)
+    {
+        var result = await service.GetPagedForStudentAsync(search);
+        return Ok(result);
+    }
+
+    [HttpGet("{id:int}")]
+    [ProducesResponseType(typeof(CourseDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<CourseDto>> GetById(int id)
+    {
+        var dto = await service.GetByIdForStudentAsync(id);
+        return Ok(dto);
+    }
+
+    [HttpPost("{id:int}/enroll")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> Enroll(int id)
+    {
+        await enrollmentService.EnrollAsync(id);
+        return NoContent();
+    }
+
+    [HttpPost("{id:int}/unenroll")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> Unenroll(int id)
+    {
+        await enrollmentService.UnenrollAsync(id);
+        return NoContent();
+    }
+}
+
+```
+
+## File: eNote\eNote.API\Controllers\Courses\StudentRankingController.cs
+```cs
+using eNote.API.Controllers.Base;
+using eNote.Application.Constants;
+using eNote.Application.Features.Courses;
+using eNote.Application.Features.Courses.Services;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+
+namespace eNote.API.Controllers.Courses;
+
+[Authorize(Roles = AppRoles.Student)]
+[Route("api/student/courses/{courseId:int}/ranking")]
+public sealed class StudentRankingController(IRankingService rankingService) : CoreController
+{
+    [HttpGet]
+    [ProducesResponseType(typeof(IReadOnlyList<CourseRankingEntryDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IReadOnlyList<CourseRankingEntryDto>>> GetRanking(int courseId)
+    {
+        return Ok(await rankingService.GetForStudentAsync(courseId));
+    }
+}
+
+```
+

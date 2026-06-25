@@ -6,24 +6,25 @@ using eNote.Application.Features.Assignments.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace eNote.API.Controllers.Assignments
-{
-    [Authorize(Roles = AppRoles.Student)]
-    [Route("api/student/assignments")]
-    public sealed class StudentAssignmentController(IAssignmentService service) : CoreController
-    {
-        [HttpGet]
-        public async Task<ActionResult<PagedResult<AssignmentDto>>> GetMyAssignments([FromQuery] AssignmentSearchObject search)
-        {
-            var result = await service.GetForStudentAsync(search);
-            return Ok(result);
-        }
+namespace eNote.API.Controllers.Assignments;
 
-        [HttpGet("{id:int}")]
-        public async Task<ActionResult<AssignmentDto>> GetById(int id)
-        {
-            var dto = await service.GetByIdForStudentAsync(id);
-            return Ok(dto);
-        }
+[Authorize(Roles = AppRoles.Student)]
+[Route("api/student/assignments")]
+public sealed class StudentAssignmentController(IAssignmentService service) : CoreController
+{
+    [HttpGet]
+    [ProducesResponseType(typeof(PagedResult<AssignmentDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<PagedResult<AssignmentDto>>> GetMyAssignments([FromQuery] AssignmentSearchObject search)
+    {
+        var result = await service.GetForStudentAsync(search);
+        return Ok(result);
+    }
+
+    [HttpGet("{id:int}")]
+    [ProducesResponseType(typeof(AssignmentDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<AssignmentDto>> GetById(int id)
+    {
+        var dto = await service.GetByIdForStudentAsync(id);
+        return Ok(dto);
     }
 }

@@ -5,6 +5,7 @@ namespace eNote.Application.Features.Instructors;
 public interface IInstructorAccessService
 {
     Task<Instructor> GetInstructorAsync(int userId);
+    Task<int> GetCurrentInstructorIdAsync(int appUserId);
 
     Task<bool> OwnsCourseAsync(int courseId, int instructorId);
 

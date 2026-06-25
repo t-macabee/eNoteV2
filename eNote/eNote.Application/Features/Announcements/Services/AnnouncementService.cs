@@ -8,208 +8,190 @@ using eNote.Application.Features.Instructors;
 using eNote.Application.Features.MusicStores.Services;
 using eNote.Application.Features.Users.Services;
 using eNote.Domain.Entities;
+using eNote.Domain.Enums;
 using MapsterMapper;
 using Microsoft.EntityFrameworkCore;
 
-namespace eNote.Application.Features.Announcements.Services
+namespace eNote.Application.Features.Announcements.Services;
+
+public sealed class AnnouncementService(IAppDbContext context, IClock clock, IUserContextResolver resolver, IInstructorAccessService instructorAccess, IMusicStoreContextService storeContext, ICurrentUserService currentUserService, IFileStorageService fileStorage, IMapper mapper)
+     : ICourseAnnouncementService, IStoreAnnouncementService, IStudentAnnouncementService
 {
-    public class AnnouncementService(
-        IAppDbContext context,
-        IClock clock,
-        IUserContextResolver resolver,
-        IInstructorAccessService instructorAccess,
-        IMusicStoreContextService storeContext,
-        ICurrentUserService currentUserService,
-        IFileStorageService fileStorage,
-        IMapper mapper) : IAnnouncementService
+    public async Task<PagedResult<AnnouncementDto>> GetFeedForStudentAsync(AnnouncementSearchObject search)
     {
-        public async Task<PagedResult<AnnouncementDto>> GetFeedForStudentAsync(int page, int pageSize)
+        var studentId = (await resolver.GetStudentAsync(currentUserService.UserId)).Id;
+
+        var query = context.Set<Announcement>()
+            .AsNoTracking()
+            .Include(a => a.Course)
+            .Include(a => a.MusicStore)
+            .Where(a =>
+                (a.CourseId != null && context.Set<Enrollment>().Any(e =>
+                    e.StudentId == studentId &&
+                    e.EnrollmentStatus == EnrollmentStatus.Active &&
+                    e.CourseId == a.CourseId)) ||
+                (a.MusicStoreId != null && context.Set<InstrumentRental>().Any(r =>
+                    r.StudentProfileId == studentId &&
+                    InstrumentRentalStatusSets.History.Contains(r.RentalStatus) &&
+                    r.Instrument.MusicStoreId == a.MusicStoreId)));
+
+        return await query.ToPagedResultAsync(search, mapper.Map<AnnouncementDto>, q => q.OrderByDescending(x => x.PublishedAt));
+    }
+
+    public async Task<AnnouncementDto> CreateForCourseAsync(int courseId, AnnouncementRequest request)
+    {
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUserService.UserId);
+
+        if (!await instructorAccess.OwnsCourseAsync(courseId, instructorId))
         {
-            var studentId = (await resolver.GetStudentAsync(currentUserService.UserId)).Id;
-
-            var query = context.Set<Announcement>()
-                .AsNoTracking()
-                .Include(a => a.Course)
-                .Include(a => a.MusicStore)
-                .Where(a =>
-                    (a.CourseId != null && context.Set<Enrollment>().Any(e =>
-                        e.StudentId == studentId &&
-                        e.EnrollmentStatus == EnrollmentStatus.Active &&
-                        e.CourseId == a.CourseId)) ||
-                    (a.MusicStoreId != null && context.Set<InstrumentRental>().Any(r =>
-                        r.StudentProfileId == studentId &&
-                        InstrumentRentalStatusSets.History.Contains(r.RentalStatus) &&
-                        r.Instrument.MusicStoreId == a.MusicStoreId)));
-
-            return await query.ToPagedResultAsync(page, pageSize, includeTotalCount: true, mapper.Map<AnnouncementDto>, q => q.OrderByDescending(x => x.PublishedAt));
+            throw new BusinessException(Messages.AnnouncementCourseForbidden);
         }
 
-        public async Task<AnnouncementDto> CreateForCourseAsync(int courseId, AnnouncementRequest request)
+        var entity = new Announcement(request.Title.Trim(), request.Content.Trim(), courseId, null, clock.UtcNow)
         {
-            var instructor = await instructorAccess.GetInstructorAsync(currentUserService.UserId);
+            CreatedById = currentUserService.UserId
+        };
 
-            if (!await instructorAccess.OwnsCourseAsync(courseId, instructor.Id))
-            {
-                throw new BusinessException(Messages.AnnouncementCourseForbidden);
-            }
+        context.Set<Announcement>().Add(entity);
+        await context.SaveChangesAsync();
 
-            var entity = new Announcement(request.Title.Trim(), request.Content.Trim(), courseId, null, clock.UtcNow)
-            {
-                CreatedById = currentUserService.UserId
-            };
+        return mapper.Map<AnnouncementDto>(entity);
+    }
 
-            context.Set<Announcement>().Add(entity);
-            await context.SaveChangesAsync();
+    public async Task<AnnouncementDto> GetByIdForCourseAsync(int courseId, int announcementId)
+    {
+        var entity = await (await GetCourseAnnouncementQueryAsync(courseId)).FirstOrDefaultAsync(a => a.Id == announcementId) ?? throw new NotFoundException(Messages.AnnouncementNotFound);
 
-            return mapper.Map<AnnouncementDto>(entity);
-        }
+        return mapper.Map<AnnouncementDto>(entity);
+    }
 
-        public async Task<AnnouncementDto> GetByIdForCourseAsync(int courseId, int announcementId)
+    public async Task<PagedResult<AnnouncementDto>> GetForCourseAsync(int courseId, AnnouncementSearchObject search)
+    {
+        return await (await GetCourseAnnouncementQueryAsync(courseId)).ToPagedResultAsync(search, mapper.Map<AnnouncementDto>, q => q.OrderByDescending(x => x.PublishedAt));
+    }
+
+    public async Task<AnnouncementDto> UpdateForCourseAsync(int courseId, int announcementId, AnnouncementRequest request)
+    {
+        var entity = await (await GetCourseAnnouncementQueryAsync(courseId, track: true)).FirstOrDefaultAsync(a => a.Id == announcementId) ?? throw new NotFoundException(Messages.AnnouncementNotFound);
+
+        entity.UpdateDetails(request.Title.Trim(), request.Content.Trim());
+        entity.UpdatedById = currentUserService.UserId;
+
+        await context.SaveChangesAsync();
+
+        return mapper.Map<AnnouncementDto>(entity);
+    }
+
+    public async Task DeleteForCourseAsync(int courseId, int announcementId)
+    {
+        var entity = await (await GetCourseAnnouncementQueryAsync(courseId, track: true)).FirstOrDefaultAsync(a => a.Id == announcementId) ?? throw new NotFoundException(Messages.AnnouncementNotFound);
+
+        entity.SoftDelete();
+        entity.UpdatedById = currentUserService.UserId;
+
+        await context.SaveChangesAsync();
+    }
+
+    public async Task<AnnouncementDto> CreateForStoreAsync(AnnouncementRequest request)
+    {
+        var storeId = await storeContext.GetActiveStoreAsync(currentUserService.UserId);
+
+        var entity = new Announcement(request.Title.Trim(), request.Content.Trim(), null, storeId, clock.UtcNow)
         {
-            var entity = await (await GetCourseAnnouncementQueryAsync(courseId))
-                .FirstOrDefaultAsync(a => a.Id == announcementId)
-                ?? throw new NotFoundException(Messages.AnnouncementNotFound);
+            CreatedById = currentUserService.UserId
+        };
 
-            return mapper.Map<AnnouncementDto>(entity);
-        }
+        context.Set<Announcement>().Add(entity);
+        await context.SaveChangesAsync();
 
-        public async Task<PagedResult<AnnouncementDto>> GetForCourseAsync(int courseId, int page, int pageSize)
-        {
-            return await (await GetCourseAnnouncementQueryAsync(courseId))
-                .ToPagedResultAsync(page, pageSize, includeTotalCount: true, mapper.Map<AnnouncementDto>, q => q.OrderByDescending(x => x.PublishedAt));
-        }
+        return mapper.Map<AnnouncementDto>(entity);
+    }
 
-        public async Task<AnnouncementDto> UpdateForCourseAsync(int courseId, int announcementId, AnnouncementRequest request)
-        {
-            var entity = await (await GetCourseAnnouncementQueryAsync(courseId, track: true))
-                .FirstOrDefaultAsync(a => a.Id == announcementId)
-                ?? throw new NotFoundException(Messages.AnnouncementNotFound);
+    public async Task<AnnouncementDto> GetByIdForStoreAsync(int announcementId)
+    {
+        var storeId = await storeContext.GetActiveStoreAsync(currentUserService.UserId);
 
-            entity.UpdateDetails(request.Title.Trim(), request.Content.Trim());
-            entity.UpdatedById = currentUserService.UserId;
+        var entity = await context.Set<Announcement>()
+            .AsNoTracking()
+            .Include(a => a.MusicStore)
+            .FirstOrDefaultAsync(a => a.Id == announcementId && a.MusicStoreId == storeId) ?? throw new NotFoundException(Messages.AnnouncementNotFound);
 
-            await context.SaveChangesAsync();
+        return mapper.Map<AnnouncementDto>(entity);
+    }
 
-            return mapper.Map<AnnouncementDto>(entity);
-        }
+    public async Task<PagedResult<AnnouncementDto>> GetForStoreAsync(AnnouncementSearchObject search)
+    {
+        var storeId = await storeContext.GetActiveStoreAsync(currentUserService.UserId);
 
-        public async Task DeleteForCourseAsync(int courseId, int announcementId)
-        {
-            var entity = await (await GetCourseAnnouncementQueryAsync(courseId, track: true))
-                .FirstOrDefaultAsync(a => a.Id == announcementId)
-                ?? throw new NotFoundException(Messages.AnnouncementNotFound);
+        return await context.Set<Announcement>()
+            .AsNoTracking()
+            .Include(a => a.MusicStore)
+            .Where(a => a.MusicStoreId == storeId)
+            .ToPagedResultAsync(search, mapper.Map<AnnouncementDto>, q => q.OrderByDescending(x => x.PublishedAt));
+    }
 
-            entity.SoftDelete();
-            entity.UpdatedById = currentUserService.UserId;
+    public async Task<AnnouncementDto> UpdateForStoreAsync(int announcementId, AnnouncementRequest request)
+    {
+        var storeId = await storeContext.GetActiveStoreAsync(currentUserService.UserId);
 
-            await context.SaveChangesAsync();
-        }
+        var entity = await context.Set<Announcement>()
+            .FirstOrDefaultAsync(a => a.Id == announcementId && a.MusicStoreId == storeId) ?? throw new NotFoundException(Messages.AnnouncementNotFound);
 
-        public async Task<AnnouncementDto> CreateForStoreAsync(AnnouncementRequest request)
-        {
-            var storeId = await storeContext.GetActiveStoreAsync(currentUserService.UserId);
+        entity.UpdateDetails(request.Title.Trim(), request.Content.Trim());
+        entity.UpdatedById = currentUserService.UserId;
 
-            var entity = new Announcement(request.Title.Trim(), request.Content.Trim(), null, storeId, clock.UtcNow)
-            {
-                CreatedById = currentUserService.UserId
-            };
+        await context.SaveChangesAsync();
 
-            context.Set<Announcement>().Add(entity);
-            await context.SaveChangesAsync();
+        return mapper.Map<AnnouncementDto>(entity);
+    }
 
-            return mapper.Map<AnnouncementDto>(entity);
-        }
+    public async Task DeleteForStoreAsync(int announcementId)
+    {
+        var storeId = await storeContext.GetActiveStoreAsync(currentUserService.UserId);
 
-        public async Task<AnnouncementDto> GetByIdForStoreAsync(int announcementId)
-        {
-            var storeId = await storeContext.GetActiveStoreAsync(currentUserService.UserId);
+        var entity = await context.Set<Announcement>()
+            .FirstOrDefaultAsync(a => a.Id == announcementId && a.MusicStoreId == storeId) ?? throw new NotFoundException(Messages.AnnouncementNotFound);
 
-            var entity = await context.Set<Announcement>()
-                .AsNoTracking()
-                .Include(a => a.MusicStore)
-                .FirstOrDefaultAsync(a => a.Id == announcementId && a.MusicStoreId == storeId)
-                ?? throw new NotFoundException(Messages.AnnouncementNotFound);
+        entity.SoftDelete();
+        entity.UpdatedById = currentUserService.UserId;
 
-            return mapper.Map<AnnouncementDto>(entity);
-        }
+        await context.SaveChangesAsync();
+    }
 
-        public async Task<PagedResult<AnnouncementDto>> GetForStoreAsync(int page, int pageSize)
-        {
-            var storeId = await storeContext.GetActiveStoreAsync(currentUserService.UserId);
+    public async Task<AnnouncementDto> UploadImageForCourseAsync(int courseId, int announcementId, Stream stream, string fileName, string contentType, CancellationToken ct = default)
+    {
+        var entity = await (await GetCourseAnnouncementQueryAsync(courseId, track: true)).FirstOrDefaultAsync(a => a.Id == announcementId, ct) ?? throw new NotFoundException(Messages.AnnouncementNotFound);
+        var path = await fileStorage.SaveAsync(stream, fileName, contentType, "announcements", ct);
 
-            return await context.Set<Announcement>()
-                .AsNoTracking()
-                .Include(a => a.MusicStore)
-                .Where(a => a.MusicStoreId == storeId)
-                .ToPagedResultAsync(page, pageSize, includeTotalCount: true, mapper.Map<AnnouncementDto>, q => q.OrderByDescending(x => x.PublishedAt));
-        }
+        entity.SetImagePath(path);
+        entity.UpdatedById = currentUserService.UserId;
 
-        public async Task<AnnouncementDto> UpdateForStoreAsync(int announcementId, AnnouncementRequest request)
-        {
-            var storeId = await storeContext.GetActiveStoreAsync(currentUserService.UserId);
+        await context.SaveChangesAsync(ct);
 
-            var entity = await context.Set<Announcement>()
-                .FirstOrDefaultAsync(a => a.Id == announcementId && a.MusicStoreId == storeId)
-                ?? throw new NotFoundException(Messages.AnnouncementNotFound);
+        return mapper.Map<AnnouncementDto>(entity);
+    }
 
-            entity.UpdateDetails(request.Title.Trim(), request.Content.Trim());
-            entity.UpdatedById = currentUserService.UserId;
+    public async Task<AnnouncementDto> UploadImageForStoreAsync(int announcementId, Stream stream, string fileName, string contentType, CancellationToken ct = default)
+    {
+        var storeId = await storeContext.GetActiveStoreAsync(currentUserService.UserId);
 
-            await context.SaveChangesAsync();
+        var entity = await context.Set<Announcement>()
+            .FirstOrDefaultAsync(a => a.Id == announcementId && a.MusicStoreId == storeId, ct) ?? throw new NotFoundException(Messages.AnnouncementNotFound);
 
-            return mapper.Map<AnnouncementDto>(entity);
-        }
+        var path = await fileStorage.SaveAsync(stream, fileName, contentType, "announcements", ct);
 
-        public async Task DeleteForStoreAsync(int announcementId)
-        {
-            var storeId = await storeContext.GetActiveStoreAsync(currentUserService.UserId);
+        entity.SetImagePath(path);
+        entity.UpdatedById = currentUserService.UserId;
 
-            var entity = await context.Set<Announcement>()
-                .FirstOrDefaultAsync(a => a.Id == announcementId && a.MusicStoreId == storeId)
-                ?? throw new NotFoundException(Messages.AnnouncementNotFound);
+        await context.SaveChangesAsync(ct);
 
-            entity.SoftDelete();
-            entity.UpdatedById = currentUserService.UserId;
+        return mapper.Map<AnnouncementDto>(entity);
+    }
 
-            await context.SaveChangesAsync();
-        }
+    private async Task<IQueryable<Announcement>> GetCourseAnnouncementQueryAsync(int courseId, bool track = false)
+    {
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUserService.UserId);
 
-        public async Task<AnnouncementDto> UploadImageForCourseAsync(int courseId, int announcementId, Stream stream, string fileName, string contentType, CancellationToken ct = default)
-        {
-            var entity = await (await GetCourseAnnouncementQueryAsync(courseId, track: true))
-                .FirstOrDefaultAsync(a => a.Id == announcementId, ct)
-                ?? throw new NotFoundException(Messages.AnnouncementNotFound);
-
-            var path = await fileStorage.SaveAsync(stream, fileName, contentType, "announcements", ct);
-            entity.SetImagePath(path);
-            entity.UpdatedById = currentUserService.UserId;
-
-            await context.SaveChangesAsync(ct);
-
-            return mapper.Map<AnnouncementDto>(entity);
-        }
-
-        public async Task<AnnouncementDto> UploadImageForStoreAsync(int announcementId, Stream stream, string fileName, string contentType, CancellationToken ct = default)
-        {
-            var storeId = await storeContext.GetActiveStoreAsync(currentUserService.UserId);
-
-            var entity = await context.Set<Announcement>()
-                .FirstOrDefaultAsync(a => a.Id == announcementId && a.MusicStoreId == storeId, ct)
-                ?? throw new NotFoundException(Messages.AnnouncementNotFound);
-
-            var path = await fileStorage.SaveAsync(stream, fileName, contentType, "announcements", ct);
-            entity.SetImagePath(path);
-            entity.UpdatedById = currentUserService.UserId;
-
-            await context.SaveChangesAsync(ct);
-
-            return mapper.Map<AnnouncementDto>(entity);
-        }
-
-        private async Task<IQueryable<Announcement>> GetCourseAnnouncementQueryAsync(int courseId, bool track = false)
-        {
-            var instructor = await instructorAccess.GetInstructorAsync(currentUserService.UserId);
-            return instructorAccess.CourseAnnouncementsFor(courseId, instructor.Id, track);
-        }
+        return instructorAccess.CourseAnnouncementsFor(courseId, instructorId, track);
     }
 }

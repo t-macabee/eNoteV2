@@ -7,65 +7,69 @@ using eNote.Application.Features.Announcements.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace eNote.API.Controllers.Announcements
+namespace eNote.API.Controllers.Announcements;
+
+[Authorize(Roles = AppRoles.StoreEmployee)]
+[Route("api/shop/announcements")]
+public sealed class StoreAnnouncementController(IStoreAnnouncementService announcementService) : CoreController
 {
-    [Authorize(Roles = AppRoles.StoreEmployee)]
-    [Route("api/shop/announcements")]
-    public sealed class StoreAnnouncementController(IAnnouncementService announcementService) : CoreController
+    [HttpGet]
+    [ProducesResponseType(typeof(PagedResult<AnnouncementDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<PagedResult<AnnouncementDto>>> GetForStore([FromQuery] AnnouncementSearchObject search)
     {
-        [HttpGet]
-        public async Task<ActionResult<PagedResult<AnnouncementDto>>> GetForStore(int page = 1, int pageSize = 20)
+        var result = await announcementService.GetForStoreAsync(search);
+        return Ok(result);
+    }
+
+    [HttpGet("{announcementId:int}")]
+    [ProducesResponseType(typeof(AnnouncementDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<AnnouncementDto>> GetById(int announcementId)
+    {
+        var result = await announcementService.GetByIdForStoreAsync(announcementId);
+        return Ok(result);
+    }
+
+    [HttpPost]
+    [ProducesResponseType(typeof(AnnouncementDto), StatusCodes.Status201Created)]
+    public async Task<ActionResult<AnnouncementDto>> Create([FromBody] AnnouncementRequest request)
+    {
+        var result = await announcementService.CreateForStoreAsync(request);
+        return CreatedAtAction(nameof(GetById), new
         {
-            var result = await announcementService.GetForStoreAsync(page, pageSize);
-            return Ok(result);
+            announcementId = result.Id
+        }, result);
+    }
+
+    [HttpPut("{announcementId:int}")]
+    [ProducesResponseType(typeof(AnnouncementDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<AnnouncementDto>> Update(int announcementId, [FromBody] AnnouncementRequest request)
+    {
+        var result = await announcementService.UpdateForStoreAsync(announcementId, request);
+        return Ok(result);
+    }
+
+    [HttpDelete("{announcementId:int}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> Delete(int announcementId)
+    {
+        await announcementService.DeleteForStoreAsync(announcementId);
+        return NoContent();
+    }
+
+    [HttpPost("{announcementId:int}/image")]
+    [ProducesResponseType(typeof(AnnouncementDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<AnnouncementDto>> UploadImage(int announcementId, IFormFile? file, CancellationToken ct)
+    {
+        if (file is null || file.Length == 0)
+        {
+            return BadRequest(new { message = Messages.FileNotProvided });
         }
 
-        [HttpGet("{announcementId:int}")]
-        public async Task<ActionResult<AnnouncementDto>> GetById(int announcementId)
-        {
-            var result = await announcementService.GetByIdForStoreAsync(announcementId);
-            return Ok(result);
-        }
+        await using Stream stream = file.OpenReadStream();
 
-        [HttpPost]
-        public async Task<ActionResult<AnnouncementDto>> Create([FromBody] AnnouncementRequest request)
-        {
-            var result = await announcementService.CreateForStoreAsync(request);
-            return CreatedAtAction(nameof(GetById), new
-            {
-                announcementId = result.Id
-            }, result);
-        }
+        var result = await announcementService.UploadImageForStoreAsync(announcementId, stream, file.FileName, file.ContentType, ct);
 
-        [HttpPut("{announcementId:int}")]
-        public async Task<ActionResult<AnnouncementDto>> Update(int announcementId, [FromBody] AnnouncementRequest request)
-        {
-            var result = await announcementService.UpdateForStoreAsync(announcementId, request);
-            return Ok(result);
-        }
-
-        [HttpDelete("{announcementId:int}")]
-        public async Task<IActionResult> Delete(int announcementId)
-        {
-            await announcementService.DeleteForStoreAsync(announcementId);
-            return NoContent();
-        }
-
-        [HttpPost("{announcementId:int}/image")]
-        [ProducesResponseType(typeof(AnnouncementDto), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<ActionResult<AnnouncementDto>> UploadImage(int announcementId, IFormFile? file, CancellationToken ct)
-        {
-            if (file is null || file.Length == 0)
-            {
-                return BadRequest(new { message = Messages.FileNotProvided });
-            }
-
-            await using Stream stream = file.OpenReadStream();
-
-            var result = await announcementService.UploadImageForStoreAsync(announcementId, stream, file.FileName, file.ContentType, ct);
-
-            return Ok(result);
-        }
+        return Ok(result);
     }
 }

@@ -13,13 +13,15 @@ namespace eNote.API.Controllers.Assignments;
 public sealed class InstructorAssignmentSubmissionController(IAssignmentSubmissionService submissionService) : CoreController
 {
     [HttpGet]
-    public async Task<ActionResult<PagedResult<AssignmentSubmissionDto>>> GetSubmissions(int lectureId, int assignmentId, int page = 1, int pageSize = 20)
+    [ProducesResponseType(typeof(PagedResult<AssignmentSubmissionDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<PagedResult<AssignmentSubmissionDto>>> GetSubmissions(int lectureId, int assignmentId, [FromQuery] SubmissionSearchObject search)
     {
-        var result = await submissionService.GetSubmissionsAsync(lectureId, assignmentId, page, pageSize);
+        var result = await submissionService.GetSubmissionsAsync(lectureId, assignmentId, search);
         return Ok(result);
     }
 
     [HttpPut("{submissionId:int}/grade")]
+    [ProducesResponseType(typeof(AssignmentSubmissionDto), StatusCodes.Status200OK)]
     public async Task<ActionResult<AssignmentSubmissionDto>> Grade(int lectureId, int assignmentId, int submissionId, [FromBody] GradeAssignmentRequest request)
     {
         var dto = await submissionService.GradeAsync(lectureId, assignmentId, submissionId, request);

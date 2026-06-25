@@ -1,11 +1,10 @@
-namespace eNote.Domain.Entities
-{
-    public class RevokedToken
-    {
-        public int Id { get; set; }
-        public string Jti { get; set; } = string.Empty;
+namespace eNote.Domain.Entities;
 
-        public DateTime ExpiresAt { get; set; }
-        public DateTime RevokedAt { get; set; }
-    }
+public class RevokedToken
+{
+    public int Id { get; set; }
+    public string Jti { get; set; } = string.Empty;
+
+    public DateTime ExpiresAt { get; set; }
+    public DateTime RevokedAt { get; set; }
 }

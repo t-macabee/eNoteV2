@@ -1,9 +1,8 @@
-namespace eNote.Application.Features.Users
+namespace eNote.Application.Features.Users;
+
+public class AddressDto
 {
-    public class AddressDto
-    {
-        public string City { get; set; } = null!;
-        public string Street { get; set; } = null!;
-        public string Number { get; set; } = null!;
-    }
+    public string City { get; set; } = null!;
+    public string Street { get; set; } = null!;
+    public string Number { get; set; } = null!;
 }

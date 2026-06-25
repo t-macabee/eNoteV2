@@ -21,9 +21,9 @@ public sealed class LectureNoteService(
 {
     public async Task<PagedResult<LectureNoteDto>> GetForLectureAsync(int lectureId, LectureNoteSearchObject search)
     {
-        var instructor = await instructorAccess.GetInstructorAsync(currentUserService.UserId);
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUserService.UserId);
 
-        var query = instructorAccess.LectureNotesForLecture(lectureId, instructor.Id)
+        var query = instructorAccess.LectureNotesForLecture(lectureId, instructorId)
             .AsNoTracking()
             .ApplySearch(search);
 
@@ -35,8 +35,8 @@ public sealed class LectureNoteService(
 
     public async Task<LectureNoteDto> CreateAsync(int lectureId, LectureNoteRequest request)
     {
-        var instructor = await instructorAccess.GetInstructorAsync(currentUserService.UserId);
-        await instructorAccess.EnsureOwnsLectureAsync(lectureId, instructor.Id);
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUserService.UserId);
+        await instructorAccess.EnsureOwnsLectureAsync(lectureId, instructorId);
 
         var entity = new LectureNote(request.Title.Trim(), request.Content.Trim(), lectureId)
         {
@@ -99,7 +99,7 @@ public sealed class LectureNoteService(
 
     private async Task<LectureNote> GetOwnedNoteAsync(int lectureId, int noteId, bool track = false)
     {
-        var instructor = await instructorAccess.GetInstructorAsync(currentUserService.UserId);
-        return await instructorAccess.GetOwnedLectureNoteAsync(lectureId, noteId, instructor.Id, track);
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUserService.UserId);
+        return await instructorAccess.GetOwnedLectureNoteAsync(lectureId, noteId, instructorId, track);
     }
 }

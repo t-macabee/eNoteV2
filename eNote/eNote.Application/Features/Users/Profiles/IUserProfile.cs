@@ -1,6 +1,5 @@
-namespace eNote.Application.Features.Users.Profiles
+namespace eNote.Application.Features.Users.Profiles;
+
+public interface IUserProfile
 {
-    public interface IUserProfile
-    {
-    }
 }

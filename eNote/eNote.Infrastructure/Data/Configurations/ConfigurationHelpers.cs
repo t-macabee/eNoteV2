@@ -1,48 +1,47 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace eNote.Infrastructure.Data.Configurations
+namespace eNote.Infrastructure.Data.Configurations;
+
+public static class ConfigurationHelpers
 {
-    public static class ConfigurationHelpers
+    public static PropertyBuilder<string> HasStringConfig(this PropertyBuilder<string> propertyBuilder, int? maxLength = null, bool isRequired = false)
     {
-        public static PropertyBuilder<string> HasStringConfig(this PropertyBuilder<string> propertyBuilder, int? maxLength = null, bool isRequired = false)
+        if (isRequired)
         {
-            if (isRequired)
-            {
-                propertyBuilder.IsRequired();
-            }
-
-            if (maxLength.HasValue)
-            {
-                propertyBuilder.HasMaxLength(maxLength.Value);
-            }
-
-            return propertyBuilder;
+            propertyBuilder.IsRequired();
         }
 
-        public static PropertyBuilder<decimal> HasDecimalPrecision(this PropertyBuilder<decimal> propertyBuilder, int precision = 18, int scale = 2)
+        if (maxLength.HasValue)
         {
-            return propertyBuilder.HasPrecision(precision, scale);
+            propertyBuilder.HasMaxLength(maxLength.Value);
         }
 
-        public static PropertyBuilder<bool> HasDefaultFalse(this PropertyBuilder<bool> propertyBuilder)
-        {
-            return propertyBuilder.HasDefaultValue(false);
-        }
+        return propertyBuilder;
+    }
 
-        public static PropertyBuilder<DateTime> HasDefaultSqlNow(this PropertyBuilder<DateTime> propertyBuilder)
-        {
-            return propertyBuilder.HasDefaultValueSql("GETUTCDATE()");
-        }
+    public static PropertyBuilder<decimal> HasDecimalPrecision(this PropertyBuilder<decimal> propertyBuilder, int precision = 18, int scale = 2)
+    {
+        return propertyBuilder.HasPrecision(precision, scale);
+    }
 
-        public static IndexBuilder HasUniqueIndex(this EntityTypeBuilder builder, string propertyName)
-        {
-            return builder.HasIndex(propertyName).IsUnique();
-        }
+    public static PropertyBuilder<bool> HasDefaultFalse(this PropertyBuilder<bool> propertyBuilder)
+    {
+        return propertyBuilder.HasDefaultValue(false);
+    }
 
-        public static IndexBuilder HasUniqueIndex(this EntityTypeBuilder builder, params string[] propertyNames)
-        {
-            return builder.HasIndex(propertyNames).IsUnique();
-        }
+    public static PropertyBuilder<DateTime> HasDefaultSqlNow(this PropertyBuilder<DateTime> propertyBuilder)
+    {
+        return propertyBuilder.HasDefaultValueSql("GETUTCDATE()");
+    }
+
+    public static IndexBuilder HasUniqueIndex(this EntityTypeBuilder builder, string propertyName)
+    {
+        return builder.HasIndex(propertyName).IsUnique();
+    }
+
+    public static IndexBuilder HasUniqueIndex(this EntityTypeBuilder builder, params string[] propertyNames)
+    {
+        return builder.HasIndex(propertyNames).IsUnique();
     }
 }

@@ -1,8 +1,7 @@
-namespace eNote.Domain.Enums
+namespace eNote.Domain.Enums;
+
+public enum AnnouncementScope
 {
-    public enum AnnouncementScope
-    {
-        Course = 1,
-        MusicStore = 2
-    }
+    Course = 1,
+    MusicStore = 2
 }

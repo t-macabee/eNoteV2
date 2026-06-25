@@ -1,8 +1,7 @@
-namespace eNote.Application.Features.Auth.Services
+namespace eNote.Application.Features.Auth.Services;
+
+public interface ITokenRevocationService
 {
-    public interface ITokenRevocationService
-    {
-        Task RevokeAsync(string jti, DateTime expiresAt, CancellationToken cancellationToken = default);
-        Task<bool> IsRevokedAsync(string jti, CancellationToken cancellationToken = default);
-    }
+    Task RevokeAsync(string jti, DateTime expiresAt, CancellationToken cancellationToken = default);
+    Task<bool> IsRevokedAsync(string jti, CancellationToken cancellationToken = default);
 }

@@ -3,77 +3,76 @@ using Microsoft.AspNetCore.OpenApi;
 using Microsoft.OpenApi;
 using Scalar.AspNetCore;
 
-namespace eNote.API.Extensions
+namespace eNote.API.Extensions;
+
+public static class OpenAPIExtensions
 {
-    public static class OpenAPIExtensions
+    public static WebApplication MapScalarDocumentation(this WebApplication app)
     {
-        public static WebApplication MapScalarDocumentation(this WebApplication app)
-        {
-            app.MapGet("/", () => Results.Redirect("/scalar")).ExcludeFromDescription();
-            app.MapOpenApi();
-            app.MapScalarApiReference();
+        app.MapGet("/", () => Results.Redirect("/scalar")).ExcludeFromDescription();
+        app.MapOpenApi();
+        app.MapScalarApiReference();
 
-            return app;
-        }
-
-        public static IServiceCollection AddScalarDocumentation(this IServiceCollection services)
-        {
-            services.AddOpenApi(options =>
-            {
-                options.AddDocumentTransformer<BearerSecurityTransformer>();
-                options.AddOperationTransformer<AnonymousOperationTransformer>();
-            });
-
-            return services;
-        }
+        return app;
     }
 
-    public sealed class BearerSecurityTransformer : IOpenApiDocumentTransformer
+    public static IServiceCollection AddScalarDocumentation(this IServiceCollection services)
     {
-        public Task TransformAsync(OpenApiDocument document, OpenApiDocumentTransformerContext context, CancellationToken cancellationToken)
+        services.AddOpenApi(options =>
         {
-            document.Components ??= new OpenApiComponents();
-            document.Components.SecuritySchemes ??= new Dictionary<string, IOpenApiSecurityScheme>();
+            options.AddDocumentTransformer<BearerSecurityTransformer>();
+            options.AddOperationTransformer<AnonymousOperationTransformer>();
+        });
 
-            document.Components.SecuritySchemes.Add("Bearer", new OpenApiSecurityScheme
+        return services;
+    }
+}
+
+public sealed class BearerSecurityTransformer : IOpenApiDocumentTransformer
+{
+    public Task TransformAsync(OpenApiDocument document, OpenApiDocumentTransformerContext context, CancellationToken cancellationToken)
+    {
+        document.Components ??= new OpenApiComponents();
+        document.Components.SecuritySchemes ??= new Dictionary<string, IOpenApiSecurityScheme>();
+
+        document.Components.SecuritySchemes.Add("Bearer", new OpenApiSecurityScheme
+        {
+            Type = SecuritySchemeType.Http,
+            Scheme = "bearer",
+            BearerFormat = "JWT",
+            Description = "Unesite važeći JSON Web Token (JWT)."
+        });
+
+        document.Security =
+        [
+            new OpenApiSecurityRequirement
             {
-                Type = SecuritySchemeType.Http,
-                Scheme = "bearer",
-                BearerFormat = "JWT",
-                Description = "Unesite važeći JSON Web Token (JWT)."
-            });
+                [new OpenApiSecuritySchemeReference("Bearer", document)] = []
+            }
+        ];
 
-            document.Security =
-            [
-                new OpenApiSecurityRequirement
-                {
-                    [new OpenApiSecuritySchemeReference("Bearer", document)] = []
-                }
-            ];
+        return Task.CompletedTask;
+    }
+}
+
+public sealed class AnonymousOperationTransformer : IOpenApiOperationTransformer
+{
+    public Task TransformAsync(OpenApiOperation operation, OpenApiOperationTransformerContext context, CancellationToken cancellationToken)
+    {
+        var metadata = context.Description.ActionDescriptor.EndpointMetadata;
+
+        if (metadata.Any(m => m is IAllowAnonymous))
+        {
+            operation.Security = [];
 
             return Task.CompletedTask;
         }
-    }
 
-    public sealed class AnonymousOperationTransformer : IOpenApiOperationTransformer
-    {
-        public Task TransformAsync(OpenApiOperation operation, OpenApiOperationTransformerContext context, CancellationToken cancellationToken)
+        if (!metadata.Any(m => m is IAuthorizeData))
         {
-            var metadata = context.Description.ActionDescriptor.EndpointMetadata;
-
-            if (metadata.Any(m => m is IAllowAnonymous))
-            {
-                operation.Security = [];
-
-                return Task.CompletedTask;
-            }
-
-            if (!metadata.Any(m => m is IAuthorizeData))
-            {
-                operation.Security = [];
-            }
-
-            return Task.CompletedTask;
+            operation.Security = [];
         }
+
+        return Task.CompletedTask;
     }
 }

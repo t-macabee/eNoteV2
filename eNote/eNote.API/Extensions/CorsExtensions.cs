@@ -1,34 +1,33 @@
-namespace eNote.API.Extensions
+namespace eNote.API.Extensions;
+
+public static class CorsExtensions
 {
-    public static class CorsExtensions
+    public const string PolicyName = "ENoteCors";
+
+    public static IServiceCollection AddApplicationCors(this IServiceCollection services, IConfiguration configuration, IWebHostEnvironment environment)
     {
-        public const string PolicyName = "ENoteCors";
+        var origins = configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
+            ?? configuration["Cors:AllowedOrigins"]?.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries) ?? [];
 
-        public static IServiceCollection AddApplicationCors(this IServiceCollection services, IConfiguration configuration, IWebHostEnvironment environment)
+        services.AddCors(options =>
         {
-            var origins = configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
-                ?? configuration["Cors:AllowedOrigins"]?.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries) ?? [];
-
-            services.AddCors(options =>
+            options.AddPolicy(PolicyName, policy =>
             {
-                options.AddPolicy(PolicyName, policy =>
+                if (origins.Length == 0)
                 {
-                    if (origins.Length == 0)
+                    if (environment.IsDevelopment())
                     {
-                        if (environment.IsDevelopment())
-                        {
-                            policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod();
-                            return;
-                        }
-
-                        throw new InvalidOperationException("Cors:AllowedOrigins must be configured for non-development environments.");
+                        policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod();
+                        return;
                     }
 
-                    policy.WithOrigins(origins).AllowAnyHeader().AllowAnyMethod().AllowCredentials();
-                });
-            });
+                    throw new InvalidOperationException("Cors:AllowedOrigins must be configured for non-development environments.");
+                }
 
-            return services;
-        }
+                policy.WithOrigins(origins).AllowAnyHeader().AllowAnyMethod().AllowCredentials();
+            });
+        });
+
+        return services;
     }
 }

@@ -1,3 +1,4 @@
+using eNote.Application.Features.InstrumentRentals.Billing;
 using eNote.Domain.Entities;
 using Mapster;
 
@@ -12,6 +13,7 @@ public sealed class InstrumentRentalMappingConfig : IRegister
             .Map(x => x.InstrumentType, x => x.Instrument.InstrumentType.Type)
             .Map(x => x.MusicStoreId, x => x.Instrument.MusicStoreId)
             .Map(x => x.StoreName, x => x.Instrument.MusicStore.StoreName)
-            .Map(x => x.StudentUserId, x => x.StudentProfile.AppUserId);
+            .Map(x => x.StudentUserId, x => x.StudentProfile.AppUserId)
+            .AfterMapping((src, dest) => RentalBilling.ApplyBilling(src, dest, DateTime.UtcNow));
     }
 }

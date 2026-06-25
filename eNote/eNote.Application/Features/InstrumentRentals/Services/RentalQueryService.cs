@@ -3,8 +3,6 @@ using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Paging;
 using eNote.Application.Common.Persistence;
-using eNote.Application.Common.Time;
-using eNote.Application.Features.InstrumentRentals.Billing;
 using eNote.Application.Features.MusicStores.Services;
 using eNote.Domain.Entities;
 using MapsterMapper;
@@ -15,21 +13,18 @@ namespace eNote.Application.Features.InstrumentRentals.Services;
 public sealed class RentalQueryService(
     IAppDbContext context,
     IMapper mapper,
-    IClock clock,
     IMusicStoreContextService storeContext,
     ICurrentUserService currentUserService) : IRentalQueryService
 {
     public async Task<InstrumentRentalDto> GetByIdForStudentAsync(int rentalId) =>
-        MapEntityToModel(await FindRentalAsync(
-            context.Set<InstrumentRental>()
-                .Where(x => x.Id == rentalId && x.StudentProfile.AppUserId == currentUserService.UserId)));
+        mapper.Map<InstrumentRentalDto>(await FindRentalAsync(context.Set<InstrumentRental>()
+        .Where(x => x.Id == rentalId && x.StudentProfile.AppUserId == currentUserService.UserId)));
 
     public async Task<InstrumentRentalDto> GetByIdForStoreAsync(int rentalId)
     {
         var storeId = await storeContext.GetActiveStoreAsync(currentUserService.UserId);
 
-        return MapEntityToModel(await FindRentalAsync(
-            context.Set<InstrumentRental>()
+        return mapper.Map<InstrumentRentalDto>(await FindRentalAsync(context.Set<InstrumentRental>()
                 .Where(x => x.Id == rentalId && x.Instrument.MusicStoreId == storeId)));
     }
 
@@ -56,16 +51,9 @@ public sealed class RentalQueryService(
             .WithRentalDetails()
             .ApplySearch(search)
             .OrderByDescending(x => x.RequestedAt)
-            .ToPagedResultAsync(search, MapEntityToModel);
+            .ToPagedResultAsync(search, mapper.Map<InstrumentRentalDto>);
 
     private async Task<InstrumentRental> FindRentalAsync(IQueryable<InstrumentRental> query) =>
         await query.AsNoTracking().WithRentalDetails().FirstOrDefaultAsync()
         ?? throw new NotFoundException(Messages.NotFound);
-
-    private InstrumentRentalDto MapEntityToModel(InstrumentRental entity)
-    {
-        var result = mapper.Map<InstrumentRentalDto>(entity);
-        RentalBilling.ApplyBilling(entity, result, clock.UtcNow);
-        return result;
-    }
 }

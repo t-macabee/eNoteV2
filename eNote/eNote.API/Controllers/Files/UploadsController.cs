@@ -1,3 +1,4 @@
+using eNote.API.Controllers.Base;
 using eNote.Application.Common.Interfaces;
 using eNote.Application.Features.Files.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -7,18 +8,28 @@ namespace eNote.API.Controllers.Files;
 
 [ApiController]
 [Route("api/uploads")]
-public sealed class UploadsController(IWebHostEnvironment env, IFileAccessService fileAccess, ICurrentUserService currentUser) : ControllerBase
+public sealed class UploadsController(IWebHostEnvironment env, IFileAccessService fileAccess, ICurrentUserService currentUser) : CoreController
 {
     [AllowAnonymous]
     [HttpGet("instruments/{fileName}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public IActionResult GetInstrument(string fileName) => Serve("instruments", fileName);
 
     [Authorize]
     [HttpGet("announcements/{fileName}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public IActionResult GetAnnouncement(string fileName) => Serve("announcements", fileName);
 
     [Authorize]
     [HttpGet("assignments/{fileName}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetAssignment(string fileName, CancellationToken cancellationToken)
     {
         if (!IsSafeFileName(fileName))

@@ -1,12 +1,11 @@
-namespace eNote.Application.Features.Instruments
-{
-    public class InstrumentCreateRequest
-    {
-        public string Model { get; set; } = null!;
-        public string Manufacturer { get; set; } = null!;
-        public string? Description { get; set; }
-        public string? ImagePath { get; set; }
+namespace eNote.Application.Features.Instruments;
 
-        public int InstrumentTypeId { get; set; }
-    }
+public class InstrumentCreateRequest
+{
+    public string Model { get; set; } = null!;
+    public string Manufacturer { get; set; } = null!;
+    public string? Description { get; set; }
+    public string? ImagePath { get; set; }
+
+    public int InstrumentTypeId { get; set; }
 }
