@@ -174,6 +174,7 @@ public interface ITokenService
 ## File: eNote\eNote.Infrastructure\Identity\AuthService.cs
 ```cs
 using eNote.Application.Common.Exceptions;
+using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Localization;
 using eNote.Application.Features.Identity.Auth;
 using eNote.Application.Features.Identity.Auth.Services;
@@ -185,14 +186,7 @@ using Microsoft.Extensions.Logging;
 
 namespace eNote.Infrastructure.Identity;
 
-public sealed class AuthService(
-    UserManager<AppUser> userManager,
-    SignInManager<AppUser> signInManager,
-    ITokenService tokenService,
-    IUserProvisioningService userProvisioning,
-    ITokenRevocationService tokenRevocationService,
-    IWebHostEnvironment environment,
-    ILogger<AuthService> logger) : IAuthService
+public sealed class AuthService(UserManager<AppUser> userManager, SignInManager<AppUser> signInManager, ITokenService tokenService, IUserProvisioningService userProvisioning, ITokenRevocationService tokenRevocationService, IEmailService emailService, IWebHostEnvironment environment, ILogger<AuthService> logger) : IAuthService
 {
     public async Task<AuthResponse> LoginAsync(LoginRequest model)
     {
@@ -268,8 +262,7 @@ public sealed class AuthService(
         };
     }
 
-    public Task LogoutAsync(string jti, DateTime expiresAtUtc, CancellationToken cancellationToken = default) =>
-        tokenRevocationService.RevokeAsync(jti, expiresAtUtc, cancellationToken);
+    public Task LogoutAsync(string jti, DateTime expiresAtUtc, CancellationToken cancellationToken = default) => tokenRevocationService.RevokeAsync(jti, expiresAtUtc, cancellationToken);
 
     public async Task<ForgotPasswordResponse> ForgotPasswordAsync(ForgotPasswordRequest request, CancellationToken cancellationToken = default)
     {
@@ -282,6 +275,8 @@ public sealed class AuthService(
         }
 
         var token = await userManager.GeneratePasswordResetTokenAsync(user);
+
+        await emailService.SendPasswordResetAsync(user.Email!, token, cancellationToken);
 
         if (environment.IsDevelopment())
         {

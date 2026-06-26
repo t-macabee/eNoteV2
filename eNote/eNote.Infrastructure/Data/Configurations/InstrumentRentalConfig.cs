@@ -9,7 +9,7 @@ public sealed class InstrumentRentalConfig : IEntityTypeConfiguration<Instrument
 {
     public void Configure(EntityTypeBuilder<InstrumentRental> builder)
     {
-        // ponytail: intentionally excludes rentals for inactive instruments globally; use IgnoreQueryFilters() for historical/audit queries
+        // intentionally excludes rentals for inactive instruments globally; use IgnoreQueryFilters() for historical/audit queries
         builder.HasQueryFilter(r => r.Instrument.IsActive);
 
         builder.HasOne(x => x.StudentProfile)

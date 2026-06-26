@@ -1,5 +1,5 @@
 # Bounded Context: Shared_Infrastructure
-Total Files Contained: 246
+Total Files Contained: 248
 ---
 
 ## File: eNote\eNote.Domain\Entities\Academic\Attendance.cs
@@ -868,6 +868,17 @@ public interface ICurrentUserService
 {
     int UserId { get; }
     bool IsAuthenticated { get; }
+}
+
+```
+
+## File: eNote\eNote.Application\Common\Interfaces\IEmailService.cs
+```cs
+namespace eNote.Application.Common.Interfaces;
+
+public interface IEmailService
+{
+    Task SendPasswordResetAsync(string email, string token, CancellationToken cancellationToken = default);
 }
 
 ```
@@ -4796,7 +4807,7 @@ public static class StudentEnrollmentExtensions
         query.Where(x => x.Lecture.Course.IsPublished && x.Lecture.LectureStatus != LectureStatus.Cancelled && x.Lecture.Course.Enrollments.Any(e => e.StudentId == studentId && e.EnrollmentStatus == EnrollmentStatus.Active));
 
     public static IQueryable<Assignment> ForEnrolledStudent(this IQueryable<Assignment> query, int studentId) =>
-        query.Where(x => x.Lecture.LectureStatus != LectureStatus.Cancelled && x.Lecture.Course.Enrollments.Any(e => e.StudentId == studentId && e.EnrollmentStatus == EnrollmentStatus.Active));
+        query.Where(x => x.Lecture.Course.IsPublished && x.Lecture.LectureStatus != LectureStatus.Cancelled && x.Lecture.Course.Enrollments.Any(e => e.StudentId == studentId && e.EnrollmentStatus == EnrollmentStatus.Active));
 }
 ```
 
@@ -5592,7 +5603,7 @@ public sealed class InstrumentRentalConfig : IEntityTypeConfiguration<Instrument
 {
     public void Configure(EntityTypeBuilder<InstrumentRental> builder)
     {
-        // ponytail: intentionally excludes rentals for inactive instruments globally; use IgnoreQueryFilters() for historical/audit queries
+        // intentionally excludes rentals for inactive instruments globally; use IgnoreQueryFilters() for historical/audit queries
         builder.HasQueryFilter(r => r.Instrument.IsActive);
 
         builder.HasOne(x => x.StudentProfile)
@@ -6280,6 +6291,58 @@ public class AppUser : IdentityUser<int>
 
     public int? AddressId { get; set; }
     public Address? Address { get; set; }
+}
+
+```
+
+## File: eNote\eNote.Infrastructure\Identity\SmtpEmailService.cs
+```cs
+using System.Net;
+using System.Net.Mail;
+using eNote.Application.Common.Interfaces;
+using Microsoft.Extensions.Configuration;
+
+namespace eNote.Infrastructure.Identity;
+
+public sealed class SmtpEmailService : IEmailService
+{
+    private readonly string _host;
+    private readonly string _from;
+    private readonly int _port;
+    private readonly bool _enableSsl;
+    private readonly string? _username;
+    private readonly string? _password;
+
+    public SmtpEmailService(IConfiguration configuration)
+    {
+        _host = configuration["Smtp:Host"] ?? throw new InvalidOperationException("Smtp:Host is required.");
+        _from = configuration["Smtp:From"] ?? throw new InvalidOperationException("Smtp:From is required.");
+        _port = configuration.GetValue("Smtp:Port", 25);
+        _enableSsl = configuration.GetValue("Smtp:EnableSsl", true);
+        _username = configuration["Smtp:Username"];
+        _password = configuration["Smtp:Password"];
+    }
+
+    public async Task SendPasswordResetAsync(string email, string token, CancellationToken cancellationToken = default)
+    {
+        using var message = new MailMessage(_from, email)
+        {
+            Subject = "Reset lozinke",
+            Body = $"Token za reset lozinke: {token}"
+        };
+
+        using var client = new SmtpClient(_host, _port)
+        {
+            EnableSsl = _enableSsl
+        };
+
+        if (!string.IsNullOrWhiteSpace(_username))
+        {
+            client.Credentials = new NetworkCredential(_username, _password);
+        }
+
+        await client.SendMailAsync(message, cancellationToken);
+    }
 }
 
 ```
@@ -8953,14 +9016,13 @@ public sealed class RabbitMqHealthCheck(IConfiguration configuration) : IHealthC
 
 ## File: eNote\eNote.API\Hubs\NotificationHub.cs
 ```cs
-using eNote.Application.Constants;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using System.IdentityModel.Tokens.Jwt;
 
 namespace eNote.API.Hubs;
 
-[Authorize(Roles = AppRoles.Student)]
+[Authorize]
 public sealed class NotificationHub : Hub
 {
     public const string HubPath = "/hubs/notifications";

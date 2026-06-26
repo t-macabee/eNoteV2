@@ -1,11 +1,10 @@
-using eNote.Application.Constants;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using System.IdentityModel.Tokens.Jwt;
 
 namespace eNote.API.Hubs;
 
-[Authorize(Roles = AppRoles.Student)]
+[Authorize]
 public sealed class NotificationHub : Hub
 {
     public const string HubPath = "/hubs/notifications";
