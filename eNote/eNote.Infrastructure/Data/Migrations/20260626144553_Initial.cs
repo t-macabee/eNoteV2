@@ -110,6 +110,26 @@ public partial class Initial : Migration
             });
 
         migrationBuilder.CreateTable(
+            name: "RentalNotificationOutbox",
+            columns: table => new
+            {
+                Id = table.Column<int>(type: "int", nullable: false)
+                    .Annotation("SqlServer:Identity", "1, 1"),
+                PayloadJson = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                PublishedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                Attempts = table.Column<int>(type: "int", nullable: false),
+                LastError = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: true),
+                CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                CreatedById = table.Column<int>(type: "int", nullable: true),
+                UpdatedById = table.Column<int>(type: "int", nullable: true)
+            },
+            constraints: table =>
+            {
+                table.PrimaryKey("PK_RentalNotificationOutbox", x => x.Id);
+            });
+
+        migrationBuilder.CreateTable(
             name: "RevokedToken",
             columns: table => new
             {
@@ -693,11 +713,11 @@ public partial class Initial : Migration
             columns: new[] { "Id", "MonthlyFee", "Type" },
             values: new object[,]
             {
-                { 1, 0m, "Žičani" },
-                { 2, 0m, "Udaraljke" },
-                { 3, 0m, "Limeni" },
-                { 4, 0m, "Tipke" },
-                { 5, 0m, "Dodatna oprema" }
+                { 1, 45m, "Žičani" },
+                { 2, 35m, "Udaraljke" },
+                { 3, 55m, "Limeni" },
+                { 4, 65m, "Tipke" },
+                { 5, 15m, "Dodatna oprema" }
             });
 
         migrationBuilder.CreateIndex(
@@ -883,6 +903,11 @@ public partial class Initial : Migration
             columns: new[] { "UserId", "RentalId", "Title" });
 
         migrationBuilder.CreateIndex(
+            name: "IX_RentalNotificationOutbox_PublishedAt",
+            table: "RentalNotificationOutbox",
+            column: "PublishedAt");
+
+        migrationBuilder.CreateIndex(
             name: "IX_RevokedToken_Jti",
             table: "RevokedToken",
             column: "Jti",
@@ -939,6 +964,9 @@ public partial class Initial : Migration
 
         migrationBuilder.DropTable(
             name: "Notification");
+
+        migrationBuilder.DropTable(
+            name: "RentalNotificationOutbox");
 
         migrationBuilder.DropTable(
             name: "RevokedToken");

@@ -110,15 +110,18 @@ public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, 
 
     private async Task<InstrumentRentalDto> ExecuteTransitionAsync(InstrumentRental rental, RentalTrigger trigger, RentalActor actor, int userId, RentalStatusResponse? response)
     {
+        var hasConflict = await context.Set<InstrumentRental>()
+            .AnyAsync(x => x.InstrumentId == rental.InstrumentId && x.Id != rental.Id && InstrumentRentalStatusSets.Blocking.Contains(x.RentalStatus));
+
         var transitionContext = new RentalTransitionContext
         {
             UserId = userId,
             Actor = actor,
-            Db = context,
+            HasInstrumentLockConflict = hasConflict,
             Response = response
         };
 
-        var result = await stateMachine.FireAsync(rental, trigger, transitionContext);
+        var result = stateMachine.Fire(rental, trigger, transitionContext);
 
         if (result.UsesInstrumentLock)
         {

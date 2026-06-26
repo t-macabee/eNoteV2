@@ -61,21 +61,19 @@ public sealed class UploadsController(IWebHostEnvironment env, IFileAccessServic
         }
 
         var contentType = GetContentType(fileName);
+
         return PhysicalFile(fullPath, contentType, enableRangeProcessing: true);
     }
 
-    private static bool IsSafeFileName(string fileName) =>
-        !string.IsNullOrWhiteSpace(fileName)
-        && fileName == Path.GetFileName(fileName)
-        && !fileName.Contains("..", StringComparison.Ordinal);
+    private static bool IsSafeFileName(string fileName) => !string.IsNullOrWhiteSpace(fileName) && fileName == Path.GetFileName(fileName) && !fileName.Contains("..", StringComparison.Ordinal);
 
-    private static string GetContentType(string fileName) =>
-        Path.GetExtension(fileName).ToLowerInvariant() switch
-        {
-            ".jpg" or ".jpeg" => "image/jpeg",
-            ".png" => "image/png",
-            ".webp" => "image/webp",
-            ".pdf" => "application/pdf",
-            _ => "application/octet-stream"
-        };
+    private static string GetContentType(string fileName) => Path.GetExtension(fileName).ToLowerInvariant()
+        switch
+    {
+        ".jpg" or ".jpeg" => "image/jpeg",
+        ".png" => "image/png",
+        ".webp" => "image/webp",
+        ".pdf" => "application/pdf",
+        _ => "application/octet-stream"
+    };
 }

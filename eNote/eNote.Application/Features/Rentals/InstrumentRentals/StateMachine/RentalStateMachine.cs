@@ -1,9 +1,8 @@
-﻿using eNote.Application.Common.Exceptions;
+using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Time;
 using eNote.Domain.Entities.Rentals;
 using eNote.Domain.Enums;
-using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Application.Features.Rentals.InstrumentRentals.StateMachine;
 
@@ -11,15 +10,11 @@ public sealed class RentalStateMachine(IClock clock) : IRentalStateMachine
 {
     private static readonly IReadOnlyList<TransitionDefinition> Transitions = CreateTransitions();
 
-    public async Task<RentalTransitionResult> FireAsync(InstrumentRental rental, RentalTrigger trigger, RentalTransitionContext context, CancellationToken cancellationToken = default)
+    public RentalTransitionResult Fire(InstrumentRental rental, RentalTrigger trigger, RentalTransitionContext context)
     {
         var transition = FindTransition(rental.RentalStatus, trigger, context.Actor) ?? throw new BusinessException(GetInvalidTransitionMessage(trigger, context.Actor));
 
-        if (transition.GuardAsync is not null)
-        {
-            await transition.GuardAsync(rental, context, cancellationToken);
-        }
-
+        transition.Guard?.Invoke(rental, context);
         transition.Apply(rental, context, clock);
 
         return new RentalTransitionResult(transition.UsesInstrumentLock);
@@ -49,16 +44,9 @@ public sealed class RentalStateMachine(IClock clock) : IRentalStateMachine
         _ => Messages.BadRequest
     };
 
-    private static async Task GuardNoInstrumentLockConflictAsync(InstrumentRental rental, RentalTransitionContext context, CancellationToken cancellationToken)
+    private static void GuardNoInstrumentLockConflict(RentalTransitionContext context)
     {
-        var conflict = await context.Db.Set<InstrumentRental>()
-            .AnyAsync(x =>
-                x.InstrumentId == rental.InstrumentId &&
-                x.Id != rental.Id &&
-                InstrumentRentalStatusSets.Blocking.Contains(x.RentalStatus),
-                cancellationToken);
-
-        if (conflict)
+        if (context.HasInstrumentLockConflict)
         {
             throw new BusinessException(Messages.InstrumentReservedOrRented);
         }
@@ -107,10 +95,10 @@ public sealed class RentalStateMachine(IClock clock) : IRentalStateMachine
             From: InstrumentRentalStatus.Pending,
             Trigger: RentalTrigger.Approve,
             Actors: [RentalActor.StoreEmployee],
-            GuardAsync: async (rental, context, ct) =>
+            Guard: (rental, context) =>
             {
                 GuardInstrumentActive(rental);
-                await GuardNoInstrumentLockConflictAsync(rental, context, ct);
+                GuardNoInstrumentLockConflict(context);
             },
             Apply: (rental, context, time) =>
             {
@@ -123,7 +111,7 @@ public sealed class RentalStateMachine(IClock clock) : IRentalStateMachine
             From: InstrumentRentalStatus.Pending,
             Trigger: RentalTrigger.Reject,
             Actors: [RentalActor.StoreEmployee],
-            GuardAsync: null,
+            Guard: null,
             Apply: (rental, context, time) =>
             {
                 rental.Reject(time.UtcNow, context.Response?.Note, context.UserId);
@@ -135,11 +123,7 @@ public sealed class RentalStateMachine(IClock clock) : IRentalStateMachine
             From: InstrumentRentalStatus.Pending,
             Trigger: RentalTrigger.Cancel,
             Actors: [RentalActor.Student],
-            GuardAsync: (rental, _, _) =>
-            {
-                GuardNotPickedUp(rental);
-                return Task.CompletedTask;
-            },
+            Guard: (rental, _) => GuardNotPickedUp(rental),
             Apply: (rental, context, time) =>
             {
                 var note = !string.IsNullOrWhiteSpace(context.Response?.Note) ? context.Response.Note : rental.Note;
@@ -152,11 +136,11 @@ public sealed class RentalStateMachine(IClock clock) : IRentalStateMachine
             From: InstrumentRentalStatus.Approved,
             Trigger: RentalTrigger.Pickup,
             Actors: [RentalActor.StoreEmployee],
-            GuardAsync: async (rental, context, ct) =>
+            Guard: (rental, context) =>
             {
                 GuardInstrumentActive(rental);
-
-                if (rental.PickedUpAt.HasValue) { throw new BusinessException(Messages.RentalAlreadyPickedUp); } await GuardNoInstrumentLockConflictAsync(rental, context, ct);
+                if (rental.PickedUpAt.HasValue) { throw new BusinessException(Messages.RentalAlreadyPickedUp); }
+                GuardNoInstrumentLockConflict(context);
             },
             Apply: (rental, context, time) =>
             {
@@ -170,11 +154,7 @@ public sealed class RentalStateMachine(IClock clock) : IRentalStateMachine
             From: InstrumentRentalStatus.Approved,
             Trigger: RentalTrigger.Cancel,
             Actors: [RentalActor.Student],
-            GuardAsync: (rental, _, _) =>
-            {
-                GuardNotPickedUp(rental);
-                return Task.CompletedTask;
-            },
+            Guard: (rental, _) => GuardNotPickedUp(rental),
             Apply: (rental, context, time) =>
             {
                 var note = !string.IsNullOrWhiteSpace(context.Response?.Note) ? context.Response.Note : rental.Note;
@@ -187,11 +167,7 @@ public sealed class RentalStateMachine(IClock clock) : IRentalStateMachine
             From: InstrumentRentalStatus.Active,
             Trigger: RentalTrigger.Complete,
             Actors: [RentalActor.StoreEmployee],
-            GuardAsync: (rental, _, _) =>
-            {
-                GuardNotReturned(rental);
-                return Task.CompletedTask;
-            },
+            Guard: (rental, _) => GuardNotReturned(rental),
             Apply: (rental, context, time) =>
             {
                 var note = !string.IsNullOrWhiteSpace(context.Response?.Note) ? context.Response.Note : rental.Note;
@@ -204,11 +180,10 @@ public sealed class RentalStateMachine(IClock clock) : IRentalStateMachine
             From: InstrumentRentalStatus.Active,
             Trigger: RentalTrigger.ReturnEarly,
             Actors: [RentalActor.StoreEmployee],
-            GuardAsync: (rental, _, _) =>
+            Guard: (rental, _) =>
             {
                 GuardNotReturned(rental);
                 GuardPickedUp(rental);
-                return Task.CompletedTask;
             },
             Apply: (rental, context, time) =>
             {
@@ -221,7 +196,8 @@ public sealed class RentalStateMachine(IClock clock) : IRentalStateMachine
 
     private sealed record TransitionDefinition(
         InstrumentRentalStatus From, RentalTrigger Trigger, RentalActor[] Actors,
-        Func<InstrumentRental, RentalTransitionContext, CancellationToken, Task>? GuardAsync, Action<InstrumentRental,
-        RentalTransitionContext, IClock> Apply, bool UsesInstrumentLock
+        Action<InstrumentRental, RentalTransitionContext>? Guard,
+        Action<InstrumentRental, RentalTransitionContext, IClock> Apply,
+        bool UsesInstrumentLock
     );
 }

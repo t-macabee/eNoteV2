@@ -13,50 +13,50 @@ public sealed class RentalStateMachineTests
     private readonly RentalStateMachine _stateMachine = new(new SystemClock());
 
     [Fact]
-    public async Task Reject_FromPending_SetsRejectedStatus()
+    public void Reject_FromPending_SetsRejectedStatus()
     {
         var rental = new InstrumentRental(1, 1, Now, "note");
         var context = new RentalTransitionContext
         {
             UserId = 10,
             Actor = RentalActor.StoreEmployee,
-            Db = new NoConflictDbContext()
+            HasInstrumentLockConflict = false
         };
 
-        await _stateMachine.FireAsync(rental, RentalTrigger.Reject, context);
+        _stateMachine.Fire(rental, RentalTrigger.Reject, context);
 
         Assert.Equal(InstrumentRentalStatus.Rejected, rental.RentalStatus);
         Assert.NotNull(rental.RejectedAt);
     }
 
     [Fact]
-    public async Task Cancel_FromPending_WithoutPickup_SetsCanceledStatus()
+    public void Cancel_FromPending_WithoutPickup_SetsCanceledStatus()
     {
         var rental = new InstrumentRental(1, 1, Now, null);
         var context = new RentalTransitionContext
         {
             UserId = 5,
             Actor = RentalActor.Student,
-            Db = new NoConflictDbContext()
+            HasInstrumentLockConflict = false
         };
 
-        await _stateMachine.FireAsync(rental, RentalTrigger.Cancel, context);
+        _stateMachine.Fire(rental, RentalTrigger.Cancel, context);
 
         Assert.Equal(InstrumentRentalStatus.Canceled, rental.RentalStatus);
         Assert.NotNull(rental.ReturnedAt);
     }
 
     [Fact]
-    public async Task FireAsync_WithInvalidTransition_ThrowsBusinessException()
+    public void Fire_WithInvalidTransition_ThrowsBusinessException()
     {
         var rental = new InstrumentRental(1, 1, Now, null);
         var context = new RentalTransitionContext
         {
             UserId = 10,
             Actor = RentalActor.StoreEmployee,
-            Db = new NoConflictDbContext()
+            HasInstrumentLockConflict = false
         };
 
-        await Assert.ThrowsAsync<BusinessException>(() => _stateMachine.FireAsync(rental, RentalTrigger.Pickup, context));
+        Assert.Throws<BusinessException>(() => _stateMachine.Fire(rental, RentalTrigger.Pickup, context));
     }
 }

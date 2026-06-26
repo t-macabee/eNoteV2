@@ -11,9 +11,7 @@ namespace eNote.API.Controllers.Base;
 [Authorize]
 public abstract class CoreController : ControllerBase
 {
-    protected string CurrentTokenJti =>
-        User.FindFirstValue(JwtRegisteredClaimNames.Jti)
-        ?? throw new AuthenticationException(Messages.InvalidUserClaim);
+    protected string CurrentTokenJti => User.FindFirstValue(JwtRegisteredClaimNames.Jti) ?? throw new AuthenticationException(Messages.InvalidUserClaim);
 
     protected DateTime CurrentTokenExpiresAtUtc
     {

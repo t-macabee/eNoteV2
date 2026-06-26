@@ -5,8 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace eNote.API.Controllers.Base;
 
-public abstract class ReferenceCrudController<TDto, TRequest, TSearch>(IReferenceCrudService<TDto, TRequest, TSearch> service) : CoreController
-    where TSearch : BaseSearchObject
+public abstract class ReferenceCrudController<TDto, TRequest, TSearch>(IReferenceCrudService<TDto, TRequest, TSearch> service) : CoreController where TSearch : BaseSearchObject
 {
     [HttpGet]
     [ProducesResponseType(StatusCodes.Status200OK)]
@@ -48,7 +47,5 @@ public abstract class ReferenceCrudController<TDto, TRequest, TSearch>(IReferenc
         return NoContent();
     }
 
-    private static object GetDtoId(TDto dto) =>
-        typeof(TDto).GetProperty("Id")?.GetValue(dto)
-        ?? throw new InvalidOperationException($"{typeof(TDto).Name} must expose an Id property.");
+    private static object GetDtoId(TDto dto) => typeof(TDto).GetProperty("Id")?.GetValue(dto) ?? throw new InvalidOperationException($"{typeof(TDto).Name} must expose an Id property.");
 }

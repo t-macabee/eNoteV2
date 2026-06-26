@@ -9,9 +9,7 @@ namespace eNote.API.Controllers.Admin;
 
 [Authorize(Roles = AppRoles.Administrator)]
 [Route("api/admin/users")]
-public sealed class AdminUsersController(
-    IUserProfileService profileService,
-    IUserProvisioningService provisioningService) : CoreController
+public sealed class AdminUsersController(IUserProfileService profileService, IUserProvisioningService provisioningService) : CoreController
 {
     [HttpGet("{id:int}")]
     [ProducesResponseType(typeof(UserProfileResponse), StatusCodes.Status200OK)]

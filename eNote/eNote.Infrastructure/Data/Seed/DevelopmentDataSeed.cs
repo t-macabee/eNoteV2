@@ -1,4 +1,4 @@
-﻿using eNote.Domain.Entities;
+using eNote.Domain.Entities;
 using eNote.Domain.Entities.Identity;
 using eNote.Domain.Entities.Rentals;
 using eNote.Domain.Enums;
@@ -109,30 +109,12 @@ internal static class InstrumentSeed
             .Select(s => s.Id)
             .FirstAsync();
 
-        var stringTypeId = await context.Set<InstrumentType>()
-            .Where(x => x.Type == "Å½iÄani")
-            .Select(x => x.Id)
-            .FirstAsync();
-
-        var percussionTypeId = await context.Set<InstrumentType>()
-            .Where(x => x.Type == "Udaraljke")
-            .Select(x => x.Id)
-            .FirstAsync();
-
-        var brassTypeId = await context.Set<InstrumentType>()
-            .Where(x => x.Type == "Limeni")
-            .Select(x => x.Id)
-            .FirstAsync();
-
-        var keysTypeId = await context.Set<InstrumentType>()
-            .Where(x => x.Type == "Tipke")
-            .Select(x => x.Id)
-            .FirstAsync();
-
-        var accessoriesTypeId = await context.Set<InstrumentType>()
-            .Where(x => x.Type == "Dodatna oprema")
-            .Select(x => x.Id)
-            .FirstAsync();
+        // ponytail: IDs are stable - seeded via HasData with explicit values in ModelBuilderSeed
+        const int stringTypeId = 1;
+        const int percussionTypeId = 2;
+        const int brassTypeId = 3;
+        const int keysTypeId = 4;
+        const int accessoriesTypeId = 5;
 
         Instrument[] allInstruments = [.. new[]
         {

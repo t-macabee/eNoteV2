@@ -11,9 +11,7 @@ public sealed class DatabaseHealthCheck(ENoteContext dbContext) : IHealthCheck
         {
             var canConnect = await dbContext.Database.CanConnectAsync(cancellationToken);
 
-            return canConnect
-                ? HealthCheckResult.Healthy("SQL Server is reachable.")
-                : HealthCheckResult.Unhealthy("SQL Server is not reachable.");
+            return canConnect ? HealthCheckResult.Healthy("SQL Server is reachable.") : HealthCheckResult.Unhealthy("SQL Server is not reachable.");
         }
         catch (Exception ex)
         {

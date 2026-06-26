@@ -20,9 +20,7 @@ public sealed class RabbitMqHealthCheck(IConfiguration configuration) : IHealthC
 
             await using var connection = await factory.CreateConnectionAsync(cancellationToken);
 
-            return connection.IsOpen
-                ? HealthCheckResult.Healthy("RabbitMQ is reachable.")
-                : HealthCheckResult.Unhealthy("RabbitMQ connection could not be opened.");
+            return connection.IsOpen ? HealthCheckResult.Healthy("RabbitMQ is reachable.") : HealthCheckResult.Unhealthy("RabbitMQ connection could not be opened.");
         }
         catch (Exception ex)
         {

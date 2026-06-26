@@ -1,5 +1,5 @@
 # Bounded Context: Shared_Infrastructure
-Total Files Contained: 245
+Total Files Contained: 246
 ---
 
 ## File: eNote\eNote.Domain\Entities\Academic\Attendance.cs
@@ -894,12 +894,7 @@ namespace eNote.Application.Common.Interfaces;
 public interface IRentalNotificationDispatcher
 {
     Task DispatchCreatedAsync(InstrumentRentalDto rental, int studentUserId, CancellationToken cancellationToken = default);
-
-    Task DispatchTransitionAsync(
-        InstrumentRentalDto rental,
-        RentalTrigger trigger,
-        int actorUserId,
-        CancellationToken cancellationToken = default);
+    Task DispatchTransitionAsync(InstrumentRentalDto rental, RentalTrigger trigger, int actorUserId, CancellationToken cancellationToken = default);
 }
 
 ```
@@ -1033,8 +1028,7 @@ namespace eNote.Application.Common.Paging;
 public static class PagingExtensions
 {
     public static async Task<PagedResult<TModel>> ToPagedResultAsync<TEntity, TModel>
-        (this IQueryable<TEntity> query, int page, int pageSize, bool includeTotalCount,
-        Func<TEntity, TModel> map, Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>>? orderBy = null, CancellationToken ct = default)
+        (this IQueryable<TEntity> query, int page, int pageSize, bool includeTotalCount, Func<TEntity, TModel> map, Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>>? orderBy = null, CancellationToken ct = default)
     {
         int? total = null;
 
@@ -1065,14 +1059,11 @@ public static class PagingExtensions
     }
 
     public static Task<PagedResult<TModel>> ToPagedResultAsync<TEntity, TSearch, TModel>
-        (this IQueryable<TEntity> query, TSearch search, Func<TEntity, TModel> map,
-        Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>>? orderBy = null, CancellationToken ct = default)
-        where TSearch : BaseSearchObject =>
-        query.ToPagedResultAsync(search.Page, search.PageSize, search.IncludeTotalCount, map, orderBy, ct);
+        (this IQueryable<TEntity> query, TSearch search, Func<TEntity, TModel> map, Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>>? orderBy = null, CancellationToken ct = default)
+        where TSearch : BaseSearchObject => query.ToPagedResultAsync(search.Page, search.PageSize, search.IncludeTotalCount, map, orderBy, ct);
 
     public static async Task<PagedResult<TModel>> ToPagedResultAsync<TEntity, TModel>
-        (this IQueryable<TEntity> query, int page, int pageSize, bool includeTotalCount,
-        Func<TEntity, Task<TModel>> mapAsync, Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>>? orderBy = null, CancellationToken ct = default)
+        (this IQueryable<TEntity> query, int page, int pageSize, bool includeTotalCount, Func<TEntity, Task<TModel>> mapAsync, Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>>? orderBy = null, CancellationToken ct = default)
     {
         int? total = null;
 
@@ -1105,15 +1096,11 @@ public static class PagingExtensions
     }
 
     public static Task<PagedResult<TModel>> ToPagedResultAsync<TEntity, TSearch, TModel>
-        (this IQueryable<TEntity> query, TSearch search, Func<TEntity, Task<TModel>> mapAsync,
-        Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>>? orderBy = null, CancellationToken ct = default)
-        where TSearch : BaseSearchObject =>
-        query.ToPagedResultAsync(search.Page, search.PageSize, search.IncludeTotalCount, mapAsync, orderBy, ct);
+        (this IQueryable<TEntity> query, TSearch search, Func<TEntity, Task<TModel>> mapAsync, Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>>? orderBy = null, CancellationToken ct = default)
+        where TSearch : BaseSearchObject => query.ToPagedResultAsync(search.Page, search.PageSize, search.IncludeTotalCount, mapAsync, orderBy, ct);
 
     public static async Task<PagedResult<TModel>> ToPagedResultAsync<TEntity, TCtx, TModel>
-        (this IQueryable<TEntity> query, int page, int pageSize, bool includeTotalCount,
-        Func<IReadOnlyList<TEntity>, Task<TCtx>> loadContext, Func<TEntity, TCtx, TModel> map,
-        Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>>? orderBy = null, CancellationToken ct = default)
+        (this IQueryable<TEntity> query, int page, int pageSize, bool includeTotalCount, Func<IReadOnlyList<TEntity>, Task<TCtx>> loadContext, Func<TEntity, TCtx, TModel> map, Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>>? orderBy = null, CancellationToken ct = default)
     {
         int? total = null;
 
@@ -1146,11 +1133,8 @@ public static class PagingExtensions
     }
 
     public static Task<PagedResult<TModel>> ToPagedResultAsync<TEntity, TSearch, TCtx, TModel>
-        (this IQueryable<TEntity> query, TSearch search, Func<IReadOnlyList<TEntity>, Task<TCtx>> loadContext,
-        Func<TEntity, TCtx, TModel> map, Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>>? orderBy = null,
-        CancellationToken ct = default)
-        where TSearch : BaseSearchObject =>
-        query.ToPagedResultAsync(search.Page, search.PageSize, search.IncludeTotalCount, loadContext, map, orderBy, ct);
+        (this IQueryable<TEntity> query, TSearch search, Func<IReadOnlyList<TEntity>, Task<TCtx>> loadContext, Func<TEntity, TCtx, TModel> map, Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>>? orderBy = null, CancellationToken ct = default)
+        where TSearch : BaseSearchObject => query.ToPagedResultAsync(search.Page, search.PageSize, search.IncludeTotalCount, loadContext, map, orderBy, ct);
 }
 
 ```
@@ -1168,9 +1152,7 @@ public static class PagingLimits
     public static (int Page, int PageSize) Normalize(int page, int pageSize)
     {
         page = page < 1 ? 1 : page;
-
         pageSize = pageSize < 1 ? DefaultPageSize : pageSize;
-
         pageSize = pageSize > MaxPageSize ? MaxPageSize : pageSize;
 
         return (page, pageSize);
@@ -1216,15 +1198,9 @@ namespace eNote.Application.Common.Search;
 
 public static class QueryableFilterExtensions
 {
-    public static IQueryable<T> WhereIf<T>(this IQueryable<T> query, bool condition, Expression<Func<T, bool>> predicate) =>
-        condition ? query.Where(predicate) : query;
-
-    public static IQueryable<T> WhereContainsIf<T>(this IQueryable<T> query, string? value, Expression<Func<T, bool>> predicate) =>
-        string.IsNullOrWhiteSpace(value) ? query : query.Where(predicate);
-
-    public static IQueryable<T> WhereEqualsIf<T, TValue>(this IQueryable<T> query, TValue? value, Expression<Func<T, bool>> predicate)
-        where TValue : struct =>
-        value.HasValue ? query.Where(predicate) : query;
+    public static IQueryable<T> WhereIf<T>(this IQueryable<T> query, bool condition, Expression<Func<T, bool>> predicate) => condition ? query.Where(predicate) : query;
+    public static IQueryable<T> WhereContainsIf<T>(this IQueryable<T> query, string? value, Expression<Func<T, bool>> predicate) => string.IsNullOrWhiteSpace(value) ? query : query.Where(predicate);
+    public static IQueryable<T> WhereEqualsIf<T, TValue>(this IQueryable<T> query, TValue? value, Expression<Func<T, bool>> predicate) where TValue : struct => value.HasValue ? query.Where(predicate) : query;
 }
 ```
 
@@ -5616,6 +5592,7 @@ public sealed class InstrumentRentalConfig : IEntityTypeConfiguration<Instrument
 {
     public void Configure(EntityTypeBuilder<InstrumentRental> builder)
     {
+        // ponytail: intentionally excludes rentals for inactive instruments globally; use IgnoreQueryFilters() for historical/audit queries
         builder.HasQueryFilter(r => r.Instrument.IsActive);
 
         builder.HasOne(x => x.StudentProfile)
@@ -5899,7 +5876,7 @@ public sealed class StudentConfig : IEntityTypeConfiguration<Student>
 
 ## File: eNote\eNote.Infrastructure\Data\Seed\DevelopmentDataSeed.cs
 ```cs
-﻿using eNote.Domain.Entities;
+using eNote.Domain.Entities;
 using eNote.Domain.Entities.Identity;
 using eNote.Domain.Entities.Rentals;
 using eNote.Domain.Enums;
@@ -6010,30 +5987,12 @@ internal static class InstrumentSeed
             .Select(s => s.Id)
             .FirstAsync();
 
-        var stringTypeId = await context.Set<InstrumentType>()
-            .Where(x => x.Type == "Å½iÄani")
-            .Select(x => x.Id)
-            .FirstAsync();
-
-        var percussionTypeId = await context.Set<InstrumentType>()
-            .Where(x => x.Type == "Udaraljke")
-            .Select(x => x.Id)
-            .FirstAsync();
-
-        var brassTypeId = await context.Set<InstrumentType>()
-            .Where(x => x.Type == "Limeni")
-            .Select(x => x.Id)
-            .FirstAsync();
-
-        var keysTypeId = await context.Set<InstrumentType>()
-            .Where(x => x.Type == "Tipke")
-            .Select(x => x.Id)
-            .FirstAsync();
-
-        var accessoriesTypeId = await context.Set<InstrumentType>()
-            .Where(x => x.Type == "Dodatna oprema")
-            .Select(x => x.Id)
-            .FirstAsync();
+        // ponytail: IDs are stable - seeded via HasData with explicit values in ModelBuilderSeed
+        const int stringTypeId = 1;
+        const int percussionTypeId = 2;
+        const int brassTypeId = 3;
+        const int keysTypeId = 4;
+        const int accessoriesTypeId = 5;
 
         Instrument[] allInstruments = [.. new[]
         {
@@ -6877,7 +6836,8 @@ public sealed class RentalNotificationDispatcher(
     {
         var message = new RentalStatusChanged(rental.Id, studentUserId, studentUserId, rental.RentalStatus.ToString(), rental.InstrumentModel, "Zahtjev za iznajmljivanje poslan", $"Vaš zahtjev za instrument {rental.InstrumentModel} je poslan prodavnici {rental.StoreName} i čeka odobrenje.", clock.UtcNow);
 
-        return EnqueueOutboxAsync(message, cancellationToken);
+        EnqueueOutbox(message);
+        return Task.CompletedTask;
     }
 
     public Task DispatchTransitionAsync(InstrumentRentalDto rental, RentalTrigger trigger, int actorUserId, CancellationToken cancellationToken = default)
@@ -6886,10 +6846,11 @@ public sealed class RentalNotificationDispatcher(
 
         var message = new RentalStatusChanged(rental.Id, rental.StudentUserId, actorUserId, rental.RentalStatus.ToString(), rental.InstrumentModel, title, body, clock.UtcNow);
 
-        return EnqueueOutboxAsync(message, cancellationToken);
+        EnqueueOutbox(message);
+        return Task.CompletedTask;
     }
 
-    private async Task EnqueueOutboxAsync(RentalStatusChanged message, CancellationToken cancellationToken)
+    private void EnqueueOutbox(RentalStatusChanged message)
     {
         var entry = new RentalNotificationOutbox
         {
@@ -6897,7 +6858,6 @@ public sealed class RentalNotificationDispatcher(
         };
 
         context.Set<RentalNotificationOutbox>().Add(entry);
-        await context.SaveChangesAsync(cancellationToken);
     }
 
     private static (string Title, string Body) BuildNotificationContent(InstrumentRentalDto rental, RentalTrigger trigger) =>
@@ -6918,6 +6878,78 @@ public sealed class RentalNotificationDispatcher(
             _ => ("Status iznajmljivanja promijenjen", $"Status iznajmljivanja za instrument {rental.InstrumentModel} je ažuriran.")
         };
 }
+```
+
+## File: eNote\eNote.Infrastructure\Messaging\RentalNotificationOutboxPublisher.cs
+```cs
+using System.Text.Json;
+using eNote.Application.Common.Persistence;
+using eNote.Application.Common.Time;
+using eNote.Contracts.Rentals;
+using eNote.Domain.Entities.Communication;
+using MassTransit;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+
+namespace eNote.Infrastructure.Messaging;
+
+public sealed class RentalNotificationOutboxPublisher(IServiceProvider services, ILogger<RentalNotificationOutboxPublisher> logger) : BackgroundService
+{
+    private static readonly TimeSpan Interval = TimeSpan.FromSeconds(5);
+    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        using var timer = new PeriodicTimer(Interval);
+        try
+        {
+            while (await timer.WaitForNextTickAsync(stoppingToken))
+                await ProcessBatchAsync(stoppingToken);
+        }
+        catch (OperationCanceledException) { }
+    }
+
+    private async Task ProcessBatchAsync(CancellationToken ct)
+    {
+        await using var scope = services.CreateAsyncScope();
+
+        var db = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
+        var publisher = scope.ServiceProvider.GetRequiredService<IPublishEndpoint>();
+        var clock = scope.ServiceProvider.GetRequiredService<IClock>();
+
+        var messages = await db.Set<RentalNotificationOutbox>()
+            .Where(x => x.PublishedAt == null && x.Attempts < 5)
+            .OrderBy(x => x.CreatedAt)
+            .Take(50)
+            .ToListAsync(ct);
+
+        if (messages.Count == 0) return;
+
+        await using var tx = await db.BeginTransactionAsync(ct);
+
+        foreach (var message in messages)
+        {
+            try
+            {
+                var payload = JsonSerializer.Deserialize<RentalStatusChanged>(message.PayloadJson, JsonOptions)!;
+                await publisher.Publish(payload, ct);
+                message.PublishedAt = clock.UtcNow;
+            }
+            catch (Exception ex)
+            {
+                message.Attempts++;
+                message.LastError = ex.Message.Length > 2000 ? ex.Message[..2000] : ex.Message;
+                logger.LogError(ex, "Failed to publish outbox message {Id}", message.Id);
+            }
+        }
+
+        await db.SaveChangesAsync(ct);
+        await tx.CommitAsync(ct);
+    }
+}
+
 ```
 
 ## File: eNote\eNote.Infrastructure\Storage\LocalFileStorageService.cs
@@ -7190,9 +7222,7 @@ public sealed class RentalStatusChangedPushConsumer(IHubContext<NotificationHub>
             CreatedAt = message.OccurredAtUtc
         };
 
-        await hubContext.Clients
-            .Group(NotificationHub.UserGroup(message.StudentUserId))
-            .SendAsync(NotificationHub.ReceiveMethod, payload, context.CancellationToken);
+        await hubContext.Clients.Group(NotificationHub.UserGroup(message.StudentUserId)).SendAsync(NotificationHub.ReceiveMethod, payload, context.CancellationToken);
 
         logger.LogInformation("Pushed rental notification to SignalR group for user {UserId}, rental {RentalId}.", message.StudentUserId, message.RentalId);
     }
@@ -7304,9 +7334,7 @@ namespace eNote.API.Controllers.Admin;
 
 [Authorize(Roles = AppRoles.Administrator)]
 [Route("api/admin/users")]
-public sealed class AdminUsersController(
-    IUserProfileService profileService,
-    IUserProvisioningService provisioningService) : CoreController
+public sealed class AdminUsersController(IUserProfileService profileService, IUserProvisioningService provisioningService) : CoreController
 {
     [HttpGet("{id:int}")]
     [ProducesResponseType(typeof(UserProfileResponse), StatusCodes.Status200OK)]
@@ -7562,9 +7590,7 @@ namespace eNote.API.Controllers.Base;
 [Authorize]
 public abstract class CoreController : ControllerBase
 {
-    protected string CurrentTokenJti =>
-        User.FindFirstValue(JwtRegisteredClaimNames.Jti)
-        ?? throw new AuthenticationException(Messages.InvalidUserClaim);
+    protected string CurrentTokenJti => User.FindFirstValue(JwtRegisteredClaimNames.Jti) ?? throw new AuthenticationException(Messages.InvalidUserClaim);
 
     protected DateTime CurrentTokenExpiresAtUtc
     {
@@ -7593,8 +7619,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace eNote.API.Controllers.Base;
 
-public abstract class ReferenceCrudController<TDto, TRequest, TSearch>(IReferenceCrudService<TDto, TRequest, TSearch> service) : CoreController
-    where TSearch : BaseSearchObject
+public abstract class ReferenceCrudController<TDto, TRequest, TSearch>(IReferenceCrudService<TDto, TRequest, TSearch> service) : CoreController where TSearch : BaseSearchObject
 {
     [HttpGet]
     [ProducesResponseType(StatusCodes.Status200OK)]
@@ -7636,9 +7661,7 @@ public abstract class ReferenceCrudController<TDto, TRequest, TSearch>(IReferenc
         return NoContent();
     }
 
-    private static object GetDtoId(TDto dto) =>
-        typeof(TDto).GetProperty("Id")?.GetValue(dto)
-        ?? throw new InvalidOperationException($"{typeof(TDto).Name} must expose an Id property.");
+    private static object GetDtoId(TDto dto) => typeof(TDto).GetProperty("Id")?.GetValue(dto) ?? throw new InvalidOperationException($"{typeof(TDto).Name} must expose an Id property.");
 }
 
 ```
@@ -7708,23 +7731,21 @@ public sealed class UploadsController(IWebHostEnvironment env, IFileAccessServic
         }
 
         var contentType = GetContentType(fileName);
+
         return PhysicalFile(fullPath, contentType, enableRangeProcessing: true);
     }
 
-    private static bool IsSafeFileName(string fileName) =>
-        !string.IsNullOrWhiteSpace(fileName)
-        && fileName == Path.GetFileName(fileName)
-        && !fileName.Contains("..", StringComparison.Ordinal);
+    private static bool IsSafeFileName(string fileName) => !string.IsNullOrWhiteSpace(fileName) && fileName == Path.GetFileName(fileName) && !fileName.Contains("..", StringComparison.Ordinal);
 
-    private static string GetContentType(string fileName) =>
-        Path.GetExtension(fileName).ToLowerInvariant() switch
-        {
-            ".jpg" or ".jpeg" => "image/jpeg",
-            ".png" => "image/png",
-            ".webp" => "image/webp",
-            ".pdf" => "application/pdf",
-            _ => "application/octet-stream"
-        };
+    private static string GetContentType(string fileName) => Path.GetExtension(fileName).ToLowerInvariant()
+        switch
+    {
+        ".jpg" or ".jpeg" => "image/jpeg",
+        ".png" => "image/png",
+        ".webp" => "image/webp",
+        ".pdf" => "application/pdf",
+        _ => "application/octet-stream"
+    };
 }
 ```
 
@@ -8342,6 +8363,7 @@ public static class ApplicationServiceExtensions
         services.AddScoped<IRentalNotificationDispatcher, RentalNotificationDispatcher>();
 
         services.AddScoped<IAppDbContext>(x => x.GetRequiredService<ENoteContext>());
+        services.AddHostedService<RentalNotificationOutboxPublisher>();
 
         return services;
     }
@@ -8414,8 +8436,7 @@ public static class CorsExtensions
 
     public static IServiceCollection AddApplicationCors(this IServiceCollection services, IConfiguration configuration, IWebHostEnvironment environment)
     {
-        var origins = configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
-            ?? configuration["Cors:AllowedOrigins"]?.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries) ?? [];
+        var origins = configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? configuration["Cors:AllowedOrigins"]?.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries) ?? [];
 
         services.AddCors(options =>
         {
@@ -8452,8 +8473,7 @@ public static class HealthCheckExtensions
 {
     public static IServiceCollection AddApplicationHealthChecks(this IServiceCollection services)
     {
-        services
-            .AddHealthChecks()
+        services.AddHealthChecks()
             .AddCheck<DatabaseHealthCheck>("sqlserver")
             .AddCheck<RabbitMqHealthCheck>("rabbitmq");
 
@@ -8675,7 +8695,6 @@ public static class MiddlewareExtensions
     private record ErrorResponse
     {
         public int Status { get; init; }
-
         public string Code { get; init; } = string.Empty;
         public string Message { get; init; } = string.Empty;
     }
@@ -8824,11 +8843,9 @@ public static class SeedExtensions
         using IServiceScope scope = app.Services.CreateScope();
 
         var services = scope.ServiceProvider;
-
         await IdentitySeed.SeedAsync(services);
 
         var context = services.GetRequiredService<ENoteContext>();
-
         await DevelopmentDataSeed.SeedAsync(context);
 
         return app;
@@ -8888,9 +8905,7 @@ public sealed class DatabaseHealthCheck(ENoteContext dbContext) : IHealthCheck
         {
             var canConnect = await dbContext.Database.CanConnectAsync(cancellationToken);
 
-            return canConnect
-                ? HealthCheckResult.Healthy("SQL Server is reachable.")
-                : HealthCheckResult.Unhealthy("SQL Server is not reachable.");
+            return canConnect ? HealthCheckResult.Healthy("SQL Server is reachable.") : HealthCheckResult.Unhealthy("SQL Server is not reachable.");
         }
         catch (Exception ex)
         {
@@ -8925,9 +8940,7 @@ public sealed class RabbitMqHealthCheck(IConfiguration configuration) : IHealthC
 
             await using var connection = await factory.CreateConnectionAsync(cancellationToken);
 
-            return connection.IsOpen
-                ? HealthCheckResult.Healthy("RabbitMQ is reachable.")
-                : HealthCheckResult.Unhealthy("RabbitMQ connection could not be opened.");
+            return connection.IsOpen ? HealthCheckResult.Healthy("RabbitMQ is reachable.") : HealthCheckResult.Unhealthy("RabbitMQ connection could not be opened.");
         }
         catch (Exception ex)
         {

@@ -19,7 +19,8 @@ public sealed class RentalNotificationDispatcher(
     {
         var message = new RentalStatusChanged(rental.Id, studentUserId, studentUserId, rental.RentalStatus.ToString(), rental.InstrumentModel, "Zahtjev za iznajmljivanje poslan", $"Vaš zahtjev za instrument {rental.InstrumentModel} je poslan prodavnici {rental.StoreName} i čeka odobrenje.", clock.UtcNow);
 
-        return EnqueueOutboxAsync(message, cancellationToken);
+        EnqueueOutbox(message);
+        return Task.CompletedTask;
     }
 
     public Task DispatchTransitionAsync(InstrumentRentalDto rental, RentalTrigger trigger, int actorUserId, CancellationToken cancellationToken = default)
@@ -28,10 +29,11 @@ public sealed class RentalNotificationDispatcher(
 
         var message = new RentalStatusChanged(rental.Id, rental.StudentUserId, actorUserId, rental.RentalStatus.ToString(), rental.InstrumentModel, title, body, clock.UtcNow);
 
-        return EnqueueOutboxAsync(message, cancellationToken);
+        EnqueueOutbox(message);
+        return Task.CompletedTask;
     }
 
-    private async Task EnqueueOutboxAsync(RentalStatusChanged message, CancellationToken cancellationToken)
+    private void EnqueueOutbox(RentalStatusChanged message)
     {
         var entry = new RentalNotificationOutbox
         {
@@ -39,7 +41,6 @@ public sealed class RentalNotificationDispatcher(
         };
 
         context.Set<RentalNotificationOutbox>().Add(entry);
-        await context.SaveChangesAsync(cancellationToken);
     }
 
     private static (string Title, string Body) BuildNotificationContent(InstrumentRentalDto rental, RentalTrigger trigger) =>

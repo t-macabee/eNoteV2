@@ -6,8 +6,7 @@ public static class CorsExtensions
 
     public static IServiceCollection AddApplicationCors(this IServiceCollection services, IConfiguration configuration, IWebHostEnvironment environment)
     {
-        var origins = configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
-            ?? configuration["Cors:AllowedOrigins"]?.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries) ?? [];
+        var origins = configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? configuration["Cors:AllowedOrigins"]?.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries) ?? [];
 
         services.AddCors(options =>
         {

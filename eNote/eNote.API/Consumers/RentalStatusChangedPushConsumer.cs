@@ -20,9 +20,7 @@ public sealed class RentalStatusChangedPushConsumer(IHubContext<NotificationHub>
             CreatedAt = message.OccurredAtUtc
         };
 
-        await hubContext.Clients
-            .Group(NotificationHub.UserGroup(message.StudentUserId))
-            .SendAsync(NotificationHub.ReceiveMethod, payload, context.CancellationToken);
+        await hubContext.Clients.Group(NotificationHub.UserGroup(message.StudentUserId)).SendAsync(NotificationHub.ReceiveMethod, payload, context.CancellationToken);
 
         logger.LogInformation("Pushed rental notification to SignalR group for user {UserId}, rental {RentalId}.", message.StudentUserId, message.RentalId);
     }

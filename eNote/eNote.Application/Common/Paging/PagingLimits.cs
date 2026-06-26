@@ -9,9 +9,7 @@ public static class PagingLimits
     public static (int Page, int PageSize) Normalize(int page, int pageSize)
     {
         page = page < 1 ? 1 : page;
-
         pageSize = pageSize < 1 ? DefaultPageSize : pageSize;
-
         pageSize = pageSize > MaxPageSize ? MaxPageSize : pageSize;
 
         return (page, pageSize);

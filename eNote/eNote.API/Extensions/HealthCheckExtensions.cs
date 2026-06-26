@@ -6,8 +6,7 @@ public static class HealthCheckExtensions
 {
     public static IServiceCollection AddApplicationHealthChecks(this IServiceCollection services)
     {
-        services
-            .AddHealthChecks()
+        services.AddHealthChecks()
             .AddCheck<DatabaseHealthCheck>("sqlserver")
             .AddCheck<RabbitMqHealthCheck>("rabbitmq");
 

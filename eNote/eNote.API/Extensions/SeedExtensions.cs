@@ -22,11 +22,9 @@ public static class SeedExtensions
         using IServiceScope scope = app.Services.CreateScope();
 
         var services = scope.ServiceProvider;
-
         await IdentitySeed.SeedAsync(services);
 
         var context = services.GetRequiredService<ENoteContext>();
-
         await DevelopmentDataSeed.SeedAsync(context);
 
         return app;
