@@ -1,6 +1,6 @@
 ﻿using eNote.API.Controllers.Base;
-using eNote.Application.Features.Users;
-using eNote.Application.Features.Users.Services;
+using eNote.Application.Features.Identity.Users;
+using eNote.Application.Features.Identity.Users.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace eNote.API.Controllers.Users;

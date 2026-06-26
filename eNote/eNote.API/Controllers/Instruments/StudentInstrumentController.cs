@@ -1,7 +1,7 @@
 ﻿using eNote.API.Controllers.Base;
 using eNote.Application.Constants;
-using eNote.Application.Features.Recommendations;
-using eNote.Application.Features.Recommendations.Services;
+using eNote.Application.Features.Rentals.Recommendations;
+using eNote.Application.Features.Rentals.Recommendations.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 

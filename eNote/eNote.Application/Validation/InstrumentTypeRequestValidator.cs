@@ -1,4 +1,4 @@
-using eNote.Application.Features.ReferenceData.InstrumentTypes;
+using eNote.Application.Features.Rentals.ReferenceData.InstrumentTypes;
 using FluentValidation;
 
 namespace eNote.Application.Validation;

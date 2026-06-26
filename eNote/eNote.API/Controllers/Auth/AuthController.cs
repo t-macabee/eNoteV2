@@ -1,8 +1,8 @@
 ﻿using eNote.API.Extensions;
 using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Localization;
-using eNote.Application.Features.Auth;
-using eNote.Application.Features.Auth.Services;
+using eNote.Application.Features.Identity.Auth;
+using eNote.Application.Features.Identity.Auth.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;

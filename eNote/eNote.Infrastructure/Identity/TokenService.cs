@@ -1,5 +1,5 @@
 using eNote.Application.Common.Time;
-using eNote.Application.Features.Auth.Services;
+using eNote.Application.Features.Identity.Auth.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;

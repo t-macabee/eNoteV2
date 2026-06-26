@@ -1,5 +1,5 @@
 using eNote.Application.Common.Localization;
-using eNote.Application.Features.Lectures;
+using eNote.Application.Features.Academic.Lectures;
 using eNote.Application.Validation;
 using eNote.Domain.Enums;
 using FluentValidation.Results;

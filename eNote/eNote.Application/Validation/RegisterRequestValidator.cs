@@ -1,4 +1,4 @@
-using eNote.Application.Features.Auth;
+using eNote.Application.Features.Identity.Auth;
 using FluentValidation;
 
 namespace eNote.Application.Validation;

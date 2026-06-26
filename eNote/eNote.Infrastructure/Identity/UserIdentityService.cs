@@ -1,5 +1,5 @@
-﻿using eNote.Application.Features.Users;
-using eNote.Application.Features.Users.Services;
+﻿using eNote.Application.Features.Identity.Users;
+using eNote.Application.Features.Identity.Users.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -50,7 +50,7 @@ public sealed class UserIdentityService(UserManager<AppUser> userManager) : IUse
         LastName = user.LastName,
         DateOfBirth = user.DateOfBirth,
         HasPicture = user.Picture is { Length: > 0 },
-        Address = user.Address is null ? null : new AddressDto
+        Address = user.Address is null ? null : new UserAddressDto
         {
             City = user.Address.City,
             Street = user.Address.Street,

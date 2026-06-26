@@ -1,9 +1,10 @@
 using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Time;
-using eNote.Application.Features.Courses.Services;
-using eNote.Application.Features.Users.Services;
+using eNote.Application.Features.Academic.Courses.Services;
+using eNote.Application.Features.Identity.Users.Services;
 using eNote.Domain.Entities;
+using eNote.Domain.Entities.Identity;
 using eNote.Domain.Enums;
 using eNote.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
@@ -120,6 +121,7 @@ public sealed class CourseEnrollmentServiceTests
     private sealed class StubUserContextResolver(Student student) : IUserContextResolver
     {
         public Task<Student> GetStudentAsync(int userId) => Task.FromResult(student);
+        public Task<int> GetCurrentStudentIdAsync(int appUserId) => Task.FromResult(student.Id);
         public Task<Instructor> GetInstructorAsync(int userId) => throw new NotSupportedException();
         public Task<MusicStoreEmployee> GetActiveEmployeeAsync(int userId) => throw new NotSupportedException();
         public Task<string> GetStudentDisplayNameAsync(Student student) => throw new NotSupportedException();

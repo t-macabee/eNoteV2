@@ -1,12 +1,59 @@
 # Bounded Context: Assignments
-Total Files Contained: 18
+Total Files Contained: 19
 ---
 
-## File: eNote\eNote.Domain\Entities\AssignmentSubmission.cs
+## File: eNote\eNote.Domain\Entities\Assignments\Assignment.cs
 ```cs
-using eNote.Domain.Entities.Base;
+using eNote.Domain.Entities.Shared.Base;
 
-namespace eNote.Domain.Entities;
+namespace eNote.Domain.Entities.Assignments;
+
+public class Assignment : AuditableEntity
+{
+    public int LectureId { get; private set; }
+    public Lecture Lecture { get; private set; } = null!;
+
+    public string Title { get; private set; } = null!;
+    public string Description { get; private set; } = null!;
+    public DateTime DueAt { get; private set; }
+    public bool IsActive { get; private set; } = true;
+
+    public ICollection<AssignmentSubmission> AssignmentSubmissions { get; private set; } = new List<AssignmentSubmission>();
+
+    protected Assignment()
+    {
+    }
+
+    public Assignment(string title, string description, DateTime dueAt, int lectureId)
+    {
+        Title = title;
+        Description = description;
+        DueAt = dueAt;
+        LectureId = lectureId;
+        IsActive = true;
+    }
+
+    public void UpdateDetails(string title, string description, DateTime dueAt)
+    {
+        Title = title;
+        Description = description;
+        DueAt = dueAt;
+    }
+
+    public void SoftDelete()
+    {
+        IsActive = false;
+    }
+}
+
+```
+
+## File: eNote\eNote.Domain\Entities\Assignments\AssignmentSubmission.cs
+```cs
+using eNote.Domain.Entities.Identity;
+using eNote.Domain.Entities.Shared.Base;
+
+namespace eNote.Domain.Entities.Assignments;
 
 public class AssignmentSubmission : AuditableEntity
 {
@@ -43,9 +90,9 @@ public class AssignmentSubmission : AuditableEntity
 
 ```
 
-## File: eNote\eNote.Application\Features\Assignments\AssignmentDto.cs
+## File: eNote\eNote.Application\Features\Academic\Assignments\AssignmentDto.cs
 ```cs
-namespace eNote.Application.Features.Assignments;
+namespace eNote.Application.Features.Academic.Assignments;
 
 public class AssignmentDto
 {
@@ -60,11 +107,11 @@ public class AssignmentDto
 
 ```
 
-## File: eNote\eNote.Application\Features\Assignments\AssignmentRequest.cs
+## File: eNote\eNote.Application\Features\Academic\Assignments\AssignmentRequest.cs
 ```cs
 using System.ComponentModel.DataAnnotations;
 
-namespace eNote.Application.Features.Assignments;
+namespace eNote.Application.Features.Academic.Assignments;
 
 public class AssignmentRequest
 {
@@ -78,13 +125,13 @@ public class AssignmentRequest
 
 ```
 
-## File: eNote\eNote.Application\Features\Assignments\AssignmentSearchExtensions.cs
+## File: eNote\eNote.Application\Features\Academic\Assignments\AssignmentSearchExtensions.cs
 ```cs
 using eNote.Application.Common.Search;
 using eNote.Application.Features.Students;
-using eNote.Domain.Entities;
+using eNote.Domain.Entities.Assignments;
 
-namespace eNote.Application.Features.Assignments;
+namespace eNote.Application.Features.Academic.Assignments;
 
 public static class AssignmentSearchExtensions
 {
@@ -99,11 +146,11 @@ public static class AssignmentSearchExtensions
 }
 ```
 
-## File: eNote\eNote.Application\Features\Assignments\AssignmentSearchObject.cs
+## File: eNote\eNote.Application\Features\Academic\Assignments\AssignmentSearchObject.cs
 ```cs
 using eNote.Application.Common.Search;
 
-namespace eNote.Application.Features.Assignments;
+namespace eNote.Application.Features.Academic.Assignments;
 
 public class AssignmentSearchObject : BaseSearchObject
 {
@@ -115,9 +162,9 @@ public class AssignmentSearchObject : BaseSearchObject
 
 ```
 
-## File: eNote\eNote.Application\Features\Assignments\AssignmentSubmissionDto.cs
+## File: eNote\eNote.Application\Features\Academic\Assignments\AssignmentSubmissionDto.cs
 ```cs
-namespace eNote.Application.Features.Assignments;
+namespace eNote.Application.Features.Academic.Assignments;
 
 public class AssignmentSubmissionDto
 {
@@ -135,9 +182,9 @@ public class AssignmentSubmissionDto
 
 ```
 
-## File: eNote\eNote.Application\Features\Assignments\AssignmentSubmitRequest.cs
+## File: eNote\eNote.Application\Features\Academic\Assignments\AssignmentSubmitRequest.cs
 ```cs
-namespace eNote.Application.Features.Assignments;
+namespace eNote.Application.Features.Academic.Assignments;
 
 public class AssignmentSubmitRequest
 {
@@ -146,11 +193,11 @@ public class AssignmentSubmitRequest
 
 ```
 
-## File: eNote\eNote.Application\Features\Assignments\GradeAssignmentRequest.cs
+## File: eNote\eNote.Application\Features\Academic\Assignments\GradeAssignmentRequest.cs
 ```cs
 using System.ComponentModel.DataAnnotations;
 
-namespace eNote.Application.Features.Assignments;
+namespace eNote.Application.Features.Academic.Assignments;
 
 public class GradeAssignmentRequest
 {
@@ -160,11 +207,11 @@ public class GradeAssignmentRequest
 
 ```
 
-## File: eNote\eNote.Application\Features\Assignments\SubmissionSearchObject.cs
+## File: eNote\eNote.Application\Features\Academic\Assignments\SubmissionSearchObject.cs
 ```cs
 using eNote.Application.Common.Search;
 
-namespace eNote.Application.Features.Assignments;
+namespace eNote.Application.Features.Academic.Assignments;
 
 public sealed class SubmissionSearchObject : BaseSearchObject
 {
@@ -172,21 +219,22 @@ public sealed class SubmissionSearchObject : BaseSearchObject
 
 ```
 
-## File: eNote\eNote.Application\Features\Assignments\Services\AssignmentService.cs
+## File: eNote\eNote.Application\Features\Academic\Assignments\Services\AssignmentService.cs
 ```cs
 ﻿using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Paging;
 using eNote.Application.Common.Persistence;
-using eNote.Application.Features.Instructors;
+using eNote.Application.Features.Academic.Assignments;
+using eNote.Application.Features.Identity.Instructors;
+using eNote.Application.Features.Identity.Users.Services;
 using eNote.Application.Features.Students;
-using eNote.Application.Features.Users.Services;
-using eNote.Domain.Entities;
+using eNote.Domain.Entities.Assignments;
 using MapsterMapper;
 using Microsoft.EntityFrameworkCore;
 
-namespace eNote.Application.Features.Assignments.Services;
+namespace eNote.Application.Features.Academic.Assignments.Services;
 
 public sealed class AssignmentService(
     IAppDbContext context,
@@ -249,11 +297,11 @@ public sealed class AssignmentService(
 
     public async Task<PagedResult<AssignmentDto>> GetForStudentAsync(AssignmentSearchObject search)
     {
-        var student = await resolver.GetStudentAsync(currentUserService.UserId);
+        var studentId = await resolver.GetCurrentStudentIdAsync(currentUserService.UserId);
 
         var query = context.Set<Assignment>()
             .AsNoTracking()
-            .ForEnrolledStudent(student.Id)
+            .ForEnrolledStudent(studentId)
             .ApplySearch(search);
 
         return await query.ToPagedResultAsync(search, mapper.Map<AssignmentDto>, q => q.OrderBy(x => x.DueAt));
@@ -261,10 +309,10 @@ public sealed class AssignmentService(
 
     public async Task<AssignmentDto> GetByIdForStudentAsync(int assignmentId)
     {
-        var student = await resolver.GetStudentAsync(currentUserService.UserId);
+        var studentId = await resolver.GetCurrentStudentIdAsync(currentUserService.UserId);
 
         var entity = await context.Set<Assignment>()
-            .ForEnrolledStudentById(student.Id, assignmentId)
+            .ForEnrolledStudentById(studentId, assignmentId)
             .AsNoTracking()
             .FirstOrDefaultAsync()
             ?? throw new NotFoundException(Messages.AssignmentNotFound);
@@ -281,7 +329,7 @@ public sealed class AssignmentService(
 
 ```
 
-## File: eNote\eNote.Application\Features\Assignments\Services\AssignmentSubmissionService.cs
+## File: eNote\eNote.Application\Features\Academic\Assignments\Services\AssignmentSubmissionService.cs
 ```cs
 using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Interfaces;
@@ -289,13 +337,15 @@ using eNote.Application.Common.Localization;
 using eNote.Application.Common.Paging;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Common.Time;
-using eNote.Application.Features.Instructors;
+using eNote.Application.Features.Academic.Assignments;
+using eNote.Application.Features.Identity.Instructors;
+using eNote.Application.Features.Identity.Users.Services;
 using eNote.Application.Features.Students;
-using eNote.Application.Features.Users.Services;
-using eNote.Domain.Entities;
+using eNote.Domain.Entities.Assignments;
+using eNote.Domain.Entities.Identity;
 using Microsoft.EntityFrameworkCore;
 
-namespace eNote.Application.Features.Assignments.Services;
+namespace eNote.Application.Features.Academic.Assignments.Services;
 
 public sealed class AssignmentSubmissionService(
     IAppDbContext context,
@@ -402,11 +452,12 @@ public sealed class AssignmentSubmissionService(
 
 ```
 
-## File: eNote\eNote.Application\Features\Assignments\Services\IAssignmentService.cs
+## File: eNote\eNote.Application\Features\Academic\Assignments\Services\IAssignmentService.cs
 ```cs
 using eNote.Application.Common.Paging;
+using eNote.Application.Features.Academic.Assignments;
 
-namespace eNote.Application.Features.Assignments.Services;
+namespace eNote.Application.Features.Academic.Assignments.Services;
 
 public interface IAssignmentService
 {
@@ -421,11 +472,12 @@ public interface IAssignmentService
 
 ```
 
-## File: eNote\eNote.Application\Features\Assignments\Services\IAssignmentSubmissionService.cs
+## File: eNote\eNote.Application\Features\Academic\Assignments\Services\IAssignmentSubmissionService.cs
 ```cs
 using eNote.Application.Common.Paging;
+using eNote.Application.Features.Academic.Assignments;
 
-namespace eNote.Application.Features.Assignments.Services;
+namespace eNote.Application.Features.Academic.Assignments.Services;
 
 public interface IAssignmentSubmissionService
 {
@@ -438,7 +490,7 @@ public interface IAssignmentSubmissionService
 
 ## File: eNote\eNote.Infrastructure\Data\Configurations\AssignmentSubmissionConfig.cs
 ```cs
-using eNote.Domain.Entities;
+using eNote.Domain.Entities.Assignments;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -472,8 +524,8 @@ public sealed class AssignmentSubmissionConfig : IEntityTypeConfiguration<Assign
 ﻿using eNote.API.Controllers.Base;
 using eNote.Application.Common.Paging;
 using eNote.Application.Constants;
-using eNote.Application.Features.Assignments;
-using eNote.Application.Features.Assignments.Services;
+using eNote.Application.Features.Academic.Assignments;
+using eNote.Application.Features.Academic.Assignments.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -535,8 +587,8 @@ public sealed class InstructorAssignmentController(IAssignmentService service) :
 using eNote.API.Controllers.Base;
 using eNote.Application.Common.Paging;
 using eNote.Application.Constants;
-using eNote.Application.Features.Assignments;
-using eNote.Application.Features.Assignments.Services;
+using eNote.Application.Features.Academic.Assignments;
+using eNote.Application.Features.Academic.Assignments.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -570,8 +622,8 @@ public sealed class InstructorAssignmentSubmissionController(IAssignmentSubmissi
 ﻿using eNote.API.Controllers.Base;
 using eNote.Application.Common.Paging;
 using eNote.Application.Constants;
-using eNote.Application.Features.Assignments;
-using eNote.Application.Features.Assignments.Services;
+using eNote.Application.Features.Academic.Assignments;
+using eNote.Application.Features.Academic.Assignments.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -605,8 +657,8 @@ public sealed class StudentAssignmentController(IAssignmentService service) : Co
 using eNote.API.Controllers.Base;
 using eNote.Application.Common.Localization;
 using eNote.Application.Constants;
-using eNote.Application.Features.Assignments;
-using eNote.Application.Features.Assignments.Services;
+using eNote.Application.Features.Academic.Assignments;
+using eNote.Application.Features.Academic.Assignments.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 

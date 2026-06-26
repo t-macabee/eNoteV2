@@ -1,18 +1,19 @@
 using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Common.Time;
-using eNote.Application.Features.Courses.Services;
-using eNote.Application.Features.InstrumentRentals;
-using eNote.Application.Features.Instructors;
-using eNote.Application.Features.InstrumentRentals.Billing;
-using eNote.Application.Features.MusicStores.Services;
-using eNote.Application.Features.Users.Services;
+using eNote.Application.Features.Rentals.InstrumentRentals;
 using eNote.Domain.Entities;
 using eNote.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
+using eNote.Domain.Entities.Rentals;
+using eNote.Application.Features.Identity.Users.Services;
+using eNote.Application.Features.Academic.Courses.Services;
+using eNote.Application.Features.Rentals.InstrumentRentals.Billing;
+using eNote.Application.Features.Identity.Instructors;
+using eNote.Application.Features.Rentals.MusicStores.Services;
 
 namespace eNote.Application.Features.Reports.Services;
 

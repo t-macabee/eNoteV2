@@ -1,5 +1,6 @@
 using eNote.Application.Common.Persistence;
 using eNote.Domain.Entities;
+using eNote.Domain.Entities.Assignments;
 using eNote.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 

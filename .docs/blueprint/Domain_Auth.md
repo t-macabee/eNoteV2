@@ -22,11 +22,11 @@ public class AuthorizationException(string? message = null) : AppException(403, 
 
 ```
 
-## File: eNote\eNote.Application\Features\Auth\AuthResponse.cs
+## File: eNote\eNote.Application\Features\Identity\Auth\AuthResponse.cs
 ```cs
 using System.Text.Json.Serialization;
 
-namespace eNote.Application.Features.Auth;
+namespace eNote.Application.Features.Identity.Auth;
 
 public sealed class AuthResponse
 {
@@ -45,11 +45,11 @@ public sealed class AuthResponse
 
 ```
 
-## File: eNote\eNote.Application\Features\Auth\ForgotPasswordRequest.cs
+## File: eNote\eNote.Application\Features\Identity\Auth\ForgotPasswordRequest.cs
 ```cs
 using System.ComponentModel.DataAnnotations;
 
-namespace eNote.Application.Features.Auth;
+namespace eNote.Application.Features.Identity.Auth;
 
 public sealed class ForgotPasswordRequest
 {
@@ -60,9 +60,9 @@ public sealed class ForgotPasswordRequest
 
 ```
 
-## File: eNote\eNote.Application\Features\Auth\ForgotPasswordResponse.cs
+## File: eNote\eNote.Application\Features\Identity\Auth\ForgotPasswordResponse.cs
 ```cs
-namespace eNote.Application.Features.Auth;
+namespace eNote.Application.Features.Identity.Auth;
 
 public sealed class ForgotPasswordResponse
 {
@@ -71,11 +71,11 @@ public sealed class ForgotPasswordResponse
 
 ```
 
-## File: eNote\eNote.Application\Features\Auth\LoginRequest.cs
+## File: eNote\eNote.Application\Features\Identity\Auth\LoginRequest.cs
 ```cs
 using System.ComponentModel.DataAnnotations;
 
-namespace eNote.Application.Features.Auth;
+namespace eNote.Application.Features.Identity.Auth;
 
 public class LoginRequest
 {
@@ -88,11 +88,11 @@ public class LoginRequest
 
 ```
 
-## File: eNote\eNote.Application\Features\Auth\RegisterRequest.cs
+## File: eNote\eNote.Application\Features\Identity\Auth\RegisterRequest.cs
 ```cs
 using System.ComponentModel.DataAnnotations;
 
-namespace eNote.Application.Features.Auth;
+namespace eNote.Application.Features.Identity.Auth;
 
 public class RegisterRequest
 {
@@ -110,11 +110,11 @@ public class RegisterRequest
 
 ```
 
-## File: eNote\eNote.Application\Features\Auth\ResetPasswordRequest.cs
+## File: eNote\eNote.Application\Features\Identity\Auth\ResetPasswordRequest.cs
 ```cs
 using System.ComponentModel.DataAnnotations;
 
-namespace eNote.Application.Features.Auth;
+namespace eNote.Application.Features.Identity.Auth;
 
 public sealed class ResetPasswordRequest
 {
@@ -131,9 +131,11 @@ public sealed class ResetPasswordRequest
 
 ```
 
-## File: eNote\eNote.Application\Features\Auth\Services\IAuthService.cs
+## File: eNote\eNote.Application\Features\Identity\Auth\Services\IAuthService.cs
 ```cs
-namespace eNote.Application.Features.Auth.Services;
+using eNote.Application.Features.Identity.Auth;
+
+namespace eNote.Application.Features.Identity.Auth.Services;
 
 public interface IAuthService
 {
@@ -146,9 +148,9 @@ public interface IAuthService
 
 ```
 
-## File: eNote\eNote.Application\Features\Auth\Services\ITokenRevocationService.cs
+## File: eNote\eNote.Application\Features\Identity\Auth\Services\ITokenRevocationService.cs
 ```cs
-namespace eNote.Application.Features.Auth.Services;
+namespace eNote.Application.Features.Identity.Auth.Services;
 
 public interface ITokenRevocationService
 {
@@ -158,9 +160,9 @@ public interface ITokenRevocationService
 
 ```
 
-## File: eNote\eNote.Application\Features\Auth\Services\ITokenService.cs
+## File: eNote\eNote.Application\Features\Identity\Auth\Services\ITokenService.cs
 ```cs
-namespace eNote.Application.Features.Auth.Services;
+namespace eNote.Application.Features.Identity.Auth.Services;
 
 public interface ITokenService
 {
@@ -173,9 +175,9 @@ public interface ITokenService
 ```cs
 using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Localization;
-using eNote.Application.Features.Auth;
-using eNote.Application.Features.Auth.Services;
-using eNote.Application.Features.Users.Services;
+using eNote.Application.Features.Identity.Auth;
+using eNote.Application.Features.Identity.Auth.Services;
+using eNote.Application.Features.Identity.Users.Services;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Hosting;
@@ -315,8 +317,8 @@ public sealed class AuthService(
 ﻿using eNote.API.Extensions;
 using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Localization;
-using eNote.Application.Features.Auth;
-using eNote.Application.Features.Auth.Services;
+using eNote.Application.Features.Identity.Auth;
+using eNote.Application.Features.Identity.Auth.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;

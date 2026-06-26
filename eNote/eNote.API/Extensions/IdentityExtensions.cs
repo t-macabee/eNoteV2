@@ -1,5 +1,5 @@
 ﻿using eNote.Application.Common.Localization;
-using eNote.Application.Features.Auth.Services;
+using eNote.Application.Features.Identity.Auth.Services;
 using eNote.Infrastructure.Data;
 using eNote.Infrastructure.Identity;
 using Microsoft.AspNetCore.Authentication.JwtBearer;

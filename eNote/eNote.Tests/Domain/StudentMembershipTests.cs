@@ -1,4 +1,4 @@
-using eNote.Domain.Entities;
+using eNote.Domain.Entities.Identity;
 using Xunit;
 
 namespace eNote.Tests.Domain;

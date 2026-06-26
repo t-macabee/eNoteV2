@@ -1,6 +1,6 @@
 using eNote.Application.Common.Interfaces;
-using eNote.Application.Features.Users;
-using eNote.Application.Features.Users.Services;
+using eNote.Application.Features.Identity.Users.Services;
+using eNote.Application.Features.Identity.Users;
 using Xunit;
 
 namespace eNote.Tests.Users;

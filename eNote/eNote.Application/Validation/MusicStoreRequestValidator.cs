@@ -1,4 +1,4 @@
-using eNote.Application.Features.ReferenceData.MusicStores;
+using eNote.Application.Features.Rentals.ReferenceData.MusicStores;
 using FluentValidation;
 
 namespace eNote.Application.Validation;

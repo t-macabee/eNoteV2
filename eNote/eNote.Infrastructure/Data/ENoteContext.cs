@@ -1,6 +1,6 @@
 ﻿using eNote.Application.Common.Persistence;
 using eNote.Application.Common.Time;
-using eNote.Domain.Entities.Base;
+using eNote.Domain.Entities.Shared.Base;
 using eNote.Infrastructure.Data.Seed;
 using eNote.Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;

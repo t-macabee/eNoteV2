@@ -1,6 +1,6 @@
 ﻿using eNote.API.Controllers.Base;
 using eNote.Application.Constants;
-using eNote.Application.Features.ReferenceData.MusicStores;
+using eNote.Application.Features.Rentals.ReferenceData.MusicStores;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 

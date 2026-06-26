@@ -1,7 +1,7 @@
 using eNote.API.Controllers.Base;
 using eNote.Application.Common.Paging;
 using eNote.Application.Constants;
-using eNote.Application.Features.Instructors;
+using eNote.Application.Features.Identity.Instructors;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 

@@ -2,8 +2,8 @@
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Paging;
 using eNote.Application.Constants;
-using eNote.Application.Features.Announcements;
-using eNote.Application.Features.Announcements.Services;
+using eNote.Application.Features.Communication.Announcements;
+using eNote.Application.Features.Communication.Announcements.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 

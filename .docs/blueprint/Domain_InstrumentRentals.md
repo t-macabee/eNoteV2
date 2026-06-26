@@ -56,11 +56,11 @@ public static class InstrumentRentalStatusSets
 }
 ```
 
-## File: eNote\eNote.Application\Features\InstrumentRentals\InstrumentRentalDto.cs
+## File: eNote\eNote.Application\Features\Rentals\InstrumentRentals\InstrumentRentalDto.cs
 ```cs
 using eNote.Domain.Enums;
 
-namespace eNote.Application.Features.InstrumentRentals;
+namespace eNote.Application.Features.Rentals.InstrumentRentals;
 
 public class InstrumentRentalDto
 {
@@ -96,13 +96,13 @@ public class InstrumentRentalDto
 
 ```
 
-## File: eNote\eNote.Application\Features\InstrumentRentals\InstrumentRentalMappingConfig.cs
+## File: eNote\eNote.Application\Features\Rentals\InstrumentRentals\InstrumentRentalMappingConfig.cs
 ```cs
-using eNote.Application.Features.InstrumentRentals.Billing;
-using eNote.Domain.Entities;
+using eNote.Application.Features.Rentals.InstrumentRentals.Billing;
+using eNote.Domain.Entities.Rentals;
 using Mapster;
 
-namespace eNote.Application.Features.InstrumentRentals;
+namespace eNote.Application.Features.Rentals.InstrumentRentals;
 
 public sealed class InstrumentRentalMappingConfig : IRegister
 {
@@ -120,12 +120,12 @@ public sealed class InstrumentRentalMappingConfig : IRegister
 
 ```
 
-## File: eNote\eNote.Application\Features\InstrumentRentals\InstrumentRentalSearchExtensions.cs
+## File: eNote\eNote.Application\Features\Rentals\InstrumentRentals\InstrumentRentalSearchExtensions.cs
 ```cs
 using eNote.Application.Common.Search;
-using eNote.Domain.Entities;
+using eNote.Domain.Entities.Rentals;
 
-namespace eNote.Application.Features.InstrumentRentals;
+namespace eNote.Application.Features.Rentals.InstrumentRentals;
 
 public static class InstrumentRentalSearchExtensions
 {
@@ -136,12 +136,12 @@ public static class InstrumentRentalSearchExtensions
 }
 ```
 
-## File: eNote\eNote.Application\Features\InstrumentRentals\InstrumentRentalSearchObject.cs
+## File: eNote\eNote.Application\Features\Rentals\InstrumentRentals\InstrumentRentalSearchObject.cs
 ```cs
 using eNote.Application.Common.Search;
 using eNote.Domain.Enums;
 
-namespace eNote.Application.Features.InstrumentRentals;
+namespace eNote.Application.Features.Rentals.InstrumentRentals;
 
 public class InstrumentRentalSearchObject : BaseSearchObject
 {
@@ -151,11 +151,11 @@ public class InstrumentRentalSearchObject : BaseSearchObject
 
 ```
 
-## File: eNote\eNote.Application\Features\InstrumentRentals\RentalCreateRequest.cs
+## File: eNote\eNote.Application\Features\Rentals\InstrumentRentals\RentalCreateRequest.cs
 ```cs
 using System.ComponentModel.DataAnnotations;
 
-namespace eNote.Application.Features.InstrumentRentals;
+namespace eNote.Application.Features.Rentals.InstrumentRentals;
 
 public class RentalCreateRequest
 {
@@ -167,12 +167,12 @@ public class RentalCreateRequest
 
 ```
 
-## File: eNote\eNote.Application\Features\InstrumentRentals\RentalQueryableExtensions.cs
+## File: eNote\eNote.Application\Features\Rentals\InstrumentRentals\RentalQueryableExtensions.cs
 ```cs
-using eNote.Domain.Entities;
+using eNote.Domain.Entities.Rentals;
 using Microsoft.EntityFrameworkCore;
 
-namespace eNote.Application.Features.InstrumentRentals;
+namespace eNote.Application.Features.Rentals.InstrumentRentals;
 
 public static class RentalQueryableExtensions
 {
@@ -184,9 +184,9 @@ public static class RentalQueryableExtensions
 }
 ```
 
-## File: eNote\eNote.Application\Features\InstrumentRentals\RentalStatusResponse.cs
+## File: eNote\eNote.Application\Features\Rentals\InstrumentRentals\RentalStatusResponse.cs
 ```cs
-namespace eNote.Application.Features.InstrumentRentals;
+namespace eNote.Application.Features.Rentals.InstrumentRentals;
 
 public class RentalStatusResponse
 {
@@ -195,12 +195,13 @@ public class RentalStatusResponse
 
 ```
 
-## File: eNote\eNote.Application\Features\InstrumentRentals\Billing\RentalBilling.cs
+## File: eNote\eNote.Application\Features\Rentals\InstrumentRentals\Billing\RentalBilling.cs
 ```cs
-﻿using eNote.Domain.Entities;
+﻿using eNote.Application.Features.Rentals.InstrumentRentals;
+using eNote.Domain.Entities.Rentals;
 using eNote.Domain.Enums;
 
-namespace eNote.Application.Features.InstrumentRentals.Billing;
+namespace eNote.Application.Features.Rentals.InstrumentRentals.Billing;
 
 public static class RentalBilling
 {
@@ -270,9 +271,11 @@ public static class RentalBilling
 
 ```
 
-## File: eNote\eNote.Application\Features\InstrumentRentals\Services\IRentalCommandService.cs
+## File: eNote\eNote.Application\Features\Rentals\InstrumentRentals\Services\IRentalCommandService.cs
 ```cs
-namespace eNote.Application.Features.InstrumentRentals.Services;
+using eNote.Application.Features.Rentals.InstrumentRentals;
+
+namespace eNote.Application.Features.Rentals.InstrumentRentals.Services;
 
 public interface IRentalCommandService
 {
@@ -287,11 +290,12 @@ public interface IRentalCommandService
 
 ```
 
-## File: eNote\eNote.Application\Features\InstrumentRentals\Services\IRentalQueryService.cs
+## File: eNote\eNote.Application\Features\Rentals\InstrumentRentals\Services\IRentalQueryService.cs
 ```cs
 using eNote.Application.Common.Paging;
+using eNote.Application.Features.Rentals.InstrumentRentals;
 
-namespace eNote.Application.Features.InstrumentRentals.Services;
+namespace eNote.Application.Features.Rentals.InstrumentRentals.Services;
 
 public interface IRentalQueryService
 {
@@ -303,24 +307,25 @@ public interface IRentalQueryService
 
 ```
 
-## File: eNote\eNote.Application\Features\InstrumentRentals\Services\RentalCommandService.cs
+## File: eNote\eNote.Application\Features\Rentals\InstrumentRentals\Services\RentalCommandService.cs
 ```cs
 using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Common.Time;
-using eNote.Application.Features.InstrumentRentals.Billing;
-using eNote.Application.Features.InstrumentRentals.StateMachine;
-using eNote.Application.Features.MusicStores.Services;
-using eNote.Application.Features.Users.Services;
-using eNote.Domain.Entities;
+using eNote.Application.Features.Identity.Users.Services;
+using eNote.Application.Features.Rentals.InstrumentRentals;
+using eNote.Application.Features.Rentals.InstrumentRentals.Billing;
+using eNote.Application.Features.Rentals.InstrumentRentals.StateMachine;
+using eNote.Application.Features.Rentals.MusicStores.Services;
+using eNote.Domain.Entities.Rentals;
 using eNote.Domain.Enums;
 using MapsterMapper;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 
-namespace eNote.Application.Features.InstrumentRentals.Services;
+namespace eNote.Application.Features.Rentals.InstrumentRentals.Services;
 
 public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, IClock clock, IUserContextResolver resolver, IMusicStoreContextService storeContext, IRentalStateMachine stateMachine, ICurrentUserService currentUserService, IRentalNotificationDispatcher notificationDispatcher) : IRentalCommandService
 {
@@ -516,19 +521,20 @@ public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, 
 
 ```
 
-## File: eNote\eNote.Application\Features\InstrumentRentals\Services\RentalQueryService.cs
+## File: eNote\eNote.Application\Features\Rentals\InstrumentRentals\Services\RentalQueryService.cs
 ```cs
 ﻿using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Paging;
 using eNote.Application.Common.Persistence;
-using eNote.Application.Features.MusicStores.Services;
-using eNote.Domain.Entities;
+using eNote.Application.Features.Rentals.InstrumentRentals;
+using eNote.Application.Features.Rentals.MusicStores.Services;
+using eNote.Domain.Entities.Rentals;
 using MapsterMapper;
 using Microsoft.EntityFrameworkCore;
 
-namespace eNote.Application.Features.InstrumentRentals.Services;
+namespace eNote.Application.Features.Rentals.InstrumentRentals.Services;
 
 public sealed class RentalQueryService(
     IAppDbContext context,
@@ -580,11 +586,11 @@ public sealed class RentalQueryService(
 
 ```
 
-## File: eNote\eNote.Application\Features\InstrumentRentals\StateMachine\IRentalStateMachine.cs
+## File: eNote\eNote.Application\Features\Rentals\InstrumentRentals\StateMachine\IRentalStateMachine.cs
 ```cs
-using eNote.Domain.Entities;
+using eNote.Domain.Entities.Rentals;
 
-namespace eNote.Application.Features.InstrumentRentals.StateMachine;
+namespace eNote.Application.Features.Rentals.InstrumentRentals.StateMachine;
 
 public interface IRentalStateMachine
 {
@@ -593,9 +599,9 @@ public interface IRentalStateMachine
 
 ```
 
-## File: eNote\eNote.Application\Features\InstrumentRentals\StateMachine\RentalActor.cs
+## File: eNote\eNote.Application\Features\Rentals\InstrumentRentals\StateMachine\RentalActor.cs
 ```cs
-namespace eNote.Application.Features.InstrumentRentals.StateMachine;
+namespace eNote.Application.Features.Rentals.InstrumentRentals.StateMachine;
 
 public enum RentalActor
 {
@@ -605,16 +611,16 @@ public enum RentalActor
 
 ```
 
-## File: eNote\eNote.Application\Features\InstrumentRentals\StateMachine\RentalStateMachine.cs
+## File: eNote\eNote.Application\Features\Rentals\InstrumentRentals\StateMachine\RentalStateMachine.cs
 ```cs
 ﻿using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Time;
-using eNote.Domain.Entities;
+using eNote.Domain.Entities.Rentals;
 using eNote.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 
-namespace eNote.Application.Features.InstrumentRentals.StateMachine;
+namespace eNote.Application.Features.Rentals.InstrumentRentals.StateMachine;
 
 public sealed class RentalStateMachine(IClock clock) : IRentalStateMachine
 {
@@ -837,11 +843,12 @@ public sealed class RentalStateMachine(IClock clock) : IRentalStateMachine
 
 ```
 
-## File: eNote\eNote.Application\Features\InstrumentRentals\StateMachine\RentalTransitionContext.cs
+## File: eNote\eNote.Application\Features\Rentals\InstrumentRentals\StateMachine\RentalTransitionContext.cs
 ```cs
 using eNote.Application.Common.Persistence;
+using eNote.Application.Features.Rentals.InstrumentRentals;
 
-namespace eNote.Application.Features.InstrumentRentals.StateMachine;
+namespace eNote.Application.Features.Rentals.InstrumentRentals.StateMachine;
 
 public sealed class RentalTransitionContext
 {
@@ -854,17 +861,17 @@ public sealed class RentalTransitionContext
 
 ```
 
-## File: eNote\eNote.Application\Features\InstrumentRentals\StateMachine\RentalTransitionResult.cs
+## File: eNote\eNote.Application\Features\Rentals\InstrumentRentals\StateMachine\RentalTransitionResult.cs
 ```cs
-namespace eNote.Application.Features.InstrumentRentals.StateMachine;
+namespace eNote.Application.Features.Rentals.InstrumentRentals.StateMachine;
 
 public sealed record RentalTransitionResult(bool UsesInstrumentLock);
 
 ```
 
-## File: eNote\eNote.Application\Features\InstrumentRentals\StateMachine\RentalTrigger.cs
+## File: eNote\eNote.Application\Features\Rentals\InstrumentRentals\StateMachine\RentalTrigger.cs
 ```cs
-namespace eNote.Application.Features.InstrumentRentals.StateMachine;
+namespace eNote.Application.Features.Rentals.InstrumentRentals.StateMachine;
 
 public enum RentalTrigger
 {
@@ -883,8 +890,8 @@ public enum RentalTrigger
 ﻿using eNote.API.Controllers.Base;
 using eNote.Application.Common.Paging;
 using eNote.Application.Constants;
-using eNote.Application.Features.InstrumentRentals;
-using eNote.Application.Features.InstrumentRentals.Services;
+using eNote.Application.Features.Rentals.InstrumentRentals;
+using eNote.Application.Features.Rentals.InstrumentRentals.Services;
 using eNote.Application.Features.Reports.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -967,8 +974,8 @@ public sealed class StoreRentalController(IRentalQueryService queryService, IRen
 ﻿using eNote.API.Controllers.Base;
 using eNote.Application.Common.Paging;
 using eNote.Application.Constants;
-using eNote.Application.Features.InstrumentRentals;
-using eNote.Application.Features.InstrumentRentals.Services;
+using eNote.Application.Features.Rentals.InstrumentRentals;
+using eNote.Application.Features.Rentals.InstrumentRentals.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 

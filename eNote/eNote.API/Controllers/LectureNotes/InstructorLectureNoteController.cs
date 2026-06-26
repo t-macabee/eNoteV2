@@ -1,8 +1,8 @@
 ﻿using eNote.API.Controllers.Base;
 using eNote.Application.Common.Paging;
 using eNote.Application.Constants;
-using eNote.Application.Features.LectureNotes;
-using eNote.Application.Features.LectureNotes.Services;
+using eNote.Application.Features.Academic.LectureNotes;
+using eNote.Application.Features.Academic.LectureNotes.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 

@@ -1,4 +1,4 @@
-using eNote.Application.Features.Assignments;
+using eNote.Application.Features.Academic.Assignments;
 using FluentValidation;
 
 namespace eNote.Application.Validation;

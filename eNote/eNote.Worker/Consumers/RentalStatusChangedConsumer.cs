@@ -1,5 +1,5 @@
 ﻿using eNote.Contracts.Rentals;
-using eNote.Domain.Entities;
+using eNote.Domain.Entities.Communication;
 using eNote.Infrastructure.Data;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;

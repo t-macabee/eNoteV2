@@ -1,6 +1,6 @@
 ﻿using eNote.Application.Common.Paging;
-using eNote.Application.Features.Instruments;
-using eNote.Application.Features.Instruments.Services;
+using eNote.Application.Features.Rentals.Instruments;
+using eNote.Application.Features.Rentals.Instruments.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 

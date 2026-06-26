@@ -1,4 +1,4 @@
-using eNote.Application.Mapping;
+using eNote.Application.Features.Communication.Announcements;
 using FluentValidation;
 using FluentValidation.AspNetCore;
 
@@ -9,7 +9,7 @@ public static class ValidationExtensions
     public static IServiceCollection AddApplicationValidation(this IServiceCollection services)
     {
         services.AddFluentValidationAutoValidation();
-        services.AddValidatorsFromAssemblyContaining<MapsterConfig>();
+        services.AddValidatorsFromAssemblyContaining<AnnouncementMappingConfig>();
 
         return services;
     }

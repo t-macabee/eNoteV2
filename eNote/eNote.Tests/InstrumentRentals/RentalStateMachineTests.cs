@@ -1,7 +1,7 @@
 using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Time;
-using eNote.Application.Features.InstrumentRentals.StateMachine;
-using eNote.Domain.Entities;
+using eNote.Application.Features.Rentals.InstrumentRentals.StateMachine;
+using eNote.Domain.Entities.Rentals;
 using eNote.Domain.Enums;
 using Xunit;
 

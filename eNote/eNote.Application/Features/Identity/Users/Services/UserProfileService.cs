@@ -1,0 +1,76 @@
+using eNote.Application.Common.Exceptions;
+using eNote.Application.Common.Interfaces;
+using eNote.Application.Common.Localization;
+using eNote.Application.Common.Persistence;
+using eNote.Application.Constants;
+using eNote.Application.Features.Identity.Users;
+using eNote.Application.Features.Identity.Users.Profiles;
+using eNote.Domain.Entities.Rentals;
+using Microsoft.EntityFrameworkCore;
+
+namespace eNote.Application.Features.Identity.Users.Services;
+
+public sealed class UserProfileService(
+    IAppDbContext context,
+    IUserIdentityService identity,
+    IUserContextResolver resolver,
+    ICurrentUserService currentUserService) : IUserProfileService
+{
+    public Task<UserProfileResponse?> GetCurrentUserAsync() => GetUserAsync(currentUserService.UserId);
+
+    public async Task<UserProfileResponse?> GetUserAsync(int userId)
+    {
+        var user = await identity.GetUserAsync(userId);
+
+        if (user == null || !user.IsActive)
+        {
+            return null;
+        }
+
+        var roles = await identity.GetRolesAsync(userId);
+
+        if (roles.Count != 1)
+        {
+            throw new BusinessException(Messages.UserSingleRoleRequired);
+        }
+
+        var role = roles[0];
+
+        IUserProfile profile = role switch
+        {
+            AppRoles.Student => await BuildStudentProfile(userId, user),
+            AppRoles.Instructor => await BuildInstructorProfile(userId, user),
+            AppRoles.StoreEmployee => await BuildMusicStoreProfile(userId, user),
+            AppRoles.Administrator => new AdminProfile(user.FirstName, user.LastName),
+            _ => throw new BusinessException(Messages.UnknownRole)
+        };
+
+        return new UserProfileResponse(role, profile);
+    }
+
+    private async Task<StudentProfile> BuildStudentProfile(int userId, UserIdentityDto user)
+    {
+        var student = await resolver.GetStudentAsync(userId);
+
+        return new StudentProfile(student.Id, student.EnrollmentDate, user.FirstName, user.LastName, user.DateOfBirth, user.Address, student.MembershipPaidUntil);
+    }
+
+    private async Task<InstructorProfile> BuildInstructorProfile(int userId, UserIdentityDto user)
+    {
+        var instructor = await resolver.GetInstructorAsync(userId);
+
+        return new InstructorProfile(instructor.Id, user.FirstName, user.LastName);
+    }
+
+    private async Task<MusicStoreProfile> BuildMusicStoreProfile(int userId, UserIdentityDto user)
+    {
+        var employee = await resolver.GetActiveEmployeeAsync(userId);
+
+        var shop = await context.Set<MusicStore>()
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == employee.MusicStoreId)
+            ?? throw new BusinessException(Messages.StoreNotFound);
+
+        return new MusicStoreProfile(shop.Id, shop.StoreName, shop.BusinessHours, user.Address);
+    }
+}

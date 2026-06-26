@@ -1,5 +1,5 @@
 ﻿using eNote.API.Hubs;
-using eNote.Application.Features.Notifications;
+using eNote.Application.Features.Communication.Notifications;
 using eNote.Contracts.Rentals;
 using MassTransit;
 using Microsoft.AspNetCore.SignalR;

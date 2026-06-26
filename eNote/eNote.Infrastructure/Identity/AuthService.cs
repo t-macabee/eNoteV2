@@ -1,8 +1,8 @@
 using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Localization;
-using eNote.Application.Features.Auth;
-using eNote.Application.Features.Auth.Services;
-using eNote.Application.Features.Users.Services;
+using eNote.Application.Features.Identity.Auth;
+using eNote.Application.Features.Identity.Auth.Services;
+using eNote.Application.Features.Identity.Users.Services;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Hosting;

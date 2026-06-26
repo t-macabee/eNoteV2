@@ -1,3 +1,4 @@
+using eNote.Application.Features.Communication.Announcements;
 using Mapster;
 
 namespace eNote.API.Extensions;
@@ -8,7 +9,8 @@ public static class MapsterExtensions
     {
         var config = new TypeAdapterConfig();
 
-        config.Scan(typeof(eNote.Application.Mapping.MapsterConfig).Assembly);
+        config.Scan(typeof(AnnouncementMappingConfig).Assembly);
+        config.Compile();
 
         services.AddSingleton(config);
         services.AddMapster();

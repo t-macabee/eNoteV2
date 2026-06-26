@@ -2,10 +2,10 @@ using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Constants;
-using eNote.Application.Features.Users;
-using eNote.Application.Features.Users.Profiles;
-using eNote.Application.Features.Users.Services;
-using eNote.Domain.Entities;
+using eNote.Application.Features.Identity.Users;
+using eNote.Application.Features.Identity.Users.Profiles;
+using eNote.Application.Features.Identity.Users.Services;
+using eNote.Domain.Entities.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using Xunit;
@@ -131,6 +131,7 @@ public sealed class UserProfileServiceTests
     private sealed class ThrowingUserContextResolver : IUserContextResolver
     {
         public Task<Student> GetStudentAsync(int userId) => throw new NotSupportedException();
+        public Task<int> GetCurrentStudentIdAsync(int appUserId) => throw new NotSupportedException();
         public Task<Instructor> GetInstructorAsync(int userId) => throw new NotSupportedException();
         public Task<MusicStoreEmployee> GetActiveEmployeeAsync(int userId) => throw new NotSupportedException();
         public Task<string> GetStudentDisplayNameAsync(Student student) => throw new NotSupportedException();

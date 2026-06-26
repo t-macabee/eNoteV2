@@ -1,6 +1,6 @@
 using eNote.Application.Common.Paging;
 using eNote.Application.Common.Search;
-using eNote.Application.Features.ReferenceData;
+using eNote.Application.Features.Rentals.ReferenceData;
 using Microsoft.AspNetCore.Mvc;
 
 namespace eNote.API.Controllers.Base;

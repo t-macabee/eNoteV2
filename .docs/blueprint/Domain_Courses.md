@@ -2,9 +2,9 @@
 Total Files Contained: 16
 ---
 
-## File: eNote\eNote.Application\Features\Courses\CourseDto.cs
+## File: eNote\eNote.Application\Features\Academic\Courses\CourseDto.cs
 ```cs
-namespace eNote.Application.Features.Courses;
+namespace eNote.Application.Features.Academic.Courses;
 
 public class CourseDto
 {
@@ -25,13 +25,13 @@ public class CourseDto
 
 ```
 
-## File: eNote\eNote.Application\Features\Courses\CourseMappingConfig.cs
+## File: eNote\eNote.Application\Features\Academic\Courses\CourseMappingConfig.cs
 ```cs
 using eNote.Domain.Entities;
 using eNote.Domain.Enums;
 using Mapster;
 
-namespace eNote.Application.Features.Courses;
+namespace eNote.Application.Features.Academic.Courses;
 
 public sealed class CourseMappingConfig : IRegister
 {
@@ -44,9 +44,9 @@ public sealed class CourseMappingConfig : IRegister
 
 ```
 
-## File: eNote\eNote.Application\Features\Courses\CourseRankingEntryDto.cs
+## File: eNote\eNote.Application\Features\Academic\Courses\CourseRankingEntryDto.cs
 ```cs
-namespace eNote.Application.Features.Courses;
+namespace eNote.Application.Features.Academic.Courses;
 
 public class CourseRankingEntryDto
 {
@@ -61,11 +61,11 @@ public class CourseRankingEntryDto
 
 ```
 
-## File: eNote\eNote.Application\Features\Courses\CourseRequest.cs
+## File: eNote\eNote.Application\Features\Academic\Courses\CourseRequest.cs
 ```cs
 using System.ComponentModel.DataAnnotations;
 
-namespace eNote.Application.Features.Courses;
+namespace eNote.Application.Features.Academic.Courses;
 
 public class CourseRequest
 {
@@ -83,12 +83,12 @@ public class CourseRequest
 
 ```
 
-## File: eNote\eNote.Application\Features\Courses\CourseSearchExtensions.cs
+## File: eNote\eNote.Application\Features\Academic\Courses\CourseSearchExtensions.cs
 ```cs
 using eNote.Application.Common.Search;
 using eNote.Domain.Entities;
 
-namespace eNote.Application.Features.Courses;
+namespace eNote.Application.Features.Academic.Courses;
 
 public static class CourseSearchExtensions
 {
@@ -99,11 +99,11 @@ public static class CourseSearchExtensions
 }
 ```
 
-## File: eNote\eNote.Application\Features\Courses\CourseSearchObject.cs
+## File: eNote\eNote.Application\Features\Academic\Courses\CourseSearchObject.cs
 ```cs
 using eNote.Application.Common.Search;
 
-namespace eNote.Application.Features.Courses;
+namespace eNote.Application.Features.Academic.Courses;
 
 public class CourseSearchObject : BaseSearchObject
 {
@@ -113,20 +113,20 @@ public class CourseSearchObject : BaseSearchObject
 
 ```
 
-## File: eNote\eNote.Application\Features\Courses\Services\CourseEnrollmentService.cs
+## File: eNote\eNote.Application\Features\Academic\Courses\Services\CourseEnrollmentService.cs
 ```cs
 using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Common.Time;
-using eNote.Application.Features.Users.Services;
+using eNote.Application.Features.Identity.Users.Services;
 using eNote.Domain.Entities;
 using eNote.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
-namespace eNote.Application.Features.Courses.Services;
+namespace eNote.Application.Features.Academic.Courses.Services;
 
 public sealed class CourseEnrollmentService(
     IAppDbContext context,
@@ -177,12 +177,12 @@ public sealed class CourseEnrollmentService(
 
     public async Task UnenrollAsync(int courseId)
     {
-        var student = await resolver.GetStudentAsync(currentUserService.UserId);
+        var studentId = await resolver.GetCurrentStudentIdAsync(currentUserService.UserId);
 
         var enrollment = await context.Set<Enrollment>()
             .FirstOrDefaultAsync(e =>
                 e.CourseId == courseId &&
-                e.StudentId == student.Id &&
+                e.StudentId == studentId &&
                 e.EnrollmentStatus == EnrollmentStatus.Active)
             ?? throw new BusinessException(Messages.StudentNotEnrolled);
 
@@ -195,22 +195,23 @@ public sealed class CourseEnrollmentService(
 
 ```
 
-## File: eNote\eNote.Application\Features\Courses\Services\CourseService.cs
+## File: eNote\eNote.Application\Features\Academic\Courses\Services\CourseService.cs
 ```cs
 ﻿using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Paging;
 using eNote.Application.Common.Persistence;
-using eNote.Application.Features.Instructors;
-using eNote.Application.Features.Users.Services;
+using eNote.Application.Features.Academic.Courses;
+using eNote.Application.Features.Identity.Instructors;
+using eNote.Application.Features.Identity.Users.Services;
 using eNote.Domain.Entities;
 using eNote.Domain.Enums;
 using MapsterMapper;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
-namespace eNote.Application.Features.Courses.Services;
+namespace eNote.Application.Features.Academic.Courses.Services;
 
 public sealed class CourseService(IAppDbContext context, IMapper mapper, IUserContextResolver resolver, IInstructorAccessService instructorAccess, ICurrentUserService currentUserService, ILogger<CourseService> logger) : ICourseService
 {
@@ -229,12 +230,12 @@ public sealed class CourseService(IAppDbContext context, IMapper mapper, IUserCo
 
     public async Task<CourseDto> GetByIdForStudentAsync(int id)
     {
-        var student = await resolver.GetStudentAsync(currentUserService.UserId);
+        var studentId = await resolver.GetCurrentStudentIdAsync(currentUserService.UserId);
 
         var entity = await context.Set<Course>()
             .Include(c => c.Enrollments)
             .AsNoTracking()
-            .FirstOrDefaultAsync(c => c.Id == id && (c.IsPublished || c.Enrollments.Any(e => e.StudentId == student.Id && e.EnrollmentStatus == EnrollmentStatus.Active))) ?? throw new NotFoundException(Messages.CourseNotFound);
+            .FirstOrDefaultAsync(c => c.Id == id && (c.IsPublished || c.Enrollments.Any(e => e.StudentId == studentId && e.EnrollmentStatus == EnrollmentStatus.Active))) ?? throw new NotFoundException(Messages.CourseNotFound);
 
         return mapper.Map<CourseDto>(entity);
     }
@@ -327,9 +328,9 @@ public sealed class CourseService(IAppDbContext context, IMapper mapper, IUserCo
 
 ```
 
-## File: eNote\eNote.Application\Features\Courses\Services\ICourseEnrollmentService.cs
+## File: eNote\eNote.Application\Features\Academic\Courses\Services\ICourseEnrollmentService.cs
 ```cs
-namespace eNote.Application.Features.Courses.Services;
+namespace eNote.Application.Features.Academic.Courses.Services;
 
 public interface ICourseEnrollmentService
 {
@@ -339,11 +340,12 @@ public interface ICourseEnrollmentService
 
 ```
 
-## File: eNote\eNote.Application\Features\Courses\Services\ICourseService.cs
+## File: eNote\eNote.Application\Features\Academic\Courses\Services\ICourseService.cs
 ```cs
 using eNote.Application.Common.Paging;
+using eNote.Application.Features.Academic.Courses;
 
-namespace eNote.Application.Features.Courses.Services;
+namespace eNote.Application.Features.Academic.Courses.Services;
 
 public interface ICourseService
 {
@@ -358,9 +360,11 @@ public interface ICourseService
 
 ```
 
-## File: eNote\eNote.Application\Features\Courses\Services\IRankingService.cs
+## File: eNote\eNote.Application\Features\Academic\Courses\Services\IRankingService.cs
 ```cs
-namespace eNote.Application.Features.Courses.Services;
+using eNote.Application.Features.Academic.Courses;
+
+namespace eNote.Application.Features.Academic.Courses.Services;
 
 public interface IRankingService
 {
@@ -370,20 +374,23 @@ public interface IRankingService
 
 ```
 
-## File: eNote\eNote.Application\Features\Courses\Services\RankingService.cs
+## File: eNote\eNote.Application\Features\Academic\Courses\Services\RankingService.cs
 ```cs
 ﻿using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Persistence;
-using eNote.Application.Features.Instructors;
+using eNote.Application.Features.Academic.Courses;
+using eNote.Application.Features.Identity.Instructors;
+using eNote.Application.Features.Identity.Users.Services;
 using eNote.Application.Features.Students;
-using eNote.Application.Features.Users.Services;
 using eNote.Domain.Entities;
+using eNote.Domain.Entities.Assignments;
+using eNote.Domain.Entities.Identity;
 using eNote.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 
-namespace eNote.Application.Features.Courses.Services;
+namespace eNote.Application.Features.Academic.Courses.Services;
 
 public sealed class RankingService(IAppDbContext context, IUserContextResolver resolver, IInstructorAccessService instructorAccess, ICurrentUserService currentUserService) : IRankingService
 {
@@ -401,9 +408,9 @@ public sealed class RankingService(IAppDbContext context, IUserContextResolver r
 
     public async Task<IReadOnlyList<CourseRankingEntryDto>> GetForStudentAsync(int courseId)
     {
-        var student = await resolver.GetStudentAsync(currentUserService.UserId);
+        var studentId = await resolver.GetCurrentStudentIdAsync(currentUserService.UserId);
 
-        if (!await context.IsEnrolledInCourseAsync(student.Id, courseId))
+        if (!await context.IsEnrolledInCourseAsync(studentId, courseId))
         {
             throw new AuthorizationException(Messages.StudentNotEnrolled);
         }
@@ -473,8 +480,8 @@ public sealed class RankingService(IAppDbContext context, IUserContextResolver r
 ﻿using eNote.API.Controllers.Base;
 using eNote.Application.Common.Paging;
 using eNote.Application.Constants;
-using eNote.Application.Features.Courses;
-using eNote.Application.Features.Courses.Services;
+using eNote.Application.Features.Academic.Courses;
+using eNote.Application.Features.Academic.Courses.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -534,8 +541,8 @@ public sealed class InstructorCourseController(ICourseService service) : CoreCon
 ```cs
 using eNote.API.Controllers.Base;
 using eNote.Application.Constants;
-using eNote.Application.Features.Courses;
-using eNote.Application.Features.Courses.Services;
+using eNote.Application.Features.Academic.Courses;
+using eNote.Application.Features.Academic.Courses.Services;
 using eNote.Application.Features.Reports.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -569,8 +576,8 @@ public sealed class InstructorRankingController(IRankingService rankingService, 
 ﻿using eNote.API.Controllers.Base;
 using eNote.Application.Common.Paging;
 using eNote.Application.Constants;
-using eNote.Application.Features.Courses;
-using eNote.Application.Features.Courses.Services;
+using eNote.Application.Features.Academic.Courses;
+using eNote.Application.Features.Academic.Courses.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -621,8 +628,8 @@ public sealed class StudentCourseController(
 ```cs
 using eNote.API.Controllers.Base;
 using eNote.Application.Constants;
-using eNote.Application.Features.Courses;
-using eNote.Application.Features.Courses.Services;
+using eNote.Application.Features.Academic.Courses;
+using eNote.Application.Features.Academic.Courses.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 

@@ -1,6 +1,6 @@
 ﻿using eNote.API.Controllers.Base;
 using eNote.Application.Constants;
-using eNote.Application.Features.ReferenceData.Addresses;
+using eNote.Application.Features.Rentals.ReferenceData.Addresses;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 

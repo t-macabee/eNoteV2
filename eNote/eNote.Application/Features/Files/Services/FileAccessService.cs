@@ -1,8 +1,8 @@
 using eNote.Application.Common.Persistence;
 using eNote.Application.Constants;
-using eNote.Application.Features.Instructors;
-using eNote.Application.Features.Users.Services;
-using eNote.Domain.Entities;
+using eNote.Application.Features.Identity.Instructors;
+using eNote.Application.Features.Identity.Users.Services;
+using eNote.Domain.Entities.Assignments;
 using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Application.Features.Files.Services;
