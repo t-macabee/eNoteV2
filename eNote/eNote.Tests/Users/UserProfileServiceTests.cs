@@ -95,7 +95,7 @@ public sealed class UserProfileServiceTests
     }
 
     private static UserProfileService CreateService(StubUserIdentityService identity, int currentUserId = 1) =>
-        new(new ThrowingDbContext(), identity, new ThrowingUserContextResolver(), new TestCurrentUserService(currentUserId));
+        new(new ThrowingDbContext(), identity, new ThrowingUserProfileLookup(), new TestCurrentUserService(currentUserId));
 
     private static UserIdentityDto ActiveUser(int id) => new()
     {
@@ -128,14 +128,11 @@ public sealed class UserProfileServiceTests
         public Task<IReadOnlyList<string>> GetRolesAsync(int userId) => Task.FromResult(Roles);
     }
 
-    private sealed class ThrowingUserContextResolver : IUserContextResolver
+    private sealed class ThrowingUserProfileLookup : IUserProfileLookup
     {
         public Task<Student> GetStudentAsync(int userId) => throw new NotSupportedException();
-        public Task<int> GetCurrentStudentIdAsync(int appUserId) => throw new NotSupportedException();
         public Task<Instructor> GetInstructorAsync(int userId) => throw new NotSupportedException();
         public Task<MusicStoreEmployee> GetActiveEmployeeAsync(int userId) => throw new NotSupportedException();
-        public Task<string> GetStudentDisplayNameAsync(Student student) => throw new NotSupportedException();
-        public Task<IReadOnlyDictionary<int, string>> GetStudentDisplayNamesAsync(IEnumerable<Student> students) => throw new NotSupportedException();
     }
 
     private sealed class ThrowingDbContext : IAppDbContext

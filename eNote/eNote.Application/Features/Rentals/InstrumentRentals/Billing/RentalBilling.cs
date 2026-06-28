@@ -1,5 +1,4 @@
-﻿using eNote.Application.Features.Rentals.InstrumentRentals;
-using eNote.Domain.Entities.Rentals;
+﻿using eNote.Domain.Entities.Rentals;
 using eNote.Domain.Enums;
 
 namespace eNote.Application.Features.Rentals.InstrumentRentals.Billing;
@@ -7,6 +6,7 @@ namespace eNote.Application.Features.Rentals.InstrumentRentals.Billing;
 public static class RentalBilling
 {
     private const int DaysPerBillingCycle = 30;
+
     public static void ApplyBilling(InstrumentRental rental, InstrumentRentalDto dto, DateTime nowUtc)
     {
         dto.Fee = rental.Fee;
@@ -33,7 +33,6 @@ public static class RentalBilling
         }
 
         var start = pickedUpAt.Value;
-
         var end = returnedAt ?? nowUtc;
 
         if (end < start)

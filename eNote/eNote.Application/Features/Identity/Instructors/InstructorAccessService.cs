@@ -10,9 +10,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Application.Features.Identity.Instructors;
 
-public sealed class InstructorAccessService(IAppDbContext context, IUserContextResolver resolver) : IInstructorAccessService
+public sealed class InstructorAccessService(IAppDbContext context, IUserProfileLookup lookup) : IInstructorAccessService
 {
-    public Task<Instructor> GetInstructorAsync(int userId) => resolver.GetInstructorAsync(userId);
+    public Task<Instructor> GetInstructorAsync(int userId) => lookup.GetInstructorAsync(userId);
     public async Task<int> GetCurrentInstructorIdAsync(int appUserId) => (await GetInstructorAsync(appUserId)).Id;
 
     public Task<bool> OwnsCourseAsync(int courseId, int instructorId) =>

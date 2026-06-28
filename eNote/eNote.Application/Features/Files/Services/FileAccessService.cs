@@ -9,7 +9,7 @@ namespace eNote.Application.Features.Files.Services;
 
 public sealed class FileAccessService(
     IAppDbContext context,
-    IUserContextResolver resolver,
+    IUserProfileLookup lookup,
     IInstructorAccessService instructorAccess,
     IUserIdentityService identity) : IFileAccessService
 {
@@ -40,7 +40,7 @@ public sealed class FileAccessService(
 
         if (roles.Contains(AppRoles.Student))
         {
-            var student = await resolver.GetStudentAsync(userId);
+            var student = await lookup.GetStudentAsync(userId);
             return submission.StudentId == student.Id;
         }
 

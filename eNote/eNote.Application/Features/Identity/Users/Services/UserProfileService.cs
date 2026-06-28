@@ -13,7 +13,7 @@ namespace eNote.Application.Features.Identity.Users.Services;
 public sealed class UserProfileService(
     IAppDbContext context,
     IUserIdentityService identity,
-    IUserContextResolver resolver,
+    IUserProfileLookup lookup,
     ICurrentUserService currentUserService) : IUserProfileService
 {
     public Task<UserProfileResponse?> GetCurrentUserAsync() => GetUserAsync(currentUserService.UserId);
@@ -50,21 +50,21 @@ public sealed class UserProfileService(
 
     private async Task<StudentProfile> BuildStudentProfile(int userId, UserIdentityDto user)
     {
-        var student = await resolver.GetStudentAsync(userId);
+        var student = await lookup.GetStudentAsync(userId);
 
         return new StudentProfile(student.Id, student.EnrollmentDate, user.FirstName, user.LastName, user.DateOfBirth, user.Address, student.MembershipPaidUntil);
     }
 
     private async Task<InstructorProfile> BuildInstructorProfile(int userId, UserIdentityDto user)
     {
-        var instructor = await resolver.GetInstructorAsync(userId);
+        var instructor = await lookup.GetInstructorAsync(userId);
 
         return new InstructorProfile(instructor.Id, user.FirstName, user.LastName);
     }
 
     private async Task<MusicStoreProfile> BuildMusicStoreProfile(int userId, UserIdentityDto user)
     {
-        var employee = await resolver.GetActiveEmployeeAsync(userId);
+        var employee = await lookup.GetActiveEmployeeAsync(userId);
 
         var shop = await context.Set<MusicStore>()
             .AsNoTracking()

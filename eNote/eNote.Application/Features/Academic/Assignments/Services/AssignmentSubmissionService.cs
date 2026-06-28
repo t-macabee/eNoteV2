@@ -17,9 +17,9 @@ namespace eNote.Application.Features.Academic.Assignments.Services;
 public sealed class AssignmentSubmissionService(
     IAppDbContext context,
     IClock clock,
-    IUserContextResolver resolver,
+    ICurrentActor actor,
+    IStudentDisplayNameService displayNames,
     IInstructorAccessService instructorAccess,
-    ICurrentUserService currentUserService,
     IFileStorageService fileStorage) : IAssignmentSubmissionService
 {
     public async Task<AssignmentSubmissionDto> SubmitWithFileAsync(int assignmentId, Stream stream, string fileName, string contentType, CancellationToken ct = default)
@@ -39,7 +39,7 @@ public sealed class AssignmentSubmissionService(
 
         return await query.ToPagedResultAsync(
             search,
-            items => resolver.GetStudentDisplayNamesAsync(items.Select(x => x.Student)),
+            items => displayNames.GetStudentDisplayNamesAsync(items.Select(x => x.Student)),
             (x, names) => MapSubmission(x, x.Student, names.GetValueOrDefault(x.StudentId, $"Student {x.StudentId}")),
             q => q.OrderBy(x => x.StudentId));
     }
@@ -54,16 +54,16 @@ public sealed class AssignmentSubmissionService(
             ?? throw new NotFoundException(Messages.AssignmentSubmissionNotFound);
 
         submission.SetGrade(request.Grade);
-        submission.UpdatedById = currentUserService.UserId;
+        submission.UpdatedById = actor.UserId;
 
         await context.SaveChangesAsync();
 
-        return MapSubmission(submission, submission.Student, await resolver.GetStudentDisplayNameAsync(submission.Student));
+        return MapSubmission(submission, submission.Student, await displayNames.GetStudentDisplayNameAsync(submission.Student));
     }
 
     private async Task<AssignmentSubmissionDto> SubmitAsync(int assignmentId, AssignmentSubmitRequest request)
     {
-        var student = await resolver.GetStudentAsync(currentUserService.UserId);
+        var student = await actor.GetStudentAsync();
 
         var assignment = await context.Set<Assignment>()
             .ForEnrolledStudentById(student.Id, assignmentId)
@@ -87,22 +87,22 @@ public sealed class AssignmentSubmissionService(
         {
             existing = new AssignmentSubmission(assignment.Id, student.Id)
             {
-                CreatedById = currentUserService.UserId
+                CreatedById = actor.UserId
             };
             assignment.AssignmentSubmissions.Add(existing);
         }
 
         existing.Submit(request.FilePath?.Trim(), clock.UtcNow);
-        existing.UpdatedById = currentUserService.UserId;
+        existing.UpdatedById = actor.UserId;
 
         await context.SaveChangesAsync();
 
-        return MapSubmission(existing, student, await resolver.GetStudentDisplayNameAsync(student));
+        return MapSubmission(existing, student, await displayNames.GetStudentDisplayNameAsync(student));
     }
 
     private async Task<Assignment> GetOwnedAssignmentAsync(int lectureId, int assignmentId)
     {
-        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUserService.UserId);
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(actor.UserId);
         return await instructorAccess.GetOwnedAssignmentAsync(lectureId, assignmentId, instructorId);
     }
     private static AssignmentSubmissionDto MapSubmission(AssignmentSubmission submission, Student student, string studentName) => new()

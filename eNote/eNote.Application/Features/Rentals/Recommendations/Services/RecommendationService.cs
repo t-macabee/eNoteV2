@@ -3,7 +3,6 @@ using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Common.Time;
-using eNote.Application.Features.Identity.Users.Services;
 using eNote.Application.Features.Rentals.Instruments;
 using eNote.Application.Features.Rentals.Recommendations;
 using eNote.Domain.Entities.Rentals;
@@ -13,7 +12,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Application.Features.Rentals.Recommendations.Services;
 
-public sealed class RecommendationService(IAppDbContext context, IMapper mapper, ICurrentUserService currentUserService, IUserContextResolver resolver, IClock clock) : IRecommendationService
+public sealed class RecommendationService(IAppDbContext context, IMapper mapper, ICurrentActor actor, IClock clock) : IRecommendationService
 {
     private const double RentalWeight = 0.40;
     private const double ViewWeight = 0.30;
@@ -25,9 +24,9 @@ public sealed class RecommendationService(IAppDbContext context, IMapper mapper,
     {
         count = NormalizeCount(count);
 
-        var studentId = await resolver.GetCurrentStudentIdAsync(currentUserService.UserId);
+        var studentId = await actor.GetCurrentStudentIdAsync();
 
-        var userId = currentUserService.UserId;
+        var userId = actor.UserId;
 
         var userRentals = await context.Set<InstrumentRental>()
             .AsNoTracking()
@@ -120,7 +119,7 @@ public sealed class RecommendationService(IAppDbContext context, IMapper mapper,
             throw new NotFoundException(Messages.InstrumentNotFound);
         }
 
-        var userId = currentUserService.UserId;
+        var userId = actor.UserId;
 
         var now = clock.UtcNow;
 

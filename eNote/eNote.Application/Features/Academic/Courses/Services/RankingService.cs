@@ -14,11 +14,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Application.Features.Academic.Courses.Services;
 
-public sealed class RankingService(IAppDbContext context, IUserContextResolver resolver, IInstructorAccessService instructorAccess, ICurrentUserService currentUserService) : IRankingService
+public sealed class RankingService(IAppDbContext context, ICurrentActor actor, IStudentDisplayNameService displayNames, IInstructorAccessService instructorAccess) : IRankingService
 {
     public async Task<IReadOnlyList<CourseRankingEntryDto>> GetForInstructorAsync(int courseId)
     {
-        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUserService.UserId);
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(actor.UserId);
 
         if (!await instructorAccess.OwnsCourseAsync(courseId, instructorId))
         {
@@ -30,7 +30,7 @@ public sealed class RankingService(IAppDbContext context, IUserContextResolver r
 
     public async Task<IReadOnlyList<CourseRankingEntryDto>> GetForStudentAsync(int courseId)
     {
-        var studentId = await resolver.GetCurrentStudentIdAsync(currentUserService.UserId);
+        var studentId = await actor.GetCurrentStudentIdAsync();
 
         if (!await context.IsEnrolledInCourseAsync(studentId, courseId))
         {
@@ -66,7 +66,7 @@ public sealed class RankingService(IAppDbContext context, IUserContextResolver r
                     g.Count()))
                 .ToDictionaryAsync(x => x.StudentId);
 
-        IReadOnlyDictionary<int, string> nameMap = await resolver.GetStudentDisplayNamesAsync(enrolledStudents);
+        IReadOnlyDictionary<int, string> nameMap = await displayNames.GetStudentDisplayNamesAsync(enrolledStudents);
 
         List<CourseRankingEntryDto> ranked = [.. enrolledStudents
             .Where(s => gradeData.ContainsKey(s.Id))

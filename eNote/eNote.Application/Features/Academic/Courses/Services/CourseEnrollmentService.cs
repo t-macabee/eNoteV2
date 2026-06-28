@@ -3,7 +3,6 @@ using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Common.Time;
-using eNote.Application.Features.Identity.Users.Services;
 using eNote.Domain.Entities;
 using eNote.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
@@ -14,13 +13,12 @@ namespace eNote.Application.Features.Academic.Courses.Services;
 public sealed class CourseEnrollmentService(
     IAppDbContext context,
     IClock clock,
-    IUserContextResolver resolver,
-    ICurrentUserService currentUserService,
+    ICurrentActor actor,
     ILogger<CourseEnrollmentService> logger) : ICourseEnrollmentService
 {
     public async Task EnrollAsync(int courseId)
     {
-        var student = await resolver.GetStudentAsync(currentUserService.UserId);
+        var student = await actor.GetStudentAsync();
 
         if (!student.HasActiveMembership(clock.UtcNow))
         {
@@ -43,24 +41,24 @@ public sealed class CourseEnrollmentService(
         if (enrollment?.EnrollmentStatus == EnrollmentStatus.Canceled)
         {
             enrollment.UpdateStatus(EnrollmentStatus.Active);
-            enrollment.UpdatedById = currentUserService.UserId;
+            enrollment.UpdatedById = actor.UserId;
         }
         else
         {
             context.Set<Enrollment>().Add(new Enrollment(student.Id, courseId, EnrollmentStatus.Active)
             {
-                CreatedById = currentUserService.UserId
+                CreatedById = actor.UserId
             });
         }
 
         await context.SaveChangesAsync();
 
-        logger.LogInformation("Student {StudentUserId} enrolled in course {CourseId}", currentUserService.UserId, courseId);
+        logger.LogInformation("Student {StudentUserId} enrolled in course {CourseId}", actor.UserId, courseId);
     }
 
     public async Task UnenrollAsync(int courseId)
     {
-        var studentId = await resolver.GetCurrentStudentIdAsync(currentUserService.UserId);
+        var studentId = await actor.GetCurrentStudentIdAsync();
 
         var enrollment = await context.Set<Enrollment>()
             .FirstOrDefaultAsync(e =>
@@ -72,6 +70,6 @@ public sealed class CourseEnrollmentService(
         enrollment.UpdateStatus(EnrollmentStatus.Canceled);
         await context.SaveChangesAsync();
 
-        logger.LogInformation("Student {StudentUserId} unenrolled from course {CourseId}", currentUserService.UserId, courseId);
+        logger.LogInformation("Student {StudentUserId} unenrolled from course {CourseId}", actor.UserId, courseId);
     }
 }

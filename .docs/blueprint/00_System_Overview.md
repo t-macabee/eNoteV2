@@ -1,25 +1,43 @@
-# 🗺️ System Architecture Overview & Index
+# 🗺️ eNote System Architecture Overview
 
-This master index serves as Claude's top-level mental map of the system architecture.
+**Generated**: 2026-06-28T05:17:02.569666+00:00  
+**Commit**: latest
 
-## 🏗️ Architectural Layers Hierarchy (Clean Architecture)
-The system strictly follows dependency injection patterns flowing inwards:
-```text
-  eNote.API (Presentation) ──> eNote.Infrastructure ──┐
-             │                                        ▼
-             └─────────> eNote.Application ──> eNote.Domain
+## Architectural Layers (Clean Architecture)
+
+```
+eNote.API (Presentation)
+        │
+        ▼
+eNote.Application  ──►  eNote.Domain
+        │
+        ▼
+eNote.Infrastructure (Persistence, Messaging, External Services)
 ```
 
-## 🔀 Asynchronous Communication Pattern
-* **Event Bus:** Cross-domain integration events are decoupled via **RabbitMQ**.
-* **Flow Example:** When `Domain_InstrumentRentals` fires an execution state change event, a background consumer in the isolated Worker container processes it asynchronously to trigger notifications[cite: 3].
+## Asynchronous Communication
+- **Event Bus**: RabbitMQ + Outbox pattern for cross-domain integration events.
 
-## 📦 Identified Bounded Contexts & File Distribution
-Use these specific domain files when pinning context in Claude or Cursor:
+## Bounded Contexts
 
-* **`@Domain_Auth.md`**: Contains the core logic, features, DTOs, and contracts for the **Auth** context (13 source files).
-* **`@Domain_InstrumentRentals.md`**: Contains the core logic, features, DTOs, and contracts for the **InstrumentRentals** context (23 source files).
-* **`@Domain_Assignments.md`**: Contains the core logic, features, DTOs, and contracts for the **Assignments** context (19 source files).
-* **`@Domain_Courses.md`**: Contains the core logic, features, DTOs, and contracts for the **Courses** context (16 source files).
-* **`@Domain_Payments.md`**: Contains the core logic, features, DTOs, and contracts for the **Payments** context (0 source files).
-* **`@Domain_Shared_Infrastructure.md`**: Fallback directory for shared configurations, generic middleware, and foundational cross-cutting components (248 files)[cite: 3].
+Use these files when building or refreshing your mental model:
+
+- **`Domain_Auth.md`** — 13 files (core logic, entities, features)
+- **`Domain_InstrumentRentals.md`** — 23 files (core logic, entities, features)
+- **`Domain_Assignments.md`** — 19 files (core logic, entities, features)
+- **`Domain_Courses.md`** — 16 files (core logic, entities, features)
+- **`Domain_Payments.md`** — 0 files (core logic, entities, features)
+- **`Domain_Shared_Infrastructure.md`** — 250 files (foundational + cross-cutting)
+
+---
+
+## How to Use These Files with AI Agents (Recommended Workflow)
+
+1. Start with `00_System_Overview.md`
+2. Load the specific domain files you need into persistent context
+3. Ask the agent to "explain the {domain} bounded context back to me"
+4. Run architecture audit prompts on the loaded files
+5. Re-run this script in incremental mode after code changes
+6. Compare outputs over time for drift detection
+
+This structure is optimized for long-running agent sessions rather than one-shot prompts.

@@ -1,62 +1,261 @@
 # Bounded Context: InstrumentRentals
-Total Files Contained: 23
+
+**Generated**: 2026-06-28T05:17:02.564626+00:00  
+**Commit**: latest  
+**Total Files**: 23
+
 ---
 
-## File: eNote\eNote.Domain\Enums\InstrumentRentalStatus.cs
-```cs
-namespace eNote.Domain.Enums;
+## 🤖 Agent Briefing (Read First)
 
-public enum InstrumentRentalStatus
+This file contains the complete source for the **InstrumentRentals** bounded context.
+
+**Your goals when reading this context:**
+1. Build an accurate mental model of entities, behavior, and state transitions.
+2. Identify cross-context interactions (see "Key Interactions" sections).
+3. Note any architectural smells, duplicated logic, or unnecessary abstractions.
+4. Track how this context communicates with others (especially via events).
+
+**Focus areas for deep analysis:**
+- Domain entities with rich behavior (not anemic)
+- Service orchestration and access control
+- State machines / workflow logic
+- Cross-domain event contracts
+
+---
+
+## File: `eNote\eNote.API\Controllers\InstrumentRentals\StoreRentalController.cs`
+**Hash**: `1081ff854049` | **Size**: 3302 chars
+
+**Classes**: StoreRentalController
+```cs
+﻿using eNote.API.Controllers.Base;
+using eNote.Application.Common.Paging;
+using eNote.Application.Constants;
+using eNote.Application.Features.Rentals.InstrumentRentals;
+using eNote.Application.Features.Rentals.InstrumentRentals.Services;
+using eNote.Application.Features.Reports.Services;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+
+namespace eNote.API.Controllers.InstrumentRentals;
+
+[Authorize(Roles = AppRoles.StoreEmployee)]
+[Route("api/shop/rentals")]
+public sealed class StoreRentalController(IRentalQueryService queryService, IRentalCommandService commandService, IReportService reportService) : CoreController
 {
-    Pending = 1,
-    Approved = 2,
-    Active = 3,
-    Completed = 4,
-    Rejected = 5,
-    Canceled = 6,
-    ReturnedEarly = 7
+    [HttpGet("report")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetRentalReport(CancellationToken cancellationToken)
+    {
+        var pdf = await reportService.GenerateStoreRentalSummaryPdfAsync(cancellationToken);
+        return File(pdf, "application/pdf", "store-rentals.pdf");
+    }
+
+    [HttpGet]
+    [ProducesResponseType(typeof(PagedResult<InstrumentRentalDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<PagedResult<InstrumentRentalDto>>> GetPaged([FromQuery] InstrumentRentalSearchObject search)
+    {
+        var result = await queryService.GetPagedForStoreAsync(search);
+        return Ok(result);
+    }
+
+    [HttpGet("{id:int}")]
+    [ProducesResponseType(typeof(InstrumentRentalDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<InstrumentRentalDto>> GetById(int id)
+    {
+        var dto = await queryService.GetByIdForStoreAsync(id);
+        return Ok(dto);
+    }
+
+    [HttpPost("{id:int}/approve")]
+    [ProducesResponseType(typeof(InstrumentRentalDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<InstrumentRentalDto>> Approve(int id, [FromBody] RentalStatusResponse response)
+    {
+        var dto = await commandService.ApproveAsync(id, response);
+        return Ok(dto);
+    }
+
+    [HttpPost("{id:int}/reject")]
+    [ProducesResponseType(typeof(InstrumentRentalDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<InstrumentRentalDto>> Reject(int id, [FromBody] RentalStatusResponse response)
+    {
+        var dto = await commandService.RejectAsync(id, response);
+        return Ok(dto);
+    }
+
+    [HttpPost("{id:int}/pickup")]
+    [ProducesResponseType(typeof(InstrumentRentalDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<InstrumentRentalDto>> Pickup(int id, [FromBody] RentalStatusResponse response)
+    {
+        var dto = await commandService.PickupAsync(id, response);
+        return Ok(dto);
+    }
+
+    [HttpPost("{id:int}/complete")]
+    [ProducesResponseType(typeof(InstrumentRentalDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<InstrumentRentalDto>> Complete(int id, [FromBody] RentalStatusResponse response)
+    {
+        var dto = await commandService.CompleteAsync(id, response);
+        return Ok(dto);
+    }
+
+    [HttpPost("{id:int}/return-early")]
+    [ProducesResponseType(typeof(InstrumentRentalDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<InstrumentRentalDto>> ReturnEarly(int id, [FromBody] RentalStatusResponse response)
+    {
+        var dto = await commandService.ReturnEarlyAsync(id, response);
+        return Ok(dto);
+    }
 }
+
 ```
 
-## File: eNote\eNote.Domain\Enums\InstrumentRentalStatusExtensions.cs
+---
+
+## File: `eNote\eNote.API\Controllers\InstrumentRentals\StudentRentalController.cs`
+**Hash**: `989922f60d18` | **Size**: 1922 chars
+
+**Classes**: StudentRentalController
 ```cs
-namespace eNote.Domain.Enums;
+﻿using eNote.API.Controllers.Base;
+using eNote.Application.Common.Paging;
+using eNote.Application.Constants;
+using eNote.Application.Features.Rentals.InstrumentRentals;
+using eNote.Application.Features.Rentals.InstrumentRentals.Services;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 
-public static class InstrumentRentalStatusExtensions
+namespace eNote.API.Controllers.InstrumentRentals;
+
+[Authorize(Roles = AppRoles.Student)]
+[Route("api/student/rentals")]
+public sealed class StudentRentalController(IRentalQueryService queryService, IRentalCommandService commandService) : CoreController
 {
-    public static bool BlocksInstrument(this InstrumentRentalStatus status) =>
-        status is InstrumentRentalStatus.Approved or InstrumentRentalStatus.Active;
+    [HttpGet]
+    [ProducesResponseType(typeof(PagedResult<InstrumentRentalDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<PagedResult<InstrumentRentalDto>>> GetPaged([FromQuery] InstrumentRentalSearchObject search)
+    {
+        var result = await queryService.GetPagedForStudentAsync(search);
+        return Ok(result);
+    }
 
-    public static bool IsBillingEligible(this InstrumentRentalStatus status) =>
-        status is InstrumentRentalStatus.Active
-            or InstrumentRentalStatus.Completed
-            or InstrumentRentalStatus.ReturnedEarly;
+    [HttpGet("{id:int}")]
+    [ProducesResponseType(typeof(InstrumentRentalDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<InstrumentRentalDto>> GetById(int id)
+    {
+        var dto = await queryService.GetByIdForStudentAsync(id);
+        return Ok(dto);
+    }
+
+    [HttpPost]
+    [ProducesResponseType(typeof(InstrumentRentalDto), StatusCodes.Status201Created)]
+    public async Task<ActionResult<InstrumentRentalDto>> Create([FromBody] RentalCreateRequest request)
+    {
+        var dto = await commandService.CreateRequestAsync(request);
+        return CreatedAtAction(nameof(GetById), new
+        {
+            id = dto.Id
+        }, dto);
+    }
+
+    [HttpPost("{id:int}/cancel")]
+    [ProducesResponseType(typeof(InstrumentRentalDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<InstrumentRentalDto>> Cancel(int id, [FromBody] RentalStatusResponse response)
+    {
+        var dto = await commandService.CancelAsync(id, response);
+        return Ok(dto);
+    }
 }
+
 ```
 
-## File: eNote\eNote.Domain\Enums\InstrumentRentalStatusSets.cs
+---
+
+## File: `eNote\eNote.Application\Features\Rentals\InstrumentRentals\Billing\RentalBilling.cs`
+**Hash**: `73a68291afd5` | **Size**: 2316 chars
+
+**Classes**: RentalBilling
 ```cs
-namespace eNote.Domain.Enums;
+﻿using eNote.Domain.Entities.Rentals;
+using eNote.Domain.Enums;
 
-public static class InstrumentRentalStatusSets
+namespace eNote.Application.Features.Rentals.InstrumentRentals.Billing;
+
+public static class RentalBilling
 {
-    public static readonly InstrumentRentalStatus[] Blocking =
-    [
-        InstrumentRentalStatus.Approved,
-        InstrumentRentalStatus.Active
-    ];
+    private const int DaysPerBillingCycle = 30;
 
-    public static readonly InstrumentRentalStatus[] History =
-    [
-        InstrumentRentalStatus.Approved,
-        InstrumentRentalStatus.Active,
-        InstrumentRentalStatus.Completed,
-        InstrumentRentalStatus.ReturnedEarly
-    ];
+    public static void ApplyBilling(InstrumentRental rental, InstrumentRentalDto dto, DateTime nowUtc)
+    {
+        dto.Fee = rental.Fee;
+
+        var result = Calculate(rental.Fee, rental.PickedUpAt, rental.ReturnedAt, rental.RentalStatus, nowUtc);
+
+        dto.MonthsCharged = result.MonthsCharged;
+        dto.DaysCharged = result.DaysCharged;
+        dto.DailyFee = result.DailyFee;
+        dto.IsProrated = result.IsProrated;
+        dto.TotalFee = result.TotalFee;
+    }
+
+    private static BillingResult Calculate(decimal fee, DateTime? pickedUpAt, DateTime? returnedAt, InstrumentRentalStatus status, DateTime nowUtc)
+    {
+        if (!pickedUpAt.HasValue)
+        {
+            return new BillingResult(null, null, null, null, false);
+        }
+
+        if (!status.IsBillingEligible())
+        {
+            return new BillingResult(null, null, null, null, false);
+        }
+
+        var start = pickedUpAt.Value;
+        var end = returnedAt ?? nowUtc;
+
+        if (end < start)
+        {
+            end = start;
+        }
+
+        var daysCharged = (int)Math.Ceiling((end - start).TotalDays);
+
+        if (daysCharged < 1)
+        {
+            daysCharged = 1;
+        }
+
+        if (status == InstrumentRentalStatus.ReturnedEarly)
+        {
+            var dailyFee = fee / DaysPerBillingCycle;
+            var prorated = daysCharged * dailyFee;
+            var totalFee = prorated > fee ? fee : prorated;
+
+            return new BillingResult(MonthsCharged: null, DaysCharged: daysCharged, DailyFee: decimal.Round(dailyFee, 2), TotalFee: decimal.Round(totalFee, 2), IsProrated: true);
+        }
+
+        var monthsCharged = (int)Math.Ceiling((end - start).TotalDays / DaysPerBillingCycle);
+
+        if (monthsCharged < 1)
+        {
+            monthsCharged = 1;
+        }
+
+        return new BillingResult(MonthsCharged: monthsCharged, DaysCharged: null, DailyFee: null, TotalFee: monthsCharged * fee, IsProrated: false);
+    }
+
+    private readonly record struct BillingResult(int? MonthsCharged, int? DaysCharged, decimal? DailyFee, decimal? TotalFee, bool IsProrated);
 }
+
 ```
 
-## File: eNote\eNote.Application\Features\Rentals\InstrumentRentals\InstrumentRentalDto.cs
+---
+
+## File: `eNote\eNote.Application\Features\Rentals\InstrumentRentals\InstrumentRentalDto.cs`
+**Hash**: `d17495dd1692` | **Size**: 1212 chars
+
+**Classes**: InstrumentRentalDto
 ```cs
 using eNote.Domain.Enums;
 
@@ -96,7 +295,12 @@ public class InstrumentRentalDto
 
 ```
 
-## File: eNote\eNote.Application\Features\Rentals\InstrumentRentals\InstrumentRentalMappingConfig.cs
+---
+
+## File: `eNote\eNote.Application\Features\Rentals\InstrumentRentals\InstrumentRentalMappingConfig.cs`
+**Hash**: `c54521003ed0` | **Size**: 676 chars
+
+**Classes**: InstrumentRentalMappingConfig
 ```cs
 using eNote.Domain.Entities.Rentals;
 using Mapster;
@@ -118,7 +322,12 @@ public sealed class InstrumentRentalMappingConfig : IRegister
 
 ```
 
-## File: eNote\eNote.Application\Features\Rentals\InstrumentRentals\InstrumentRentalSearchExtensions.cs
+---
+
+## File: `eNote\eNote.Application\Features\Rentals\InstrumentRentals\InstrumentRentalSearchExtensions.cs`
+**Hash**: `8acf6455d915` | **Size**: 551 chars
+
+**Classes**: InstrumentRentalSearchExtensions
 ```cs
 using eNote.Application.Common.Search;
 using eNote.Domain.Entities.Rentals;
@@ -134,7 +343,12 @@ public static class InstrumentRentalSearchExtensions
 }
 ```
 
-## File: eNote\eNote.Application\Features\Rentals\InstrumentRentals\InstrumentRentalSearchObject.cs
+---
+
+## File: `eNote\eNote.Application\Features\Rentals\InstrumentRentals\InstrumentRentalSearchObject.cs`
+**Hash**: `999f3ff1a05d` | **Size**: 301 chars
+
+**Classes**: InstrumentRentalSearchObject
 ```cs
 using eNote.Application.Common.Search;
 using eNote.Domain.Enums;
@@ -149,7 +363,12 @@ public class InstrumentRentalSearchObject : BaseSearchObject
 
 ```
 
-## File: eNote\eNote.Application\Features\Rentals\InstrumentRentals\RentalCreateRequest.cs
+---
+
+## File: `eNote\eNote.Application\Features\Rentals\InstrumentRentals\RentalCreateRequest.cs`
+**Hash**: `c5e467687902` | **Size**: 272 chars
+
+**Classes**: RentalCreateRequest
 ```cs
 using System.ComponentModel.DataAnnotations;
 
@@ -165,7 +384,12 @@ public class RentalCreateRequest
 
 ```
 
-## File: eNote\eNote.Application\Features\Rentals\InstrumentRentals\RentalQueryableExtensions.cs
+---
+
+## File: `eNote\eNote.Application\Features\Rentals\InstrumentRentals\RentalQueryableExtensions.cs`
+**Hash**: `c5b49381b830` | **Size**: 503 chars
+
+**Classes**: RentalQueryableExtensions
 ```cs
 using eNote.Domain.Entities.Rentals;
 using Microsoft.EntityFrameworkCore;
@@ -182,7 +406,12 @@ public static class RentalQueryableExtensions
 }
 ```
 
-## File: eNote\eNote.Application\Features\Rentals\InstrumentRentals\RentalStatusResponse.cs
+---
+
+## File: `eNote\eNote.Application\Features\Rentals\InstrumentRentals\RentalStatusResponse.cs`
+**Hash**: `64c8da3d0f2f` | **Size**: 141 chars
+
+**Classes**: RentalStatusResponse
 ```cs
 namespace eNote.Application.Features.Rentals.InstrumentRentals;
 
@@ -193,86 +422,14 @@ public class RentalStatusResponse
 
 ```
 
-## File: eNote\eNote.Application\Features\Rentals\InstrumentRentals\Billing\RentalBilling.cs
+---
+
+## File: `eNote\eNote.Application\Features\Rentals\InstrumentRentals\Services\IRentalCommandService.cs`
+**Hash**: `1f64a092ee95` | **Size**: 732 chars
+
+**Classes**: 
+**Interfaces**: IRentalCommandService
 ```cs
-﻿using eNote.Application.Features.Rentals.InstrumentRentals;
-using eNote.Domain.Entities.Rentals;
-using eNote.Domain.Enums;
-
-namespace eNote.Application.Features.Rentals.InstrumentRentals.Billing;
-
-public static class RentalBilling
-{
-    private const int DaysPerBillingCycle = 30;
-    public static void ApplyBilling(InstrumentRental rental, InstrumentRentalDto dto, DateTime nowUtc)
-    {
-        dto.Fee = rental.Fee;
-
-        var result = Calculate(rental.Fee, rental.PickedUpAt, rental.ReturnedAt, rental.RentalStatus, nowUtc);
-
-        dto.MonthsCharged = result.MonthsCharged;
-        dto.DaysCharged = result.DaysCharged;
-        dto.DailyFee = result.DailyFee;
-        dto.IsProrated = result.IsProrated;
-        dto.TotalFee = result.TotalFee;
-    }
-
-    private static BillingResult Calculate(decimal fee, DateTime? pickedUpAt, DateTime? returnedAt, InstrumentRentalStatus status, DateTime nowUtc)
-    {
-        if (!pickedUpAt.HasValue)
-        {
-            return new BillingResult(null, null, null, null, false);
-        }
-
-        if (!status.IsBillingEligible())
-        {
-            return new BillingResult(null, null, null, null, false);
-        }
-
-        var start = pickedUpAt.Value;
-
-        var end = returnedAt ?? nowUtc;
-
-        if (end < start)
-        {
-            end = start;
-        }
-
-        var daysCharged = (int)Math.Ceiling((end - start).TotalDays);
-
-        if (daysCharged < 1)
-        {
-            daysCharged = 1;
-        }
-
-        if (status == InstrumentRentalStatus.ReturnedEarly)
-        {
-            var dailyFee = fee / DaysPerBillingCycle;
-            var prorated = daysCharged * dailyFee;
-            var totalFee = prorated > fee ? fee : prorated;
-
-            return new BillingResult(MonthsCharged: null, DaysCharged: daysCharged, DailyFee: decimal.Round(dailyFee, 2), TotalFee: decimal.Round(totalFee, 2), IsProrated: true);
-        }
-
-        var monthsCharged = (int)Math.Ceiling((end - start).TotalDays / DaysPerBillingCycle);
-
-        if (monthsCharged < 1)
-        {
-            monthsCharged = 1;
-        }
-
-        return new BillingResult(MonthsCharged: monthsCharged, DaysCharged: null, DailyFee: null, TotalFee: monthsCharged * fee, IsProrated: false);
-    }
-
-    private readonly record struct BillingResult(int? MonthsCharged, int? DaysCharged, decimal? DailyFee, decimal? TotalFee, bool IsProrated);
-}
-
-```
-
-## File: eNote\eNote.Application\Features\Rentals\InstrumentRentals\Services\IRentalCommandService.cs
-```cs
-using eNote.Application.Features.Rentals.InstrumentRentals;
-
 namespace eNote.Application.Features.Rentals.InstrumentRentals.Services;
 
 public interface IRentalCommandService
@@ -288,7 +445,13 @@ public interface IRentalCommandService
 
 ```
 
-## File: eNote\eNote.Application\Features\Rentals\InstrumentRentals\Services\IRentalQueryService.cs
+---
+
+## File: `eNote\eNote.Application\Features\Rentals\InstrumentRentals\Services\IRentalQueryService.cs`
+**Hash**: `ab879ac6bca4` | **Size**: 569 chars
+
+**Classes**: 
+**Interfaces**: IRentalQueryService
 ```cs
 using eNote.Application.Common.Paging;
 using eNote.Application.Features.Rentals.InstrumentRentals;
@@ -305,18 +468,24 @@ public interface IRentalQueryService
 
 ```
 
-## File: eNote\eNote.Application\Features\Rentals\InstrumentRentals\Services\RentalCommandService.cs
+---
+
+## File: `eNote\eNote.Application\Features\Rentals\InstrumentRentals\Services\RentalCommandService.cs`
+**Hash**: `ae8375f6ddd1` | **Size**: 7941 chars
+
+**Classes**: RentalCommandService
+### Key Cross-Cutting Interactions
+- Uses **ICurrentActor** → Current actor resolution
+- Uses **IAppDbContext|DbContext** → Persistence boundary
+
 ```cs
 using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Common.Time;
-using eNote.Application.Features.Identity.Users.Services;
-using eNote.Application.Features.Rentals.InstrumentRentals;
 using eNote.Application.Features.Rentals.InstrumentRentals.Billing;
 using eNote.Application.Features.Rentals.InstrumentRentals.StateMachine;
-using eNote.Application.Features.Rentals.MusicStores.Services;
 using eNote.Domain.Entities.Rentals;
 using eNote.Domain.Enums;
 using MapsterMapper;
@@ -325,13 +494,13 @@ using Microsoft.EntityFrameworkCore.Storage;
 
 namespace eNote.Application.Features.Rentals.InstrumentRentals.Services;
 
-public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, IClock clock, IUserContextResolver resolver, IMusicStoreContextService storeContext, IRentalStateMachine stateMachine, ICurrentUserService currentUserService, IRentalNotificationDispatcher notificationDispatcher) : IRentalCommandService
+public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, IClock clock, ICurrentActor actor, IRentalStateMachine stateMachine, IRentalNotificationDispatcher notificationDispatcher) : IRentalCommandService
 {
     public async Task<InstrumentRentalDto> CreateRequestAsync(RentalCreateRequest request)
     {
         var dto = await ExecuteInTransactionAsync(async () =>
         {
-            var student = await resolver.GetStudentAsync(currentUserService.UserId);
+            var student = await actor.GetStudentAsync();
 
             if (!student.HasActiveMembership(clock.UtcNow))
             {
@@ -342,12 +511,10 @@ public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, 
 
             _ = await context.Set<Instrument>()
                 .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.Id == request.InstrumentId && x.IsActive)
-                ?? throw new NotFoundException(Messages.InstrumentNotFound);
+                .FirstOrDefaultAsync(x => x.Id == request.InstrumentId && x.IsActive) ?? throw new NotFoundException(Messages.InstrumentNotFound);
 
             var locked = await context.Set<InstrumentRental>()
-                .AnyAsync(x => x.InstrumentId == request.InstrumentId
-                && InstrumentRentalStatusSets.Blocking.Contains(x.RentalStatus));
+                .AnyAsync(x => x.InstrumentId == request.InstrumentId && InstrumentRentalStatusSets.Blocking.Contains(x.RentalStatus));
 
             if (locked)
             {
@@ -355,9 +522,7 @@ public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, 
             }
 
             var alreadyPending = await context.Set<InstrumentRental>()
-                .AnyAsync(x => x.InstrumentId == request.InstrumentId
-                    && x.StudentProfileId == studentProfileId
-                    && x.RentalStatus == InstrumentRentalStatus.Pending);
+                .AnyAsync(x => x.InstrumentId == request.InstrumentId && x.StudentProfileId == studentProfileId && x.RentalStatus == InstrumentRentalStatus.Pending);
 
             if (alreadyPending)
             {
@@ -366,14 +531,14 @@ public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, 
 
             var rental = new InstrumentRental(request.InstrumentId, studentProfileId, clock.UtcNow, request.Note)
             {
-                CreatedById = currentUserService.UserId
+                CreatedById = actor.UserId
             };
 
             context.Set<InstrumentRental>().Add(rental);
             await context.SaveChangesAsync();
 
             var dto = await LoadDtoAsync(rental.Id);
-            await notificationDispatcher.DispatchCreatedAsync(dto, currentUserService.UserId);
+            await notificationDispatcher.DispatchCreatedAsync(dto, actor.UserId);
 
             return dto;
         });
@@ -395,10 +560,10 @@ public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, 
     {
         var dto = await ExecuteInTransactionAsync(async () =>
         {
-            var rental = await LoadForStudentAsync(rentalId, currentUserService.UserId);
-            var dto = await ExecuteTransitionAsync(rental, RentalTrigger.Cancel, RentalActor.Student, currentUserService.UserId, response);
+            var rental = await LoadForStudentAsync(rentalId, actor.UserId);
+            var dto = await ExecuteTransitionAsync(rental, RentalTrigger.Cancel, RentalActor.Student, actor.UserId, response);
 
-            await notificationDispatcher.DispatchTransitionAsync(dto, RentalTrigger.Cancel, currentUserService.UserId);
+            await notificationDispatcher.DispatchTransitionAsync(dto, RentalTrigger.Cancel, actor.UserId);
 
             return dto;
         });
@@ -408,19 +573,24 @@ public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, 
 
     private Task<InstrumentRentalDto> ExecuteStoreTransitionAsync(int rentalId, RentalTrigger trigger, RentalStatusResponse response) => ExecuteInTransactionAsync(async () =>
     {
-        var storeId = await storeContext.GetActiveStoreAsync(currentUserService.UserId);
+        var storeId = await actor.GetActiveStoreAsync();
         var rental = await LoadForStoreAsync(rentalId, storeId);
-        var dto = await ExecuteTransitionAsync(rental, trigger, RentalActor.StoreEmployee, currentUserService.UserId, response);
+        var dto = await ExecuteTransitionAsync(rental, trigger, RentalActor.StoreEmployee, actor.UserId, response);
 
-        await notificationDispatcher.DispatchTransitionAsync(dto, trigger, currentUserService.UserId);
+        await notificationDispatcher.DispatchTransitionAsync(dto, trigger, actor.UserId);
 
         return dto;
     });
 
     private async Task<InstrumentRentalDto> ExecuteTransitionAsync(InstrumentRental rental, RentalTrigger trigger, RentalActor actor, int userId, RentalStatusResponse? response)
     {
-        var hasConflict = await context.Set<InstrumentRental>()
-            .AnyAsync(x => x.InstrumentId == rental.InstrumentId && x.Id != rental.Id && InstrumentRentalStatusSets.Blocking.Contains(x.RentalStatus));
+        var hasConflict = false;
+
+        if (trigger is RentalTrigger.Approve or RentalTrigger.Pickup)
+        {
+            hasConflict = await context.Set<InstrumentRental>()
+                .AnyAsync(x => x.InstrumentId == rental.InstrumentId && x.Id != rental.Id && InstrumentRentalStatusSets.Blocking.Contains(x.RentalStatus));
+        }
 
         var transitionContext = new RentalTransitionContext
         {
@@ -448,8 +618,7 @@ public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, 
     {
         var rental = await context.Set<InstrumentRental>()
             .WithRentalDetails()
-            .FirstOrDefaultAsync(x => x.Id == rentalId)
-            ?? throw new NotFoundException(Messages.RentalNotFound);
+            .FirstOrDefaultAsync(x => x.Id == rentalId) ?? throw new NotFoundException(Messages.RentalNotFound);
 
         if (rental.Instrument.MusicStoreId != storeId)
         {
@@ -463,8 +632,7 @@ public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, 
     {
         var rental = await context.Set<InstrumentRental>()
             .WithRentalDetails()
-            .FirstOrDefaultAsync(x => x.Id == rentalId)
-            ?? throw new NotFoundException(Messages.RentalNotFound);
+            .FirstOrDefaultAsync(x => x.Id == rentalId) ?? throw new NotFoundException(Messages.RentalNotFound);
 
         if (rental.StudentProfile.AppUserId != userId)
         {
@@ -479,8 +647,7 @@ public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, 
         var entity = await context.Set<InstrumentRental>()
             .AsNoTracking()
             .WithRentalDetails()
-            .FirstOrDefaultAsync(x => x.Id == rentalId)
-            ?? throw new NotFoundException(Messages.RentalNotFoundAfterUpdate);
+            .FirstOrDefaultAsync(x => x.Id == rentalId) ?? throw new NotFoundException(Messages.RentalNotFoundAfterUpdate);
 
         var result = mapper.Map<InstrumentRentalDto>(entity);
 
@@ -522,72 +689,92 @@ public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, 
 
 ```
 
-## File: eNote\eNote.Application\Features\Rentals\InstrumentRentals\Services\RentalQueryService.cs
+---
+
+## File: `eNote\eNote.Application\Features\Rentals\InstrumentRentals\Services\RentalQueryService.cs`
+**Hash**: `fbbb54b7c858` | **Size**: 2753 chars
+
+**Classes**: RentalQueryService
+### Key Cross-Cutting Interactions
+- Uses **ICurrentActor** → Current actor resolution
+- Uses **IAppDbContext|DbContext** → Persistence boundary
+
 ```cs
 ﻿using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Paging;
 using eNote.Application.Common.Persistence;
-using eNote.Application.Features.Rentals.InstrumentRentals;
-using eNote.Application.Features.Rentals.MusicStores.Services;
+using eNote.Application.Common.Time;
+using eNote.Application.Features.Rentals.InstrumentRentals.Billing;
 using eNote.Domain.Entities.Rentals;
 using MapsterMapper;
 using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Application.Features.Rentals.InstrumentRentals.Services;
 
-public sealed class RentalQueryService(
-    IAppDbContext context,
-    IMapper mapper,
-    IMusicStoreContextService storeContext,
-    ICurrentUserService currentUserService) : IRentalQueryService
+public sealed class RentalQueryService(IAppDbContext context, IMapper mapper, ICurrentActor actor, IClock clock) : IRentalQueryService
 {
-    public async Task<InstrumentRentalDto> GetByIdForStudentAsync(int rentalId) =>
-        mapper.Map<InstrumentRentalDto>(await FindRentalAsync(context.Set<InstrumentRental>()
-        .Where(x => x.Id == rentalId && x.StudentProfile.AppUserId == currentUserService.UserId)));
+    public async Task<InstrumentRentalDto> GetByIdForStudentAsync(int rentalId)
+    {
+        var entity = await FindRentalAsync(context.Set<InstrumentRental>().Where(x => x.Id == rentalId && x.StudentProfile.AppUserId == actor.UserId));
+
+        var dto = mapper.Map<InstrumentRentalDto>(entity);
+
+        RentalBilling.ApplyBilling(entity, dto, clock.UtcNow);
+
+        return dto;
+    }
+
+    public Task<PagedResult<InstrumentRentalDto>> GetPagedForStudentAsync(InstrumentRentalSearchObject search) => GetPagedAsync(context.Set<InstrumentRental>()
+        .Where(x => x.StudentProfile.AppUserId == actor.UserId), search);
 
     public async Task<InstrumentRentalDto> GetByIdForStoreAsync(int rentalId)
     {
-        var storeId = await storeContext.GetActiveStoreAsync(currentUserService.UserId);
+        var storeId = await actor.GetActiveStoreAsync();
 
-        return mapper.Map<InstrumentRentalDto>(await FindRentalAsync(context.Set<InstrumentRental>()
-                .Where(x => x.Id == rentalId && x.Instrument.MusicStoreId == storeId)));
+        var entity = await FindRentalAsync(context.Set<InstrumentRental>().Where(x => x.Id == rentalId && x.Instrument.MusicStoreId == storeId));
+
+        var dto = mapper.Map<InstrumentRentalDto>(entity);
+
+        RentalBilling.ApplyBilling(entity, dto, clock.UtcNow);
+
+        return dto;
     }
-
-    public Task<PagedResult<InstrumentRentalDto>> GetPagedForStudentAsync(InstrumentRentalSearchObject search) =>
-        GetPagedAsync(
-            context.Set<InstrumentRental>()
-                .Where(x => x.StudentProfile.AppUserId == currentUserService.UserId),
-            search);
 
     public async Task<PagedResult<InstrumentRentalDto>> GetPagedForStoreAsync(InstrumentRentalSearchObject search)
     {
-        var storeId = await storeContext.GetActiveStoreAsync(currentUserService.UserId);
+        var storeId = await actor.GetActiveStoreAsync();
 
-        return await GetPagedAsync(
-            context.Set<InstrumentRental>().Where(x => x.Instrument.MusicStoreId == storeId),
-            search);
+        return await GetPagedAsync(context.Set<InstrumentRental>().Where(x => x.Instrument.MusicStoreId == storeId), search);
     }
 
-    private async Task<PagedResult<InstrumentRentalDto>> GetPagedAsync(
-        IQueryable<InstrumentRental> query,
-        InstrumentRentalSearchObject search) =>
-        await query
-            .AsNoTracking()
-            .WithRentalDetails()
-            .ApplySearch(search)
-            .OrderByDescending(x => x.RequestedAt)
-            .ToPagedResultAsync(search, mapper.Map<InstrumentRentalDto>);
+    private async Task<PagedResult<InstrumentRentalDto>> GetPagedAsync(IQueryable<InstrumentRental> query, InstrumentRentalSearchObject search)
+    {
+        var now = clock.UtcNow;
 
-    private async Task<InstrumentRental> FindRentalAsync(IQueryable<InstrumentRental> query) =>
-        await query.AsNoTracking().WithRentalDetails().FirstOrDefaultAsync()
-        ?? throw new NotFoundException(Messages.NotFound);
+        return await query.AsNoTracking().WithRentalDetails().ApplySearch(search).OrderByDescending(x => x.RequestedAt).ToPagedResultAsync(search, entity =>
+        {
+            var dto = mapper.Map<InstrumentRentalDto>(entity);
+            RentalBilling.ApplyBilling(entity, dto, now);
+
+            return dto;
+        });
+    }
+
+    private static async Task<InstrumentRental> FindRentalAsync(IQueryable<InstrumentRental> query) => await query
+        .AsNoTracking().WithRentalDetails().FirstOrDefaultAsync() ?? throw new NotFoundException(Messages.NotFound);
 }
 
 ```
 
-## File: eNote\eNote.Application\Features\Rentals\InstrumentRentals\StateMachine\IRentalStateMachine.cs
+---
+
+## File: `eNote\eNote.Application\Features\Rentals\InstrumentRentals\StateMachine\IRentalStateMachine.cs`
+**Hash**: `ddf6fa93a4a3` | **Size**: 271 chars
+
+**Classes**: 
+**Interfaces**: IRentalStateMachine
 ```cs
 using eNote.Domain.Entities.Rentals;
 
@@ -600,7 +787,11 @@ public interface IRentalStateMachine
 
 ```
 
-## File: eNote\eNote.Application\Features\Rentals\InstrumentRentals\StateMachine\RentalActor.cs
+---
+
+## File: `eNote\eNote.Application\Features\Rentals\InstrumentRentals\StateMachine\RentalActor.cs`
+**Hash**: `9f00c147ec4a` | **Size**: 137 chars
+
 ```cs
 namespace eNote.Application.Features.Rentals.InstrumentRentals.StateMachine;
 
@@ -612,7 +803,12 @@ public enum RentalActor
 
 ```
 
-## File: eNote\eNote.Application\Features\Rentals\InstrumentRentals\StateMachine\RentalStateMachine.cs
+---
+
+## File: `eNote\eNote.Application\Features\Rentals\InstrumentRentals\StateMachine\RentalStateMachine.cs`
+**Hash**: `55767ff66ca9` | **Size**: 7869 chars
+
+**Classes**: RentalStateMachine
 ```cs
 using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Localization;
@@ -820,7 +1016,12 @@ public sealed class RentalStateMachine(IClock clock) : IRentalStateMachine
 
 ```
 
-## File: eNote\eNote.Application\Features\Rentals\InstrumentRentals\StateMachine\RentalTransitionContext.cs
+---
+
+## File: `eNote\eNote.Application\Features\Rentals\InstrumentRentals\StateMachine\RentalTransitionContext.cs`
+**Hash**: `ce702bce69f7` | **Size**: 409 chars
+
+**Classes**: RentalTransitionContext
 ```cs
 using eNote.Application.Features.Rentals.InstrumentRentals;
 
@@ -836,7 +1037,11 @@ public sealed class RentalTransitionContext
 
 ```
 
-## File: eNote\eNote.Application\Features\Rentals\InstrumentRentals\StateMachine\RentalTransitionResult.cs
+---
+
+## File: `eNote\eNote.Application\Features\Rentals\InstrumentRentals\StateMachine\RentalTransitionResult.cs`
+**Hash**: `7bd749a3f2f5` | **Size**: 148 chars
+
 ```cs
 namespace eNote.Application.Features.Rentals.InstrumentRentals.StateMachine;
 
@@ -844,7 +1049,11 @@ public sealed record RentalTransitionResult(bool UsesInstrumentLock);
 
 ```
 
-## File: eNote\eNote.Application\Features\Rentals\InstrumentRentals\StateMachine\RentalTrigger.cs
+---
+
+## File: `eNote\eNote.Application\Features\Rentals\InstrumentRentals\StateMachine\RentalTrigger.cs`
+**Hash**: `a21166fbb38a` | **Size**: 187 chars
+
 ```cs
 namespace eNote.Application.Features.Rentals.InstrumentRentals.StateMachine;
 
@@ -860,141 +1069,75 @@ public enum RentalTrigger
 
 ```
 
-## File: eNote\eNote.API\Controllers\InstrumentRentals\StoreRentalController.cs
+---
+
+## File: `eNote\eNote.Domain\Enums\InstrumentRentalStatus.cs`
+**Hash**: `ed7d5dcb9f7d` | **Size**: 197 chars
+
 ```cs
-﻿using eNote.API.Controllers.Base;
-using eNote.Application.Common.Paging;
-using eNote.Application.Constants;
-using eNote.Application.Features.Rentals.InstrumentRentals;
-using eNote.Application.Features.Rentals.InstrumentRentals.Services;
-using eNote.Application.Features.Reports.Services;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
+namespace eNote.Domain.Enums;
 
-namespace eNote.API.Controllers.InstrumentRentals;
-
-[Authorize(Roles = AppRoles.StoreEmployee)]
-[Route("api/shop/rentals")]
-public sealed class StoreRentalController(IRentalQueryService queryService, IRentalCommandService commandService, IReportService reportService) : CoreController
+public enum InstrumentRentalStatus
 {
-    [HttpGet("report")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetRentalReport(CancellationToken cancellationToken)
-    {
-        var pdf = await reportService.GenerateStoreRentalSummaryPdfAsync(cancellationToken);
-        return File(pdf, "application/pdf", "store-rentals.pdf");
-    }
-
-    [HttpGet]
-    [ProducesResponseType(typeof(PagedResult<InstrumentRentalDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<PagedResult<InstrumentRentalDto>>> GetPaged([FromQuery] InstrumentRentalSearchObject search)
-    {
-        var result = await queryService.GetPagedForStoreAsync(search);
-        return Ok(result);
-    }
-
-    [HttpGet("{id:int}")]
-    [ProducesResponseType(typeof(InstrumentRentalDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<InstrumentRentalDto>> GetById(int id)
-    {
-        var dto = await queryService.GetByIdForStoreAsync(id);
-        return Ok(dto);
-    }
-
-    [HttpPost("{id:int}/approve")]
-    [ProducesResponseType(typeof(InstrumentRentalDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<InstrumentRentalDto>> Approve(int id, [FromBody] RentalStatusResponse response)
-    {
-        var dto = await commandService.ApproveAsync(id, response);
-        return Ok(dto);
-    }
-
-    [HttpPost("{id:int}/reject")]
-    [ProducesResponseType(typeof(InstrumentRentalDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<InstrumentRentalDto>> Reject(int id, [FromBody] RentalStatusResponse response)
-    {
-        var dto = await commandService.RejectAsync(id, response);
-        return Ok(dto);
-    }
-
-    [HttpPost("{id:int}/pickup")]
-    [ProducesResponseType(typeof(InstrumentRentalDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<InstrumentRentalDto>> Pickup(int id, [FromBody] RentalStatusResponse response)
-    {
-        var dto = await commandService.PickupAsync(id, response);
-        return Ok(dto);
-    }
-
-    [HttpPost("{id:int}/complete")]
-    [ProducesResponseType(typeof(InstrumentRentalDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<InstrumentRentalDto>> Complete(int id, [FromBody] RentalStatusResponse response)
-    {
-        var dto = await commandService.CompleteAsync(id, response);
-        return Ok(dto);
-    }
-
-    [HttpPost("{id:int}/return-early")]
-    [ProducesResponseType(typeof(InstrumentRentalDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<InstrumentRentalDto>> ReturnEarly(int id, [FromBody] RentalStatusResponse response)
-    {
-        var dto = await commandService.ReturnEarlyAsync(id, response);
-        return Ok(dto);
-    }
+    Pending = 1,
+    Approved = 2,
+    Active = 3,
+    Completed = 4,
+    Rejected = 5,
+    Canceled = 6,
+    ReturnedEarly = 7
 }
-
 ```
 
-## File: eNote\eNote.API\Controllers\InstrumentRentals\StudentRentalController.cs
+---
+
+## File: `eNote\eNote.Domain\Enums\InstrumentRentalStatusExtensions.cs`
+**Hash**: `db395448d8b8` | **Size**: 480 chars
+
+**Classes**: InstrumentRentalStatusExtensions
 ```cs
-﻿using eNote.API.Controllers.Base;
-using eNote.Application.Common.Paging;
-using eNote.Application.Constants;
-using eNote.Application.Features.Rentals.InstrumentRentals;
-using eNote.Application.Features.Rentals.InstrumentRentals.Services;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
+namespace eNote.Domain.Enums;
 
-namespace eNote.API.Controllers.InstrumentRentals;
-
-[Authorize(Roles = AppRoles.Student)]
-[Route("api/student/rentals")]
-public sealed class StudentRentalController(IRentalQueryService queryService, IRentalCommandService commandService) : CoreController
+public static class InstrumentRentalStatusExtensions
 {
-    [HttpGet]
-    [ProducesResponseType(typeof(PagedResult<InstrumentRentalDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<PagedResult<InstrumentRentalDto>>> GetPaged([FromQuery] InstrumentRentalSearchObject search)
-    {
-        var result = await queryService.GetPagedForStudentAsync(search);
-        return Ok(result);
-    }
+    public static bool BlocksInstrument(this InstrumentRentalStatus status) =>
+        status is InstrumentRentalStatus.Approved or InstrumentRentalStatus.Active;
 
-    [HttpGet("{id:int}")]
-    [ProducesResponseType(typeof(InstrumentRentalDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<InstrumentRentalDto>> GetById(int id)
-    {
-        var dto = await queryService.GetByIdForStudentAsync(id);
-        return Ok(dto);
-    }
-
-    [HttpPost]
-    [ProducesResponseType(typeof(InstrumentRentalDto), StatusCodes.Status201Created)]
-    public async Task<ActionResult<InstrumentRentalDto>> Create([FromBody] RentalCreateRequest request)
-    {
-        var dto = await commandService.CreateRequestAsync(request);
-        return CreatedAtAction(nameof(GetById), new
-        {
-            id = dto.Id
-        }, dto);
-    }
-
-    [HttpPost("{id:int}/cancel")]
-    [ProducesResponseType(typeof(InstrumentRentalDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<InstrumentRentalDto>> Cancel(int id, [FromBody] RentalStatusResponse response)
-    {
-        var dto = await commandService.CancelAsync(id, response);
-        return Ok(dto);
-    }
+    public static bool IsBillingEligible(this InstrumentRentalStatus status) =>
+        status is InstrumentRentalStatus.Active
+            or InstrumentRentalStatus.Completed
+            or InstrumentRentalStatus.ReturnedEarly;
 }
-
 ```
+
+---
+
+## File: `eNote\eNote.Domain\Enums\InstrumentRentalStatusSets.cs`
+**Hash**: `44bb97d2a6fc` | **Size**: 617 chars
+
+**Classes**: InstrumentRentalStatusSets
+```cs
+using System.Collections.Frozen;
+
+namespace eNote.Domain.Enums;
+
+public static class InstrumentRentalStatusSets
+{
+    public static readonly FrozenSet<InstrumentRentalStatus> Blocking = new InstrumentRentalStatus[]
+    {
+        InstrumentRentalStatus.Approved,
+        InstrumentRentalStatus.Active
+    }.ToFrozenSet();
+
+    public static readonly FrozenSet<InstrumentRentalStatus> History = new InstrumentRentalStatus[]
+    {
+        InstrumentRentalStatus.Approved,
+        InstrumentRentalStatus.Active,
+        InstrumentRentalStatus.Completed,
+        InstrumentRentalStatus.ReturnedEarly
+    }.ToFrozenSet();
+}
+```
+
+---
 

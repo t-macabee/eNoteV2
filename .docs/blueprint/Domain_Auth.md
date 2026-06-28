@@ -1,8 +1,122 @@
 # Bounded Context: Auth
-Total Files Contained: 13
+
+**Generated**: 2026-06-28T05:17:02.563057+00:00  
+**Commit**: latest  
+**Total Files**: 13
+
 ---
 
-## File: eNote\eNote.Application\Common\Exceptions\AuthenticationException.cs
+## 🤖 Agent Briefing (Read First)
+
+This file contains the complete source for the **Auth** bounded context.
+
+**Your goals when reading this context:**
+1. Build an accurate mental model of entities, behavior, and state transitions.
+2. Identify cross-context interactions (see "Key Interactions" sections).
+3. Note any architectural smells, duplicated logic, or unnecessary abstractions.
+4. Track how this context communicates with others (especially via events).
+
+**Focus areas for deep analysis:**
+- Domain entities with rich behavior (not anemic)
+- Service orchestration and access control
+- State machines / workflow logic
+- Cross-domain event contracts
+
+---
+
+## File: `eNote\eNote.API\Controllers\Auth\AuthController.cs`
+**Hash**: `0906d7e8694b` | **Size**: 3007 chars
+
+**Classes**: AuthController
+```cs
+﻿using eNote.API.Extensions;
+using eNote.Application.Common.Exceptions;
+using eNote.Application.Common.Localization;
+using eNote.Application.Features.Identity.Auth;
+using eNote.Application.Features.Identity.Auth.Services;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+
+namespace eNote.API.Controllers.Auth;
+
+[ApiController]
+[Route("api/auth")]
+[EnableRateLimiting(RateLimitingExtensions.AuthPolicy)]
+public class AuthController(IAuthService authService) : ControllerBase
+{
+    [HttpPost("login")]
+    [ProducesResponseType(typeof(AuthResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<AuthResponse>> Login([FromBody] LoginRequest model)
+    {
+        AuthResponse response = await authService.LoginAsync(model);
+        return Ok(response);
+    }
+
+    [HttpPost("register")]
+    [ProducesResponseType(typeof(AuthResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<AuthResponse>> Register([FromBody] RegisterRequest model)
+    {
+        AuthResponse response = await authService.RegisterAsync(model);
+        return Ok(response);
+    }
+
+    [HttpPost("forgot-password")]
+    [ProducesResponseType(typeof(ForgotPasswordResponse), StatusCodes.Status200OK)]
+    public async Task<ActionResult<ForgotPasswordResponse>> ForgotPassword([FromBody] ForgotPasswordRequest request)
+    {
+        ForgotPasswordResponse response = await authService.ForgotPasswordAsync(request, HttpContext.RequestAborted);
+        return Ok(response);
+    }
+
+    [HttpPost("reset-password")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
+    {
+        await authService.ResetPasswordAsync(request, HttpContext.RequestAborted);
+        return NoContent();
+    }
+
+    [Authorize]
+    [HttpPost("logout")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> Logout()
+    {
+        await authService.LogoutAsync(CurrentTokenJti, CurrentTokenExpiresAtUtc, HttpContext.RequestAborted);
+        return NoContent();
+    }
+
+    private string CurrentTokenJti => User.FindFirstValue(JwtRegisteredClaimNames.Jti) ?? throw new AuthenticationException(Messages.InvalidUserClaim);
+
+    private DateTime CurrentTokenExpiresAtUtc
+    {
+        get
+        {
+            var exp = User.FindFirstValue(JwtRegisteredClaimNames.Exp);
+
+            if (exp is null || !long.TryParse(exp, out var unixSeconds))
+            {
+                throw new AuthenticationException(Messages.InvalidUserClaim);
+            }
+
+            return DateTimeOffset.FromUnixTimeSeconds(unixSeconds).UtcDateTime;
+        }
+    }
+}
+
+```
+
+---
+
+## File: `eNote\eNote.Application\Common\Exceptions\AuthenticationException.cs`
+**Hash**: `8d5c996fcfc4` | **Size**: 164 chars
+
+**Classes**: AuthenticationException
 ```cs
 namespace eNote.Application.Common.Exceptions;
 
@@ -12,7 +126,12 @@ public class AuthenticationException(string? message = null) : AppException(401,
 
 ```
 
-## File: eNote\eNote.Application\Common\Exceptions\AuthorizationException.cs
+---
+
+## File: `eNote\eNote.Application\Common\Exceptions\AuthorizationException.cs`
+**Hash**: `9033d52670b6` | **Size**: 160 chars
+
+**Classes**: AuthorizationException
 ```cs
 namespace eNote.Application.Common.Exceptions;
 
@@ -22,7 +141,12 @@ public class AuthorizationException(string? message = null) : AppException(403, 
 
 ```
 
-## File: eNote\eNote.Application\Features\Identity\Auth\AuthResponse.cs
+---
+
+## File: `eNote\eNote.Application\Features\Identity\Auth\AuthResponse.cs`
+**Hash**: `6a73946b1630` | **Size**: 479 chars
+
+**Classes**: AuthResponse
 ```cs
 using System.Text.Json.Serialization;
 
@@ -45,7 +169,12 @@ public sealed class AuthResponse
 
 ```
 
-## File: eNote\eNote.Application\Features\Identity\Auth\ForgotPasswordRequest.cs
+---
+
+## File: `eNote\eNote.Application\Features\Identity\Auth\ForgotPasswordRequest.cs`
+**Hash**: `af23ef376863` | **Size**: 233 chars
+
+**Classes**: ForgotPasswordRequest
 ```cs
 using System.ComponentModel.DataAnnotations;
 
@@ -60,7 +189,12 @@ public sealed class ForgotPasswordRequest
 
 ```
 
-## File: eNote\eNote.Application\Features\Identity\Auth\ForgotPasswordResponse.cs
+---
+
+## File: `eNote\eNote.Application\Features\Identity\Auth\ForgotPasswordResponse.cs`
+**Hash**: `ec7a871362bf` | **Size**: 150 chars
+
+**Classes**: ForgotPasswordResponse
 ```cs
 namespace eNote.Application.Features.Identity.Auth;
 
@@ -71,7 +205,12 @@ public sealed class ForgotPasswordResponse
 
 ```
 
-## File: eNote\eNote.Application\Features\Identity\Auth\LoginRequest.cs
+---
+
+## File: `eNote\eNote.Application\Features\Identity\Auth\LoginRequest.cs`
+**Hash**: `f7e19892bb48` | **Size**: 345 chars
+
+**Classes**: LoginRequest
 ```cs
 using System.ComponentModel.DataAnnotations;
 
@@ -88,7 +227,12 @@ public class LoginRequest
 
 ```
 
-## File: eNote\eNote.Application\Features\Identity\Auth\RegisterRequest.cs
+---
+
+## File: `eNote\eNote.Application\Features\Identity\Auth\RegisterRequest.cs`
+**Hash**: `657a91aac283` | **Size**: 450 chars
+
+**Classes**: RegisterRequest
 ```cs
 using System.ComponentModel.DataAnnotations;
 
@@ -110,7 +254,12 @@ public class RegisterRequest
 
 ```
 
-## File: eNote\eNote.Application\Features\Identity\Auth\ResetPasswordRequest.cs
+---
+
+## File: `eNote\eNote.Application\Features\Identity\Auth\ResetPasswordRequest.cs`
+**Hash**: `921078e38309` | **Size**: 378 chars
+
+**Classes**: ResetPasswordRequest
 ```cs
 using System.ComponentModel.DataAnnotations;
 
@@ -131,7 +280,13 @@ public sealed class ResetPasswordRequest
 
 ```
 
-## File: eNote\eNote.Application\Features\Identity\Auth\Services\IAuthService.cs
+---
+
+## File: `eNote\eNote.Application\Features\Identity\Auth\Services\IAuthService.cs`
+**Hash**: `c53a1f376928` | **Size**: 603 chars
+
+**Classes**: 
+**Interfaces**: IAuthService
 ```cs
 using eNote.Application.Features.Identity.Auth;
 
@@ -148,7 +303,13 @@ public interface IAuthService
 
 ```
 
-## File: eNote\eNote.Application\Features\Identity\Auth\Services\ITokenRevocationService.cs
+---
+
+## File: `eNote\eNote.Application\Features\Identity\Auth\Services\ITokenRevocationService.cs`
+**Hash**: `73e73c3ca240` | **Size**: 298 chars
+
+**Classes**: 
+**Interfaces**: ITokenRevocationService
 ```cs
 namespace eNote.Application.Features.Identity.Auth.Services;
 
@@ -160,7 +321,13 @@ public interface ITokenRevocationService
 
 ```
 
-## File: eNote\eNote.Application\Features\Identity\Auth\Services\ITokenService.cs
+---
+
+## File: `eNote\eNote.Application\Features\Identity\Auth\Services\ITokenService.cs`
+**Hash**: `ee4525554437` | **Size**: 173 chars
+
+**Classes**: 
+**Interfaces**: ITokenService
 ```cs
 namespace eNote.Application.Features.Identity.Auth.Services;
 
@@ -171,7 +338,12 @@ public interface ITokenService
 
 ```
 
-## File: eNote\eNote.Infrastructure\Identity\AuthService.cs
+---
+
+## File: `eNote\eNote.Infrastructure\Identity\AuthService.cs`
+**Hash**: `5d8b93304716` | **Size**: 4741 chars
+
+**Classes**: AuthService
 ```cs
 using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Interfaces;
@@ -307,87 +479,5 @@ public sealed class AuthService(UserManager<AppUser> userManager, SignInManager<
 
 ```
 
-## File: eNote\eNote.API\Controllers\Auth\AuthController.cs
-```cs
-﻿using eNote.API.Extensions;
-using eNote.Application.Common.Exceptions;
-using eNote.Application.Common.Localization;
-using eNote.Application.Features.Identity.Auth;
-using eNote.Application.Features.Identity.Auth.Services;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.RateLimiting;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-
-namespace eNote.API.Controllers.Auth;
-
-[ApiController]
-[Route("api/auth")]
-[EnableRateLimiting(RateLimitingExtensions.AuthPolicy)]
-public class AuthController(IAuthService authService) : ControllerBase
-{
-    [HttpPost("login")]
-    [ProducesResponseType(typeof(AuthResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
-    public async Task<ActionResult<AuthResponse>> Login([FromBody] LoginRequest model)
-    {
-        AuthResponse response = await authService.LoginAsync(model);
-        return Ok(response);
-    }
-
-    [HttpPost("register")]
-    [ProducesResponseType(typeof(AuthResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<AuthResponse>> Register([FromBody] RegisterRequest model)
-    {
-        AuthResponse response = await authService.RegisterAsync(model);
-        return Ok(response);
-    }
-
-    [HttpPost("forgot-password")]
-    [ProducesResponseType(typeof(ForgotPasswordResponse), StatusCodes.Status200OK)]
-    public async Task<ActionResult<ForgotPasswordResponse>> ForgotPassword([FromBody] ForgotPasswordRequest request)
-    {
-        ForgotPasswordResponse response = await authService.ForgotPasswordAsync(request, HttpContext.RequestAborted);
-        return Ok(response);
-    }
-
-    [HttpPost("reset-password")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
-    {
-        await authService.ResetPasswordAsync(request, HttpContext.RequestAborted);
-        return NoContent();
-    }
-
-    [Authorize]
-    [HttpPost("logout")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public async Task<IActionResult> Logout()
-    {
-        await authService.LogoutAsync(CurrentTokenJti, CurrentTokenExpiresAtUtc, HttpContext.RequestAborted);
-        return NoContent();
-    }
-
-    private string CurrentTokenJti => User.FindFirstValue(JwtRegisteredClaimNames.Jti) ?? throw new AuthenticationException(Messages.InvalidUserClaim);
-
-    private DateTime CurrentTokenExpiresAtUtc
-    {
-        get
-        {
-            var exp = User.FindFirstValue(JwtRegisteredClaimNames.Exp);
-
-            if (exp is null || !long.TryParse(exp, out var unixSeconds))
-            {
-                throw new AuthenticationException(Messages.InvalidUserClaim);
-            }
-
-            return DateTimeOffset.FromUnixTimeSeconds(unixSeconds).UtcDateTime;
-        }
-    }
-}
-
-```
+---
 

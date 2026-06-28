@@ -1,814 +1,2207 @@
 # Bounded Context: Shared_Infrastructure
-Total Files Contained: 248
+
+**Generated**: 2026-06-28T05:17:02.566914+00:00  
+**Commit**: latest  
+**Total Files**: 250
+
 ---
 
-## File: eNote\eNote.Domain\Entities\Academic\Attendance.cs
+## 🤖 Agent Briefing (Read First)
+
+This file contains the complete source for the **Shared_Infrastructure** bounded context.
+
+**Your goals when reading this context:**
+1. Build an accurate mental model of entities, behavior, and state transitions.
+2. Identify cross-context interactions (see "Key Interactions" sections).
+3. Note any architectural smells, duplicated logic, or unnecessary abstractions.
+4. Track how this context communicates with others (especially via events).
+
+**Focus areas for deep analysis:**
+- Domain entities with rich behavior (not anemic)
+- Service orchestration and access control
+- State machines / workflow logic
+- Cross-domain event contracts
+
+---
+
+## File: `eNote\eNote.API\Consumers\RentalStatusChangedPushConsumer.cs`
+**Hash**: `49922ce325bf` | **Size**: 1060 chars
+
+**Classes**: RentalStatusChangedPushConsumer
 ```cs
-using eNote.Domain.Entities.Identity;
-using eNote.Domain.Entities.Shared.Base;
-using eNote.Domain.Enums;
+﻿using eNote.API.Hubs;
+using eNote.Application.Features.Communication.Notifications;
+using eNote.Contracts.Rentals;
+using MassTransit;
+using Microsoft.AspNetCore.SignalR;
 
-namespace eNote.Domain.Entities;
+namespace eNote.API.Consumers;
 
-public class Attendance : AuditableEntity
+public sealed class RentalStatusChangedPushConsumer(IHubContext<NotificationHub> hubContext, ILogger<RentalStatusChangedPushConsumer> logger) : IConsumer<RentalStatusChanged>
 {
-    public int StudentId { get; private set; }
-    public Student Student { get; private set; } = null!;
-    public int LectureId { get; private set; }
-    public Lecture Lecture { get; private set; } = null!;
-
-    public AttendanceStatus AttendanceStatus { get; private set; }
-
-    protected Attendance()
+    public async Task Consume(ConsumeContext<RentalStatusChanged> context)
     {
-    }
+        var message = context.Message;
 
-    public Attendance(int studentId, int lectureId, AttendanceStatus status)
-    {
-        StudentId = studentId;
-        LectureId = lectureId;
-        AttendanceStatus = status;
-    }
-
-    public void UpdateStatus(AttendanceStatus status)
-    {
-        AttendanceStatus = status;
-    }
-}
-
-```
-
-## File: eNote\eNote.Domain\Entities\Academic\Course.cs
-```cs
-using eNote.Domain.Entities.Identity;
-using eNote.Domain.Entities.Shared.Base;
-
-namespace eNote.Domain.Entities;
-
-public class Course : AuditableEntity
-{
-    public int InstructorId { get; private set; }
-    public Instructor Instructor { get; private set; } = null!;
-
-    public string Name { get; private set; } = null!;
-    public string? Description { get; private set; }
-    public decimal Price { get; private set; }
-
-    public DateTime? StartDate { get; private set; }
-    public DateTime? EndDate { get; private set; }
-    public bool IsPublished { get; private set; }
-    public bool IsActive { get; private set; } = true;
-
-    public ICollection<Enrollment> Enrollments { get; private set; } = new List<Enrollment>();
-    public ICollection<Lecture> Lectures { get; private set; } = new List<Lecture>();
-
-    protected Course()
-    {
-    }
-
-    public Course(string name, string? description, decimal price, DateTime? startDate, DateTime? endDate, int instructorId)
-    {
-        Name = name;
-        Description = description;
-        Price = price;
-        StartDate = startDate;
-        EndDate = endDate;
-        InstructorId = instructorId;
-        IsPublished = false;
-        IsActive = true;
-    }
-
-    public void UpdateDetails(string name, string? description, decimal price, DateTime? startDate, DateTime? endDate)
-    {
-        Name = name;
-        Description = description;
-        Price = price;
-        StartDate = startDate;
-        EndDate = endDate;
-    }
-
-    public void SetPublishedStatus(bool isPublished)
-    {
-        IsPublished = isPublished;
-    }
-
-    public void SoftDelete()
-    {
-        IsActive = false;
-        IsPublished = false;
-    }
-}
-
-```
-
-## File: eNote\eNote.Domain\Entities\Academic\Enrollment.cs
-```cs
-using eNote.Domain.Entities.Identity;
-using eNote.Domain.Entities.Shared.Base;
-using eNote.Domain.Enums;
-
-namespace eNote.Domain.Entities;
-
-public class Enrollment : AuditableEntity
-{
-    public int StudentId { get; private set; }
-    public Student Student { get; private set; } = null!;
-    public int CourseId { get; private set; }
-    public Course Course { get; private set; } = null!;
-
-    public EnrollmentStatus EnrollmentStatus { get; private set; }
-
-    protected Enrollment()
-    {
-    }
-
-    public Enrollment(int studentId, int courseId, EnrollmentStatus status)
-    {
-        StudentId = studentId;
-        CourseId = courseId;
-        EnrollmentStatus = status;
-    }
-
-    public void UpdateStatus(EnrollmentStatus status)
-    {
-        EnrollmentStatus = status;
-    }
-}
-
-```
-
-## File: eNote\eNote.Domain\Entities\Academic\Lecture.cs
-```cs
-using eNote.Domain.Entities.Assignments;
-using eNote.Domain.Entities.Shared.Base;
-using eNote.Domain.Enums;
-
-namespace eNote.Domain.Entities;
-
-public class Lecture : AuditableEntity
-{
-    public int CourseId { get; private set; }
-    public Course Course { get; private set; } = null!;
-
-    public string Name { get; private set; } = null!;
-    public string Location { get; private set; } = null!;
-    public LectureType LectureType { get; private set; }
-
-    public DateTime LectureTime { get; private set; }
-    public int Duration { get; private set; }
-    public int? Capacity { get; private set; }
-
-    public LectureStatus LectureStatus { get; private set; }
-    public bool IsCancelled => LectureStatus == LectureStatus.Cancelled;
-    public bool IsActive { get; private set; } = true;
-    public byte[]? RowVersion { get; set; }
-
-    public ICollection<Attendance> Attendances { get; private set; } = new List<Attendance>();
-    public ICollection<LectureNote> LectureNotes { get; private set; } = new List<LectureNote>();
-    public ICollection<Assignment> Assignments { get; private set; } = new List<Assignment>();
-
-    protected Lecture()
-    {
-    }
-
-    public Lecture(string name, string location, int duration, DateTime lectureTime, LectureType lectureType, int? capacity, int courseId)
-    {
-        Name = name;
-        Location = location;
-        Duration = duration;
-        LectureTime = lectureTime;
-        LectureType = lectureType;
-        Capacity = capacity;
-        CourseId = courseId;
-        LectureStatus = LectureStatus.Scheduled;
-        IsActive = true;
-    }
-
-    public void UpdateDetails(string name, string location, int duration, DateTime lectureTime, int? capacity)
-    {
-        Name = name;
-        Location = location;
-        Duration = duration;
-        LectureTime = lectureTime;
-        Capacity = capacity;
-    }
-
-    public void Cancel()
-    {
-        LectureStatus = LectureStatus.Cancelled;
-    }
-
-    public void SoftDelete()
-    {
-        IsActive = false;
-    }
-}
-
-```
-
-## File: eNote\eNote.Domain\Entities\Academic\LectureNote.cs
-```cs
-using eNote.Domain.Entities.Shared.Base;
-
-namespace eNote.Domain.Entities;
-
-public class LectureNote : AuditableEntity
-{
-    public int LectureId { get; private set; }
-    public Lecture Lecture { get; private set; } = null!;
-
-    public string Title { get; private set; } = null!;
-    public string Content { get; private set; } = null!;
-    public bool IsActive { get; private set; } = true;
-
-    protected LectureNote()
-    {
-    }
-
-    public LectureNote(string title, string content, int lectureId)
-    {
-        Title = title;
-        Content = content;
-        LectureId = lectureId;
-        IsActive = true;
-    }
-
-    public void UpdateDetails(string title, string content)
-    {
-        Title = title;
-        Content = content;
-    }
-
-    public void SoftDelete()
-    {
-        IsActive = false;
-    }
-}
-
-```
-
-## File: eNote\eNote.Domain\Entities\Communication\Announcement.cs
-```cs
-using eNote.Domain.Entities.Rentals;
-using eNote.Domain.Entities.Shared.Base;
-
-namespace eNote.Domain.Entities.Communication;
-
-public class Announcement : AuditableEntity
-{
-    public int? CourseId { get; private set; }
-    public Course? Course { get; private set; }
-    public int? MusicStoreId { get; private set; }
-    public MusicStore? MusicStore { get; private set; }
-
-    public string Title { get; private set; } = null!;
-    public string Content { get; private set; } = null!;
-    public string? ImagePath { get; private set; }
-
-    public DateTime PublishedAt { get; private set; }
-    public bool IsActive { get; private set; } = true;
-
-    protected Announcement()
-    {
-    }
-
-    public Announcement(string title, string content, int? courseId, int? musicStoreId, DateTime publishedAt, string? imagePath = null)
-    {
-        Title = title;
-        Content = content;
-        ImagePath = imagePath;
-        CourseId = courseId;
-        MusicStoreId = musicStoreId;
-        PublishedAt = publishedAt;
-        IsActive = true;
-    }
-
-    public void UpdateDetails(string title, string content, string? imagePath = null)
-    {
-        Title = title;
-        Content = content;
-
-        if (imagePath is not null)
+        var payload = new NotificationPushDto()
         {
-            ImagePath = imagePath;
+            RentalId = message.RentalId,
+            Title = message.Title,
+            Body = message.Body,
+            CreatedAt = message.OccurredAtUtc
+        };
+
+        await hubContext.Clients.Group(NotificationHub.UserGroup(message.StudentUserId)).SendAsync(NotificationHub.ReceiveMethod, payload, context.CancellationToken);
+
+        logger.LogInformation("Pushed rental notification to SignalR group for user {UserId}, rental {RentalId}.", message.StudentUserId, message.RentalId);
+    }
+}
+
+```
+
+---
+
+## File: `eNote\eNote.API\Controllers\Admin\AdminAddressController.cs`
+**Hash**: `e436904fb474` | **Size**: 495 chars
+
+**Classes**: AdminAddressController
+```cs
+﻿using eNote.API.Controllers.Base;
+using eNote.Application.Constants;
+using eNote.Application.Features.Rentals.ReferenceData.Addresses;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+
+namespace eNote.API.Controllers.Admin;
+
+[Authorize(Roles = AppRoles.Administrator)]
+[Route("api/admin/addresses")]
+public sealed class AdminAddressController(IAddressService service)
+    : ReferenceCrudController<AddressReferenceDto, AddressRequest, AddressSearchObject>(service)
+{
+}
+
+```
+
+---
+
+## File: `eNote\eNote.API\Controllers\Admin\AdminInstructorController.cs`
+**Hash**: `1172236f4fc4` | **Size**: 1058 chars
+
+**Classes**: AdminInstructorController
+```cs
+using eNote.API.Controllers.Base;
+using eNote.Application.Common.Paging;
+using eNote.Application.Constants;
+using eNote.Application.Features.Identity.Instructors;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+
+namespace eNote.API.Controllers.Admin;
+
+[Authorize(Roles = AppRoles.Administrator)]
+[Route("api/admin/instructors")]
+public sealed class AdminInstructorController(IAdminInstructorService service) : CoreController
+{
+    [HttpGet]
+    [ProducesResponseType(typeof(PagedResult<InstructorDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<PagedResult<InstructorDto>>> GetPaged([FromQuery] InstructorSearchObject search)
+    {
+        PagedResult<InstructorDto> result = await service.GetPagedAsync(search);
+        return Ok(result);
+    }
+
+    [HttpGet("{id:int}")]
+    [ProducesResponseType(typeof(InstructorDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<InstructorDto>> GetById(int id)
+    {
+        InstructorDto dto = await service.GetByIdAsync(id);
+        return Ok(dto);
+    }
+}
+
+```
+
+---
+
+## File: `eNote\eNote.API\Controllers\Admin\AdminInstrumentTypeController.cs`
+**Hash**: `aa8e271642b2` | **Size**: 534 chars
+
+**Classes**: AdminInstrumentTypeController
+```cs
+﻿using eNote.API.Controllers.Base;
+using eNote.Application.Constants;
+using eNote.Application.Features.Rentals.ReferenceData.InstrumentTypes;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+
+namespace eNote.API.Controllers.Admin;
+
+[Authorize(Roles = AppRoles.Administrator)]
+[Route("api/admin/instrument-types")]
+public sealed class AdminInstrumentTypeController(IInstrumentTypeService service)
+    : ReferenceCrudController<InstrumentTypeDto, InstrumentTypeRequest, InstrumentTypeSearchObject>(service)
+{
+}
+
+```
+
+---
+
+## File: `eNote\eNote.API\Controllers\Admin\AdminMusicStoreController.cs`
+**Hash**: `239fd416d399` | **Size**: 506 chars
+
+**Classes**: AdminMusicStoreController
+```cs
+﻿using eNote.API.Controllers.Base;
+using eNote.Application.Constants;
+using eNote.Application.Features.Rentals.ReferenceData.MusicStores;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+
+namespace eNote.API.Controllers.Admin;
+
+[Authorize(Roles = AppRoles.Administrator)]
+[Route("api/admin/music-stores")]
+public sealed class AdminMusicStoreController(IMusicStoreService service)
+    : ReferenceCrudController<MusicStoreDto, MusicStoreRequest, MusicStoreSearchObject>(service)
+{
+}
+
+```
+
+---
+
+## File: `eNote\eNote.API\Controllers\Admin\AdminUsersController.cs`
+**Hash**: `1d742f005401` | **Size**: 1910 chars
+
+**Classes**: AdminUsersController
+```cs
+using eNote.API.Controllers.Base;
+using eNote.Application.Constants;
+using eNote.Application.Features.Identity.Users;
+using eNote.Application.Features.Identity.Users.Services;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+
+namespace eNote.API.Controllers.Admin;
+
+[Authorize(Roles = AppRoles.Administrator)]
+[Route("api/admin/users")]
+public sealed class AdminUsersController(IUserProfileService profileService, IUserProvisioningService provisioningService) : CoreController
+{
+    [HttpGet("{id:int}")]
+    [ProducesResponseType(typeof(UserProfileResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<UserProfileResponse>> GetById(int id)
+    {
+        var profile = await profileService.GetUserAsync(id);
+
+        if (profile is null)
+        {
+            return NotFound();
+        }
+
+        return Ok(profile);
+    }
+
+    [HttpPost]
+    [ProducesResponseType(StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult> Provision([FromBody] UserProvisionRequest request)
+    {
+        (var userId, var error) = await provisioningService.ProvisionUserAsync(request);
+
+        if (error is not null)
+        {
+            return BadRequest(new
+            {
+                message = error
+            });
+        }
+
+        return CreatedAtAction(nameof(GetById), new
+        {
+            id = userId
+        }, new
+        {
+            userId
+        });
+    }
+
+    [HttpPut("{id:int}/membership")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> UpdateMembership(int id, [FromBody] UpdateMembershipRequest request)
+    {
+        await provisioningService.UpdateMembershipAsync(id, request);
+        return NoContent();
+    }
+}
+
+```
+
+---
+
+## File: `eNote\eNote.API\Controllers\Announcements\InstructorAnnouncementController.cs`
+**Hash**: `0f733a10658c` | **Size**: 3204 chars
+
+**Classes**: InstructorAnnouncementController
+```cs
+﻿using eNote.API.Controllers.Base;
+using eNote.Application.Common.Localization;
+using eNote.Application.Common.Paging;
+using eNote.Application.Constants;
+using eNote.Application.Features.Communication.Announcements;
+using eNote.Application.Features.Communication.Announcements.Services;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+
+namespace eNote.API.Controllers.Announcements;
+
+[Authorize(Roles = AppRoles.Instructor)]
+[Route("api/instructor/courses/{courseId:int}/announcements")]
+public sealed class InstructorAnnouncementController(ICourseAnnouncementService announcementService) : CoreController
+{
+    [HttpGet]
+    [ProducesResponseType(typeof(PagedResult<AnnouncementDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<PagedResult<AnnouncementDto>>> GetForCourse(int courseId, [FromQuery] AnnouncementSearchObject search)
+    {
+        var result = await announcementService.GetForCourseAsync(courseId, search);
+        return Ok(result);
+    }
+
+    [HttpGet("{announcementId:int}")]
+    [ProducesResponseType(typeof(AnnouncementDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<AnnouncementDto>> GetById(int courseId, int announcementId)
+    {
+        var result = await announcementService.GetByIdForCourseAsync(courseId, announcementId);
+        return Ok(result);
+    }
+
+    [HttpPost]
+    [ProducesResponseType(typeof(AnnouncementDto), StatusCodes.Status201Created)]
+    public async Task<ActionResult<AnnouncementDto>> Create(int courseId, [FromBody] AnnouncementRequest request)
+    {
+        var result = await announcementService.CreateForCourseAsync(courseId, request);
+        return CreatedAtAction(nameof(GetById), new
+        {
+            courseId,
+            announcementId = result.Id
+        }, result);
+    }
+
+    [HttpPut("{announcementId:int}")]
+    [ProducesResponseType(typeof(AnnouncementDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<AnnouncementDto>> Update(int courseId, int announcementId, [FromBody] AnnouncementRequest request)
+    {
+        var result = await announcementService.UpdateForCourseAsync(courseId, announcementId, request);
+        return Ok(result);
+    }
+
+    [HttpDelete("{announcementId:int}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> Delete(int courseId, int announcementId)
+    {
+        await announcementService.DeleteForCourseAsync(courseId, announcementId);
+        return NoContent();
+    }
+
+    [HttpPost("{announcementId:int}/image")]
+    [ProducesResponseType(typeof(AnnouncementDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<AnnouncementDto>> UploadImage(int courseId, int announcementId, IFormFile? file, CancellationToken ct)
+    {
+        if (file is null || file.Length == 0)
+        {
+            return BadRequest(new { message = Messages.FileNotProvided });
+        }
+
+        await using Stream stream = file.OpenReadStream();
+
+        var result = await announcementService.UploadImageForCourseAsync(courseId, announcementId, stream, file.FileName, file.ContentType, ct);
+
+        return Ok(result);
+    }
+}
+
+```
+
+---
+
+## File: `eNote\eNote.API\Controllers\Announcements\StoreAnnouncementController.cs`
+**Hash**: `a25715634d3c` | **Size**: 2999 chars
+
+**Classes**: StoreAnnouncementController
+```cs
+﻿using eNote.API.Controllers.Base;
+using eNote.Application.Common.Localization;
+using eNote.Application.Common.Paging;
+using eNote.Application.Constants;
+using eNote.Application.Features.Communication.Announcements;
+using eNote.Application.Features.Communication.Announcements.Services;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+
+namespace eNote.API.Controllers.Announcements;
+
+[Authorize(Roles = AppRoles.StoreEmployee)]
+[Route("api/shop/announcements")]
+public sealed class StoreAnnouncementController(IStoreAnnouncementService announcementService) : CoreController
+{
+    [HttpGet]
+    [ProducesResponseType(typeof(PagedResult<AnnouncementDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<PagedResult<AnnouncementDto>>> GetForStore([FromQuery] AnnouncementSearchObject search)
+    {
+        var result = await announcementService.GetForStoreAsync(search);
+        return Ok(result);
+    }
+
+    [HttpGet("{announcementId:int}")]
+    [ProducesResponseType(typeof(AnnouncementDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<AnnouncementDto>> GetById(int announcementId)
+    {
+        var result = await announcementService.GetByIdForStoreAsync(announcementId);
+        return Ok(result);
+    }
+
+    [HttpPost]
+    [ProducesResponseType(typeof(AnnouncementDto), StatusCodes.Status201Created)]
+    public async Task<ActionResult<AnnouncementDto>> Create([FromBody] AnnouncementRequest request)
+    {
+        var result = await announcementService.CreateForStoreAsync(request);
+        return CreatedAtAction(nameof(GetById), new
+        {
+            announcementId = result.Id
+        }, result);
+    }
+
+    [HttpPut("{announcementId:int}")]
+    [ProducesResponseType(typeof(AnnouncementDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<AnnouncementDto>> Update(int announcementId, [FromBody] AnnouncementRequest request)
+    {
+        var result = await announcementService.UpdateForStoreAsync(announcementId, request);
+        return Ok(result);
+    }
+
+    [HttpDelete("{announcementId:int}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> Delete(int announcementId)
+    {
+        await announcementService.DeleteForStoreAsync(announcementId);
+        return NoContent();
+    }
+
+    [HttpPost("{announcementId:int}/image")]
+    [ProducesResponseType(typeof(AnnouncementDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<AnnouncementDto>> UploadImage(int announcementId, IFormFile? file, CancellationToken ct)
+    {
+        if (file is null || file.Length == 0)
+        {
+            return BadRequest(new { message = Messages.FileNotProvided });
+        }
+
+        await using Stream stream = file.OpenReadStream();
+
+        var result = await announcementService.UploadImageForStoreAsync(announcementId, stream, file.FileName, file.ContentType, ct);
+
+        return Ok(result);
+    }
+}
+
+```
+
+---
+
+## File: `eNote\eNote.API\Controllers\Announcements\StudentAnnouncementController.cs`
+**Hash**: `28b62356602b` | **Size**: 901 chars
+
+**Classes**: StudentAnnouncementController
+```cs
+﻿using eNote.API.Controllers.Base;
+using eNote.Application.Common.Paging;
+using eNote.Application.Constants;
+using eNote.Application.Features.Communication.Announcements;
+using eNote.Application.Features.Communication.Announcements.Services;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+
+namespace eNote.API.Controllers.Announcements;
+
+[Authorize(Roles = AppRoles.Student)]
+[Route("api/student/announcements")]
+public sealed class StudentAnnouncementController(IStudentAnnouncementService announcementService) : CoreController
+{
+    [HttpGet]
+    [ProducesResponseType(typeof(PagedResult<AnnouncementDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<PagedResult<AnnouncementDto>>> GetFeed([FromQuery] AnnouncementSearchObject search)
+    {
+        var result = await announcementService.GetFeedForStudentAsync(search);
+        return Ok(result);
+    }
+}
+
+```
+
+---
+
+## File: `eNote\eNote.API\Controllers\Base\CoreController.cs`
+**Hash**: `5954e0cd2422` | **Size**: 937 chars
+
+**Classes**: CoreController
+```cs
+using eNote.Application.Common.Exceptions;
+using eNote.Application.Common.Localization;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+
+namespace eNote.API.Controllers.Base;
+
+[ApiController]
+[Authorize]
+public abstract class CoreController : ControllerBase
+{
+    protected string CurrentTokenJti => User.FindFirstValue(JwtRegisteredClaimNames.Jti) ?? throw new AuthenticationException(Messages.InvalidUserClaim);
+
+    protected DateTime CurrentTokenExpiresAtUtc
+    {
+        get
+        {
+            var exp = User.FindFirstValue(JwtRegisteredClaimNames.Exp);
+
+            if (exp is null || !long.TryParse(exp, out var unixSeconds))
+            {
+                throw new AuthenticationException(Messages.InvalidUserClaim);
+            }
+
+            return DateTimeOffset.FromUnixTimeSeconds(unixSeconds).UtcDateTime;
+        }
+    }
+}
+
+```
+
+---
+
+## File: `eNote\eNote.API\Controllers\Base\ReferenceCrudController.cs`
+**Hash**: `474bbcfadb13` | **Size**: 1847 chars
+
+**Classes**: ReferenceCrudController
+```cs
+using eNote.Application.Common.Paging;
+using eNote.Application.Common.Search;
+using eNote.Application.Features.Rentals.ReferenceData;
+using Microsoft.AspNetCore.Mvc;
+
+namespace eNote.API.Controllers.Base;
+
+public abstract class ReferenceCrudController<TDto, TRequest, TSearch>(IReferenceCrudService<TDto, TRequest, TSearch> service) : CoreController where TSearch : BaseSearchObject
+{
+    [HttpGet]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<ActionResult<PagedResult<TDto>>> GetPaged([FromQuery] TSearch search)
+    {
+        PagedResult<TDto> result = await service.GetPagedAsync(search);
+        return Ok(result);
+    }
+
+    [HttpGet("{id:int}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<ActionResult<TDto>> GetById(int id)
+    {
+        TDto dto = await service.GetByIdAsync(id);
+        return Ok(dto);
+    }
+
+    [HttpPost]
+    [ProducesResponseType(StatusCodes.Status201Created)]
+    public async Task<ActionResult<TDto>> Create([FromBody] TRequest request)
+    {
+        TDto dto = await service.CreateAsync(request);
+        return CreatedAtAction(nameof(GetById), new { id = GetDtoId(dto) }, dto);
+    }
+
+    [HttpPut("{id:int}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<ActionResult<TDto>> Update(int id, [FromBody] TRequest request)
+    {
+        TDto dto = await service.UpdateAsync(id, request);
+        return Ok(dto);
+    }
+
+    [HttpDelete("{id:int}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> Delete(int id)
+    {
+        await service.DeleteAsync(id);
+        return NoContent();
+    }
+
+    private static object GetDtoId(TDto dto) => typeof(TDto).GetProperty("Id")?.GetValue(dto) ?? throw new InvalidOperationException($"{typeof(TDto).Name} must expose an Id property.");
+}
+
+```
+
+---
+
+## File: `eNote\eNote.API\Controllers\Files\UploadsController.cs`
+**Hash**: `ab3158891745` | **Size**: 2992 chars
+
+**Classes**: UploadsController
+```cs
+using eNote.API.Controllers.Base;
+using eNote.Application.Common.Interfaces;
+using eNote.Application.Features.Files.Services;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+
+namespace eNote.API.Controllers.Files;
+
+[ApiController]
+[Route("api/uploads")]
+public sealed class UploadsController(IWebHostEnvironment env, IFileAccessService fileAccess, ICurrentUserService currentUser) : CoreController
+{
+    [AllowAnonymous]
+    [HttpGet("instruments/{fileName}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public IActionResult GetInstrument(string fileName) => Serve("instruments", fileName);
+
+    [Authorize]
+    [HttpGet("announcements/{fileName}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public IActionResult GetAnnouncement(string fileName) => Serve("announcements", fileName);
+
+    [Authorize]
+    [HttpGet("assignments/{fileName}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetAssignment(string fileName, CancellationToken cancellationToken)
+    {
+        if (!IsSafeFileName(fileName))
+        {
+            return BadRequest();
+        }
+
+        if (!await fileAccess.CanAccessAssignmentFileAsync(currentUser.UserId, fileName, cancellationToken))
+        {
+            return Forbid();
+        }
+
+        return Serve("assignments", fileName);
+    }
+
+    private IActionResult Serve(string subfolder, string fileName)
+    {
+        if (!IsSafeFileName(fileName))
+        {
+            return BadRequest();
+        }
+
+        var uploadsRoot = Path.Combine(env.WebRootPath ?? Path.Combine(env.ContentRootPath, "wwwroot"), "uploads", subfolder);
+        var fullPath = Path.GetFullPath(Path.Combine(uploadsRoot, fileName));
+
+        if (!fullPath.StartsWith(Path.GetFullPath(uploadsRoot), StringComparison.OrdinalIgnoreCase) || !System.IO.File.Exists(fullPath))
+        {
+            return NotFound();
+        }
+
+        var contentType = GetContentType(fileName);
+
+        return PhysicalFile(fullPath, contentType, enableRangeProcessing: true);
+    }
+
+    private static bool IsSafeFileName(string fileName) => !string.IsNullOrWhiteSpace(fileName) && fileName == Path.GetFileName(fileName) && !fileName.Contains("..", StringComparison.Ordinal);
+
+    private static string GetContentType(string fileName) => Path.GetExtension(fileName).ToLowerInvariant()
+        switch
+    {
+        ".jpg" or ".jpeg" => "image/jpeg",
+        ".png" => "image/png",
+        ".webp" => "image/webp",
+        ".pdf" => "application/pdf",
+        _ => "application/octet-stream"
+    };
+}
+```
+
+---
+
+## File: `eNote\eNote.API\Controllers\Instruments\PublicInstrumentController.cs`
+**Hash**: `ed3a5a2d732d` | **Size**: 1059 chars
+
+**Classes**: PublicInstrumentController
+```cs
+﻿using eNote.Application.Common.Paging;
+using eNote.Application.Features.Rentals.Instruments;
+using eNote.Application.Features.Rentals.Instruments.Services;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+
+namespace eNote.API.Controllers.Instruments;
+
+[ApiController]
+[AllowAnonymous]
+[Route("api/instruments/public")]
+public sealed class PublicInstrumentController(IInstrumentService instrumentService) : ControllerBase
+{
+    [HttpGet]
+    [ProducesResponseType(typeof(PagedResult<InstrumentDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<PagedResult<InstrumentDto>>> GetPaged([FromQuery] InstrumentSearchObject search)
+    {
+        var result = await instrumentService.GetPublicPagedAsync(search);
+        return Ok(result);
+    }
+
+    [HttpGet("{id:int}")]
+    [ProducesResponseType(typeof(InstrumentDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<InstrumentDto>> GetById(int id)
+    {
+        var result = await instrumentService.GetPublicByIdAsync(id);
+        return Ok(result);
+    }
+}
+
+```
+
+---
+
+## File: `eNote\eNote.API\Controllers\Instruments\StoreInstrumentController.cs`
+**Hash**: `855c2d842cf4` | **Size**: 2737 chars
+
+**Classes**: StoreInstrumentController
+```cs
+using eNote.API.Controllers.Base;
+using eNote.Application.Common.Localization;
+using eNote.Application.Common.Paging;
+using eNote.Application.Constants;
+using eNote.Application.Features.Rentals.Instruments;
+using eNote.Application.Features.Rentals.Instruments.Services;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+
+namespace eNote.API.Controllers.Instruments;
+
+[Authorize(Roles = AppRoles.StoreEmployee)]
+[Route("api/shop/instruments")]
+public sealed class StoreInstrumentController(IInstrumentService instrumentService) : CoreController
+{
+    [HttpGet]
+    [ProducesResponseType(typeof(PagedResult<InstrumentDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<PagedResult<InstrumentDto>>> GetPaged([FromQuery] InstrumentSearchObject search)
+    {
+        var result = await instrumentService.GetPagedAsync(search);
+        return Ok(result);
+    }
+
+    [HttpGet("{id:int}")]
+    [ProducesResponseType(typeof(InstrumentDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<InstrumentDto>> GetById(int id)
+    {
+        var result = await instrumentService.GetByIdAsync(id);
+        return Ok(result);
+    }
+
+    [HttpPost]
+    [ProducesResponseType(typeof(InstrumentDto), StatusCodes.Status201Created)]
+    public async Task<ActionResult<InstrumentDto>> Create([FromBody] InstrumentCreateRequest request)
+    {
+        var result = await instrumentService.CreateAsync(request);
+        return CreatedAtAction(nameof(GetById), new
+        {
+            id = result.Id
+        }, result);
+    }
+
+    [HttpPut("{id:int}")]
+    [ProducesResponseType(typeof(InstrumentDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<InstrumentDto>> Update(int id, [FromBody] InstrumentUpdateRequest request)
+    {
+        var result = await instrumentService.UpdateAsync(id, request);
+        return Ok(result);
+    }
+
+    [HttpPost("{id:int}/image")]
+    [ProducesResponseType(typeof(InstrumentDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<InstrumentDto>> UploadImage(int id, IFormFile? file, CancellationToken ct)
+    {
+        if (file is null || file.Length == 0)
+        {
+            return BadRequest(new { message = Messages.FileNotProvided });
+        }
+
+        await using Stream stream = file.OpenReadStream();
+        var result = await instrumentService.UploadImageAsync(id, stream, file.FileName, file.ContentType, ct);
+        return Ok(result);
+    }
+
+    [HttpDelete("{id:int}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> Delete(int id)
+    {
+        await instrumentService.DeleteAsync(id);
+        return NoContent();
+    }
+}
+
+```
+
+---
+
+## File: `eNote\eNote.API\Controllers\Instruments\StudentInstrumentController.cs`
+**Hash**: `15b8dcc8139b` | **Size**: 1141 chars
+
+**Classes**: StudentInstrumentController
+```cs
+﻿using eNote.API.Controllers.Base;
+using eNote.Application.Constants;
+using eNote.Application.Features.Rentals.Recommendations;
+using eNote.Application.Features.Rentals.Recommendations.Services;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+
+namespace eNote.API.Controllers.Instruments;
+
+[Authorize(Roles = AppRoles.Student)]
+[Route("api/student/instruments")]
+public sealed class StudentInstrumentController(IRecommendationService recommendationService) : CoreController
+{
+    [HttpGet("recommended")]
+    [ProducesResponseType(typeof(IReadOnlyList<InstrumentRecommendationDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IReadOnlyList<InstrumentRecommendationDto>>> GetRecommended([FromQuery] int count = 5)
+    {
+        var result = await recommendationService.GetRecommendedInstrumentsAsync(count);
+        return Ok(result);
+    }
+
+    [HttpPost("{id:int}/view")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> RecordView(int id)
+    {
+        await recommendationService.RecordInstrumentViewAsync(id);
+        return NoContent();
+    }
+}
+
+```
+
+---
+
+## File: `eNote\eNote.API\Controllers\LectureNotes\InstructorLectureNoteController.cs`
+**Hash**: `a7412e297f10` | **Size**: 2230 chars
+
+**Classes**: InstructorLectureNoteController
+```cs
+﻿using eNote.API.Controllers.Base;
+using eNote.Application.Common.Paging;
+using eNote.Application.Constants;
+using eNote.Application.Features.Academic.LectureNotes;
+using eNote.Application.Features.Academic.LectureNotes.Services;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+
+namespace eNote.API.Controllers.LectureNotes;
+
+[Authorize(Roles = AppRoles.Instructor)]
+[Route("api/instructor/lectures/{lectureId:int}/notes")]
+public sealed class InstructorLectureNoteController(ILectureNoteService service) : CoreController
+{
+    [HttpGet]
+    [ProducesResponseType(typeof(PagedResult<LectureNoteDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<PagedResult<LectureNoteDto>>> GetForLecture(int lectureId, [FromQuery] LectureNoteSearchObject search)
+    {
+        var result = await service.GetForLectureAsync(lectureId, search);
+        return Ok(result);
+    }
+
+    [HttpGet("{noteId:int}")]
+    [ProducesResponseType(typeof(LectureNoteDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<LectureNoteDto>> GetById(int lectureId, int noteId)
+    {
+        var dto = await service.GetByIdForInstructorAsync(lectureId, noteId);
+        return Ok(dto);
+    }
+
+    [HttpPost]
+    [ProducesResponseType(typeof(LectureNoteDto), StatusCodes.Status201Created)]
+    public async Task<ActionResult<LectureNoteDto>> Create(int lectureId, [FromBody] LectureNoteRequest request)
+    {
+        var dto = await service.CreateAsync(lectureId, request);
+        return CreatedAtAction(nameof(GetById), new
+        {
+            lectureId,
+            noteId = dto.Id
+        }, dto);
+    }
+
+    [HttpPut("{noteId:int}")]
+    [ProducesResponseType(typeof(LectureNoteDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<LectureNoteDto>> Update(int lectureId, int noteId, [FromBody] LectureNoteRequest request)
+    {
+        var dto = await service.UpdateAsync(lectureId, noteId, request);
+        return Ok(dto);
+    }
+
+    [HttpDelete("{noteId:int}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> Delete(int lectureId, int noteId)
+    {
+        await service.DeleteAsync(lectureId, noteId);
+        return NoContent();
+    }
+}
+
+```
+
+---
+
+## File: `eNote\eNote.API\Controllers\LectureNotes\StudentLectureNoteController.cs`
+**Hash**: `ebe1f91e9d59` | **Size**: 1202 chars
+
+**Classes**: StudentLectureNoteController
+```cs
+﻿using eNote.API.Controllers.Base;
+using eNote.Application.Common.Paging;
+using eNote.Application.Constants;
+using eNote.Application.Features.Academic.LectureNotes;
+using eNote.Application.Features.Academic.LectureNotes.Services;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+
+namespace eNote.API.Controllers.LectureNotes;
+
+[Authorize(Roles = AppRoles.Student)]
+[Route("api/student/lectures/{lectureId:int}/notes")]
+public sealed class StudentLectureNoteController(ILectureNoteService service) : CoreController
+{
+    [HttpGet]
+    [ProducesResponseType(typeof(PagedResult<LectureNoteDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<PagedResult<LectureNoteDto>>> GetForLecture(int lectureId, [FromQuery] LectureNoteSearchObject search)
+    {
+        var result = await service.GetForStudentAsync(lectureId, search);
+        return Ok(result);
+    }
+
+    [HttpGet("{noteId:int}")]
+    [ProducesResponseType(typeof(LectureNoteDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<LectureNoteDto>> GetById(int lectureId, int noteId)
+    {
+        var dto = await service.GetByIdForStudentAsync(lectureId, noteId);
+        return Ok(dto);
+    }
+}
+
+```
+
+---
+
+## File: `eNote\eNote.API\Controllers\Lectures\InstructorLectureController.cs`
+**Hash**: `bee65a0797ca` | **Size**: 3448 chars
+
+**Classes**: InstructorLectureController
+```cs
+﻿using eNote.API.Controllers.Base;
+using eNote.Application.Common.Paging;
+using eNote.Application.Constants;
+using eNote.Application.Features.Academic.Lectures;
+using eNote.Application.Features.Academic.Lectures.Services;
+using eNote.Application.Features.Reports.Services;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+
+namespace eNote.API.Controllers.Lectures;
+
+[Authorize(Roles = AppRoles.Instructor)]
+[Route("api/instructor/lectures")]
+public sealed class InstructorLectureController(ILectureService service, ILectureAttendanceService attendanceService, IReportService reportService) : CoreController
+{
+    [HttpGet]
+    [ProducesResponseType(typeof(PagedResult<LectureDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<PagedResult<LectureDto>>> GetMyLectures([FromQuery] LectureSearchObject search)
+    {
+        var result = await service.GetPagedForInstructorAsync(search);
+        return Ok(result);
+    }
+
+    [HttpGet("{id:int}")]
+    [ProducesResponseType(typeof(LectureDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<LectureDto>> GetById(int id)
+    {
+        var dto = await service.GetByIdForInstructorAsync(id);
+        return Ok(dto);
+    }
+
+    [HttpPost]
+    [ProducesResponseType(typeof(LectureDto), StatusCodes.Status201Created)]
+    public async Task<ActionResult<LectureDto>> Create([FromBody] LectureCreateRequest request)
+    {
+        var dto = await service.CreateAsync(request);
+        return CreatedAtAction(nameof(GetById), new
+        {
+            id = dto.Id
+        }, dto);
+    }
+
+    [HttpPut("{id:int}")]
+    [ProducesResponseType(typeof(LectureDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<LectureDto>> Update(int id, [FromBody] LectureUpdateRequest request)
+    {
+        var dto = await service.UpdateAsync(id, request);
+        return Ok(dto);
+    }
+
+    [HttpDelete("{id:int}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> Delete(int id)
+    {
+        await service.DeleteAsync(id);
+        return NoContent();
+    }
+
+    [HttpPost("{id:int}/cancel")]
+    [ProducesResponseType(typeof(LectureDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<LectureDto>> Cancel(int id)
+    {
+        var dto = await service.CancelAsync(id);
+        return Ok(dto);
+    }
+
+    [HttpGet("{id:int}/attendance/report")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetAttendanceReport(int id, CancellationToken cancellationToken)
+    {
+        var pdf = await reportService.GenerateLectureAttendancePdfAsync(id, cancellationToken);
+        return File(pdf, "application/pdf", $"lecture-{id}-attendance.pdf");
+    }
+
+    [HttpGet("{id:int}/attendance")]
+    [ProducesResponseType(typeof(PagedResult<AttendanceDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<PagedResult<AttendanceDto>>> GetAttendance(int id, [FromQuery] AttendanceSearchObject search)
+    {
+        var result = await attendanceService.GetAttendanceAsync(id, search);
+        return Ok(result);
+    }
+
+    [HttpPut("{id:int}/attendance")]
+    [ProducesResponseType(typeof(AttendanceDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<AttendanceDto>> MarkAttendance(int id, [FromBody] MarkAttendanceRequest request)
+    {
+        var dto = await attendanceService.MarkAttendanceAsync(id, request);
+        return Ok(dto);
+    }
+}
+
+```
+
+---
+
+## File: `eNote\eNote.API\Controllers\Lectures\StudentLectureController.cs`
+**Hash**: `1886f3415a8f` | **Size**: 1448 chars
+
+**Classes**: StudentLectureController
+```cs
+﻿using eNote.API.Controllers.Base;
+using eNote.Application.Common.Paging;
+using eNote.Application.Constants;
+using eNote.Application.Features.Academic.Lectures;
+using eNote.Application.Features.Academic.Lectures.Services;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+
+namespace eNote.API.Controllers.Lectures;
+
+[Authorize(Roles = AppRoles.Student)]
+[Route("api/student/lectures")]
+public sealed class StudentLectureController(
+    ILectureService service,
+    ILectureAttendanceService attendanceService) : CoreController
+{
+    [HttpGet]
+    [ProducesResponseType(typeof(PagedResult<LectureDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<PagedResult<LectureDto>>> GetAvailable([FromQuery] LectureSearchObject search)
+    {
+        var result = await service.GetPagedForStudentAsync(search);
+        return Ok(result);
+    }
+
+    [HttpGet("{id:int}")]
+    [ProducesResponseType(typeof(LectureDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<LectureDto>> GetById(int id)
+    {
+        var dto = await service.GetByIdForStudentAsync(id);
+        return Ok(dto);
+    }
+
+    [HttpPost("{id:int}/rsvp")]
+    [ProducesResponseType(typeof(RsvpResponse), StatusCodes.Status200OK)]
+    public async Task<ActionResult<RsvpResponse>> Rsvp(int id, [FromBody] RsvpRequest request)
+    {
+        var response = await attendanceService.RsvpAsync(id, request);
+        return Ok(response);
+    }
+}
+
+```
+
+---
+
+## File: `eNote\eNote.API\Controllers\Notifications\StudentNotificationController.cs`
+**Hash**: `a60cf57005ab` | **Size**: 1782 chars
+
+**Classes**: StudentNotificationController
+```cs
+﻿using eNote.API.Controllers.Base;
+using eNote.Application.Common.Paging;
+using eNote.Application.Constants;
+using eNote.Application.Features.Communication.Notifications;
+using eNote.Application.Features.Communication.Notifications.Services;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+
+namespace eNote.API.Controllers.Notifications;
+
+[Authorize(Roles = AppRoles.Student)]
+[Route("api/student/notifications")]
+public sealed class StudentNotificationController(INotificationService notificationService) : CoreController
+{
+    [HttpGet]
+    [ProducesResponseType(typeof(PagedResult<NotificationDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<PagedResult<NotificationDto>>> GetPaged([FromQuery] NotificationSearchObject search)
+    {
+        var result = await notificationService.GetPagedAsync(search);
+        return Ok(result);
+    }
+
+    [HttpGet("unread-count")]
+    [ProducesResponseType(typeof(NotificationUnreadCountDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<NotificationUnreadCountDto>> GetUnreadCount()
+    {
+        var result = await notificationService.GetUnreadCountAsync();
+        return Ok(result);
+    }
+
+    [HttpPatch("{id:int}/read")]
+    [ProducesResponseType(typeof(NotificationDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<NotificationDto>> MarkRead(int id)
+    {
+        var result = await notificationService.MarkReadAsync(id);
+        return Ok(result);
+    }
+
+    [HttpPatch("read-all")]
+    [ProducesResponseType(typeof(NotificationUnreadCountDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<NotificationUnreadCountDto>> MarkAllRead()
+    {
+        var result = await notificationService.MarkAllReadAsync();
+        return Ok(result);
+    }
+}
+
+```
+
+---
+
+## File: `eNote\eNote.API\Controllers\Users\UsersController.cs`
+**Hash**: `6cb3a653205f` | **Size**: 3435 chars
+
+**Classes**: UsersController
+```cs
+﻿using eNote.API.Controllers.Base;
+using eNote.Application.Features.Identity.Users;
+using eNote.Application.Features.Identity.Users.Services;
+using Microsoft.AspNetCore.Mvc;
+
+namespace eNote.API.Controllers.Users;
+
+[Route("api/users")]
+public sealed class UsersController(
+    IUserProfileService profileService,
+    IUserSelfService selfService) : CoreController
+{
+    [HttpGet("me")]
+    [ProducesResponseType(typeof(UserProfileResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<UserProfileResponse>> GetCurrentUser()
+    {
+        var profile = await profileService.GetCurrentUserAsync();
+
+        if (profile is null)
+        {
+            return NotFound();
+        }
+
+        return Ok(profile);
+    }
+
+    [HttpPut("me")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileRequest request)
+    {
+        (var success, var error) = await selfService.UpdateProfileAsync(request);
+
+        if (!success)
+        {
+            return BadRequest(new
+            {
+                message = error
+            });
+        }
+
+        return NoContent();
+    }
+
+    [HttpPut("me/picture")]
+    [RequestSizeLimit(5 * 1024 * 1024)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> UploadPicture(IFormFile file)
+    {
+        if (file.Length == 0)
+        {
+            return BadRequest(new { message = "No file uploaded." });
+        }
+
+        await using var stream = file.OpenReadStream();
+        using var buffer = new MemoryStream();
+        await stream.CopyToAsync(buffer);
+
+        (var success, var error) = await selfService.UpdatePictureAsync(buffer.ToArray());
+
+        if (!success)
+        {
+            return BadRequest(new { message = error });
+        }
+
+        return NoContent();
+    }
+
+    [HttpGet("me/picture")]
+    [Produces("image/jpeg", "image/png", "image/webp")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetPicture()
+    {
+        (var data, var contentType) = await selfService.GetPictureAsync();
+
+        if (data is null || contentType is null)
+        {
+            return NotFound();
+        }
+
+        return File(data, contentType);
+    }
+
+    [HttpDelete("me/picture")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> DeletePicture()
+    {
+        (var success, var error) = await selfService.DeletePictureAsync();
+
+        if (!success)
+        {
+            return BadRequest(new { message = error });
+        }
+
+        return NoContent();
+    }
+
+    [HttpPut("me/password")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
+    {
+        (var success, var error) = await selfService.ChangePasswordAsync(request);
+
+        if (!success)
+        {
+            return BadRequest(new
+            {
+                message = error
+            });
+        }
+
+        return NoContent();
+    }
+}
+
+```
+
+---
+
+## File: `eNote\eNote.API\Extensions\ApplicationServiceExtensions.cs`
+**Hash**: `f9084e1b29ab` | **Size**: 2471 chars
+
+**Classes**: ApplicationServiceExtensions
+### Key Cross-Cutting Interactions
+- Uses **ICurrentActor** → Current actor resolution
+- Uses **IUserProfileLookup** → User profile lookup
+- Uses **RabbitMQ|IEventBus|Outbox** → Async integration events (RabbitMQ)
+- Uses **IAppDbContext|DbContext** → Persistence boundary
+
+```cs
+using eNote.API.Services;
+using eNote.Application.Common.Interfaces;
+using eNote.Application.Common.Persistence;
+using eNote.Application.Common.Time;
+using eNote.Application.Features.Academic.Courses.Services;
+using eNote.Application.Features.Communication.Announcements.Services;
+using eNote.Application.Features.Identity.Instructors;
+using eNote.Application.Features.Identity.Users.Services;
+using eNote.Application.Features.Rentals.InstrumentRentals.StateMachine;
+using eNote.Infrastructure.Data;
+using eNote.Infrastructure.Identity;
+using eNote.Infrastructure.Messaging;
+using Microsoft.EntityFrameworkCore;
+
+namespace eNote.API.Extensions;
+
+public static class ApplicationServiceExtensions
+{
+    public static IServiceCollection AddApplicationDatabase(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.AddDbContext<ENoteContext>(options =>
+            options.UseSqlServer(configuration.GetConnectionString("DefaultConnection"),
+            sql => sql.MigrationsAssembly("eNote.Infrastructure")));
+
+        return services;
+    }
+
+    public static IServiceCollection AddApplicationServices(this IServiceCollection services)
+    {
+        services.AddMemoryCache();
+        services.AddHttpContextAccessor();
+        services.AddSingleton<IClock, SystemClock>();
+
+        services.Scan(scan => scan
+            .FromAssembliesOf(typeof(AuthService), typeof(CourseService))
+            .AddClasses(classes => classes.Where(type => type.Name.EndsWith("Service") && !type.IsAbstract))
+            .AsImplementedInterfaces()
+            .WithScopedLifetime());
+
+        services.AddScoped<ICourseAnnouncementService, AnnouncementService>();
+        services.AddScoped<IStoreAnnouncementService, AnnouncementService>();
+        services.AddScoped<IStudentAnnouncementService, AnnouncementService>();
+        services.AddScoped<IAdminInstructorService, AdminInstructorService>();
+
+        services.AddScoped<ICurrentUserService, CurrentUserService>();
+        services.AddScoped<ICurrentActor, CurrentActor>();
+        services.AddScoped<IUserProfileLookup, UserProfileLookup>();
+        services.AddScoped<IRentalStateMachine, RentalStateMachine>();
+        services.AddScoped<IRentalNotificationDispatcher, RentalNotificationDispatcher>();
+
+        services.AddScoped<IAppDbContext>(x => x.GetRequiredService<ENoteContext>());
+        services.AddHostedService<RentalNotificationOutboxPublisher>();
+
+        return services;
+    }
+}
+
+```
+
+---
+
+## File: `eNote\eNote.API\Extensions\ConfigurationExtensions.cs`
+**Hash**: `8ad4540a58aa` | **Size**: 1404 chars
+
+**Classes**: ConfigurationExtensions
+### Key Cross-Cutting Interactions
+- Uses **RabbitMQ|IEventBus|Outbox** → Async integration events (RabbitMQ)
+
+```cs
+using eNote.Infrastructure.Configuration;
+using eNote.Infrastructure.Messaging;
+
+namespace eNote.API.Extensions;
+
+public static class ConfigurationExtensions
+{
+    public static void LoadDotEnv() => DotEnvConfiguration.Load();
+
+    public static void ValidateRequiredSettings(this IConfiguration configuration)
+    {
+        var errors = new List<string>();
+
+        if (string.IsNullOrWhiteSpace(configuration.GetConnectionString("DefaultConnection")))
+        {
+            errors.Add("ConnectionStrings__DefaultConnection");
+        }
+
+        var jwtKey = configuration["Jwt:Key"];
+
+        if (string.IsNullOrWhiteSpace(jwtKey))
+        {
+            errors.Add("JWT__Key");
+        }
+        else if (jwtKey.Length < 32)
+        {
+            errors.Add("JWT__Key (minimum 32 characters)");
+        }
+
+        if (string.IsNullOrWhiteSpace(configuration["Jwt:Issuer"]))
+        {
+            errors.Add("JWT__Issuer");
+        }
+
+        if (string.IsNullOrWhiteSpace(configuration["Jwt:Audience"]))
+        {
+            errors.Add("JWT__Audience");
+        }
+
+        if (!RabbitMqConfiguration.IsConfigured(configuration))
+        {
+            errors.Add("RabbitMQ__Host (or RabbitMQ__User)");
+        }
+
+        if (errors.Count > 0)
+        {
+            throw new InvalidOperationException("Missing or invalid required configuration values: " + string.Join(", ", errors));
+        }
+    }
+}
+
+```
+
+---
+
+## File: `eNote\eNote.API\Extensions\CorsExtensions.cs`
+**Hash**: `850e2f3a38c9` | **Size**: 1194 chars
+
+**Classes**: CorsExtensions
+```cs
+namespace eNote.API.Extensions;
+
+public static class CorsExtensions
+{
+    public const string PolicyName = "ENoteCors";
+
+    public static IServiceCollection AddApplicationCors(this IServiceCollection services, IConfiguration configuration, IWebHostEnvironment environment)
+    {
+        var origins = configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? configuration["Cors:AllowedOrigins"]?.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries) ?? [];
+
+        services.AddCors(options =>
+        {
+            options.AddPolicy(PolicyName, policy =>
+            {
+                if (origins.Length == 0)
+                {
+                    if (environment.IsDevelopment())
+                    {
+                        policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod();
+                        return;
+                    }
+
+                    throw new InvalidOperationException("Cors:AllowedOrigins must be configured for non-development environments.");
+                }
+
+                policy.WithOrigins(origins).AllowAnyHeader().AllowAnyMethod().AllowCredentials();
+            });
+        });
+
+        return services;
+    }
+}
+
+```
+
+---
+
+## File: `eNote\eNote.API\Extensions\HealthCheckExtensions.cs`
+**Hash**: `9412171086f5` | **Size**: 387 chars
+
+**Classes**: HealthCheckExtensions
+### Key Cross-Cutting Interactions
+- Uses **RabbitMQ|IEventBus|Outbox** → Async integration events (RabbitMQ)
+
+```cs
+using eNote.API.Health;
+
+namespace eNote.API.Extensions;
+
+public static class HealthCheckExtensions
+{
+    public static IServiceCollection AddApplicationHealthChecks(this IServiceCollection services)
+    {
+        services.AddHealthChecks()
+            .AddCheck<DatabaseHealthCheck>("sqlserver")
+            .AddCheck<RabbitMqHealthCheck>("rabbitmq");
+
+        return services;
+    }
+}
+
+```
+
+---
+
+## File: `eNote\eNote.API\Extensions\IdentityExtensions.cs`
+**Hash**: `6960d3d77577` | **Size**: 3536 chars
+
+**Classes**: IdentityExtensions
+```cs
+﻿using eNote.Application.Common.Localization;
+using eNote.Application.Features.Identity.Auth.Services;
+using eNote.Infrastructure.Data;
+using eNote.Infrastructure.Identity;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
+
+namespace eNote.API.Extensions;
+
+public static class IdentityExtensions
+{
+    public static IServiceCollection AddApplicationIdentity(this IServiceCollection services)
+    {
+        services.AddIdentityCore<AppUser>(options =>
+        {
+            options.Password.RequireDigit = true;
+            options.Password.RequireNonAlphanumeric = true;
+            options.Password.RequireUppercase = true;
+            options.Password.RequireLowercase = true;
+            options.Password.RequiredLength = 8;
+            options.Lockout.AllowedForNewUsers = true;
+            options.Lockout.MaxFailedAccessAttempts = 5;
+            options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
+        })
+        .AddRoles<AppRole>()
+        .AddEntityFrameworkStores<ENoteContext>()
+        .AddSignInManager<SignInManager<AppUser>>()
+        .AddDefaultTokenProviders();
+
+        return services;
+    }
+
+    public static IServiceCollection AddJwtAuthentication(this IServiceCollection services, IConfiguration config)
+    {
+        var key = Encoding.UTF8.GetBytes(config["Jwt:Key"]!);
+
+        services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+            .AddJwtBearer(options =>
+            {
+                options.MapInboundClaims = false;
+
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true,
+                    ValidIssuer = config["Jwt:Issuer"],
+                    ValidAudience = config["Jwt:Audience"],
+                    IssuerSigningKey = new SymmetricSecurityKey(key),
+                    ClockSkew = TimeSpan.Zero
+                };
+
+                options.Events = new JwtBearerEvents
+                {
+                    OnMessageReceived = context =>
+                    {
+                        var accessToken = context.Request.Query["access_token"];
+                        var path = context.HttpContext.Request.Path;
+
+                        if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs"))
+                        {
+                            context.Token = accessToken;
+                        }
+
+                        return Task.CompletedTask;
+                    },
+                    OnTokenValidated = async context =>
+                    {
+                        var jti = context.Principal?.FindFirstValue(JwtRegisteredClaimNames.Jti);
+
+                        if (string.IsNullOrWhiteSpace(jti))
+                        {
+                            return;
+                        }
+
+                        var revocation = context.HttpContext.RequestServices.GetRequiredService<ITokenRevocationService>();
+
+                        if (await revocation.IsRevokedAsync(jti, context.HttpContext.RequestAborted))
+                        {
+                            context.Fail(Messages.TokenRevoked);
+                        }
+                    }
+                };
+            });
+
+        return services;
+    }
+}
+
+```
+
+---
+
+## File: `eNote\eNote.API\Extensions\LoggingExtensions.cs`
+**Hash**: `92d731578fa0` | **Size**: 667 chars
+
+**Classes**: LoggingExtensions
+```cs
+using Serilog;
+
+namespace eNote.API.Extensions;
+
+public static class LoggingExtensions
+{
+    public static IHostBuilder UseApplicationLogging(this IHostBuilder host) =>
+        host.UseSerilog((ctx, services, cfg) => cfg
+            .ReadFrom.Configuration(ctx.Configuration)
+            .ReadFrom.Services(services)
+            .Enrich.FromLogContext()
+            .WriteTo.Console()
+            .WriteTo.File(
+                path: "logs/enote-.log",
+                rollingInterval: RollingInterval.Day,
+                retainedFileCountLimit: 7,
+                outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss} [{Level:u3}] {Message:lj}{NewLine}{Exception}"));
+}
+
+```
+
+---
+
+## File: `eNote\eNote.API\Extensions\MapsterExtensions.cs`
+**Hash**: `dcb2cea19e6b` | **Size**: 490 chars
+
+**Classes**: MapsterExtensions
+```cs
+using eNote.Application.Features.Communication.Announcements;
+using Mapster;
+
+namespace eNote.API.Extensions;
+
+public static class MapsterExtensions
+{
+    public static IServiceCollection AddMapsterMappings(this IServiceCollection services)
+    {
+        var config = new TypeAdapterConfig();
+
+        config.Scan(typeof(AnnouncementMappingConfig).Assembly);
+        config.Compile();
+
+        services.AddSingleton(config);
+        services.AddMapster();
+
+        return services;
+    }
+}
+
+```
+
+---
+
+## File: `eNote\eNote.API\Extensions\MessagingExtensions.cs`
+**Hash**: `1c5fb26f73a4` | **Size**: 386 chars
+
+**Classes**: MessagingExtensions
+### Key Cross-Cutting Interactions
+- Uses **RabbitMQ|IEventBus|Outbox** → Async integration events (RabbitMQ)
+
+```cs
+using eNote.API.Consumers;
+using eNote.Infrastructure.Messaging;
+
+namespace eNote.API.Extensions;
+
+public static class MessagingExtensions
+{
+    public static IServiceCollection AddApplicationMessaging(this IServiceCollection services, IConfiguration configuration) =>
+        services.AddRabbitMqMassTransit(configuration, bus => bus.AddConsumer<RentalStatusChangedPushConsumer>());
+}
+
+```
+
+---
+
+## File: `eNote\eNote.API\Extensions\MiddlewareExtensions.cs`
+**Hash**: `b54120eba50e` | **Size**: 1776 chars
+
+**Classes**: MiddlewareExtensions
+```cs
+﻿using eNote.Application.Common.Exceptions;
+using eNote.Application.Common.Localization;
+using Microsoft.AspNetCore.Diagnostics;
+using System.Text.Json;
+
+namespace eNote.API.Extensions;
+
+public static class MiddlewareExtensions
+{
+    public static WebApplication UseErrorHandling(this WebApplication app)
+    {
+        _ = app.UseExceptionHandler(errorApp =>
+        {
+            errorApp.Run(async context =>
+            {
+                context.Response.ContentType = "application/json";
+
+                var exception = context.Features.Get<IExceptionHandlerFeature>()?.Error;
+
+                (var statusCode, var errorCode, var message) = exception switch
+                {
+                    AppException appEx => (appEx.StatusCode, appEx.ErrorCode, appEx.Message),
+                    ArgumentException => (400, "error.bad_request", exception?.Message ?? Messages.BadRequest),
+                    _ => (500, "error.internal", Messages.InternalError)
+                };
+
+                context.Response.StatusCode = statusCode;
+
+                var logger = context.RequestServices.GetService<ILogger<WebApplication>>();
+
+                logger?.LogError(exception, "Unhandled exception caught by middleware");
+
+                var response = new ErrorResponse
+                {
+                    Status = statusCode,
+                    Code = errorCode,
+                    Message = message
+                };
+
+                await context.Response.WriteAsync(JsonSerializer.Serialize(response));
+            });
+        });
+
+        return app;
+    }
+
+    private record ErrorResponse
+    {
+        public int Status { get; init; }
+        public string Code { get; init; } = string.Empty;
+        public string Message { get; init; } = string.Empty;
+    }
+}
+
+```
+
+---
+
+## File: `eNote\eNote.API\Extensions\OpenAPIExtensions.cs`
+**Hash**: `7985be6f24a1` | **Size**: 2327 chars
+
+**Classes**: AnonymousOperationTransformer, BearerSecurityTransformer, OpenAPIExtensions
+```cs
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.OpenApi;
+using Microsoft.OpenApi;
+using Scalar.AspNetCore;
+
+namespace eNote.API.Extensions;
+
+public static class OpenAPIExtensions
+{
+    public static WebApplication MapScalarDocumentation(this WebApplication app)
+    {
+        app.MapGet("/", () => Results.Redirect("/scalar")).ExcludeFromDescription();
+        app.MapOpenApi();
+        app.MapScalarApiReference();
+
+        return app;
+    }
+
+    public static IServiceCollection AddScalarDocumentation(this IServiceCollection services)
+    {
+        services.AddOpenApi(options =>
+        {
+            options.AddDocumentTransformer<BearerSecurityTransformer>();
+            options.AddOperationTransformer<AnonymousOperationTransformer>();
+        });
+
+        return services;
+    }
+}
+
+public sealed class BearerSecurityTransformer : IOpenApiDocumentTransformer
+{
+    public Task TransformAsync(OpenApiDocument document, OpenApiDocumentTransformerContext context, CancellationToken cancellationToken)
+    {
+        document.Components ??= new OpenApiComponents();
+        document.Components.SecuritySchemes ??= new Dictionary<string, IOpenApiSecurityScheme>();
+
+        document.Components.SecuritySchemes.Add("Bearer", new OpenApiSecurityScheme
+        {
+            Type = SecuritySchemeType.Http,
+            Scheme = "bearer",
+            BearerFormat = "JWT",
+            Description = "Unesite važeći JSON Web Token (JWT)."
+        });
+
+        document.Security =
+        [
+            new OpenApiSecurityRequirement
+            {
+                [new OpenApiSecuritySchemeReference("Bearer", document)] = []
+            }
+        ];
+
+        return Task.CompletedTask;
+    }
+}
+
+public sealed class AnonymousOperationTransformer : IOpenApiOperationTransformer
+{
+    public Task TransformAsync(OpenApiOperation operation, OpenApiOperationTransformerContext context, CancellationToken cancellationToken)
+    {
+        var metadata = context.Description.ActionDescriptor.EndpointMetadata;
+
+        if (metadata.Any(m => m is IAllowAnonymous))
+        {
+            operation.Security = [];
+
+            return Task.CompletedTask;
+        }
+
+        if (!metadata.Any(m => m is IAuthorizeData))
+        {
+            operation.Security = [];
+        }
+
+        return Task.CompletedTask;
+    }
+}
+
+```
+
+---
+
+## File: `eNote\eNote.API\Extensions\RateLimitingExtensions.cs`
+**Hash**: `9bbe6a507e46` | **Size**: 783 chars
+
+**Classes**: RateLimitingExtensions
+```cs
+using Microsoft.AspNetCore.RateLimiting;
+using System.Threading.RateLimiting;
+
+namespace eNote.API.Extensions;
+
+public static class RateLimitingExtensions
+{
+    public const string AuthPolicy = "auth";
+
+    public static IServiceCollection AddApplicationRateLimiting(this IServiceCollection services)
+    {
+        services.AddRateLimiter(options =>
+        {
+            options.AddFixedWindowLimiter(AuthPolicy, opt =>
+            {
+                opt.PermitLimit = 10;
+                opt.Window = TimeSpan.FromMinutes(1);
+                opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+                opt.QueueLimit = 0;
+            });
+
+            options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+        });
+
+        return services;
+    }
+}
+
+```
+
+---
+
+## File: `eNote\eNote.API\Extensions\SeedExtensions.cs`
+**Hash**: `918c2769667a` | **Size**: 896 chars
+
+**Classes**: SeedExtensions
+```cs
+﻿using eNote.Infrastructure.Data;
+using eNote.Infrastructure.Data.Seed;
+using Microsoft.EntityFrameworkCore;
+
+namespace eNote.API.Extensions;
+
+public static class SeedExtensions
+{
+    public static async Task<WebApplication> MigrateAsync(this WebApplication app)
+    {
+        using IServiceScope scope = app.Services.CreateScope();
+
+        var context = scope.ServiceProvider.GetRequiredService<ENoteContext>();
+
+        await context.Database.MigrateAsync();
+
+        return app;
+    }
+
+    public static async Task<WebApplication> SeedDevelopmentData(this WebApplication app)
+    {
+        using IServiceScope scope = app.Services.CreateScope();
+
+        var services = scope.ServiceProvider;
+        await IdentitySeed.SeedAsync(services);
+
+        var context = services.GetRequiredService<ENoteContext>();
+        await DevelopmentDataSeed.SeedAsync(context);
+
+        return app;
+    }
+}
+
+```
+
+---
+
+## File: `eNote\eNote.API\Extensions\SignalRExtensions.cs`
+**Hash**: `82642058c8d3` | **Size**: 236 chars
+
+**Classes**: SignalRExtensions
+```cs
+namespace eNote.API.Extensions;
+
+public static class SignalRExtensions
+{
+    public static IServiceCollection AddApplicationSignalR(this IServiceCollection services)
+    {
+        services.AddSignalR();
+        return services;
+    }
+}
+
+```
+
+---
+
+## File: `eNote\eNote.API\Extensions\ValidationExtensions.cs`
+**Hash**: `4582c3540e17` | **Size**: 471 chars
+
+**Classes**: ValidationExtensions
+```cs
+using eNote.Application.Features.Communication.Announcements;
+using FluentValidation;
+using FluentValidation.AspNetCore;
+
+namespace eNote.API.Extensions;
+
+public static class ValidationExtensions
+{
+    public static IServiceCollection AddApplicationValidation(this IServiceCollection services)
+    {
+        services.AddFluentValidationAutoValidation();
+        services.AddValidatorsFromAssemblyContaining<AnnouncementMappingConfig>();
+
+        return services;
+    }
+}
+
+```
+
+---
+
+## File: `eNote\eNote.API\Health\DatabaseHealthCheck.cs`
+**Hash**: `ab5629df40ce` | **Size**: 752 chars
+
+**Classes**: DatabaseHealthCheck
+### Key Cross-Cutting Interactions
+- Uses **IAppDbContext|DbContext** → Persistence boundary
+
+```cs
+using eNote.Infrastructure.Data;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
+
+namespace eNote.API.Health;
+
+public sealed class DatabaseHealthCheck(ENoteContext dbContext) : IHealthCheck
+{
+    public async Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var canConnect = await dbContext.Database.CanConnectAsync(cancellationToken);
+
+            return canConnect ? HealthCheckResult.Healthy("SQL Server is reachable.") : HealthCheckResult.Unhealthy("SQL Server is not reachable.");
+        }
+        catch (Exception ex)
+        {
+            return HealthCheckResult.Unhealthy("SQL Server health check failed.", ex);
+        }
+    }
+}
+
+```
+
+---
+
+## File: `eNote\eNote.API\Health\RabbitMqHealthCheck.cs`
+**Hash**: `2756e2ca08d9` | **Size**: 1195 chars
+
+**Classes**: RabbitMqHealthCheck
+### Key Cross-Cutting Interactions
+- Uses **RabbitMQ|IEventBus|Outbox** → Async integration events (RabbitMQ)
+
+```cs
+using eNote.Infrastructure.Messaging;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
+using RabbitMQ.Client;
+
+namespace eNote.API.Health;
+
+public sealed class RabbitMqHealthCheck(IConfiguration configuration) : IHealthCheck
+{
+    public async Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var factory = new ConnectionFactory
+            {
+                HostName = RabbitMqConfiguration.GetHost(configuration),
+                VirtualHost = RabbitMqConfiguration.GetVirtualHost(configuration),
+                UserName = RabbitMqConfiguration.GetUsername(configuration),
+                Password = RabbitMqConfiguration.GetPassword(configuration)
+            };
+
+            await using var connection = await factory.CreateConnectionAsync(cancellationToken);
+
+            return connection.IsOpen ? HealthCheckResult.Healthy("RabbitMQ is reachable.") : HealthCheckResult.Unhealthy("RabbitMQ connection could not be opened.");
+        }
+        catch (Exception ex)
+        {
+            return HealthCheckResult.Unhealthy("RabbitMQ health check failed.", ex);
+        }
+    }
+}
+
+```
+
+---
+
+## File: `eNote\eNote.API\Hubs\NotificationHub.cs`
+**Hash**: `dc526637823d` | **Size**: 741 chars
+
+**Classes**: NotificationHub
+```cs
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.SignalR;
+using System.IdentityModel.Tokens.Jwt;
+
+namespace eNote.API.Hubs;
+
+[Authorize]
+public sealed class NotificationHub : Hub
+{
+    public const string HubPath = "/hubs/notifications";
+    public const string ReceiveMethod = "ReceiveNotification";
+
+    public static string UserGroup(int userId) => $"user:{userId}";
+
+    public override async Task OnConnectedAsync()
+    {
+        var userIdValue = Context.User?.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+
+        if (int.TryParse(userIdValue, out var userId))
+        {
+            await Groups.AddToGroupAsync(Context.ConnectionId, UserGroup(userId));
+        }
+
+        await base.OnConnectedAsync();
+    }
+}
+
+```
+
+---
+
+## File: `eNote\eNote.API\Program.cs`
+**Hash**: `07da5e859bb0` | **Size**: 1701 chars
+
+```cs
+using eNote.API.Extensions;
+using eNote.API.Hubs;
+using Serilog;
+using System.Text.Json.Serialization;
+
+eNote.API.Extensions.ConfigurationExtensions.LoadDotEnv();
+
+Log.Logger = new LoggerConfiguration()
+    .WriteTo.Console()
+    .CreateBootstrapLogger();
+
+WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+
+builder.Host.UseApplicationLogging();
+builder.Configuration.ValidateRequiredSettings();
+
+builder.Services
+    .AddApplicationDatabase(builder.Configuration)
+    .AddApplicationIdentity()
+    .AddJwtAuthentication(builder.Configuration)
+    .AddAuthorization()
+    .AddApplicationServices()
+    .AddApplicationMessaging(builder.Configuration)
+    .AddApplicationCors(builder.Configuration, builder.Environment)
+    .AddApplicationRateLimiting()
+    .AddResponseCompression(opts => opts.EnableForHttps = true)
+    .AddMapsterMappings()
+    .AddApplicationValidation()
+    .AddApplicationSignalR()
+    .AddScalarDocumentation();
+
+builder.Services
+    .AddControllers()
+    .AddJsonOptions(x => x.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
+
+builder.Services.AddApplicationHealthChecks();
+
+WebApplication app = builder.Build();
+
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+    app.UseResponseCompression();
+}
+app.UseCors(CorsExtensions.PolicyName);
+app.UseErrorHandling();
+
+if (app.Environment.IsDevelopment())
+{
+    await app.MigrateAsync();
+    app.MapScalarDocumentation();
+    await app.SeedDevelopmentData();
+}
+
+app.UseRateLimiter();
+app.UseAuthentication();
+app.UseAuthorization();
+
+app.MapHealthChecks("/health").AllowAnonymous();
+app.MapControllers();
+app.MapHub<NotificationHub>(NotificationHub.HubPath);
+
+app.Run();
+
+```
+
+---
+
+## File: `eNote\eNote.API\Services\CurrentUserService.cs`
+**Hash**: `1cf7d17829df` | **Size**: 882 chars
+
+**Classes**: CurrentUserService
+```cs
+﻿using eNote.Application.Common.Exceptions;
+using eNote.Application.Common.Interfaces;
+using eNote.Application.Common.Localization;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+
+namespace eNote.API.Services;
+
+public class CurrentUserService(IHttpContextAccessor httpContextAccessor) : ICurrentUserService
+{
+    public int UserId
+    {
+        get
+        {
+            var user = httpContextAccessor.HttpContext?.User;
+
+            var id = user?.FindFirstValue(JwtRegisteredClaimNames.Sub) ?? user?.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (!int.TryParse(id, out var userId))
+            {
+                throw new AuthenticationException(Messages.InvalidUserClaim);
+            }
+
+            return userId;
         }
     }
 
-    public void SetImagePath(string? imagePath)
-    {
-        ImagePath = imagePath;
-    }
-
-    public void SoftDelete()
-    {
-        IsActive = false;
-    }
+    public bool IsAuthenticated => httpContextAccessor.HttpContext?.User?.Identity?.IsAuthenticated ?? false;
 }
 
 ```
 
-## File: eNote\eNote.Domain\Entities\Communication\Notification.cs
-```cs
-namespace eNote.Domain.Entities.Communication;
+---
 
-public class Notification
+## File: `eNote\eNote.API\appsettings.Development.json`
+**Hash**: `4f1dce8a3117` | **Size**: 363 chars
+
+```json
 {
-    public int Id { get; private set; }
-    public int UserId { get; private set; }
-    public int? RentalId { get; private set; }
-
-    public string Title { get; private set; } = null!;
-    public string Body { get; private set; } = null!;
-
-    public bool IsRead { get; private set; }
-    public DateTime CreatedAt { get; private set; }
-
-    protected Notification()
-    {
+  "Logging": {
+    "LogLevel": {
+      "Default": "Debug",
+      "Microsoft.AspNetCore": "Information",
+      "Microsoft.EntityFrameworkCore": "Information"
     }
-
-    public Notification(int userId, string title, string body, DateTime createdAt, int? rentalId = null)
-    {
-        UserId = userId;
-        Title = title;
-        Body = body;
-        CreatedAt = createdAt;
-        RentalId = rentalId;
-    }
-
-    public void MarkRead()
-    {
-        IsRead = true;
-    }
+  },
+  "Cors": {
+    "AllowedOrigins": [
+      "http://localhost:3000",
+      "http://localhost:5059",
+      "https://localhost:7239"
+    ]
+  },
+  "Seed": {
+    "DefaultPassword": "Test1234!"
+  }
 }
 
 ```
 
-## File: eNote\eNote.Domain\Entities\Communication\RentalNotificationOutbox.cs
-```cs
-using eNote.Domain.Entities.Shared.Base;
+---
 
-namespace eNote.Domain.Entities.Communication;
+## File: `eNote\eNote.API\appsettings.json`
+**Hash**: `7b7876ddd8cf` | **Size**: 355 chars
 
-public class RentalNotificationOutbox : AuditableEntity
+```json
 {
-    public string PayloadJson { get; set; } = null!;
-    public DateTime? PublishedAt { get; set; }
-    public int Attempts { get; set; }
-    public string? LastError { get; set; }
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "AllowedHosts": "*",
+  "ConnectionStrings": {
+    "DefaultConnection": ""
+  },
+  "Jwt": {
+    "Key": "",
+    "Issuer": "ENote.Api",
+    "Audience": "ENote.Client",
+    "ExpirationDays": 1
+  },
+  "Cors": {
+    "AllowedOrigins": []
+  }
 }
 ```
 
-## File: eNote\eNote.Domain\Entities\Identity\Instructor.cs
-```cs
-using eNote.Domain.Entities.Shared.Base;
+---
 
-namespace eNote.Domain.Entities.Identity;
+## File: `eNote\eNote.API\libman.json`
+**Hash**: `80df475c5002` | **Size**: 71 chars
 
-public class Instructor : AuditableEntity
+```json
 {
-    public int AppUserId { get; private set; }
-
-    public ICollection<Course> Courses { get; private set; } = new List<Course>();
-
-    protected Instructor()
-    {
-    }
-
-    public Instructor(int appUserId)
-    {
-        AppUserId = appUserId;
-    }
-}
-
-```
-
-## File: eNote\eNote.Domain\Entities\Identity\MusicStoreEmployee.cs
-```cs
-using eNote.Domain.Entities.Rentals;
-using eNote.Domain.Entities.Shared.Base;
-
-namespace eNote.Domain.Entities.Identity;
-
-public class MusicStoreEmployee : AuditableEntity
-{
-    public int AppUserId { get; private set; }
-    public int MusicStoreId { get; private set; }
-    public MusicStore MusicStore { get; private set; } = null!;
-
-    public bool IsManager { get; private set; }
-    public bool IsActive { get; set; } = true;
-
-    protected MusicStoreEmployee()
-    {
-    }
-
-    public MusicStoreEmployee(int appUserId, int musicStoreId, bool isManager)
-    {
-        AppUserId = appUserId;
-        MusicStoreId = musicStoreId;
-        IsManager = isManager;
-    }
-}
-
-```
-
-## File: eNote\eNote.Domain\Entities\Identity\RevokedToken.cs
-```cs
-namespace eNote.Domain.Entities.Identity;
-
-public class RevokedToken
-{
-    public int Id { get; set; }
-    public string Jti { get; set; } = string.Empty;
-
-    public DateTime ExpiresAt { get; set; }
-    public DateTime RevokedAt { get; set; }
-}
-
-```
-
-## File: eNote\eNote.Domain\Entities\Identity\Student.cs
-```cs
-using eNote.Domain.Entities.Assignments;
-using eNote.Domain.Entities.Rentals;
-using eNote.Domain.Entities.Shared.Base;
-
-namespace eNote.Domain.Entities.Identity;
-
-public class Student : AuditableEntity
-{
-    public int AppUserId { get; private set; }
-    public DateTime EnrollmentDate { get; private set; }
-    public DateTime? MembershipPaidUntil { get; private set; }
-
-    public ICollection<Attendance> Attendances { get; private set; } = new List<Attendance>();
-    public ICollection<Enrollment> Enrollments { get; private set; } = new List<Enrollment>();
-    public ICollection<InstrumentRental> InstrumentRentals { get; private set; } = new List<InstrumentRental>();
-    public ICollection<AssignmentSubmission> AssignmentSubmissions { get; private set; } = new List<AssignmentSubmission>();
-
-    protected Student()
-    {
-    }
-
-    public Student(int appUserId, DateTime enrollmentDate)
-    {
-        AppUserId = appUserId;
-        EnrollmentDate = enrollmentDate;
-    }
-
-    public void UpdateMembership(DateTime? paidUntil)
-    {
-        MembershipPaidUntil = paidUntil;
-    }
-
-    public bool HasActiveMembership(DateTime utcNow)
-    {
-        return MembershipPaidUntil.HasValue && MembershipPaidUntil.Value.Date >= utcNow.Date;
-    }
-}
-
-```
-
-## File: eNote\eNote.Domain\Entities\Rentals\Instrument.cs
-```cs
-using eNote.Domain.Entities.Shared.Base;
-using eNote.Domain.Enums;
-
-namespace eNote.Domain.Entities.Rentals;
-
-public class Instrument : AuditableEntity
-{
-    public int InstrumentTypeId { get; private set; }
-    public InstrumentType InstrumentType { get; private set; } = null!;
-    public int MusicStoreId { get; private set; }
-    public MusicStore MusicStore { get; private set; } = null!;
-
-    public string Model { get; private set; } = null!;
-    public string Manufacturer { get; private set; } = null!;
-    public string? Description { get; private set; }
-    public string? ImagePath { get; private set; }
-
-    public bool IsActive { get; private set; } = true;
-    public bool IsAvailable =>
-        IsActive && !InstrumentRentals.Any(x => x.RentalStatus.BlocksInstrument());
-
-    public ICollection<InstrumentRental> InstrumentRentals { get; private set; } = [];
-
-    protected Instrument() { }
-
-    public Instrument(string model, string manufacturer, string? description, string? imagePath, int instrumentTypeId, int musicStoreId)
-    {
-        Model = model;
-        Manufacturer = manufacturer;
-        Description = description;
-        ImagePath = imagePath;
-        InstrumentTypeId = instrumentTypeId;
-        MusicStoreId = musicStoreId;
-    }
-
-    public void UpdateDetails(string model, string manufacturer, string? description, string? imagePath, int instrumentTypeId)
-    {
-        Model = model;
-        Manufacturer = manufacturer;
-        Description = description;
-        ImagePath = imagePath;
-        InstrumentTypeId = instrumentTypeId;
-    }
-
-    public void SoftDelete() => IsActive = false;
+  "version": "3.0",
+  "defaultProvider": "cdnjs",
+  "libraries": []
 }
 ```
 
-## File: eNote\eNote.Domain\Entities\Rentals\InstrumentRental.cs
-```cs
-using eNote.Domain.Entities.Identity;
-using eNote.Domain.Entities.Shared.Base;
-using eNote.Domain.Enums;
+---
 
-namespace eNote.Domain.Entities.Rentals;
+## File: `eNote\eNote.Application\Common\Exceptions\AppException.cs`
+**Hash**: `ee1111f502bc` | **Size**: 656 chars
 
-public class InstrumentRental : AuditableEntity
-{
-    public int StudentProfileId { get; private set; }
-    public Student StudentProfile { get; private set; } = null!;
-    public int InstrumentId { get; private set; }
-    public Instrument Instrument { get; private set; } = null!;
-
-    public InstrumentRentalStatus RentalStatus { get; private set; }
-    public string? RequestNote { get; private set; }
-    public string? Note { get; private set; }
-
-    public DateTime RequestedAt { get; private set; }
-    public DateTime? ApprovedAt { get; private set; }
-    public DateTime? RejectedAt { get; private set; }
-    public DateTime? PickedUpAt { get; private set; }
-    public DateTime? ReturnedAt { get; private set; }
-
-    public int? ApprovedById { get; private set; }
-    public int? RejectedById { get; private set; }
-
-    public decimal Fee { get; private set; }
-
-    protected InstrumentRental()
-    {
-    }
-
-    public InstrumentRental(int instrumentId, int studentProfileId, DateTime requestedAt, string? note)
-    {
-        InstrumentId = instrumentId;
-        StudentProfileId = studentProfileId;
-        RequestedAt = requestedAt;
-        RequestNote = note;
-        RentalStatus = InstrumentRentalStatus.Pending;
-    }
-
-    public void Approve(decimal fee, string? note, DateTime approvedAt, int approvedById)
-    {
-        Fee = fee;
-        Note = note;
-        ApprovedAt = approvedAt;
-        ApprovedById = approvedById;
-        RentalStatus = InstrumentRentalStatus.Approved;
-    }
-
-    public void Reject(DateTime rejectedAt, string? note, int rejectedById)
-    {
-        Note = note;
-        RejectedAt = rejectedAt;
-        RejectedById = rejectedById;
-        RentalStatus = InstrumentRentalStatus.Rejected;
-    }
-
-    public void Cancel(DateTime returnedAt, string? note)
-    {
-        Note = note;
-        ReturnedAt = returnedAt;
-        RentalStatus = InstrumentRentalStatus.Canceled;
-    }
-
-    public void Pickup(DateTime pickedUpAt, string? note = null)
-    {
-        PickedUpAt = pickedUpAt;
-        RentalStatus = InstrumentRentalStatus.Active;
-        if (note != null)
-        {
-            Note = note;
-        }
-    }
-
-    public void Complete(DateTime returnedAt, string? note)
-    {
-        Note = note;
-        ReturnedAt = returnedAt;
-        RentalStatus = InstrumentRentalStatus.Completed;
-    }
-
-    public void ReturnEarly(DateTime returnedAt, string? note)
-    {
-        Note = note;
-        ReturnedAt = returnedAt;
-        RentalStatus = InstrumentRentalStatus.ReturnedEarly;
-    }
-}
-
-```
-
-## File: eNote\eNote.Domain\Entities\Rentals\InstrumentType.cs
-```cs
-using eNote.Domain.Entities.Shared.Base;
-
-namespace eNote.Domain.Entities.Rentals;
-
-public class InstrumentType : BaseEntity
-{
-    public string Type { get; set; } = null!;
-    public decimal MonthlyFee { get; set; }
-
-    public ICollection<Instrument> Instruments { get; set; } = new List<Instrument>();
-}
-
-```
-
-## File: eNote\eNote.Domain\Entities\Rentals\InstrumentView.cs
-```cs
-namespace eNote.Domain.Entities.Rentals;
-
-public class InstrumentView
-{
-    public int Id { get; private set; }
-    public int UserId { get; private set; }
-    public int InstrumentId { get; private set; }
-
-    public int ViewCount { get; private set; }
-    public DateTime LastViewedAt { get; private set; }
-
-    protected InstrumentView()
-    {
-    }
-
-    public InstrumentView(int userId, int instrumentId, DateTime viewedAt)
-    {
-        UserId = userId;
-        InstrumentId = instrumentId;
-        ViewCount = 1;
-        LastViewedAt = viewedAt;
-    }
-
-    public void RecordView(DateTime viewedAt)
-    {
-        ViewCount++;
-        LastViewedAt = viewedAt;
-    }
-}
-
-```
-
-## File: eNote\eNote.Domain\Entities\Rentals\MusicStore.cs
-```cs
-using eNote.Domain.Entities.Identity;
-using eNote.Domain.Entities.Shared.Base;
-
-namespace eNote.Domain.Entities.Rentals;
-
-public class MusicStore : AuditableEntity
-{
-    public string StoreName { get; private set; } = null!;
-    public string BusinessHours { get; private set; } = null!;
-
-    public ICollection<MusicStoreEmployee> Employees { get; private set; } = new List<MusicStoreEmployee>();
-    public ICollection<Instrument> Instruments { get; private set; } = new List<Instrument>();
-
-    protected MusicStore()
-    {
-    }
-
-    public MusicStore(string storeName, string businessHours)
-    {
-        StoreName = storeName;
-        BusinessHours = businessHours;
-    }
-
-    public void UpdateDetails(string storeName, string businessHours)
-    {
-        StoreName = storeName;
-        BusinessHours = businessHours;
-    }
-}
-
-```
-
-## File: eNote\eNote.Domain\Entities\Shared\Address.cs
-```cs
-using eNote.Domain.Entities.Shared.Base;
-
-namespace eNote.Domain.Entities.Shared;
-
-public class Address : BaseEntity
-{
-    public string City { get; set; } = null!;
-    public string Street { get; set; } = null!;
-    public string Number { get; set; } = null!;
-}
-
-```
-
-## File: eNote\eNote.Domain\Entities\Shared\Base\BaseEntity.cs
-```cs
-namespace eNote.Domain.Entities.Shared.Base;
-
-public abstract class BaseEntity : IEntity
-{
-    public int Id { get; set; }
-}
-
-public abstract class AuditableEntity : BaseEntity
-{
-    public DateTime CreatedAt { get; set; }
-    public DateTime? UpdatedAt { get; set; }
-
-    public int? CreatedById { get; set; }
-    public int? UpdatedById { get; set; }
-}
-
-```
-
-## File: eNote\eNote.Domain\Entities\Shared\Base\IEntity.cs
-```cs
-namespace eNote.Domain.Entities.Shared.Base;
-
-public interface IEntity
-{
-    int Id { get; set; }
-}
-
-```
-
-## File: eNote\eNote.Domain\Enums\AnnouncementScope.cs
-```cs
-namespace eNote.Domain.Enums;
-
-public enum AnnouncementScope
-{
-    Course = 1,
-    MusicStore = 2
-}
-
-```
-
-## File: eNote\eNote.Domain\Enums\AttendanceStatus.cs
-```cs
-namespace eNote.Domain.Enums;
-
-public enum AttendanceStatus
-{
-    Pending = 1,
-    Present = 2,
-    Absent = 3
-}
-
-```
-
-## File: eNote\eNote.Domain\Enums\EnrollmentStatus.cs
-```cs
-namespace eNote.Domain.Enums;
-
-public enum EnrollmentStatus
-{
-    Active = 1,
-    Completed = 2,
-    Canceled = 3
-}
-
-```
-
-## File: eNote\eNote.Domain\Enums\LectureStatus.cs
-```cs
-namespace eNote.Domain.Enums;
-
-public enum LectureStatus
-{
-    Scheduled = 1,
-    Held = 2,
-    Cancelled = 3
-}
-
-```
-
-## File: eNote\eNote.Domain\Enums\LectureType.cs
-```cs
-namespace eNote.Domain.Enums;
-
-public enum LectureType
-{
-    Theoretical = 1,
-    Practical = 2,
-    Combined = 3,
-}
-
-```
-
-## File: eNote\eNote.Application\Common\Exceptions\AppException.cs
+**Classes**: AppException
 ```cs
 namespace eNote.Application.Common.Exceptions;
 
@@ -830,7 +2223,12 @@ public abstract class AppException(int statusCode, string errorCode, string? mes
 
 ```
 
-## File: eNote\eNote.Application\Common\Exceptions\BusinessException.cs
+---
+
+## File: `eNote\eNote.Application\Common\Exceptions\BusinessException.cs`
+**Hash**: `2d52324d6cd9` | **Size**: 154 chars
+
+**Classes**: BusinessException
 ```cs
 namespace eNote.Application.Common.Exceptions;
 
@@ -840,7 +2238,12 @@ public class BusinessException(string? message = null) : AppException(400, "erro
 
 ```
 
-## File: eNote\eNote.Application\Common\Exceptions\ConflictException.cs
+---
+
+## File: `eNote\eNote.Application\Common\Exceptions\ConflictException.cs`
+**Hash**: `381931baea33` | **Size**: 154 chars
+
+**Classes**: ConflictException
 ```cs
 namespace eNote.Application.Common.Exceptions;
 
@@ -850,7 +2253,12 @@ public class ConflictException(string? message = null) : AppException(409, "erro
 
 ```
 
-## File: eNote\eNote.Application\Common\Exceptions\NotFoundException.cs
+---
+
+## File: `eNote\eNote.Application\Common\Exceptions\NotFoundException.cs`
+**Hash**: `f1a1cb0bf214` | **Size**: 155 chars
+
+**Classes**: NotFoundException
 ```cs
 namespace eNote.Application.Common.Exceptions;
 
@@ -860,7 +2268,39 @@ public class NotFoundException(string? message = null) : AppException(404, "erro
 
 ```
 
-## File: eNote\eNote.Application\Common\Interfaces\ICurrentUserService.cs
+---
+
+## File: `eNote\eNote.Application\Common\Interfaces\ICurrentActor.cs`
+**Hash**: `8cb398920a2c` | **Size**: 358 chars
+
+**Classes**: 
+**Interfaces**: ICurrentActor
+### Key Cross-Cutting Interactions
+- Uses **ICurrentActor** → Current actor resolution
+
+```cs
+using eNote.Domain.Entities.Identity;
+
+namespace eNote.Application.Common.Interfaces;
+
+public interface ICurrentActor : ICurrentUserService
+{
+    Task<Student> GetStudentAsync();
+    Task<int> GetCurrentStudentIdAsync();
+    Task<Instructor> GetInstructorAsync();
+    Task<MusicStoreEmployee> GetActiveEmployeeAsync();
+    Task<int> GetActiveStoreAsync();
+}
+
+```
+
+---
+
+## File: `eNote\eNote.Application\Common\Interfaces\ICurrentUserService.cs`
+**Hash**: `6a2e58c205e4` | **Size**: 147 chars
+
+**Classes**: 
+**Interfaces**: ICurrentUserService
 ```cs
 namespace eNote.Application.Common.Interfaces;
 
@@ -872,7 +2312,13 @@ public interface ICurrentUserService
 
 ```
 
-## File: eNote\eNote.Application\Common\Interfaces\IEmailService.cs
+---
+
+## File: `eNote\eNote.Application\Common\Interfaces\IEmailService.cs`
+**Hash**: `cf33b0025add` | **Size**: 191 chars
+
+**Classes**: 
+**Interfaces**: IEmailService
 ```cs
 namespace eNote.Application.Common.Interfaces;
 
@@ -883,7 +2329,13 @@ public interface IEmailService
 
 ```
 
-## File: eNote\eNote.Application\Common\Interfaces\IFileStorageService.cs
+---
+
+## File: `eNote\eNote.Application\Common\Interfaces\IFileStorageService.cs`
+**Hash**: `9b032e61d09c` | **Size**: 341 chars
+
+**Classes**: 
+**Interfaces**: IFileStorageService
 ```cs
 namespace eNote.Application.Common.Interfaces;
 
@@ -895,7 +2347,13 @@ public interface IFileStorageService
 
 ```
 
-## File: eNote\eNote.Application\Common\Interfaces\IRentalNotificationDispatcher.cs
+---
+
+## File: `eNote\eNote.Application\Common\Interfaces\IRentalNotificationDispatcher.cs`
+**Hash**: `a4a539e0a06f` | **Size**: 508 chars
+
+**Classes**: 
+**Interfaces**: IRentalNotificationDispatcher
 ```cs
 ﻿using eNote.Application.Features.Rentals.InstrumentRentals;
 using eNote.Application.Features.Rentals.InstrumentRentals.StateMachine;
@@ -910,7 +2368,12 @@ public interface IRentalNotificationDispatcher
 
 ```
 
-## File: eNote\eNote.Application\Common\Localization\Messages.cs
+---
+
+## File: `eNote\eNote.Application\Common\Localization\Messages.cs`
+**Hash**: `b8781b9a9265` | **Size**: 6428 chars
+
+**Classes**: Messages
 ```cs
 namespace eNote.Application.Common.Localization;
 
@@ -1012,7 +2475,12 @@ public static class Messages
 
 ```
 
-## File: eNote\eNote.Application\Common\Paging\PagedResult.cs
+---
+
+## File: `eNote\eNote.Application\Common\Paging\PagedResult.cs`
+**Hash**: `e9e81a39e6f9` | **Size**: 410 chars
+
+**Classes**: PagedResult
 ```cs
 namespace eNote.Application.Common.Paging;
 
@@ -1029,7 +2497,12 @@ public class PagedResult<T>
 
 ```
 
-## File: eNote\eNote.Application\Common\Paging\PagingExtensions.cs
+---
+
+## File: `eNote\eNote.Application\Common\Paging\PagingExtensions.cs`
+**Hash**: `e8e4e6895afb` | **Size**: 4507 chars
+
+**Classes**: PagingExtensions
 ```cs
 ﻿using eNote.Application.Common.Search;
 using Microsoft.EntityFrameworkCore;
@@ -1038,8 +2511,7 @@ namespace eNote.Application.Common.Paging;
 
 public static class PagingExtensions
 {
-    public static async Task<PagedResult<TModel>> ToPagedResultAsync<TEntity, TModel>
-        (this IQueryable<TEntity> query, int page, int pageSize, bool includeTotalCount, Func<TEntity, TModel> map, Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>>? orderBy = null, CancellationToken ct = default)
+    public static async Task<PagedResult<TModel>> ToPagedResultAsync<TEntity, TModel>(this IQueryable<TEntity> query, int page, int pageSize, bool includeTotalCount, Func<TEntity, TModel> map, Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>>? orderBy = null, CancellationToken ct = default)
     {
         int? total = null;
 
@@ -1068,10 +2540,6 @@ public static class PagingExtensions
             TotalCount = total
         };
     }
-
-    public static Task<PagedResult<TModel>> ToPagedResultAsync<TEntity, TSearch, TModel>
-        (this IQueryable<TEntity> query, TSearch search, Func<TEntity, TModel> map, Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>>? orderBy = null, CancellationToken ct = default)
-        where TSearch : BaseSearchObject => query.ToPagedResultAsync(search.Page, search.PageSize, search.IncludeTotalCount, map, orderBy, ct);
 
     public static async Task<PagedResult<TModel>> ToPagedResultAsync<TEntity, TModel>
         (this IQueryable<TEntity> query, int page, int pageSize, bool includeTotalCount, Func<TEntity, Task<TModel>> mapAsync, Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>>? orderBy = null, CancellationToken ct = default)
@@ -1106,10 +2574,6 @@ public static class PagingExtensions
         };
     }
 
-    public static Task<PagedResult<TModel>> ToPagedResultAsync<TEntity, TSearch, TModel>
-        (this IQueryable<TEntity> query, TSearch search, Func<TEntity, Task<TModel>> mapAsync, Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>>? orderBy = null, CancellationToken ct = default)
-        where TSearch : BaseSearchObject => query.ToPagedResultAsync(search.Page, search.PageSize, search.IncludeTotalCount, mapAsync, orderBy, ct);
-
     public static async Task<PagedResult<TModel>> ToPagedResultAsync<TEntity, TCtx, TModel>
         (this IQueryable<TEntity> query, int page, int pageSize, bool includeTotalCount, Func<IReadOnlyList<TEntity>, Task<TCtx>> loadContext, Func<TEntity, TCtx, TModel> map, Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>>? orderBy = null, CancellationToken ct = default)
     {
@@ -1143,6 +2607,14 @@ public static class PagingExtensions
         };
     }
 
+    public static Task<PagedResult<TModel>> ToPagedResultAsync<TEntity, TSearch, TModel>
+        (this IQueryable<TEntity> query, TSearch search, Func<TEntity, TModel> map, Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>>? orderBy = null, CancellationToken ct = default)
+        where TSearch : BaseSearchObject => query.ToPagedResultAsync(search.Page, search.PageSize, search.IncludeTotalCount, map, orderBy, ct);
+
+    public static Task<PagedResult<TModel>> ToPagedResultAsync<TEntity, TSearch, TModel>
+        (this IQueryable<TEntity> query, TSearch search, Func<TEntity, Task<TModel>> mapAsync, Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>>? orderBy = null, CancellationToken ct = default)
+        where TSearch : BaseSearchObject => query.ToPagedResultAsync(search.Page, search.PageSize, search.IncludeTotalCount, mapAsync, orderBy, ct);
+
     public static Task<PagedResult<TModel>> ToPagedResultAsync<TEntity, TSearch, TCtx, TModel>
         (this IQueryable<TEntity> query, TSearch search, Func<IReadOnlyList<TEntity>, Task<TCtx>> loadContext, Func<TEntity, TCtx, TModel> map, Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>>? orderBy = null, CancellationToken ct = default)
         where TSearch : BaseSearchObject => query.ToPagedResultAsync(search.Page, search.PageSize, search.IncludeTotalCount, loadContext, map, orderBy, ct);
@@ -1150,7 +2622,12 @@ public static class PagingExtensions
 
 ```
 
-## File: eNote\eNote.Application\Common\Paging\PagingLimits.cs
+---
+
+## File: `eNote\eNote.Application\Common\Paging\PagingLimits.cs`
+**Hash**: `a9b02e3629d1` | **Size**: 455 chars
+
+**Classes**: PagingLimits
 ```cs
 namespace eNote.Application.Common.Paging;
 
@@ -1172,7 +2649,16 @@ public static class PagingLimits
 
 ```
 
-## File: eNote\eNote.Application\Common\Persistence\IAppDbContext.cs
+---
+
+## File: `eNote\eNote.Application\Common\Persistence\IAppDbContext.cs`
+**Hash**: `160a2a9706f7` | **Size**: 405 chars
+
+**Classes**: 
+**Interfaces**: IAppDbContext
+### Key Cross-Cutting Interactions
+- Uses **IAppDbContext|DbContext** → Persistence boundary
+
 ```cs
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
@@ -1188,7 +2674,12 @@ public interface IAppDbContext
 
 ```
 
-## File: eNote\eNote.Application\Common\Search\BaseSearchObject.cs
+---
+
+## File: `eNote\eNote.Application\Common\Search\BaseSearchObject.cs`
+**Hash**: `e48da0b09bd1` | **Size**: 217 chars
+
+**Classes**: BaseSearchObject
 ```cs
 namespace eNote.Application.Common.Search;
 
@@ -1201,7 +2692,12 @@ public class BaseSearchObject
 
 ```
 
-## File: eNote\eNote.Application\Common\Search\QueryableFilterExtensions.cs
+---
+
+## File: `eNote\eNote.Application\Common\Search\QueryableFilterExtensions.cs`
+**Hash**: `554f6f36aa57` | **Size**: 702 chars
+
+**Classes**: QueryableFilterExtensions
 ```cs
 using System.Linq.Expressions;
 
@@ -1215,7 +2711,13 @@ public static class QueryableFilterExtensions
 }
 ```
 
-## File: eNote\eNote.Application\Common\Time\IClock.cs
+---
+
+## File: `eNote\eNote.Application\Common\Time\IClock.cs`
+**Hash**: `a2742f3ac396` | **Size**: 99 chars
+
+**Classes**: 
+**Interfaces**: IClock
 ```cs
 namespace eNote.Application.Common.Time;
 
@@ -1226,7 +2728,12 @@ public interface IClock
 
 ```
 
-## File: eNote\eNote.Application\Common\Time\SystemClock.cs
+---
+
+## File: `eNote\eNote.Application\Common\Time\SystemClock.cs`
+**Hash**: `d5045c0bfbf5` | **Size**: 134 chars
+
+**Classes**: SystemClock
 ```cs
 namespace eNote.Application.Common.Time;
 
@@ -1237,7 +2744,12 @@ public sealed class SystemClock : IClock
 
 ```
 
-## File: eNote\eNote.Application\Constants\AppRoles.cs
+---
+
+## File: `eNote\eNote.Application\Constants\AppRoles.cs`
+**Hash**: `905781bde49a` | **Size**: 283 chars
+
+**Classes**: AppRoles
 ```cs
 namespace eNote.Application.Constants;
 
@@ -1251,7 +2763,12 @@ public static class AppRoles
 
 ```
 
-## File: eNote\eNote.Application\Features\Academic\LectureNotes\LectureNoteDto.cs
+---
+
+## File: `eNote\eNote.Application\Features\Academic\LectureNotes\LectureNoteDto.cs`
+**Hash**: `9e8ef5036c89` | **Size**: 261 chars
+
+**Classes**: LectureNoteDto
 ```cs
 namespace eNote.Application.Features.Academic.LectureNotes;
 
@@ -1266,7 +2783,12 @@ public class LectureNoteDto
 
 ```
 
-## File: eNote\eNote.Application\Features\Academic\LectureNotes\LectureNoteRequest.cs
+---
+
+## File: `eNote\eNote.Application\Features\Academic\LectureNotes\LectureNoteRequest.cs`
+**Hash**: `adfd6a856c44` | **Size**: 270 chars
+
+**Classes**: LectureNoteRequest
 ```cs
 using System.ComponentModel.DataAnnotations;
 
@@ -1283,7 +2805,12 @@ public class LectureNoteRequest
 
 ```
 
-## File: eNote\eNote.Application\Features\Academic\LectureNotes\LectureNoteSearchExtensions.cs
+---
+
+## File: `eNote\eNote.Application\Features\Academic\LectureNotes\LectureNoteSearchExtensions.cs`
+**Hash**: `163091eab179` | **Size**: 389 chars
+
+**Classes**: LectureNoteSearchExtensions
 ```cs
 using eNote.Application.Common.Search;
 using eNote.Domain.Entities;
@@ -1297,7 +2824,12 @@ public static class LectureNoteSearchExtensions
 }
 ```
 
-## File: eNote\eNote.Application\Features\Academic\LectureNotes\LectureNoteSearchObject.cs
+---
+
+## File: `eNote\eNote.Application\Features\Academic\LectureNotes\LectureNoteSearchObject.cs`
+**Hash**: `f3e450e7d623` | **Size**: 200 chars
+
+**Classes**: LectureNoteSearchObject
 ```cs
 using eNote.Application.Common.Search;
 
@@ -1310,7 +2842,13 @@ public class LectureNoteSearchObject : BaseSearchObject
 
 ```
 
-## File: eNote\eNote.Application\Features\Academic\LectureNotes\Services\ILectureNoteService.cs
+---
+
+## File: `eNote\eNote.Application\Features\Academic\LectureNotes\Services\ILectureNoteService.cs`
+**Hash**: `c4a44bcda5d1` | **Size**: 795 chars
+
+**Classes**: 
+**Interfaces**: ILectureNoteService
 ```cs
 using eNote.Application.Common.Paging;
 using eNote.Application.Features.Academic.LectureNotes;
@@ -1330,7 +2868,17 @@ public interface ILectureNoteService
 
 ```
 
-## File: eNote\eNote.Application\Features\Academic\LectureNotes\Services\LectureNoteService.cs
+---
+
+## File: `eNote\eNote.Application\Features\Academic\LectureNotes\Services\LectureNoteService.cs`
+**Hash**: `c09f392bf37b` | **Size**: 3976 chars
+
+**Classes**: LectureNoteService
+### Key Cross-Cutting Interactions
+- Uses **IInstructorAccessService** → Instructor ownership enforcement
+- Uses **ICurrentActor** → Current actor resolution
+- Uses **IAppDbContext|DbContext** → Persistence boundary
+
 ```cs
 ﻿using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Interfaces;
@@ -1339,7 +2887,6 @@ using eNote.Application.Common.Paging;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Features.Academic.LectureNotes;
 using eNote.Application.Features.Identity.Instructors;
-using eNote.Application.Features.Identity.Users.Services;
 using eNote.Application.Features.Students;
 using eNote.Domain.Entities;
 using MapsterMapper;
@@ -1349,14 +2896,13 @@ namespace eNote.Application.Features.Academic.LectureNotes.Services;
 
 public sealed class LectureNoteService(
     IAppDbContext context,
-    IUserContextResolver resolver,
+    ICurrentActor actor,
     IInstructorAccessService instructorAccess,
-    ICurrentUserService currentUserService,
     IMapper mapper) : ILectureNoteService
 {
     public async Task<PagedResult<LectureNoteDto>> GetForLectureAsync(int lectureId, LectureNoteSearchObject search)
     {
-        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUserService.UserId);
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(actor.UserId);
 
         var query = instructorAccess.LectureNotesForLecture(lectureId, instructorId)
             .AsNoTracking()
@@ -1370,12 +2916,12 @@ public sealed class LectureNoteService(
 
     public async Task<LectureNoteDto> CreateAsync(int lectureId, LectureNoteRequest request)
     {
-        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUserService.UserId);
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(actor.UserId);
         await instructorAccess.EnsureOwnsLectureAsync(lectureId, instructorId);
 
         var entity = new LectureNote(request.Title.Trim(), request.Content.Trim(), lectureId)
         {
-            CreatedById = currentUserService.UserId
+            CreatedById = actor.UserId
         };
 
         context.Set<LectureNote>().Add(entity);
@@ -1389,7 +2935,7 @@ public sealed class LectureNoteService(
         var entity = await GetOwnedNoteAsync(lectureId, noteId, track: true);
 
         entity.UpdateDetails(request.Title.Trim(), request.Content.Trim());
-        entity.UpdatedById = currentUserService.UserId;
+        entity.UpdatedById = actor.UserId;
 
         await context.SaveChangesAsync();
 
@@ -1401,14 +2947,14 @@ public sealed class LectureNoteService(
         var entity = await GetOwnedNoteAsync(lectureId, noteId, track: true);
 
         entity.SoftDelete();
-        entity.UpdatedById = currentUserService.UserId;
+        entity.UpdatedById = actor.UserId;
 
         await context.SaveChangesAsync();
     }
 
     public async Task<PagedResult<LectureNoteDto>> GetForStudentAsync(int lectureId, LectureNoteSearchObject search)
     {
-        var studentId = await resolver.GetCurrentStudentIdAsync(currentUserService.UserId);
+        var studentId = await actor.GetCurrentStudentIdAsync();
 
         var query = context.Set<LectureNote>()
             .AsNoTracking()
@@ -1421,7 +2967,7 @@ public sealed class LectureNoteService(
 
     public async Task<LectureNoteDto> GetByIdForStudentAsync(int lectureId, int noteId)
     {
-        var studentId = await resolver.GetCurrentStudentIdAsync(currentUserService.UserId);
+        var studentId = await actor.GetCurrentStudentIdAsync();
 
         var entity = await context.Set<LectureNote>()
             .AsNoTracking()
@@ -1434,14 +2980,19 @@ public sealed class LectureNoteService(
 
     private async Task<LectureNote> GetOwnedNoteAsync(int lectureId, int noteId, bool track = false)
     {
-        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUserService.UserId);
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(actor.UserId);
         return await instructorAccess.GetOwnedLectureNoteAsync(lectureId, noteId, instructorId, track);
     }
 }
 
 ```
 
-## File: eNote\eNote.Application\Features\Academic\Lectures\AttendanceDto.cs
+---
+
+## File: `eNote\eNote.Application\Features\Academic\Lectures\AttendanceDto.cs`
+**Hash**: `e70b16de25d9` | **Size**: 299 chars
+
+**Classes**: AttendanceDto
 ```cs
 using eNote.Domain.Enums;
 
@@ -1458,7 +3009,12 @@ public class AttendanceDto
 
 ```
 
-## File: eNote\eNote.Application\Features\Academic\Lectures\AttendanceSearchObject.cs
+---
+
+## File: `eNote\eNote.Application\Features\Academic\Lectures\AttendanceSearchObject.cs`
+**Hash**: `d954be278783` | **Size**: 163 chars
+
+**Classes**: AttendanceSearchObject
 ```cs
 using eNote.Application.Common.Search;
 
@@ -1470,7 +3026,12 @@ public sealed class AttendanceSearchObject : BaseSearchObject
 
 ```
 
-## File: eNote\eNote.Application\Features\Academic\Lectures\LectureCreateRequest.cs
+---
+
+## File: `eNote\eNote.Application\Features\Academic\Lectures\LectureCreateRequest.cs`
+**Hash**: `d291f0087253` | **Size**: 594 chars
+
+**Classes**: LectureCreateRequest
 ```cs
 using eNote.Domain.Enums;
 using System.ComponentModel.DataAnnotations;
@@ -1499,7 +3060,12 @@ public class LectureCreateRequest
 
 ```
 
-## File: eNote\eNote.Application\Features\Academic\Lectures\LectureDto.cs
+---
+
+## File: `eNote\eNote.Application\Features\Academic\Lectures\LectureDto.cs`
+**Hash**: `05f977895b06` | **Size**: 553 chars
+
+**Classes**: LectureDto
 ```cs
 using eNote.Domain.Enums;
 
@@ -1524,7 +3090,12 @@ public class LectureDto
 
 ```
 
-## File: eNote\eNote.Application\Features\Academic\Lectures\LectureMappingConfig.cs
+---
+
+## File: `eNote\eNote.Application\Features\Academic\Lectures\LectureMappingConfig.cs`
+**Hash**: `5cd5fbd27523` | **Size**: 455 chars
+
+**Classes**: LectureMappingConfig
 ```cs
 using eNote.Domain.Entities;
 using eNote.Domain.Enums;
@@ -1543,7 +3114,12 @@ public sealed class LectureMappingConfig : IRegister
 
 ```
 
-## File: eNote\eNote.Application\Features\Academic\Lectures\LectureSearchExtensions.cs
+---
+
+## File: `eNote\eNote.Application\Features\Academic\Lectures\LectureSearchExtensions.cs`
+**Hash**: `7c0eca40e566` | **Size**: 722 chars
+
+**Classes**: LectureSearchExtensions
 ```cs
 using eNote.Application.Common.Search;
 using eNote.Domain.Entities;
@@ -1562,7 +3138,12 @@ public static class LectureSearchExtensions
 }
 ```
 
-## File: eNote\eNote.Application\Features\Academic\Lectures\LectureSearchObject.cs
+---
+
+## File: `eNote\eNote.Application\Features\Academic\Lectures\LectureSearchObject.cs`
+**Hash**: `fceee39d1ab3` | **Size**: 385 chars
+
+**Classes**: LectureSearchObject
 ```cs
 using eNote.Application.Common.Search;
 using eNote.Domain.Enums;
@@ -1581,7 +3162,12 @@ public class LectureSearchObject : BaseSearchObject
 
 ```
 
-## File: eNote\eNote.Application\Features\Academic\Lectures\LectureUpdateRequest.cs
+---
+
+## File: `eNote\eNote.Application\Features\Academic\Lectures\LectureUpdateRequest.cs`
+**Hash**: `cc480215933c` | **Size**: 421 chars
+
+**Classes**: LectureUpdateRequest
 ```cs
 using System.ComponentModel.DataAnnotations;
 
@@ -1603,7 +3189,12 @@ public class LectureUpdateRequest
 
 ```
 
-## File: eNote\eNote.Application\Features\Academic\Lectures\MarkAttendanceRequest.cs
+---
+
+## File: `eNote\eNote.Application\Features\Academic\Lectures\MarkAttendanceRequest.cs`
+**Hash**: `2b7339a16da2` | **Size**: 310 chars
+
+**Classes**: MarkAttendanceRequest
 ```cs
 using eNote.Domain.Enums;
 using System.ComponentModel.DataAnnotations;
@@ -1620,7 +3211,12 @@ public class MarkAttendanceRequest
 
 ```
 
-## File: eNote\eNote.Application\Features\Academic\Lectures\RsvpRequest.cs
+---
+
+## File: `eNote\eNote.Application\Features\Academic\Lectures\RsvpRequest.cs`
+**Hash**: `1ba303e2558f` | **Size**: 223 chars
+
+**Classes**: RsvpRequest
 ```cs
 using System.ComponentModel.DataAnnotations;
 
@@ -1635,7 +3231,12 @@ public class RsvpRequest
 
 ```
 
-## File: eNote\eNote.Application\Features\Academic\Lectures\RsvpResponse.cs
+---
+
+## File: `eNote\eNote.Application\Features\Academic\Lectures\RsvpResponse.cs`
+**Hash**: `6908aa05a55c` | **Size**: 206 chars
+
+**Classes**: RsvpResponse
 ```cs
 namespace eNote.Application.Features.Academic.Lectures;
 
@@ -1649,23 +3250,34 @@ public class RsvpResponse
 
 ```
 
-## File: eNote\eNote.Application\Features\Academic\Lectures\Services\ILectureAttendanceService.cs
+---
+
+## File: `eNote\eNote.Application\Features\Academic\Lectures\Services\ILectureAttendanceService.cs`
+**Hash**: `3edd160ac857` | **Size**: 417 chars
+
+**Classes**: 
+**Interfaces**: ILectureAttendanceService
 ```cs
 using eNote.Application.Common.Paging;
-using eNote.Application.Features.Academic.Lectures;
 
 namespace eNote.Application.Features.Academic.Lectures.Services;
 
 public interface ILectureAttendanceService
 {
     Task<RsvpResponse> RsvpAsync(int lectureId, RsvpRequest request);
-    Task<PagedResult<AttendanceDto>> GetAttendanceAsync(int lectureId, AttendanceSearchObject search);
     Task<AttendanceDto> MarkAttendanceAsync(int lectureId, MarkAttendanceRequest request);
+    Task<PagedResult<AttendanceDto>> GetAttendanceAsync(int lectureId, AttendanceSearchObject search);
 }
 
 ```
 
-## File: eNote\eNote.Application\Features\Academic\Lectures\Services\ILectureService.cs
+---
+
+## File: `eNote\eNote.Application\Features\Academic\Lectures\Services\ILectureService.cs`
+**Hash**: `124338b7f247` | **Size**: 689 chars
+
+**Classes**: 
+**Interfaces**: ILectureService
 ```cs
 using eNote.Application.Common.Paging;
 using eNote.Application.Features.Academic.Lectures;
@@ -1686,14 +3298,24 @@ public interface ILectureService
 
 ```
 
-## File: eNote\eNote.Application\Features\Academic\Lectures\Services\LectureAttendanceService.cs
+---
+
+## File: `eNote\eNote.Application\Features\Academic\Lectures\Services\LectureAttendanceService.cs`
+**Hash**: `7e007b4910d2` | **Size**: 5598 chars
+
+**Classes**: LectureAttendanceService
+### Key Cross-Cutting Interactions
+- Uses **IInstructorAccessService** → Instructor ownership enforcement
+- Uses **ICurrentActor** → Current actor resolution
+- Uses **IStudentDisplayNameService** → Student display-name formatting
+- Uses **IAppDbContext|DbContext** → Persistence boundary
+
 ```cs
 using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Paging;
 using eNote.Application.Common.Persistence;
-using eNote.Application.Features.Academic.Lectures;
 using eNote.Application.Features.Identity.Instructors;
 using eNote.Application.Features.Identity.Users.Services;
 using eNote.Application.Features.Students;
@@ -1705,30 +3327,21 @@ using Microsoft.Extensions.Logging;
 
 namespace eNote.Application.Features.Academic.Lectures.Services;
 
-public sealed class LectureAttendanceService(
-    IAppDbContext context,
-    IUserContextResolver resolver,
-    IInstructorAccessService instructorAccess,
-    ILogger<LectureAttendanceService> logger,
-    ICurrentUserService currentUserService) : ILectureAttendanceService
+public sealed class LectureAttendanceService(IAppDbContext context, ICurrentActor actor, IStudentDisplayNameService displayNames, IInstructorAccessService instructorAccess, ILogger<LectureAttendanceService> logger) : ILectureAttendanceService
 {
     public async Task<RsvpResponse> RsvpAsync(int lectureId, RsvpRequest request)
     {
         var lecture = await context.Set<Lecture>()
             .Include(x => x.Attendances)
             .Include(x => x.Course)
-            .FirstOrDefaultAsync(x =>
-                x.Id == lectureId &&
-                x.Course.IsPublished &&
-                x.LectureStatus != LectureStatus.Cancelled)
-            ?? throw new NotFoundException(Messages.LectureNotFound);
+            .FirstOrDefaultAsync(x => x.Id == lectureId && x.Course.IsPublished && x.LectureStatus != LectureStatus.Cancelled) ?? throw new NotFoundException(Messages.LectureNotFound);
 
         if (lecture.IsCancelled)
         {
             throw new BusinessException(Messages.LectureCancelled);
         }
 
-        var studentId = await resolver.GetCurrentStudentIdAsync(currentUserService.UserId);
+        var studentId = await actor.GetCurrentStudentIdAsync();
 
         if (!await context.IsEnrolledInCourseAsync(studentId, lecture.CourseId))
         {
@@ -1741,8 +3354,7 @@ public sealed class LectureAttendanceService(
         {
             var confirmedCount = lecture.Attendances.Count(a => a.AttendanceStatus == AttendanceStatus.Present);
 
-            if (lecture.Capacity.HasValue && confirmedCount >= lecture.Capacity.Value &&
-                (existing is null || existing.AttendanceStatus != AttendanceStatus.Present))
+            if (lecture.Capacity.HasValue && confirmedCount >= lecture.Capacity.Value && (existing is null || existing.AttendanceStatus != AttendanceStatus.Present))
             {
                 throw new ConflictException(Messages.LectureFull);
             }
@@ -1763,11 +3375,12 @@ public sealed class LectureAttendanceService(
 
         try
         {
+            context.Set<Lecture>().Entry(lecture).State = EntityState.Modified;
             await context.SaveChangesAsync();
         }
         catch (DbUpdateConcurrencyException ex)
         {
-            logger.LogWarning(ex, "Concurrency conflict while RSVPing for lecture {LectureId} by student user {StudentUserId}", lectureId, currentUserService.UserId);
+            logger.LogWarning(ex, "Concurrency conflict while RSVPing for lecture {LectureId} by student user {StudentUserId}", lectureId, actor.UserId);
             throw new ConflictException(Messages.LectureRsvpConflict);
         }
 
@@ -1776,7 +3389,7 @@ public sealed class LectureAttendanceService(
 
     public async Task<PagedResult<AttendanceDto>> GetAttendanceAsync(int lectureId, AttendanceSearchObject search)
     {
-        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUserService.UserId);
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(actor.UserId);
         await instructorAccess.EnsureOwnsLectureAsync(lectureId, instructorId);
 
         var query = context.Set<Attendance>()
@@ -1784,22 +3397,18 @@ public sealed class LectureAttendanceService(
             .Include(x => x.Student)
             .Where(x => x.LectureId == lectureId);
 
-        return await query.ToPagedResultAsync(
-            search,
-            items => resolver.GetStudentDisplayNamesAsync(items.Select(a => a.Student)),
-            (a, names) => new AttendanceDto
-            {
-                Id = a.Id,
-                StudentId = a.StudentId,
-                StudentName = names.GetValueOrDefault(a.StudentId, $"Student {a.StudentId}"),
-                AttendanceStatus = a.AttendanceStatus
-            },
-            q => q.OrderBy(x => x.StudentId));
+        return await query.ToPagedResultAsync(search, items => displayNames.GetStudentDisplayNamesAsync(items.Select(a => a.Student)), (a, names) => new AttendanceDto
+        {
+            Id = a.Id,
+            StudentId = a.StudentId,
+            StudentName = names.GetValueOrDefault(a.StudentId, $"Student {a.StudentId}"),
+            AttendanceStatus = a.AttendanceStatus
+        }, q => q.OrderBy(x => x.StudentId));
     }
 
     public async Task<AttendanceDto> MarkAttendanceAsync(int lectureId, MarkAttendanceRequest request)
     {
-        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUserService.UserId);
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(actor.UserId);
         var lecture = await instructorAccess.GetOwnedLectureAsync(lectureId, instructorId, track: true, includeAttendances: true);
 
         if (lecture.IsCancelled)
@@ -1818,14 +3427,14 @@ public sealed class LectureAttendanceService(
         {
             attendance = new Attendance(request.StudentId, lecture.Id, request.AttendanceStatus)
             {
-                CreatedById = currentUserService.UserId
+                CreatedById = actor.UserId
             };
             lecture.Attendances.Add(attendance);
         }
         else
         {
             attendance.UpdateStatus(request.AttendanceStatus);
-            attendance.UpdatedById = currentUserService.UserId;
+            attendance.UpdatedById = actor.UserId;
         }
 
         await context.SaveChangesAsync();
@@ -1838,7 +3447,7 @@ public sealed class LectureAttendanceService(
         {
             Id = attendance.Id,
             StudentId = attendance.StudentId,
-            StudentName = await resolver.GetStudentDisplayNameAsync(student),
+            StudentName = await displayNames.GetStudentDisplayNameAsync(student),
             AttendanceStatus = attendance.AttendanceStatus
         };
     }
@@ -1846,7 +3455,17 @@ public sealed class LectureAttendanceService(
 
 ```
 
-## File: eNote\eNote.Application\Features\Academic\Lectures\Services\LectureService.cs
+---
+
+## File: `eNote\eNote.Application\Features\Academic\Lectures\Services\LectureService.cs`
+**Hash**: `95f61d8a2efe` | **Size**: 5048 chars
+
+**Classes**: LectureService
+### Key Cross-Cutting Interactions
+- Uses **IInstructorAccessService** → Instructor ownership enforcement
+- Uses **ICurrentActor** → Current actor resolution
+- Uses **IAppDbContext|DbContext** → Persistence boundary
+
 ```cs
 ﻿using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Interfaces;
@@ -1855,7 +3474,6 @@ using eNote.Application.Common.Paging;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Features.Academic.Lectures;
 using eNote.Application.Features.Identity.Instructors;
-using eNote.Application.Features.Identity.Users.Services;
 using eNote.Application.Features.Students;
 using eNote.Domain.Entities;
 using MapsterMapper;
@@ -1866,22 +3484,21 @@ namespace eNote.Application.Features.Academic.Lectures.Services;
 
 public sealed class LectureService(
     IAppDbContext context,
-    IUserContextResolver resolver,
+    ICurrentActor actor,
     IInstructorAccessService instructorAccess,
     ILogger<LectureService> logger,
-    ICurrentUserService currentUserService,
     IMapper mapper) : ILectureService
 {
     public async Task<LectureDto> GetByIdForInstructorAsync(int id)
     {
-        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUserService.UserId);
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(actor.UserId);
         var entity = await instructorAccess.GetOwnedLectureAsync(id, instructorId, includeAttendances: true);
         return mapper.Map<LectureDto>(entity);
     }
 
     public async Task<LectureDto> GetByIdForStudentAsync(int id)
     {
-        var studentId = await resolver.GetCurrentStudentIdAsync(currentUserService.UserId);
+        var studentId = await actor.GetCurrentStudentIdAsync();
 
         var entity = await context.Set<Lecture>()
             .Include(x => x.Attendances)
@@ -1895,7 +3512,7 @@ public sealed class LectureService(
 
     public async Task<PagedResult<LectureDto>> GetPagedForInstructorAsync(LectureSearchObject search)
     {
-        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUserService.UserId);
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(actor.UserId);
 
         var query = instructorAccess.LecturesFor(instructorId)
             .AsNoTracking()
@@ -1907,7 +3524,7 @@ public sealed class LectureService(
 
     public async Task<PagedResult<LectureDto>> GetPagedForStudentAsync(LectureSearchObject search)
     {
-        var studentId = await resolver.GetCurrentStudentIdAsync(currentUserService.UserId);
+        var studentId = await actor.GetCurrentStudentIdAsync();
 
         var query = context.Set<Lecture>()
             .AsNoTracking()
@@ -1920,7 +3537,7 @@ public sealed class LectureService(
 
     public async Task<LectureDto> CreateAsync(LectureCreateRequest request)
     {
-        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUserService.UserId);
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(actor.UserId);
         await instructorAccess.EnsureOwnsCourseAsync(request.CourseId, instructorId);
 
         var entity = new Lecture(
@@ -1932,7 +3549,7 @@ public sealed class LectureService(
             request.Capacity,
             request.CourseId)
         {
-            CreatedById = currentUserService.UserId
+            CreatedById = actor.UserId
         };
 
         context.Set<Lecture>().Add(entity);
@@ -1943,7 +3560,7 @@ public sealed class LectureService(
 
     public async Task<LectureDto> UpdateAsync(int id, LectureUpdateRequest request)
     {
-        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUserService.UserId);
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(actor.UserId);
         var entity = await instructorAccess.GetOwnedLectureAsync(id, instructorId, track: true);
 
         if (entity.IsCancelled)
@@ -1957,7 +3574,7 @@ public sealed class LectureService(
             request.Duration,
             request.LectureTime,
             request.Capacity);
-        entity.UpdatedById = currentUserService.UserId;
+        entity.UpdatedById = actor.UserId;
 
         await context.SaveChangesAsync();
 
@@ -1966,20 +3583,20 @@ public sealed class LectureService(
 
     public async Task DeleteAsync(int id)
     {
-        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUserService.UserId);
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(actor.UserId);
         var entity = await instructorAccess.GetOwnedLectureAsync(id, instructorId, track: true);
 
         entity.SoftDelete();
-        entity.UpdatedById = currentUserService.UserId;
+        entity.UpdatedById = actor.UserId;
 
         await context.SaveChangesAsync();
 
-        logger.LogInformation("Lecture {LectureId} soft-deleted by instructor user {InstructorUserId}", id, currentUserService.UserId);
+        logger.LogInformation("Lecture {LectureId} soft-deleted by instructor user {InstructorUserId}", id, actor.UserId);
     }
 
     public async Task<LectureDto> CancelAsync(int id)
     {
-        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUserService.UserId);
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(actor.UserId);
         var entity = await instructorAccess.GetOwnedLectureAsync(id, instructorId, track: true);
 
         if (entity.IsCancelled)
@@ -1988,7 +3605,7 @@ public sealed class LectureService(
         }
 
         entity.Cancel();
-        entity.UpdatedById = currentUserService.UserId;
+        entity.UpdatedById = actor.UserId;
 
         await context.SaveChangesAsync();
 
@@ -1998,7 +3615,12 @@ public sealed class LectureService(
 
 ```
 
-## File: eNote\eNote.Application\Features\Communication\Announcements\AnnouncementDto.cs
+---
+
+## File: `eNote\eNote.Application\Features\Communication\Announcements\AnnouncementDto.cs`
+**Hash**: `b7d464e1971f` | **Size**: 564 chars
+
+**Classes**: AnnouncementDto
 ```cs
 using eNote.Domain.Enums;
 
@@ -2022,7 +3644,12 @@ public class AnnouncementDto
 
 ```
 
-## File: eNote\eNote.Application\Features\Communication\Announcements\AnnouncementMappingConfig.cs
+---
+
+## File: `eNote\eNote.Application\Features\Communication\Announcements\AnnouncementMappingConfig.cs`
+**Hash**: `c66b72e8b0e8` | **Size**: 661 chars
+
+**Classes**: AnnouncementMappingConfig
 ```cs
 using eNote.Domain.Entities.Communication;
 using eNote.Domain.Enums;
@@ -2043,7 +3670,11 @@ public sealed class AnnouncementMappingConfig : IRegister
 
 ```
 
-## File: eNote\eNote.Application\Features\Communication\Announcements\AnnouncementRequest.cs
+---
+
+## File: `eNote\eNote.Application\Features\Communication\Announcements\AnnouncementRequest.cs`
+**Hash**: `db3332ca8bb1` | **Size**: 227 chars
+
 ```cs
 using System.ComponentModel.DataAnnotations;
 
@@ -2053,7 +3684,12 @@ public sealed record AnnouncementRequest([property: Required] string Title, [pro
 
 ```
 
-## File: eNote\eNote.Application\Features\Communication\Announcements\AnnouncementSearchObject.cs
+---
+
+## File: `eNote\eNote.Application\Features\Communication\Announcements\AnnouncementSearchObject.cs`
+**Hash**: `a1c840d53bba` | **Size**: 175 chars
+
+**Classes**: AnnouncementSearchObject
 ```cs
 using eNote.Application.Common.Search;
 
@@ -2065,7 +3701,17 @@ public sealed class AnnouncementSearchObject : BaseSearchObject
 
 ```
 
-## File: eNote\eNote.Application\Features\Communication\Announcements\Services\AnnouncementService.cs
+---
+
+## File: `eNote\eNote.Application\Features\Communication\Announcements\Services\AnnouncementService.cs`
+**Hash**: `48ae33fb55f0` | **Size**: 8463 chars
+
+**Classes**: AnnouncementService
+### Key Cross-Cutting Interactions
+- Uses **IInstructorAccessService** → Instructor ownership enforcement
+- Uses **ICurrentActor** → Current actor resolution
+- Uses **IAppDbContext|DbContext** → Persistence boundary
+
 ```cs
 ﻿using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Interfaces;
@@ -2075,8 +3721,6 @@ using eNote.Application.Common.Persistence;
 using eNote.Application.Common.Time;
 using eNote.Application.Features.Communication.Announcements;
 using eNote.Application.Features.Identity.Instructors;
-using eNote.Application.Features.Identity.Users.Services;
-using eNote.Application.Features.Rentals.MusicStores.Services;
 using eNote.Domain.Entities;
 using eNote.Domain.Entities.Communication;
 using eNote.Domain.Entities.Rentals;
@@ -2086,12 +3730,12 @@ using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Application.Features.Communication.Announcements.Services;
 
-public sealed class AnnouncementService(IAppDbContext context, IClock clock, IUserContextResolver resolver, IInstructorAccessService instructorAccess, IMusicStoreContextService storeContext, ICurrentUserService currentUserService, IFileStorageService fileStorage, IMapper mapper)
+public sealed class AnnouncementService(IAppDbContext context, IClock clock, ICurrentActor actor, IInstructorAccessService instructorAccess, IFileStorageService fileStorage, IMapper mapper)
      : ICourseAnnouncementService, IStoreAnnouncementService, IStudentAnnouncementService
 {
     public async Task<PagedResult<AnnouncementDto>> GetFeedForStudentAsync(AnnouncementSearchObject search)
     {
-        var studentId = await resolver.GetCurrentStudentIdAsync(currentUserService.UserId);
+        var studentId = await actor.GetCurrentStudentIdAsync();
 
         var query = context.Set<Announcement>()
             .AsNoTracking()
@@ -2112,7 +3756,7 @@ public sealed class AnnouncementService(IAppDbContext context, IClock clock, IUs
 
     public async Task<AnnouncementDto> CreateForCourseAsync(int courseId, AnnouncementRequest request)
     {
-        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUserService.UserId);
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(actor.UserId);
 
         if (!await instructorAccess.OwnsCourseAsync(courseId, instructorId))
         {
@@ -2121,7 +3765,7 @@ public sealed class AnnouncementService(IAppDbContext context, IClock clock, IUs
 
         var entity = new Announcement(request.Title.Trim(), request.Content.Trim(), courseId, null, clock.UtcNow)
         {
-            CreatedById = currentUserService.UserId
+            CreatedById = actor.UserId
         };
 
         context.Set<Announcement>().Add(entity);
@@ -2147,7 +3791,7 @@ public sealed class AnnouncementService(IAppDbContext context, IClock clock, IUs
         var entity = await (await GetCourseAnnouncementQueryAsync(courseId, track: true)).FirstOrDefaultAsync(a => a.Id == announcementId) ?? throw new NotFoundException(Messages.AnnouncementNotFound);
 
         entity.UpdateDetails(request.Title.Trim(), request.Content.Trim());
-        entity.UpdatedById = currentUserService.UserId;
+        entity.UpdatedById = actor.UserId;
 
         await context.SaveChangesAsync();
 
@@ -2159,18 +3803,18 @@ public sealed class AnnouncementService(IAppDbContext context, IClock clock, IUs
         var entity = await (await GetCourseAnnouncementQueryAsync(courseId, track: true)).FirstOrDefaultAsync(a => a.Id == announcementId) ?? throw new NotFoundException(Messages.AnnouncementNotFound);
 
         entity.SoftDelete();
-        entity.UpdatedById = currentUserService.UserId;
+        entity.UpdatedById = actor.UserId;
 
         await context.SaveChangesAsync();
     }
 
     public async Task<AnnouncementDto> CreateForStoreAsync(AnnouncementRequest request)
     {
-        var storeId = await storeContext.GetActiveStoreAsync(currentUserService.UserId);
+        var storeId = await actor.GetActiveStoreAsync();
 
         var entity = new Announcement(request.Title.Trim(), request.Content.Trim(), null, storeId, clock.UtcNow)
         {
-            CreatedById = currentUserService.UserId
+            CreatedById = actor.UserId
         };
 
         context.Set<Announcement>().Add(entity);
@@ -2181,7 +3825,7 @@ public sealed class AnnouncementService(IAppDbContext context, IClock clock, IUs
 
     public async Task<AnnouncementDto> GetByIdForStoreAsync(int announcementId)
     {
-        var storeId = await storeContext.GetActiveStoreAsync(currentUserService.UserId);
+        var storeId = await actor.GetActiveStoreAsync();
 
         var entity = await context.Set<Announcement>()
             .AsNoTracking()
@@ -2193,7 +3837,7 @@ public sealed class AnnouncementService(IAppDbContext context, IClock clock, IUs
 
     public async Task<PagedResult<AnnouncementDto>> GetForStoreAsync(AnnouncementSearchObject search)
     {
-        var storeId = await storeContext.GetActiveStoreAsync(currentUserService.UserId);
+        var storeId = await actor.GetActiveStoreAsync();
 
         return await context.Set<Announcement>()
             .AsNoTracking()
@@ -2204,13 +3848,13 @@ public sealed class AnnouncementService(IAppDbContext context, IClock clock, IUs
 
     public async Task<AnnouncementDto> UpdateForStoreAsync(int announcementId, AnnouncementRequest request)
     {
-        var storeId = await storeContext.GetActiveStoreAsync(currentUserService.UserId);
+        var storeId = await actor.GetActiveStoreAsync();
 
         var entity = await context.Set<Announcement>()
             .FirstOrDefaultAsync(a => a.Id == announcementId && a.MusicStoreId == storeId) ?? throw new NotFoundException(Messages.AnnouncementNotFound);
 
         entity.UpdateDetails(request.Title.Trim(), request.Content.Trim());
-        entity.UpdatedById = currentUserService.UserId;
+        entity.UpdatedById = actor.UserId;
 
         await context.SaveChangesAsync();
 
@@ -2219,13 +3863,13 @@ public sealed class AnnouncementService(IAppDbContext context, IClock clock, IUs
 
     public async Task DeleteForStoreAsync(int announcementId)
     {
-        var storeId = await storeContext.GetActiveStoreAsync(currentUserService.UserId);
+        var storeId = await actor.GetActiveStoreAsync();
 
         var entity = await context.Set<Announcement>()
             .FirstOrDefaultAsync(a => a.Id == announcementId && a.MusicStoreId == storeId) ?? throw new NotFoundException(Messages.AnnouncementNotFound);
 
         entity.SoftDelete();
-        entity.UpdatedById = currentUserService.UserId;
+        entity.UpdatedById = actor.UserId;
 
         await context.SaveChangesAsync();
     }
@@ -2236,7 +3880,7 @@ public sealed class AnnouncementService(IAppDbContext context, IClock clock, IUs
         var path = await fileStorage.SaveAsync(stream, fileName, contentType, "announcements", ct);
 
         entity.SetImagePath(path);
-        entity.UpdatedById = currentUserService.UserId;
+        entity.UpdatedById = actor.UserId;
 
         await context.SaveChangesAsync(ct);
 
@@ -2245,7 +3889,7 @@ public sealed class AnnouncementService(IAppDbContext context, IClock clock, IUs
 
     public async Task<AnnouncementDto> UploadImageForStoreAsync(int announcementId, Stream stream, string fileName, string contentType, CancellationToken ct = default)
     {
-        var storeId = await storeContext.GetActiveStoreAsync(currentUserService.UserId);
+        var storeId = await actor.GetActiveStoreAsync();
 
         var entity = await context.Set<Announcement>()
             .FirstOrDefaultAsync(a => a.Id == announcementId && a.MusicStoreId == storeId, ct) ?? throw new NotFoundException(Messages.AnnouncementNotFound);
@@ -2253,7 +3897,7 @@ public sealed class AnnouncementService(IAppDbContext context, IClock clock, IUs
         var path = await fileStorage.SaveAsync(stream, fileName, contentType, "announcements", ct);
 
         entity.SetImagePath(path);
-        entity.UpdatedById = currentUserService.UserId;
+        entity.UpdatedById = actor.UserId;
 
         await context.SaveChangesAsync(ct);
 
@@ -2262,7 +3906,7 @@ public sealed class AnnouncementService(IAppDbContext context, IClock clock, IUs
 
     private async Task<IQueryable<Announcement>> GetCourseAnnouncementQueryAsync(int courseId, bool track = false)
     {
-        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUserService.UserId);
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(actor.UserId);
 
         return instructorAccess.CourseAnnouncementsFor(courseId, instructorId, track);
     }
@@ -2270,7 +3914,13 @@ public sealed class AnnouncementService(IAppDbContext context, IClock clock, IUs
 
 ```
 
-## File: eNote\eNote.Application\Features\Communication\Announcements\Services\ICourseAnnouncementService.cs
+---
+
+## File: `eNote\eNote.Application\Features\Communication\Announcements\Services\ICourseAnnouncementService.cs`
+**Hash**: `ee6ac41cf309` | **Size**: 852 chars
+
+**Classes**: 
+**Interfaces**: ICourseAnnouncementService
 ```cs
 using eNote.Application.Common.Paging;
 using eNote.Application.Features.Communication.Announcements;
@@ -2289,7 +3939,13 @@ public interface ICourseAnnouncementService
 
 ```
 
-## File: eNote\eNote.Application\Features\Communication\Announcements\Services\IStoreAnnouncementService.cs
+---
+
+## File: `eNote\eNote.Application\Features\Communication\Announcements\Services\IStoreAnnouncementService.cs`
+**Hash**: `8dda14d7e4fa` | **Size**: 761 chars
+
+**Classes**: 
+**Interfaces**: IStoreAnnouncementService
 ```cs
 using eNote.Application.Common.Paging;
 using eNote.Application.Features.Communication.Announcements;
@@ -2308,7 +3964,13 @@ public interface IStoreAnnouncementService
 
 ```
 
-## File: eNote\eNote.Application\Features\Communication\Announcements\Services\IStudentAnnouncementService.cs
+---
+
+## File: `eNote\eNote.Application\Features\Communication\Announcements\Services\IStudentAnnouncementService.cs`
+**Hash**: `6422344bb2c2` | **Size**: 323 chars
+
+**Classes**: 
+**Interfaces**: IStudentAnnouncementService
 ```cs
 using eNote.Application.Common.Paging;
 using eNote.Application.Features.Communication.Announcements;
@@ -2322,7 +3984,12 @@ public interface IStudentAnnouncementService
 
 ```
 
-## File: eNote\eNote.Application\Features\Communication\Notifications\NotificationDto.cs
+---
+
+## File: `eNote\eNote.Application\Features\Communication\Notifications\NotificationDto.cs`
+**Hash**: `4c429c5ba45f` | **Size**: 347 chars
+
+**Classes**: NotificationDto
 ```cs
 namespace eNote.Application.Features.Communication.Notifications;
 
@@ -2340,7 +4007,12 @@ public class NotificationDto
 
 ```
 
-## File: eNote\eNote.Application\Features\Communication\Notifications\NotificationPushDto.cs
+---
+
+## File: `eNote\eNote.Application\Features\Communication\Notifications\NotificationPushDto.cs`
+**Hash**: `5be36f9e6cf4` | **Size**: 284 chars
+
+**Classes**: NotificationPushDto
 ```cs
 namespace eNote.Application.Features.Communication.Notifications;
 
@@ -2354,7 +4026,12 @@ public class NotificationPushDto
 
 ```
 
-## File: eNote\eNote.Application\Features\Communication\Notifications\NotificationSearchExtensions.cs
+---
+
+## File: `eNote\eNote.Application\Features\Communication\Notifications\NotificationSearchExtensions.cs`
+**Hash**: `9ed3cd111c38` | **Size**: 413 chars
+
+**Classes**: NotificationSearchExtensions
 ```cs
 using eNote.Application.Common.Search;
 using eNote.Domain.Entities.Communication;
@@ -2368,7 +4045,12 @@ public static class NotificationSearchExtensions
 }
 ```
 
-## File: eNote\eNote.Application\Features\Communication\Notifications\NotificationSearchObject.cs
+---
+
+## File: `eNote\eNote.Application\Features\Communication\Notifications\NotificationSearchObject.cs`
+**Hash**: `4d1f4a81baea` | **Size**: 206 chars
+
+**Classes**: NotificationSearchObject
 ```cs
 using eNote.Application.Common.Search;
 
@@ -2381,7 +4063,12 @@ public class NotificationSearchObject : BaseSearchObject
 
 ```
 
-## File: eNote\eNote.Application\Features\Communication\Notifications\NotificationUnreadCountDto.cs
+---
+
+## File: `eNote\eNote.Application\Features\Communication\Notifications\NotificationUnreadCountDto.cs`
+**Hash**: `bae0d7965f33` | **Size**: 153 chars
+
+**Classes**: NotificationUnreadCountDto
 ```cs
 namespace eNote.Application.Features.Communication.Notifications;
 
@@ -2392,7 +4079,13 @@ public class NotificationUnreadCountDto
 
 ```
 
-## File: eNote\eNote.Application\Features\Communication\Notifications\Services\INotificationService.cs
+---
+
+## File: `eNote\eNote.Application\Features\Communication\Notifications\Services\INotificationService.cs`
+**Hash**: `b2dbd04c9e63` | **Size**: 660 chars
+
+**Classes**: 
+**Interfaces**: INotificationService
 ```cs
 using eNote.Application.Common.Paging;
 using eNote.Application.Features.Communication.Notifications;
@@ -2412,7 +4105,15 @@ public interface INotificationService
 
 ```
 
-## File: eNote\eNote.Application\Features\Communication\Notifications\Services\NotificationService.cs
+---
+
+## File: `eNote\eNote.Application\Features\Communication\Notifications\Services\NotificationService.cs`
+**Hash**: `183c7219f399` | **Size**: 2638 chars
+
+**Classes**: NotificationService
+### Key Cross-Cutting Interactions
+- Uses **IAppDbContext|DbContext** → Persistence boundary
+
 ```cs
 ﻿using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Interfaces;
@@ -2487,7 +4188,17 @@ public sealed class NotificationService(IAppDbContext context, IMapper mapper, I
 
 ```
 
-## File: eNote\eNote.Application\Features\Files\Services\FileAccessService.cs
+---
+
+## File: `eNote\eNote.Application\Features\Files\Services\FileAccessService.cs`
+**Hash**: `892d446c3ae0` | **Size**: 1859 chars
+
+**Classes**: FileAccessService
+### Key Cross-Cutting Interactions
+- Uses **IInstructorAccessService** → Instructor ownership enforcement
+- Uses **IUserProfileLookup** → User profile lookup
+- Uses **IAppDbContext|DbContext** → Persistence boundary
+
 ```cs
 using eNote.Application.Common.Persistence;
 using eNote.Application.Constants;
@@ -2500,7 +4211,7 @@ namespace eNote.Application.Features.Files.Services;
 
 public sealed class FileAccessService(
     IAppDbContext context,
-    IUserContextResolver resolver,
+    IUserProfileLookup lookup,
     IInstructorAccessService instructorAccess,
     IUserIdentityService identity) : IFileAccessService
 {
@@ -2531,7 +4242,7 @@ public sealed class FileAccessService(
 
         if (roles.Contains(AppRoles.Student))
         {
-            var student = await resolver.GetStudentAsync(userId);
+            var student = await lookup.GetStudentAsync(userId);
             return submission.StudentId == student.Id;
         }
 
@@ -2546,7 +4257,13 @@ public sealed class FileAccessService(
 }
 ```
 
-## File: eNote\eNote.Application\Features\Files\Services\IFileAccessService.cs
+---
+
+## File: `eNote\eNote.Application\Features\Files\Services\IFileAccessService.cs`
+**Hash**: `7453989735ab` | **Size**: 214 chars
+
+**Classes**: 
+**Interfaces**: IFileAccessService
 ```cs
 namespace eNote.Application.Features.Files.Services;
 
@@ -2556,7 +4273,15 @@ public interface IFileAccessService
 }
 ```
 
-## File: eNote\eNote.Application\Features\Identity\Instructors\AdminInstructorService.cs
+---
+
+## File: `eNote\eNote.Application\Features\Identity\Instructors\AdminInstructorService.cs`
+**Hash**: `1d9c5b8fea00` | **Size**: 2749 chars
+
+**Classes**: AdminInstructorService
+### Key Cross-Cutting Interactions
+- Uses **IAppDbContext|DbContext** → Persistence boundary
+
 ```cs
 using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Localization;
@@ -2635,7 +4360,13 @@ public sealed class AdminInstructorService(IAppDbContext context, IUserIdentityS
 
 ```
 
-## File: eNote\eNote.Application\Features\Identity\Instructors\IAdminInstructorService.cs
+---
+
+## File: `eNote\eNote.Application\Features\Identity\Instructors\IAdminInstructorService.cs`
+**Hash**: `f08d26c2e39b` | **Size**: 274 chars
+
+**Classes**: 
+**Interfaces**: IAdminInstructorService
 ```cs
 using eNote.Application.Common.Paging;
 
@@ -2649,7 +4380,16 @@ public interface IAdminInstructorService
 
 ```
 
-## File: eNote\eNote.Application\Features\Identity\Instructors\IInstructorAccessService.cs
+---
+
+## File: `eNote\eNote.Application\Features\Identity\Instructors\IInstructorAccessService.cs`
+**Hash**: `8857d9c3527a` | **Size**: 1310 chars
+
+**Classes**: 
+**Interfaces**: IInstructorAccessService
+### Key Cross-Cutting Interactions
+- Uses **IInstructorAccessService** → Instructor ownership enforcement
+
 ```cs
 using eNote.Domain.Entities;
 using eNote.Domain.Entities.Assignments;
@@ -2687,7 +4427,17 @@ public interface IInstructorAccessService
 }
 ```
 
-## File: eNote\eNote.Application\Features\Identity\Instructors\InstructorAccessService.cs
+---
+
+## File: `eNote\eNote.Application\Features\Identity\Instructors\InstructorAccessService.cs`
+**Hash**: `2badfa66cb14` | **Size**: 4089 chars
+
+**Classes**: InstructorAccessService
+### Key Cross-Cutting Interactions
+- Uses **IInstructorAccessService** → Instructor ownership enforcement
+- Uses **IUserProfileLookup** → User profile lookup
+- Uses **IAppDbContext|DbContext** → Persistence boundary
+
 ```cs
 ﻿using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Localization;
@@ -2701,9 +4451,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Application.Features.Identity.Instructors;
 
-public sealed class InstructorAccessService(IAppDbContext context, IUserContextResolver resolver) : IInstructorAccessService
+public sealed class InstructorAccessService(IAppDbContext context, IUserProfileLookup lookup) : IInstructorAccessService
 {
-    public Task<Instructor> GetInstructorAsync(int userId) => resolver.GetInstructorAsync(userId);
+    public Task<Instructor> GetInstructorAsync(int userId) => lookup.GetInstructorAsync(userId);
     public async Task<int> GetCurrentInstructorIdAsync(int appUserId) => (await GetInstructorAsync(appUserId)).Id;
 
     public Task<bool> OwnsCourseAsync(int courseId, int instructorId) =>
@@ -2787,7 +4537,12 @@ public sealed class InstructorAccessService(IAppDbContext context, IUserContextR
 
 ```
 
-## File: eNote\eNote.Application\Features\Identity\Instructors\InstructorDto.cs
+---
+
+## File: `eNote\eNote.Application\Features\Identity\Instructors\InstructorDto.cs`
+**Hash**: `75f2b902e847` | **Size**: 290 chars
+
+**Classes**: InstructorDto
 ```cs
 namespace eNote.Application.Features.Identity.Instructors;
 
@@ -2803,7 +4558,12 @@ public class InstructorDto
 
 ```
 
-## File: eNote\eNote.Application\Features\Identity\Instructors\InstructorSearchObject.cs
+---
+
+## File: `eNote\eNote.Application\Features\Identity\Instructors\InstructorSearchObject.cs`
+**Hash**: `f9f2120c0f5f` | **Size**: 204 chars
+
+**Classes**: InstructorSearchObject
 ```cs
 using eNote.Application.Common.Search;
 
@@ -2816,7 +4576,12 @@ public sealed class InstructorSearchObject : BaseSearchObject
 
 ```
 
-## File: eNote\eNote.Application\Features\Identity\Users\AddressDto.cs
+---
+
+## File: `eNote\eNote.Application\Features\Identity\Users\AddressDto.cs`
+**Hash**: `80d4dab82050` | **Size**: 228 chars
+
+**Classes**: UserAddressDto
 ```cs
 namespace eNote.Application.Features.Identity.Users;
 
@@ -2829,7 +4594,12 @@ public class UserAddressDto
 
 ```
 
-## File: eNote\eNote.Application\Features\Identity\Users\ChangePasswordRequest.cs
+---
+
+## File: `eNote\eNote.Application\Features\Identity\Users\ChangePasswordRequest.cs`
+**Hash**: `562d194e205a` | **Size**: 433 chars
+
+**Classes**: ChangePasswordRequest
 ```cs
 using System.ComponentModel.DataAnnotations;
 
@@ -2850,86 +4620,11 @@ public class ChangePasswordRequest
 
 ```
 
-## File: eNote\eNote.Application\Features\Identity\Users\UpdateMembershipRequest.cs
-```cs
-namespace eNote.Application.Features.Identity.Users;
+---
 
-public class UpdateMembershipRequest
-{
-    // Null briše članstvo (označava kao neplaćeno)
-    public DateTime? PaidUntil { get; set; }
-}
+## File: `eNote\eNote.Application\Features\Identity\Users\Profiles\AdminProfile.cs`
+**Hash**: `fa102c712373` | **Size**: 143 chars
 
-```
-
-## File: eNote\eNote.Application\Features\Identity\Users\UpdateProfileRequest.cs
-```cs
-using System.ComponentModel.DataAnnotations;
-
-namespace eNote.Application.Features.Identity.Users;
-
-public class UpdateProfileRequest
-{
-    [Required]
-    [EmailAddress]
-    public string Email { get; set; } = null!;
-    public string? FirstName { get; set; }
-    public string? LastName { get; set; }
-    public DateTime? DateOfBirth { get; set; }
-}
-
-```
-
-## File: eNote\eNote.Application\Features\Identity\Users\UserIdentityDto.cs
-```cs
-namespace eNote.Application.Features.Identity.Users;
-
-public class UserIdentityDto
-{
-    public int Id { get; set; }
-
-    public string Username { get; set; } = null!;
-    public string? FirstName { get; set; }
-    public string? LastName { get; set; }
-    public UserAddressDto? Address { get; set; }
-
-    public DateTime? DateOfBirth { get; set; }
-    public bool HasPicture { get; set; }
-
-    public bool IsActive { get; set; }
-}
-
-```
-
-## File: eNote\eNote.Application\Features\Identity\Users\UserProfileResponse.cs
-```cs
-using eNote.Application.Features.Identity.Users.Profiles;
-
-namespace eNote.Application.Features.Identity.Users;
-
-public sealed record UserProfileResponse(string Role, IUserProfile Profile);
-
-```
-
-## File: eNote\eNote.Application\Features\Identity\Users\UserProvisionRequest.cs
-```cs
-namespace eNote.Application.Features.Identity.Users;
-
-public class UserProvisionRequest
-{
-    public required string Username { get; init; }
-    public required string Email { get; init; }
-    public required string Password { get; init; }
-    public required string Role { get; init; }
-
-    public string? FirstName { get; init; }
-    public string? LastName { get; init; }
-    public int? MusicStoreId { get; init; }
-}
-
-```
-
-## File: eNote\eNote.Application\Features\Identity\Users\Profiles\AdminProfile.cs
 ```cs
 namespace eNote.Application.Features.Identity.Users.Profiles;
 
@@ -2937,15 +4632,13 @@ public record AdminProfile(string? FirstName, string? LastName) : IUserProfile;
 
 ```
 
-## File: eNote\eNote.Application\Features\Identity\Users\Profiles\InstructorProfile.cs
-```cs
-namespace eNote.Application.Features.Identity.Users.Profiles;
+---
 
-public record InstructorProfile(int Id, string? FirstName, string? LastName) : IUserProfile;
+## File: `eNote\eNote.Application\Features\Identity\Users\Profiles\IUserProfile.cs`
+**Hash**: `cb43c2af43ca` | **Size**: 97 chars
 
-```
-
-## File: eNote\eNote.Application\Features\Identity\Users\Profiles\IUserProfile.cs
+**Classes**: 
+**Interfaces**: IUserProfile
 ```cs
 namespace eNote.Application.Features.Identity.Users.Profiles;
 
@@ -2955,7 +4648,23 @@ public interface IUserProfile
 
 ```
 
-## File: eNote\eNote.Application\Features\Identity\Users\Profiles\MusicStoreProfile.cs
+---
+
+## File: `eNote\eNote.Application\Features\Identity\Users\Profiles\InstructorProfile.cs`
+**Hash**: `0b99489eac3f` | **Size**: 156 chars
+
+```cs
+namespace eNote.Application.Features.Identity.Users.Profiles;
+
+public record InstructorProfile(int Id, string? FirstName, string? LastName) : IUserProfile;
+
+```
+
+---
+
+## File: `eNote\eNote.Application\Features\Identity\Users\Profiles\MusicStoreProfile.cs`
+**Hash**: `961183f7e433` | **Size**: 234 chars
+
 ```cs
 using eNote.Application.Features.Identity.Users;
 
@@ -2965,7 +4674,11 @@ public record MusicStoreProfile(int Id, string StoreName, string BusinessHours, 
 
 ```
 
-## File: eNote\eNote.Application\Features\Identity\Users\Profiles\StudentProfile.cs
+---
+
+## File: `eNote\eNote.Application\Features\Identity\Users\Profiles\StudentProfile.cs`
+**Hash**: `390a84a6dcab` | **Size**: 307 chars
+
 ```cs
 using eNote.Application.Features.Identity.Users;
 
@@ -2975,7 +4688,91 @@ public record StudentProfile(int Id, DateTime EnrollmentDate, string? FirstName,
 
 ```
 
-## File: eNote\eNote.Application\Features\Identity\Users\Services\IUserAccountService.cs
+---
+
+## File: `eNote\eNote.Application\Features\Identity\Users\Services\CurrentActor.cs`
+**Hash**: `9563fce81595` | **Size**: 1628 chars
+
+**Classes**: CurrentActor
+### Key Cross-Cutting Interactions
+- Uses **ICurrentActor** → Current actor resolution
+- Uses **IUserProfileLookup** → User profile lookup
+- Uses **IAppDbContext|DbContext** → Persistence boundary
+
+```cs
+using eNote.Application.Common.Exceptions;
+using eNote.Application.Common.Interfaces;
+using eNote.Application.Common.Localization;
+using eNote.Application.Common.Persistence;
+using eNote.Domain.Entities.Identity;
+using Microsoft.EntityFrameworkCore;
+
+namespace eNote.Application.Features.Identity.Users.Services;
+
+public sealed class CurrentActor(ICurrentUserService user, IUserProfileLookup lookup, IAppDbContext context) : ICurrentActor
+{
+    private Student? _student;
+    private Instructor? _instructor;
+    private MusicStoreEmployee? _employee;
+    private int? _storeId;
+
+    public int UserId => user.UserId;
+    public bool IsAuthenticated => user.IsAuthenticated;
+
+    public async Task<Student> GetStudentAsync() => _student ??= await lookup.GetStudentAsync(user.UserId);
+    public async Task<int> GetCurrentStudentIdAsync() => (await GetStudentAsync()).Id;
+    public async Task<Instructor> GetInstructorAsync() => _instructor ??= await lookup.GetInstructorAsync(user.UserId);
+    public async Task<MusicStoreEmployee> GetActiveEmployeeAsync() => _employee ??= await lookup.GetActiveEmployeeAsync(user.UserId);
+
+    public async Task<int> GetActiveStoreAsync()
+    {
+        if (_storeId is not null) return _storeId.Value;
+
+        var storeId = await context.Set<MusicStoreEmployee>()
+            .AsNoTracking()
+            .Where(x => x.AppUserId == user.UserId && x.IsActive)
+            .Select(x => x.MusicStoreId)
+            .SingleOrDefaultAsync();
+
+        if (storeId == 0) throw new BusinessException(Messages.ActiveEmployeeStoreNotFound);
+
+        _storeId = storeId;
+        return storeId;
+    }
+}
+
+```
+
+---
+
+## File: `eNote\eNote.Application\Features\Identity\Users\Services\IStudentDisplayNameService.cs`
+**Hash**: `0e71feef362c` | **Size**: 315 chars
+
+**Classes**: 
+**Interfaces**: IStudentDisplayNameService
+### Key Cross-Cutting Interactions
+- Uses **IStudentDisplayNameService** → Student display-name formatting
+
+```cs
+using eNote.Domain.Entities.Identity;
+
+namespace eNote.Application.Features.Identity.Users.Services;
+
+public interface IStudentDisplayNameService
+{
+    Task<string> GetStudentDisplayNameAsync(Student student);
+    Task<IReadOnlyDictionary<int, string>> GetStudentDisplayNamesAsync(IEnumerable<Student> students);
+}
+
+```
+
+---
+
+## File: `eNote\eNote.Application\Features\Identity\Users\Services\IUserAccountService.cs`
+**Hash**: `5425cd9cde12` | **Size**: 953 chars
+
+**Classes**: 
+**Interfaces**: IUserAccountService
 ```cs
 namespace eNote.Application.Features.Identity.Users.Services;
 
@@ -2994,25 +4791,13 @@ public interface IUserAccountService
 
 ```
 
-## File: eNote\eNote.Application\Features\Identity\Users\Services\IUserContextResolver.cs
-```cs
-using eNote.Domain.Entities.Identity;
+---
 
-namespace eNote.Application.Features.Identity.Users.Services;
+## File: `eNote\eNote.Application\Features\Identity\Users\Services\IUserIdentityService.cs`
+**Hash**: `803f5065e217` | **Size**: 364 chars
 
-public interface IUserContextResolver
-{
-    Task<Student> GetStudentAsync(int userId);
-    Task<int> GetCurrentStudentIdAsync(int appUserId);
-    Task<Instructor> GetInstructorAsync(int userId);
-    Task<MusicStoreEmployee> GetActiveEmployeeAsync(int userId);
-    Task<string> GetStudentDisplayNameAsync(Student student);
-    Task<IReadOnlyDictionary<int, string>> GetStudentDisplayNamesAsync(IEnumerable<Student> students);
-}
-
-```
-
-## File: eNote\eNote.Application\Features\Identity\Users\Services\IUserIdentityService.cs
+**Classes**: 
+**Interfaces**: IUserIdentityService
 ```cs
 using eNote.Application.Features.Identity.Users;
 
@@ -3027,7 +4812,37 @@ public interface IUserIdentityService
 
 ```
 
-## File: eNote\eNote.Application\Features\Identity\Users\Services\IUserProfileService.cs
+---
+
+## File: `eNote\eNote.Application\Features\Identity\Users\Services\IUserProfileLookup.cs`
+**Hash**: `de4eecd99ac6` | **Size**: 307 chars
+
+**Classes**: 
+**Interfaces**: IUserProfileLookup
+### Key Cross-Cutting Interactions
+- Uses **IUserProfileLookup** → User profile lookup
+
+```cs
+using eNote.Domain.Entities.Identity;
+
+namespace eNote.Application.Features.Identity.Users.Services;
+
+public interface IUserProfileLookup
+{
+    Task<Student> GetStudentAsync(int userId);
+    Task<Instructor> GetInstructorAsync(int userId);
+    Task<MusicStoreEmployee> GetActiveEmployeeAsync(int userId);
+}
+
+```
+
+---
+
+## File: `eNote\eNote.Application\Features\Identity\Users\Services\IUserProfileService.cs`
+**Hash**: `a5432d62990e` | **Size**: 265 chars
+
+**Classes**: 
+**Interfaces**: IUserProfileService
 ```cs
 using eNote.Application.Features.Identity.Users;
 
@@ -3041,7 +4856,13 @@ public interface IUserProfileService
 
 ```
 
-## File: eNote\eNote.Application\Features\Identity\Users\Services\IUserProvisioningService.cs
+---
+
+## File: `eNote\eNote.Application\Features\Identity\Users\Services\IUserProvisioningService.cs`
+**Hash**: `362f88981525` | **Size**: 475 chars
+
+**Classes**: 
+**Interfaces**: IUserProvisioningService
 ```cs
 using eNote.Application.Features.Identity.Auth;
 using eNote.Application.Features.Identity.Users;
@@ -3057,7 +4878,13 @@ public interface IUserProvisioningService
 
 ```
 
-## File: eNote\eNote.Application\Features\Identity\Users\Services\IUserSelfService.cs
+---
+
+## File: `eNote\eNote.Application\Features\Identity\Users\Services\IUserSelfService.cs`
+**Hash**: `803aa4f0ffc2` | **Size**: 536 chars
+
+**Classes**: 
+**Interfaces**: IUserSelfService
 ```cs
 using eNote.Application.Features.Identity.Users;
 
@@ -3074,66 +4901,90 @@ public interface IUserSelfService
 
 ```
 
-## File: eNote\eNote.Application\Features\Identity\Users\Services\UserContextResolver.cs
+---
+
+## File: `eNote\eNote.Application\Features\Identity\Users\Services\StudentDisplayNameService.cs`
+**Hash**: `1d7ef2aa5107` | **Size**: 1149 chars
+
+**Classes**: StudentDisplayNameService
+### Key Cross-Cutting Interactions
+- Uses **IStudentDisplayNameService** → Student display-name formatting
+
 ```cs
-﻿using eNote.Application.Common.Localization;
-using eNote.Application.Common.Persistence;
 using eNote.Application.Features.Identity.Users;
 using eNote.Domain.Entities.Identity;
-using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Application.Features.Identity.Users.Services;
 
-public class UserContextResolver(IAppDbContext context, IUserIdentityService identity) : IUserContextResolver
+public sealed class StudentDisplayNameService(IUserIdentityService identity) : IStudentDisplayNameService
 {
-    public async Task<int> GetCurrentStudentIdAsync(int appUserId) =>
-        (await GetStudentAsync(appUserId)).Id;
-
-    public async Task<Student> GetStudentAsync(int userId) =>
-        await context.Set<Student>()
-        .AsNoTracking()
-        .FirstOrDefaultAsync(x => x.AppUserId == userId)
-        ?? throw new Common.Exceptions.BusinessException(Messages.StudentProfileNotFound);
-
-    public async Task<Instructor> GetInstructorAsync(int userId) =>
-        await context.Set<Instructor>()
-        .AsNoTracking()
-        .FirstOrDefaultAsync(x => x.AppUserId == userId)
-        ?? throw new Common.Exceptions.BusinessException(Messages.InstructorProfileNotFound);
-
-    public async Task<MusicStoreEmployee> GetActiveEmployeeAsync(int userId) =>
-        await context.Set<MusicStoreEmployee>()
-        .AsNoTracking()
-        .FirstOrDefaultAsync(x => x.AppUserId == userId && x.IsActive)
-        ?? throw new Common.Exceptions.BusinessException(Messages.EmployeeProfileNotFound);
-
     public async Task<string> GetStudentDisplayNameAsync(Student student)
     {
         var user = await identity.GetUserAsync(student.AppUserId);
-
         return user is null ? $"Student {student.Id}" : FormatName(user);
     }
 
     public async Task<IReadOnlyDictionary<int, string>> GetStudentDisplayNamesAsync(IEnumerable<Student> students)
     {
         List<Student> list = [.. students];
-
         IReadOnlyDictionary<int, UserIdentityDto> users = await identity.GetUsersBulkAsync(list.Select(s => s.AppUserId));
-
         return list.ToDictionary(s => s.Id, s => users.TryGetValue(s.AppUserId, out UserIdentityDto? user) ? FormatName(user) : $"Student {s.Id}");
     }
 
     private static string FormatName(UserIdentityDto user)
     {
         var fullName = $"{user.FirstName} {user.LastName}".Trim();
-
         return string.IsNullOrWhiteSpace(fullName) ? user.Username : fullName;
     }
 }
 
 ```
 
-## File: eNote\eNote.Application\Features\Identity\Users\Services\UserProfileService.cs
+---
+
+## File: `eNote\eNote.Application\Features\Identity\Users\Services\UserProfileLookup.cs`
+**Hash**: `cc062c464f8f` | **Size**: 1131 chars
+
+**Classes**: UserProfileLookup
+### Key Cross-Cutting Interactions
+- Uses **IUserProfileLookup** → User profile lookup
+- Uses **IAppDbContext|DbContext** → Persistence boundary
+
+```cs
+using eNote.Application.Common.Localization;
+using eNote.Application.Common.Persistence;
+using eNote.Domain.Entities.Identity;
+using Microsoft.EntityFrameworkCore;
+
+namespace eNote.Application.Features.Identity.Users.Services;
+
+public sealed class UserProfileLookup(IAppDbContext context) : IUserProfileLookup
+{
+    public async Task<Student> GetStudentAsync(int userId) =>
+        await context.Set<Student>().AsNoTracking().FirstOrDefaultAsync(x => x.AppUserId == userId)
+        ?? throw new Common.Exceptions.BusinessException(Messages.StudentProfileNotFound);
+
+    public async Task<Instructor> GetInstructorAsync(int userId) =>
+        await context.Set<Instructor>().AsNoTracking().FirstOrDefaultAsync(x => x.AppUserId == userId)
+        ?? throw new Common.Exceptions.BusinessException(Messages.InstructorProfileNotFound);
+
+    public async Task<MusicStoreEmployee> GetActiveEmployeeAsync(int userId) =>
+        await context.Set<MusicStoreEmployee>().AsNoTracking().FirstOrDefaultAsync(x => x.AppUserId == userId && x.IsActive)
+        ?? throw new Common.Exceptions.BusinessException(Messages.EmployeeProfileNotFound);
+}
+
+```
+
+---
+
+## File: `eNote\eNote.Application\Features\Identity\Users\Services\UserProfileService.cs`
+**Hash**: `0f2eeee7159a` | **Size**: 2801 chars
+
+**Classes**: UserProfileService
+### Key Cross-Cutting Interactions
+- Uses **IUserProfileLookup** → User profile lookup
+- Uses **IAppDbContext|DbContext** → Persistence boundary
+
 ```cs
 using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Interfaces;
@@ -3150,7 +5001,7 @@ namespace eNote.Application.Features.Identity.Users.Services;
 public sealed class UserProfileService(
     IAppDbContext context,
     IUserIdentityService identity,
-    IUserContextResolver resolver,
+    IUserProfileLookup lookup,
     ICurrentUserService currentUserService) : IUserProfileService
 {
     public Task<UserProfileResponse?> GetCurrentUserAsync() => GetUserAsync(currentUserService.UserId);
@@ -3187,21 +5038,21 @@ public sealed class UserProfileService(
 
     private async Task<StudentProfile> BuildStudentProfile(int userId, UserIdentityDto user)
     {
-        var student = await resolver.GetStudentAsync(userId);
+        var student = await lookup.GetStudentAsync(userId);
 
         return new StudentProfile(student.Id, student.EnrollmentDate, user.FirstName, user.LastName, user.DateOfBirth, user.Address, student.MembershipPaidUntil);
     }
 
     private async Task<InstructorProfile> BuildInstructorProfile(int userId, UserIdentityDto user)
     {
-        var instructor = await resolver.GetInstructorAsync(userId);
+        var instructor = await lookup.GetInstructorAsync(userId);
 
         return new InstructorProfile(instructor.Id, user.FirstName, user.LastName);
     }
 
     private async Task<MusicStoreProfile> BuildMusicStoreProfile(int userId, UserIdentityDto user)
     {
-        var employee = await resolver.GetActiveEmployeeAsync(userId);
+        var employee = await lookup.GetActiveEmployeeAsync(userId);
 
         var shop = await context.Set<MusicStore>()
             .AsNoTracking()
@@ -3214,7 +5065,15 @@ public sealed class UserProfileService(
 
 ```
 
-## File: eNote\eNote.Application\Features\Identity\Users\Services\UserProvisioningService.cs
+---
+
+## File: `eNote\eNote.Application\Features\Identity\Users\Services\UserProvisioningService.cs`
+**Hash**: `a1a9d64b5fc2` | **Size**: 5443 chars
+
+**Classes**: UserProvisioningService
+### Key Cross-Cutting Interactions
+- Uses **IAppDbContext|DbContext** → Persistence boundary
+
 ```cs
 using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Localization;
@@ -3391,7 +5250,12 @@ public sealed class UserProvisioningService(
 
 ```
 
-## File: eNote\eNote.Application\Features\Identity\Users\Services\UserSelfService.cs
+---
+
+## File: `eNote\eNote.Application\Features\Identity\Users\Services\UserSelfService.cs`
+**Hash**: `386696105c33` | **Size**: 1215 chars
+
+**Classes**: UserSelfService
 ```cs
 using eNote.Application.Common.Interfaces;
 using eNote.Application.Features.Identity.Users;
@@ -3420,7 +5284,115 @@ public sealed class UserSelfService(
 
 ```
 
-## File: eNote\eNote.Application\Features\Rentals\Instruments\InstrumentAvailabilityExtensions.cs
+---
+
+## File: `eNote\eNote.Application\Features\Identity\Users\UpdateMembershipRequest.cs`
+**Hash**: `87a28dee08d2` | **Size**: 192 chars
+
+**Classes**: UpdateMembershipRequest
+```cs
+namespace eNote.Application.Features.Identity.Users;
+
+public class UpdateMembershipRequest
+{
+    // Null briše članstvo (označava kao neplaćeno)
+    public DateTime? PaidUntil { get; set; }
+}
+
+```
+
+---
+
+## File: `eNote\eNote.Application\Features\Identity\Users\UpdateProfileRequest.cs`
+**Hash**: `cdba8fb327cc` | **Size**: 351 chars
+
+**Classes**: UpdateProfileRequest
+```cs
+using System.ComponentModel.DataAnnotations;
+
+namespace eNote.Application.Features.Identity.Users;
+
+public class UpdateProfileRequest
+{
+    [Required]
+    [EmailAddress]
+    public string Email { get; set; } = null!;
+    public string? FirstName { get; set; }
+    public string? LastName { get; set; }
+    public DateTime? DateOfBirth { get; set; }
+}
+
+```
+
+---
+
+## File: `eNote\eNote.Application\Features\Identity\Users\UserIdentityDto.cs`
+**Hash**: `78fd5ac75903` | **Size**: 433 chars
+
+**Classes**: UserIdentityDto
+```cs
+namespace eNote.Application.Features.Identity.Users;
+
+public class UserIdentityDto
+{
+    public int Id { get; set; }
+
+    public string Username { get; set; } = null!;
+    public string? FirstName { get; set; }
+    public string? LastName { get; set; }
+    public UserAddressDto? Address { get; set; }
+
+    public DateTime? DateOfBirth { get; set; }
+    public bool HasPicture { get; set; }
+
+    public bool IsActive { get; set; }
+}
+
+```
+
+---
+
+## File: `eNote\eNote.Application\Features\Identity\Users\UserProfileResponse.cs`
+**Hash**: `a19a1e5f0bfb` | **Size**: 190 chars
+
+```cs
+using eNote.Application.Features.Identity.Users.Profiles;
+
+namespace eNote.Application.Features.Identity.Users;
+
+public sealed record UserProfileResponse(string Role, IUserProfile Profile);
+
+```
+
+---
+
+## File: `eNote\eNote.Application\Features\Identity\Users\UserProvisionRequest.cs`
+**Hash**: `2e2cee0f3a21` | **Size**: 421 chars
+
+**Classes**: UserProvisionRequest
+```cs
+namespace eNote.Application.Features.Identity.Users;
+
+public class UserProvisionRequest
+{
+    public required string Username { get; init; }
+    public required string Email { get; init; }
+    public required string Password { get; init; }
+    public required string Role { get; init; }
+
+    public string? FirstName { get; init; }
+    public string? LastName { get; init; }
+    public int? MusicStoreId { get; init; }
+}
+
+```
+
+---
+
+## File: `eNote\eNote.Application\Features\Rentals\Instruments\InstrumentAvailabilityExtensions.cs`
+**Hash**: `14fea4ea23f6` | **Size**: 823 chars
+
+**Classes**: InstrumentAvailabilityExtensions
 ```cs
 using eNote.Domain.Entities.Rentals;
 using eNote.Domain.Enums;
@@ -3440,7 +5412,12 @@ public static class InstrumentAvailabilityExtensions
 }
 ```
 
-## File: eNote\eNote.Application\Features\Rentals\Instruments\InstrumentCreateRequest.cs
+---
+
+## File: `eNote\eNote.Application\Features\Rentals\Instruments\InstrumentCreateRequest.cs`
+**Hash**: `d6378335f620` | **Size**: 336 chars
+
+**Classes**: InstrumentCreateRequest
 ```cs
 namespace eNote.Application.Features.Rentals.Instruments;
 
@@ -3456,7 +5433,12 @@ public class InstrumentCreateRequest
 
 ```
 
-## File: eNote\eNote.Application\Features\Rentals\Instruments\InstrumentDto.cs
+---
+
+## File: `eNote\eNote.Application\Features\Rentals\Instruments\InstrumentDto.cs`
+**Hash**: `473bb9e958a1` | **Size**: 463 chars
+
+**Classes**: InstrumentDto
 ```cs
 namespace eNote.Application.Features.Rentals.Instruments;
 
@@ -3476,7 +5458,12 @@ public class InstrumentDto
 
 ```
 
-## File: eNote\eNote.Application\Features\Rentals\Instruments\InstrumentMappingConfig.cs
+---
+
+## File: `eNote\eNote.Application\Features\Rentals\Instruments\InstrumentMappingConfig.cs`
+**Hash**: `82f1140fa90e` | **Size**: 443 chars
+
+**Classes**: InstrumentMappingConfig
 ```cs
 using eNote.Domain.Entities.Rentals;
 using Mapster;
@@ -3495,7 +5482,12 @@ public sealed class InstrumentMappingConfig : IRegister
 
 ```
 
-## File: eNote\eNote.Application\Features\Rentals\Instruments\InstrumentQueryableExtensions.cs
+---
+
+## File: `eNote\eNote.Application\Features\Rentals\Instruments\InstrumentQueryableExtensions.cs`
+**Hash**: `a004a6908890` | **Size**: 434 chars
+
+**Classes**: InstrumentQueryableExtensions
 ```cs
 using eNote.Domain.Entities.Rentals;
 using Microsoft.EntityFrameworkCore;
@@ -3512,7 +5504,12 @@ public static class InstrumentQueryableExtensions
 }
 ```
 
-## File: eNote\eNote.Application\Features\Rentals\Instruments\InstrumentSearchExtensions.cs
+---
+
+## File: `eNote\eNote.Application\Features\Rentals\Instruments\InstrumentSearchExtensions.cs`
+**Hash**: `bbc29ecde6f1` | **Size**: 857 chars
+
+**Classes**: InstrumentSearchExtensions
 ```cs
 using eNote.Application.Common.Search;
 using eNote.Domain.Entities.Rentals;
@@ -3540,7 +5537,12 @@ public static class InstrumentSearchExtensions
 }
 ```
 
-## File: eNote\eNote.Application\Features\Rentals\Instruments\InstrumentSearchObject.cs
+---
+
+## File: `eNote\eNote.Application\Features\Rentals\Instruments\InstrumentSearchObject.cs`
+**Hash**: `50e7051d7070` | **Size**: 334 chars
+
+**Classes**: InstrumentSearchObject
 ```cs
 using eNote.Application.Common.Search;
 
@@ -3557,7 +5559,12 @@ public class InstrumentSearchObject : BaseSearchObject
 
 ```
 
-## File: eNote\eNote.Application\Features\Rentals\Instruments\InstrumentUpdateRequest.cs
+---
+
+## File: `eNote\eNote.Application\Features\Rentals\Instruments\InstrumentUpdateRequest.cs`
+**Hash**: `6bb1d5655b64` | **Size**: 321 chars
+
+**Classes**: InstrumentUpdateRequest
 ```cs
 namespace eNote.Application.Features.Rentals.Instruments;
 
@@ -3573,7 +5580,13 @@ public class InstrumentUpdateRequest
 
 ```
 
-## File: eNote\eNote.Application\Features\Rentals\Instruments\Services\IInstrumentService.cs
+---
+
+## File: `eNote\eNote.Application\Features\Rentals\Instruments\Services\IInstrumentService.cs`
+**Hash**: `a3cccd1a3d6d` | **Size**: 784 chars
+
+**Classes**: 
+**Interfaces**: IInstrumentService
 ```cs
 using eNote.Application.Common.Paging;
 using eNote.Application.Features.Rentals.Instruments;
@@ -3594,14 +5607,22 @@ public interface IInstrumentService
 
 ```
 
-## File: eNote\eNote.Application\Features\Rentals\Instruments\Services\InstrumentService.cs
+---
+
+## File: `eNote\eNote.Application\Features\Rentals\Instruments\Services\InstrumentService.cs`
+**Hash**: `c2b0e64b517a` | **Size**: 5768 chars
+
+**Classes**: InstrumentService
+### Key Cross-Cutting Interactions
+- Uses **ICurrentActor** → Current actor resolution
+- Uses **IAppDbContext|DbContext** → Persistence boundary
+
 ```cs
 ﻿using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Paging;
 using eNote.Application.Common.Persistence;
-using eNote.Application.Features.Identity.Users.Services;
 using eNote.Application.Features.Rentals.Instruments;
 using eNote.Domain.Entities.Identity;
 using eNote.Domain.Entities.Rentals;
@@ -3613,8 +5634,7 @@ namespace eNote.Application.Features.Rentals.Instruments.Services;
 public sealed class InstrumentService(
     IAppDbContext context,
     IMapper mapper,
-    IUserContextResolver resolver,
-    ICurrentUserService currentUserService,
+    ICurrentActor actor,
     IFileStorageService fileStorage) : IInstrumentService
 {
     public async Task<InstrumentDto> GetByIdAsync(int id)
@@ -3742,7 +5762,7 @@ public sealed class InstrumentService(
     }
 
     private Task<MusicStoreEmployee> EnsureStoreAccessAsync() =>
-        resolver.GetActiveEmployeeAsync(currentUserService.UserId);
+        actor.GetActiveEmployeeAsync();
 
     private async Task EnsureInstrumentTypeExistsAsync(int instrumentTypeId)
     {
@@ -3758,49 +5778,12 @@ public sealed class InstrumentService(
 
 ```
 
-## File: eNote\eNote.Application\Features\Rentals\MusicStores\Services\IMusicStoreContextService.cs
-```cs
-namespace eNote.Application.Features.Rentals.MusicStores.Services;
+---
 
-public interface IMusicStoreContextService
-{
-    Task<int> GetActiveStoreAsync(int appUserId, CancellationToken ct = default);
-}
+## File: `eNote\eNote.Application\Features\Rentals\Recommendations\InstrumentRecommendationDto.cs`
+**Hash**: `4f443b312d54` | **Size**: 322 chars
 
-```
-
-## File: eNote\eNote.Application\Features\Rentals\MusicStores\Services\MusicStoreContextService.cs
-```cs
-using eNote.Application.Common.Exceptions;
-using eNote.Application.Common.Localization;
-using eNote.Application.Common.Persistence;
-using eNote.Domain.Entities.Identity;
-using Microsoft.EntityFrameworkCore;
-
-namespace eNote.Application.Features.Rentals.MusicStores.Services;
-
-public sealed class MusicStoreContextService(IAppDbContext context) : IMusicStoreContextService
-{
-    public async Task<int> GetActiveStoreAsync(int appUserId, CancellationToken ct = default)
-    {
-        var activeStore = await context.Set<MusicStoreEmployee>()
-            .AsNoTracking()
-            .Where(x => x.AppUserId == appUserId && x.IsActive)
-            .Select(x => x.MusicStoreId)
-            .SingleOrDefaultAsync(ct);
-
-        if (activeStore == 0)
-        {
-            throw new BusinessException(Messages.ActiveEmployeeStoreNotFound);
-        }
-
-        return activeStore;
-    }
-}
-
-```
-
-## File: eNote\eNote.Application\Features\Rentals\Recommendations\InstrumentRecommendationDto.cs
+**Classes**: InstrumentRecommendationDto
 ```cs
 using eNote.Application.Features.Rentals.Instruments;
 
@@ -3815,7 +5798,13 @@ public class InstrumentRecommendationDto
 
 ```
 
-## File: eNote\eNote.Application\Features\Rentals\Recommendations\Services\IRecommendationService.cs
+---
+
+## File: `eNote\eNote.Application\Features\Rentals\Recommendations\Services\IRecommendationService.cs`
+**Hash**: `24e963912e04` | **Size**: 423 chars
+
+**Classes**: 
+**Interfaces**: IRecommendationService
 ```cs
 using eNote.Application.Features.Rentals.Recommendations;
 
@@ -3829,14 +5818,22 @@ public interface IRecommendationService
 
 ```
 
-## File: eNote\eNote.Application\Features\Rentals\Recommendations\Services\RecommendationService.cs
+---
+
+## File: `eNote\eNote.Application\Features\Rentals\Recommendations\Services\RecommendationService.cs`
+**Hash**: `988163a3aa67` | **Size**: 12208 chars
+
+**Classes**: RecommendationService
+### Key Cross-Cutting Interactions
+- Uses **ICurrentActor** → Current actor resolution
+- Uses **IAppDbContext|DbContext** → Persistence boundary
+
 ```cs
 ﻿using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Common.Time;
-using eNote.Application.Features.Identity.Users.Services;
 using eNote.Application.Features.Rentals.Instruments;
 using eNote.Application.Features.Rentals.Recommendations;
 using eNote.Domain.Entities.Rentals;
@@ -3846,7 +5843,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Application.Features.Rentals.Recommendations.Services;
 
-public sealed class RecommendationService(IAppDbContext context, IMapper mapper, ICurrentUserService currentUserService, IUserContextResolver resolver, IClock clock) : IRecommendationService
+public sealed class RecommendationService(IAppDbContext context, IMapper mapper, ICurrentActor actor, IClock clock) : IRecommendationService
 {
     private const double RentalWeight = 0.40;
     private const double ViewWeight = 0.30;
@@ -3858,9 +5855,9 @@ public sealed class RecommendationService(IAppDbContext context, IMapper mapper,
     {
         count = NormalizeCount(count);
 
-        var studentId = await resolver.GetCurrentStudentIdAsync(currentUserService.UserId);
+        var studentId = await actor.GetCurrentStudentIdAsync();
 
-        var userId = currentUserService.UserId;
+        var userId = actor.UserId;
 
         var userRentals = await context.Set<InstrumentRental>()
             .AsNoTracking()
@@ -3953,7 +5950,7 @@ public sealed class RecommendationService(IAppDbContext context, IMapper mapper,
             throw new NotFoundException(Messages.InstrumentNotFound);
         }
 
-        var userId = currentUserService.UserId;
+        var userId = actor.UserId;
 
         var now = clock.UtcNow;
 
@@ -4155,7 +6152,166 @@ public sealed class RecommendationService(IAppDbContext context, IMapper mapper,
 
 ```
 
-## File: eNote\eNote.Application\Features\Rentals\ReferenceData\IReferenceCrudService.cs
+---
+
+## File: `eNote\eNote.Application\Features\Rentals\ReferenceData\Addresses\AddressReferenceDto.cs`
+**Hash**: `6f6ee229d091` | **Size**: 293 chars
+
+**Classes**: AddressReferenceDto
+```cs
+namespace eNote.Application.Features.Rentals.ReferenceData.Addresses;
+
+public sealed class AddressReferenceDto
+{
+    public int Id { get; init; }
+    public string City { get; init; } = null!;
+    public string Street { get; init; } = null!;
+    public string Number { get; init; } = null!;
+}
+
+```
+
+---
+
+## File: `eNote\eNote.Application\Features\Rentals\ReferenceData\Addresses\AddressRequest.cs`
+**Hash**: `0e93352fceb6` | **Size**: 252 chars
+
+**Classes**: AddressRequest
+```cs
+namespace eNote.Application.Features.Rentals.ReferenceData.Addresses;
+
+public sealed class AddressRequest
+{
+    public string City { get; set; } = null!;
+    public string Street { get; set; } = null!;
+    public string Number { get; set; } = null!;
+}
+
+```
+
+---
+
+## File: `eNote\eNote.Application\Features\Rentals\ReferenceData\Addresses\AddressSearchExtensions.cs`
+**Hash**: `b7f4fdc45e59` | **Size**: 476 chars
+
+**Classes**: AddressSearchExtensions
+```cs
+using eNote.Application.Common.Search;
+using eNote.Domain.Entities.Shared;
+
+namespace eNote.Application.Features.Rentals.ReferenceData.Addresses;
+
+public static class AddressSearchExtensions
+{
+    public static IQueryable<Address> ApplySearch(this IQueryable<Address> query, AddressSearchObject search) => query
+            .WhereContainsIf(search.City, x => x.City.Contains(search.City!))
+            .WhereContainsIf(search.Street, x => x.Street.Contains(search.Street!));
+}
+```
+
+---
+
+## File: `eNote\eNote.Application\Features\Rentals\ReferenceData\Addresses\AddressSearchObject.cs`
+**Hash**: `ccc274b15f88` | **Size**: 251 chars
+
+**Classes**: AddressSearchObject
+```cs
+using eNote.Application.Common.Search;
+
+namespace eNote.Application.Features.Rentals.ReferenceData.Addresses;
+
+public sealed class AddressSearchObject : BaseSearchObject
+{
+    public string? City { get; set; }
+    public string? Street { get; set; }
+}
+```
+
+---
+
+## File: `eNote\eNote.Application\Features\Rentals\ReferenceData\Addresses\AddressService.cs`
+**Hash**: `8d12c89fc7f6` | **Size**: 1867 chars
+
+**Classes**: AddressService
+### Key Cross-Cutting Interactions
+- Uses **IAppDbContext|DbContext** → Persistence boundary
+
+```cs
+using eNote.Application.Common.Exceptions;
+using eNote.Application.Common.Localization;
+using eNote.Application.Common.Persistence;
+using eNote.Application.Features.Identity.Users.Services;
+using eNote.Application.Features.Rentals.ReferenceData;
+using eNote.Domain.Entities.Shared;
+using Microsoft.EntityFrameworkCore;
+
+namespace eNote.Application.Features.Rentals.ReferenceData.Addresses;
+
+public sealed class AddressService(IAppDbContext context, IUserAccountService accountService) : ReferenceCrudService<Address, AddressReferenceDto, AddressRequest, AddressSearchObject>(context), IAddressService
+{
+    protected override string NotFoundMessage => Messages.AddressNotFound;
+
+    protected override AddressReferenceDto Map(Address entity) => new()
+    {
+        Id = entity.Id,
+        City = entity.City,
+        Street = entity.Street,
+        Number = entity.Number
+    };
+
+    protected override Address CreateEntity(AddressRequest request) => new()
+    {
+        City = request.City.Trim(),
+        Street = request.Street.Trim(),
+        Number = request.Number.Trim()
+    };
+
+    protected override void ApplyUpdate(Address entity, AddressRequest request)
+    {
+        entity.City = request.City.Trim();
+        entity.Street = request.Street.Trim();
+        entity.Number = request.Number.Trim();
+    }
+
+    protected override IQueryable<Address> ApplySearch(IQueryable<Address> query, AddressSearchObject search) => query.ApplySearch(search);
+    protected override IOrderedQueryable<Address> Order(IQueryable<Address> query) => query.OrderBy(x => x.City).ThenBy(x => x.Street);
+
+    protected override async Task EnsureDeletableAsync(Address entity, CancellationToken ct = default)
+    {
+        if (await accountService.IsAddressInUseAsync(entity.Id))
+        {
+            throw new BusinessException(Messages.AddressDeleteBlocked);
+        }
+    }
+}
+
+```
+
+---
+
+## File: `eNote\eNote.Application\Features\Rentals\ReferenceData\Addresses\IAddressService.cs`
+**Hash**: `b2a3a0272d4b` | **Size**: 247 chars
+
+**Classes**: 
+**Interfaces**: IAddressService
+```cs
+using eNote.Application.Features.Rentals.ReferenceData;
+
+namespace eNote.Application.Features.Rentals.ReferenceData.Addresses;
+
+public interface IAddressService : IReferenceCrudService<AddressReferenceDto, AddressRequest, AddressSearchObject>
+{
+}
+
+```
+
+---
+
+## File: `eNote\eNote.Application\Features\Rentals\ReferenceData\IReferenceCrudService.cs`
+**Hash**: `ff09f19641b6` | **Size**: 467 chars
+
+**Classes**: 
+**Interfaces**: IReferenceCrudService
 ```cs
 using eNote.Application.Common.Paging;
 using eNote.Application.Common.Search;
@@ -4173,7 +6329,297 @@ public interface IReferenceCrudService<TDto, TRequest, TSearch> where TSearch : 
 
 ```
 
-## File: eNote\eNote.Application\Features\Rentals\ReferenceData\ReferenceCrudService.cs
+---
+
+## File: `eNote\eNote.Application\Features\Rentals\ReferenceData\InstrumentTypes\IInstrumentTypeService.cs`
+**Hash**: `087749396844` | **Size**: 272 chars
+
+**Classes**: 
+**Interfaces**: IInstrumentTypeService
+```cs
+using eNote.Application.Features.Rentals.ReferenceData;
+
+namespace eNote.Application.Features.Rentals.ReferenceData.InstrumentTypes;
+
+public interface IInstrumentTypeService : IReferenceCrudService<InstrumentTypeDto, InstrumentTypeRequest, InstrumentTypeSearchObject>
+{
+}
+
+```
+
+---
+
+## File: `eNote\eNote.Application\Features\Rentals\ReferenceData\InstrumentTypes\InstrumentTypeDto.cs`
+**Hash**: `57b0cddb8d01` | **Size**: 244 chars
+
+**Classes**: InstrumentTypeDto
+```cs
+namespace eNote.Application.Features.Rentals.ReferenceData.InstrumentTypes;
+
+public sealed class InstrumentTypeDto
+{
+    public int Id { get; init; }
+    public string Type { get; init; } = null!;
+    public decimal MonthlyFee { get; init; }
+}
+
+```
+
+---
+
+## File: `eNote\eNote.Application\Features\Rentals\ReferenceData\InstrumentTypes\InstrumentTypeRequest.cs`
+**Hash**: `b9633feb6e24` | **Size**: 213 chars
+
+**Classes**: InstrumentTypeRequest
+```cs
+namespace eNote.Application.Features.Rentals.ReferenceData.InstrumentTypes;
+
+public sealed class InstrumentTypeRequest
+{
+    public string Type { get; set; } = null!;
+    public decimal MonthlyFee { get; set; }
+}
+
+```
+
+---
+
+## File: `eNote\eNote.Application\Features\Rentals\ReferenceData\InstrumentTypes\InstrumentTypeSearchExtensions.cs`
+**Hash**: `2d0d69505218` | **Size**: 414 chars
+
+**Classes**: InstrumentTypeSearchExtensions
+```cs
+using eNote.Application.Common.Search;
+using eNote.Domain.Entities.Rentals;
+
+namespace eNote.Application.Features.Rentals.ReferenceData.InstrumentTypes;
+
+public static class InstrumentTypeSearchExtensions
+{
+    public static IQueryable<InstrumentType> ApplySearch(this IQueryable<InstrumentType> query, InstrumentTypeSearchObject search) => query.WhereContainsIf(search.Type, x => x.Type.Contains(search.Type!));
+}
+```
+
+---
+
+## File: `eNote\eNote.Application\Features\Rentals\ReferenceData\InstrumentTypes\InstrumentTypeSearchObject.cs`
+**Hash**: `8ee564078e61` | **Size**: 224 chars
+
+**Classes**: InstrumentTypeSearchObject
+```cs
+using eNote.Application.Common.Search;
+
+namespace eNote.Application.Features.Rentals.ReferenceData.InstrumentTypes;
+
+public sealed class InstrumentTypeSearchObject : BaseSearchObject
+{
+    public string? Type { get; set; }
+}
+```
+
+---
+
+## File: `eNote\eNote.Application\Features\Rentals\ReferenceData\InstrumentTypes\InstrumentTypeService.cs`
+**Hash**: `f833e154e982` | **Size**: 1800 chars
+
+**Classes**: InstrumentTypeService
+### Key Cross-Cutting Interactions
+- Uses **IAppDbContext|DbContext** → Persistence boundary
+
+```cs
+using eNote.Application.Common.Exceptions;
+using eNote.Application.Common.Localization;
+using eNote.Application.Common.Persistence;
+using eNote.Application.Features.Rentals.ReferenceData;
+using eNote.Domain.Entities.Rentals;
+using Microsoft.EntityFrameworkCore;
+
+namespace eNote.Application.Features.Rentals.ReferenceData.InstrumentTypes;
+
+public sealed class InstrumentTypeService(IAppDbContext context)
+    : ReferenceCrudService<InstrumentType, InstrumentTypeDto, InstrumentTypeRequest, InstrumentTypeSearchObject>(context), IInstrumentTypeService
+{
+    protected override string NotFoundMessage => Messages.InstrumentTypeNotFound;
+
+    protected override InstrumentTypeDto Map(InstrumentType entity) => new()
+    {
+        Id = entity.Id,
+        Type = entity.Type,
+        MonthlyFee = entity.MonthlyFee
+    };
+
+    protected override InstrumentType CreateEntity(InstrumentTypeRequest request) => new()
+    {
+        Type = request.Type.Trim(),
+        MonthlyFee = request.MonthlyFee
+    };
+
+    protected override void ApplyUpdate(InstrumentType entity, InstrumentTypeRequest request)
+    {
+        entity.Type = request.Type.Trim();
+        entity.MonthlyFee = request.MonthlyFee;
+    }
+
+    protected override IQueryable<InstrumentType> ApplySearch(IQueryable<InstrumentType> query, InstrumentTypeSearchObject search) => query.ApplySearch(search);
+    protected override IOrderedQueryable<InstrumentType> Order(IQueryable<InstrumentType> query) => query.OrderBy(x => x.Type);
+
+    protected override async Task EnsureDeletableAsync(InstrumentType entity, CancellationToken ct = default)
+    {
+        if (await Db.Set<Instrument>().AnyAsync(x => x.InstrumentTypeId == entity.Id, ct))
+        {
+            throw new BusinessException(Messages.InstrumentTypeDeleteBlocked);
+        }
+    }
+}
+```
+
+---
+
+## File: `eNote\eNote.Application\Features\Rentals\ReferenceData\MusicStores\IMusicStoreService.cs`
+**Hash**: `a45d255df6e9` | **Size**: 252 chars
+
+**Classes**: 
+**Interfaces**: IMusicStoreService
+```cs
+using eNote.Application.Features.Rentals.ReferenceData;
+
+namespace eNote.Application.Features.Rentals.ReferenceData.MusicStores;
+
+public interface IMusicStoreService : IReferenceCrudService<MusicStoreDto, MusicStoreRequest, MusicStoreSearchObject>
+{
+}
+
+```
+
+---
+
+## File: `eNote\eNote.Application\Features\Rentals\ReferenceData\MusicStores\MusicStoreDto.cs`
+**Hash**: `1264e2717217` | **Size**: 252 chars
+
+**Classes**: MusicStoreDto
+```cs
+namespace eNote.Application.Features.Rentals.ReferenceData.MusicStores;
+
+public sealed class MusicStoreDto
+{
+    public int Id { get; init; }
+    public string StoreName { get; init; } = null!;
+    public string BusinessHours { get; init; } = null!;
+}
+
+```
+
+---
+
+## File: `eNote\eNote.Application\Features\Rentals\ReferenceData\MusicStores\MusicStoreRequest.cs`
+**Hash**: `acef42be64ac` | **Size**: 221 chars
+
+**Classes**: MusicStoreRequest
+```cs
+namespace eNote.Application.Features.Rentals.ReferenceData.MusicStores;
+
+public sealed class MusicStoreRequest
+{
+    public string StoreName { get; set; } = null!;
+    public string BusinessHours { get; set; } = null!;
+}
+
+```
+
+---
+
+## File: `eNote\eNote.Application\Features\Rentals\ReferenceData\MusicStores\MusicStoreSearchExtensions.cs`
+**Hash**: `f3972bc8cbd7` | **Size**: 409 chars
+
+**Classes**: MusicStoreSearchExtensions
+```cs
+using eNote.Application.Common.Search;
+using eNote.Domain.Entities.Rentals;
+
+namespace eNote.Application.Features.Rentals.ReferenceData.MusicStores;
+
+public static class MusicStoreSearchExtensions
+{
+    public static IQueryable<MusicStore> ApplySearch(this IQueryable<MusicStore> query, MusicStoreSearchObject search) => query.WhereContainsIf(search.StoreName, x => x.StoreName.Contains(search.StoreName!));
+}
+```
+
+---
+
+## File: `eNote\eNote.Application\Features\Rentals\ReferenceData\MusicStores\MusicStoreSearchObject.cs`
+**Hash**: `c540c47aa47f` | **Size**: 221 chars
+
+**Classes**: MusicStoreSearchObject
+```cs
+using eNote.Application.Common.Search;
+
+namespace eNote.Application.Features.Rentals.ReferenceData.MusicStores;
+
+public sealed class MusicStoreSearchObject : BaseSearchObject
+{
+    public string? StoreName { get; set; }
+}
+```
+
+---
+
+## File: `eNote\eNote.Application\Features\Rentals\ReferenceData\MusicStores\MusicStoreService.cs`
+**Hash**: `ee19d2a85701` | **Size**: 1830 chars
+
+**Classes**: MusicStoreService
+### Key Cross-Cutting Interactions
+- Uses **IAppDbContext|DbContext** → Persistence boundary
+
+```cs
+using eNote.Application.Common.Exceptions;
+using eNote.Application.Common.Localization;
+using eNote.Application.Common.Persistence;
+using eNote.Application.Features.Rentals.ReferenceData;
+using eNote.Domain.Entities.Identity;
+using eNote.Domain.Entities.Rentals;
+using Microsoft.EntityFrameworkCore;
+
+namespace eNote.Application.Features.Rentals.ReferenceData.MusicStores;
+
+public sealed class MusicStoreService(IAppDbContext context) : ReferenceCrudService<MusicStore, MusicStoreDto, MusicStoreRequest, MusicStoreSearchObject>(context), IMusicStoreService
+{
+    protected override string NotFoundMessage => Messages.StoreNotFound;
+
+    protected override MusicStoreDto Map(MusicStore entity) => new()
+    {
+        Id = entity.Id,
+        StoreName = entity.StoreName,
+        BusinessHours = entity.BusinessHours
+    };
+
+    protected override MusicStore CreateEntity(MusicStoreRequest request) => new(request.StoreName.Trim(), request.BusinessHours.Trim());
+
+    protected override void ApplyUpdate(MusicStore entity, MusicStoreRequest request) => entity.UpdateDetails(request.StoreName.Trim(), request.BusinessHours.Trim());
+    protected override IQueryable<MusicStore> ApplySearch(IQueryable<MusicStore> query, MusicStoreSearchObject search) => query.ApplySearch(search);
+    protected override IOrderedQueryable<MusicStore> Order(IQueryable<MusicStore> query) => query.OrderBy(x => x.StoreName);
+
+    protected override async Task EnsureDeletableAsync(MusicStore entity, CancellationToken ct = default)
+    {
+        var inUse = await Db.Set<Instrument>().AnyAsync(x => x.MusicStoreId == entity.Id, ct)
+            || await Db.Set<MusicStoreEmployee>().AnyAsync(x => x.MusicStoreId == entity.Id, ct);
+
+        if (inUse)
+        {
+            throw new BusinessException(Messages.MusicStoreDeleteBlocked);
+        }
+    }
+}
+```
+
+---
+
+## File: `eNote\eNote.Application\Features\Rentals\ReferenceData\ReferenceCrudService.cs`
+**Hash**: `1b7e8ca22707` | **Size**: 2468 chars
+
+**Classes**: ReferenceCrudService
+### Key Cross-Cutting Interactions
+- Uses **IAppDbContext|DbContext** → Persistence boundary
+
 ```cs
 using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Paging;
@@ -4249,340 +6695,13 @@ public abstract class ReferenceCrudService<TEntity, TDto, TRequest, TSearch>(IAp
 }
 ```
 
-## File: eNote\eNote.Application\Features\Rentals\ReferenceData\Addresses\AddressReferenceDto.cs
-```cs
-namespace eNote.Application.Features.Rentals.ReferenceData.Addresses;
+---
 
-public sealed class AddressReferenceDto
-{
-    public int Id { get; init; }
-    public string City { get; init; } = null!;
-    public string Street { get; init; } = null!;
-    public string Number { get; init; } = null!;
-}
+## File: `eNote\eNote.Application\Features\Reports\Services\IReportService.cs`
+**Hash**: `0c14af9ba66d` | **Size**: 414 chars
 
-```
-
-## File: eNote\eNote.Application\Features\Rentals\ReferenceData\Addresses\AddressRequest.cs
-```cs
-namespace eNote.Application.Features.Rentals.ReferenceData.Addresses;
-
-public sealed class AddressRequest
-{
-    public string City { get; set; } = null!;
-    public string Street { get; set; } = null!;
-    public string Number { get; set; } = null!;
-}
-
-```
-
-## File: eNote\eNote.Application\Features\Rentals\ReferenceData\Addresses\AddressSearchExtensions.cs
-```cs
-using eNote.Application.Common.Search;
-using eNote.Domain.Entities.Shared;
-
-namespace eNote.Application.Features.Rentals.ReferenceData.Addresses;
-
-public static class AddressSearchExtensions
-{
-    public static IQueryable<Address> ApplySearch(this IQueryable<Address> query, AddressSearchObject search) => query
-            .WhereContainsIf(search.City, x => x.City.Contains(search.City!))
-            .WhereContainsIf(search.Street, x => x.Street.Contains(search.Street!));
-}
-```
-
-## File: eNote\eNote.Application\Features\Rentals\ReferenceData\Addresses\AddressSearchObject.cs
-```cs
-using eNote.Application.Common.Search;
-
-namespace eNote.Application.Features.Rentals.ReferenceData.Addresses;
-
-public sealed class AddressSearchObject : BaseSearchObject
-{
-    public string? City { get; set; }
-    public string? Street { get; set; }
-}
-```
-
-## File: eNote\eNote.Application\Features\Rentals\ReferenceData\Addresses\AddressService.cs
-```cs
-using eNote.Application.Common.Exceptions;
-using eNote.Application.Common.Localization;
-using eNote.Application.Common.Persistence;
-using eNote.Application.Features.Identity.Users.Services;
-using eNote.Application.Features.Rentals.ReferenceData;
-using eNote.Domain.Entities.Shared;
-using Microsoft.EntityFrameworkCore;
-
-namespace eNote.Application.Features.Rentals.ReferenceData.Addresses;
-
-public sealed class AddressService(IAppDbContext context, IUserAccountService accountService) : ReferenceCrudService<Address, AddressReferenceDto, AddressRequest, AddressSearchObject>(context), IAddressService
-{
-    protected override string NotFoundMessage => Messages.AddressNotFound;
-
-    protected override AddressReferenceDto Map(Address entity) => new()
-    {
-        Id = entity.Id,
-        City = entity.City,
-        Street = entity.Street,
-        Number = entity.Number
-    };
-
-    protected override Address CreateEntity(AddressRequest request) => new()
-    {
-        City = request.City.Trim(),
-        Street = request.Street.Trim(),
-        Number = request.Number.Trim()
-    };
-
-    protected override void ApplyUpdate(Address entity, AddressRequest request)
-    {
-        entity.City = request.City.Trim();
-        entity.Street = request.Street.Trim();
-        entity.Number = request.Number.Trim();
-    }
-
-    protected override IQueryable<Address> ApplySearch(IQueryable<Address> query, AddressSearchObject search) => query.ApplySearch(search);
-    protected override IOrderedQueryable<Address> Order(IQueryable<Address> query) => query.OrderBy(x => x.City).ThenBy(x => x.Street);
-
-    protected override async Task EnsureDeletableAsync(Address entity, CancellationToken ct = default)
-    {
-        if (await accountService.IsAddressInUseAsync(entity.Id))
-        {
-            throw new BusinessException(Messages.AddressDeleteBlocked);
-        }
-    }
-}
-
-```
-
-## File: eNote\eNote.Application\Features\Rentals\ReferenceData\Addresses\IAddressService.cs
-```cs
-using eNote.Application.Features.Rentals.ReferenceData;
-
-namespace eNote.Application.Features.Rentals.ReferenceData.Addresses;
-
-public interface IAddressService : IReferenceCrudService<AddressReferenceDto, AddressRequest, AddressSearchObject>
-{
-}
-
-```
-
-## File: eNote\eNote.Application\Features\Rentals\ReferenceData\InstrumentTypes\IInstrumentTypeService.cs
-```cs
-using eNote.Application.Features.Rentals.ReferenceData;
-
-namespace eNote.Application.Features.Rentals.ReferenceData.InstrumentTypes;
-
-public interface IInstrumentTypeService : IReferenceCrudService<InstrumentTypeDto, InstrumentTypeRequest, InstrumentTypeSearchObject>
-{
-}
-
-```
-
-## File: eNote\eNote.Application\Features\Rentals\ReferenceData\InstrumentTypes\InstrumentTypeDto.cs
-```cs
-namespace eNote.Application.Features.Rentals.ReferenceData.InstrumentTypes;
-
-public sealed class InstrumentTypeDto
-{
-    public int Id { get; init; }
-    public string Type { get; init; } = null!;
-    public decimal MonthlyFee { get; init; }
-}
-
-```
-
-## File: eNote\eNote.Application\Features\Rentals\ReferenceData\InstrumentTypes\InstrumentTypeRequest.cs
-```cs
-namespace eNote.Application.Features.Rentals.ReferenceData.InstrumentTypes;
-
-public sealed class InstrumentTypeRequest
-{
-    public string Type { get; set; } = null!;
-    public decimal MonthlyFee { get; set; }
-}
-
-```
-
-## File: eNote\eNote.Application\Features\Rentals\ReferenceData\InstrumentTypes\InstrumentTypeSearchExtensions.cs
-```cs
-using eNote.Application.Common.Search;
-using eNote.Domain.Entities.Rentals;
-
-namespace eNote.Application.Features.Rentals.ReferenceData.InstrumentTypes;
-
-public static class InstrumentTypeSearchExtensions
-{
-    public static IQueryable<InstrumentType> ApplySearch(this IQueryable<InstrumentType> query, InstrumentTypeSearchObject search) => query.WhereContainsIf(search.Type, x => x.Type.Contains(search.Type!));
-}
-```
-
-## File: eNote\eNote.Application\Features\Rentals\ReferenceData\InstrumentTypes\InstrumentTypeSearchObject.cs
-```cs
-using eNote.Application.Common.Search;
-
-namespace eNote.Application.Features.Rentals.ReferenceData.InstrumentTypes;
-
-public sealed class InstrumentTypeSearchObject : BaseSearchObject
-{
-    public string? Type { get; set; }
-}
-```
-
-## File: eNote\eNote.Application\Features\Rentals\ReferenceData\InstrumentTypes\InstrumentTypeService.cs
-```cs
-using eNote.Application.Common.Exceptions;
-using eNote.Application.Common.Localization;
-using eNote.Application.Common.Persistence;
-using eNote.Application.Features.Rentals.ReferenceData;
-using eNote.Domain.Entities.Rentals;
-using Microsoft.EntityFrameworkCore;
-
-namespace eNote.Application.Features.Rentals.ReferenceData.InstrumentTypes;
-
-public sealed class InstrumentTypeService(IAppDbContext context)
-    : ReferenceCrudService<InstrumentType, InstrumentTypeDto, InstrumentTypeRequest, InstrumentTypeSearchObject>(context), IInstrumentTypeService
-{
-    protected override string NotFoundMessage => Messages.InstrumentTypeNotFound;
-
-    protected override InstrumentTypeDto Map(InstrumentType entity) => new()
-    {
-        Id = entity.Id,
-        Type = entity.Type,
-        MonthlyFee = entity.MonthlyFee
-    };
-
-    protected override InstrumentType CreateEntity(InstrumentTypeRequest request) => new()
-    {
-        Type = request.Type.Trim(),
-        MonthlyFee = request.MonthlyFee
-    };
-
-    protected override void ApplyUpdate(InstrumentType entity, InstrumentTypeRequest request)
-    {
-        entity.Type = request.Type.Trim();
-        entity.MonthlyFee = request.MonthlyFee;
-    }
-
-    protected override IQueryable<InstrumentType> ApplySearch(IQueryable<InstrumentType> query, InstrumentTypeSearchObject search) => query.ApplySearch(search);
-    protected override IOrderedQueryable<InstrumentType> Order(IQueryable<InstrumentType> query) => query.OrderBy(x => x.Type);
-
-    protected override async Task EnsureDeletableAsync(InstrumentType entity, CancellationToken ct = default)
-    {
-        if (await Db.Set<Instrument>().AnyAsync(x => x.InstrumentTypeId == entity.Id, ct))
-        {
-            throw new BusinessException(Messages.InstrumentTypeDeleteBlocked);
-        }
-    }
-}
-```
-
-## File: eNote\eNote.Application\Features\Rentals\ReferenceData\MusicStores\IMusicStoreService.cs
-```cs
-using eNote.Application.Features.Rentals.ReferenceData;
-
-namespace eNote.Application.Features.Rentals.ReferenceData.MusicStores;
-
-public interface IMusicStoreService : IReferenceCrudService<MusicStoreDto, MusicStoreRequest, MusicStoreSearchObject>
-{
-}
-
-```
-
-## File: eNote\eNote.Application\Features\Rentals\ReferenceData\MusicStores\MusicStoreDto.cs
-```cs
-namespace eNote.Application.Features.Rentals.ReferenceData.MusicStores;
-
-public sealed class MusicStoreDto
-{
-    public int Id { get; init; }
-    public string StoreName { get; init; } = null!;
-    public string BusinessHours { get; init; } = null!;
-}
-
-```
-
-## File: eNote\eNote.Application\Features\Rentals\ReferenceData\MusicStores\MusicStoreRequest.cs
-```cs
-namespace eNote.Application.Features.Rentals.ReferenceData.MusicStores;
-
-public sealed class MusicStoreRequest
-{
-    public string StoreName { get; set; } = null!;
-    public string BusinessHours { get; set; } = null!;
-}
-
-```
-
-## File: eNote\eNote.Application\Features\Rentals\ReferenceData\MusicStores\MusicStoreSearchExtensions.cs
-```cs
-using eNote.Application.Common.Search;
-using eNote.Domain.Entities.Rentals;
-
-namespace eNote.Application.Features.Rentals.ReferenceData.MusicStores;
-
-public static class MusicStoreSearchExtensions
-{
-    public static IQueryable<MusicStore> ApplySearch(this IQueryable<MusicStore> query, MusicStoreSearchObject search) => query.WhereContainsIf(search.StoreName, x => x.StoreName.Contains(search.StoreName!));
-}
-```
-
-## File: eNote\eNote.Application\Features\Rentals\ReferenceData\MusicStores\MusicStoreSearchObject.cs
-```cs
-using eNote.Application.Common.Search;
-
-namespace eNote.Application.Features.Rentals.ReferenceData.MusicStores;
-
-public sealed class MusicStoreSearchObject : BaseSearchObject
-{
-    public string? StoreName { get; set; }
-}
-```
-
-## File: eNote\eNote.Application\Features\Rentals\ReferenceData\MusicStores\MusicStoreService.cs
-```cs
-using eNote.Application.Common.Exceptions;
-using eNote.Application.Common.Localization;
-using eNote.Application.Common.Persistence;
-using eNote.Application.Features.Rentals.ReferenceData;
-using eNote.Domain.Entities.Identity;
-using eNote.Domain.Entities.Rentals;
-using Microsoft.EntityFrameworkCore;
-
-namespace eNote.Application.Features.Rentals.ReferenceData.MusicStores;
-
-public sealed class MusicStoreService(IAppDbContext context) : ReferenceCrudService<MusicStore, MusicStoreDto, MusicStoreRequest, MusicStoreSearchObject>(context), IMusicStoreService
-{
-    protected override string NotFoundMessage => Messages.StoreNotFound;
-
-    protected override MusicStoreDto Map(MusicStore entity) => new()
-    {
-        Id = entity.Id,
-        StoreName = entity.StoreName,
-        BusinessHours = entity.BusinessHours
-    };
-
-    protected override MusicStore CreateEntity(MusicStoreRequest request) => new(request.StoreName.Trim(), request.BusinessHours.Trim());
-
-    protected override void ApplyUpdate(MusicStore entity, MusicStoreRequest request) => entity.UpdateDetails(request.StoreName.Trim(), request.BusinessHours.Trim());
-    protected override IQueryable<MusicStore> ApplySearch(IQueryable<MusicStore> query, MusicStoreSearchObject search) => query.ApplySearch(search);
-    protected override IOrderedQueryable<MusicStore> Order(IQueryable<MusicStore> query) => query.OrderBy(x => x.StoreName);
-
-    protected override async Task EnsureDeletableAsync(MusicStore entity, CancellationToken ct = default)
-    {
-        var inUse = await Db.Set<Instrument>().AnyAsync(x => x.MusicStoreId == entity.Id, ct)
-            || await Db.Set<MusicStoreEmployee>().AnyAsync(x => x.MusicStoreId == entity.Id, ct);
-
-        if (inUse)
-        {
-            throw new BusinessException(Messages.MusicStoreDeleteBlocked);
-        }
-    }
-}
-```
-
-## File: eNote\eNote.Application\Features\Reports\Services\IReportService.cs
+**Classes**: 
+**Interfaces**: IReportService
 ```cs
 namespace eNote.Application.Features.Reports.Services;
 
@@ -4594,8 +6713,20 @@ public interface IReportService
 }
 ```
 
-## File: eNote\eNote.Application\Features\Reports\Services\ReportService.cs
+---
+
+## File: `eNote\eNote.Application\Features\Reports\Services\ReportService.cs`
+**Hash**: `17003eefcce3` | **Size**: 8539 chars
+
+**Classes**: ReportService
+### Key Cross-Cutting Interactions
+- Uses **IInstructorAccessService** → Instructor ownership enforcement
+- Uses **ICurrentActor** → Current actor resolution
+- Uses **IStudentDisplayNameService** → Student display-name formatting
+- Uses **IAppDbContext|DbContext** → Persistence boundary
+
 ```cs
+using System.Globalization;
 using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Common.Time;
@@ -4611,12 +6742,13 @@ using eNote.Application.Features.Identity.Users.Services;
 using eNote.Application.Features.Academic.Courses.Services;
 using eNote.Application.Features.Rentals.InstrumentRentals.Billing;
 using eNote.Application.Features.Identity.Instructors;
-using eNote.Application.Features.Rentals.MusicStores.Services;
 
 namespace eNote.Application.Features.Reports.Services;
 
-public sealed class ReportService(IAppDbContext context, IClock clock, IRankingService rankingService, IInstructorAccessService instructorAccess, IMusicStoreContextService storeContext, IUserContextResolver resolver, ICurrentUserService currentUserService) : IReportService
+public sealed class ReportService(IAppDbContext context, IClock clock, IRankingService rankingService, IInstructorAccessService instructorAccess, ICurrentActor actor, IStudentDisplayNameService displayNames) : IReportService
 {
+    private static readonly CultureInfo ReportCulture = CultureInfo.GetCultureInfo("bs-BA");
+
     static ReportService()
     {
         QuestPDF.Settings.License = LicenseType.Community;
@@ -4660,7 +6792,7 @@ public sealed class ReportService(IAppDbContext context, IClock clock, IRankingS
                     {
                         table.Cell().Element(CellStyle).Text(entry.Rank.ToString());
                         table.Cell().Element(CellStyle).Text(entry.StudentName);
-                        table.Cell().Element(CellStyle).Text(entry.AverageGrade?.ToString("F2") ?? "-");
+                        table.Cell().Element(CellStyle).Text(entry.AverageGrade?.ToString("F2", ReportCulture) ?? "-");
                         table.Cell().Element(CellStyle).Text(entry.GradedSubmissions.ToString());
                     }
                 });
@@ -4671,7 +6803,7 @@ public sealed class ReportService(IAppDbContext context, IClock clock, IRankingS
 
     public async Task<byte[]> GenerateStoreRentalSummaryPdfAsync(CancellationToken cancellationToken = default)
     {
-        var storeId = await storeContext.GetActiveStoreAsync(currentUserService.UserId, cancellationToken);
+        var storeId = await actor.GetActiveStoreAsync();
 
         var storeName = await context.Set<MusicStore>()
             .AsNoTracking()
@@ -4725,8 +6857,8 @@ public sealed class ReportService(IAppDbContext context, IClock clock, IRankingS
                         table.Cell().Element(CellStyle).Text(rental.Id.ToString());
                         table.Cell().Element(CellStyle).Text(rental.Instrument.Model);
                         table.Cell().Element(CellStyle).Text(rental.RentalStatus.ToString());
-                        table.Cell().Element(CellStyle).Text(rental.Fee.ToString("F2"));
-                        table.Cell().Element(CellStyle).Text(dto.TotalFee?.ToString("F2") ?? "-");
+                        table.Cell().Element(CellStyle).Text(rental.Fee.ToString("F2", ReportCulture));
+                        table.Cell().Element(CellStyle).Text(dto.TotalFee?.ToString("F2", ReportCulture) ?? "-");
                     }
                 });
                 page.Footer().AlignRight().Text($"Generisano: {clock.UtcNow:dd.MM.yyyy HH:mm} UTC").FontSize(9);
@@ -4736,10 +6868,10 @@ public sealed class ReportService(IAppDbContext context, IClock clock, IRankingS
 
     public async Task<byte[]> GenerateLectureAttendancePdfAsync(int lectureId, CancellationToken cancellationToken = default)
     {
-        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUserService.UserId);
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(actor.UserId);
         var lecture = await instructorAccess.GetOwnedLectureAsync(lectureId, instructorId, includeAttendances: true);
 
-        var nameMap = await resolver.GetStudentDisplayNamesAsync(lecture.Attendances.Select(a => a.Student).Where(s => s is not null)!);
+        var nameMap = await displayNames.GetStudentDisplayNamesAsync(lecture.Attendances.Select(a => a.Student).Where(s => s is not null)!);
 
         var rows = lecture.Attendances.OrderBy(a => a.StudentId).Select(a =>
             new AttendanceRow(a.StudentId, nameMap.GetValueOrDefault(a.StudentId, $"Student {a.StudentId}"), a.AttendanceStatus)).ToList();
@@ -4785,7 +6917,15 @@ public sealed class ReportService(IAppDbContext context, IClock clock, IRankingS
 }
 ```
 
-## File: eNote\eNote.Application\Features\Students\StudentEnrollmentExtensions.cs
+---
+
+## File: `eNote\eNote.Application\Features\Students\StudentEnrollmentExtensions.cs`
+**Hash**: `1bb0669c7a77` | **Size**: 1532 chars
+
+**Classes**: StudentEnrollmentExtensions
+### Key Cross-Cutting Interactions
+- Uses **IAppDbContext|DbContext** → Persistence boundary
+
 ```cs
 using eNote.Application.Common.Persistence;
 using eNote.Domain.Entities;
@@ -4811,7 +6951,12 @@ public static class StudentEnrollmentExtensions
 }
 ```
 
-## File: eNote\eNote.Application\Validation\AddressRequestValidator.cs
+---
+
+## File: `eNote\eNote.Application\Validation\AddressRequestValidator.cs`
+**Hash**: `0c1b8718a149` | **Size**: 448 chars
+
+**Classes**: AddressRequestValidator
 ```cs
 using eNote.Application.Features.Rentals.ReferenceData.Addresses;
 using FluentValidation;
@@ -4830,7 +6975,12 @@ public sealed class AddressRequestValidator : AbstractValidator<AddressRequest>
 
 ```
 
-## File: eNote\eNote.Application\Validation\AnnouncementRequestValidator.cs
+---
+
+## File: `eNote\eNote.Application\Validation\AnnouncementRequestValidator.cs`
+**Hash**: `c1770aa33a09` | **Size**: 362 chars
+
+**Classes**: AnnouncementRequestValidator
 ```cs
 using eNote.Application.Features.Communication.Announcements;
 using FluentValidation;
@@ -4848,7 +6998,12 @@ public sealed class AnnouncementRequestValidator : AbstractValidator<Announcemen
 
 ```
 
-## File: eNote\eNote.Application\Validation\AssignmentRequestValidator.cs
+---
+
+## File: `eNote\eNote.Application\Validation\AssignmentRequestValidator.cs`
+**Hash**: `fe41b133b38d` | **Size**: 395 chars
+
+**Classes**: AssignmentRequestValidator
 ```cs
 using eNote.Application.Features.Academic.Assignments;
 using FluentValidation;
@@ -4867,7 +7022,12 @@ public sealed class AssignmentRequestValidator : AbstractValidator<AssignmentReq
 
 ```
 
-## File: eNote\eNote.Application\Validation\ChangePasswordRequestValidator.cs
+---
+
+## File: `eNote\eNote.Application\Validation\ChangePasswordRequestValidator.cs`
+**Hash**: `f0ba77db32a5` | **Size**: 506 chars
+
+**Classes**: ChangePasswordRequestValidator
 ```cs
 using eNote.Application.Features.Identity.Users;
 using FluentValidation;
@@ -4886,7 +7046,12 @@ public sealed class ChangePasswordRequestValidator : AbstractValidator<ChangePas
 
 ```
 
-## File: eNote\eNote.Application\Validation\CourseRequestValidator.cs
+---
+
+## File: `eNote\eNote.Application\Validation\CourseRequestValidator.cs`
+**Hash**: `659d79c716e0` | **Size**: 386 chars
+
+**Classes**: CourseRequestValidator
 ```cs
 using eNote.Application.Features.Academic.Courses;
 using FluentValidation;
@@ -4904,7 +7069,12 @@ public sealed class CourseRequestValidator : AbstractValidator<CourseRequest>
 
 ```
 
-## File: eNote\eNote.Application\Validation\ForgotPasswordRequestValidator.cs
+---
+
+## File: `eNote\eNote.Application\Validation\ForgotPasswordRequestValidator.cs`
+**Hash**: `121af66d243b` | **Size**: 325 chars
+
+**Classes**: ForgotPasswordRequestValidator
 ```cs
 using eNote.Application.Features.Identity.Auth;
 using FluentValidation;
@@ -4921,7 +7091,12 @@ public sealed class ForgotPasswordRequestValidator : AbstractValidator<ForgotPas
 
 ```
 
-## File: eNote\eNote.Application\Validation\GradeAssignmentRequestValidator.cs
+---
+
+## File: `eNote\eNote.Application\Validation\GradeAssignmentRequestValidator.cs`
+**Hash**: `0f1a189a05cf` | **Size**: 334 chars
+
+**Classes**: GradeAssignmentRequestValidator
 ```cs
 using eNote.Application.Features.Academic.Assignments;
 using FluentValidation;
@@ -4938,7 +7113,12 @@ public sealed class GradeAssignmentRequestValidator : AbstractValidator<GradeAss
 
 ```
 
-## File: eNote\eNote.Application\Validation\InstrumentCreateRequestValidator.cs
+---
+
+## File: `eNote\eNote.Application\Validation\InstrumentCreateRequestValidator.cs`
+**Hash**: `85ec024cd732` | **Size**: 428 chars
+
+**Classes**: InstrumentCreateRequestValidator
 ```cs
 using eNote.Application.Features.Rentals.Instruments;
 using FluentValidation;
@@ -4957,7 +7137,12 @@ public sealed class InstrumentCreateRequestValidator : AbstractValidator<Instrum
 
 ```
 
-## File: eNote\eNote.Application\Validation\InstrumentTypeRequestValidator.cs
+---
+
+## File: `eNote\eNote.Application\Validation\InstrumentTypeRequestValidator.cs`
+**Hash**: `ac955a288ad3` | **Size**: 412 chars
+
+**Classes**: InstrumentTypeRequestValidator
 ```cs
 using eNote.Application.Features.Rentals.ReferenceData.InstrumentTypes;
 using FluentValidation;
@@ -4975,7 +7160,12 @@ public sealed class InstrumentTypeRequestValidator : AbstractValidator<Instrumen
 
 ```
 
-## File: eNote\eNote.Application\Validation\LectureCreateRequestValidator.cs
+---
+
+## File: `eNote\eNote.Application\Validation\LectureCreateRequestValidator.cs`
+**Hash**: `66feac6039cd` | **Size**: 585 chars
+
+**Classes**: LectureCreateRequestValidator
 ```cs
 using eNote.Application.Common.Localization;
 using eNote.Application.Features.Academic.Lectures;
@@ -4997,7 +7187,12 @@ public sealed class LectureCreateRequestValidator : AbstractValidator<LectureCre
 
 ```
 
-## File: eNote\eNote.Application\Validation\LectureNoteRequestValidator.cs
+---
+
+## File: `eNote\eNote.Application\Validation\LectureNoteRequestValidator.cs`
+**Hash**: `a0fea593ac04` | **Size**: 353 chars
+
+**Classes**: LectureNoteRequestValidator
 ```cs
 using eNote.Application.Features.Academic.LectureNotes;
 using FluentValidation;
@@ -5015,7 +7210,12 @@ public sealed class LectureNoteRequestValidator : AbstractValidator<LectureNoteR
 
 ```
 
-## File: eNote\eNote.Application\Validation\LectureUpdateRequestValidator.cs
+---
+
+## File: `eNote\eNote.Application\Validation\LectureUpdateRequestValidator.cs`
+**Hash**: `df623ecc7934` | **Size**: 452 chars
+
+**Classes**: LectureUpdateRequestValidator
 ```cs
 using eNote.Application.Features.Academic.Lectures;
 using FluentValidation;
@@ -5035,7 +7235,12 @@ public sealed class LectureUpdateRequestValidator : AbstractValidator<LectureUpd
 
 ```
 
-## File: eNote\eNote.Application\Validation\LoginRequestValidator.cs
+---
+
+## File: `eNote\eNote.Application\Validation\LoginRequestValidator.cs`
+**Hash**: `98b762e15651` | **Size**: 410 chars
+
+**Classes**: LoginRequestValidator
 ```cs
 using eNote.Application.Features.Identity.Auth;
 using FluentValidation;
@@ -5053,7 +7258,12 @@ public sealed class LoginRequestValidator : AbstractValidator<LoginRequest>
 
 ```
 
-## File: eNote\eNote.Application\Validation\MusicStoreRequestValidator.cs
+---
+
+## File: `eNote\eNote.Application\Validation\MusicStoreRequestValidator.cs`
+**Hash**: `1dde7eec2515` | **Size**: 409 chars
+
+**Classes**: MusicStoreRequestValidator
 ```cs
 using eNote.Application.Features.Rentals.ReferenceData.MusicStores;
 using FluentValidation;
@@ -5071,7 +7281,12 @@ public sealed class MusicStoreRequestValidator : AbstractValidator<MusicStoreReq
 
 ```
 
-## File: eNote\eNote.Application\Validation\RegisterRequestValidator.cs
+---
+
+## File: `eNote\eNote.Application\Validation\RegisterRequestValidator.cs`
+**Hash**: `1b4a7a6488d8` | **Size**: 414 chars
+
+**Classes**: RegisterRequestValidator
 ```cs
 using eNote.Application.Features.Identity.Auth;
 using FluentValidation;
@@ -5090,7 +7305,12 @@ public sealed class RegisterRequestValidator : AbstractValidator<RegisterRequest
 
 ```
 
-## File: eNote\eNote.Application\Validation\RentalCreateRequestValidator.cs
+---
+
+## File: `eNote\eNote.Application\Validation\RentalCreateRequestValidator.cs`
+**Hash**: `793fb49bae38` | **Size**: 327 chars
+
+**Classes**: RentalCreateRequestValidator
 ```cs
 using eNote.Application.Features.Rentals.InstrumentRentals;
 using FluentValidation;
@@ -5107,7 +7327,12 @@ public sealed class RentalCreateRequestValidator : AbstractValidator<RentalCreat
 
 ```
 
-## File: eNote\eNote.Application\Validation\ResetPasswordRequestValidator.cs
+---
+
+## File: `eNote\eNote.Application\Validation\ResetPasswordRequestValidator.cs`
+**Hash**: `3473c1b45873` | **Size**: 429 chars
+
+**Classes**: ResetPasswordRequestValidator
 ```cs
 using eNote.Application.Features.Identity.Auth;
 using FluentValidation;
@@ -5126,7 +7351,12 @@ public sealed class ResetPasswordRequestValidator : AbstractValidator<ResetPassw
 
 ```
 
-## File: eNote\eNote.Application\Validation\UpdateProfileRequestValidator.cs
+---
+
+## File: `eNote\eNote.Application\Validation\UpdateProfileRequestValidator.cs`
+**Hash**: `c9e8780f0d84` | **Size**: 323 chars
+
+**Classes**: UpdateProfileRequestValidator
 ```cs
 using eNote.Application.Features.Identity.Users;
 using FluentValidation;
@@ -5143,7 +7373,954 @@ public sealed class UpdateProfileRequestValidator : AbstractValidator<UpdateProf
 
 ```
 
-## File: eNote\eNote.Infrastructure\Configuration\DotEnvConfiguration.cs
+---
+
+## File: `eNote\eNote.Contracts\Rentals\RentalStatusChanged.cs`
+**Hash**: `bffe586f8d50` | **Size**: 212 chars
+
+```cs
+namespace eNote.Contracts.Rentals;
+
+public record RentalStatusChanged(int RentalId, int StudentUserId, int? ActorUserId, string Status, string InstrumentModel, string Title, string Body, DateTime OccurredAtUtc);
+
+```
+
+---
+
+## File: `eNote\eNote.Domain\Entities\Academic\Attendance.cs`
+**Hash**: `78a29a909cec` | **Size**: 793 chars
+
+**Classes**: Attendance
+```cs
+using eNote.Domain.Entities.Identity;
+using eNote.Domain.Entities.Shared.Base;
+using eNote.Domain.Enums;
+
+namespace eNote.Domain.Entities;
+
+public class Attendance : AuditableEntity
+{
+    public int StudentId { get; private set; }
+    public Student Student { get; private set; } = null!;
+    public int LectureId { get; private set; }
+    public Lecture Lecture { get; private set; } = null!;
+
+    public AttendanceStatus AttendanceStatus { get; private set; }
+
+    protected Attendance()
+    {
+    }
+
+    public Attendance(int studentId, int lectureId, AttendanceStatus status)
+    {
+        StudentId = studentId;
+        LectureId = lectureId;
+        AttendanceStatus = status;
+    }
+
+    public void UpdateStatus(AttendanceStatus status)
+    {
+        AttendanceStatus = status;
+    }
+}
+
+```
+
+---
+
+## File: `eNote\eNote.Domain\Entities\Academic\Course.cs`
+**Hash**: `829e119c2bca` | **Size**: 1686 chars
+
+**Classes**: Course
+```cs
+using eNote.Domain.Entities.Identity;
+using eNote.Domain.Entities.Shared.Base;
+
+namespace eNote.Domain.Entities;
+
+public class Course : AuditableEntity
+{
+    public int InstructorId { get; private set; }
+    public Instructor Instructor { get; private set; } = null!;
+
+    public string Name { get; private set; } = null!;
+    public string? Description { get; private set; }
+    public decimal Price { get; private set; }
+
+    public DateTime? StartDate { get; private set; }
+    public DateTime? EndDate { get; private set; }
+    public bool IsPublished { get; private set; }
+    public bool IsActive { get; private set; } = true;
+
+    public ICollection<Enrollment> Enrollments { get; private set; } = new List<Enrollment>();
+    public ICollection<Lecture> Lectures { get; private set; } = new List<Lecture>();
+
+    protected Course()
+    {
+    }
+
+    public Course(string name, string? description, decimal price, DateTime? startDate, DateTime? endDate, int instructorId)
+    {
+        Name = name;
+        Description = description;
+        Price = price;
+        StartDate = startDate;
+        EndDate = endDate;
+        InstructorId = instructorId;
+        IsPublished = false;
+        IsActive = true;
+    }
+
+    public void UpdateDetails(string name, string? description, decimal price, DateTime? startDate, DateTime? endDate)
+    {
+        Name = name;
+        Description = description;
+        Price = price;
+        StartDate = startDate;
+        EndDate = endDate;
+    }
+
+    public void SetPublishedStatus(bool isPublished)
+    {
+        IsPublished = isPublished;
+    }
+
+    public void SoftDelete()
+    {
+        IsActive = false;
+        IsPublished = false;
+    }
+}
+
+```
+
+---
+
+## File: `eNote\eNote.Domain\Entities\Academic\Enrollment.cs`
+**Hash**: `f2f1d4945ffe` | **Size**: 787 chars
+
+**Classes**: Enrollment
+```cs
+using eNote.Domain.Entities.Identity;
+using eNote.Domain.Entities.Shared.Base;
+using eNote.Domain.Enums;
+
+namespace eNote.Domain.Entities;
+
+public class Enrollment : AuditableEntity
+{
+    public int StudentId { get; private set; }
+    public Student Student { get; private set; } = null!;
+    public int CourseId { get; private set; }
+    public Course Course { get; private set; } = null!;
+
+    public EnrollmentStatus EnrollmentStatus { get; private set; }
+
+    protected Enrollment()
+    {
+    }
+
+    public Enrollment(int studentId, int courseId, EnrollmentStatus status)
+    {
+        StudentId = studentId;
+        CourseId = courseId;
+        EnrollmentStatus = status;
+    }
+
+    public void UpdateStatus(EnrollmentStatus status)
+    {
+        EnrollmentStatus = status;
+    }
+}
+
+```
+
+---
+
+## File: `eNote\eNote.Domain\Entities\Academic\Lecture.cs`
+**Hash**: `df91c8b58b85` | **Size**: 2021 chars
+
+**Classes**: Lecture
+```cs
+using eNote.Domain.Entities.Assignments;
+using eNote.Domain.Entities.Shared.Base;
+using eNote.Domain.Enums;
+
+namespace eNote.Domain.Entities;
+
+public class Lecture : AuditableEntity
+{
+    public int CourseId { get; private set; }
+    public Course Course { get; private set; } = null!;
+
+    public string Name { get; private set; } = null!;
+    public string Location { get; private set; } = null!;
+    public LectureType LectureType { get; private set; }
+
+    public DateTime LectureTime { get; private set; }
+    public int Duration { get; private set; }
+    public int? Capacity { get; private set; }
+
+    public LectureStatus LectureStatus { get; private set; }
+    public bool IsCancelled => LectureStatus == LectureStatus.Cancelled;
+    public bool IsActive { get; private set; } = true;
+    public byte[]? RowVersion { get; set; }
+
+    public ICollection<Attendance> Attendances { get; private set; } = new List<Attendance>();
+    public ICollection<LectureNote> LectureNotes { get; private set; } = new List<LectureNote>();
+    public ICollection<Assignment> Assignments { get; private set; } = new List<Assignment>();
+
+    protected Lecture()
+    {
+    }
+
+    public Lecture(string name, string location, int duration, DateTime lectureTime, LectureType lectureType, int? capacity, int courseId)
+    {
+        Name = name;
+        Location = location;
+        Duration = duration;
+        LectureTime = lectureTime;
+        LectureType = lectureType;
+        Capacity = capacity;
+        CourseId = courseId;
+        LectureStatus = LectureStatus.Scheduled;
+        IsActive = true;
+    }
+
+    public void UpdateDetails(string name, string location, int duration, DateTime lectureTime, int? capacity)
+    {
+        Name = name;
+        Location = location;
+        Duration = duration;
+        LectureTime = lectureTime;
+        Capacity = capacity;
+    }
+
+    public void Cancel()
+    {
+        LectureStatus = LectureStatus.Cancelled;
+    }
+
+    public void SoftDelete()
+    {
+        IsActive = false;
+    }
+}
+
+```
+
+---
+
+## File: `eNote\eNote.Domain\Entities\Academic\LectureNote.cs`
+**Hash**: `349441ca19e5` | **Size**: 815 chars
+
+**Classes**: LectureNote
+```cs
+using eNote.Domain.Entities.Shared.Base;
+
+namespace eNote.Domain.Entities;
+
+public class LectureNote : AuditableEntity
+{
+    public int LectureId { get; private set; }
+    public Lecture Lecture { get; private set; } = null!;
+
+    public string Title { get; private set; } = null!;
+    public string Content { get; private set; } = null!;
+    public bool IsActive { get; private set; } = true;
+
+    protected LectureNote()
+    {
+    }
+
+    public LectureNote(string title, string content, int lectureId)
+    {
+        Title = title;
+        Content = content;
+        LectureId = lectureId;
+        IsActive = true;
+    }
+
+    public void UpdateDetails(string title, string content)
+    {
+        Title = title;
+        Content = content;
+    }
+
+    public void SoftDelete()
+    {
+        IsActive = false;
+    }
+}
+
+```
+
+---
+
+## File: `eNote\eNote.Domain\Entities\Communication\Announcement.cs`
+**Hash**: `6bea072d8c90` | **Size**: 1449 chars
+
+**Classes**: Announcement
+```cs
+using eNote.Domain.Entities.Rentals;
+using eNote.Domain.Entities.Shared.Base;
+
+namespace eNote.Domain.Entities.Communication;
+
+public class Announcement : AuditableEntity
+{
+    public int? CourseId { get; private set; }
+    public Course? Course { get; private set; }
+    public int? MusicStoreId { get; private set; }
+    public MusicStore? MusicStore { get; private set; }
+
+    public string Title { get; private set; } = null!;
+    public string Content { get; private set; } = null!;
+    public string? ImagePath { get; private set; }
+
+    public DateTime PublishedAt { get; private set; }
+    public bool IsActive { get; private set; } = true;
+
+    protected Announcement()
+    {
+    }
+
+    public Announcement(string title, string content, int? courseId, int? musicStoreId, DateTime publishedAt, string? imagePath = null)
+    {
+        Title = title;
+        Content = content;
+        ImagePath = imagePath;
+        CourseId = courseId;
+        MusicStoreId = musicStoreId;
+        PublishedAt = publishedAt;
+        IsActive = true;
+    }
+
+    public void UpdateDetails(string title, string content, string? imagePath = null)
+    {
+        Title = title;
+        Content = content;
+
+        if (imagePath is not null)
+        {
+            ImagePath = imagePath;
+        }
+    }
+
+    public void SetImagePath(string? imagePath)
+    {
+        ImagePath = imagePath;
+    }
+
+    public void SoftDelete()
+    {
+        IsActive = false;
+    }
+}
+
+```
+
+---
+
+## File: `eNote\eNote.Domain\Entities\Communication\Notification.cs`
+**Hash**: `be627089af27` | **Size**: 769 chars
+
+**Classes**: Notification
+```cs
+namespace eNote.Domain.Entities.Communication;
+
+public class Notification
+{
+    public int Id { get; private set; }
+    public int UserId { get; private set; }
+    public int? RentalId { get; private set; }
+
+    public string Title { get; private set; } = null!;
+    public string Body { get; private set; } = null!;
+
+    public bool IsRead { get; private set; }
+    public DateTime CreatedAt { get; private set; }
+
+    protected Notification()
+    {
+    }
+
+    public Notification(int userId, string title, string body, DateTime createdAt, int? rentalId = null)
+    {
+        UserId = userId;
+        Title = title;
+        Body = body;
+        CreatedAt = createdAt;
+        RentalId = rentalId;
+    }
+
+    public void MarkRead()
+    {
+        IsRead = true;
+    }
+}
+
+```
+
+---
+
+## File: `eNote\eNote.Domain\Entities\Communication\RentalNotificationOutbox.cs`
+**Hash**: `7e05ea96e68e` | **Size**: 330 chars
+
+**Classes**: RentalNotificationOutbox
+### Key Cross-Cutting Interactions
+- Uses **RabbitMQ|IEventBus|Outbox** → Async integration events (RabbitMQ)
+
+```cs
+using eNote.Domain.Entities.Shared.Base;
+
+namespace eNote.Domain.Entities.Communication;
+
+public class RentalNotificationOutbox : AuditableEntity
+{
+    public string PayloadJson { get; set; } = null!;
+    public DateTime? PublishedAt { get; set; }
+    public int Attempts { get; set; }
+    public string? LastError { get; set; }
+}
+```
+
+---
+
+## File: `eNote\eNote.Domain\Entities\Identity\Instructor.cs`
+**Hash**: `e9115f3e565a` | **Size**: 383 chars
+
+**Classes**: Instructor
+```cs
+using eNote.Domain.Entities.Shared.Base;
+
+namespace eNote.Domain.Entities.Identity;
+
+public class Instructor : AuditableEntity
+{
+    public int AppUserId { get; private set; }
+
+    public ICollection<Course> Courses { get; private set; } = new List<Course>();
+
+    protected Instructor()
+    {
+    }
+
+    public Instructor(int appUserId)
+    {
+        AppUserId = appUserId;
+    }
+}
+
+```
+
+---
+
+## File: `eNote\eNote.Domain\Entities\Identity\MusicStoreEmployee.cs`
+**Hash**: `57e2ae786e16` | **Size**: 672 chars
+
+**Classes**: MusicStoreEmployee
+```cs
+using eNote.Domain.Entities.Rentals;
+using eNote.Domain.Entities.Shared.Base;
+
+namespace eNote.Domain.Entities.Identity;
+
+public class MusicStoreEmployee : AuditableEntity
+{
+    public int AppUserId { get; private set; }
+    public int MusicStoreId { get; private set; }
+    public MusicStore MusicStore { get; private set; } = null!;
+
+    public bool IsManager { get; private set; }
+    public bool IsActive { get; set; } = true;
+
+    protected MusicStoreEmployee()
+    {
+    }
+
+    public MusicStoreEmployee(int appUserId, int musicStoreId, bool isManager)
+    {
+        AppUserId = appUserId;
+        MusicStoreId = musicStoreId;
+        IsManager = isManager;
+    }
+}
+
+```
+
+---
+
+## File: `eNote\eNote.Domain\Entities\Identity\RevokedToken.cs`
+**Hash**: `ca9a264ef001` | **Size**: 246 chars
+
+**Classes**: RevokedToken
+```cs
+namespace eNote.Domain.Entities.Identity;
+
+public class RevokedToken
+{
+    public int Id { get; set; }
+    public string Jti { get; set; } = string.Empty;
+
+    public DateTime ExpiresAt { get; set; }
+    public DateTime RevokedAt { get; set; }
+}
+
+```
+
+---
+
+## File: `eNote\eNote.Domain\Entities\Identity\Student.cs`
+**Hash**: `59ad240d0be1` | **Size**: 1251 chars
+
+**Classes**: Student
+```cs
+using eNote.Domain.Entities.Assignments;
+using eNote.Domain.Entities.Rentals;
+using eNote.Domain.Entities.Shared.Base;
+
+namespace eNote.Domain.Entities.Identity;
+
+public class Student : AuditableEntity
+{
+    public int AppUserId { get; private set; }
+    public DateTime EnrollmentDate { get; private set; }
+    public DateTime? MembershipPaidUntil { get; private set; }
+
+    public ICollection<Attendance> Attendances { get; private set; } = new List<Attendance>();
+    public ICollection<Enrollment> Enrollments { get; private set; } = new List<Enrollment>();
+    public ICollection<InstrumentRental> InstrumentRentals { get; private set; } = new List<InstrumentRental>();
+    public ICollection<AssignmentSubmission> AssignmentSubmissions { get; private set; } = new List<AssignmentSubmission>();
+
+    protected Student()
+    {
+    }
+
+    public Student(int appUserId, DateTime enrollmentDate)
+    {
+        AppUserId = appUserId;
+        EnrollmentDate = enrollmentDate;
+    }
+
+    public void UpdateMembership(DateTime? paidUntil)
+    {
+        MembershipPaidUntil = paidUntil;
+    }
+
+    public bool HasActiveMembership(DateTime utcNow)
+    {
+        return MembershipPaidUntil.HasValue && MembershipPaidUntil.Value.Date >= utcNow.Date;
+    }
+}
+
+```
+
+---
+
+## File: `eNote\eNote.Domain\Entities\Rentals\Instrument.cs`
+**Hash**: `40fa3aef84c9` | **Size**: 1628 chars
+
+**Classes**: Instrument
+```cs
+using eNote.Domain.Entities.Shared.Base;
+using eNote.Domain.Enums;
+
+namespace eNote.Domain.Entities.Rentals;
+
+public class Instrument : AuditableEntity
+{
+    public int InstrumentTypeId { get; private set; }
+    public InstrumentType InstrumentType { get; private set; } = null!;
+    public int MusicStoreId { get; private set; }
+    public MusicStore MusicStore { get; private set; } = null!;
+
+    public string Model { get; private set; } = null!;
+    public string Manufacturer { get; private set; } = null!;
+    public string? Description { get; private set; }
+    public string? ImagePath { get; private set; }
+
+    public bool IsActive { get; private set; } = true;
+    public bool IsAvailable =>
+        IsActive && !InstrumentRentals.Any(x => x.RentalStatus.BlocksInstrument());
+
+    public ICollection<InstrumentRental> InstrumentRentals { get; private set; } = [];
+
+    protected Instrument() { }
+
+    public Instrument(string model, string manufacturer, string? description, string? imagePath, int instrumentTypeId, int musicStoreId)
+    {
+        Model = model;
+        Manufacturer = manufacturer;
+        Description = description;
+        ImagePath = imagePath;
+        InstrumentTypeId = instrumentTypeId;
+        MusicStoreId = musicStoreId;
+    }
+
+    public void UpdateDetails(string model, string manufacturer, string? description, string? imagePath, int instrumentTypeId)
+    {
+        Model = model;
+        Manufacturer = manufacturer;
+        Description = description;
+        ImagePath = imagePath;
+        InstrumentTypeId = instrumentTypeId;
+    }
+
+    public void SoftDelete() => IsActive = false;
+}
+```
+
+---
+
+## File: `eNote\eNote.Domain\Entities\Rentals\InstrumentRental.cs`
+**Hash**: `e52a27d1bf0e` | **Size**: 2682 chars
+
+**Classes**: InstrumentRental
+```cs
+using eNote.Domain.Entities.Identity;
+using eNote.Domain.Entities.Shared.Base;
+using eNote.Domain.Enums;
+
+namespace eNote.Domain.Entities.Rentals;
+
+public class InstrumentRental : AuditableEntity
+{
+    public int StudentProfileId { get; private set; }
+    public Student StudentProfile { get; private set; } = null!;
+    public int InstrumentId { get; private set; }
+    public Instrument Instrument { get; private set; } = null!;
+
+    public InstrumentRentalStatus RentalStatus { get; private set; }
+    public string? RequestNote { get; private set; }
+    public string? Note { get; private set; }
+
+    public DateTime RequestedAt { get; private set; }
+    public DateTime? ApprovedAt { get; private set; }
+    public DateTime? RejectedAt { get; private set; }
+    public DateTime? PickedUpAt { get; private set; }
+    public DateTime? ReturnedAt { get; private set; }
+
+    public int? ApprovedById { get; private set; }
+    public int? RejectedById { get; private set; }
+
+    public decimal Fee { get; private set; }
+
+    protected InstrumentRental()
+    {
+    }
+
+    public InstrumentRental(int instrumentId, int studentProfileId, DateTime requestedAt, string? note)
+    {
+        InstrumentId = instrumentId;
+        StudentProfileId = studentProfileId;
+        RequestedAt = requestedAt;
+        RequestNote = note;
+        RentalStatus = InstrumentRentalStatus.Pending;
+    }
+
+    public void Approve(decimal fee, string? note, DateTime approvedAt, int approvedById)
+    {
+        Fee = fee;
+        Note = note;
+        ApprovedAt = approvedAt;
+        ApprovedById = approvedById;
+        RentalStatus = InstrumentRentalStatus.Approved;
+    }
+
+    public void Reject(DateTime rejectedAt, string? note, int rejectedById)
+    {
+        Note = note;
+        RejectedAt = rejectedAt;
+        RejectedById = rejectedById;
+        RentalStatus = InstrumentRentalStatus.Rejected;
+    }
+
+    public void Cancel(DateTime returnedAt, string? note)
+    {
+        Note = note;
+        ReturnedAt = returnedAt;
+        RentalStatus = InstrumentRentalStatus.Canceled;
+    }
+
+    public void Pickup(DateTime pickedUpAt, string? note = null)
+    {
+        PickedUpAt = pickedUpAt;
+        RentalStatus = InstrumentRentalStatus.Active;
+        if (note != null)
+        {
+            Note = note;
+        }
+    }
+
+    public void Complete(DateTime returnedAt, string? note)
+    {
+        Note = note;
+        ReturnedAt = returnedAt;
+        RentalStatus = InstrumentRentalStatus.Completed;
+    }
+
+    public void ReturnEarly(DateTime returnedAt, string? note)
+    {
+        Note = note;
+        ReturnedAt = returnedAt;
+        RentalStatus = InstrumentRentalStatus.ReturnedEarly;
+    }
+}
+
+```
+
+---
+
+## File: `eNote\eNote.Domain\Entities\Rentals\InstrumentType.cs`
+**Hash**: `24e040717c69` | **Size**: 307 chars
+
+**Classes**: InstrumentType
+```cs
+using eNote.Domain.Entities.Shared.Base;
+
+namespace eNote.Domain.Entities.Rentals;
+
+public class InstrumentType : BaseEntity
+{
+    public string Type { get; set; } = null!;
+    public decimal MonthlyFee { get; set; }
+
+    public ICollection<Instrument> Instruments { get; set; } = new List<Instrument>();
+}
+
+```
+
+---
+
+## File: `eNote\eNote.Domain\Entities\Rentals\InstrumentView.cs`
+**Hash**: `3bbf60c8a1a6` | **Size**: 674 chars
+
+**Classes**: InstrumentView
+```cs
+namespace eNote.Domain.Entities.Rentals;
+
+public class InstrumentView
+{
+    public int Id { get; private set; }
+    public int UserId { get; private set; }
+    public int InstrumentId { get; private set; }
+
+    public int ViewCount { get; private set; }
+    public DateTime LastViewedAt { get; private set; }
+
+    protected InstrumentView()
+    {
+    }
+
+    public InstrumentView(int userId, int instrumentId, DateTime viewedAt)
+    {
+        UserId = userId;
+        InstrumentId = instrumentId;
+        ViewCount = 1;
+        LastViewedAt = viewedAt;
+    }
+
+    public void RecordView(DateTime viewedAt)
+    {
+        ViewCount++;
+        LastViewedAt = viewedAt;
+    }
+}
+
+```
+
+---
+
+## File: `eNote\eNote.Domain\Entities\Rentals\MusicStore.cs`
+**Hash**: `46c08d527ebd` | **Size**: 833 chars
+
+**Classes**: MusicStore
+```cs
+using eNote.Domain.Entities.Identity;
+using eNote.Domain.Entities.Shared.Base;
+
+namespace eNote.Domain.Entities.Rentals;
+
+public class MusicStore : AuditableEntity
+{
+    public string StoreName { get; private set; } = null!;
+    public string BusinessHours { get; private set; } = null!;
+
+    public ICollection<MusicStoreEmployee> Employees { get; private set; } = new List<MusicStoreEmployee>();
+    public ICollection<Instrument> Instruments { get; private set; } = new List<Instrument>();
+
+    protected MusicStore()
+    {
+    }
+
+    public MusicStore(string storeName, string businessHours)
+    {
+        StoreName = storeName;
+        BusinessHours = businessHours;
+    }
+
+    public void UpdateDetails(string storeName, string businessHours)
+    {
+        StoreName = storeName;
+        BusinessHours = businessHours;
+    }
+}
+
+```
+
+---
+
+## File: `eNote\eNote.Domain\Entities\Shared\Address.cs`
+**Hash**: `ebde52414ad3` | **Size**: 263 chars
+
+**Classes**: Address
+```cs
+using eNote.Domain.Entities.Shared.Base;
+
+namespace eNote.Domain.Entities.Shared;
+
+public class Address : BaseEntity
+{
+    public string City { get; set; } = null!;
+    public string Street { get; set; } = null!;
+    public string Number { get; set; } = null!;
+}
+
+```
+
+---
+
+## File: `eNote\eNote.Domain\Entities\Shared\Base\BaseEntity.cs`
+**Hash**: `9c126eda6995` | **Size**: 355 chars
+
+**Classes**: AuditableEntity, BaseEntity
+```cs
+namespace eNote.Domain.Entities.Shared.Base;
+
+public abstract class BaseEntity : IEntity
+{
+    public int Id { get; set; }
+}
+
+public abstract class AuditableEntity : BaseEntity
+{
+    public DateTime CreatedAt { get; set; }
+    public DateTime? UpdatedAt { get; set; }
+
+    public int? CreatedById { get; set; }
+    public int? UpdatedById { get; set; }
+}
+
+```
+
+---
+
+## File: `eNote\eNote.Domain\Entities\Shared\Base\IEntity.cs`
+**Hash**: `b2154ea51c38` | **Size**: 100 chars
+
+**Classes**: 
+**Interfaces**: IEntity
+```cs
+namespace eNote.Domain.Entities.Shared.Base;
+
+public interface IEntity
+{
+    int Id { get; set; }
+}
+
+```
+
+---
+
+## File: `eNote\eNote.Domain\Enums\AnnouncementScope.cs`
+**Hash**: `4aca5aa05dd6` | **Size**: 100 chars
+
+```cs
+namespace eNote.Domain.Enums;
+
+public enum AnnouncementScope
+{
+    Course = 1,
+    MusicStore = 2
+}
+
+```
+
+---
+
+## File: `eNote\eNote.Domain\Enums\AttendanceStatus.cs`
+**Hash**: `40474a91c1f9` | **Size**: 113 chars
+
+```cs
+namespace eNote.Domain.Enums;
+
+public enum AttendanceStatus
+{
+    Pending = 1,
+    Present = 2,
+    Absent = 3
+}
+
+```
+
+---
+
+## File: `eNote\eNote.Domain\Enums\EnrollmentStatus.cs`
+**Hash**: `1b7ea1fadda4` | **Size**: 116 chars
+
+```cs
+namespace eNote.Domain.Enums;
+
+public enum EnrollmentStatus
+{
+    Active = 1,
+    Completed = 2,
+    Canceled = 3
+}
+
+```
+
+---
+
+## File: `eNote\eNote.Domain\Enums\LectureStatus.cs`
+**Hash**: `a520232c220d` | **Size**: 112 chars
+
+```cs
+namespace eNote.Domain.Enums;
+
+public enum LectureStatus
+{
+    Scheduled = 1,
+    Held = 2,
+    Cancelled = 3
+}
+
+```
+
+---
+
+## File: `eNote\eNote.Domain\Enums\LectureType.cs`
+**Hash**: `352c75864656` | **Size**: 117 chars
+
+```cs
+namespace eNote.Domain.Enums;
+
+public enum LectureType
+{
+    Theoretical = 1,
+    Practical = 2,
+    Combined = 3,
+}
+
+```
+
+---
+
+## File: `eNote\eNote.Infrastructure\Configuration\DotEnvConfiguration.cs`
+**Hash**: `5b465ef76902` | **Size**: 523 chars
+
+**Classes**: DotEnvConfiguration
 ```cs
 using DotNetEnv;
 
@@ -5172,7 +8349,733 @@ public static class DotEnvConfiguration
 
 ```
 
-## File: eNote\eNote.Infrastructure\Data\ENoteContext.cs
+---
+
+## File: `eNote\eNote.Infrastructure\Data\Configurations\AddressConfig.cs`
+**Hash**: `b8f14c2c62a0` | **Size**: 531 chars
+
+**Classes**: AddressConfig
+```cs
+using eNote.Domain.Entities.Shared;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+
+namespace eNote.Infrastructure.Data.Configurations;
+
+public sealed class AddressConfig : IEntityTypeConfiguration<Address>
+{
+    public void Configure(EntityTypeBuilder<Address> builder)
+    {
+        builder.Property(a => a.City).HasStringConfig(100, true);
+        builder.Property(a => a.Street).HasStringConfig(100, true);
+        builder.Property(a => a.Number).HasStringConfig(20, true);
+    }
+}
+
+```
+
+---
+
+## File: `eNote\eNote.Infrastructure\Data\Configurations\AnnouncementConfig.cs`
+**Hash**: `2e62f30629ab` | **Size**: 1522 chars
+
+**Classes**: AnnouncementConfig
+```cs
+using eNote.Domain.Entities.Communication;
+using eNote.Infrastructure.Identity;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+
+namespace eNote.Infrastructure.Data.Configurations;
+
+public sealed class AnnouncementConfig : IEntityTypeConfiguration<Announcement>
+{
+    public void Configure(EntityTypeBuilder<Announcement> builder)
+    {
+        builder.Property(x => x.Title).HasStringConfig(150, true);
+        builder.Property(x => x.Content).HasStringConfig(4000, true);
+        builder.Property(x => x.ImagePath).HasMaxLength(500);
+        builder.Property(x => x.IsActive).HasDefaultValue(true);
+        builder.HasQueryFilter(x => x.IsActive);
+
+        builder.HasOne<AppUser>()
+            .WithMany()
+            .HasForeignKey(x => x.CreatedById)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(x => x.Course)
+            .WithMany()
+            .HasForeignKey(x => x.CourseId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasOne(x => x.MusicStore)
+            .WithMany()
+            .HasForeignKey(x => x.MusicStoreId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasIndex(x => x.PublishedAt);
+        builder.HasIndex(x => x.CourseId);
+        builder.HasIndex(x => x.MusicStoreId);
+
+        builder.ToTable(t => t.HasCheckConstraint(
+            "CK_Announcement_Scope",
+            "([CourseId] IS NOT NULL AND [MusicStoreId] IS NULL) OR ([CourseId] IS NULL AND [MusicStoreId] IS NOT NULL)"));
+    }
+}
+
+```
+
+---
+
+## File: `eNote\eNote.Infrastructure\Data\Configurations\AppUserConfig.cs`
+**Hash**: `b811f371cc6c` | **Size**: 496 chars
+
+**Classes**: AppUserConfig
+```cs
+using eNote.Infrastructure.Identity;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+
+namespace eNote.Infrastructure.Data.Configurations;
+
+public sealed class AppUserConfig : IEntityTypeConfiguration<AppUser>
+{
+    public void Configure(EntityTypeBuilder<AppUser> builder)
+    {
+        builder.HasOne(u => u.Address)
+               .WithMany()
+               .HasForeignKey(u => u.AddressId)
+               .OnDelete(DeleteBehavior.Restrict);
+    }
+}
+
+```
+
+---
+
+## File: `eNote\eNote.Infrastructure\Data\Configurations\AssignmentConfig.cs`
+**Hash**: `471863d7a2e3` | **Size**: 767 chars
+
+**Classes**: AssignmentConfig
+```cs
+using eNote.Domain.Entities.Assignments;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+
+namespace eNote.Infrastructure.Data.Configurations;
+
+public sealed class AssignmentConfig : IEntityTypeConfiguration<Assignment>
+{
+    public void Configure(EntityTypeBuilder<Assignment> builder)
+    {
+        builder.HasOne(a => a.Lecture)
+               .WithMany(l => l.Assignments)
+               .HasForeignKey(a => a.LectureId)
+               .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Property(a => a.Title).HasStringConfig(200, true);
+        builder.Property(a => a.Description).IsRequired();
+        builder.Property(a => a.IsActive).HasDefaultValue(true);
+        builder.HasQueryFilter(a => a.IsActive);
+    }
+}
+
+```
+
+---
+
+## File: `eNote\eNote.Infrastructure\Data\Configurations\AttendanceConfig.cs`
+**Hash**: `e85462b9e220` | **Size**: 905 chars
+
+**Classes**: AttendanceConfig
+```cs
+using eNote.Domain.Entities;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+
+namespace eNote.Infrastructure.Data.Configurations;
+
+public sealed class AttendanceConfig : IEntityTypeConfiguration<Attendance>
+{
+    public void Configure(EntityTypeBuilder<Attendance> builder)
+    {
+        builder.HasQueryFilter(a => a.Lecture.IsActive);
+
+        builder.HasOne(p => p.Student)
+               .WithMany(s => s.Attendances)
+               .HasForeignKey(p => p.StudentId)
+               .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(p => p.Lecture)
+               .WithMany(p => p.Attendances)
+               .HasForeignKey(p => p.LectureId)
+               .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasIndex(p => new { p.StudentId, p.LectureId }).IsUnique();
+        builder.Property(p => p.AttendanceStatus).HasConversion<int>();
+    }
+}
+
+```
+
+---
+
+## File: `eNote\eNote.Infrastructure\Data\Configurations\ConfigurationHelpers.cs`
+**Hash**: `3a6f8e08685e` | **Size**: 1515 chars
+
+**Classes**: ConfigurationHelpers
+```cs
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+
+namespace eNote.Infrastructure.Data.Configurations;
+
+public static class ConfigurationHelpers
+{
+    public static PropertyBuilder<string> HasStringConfig(this PropertyBuilder<string> propertyBuilder, int? maxLength = null, bool isRequired = false)
+    {
+        if (isRequired)
+        {
+            propertyBuilder.IsRequired();
+        }
+
+        if (maxLength.HasValue)
+        {
+            propertyBuilder.HasMaxLength(maxLength.Value);
+        }
+
+        return propertyBuilder;
+    }
+
+    public static PropertyBuilder<decimal> HasDecimalPrecision(this PropertyBuilder<decimal> propertyBuilder, int precision = 18, int scale = 2)
+    {
+        return propertyBuilder.HasPrecision(precision, scale);
+    }
+
+    public static PropertyBuilder<bool> HasDefaultFalse(this PropertyBuilder<bool> propertyBuilder)
+    {
+        return propertyBuilder.HasDefaultValue(false);
+    }
+
+    public static PropertyBuilder<DateTime> HasDefaultSqlNow(this PropertyBuilder<DateTime> propertyBuilder)
+    {
+        return propertyBuilder.HasDefaultValueSql("GETUTCDATE()");
+    }
+
+    public static IndexBuilder HasUniqueIndex(this EntityTypeBuilder builder, string propertyName)
+    {
+        return builder.HasIndex(propertyName).IsUnique();
+    }
+
+    public static IndexBuilder HasUniqueIndex(this EntityTypeBuilder builder, params string[] propertyNames)
+    {
+        return builder.HasIndex(propertyNames).IsUnique();
+    }
+}
+
+```
+
+---
+
+## File: `eNote\eNote.Infrastructure\Data\Configurations\CourseConfig.cs`
+**Hash**: `b2629b63a051` | **Size**: 924 chars
+
+**Classes**: CourseConfig
+```cs
+using eNote.Domain.Entities;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+
+namespace eNote.Infrastructure.Data.Configurations;
+
+public sealed class CourseConfig : IEntityTypeConfiguration<Course>
+{
+    public void Configure(EntityTypeBuilder<Course> builder)
+    {
+        builder.HasOne(x => x.Instructor)
+               .WithMany(i => i.Courses)
+               .HasForeignKey(x => x.InstructorId)
+               .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasMany(x => x.Lectures)
+               .WithOne(x => x.Course)
+               .HasForeignKey(x => x.CourseId)
+               .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Property(x => x.Price).HasDecimalPrecision();
+        builder.Property(x => x.IsPublished).HasDefaultFalse();
+        builder.Property(x => x.IsActive).HasDefaultValue(true);
+        builder.HasQueryFilter(x => x.IsActive);
+    }
+}
+
+```
+
+---
+
+## File: `eNote\eNote.Infrastructure\Data\Configurations\EnrollmentConfig.cs`
+**Hash**: `5ca3836e090a` | **Size**: 902 chars
+
+**Classes**: EnrollmentConfig
+```cs
+using eNote.Domain.Entities;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+
+namespace eNote.Infrastructure.Data.Configurations;
+
+public sealed class EnrollmentConfig : IEntityTypeConfiguration<Enrollment>
+{
+    public void Configure(EntityTypeBuilder<Enrollment> builder)
+    {
+        builder.HasQueryFilter(e => e.Course.IsActive);
+
+        builder.HasOne(x => x.Student)
+               .WithMany(s => s.Enrollments)
+               .HasForeignKey(x => x.StudentId)
+               .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(x => x.Course)
+               .WithMany(x => x.Enrollments)
+               .HasForeignKey(x => x.CourseId)
+               .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasIndex(e => new { e.StudentId, e.CourseId }).IsUnique();
+        builder.Property(e => e.EnrollmentStatus).HasConversion<int>();
+    }
+}
+
+```
+
+---
+
+## File: `eNote\eNote.Infrastructure\Data\Configurations\InstructorConfig.cs`
+**Hash**: `d23ba30af690` | **Size**: 604 chars
+
+**Classes**: InstructorConfig
+```cs
+using eNote.Domain.Entities.Identity;
+using eNote.Infrastructure.Identity;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+
+namespace eNote.Infrastructure.Data.Configurations;
+
+public sealed class InstructorConfig : IEntityTypeConfiguration<Instructor>
+{
+    public void Configure(EntityTypeBuilder<Instructor> builder)
+    {
+        builder.HasOne<AppUser>()
+               .WithOne()
+               .HasForeignKey<Instructor>(i => i.AppUserId)
+               .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasIndex(i => i.AppUserId).IsUnique();
+    }
+}
+
+```
+
+---
+
+## File: `eNote\eNote.Infrastructure\Data\Configurations\InstrumentConfig.cs`
+**Hash**: `dc9557d5bb0f` | **Size**: 1028 chars
+
+**Classes**: InstrumentConfig
+```cs
+using eNote.Domain.Entities.Rentals;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+
+namespace eNote.Infrastructure.Data.Configurations;
+
+public sealed class InstrumentConfig : IEntityTypeConfiguration<Instrument>
+{
+    public void Configure(EntityTypeBuilder<Instrument> builder)
+    {
+        builder.HasOne(x => x.MusicStore)
+               .WithMany(x => x.Instruments)
+               .HasForeignKey(x => x.MusicStoreId)
+               .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(x => x.InstrumentType)
+               .WithMany(t => t.Instruments)
+               .HasForeignKey(x => x.InstrumentTypeId)
+               .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Property(x => x.Model).HasStringConfig(100, true);
+        builder.Property(x => x.Manufacturer).HasStringConfig(100, true);
+        builder.Property(x => x.Description).HasMaxLength(1000);
+
+        builder.Ignore(x => x.IsAvailable);
+        builder.HasQueryFilter(x => x.IsActive);
+    }
+}
+
+```
+
+---
+
+## File: `eNote\eNote.Infrastructure\Data\Configurations\InstrumentRentalConfig.cs`
+**Hash**: `edc628e0bfdf` | **Size**: 1388 chars
+
+**Classes**: InstrumentRentalConfig
+```cs
+using eNote.Domain.Entities.Rentals;
+using eNote.Domain.Enums;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+
+namespace eNote.Infrastructure.Data.Configurations;
+
+public sealed class InstrumentRentalConfig : IEntityTypeConfiguration<InstrumentRental>
+{
+    public void Configure(EntityTypeBuilder<InstrumentRental> builder)
+    {
+        // intentionally excludes rentals for inactive instruments globally; use IgnoreQueryFilters() for historical/audit queries
+        builder.HasQueryFilter(r => r.Instrument.IsActive);
+
+        builder.HasOne(x => x.StudentProfile)
+               .WithMany(s => s.InstrumentRentals)
+               .HasForeignKey(x => x.StudentProfileId)
+               .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(x => x.Instrument)
+               .WithMany(x => x.InstrumentRentals)
+               .HasForeignKey(x => x.InstrumentId)
+               .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Property(x => x.Fee).HasDecimalPrecision(10, 2).IsRequired();
+
+        builder.Property(x => x.RentalStatus)
+               .HasConversion<int>();
+
+        builder.HasIndex(x => x.InstrumentId)
+               .HasFilter(
+                    $"[{nameof(InstrumentRental.RentalStatus)}] IN ({(int)InstrumentRentalStatus.Approved}, {(int)InstrumentRentalStatus.Active})"
+               ).IsUnique();
+    }
+}
+
+```
+
+---
+
+## File: `eNote\eNote.Infrastructure\Data\Configurations\InstrumentTypeConfig.cs`
+**Hash**: `5027b0ca6e60` | **Size**: 490 chars
+
+**Classes**: InstrumentTypeConfig
+```cs
+using eNote.Domain.Entities.Rentals;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+
+namespace eNote.Infrastructure.Data.Configurations;
+
+public sealed class InstrumentTypeConfig : IEntityTypeConfiguration<InstrumentType>
+{
+    public void Configure(EntityTypeBuilder<InstrumentType> builder)
+    {
+        builder.Property(t => t.Type).HasStringConfig(100, true);
+        builder.Property(t => t.MonthlyFee).HasDecimalPrecision(18, 2);
+    }
+}
+
+```
+
+---
+
+## File: `eNote\eNote.Infrastructure\Data\Configurations\InstrumentViewConfig.cs`
+**Hash**: `63cdbbc36854` | **Size**: 475 chars
+
+**Classes**: InstrumentViewConfig
+```cs
+using eNote.Domain.Entities.Rentals;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+
+namespace eNote.Infrastructure.Data.Configurations;
+
+public sealed class InstrumentViewConfig : IEntityTypeConfiguration<InstrumentView>
+{
+    public void Configure(EntityTypeBuilder<InstrumentView> builder)
+    {
+        builder.HasIndex(x => new { x.UserId, x.InstrumentId }).IsUnique();
+        builder.HasIndex(x => x.LastViewedAt);
+    }
+}
+
+```
+
+---
+
+## File: `eNote\eNote.Infrastructure\Data\Configurations\LectureConfig.cs`
+**Hash**: `b404f226958c` | **Size**: 1167 chars
+
+**Classes**: LectureConfig
+```cs
+using eNote.Domain.Entities;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+
+namespace eNote.Infrastructure.Data.Configurations;
+
+public sealed class LectureConfig : IEntityTypeConfiguration<Lecture>
+{
+    public void Configure(EntityTypeBuilder<Lecture> builder)
+    {
+        builder.HasOne(p => p.Course)
+               .WithMany(k => k.Lectures)
+               .HasForeignKey(p => p.CourseId)
+               .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Property(p => p.Name).HasStringConfig(200, true);
+        builder.Property(p => p.Location).HasStringConfig(200, true);
+        builder.Property(p => p.Duration).IsRequired();
+        builder.Property(p => p.LectureType).HasConversion<int>();
+        builder.Property(p => p.LectureStatus).HasConversion<int>();
+        builder.Property(p => p.LectureTime).IsRequired();
+        builder.Property(p => p.Capacity).IsRequired(false);
+        builder.Ignore(p => p.IsCancelled);
+        builder.Property(p => p.IsActive).HasDefaultValue(true);
+        builder.HasQueryFilter(p => p.IsActive);
+        builder.Property(p => p.RowVersion).IsRowVersion();
+    }
+}
+
+```
+
+---
+
+## File: `eNote\eNote.Infrastructure\Data\Configurations\LectureNoteConfig.cs`
+**Hash**: `b14c71db45a6` | **Size**: 812 chars
+
+**Classes**: LectureNoteConfig
+```cs
+using eNote.Domain.Entities;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+
+namespace eNote.Infrastructure.Data.Configurations;
+
+public sealed class LectureNoteConfig : IEntityTypeConfiguration<LectureNote>
+{
+    public void Configure(EntityTypeBuilder<LectureNote> builder)
+    {
+        builder.HasOne(n => n.Lecture)
+               .WithMany(p => p.LectureNotes)
+               .HasForeignKey(n => n.LectureId)
+               .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Property(n => n.Title).HasStringConfig(200, true);
+        builder.Property(n => n.Content).IsRequired();
+        builder.Property(n => n.CreatedAt).IsRequired();
+        builder.Property(n => n.IsActive).HasDefaultValue(true);
+        builder.HasQueryFilter(n => n.IsActive);
+    }
+}
+
+```
+
+---
+
+## File: `eNote\eNote.Infrastructure\Data\Configurations\MusicStoreConfig.cs`
+**Hash**: `b17bc3cdbb30` | **Size**: 862 chars
+
+**Classes**: MusicStoreConfig
+```cs
+using eNote.Domain.Entities.Rentals;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+
+namespace eNote.Infrastructure.Data.Configurations;
+
+public sealed class MusicStoreConfig : IEntityTypeConfiguration<MusicStore>
+{
+    public void Configure(EntityTypeBuilder<MusicStore> builder)
+    {
+        builder.Property(m => m.StoreName).HasStringConfig(100, true);
+        builder.Property(m => m.BusinessHours).HasStringConfig(50, true);
+
+        builder.HasMany(x => x.Employees)
+               .WithOne(e => e.MusicStore)
+               .HasForeignKey(e => e.MusicStoreId)
+               .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasMany(x => x.Instruments)
+               .WithOne(i => i.MusicStore)
+               .HasForeignKey(i => i.MusicStoreId)
+               .OnDelete(DeleteBehavior.Restrict);
+    }
+}
+
+```
+
+---
+
+## File: `eNote\eNote.Infrastructure\Data\Configurations\MusicStoreEmployeeConfig.cs`
+**Hash**: `d4bf7eef6a14` | **Size**: 1038 chars
+
+**Classes**: MusicStoreEmployeeConfig
+```cs
+using eNote.Domain.Entities.Identity;
+using eNote.Infrastructure.Identity;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+
+namespace eNote.Infrastructure.Data.Configurations;
+
+public class MusicStoreEmployeeConfig : IEntityTypeConfiguration<MusicStoreEmployee>
+{
+    public void Configure(EntityTypeBuilder<MusicStoreEmployee> builder)
+    {
+        builder.HasUniqueIndex(nameof(MusicStoreEmployee.AppUserId));
+        builder.HasUniqueIndex(nameof(MusicStoreEmployee.MusicStoreId), nameof(MusicStoreEmployee.AppUserId));
+
+        builder.Property(x => x.IsManager).IsRequired();
+        builder.Property(x => x.IsActive).IsRequired();
+
+        builder.HasOne(x => x.MusicStore)
+               .WithMany(x => x.Employees)
+               .HasForeignKey(x => x.MusicStoreId)
+               .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasOne<AppUser>()
+               .WithMany()
+               .HasForeignKey(x => x.AppUserId)
+               .OnDelete(DeleteBehavior.Restrict);
+    }
+}
+
+```
+
+---
+
+## File: `eNote\eNote.Infrastructure\Data\Configurations\NotificationConfig.cs`
+**Hash**: `d232e1c65721` | **Size**: 732 chars
+
+**Classes**: NotificationConfig
+```cs
+using eNote.Domain.Entities.Communication;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+
+namespace eNote.Infrastructure.Data.Configurations;
+
+public sealed class NotificationConfig : IEntityTypeConfiguration<Notification>
+{
+    public void Configure(EntityTypeBuilder<Notification> builder)
+    {
+        builder.Property(x => x.Title).HasMaxLength(200).IsRequired();
+        builder.Property(x => x.Body).HasMaxLength(2000).IsRequired();
+        builder.Property(x => x.IsRead).HasDefaultValue(false);
+
+        builder.HasIndex(x => new { x.UserId, x.IsRead });
+        builder.HasIndex(x => x.CreatedAt);
+        builder.HasIndex(x => new { x.UserId, x.RentalId, x.Title });
+    }
+}
+
+```
+
+---
+
+## File: `eNote\eNote.Infrastructure\Data\Configurations\RentalNotificationOutboxConfig.cs`
+**Hash**: `19e59618c4b7` | **Size**: 681 chars
+
+**Classes**: RentalNotificationOutboxConfig
+### Key Cross-Cutting Interactions
+- Uses **RabbitMQ|IEventBus|Outbox** → Async integration events (RabbitMQ)
+
+```cs
+using eNote.Domain.Entities.Communication;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+
+namespace eNote.Infrastructure.Data.Configurations;
+
+public sealed class RentalNotificationOutboxConfig : IEntityTypeConfiguration<RentalNotificationOutbox>
+{
+    public void Configure(EntityTypeBuilder<RentalNotificationOutbox> builder)
+    {
+        builder.ToTable("RentalNotificationOutbox");
+
+        builder.Property(x => x.PayloadJson)
+            .IsRequired()
+            .HasColumnType("nvarchar(max)");
+
+        builder.Property(x => x.LastError)
+            .HasMaxLength(2000);
+
+        builder.HasIndex(x => x.PublishedAt);
+    }
+}
+```
+
+---
+
+## File: `eNote\eNote.Infrastructure\Data\Configurations\RevokedTokenConfig.cs`
+**Hash**: `e3ffa574e936` | **Size**: 578 chars
+
+**Classes**: RevokedTokenConfig
+```cs
+using eNote.Domain.Entities.Identity;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+
+namespace eNote.Infrastructure.Data.Configurations;
+
+public sealed class RevokedTokenConfig : IEntityTypeConfiguration<RevokedToken>
+{
+    public void Configure(EntityTypeBuilder<RevokedToken> builder)
+    {
+        builder.Property(x => x.Jti).HasMaxLength(64).IsRequired();
+        builder.HasIndex(x => x.Jti).IsUnique();
+        builder.Property(x => x.ExpiresAt).IsRequired();
+        builder.Property(x => x.RevokedAt).IsRequired();
+    }
+}
+
+```
+
+---
+
+## File: `eNote\eNote.Infrastructure\Data\Configurations\StudentConfig.cs`
+**Hash**: `2950b5736209` | **Size**: 592 chars
+
+**Classes**: StudentConfig
+```cs
+using eNote.Domain.Entities.Identity;
+using eNote.Infrastructure.Identity;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
+
+namespace eNote.Infrastructure.Data.Configurations;
+
+public sealed class StudentConfig : IEntityTypeConfiguration<Student>
+{
+    public void Configure(EntityTypeBuilder<Student> builder)
+    {
+        builder.HasOne<AppUser>()
+               .WithOne()
+               .HasForeignKey<Student>(s => s.AppUserId)
+               .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasIndex(s => s.AppUserId).IsUnique();
+    }
+}
+
+```
+
+---
+
+## File: `eNote\eNote.Infrastructure\Data\ENoteContext.cs`
+**Hash**: `fe1558516114` | **Size**: 1616 chars
+
+**Classes**: ENoteContext
+### Key Cross-Cutting Interactions
+- Uses **IAppDbContext|DbContext** → Persistence boundary
+
 ```cs
 ﻿using eNote.Application.Common.Persistence;
 using eNote.Application.Common.Time;
@@ -5225,7 +9128,15 @@ public class ENoteContext(DbContextOptions<ENoteContext> options, IClock clock) 
 
 ```
 
-## File: eNote\eNote.Infrastructure\Data\ENoteContextFactory.cs
+---
+
+## File: `eNote\eNote.Infrastructure\Data\ENoteContextFactory.cs`
+**Hash**: `ad245c241c99` | **Size**: 1427 chars
+
+**Classes**: ENoteContextFactory
+### Key Cross-Cutting Interactions
+- Uses **IAppDbContext|DbContext** → Persistence boundary
+
 ```cs
 ﻿using DotNetEnv;
 using eNote.Application.Common.Time;
@@ -5275,617 +9186,12 @@ public sealed class ENoteContextFactory : IDesignTimeDbContextFactory<ENoteConte
 
 ```
 
-## File: eNote\eNote.Infrastructure\Data\Configurations\AddressConfig.cs
-```cs
-using eNote.Domain.Entities.Shared;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
+---
 
-namespace eNote.Infrastructure.Data.Configurations;
+## File: `eNote\eNote.Infrastructure\Data\Seed\DevelopmentDataSeed.cs`
+**Hash**: `24d2d22ebb21` | **Size**: 10075 chars
 
-public sealed class AddressConfig : IEntityTypeConfiguration<Address>
-{
-    public void Configure(EntityTypeBuilder<Address> builder)
-    {
-        builder.Property(a => a.City).HasStringConfig(100, true);
-        builder.Property(a => a.Street).HasStringConfig(100, true);
-        builder.Property(a => a.Number).HasStringConfig(20, true);
-    }
-}
-
-```
-
-## File: eNote\eNote.Infrastructure\Data\Configurations\AnnouncementConfig.cs
-```cs
-using eNote.Domain.Entities.Communication;
-using eNote.Infrastructure.Identity;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
-
-namespace eNote.Infrastructure.Data.Configurations;
-
-public sealed class AnnouncementConfig : IEntityTypeConfiguration<Announcement>
-{
-    public void Configure(EntityTypeBuilder<Announcement> builder)
-    {
-        builder.Property(x => x.Title).HasStringConfig(150, true);
-        builder.Property(x => x.Content).HasStringConfig(4000, true);
-        builder.Property(x => x.ImagePath).HasMaxLength(500);
-        builder.Property(x => x.IsActive).HasDefaultValue(true);
-        builder.HasQueryFilter(x => x.IsActive);
-
-        builder.HasOne<AppUser>()
-            .WithMany()
-            .HasForeignKey(x => x.CreatedById)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        builder.HasOne(x => x.Course)
-            .WithMany()
-            .HasForeignKey(x => x.CourseId)
-            .OnDelete(DeleteBehavior.Cascade);
-
-        builder.HasOne(x => x.MusicStore)
-            .WithMany()
-            .HasForeignKey(x => x.MusicStoreId)
-            .OnDelete(DeleteBehavior.Cascade);
-
-        builder.HasIndex(x => x.PublishedAt);
-        builder.HasIndex(x => x.CourseId);
-        builder.HasIndex(x => x.MusicStoreId);
-
-        builder.ToTable(t => t.HasCheckConstraint(
-            "CK_Announcement_Scope",
-            "([CourseId] IS NOT NULL AND [MusicStoreId] IS NULL) OR ([CourseId] IS NULL AND [MusicStoreId] IS NOT NULL)"));
-    }
-}
-
-```
-
-## File: eNote\eNote.Infrastructure\Data\Configurations\AppUserConfig.cs
-```cs
-using eNote.Infrastructure.Identity;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
-
-namespace eNote.Infrastructure.Data.Configurations;
-
-public sealed class AppUserConfig : IEntityTypeConfiguration<AppUser>
-{
-    public void Configure(EntityTypeBuilder<AppUser> builder)
-    {
-        builder.HasOne(u => u.Address)
-               .WithMany()
-               .HasForeignKey(u => u.AddressId)
-               .OnDelete(DeleteBehavior.Restrict);
-    }
-}
-
-```
-
-## File: eNote\eNote.Infrastructure\Data\Configurations\AssignmentConfig.cs
-```cs
-using eNote.Domain.Entities.Assignments;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
-
-namespace eNote.Infrastructure.Data.Configurations;
-
-public sealed class AssignmentConfig : IEntityTypeConfiguration<Assignment>
-{
-    public void Configure(EntityTypeBuilder<Assignment> builder)
-    {
-        builder.HasOne(a => a.Lecture)
-               .WithMany(l => l.Assignments)
-               .HasForeignKey(a => a.LectureId)
-               .OnDelete(DeleteBehavior.Cascade);
-
-        builder.Property(a => a.Title).HasStringConfig(200, true);
-        builder.Property(a => a.Description).IsRequired();
-        builder.Property(a => a.IsActive).HasDefaultValue(true);
-        builder.HasQueryFilter(a => a.IsActive);
-    }
-}
-
-```
-
-## File: eNote\eNote.Infrastructure\Data\Configurations\AttendanceConfig.cs
-```cs
-using eNote.Domain.Entities;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
-
-namespace eNote.Infrastructure.Data.Configurations;
-
-public sealed class AttendanceConfig : IEntityTypeConfiguration<Attendance>
-{
-    public void Configure(EntityTypeBuilder<Attendance> builder)
-    {
-        builder.HasQueryFilter(a => a.Lecture.IsActive);
-
-        builder.HasOne(p => p.Student)
-               .WithMany(s => s.Attendances)
-               .HasForeignKey(p => p.StudentId)
-               .OnDelete(DeleteBehavior.Restrict);
-
-        builder.HasOne(p => p.Lecture)
-               .WithMany(p => p.Attendances)
-               .HasForeignKey(p => p.LectureId)
-               .OnDelete(DeleteBehavior.Cascade);
-
-        builder.HasIndex(p => new { p.StudentId, p.LectureId }).IsUnique();
-        builder.Property(p => p.AttendanceStatus).HasConversion<int>();
-    }
-}
-
-```
-
-## File: eNote\eNote.Infrastructure\Data\Configurations\ConfigurationHelpers.cs
-```cs
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
-
-namespace eNote.Infrastructure.Data.Configurations;
-
-public static class ConfigurationHelpers
-{
-    public static PropertyBuilder<string> HasStringConfig(this PropertyBuilder<string> propertyBuilder, int? maxLength = null, bool isRequired = false)
-    {
-        if (isRequired)
-        {
-            propertyBuilder.IsRequired();
-        }
-
-        if (maxLength.HasValue)
-        {
-            propertyBuilder.HasMaxLength(maxLength.Value);
-        }
-
-        return propertyBuilder;
-    }
-
-    public static PropertyBuilder<decimal> HasDecimalPrecision(this PropertyBuilder<decimal> propertyBuilder, int precision = 18, int scale = 2)
-    {
-        return propertyBuilder.HasPrecision(precision, scale);
-    }
-
-    public static PropertyBuilder<bool> HasDefaultFalse(this PropertyBuilder<bool> propertyBuilder)
-    {
-        return propertyBuilder.HasDefaultValue(false);
-    }
-
-    public static PropertyBuilder<DateTime> HasDefaultSqlNow(this PropertyBuilder<DateTime> propertyBuilder)
-    {
-        return propertyBuilder.HasDefaultValueSql("GETUTCDATE()");
-    }
-
-    public static IndexBuilder HasUniqueIndex(this EntityTypeBuilder builder, string propertyName)
-    {
-        return builder.HasIndex(propertyName).IsUnique();
-    }
-
-    public static IndexBuilder HasUniqueIndex(this EntityTypeBuilder builder, params string[] propertyNames)
-    {
-        return builder.HasIndex(propertyNames).IsUnique();
-    }
-}
-
-```
-
-## File: eNote\eNote.Infrastructure\Data\Configurations\CourseConfig.cs
-```cs
-using eNote.Domain.Entities;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
-
-namespace eNote.Infrastructure.Data.Configurations;
-
-public sealed class CourseConfig : IEntityTypeConfiguration<Course>
-{
-    public void Configure(EntityTypeBuilder<Course> builder)
-    {
-        builder.HasOne(x => x.Instructor)
-               .WithMany(i => i.Courses)
-               .HasForeignKey(x => x.InstructorId)
-               .OnDelete(DeleteBehavior.Restrict);
-
-        builder.HasMany(x => x.Lectures)
-               .WithOne(x => x.Course)
-               .HasForeignKey(x => x.CourseId)
-               .OnDelete(DeleteBehavior.Cascade);
-
-        builder.Property(x => x.Price).HasDecimalPrecision();
-        builder.Property(x => x.IsPublished).HasDefaultFalse();
-        builder.Property(x => x.IsActive).HasDefaultValue(true);
-        builder.HasQueryFilter(x => x.IsActive);
-    }
-}
-
-```
-
-## File: eNote\eNote.Infrastructure\Data\Configurations\EnrollmentConfig.cs
-```cs
-using eNote.Domain.Entities;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
-
-namespace eNote.Infrastructure.Data.Configurations;
-
-public sealed class EnrollmentConfig : IEntityTypeConfiguration<Enrollment>
-{
-    public void Configure(EntityTypeBuilder<Enrollment> builder)
-    {
-        builder.HasQueryFilter(e => e.Course.IsActive);
-
-        builder.HasOne(x => x.Student)
-               .WithMany(s => s.Enrollments)
-               .HasForeignKey(x => x.StudentId)
-               .OnDelete(DeleteBehavior.Restrict);
-
-        builder.HasOne(x => x.Course)
-               .WithMany(x => x.Enrollments)
-               .HasForeignKey(x => x.CourseId)
-               .OnDelete(DeleteBehavior.Restrict);
-
-        builder.HasIndex(e => new { e.StudentId, e.CourseId }).IsUnique();
-        builder.Property(e => e.EnrollmentStatus).HasConversion<int>();
-    }
-}
-
-```
-
-## File: eNote\eNote.Infrastructure\Data\Configurations\InstructorConfig.cs
-```cs
-using eNote.Domain.Entities.Identity;
-using eNote.Infrastructure.Identity;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
-
-namespace eNote.Infrastructure.Data.Configurations;
-
-public sealed class InstructorConfig : IEntityTypeConfiguration<Instructor>
-{
-    public void Configure(EntityTypeBuilder<Instructor> builder)
-    {
-        builder.HasOne<AppUser>()
-               .WithOne()
-               .HasForeignKey<Instructor>(i => i.AppUserId)
-               .OnDelete(DeleteBehavior.Cascade);
-
-        builder.HasIndex(i => i.AppUserId).IsUnique();
-    }
-}
-
-```
-
-## File: eNote\eNote.Infrastructure\Data\Configurations\InstrumentConfig.cs
-```cs
-using eNote.Domain.Entities.Rentals;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
-
-namespace eNote.Infrastructure.Data.Configurations;
-
-public sealed class InstrumentConfig : IEntityTypeConfiguration<Instrument>
-{
-    public void Configure(EntityTypeBuilder<Instrument> builder)
-    {
-        builder.HasOne(x => x.MusicStore)
-               .WithMany(x => x.Instruments)
-               .HasForeignKey(x => x.MusicStoreId)
-               .OnDelete(DeleteBehavior.Restrict);
-
-        builder.HasOne(x => x.InstrumentType)
-               .WithMany(t => t.Instruments)
-               .HasForeignKey(x => x.InstrumentTypeId)
-               .OnDelete(DeleteBehavior.Restrict);
-
-        builder.Property(x => x.Model).HasStringConfig(100, true);
-        builder.Property(x => x.Manufacturer).HasStringConfig(100, true);
-        builder.Property(x => x.Description).HasMaxLength(1000);
-
-        builder.Ignore(x => x.IsAvailable);
-        builder.HasQueryFilter(x => x.IsActive);
-    }
-}
-
-```
-
-## File: eNote\eNote.Infrastructure\Data\Configurations\InstrumentRentalConfig.cs
-```cs
-using eNote.Domain.Entities.Rentals;
-using eNote.Domain.Enums;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
-
-namespace eNote.Infrastructure.Data.Configurations;
-
-public sealed class InstrumentRentalConfig : IEntityTypeConfiguration<InstrumentRental>
-{
-    public void Configure(EntityTypeBuilder<InstrumentRental> builder)
-    {
-        // intentionally excludes rentals for inactive instruments globally; use IgnoreQueryFilters() for historical/audit queries
-        builder.HasQueryFilter(r => r.Instrument.IsActive);
-
-        builder.HasOne(x => x.StudentProfile)
-               .WithMany(s => s.InstrumentRentals)
-               .HasForeignKey(x => x.StudentProfileId)
-               .OnDelete(DeleteBehavior.Restrict);
-
-        builder.HasOne(x => x.Instrument)
-               .WithMany(x => x.InstrumentRentals)
-               .HasForeignKey(x => x.InstrumentId)
-               .OnDelete(DeleteBehavior.Cascade);
-
-        builder.Property(x => x.Fee).HasDecimalPrecision(10, 2).IsRequired();
-
-        builder.Property(x => x.RentalStatus)
-               .HasConversion<int>();
-
-        builder.HasIndex(x => x.InstrumentId)
-               .HasFilter(
-                    $"[{nameof(InstrumentRental.RentalStatus)}] IN ({(int)InstrumentRentalStatus.Approved}, {(int)InstrumentRentalStatus.Active})"
-               ).IsUnique();
-    }
-}
-
-```
-
-## File: eNote\eNote.Infrastructure\Data\Configurations\InstrumentTypeConfig.cs
-```cs
-using eNote.Domain.Entities.Rentals;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
-
-namespace eNote.Infrastructure.Data.Configurations;
-
-public sealed class InstrumentTypeConfig : IEntityTypeConfiguration<InstrumentType>
-{
-    public void Configure(EntityTypeBuilder<InstrumentType> builder)
-    {
-        builder.Property(t => t.Type).HasStringConfig(100, true);
-        builder.Property(t => t.MonthlyFee).HasDecimalPrecision(18, 2);
-    }
-}
-
-```
-
-## File: eNote\eNote.Infrastructure\Data\Configurations\InstrumentViewConfig.cs
-```cs
-using eNote.Domain.Entities.Rentals;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
-
-namespace eNote.Infrastructure.Data.Configurations;
-
-public sealed class InstrumentViewConfig : IEntityTypeConfiguration<InstrumentView>
-{
-    public void Configure(EntityTypeBuilder<InstrumentView> builder)
-    {
-        builder.HasIndex(x => new { x.UserId, x.InstrumentId }).IsUnique();
-        builder.HasIndex(x => x.LastViewedAt);
-    }
-}
-
-```
-
-## File: eNote\eNote.Infrastructure\Data\Configurations\LectureConfig.cs
-```cs
-using eNote.Domain.Entities;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
-
-namespace eNote.Infrastructure.Data.Configurations;
-
-public sealed class LectureConfig : IEntityTypeConfiguration<Lecture>
-{
-    public void Configure(EntityTypeBuilder<Lecture> builder)
-    {
-        builder.HasOne(p => p.Course)
-               .WithMany(k => k.Lectures)
-               .HasForeignKey(p => p.CourseId)
-               .OnDelete(DeleteBehavior.Cascade);
-
-        builder.Property(p => p.Name).HasStringConfig(200, true);
-        builder.Property(p => p.Location).HasStringConfig(200, true);
-        builder.Property(p => p.Duration).IsRequired();
-        builder.Property(p => p.LectureType).HasConversion<int>();
-        builder.Property(p => p.LectureStatus).HasConversion<int>();
-        builder.Property(p => p.LectureTime).IsRequired();
-        builder.Property(p => p.Capacity).IsRequired(false);
-        builder.Ignore(p => p.IsCancelled);
-        builder.Property(p => p.IsActive).HasDefaultValue(true);
-        builder.HasQueryFilter(p => p.IsActive);
-        builder.Property(p => p.RowVersion).IsRowVersion();
-    }
-}
-
-```
-
-## File: eNote\eNote.Infrastructure\Data\Configurations\LectureNoteConfig.cs
-```cs
-using eNote.Domain.Entities;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
-
-namespace eNote.Infrastructure.Data.Configurations;
-
-public sealed class LectureNoteConfig : IEntityTypeConfiguration<LectureNote>
-{
-    public void Configure(EntityTypeBuilder<LectureNote> builder)
-    {
-        builder.HasOne(n => n.Lecture)
-               .WithMany(p => p.LectureNotes)
-               .HasForeignKey(n => n.LectureId)
-               .OnDelete(DeleteBehavior.Cascade);
-
-        builder.Property(n => n.Title).HasStringConfig(200, true);
-        builder.Property(n => n.Content).IsRequired();
-        builder.Property(n => n.CreatedAt).IsRequired();
-        builder.Property(n => n.IsActive).HasDefaultValue(true);
-        builder.HasQueryFilter(n => n.IsActive);
-    }
-}
-
-```
-
-## File: eNote\eNote.Infrastructure\Data\Configurations\MusicStoreConfig.cs
-```cs
-using eNote.Domain.Entities.Rentals;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
-
-namespace eNote.Infrastructure.Data.Configurations;
-
-public sealed class MusicStoreConfig : IEntityTypeConfiguration<MusicStore>
-{
-    public void Configure(EntityTypeBuilder<MusicStore> builder)
-    {
-        builder.Property(m => m.StoreName).HasStringConfig(100, true);
-        builder.Property(m => m.BusinessHours).HasStringConfig(50, true);
-
-        builder.HasMany(x => x.Employees)
-               .WithOne(e => e.MusicStore)
-               .HasForeignKey(e => e.MusicStoreId)
-               .OnDelete(DeleteBehavior.Cascade);
-
-        builder.HasMany(x => x.Instruments)
-               .WithOne(i => i.MusicStore)
-               .HasForeignKey(i => i.MusicStoreId)
-               .OnDelete(DeleteBehavior.Restrict);
-    }
-}
-
-```
-
-## File: eNote\eNote.Infrastructure\Data\Configurations\MusicStoreEmployeeConfig.cs
-```cs
-using eNote.Domain.Entities.Identity;
-using eNote.Infrastructure.Identity;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
-
-namespace eNote.Infrastructure.Data.Configurations;
-
-public class MusicStoreEmployeeConfig : IEntityTypeConfiguration<MusicStoreEmployee>
-{
-    public void Configure(EntityTypeBuilder<MusicStoreEmployee> builder)
-    {
-        builder.HasUniqueIndex(nameof(MusicStoreEmployee.AppUserId));
-        builder.HasUniqueIndex(nameof(MusicStoreEmployee.MusicStoreId), nameof(MusicStoreEmployee.AppUserId));
-
-        builder.Property(x => x.IsManager).IsRequired();
-        builder.Property(x => x.IsActive).IsRequired();
-
-        builder.HasOne(x => x.MusicStore)
-               .WithMany(x => x.Employees)
-               .HasForeignKey(x => x.MusicStoreId)
-               .OnDelete(DeleteBehavior.Cascade);
-
-        builder.HasOne<AppUser>()
-               .WithMany()
-               .HasForeignKey(x => x.AppUserId)
-               .OnDelete(DeleteBehavior.Restrict);
-    }
-}
-
-```
-
-## File: eNote\eNote.Infrastructure\Data\Configurations\NotificationConfig.cs
-```cs
-using eNote.Domain.Entities.Communication;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
-
-namespace eNote.Infrastructure.Data.Configurations;
-
-public sealed class NotificationConfig : IEntityTypeConfiguration<Notification>
-{
-    public void Configure(EntityTypeBuilder<Notification> builder)
-    {
-        builder.Property(x => x.Title).HasMaxLength(200).IsRequired();
-        builder.Property(x => x.Body).HasMaxLength(2000).IsRequired();
-        builder.Property(x => x.IsRead).HasDefaultValue(false);
-
-        builder.HasIndex(x => new { x.UserId, x.IsRead });
-        builder.HasIndex(x => x.CreatedAt);
-        builder.HasIndex(x => new { x.UserId, x.RentalId, x.Title });
-    }
-}
-
-```
-
-## File: eNote\eNote.Infrastructure\Data\Configurations\RentalNotificationOutboxConfig.cs
-```cs
-using eNote.Domain.Entities.Communication;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
-
-namespace eNote.Infrastructure.Data.Configurations;
-
-public sealed class RentalNotificationOutboxConfig : IEntityTypeConfiguration<RentalNotificationOutbox>
-{
-    public void Configure(EntityTypeBuilder<RentalNotificationOutbox> builder)
-    {
-        builder.ToTable("RentalNotificationOutbox");
-
-        builder.Property(x => x.PayloadJson)
-            .IsRequired()
-            .HasColumnType("nvarchar(max)");
-
-        builder.Property(x => x.LastError)
-            .HasMaxLength(2000);
-
-        builder.HasIndex(x => x.PublishedAt);
-    }
-}
-```
-
-## File: eNote\eNote.Infrastructure\Data\Configurations\RevokedTokenConfig.cs
-```cs
-using eNote.Domain.Entities.Identity;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
-
-namespace eNote.Infrastructure.Data.Configurations;
-
-public sealed class RevokedTokenConfig : IEntityTypeConfiguration<RevokedToken>
-{
-    public void Configure(EntityTypeBuilder<RevokedToken> builder)
-    {
-        builder.Property(x => x.Jti).HasMaxLength(64).IsRequired();
-        builder.HasIndex(x => x.Jti).IsUnique();
-        builder.Property(x => x.ExpiresAt).IsRequired();
-        builder.Property(x => x.RevokedAt).IsRequired();
-    }
-}
-
-```
-
-## File: eNote\eNote.Infrastructure\Data\Configurations\StudentConfig.cs
-```cs
-using eNote.Domain.Entities.Identity;
-using eNote.Infrastructure.Identity;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Builders;
-
-namespace eNote.Infrastructure.Data.Configurations;
-
-public sealed class StudentConfig : IEntityTypeConfiguration<Student>
-{
-    public void Configure(EntityTypeBuilder<Student> builder)
-    {
-        builder.HasOne<AppUser>()
-               .WithOne()
-               .HasForeignKey<Student>(s => s.AppUserId)
-               .OnDelete(DeleteBehavior.Cascade);
-
-        builder.HasIndex(s => s.AppUserId).IsUnique();
-    }
-}
-
-```
-
-## File: eNote\eNote.Infrastructure\Data\Seed\DevelopmentDataSeed.cs
+**Classes**: AccessoriesInstruments, BrassInstruments, CourseSeed, DevelopmentDataSeed, EnrollmentSeed, InstrumentSeed, KeysInstruments, LectureSeed, PercussionInstruments, StringInstruments, StudentMembershipSeed
 ```cs
 using eNote.Domain.Entities;
 using eNote.Domain.Entities.Identity;
@@ -6113,7 +9419,12 @@ internal static class EnrollmentSeed
 
 ```
 
-## File: eNote\eNote.Infrastructure\Data\Seed\IdentitySeed.cs
+---
+
+## File: `eNote\eNote.Infrastructure\Data\Seed\IdentitySeed.cs`
+**Hash**: `0929d902b84b` | **Size**: 3431 chars
+
+**Classes**: IdentitySeed, RoleSeed, StoreSeed
 ```cs
 ﻿using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Localization;
@@ -6221,7 +9532,12 @@ internal static class StoreSeed
 
 ```
 
-## File: eNote\eNote.Infrastructure\Data\Seed\ModelBuilderSeed.cs
+---
+
+## File: `eNote\eNote.Infrastructure\Data\Seed\ModelBuilderSeed.cs`
+**Hash**: `bc6de69d6131` | **Size**: 1518 chars
+
+**Classes**: ModelBuilderSeed
 ```cs
 using eNote.Domain.Entities.Rentals;
 using eNote.Domain.Entities.Shared;
@@ -6262,7 +9578,12 @@ internal static class ModelBuilderSeed
 
 ```
 
-## File: eNote\eNote.Infrastructure\Identity\AppRole.cs
+---
+
+## File: `eNote\eNote.Infrastructure\Identity\AppRole.cs`
+**Hash**: `1ea54f2c80bf` | **Size**: 125 chars
+
+**Classes**: AppRole
 ```cs
 using Microsoft.AspNetCore.Identity;
 
@@ -6274,7 +9595,12 @@ public class AppRole : IdentityRole<int>
 
 ```
 
-## File: eNote\eNote.Infrastructure\Identity\AppUser.cs
+---
+
+## File: `eNote\eNote.Infrastructure\Identity\AppUser.cs`
+**Hash**: `63e199fabb75` | **Size**: 456 chars
+
+**Classes**: AppUser
 ```cs
 using eNote.Domain.Entities.Shared;
 using Microsoft.AspNetCore.Identity;
@@ -6295,7 +9621,12 @@ public class AppUser : IdentityUser<int>
 
 ```
 
-## File: eNote\eNote.Infrastructure\Identity\SmtpEmailService.cs
+---
+
+## File: `eNote\eNote.Infrastructure\Identity\SmtpEmailService.cs`
+**Hash**: `b771433af967` | **Size**: 1598 chars
+
+**Classes**: SmtpEmailService
 ```cs
 using System.Net;
 using System.Net.Mail;
@@ -6347,7 +9678,15 @@ public sealed class SmtpEmailService : IEmailService
 
 ```
 
-## File: eNote\eNote.Infrastructure\Identity\TokenRevocationService.cs
+---
+
+## File: `eNote\eNote.Infrastructure\Identity\TokenRevocationService.cs`
+**Hash**: `03dcb71441fc` | **Size**: 1856 chars
+
+**Classes**: TokenRevocationService
+### Key Cross-Cutting Interactions
+- Uses **IAppDbContext|DbContext** → Persistence boundary
+
 ```cs
 ﻿using eNote.Application.Common.Persistence;
 using eNote.Application.Common.Time;
@@ -6421,7 +9760,12 @@ public class TokenRevocationService(IAppDbContext context, IClock clock, IMemory
 
 ```
 
-## File: eNote\eNote.Infrastructure\Identity\TokenService.cs
+---
+
+## File: `eNote\eNote.Infrastructure\Identity\TokenService.cs`
+**Hash**: `827d69cae04d` | **Size**: 1475 chars
+
+**Classes**: TokenService
 ```cs
 using eNote.Application.Common.Time;
 using eNote.Application.Features.Identity.Auth.Services;
@@ -6468,7 +9812,12 @@ public sealed class TokenService(IConfiguration configuration, IClock clock) : I
 
 ```
 
-## File: eNote\eNote.Infrastructure\Identity\UserAccountService.cs
+---
+
+## File: `eNote\eNote.Infrastructure\Identity\UserAccountService.cs`
+**Hash**: `424e07efc9cd` | **Size**: 8207 chars
+
+**Classes**: UserAccountService
 ```cs
 using eNote.Application.Common.Localization;
 using eNote.Application.Features.Identity.Users.Services;
@@ -6740,7 +10089,12 @@ public sealed class UserAccountService(UserManager<AppUser> userManager) : IUser
 }
 ```
 
-## File: eNote\eNote.Infrastructure\Identity\UserIdentityService.cs
+---
+
+## File: `eNote\eNote.Infrastructure\Identity\UserIdentityService.cs`
+**Hash**: `d140e6bf2dc9` | **Size**: 1894 chars
+
+**Classes**: UserIdentityService
 ```cs
 ﻿using eNote.Application.Features.Identity.Users;
 using eNote.Application.Features.Identity.Users.Services;
@@ -6806,7 +10160,15 @@ public sealed class UserIdentityService(UserManager<AppUser> userManager) : IUse
 
 ```
 
-## File: eNote\eNote.Infrastructure\Messaging\MassTransitServiceExtensions.cs
+---
+
+## File: `eNote\eNote.Infrastructure\Messaging\MassTransitServiceExtensions.cs`
+**Hash**: `ea4a9593a4b0` | **Size**: 1084 chars
+
+**Classes**: MassTransitServiceExtensions
+### Key Cross-Cutting Interactions
+- Uses **RabbitMQ|IEventBus|Outbox** → Async integration events (RabbitMQ)
+
 ```cs
 ﻿using MassTransit;
 using Microsoft.Extensions.Configuration;
@@ -6846,7 +10208,15 @@ public static class MassTransitServiceExtensions
 
 ```
 
-## File: eNote\eNote.Infrastructure\Messaging\RabbitMqConfiguration.cs
+---
+
+## File: `eNote\eNote.Infrastructure\Messaging\RabbitMqConfiguration.cs`
+**Hash**: `37c097fe1aee` | **Size**: 965 chars
+
+**Classes**: RabbitMqConfiguration
+### Key Cross-Cutting Interactions
+- Uses **RabbitMQ|IEventBus|Outbox** → Async integration events (RabbitMQ)
+
 ```cs
 using Microsoft.Extensions.Configuration;
 
@@ -6876,7 +10246,16 @@ public static class RabbitMqConfiguration
 
 ```
 
-## File: eNote\eNote.Infrastructure\Messaging\RentalNotificationDispatcher.cs
+---
+
+## File: `eNote\eNote.Infrastructure\Messaging\RentalNotificationDispatcher.cs`
+**Hash**: `279b236dce6e` | **Size**: 3259 chars
+
+**Classes**: RentalNotificationDispatcher
+### Key Cross-Cutting Interactions
+- Uses **RabbitMQ|IEventBus|Outbox** → Async integration events (RabbitMQ)
+- Uses **IAppDbContext|DbContext** → Persistence boundary
+
 ```cs
 using System.Text.Json;
 using eNote.Application.Common.Interfaces;
@@ -6943,7 +10322,16 @@ public sealed class RentalNotificationDispatcher(
 }
 ```
 
-## File: eNote\eNote.Infrastructure\Messaging\RentalNotificationOutboxPublisher.cs
+---
+
+## File: `eNote\eNote.Infrastructure\Messaging\RentalNotificationOutboxPublisher.cs`
+**Hash**: `019e55dc5007` | **Size**: 2461 chars
+
+**Classes**: RentalNotificationOutboxPublisher
+### Key Cross-Cutting Interactions
+- Uses **RabbitMQ|IEventBus|Outbox** → Async integration events (RabbitMQ)
+- Uses **IAppDbContext|DbContext** → Persistence boundary
+
 ```cs
 using System.Text.Json;
 using eNote.Application.Common.Persistence;
@@ -7015,7 +10403,12 @@ public sealed class RentalNotificationOutboxPublisher(IServiceProvider services,
 
 ```
 
-## File: eNote\eNote.Infrastructure\Storage\LocalFileStorageService.cs
+---
+
+## File: `eNote\eNote.Infrastructure\Storage\LocalFileStorageService.cs`
+**Hash**: `11e911516bee` | **Size**: 4287 chars
+
+**Classes**: LocalFileStorageService
 ```cs
 using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Interfaces;
@@ -7135,1955 +10528,5 @@ public sealed class LocalFileStorageService(IWebHostEnvironment env) : IFileStor
 
 ```
 
-## File: eNote\eNote.API\appsettings.Development.json
-```json
-{
-  "Logging": {
-    "LogLevel": {
-      "Default": "Debug",
-      "Microsoft.AspNetCore": "Information",
-      "Microsoft.EntityFrameworkCore": "Information"
-    }
-  },
-  "Cors": {
-    "AllowedOrigins": [
-      "http://localhost:3000",
-      "http://localhost:5059",
-      "https://localhost:7239"
-    ]
-  },
-  "Seed": {
-    "DefaultPassword": "Test1234!"
-  }
-}
-
-```
-
-## File: eNote\eNote.API\appsettings.json
-```json
-{
-  "Logging": {
-    "LogLevel": {
-      "Default": "Information",
-      "Microsoft.AspNetCore": "Warning"
-    }
-  },
-  "AllowedHosts": "*",
-  "ConnectionStrings": {
-    "DefaultConnection": ""
-  },
-  "Jwt": {
-    "Key": "",
-    "Issuer": "ENote.Api",
-    "Audience": "ENote.Client",
-    "ExpirationDays": 1
-  },
-  "Cors": {
-    "AllowedOrigins": []
-  }
-}
-```
-
-## File: eNote\eNote.API\libman.json
-```json
-{
-  "version": "3.0",
-  "defaultProvider": "cdnjs",
-  "libraries": []
-}
-```
-
-## File: eNote\eNote.API\Program.cs
-```cs
-using eNote.API.Extensions;
-using eNote.API.Hubs;
-using Serilog;
-using System.Text.Json.Serialization;
-
-eNote.API.Extensions.ConfigurationExtensions.LoadDotEnv();
-
-Log.Logger = new LoggerConfiguration()
-    .WriteTo.Console()
-    .CreateBootstrapLogger();
-
-WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
-
-builder.Host.UseApplicationLogging();
-builder.Configuration.ValidateRequiredSettings();
-
-builder.Services
-    .AddApplicationDatabase(builder.Configuration)
-    .AddApplicationIdentity()
-    .AddJwtAuthentication(builder.Configuration)
-    .AddAuthorization()
-    .AddApplicationServices()
-    .AddApplicationMessaging(builder.Configuration)
-    .AddApplicationCors(builder.Configuration, builder.Environment)
-    .AddApplicationRateLimiting()
-    .AddResponseCompression(opts => opts.EnableForHttps = true)
-    .AddMapsterMappings()
-    .AddApplicationValidation()
-    .AddApplicationSignalR()
-    .AddScalarDocumentation();
-
-builder.Services
-    .AddControllers()
-    .AddJsonOptions(x => x.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
-
-builder.Services.AddApplicationHealthChecks();
-
-WebApplication app = builder.Build();
-
-if (!app.Environment.IsDevelopment())
-{
-    app.UseHttpsRedirection();
-    app.UseResponseCompression();
-}
-app.UseCors(CorsExtensions.PolicyName);
-app.UseErrorHandling();
-
-if (app.Environment.IsDevelopment())
-{
-    await app.MigrateAsync();
-    app.MapScalarDocumentation();
-    await app.SeedDevelopmentData();
-}
-
-app.UseRateLimiter();
-app.UseAuthentication();
-app.UseAuthorization();
-
-app.MapHealthChecks("/health").AllowAnonymous();
-app.MapControllers();
-app.MapHub<NotificationHub>(NotificationHub.HubPath);
-
-app.Run();
-
-```
-
-## File: eNote\eNote.API\Consumers\RentalStatusChangedPushConsumer.cs
-```cs
-﻿using eNote.API.Hubs;
-using eNote.Application.Features.Communication.Notifications;
-using eNote.Contracts.Rentals;
-using MassTransit;
-using Microsoft.AspNetCore.SignalR;
-
-namespace eNote.API.Consumers;
-
-public sealed class RentalStatusChangedPushConsumer(IHubContext<NotificationHub> hubContext, ILogger<RentalStatusChangedPushConsumer> logger) : IConsumer<RentalStatusChanged>
-{
-    public async Task Consume(ConsumeContext<RentalStatusChanged> context)
-    {
-        var message = context.Message;
-
-        var payload = new NotificationPushDto()
-        {
-            RentalId = message.RentalId,
-            Title = message.Title,
-            Body = message.Body,
-            CreatedAt = message.OccurredAtUtc
-        };
-
-        await hubContext.Clients.Group(NotificationHub.UserGroup(message.StudentUserId)).SendAsync(NotificationHub.ReceiveMethod, payload, context.CancellationToken);
-
-        logger.LogInformation("Pushed rental notification to SignalR group for user {UserId}, rental {RentalId}.", message.StudentUserId, message.RentalId);
-    }
-}
-
-```
-
-## File: eNote\eNote.API\Controllers\Admin\AdminAddressController.cs
-```cs
-﻿using eNote.API.Controllers.Base;
-using eNote.Application.Constants;
-using eNote.Application.Features.Rentals.ReferenceData.Addresses;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-
-namespace eNote.API.Controllers.Admin;
-
-[Authorize(Roles = AppRoles.Administrator)]
-[Route("api/admin/addresses")]
-public sealed class AdminAddressController(IAddressService service)
-    : ReferenceCrudController<AddressReferenceDto, AddressRequest, AddressSearchObject>(service)
-{
-}
-
-```
-
-## File: eNote\eNote.API\Controllers\Admin\AdminInstructorController.cs
-```cs
-using eNote.API.Controllers.Base;
-using eNote.Application.Common.Paging;
-using eNote.Application.Constants;
-using eNote.Application.Features.Identity.Instructors;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-
-namespace eNote.API.Controllers.Admin;
-
-[Authorize(Roles = AppRoles.Administrator)]
-[Route("api/admin/instructors")]
-public sealed class AdminInstructorController(IAdminInstructorService service) : CoreController
-{
-    [HttpGet]
-    [ProducesResponseType(typeof(PagedResult<InstructorDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<PagedResult<InstructorDto>>> GetPaged([FromQuery] InstructorSearchObject search)
-    {
-        PagedResult<InstructorDto> result = await service.GetPagedAsync(search);
-        return Ok(result);
-    }
-
-    [HttpGet("{id:int}")]
-    [ProducesResponseType(typeof(InstructorDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<InstructorDto>> GetById(int id)
-    {
-        InstructorDto dto = await service.GetByIdAsync(id);
-        return Ok(dto);
-    }
-}
-
-```
-
-## File: eNote\eNote.API\Controllers\Admin\AdminInstrumentTypeController.cs
-```cs
-﻿using eNote.API.Controllers.Base;
-using eNote.Application.Constants;
-using eNote.Application.Features.Rentals.ReferenceData.InstrumentTypes;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-
-namespace eNote.API.Controllers.Admin;
-
-[Authorize(Roles = AppRoles.Administrator)]
-[Route("api/admin/instrument-types")]
-public sealed class AdminInstrumentTypeController(IInstrumentTypeService service)
-    : ReferenceCrudController<InstrumentTypeDto, InstrumentTypeRequest, InstrumentTypeSearchObject>(service)
-{
-}
-
-```
-
-## File: eNote\eNote.API\Controllers\Admin\AdminMusicStoreController.cs
-```cs
-﻿using eNote.API.Controllers.Base;
-using eNote.Application.Constants;
-using eNote.Application.Features.Rentals.ReferenceData.MusicStores;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-
-namespace eNote.API.Controllers.Admin;
-
-[Authorize(Roles = AppRoles.Administrator)]
-[Route("api/admin/music-stores")]
-public sealed class AdminMusicStoreController(IMusicStoreService service)
-    : ReferenceCrudController<MusicStoreDto, MusicStoreRequest, MusicStoreSearchObject>(service)
-{
-}
-
-```
-
-## File: eNote\eNote.API\Controllers\Admin\AdminUsersController.cs
-```cs
-using eNote.API.Controllers.Base;
-using eNote.Application.Constants;
-using eNote.Application.Features.Identity.Users;
-using eNote.Application.Features.Identity.Users.Services;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-
-namespace eNote.API.Controllers.Admin;
-
-[Authorize(Roles = AppRoles.Administrator)]
-[Route("api/admin/users")]
-public sealed class AdminUsersController(IUserProfileService profileService, IUserProvisioningService provisioningService) : CoreController
-{
-    [HttpGet("{id:int}")]
-    [ProducesResponseType(typeof(UserProfileResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<UserProfileResponse>> GetById(int id)
-    {
-        var profile = await profileService.GetUserAsync(id);
-
-        if (profile is null)
-        {
-            return NotFound();
-        }
-
-        return Ok(profile);
-    }
-
-    [HttpPost]
-    [ProducesResponseType(StatusCodes.Status201Created)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult> Provision([FromBody] UserProvisionRequest request)
-    {
-        (var userId, var error) = await provisioningService.ProvisionUserAsync(request);
-
-        if (error is not null)
-        {
-            return BadRequest(new
-            {
-                message = error
-            });
-        }
-
-        return CreatedAtAction(nameof(GetById), new
-        {
-            id = userId
-        }, new
-        {
-            userId
-        });
-    }
-
-    [HttpPut("{id:int}/membership")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> UpdateMembership(int id, [FromBody] UpdateMembershipRequest request)
-    {
-        await provisioningService.UpdateMembershipAsync(id, request);
-        return NoContent();
-    }
-}
-
-```
-
-## File: eNote\eNote.API\Controllers\Announcements\InstructorAnnouncementController.cs
-```cs
-﻿using eNote.API.Controllers.Base;
-using eNote.Application.Common.Localization;
-using eNote.Application.Common.Paging;
-using eNote.Application.Constants;
-using eNote.Application.Features.Communication.Announcements;
-using eNote.Application.Features.Communication.Announcements.Services;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-
-namespace eNote.API.Controllers.Announcements;
-
-[Authorize(Roles = AppRoles.Instructor)]
-[Route("api/instructor/courses/{courseId:int}/announcements")]
-public sealed class InstructorAnnouncementController(ICourseAnnouncementService announcementService) : CoreController
-{
-    [HttpGet]
-    [ProducesResponseType(typeof(PagedResult<AnnouncementDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<PagedResult<AnnouncementDto>>> GetForCourse(int courseId, [FromQuery] AnnouncementSearchObject search)
-    {
-        var result = await announcementService.GetForCourseAsync(courseId, search);
-        return Ok(result);
-    }
-
-    [HttpGet("{announcementId:int}")]
-    [ProducesResponseType(typeof(AnnouncementDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<AnnouncementDto>> GetById(int courseId, int announcementId)
-    {
-        var result = await announcementService.GetByIdForCourseAsync(courseId, announcementId);
-        return Ok(result);
-    }
-
-    [HttpPost]
-    [ProducesResponseType(typeof(AnnouncementDto), StatusCodes.Status201Created)]
-    public async Task<ActionResult<AnnouncementDto>> Create(int courseId, [FromBody] AnnouncementRequest request)
-    {
-        var result = await announcementService.CreateForCourseAsync(courseId, request);
-        return CreatedAtAction(nameof(GetById), new
-        {
-            courseId,
-            announcementId = result.Id
-        }, result);
-    }
-
-    [HttpPut("{announcementId:int}")]
-    [ProducesResponseType(typeof(AnnouncementDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<AnnouncementDto>> Update(int courseId, int announcementId, [FromBody] AnnouncementRequest request)
-    {
-        var result = await announcementService.UpdateForCourseAsync(courseId, announcementId, request);
-        return Ok(result);
-    }
-
-    [HttpDelete("{announcementId:int}")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public async Task<IActionResult> Delete(int courseId, int announcementId)
-    {
-        await announcementService.DeleteForCourseAsync(courseId, announcementId);
-        return NoContent();
-    }
-
-    [HttpPost("{announcementId:int}/image")]
-    [ProducesResponseType(typeof(AnnouncementDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<AnnouncementDto>> UploadImage(int courseId, int announcementId, IFormFile? file, CancellationToken ct)
-    {
-        if (file is null || file.Length == 0)
-        {
-            return BadRequest(new { message = Messages.FileNotProvided });
-        }
-
-        await using Stream stream = file.OpenReadStream();
-
-        var result = await announcementService.UploadImageForCourseAsync(courseId, announcementId, stream, file.FileName, file.ContentType, ct);
-
-        return Ok(result);
-    }
-}
-
-```
-
-## File: eNote\eNote.API\Controllers\Announcements\StoreAnnouncementController.cs
-```cs
-﻿using eNote.API.Controllers.Base;
-using eNote.Application.Common.Localization;
-using eNote.Application.Common.Paging;
-using eNote.Application.Constants;
-using eNote.Application.Features.Communication.Announcements;
-using eNote.Application.Features.Communication.Announcements.Services;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-
-namespace eNote.API.Controllers.Announcements;
-
-[Authorize(Roles = AppRoles.StoreEmployee)]
-[Route("api/shop/announcements")]
-public sealed class StoreAnnouncementController(IStoreAnnouncementService announcementService) : CoreController
-{
-    [HttpGet]
-    [ProducesResponseType(typeof(PagedResult<AnnouncementDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<PagedResult<AnnouncementDto>>> GetForStore([FromQuery] AnnouncementSearchObject search)
-    {
-        var result = await announcementService.GetForStoreAsync(search);
-        return Ok(result);
-    }
-
-    [HttpGet("{announcementId:int}")]
-    [ProducesResponseType(typeof(AnnouncementDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<AnnouncementDto>> GetById(int announcementId)
-    {
-        var result = await announcementService.GetByIdForStoreAsync(announcementId);
-        return Ok(result);
-    }
-
-    [HttpPost]
-    [ProducesResponseType(typeof(AnnouncementDto), StatusCodes.Status201Created)]
-    public async Task<ActionResult<AnnouncementDto>> Create([FromBody] AnnouncementRequest request)
-    {
-        var result = await announcementService.CreateForStoreAsync(request);
-        return CreatedAtAction(nameof(GetById), new
-        {
-            announcementId = result.Id
-        }, result);
-    }
-
-    [HttpPut("{announcementId:int}")]
-    [ProducesResponseType(typeof(AnnouncementDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<AnnouncementDto>> Update(int announcementId, [FromBody] AnnouncementRequest request)
-    {
-        var result = await announcementService.UpdateForStoreAsync(announcementId, request);
-        return Ok(result);
-    }
-
-    [HttpDelete("{announcementId:int}")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public async Task<IActionResult> Delete(int announcementId)
-    {
-        await announcementService.DeleteForStoreAsync(announcementId);
-        return NoContent();
-    }
-
-    [HttpPost("{announcementId:int}/image")]
-    [ProducesResponseType(typeof(AnnouncementDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<AnnouncementDto>> UploadImage(int announcementId, IFormFile? file, CancellationToken ct)
-    {
-        if (file is null || file.Length == 0)
-        {
-            return BadRequest(new { message = Messages.FileNotProvided });
-        }
-
-        await using Stream stream = file.OpenReadStream();
-
-        var result = await announcementService.UploadImageForStoreAsync(announcementId, stream, file.FileName, file.ContentType, ct);
-
-        return Ok(result);
-    }
-}
-
-```
-
-## File: eNote\eNote.API\Controllers\Announcements\StudentAnnouncementController.cs
-```cs
-﻿using eNote.API.Controllers.Base;
-using eNote.Application.Common.Paging;
-using eNote.Application.Constants;
-using eNote.Application.Features.Communication.Announcements;
-using eNote.Application.Features.Communication.Announcements.Services;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-
-namespace eNote.API.Controllers.Announcements;
-
-[Authorize(Roles = AppRoles.Student)]
-[Route("api/student/announcements")]
-public sealed class StudentAnnouncementController(IStudentAnnouncementService announcementService) : CoreController
-{
-    [HttpGet]
-    [ProducesResponseType(typeof(PagedResult<AnnouncementDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<PagedResult<AnnouncementDto>>> GetFeed([FromQuery] AnnouncementSearchObject search)
-    {
-        var result = await announcementService.GetFeedForStudentAsync(search);
-        return Ok(result);
-    }
-}
-
-```
-
-## File: eNote\eNote.API\Controllers\Base\CoreController.cs
-```cs
-using eNote.Application.Common.Exceptions;
-using eNote.Application.Common.Localization;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-
-namespace eNote.API.Controllers.Base;
-
-[ApiController]
-[Authorize]
-public abstract class CoreController : ControllerBase
-{
-    protected string CurrentTokenJti => User.FindFirstValue(JwtRegisteredClaimNames.Jti) ?? throw new AuthenticationException(Messages.InvalidUserClaim);
-
-    protected DateTime CurrentTokenExpiresAtUtc
-    {
-        get
-        {
-            var exp = User.FindFirstValue(JwtRegisteredClaimNames.Exp);
-
-            if (exp is null || !long.TryParse(exp, out var unixSeconds))
-            {
-                throw new AuthenticationException(Messages.InvalidUserClaim);
-            }
-
-            return DateTimeOffset.FromUnixTimeSeconds(unixSeconds).UtcDateTime;
-        }
-    }
-}
-
-```
-
-## File: eNote\eNote.API\Controllers\Base\ReferenceCrudController.cs
-```cs
-using eNote.Application.Common.Paging;
-using eNote.Application.Common.Search;
-using eNote.Application.Features.Rentals.ReferenceData;
-using Microsoft.AspNetCore.Mvc;
-
-namespace eNote.API.Controllers.Base;
-
-public abstract class ReferenceCrudController<TDto, TRequest, TSearch>(IReferenceCrudService<TDto, TRequest, TSearch> service) : CoreController where TSearch : BaseSearchObject
-{
-    [HttpGet]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    public async Task<ActionResult<PagedResult<TDto>>> GetPaged([FromQuery] TSearch search)
-    {
-        PagedResult<TDto> result = await service.GetPagedAsync(search);
-        return Ok(result);
-    }
-
-    [HttpGet("{id:int}")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    public async Task<ActionResult<TDto>> GetById(int id)
-    {
-        TDto dto = await service.GetByIdAsync(id);
-        return Ok(dto);
-    }
-
-    [HttpPost]
-    [ProducesResponseType(StatusCodes.Status201Created)]
-    public async Task<ActionResult<TDto>> Create([FromBody] TRequest request)
-    {
-        TDto dto = await service.CreateAsync(request);
-        return CreatedAtAction(nameof(GetById), new { id = GetDtoId(dto) }, dto);
-    }
-
-    [HttpPut("{id:int}")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    public async Task<ActionResult<TDto>> Update(int id, [FromBody] TRequest request)
-    {
-        TDto dto = await service.UpdateAsync(id, request);
-        return Ok(dto);
-    }
-
-    [HttpDelete("{id:int}")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public async Task<IActionResult> Delete(int id)
-    {
-        await service.DeleteAsync(id);
-        return NoContent();
-    }
-
-    private static object GetDtoId(TDto dto) => typeof(TDto).GetProperty("Id")?.GetValue(dto) ?? throw new InvalidOperationException($"{typeof(TDto).Name} must expose an Id property.");
-}
-
-```
-
-## File: eNote\eNote.API\Controllers\Files\UploadsController.cs
-```cs
-using eNote.API.Controllers.Base;
-using eNote.Application.Common.Interfaces;
-using eNote.Application.Features.Files.Services;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-
-namespace eNote.API.Controllers.Files;
-
-[ApiController]
-[Route("api/uploads")]
-public sealed class UploadsController(IWebHostEnvironment env, IFileAccessService fileAccess, ICurrentUserService currentUser) : CoreController
-{
-    [AllowAnonymous]
-    [HttpGet("instruments/{fileName}")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public IActionResult GetInstrument(string fileName) => Serve("instruments", fileName);
-
-    [Authorize]
-    [HttpGet("announcements/{fileName}")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public IActionResult GetAnnouncement(string fileName) => Serve("announcements", fileName);
-
-    [Authorize]
-    [HttpGet("assignments/{fileName}")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetAssignment(string fileName, CancellationToken cancellationToken)
-    {
-        if (!IsSafeFileName(fileName))
-        {
-            return BadRequest();
-        }
-
-        if (!await fileAccess.CanAccessAssignmentFileAsync(currentUser.UserId, fileName, cancellationToken))
-        {
-            return Forbid();
-        }
-
-        return Serve("assignments", fileName);
-    }
-
-    private IActionResult Serve(string subfolder, string fileName)
-    {
-        if (!IsSafeFileName(fileName))
-        {
-            return BadRequest();
-        }
-
-        var uploadsRoot = Path.Combine(env.WebRootPath ?? Path.Combine(env.ContentRootPath, "wwwroot"), "uploads", subfolder);
-        var fullPath = Path.GetFullPath(Path.Combine(uploadsRoot, fileName));
-
-        if (!fullPath.StartsWith(Path.GetFullPath(uploadsRoot), StringComparison.OrdinalIgnoreCase) || !System.IO.File.Exists(fullPath))
-        {
-            return NotFound();
-        }
-
-        var contentType = GetContentType(fileName);
-
-        return PhysicalFile(fullPath, contentType, enableRangeProcessing: true);
-    }
-
-    private static bool IsSafeFileName(string fileName) => !string.IsNullOrWhiteSpace(fileName) && fileName == Path.GetFileName(fileName) && !fileName.Contains("..", StringComparison.Ordinal);
-
-    private static string GetContentType(string fileName) => Path.GetExtension(fileName).ToLowerInvariant()
-        switch
-    {
-        ".jpg" or ".jpeg" => "image/jpeg",
-        ".png" => "image/png",
-        ".webp" => "image/webp",
-        ".pdf" => "application/pdf",
-        _ => "application/octet-stream"
-    };
-}
-```
-
-## File: eNote\eNote.API\Controllers\Instruments\PublicInstrumentController.cs
-```cs
-﻿using eNote.Application.Common.Paging;
-using eNote.Application.Features.Rentals.Instruments;
-using eNote.Application.Features.Rentals.Instruments.Services;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-
-namespace eNote.API.Controllers.Instruments;
-
-[ApiController]
-[AllowAnonymous]
-[Route("api/instruments/public")]
-public sealed class PublicInstrumentController(IInstrumentService instrumentService) : ControllerBase
-{
-    [HttpGet]
-    [ProducesResponseType(typeof(PagedResult<InstrumentDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<PagedResult<InstrumentDto>>> GetPaged([FromQuery] InstrumentSearchObject search)
-    {
-        var result = await instrumentService.GetPublicPagedAsync(search);
-        return Ok(result);
-    }
-
-    [HttpGet("{id:int}")]
-    [ProducesResponseType(typeof(InstrumentDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<InstrumentDto>> GetById(int id)
-    {
-        var result = await instrumentService.GetPublicByIdAsync(id);
-        return Ok(result);
-    }
-}
-
-```
-
-## File: eNote\eNote.API\Controllers\Instruments\StoreInstrumentController.cs
-```cs
-using eNote.API.Controllers.Base;
-using eNote.Application.Common.Localization;
-using eNote.Application.Common.Paging;
-using eNote.Application.Constants;
-using eNote.Application.Features.Rentals.Instruments;
-using eNote.Application.Features.Rentals.Instruments.Services;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-
-namespace eNote.API.Controllers.Instruments;
-
-[Authorize(Roles = AppRoles.StoreEmployee)]
-[Route("api/shop/instruments")]
-public sealed class StoreInstrumentController(IInstrumentService instrumentService) : CoreController
-{
-    [HttpGet]
-    [ProducesResponseType(typeof(PagedResult<InstrumentDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<PagedResult<InstrumentDto>>> GetPaged([FromQuery] InstrumentSearchObject search)
-    {
-        var result = await instrumentService.GetPagedAsync(search);
-        return Ok(result);
-    }
-
-    [HttpGet("{id:int}")]
-    [ProducesResponseType(typeof(InstrumentDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<InstrumentDto>> GetById(int id)
-    {
-        var result = await instrumentService.GetByIdAsync(id);
-        return Ok(result);
-    }
-
-    [HttpPost]
-    [ProducesResponseType(typeof(InstrumentDto), StatusCodes.Status201Created)]
-    public async Task<ActionResult<InstrumentDto>> Create([FromBody] InstrumentCreateRequest request)
-    {
-        var result = await instrumentService.CreateAsync(request);
-        return CreatedAtAction(nameof(GetById), new
-        {
-            id = result.Id
-        }, result);
-    }
-
-    [HttpPut("{id:int}")]
-    [ProducesResponseType(typeof(InstrumentDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<InstrumentDto>> Update(int id, [FromBody] InstrumentUpdateRequest request)
-    {
-        var result = await instrumentService.UpdateAsync(id, request);
-        return Ok(result);
-    }
-
-    [HttpPost("{id:int}/image")]
-    [ProducesResponseType(typeof(InstrumentDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<InstrumentDto>> UploadImage(int id, IFormFile? file, CancellationToken ct)
-    {
-        if (file is null || file.Length == 0)
-        {
-            return BadRequest(new { message = Messages.FileNotProvided });
-        }
-
-        await using Stream stream = file.OpenReadStream();
-        var result = await instrumentService.UploadImageAsync(id, stream, file.FileName, file.ContentType, ct);
-        return Ok(result);
-    }
-
-    [HttpDelete("{id:int}")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public async Task<IActionResult> Delete(int id)
-    {
-        await instrumentService.DeleteAsync(id);
-        return NoContent();
-    }
-}
-
-```
-
-## File: eNote\eNote.API\Controllers\Instruments\StudentInstrumentController.cs
-```cs
-﻿using eNote.API.Controllers.Base;
-using eNote.Application.Constants;
-using eNote.Application.Features.Rentals.Recommendations;
-using eNote.Application.Features.Rentals.Recommendations.Services;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-
-namespace eNote.API.Controllers.Instruments;
-
-[Authorize(Roles = AppRoles.Student)]
-[Route("api/student/instruments")]
-public sealed class StudentInstrumentController(IRecommendationService recommendationService) : CoreController
-{
-    [HttpGet("recommended")]
-    [ProducesResponseType(typeof(IReadOnlyList<InstrumentRecommendationDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<IReadOnlyList<InstrumentRecommendationDto>>> GetRecommended([FromQuery] int count = 5)
-    {
-        var result = await recommendationService.GetRecommendedInstrumentsAsync(count);
-        return Ok(result);
-    }
-
-    [HttpPost("{id:int}/view")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public async Task<IActionResult> RecordView(int id)
-    {
-        await recommendationService.RecordInstrumentViewAsync(id);
-        return NoContent();
-    }
-}
-
-```
-
-## File: eNote\eNote.API\Controllers\LectureNotes\InstructorLectureNoteController.cs
-```cs
-﻿using eNote.API.Controllers.Base;
-using eNote.Application.Common.Paging;
-using eNote.Application.Constants;
-using eNote.Application.Features.Academic.LectureNotes;
-using eNote.Application.Features.Academic.LectureNotes.Services;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-
-namespace eNote.API.Controllers.LectureNotes;
-
-[Authorize(Roles = AppRoles.Instructor)]
-[Route("api/instructor/lectures/{lectureId:int}/notes")]
-public sealed class InstructorLectureNoteController(ILectureNoteService service) : CoreController
-{
-    [HttpGet]
-    [ProducesResponseType(typeof(PagedResult<LectureNoteDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<PagedResult<LectureNoteDto>>> GetForLecture(int lectureId, [FromQuery] LectureNoteSearchObject search)
-    {
-        var result = await service.GetForLectureAsync(lectureId, search);
-        return Ok(result);
-    }
-
-    [HttpGet("{noteId:int}")]
-    [ProducesResponseType(typeof(LectureNoteDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<LectureNoteDto>> GetById(int lectureId, int noteId)
-    {
-        var dto = await service.GetByIdForInstructorAsync(lectureId, noteId);
-        return Ok(dto);
-    }
-
-    [HttpPost]
-    [ProducesResponseType(typeof(LectureNoteDto), StatusCodes.Status201Created)]
-    public async Task<ActionResult<LectureNoteDto>> Create(int lectureId, [FromBody] LectureNoteRequest request)
-    {
-        var dto = await service.CreateAsync(lectureId, request);
-        return CreatedAtAction(nameof(GetById), new
-        {
-            lectureId,
-            noteId = dto.Id
-        }, dto);
-    }
-
-    [HttpPut("{noteId:int}")]
-    [ProducesResponseType(typeof(LectureNoteDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<LectureNoteDto>> Update(int lectureId, int noteId, [FromBody] LectureNoteRequest request)
-    {
-        var dto = await service.UpdateAsync(lectureId, noteId, request);
-        return Ok(dto);
-    }
-
-    [HttpDelete("{noteId:int}")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public async Task<IActionResult> Delete(int lectureId, int noteId)
-    {
-        await service.DeleteAsync(lectureId, noteId);
-        return NoContent();
-    }
-}
-
-```
-
-## File: eNote\eNote.API\Controllers\LectureNotes\StudentLectureNoteController.cs
-```cs
-﻿using eNote.API.Controllers.Base;
-using eNote.Application.Common.Paging;
-using eNote.Application.Constants;
-using eNote.Application.Features.Academic.LectureNotes;
-using eNote.Application.Features.Academic.LectureNotes.Services;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-
-namespace eNote.API.Controllers.LectureNotes;
-
-[Authorize(Roles = AppRoles.Student)]
-[Route("api/student/lectures/{lectureId:int}/notes")]
-public sealed class StudentLectureNoteController(ILectureNoteService service) : CoreController
-{
-    [HttpGet]
-    [ProducesResponseType(typeof(PagedResult<LectureNoteDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<PagedResult<LectureNoteDto>>> GetForLecture(int lectureId, [FromQuery] LectureNoteSearchObject search)
-    {
-        var result = await service.GetForStudentAsync(lectureId, search);
-        return Ok(result);
-    }
-
-    [HttpGet("{noteId:int}")]
-    [ProducesResponseType(typeof(LectureNoteDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<LectureNoteDto>> GetById(int lectureId, int noteId)
-    {
-        var dto = await service.GetByIdForStudentAsync(lectureId, noteId);
-        return Ok(dto);
-    }
-}
-
-```
-
-## File: eNote\eNote.API\Controllers\Lectures\InstructorLectureController.cs
-```cs
-﻿using eNote.API.Controllers.Base;
-using eNote.Application.Common.Paging;
-using eNote.Application.Constants;
-using eNote.Application.Features.Academic.Lectures;
-using eNote.Application.Features.Academic.Lectures.Services;
-using eNote.Application.Features.Reports.Services;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-
-namespace eNote.API.Controllers.Lectures;
-
-[Authorize(Roles = AppRoles.Instructor)]
-[Route("api/instructor/lectures")]
-public sealed class InstructorLectureController(
-    ILectureService service,
-    ILectureAttendanceService attendanceService,
-    IReportService reportService) : CoreController
-{
-    [HttpGet]
-    [ProducesResponseType(typeof(PagedResult<LectureDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<PagedResult<LectureDto>>> GetMyLectures([FromQuery] LectureSearchObject search)
-    {
-        var result = await service.GetPagedForInstructorAsync(search);
-        return Ok(result);
-    }
-
-    [HttpGet("{id:int}")]
-    [ProducesResponseType(typeof(LectureDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<LectureDto>> GetById(int id)
-    {
-        var dto = await service.GetByIdForInstructorAsync(id);
-        return Ok(dto);
-    }
-
-    [HttpPost]
-    [ProducesResponseType(typeof(LectureDto), StatusCodes.Status201Created)]
-    public async Task<ActionResult<LectureDto>> Create([FromBody] LectureCreateRequest request)
-    {
-        var dto = await service.CreateAsync(request);
-        return CreatedAtAction(nameof(GetById), new
-        {
-            id = dto.Id
-        }, dto);
-    }
-
-    [HttpPut("{id:int}")]
-    [ProducesResponseType(typeof(LectureDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<LectureDto>> Update(int id, [FromBody] LectureUpdateRequest request)
-    {
-        var dto = await service.UpdateAsync(id, request);
-        return Ok(dto);
-    }
-
-    [HttpDelete("{id:int}")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public async Task<IActionResult> Delete(int id)
-    {
-        await service.DeleteAsync(id);
-        return NoContent();
-    }
-
-    [HttpPost("{id:int}/cancel")]
-    [ProducesResponseType(typeof(LectureDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<LectureDto>> Cancel(int id)
-    {
-        var dto = await service.CancelAsync(id);
-        return Ok(dto);
-    }
-
-    [HttpGet("{id:int}/attendance/report")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetAttendanceReport(int id, CancellationToken cancellationToken)
-    {
-        var pdf = await reportService.GenerateLectureAttendancePdfAsync(id, cancellationToken);
-        return File(pdf, "application/pdf", $"lecture-{id}-attendance.pdf");
-    }
-
-    [HttpGet("{id:int}/attendance")]
-    [ProducesResponseType(typeof(PagedResult<AttendanceDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<PagedResult<AttendanceDto>>> GetAttendance(int id, [FromQuery] AttendanceSearchObject search)
-    {
-        var result = await attendanceService.GetAttendanceAsync(id, search);
-        return Ok(result);
-    }
-
-    [HttpPut("{id:int}/attendance")]
-    [ProducesResponseType(typeof(AttendanceDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<AttendanceDto>> MarkAttendance(int id, [FromBody] MarkAttendanceRequest request)
-    {
-        var dto = await attendanceService.MarkAttendanceAsync(id, request);
-        return Ok(dto);
-    }
-}
-
-```
-
-## File: eNote\eNote.API\Controllers\Lectures\StudentLectureController.cs
-```cs
-﻿using eNote.API.Controllers.Base;
-using eNote.Application.Common.Paging;
-using eNote.Application.Constants;
-using eNote.Application.Features.Academic.Lectures;
-using eNote.Application.Features.Academic.Lectures.Services;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-
-namespace eNote.API.Controllers.Lectures;
-
-[Authorize(Roles = AppRoles.Student)]
-[Route("api/student/lectures")]
-public sealed class StudentLectureController(
-    ILectureService service,
-    ILectureAttendanceService attendanceService) : CoreController
-{
-    [HttpGet]
-    [ProducesResponseType(typeof(PagedResult<LectureDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<PagedResult<LectureDto>>> GetAvailable([FromQuery] LectureSearchObject search)
-    {
-        var result = await service.GetPagedForStudentAsync(search);
-        return Ok(result);
-    }
-
-    [HttpGet("{id:int}")]
-    [ProducesResponseType(typeof(LectureDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<LectureDto>> GetById(int id)
-    {
-        var dto = await service.GetByIdForStudentAsync(id);
-        return Ok(dto);
-    }
-
-    [HttpPost("{id:int}/rsvp")]
-    [ProducesResponseType(typeof(RsvpResponse), StatusCodes.Status200OK)]
-    public async Task<ActionResult<RsvpResponse>> Rsvp(int id, [FromBody] RsvpRequest request)
-    {
-        var response = await attendanceService.RsvpAsync(id, request);
-        return Ok(response);
-    }
-}
-
-```
-
-## File: eNote\eNote.API\Controllers\Notifications\StudentNotificationController.cs
-```cs
-﻿using eNote.API.Controllers.Base;
-using eNote.Application.Common.Paging;
-using eNote.Application.Constants;
-using eNote.Application.Features.Communication.Notifications;
-using eNote.Application.Features.Communication.Notifications.Services;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-
-namespace eNote.API.Controllers.Notifications;
-
-[Authorize(Roles = AppRoles.Student)]
-[Route("api/student/notifications")]
-public sealed class StudentNotificationController(INotificationService notificationService) : CoreController
-{
-    [HttpGet]
-    [ProducesResponseType(typeof(PagedResult<NotificationDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<PagedResult<NotificationDto>>> GetPaged([FromQuery] NotificationSearchObject search)
-    {
-        var result = await notificationService.GetPagedAsync(search);
-        return Ok(result);
-    }
-
-    [HttpGet("unread-count")]
-    [ProducesResponseType(typeof(NotificationUnreadCountDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<NotificationUnreadCountDto>> GetUnreadCount()
-    {
-        var result = await notificationService.GetUnreadCountAsync();
-        return Ok(result);
-    }
-
-    [HttpPatch("{id:int}/read")]
-    [ProducesResponseType(typeof(NotificationDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<NotificationDto>> MarkRead(int id)
-    {
-        var result = await notificationService.MarkReadAsync(id);
-        return Ok(result);
-    }
-
-    [HttpPatch("read-all")]
-    [ProducesResponseType(typeof(NotificationUnreadCountDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<NotificationUnreadCountDto>> MarkAllRead()
-    {
-        var result = await notificationService.MarkAllReadAsync();
-        return Ok(result);
-    }
-}
-
-```
-
-## File: eNote\eNote.API\Controllers\Users\UsersController.cs
-```cs
-﻿using eNote.API.Controllers.Base;
-using eNote.Application.Features.Identity.Users;
-using eNote.Application.Features.Identity.Users.Services;
-using Microsoft.AspNetCore.Mvc;
-
-namespace eNote.API.Controllers.Users;
-
-[Route("api/users")]
-public sealed class UsersController(
-    IUserProfileService profileService,
-    IUserSelfService selfService) : CoreController
-{
-    [HttpGet("me")]
-    [ProducesResponseType(typeof(UserProfileResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<UserProfileResponse>> GetCurrentUser()
-    {
-        var profile = await profileService.GetCurrentUserAsync();
-
-        if (profile is null)
-        {
-            return NotFound();
-        }
-
-        return Ok(profile);
-    }
-
-    [HttpPut("me")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileRequest request)
-    {
-        (var success, var error) = await selfService.UpdateProfileAsync(request);
-
-        if (!success)
-        {
-            return BadRequest(new
-            {
-                message = error
-            });
-        }
-
-        return NoContent();
-    }
-
-    [HttpPut("me/picture")]
-    [RequestSizeLimit(5 * 1024 * 1024)]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> UploadPicture(IFormFile file)
-    {
-        if (file.Length == 0)
-        {
-            return BadRequest(new { message = "No file uploaded." });
-        }
-
-        await using var stream = file.OpenReadStream();
-        using var buffer = new MemoryStream();
-        await stream.CopyToAsync(buffer);
-
-        (var success, var error) = await selfService.UpdatePictureAsync(buffer.ToArray());
-
-        if (!success)
-        {
-            return BadRequest(new { message = error });
-        }
-
-        return NoContent();
-    }
-
-    [HttpGet("me/picture")]
-    [Produces("image/jpeg", "image/png", "image/webp")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetPicture()
-    {
-        (var data, var contentType) = await selfService.GetPictureAsync();
-
-        if (data is null || contentType is null)
-        {
-            return NotFound();
-        }
-
-        return File(data, contentType);
-    }
-
-    [HttpDelete("me/picture")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> DeletePicture()
-    {
-        (var success, var error) = await selfService.DeletePictureAsync();
-
-        if (!success)
-        {
-            return BadRequest(new { message = error });
-        }
-
-        return NoContent();
-    }
-
-    [HttpPut("me/password")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
-    {
-        (var success, var error) = await selfService.ChangePasswordAsync(request);
-
-        if (!success)
-        {
-            return BadRequest(new
-            {
-                message = error
-            });
-        }
-
-        return NoContent();
-    }
-}
-
-```
-
-## File: eNote\eNote.API\Extensions\ApplicationServiceExtensions.cs
-```cs
-using eNote.API.Services;
-using eNote.Application.Common.Interfaces;
-using eNote.Application.Common.Persistence;
-using eNote.Application.Common.Time;
-using eNote.Application.Features.Academic.Courses.Services;
-using eNote.Application.Features.Communication.Announcements.Services;
-using eNote.Application.Features.Identity.Instructors;
-using eNote.Application.Features.Identity.Users.Services;
-using eNote.Application.Features.Rentals.InstrumentRentals.StateMachine;
-using eNote.Infrastructure.Data;
-using eNote.Infrastructure.Identity;
-using eNote.Infrastructure.Messaging;
-using Microsoft.EntityFrameworkCore;
-
-namespace eNote.API.Extensions;
-
-public static class ApplicationServiceExtensions
-{
-    public static IServiceCollection AddApplicationDatabase(this IServiceCollection services, IConfiguration configuration)
-    {
-        services.AddDbContext<ENoteContext>(options =>
-            options.UseSqlServer(configuration.GetConnectionString("DefaultConnection"),
-            sql => sql.MigrationsAssembly("eNote.Infrastructure")));
-
-        return services;
-    }
-
-    public static IServiceCollection AddApplicationServices(this IServiceCollection services)
-    {
-        services.AddMemoryCache();
-        services.AddHttpContextAccessor();
-        services.AddSingleton<IClock, SystemClock>();
-
-        services.Scan(scan => scan
-            .FromAssembliesOf(typeof(AuthService), typeof(CourseService))
-            .AddClasses(classes => classes.Where(type => type.Name.EndsWith("Service") && !type.IsAbstract))
-            .AsImplementedInterfaces()
-            .WithScopedLifetime());
-
-        services.AddScoped<ICourseAnnouncementService, AnnouncementService>();
-        services.AddScoped<IStoreAnnouncementService, AnnouncementService>();
-        services.AddScoped<IStudentAnnouncementService, AnnouncementService>();
-        services.AddScoped<IAdminInstructorService, AdminInstructorService>();
-
-        services.AddScoped<ICurrentUserService, CurrentUserService>();
-        services.AddScoped<IUserContextResolver, UserContextResolver>();
-        services.AddScoped<IRentalStateMachine, RentalStateMachine>();
-        services.AddScoped<IRentalNotificationDispatcher, RentalNotificationDispatcher>();
-
-        services.AddScoped<IAppDbContext>(x => x.GetRequiredService<ENoteContext>());
-        services.AddHostedService<RentalNotificationOutboxPublisher>();
-
-        return services;
-    }
-}
-
-```
-
-## File: eNote\eNote.API\Extensions\ConfigurationExtensions.cs
-```cs
-using eNote.Infrastructure.Configuration;
-using eNote.Infrastructure.Messaging;
-
-namespace eNote.API.Extensions;
-
-public static class ConfigurationExtensions
-{
-    public static void LoadDotEnv() => DotEnvConfiguration.Load();
-
-    public static void ValidateRequiredSettings(this IConfiguration configuration)
-    {
-        var errors = new List<string>();
-
-        if (string.IsNullOrWhiteSpace(configuration.GetConnectionString("DefaultConnection")))
-        {
-            errors.Add("ConnectionStrings__DefaultConnection");
-        }
-
-        var jwtKey = configuration["Jwt:Key"];
-
-        if (string.IsNullOrWhiteSpace(jwtKey))
-        {
-            errors.Add("JWT__Key");
-        }
-        else if (jwtKey.Length < 32)
-        {
-            errors.Add("JWT__Key (minimum 32 characters)");
-        }
-
-        if (string.IsNullOrWhiteSpace(configuration["Jwt:Issuer"]))
-        {
-            errors.Add("JWT__Issuer");
-        }
-
-        if (string.IsNullOrWhiteSpace(configuration["Jwt:Audience"]))
-        {
-            errors.Add("JWT__Audience");
-        }
-
-        if (!RabbitMqConfiguration.IsConfigured(configuration))
-        {
-            errors.Add("RabbitMQ__Host (or RabbitMQ__User)");
-        }
-
-        if (errors.Count > 0)
-        {
-            throw new InvalidOperationException("Missing or invalid required configuration values: " + string.Join(", ", errors));
-        }
-    }
-}
-
-```
-
-## File: eNote\eNote.API\Extensions\CorsExtensions.cs
-```cs
-namespace eNote.API.Extensions;
-
-public static class CorsExtensions
-{
-    public const string PolicyName = "ENoteCors";
-
-    public static IServiceCollection AddApplicationCors(this IServiceCollection services, IConfiguration configuration, IWebHostEnvironment environment)
-    {
-        var origins = configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? configuration["Cors:AllowedOrigins"]?.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries) ?? [];
-
-        services.AddCors(options =>
-        {
-            options.AddPolicy(PolicyName, policy =>
-            {
-                if (origins.Length == 0)
-                {
-                    if (environment.IsDevelopment())
-                    {
-                        policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod();
-                        return;
-                    }
-
-                    throw new InvalidOperationException("Cors:AllowedOrigins must be configured for non-development environments.");
-                }
-
-                policy.WithOrigins(origins).AllowAnyHeader().AllowAnyMethod().AllowCredentials();
-            });
-        });
-
-        return services;
-    }
-}
-
-```
-
-## File: eNote\eNote.API\Extensions\HealthCheckExtensions.cs
-```cs
-using eNote.API.Health;
-
-namespace eNote.API.Extensions;
-
-public static class HealthCheckExtensions
-{
-    public static IServiceCollection AddApplicationHealthChecks(this IServiceCollection services)
-    {
-        services.AddHealthChecks()
-            .AddCheck<DatabaseHealthCheck>("sqlserver")
-            .AddCheck<RabbitMqHealthCheck>("rabbitmq");
-
-        return services;
-    }
-}
-
-```
-
-## File: eNote\eNote.API\Extensions\IdentityExtensions.cs
-```cs
-﻿using eNote.Application.Common.Localization;
-using eNote.Application.Features.Identity.Auth.Services;
-using eNote.Infrastructure.Data;
-using eNote.Infrastructure.Identity;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
-
-namespace eNote.API.Extensions;
-
-public static class IdentityExtensions
-{
-    public static IServiceCollection AddApplicationIdentity(this IServiceCollection services)
-    {
-        services.AddIdentityCore<AppUser>(options =>
-        {
-            options.Password.RequireDigit = true;
-            options.Password.RequireNonAlphanumeric = true;
-            options.Password.RequireUppercase = true;
-            options.Password.RequireLowercase = true;
-            options.Password.RequiredLength = 8;
-            options.Lockout.AllowedForNewUsers = true;
-            options.Lockout.MaxFailedAccessAttempts = 5;
-            options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
-        })
-        .AddRoles<AppRole>()
-        .AddEntityFrameworkStores<ENoteContext>()
-        .AddSignInManager<SignInManager<AppUser>>()
-        .AddDefaultTokenProviders();
-
-        return services;
-    }
-
-    public static IServiceCollection AddJwtAuthentication(this IServiceCollection services, IConfiguration config)
-    {
-        var key = Encoding.UTF8.GetBytes(config["Jwt:Key"]!);
-
-        services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-            .AddJwtBearer(options =>
-            {
-                options.MapInboundClaims = false;
-
-                options.TokenValidationParameters = new TokenValidationParameters
-                {
-                    ValidateIssuer = true,
-                    ValidateAudience = true,
-                    ValidateLifetime = true,
-                    ValidateIssuerSigningKey = true,
-                    ValidIssuer = config["Jwt:Issuer"],
-                    ValidAudience = config["Jwt:Audience"],
-                    IssuerSigningKey = new SymmetricSecurityKey(key),
-                    ClockSkew = TimeSpan.Zero
-                };
-
-                options.Events = new JwtBearerEvents
-                {
-                    OnMessageReceived = context =>
-                    {
-                        var accessToken = context.Request.Query["access_token"];
-                        var path = context.HttpContext.Request.Path;
-
-                        if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs"))
-                        {
-                            context.Token = accessToken;
-                        }
-
-                        return Task.CompletedTask;
-                    },
-                    OnTokenValidated = async context =>
-                    {
-                        var jti = context.Principal?.FindFirstValue(JwtRegisteredClaimNames.Jti);
-
-                        if (string.IsNullOrWhiteSpace(jti))
-                        {
-                            return;
-                        }
-
-                        var revocation = context.HttpContext.RequestServices.GetRequiredService<ITokenRevocationService>();
-
-                        if (await revocation.IsRevokedAsync(jti, context.HttpContext.RequestAborted))
-                        {
-                            context.Fail(Messages.TokenRevoked);
-                        }
-                    }
-                };
-            });
-
-        return services;
-    }
-}
-
-```
-
-## File: eNote\eNote.API\Extensions\LoggingExtensions.cs
-```cs
-using Serilog;
-
-namespace eNote.API.Extensions;
-
-public static class LoggingExtensions
-{
-    public static IHostBuilder UseApplicationLogging(this IHostBuilder host) =>
-        host.UseSerilog((ctx, services, cfg) => cfg
-            .ReadFrom.Configuration(ctx.Configuration)
-            .ReadFrom.Services(services)
-            .Enrich.FromLogContext()
-            .WriteTo.Console()
-            .WriteTo.File(
-                path: "logs/enote-.log",
-                rollingInterval: RollingInterval.Day,
-                retainedFileCountLimit: 7,
-                outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss} [{Level:u3}] {Message:lj}{NewLine}{Exception}"));
-}
-
-```
-
-## File: eNote\eNote.API\Extensions\MapsterExtensions.cs
-```cs
-using eNote.Application.Features.Communication.Announcements;
-using Mapster;
-
-namespace eNote.API.Extensions;
-
-public static class MapsterExtensions
-{
-    public static IServiceCollection AddMapsterMappings(this IServiceCollection services)
-    {
-        var config = new TypeAdapterConfig();
-
-        config.Scan(typeof(AnnouncementMappingConfig).Assembly);
-        config.Compile();
-
-        services.AddSingleton(config);
-        services.AddMapster();
-
-        return services;
-    }
-}
-
-```
-
-## File: eNote\eNote.API\Extensions\MessagingExtensions.cs
-```cs
-using eNote.API.Consumers;
-using eNote.Infrastructure.Messaging;
-
-namespace eNote.API.Extensions;
-
-public static class MessagingExtensions
-{
-    public static IServiceCollection AddApplicationMessaging(this IServiceCollection services, IConfiguration configuration) =>
-        services.AddRabbitMqMassTransit(configuration, bus => bus.AddConsumer<RentalStatusChangedPushConsumer>());
-}
-
-```
-
-## File: eNote\eNote.API\Extensions\MiddlewareExtensions.cs
-```cs
-﻿using eNote.Application.Common.Exceptions;
-using eNote.Application.Common.Localization;
-using Microsoft.AspNetCore.Diagnostics;
-using System.Text.Json;
-
-namespace eNote.API.Extensions;
-
-public static class MiddlewareExtensions
-{
-    public static WebApplication UseErrorHandling(this WebApplication app)
-    {
-        _ = app.UseExceptionHandler(errorApp =>
-        {
-            errorApp.Run(async context =>
-            {
-                context.Response.ContentType = "application/json";
-
-                var exception = context.Features.Get<IExceptionHandlerFeature>()?.Error;
-
-                (var statusCode, var errorCode, var message) = exception switch
-                {
-                    AppException appEx => (appEx.StatusCode, appEx.ErrorCode, appEx.Message),
-                    ArgumentException => (400, "error.bad_request", exception?.Message ?? Messages.BadRequest),
-                    _ => (500, "error.internal", Messages.InternalError)
-                };
-
-                context.Response.StatusCode = statusCode;
-
-                var logger = context.RequestServices.GetService<ILogger<WebApplication>>();
-
-                logger?.LogError(exception, "Unhandled exception caught by middleware");
-
-                var response = new ErrorResponse
-                {
-                    Status = statusCode,
-                    Code = errorCode,
-                    Message = message
-                };
-
-                await context.Response.WriteAsync(JsonSerializer.Serialize(response));
-            });
-        });
-
-        return app;
-    }
-
-    private record ErrorResponse
-    {
-        public int Status { get; init; }
-        public string Code { get; init; } = string.Empty;
-        public string Message { get; init; } = string.Empty;
-    }
-}
-
-```
-
-## File: eNote\eNote.API\Extensions\OpenAPIExtensions.cs
-```cs
-﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.OpenApi;
-using Microsoft.OpenApi;
-using Scalar.AspNetCore;
-
-namespace eNote.API.Extensions;
-
-public static class OpenAPIExtensions
-{
-    public static WebApplication MapScalarDocumentation(this WebApplication app)
-    {
-        app.MapGet("/", () => Results.Redirect("/scalar")).ExcludeFromDescription();
-        app.MapOpenApi();
-        app.MapScalarApiReference();
-
-        return app;
-    }
-
-    public static IServiceCollection AddScalarDocumentation(this IServiceCollection services)
-    {
-        services.AddOpenApi(options =>
-        {
-            options.AddDocumentTransformer<BearerSecurityTransformer>();
-            options.AddOperationTransformer<AnonymousOperationTransformer>();
-        });
-
-        return services;
-    }
-}
-
-public sealed class BearerSecurityTransformer : IOpenApiDocumentTransformer
-{
-    public Task TransformAsync(OpenApiDocument document, OpenApiDocumentTransformerContext context, CancellationToken cancellationToken)
-    {
-        document.Components ??= new OpenApiComponents();
-        document.Components.SecuritySchemes ??= new Dictionary<string, IOpenApiSecurityScheme>();
-
-        document.Components.SecuritySchemes.Add("Bearer", new OpenApiSecurityScheme
-        {
-            Type = SecuritySchemeType.Http,
-            Scheme = "bearer",
-            BearerFormat = "JWT",
-            Description = "Unesite važeći JSON Web Token (JWT)."
-        });
-
-        document.Security =
-        [
-            new OpenApiSecurityRequirement
-            {
-                [new OpenApiSecuritySchemeReference("Bearer", document)] = []
-            }
-        ];
-
-        return Task.CompletedTask;
-    }
-}
-
-public sealed class AnonymousOperationTransformer : IOpenApiOperationTransformer
-{
-    public Task TransformAsync(OpenApiOperation operation, OpenApiOperationTransformerContext context, CancellationToken cancellationToken)
-    {
-        var metadata = context.Description.ActionDescriptor.EndpointMetadata;
-
-        if (metadata.Any(m => m is IAllowAnonymous))
-        {
-            operation.Security = [];
-
-            return Task.CompletedTask;
-        }
-
-        if (!metadata.Any(m => m is IAuthorizeData))
-        {
-            operation.Security = [];
-        }
-
-        return Task.CompletedTask;
-    }
-}
-
-```
-
-## File: eNote\eNote.API\Extensions\RateLimitingExtensions.cs
-```cs
-using Microsoft.AspNetCore.RateLimiting;
-using System.Threading.RateLimiting;
-
-namespace eNote.API.Extensions;
-
-public static class RateLimitingExtensions
-{
-    public const string AuthPolicy = "auth";
-
-    public static IServiceCollection AddApplicationRateLimiting(this IServiceCollection services)
-    {
-        services.AddRateLimiter(options =>
-        {
-            options.AddFixedWindowLimiter(AuthPolicy, opt =>
-            {
-                opt.PermitLimit = 10;
-                opt.Window = TimeSpan.FromMinutes(1);
-                opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-                opt.QueueLimit = 0;
-            });
-
-            options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
-        });
-
-        return services;
-    }
-}
-
-```
-
-## File: eNote\eNote.API\Extensions\SeedExtensions.cs
-```cs
-﻿using eNote.Infrastructure.Data;
-using eNote.Infrastructure.Data.Seed;
-using Microsoft.EntityFrameworkCore;
-
-namespace eNote.API.Extensions;
-
-public static class SeedExtensions
-{
-    public static async Task<WebApplication> MigrateAsync(this WebApplication app)
-    {
-        using IServiceScope scope = app.Services.CreateScope();
-
-        var context = scope.ServiceProvider.GetRequiredService<ENoteContext>();
-
-        await context.Database.MigrateAsync();
-
-        return app;
-    }
-
-    public static async Task<WebApplication> SeedDevelopmentData(this WebApplication app)
-    {
-        using IServiceScope scope = app.Services.CreateScope();
-
-        var services = scope.ServiceProvider;
-        await IdentitySeed.SeedAsync(services);
-
-        var context = services.GetRequiredService<ENoteContext>();
-        await DevelopmentDataSeed.SeedAsync(context);
-
-        return app;
-    }
-}
-
-```
-
-## File: eNote\eNote.API\Extensions\SignalRExtensions.cs
-```cs
-namespace eNote.API.Extensions;
-
-public static class SignalRExtensions
-{
-    public static IServiceCollection AddApplicationSignalR(this IServiceCollection services)
-    {
-        services.AddSignalR();
-        return services;
-    }
-}
-
-```
-
-## File: eNote\eNote.API\Extensions\ValidationExtensions.cs
-```cs
-using eNote.Application.Features.Communication.Announcements;
-using FluentValidation;
-using FluentValidation.AspNetCore;
-
-namespace eNote.API.Extensions;
-
-public static class ValidationExtensions
-{
-    public static IServiceCollection AddApplicationValidation(this IServiceCollection services)
-    {
-        services.AddFluentValidationAutoValidation();
-        services.AddValidatorsFromAssemblyContaining<AnnouncementMappingConfig>();
-
-        return services;
-    }
-}
-
-```
-
-## File: eNote\eNote.API\Health\DatabaseHealthCheck.cs
-```cs
-using eNote.Infrastructure.Data;
-using Microsoft.Extensions.Diagnostics.HealthChecks;
-
-namespace eNote.API.Health;
-
-public sealed class DatabaseHealthCheck(ENoteContext dbContext) : IHealthCheck
-{
-    public async Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default)
-    {
-        try
-        {
-            var canConnect = await dbContext.Database.CanConnectAsync(cancellationToken);
-
-            return canConnect ? HealthCheckResult.Healthy("SQL Server is reachable.") : HealthCheckResult.Unhealthy("SQL Server is not reachable.");
-        }
-        catch (Exception ex)
-        {
-            return HealthCheckResult.Unhealthy("SQL Server health check failed.", ex);
-        }
-    }
-}
-
-```
-
-## File: eNote\eNote.API\Health\RabbitMqHealthCheck.cs
-```cs
-using eNote.Infrastructure.Messaging;
-using Microsoft.Extensions.Diagnostics.HealthChecks;
-using RabbitMQ.Client;
-
-namespace eNote.API.Health;
-
-public sealed class RabbitMqHealthCheck(IConfiguration configuration) : IHealthCheck
-{
-    public async Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default)
-    {
-        try
-        {
-            var factory = new ConnectionFactory
-            {
-                HostName = RabbitMqConfiguration.GetHost(configuration),
-                VirtualHost = RabbitMqConfiguration.GetVirtualHost(configuration),
-                UserName = RabbitMqConfiguration.GetUsername(configuration),
-                Password = RabbitMqConfiguration.GetPassword(configuration)
-            };
-
-            await using var connection = await factory.CreateConnectionAsync(cancellationToken);
-
-            return connection.IsOpen ? HealthCheckResult.Healthy("RabbitMQ is reachable.") : HealthCheckResult.Unhealthy("RabbitMQ connection could not be opened.");
-        }
-        catch (Exception ex)
-        {
-            return HealthCheckResult.Unhealthy("RabbitMQ health check failed.", ex);
-        }
-    }
-}
-
-```
-
-## File: eNote\eNote.API\Hubs\NotificationHub.cs
-```cs
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.SignalR;
-using System.IdentityModel.Tokens.Jwt;
-
-namespace eNote.API.Hubs;
-
-[Authorize]
-public sealed class NotificationHub : Hub
-{
-    public const string HubPath = "/hubs/notifications";
-    public const string ReceiveMethod = "ReceiveNotification";
-
-    public static string UserGroup(int userId) => $"user:{userId}";
-
-    public override async Task OnConnectedAsync()
-    {
-        var userIdValue = Context.User?.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-
-        if (int.TryParse(userIdValue, out var userId))
-        {
-            await Groups.AddToGroupAsync(Context.ConnectionId, UserGroup(userId));
-        }
-
-        await base.OnConnectedAsync();
-    }
-}
-
-```
-
-## File: eNote\eNote.API\Services\CurrentUserService.cs
-```cs
-﻿using eNote.Application.Common.Exceptions;
-using eNote.Application.Common.Interfaces;
-using eNote.Application.Common.Localization;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-
-namespace eNote.API.Services;
-
-public class CurrentUserService(IHttpContextAccessor httpContextAccessor) : ICurrentUserService
-{
-    public int UserId
-    {
-        get
-        {
-            var user = httpContextAccessor.HttpContext?.User;
-
-            var id = user?.FindFirstValue(JwtRegisteredClaimNames.Sub) ?? user?.FindFirstValue(ClaimTypes.NameIdentifier);
-
-            if (!int.TryParse(id, out var userId))
-            {
-                throw new AuthenticationException(Messages.InvalidUserClaim);
-            }
-
-            return userId;
-        }
-    }
-
-    public bool IsAuthenticated => httpContextAccessor.HttpContext?.User?.Identity?.IsAuthenticated ?? false;
-}
-
-```
-
-## File: eNote\eNote.Contracts\Rentals\RentalStatusChanged.cs
-```cs
-namespace eNote.Contracts.Rentals;
-
-public record RentalStatusChanged(int RentalId, int StudentUserId, int? ActorUserId, string Status, string InstrumentModel, string Title, string Body, DateTime OccurredAtUtc);
-
-```
+---
 

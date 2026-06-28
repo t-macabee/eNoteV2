@@ -5,7 +5,6 @@ using eNote.Application.Common.Paging;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Features.Academic.LectureNotes;
 using eNote.Application.Features.Identity.Instructors;
-using eNote.Application.Features.Identity.Users.Services;
 using eNote.Application.Features.Students;
 using eNote.Domain.Entities;
 using MapsterMapper;
@@ -15,14 +14,13 @@ namespace eNote.Application.Features.Academic.LectureNotes.Services;
 
 public sealed class LectureNoteService(
     IAppDbContext context,
-    IUserContextResolver resolver,
+    ICurrentActor actor,
     IInstructorAccessService instructorAccess,
-    ICurrentUserService currentUserService,
     IMapper mapper) : ILectureNoteService
 {
     public async Task<PagedResult<LectureNoteDto>> GetForLectureAsync(int lectureId, LectureNoteSearchObject search)
     {
-        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUserService.UserId);
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(actor.UserId);
 
         var query = instructorAccess.LectureNotesForLecture(lectureId, instructorId)
             .AsNoTracking()
@@ -36,12 +34,12 @@ public sealed class LectureNoteService(
 
     public async Task<LectureNoteDto> CreateAsync(int lectureId, LectureNoteRequest request)
     {
-        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUserService.UserId);
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(actor.UserId);
         await instructorAccess.EnsureOwnsLectureAsync(lectureId, instructorId);
 
         var entity = new LectureNote(request.Title.Trim(), request.Content.Trim(), lectureId)
         {
-            CreatedById = currentUserService.UserId
+            CreatedById = actor.UserId
         };
 
         context.Set<LectureNote>().Add(entity);
@@ -55,7 +53,7 @@ public sealed class LectureNoteService(
         var entity = await GetOwnedNoteAsync(lectureId, noteId, track: true);
 
         entity.UpdateDetails(request.Title.Trim(), request.Content.Trim());
-        entity.UpdatedById = currentUserService.UserId;
+        entity.UpdatedById = actor.UserId;
 
         await context.SaveChangesAsync();
 
@@ -67,14 +65,14 @@ public sealed class LectureNoteService(
         var entity = await GetOwnedNoteAsync(lectureId, noteId, track: true);
 
         entity.SoftDelete();
-        entity.UpdatedById = currentUserService.UserId;
+        entity.UpdatedById = actor.UserId;
 
         await context.SaveChangesAsync();
     }
 
     public async Task<PagedResult<LectureNoteDto>> GetForStudentAsync(int lectureId, LectureNoteSearchObject search)
     {
-        var studentId = await resolver.GetCurrentStudentIdAsync(currentUserService.UserId);
+        var studentId = await actor.GetCurrentStudentIdAsync();
 
         var query = context.Set<LectureNote>()
             .AsNoTracking()
@@ -87,7 +85,7 @@ public sealed class LectureNoteService(
 
     public async Task<LectureNoteDto> GetByIdForStudentAsync(int lectureId, int noteId)
     {
-        var studentId = await resolver.GetCurrentStudentIdAsync(currentUserService.UserId);
+        var studentId = await actor.GetCurrentStudentIdAsync();
 
         var entity = await context.Set<LectureNote>()
             .AsNoTracking()
@@ -100,7 +98,7 @@ public sealed class LectureNoteService(
 
     private async Task<LectureNote> GetOwnedNoteAsync(int lectureId, int noteId, bool track = false)
     {
-        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUserService.UserId);
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(actor.UserId);
         return await instructorAccess.GetOwnedLectureNoteAsync(lectureId, noteId, instructorId, track);
     }
 }

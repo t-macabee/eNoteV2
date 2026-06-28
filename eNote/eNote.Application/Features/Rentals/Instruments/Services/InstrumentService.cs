@@ -3,7 +3,6 @@ using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Paging;
 using eNote.Application.Common.Persistence;
-using eNote.Application.Features.Identity.Users.Services;
 using eNote.Application.Features.Rentals.Instruments;
 using eNote.Domain.Entities.Identity;
 using eNote.Domain.Entities.Rentals;
@@ -15,8 +14,7 @@ namespace eNote.Application.Features.Rentals.Instruments.Services;
 public sealed class InstrumentService(
     IAppDbContext context,
     IMapper mapper,
-    IUserContextResolver resolver,
-    ICurrentUserService currentUserService,
+    ICurrentActor actor,
     IFileStorageService fileStorage) : IInstrumentService
 {
     public async Task<InstrumentDto> GetByIdAsync(int id)
@@ -144,7 +142,7 @@ public sealed class InstrumentService(
     }
 
     private Task<MusicStoreEmployee> EnsureStoreAccessAsync() =>
-        resolver.GetActiveEmployeeAsync(currentUserService.UserId);
+        actor.GetActiveEmployeeAsync();
 
     private async Task EnsureInstrumentTypeExistsAsync(int instrumentTypeId)
     {

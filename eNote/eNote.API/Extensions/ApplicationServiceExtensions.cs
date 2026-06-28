@@ -43,7 +43,8 @@ public static class ApplicationServiceExtensions
         services.AddScoped<IAdminInstructorService, AdminInstructorService>();
 
         services.AddScoped<ICurrentUserService, CurrentUserService>();
-        services.AddScoped<IUserContextResolver, UserContextResolver>();
+        services.AddScoped<ICurrentActor, CurrentActor>();
+        services.AddScoped<IUserProfileLookup, UserProfileLookup>();
         services.AddScoped<IRentalStateMachine, RentalStateMachine>();
         services.AddScoped<IRentalNotificationDispatcher, RentalNotificationDispatcher>();
 

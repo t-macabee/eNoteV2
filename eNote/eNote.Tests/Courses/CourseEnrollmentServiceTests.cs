@@ -2,7 +2,6 @@ using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Time;
 using eNote.Application.Features.Academic.Courses.Services;
-using eNote.Application.Features.Identity.Users.Services;
 using eNote.Domain.Entities;
 using eNote.Domain.Entities.Identity;
 using eNote.Domain.Enums;
@@ -103,8 +102,7 @@ public sealed class CourseEnrollmentServiceTests
         new(
             context,
             new FixedClock(Now),
-            new StubUserContextResolver(student),
-            new TestCurrentUserService(student.AppUserId),
+            new StubCurrentActor(student),
             NullLogger<CourseEnrollmentService>.Instance);
 
     private sealed class FixedClock(DateTime utcNow) : IClock
@@ -112,19 +110,14 @@ public sealed class CourseEnrollmentServiceTests
         public DateTime UtcNow => utcNow;
     }
 
-    private sealed class TestCurrentUserService(int userId) : ICurrentUserService
+    private sealed class StubCurrentActor(Student student) : ICurrentActor
     {
-        public int UserId => userId;
+        public int UserId => student.AppUserId;
         public bool IsAuthenticated => true;
-    }
-
-    private sealed class StubUserContextResolver(Student student) : IUserContextResolver
-    {
-        public Task<Student> GetStudentAsync(int userId) => Task.FromResult(student);
-        public Task<int> GetCurrentStudentIdAsync(int appUserId) => Task.FromResult(student.Id);
-        public Task<Instructor> GetInstructorAsync(int userId) => throw new NotSupportedException();
-        public Task<MusicStoreEmployee> GetActiveEmployeeAsync(int userId) => throw new NotSupportedException();
-        public Task<string> GetStudentDisplayNameAsync(Student student) => throw new NotSupportedException();
-        public Task<IReadOnlyDictionary<int, string>> GetStudentDisplayNamesAsync(IEnumerable<Student> students) => throw new NotSupportedException();
+        public Task<Student> GetStudentAsync() => Task.FromResult(student);
+        public Task<int> GetCurrentStudentIdAsync() => Task.FromResult(student.Id);
+        public Task<Instructor> GetInstructorAsync() => throw new NotSupportedException();
+        public Task<MusicStoreEmployee> GetActiveEmployeeAsync() => throw new NotSupportedException();
+        public Task<int> GetActiveStoreAsync() => throw new NotSupportedException();
     }
 }

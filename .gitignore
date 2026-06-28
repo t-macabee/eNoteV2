@@ -88,5 +88,10 @@ ios/Runner/GeneratedPluginRegistrant.*
 *.apk
 /task.txt
 .aider*
+
+# Generated / local agent artifacts
+graphify*/
+**/scripts/
+
 # Added by code-review-graph
 .code-review-graph/

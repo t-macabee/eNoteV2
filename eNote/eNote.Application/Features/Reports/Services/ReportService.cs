@@ -1,3 +1,4 @@
+using System.Globalization;
 using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Common.Time;
@@ -13,12 +14,13 @@ using eNote.Application.Features.Identity.Users.Services;
 using eNote.Application.Features.Academic.Courses.Services;
 using eNote.Application.Features.Rentals.InstrumentRentals.Billing;
 using eNote.Application.Features.Identity.Instructors;
-using eNote.Application.Features.Rentals.MusicStores.Services;
 
 namespace eNote.Application.Features.Reports.Services;
 
-public sealed class ReportService(IAppDbContext context, IClock clock, IRankingService rankingService, IInstructorAccessService instructorAccess, IMusicStoreContextService storeContext, IUserContextResolver resolver, ICurrentUserService currentUserService) : IReportService
+public sealed class ReportService(IAppDbContext context, IClock clock, IRankingService rankingService, IInstructorAccessService instructorAccess, ICurrentActor actor, IStudentDisplayNameService displayNames) : IReportService
 {
+    private static readonly CultureInfo ReportCulture = CultureInfo.GetCultureInfo("bs-BA");
+
     static ReportService()
     {
         QuestPDF.Settings.License = LicenseType.Community;
@@ -62,7 +64,7 @@ public sealed class ReportService(IAppDbContext context, IClock clock, IRankingS
                     {
                         table.Cell().Element(CellStyle).Text(entry.Rank.ToString());
                         table.Cell().Element(CellStyle).Text(entry.StudentName);
-                        table.Cell().Element(CellStyle).Text(entry.AverageGrade?.ToString("F2") ?? "-");
+                        table.Cell().Element(CellStyle).Text(entry.AverageGrade?.ToString("F2", ReportCulture) ?? "-");
                         table.Cell().Element(CellStyle).Text(entry.GradedSubmissions.ToString());
                     }
                 });
@@ -73,7 +75,7 @@ public sealed class ReportService(IAppDbContext context, IClock clock, IRankingS
 
     public async Task<byte[]> GenerateStoreRentalSummaryPdfAsync(CancellationToken cancellationToken = default)
     {
-        var storeId = await storeContext.GetActiveStoreAsync(currentUserService.UserId, cancellationToken);
+        var storeId = await actor.GetActiveStoreAsync();
 
         var storeName = await context.Set<MusicStore>()
             .AsNoTracking()
@@ -127,8 +129,8 @@ public sealed class ReportService(IAppDbContext context, IClock clock, IRankingS
                         table.Cell().Element(CellStyle).Text(rental.Id.ToString());
                         table.Cell().Element(CellStyle).Text(rental.Instrument.Model);
                         table.Cell().Element(CellStyle).Text(rental.RentalStatus.ToString());
-                        table.Cell().Element(CellStyle).Text(rental.Fee.ToString("F2"));
-                        table.Cell().Element(CellStyle).Text(dto.TotalFee?.ToString("F2") ?? "-");
+                        table.Cell().Element(CellStyle).Text(rental.Fee.ToString("F2", ReportCulture));
+                        table.Cell().Element(CellStyle).Text(dto.TotalFee?.ToString("F2", ReportCulture) ?? "-");
                     }
                 });
                 page.Footer().AlignRight().Text($"Generisano: {clock.UtcNow:dd.MM.yyyy HH:mm} UTC").FontSize(9);
@@ -138,10 +140,10 @@ public sealed class ReportService(IAppDbContext context, IClock clock, IRankingS
 
     public async Task<byte[]> GenerateLectureAttendancePdfAsync(int lectureId, CancellationToken cancellationToken = default)
     {
-        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUserService.UserId);
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(actor.UserId);
         var lecture = await instructorAccess.GetOwnedLectureAsync(lectureId, instructorId, includeAttendances: true);
 
-        var nameMap = await resolver.GetStudentDisplayNamesAsync(lecture.Attendances.Select(a => a.Student).Where(s => s is not null)!);
+        var nameMap = await displayNames.GetStudentDisplayNamesAsync(lecture.Attendances.Select(a => a.Student).Where(s => s is not null)!);
 
         var rows = lecture.Attendances.OrderBy(a => a.StudentId).Select(a =>
             new AttendanceRow(a.StudentId, nameMap.GetValueOrDefault(a.StudentId, $"Student {a.StudentId}"), a.AttendanceStatus)).ToList();
