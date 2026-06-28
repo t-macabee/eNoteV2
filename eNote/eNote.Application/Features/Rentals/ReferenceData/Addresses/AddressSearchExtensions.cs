@@ -1,5 +1,5 @@
+using eNote.Domain.Entities;
 using eNote.Application.Common.Search;
-using eNote.Domain.Entities.Shared;
 
 namespace eNote.Application.Features.Rentals.ReferenceData.Addresses;
 

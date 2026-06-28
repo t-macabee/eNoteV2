@@ -1,7 +1,4 @@
 using eNote.Domain.Entities;
-using eNote.Domain.Entities.Assignments;
-using eNote.Domain.Entities.Communication;
-using eNote.Domain.Entities.Identity;
 
 namespace eNote.Application.Features.Identity.Instructors;
 

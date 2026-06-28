@@ -1,4 +1,4 @@
-using eNote.Domain.Entities.Communication;
+using eNote.Domain.Entities;
 using eNote.Domain.Enums;
 using Mapster;
 

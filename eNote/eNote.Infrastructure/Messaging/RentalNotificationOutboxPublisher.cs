@@ -1,8 +1,8 @@
+using eNote.Domain.Entities;
 using System.Text.Json;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Common.Time;
 using eNote.Contracts.Rentals;
-using eNote.Domain.Entities.Communication;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;

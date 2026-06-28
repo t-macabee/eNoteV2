@@ -1,6 +1,6 @@
 # Bounded Context: Courses
 
-**Generated**: 2026-06-28T05:23:54.637812+00:00  
+**Generated**: 2026-06-28T06:40:45.056587+00:00  
 **Commit**: latest  
 **Total Files**: 16
 
@@ -655,7 +655,7 @@ public interface IRankingService
 ---
 
 ## File: `eNote\eNote.Application\Features\Academic\Courses\Services\RankingService.cs`
-**Hash**: `9148d0031181` | **Size**: 3784 chars
+**Hash**: `9baf52c8750e` | **Size**: 3704 chars
 
 **Classes**: RankingService
 ### Key Cross-Cutting Interactions
@@ -665,7 +665,8 @@ public interface IRankingService
 - Uses **IAppDbContext|DbContext** → Persistence boundary
 
 ```cs
-﻿using eNote.Application.Common.Exceptions;
+using eNote.Domain.Entities;
+using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Persistence;
@@ -673,9 +674,6 @@ using eNote.Application.Features.Academic.Courses;
 using eNote.Application.Features.Identity.Instructors;
 using eNote.Application.Features.Identity.Users.Services;
 using eNote.Application.Features.Students;
-using eNote.Domain.Entities;
-using eNote.Domain.Entities.Assignments;
-using eNote.Domain.Entities.Identity;
 using eNote.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 

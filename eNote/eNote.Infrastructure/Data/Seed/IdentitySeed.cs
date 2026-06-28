@@ -1,9 +1,9 @@
-﻿using eNote.Application.Common.Exceptions;
+using eNote.Domain.Entities;
+using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Localization;
 using eNote.Application.Constants;
 using eNote.Application.Features.Identity.Users.Services;
 using eNote.Application.Features.Identity.Users;
-using eNote.Domain.Entities.Rentals;
 using eNote.Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;

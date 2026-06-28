@@ -1,5 +1,5 @@
+using eNote.Domain.Entities;
 using eNote.Application.Common.Search;
-using eNote.Domain.Entities.Communication;
 
 namespace eNote.Application.Features.Communication.Notifications;
 

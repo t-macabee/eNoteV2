@@ -1,6 +1,6 @@
-using eNote.Domain.Entities.Shared.Base;
+using eNote.Domain.Entities;
 
-namespace eNote.Domain.Entities.Communication;
+namespace eNote.Domain.Entities;
 
 public class RentalNotificationOutbox : AuditableEntity
 {

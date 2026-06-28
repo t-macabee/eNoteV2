@@ -1,4 +1,4 @@
-namespace eNote.Domain.Entities.Identity;
+namespace eNote.Domain.Entities;
 
 public class RevokedToken
 {

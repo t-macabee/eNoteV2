@@ -1,9 +1,9 @@
+using eNote.Domain.Entities;
 using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Features.Identity.Users.Services;
 using eNote.Application.Features.Rentals.ReferenceData;
-using eNote.Domain.Entities.Shared;
 using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Application.Features.Rentals.ReferenceData.Addresses;

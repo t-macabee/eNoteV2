@@ -1,5 +1,5 @@
+using eNote.Domain.Entities;
 using eNote.Application.Features.Identity.Users;
-using eNote.Domain.Entities.Identity;
 
 namespace eNote.Application.Features.Identity.Users.Services;
 

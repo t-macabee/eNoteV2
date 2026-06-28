@@ -1,5 +1,4 @@
-using eNote.Domain.Entities.Assignments;
-using eNote.Domain.Entities.Shared.Base;
+using eNote.Domain.Entities;
 using eNote.Domain.Enums;
 
 namespace eNote.Domain.Entities;

@@ -1,7 +1,7 @@
-﻿using eNote.Application.Common.Persistence;
+using eNote.Domain.Entities;
+using eNote.Application.Common.Persistence;
 using eNote.Application.Common.Time;
 using eNote.Application.Features.Identity.Auth.Services;
-using eNote.Domain.Entities.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 

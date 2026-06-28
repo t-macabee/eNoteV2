@@ -1,6 +1,6 @@
+using eNote.Domain.Entities;
 using eNote.Application.Common.Search;
 using eNote.Application.Features.Students;
-using eNote.Domain.Entities.Assignments;
 
 namespace eNote.Application.Features.Academic.Assignments;
 

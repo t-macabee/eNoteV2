@@ -1,6 +1,6 @@
 # Bounded Context: InstrumentRentals
 
-**Generated**: 2026-06-28T05:23:54.636308+00:00  
+**Generated**: 2026-06-28T06:40:45.055228+00:00  
 **Commit**: latest  
 **Total Files**: 23
 
@@ -173,11 +173,11 @@ public sealed class StudentRentalController(IRentalQueryService queryService, IR
 ---
 
 ## File: `eNote\eNote.Application\Features\Rentals\InstrumentRentals\Billing\RentalBilling.cs`
-**Hash**: `73a68291afd5` | **Size**: 2316 chars
+**Hash**: `0cb96a6f63a0` | **Size**: 2307 chars
 
 **Classes**: RentalBilling
 ```cs
-﻿using eNote.Domain.Entities.Rentals;
+using eNote.Domain.Entities;
 using eNote.Domain.Enums;
 
 namespace eNote.Application.Features.Rentals.InstrumentRentals.Billing;
@@ -298,11 +298,11 @@ public class InstrumentRentalDto
 ---
 
 ## File: `eNote\eNote.Application\Features\Rentals\InstrumentRentals\InstrumentRentalMappingConfig.cs`
-**Hash**: `c54521003ed0` | **Size**: 676 chars
+**Hash**: `7e270c3bd6dd` | **Size**: 668 chars
 
 **Classes**: InstrumentRentalMappingConfig
 ```cs
-using eNote.Domain.Entities.Rentals;
+using eNote.Domain.Entities;
 using Mapster;
 
 namespace eNote.Application.Features.Rentals.InstrumentRentals;
@@ -325,12 +325,12 @@ public sealed class InstrumentRentalMappingConfig : IRegister
 ---
 
 ## File: `eNote\eNote.Application\Features\Rentals\InstrumentRentals\InstrumentRentalSearchExtensions.cs`
-**Hash**: `8acf6455d915` | **Size**: 551 chars
+**Hash**: `e433a4459186` | **Size**: 543 chars
 
 **Classes**: InstrumentRentalSearchExtensions
 ```cs
+using eNote.Domain.Entities;
 using eNote.Application.Common.Search;
-using eNote.Domain.Entities.Rentals;
 
 namespace eNote.Application.Features.Rentals.InstrumentRentals;
 
@@ -387,11 +387,11 @@ public class RentalCreateRequest
 ---
 
 ## File: `eNote\eNote.Application\Features\Rentals\InstrumentRentals\RentalQueryableExtensions.cs`
-**Hash**: `c5b49381b830` | **Size**: 503 chars
+**Hash**: `12ed675f1b5f` | **Size**: 495 chars
 
 **Classes**: RentalQueryableExtensions
 ```cs
-using eNote.Domain.Entities.Rentals;
+using eNote.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Application.Features.Rentals.InstrumentRentals;
@@ -471,7 +471,7 @@ public interface IRentalQueryService
 ---
 
 ## File: `eNote\eNote.Application\Features\Rentals\InstrumentRentals\Services\RentalCommandService.cs`
-**Hash**: `ae8375f6ddd1` | **Size**: 7941 chars
+**Hash**: `cc8c2492d251` | **Size**: 7933 chars
 
 **Classes**: RentalCommandService
 ### Key Cross-Cutting Interactions
@@ -479,6 +479,7 @@ public interface IRentalQueryService
 - Uses **IAppDbContext|DbContext** → Persistence boundary
 
 ```cs
+using eNote.Domain.Entities;
 using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Localization;
@@ -486,7 +487,6 @@ using eNote.Application.Common.Persistence;
 using eNote.Application.Common.Time;
 using eNote.Application.Features.Rentals.InstrumentRentals.Billing;
 using eNote.Application.Features.Rentals.InstrumentRentals.StateMachine;
-using eNote.Domain.Entities.Rentals;
 using eNote.Domain.Enums;
 using MapsterMapper;
 using Microsoft.EntityFrameworkCore;
@@ -692,7 +692,7 @@ public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, 
 ---
 
 ## File: `eNote\eNote.Application\Features\Rentals\InstrumentRentals\Services\RentalQueryService.cs`
-**Hash**: `fbbb54b7c858` | **Size**: 2753 chars
+**Hash**: `3e5549a8dce2` | **Size**: 2744 chars
 
 **Classes**: RentalQueryService
 ### Key Cross-Cutting Interactions
@@ -700,14 +700,14 @@ public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, 
 - Uses **IAppDbContext|DbContext** → Persistence boundary
 
 ```cs
-﻿using eNote.Application.Common.Exceptions;
+using eNote.Domain.Entities;
+using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Paging;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Common.Time;
 using eNote.Application.Features.Rentals.InstrumentRentals.Billing;
-using eNote.Domain.Entities.Rentals;
 using MapsterMapper;
 using Microsoft.EntityFrameworkCore;
 
@@ -771,12 +771,12 @@ public sealed class RentalQueryService(IAppDbContext context, IMapper mapper, IC
 ---
 
 ## File: `eNote\eNote.Application\Features\Rentals\InstrumentRentals\StateMachine\IRentalStateMachine.cs`
-**Hash**: `ddf6fa93a4a3` | **Size**: 271 chars
+**Hash**: `1800a4f1ebca` | **Size**: 263 chars
 
 **Classes**: 
 **Interfaces**: IRentalStateMachine
 ```cs
-using eNote.Domain.Entities.Rentals;
+using eNote.Domain.Entities;
 
 namespace eNote.Application.Features.Rentals.InstrumentRentals.StateMachine;
 
@@ -806,14 +806,14 @@ public enum RentalActor
 ---
 
 ## File: `eNote\eNote.Application\Features\Rentals\InstrumentRentals\StateMachine\RentalStateMachine.cs`
-**Hash**: `55767ff66ca9` | **Size**: 7869 chars
+**Hash**: `52194ec89524` | **Size**: 7861 chars
 
 **Classes**: RentalStateMachine
 ```cs
+using eNote.Domain.Entities;
 using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Time;
-using eNote.Domain.Entities.Rentals;
 using eNote.Domain.Enums;
 
 namespace eNote.Application.Features.Rentals.InstrumentRentals.StateMachine;

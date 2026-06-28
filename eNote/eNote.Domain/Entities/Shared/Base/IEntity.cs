@@ -1,4 +1,4 @@
-namespace eNote.Domain.Entities.Shared.Base;
+namespace eNote.Domain.Entities;
 
 public interface IEntity
 {

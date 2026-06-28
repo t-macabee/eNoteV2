@@ -1,6 +1,6 @@
 # Bounded Context: Shared_Infrastructure
 
-**Generated**: 2026-06-28T05:23:54.638391+00:00  
+**Generated**: 2026-06-28T06:40:45.057095+00:00  
 **Commit**: latest  
 **Total Files**: 250
 
@@ -2271,7 +2271,7 @@ public class NotFoundException(string? message = null) : AppException(404, "erro
 ---
 
 ## File: `eNote\eNote.Application\Common\Interfaces\ICurrentActor.cs`
-**Hash**: `8cb398920a2c` | **Size**: 358 chars
+**Hash**: `6a619c412499` | **Size**: 349 chars
 
 **Classes**: 
 **Interfaces**: ICurrentActor
@@ -2279,7 +2279,7 @@ public class NotFoundException(string? message = null) : AppException(404, "erro
 - Uses **ICurrentActor** → Current actor resolution
 
 ```cs
-using eNote.Domain.Entities.Identity;
+using eNote.Domain.Entities;
 
 namespace eNote.Application.Common.Interfaces;
 
@@ -3301,7 +3301,7 @@ public interface ILectureService
 ---
 
 ## File: `eNote\eNote.Application\Features\Academic\Lectures\Services\LectureAttendanceService.cs`
-**Hash**: `7e007b4910d2` | **Size**: 5598 chars
+**Hash**: `6c787e9c1149` | **Size**: 5560 chars
 
 **Classes**: LectureAttendanceService
 ### Key Cross-Cutting Interactions
@@ -3311,6 +3311,7 @@ public interface ILectureService
 - Uses **IAppDbContext|DbContext** → Persistence boundary
 
 ```cs
+using eNote.Domain.Entities;
 using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Localization;
@@ -3319,8 +3320,6 @@ using eNote.Application.Common.Persistence;
 using eNote.Application.Features.Identity.Instructors;
 using eNote.Application.Features.Identity.Users.Services;
 using eNote.Application.Features.Students;
-using eNote.Domain.Entities;
-using eNote.Domain.Entities.Identity;
 using eNote.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -3647,11 +3646,11 @@ public class AnnouncementDto
 ---
 
 ## File: `eNote\eNote.Application\Features\Communication\Announcements\AnnouncementMappingConfig.cs`
-**Hash**: `c66b72e8b0e8` | **Size**: 661 chars
+**Hash**: `e332170cb4dc` | **Size**: 647 chars
 
 **Classes**: AnnouncementMappingConfig
 ```cs
-using eNote.Domain.Entities.Communication;
+using eNote.Domain.Entities;
 using eNote.Domain.Enums;
 using Mapster;
 
@@ -3704,7 +3703,7 @@ public sealed class AnnouncementSearchObject : BaseSearchObject
 ---
 
 ## File: `eNote\eNote.Application\Features\Communication\Announcements\Services\AnnouncementService.cs`
-**Hash**: `48ae33fb55f0` | **Size**: 8463 chars
+**Hash**: `8ed50fbddd22` | **Size**: 8382 chars
 
 **Classes**: AnnouncementService
 ### Key Cross-Cutting Interactions
@@ -3713,7 +3712,8 @@ public sealed class AnnouncementSearchObject : BaseSearchObject
 - Uses **IAppDbContext|DbContext** → Persistence boundary
 
 ```cs
-﻿using eNote.Application.Common.Exceptions;
+using eNote.Domain.Entities;
+using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Paging;
@@ -3721,9 +3721,6 @@ using eNote.Application.Common.Persistence;
 using eNote.Application.Common.Time;
 using eNote.Application.Features.Communication.Announcements;
 using eNote.Application.Features.Identity.Instructors;
-using eNote.Domain.Entities;
-using eNote.Domain.Entities.Communication;
-using eNote.Domain.Entities.Rentals;
 using eNote.Domain.Enums;
 using MapsterMapper;
 using Microsoft.EntityFrameworkCore;
@@ -4029,12 +4026,12 @@ public class NotificationPushDto
 ---
 
 ## File: `eNote\eNote.Application\Features\Communication\Notifications\NotificationSearchExtensions.cs`
-**Hash**: `9ed3cd111c38` | **Size**: 413 chars
+**Hash**: `0882f9c08f46` | **Size**: 399 chars
 
 **Classes**: NotificationSearchExtensions
 ```cs
+using eNote.Domain.Entities;
 using eNote.Application.Common.Search;
-using eNote.Domain.Entities.Communication;
 
 namespace eNote.Application.Features.Communication.Notifications;
 
@@ -4108,20 +4105,20 @@ public interface INotificationService
 ---
 
 ## File: `eNote\eNote.Application\Features\Communication\Notifications\Services\NotificationService.cs`
-**Hash**: `183c7219f399` | **Size**: 2638 chars
+**Hash**: `c4d2b4066f58` | **Size**: 2623 chars
 
 **Classes**: NotificationService
 ### Key Cross-Cutting Interactions
 - Uses **IAppDbContext|DbContext** → Persistence boundary
 
 ```cs
-﻿using eNote.Application.Common.Exceptions;
+using eNote.Domain.Entities;
+using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Paging;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Features.Communication.Notifications;
-using eNote.Domain.Entities.Communication;
 using MapsterMapper;
 using Microsoft.EntityFrameworkCore;
 
@@ -4191,7 +4188,7 @@ public sealed class NotificationService(IAppDbContext context, IMapper mapper, I
 ---
 
 ## File: `eNote\eNote.Application\Features\Files\Services\FileAccessService.cs`
-**Hash**: `892d446c3ae0` | **Size**: 1859 chars
+**Hash**: `22595b2f4540` | **Size**: 1847 chars
 
 **Classes**: FileAccessService
 ### Key Cross-Cutting Interactions
@@ -4200,11 +4197,11 @@ public sealed class NotificationService(IAppDbContext context, IMapper mapper, I
 - Uses **IAppDbContext|DbContext** → Persistence boundary
 
 ```cs
+using eNote.Domain.Entities;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Constants;
 using eNote.Application.Features.Identity.Instructors;
 using eNote.Application.Features.Identity.Users.Services;
-using eNote.Domain.Entities.Assignments;
 using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Application.Features.Files.Services;
@@ -4276,20 +4273,20 @@ public interface IFileAccessService
 ---
 
 ## File: `eNote\eNote.Application\Features\Identity\Instructors\AdminInstructorService.cs`
-**Hash**: `1d9c5b8fea00` | **Size**: 2749 chars
+**Hash**: `477b0ac73ca5` | **Size**: 2740 chars
 
 **Classes**: AdminInstructorService
 ### Key Cross-Cutting Interactions
 - Uses **IAppDbContext|DbContext** → Persistence boundary
 
 ```cs
+using eNote.Domain.Entities;
 using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Paging;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Features.Identity.Users;
 using eNote.Application.Features.Identity.Users.Services;
-using eNote.Domain.Entities.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Application.Features.Identity.Instructors;
@@ -4383,7 +4380,7 @@ public interface IAdminInstructorService
 ---
 
 ## File: `eNote\eNote.Application\Features\Identity\Instructors\IInstructorAccessService.cs`
-**Hash**: `8857d9c3527a` | **Size**: 1310 chars
+**Hash**: `63f9d42ec9b3` | **Size**: 1189 chars
 
 **Classes**: 
 **Interfaces**: IInstructorAccessService
@@ -4392,9 +4389,6 @@ public interface IAdminInstructorService
 
 ```cs
 using eNote.Domain.Entities;
-using eNote.Domain.Entities.Assignments;
-using eNote.Domain.Entities.Communication;
-using eNote.Domain.Entities.Identity;
 
 namespace eNote.Application.Features.Identity.Instructors;
 
@@ -4425,12 +4419,13 @@ public interface IInstructorAccessService
 
     IQueryable<Announcement> CourseAnnouncementsFor(int courseId, int instructorId, bool track = false);
 }
+
 ```
 
 ---
 
 ## File: `eNote\eNote.Application\Features\Identity\Instructors\InstructorAccessService.cs`
-**Hash**: `2badfa66cb14` | **Size**: 4089 chars
+**Hash**: `c83d1ba35a8b` | **Size**: 3966 chars
 
 **Classes**: InstructorAccessService
 ### Key Cross-Cutting Interactions
@@ -4439,14 +4434,11 @@ public interface IInstructorAccessService
 - Uses **IAppDbContext|DbContext** → Persistence boundary
 
 ```cs
-﻿using eNote.Application.Common.Exceptions;
+using eNote.Domain.Entities;
+using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Features.Identity.Users.Services;
-using eNote.Domain.Entities;
-using eNote.Domain.Entities.Assignments;
-using eNote.Domain.Entities.Communication;
-using eNote.Domain.Entities.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Application.Features.Identity.Instructors;
@@ -4691,7 +4683,7 @@ public record StudentProfile(int Id, DateTime EnrollmentDate, string? FirstName,
 ---
 
 ## File: `eNote\eNote.Application\Features\Identity\Users\Services\CurrentActor.cs`
-**Hash**: `9563fce81595` | **Size**: 1628 chars
+**Hash**: `87194fbed132` | **Size**: 1619 chars
 
 **Classes**: CurrentActor
 ### Key Cross-Cutting Interactions
@@ -4700,11 +4692,11 @@ public record StudentProfile(int Id, DateTime EnrollmentDate, string? FirstName,
 - Uses **IAppDbContext|DbContext** → Persistence boundary
 
 ```cs
+using eNote.Domain.Entities;
 using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Persistence;
-using eNote.Domain.Entities.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Application.Features.Identity.Users.Services;
@@ -4746,7 +4738,7 @@ public sealed class CurrentActor(ICurrentUserService user, IUserProfileLookup lo
 ---
 
 ## File: `eNote\eNote.Application\Features\Identity\Users\Services\IStudentDisplayNameService.cs`
-**Hash**: `0e71feef362c` | **Size**: 315 chars
+**Hash**: `997c18d61b32` | **Size**: 306 chars
 
 **Classes**: 
 **Interfaces**: IStudentDisplayNameService
@@ -4754,7 +4746,7 @@ public sealed class CurrentActor(ICurrentUserService user, IUserProfileLookup lo
 - Uses **IStudentDisplayNameService** → Student display-name formatting
 
 ```cs
-using eNote.Domain.Entities.Identity;
+using eNote.Domain.Entities;
 
 namespace eNote.Application.Features.Identity.Users.Services;
 
@@ -4815,7 +4807,7 @@ public interface IUserIdentityService
 ---
 
 ## File: `eNote\eNote.Application\Features\Identity\Users\Services\IUserProfileLookup.cs`
-**Hash**: `de4eecd99ac6` | **Size**: 307 chars
+**Hash**: `460cbe76208b` | **Size**: 298 chars
 
 **Classes**: 
 **Interfaces**: IUserProfileLookup
@@ -4823,7 +4815,7 @@ public interface IUserIdentityService
 - Uses **IUserProfileLookup** → User profile lookup
 
 ```cs
-using eNote.Domain.Entities.Identity;
+using eNote.Domain.Entities;
 
 namespace eNote.Application.Features.Identity.Users.Services;
 
@@ -4904,15 +4896,15 @@ public interface IUserSelfService
 ---
 
 ## File: `eNote\eNote.Application\Features\Identity\Users\Services\StudentDisplayNameService.cs`
-**Hash**: `1d7ef2aa5107` | **Size**: 1149 chars
+**Hash**: `dacd0f50875c` | **Size**: 1140 chars
 
 **Classes**: StudentDisplayNameService
 ### Key Cross-Cutting Interactions
 - Uses **IStudentDisplayNameService** → Student display-name formatting
 
 ```cs
+using eNote.Domain.Entities;
 using eNote.Application.Features.Identity.Users;
-using eNote.Domain.Entities.Identity;
 
 namespace eNote.Application.Features.Identity.Users.Services;
 
@@ -4943,7 +4935,7 @@ public sealed class StudentDisplayNameService(IUserIdentityService identity) : I
 ---
 
 ## File: `eNote\eNote.Application\Features\Identity\Users\Services\UserProfileLookup.cs`
-**Hash**: `cc062c464f8f` | **Size**: 1131 chars
+**Hash**: `c35a63be617a` | **Size**: 1122 chars
 
 **Classes**: UserProfileLookup
 ### Key Cross-Cutting Interactions
@@ -4951,9 +4943,9 @@ public sealed class StudentDisplayNameService(IUserIdentityService identity) : I
 - Uses **IAppDbContext|DbContext** → Persistence boundary
 
 ```cs
+using eNote.Domain.Entities;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Persistence;
-using eNote.Domain.Entities.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Application.Features.Identity.Users.Services;
@@ -4978,7 +4970,7 @@ public sealed class UserProfileLookup(IAppDbContext context) : IUserProfileLooku
 ---
 
 ## File: `eNote\eNote.Application\Features\Identity\Users\Services\UserProfileService.cs`
-**Hash**: `0f2eeee7159a` | **Size**: 2801 chars
+**Hash**: `7861f42c6e48` | **Size**: 2793 chars
 
 **Classes**: UserProfileService
 ### Key Cross-Cutting Interactions
@@ -4986,6 +4978,7 @@ public sealed class UserProfileLookup(IAppDbContext context) : IUserProfileLooku
 - Uses **IAppDbContext|DbContext** → Persistence boundary
 
 ```cs
+using eNote.Domain.Entities;
 using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Localization;
@@ -4993,7 +4986,6 @@ using eNote.Application.Common.Persistence;
 using eNote.Application.Constants;
 using eNote.Application.Features.Identity.Users;
 using eNote.Application.Features.Identity.Users.Profiles;
-using eNote.Domain.Entities.Rentals;
 using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Application.Features.Identity.Users.Services;
@@ -5068,13 +5060,14 @@ public sealed class UserProfileService(
 ---
 
 ## File: `eNote\eNote.Application\Features\Identity\Users\Services\UserProvisioningService.cs`
-**Hash**: `a1a9d64b5fc2` | **Size**: 5443 chars
+**Hash**: `fd91a1e7fc64` | **Size**: 5397 chars
 
 **Classes**: UserProvisioningService
 ### Key Cross-Cutting Interactions
 - Uses **IAppDbContext|DbContext** → Persistence boundary
 
 ```cs
+using eNote.Domain.Entities;
 using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Persistence;
@@ -5082,8 +5075,6 @@ using eNote.Application.Common.Time;
 using eNote.Application.Constants;
 using eNote.Application.Features.Identity.Auth;
 using eNote.Application.Features.Identity.Users;
-using eNote.Domain.Entities.Identity;
-using eNote.Domain.Entities.Rentals;
 using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Application.Features.Identity.Users.Services;
@@ -5390,11 +5381,11 @@ public class UserProvisionRequest
 ---
 
 ## File: `eNote\eNote.Application\Features\Rentals\Instruments\InstrumentAvailabilityExtensions.cs`
-**Hash**: `14fea4ea23f6` | **Size**: 823 chars
+**Hash**: `54572bcbb9b3` | **Size**: 815 chars
 
 **Classes**: InstrumentAvailabilityExtensions
 ```cs
-using eNote.Domain.Entities.Rentals;
+using eNote.Domain.Entities;
 using eNote.Domain.Enums;
 
 namespace eNote.Application.Features.Rentals.Instruments;
@@ -5461,11 +5452,11 @@ public class InstrumentDto
 ---
 
 ## File: `eNote\eNote.Application\Features\Rentals\Instruments\InstrumentMappingConfig.cs`
-**Hash**: `82f1140fa90e` | **Size**: 443 chars
+**Hash**: `c6c45ecfab42` | **Size**: 435 chars
 
 **Classes**: InstrumentMappingConfig
 ```cs
-using eNote.Domain.Entities.Rentals;
+using eNote.Domain.Entities;
 using Mapster;
 
 namespace eNote.Application.Features.Rentals.Instruments;
@@ -5485,11 +5476,11 @@ public sealed class InstrumentMappingConfig : IRegister
 ---
 
 ## File: `eNote\eNote.Application\Features\Rentals\Instruments\InstrumentQueryableExtensions.cs`
-**Hash**: `a004a6908890` | **Size**: 434 chars
+**Hash**: `c6ed86ddd03d` | **Size**: 426 chars
 
 **Classes**: InstrumentQueryableExtensions
 ```cs
-using eNote.Domain.Entities.Rentals;
+using eNote.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Application.Features.Rentals.Instruments;
@@ -5507,12 +5498,12 @@ public static class InstrumentQueryableExtensions
 ---
 
 ## File: `eNote\eNote.Application\Features\Rentals\Instruments\InstrumentSearchExtensions.cs`
-**Hash**: `bbc29ecde6f1` | **Size**: 857 chars
+**Hash**: `158dea7859e3` | **Size**: 849 chars
 
 **Classes**: InstrumentSearchExtensions
 ```cs
+using eNote.Domain.Entities;
 using eNote.Application.Common.Search;
-using eNote.Domain.Entities.Rentals;
 
 namespace eNote.Application.Features.Rentals.Instruments;
 
@@ -5610,7 +5601,7 @@ public interface IInstrumentService
 ---
 
 ## File: `eNote\eNote.Application\Features\Rentals\Instruments\Services\InstrumentService.cs`
-**Hash**: `c2b0e64b517a` | **Size**: 5768 chars
+**Hash**: `91c5348d1858` | **Size**: 5721 chars
 
 **Classes**: InstrumentService
 ### Key Cross-Cutting Interactions
@@ -5618,14 +5609,13 @@ public interface IInstrumentService
 - Uses **IAppDbContext|DbContext** → Persistence boundary
 
 ```cs
-﻿using eNote.Application.Common.Exceptions;
+using eNote.Domain.Entities;
+using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Paging;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Features.Rentals.Instruments;
-using eNote.Domain.Entities.Identity;
-using eNote.Domain.Entities.Rentals;
 using MapsterMapper;
 using Microsoft.EntityFrameworkCore;
 
@@ -5821,7 +5811,7 @@ public interface IRecommendationService
 ---
 
 ## File: `eNote\eNote.Application\Features\Rentals\Recommendations\Services\RecommendationService.cs`
-**Hash**: `988163a3aa67` | **Size**: 12208 chars
+**Hash**: `fdf2e20f3b6f` | **Size**: 12199 chars
 
 **Classes**: RecommendationService
 ### Key Cross-Cutting Interactions
@@ -5829,14 +5819,14 @@ public interface IRecommendationService
 - Uses **IAppDbContext|DbContext** → Persistence boundary
 
 ```cs
-﻿using eNote.Application.Common.Exceptions;
+using eNote.Domain.Entities;
+using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Common.Time;
 using eNote.Application.Features.Rentals.Instruments;
 using eNote.Application.Features.Rentals.Recommendations;
-using eNote.Domain.Entities.Rentals;
 using eNote.Domain.Enums;
 using MapsterMapper;
 using Microsoft.EntityFrameworkCore;
@@ -6192,12 +6182,12 @@ public sealed class AddressRequest
 ---
 
 ## File: `eNote\eNote.Application\Features\Rentals\ReferenceData\Addresses\AddressSearchExtensions.cs`
-**Hash**: `b7f4fdc45e59` | **Size**: 476 chars
+**Hash**: `f5a164a608f7` | **Size**: 469 chars
 
 **Classes**: AddressSearchExtensions
 ```cs
+using eNote.Domain.Entities;
 using eNote.Application.Common.Search;
-using eNote.Domain.Entities.Shared;
 
 namespace eNote.Application.Features.Rentals.ReferenceData.Addresses;
 
@@ -6230,19 +6220,19 @@ public sealed class AddressSearchObject : BaseSearchObject
 ---
 
 ## File: `eNote\eNote.Application\Features\Rentals\ReferenceData\Addresses\AddressService.cs`
-**Hash**: `8d12c89fc7f6` | **Size**: 1867 chars
+**Hash**: `f3cf6a81c159` | **Size**: 1860 chars
 
 **Classes**: AddressService
 ### Key Cross-Cutting Interactions
 - Uses **IAppDbContext|DbContext** → Persistence boundary
 
 ```cs
+using eNote.Domain.Entities;
 using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Features.Identity.Users.Services;
 using eNote.Application.Features.Rentals.ReferenceData;
-using eNote.Domain.Entities.Shared;
 using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Application.Features.Rentals.ReferenceData.Addresses;
@@ -6385,12 +6375,12 @@ public sealed class InstrumentTypeRequest
 ---
 
 ## File: `eNote\eNote.Application\Features\Rentals\ReferenceData\InstrumentTypes\InstrumentTypeSearchExtensions.cs`
-**Hash**: `2d0d69505218` | **Size**: 414 chars
+**Hash**: `c0ef050174ea` | **Size**: 406 chars
 
 **Classes**: InstrumentTypeSearchExtensions
 ```cs
+using eNote.Domain.Entities;
 using eNote.Application.Common.Search;
-using eNote.Domain.Entities.Rentals;
 
 namespace eNote.Application.Features.Rentals.ReferenceData.InstrumentTypes;
 
@@ -6420,18 +6410,18 @@ public sealed class InstrumentTypeSearchObject : BaseSearchObject
 ---
 
 ## File: `eNote\eNote.Application\Features\Rentals\ReferenceData\InstrumentTypes\InstrumentTypeService.cs`
-**Hash**: `f833e154e982` | **Size**: 1800 chars
+**Hash**: `60247f84d98d` | **Size**: 1792 chars
 
 **Classes**: InstrumentTypeService
 ### Key Cross-Cutting Interactions
 - Uses **IAppDbContext|DbContext** → Persistence boundary
 
 ```cs
+using eNote.Domain.Entities;
 using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Features.Rentals.ReferenceData;
-using eNote.Domain.Entities.Rentals;
 using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Application.Features.Rentals.ReferenceData.InstrumentTypes;
@@ -6529,12 +6519,12 @@ public sealed class MusicStoreRequest
 ---
 
 ## File: `eNote\eNote.Application\Features\Rentals\ReferenceData\MusicStores\MusicStoreSearchExtensions.cs`
-**Hash**: `f3972bc8cbd7` | **Size**: 409 chars
+**Hash**: `db745fb3178d` | **Size**: 401 chars
 
 **Classes**: MusicStoreSearchExtensions
 ```cs
+using eNote.Domain.Entities;
 using eNote.Application.Common.Search;
-using eNote.Domain.Entities.Rentals;
 
 namespace eNote.Application.Features.Rentals.ReferenceData.MusicStores;
 
@@ -6564,19 +6554,18 @@ public sealed class MusicStoreSearchObject : BaseSearchObject
 ---
 
 ## File: `eNote\eNote.Application\Features\Rentals\ReferenceData\MusicStores\MusicStoreService.cs`
-**Hash**: `ee19d2a85701` | **Size**: 1830 chars
+**Hash**: `e4e465a592c0` | **Size**: 1784 chars
 
 **Classes**: MusicStoreService
 ### Key Cross-Cutting Interactions
 - Uses **IAppDbContext|DbContext** → Persistence boundary
 
 ```cs
+using eNote.Domain.Entities;
 using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Features.Rentals.ReferenceData;
-using eNote.Domain.Entities.Identity;
-using eNote.Domain.Entities.Rentals;
 using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Application.Features.Rentals.ReferenceData.MusicStores;
@@ -6614,18 +6603,18 @@ public sealed class MusicStoreService(IAppDbContext context) : ReferenceCrudServ
 ---
 
 ## File: `eNote\eNote.Application\Features\Rentals\ReferenceData\ReferenceCrudService.cs`
-**Hash**: `1b7e8ca22707` | **Size**: 2468 chars
+**Hash**: `8ad6c1c66ed1` | **Size**: 2456 chars
 
 **Classes**: ReferenceCrudService
 ### Key Cross-Cutting Interactions
 - Uses **IAppDbContext|DbContext** → Persistence boundary
 
 ```cs
+using eNote.Domain.Entities;
 using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Paging;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Common.Search;
-using eNote.Domain.Entities.Shared.Base;
 using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Application.Features.Rentals.ReferenceData;
@@ -6716,7 +6705,7 @@ public interface IReportService
 ---
 
 ## File: `eNote\eNote.Application\Features\Reports\Services\ReportService.cs`
-**Hash**: `17003eefcce3` | **Size**: 8539 chars
+**Hash**: `4c8af5c27309` | **Size**: 8503 chars
 
 **Classes**: ReportService
 ### Key Cross-Cutting Interactions
@@ -6726,18 +6715,17 @@ public interface IReportService
 - Uses **IAppDbContext|DbContext** → Persistence boundary
 
 ```cs
+using eNote.Domain.Entities;
 using System.Globalization;
 using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Common.Time;
 using eNote.Application.Features.Rentals.InstrumentRentals;
-using eNote.Domain.Entities;
 using eNote.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
-using eNote.Domain.Entities.Rentals;
 using eNote.Application.Features.Identity.Users.Services;
 using eNote.Application.Features.Academic.Courses.Services;
 using eNote.Application.Features.Rentals.InstrumentRentals.Billing;
@@ -6915,21 +6903,21 @@ public sealed class ReportService(IAppDbContext context, IClock clock, IRankingS
 
     private sealed record AttendanceRow(int StudentId, string StudentName, AttendanceStatus Status);
 }
+
 ```
 
 ---
 
 ## File: `eNote\eNote.Application\Features\Students\StudentEnrollmentExtensions.cs`
-**Hash**: `1bb0669c7a77` | **Size**: 1532 chars
+**Hash**: `edd2e71b73ab` | **Size**: 1492 chars
 
 **Classes**: StudentEnrollmentExtensions
 ### Key Cross-Cutting Interactions
 - Uses **IAppDbContext|DbContext** → Persistence boundary
 
 ```cs
-using eNote.Application.Common.Persistence;
 using eNote.Domain.Entities;
-using eNote.Domain.Entities.Assignments;
+using eNote.Application.Common.Persistence;
 using eNote.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 
@@ -6949,6 +6937,7 @@ public static class StudentEnrollmentExtensions
     public static IQueryable<Assignment> ForEnrolledStudent(this IQueryable<Assignment> query, int studentId) =>
         query.Where(x => x.Lecture.Course.IsPublished && x.Lecture.LectureStatus != LectureStatus.Cancelled && x.Lecture.Course.Enrollments.Any(e => e.StudentId == studentId && e.EnrollmentStatus == EnrollmentStatus.Active));
 }
+
 ```
 
 ---
@@ -7388,12 +7377,11 @@ public record RentalStatusChanged(int RentalId, int StudentUserId, int? ActorUse
 ---
 
 ## File: `eNote\eNote.Domain\Entities\Academic\Attendance.cs`
-**Hash**: `78a29a909cec` | **Size**: 793 chars
+**Hash**: `d85fcc6710fb` | **Size**: 743 chars
 
 **Classes**: Attendance
 ```cs
-using eNote.Domain.Entities.Identity;
-using eNote.Domain.Entities.Shared.Base;
+using eNote.Domain.Entities;
 using eNote.Domain.Enums;
 
 namespace eNote.Domain.Entities;
@@ -7429,12 +7417,11 @@ public class Attendance : AuditableEntity
 ---
 
 ## File: `eNote\eNote.Domain\Entities\Academic\Course.cs`
-**Hash**: `829e119c2bca` | **Size**: 1686 chars
+**Hash**: `b5a7f95ffca9` | **Size**: 1636 chars
 
 **Classes**: Course
 ```cs
-using eNote.Domain.Entities.Identity;
-using eNote.Domain.Entities.Shared.Base;
+using eNote.Domain.Entities;
 
 namespace eNote.Domain.Entities;
 
@@ -7497,12 +7484,11 @@ public class Course : AuditableEntity
 ---
 
 ## File: `eNote\eNote.Domain\Entities\Academic\Enrollment.cs`
-**Hash**: `f2f1d4945ffe` | **Size**: 787 chars
+**Hash**: `d8ebfde57c29` | **Size**: 737 chars
 
 **Classes**: Enrollment
 ```cs
-using eNote.Domain.Entities.Identity;
-using eNote.Domain.Entities.Shared.Base;
+using eNote.Domain.Entities;
 using eNote.Domain.Enums;
 
 namespace eNote.Domain.Entities;
@@ -7538,12 +7524,11 @@ public class Enrollment : AuditableEntity
 ---
 
 ## File: `eNote\eNote.Domain\Entities\Academic\Lecture.cs`
-**Hash**: `df91c8b58b85` | **Size**: 2021 chars
+**Hash**: `24ad7af30a5e` | **Size**: 1968 chars
 
 **Classes**: Lecture
 ```cs
-using eNote.Domain.Entities.Assignments;
-using eNote.Domain.Entities.Shared.Base;
+using eNote.Domain.Entities;
 using eNote.Domain.Enums;
 
 namespace eNote.Domain.Entities;
@@ -7612,11 +7597,11 @@ public class Lecture : AuditableEntity
 ---
 
 ## File: `eNote\eNote.Domain\Entities\Academic\LectureNote.cs`
-**Hash**: `349441ca19e5` | **Size**: 815 chars
+**Hash**: `acc4423cf7e1` | **Size**: 803 chars
 
 **Classes**: LectureNote
 ```cs
-using eNote.Domain.Entities.Shared.Base;
+using eNote.Domain.Entities;
 
 namespace eNote.Domain.Entities;
 
@@ -7658,14 +7643,13 @@ public class LectureNote : AuditableEntity
 ---
 
 ## File: `eNote\eNote.Domain\Entities\Communication\Announcement.cs`
-**Hash**: `6bea072d8c90` | **Size**: 1449 chars
+**Hash**: `c92705eb215a` | **Size**: 1386 chars
 
 **Classes**: Announcement
 ```cs
-using eNote.Domain.Entities.Rentals;
-using eNote.Domain.Entities.Shared.Base;
+using eNote.Domain.Entities;
 
-namespace eNote.Domain.Entities.Communication;
+namespace eNote.Domain.Entities;
 
 public class Announcement : AuditableEntity
 {
@@ -7723,11 +7707,11 @@ public class Announcement : AuditableEntity
 ---
 
 ## File: `eNote\eNote.Domain\Entities\Communication\Notification.cs`
-**Hash**: `be627089af27` | **Size**: 769 chars
+**Hash**: `325461e917ae` | **Size**: 755 chars
 
 **Classes**: Notification
 ```cs
-namespace eNote.Domain.Entities.Communication;
+namespace eNote.Domain.Entities;
 
 public class Notification
 {
@@ -7765,16 +7749,16 @@ public class Notification
 ---
 
 ## File: `eNote\eNote.Domain\Entities\Communication\RentalNotificationOutbox.cs`
-**Hash**: `7e05ea96e68e` | **Size**: 330 chars
+**Hash**: `bf33479fde39` | **Size**: 304 chars
 
 **Classes**: RentalNotificationOutbox
 ### Key Cross-Cutting Interactions
 - Uses **RabbitMQ|IEventBus|Outbox** → Async integration events (RabbitMQ)
 
 ```cs
-using eNote.Domain.Entities.Shared.Base;
+using eNote.Domain.Entities;
 
-namespace eNote.Domain.Entities.Communication;
+namespace eNote.Domain.Entities;
 
 public class RentalNotificationOutbox : AuditableEntity
 {
@@ -7788,13 +7772,13 @@ public class RentalNotificationOutbox : AuditableEntity
 ---
 
 ## File: `eNote\eNote.Domain\Entities\Identity\Instructor.cs`
-**Hash**: `e9115f3e565a` | **Size**: 383 chars
+**Hash**: `90a78f17b900` | **Size**: 362 chars
 
 **Classes**: Instructor
 ```cs
-using eNote.Domain.Entities.Shared.Base;
+using eNote.Domain.Entities;
 
-namespace eNote.Domain.Entities.Identity;
+namespace eNote.Domain.Entities;
 
 public class Instructor : AuditableEntity
 {
@@ -7817,14 +7801,13 @@ public class Instructor : AuditableEntity
 ---
 
 ## File: `eNote\eNote.Domain\Entities\Identity\MusicStoreEmployee.cs`
-**Hash**: `57e2ae786e16` | **Size**: 672 chars
+**Hash**: `4af84e225fda` | **Size**: 614 chars
 
 **Classes**: MusicStoreEmployee
 ```cs
-using eNote.Domain.Entities.Rentals;
-using eNote.Domain.Entities.Shared.Base;
+using eNote.Domain.Entities;
 
-namespace eNote.Domain.Entities.Identity;
+namespace eNote.Domain.Entities;
 
 public class MusicStoreEmployee : AuditableEntity
 {
@@ -7852,11 +7835,11 @@ public class MusicStoreEmployee : AuditableEntity
 ---
 
 ## File: `eNote\eNote.Domain\Entities\Identity\RevokedToken.cs`
-**Hash**: `ca9a264ef001` | **Size**: 246 chars
+**Hash**: `f57fb207c81d` | **Size**: 237 chars
 
 **Classes**: RevokedToken
 ```cs
-namespace eNote.Domain.Entities.Identity;
+namespace eNote.Domain.Entities;
 
 public class RevokedToken
 {
@@ -7872,15 +7855,13 @@ public class RevokedToken
 ---
 
 ## File: `eNote\eNote.Domain\Entities\Identity\Student.cs`
-**Hash**: `59ad240d0be1` | **Size**: 1251 chars
+**Hash**: `6cca9ab9d45e` | **Size**: 1152 chars
 
 **Classes**: Student
 ```cs
-using eNote.Domain.Entities.Assignments;
-using eNote.Domain.Entities.Rentals;
-using eNote.Domain.Entities.Shared.Base;
+using eNote.Domain.Entities;
 
-namespace eNote.Domain.Entities.Identity;
+namespace eNote.Domain.Entities;
 
 public class Student : AuditableEntity
 {
@@ -7919,14 +7900,14 @@ public class Student : AuditableEntity
 ---
 
 ## File: `eNote\eNote.Domain\Entities\Rentals\Instrument.cs`
-**Hash**: `40fa3aef84c9` | **Size**: 1628 chars
+**Hash**: `45de9e036b2b` | **Size**: 1608 chars
 
 **Classes**: Instrument
 ```cs
-using eNote.Domain.Entities.Shared.Base;
+using eNote.Domain.Entities;
 using eNote.Domain.Enums;
 
-namespace eNote.Domain.Entities.Rentals;
+namespace eNote.Domain.Entities;
 
 public class Instrument : AuditableEntity
 {
@@ -7974,15 +7955,14 @@ public class Instrument : AuditableEntity
 ---
 
 ## File: `eNote\eNote.Domain\Entities\Rentals\InstrumentRental.cs`
-**Hash**: `e52a27d1bf0e` | **Size**: 2682 chars
+**Hash**: `b18ae6f1c964` | **Size**: 2624 chars
 
 **Classes**: InstrumentRental
 ```cs
-using eNote.Domain.Entities.Identity;
-using eNote.Domain.Entities.Shared.Base;
+using eNote.Domain.Entities;
 using eNote.Domain.Enums;
 
-namespace eNote.Domain.Entities.Rentals;
+namespace eNote.Domain.Entities;
 
 public class InstrumentRental : AuditableEntity
 {
@@ -8073,13 +8053,13 @@ public class InstrumentRental : AuditableEntity
 ---
 
 ## File: `eNote\eNote.Domain\Entities\Rentals\InstrumentType.cs`
-**Hash**: `ba3b8d3e0afb` | **Size**: 350 chars
+**Hash**: `2d9c4ed1e867` | **Size**: 330 chars
 
 **Classes**: InstrumentType
 ```cs
-using eNote.Domain.Entities.Shared.Base;
+using eNote.Domain.Entities;
 
-namespace eNote.Domain.Entities.Rentals;
+namespace eNote.Domain.Entities;
 
 public class InstrumentType : BaseEntity
 {
@@ -8096,11 +8076,11 @@ public class InstrumentType : BaseEntity
 ---
 
 ## File: `eNote\eNote.Domain\Entities\Rentals\InstrumentView.cs`
-**Hash**: `3bbf60c8a1a6` | **Size**: 674 chars
+**Hash**: `957d28ebe538` | **Size**: 666 chars
 
 **Classes**: InstrumentView
 ```cs
-namespace eNote.Domain.Entities.Rentals;
+namespace eNote.Domain.Entities;
 
 public class InstrumentView
 {
@@ -8135,14 +8115,13 @@ public class InstrumentView
 ---
 
 ## File: `eNote\eNote.Domain\Entities\Rentals\MusicStore.cs`
-**Hash**: `eefec022bb7d` | **Size**: 898 chars
+**Hash**: `d64b6130e7b6` | **Size**: 840 chars
 
 **Classes**: MusicStore
 ```cs
-using eNote.Domain.Entities.Identity;
-using eNote.Domain.Entities.Shared.Base;
+using eNote.Domain.Entities;
 
-namespace eNote.Domain.Entities.Rentals;
+namespace eNote.Domain.Entities;
 
 public class MusicStore : AuditableEntity
 {
@@ -8177,13 +8156,13 @@ public class MusicStore : AuditableEntity
 ---
 
 ## File: `eNote\eNote.Domain\Entities\Shared\Address.cs`
-**Hash**: `ebde52414ad3` | **Size**: 263 chars
+**Hash**: `84e7c8a7d5fb` | **Size**: 244 chars
 
 **Classes**: Address
 ```cs
-using eNote.Domain.Entities.Shared.Base;
+using eNote.Domain.Entities;
 
-namespace eNote.Domain.Entities.Shared;
+namespace eNote.Domain.Entities;
 
 public class Address : BaseEntity
 {
@@ -8197,11 +8176,11 @@ public class Address : BaseEntity
 ---
 
 ## File: `eNote\eNote.Domain\Entities\Shared\Base\BaseEntity.cs`
-**Hash**: `9c126eda6995` | **Size**: 355 chars
+**Hash**: `ea2eb5eb597b` | **Size**: 343 chars
 
 **Classes**: AuditableEntity, BaseEntity
 ```cs
-namespace eNote.Domain.Entities.Shared.Base;
+namespace eNote.Domain.Entities;
 
 public abstract class BaseEntity : IEntity
 {
@@ -8222,12 +8201,12 @@ public abstract class AuditableEntity : BaseEntity
 ---
 
 ## File: `eNote\eNote.Domain\Entities\Shared\Base\IEntity.cs`
-**Hash**: `b2154ea51c38` | **Size**: 100 chars
+**Hash**: `f0e4088c7d87` | **Size**: 88 chars
 
 **Classes**: 
 **Interfaces**: IEntity
 ```cs
-namespace eNote.Domain.Entities.Shared.Base;
+namespace eNote.Domain.Entities;
 
 public interface IEntity
 {
@@ -8357,11 +8336,11 @@ public static class DotEnvConfiguration
 ---
 
 ## File: `eNote\eNote.Infrastructure\Data\Configurations\AddressConfig.cs`
-**Hash**: `b8f14c2c62a0` | **Size**: 531 chars
+**Hash**: `d1be0f3742b3` | **Size**: 524 chars
 
 **Classes**: AddressConfig
 ```cs
-using eNote.Domain.Entities.Shared;
+using eNote.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -8382,11 +8361,11 @@ public sealed class AddressConfig : IEntityTypeConfiguration<Address>
 ---
 
 ## File: `eNote\eNote.Infrastructure\Data\Configurations\AnnouncementConfig.cs`
-**Hash**: `2e62f30629ab` | **Size**: 1522 chars
+**Hash**: `87ae38403ae8` | **Size**: 1508 chars
 
 **Classes**: AnnouncementConfig
 ```cs
-using eNote.Domain.Entities.Communication;
+using eNote.Domain.Entities;
 using eNote.Infrastructure.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -8459,11 +8438,11 @@ public sealed class AppUserConfig : IEntityTypeConfiguration<AppUser>
 ---
 
 ## File: `eNote\eNote.Infrastructure\Data\Configurations\AssignmentConfig.cs`
-**Hash**: `471863d7a2e3` | **Size**: 767 chars
+**Hash**: `6aa9a30ebfa9` | **Size**: 755 chars
 
 **Classes**: AssignmentConfig
 ```cs
-using eNote.Domain.Entities.Assignments;
+using eNote.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -8655,11 +8634,11 @@ public sealed class EnrollmentConfig : IEntityTypeConfiguration<Enrollment>
 ---
 
 ## File: `eNote\eNote.Infrastructure\Data\Configurations\InstructorConfig.cs`
-**Hash**: `d23ba30af690` | **Size**: 604 chars
+**Hash**: `21d50f7b5110` | **Size**: 595 chars
 
 **Classes**: InstructorConfig
 ```cs
-using eNote.Domain.Entities.Identity;
+using eNote.Domain.Entities;
 using eNote.Infrastructure.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -8684,11 +8663,11 @@ public sealed class InstructorConfig : IEntityTypeConfiguration<Instructor>
 ---
 
 ## File: `eNote\eNote.Infrastructure\Data\Configurations\InstrumentConfig.cs`
-**Hash**: `dc9557d5bb0f` | **Size**: 1028 chars
+**Hash**: `83c5b3a1a9e5` | **Size**: 1020 chars
 
 **Classes**: InstrumentConfig
 ```cs
-using eNote.Domain.Entities.Rentals;
+using eNote.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -8722,11 +8701,11 @@ public sealed class InstrumentConfig : IEntityTypeConfiguration<Instrument>
 ---
 
 ## File: `eNote\eNote.Infrastructure\Data\Configurations\InstrumentRentalConfig.cs`
-**Hash**: `edc628e0bfdf` | **Size**: 1388 chars
+**Hash**: `3f554f9ff6c4` | **Size**: 1380 chars
 
 **Classes**: InstrumentRentalConfig
 ```cs
-using eNote.Domain.Entities.Rentals;
+using eNote.Domain.Entities;
 using eNote.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -8767,11 +8746,11 @@ public sealed class InstrumentRentalConfig : IEntityTypeConfiguration<Instrument
 ---
 
 ## File: `eNote\eNote.Infrastructure\Data\Configurations\InstrumentTypeConfig.cs`
-**Hash**: `5027b0ca6e60` | **Size**: 490 chars
+**Hash**: `a167942f6010` | **Size**: 482 chars
 
 **Classes**: InstrumentTypeConfig
 ```cs
-using eNote.Domain.Entities.Rentals;
+using eNote.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -8791,11 +8770,11 @@ public sealed class InstrumentTypeConfig : IEntityTypeConfiguration<InstrumentTy
 ---
 
 ## File: `eNote\eNote.Infrastructure\Data\Configurations\InstrumentViewConfig.cs`
-**Hash**: `63cdbbc36854` | **Size**: 475 chars
+**Hash**: `286b8a9880a6` | **Size**: 467 chars
 
 **Classes**: InstrumentViewConfig
 ```cs
-using eNote.Domain.Entities.Rentals;
+using eNote.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -8885,11 +8864,11 @@ public sealed class LectureNoteConfig : IEntityTypeConfiguration<LectureNote>
 ---
 
 ## File: `eNote\eNote.Infrastructure\Data\Configurations\MusicStoreConfig.cs`
-**Hash**: `b17bc3cdbb30` | **Size**: 862 chars
+**Hash**: `af1920e47412` | **Size**: 854 chars
 
 **Classes**: MusicStoreConfig
 ```cs
-using eNote.Domain.Entities.Rentals;
+using eNote.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -8919,11 +8898,11 @@ public sealed class MusicStoreConfig : IEntityTypeConfiguration<MusicStore>
 ---
 
 ## File: `eNote\eNote.Infrastructure\Data\Configurations\MusicStoreEmployeeConfig.cs`
-**Hash**: `d4bf7eef6a14` | **Size**: 1038 chars
+**Hash**: `66e7acce258b` | **Size**: 1029 chars
 
 **Classes**: MusicStoreEmployeeConfig
 ```cs
-using eNote.Domain.Entities.Identity;
+using eNote.Domain.Entities;
 using eNote.Infrastructure.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -8957,11 +8936,11 @@ public class MusicStoreEmployeeConfig : IEntityTypeConfiguration<MusicStoreEmplo
 ---
 
 ## File: `eNote\eNote.Infrastructure\Data\Configurations\NotificationConfig.cs`
-**Hash**: `d232e1c65721` | **Size**: 732 chars
+**Hash**: `840a8ab1d6db` | **Size**: 718 chars
 
 **Classes**: NotificationConfig
 ```cs
-using eNote.Domain.Entities.Communication;
+using eNote.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -8986,14 +8965,14 @@ public sealed class NotificationConfig : IEntityTypeConfiguration<Notification>
 ---
 
 ## File: `eNote\eNote.Infrastructure\Data\Configurations\RentalNotificationOutboxConfig.cs`
-**Hash**: `19e59618c4b7` | **Size**: 681 chars
+**Hash**: `9e4ab6a8e806` | **Size**: 667 chars
 
 **Classes**: RentalNotificationOutboxConfig
 ### Key Cross-Cutting Interactions
 - Uses **RabbitMQ|IEventBus|Outbox** → Async integration events (RabbitMQ)
 
 ```cs
-using eNote.Domain.Entities.Communication;
+using eNote.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -9020,11 +8999,11 @@ public sealed class RentalNotificationOutboxConfig : IEntityTypeConfiguration<Re
 ---
 
 ## File: `eNote\eNote.Infrastructure\Data\Configurations\RevokedTokenConfig.cs`
-**Hash**: `e3ffa574e936` | **Size**: 578 chars
+**Hash**: `6a8e7a5f6645` | **Size**: 569 chars
 
 **Classes**: RevokedTokenConfig
 ```cs
-using eNote.Domain.Entities.Identity;
+using eNote.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -9046,11 +9025,11 @@ public sealed class RevokedTokenConfig : IEntityTypeConfiguration<RevokedToken>
 ---
 
 ## File: `eNote\eNote.Infrastructure\Data\Configurations\StudentConfig.cs`
-**Hash**: `2950b5736209` | **Size**: 592 chars
+**Hash**: `19350ff0225c` | **Size**: 583 chars
 
 **Classes**: StudentConfig
 ```cs
-using eNote.Domain.Entities.Identity;
+using eNote.Domain.Entities;
 using eNote.Infrastructure.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -9075,16 +9054,16 @@ public sealed class StudentConfig : IEntityTypeConfiguration<Student>
 ---
 
 ## File: `eNote\eNote.Infrastructure\Data\ENoteContext.cs`
-**Hash**: `fe1558516114` | **Size**: 1616 chars
+**Hash**: `ed6d4798a7cb` | **Size**: 1603 chars
 
 **Classes**: ENoteContext
 ### Key Cross-Cutting Interactions
 - Uses **IAppDbContext|DbContext** → Persistence boundary
 
 ```cs
-﻿using eNote.Application.Common.Persistence;
+using eNote.Domain.Entities;
+using eNote.Application.Common.Persistence;
 using eNote.Application.Common.Time;
-using eNote.Domain.Entities.Shared.Base;
 using eNote.Infrastructure.Data.Seed;
 using eNote.Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -9194,13 +9173,11 @@ public sealed class ENoteContextFactory : IDesignTimeDbContextFactory<ENoteConte
 ---
 
 ## File: `eNote\eNote.Infrastructure\Data\Seed\DevelopmentDataSeed.cs`
-**Hash**: `24d2d22ebb21` | **Size**: 10075 chars
+**Hash**: `e9833cc19444` | **Size**: 10000 chars
 
 **Classes**: AccessoriesInstruments, BrassInstruments, CourseSeed, DevelopmentDataSeed, EnrollmentSeed, InstrumentSeed, KeysInstruments, LectureSeed, PercussionInstruments, StringInstruments, StudentMembershipSeed
 ```cs
 using eNote.Domain.Entities;
-using eNote.Domain.Entities.Identity;
-using eNote.Domain.Entities.Rentals;
 using eNote.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 
@@ -9427,16 +9404,16 @@ internal static class EnrollmentSeed
 ---
 
 ## File: `eNote\eNote.Infrastructure\Data\Seed\IdentitySeed.cs`
-**Hash**: `0929d902b84b` | **Size**: 3431 chars
+**Hash**: `8555a1f436f5` | **Size**: 3422 chars
 
 **Classes**: IdentitySeed, RoleSeed, StoreSeed
 ```cs
-﻿using eNote.Application.Common.Exceptions;
+using eNote.Domain.Entities;
+using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Localization;
 using eNote.Application.Constants;
 using eNote.Application.Features.Identity.Users.Services;
 using eNote.Application.Features.Identity.Users;
-using eNote.Domain.Entities.Rentals;
 using eNote.Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -9540,12 +9517,11 @@ internal static class StoreSeed
 ---
 
 ## File: `eNote\eNote.Infrastructure\Data\Seed\ModelBuilderSeed.cs`
-**Hash**: `bc6de69d6131` | **Size**: 1518 chars
+**Hash**: `d026886ebf5b` | **Size**: 1474 chars
 
 **Classes**: ModelBuilderSeed
 ```cs
-using eNote.Domain.Entities.Rentals;
-using eNote.Domain.Entities.Shared;
+using eNote.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Infrastructure.Data.Seed;
@@ -9603,11 +9579,11 @@ public class AppRole : IdentityRole<int>
 ---
 
 ## File: `eNote\eNote.Infrastructure\Identity\AppUser.cs`
-**Hash**: `63e199fabb75` | **Size**: 456 chars
+**Hash**: `ee3da42d11c5` | **Size**: 449 chars
 
 **Classes**: AppUser
 ```cs
-using eNote.Domain.Entities.Shared;
+using eNote.Domain.Entities;
 using Microsoft.AspNetCore.Identity;
 
 namespace eNote.Infrastructure.Identity;
@@ -9686,17 +9662,17 @@ public sealed class SmtpEmailService : IEmailService
 ---
 
 ## File: `eNote\eNote.Infrastructure\Identity\TokenRevocationService.cs`
-**Hash**: `03dcb71441fc` | **Size**: 1856 chars
+**Hash**: `37bdf1092da5` | **Size**: 1846 chars
 
 **Classes**: TokenRevocationService
 ### Key Cross-Cutting Interactions
 - Uses **IAppDbContext|DbContext** → Persistence boundary
 
 ```cs
-﻿using eNote.Application.Common.Persistence;
+using eNote.Domain.Entities;
+using eNote.Application.Common.Persistence;
 using eNote.Application.Common.Time;
 using eNote.Application.Features.Identity.Auth.Services;
-using eNote.Domain.Entities.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 
@@ -10254,7 +10230,7 @@ public static class RabbitMqConfiguration
 ---
 
 ## File: `eNote\eNote.Infrastructure\Messaging\RentalNotificationDispatcher.cs`
-**Hash**: `279b236dce6e` | **Size**: 3259 chars
+**Hash**: `6674be736a5c` | **Size**: 3245 chars
 
 **Classes**: RentalNotificationDispatcher
 ### Key Cross-Cutting Interactions
@@ -10262,6 +10238,7 @@ public static class RabbitMqConfiguration
 - Uses **IAppDbContext|DbContext** → Persistence boundary
 
 ```cs
+using eNote.Domain.Entities;
 using System.Text.Json;
 using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Persistence;
@@ -10269,7 +10246,6 @@ using eNote.Application.Common.Time;
 using eNote.Application.Features.Rentals.InstrumentRentals;
 using eNote.Application.Features.Rentals.InstrumentRentals.StateMachine;
 using eNote.Contracts.Rentals;
-using eNote.Domain.Entities.Communication;
 
 namespace eNote.Infrastructure.Messaging;
 
@@ -10330,7 +10306,7 @@ public sealed class RentalNotificationDispatcher(
 ---
 
 ## File: `eNote\eNote.Infrastructure\Messaging\RentalNotificationOutboxPublisher.cs`
-**Hash**: `019e55dc5007` | **Size**: 2461 chars
+**Hash**: `0bc3c5b953f9` | **Size**: 2447 chars
 
 **Classes**: RentalNotificationOutboxPublisher
 ### Key Cross-Cutting Interactions
@@ -10338,11 +10314,11 @@ public sealed class RentalNotificationDispatcher(
 - Uses **IAppDbContext|DbContext** → Persistence boundary
 
 ```cs
+using eNote.Domain.Entities;
 using System.Text.Json;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Common.Time;
 using eNote.Contracts.Rentals;
-using eNote.Domain.Entities.Communication;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;

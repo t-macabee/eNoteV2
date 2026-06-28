@@ -1,10 +1,10 @@
-﻿using eNote.Application.Common.Exceptions;
+using eNote.Domain.Entities;
+using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Paging;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Features.Communication.Notifications;
-using eNote.Domain.Entities.Communication;
 using MapsterMapper;
 using Microsoft.EntityFrameworkCore;
 

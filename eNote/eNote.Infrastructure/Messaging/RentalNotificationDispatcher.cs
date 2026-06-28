@@ -1,3 +1,4 @@
+using eNote.Domain.Entities;
 using System.Text.Json;
 using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Persistence;
@@ -5,7 +6,6 @@ using eNote.Application.Common.Time;
 using eNote.Application.Features.Rentals.InstrumentRentals;
 using eNote.Application.Features.Rentals.InstrumentRentals.StateMachine;
 using eNote.Contracts.Rentals;
-using eNote.Domain.Entities.Communication;
 
 namespace eNote.Infrastructure.Messaging;
 

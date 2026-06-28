@@ -1,6 +1,6 @@
 # Bounded Context: Assignments
 
-**Generated**: 2026-06-28T05:23:54.637193+00:00  
+**Generated**: 2026-06-28T06:40:45.056023+00:00  
 **Commit**: latest  
 **Total Files**: 19
 
@@ -257,13 +257,13 @@ public class AssignmentRequest
 ---
 
 ## File: `eNote\eNote.Application\Features\Academic\Assignments\AssignmentSearchExtensions.cs`
-**Hash**: `2a2151b8bd08` | **Size**: 836 chars
+**Hash**: `bd1c51dc7cf1` | **Size**: 824 chars
 
 **Classes**: AssignmentSearchExtensions
 ```cs
+using eNote.Domain.Entities;
 using eNote.Application.Common.Search;
 using eNote.Application.Features.Students;
-using eNote.Domain.Entities.Assignments;
 
 namespace eNote.Application.Features.Academic.Assignments;
 
@@ -364,7 +364,7 @@ public class GradeAssignmentRequest
 ---
 
 ## File: `eNote\eNote.Application\Features\Academic\Assignments\Services\AssignmentService.cs`
-**Hash**: `030b1006cbb6` | **Size**: 3939 chars
+**Hash**: `d8e3c629b928` | **Size**: 3926 chars
 
 **Classes**: AssignmentService
 ### Key Cross-Cutting Interactions
@@ -373,7 +373,8 @@ public class GradeAssignmentRequest
 - Uses **IAppDbContext|DbContext** → Persistence boundary
 
 ```cs
-﻿using eNote.Application.Common.Exceptions;
+using eNote.Domain.Entities;
+using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Paging;
@@ -381,7 +382,6 @@ using eNote.Application.Common.Persistence;
 using eNote.Application.Features.Academic.Assignments;
 using eNote.Application.Features.Identity.Instructors;
 using eNote.Application.Features.Students;
-using eNote.Domain.Entities.Assignments;
 using MapsterMapper;
 using Microsoft.EntityFrameworkCore;
 
@@ -482,7 +482,7 @@ public sealed class AssignmentService(
 ---
 
 ## File: `eNote\eNote.Application\Features\Academic\Assignments\Services\AssignmentSubmissionService.cs`
-**Hash**: `3424344fc2bf` | **Size**: 4875 chars
+**Hash**: `0b89fb69e87f` | **Size**: 4825 chars
 
 **Classes**: AssignmentSubmissionService
 ### Key Cross-Cutting Interactions
@@ -492,6 +492,7 @@ public sealed class AssignmentService(
 - Uses **IAppDbContext|DbContext** → Persistence boundary
 
 ```cs
+using eNote.Domain.Entities;
 using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Localization;
@@ -502,8 +503,6 @@ using eNote.Application.Features.Academic.Assignments;
 using eNote.Application.Features.Identity.Instructors;
 using eNote.Application.Features.Identity.Users.Services;
 using eNote.Application.Features.Students;
-using eNote.Domain.Entities.Assignments;
-using eNote.Domain.Entities.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Application.Features.Academic.Assignments.Services;
@@ -681,13 +680,13 @@ public sealed class SubmissionSearchObject : BaseSearchObject
 ---
 
 ## File: `eNote\eNote.Domain\Entities\Assignments\Assignment.cs`
-**Hash**: `55ad7487e8dc` | **Size**: 1104 chars
+**Hash**: `6977181f4887` | **Size**: 1080 chars
 
 **Classes**: Assignment
 ```cs
-using eNote.Domain.Entities.Shared.Base;
+using eNote.Domain.Entities;
 
-namespace eNote.Domain.Entities.Assignments;
+namespace eNote.Domain.Entities;
 
 public class Assignment : AuditableEntity
 {
@@ -732,14 +731,13 @@ public class Assignment : AuditableEntity
 ---
 
 ## File: `eNote\eNote.Domain\Entities\Assignments\AssignmentSubmission.cs`
-**Hash**: `e1d54dc91a80` | **Size**: 959 chars
+**Hash**: `180e85e3c97a` | **Size**: 897 chars
 
 **Classes**: AssignmentSubmission
 ```cs
-using eNote.Domain.Entities.Identity;
-using eNote.Domain.Entities.Shared.Base;
+using eNote.Domain.Entities;
 
-namespace eNote.Domain.Entities.Assignments;
+namespace eNote.Domain.Entities;
 
 public class AssignmentSubmission : AuditableEntity
 {
@@ -779,11 +777,11 @@ public class AssignmentSubmission : AuditableEntity
 ---
 
 ## File: `eNote\eNote.Infrastructure\Data\Configurations\AssignmentSubmissionConfig.cs`
-**Hash**: `9fcbc87d75f1` | **Size**: 951 chars
+**Hash**: `ae42f6bac64e` | **Size**: 939 chars
 
 **Classes**: AssignmentSubmissionConfig
 ```cs
-using eNote.Domain.Entities.Assignments;
+using eNote.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 

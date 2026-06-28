@@ -1,4 +1,4 @@
-namespace eNote.Domain.Entities.Communication;
+namespace eNote.Domain.Entities;
 
 public class Notification
 {

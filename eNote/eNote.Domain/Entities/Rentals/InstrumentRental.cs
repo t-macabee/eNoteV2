@@ -1,8 +1,7 @@
-using eNote.Domain.Entities.Identity;
-using eNote.Domain.Entities.Shared.Base;
+using eNote.Domain.Entities;
 using eNote.Domain.Enums;
 
-namespace eNote.Domain.Entities.Rentals;
+namespace eNote.Domain.Entities;
 
 public class InstrumentRental : AuditableEntity
 {

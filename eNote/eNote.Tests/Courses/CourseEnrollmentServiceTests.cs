@@ -1,9 +1,8 @@
+using eNote.Domain.Entities;
 using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Time;
 using eNote.Application.Features.Academic.Courses.Services;
-using eNote.Domain.Entities;
-using eNote.Domain.Entities.Identity;
 using eNote.Domain.Enums;
 using eNote.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
