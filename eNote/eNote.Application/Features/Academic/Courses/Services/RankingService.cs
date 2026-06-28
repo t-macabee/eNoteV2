@@ -13,38 +13,38 @@ namespace eNote.Application.Features.Academic.Courses.Services;
 
 public sealed class RankingService(IAppDbContext context, ICurrentActor actor, IStudentDisplayNameService displayNames, IInstructorAccessService instructorAccess) : IRankingService
 {
-    public async Task<IReadOnlyList<CourseRankingEntryDto>> GetForInstructorAsync(int courseId)
+    public async Task<IReadOnlyList<CourseRankingEntryDto>> GetForInstructorAsync(int courseId, CancellationToken cancellationToken = default)
     {
         var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(actor.UserId);
 
-        if (!await instructorAccess.OwnsCourseAsync(courseId, instructorId))
+        if (!await instructorAccess.OwnsCourseAsync(courseId, instructorId, cancellationToken))
         {
             throw new NotFoundException(Messages.CourseNotFound);
         }
 
-        return await BuildRankingAsync(courseId);
+        return await BuildRankingAsync(courseId, cancellationToken);
     }
 
-    public async Task<IReadOnlyList<CourseRankingEntryDto>> GetForStudentAsync(int courseId)
+    public async Task<IReadOnlyList<CourseRankingEntryDto>> GetForStudentAsync(int courseId, CancellationToken cancellationToken = default)
     {
         var studentId = await actor.GetCurrentStudentIdAsync();
 
-        if (!await context.IsEnrolledInCourseAsync(studentId, courseId))
+        if (!await context.IsEnrolledInCourseAsync(studentId, courseId, cancellationToken))
         {
             throw new AuthorizationException(Messages.StudentNotEnrolled);
         }
 
-        return await BuildRankingAsync(courseId);
+        return await BuildRankingAsync(courseId, cancellationToken);
     }
 
-    private async Task<IReadOnlyList<CourseRankingEntryDto>> BuildRankingAsync(int courseId)
+    private async Task<IReadOnlyList<CourseRankingEntryDto>> BuildRankingAsync(int courseId, CancellationToken cancellationToken)
     {
         var enrolledStudents = await context.Set<Enrollment>()
             .AsNoTracking()
             .Where(e => e.CourseId == courseId && e.EnrollmentStatus == EnrollmentStatus.Active)
             .Include(e => e.Student)
             .Select(e => e.Student)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         if (enrolledStudents.Count == 0)
         {
@@ -61,7 +61,7 @@ public sealed class RankingService(IAppDbContext context, ICurrentActor actor, I
                 new StudentGradeStats(g.Key,
                     g.Average(x => (double?)x.Grade),
                     g.Count()))
-                .ToDictionaryAsync(x => x.StudentId);
+                .ToDictionaryAsync(x => x.StudentId, cancellationToken);
 
         IReadOnlyDictionary<int, string> nameMap = await displayNames.GetStudentDisplayNamesAsync(enrolledStudents);
 
@@ -80,7 +80,7 @@ public sealed class RankingService(IAppDbContext context, ICurrentActor actor, I
                 Rank = i + 1,
                 StudentId = x.Student.Id,
                 StudentName = x.Name,
-                AverageGrade = x.Average.HasValue ? Math.Round(x.Average!.Value, 2) : null,
+                AverageGrade = x.Average.HasValue ? Math.Round(x.Average.Value, 2) : null,
                 GradedSubmissions = x.Count
             })];
 

@@ -7,6 +7,7 @@ using eNote.Application.Common.Persistence;
 using eNote.Application.Features.Rentals.Instruments;
 using MapsterMapper;
 using Microsoft.EntityFrameworkCore;
+using eNote.Domain.Entities.Rentals;
 
 namespace eNote.Application.Features.Rentals.Instruments.Services;
 
@@ -16,31 +17,31 @@ public sealed class InstrumentService(
     ICurrentActor actor,
     IFileStorageService fileStorage) : IInstrumentService
 {
-    public async Task<InstrumentDto> GetByIdAsync(int id)
+    public async Task<InstrumentDto> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
         var employee = await EnsureStoreAccessAsync();
 
         var entity = await context.Set<Instrument>()
             .AsNoTracking()
             .WithInstrumentDetails()
-            .FirstOrDefaultAsync(x => x.Id == id && x.MusicStoreId == employee.MusicStoreId)
+            .FirstOrDefaultAsync(x => x.Id == id && x.MusicStoreId == employee.MusicStoreId, cancellationToken)
             ?? throw new NotFoundException(Messages.NotFound);
 
         return mapper.Map<InstrumentDto>(entity);
     }
 
-    public async Task<InstrumentDto> GetPublicByIdAsync(int id)
+    public async Task<InstrumentDto> GetPublicByIdAsync(int id, CancellationToken cancellationToken = default)
     {
         var entity = await context.Set<Instrument>()
             .AsNoTracking()
             .WithInstrumentDetails()
-            .FirstOrDefaultAsync(x => x.Id == id)
+            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken)
             ?? throw new NotFoundException(Messages.NotFound);
 
         return mapper.Map<InstrumentDto>(entity);
     }
 
-    public async Task<PagedResult<InstrumentDto>> GetPagedAsync(InstrumentSearchObject search)
+    public async Task<PagedResult<InstrumentDto>> GetPagedAsync(InstrumentSearchObject search, CancellationToken cancellationToken = default)
     {
         var employee = await EnsureStoreAccessAsync();
 
@@ -50,23 +51,23 @@ public sealed class InstrumentService(
             .WithInstrumentDetails()
             .ApplySearch(search);
 
-        return await query.ToPagedResultAsync(search, mapper.Map<InstrumentDto>);
+        return await query.ToPagedResultAsync(search, mapper.Map<InstrumentDto>, ct: cancellationToken);
     }
 
-    public async Task<PagedResult<InstrumentDto>> GetPublicPagedAsync(InstrumentSearchObject search)
+    public async Task<PagedResult<InstrumentDto>> GetPublicPagedAsync(InstrumentSearchObject search, CancellationToken cancellationToken = default)
     {
         var query = context.Set<Instrument>()
             .AsNoTracking()
             .WithInstrumentDetails()
             .ApplySearch(search);
 
-        return await query.ToPagedResultAsync(search, mapper.Map<InstrumentDto>);
+        return await query.ToPagedResultAsync(search, mapper.Map<InstrumentDto>, ct: cancellationToken);
     }
 
-    public async Task<InstrumentDto> CreateAsync(InstrumentCreateRequest request)
+    public async Task<InstrumentDto> CreateAsync(InstrumentCreateRequest request, CancellationToken cancellationToken = default)
     {
         var employee = await EnsureStoreAccessAsync();
-        await EnsureInstrumentTypeExistsAsync(request.InstrumentTypeId);
+        await EnsureInstrumentTypeExistsAsync(request.InstrumentTypeId, cancellationToken);
 
         var entity = new Instrument(
             request.Model.Trim(),
@@ -77,22 +78,22 @@ public sealed class InstrumentService(
             employee.MusicStoreId);
 
         context.Set<Instrument>().Add(entity);
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(cancellationToken);
 
-        return mapper.Map<InstrumentDto>(await ReloadAsync(entity.Id));
+        return mapper.Map<InstrumentDto>(await ReloadAsync(entity.Id, cancellationToken));
     }
 
-    public async Task<InstrumentDto> UpdateAsync(int id, InstrumentUpdateRequest request)
+    public async Task<InstrumentDto> UpdateAsync(int id, InstrumentUpdateRequest request, CancellationToken cancellationToken = default)
     {
         var employee = await EnsureStoreAccessAsync();
 
         var entity = await context.Set<Instrument>()
-            .FirstOrDefaultAsync(x => x.Id == id && x.MusicStoreId == employee.MusicStoreId)
+            .FirstOrDefaultAsync(x => x.Id == id && x.MusicStoreId == employee.MusicStoreId, cancellationToken)
             ?? throw new NotFoundException(Messages.NotFound);
 
         if (request.InstrumentTypeId is int typeId)
         {
-            await EnsureInstrumentTypeExistsAsync(typeId);
+            await EnsureInstrumentTypeExistsAsync(typeId, cancellationToken);
         }
 
         entity.UpdateDetails(
@@ -102,9 +103,9 @@ public sealed class InstrumentService(
             request.ImagePath?.Trim() ?? entity.ImagePath,
             request.InstrumentTypeId ?? entity.InstrumentTypeId);
 
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(cancellationToken);
 
-        return mapper.Map<InstrumentDto>(await ReloadAsync(entity.Id));
+        return mapper.Map<InstrumentDto>(await ReloadAsync(entity.Id, cancellationToken));
     }
 
     public async Task<InstrumentDto> UploadImageAsync(int id, Stream stream, string fileName, string contentType, CancellationToken ct = default)
@@ -120,37 +121,37 @@ public sealed class InstrumentService(
 
         await context.SaveChangesAsync(ct);
 
-        return mapper.Map<InstrumentDto>(await ReloadAsync(entity.Id));
+        return mapper.Map<InstrumentDto>(await ReloadAsync(entity.Id, ct));
     }
 
-    public async Task DeleteAsync(int id)
+    public async Task DeleteAsync(int id, CancellationToken cancellationToken = default)
     {
         var employee = await EnsureStoreAccessAsync();
 
         var instrument = await context.Set<Instrument>()
-            .FirstOrDefaultAsync(x => x.Id == id && x.MusicStoreId == employee.MusicStoreId)
+            .FirstOrDefaultAsync(x => x.Id == id && x.MusicStoreId == employee.MusicStoreId, cancellationToken)
             ?? throw new NotFoundException(Messages.NotFound);
 
-        if (await context.Set<InstrumentRental>().WhereBlockingStatus().AnyAsync(r => r.InstrumentId == id))
+        if (await context.Set<InstrumentRental>().WhereBlockingStatus().AnyAsync(r => r.InstrumentId == id, cancellationToken))
         {
             throw new BusinessException(Messages.InstrumentDeleteBlocked);
         }
 
         instrument.SoftDelete();
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(cancellationToken);
     }
 
     private Task<MusicStoreEmployee> EnsureStoreAccessAsync() =>
         actor.GetCurrentEmployeeAsync();
 
-    private async Task EnsureInstrumentTypeExistsAsync(int instrumentTypeId)
+    private async Task EnsureInstrumentTypeExistsAsync(int instrumentTypeId, CancellationToken cancellationToken)
     {
-        if (!await context.Set<InstrumentType>().AnyAsync(x => x.Id == instrumentTypeId))
+        if (!await context.Set<InstrumentType>().AnyAsync(x => x.Id == instrumentTypeId, cancellationToken))
         {
             throw new BusinessException(Messages.InstrumentTypeNotFound);
         }
     }
 
-    private Task<Instrument> ReloadAsync(int id) =>
-        context.Set<Instrument>().AsNoTracking().WithInstrumentDetails().FirstAsync(x => x.Id == id);
+    private Task<Instrument> ReloadAsync(int id, CancellationToken cancellationToken) =>
+        context.Set<Instrument>().AsNoTracking().WithInstrumentDetails().FirstAsync(x => x.Id == id, cancellationToken);
 }

@@ -7,17 +7,17 @@ namespace eNote.Infrastructure.Identity;
 
 public sealed class UserIdentityService(UserManager<AppUser> userManager) : IUserIdentityService
 {
-    public async Task<UserIdentityDto?> GetUserAsync(int userId)
+    public async Task<UserIdentityDto?> GetUserAsync(int userId, CancellationToken cancellationToken = default)
     {
         var user = await userManager.Users
             .AsNoTracking()
             .Include(u => u.Address)
-            .FirstOrDefaultAsync(u => u.Id == userId);
+            .FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
 
         return user is null ? null : Map(user);
     }
 
-    public async Task<IReadOnlyDictionary<int, UserIdentityDto>> GetUsersBulkAsync(IEnumerable<int> userIds)
+    public async Task<IReadOnlyDictionary<int, UserIdentityDto>> GetUsersBulkAsync(IEnumerable<int> userIds, CancellationToken cancellationToken = default)
     {
         HashSet<int> ids = [.. userIds];
 
@@ -30,7 +30,7 @@ public sealed class UserIdentityService(UserManager<AppUser> userManager) : IUse
             .AsNoTracking()
             .Include(u => u.Address)
             .Where(u => ids.Contains(u.Id))
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         return users.ToDictionary(u => u.Id, Map);
     }

@@ -11,14 +11,15 @@ namespace eNote.Application.Features.Identity.Instructors;
 
 public sealed class AdminInstructorService(IAppDbContext context, IUserIdentityService identityService) : IAdminInstructorService
 {
-    public async Task<PagedResult<InstructorDto>> GetPagedAsync(InstructorSearchObject search)
+    public async Task<PagedResult<InstructorDto>> GetPagedAsync(InstructorSearchObject search, CancellationToken cancellationToken = default)
     {
         IQueryable<Instructor> query = context.Set<Instructor>()
             .AsNoTracking()
             .OrderBy(x => x.Id);
 
-        List<Instructor> instructors = await query.ToListAsync();
-        IReadOnlyDictionary<int, UserIdentityDto> users = await identityService.GetUsersBulkAsync(instructors.Select(x => x.AppUserId));
+        // ponytail: in-memory name filter, add SQL join or materialized view if instructor count grows large.
+        List<Instructor> instructors = await query.ToListAsync(cancellationToken);
+        IReadOnlyDictionary<int, UserIdentityDto> users = await identityService.GetUsersBulkAsync(instructors.Select(x => x.AppUserId), cancellationToken);
 
         List<InstructorDto> filtered = [.. instructors
             .Select(x => Map(x, users.GetValueOrDefault(x.AppUserId)))
@@ -35,13 +36,13 @@ public sealed class AdminInstructorService(IAppDbContext context, IUserIdentityS
         };
     }
 
-    public async Task<InstructorDto> GetByIdAsync(int id)
+    public async Task<InstructorDto> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
         Instructor entity = await context.Set<Instructor>()
             .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.Id == id) ?? throw new NotFoundException(Messages.InstructorProfileNotFound);
+            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken) ?? throw new NotFoundException(Messages.InstructorProfileNotFound);
 
-        UserIdentityDto? user = await identityService.GetUserAsync(entity.AppUserId);
+        UserIdentityDto? user = await identityService.GetUserAsync(entity.AppUserId, cancellationToken);
 
         return Map(entity, user);
     }

@@ -14,33 +14,33 @@ public sealed class StudentNotificationController(INotificationService notificat
 {
     [HttpGet]
     [ProducesResponseType(typeof(PagedResult<NotificationDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<PagedResult<NotificationDto>>> GetPaged([FromQuery] NotificationSearchObject search)
+    public async Task<ActionResult<PagedResult<NotificationDto>>> GetPaged([FromQuery] NotificationSearchObject search, CancellationToken cancellationToken)
     {
-        var result = await notificationService.GetPagedAsync(search);
+        var result = await notificationService.GetPagedAsync(search, cancellationToken);
         return Ok(result);
     }
 
     [HttpGet("unread-count")]
     [ProducesResponseType(typeof(NotificationUnreadCountDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<NotificationUnreadCountDto>> GetUnreadCount()
+    public async Task<ActionResult<NotificationUnreadCountDto>> GetUnreadCount(CancellationToken cancellationToken)
     {
-        var result = await notificationService.GetUnreadCountAsync();
+        var result = await notificationService.GetUnreadCountAsync(cancellationToken);
         return Ok(result);
     }
 
     [HttpPatch("{id:int}/read")]
     [ProducesResponseType(typeof(NotificationDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<NotificationDto>> MarkRead(int id)
+    public async Task<ActionResult<NotificationDto>> MarkRead(int id, CancellationToken cancellationToken)
     {
-        var result = await notificationService.MarkReadAsync(id);
+        var result = await notificationService.MarkReadAsync(id, cancellationToken);
         return Ok(result);
     }
 
     [HttpPatch("read-all")]
     [ProducesResponseType(typeof(NotificationUnreadCountDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<NotificationUnreadCountDto>> MarkAllRead()
+    public async Task<ActionResult<NotificationUnreadCountDto>> MarkAllRead(CancellationToken cancellationToken)
     {
-        var result = await notificationService.MarkAllReadAsync();
+        var result = await notificationService.MarkAllReadAsync(cancellationToken);
         return Ok(result);
     }
 }

@@ -14,17 +14,17 @@ public sealed class InstructorAssignmentSubmissionController(IAssignmentSubmissi
 {
     [HttpGet]
     [ProducesResponseType(typeof(PagedResult<AssignmentSubmissionDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<PagedResult<AssignmentSubmissionDto>>> GetSubmissions(int lectureId, int assignmentId, [FromQuery] SubmissionSearchObject search)
+    public async Task<ActionResult<PagedResult<AssignmentSubmissionDto>>> GetSubmissions(int lectureId, int assignmentId, [FromQuery] SubmissionSearchObject search, CancellationToken cancellationToken)
     {
-        var result = await submissionService.GetSubmissionsAsync(lectureId, assignmentId, search);
+        var result = await submissionService.GetSubmissionsAsync(lectureId, assignmentId, search, cancellationToken);
         return Ok(result);
     }
 
     [HttpPut("{submissionId:int}/grade")]
     [ProducesResponseType(typeof(AssignmentSubmissionDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<AssignmentSubmissionDto>> Grade(int lectureId, int assignmentId, int submissionId, [FromBody] GradeAssignmentRequest request)
+    public async Task<ActionResult<AssignmentSubmissionDto>> Grade(int lectureId, int assignmentId, int submissionId, [FromBody] GradeAssignmentRequest request, CancellationToken cancellationToken)
     {
-        var dto = await submissionService.GradeAsync(lectureId, assignmentId, submissionId, request);
+        var dto = await submissionService.GradeAsync(lectureId, assignmentId, submissionId, request, cancellationToken);
         return Ok(dto);
     }
 }

@@ -116,13 +116,13 @@ public sealed class UserProfileServiceTests
         public IReadOnlyList<string> Roles { get; init; } = [];
         public int? LastRequestedUserId { get; private set; }
 
-        public Task<UserIdentityDto?> GetUserAsync(int userId)
+        public Task<UserIdentityDto?> GetUserAsync(int userId, CancellationToken cancellationToken = default)
         {
             LastRequestedUserId = userId;
             return Task.FromResult(User);
         }
 
-        public Task<IReadOnlyDictionary<int, UserIdentityDto>> GetUsersBulkAsync(IEnumerable<int> userIds) =>
+        public Task<IReadOnlyDictionary<int, UserIdentityDto>> GetUsersBulkAsync(IEnumerable<int> userIds, CancellationToken cancellationToken = default) =>
             Task.FromResult<IReadOnlyDictionary<int, UserIdentityDto>>(new Dictionary<int, UserIdentityDto>());
 
         public Task<IReadOnlyList<string>> GetRolesAsync(int userId) => Task.FromResult(Roles);

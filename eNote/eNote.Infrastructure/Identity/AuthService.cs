@@ -13,7 +13,7 @@ namespace eNote.Infrastructure.Identity;
 
 public sealed class AuthService(UserManager<AppUser> userManager, SignInManager<AppUser> signInManager, ITokenService tokenService, IUserProvisioningService userProvisioning, ITokenRevocationService tokenRevocationService, IEmailService emailService, IWebHostEnvironment environment, ILogger<AuthService> logger) : IAuthService
 {
-    public async Task<AuthResponse> LoginAsync(LoginRequest model)
+    public async Task<AuthResponse> LoginAsync(LoginRequest model, CancellationToken cancellationToken = default)
     {
         var username = model.Username.Trim();
         AppUser? user = await userManager.FindByNameAsync(username);
@@ -53,9 +53,9 @@ public sealed class AuthService(UserManager<AppUser> userManager, SignInManager<
         };
     }
 
-    public async Task<AuthResponse> RegisterAsync(RegisterRequest model)
+    public async Task<AuthResponse> RegisterAsync(RegisterRequest model, CancellationToken cancellationToken = default)
     {
-        (_, var error) = await userProvisioning.RegisterStudentAsync(model);
+        (_, var error) = await userProvisioning.RegisterStudentAsync(model, cancellationToken);
 
         if (error is not null)
         {

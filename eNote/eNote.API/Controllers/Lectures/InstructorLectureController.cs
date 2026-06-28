@@ -15,25 +15,25 @@ public sealed class InstructorLectureController(ILectureService service, ILectur
 {
     [HttpGet]
     [ProducesResponseType(typeof(PagedResult<LectureDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<PagedResult<LectureDto>>> GetMyLectures([FromQuery] LectureSearchObject search)
+    public async Task<ActionResult<PagedResult<LectureDto>>> GetMyLectures([FromQuery] LectureSearchObject search, CancellationToken cancellationToken)
     {
-        var result = await service.GetPagedForInstructorAsync(search);
+        var result = await service.GetPagedForInstructorAsync(search, cancellationToken);
         return Ok(result);
     }
 
     [HttpGet("{id:int}")]
     [ProducesResponseType(typeof(LectureDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<LectureDto>> GetById(int id)
+    public async Task<ActionResult<LectureDto>> GetById(int id, CancellationToken cancellationToken)
     {
-        var dto = await service.GetByIdForInstructorAsync(id);
+        var dto = await service.GetByIdForInstructorAsync(id, cancellationToken);
         return Ok(dto);
     }
 
     [HttpPost]
     [ProducesResponseType(typeof(LectureDto), StatusCodes.Status201Created)]
-    public async Task<ActionResult<LectureDto>> Create([FromBody] LectureCreateRequest request)
+    public async Task<ActionResult<LectureDto>> Create([FromBody] LectureCreateRequest request, CancellationToken cancellationToken)
     {
-        var dto = await service.CreateAsync(request);
+        var dto = await service.CreateAsync(request, cancellationToken);
         return CreatedAtAction(nameof(GetById), new
         {
             id = dto.Id
@@ -42,25 +42,25 @@ public sealed class InstructorLectureController(ILectureService service, ILectur
 
     [HttpPut("{id:int}")]
     [ProducesResponseType(typeof(LectureDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<LectureDto>> Update(int id, [FromBody] LectureUpdateRequest request)
+    public async Task<ActionResult<LectureDto>> Update(int id, [FromBody] LectureUpdateRequest request, CancellationToken cancellationToken)
     {
-        var dto = await service.UpdateAsync(id, request);
+        var dto = await service.UpdateAsync(id, request, cancellationToken);
         return Ok(dto);
     }
 
     [HttpDelete("{id:int}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public async Task<IActionResult> Delete(int id)
+    public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
     {
-        await service.DeleteAsync(id);
+        await service.DeleteAsync(id, cancellationToken);
         return NoContent();
     }
 
     [HttpPost("{id:int}/cancel")]
     [ProducesResponseType(typeof(LectureDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<LectureDto>> Cancel(int id)
+    public async Task<ActionResult<LectureDto>> Cancel(int id, CancellationToken cancellationToken)
     {
-        var dto = await service.CancelAsync(id);
+        var dto = await service.CancelAsync(id, cancellationToken);
         return Ok(dto);
     }
 
@@ -74,17 +74,17 @@ public sealed class InstructorLectureController(ILectureService service, ILectur
 
     [HttpGet("{id:int}/attendance")]
     [ProducesResponseType(typeof(PagedResult<AttendanceDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<PagedResult<AttendanceDto>>> GetAttendance(int id, [FromQuery] AttendanceSearchObject search)
+    public async Task<ActionResult<PagedResult<AttendanceDto>>> GetAttendance(int id, [FromQuery] AttendanceSearchObject search, CancellationToken cancellationToken)
     {
-        var result = await attendanceService.GetAttendanceAsync(id, search);
+        var result = await attendanceService.GetAttendanceAsync(id, search, cancellationToken);
         return Ok(result);
     }
 
     [HttpPut("{id:int}/attendance")]
     [ProducesResponseType(typeof(AttendanceDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<AttendanceDto>> MarkAttendance(int id, [FromBody] MarkAttendanceRequest request)
+    public async Task<ActionResult<AttendanceDto>> MarkAttendance(int id, [FromBody] MarkAttendanceRequest request, CancellationToken cancellationToken)
     {
-        var dto = await attendanceService.MarkAttendanceAsync(id, request);
+        var dto = await attendanceService.MarkAttendanceAsync(id, request, cancellationToken);
         return Ok(dto);
     }
 }

@@ -13,9 +13,9 @@ public sealed class UsersController(
     [HttpGet("me")]
     [ProducesResponseType(typeof(UserProfileResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<UserProfileResponse>> GetCurrentUser()
+    public async Task<ActionResult<UserProfileResponse>> GetCurrentUser(CancellationToken cancellationToken)
     {
-        var profile = await profileService.GetCurrentUserAsync();
+        var profile = await profileService.GetCurrentUserAsync(cancellationToken);
 
         if (profile is null)
         {

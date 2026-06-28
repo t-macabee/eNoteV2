@@ -6,7 +6,7 @@ using System.Security.Claims;
 
 namespace eNote.API.Services;
 
-public class CurrentUserService(IHttpContextAccessor httpContextAccessor) : ICurrentUserService
+public sealed class CurrentUserService(IHttpContextAccessor httpContextAccessor) : ICurrentUserService
 {
     public int UserId
     {

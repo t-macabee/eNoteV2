@@ -9,6 +9,6 @@ namespace eNote.API.Controllers.Admin;
 [Authorize(Roles = AppRoles.Administrator)]
 [Route("api/admin/addresses")]
 public sealed class AdminAddressController(IAddressService service)
-    : ReferenceCrudController<AddressReferenceDto, AddressRequest, AddressSearchObject>(service)
+    : ReferenceCrudController<AddressReferenceDto, AddressRequest, AddressSearchObject>(service, dto => dto.Id)
 {
 }

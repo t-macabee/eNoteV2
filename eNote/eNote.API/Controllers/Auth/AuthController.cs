@@ -1,39 +1,39 @@
 ﻿using eNote.API.Extensions;
-using eNote.Application.Common.Exceptions;
-using eNote.Application.Common.Localization;
+using eNote.API.Controllers.Base;
 using eNote.Application.Features.Identity.Auth;
 using eNote.Application.Features.Identity.Auth.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
 
 namespace eNote.API.Controllers.Auth;
 
 [ApiController]
 [Route("api/auth")]
 [EnableRateLimiting(RateLimitingExtensions.AuthPolicy)]
-public class AuthController(IAuthService authService) : ControllerBase
+public sealed class AuthController(IAuthService authService) : CoreController
 {
+    [AllowAnonymous]
     [HttpPost("login")]
     [ProducesResponseType(typeof(AuthResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
-    public async Task<ActionResult<AuthResponse>> Login([FromBody] LoginRequest model)
+    public async Task<ActionResult<AuthResponse>> Login([FromBody] LoginRequest model, CancellationToken cancellationToken)
     {
-        AuthResponse response = await authService.LoginAsync(model);
+        AuthResponse response = await authService.LoginAsync(model, cancellationToken);
         return Ok(response);
     }
 
+    [AllowAnonymous]
     [HttpPost("register")]
     [ProducesResponseType(typeof(AuthResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<AuthResponse>> Register([FromBody] RegisterRequest model)
+    public async Task<ActionResult<AuthResponse>> Register([FromBody] RegisterRequest model, CancellationToken cancellationToken)
     {
-        AuthResponse response = await authService.RegisterAsync(model);
+        AuthResponse response = await authService.RegisterAsync(model, cancellationToken);
         return Ok(response);
     }
 
+    [AllowAnonymous]
     [HttpPost("forgot-password")]
     [ProducesResponseType(typeof(ForgotPasswordResponse), StatusCodes.Status200OK)]
     public async Task<ActionResult<ForgotPasswordResponse>> ForgotPassword([FromBody] ForgotPasswordRequest request)
@@ -42,6 +42,7 @@ public class AuthController(IAuthService authService) : ControllerBase
         return Ok(response);
     }
 
+    [AllowAnonymous]
     [HttpPost("reset-password")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -58,22 +59,5 @@ public class AuthController(IAuthService authService) : ControllerBase
     {
         await authService.LogoutAsync(CurrentTokenJti, CurrentTokenExpiresAtUtc, HttpContext.RequestAborted);
         return NoContent();
-    }
-
-    private string CurrentTokenJti => User.FindFirstValue(JwtRegisteredClaimNames.Jti) ?? throw new AuthenticationException(Messages.InvalidUserClaim);
-
-    private DateTime CurrentTokenExpiresAtUtc
-    {
-        get
-        {
-            var exp = User.FindFirstValue(JwtRegisteredClaimNames.Exp);
-
-            if (exp is null || !long.TryParse(exp, out var unixSeconds))
-            {
-                throw new AuthenticationException(Messages.InvalidUserClaim);
-            }
-
-            return DateTimeOffset.FromUnixTimeSeconds(unixSeconds).UtcDateTime;
-        }
     }
 }

@@ -37,11 +37,6 @@ public static class ApplicationServiceExtensions
             .AsImplementedInterfaces()
             .WithScopedLifetime());
 
-        services.AddScoped<ICourseAnnouncementService, AnnouncementService>();
-        services.AddScoped<IStoreAnnouncementService, AnnouncementService>();
-        services.AddScoped<IStudentAnnouncementService, AnnouncementService>();
-        services.AddScoped<IAdminInstructorService, AdminInstructorService>();
-
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddScoped<ICurrentActor, CurrentActor>();
         services.AddScoped<IUserProfileLookup, UserProfileLookup>();

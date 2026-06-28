@@ -1,24 +1,25 @@
 using eNote.Domain.Entities;
 using eNote.Domain.Enums;
+using eNote.Application.Common.Time;
 using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Infrastructure.Data.Seed;
 
 public static class DevelopmentDataSeed
 {
-    public static async Task SeedAsync(ENoteContext context)
+    public static async Task SeedAsync(ENoteContext context, IClock clock)
     {
         await CourseSeed.SeedCourses(context);
         await LectureSeed.SeedLectures(context);
         await InstrumentSeed.SeedInstruments(context);
         await EnrollmentSeed.SeedEnrollments(context);
-        await StudentMembershipSeed.SeedMemberships(context);
+        await StudentMembershipSeed.SeedMemberships(context, clock);
     }
 }
 
 internal static class StudentMembershipSeed
 {
-    public static async Task SeedMemberships(ENoteContext context)
+    public static async Task SeedMemberships(ENoteContext context, IClock clock)
     {
         var students = await context.Set<Student>()
             .Where(s => s.MembershipPaidUntil == null)
@@ -29,7 +30,7 @@ internal static class StudentMembershipSeed
             return;
         }
 
-        var paidUntil = DateTime.UtcNow.AddYears(1);
+        var paidUntil = clock.UtcNow.AddYears(1);
 
         foreach (Student student in students)
         {

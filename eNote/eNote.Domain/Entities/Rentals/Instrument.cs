@@ -1,4 +1,4 @@
-using eNote.Domain.Entities;
+using eNote.Domain.Entities.Rentals;
 using eNote.Domain.Enums;
 
 namespace eNote.Domain.Entities;

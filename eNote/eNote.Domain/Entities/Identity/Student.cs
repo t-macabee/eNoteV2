@@ -1,8 +1,8 @@
-using eNote.Domain.Entities;
+using eNote.Domain.Entities.Rentals;
 
 namespace eNote.Domain.Entities;
 
-public class Student : AuditableEntity
+public sealed class Student : AuditableEntity
 {
     public int AppUserId { get; private set; }
     public DateTime EnrollmentDate { get; private set; }

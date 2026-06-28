@@ -9,6 +9,7 @@ using eNote.Application.Features.Academic.Assignments;
 using eNote.Application.Features.Identity.Instructors;
 using eNote.Application.Features.Identity.Users.Services;
 using eNote.Application.Features.Academic.Courses;
+using MapsterMapper;
 using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Application.Features.Academic.Assignments.Services;
@@ -19,17 +20,18 @@ public sealed class AssignmentSubmissionService(
     ICurrentActor actor,
     IStudentDisplayNameService displayNames,
     IInstructorAccessService instructorAccess,
-    IFileStorageService fileStorage) : IAssignmentSubmissionService
+    IFileStorageService fileStorage,
+    IMapper mapper) : IAssignmentSubmissionService
 {
     public async Task<AssignmentSubmissionDto> SubmitWithFileAsync(int assignmentId, Stream stream, string fileName, string contentType, CancellationToken ct = default)
     {
         var path = await fileStorage.SaveAssignmentAsync(stream, fileName, contentType, ct);
-        return await SubmitAsync(assignmentId, new AssignmentSubmitRequest { FilePath = path });
+        return await SubmitAsync(assignmentId, new AssignmentSubmitRequest { FilePath = path }, ct);
     }
 
-    public async Task<PagedResult<AssignmentSubmissionDto>> GetSubmissionsAsync(int lectureId, int assignmentId, SubmissionSearchObject search)
+    public async Task<PagedResult<AssignmentSubmissionDto>> GetSubmissionsAsync(int lectureId, int assignmentId, SubmissionSearchObject search, CancellationToken cancellationToken = default)
     {
-        await GetOwnedAssignmentAsync(lectureId, assignmentId);
+        await GetOwnedAssignmentAsync(lectureId, assignmentId, cancellationToken);
 
         var query = context.Set<AssignmentSubmission>()
             .AsNoTracking()
@@ -39,35 +41,36 @@ public sealed class AssignmentSubmissionService(
         return await query.ToPagedResultAsync(
             search,
             items => displayNames.GetStudentDisplayNamesAsync(items.Select(x => x.Student)),
-            (x, names) => MapSubmission(x, x.Student, names.GetValueOrDefault(x.StudentId, $"Student {x.StudentId}")),
-            q => q.OrderBy(x => x.StudentId));
+            (x, names) => MapSubmission(x, names.GetValueOrDefault(x.StudentId, $"Student {x.StudentId}")),
+            q => q.OrderBy(x => x.StudentId),
+            cancellationToken);
     }
 
-    public async Task<AssignmentSubmissionDto> GradeAsync(int lectureId, int assignmentId, int submissionId, GradeAssignmentRequest request)
+    public async Task<AssignmentSubmissionDto> GradeAsync(int lectureId, int assignmentId, int submissionId, GradeAssignmentRequest request, CancellationToken cancellationToken = default)
     {
-        await GetOwnedAssignmentAsync(lectureId, assignmentId);
+        await GetOwnedAssignmentAsync(lectureId, assignmentId, cancellationToken);
 
         var submission = await context.Set<AssignmentSubmission>()
             .Include(x => x.Student)
-            .FirstOrDefaultAsync(x => x.Id == submissionId && x.AssignmentId == assignmentId)
+            .FirstOrDefaultAsync(x => x.Id == submissionId && x.AssignmentId == assignmentId, cancellationToken)
             ?? throw new NotFoundException(Messages.AssignmentSubmissionNotFound);
 
         submission.SetGrade(request.Grade);
         submission.UpdatedById = actor.UserId;
 
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(cancellationToken);
 
-        return MapSubmission(submission, submission.Student, await displayNames.GetStudentDisplayNameAsync(submission.Student));
+        return MapSubmission(submission, await displayNames.GetStudentDisplayNameAsync(submission.Student));
     }
 
-    private async Task<AssignmentSubmissionDto> SubmitAsync(int assignmentId, AssignmentSubmitRequest request)
+    private async Task<AssignmentSubmissionDto> SubmitAsync(int assignmentId, AssignmentSubmitRequest request, CancellationToken cancellationToken)
     {
         var student = await actor.GetCurrentStudentAsync();
 
         var assignment = await context.Set<Assignment>()
             .ForEnrolledStudentById(student.Id, assignmentId)
             .Include(x => x.AssignmentSubmissions)
-            .FirstOrDefaultAsync()
+            .FirstOrDefaultAsync(cancellationToken)
             ?? throw new NotFoundException(Messages.AssignmentNotFound);
 
         var existing = assignment.AssignmentSubmissions.FirstOrDefault(x => x.StudentId == student.Id);
@@ -94,24 +97,21 @@ public sealed class AssignmentSubmissionService(
         existing.Submit(request.FilePath?.Trim(), clock.UtcNow);
         existing.UpdatedById = actor.UserId;
 
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(cancellationToken);
 
-        return MapSubmission(existing, student, await displayNames.GetStudentDisplayNameAsync(student));
+        return MapSubmission(existing, await displayNames.GetStudentDisplayNameAsync(student));
     }
 
-    private async Task<Assignment> GetOwnedAssignmentAsync(int lectureId, int assignmentId)
+    private async Task<Assignment> GetOwnedAssignmentAsync(int lectureId, int assignmentId, CancellationToken cancellationToken = default)
     {
         var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(actor.UserId);
-        return await instructorAccess.GetOwnedAssignmentAsync(lectureId, assignmentId, instructorId);
+        return await instructorAccess.GetOwnedAssignmentAsync(lectureId, assignmentId, instructorId, cancellationToken: cancellationToken);
     }
-    private static AssignmentSubmissionDto MapSubmission(AssignmentSubmission submission, Student student, string studentName) => new()
+
+    private AssignmentSubmissionDto MapSubmission(AssignmentSubmission submission, string studentName)
     {
-        Id = submission.Id,
-        AssignmentId = submission.AssignmentId,
-        StudentId = submission.StudentId,
-        StudentName = studentName,
-        SubmittedAt = submission.SubmittedAt,
-        FilePath = submission.FilePath,
-        Grade = submission.Grade
-    };
+        var dto = mapper.Map<AssignmentSubmissionDto>(submission);
+        dto.StudentName = studentName;
+        return dto;
+    }
 }

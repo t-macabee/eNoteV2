@@ -4,6 +4,6 @@ namespace eNote.Application.Features.Identity.Users.Services;
 
 public interface IUserProfileService
 {
-    Task<UserProfileResponse?> GetCurrentUserAsync();
-    Task<UserProfileResponse?> GetUserAsync(int userId);
+    Task<UserProfileResponse?> GetCurrentUserAsync(CancellationToken cancellationToken = default);
+    Task<UserProfileResponse?> GetUserAsync(int userId, CancellationToken cancellationToken = default);
 }

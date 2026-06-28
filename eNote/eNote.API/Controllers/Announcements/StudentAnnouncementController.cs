@@ -14,9 +14,9 @@ public sealed class StudentAnnouncementController(IStudentAnnouncementService an
 {
     [HttpGet]
     [ProducesResponseType(typeof(PagedResult<AnnouncementDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<PagedResult<AnnouncementDto>>> GetFeed([FromQuery] AnnouncementSearchObject search)
+    public async Task<ActionResult<PagedResult<AnnouncementDto>>> GetFeed([FromQuery] AnnouncementSearchObject search, CancellationToken cancellationToken)
     {
-        var result = await announcementService.GetFeedForStudentAsync(search);
+        var result = await announcementService.GetFeedForStudentAsync(search, cancellationToken);
         return Ok(result);
     }
 }

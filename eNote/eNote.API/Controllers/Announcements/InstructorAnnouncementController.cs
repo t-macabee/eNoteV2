@@ -15,25 +15,25 @@ public sealed class InstructorAnnouncementController(ICourseAnnouncementService 
 {
     [HttpGet]
     [ProducesResponseType(typeof(PagedResult<AnnouncementDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<PagedResult<AnnouncementDto>>> GetForCourse(int courseId, [FromQuery] AnnouncementSearchObject search)
+    public async Task<ActionResult<PagedResult<AnnouncementDto>>> GetForCourse(int courseId, [FromQuery] AnnouncementSearchObject search, CancellationToken cancellationToken)
     {
-        var result = await announcementService.GetForCourseAsync(courseId, search);
+        var result = await announcementService.GetForCourseAsync(courseId, search, cancellationToken);
         return Ok(result);
     }
 
     [HttpGet("{announcementId:int}")]
     [ProducesResponseType(typeof(AnnouncementDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<AnnouncementDto>> GetById(int courseId, int announcementId)
+    public async Task<ActionResult<AnnouncementDto>> GetById(int courseId, int announcementId, CancellationToken cancellationToken)
     {
-        var result = await announcementService.GetByIdForCourseAsync(courseId, announcementId);
+        var result = await announcementService.GetByIdForCourseAsync(courseId, announcementId, cancellationToken);
         return Ok(result);
     }
 
     [HttpPost]
     [ProducesResponseType(typeof(AnnouncementDto), StatusCodes.Status201Created)]
-    public async Task<ActionResult<AnnouncementDto>> Create(int courseId, [FromBody] AnnouncementRequest request)
+    public async Task<ActionResult<AnnouncementDto>> Create(int courseId, [FromBody] AnnouncementRequest request, CancellationToken cancellationToken)
     {
-        var result = await announcementService.CreateForCourseAsync(courseId, request);
+        var result = await announcementService.CreateForCourseAsync(courseId, request, cancellationToken);
         return CreatedAtAction(nameof(GetById), new
         {
             courseId,
@@ -43,17 +43,17 @@ public sealed class InstructorAnnouncementController(ICourseAnnouncementService 
 
     [HttpPut("{announcementId:int}")]
     [ProducesResponseType(typeof(AnnouncementDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<AnnouncementDto>> Update(int courseId, int announcementId, [FromBody] AnnouncementRequest request)
+    public async Task<ActionResult<AnnouncementDto>> Update(int courseId, int announcementId, [FromBody] AnnouncementRequest request, CancellationToken cancellationToken)
     {
-        var result = await announcementService.UpdateForCourseAsync(courseId, announcementId, request);
+        var result = await announcementService.UpdateForCourseAsync(courseId, announcementId, request, cancellationToken);
         return Ok(result);
     }
 
     [HttpDelete("{announcementId:int}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public async Task<IActionResult> Delete(int courseId, int announcementId)
+    public async Task<IActionResult> Delete(int courseId, int announcementId, CancellationToken cancellationToken)
     {
-        await announcementService.DeleteForCourseAsync(courseId, announcementId);
+        await announcementService.DeleteForCourseAsync(courseId, announcementId, cancellationToken);
         return NoContent();
     }
 

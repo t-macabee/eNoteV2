@@ -16,14 +16,15 @@ public sealed class UserProvisioningService(
     IUserProfileService profileService,
     IClock clock) : IUserProvisioningService
 {
-    public async Task<(UserProfileResponse? Profile, string? Error)> RegisterStudentAsync(RegisterRequest request)
+    public async Task<(UserProfileResponse? Profile, string? Error)> RegisterStudentAsync(RegisterRequest request, CancellationToken cancellationToken = default)
     {
         (int? UserId, string? Error) createResult = await accountService.CreateUserAsync(
             request.Username,
             request.Email,
             request.Password,
             request.FirstName,
-            request.LastName);
+            request.LastName,
+            cancellationToken);
 
         if (createResult.UserId is null)
         {
@@ -32,25 +33,25 @@ public sealed class UserProvisioningService(
 
         var userId = createResult.UserId.Value;
 
-        (var Success, var Error) = await accountService.AssignSingleRoleAsync(userId, AppRoles.Student);
+        (var Success, var Error) = await accountService.AssignSingleRoleAsync(userId, AppRoles.Student, cancellationToken);
 
         if (!Success)
         {
             return (null, Error);
         }
 
-        await EnsureRoleProfileAsync(userId, AppRoles.Student, musicStoreId: null);
-        await context.SaveChangesAsync();
+        await EnsureRoleProfileAsync(userId, AppRoles.Student, null, cancellationToken);
+        await context.SaveChangesAsync(cancellationToken);
 
-        var profile = await profileService.GetUserAsync(userId);
+        var profile = await profileService.GetUserAsync(userId, cancellationToken);
 
         return (profile, null);
     }
 
-    public async Task<(int UserId, string? Error)> ProvisionUserAsync(UserProvisionRequest request)
+    public async Task<(int UserId, string? Error)> ProvisionUserAsync(UserProvisionRequest request, CancellationToken cancellationToken = default)
     {
         var username = request.Username.Trim();
-        var existingUserId = await accountService.FindUserIdByUsernameAsync(username);
+        var existingUserId = await accountService.FindUserIdByUsernameAsync(username, cancellationToken);
 
         int userId;
 
@@ -62,7 +63,8 @@ public sealed class UserProvisioningService(
                 userId,
                 request.Email,
                 request.FirstName,
-                request.LastName);
+                request.LastName,
+                cancellationToken: cancellationToken);
 
             if (!updateResult.Success)
             {
@@ -76,7 +78,8 @@ public sealed class UserProvisioningService(
                 request.Email,
                 request.Password,
                 request.FirstName,
-                request.LastName);
+                request.LastName,
+                cancellationToken);
 
             if (createResult.UserId is null)
             {
@@ -86,34 +89,34 @@ public sealed class UserProvisioningService(
             userId = createResult.UserId.Value;
         }
 
-        (var Success, var Error) = await accountService.AssignSingleRoleAsync(userId, request.Role);
+        (var Success, var Error) = await accountService.AssignSingleRoleAsync(userId, request.Role, cancellationToken);
 
         if (!Success)
         {
             return (userId, Error);
         }
 
-        var storeId = request.MusicStoreId ?? await ResolveDefaultStoreIdAsync(request.Role);
+        var storeId = request.MusicStoreId ?? await ResolveDefaultStoreIdAsync(request.Role, cancellationToken);
 
-        await EnsureRoleProfileAsync(userId, request.Role, storeId);
+        await EnsureRoleProfileAsync(userId, request.Role, storeId, cancellationToken);
 
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(cancellationToken);
 
         return (userId, null);
     }
 
-    public async Task UpdateMembershipAsync(int userId, UpdateMembershipRequest request)
+    public async Task UpdateMembershipAsync(int userId, UpdateMembershipRequest request, CancellationToken cancellationToken = default)
     {
         var student = await context.Set<Student>()
-            .FirstOrDefaultAsync(s => s.AppUserId == userId)
+            .FirstOrDefaultAsync(s => s.AppUserId == userId, cancellationToken)
             ?? throw new NotFoundException(Messages.StudentProfileNotFound);
 
         student.UpdateMembership(request.PaidUntil);
 
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(cancellationToken);
     }
 
-    private async Task<int?> ResolveDefaultStoreIdAsync(string role)
+    private async Task<int?> ResolveDefaultStoreIdAsync(string role, CancellationToken cancellationToken)
     {
         if (role != AppRoles.StoreEmployee)
         {
@@ -121,15 +124,15 @@ public sealed class UserProvisioningService(
         }
 
         return await context.Set<MusicStore>()
-            .Select(x => (int?)x.Id).FirstOrDefaultAsync();
+            .Select(x => (int?)x.Id).FirstOrDefaultAsync(cancellationToken);
     }
 
-    private async Task EnsureRoleProfileAsync(int userId, string role, int? musicStoreId)
+    private async Task EnsureRoleProfileAsync(int userId, string role, int? musicStoreId, CancellationToken cancellationToken)
     {
         switch (role)
         {
             case AppRoles.Student:
-                if (!await context.Set<Student>().AnyAsync(x => x.AppUserId == userId))
+                if (!await context.Set<Student>().AnyAsync(x => x.AppUserId == userId, cancellationToken))
                 {
                     context.Set<Student>().Add(new Student(userId, clock.UtcNow));
                 }
@@ -137,7 +140,7 @@ public sealed class UserProvisioningService(
                 break;
 
             case AppRoles.Instructor:
-                if (!await context.Set<Instructor>().AnyAsync(x => x.AppUserId == userId))
+                if (!await context.Set<Instructor>().AnyAsync(x => x.AppUserId == userId, cancellationToken))
                 {
                     context.Set<Instructor>().Add(new Instructor(userId));
                 }
@@ -148,7 +151,7 @@ public sealed class UserProvisioningService(
                 {
                     var employees = await context.Set<MusicStoreEmployee>()
                         .Where(x => x.AppUserId == userId)
-                        .ToListAsync();
+                        .ToListAsync(cancellationToken);
 
                     if (employees.Count == 0)
                     {

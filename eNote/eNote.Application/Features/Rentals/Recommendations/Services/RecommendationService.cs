@@ -9,6 +9,7 @@ using eNote.Application.Features.Rentals.Recommendations;
 using eNote.Domain.Enums;
 using MapsterMapper;
 using Microsoft.EntityFrameworkCore;
+using eNote.Domain.Entities.Rentals;
 
 namespace eNote.Application.Features.Rentals.Recommendations.Services;
 
@@ -18,6 +19,9 @@ public sealed class RecommendationService(IAppDbContext context, IMapper mapper,
     private const double ViewWeight = 0.30;
     private const double SimilarityWeight = 0.20;
     private const double PopularityWeight = 0.10;
+    private const double OwnRentalHistoryWeight = 0.60;
+    private const double CollaborativeRentalWeight = 0.40;
+    private const double TypeViewFallbackScore = 0.35;
     private const int CandidatePoolSize = 80;
 
     public async Task<IReadOnlyList<InstrumentRecommendationDto>> GetRecommendedInstrumentsAsync(int count = 5, CancellationToken cancellationToken = default)
@@ -232,7 +236,7 @@ public sealed class RecommendationService(IAppDbContext context, IMapper mapper,
 
         if (ownHistoryScore > 0 && collaborativeScore > 0)
         {
-            return ownHistoryScore * 0.6 + collaborativeScore * 0.4;
+            return ownHistoryScore * OwnRentalHistoryWeight + collaborativeScore * CollaborativeRentalWeight;
         }
 
         return Math.Max(ownHistoryScore, collaborativeScore);
@@ -247,7 +251,7 @@ public sealed class RecommendationService(IAppDbContext context, IMapper mapper,
 
         if (userTypeCounts.ContainsKey(instrument.InstrumentTypeId))
         {
-            return 0.35;
+            return TypeViewFallbackScore;
         }
 
         return 0;

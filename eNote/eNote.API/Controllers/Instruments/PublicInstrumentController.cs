@@ -13,17 +13,17 @@ public sealed class PublicInstrumentController(IInstrumentService instrumentServ
 {
     [HttpGet]
     [ProducesResponseType(typeof(PagedResult<InstrumentDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<PagedResult<InstrumentDto>>> GetPaged([FromQuery] InstrumentSearchObject search)
+    public async Task<ActionResult<PagedResult<InstrumentDto>>> GetPaged([FromQuery] InstrumentSearchObject search, CancellationToken cancellationToken)
     {
-        var result = await instrumentService.GetPublicPagedAsync(search);
+        var result = await instrumentService.GetPublicPagedAsync(search, cancellationToken);
         return Ok(result);
     }
 
     [HttpGet("{id:int}")]
     [ProducesResponseType(typeof(InstrumentDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<InstrumentDto>> GetById(int id)
+    public async Task<ActionResult<InstrumentDto>> GetById(int id, CancellationToken cancellationToken)
     {
-        var result = await instrumentService.GetPublicByIdAsync(id);
+        var result = await instrumentService.GetPublicByIdAsync(id, cancellationToken);
         return Ok(result);
     }
 }

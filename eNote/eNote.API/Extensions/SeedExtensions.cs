@@ -1,5 +1,6 @@
 ﻿using eNote.Infrastructure.Data;
 using eNote.Infrastructure.Data.Seed;
+using eNote.Application.Common.Time;
 using Microsoft.EntityFrameworkCore;
 
 namespace eNote.API.Extensions;
@@ -25,7 +26,8 @@ public static class SeedExtensions
         await IdentitySeed.SeedAsync(services);
 
         var context = services.GetRequiredService<ENoteContext>();
-        await DevelopmentDataSeed.SeedAsync(context);
+        var clock = services.GetRequiredService<IClock>();
+        await DevelopmentDataSeed.SeedAsync(context, clock);
 
         return app;
     }

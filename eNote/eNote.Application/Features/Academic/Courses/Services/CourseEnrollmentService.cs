@@ -16,7 +16,7 @@ public sealed class CourseEnrollmentService(
     ICurrentActor actor,
     ILogger<CourseEnrollmentService> logger) : ICourseEnrollmentService
 {
-    public async Task EnrollAsync(int courseId)
+    public async Task EnrollAsync(int courseId, CancellationToken cancellationToken = default)
     {
         var student = await actor.GetCurrentStudentAsync();
 
@@ -27,11 +27,11 @@ public sealed class CourseEnrollmentService(
 
         _ = await context.Set<Course>()
             .AsNoTracking()
-            .FirstOrDefaultAsync(c => c.Id == courseId && c.IsPublished)
+            .FirstOrDefaultAsync(c => c.Id == courseId && c.IsPublished, cancellationToken)
             ?? throw new NotFoundException(Messages.CourseNotFound);
 
         var enrollment = await context.Set<Enrollment>()
-            .FirstOrDefaultAsync(e => e.StudentId == student.Id && e.CourseId == courseId);
+            .FirstOrDefaultAsync(e => e.StudentId == student.Id && e.CourseId == courseId, cancellationToken);
 
         if (enrollment?.EnrollmentStatus == EnrollmentStatus.Active)
         {
@@ -51,12 +51,12 @@ public sealed class CourseEnrollmentService(
             });
         }
 
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(cancellationToken);
 
         logger.LogInformation("Student {StudentUserId} enrolled in course {CourseId}", actor.UserId, courseId);
     }
 
-    public async Task UnenrollAsync(int courseId)
+    public async Task UnenrollAsync(int courseId, CancellationToken cancellationToken = default)
     {
         var studentId = await actor.GetCurrentStudentIdAsync();
 
@@ -64,11 +64,12 @@ public sealed class CourseEnrollmentService(
             .FirstOrDefaultAsync(e =>
                 e.CourseId == courseId &&
                 e.StudentId == studentId &&
-                e.EnrollmentStatus == EnrollmentStatus.Active)
+                e.EnrollmentStatus == EnrollmentStatus.Active,
+                cancellationToken)
             ?? throw new BusinessException(Messages.StudentNotEnrolled);
 
         enrollment.UpdateStatus(EnrollmentStatus.Canceled);
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(cancellationToken);
 
         logger.LogInformation("Student {StudentUserId} unenrolled from course {CourseId}", actor.UserId, courseId);
     }

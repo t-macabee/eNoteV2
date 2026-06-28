@@ -1,6 +1,6 @@
 # Bounded Context: Auth
 
-**Generated**: 2026-06-28T06:51:06.819483+00:00  
+**Generated**: 2026-06-28T09:04:45.773351+00:00  
 **Commit**: latest  
 **Total Files**: 13
 
@@ -25,46 +25,46 @@ This file contains the complete source for the **Auth** bounded context.
 ---
 
 ## File: `eNote\eNote.API\Controllers\Auth\AuthController.cs`
-**Hash**: `0906d7e8694b` | **Size**: 3007 chars
+**Hash**: `b5bd18a68be6` | **Size**: 2510 chars
 
 **Classes**: AuthController
 ```cs
 ﻿using eNote.API.Extensions;
-using eNote.Application.Common.Exceptions;
-using eNote.Application.Common.Localization;
+using eNote.API.Controllers.Base;
 using eNote.Application.Features.Identity.Auth;
 using eNote.Application.Features.Identity.Auth.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
 
 namespace eNote.API.Controllers.Auth;
 
 [ApiController]
 [Route("api/auth")]
 [EnableRateLimiting(RateLimitingExtensions.AuthPolicy)]
-public class AuthController(IAuthService authService) : ControllerBase
+public sealed class AuthController(IAuthService authService) : CoreController
 {
+    [AllowAnonymous]
     [HttpPost("login")]
     [ProducesResponseType(typeof(AuthResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
-    public async Task<ActionResult<AuthResponse>> Login([FromBody] LoginRequest model)
+    public async Task<ActionResult<AuthResponse>> Login([FromBody] LoginRequest model, CancellationToken cancellationToken)
     {
-        AuthResponse response = await authService.LoginAsync(model);
+        AuthResponse response = await authService.LoginAsync(model, cancellationToken);
         return Ok(response);
     }
 
+    [AllowAnonymous]
     [HttpPost("register")]
     [ProducesResponseType(typeof(AuthResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<AuthResponse>> Register([FromBody] RegisterRequest model)
+    public async Task<ActionResult<AuthResponse>> Register([FromBody] RegisterRequest model, CancellationToken cancellationToken)
     {
-        AuthResponse response = await authService.RegisterAsync(model);
+        AuthResponse response = await authService.RegisterAsync(model, cancellationToken);
         return Ok(response);
     }
 
+    [AllowAnonymous]
     [HttpPost("forgot-password")]
     [ProducesResponseType(typeof(ForgotPasswordResponse), StatusCodes.Status200OK)]
     public async Task<ActionResult<ForgotPasswordResponse>> ForgotPassword([FromBody] ForgotPasswordRequest request)
@@ -73,6 +73,7 @@ public class AuthController(IAuthService authService) : ControllerBase
         return Ok(response);
     }
 
+    [AllowAnonymous]
     [HttpPost("reset-password")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -89,23 +90,6 @@ public class AuthController(IAuthService authService) : ControllerBase
     {
         await authService.LogoutAsync(CurrentTokenJti, CurrentTokenExpiresAtUtc, HttpContext.RequestAborted);
         return NoContent();
-    }
-
-    private string CurrentTokenJti => User.FindFirstValue(JwtRegisteredClaimNames.Jti) ?? throw new AuthenticationException(Messages.InvalidUserClaim);
-
-    private DateTime CurrentTokenExpiresAtUtc
-    {
-        get
-        {
-            var exp = User.FindFirstValue(JwtRegisteredClaimNames.Exp);
-
-            if (exp is null || !long.TryParse(exp, out var unixSeconds))
-            {
-                throw new AuthenticationException(Messages.InvalidUserClaim);
-            }
-
-            return DateTimeOffset.FromUnixTimeSeconds(unixSeconds).UtcDateTime;
-        }
     }
 }
 
@@ -283,7 +267,7 @@ public sealed class ResetPasswordRequest
 ---
 
 ## File: `eNote\eNote.Application\Features\Identity\Auth\Services\IAuthService.cs`
-**Hash**: `c53a1f376928` | **Size**: 603 chars
+**Hash**: `5ba4535f3d96` | **Size**: 697 chars
 
 **Classes**: 
 **Interfaces**: IAuthService
@@ -294,8 +278,8 @@ namespace eNote.Application.Features.Identity.Auth.Services;
 
 public interface IAuthService
 {
-    Task<AuthResponse> LoginAsync(LoginRequest model);
-    Task<AuthResponse> RegisterAsync(RegisterRequest model);
+    Task<AuthResponse> LoginAsync(LoginRequest model, CancellationToken cancellationToken = default);
+    Task<AuthResponse> RegisterAsync(RegisterRequest model, CancellationToken cancellationToken = default);
     Task LogoutAsync(string jti, DateTime expiresAtUtc, CancellationToken cancellationToken = default);
     Task<ForgotPasswordResponse> ForgotPasswordAsync(ForgotPasswordRequest request, CancellationToken cancellationToken = default);
     Task ResetPasswordAsync(ResetPasswordRequest request, CancellationToken cancellationToken = default);
@@ -341,7 +325,7 @@ public interface ITokenService
 ---
 
 ## File: `eNote\eNote.Infrastructure\Identity\AuthService.cs`
-**Hash**: `5d8b93304716` | **Size**: 4741 chars
+**Hash**: `777411f9afe5` | **Size**: 4854 chars
 
 **Classes**: AuthService
 ```cs
@@ -360,7 +344,7 @@ namespace eNote.Infrastructure.Identity;
 
 public sealed class AuthService(UserManager<AppUser> userManager, SignInManager<AppUser> signInManager, ITokenService tokenService, IUserProvisioningService userProvisioning, ITokenRevocationService tokenRevocationService, IEmailService emailService, IWebHostEnvironment environment, ILogger<AuthService> logger) : IAuthService
 {
-    public async Task<AuthResponse> LoginAsync(LoginRequest model)
+    public async Task<AuthResponse> LoginAsync(LoginRequest model, CancellationToken cancellationToken = default)
     {
         var username = model.Username.Trim();
         AppUser? user = await userManager.FindByNameAsync(username);
@@ -400,9 +384,9 @@ public sealed class AuthService(UserManager<AppUser> userManager, SignInManager<
         };
     }
 
-    public async Task<AuthResponse> RegisterAsync(RegisterRequest model)
+    public async Task<AuthResponse> RegisterAsync(RegisterRequest model, CancellationToken cancellationToken = default)
     {
-        (_, var error) = await userProvisioning.RegisterStudentAsync(model);
+        (_, var error) = await userProvisioning.RegisterStudentAsync(model, cancellationToken);
 
         if (error is not null)
         {

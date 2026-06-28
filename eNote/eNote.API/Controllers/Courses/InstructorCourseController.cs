@@ -14,25 +14,25 @@ public sealed class InstructorCourseController(ICourseService service) : CoreCon
 {
     [HttpGet]
     [ProducesResponseType(typeof(PagedResult<CourseDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<PagedResult<CourseDto>>> GetMyCourses([FromQuery] CourseSearchObject search)
+    public async Task<ActionResult<PagedResult<CourseDto>>> GetMyCourses([FromQuery] CourseSearchObject search, CancellationToken cancellationToken)
     {
-        var result = await service.GetPagedForInstructorAsync(search);
+        var result = await service.GetPagedForInstructorAsync(search, cancellationToken);
         return Ok(result);
     }
 
     [HttpGet("{id:int}")]
     [ProducesResponseType(typeof(CourseDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<CourseDto>> GetById(int id)
+    public async Task<ActionResult<CourseDto>> GetById(int id, CancellationToken cancellationToken)
     {
-        var dto = await service.GetByIdForInstructorAsync(id);
+        var dto = await service.GetByIdForInstructorAsync(id, cancellationToken);
         return Ok(dto);
     }
 
     [HttpPost]
     [ProducesResponseType(typeof(CourseDto), StatusCodes.Status201Created)]
-    public async Task<ActionResult<CourseDto>> Create([FromBody] CourseRequest request)
+    public async Task<ActionResult<CourseDto>> Create([FromBody] CourseRequest request, CancellationToken cancellationToken)
     {
-        var dto = await service.CreateAsync(request);
+        var dto = await service.CreateAsync(request, cancellationToken);
         return CreatedAtAction(nameof(GetById), new
         {
             id = dto.Id
@@ -41,17 +41,17 @@ public sealed class InstructorCourseController(ICourseService service) : CoreCon
 
     [HttpPut("{id:int}")]
     [ProducesResponseType(typeof(CourseDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<CourseDto>> Update(int id, [FromBody] CourseRequest request)
+    public async Task<ActionResult<CourseDto>> Update(int id, [FromBody] CourseRequest request, CancellationToken cancellationToken)
     {
-        var dto = await service.UpdateAsync(id, request);
+        var dto = await service.UpdateAsync(id, request, cancellationToken);
         return Ok(dto);
     }
 
     [HttpDelete("{id:int}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public async Task<IActionResult> Delete(int id)
+    public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
     {
-        await service.DeleteAsync(id);
+        await service.DeleteAsync(id, cancellationToken);
         return NoContent();
     }
 }

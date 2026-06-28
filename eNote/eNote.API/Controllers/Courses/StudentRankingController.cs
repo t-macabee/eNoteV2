@@ -13,8 +13,8 @@ public sealed class StudentRankingController(IRankingService rankingService) : C
 {
     [HttpGet]
     [ProducesResponseType(typeof(IReadOnlyList<CourseRankingEntryDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<IReadOnlyList<CourseRankingEntryDto>>> GetRanking(int courseId)
+    public async Task<ActionResult<IReadOnlyList<CourseRankingEntryDto>>> GetRanking(int courseId, CancellationToken cancellationToken)
     {
-        return Ok(await rankingService.GetForStudentAsync(courseId));
+        return Ok(await rankingService.GetForStudentAsync(courseId, cancellationToken));
     }
 }

@@ -14,9 +14,9 @@ public sealed class AdminUsersController(IUserProfileService profileService, IUs
     [HttpGet("{id:int}")]
     [ProducesResponseType(typeof(UserProfileResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<UserProfileResponse>> GetById(int id)
+    public async Task<ActionResult<UserProfileResponse>> GetById(int id, CancellationToken cancellationToken)
     {
-        var profile = await profileService.GetUserAsync(id);
+        var profile = await profileService.GetUserAsync(id, cancellationToken);
 
         if (profile is null)
         {
@@ -29,9 +29,9 @@ public sealed class AdminUsersController(IUserProfileService profileService, IUs
     [HttpPost]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult> Provision([FromBody] UserProvisionRequest request)
+    public async Task<ActionResult> Provision([FromBody] UserProvisionRequest request, CancellationToken cancellationToken)
     {
-        (var userId, var error) = await provisioningService.ProvisionUserAsync(request);
+        (var userId, var error) = await provisioningService.ProvisionUserAsync(request, cancellationToken);
 
         if (error is not null)
         {
@@ -53,9 +53,9 @@ public sealed class AdminUsersController(IUserProfileService profileService, IUs
     [HttpPut("{id:int}/membership")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> UpdateMembership(int id, [FromBody] UpdateMembershipRequest request)
+    public async Task<IActionResult> UpdateMembership(int id, [FromBody] UpdateMembershipRequest request, CancellationToken cancellationToken)
     {
-        await provisioningService.UpdateMembershipAsync(id, request);
+        await provisioningService.UpdateMembershipAsync(id, request, cancellationToken);
         return NoContent();
     }
 }

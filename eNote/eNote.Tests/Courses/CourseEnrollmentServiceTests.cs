@@ -117,6 +117,6 @@ public sealed class CourseEnrollmentServiceTests
         public Task<int> GetCurrentStudentIdAsync() => Task.FromResult(student.Id);
         public Task<Instructor> GetCurrentInstructorAsync() => throw new NotSupportedException();
         public Task<MusicStoreEmployee> GetCurrentEmployeeAsync() => throw new NotSupportedException();
-        public Task<int> GetCurrentStoreIdAsync() => throw new NotSupportedException();
+        public Task<int> GetCurrentStoreIdAsync(CancellationToken cancellationToken = default) => throw new NotSupportedException();
     }
 }

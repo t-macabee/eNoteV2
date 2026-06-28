@@ -23,57 +23,57 @@ public sealed class StoreRentalController(IRentalQueryService queryService, IRen
 
     [HttpGet]
     [ProducesResponseType(typeof(PagedResult<InstrumentRentalDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<PagedResult<InstrumentRentalDto>>> GetPaged([FromQuery] InstrumentRentalSearchObject search)
+    public async Task<ActionResult<PagedResult<InstrumentRentalDto>>> GetPaged([FromQuery] InstrumentRentalSearchObject search, CancellationToken cancellationToken)
     {
-        var result = await queryService.GetPagedForStoreAsync(search);
+        var result = await queryService.GetPagedForStoreAsync(search, cancellationToken);
         return Ok(result);
     }
 
     [HttpGet("{id:int}")]
     [ProducesResponseType(typeof(InstrumentRentalDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<InstrumentRentalDto>> GetById(int id)
+    public async Task<ActionResult<InstrumentRentalDto>> GetById(int id, CancellationToken cancellationToken)
     {
-        var dto = await queryService.GetByIdForStoreAsync(id);
+        var dto = await queryService.GetByIdForStoreAsync(id, cancellationToken);
         return Ok(dto);
     }
 
     [HttpPost("{id:int}/approve")]
     [ProducesResponseType(typeof(InstrumentRentalDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<InstrumentRentalDto>> Approve(int id, [FromBody] RentalStatusResponse response)
+    public async Task<ActionResult<InstrumentRentalDto>> Approve(int id, [FromBody] RentalStatusResponse response, CancellationToken cancellationToken)
     {
-        var dto = await commandService.ApproveAsync(id, response);
+        var dto = await commandService.ApproveAsync(id, response, cancellationToken);
         return Ok(dto);
     }
 
     [HttpPost("{id:int}/reject")]
     [ProducesResponseType(typeof(InstrumentRentalDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<InstrumentRentalDto>> Reject(int id, [FromBody] RentalStatusResponse response)
+    public async Task<ActionResult<InstrumentRentalDto>> Reject(int id, [FromBody] RentalStatusResponse response, CancellationToken cancellationToken)
     {
-        var dto = await commandService.RejectAsync(id, response);
+        var dto = await commandService.RejectAsync(id, response, cancellationToken);
         return Ok(dto);
     }
 
     [HttpPost("{id:int}/pickup")]
     [ProducesResponseType(typeof(InstrumentRentalDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<InstrumentRentalDto>> Pickup(int id, [FromBody] RentalStatusResponse response)
+    public async Task<ActionResult<InstrumentRentalDto>> Pickup(int id, [FromBody] RentalStatusResponse response, CancellationToken cancellationToken)
     {
-        var dto = await commandService.PickupAsync(id, response);
+        var dto = await commandService.PickupAsync(id, response, cancellationToken);
         return Ok(dto);
     }
 
     [HttpPost("{id:int}/complete")]
     [ProducesResponseType(typeof(InstrumentRentalDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<InstrumentRentalDto>> Complete(int id, [FromBody] RentalStatusResponse response)
+    public async Task<ActionResult<InstrumentRentalDto>> Complete(int id, [FromBody] RentalStatusResponse response, CancellationToken cancellationToken)
     {
-        var dto = await commandService.CompleteAsync(id, response);
+        var dto = await commandService.CompleteAsync(id, response, cancellationToken);
         return Ok(dto);
     }
 
     [HttpPost("{id:int}/return-early")]
     [ProducesResponseType(typeof(InstrumentRentalDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<InstrumentRentalDto>> ReturnEarly(int id, [FromBody] RentalStatusResponse response)
+    public async Task<ActionResult<InstrumentRentalDto>> ReturnEarly(int id, [FromBody] RentalStatusResponse response, CancellationToken cancellationToken)
     {
-        var dto = await commandService.ReturnEarlyAsync(id, response);
+        var dto = await commandService.ReturnEarlyAsync(id, response, cancellationToken);
         return Ok(dto);
     }
 }

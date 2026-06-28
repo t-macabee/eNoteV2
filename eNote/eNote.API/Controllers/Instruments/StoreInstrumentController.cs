@@ -15,25 +15,25 @@ public sealed class StoreInstrumentController(IInstrumentService instrumentServi
 {
     [HttpGet]
     [ProducesResponseType(typeof(PagedResult<InstrumentDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<PagedResult<InstrumentDto>>> GetPaged([FromQuery] InstrumentSearchObject search)
+    public async Task<ActionResult<PagedResult<InstrumentDto>>> GetPaged([FromQuery] InstrumentSearchObject search, CancellationToken cancellationToken)
     {
-        var result = await instrumentService.GetPagedAsync(search);
+        var result = await instrumentService.GetPagedAsync(search, cancellationToken);
         return Ok(result);
     }
 
     [HttpGet("{id:int}")]
     [ProducesResponseType(typeof(InstrumentDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<InstrumentDto>> GetById(int id)
+    public async Task<ActionResult<InstrumentDto>> GetById(int id, CancellationToken cancellationToken)
     {
-        var result = await instrumentService.GetByIdAsync(id);
+        var result = await instrumentService.GetByIdAsync(id, cancellationToken);
         return Ok(result);
     }
 
     [HttpPost]
     [ProducesResponseType(typeof(InstrumentDto), StatusCodes.Status201Created)]
-    public async Task<ActionResult<InstrumentDto>> Create([FromBody] InstrumentCreateRequest request)
+    public async Task<ActionResult<InstrumentDto>> Create([FromBody] InstrumentCreateRequest request, CancellationToken cancellationToken)
     {
-        var result = await instrumentService.CreateAsync(request);
+        var result = await instrumentService.CreateAsync(request, cancellationToken);
         return CreatedAtAction(nameof(GetById), new
         {
             id = result.Id
@@ -42,9 +42,9 @@ public sealed class StoreInstrumentController(IInstrumentService instrumentServi
 
     [HttpPut("{id:int}")]
     [ProducesResponseType(typeof(InstrumentDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<InstrumentDto>> Update(int id, [FromBody] InstrumentUpdateRequest request)
+    public async Task<ActionResult<InstrumentDto>> Update(int id, [FromBody] InstrumentUpdateRequest request, CancellationToken cancellationToken)
     {
-        var result = await instrumentService.UpdateAsync(id, request);
+        var result = await instrumentService.UpdateAsync(id, request, cancellationToken);
         return Ok(result);
     }
 
@@ -65,9 +65,9 @@ public sealed class StoreInstrumentController(IInstrumentService instrumentServi
 
     [HttpDelete("{id:int}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public async Task<IActionResult> Delete(int id)
+    public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
     {
-        await instrumentService.DeleteAsync(id);
+        await instrumentService.DeleteAsync(id, cancellationToken);
         return NoContent();
     }
 }

@@ -1,6 +1,6 @@
 # Bounded Context: InstrumentRentals
 
-**Generated**: 2026-06-28T06:51:06.820155+00:00  
+**Generated**: 2026-06-28T09:04:45.775107+00:00  
 **Commit**: latest  
 **Total Files**: 23
 
@@ -25,7 +25,7 @@ This file contains the complete source for the **InstrumentRentals** bounded con
 ---
 
 ## File: `eNote\eNote.API\Controllers\InstrumentRentals\StoreRentalController.cs`
-**Hash**: `1081ff854049` | **Size**: 3302 chars
+**Hash**: `7bb057460437` | **Size**: 3694 chars
 
 **Classes**: StoreRentalController
 ```cs
@@ -54,57 +54,57 @@ public sealed class StoreRentalController(IRentalQueryService queryService, IRen
 
     [HttpGet]
     [ProducesResponseType(typeof(PagedResult<InstrumentRentalDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<PagedResult<InstrumentRentalDto>>> GetPaged([FromQuery] InstrumentRentalSearchObject search)
+    public async Task<ActionResult<PagedResult<InstrumentRentalDto>>> GetPaged([FromQuery] InstrumentRentalSearchObject search, CancellationToken cancellationToken)
     {
-        var result = await queryService.GetPagedForStoreAsync(search);
+        var result = await queryService.GetPagedForStoreAsync(search, cancellationToken);
         return Ok(result);
     }
 
     [HttpGet("{id:int}")]
     [ProducesResponseType(typeof(InstrumentRentalDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<InstrumentRentalDto>> GetById(int id)
+    public async Task<ActionResult<InstrumentRentalDto>> GetById(int id, CancellationToken cancellationToken)
     {
-        var dto = await queryService.GetByIdForStoreAsync(id);
+        var dto = await queryService.GetByIdForStoreAsync(id, cancellationToken);
         return Ok(dto);
     }
 
     [HttpPost("{id:int}/approve")]
     [ProducesResponseType(typeof(InstrumentRentalDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<InstrumentRentalDto>> Approve(int id, [FromBody] RentalStatusResponse response)
+    public async Task<ActionResult<InstrumentRentalDto>> Approve(int id, [FromBody] RentalStatusResponse response, CancellationToken cancellationToken)
     {
-        var dto = await commandService.ApproveAsync(id, response);
+        var dto = await commandService.ApproveAsync(id, response, cancellationToken);
         return Ok(dto);
     }
 
     [HttpPost("{id:int}/reject")]
     [ProducesResponseType(typeof(InstrumentRentalDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<InstrumentRentalDto>> Reject(int id, [FromBody] RentalStatusResponse response)
+    public async Task<ActionResult<InstrumentRentalDto>> Reject(int id, [FromBody] RentalStatusResponse response, CancellationToken cancellationToken)
     {
-        var dto = await commandService.RejectAsync(id, response);
+        var dto = await commandService.RejectAsync(id, response, cancellationToken);
         return Ok(dto);
     }
 
     [HttpPost("{id:int}/pickup")]
     [ProducesResponseType(typeof(InstrumentRentalDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<InstrumentRentalDto>> Pickup(int id, [FromBody] RentalStatusResponse response)
+    public async Task<ActionResult<InstrumentRentalDto>> Pickup(int id, [FromBody] RentalStatusResponse response, CancellationToken cancellationToken)
     {
-        var dto = await commandService.PickupAsync(id, response);
+        var dto = await commandService.PickupAsync(id, response, cancellationToken);
         return Ok(dto);
     }
 
     [HttpPost("{id:int}/complete")]
     [ProducesResponseType(typeof(InstrumentRentalDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<InstrumentRentalDto>> Complete(int id, [FromBody] RentalStatusResponse response)
+    public async Task<ActionResult<InstrumentRentalDto>> Complete(int id, [FromBody] RentalStatusResponse response, CancellationToken cancellationToken)
     {
-        var dto = await commandService.CompleteAsync(id, response);
+        var dto = await commandService.CompleteAsync(id, response, cancellationToken);
         return Ok(dto);
     }
 
     [HttpPost("{id:int}/return-early")]
     [ProducesResponseType(typeof(InstrumentRentalDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<InstrumentRentalDto>> ReturnEarly(int id, [FromBody] RentalStatusResponse response)
+    public async Task<ActionResult<InstrumentRentalDto>> ReturnEarly(int id, [FromBody] RentalStatusResponse response, CancellationToken cancellationToken)
     {
-        var dto = await commandService.ReturnEarlyAsync(id, response);
+        var dto = await commandService.ReturnEarlyAsync(id, response, cancellationToken);
         return Ok(dto);
     }
 }
@@ -114,7 +114,7 @@ public sealed class StoreRentalController(IRentalQueryService queryService, IRen
 ---
 
 ## File: `eNote\eNote.API\Controllers\InstrumentRentals\StudentRentalController.cs`
-**Hash**: `989922f60d18` | **Size**: 1922 chars
+**Hash**: `b7c5f43b4e58` | **Size**: 2146 chars
 
 **Classes**: StudentRentalController
 ```cs
@@ -134,25 +134,25 @@ public sealed class StudentRentalController(IRentalQueryService queryService, IR
 {
     [HttpGet]
     [ProducesResponseType(typeof(PagedResult<InstrumentRentalDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<PagedResult<InstrumentRentalDto>>> GetPaged([FromQuery] InstrumentRentalSearchObject search)
+    public async Task<ActionResult<PagedResult<InstrumentRentalDto>>> GetPaged([FromQuery] InstrumentRentalSearchObject search, CancellationToken cancellationToken)
     {
-        var result = await queryService.GetPagedForStudentAsync(search);
+        var result = await queryService.GetPagedForStudentAsync(search, cancellationToken);
         return Ok(result);
     }
 
     [HttpGet("{id:int}")]
     [ProducesResponseType(typeof(InstrumentRentalDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<InstrumentRentalDto>> GetById(int id)
+    public async Task<ActionResult<InstrumentRentalDto>> GetById(int id, CancellationToken cancellationToken)
     {
-        var dto = await queryService.GetByIdForStudentAsync(id);
+        var dto = await queryService.GetByIdForStudentAsync(id, cancellationToken);
         return Ok(dto);
     }
 
     [HttpPost]
     [ProducesResponseType(typeof(InstrumentRentalDto), StatusCodes.Status201Created)]
-    public async Task<ActionResult<InstrumentRentalDto>> Create([FromBody] RentalCreateRequest request)
+    public async Task<ActionResult<InstrumentRentalDto>> Create([FromBody] RentalCreateRequest request, CancellationToken cancellationToken)
     {
-        var dto = await commandService.CreateRequestAsync(request);
+        var dto = await commandService.CreateRequestAsync(request, cancellationToken);
         return CreatedAtAction(nameof(GetById), new
         {
             id = dto.Id
@@ -161,9 +161,9 @@ public sealed class StudentRentalController(IRentalQueryService queryService, IR
 
     [HttpPost("{id:int}/cancel")]
     [ProducesResponseType(typeof(InstrumentRentalDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<InstrumentRentalDto>> Cancel(int id, [FromBody] RentalStatusResponse response)
+    public async Task<ActionResult<InstrumentRentalDto>> Cancel(int id, [FromBody] RentalStatusResponse response, CancellationToken cancellationToken)
     {
-        var dto = await commandService.CancelAsync(id, response);
+        var dto = await commandService.CancelAsync(id, response, cancellationToken);
         return Ok(dto);
     }
 }
@@ -173,11 +173,11 @@ public sealed class StudentRentalController(IRentalQueryService queryService, IR
 ---
 
 ## File: `eNote\eNote.Application\Features\Rentals\InstrumentRentals\Billing\RentalBilling.cs`
-**Hash**: `0cb96a6f63a0` | **Size**: 2307 chars
+**Hash**: `129de86dac14` | **Size**: 2315 chars
 
 **Classes**: RentalBilling
 ```cs
-using eNote.Domain.Entities;
+using eNote.Domain.Entities.Rentals;
 using eNote.Domain.Enums;
 
 namespace eNote.Application.Features.Rentals.InstrumentRentals.Billing;
@@ -298,11 +298,11 @@ public class InstrumentRentalDto
 ---
 
 ## File: `eNote\eNote.Application\Features\Rentals\InstrumentRentals\InstrumentRentalMappingConfig.cs`
-**Hash**: `7e270c3bd6dd` | **Size**: 668 chars
+**Hash**: `c54521003ed0` | **Size**: 676 chars
 
 **Classes**: InstrumentRentalMappingConfig
 ```cs
-using eNote.Domain.Entities;
+using eNote.Domain.Entities.Rentals;
 using Mapster;
 
 namespace eNote.Application.Features.Rentals.InstrumentRentals;
@@ -325,12 +325,12 @@ public sealed class InstrumentRentalMappingConfig : IRegister
 ---
 
 ## File: `eNote\eNote.Application\Features\Rentals\InstrumentRentals\InstrumentRentalSearchExtensions.cs`
-**Hash**: `e433a4459186` | **Size**: 543 chars
+**Hash**: `8acf6455d915` | **Size**: 551 chars
 
 **Classes**: InstrumentRentalSearchExtensions
 ```cs
-using eNote.Domain.Entities;
 using eNote.Application.Common.Search;
+using eNote.Domain.Entities.Rentals;
 
 namespace eNote.Application.Features.Rentals.InstrumentRentals;
 
@@ -387,11 +387,11 @@ public class RentalCreateRequest
 ---
 
 ## File: `eNote\eNote.Application\Features\Rentals\InstrumentRentals\RentalQueryableExtensions.cs`
-**Hash**: `12ed675f1b5f` | **Size**: 495 chars
+**Hash**: `c5b49381b830` | **Size**: 503 chars
 
 **Classes**: RentalQueryableExtensions
 ```cs
-using eNote.Domain.Entities;
+using eNote.Domain.Entities.Rentals;
 using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Application.Features.Rentals.InstrumentRentals;
@@ -425,7 +425,7 @@ public class RentalStatusResponse
 ---
 
 ## File: `eNote\eNote.Application\Features\Rentals\InstrumentRentals\Services\IRentalCommandService.cs`
-**Hash**: `1f64a092ee95` | **Size**: 732 chars
+**Hash**: `f3b14d3bd63e` | **Size**: 1061 chars
 
 **Classes**: 
 **Interfaces**: IRentalCommandService
@@ -434,13 +434,13 @@ namespace eNote.Application.Features.Rentals.InstrumentRentals.Services;
 
 public interface IRentalCommandService
 {
-    Task<InstrumentRentalDto> CreateRequestAsync(RentalCreateRequest request);
-    Task<InstrumentRentalDto> ApproveAsync(int rentalId, RentalStatusResponse response);
-    Task<InstrumentRentalDto> RejectAsync(int rentalId, RentalStatusResponse response);
-    Task<InstrumentRentalDto> PickupAsync(int rentalId, RentalStatusResponse response);
-    Task<InstrumentRentalDto> CompleteAsync(int rentalId, RentalStatusResponse response);
-    Task<InstrumentRentalDto> CancelAsync(int rentalId, RentalStatusResponse response);
-    Task<InstrumentRentalDto> ReturnEarlyAsync(int rentalId, RentalStatusResponse response);
+    Task<InstrumentRentalDto> CreateRequestAsync(RentalCreateRequest request, CancellationToken cancellationToken = default);
+    Task<InstrumentRentalDto> ApproveAsync(int rentalId, RentalStatusResponse response, CancellationToken cancellationToken = default);
+    Task<InstrumentRentalDto> RejectAsync(int rentalId, RentalStatusResponse response, CancellationToken cancellationToken = default);
+    Task<InstrumentRentalDto> PickupAsync(int rentalId, RentalStatusResponse response, CancellationToken cancellationToken = default);
+    Task<InstrumentRentalDto> CompleteAsync(int rentalId, RentalStatusResponse response, CancellationToken cancellationToken = default);
+    Task<InstrumentRentalDto> CancelAsync(int rentalId, RentalStatusResponse response, CancellationToken cancellationToken = default);
+    Task<InstrumentRentalDto> ReturnEarlyAsync(int rentalId, RentalStatusResponse response, CancellationToken cancellationToken = default);
 }
 
 ```
@@ -448,7 +448,7 @@ public interface IRentalCommandService
 ---
 
 ## File: `eNote\eNote.Application\Features\Rentals\InstrumentRentals\Services\IRentalQueryService.cs`
-**Hash**: `ab879ac6bca4` | **Size**: 569 chars
+**Hash**: `a05719e5dd87` | **Size**: 757 chars
 
 **Classes**: 
 **Interfaces**: IRentalQueryService
@@ -460,10 +460,10 @@ namespace eNote.Application.Features.Rentals.InstrumentRentals.Services;
 
 public interface IRentalQueryService
 {
-    Task<InstrumentRentalDto> GetByIdForStudentAsync(int rentalId);
-    Task<InstrumentRentalDto> GetByIdForStoreAsync(int rentalId);
-    Task<PagedResult<InstrumentRentalDto>> GetPagedForStudentAsync(InstrumentRentalSearchObject searchObject);
-    Task<PagedResult<InstrumentRentalDto>> GetPagedForStoreAsync(InstrumentRentalSearchObject searchObject);
+    Task<InstrumentRentalDto> GetByIdForStudentAsync(int rentalId, CancellationToken cancellationToken = default);
+    Task<InstrumentRentalDto> GetByIdForStoreAsync(int rentalId, CancellationToken cancellationToken = default);
+    Task<PagedResult<InstrumentRentalDto>> GetPagedForStudentAsync(InstrumentRentalSearchObject searchObject, CancellationToken cancellationToken = default);
+    Task<PagedResult<InstrumentRentalDto>> GetPagedForStoreAsync(InstrumentRentalSearchObject searchObject, CancellationToken cancellationToken = default);
 }
 
 ```
@@ -471,7 +471,7 @@ public interface IRentalQueryService
 ---
 
 ## File: `eNote\eNote.Application\Features\Rentals\InstrumentRentals\Services\RentalCommandService.cs`
-**Hash**: `4787a0146797` | **Size**: 7943 chars
+**Hash**: `a2cc07c731d4` | **Size**: 9045 chars
 
 **Classes**: RentalCommandService
 ### Key Cross-Cutting Interactions
@@ -491,12 +491,13 @@ using eNote.Domain.Enums;
 using MapsterMapper;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
+using eNote.Domain.Entities.Rentals;
 
 namespace eNote.Application.Features.Rentals.InstrumentRentals.Services;
 
 public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, IClock clock, ICurrentActor actor, IRentalStateMachine stateMachine, IRentalNotificationDispatcher notificationDispatcher) : IRentalCommandService
 {
-    public async Task<InstrumentRentalDto> CreateRequestAsync(RentalCreateRequest request)
+    public async Task<InstrumentRentalDto> CreateRequestAsync(RentalCreateRequest request, CancellationToken cancellationToken = default)
     {
         var dto = await ExecuteInTransactionAsync(async () =>
         {
@@ -511,10 +512,10 @@ public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, 
 
             _ = await context.Set<Instrument>()
                 .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.Id == request.InstrumentId && x.IsActive) ?? throw new NotFoundException(Messages.InstrumentNotFound);
+                .FirstOrDefaultAsync(x => x.Id == request.InstrumentId && x.IsActive, cancellationToken) ?? throw new NotFoundException(Messages.InstrumentNotFound);
 
             var locked = await context.Set<InstrumentRental>()
-                .AnyAsync(x => x.InstrumentId == request.InstrumentId && InstrumentRentalStatusSets.Blocking.Contains(x.RentalStatus));
+                .AnyAsync(x => x.InstrumentId == request.InstrumentId && InstrumentRentalStatusSets.Blocking.Contains(x.RentalStatus), cancellationToken);
 
             if (locked)
             {
@@ -522,7 +523,7 @@ public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, 
             }
 
             var alreadyPending = await context.Set<InstrumentRental>()
-                .AnyAsync(x => x.InstrumentId == request.InstrumentId && x.StudentProfileId == studentProfileId && x.RentalStatus == InstrumentRentalStatus.Pending);
+                .AnyAsync(x => x.InstrumentId == request.InstrumentId && x.StudentProfileId == studentProfileId && x.RentalStatus == InstrumentRentalStatus.Pending, cancellationToken);
 
             if (alreadyPending)
             {
@@ -535,61 +536,61 @@ public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, 
             };
 
             context.Set<InstrumentRental>().Add(rental);
-            await context.SaveChangesAsync();
+            await context.SaveChangesAsync(cancellationToken);
 
-            var dto = await LoadDtoAsync(rental.Id);
+            var dto = await LoadDtoAsync(rental.Id, cancellationToken);
             await notificationDispatcher.DispatchCreatedAsync(dto, actor.UserId);
 
             return dto;
-        });
+        }, cancellationToken);
 
         return dto;
     }
 
-    public async Task<InstrumentRentalDto> ApproveAsync(int rentalId, RentalStatusResponse response) => await ExecuteStoreTransitionAsync(rentalId, RentalTrigger.Approve, response);
+    public Task<InstrumentRentalDto> ApproveAsync(int rentalId, RentalStatusResponse response, CancellationToken cancellationToken = default) => ExecuteStoreTransitionAsync(rentalId, RentalTrigger.Approve, response, cancellationToken);
 
-    public async Task<InstrumentRentalDto> RejectAsync(int rentalId, RentalStatusResponse response) => await ExecuteStoreTransitionAsync(rentalId, RentalTrigger.Reject, response);
+    public Task<InstrumentRentalDto> RejectAsync(int rentalId, RentalStatusResponse response, CancellationToken cancellationToken = default) => ExecuteStoreTransitionAsync(rentalId, RentalTrigger.Reject, response, cancellationToken);
 
-    public async Task<InstrumentRentalDto> PickupAsync(int rentalId, RentalStatusResponse response) => await ExecuteStoreTransitionAsync(rentalId, RentalTrigger.Pickup, response);
+    public Task<InstrumentRentalDto> PickupAsync(int rentalId, RentalStatusResponse response, CancellationToken cancellationToken = default) => ExecuteStoreTransitionAsync(rentalId, RentalTrigger.Pickup, response, cancellationToken);
 
-    public async Task<InstrumentRentalDto> CompleteAsync(int rentalId, RentalStatusResponse response) => await ExecuteStoreTransitionAsync(rentalId, RentalTrigger.Complete, response);
+    public Task<InstrumentRentalDto> CompleteAsync(int rentalId, RentalStatusResponse response, CancellationToken cancellationToken = default) => ExecuteStoreTransitionAsync(rentalId, RentalTrigger.Complete, response, cancellationToken);
 
-    public async Task<InstrumentRentalDto> ReturnEarlyAsync(int rentalId, RentalStatusResponse response) => await ExecuteStoreTransitionAsync(rentalId, RentalTrigger.ReturnEarly, response);
+    public Task<InstrumentRentalDto> ReturnEarlyAsync(int rentalId, RentalStatusResponse response, CancellationToken cancellationToken = default) => ExecuteStoreTransitionAsync(rentalId, RentalTrigger.ReturnEarly, response, cancellationToken);
 
-    public async Task<InstrumentRentalDto> CancelAsync(int rentalId, RentalStatusResponse response)
+    public async Task<InstrumentRentalDto> CancelAsync(int rentalId, RentalStatusResponse response, CancellationToken cancellationToken = default)
     {
         var dto = await ExecuteInTransactionAsync(async () =>
         {
-            var rental = await LoadForStudentAsync(rentalId, actor.UserId);
-            var dto = await ExecuteTransitionAsync(rental, RentalTrigger.Cancel, RentalActor.Student, actor.UserId, response);
+            var rental = await LoadForStudentAsync(rentalId, actor.UserId, cancellationToken);
+            var dto = await ExecuteTransitionAsync(rental, RentalTrigger.Cancel, RentalActor.Student, actor.UserId, response, cancellationToken);
 
             await notificationDispatcher.DispatchTransitionAsync(dto, RentalTrigger.Cancel, actor.UserId);
 
             return dto;
-        });
+        }, cancellationToken);
 
         return dto;
     }
 
-    private Task<InstrumentRentalDto> ExecuteStoreTransitionAsync(int rentalId, RentalTrigger trigger, RentalStatusResponse response) => ExecuteInTransactionAsync(async () =>
+    private Task<InstrumentRentalDto> ExecuteStoreTransitionAsync(int rentalId, RentalTrigger trigger, RentalStatusResponse response, CancellationToken cancellationToken) => ExecuteInTransactionAsync(async () =>
     {
-        var storeId = await actor.GetCurrentStoreIdAsync();
-        var rental = await LoadForStoreAsync(rentalId, storeId);
-        var dto = await ExecuteTransitionAsync(rental, trigger, RentalActor.StoreEmployee, actor.UserId, response);
+        var storeId = await actor.GetCurrentStoreIdAsync(cancellationToken);
+        var rental = await LoadForStoreAsync(rentalId, storeId, cancellationToken);
+        var dto = await ExecuteTransitionAsync(rental, trigger, RentalActor.StoreEmployee, actor.UserId, response, cancellationToken);
 
         await notificationDispatcher.DispatchTransitionAsync(dto, trigger, actor.UserId);
 
         return dto;
-    });
+    }, cancellationToken);
 
-    private async Task<InstrumentRentalDto> ExecuteTransitionAsync(InstrumentRental rental, RentalTrigger trigger, RentalActor actor, int userId, RentalStatusResponse? response)
+    private async Task<InstrumentRentalDto> ExecuteTransitionAsync(InstrumentRental rental, RentalTrigger trigger, RentalActor actor, int userId, RentalStatusResponse? response, CancellationToken cancellationToken)
     {
         var hasConflict = false;
 
         if (trigger is RentalTrigger.Approve or RentalTrigger.Pickup)
         {
             hasConflict = await context.Set<InstrumentRental>()
-                .AnyAsync(x => x.InstrumentId == rental.InstrumentId && x.Id != rental.Id && InstrumentRentalStatusSets.Blocking.Contains(x.RentalStatus));
+                .AnyAsync(x => x.InstrumentId == rental.InstrumentId && x.Id != rental.Id && InstrumentRentalStatusSets.Blocking.Contains(x.RentalStatus), cancellationToken);
         }
 
         var transitionContext = new RentalTransitionContext
@@ -604,21 +605,21 @@ public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, 
 
         if (result.UsesInstrumentLock)
         {
-            await SaveWithLockConflictMessageAsync(Messages.InstrumentReservedOrRented);
+            await SaveWithLockConflictMessageAsync(Messages.InstrumentReservedOrRented, cancellationToken);
         }
         else
         {
-            await context.SaveChangesAsync();
+            await context.SaveChangesAsync(cancellationToken);
         }
 
-        return await LoadDtoAsync(rental.Id);
+        return await LoadDtoAsync(rental.Id, cancellationToken);
     }
 
-    private async Task<InstrumentRental> LoadForStoreAsync(int rentalId, int storeId)
+    private async Task<InstrumentRental> LoadForStoreAsync(int rentalId, int storeId, CancellationToken cancellationToken)
     {
         var rental = await context.Set<InstrumentRental>()
             .WithRentalDetails()
-            .FirstOrDefaultAsync(x => x.Id == rentalId) ?? throw new NotFoundException(Messages.RentalNotFound);
+            .FirstOrDefaultAsync(x => x.Id == rentalId, cancellationToken) ?? throw new NotFoundException(Messages.RentalNotFound);
 
         if (rental.Instrument.MusicStoreId != storeId)
         {
@@ -628,11 +629,11 @@ public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, 
         return rental;
     }
 
-    private async Task<InstrumentRental> LoadForStudentAsync(int rentalId, int userId)
+    private async Task<InstrumentRental> LoadForStudentAsync(int rentalId, int userId, CancellationToken cancellationToken)
     {
         var rental = await context.Set<InstrumentRental>()
             .WithRentalDetails()
-            .FirstOrDefaultAsync(x => x.Id == rentalId) ?? throw new NotFoundException(Messages.RentalNotFound);
+            .FirstOrDefaultAsync(x => x.Id == rentalId, cancellationToken) ?? throw new NotFoundException(Messages.RentalNotFound);
 
         if (rental.StudentProfile.AppUserId != userId)
         {
@@ -642,12 +643,12 @@ public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, 
         return rental;
     }
 
-    private async Task<InstrumentRentalDto> LoadDtoAsync(int rentalId)
+    private async Task<InstrumentRentalDto> LoadDtoAsync(int rentalId, CancellationToken cancellationToken)
     {
         var entity = await context.Set<InstrumentRental>()
             .AsNoTracking()
             .WithRentalDetails()
-            .FirstOrDefaultAsync(x => x.Id == rentalId) ?? throw new NotFoundException(Messages.RentalNotFoundAfterUpdate);
+            .FirstOrDefaultAsync(x => x.Id == rentalId, cancellationToken) ?? throw new NotFoundException(Messages.RentalNotFoundAfterUpdate);
 
         var result = mapper.Map<InstrumentRentalDto>(entity);
 
@@ -656,11 +657,11 @@ public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, 
         return result;
     }
 
-    private async Task SaveWithLockConflictMessageAsync(string message)
+    private async Task SaveWithLockConflictMessageAsync(string message, CancellationToken cancellationToken)
     {
         try
         {
-            await context.SaveChangesAsync();
+            await context.SaveChangesAsync(cancellationToken);
         }
         catch (DbUpdateException)
         {
@@ -668,20 +669,20 @@ public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, 
         }
     }
 
-    private async Task<T> ExecuteInTransactionAsync<T>(Func<Task<T>> action)
+    private async Task<T> ExecuteInTransactionAsync<T>(Func<Task<T>> action, CancellationToken cancellationToken)
     {
-        using IDbContextTransaction transaction = await context.BeginTransactionAsync();
+        using IDbContextTransaction transaction = await context.BeginTransactionAsync(cancellationToken);
 
         try
         {
             var result = await action();
-            await transaction.CommitAsync();
+            await transaction.CommitAsync(cancellationToken);
 
             return result;
         }
         catch
         {
-            await transaction.RollbackAsync();
+            await transaction.RollbackAsync(cancellationToken);
             throw;
         }
     }
@@ -692,7 +693,7 @@ public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, 
 ---
 
 ## File: `eNote\eNote.Application\Features\Rentals\InstrumentRentals\Services\RentalQueryService.cs`
-**Hash**: `b8137811b7dc` | **Size**: 2750 chars
+**Hash**: `709beabf724c` | **Size**: 3170 chars
 
 **Classes**: RentalQueryService
 ### Key Cross-Cutting Interactions
@@ -700,7 +701,6 @@ public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, 
 - Uses **IAppDbContext|DbContext** → Persistence boundary
 
 ```cs
-using eNote.Domain.Entities;
 using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Localization;
@@ -710,14 +710,15 @@ using eNote.Application.Common.Time;
 using eNote.Application.Features.Rentals.InstrumentRentals.Billing;
 using MapsterMapper;
 using Microsoft.EntityFrameworkCore;
+using eNote.Domain.Entities.Rentals;
 
 namespace eNote.Application.Features.Rentals.InstrumentRentals.Services;
 
 public sealed class RentalQueryService(IAppDbContext context, IMapper mapper, ICurrentActor actor, IClock clock) : IRentalQueryService
 {
-    public async Task<InstrumentRentalDto> GetByIdForStudentAsync(int rentalId)
+    public async Task<InstrumentRentalDto> GetByIdForStudentAsync(int rentalId, CancellationToken cancellationToken = default)
     {
-        var entity = await FindRentalAsync(context.Set<InstrumentRental>().Where(x => x.Id == rentalId && x.StudentProfile.AppUserId == actor.UserId));
+        var entity = await FindRentalAsync(context.Set<InstrumentRental>().Where(x => x.Id == rentalId && x.StudentProfile.AppUserId == actor.UserId), cancellationToken);
 
         var dto = mapper.Map<InstrumentRentalDto>(entity);
 
@@ -726,14 +727,14 @@ public sealed class RentalQueryService(IAppDbContext context, IMapper mapper, IC
         return dto;
     }
 
-    public Task<PagedResult<InstrumentRentalDto>> GetPagedForStudentAsync(InstrumentRentalSearchObject search) => GetPagedAsync(context.Set<InstrumentRental>()
-        .Where(x => x.StudentProfile.AppUserId == actor.UserId), search);
+    public Task<PagedResult<InstrumentRentalDto>> GetPagedForStudentAsync(InstrumentRentalSearchObject search, CancellationToken cancellationToken = default) => GetPagedAsync(context.Set<InstrumentRental>()
+        .Where(x => x.StudentProfile.AppUserId == actor.UserId), search, cancellationToken);
 
-    public async Task<InstrumentRentalDto> GetByIdForStoreAsync(int rentalId)
+    public async Task<InstrumentRentalDto> GetByIdForStoreAsync(int rentalId, CancellationToken cancellationToken = default)
     {
-        var storeId = await actor.GetCurrentStoreIdAsync();
+        var storeId = await actor.GetCurrentStoreIdAsync(cancellationToken);
 
-        var entity = await FindRentalAsync(context.Set<InstrumentRental>().Where(x => x.Id == rentalId && x.Instrument.MusicStoreId == storeId));
+        var entity = await FindRentalAsync(context.Set<InstrumentRental>().Where(x => x.Id == rentalId && x.Instrument.MusicStoreId == storeId), cancellationToken);
 
         var dto = mapper.Map<InstrumentRentalDto>(entity);
 
@@ -742,14 +743,14 @@ public sealed class RentalQueryService(IAppDbContext context, IMapper mapper, IC
         return dto;
     }
 
-    public async Task<PagedResult<InstrumentRentalDto>> GetPagedForStoreAsync(InstrumentRentalSearchObject search)
+    public async Task<PagedResult<InstrumentRentalDto>> GetPagedForStoreAsync(InstrumentRentalSearchObject search, CancellationToken cancellationToken = default)
     {
-        var storeId = await actor.GetCurrentStoreIdAsync();
+        var storeId = await actor.GetCurrentStoreIdAsync(cancellationToken);
 
-        return await GetPagedAsync(context.Set<InstrumentRental>().Where(x => x.Instrument.MusicStoreId == storeId), search);
+        return await GetPagedAsync(context.Set<InstrumentRental>().Where(x => x.Instrument.MusicStoreId == storeId), search, cancellationToken);
     }
 
-    private async Task<PagedResult<InstrumentRentalDto>> GetPagedAsync(IQueryable<InstrumentRental> query, InstrumentRentalSearchObject search)
+    private async Task<PagedResult<InstrumentRentalDto>> GetPagedAsync(IQueryable<InstrumentRental> query, InstrumentRentalSearchObject search, CancellationToken cancellationToken)
     {
         var now = clock.UtcNow;
 
@@ -759,11 +760,11 @@ public sealed class RentalQueryService(IAppDbContext context, IMapper mapper, IC
             RentalBilling.ApplyBilling(entity, dto, now);
 
             return dto;
-        });
+        }, ct: cancellationToken);
     }
 
-    private static async Task<InstrumentRental> FindRentalAsync(IQueryable<InstrumentRental> query) => await query
-        .AsNoTracking().WithRentalDetails().FirstOrDefaultAsync() ?? throw new NotFoundException(Messages.NotFound);
+    private static async Task<InstrumentRental> FindRentalAsync(IQueryable<InstrumentRental> query, CancellationToken cancellationToken) => await query
+        .AsNoTracking().WithRentalDetails().FirstOrDefaultAsync(cancellationToken) ?? throw new NotFoundException(Messages.NotFound);
 }
 
 ```
@@ -771,12 +772,12 @@ public sealed class RentalQueryService(IAppDbContext context, IMapper mapper, IC
 ---
 
 ## File: `eNote\eNote.Application\Features\Rentals\InstrumentRentals\StateMachine\IRentalStateMachine.cs`
-**Hash**: `1800a4f1ebca` | **Size**: 263 chars
+**Hash**: `ddf6fa93a4a3` | **Size**: 271 chars
 
 **Classes**: 
 **Interfaces**: IRentalStateMachine
 ```cs
-using eNote.Domain.Entities;
+using eNote.Domain.Entities.Rentals;
 
 namespace eNote.Application.Features.Rentals.InstrumentRentals.StateMachine;
 
@@ -806,15 +807,15 @@ public enum RentalActor
 ---
 
 ## File: `eNote\eNote.Application\Features\Rentals\InstrumentRentals\StateMachine\RentalStateMachine.cs`
-**Hash**: `52194ec89524` | **Size**: 7861 chars
+**Hash**: `d9eb61cc96b6` | **Size**: 7869 chars
 
 **Classes**: RentalStateMachine
 ```cs
-using eNote.Domain.Entities;
 using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Time;
 using eNote.Domain.Enums;
+using eNote.Domain.Entities.Rentals;
 
 namespace eNote.Application.Features.Rentals.InstrumentRentals.StateMachine;
 

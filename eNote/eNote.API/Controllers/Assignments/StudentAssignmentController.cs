@@ -14,17 +14,17 @@ public sealed class StudentAssignmentController(IAssignmentService service) : Co
 {
     [HttpGet]
     [ProducesResponseType(typeof(PagedResult<AssignmentDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<PagedResult<AssignmentDto>>> GetMyAssignments([FromQuery] AssignmentSearchObject search)
+    public async Task<ActionResult<PagedResult<AssignmentDto>>> GetMyAssignments([FromQuery] AssignmentSearchObject search, CancellationToken cancellationToken)
     {
-        var result = await service.GetForStudentAsync(search);
+        var result = await service.GetForStudentAsync(search, cancellationToken);
         return Ok(result);
     }
 
     [HttpGet("{id:int}")]
     [ProducesResponseType(typeof(AssignmentDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<AssignmentDto>> GetById(int id)
+    public async Task<ActionResult<AssignmentDto>> GetById(int id, CancellationToken cancellationToken)
     {
-        var dto = await service.GetByIdForStudentAsync(id);
+        var dto = await service.GetByIdForStudentAsync(id, cancellationToken);
         return Ok(dto);
     }
 }

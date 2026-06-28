@@ -15,21 +15,16 @@ namespace eNote.Application.Features.Academic.Lectures.Services;
 
 public sealed class LectureAttendanceService(IAppDbContext context, ICurrentActor actor, IStudentDisplayNameService displayNames, IInstructorAccessService instructorAccess, ILogger<LectureAttendanceService> logger) : ILectureAttendanceService
 {
-    public async Task<RsvpResponse> RsvpAsync(int lectureId, RsvpRequest request)
+    public async Task<RsvpResponse> RsvpAsync(int lectureId, RsvpRequest request, CancellationToken cancellationToken = default)
     {
         var lecture = await context.Set<Lecture>()
             .Include(x => x.Attendances)
             .Include(x => x.Course)
-            .FirstOrDefaultAsync(x => x.Id == lectureId && x.Course.IsPublished && x.LectureStatus != LectureStatus.Cancelled) ?? throw new NotFoundException(Messages.LectureNotFound);
-
-        if (lecture.IsCancelled)
-        {
-            throw new BusinessException(Messages.LectureCancelled);
-        }
+            .FirstOrDefaultAsync(x => x.Id == lectureId && x.Course.IsPublished && x.LectureStatus != LectureStatus.Cancelled, cancellationToken) ?? throw new NotFoundException(Messages.LectureNotFound);
 
         var studentId = await actor.GetCurrentStudentIdAsync();
 
-        if (!await context.IsEnrolledInCourseAsync(studentId, lecture.CourseId))
+        if (!await context.IsEnrolledInCourseAsync(studentId, lecture.CourseId, cancellationToken))
         {
             throw new BusinessException(Messages.StudentNotEnrolled);
         }
@@ -62,7 +57,7 @@ public sealed class LectureAttendanceService(IAppDbContext context, ICurrentActo
         try
         {
             context.Set<Lecture>().Entry(lecture).State = EntityState.Modified;
-            await context.SaveChangesAsync();
+            await context.SaveChangesAsync(cancellationToken);
         }
         catch (DbUpdateConcurrencyException ex)
         {
@@ -73,10 +68,10 @@ public sealed class LectureAttendanceService(IAppDbContext context, ICurrentActo
         return new RsvpResponse { LectureId = lecture.Id, StudentId = studentId, Confirmed = request.Confirm };
     }
 
-    public async Task<PagedResult<AttendanceDto>> GetAttendanceAsync(int lectureId, AttendanceSearchObject search)
+    public async Task<PagedResult<AttendanceDto>> GetAttendanceAsync(int lectureId, AttendanceSearchObject search, CancellationToken cancellationToken = default)
     {
         var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(actor.UserId);
-        await instructorAccess.EnsureOwnsLectureAsync(lectureId, instructorId);
+        await instructorAccess.EnsureOwnsLectureAsync(lectureId, instructorId, cancellationToken);
 
         var query = context.Set<Attendance>()
             .AsNoTracking()
@@ -89,20 +84,20 @@ public sealed class LectureAttendanceService(IAppDbContext context, ICurrentActo
             StudentId = a.StudentId,
             StudentName = names.GetValueOrDefault(a.StudentId, $"Student {a.StudentId}"),
             AttendanceStatus = a.AttendanceStatus
-        }, q => q.OrderBy(x => x.StudentId));
+        }, q => q.OrderBy(x => x.StudentId), cancellationToken);
     }
 
-    public async Task<AttendanceDto> MarkAttendanceAsync(int lectureId, MarkAttendanceRequest request)
+    public async Task<AttendanceDto> MarkAttendanceAsync(int lectureId, MarkAttendanceRequest request, CancellationToken cancellationToken = default)
     {
         var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(actor.UserId);
-        var lecture = await instructorAccess.GetOwnedLectureAsync(lectureId, instructorId, track: true, includeAttendances: true);
+        var lecture = await instructorAccess.GetOwnedLectureAsync(lectureId, instructorId, track: true, includeAttendances: true, cancellationToken: cancellationToken);
 
         if (lecture.IsCancelled)
         {
             throw new BusinessException(Messages.LectureCancelled);
         }
 
-        if (!await context.IsEnrolledInCourseAsync(request.StudentId, lecture.CourseId))
+        if (!await context.IsEnrolledInCourseAsync(request.StudentId, lecture.CourseId, cancellationToken))
         {
             throw new BusinessException(Messages.StudentNotEnrolled);
         }
@@ -123,11 +118,11 @@ public sealed class LectureAttendanceService(IAppDbContext context, ICurrentActo
             attendance.UpdatedById = actor.UserId;
         }
 
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(cancellationToken);
 
         var student = attendance.Student ?? await context.Set<Student>()
             .AsNoTracking()
-            .FirstAsync(x => x.Id == attendance.StudentId);
+            .FirstAsync(x => x.Id == attendance.StudentId, cancellationToken);
 
         return new AttendanceDto
         {

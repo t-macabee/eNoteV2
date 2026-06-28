@@ -22,18 +22,18 @@ public sealed class CurrentActor(ICurrentUserService user, IUserProfileLookup lo
     public async Task<Instructor> GetCurrentInstructorAsync() => _instructor ??= await lookup.GetInstructorAsync(user.UserId);
     public async Task<MusicStoreEmployee> GetCurrentEmployeeAsync() => _employee ??= await lookup.GetActiveEmployeeAsync(user.UserId);
 
-    public async Task<int> GetCurrentStoreIdAsync()
+    public async Task<int> GetCurrentStoreIdAsync(CancellationToken cancellationToken = default)
     {
         if (_storeId is not null) return _storeId.Value;
 
         var storeId = await context.Set<MusicStoreEmployee>()
             .AsNoTracking()
             .Where(x => x.AppUserId == user.UserId && x.IsActive)
-            .Select(x => x.MusicStoreId)
-            .SingleOrDefaultAsync();
+            .Select(x => (int?)x.MusicStoreId)
+            .SingleOrDefaultAsync(cancellationToken);
 
-        if (storeId == 0) throw new BusinessException(Messages.ActiveEmployeeStoreNotFound);
+        if (!storeId.HasValue) throw new BusinessException(Messages.ActiveEmployeeStoreNotFound);
 
-        return (_storeId = storeId).Value;
+        return (_storeId = storeId.Value).Value;
     }
 }

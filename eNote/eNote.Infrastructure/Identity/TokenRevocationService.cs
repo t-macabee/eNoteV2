@@ -7,7 +7,7 @@ using Microsoft.Extensions.Caching.Memory;
 
 namespace eNote.Infrastructure.Identity;
 
-public class TokenRevocationService(IAppDbContext context, IClock clock, IMemoryCache cache) : ITokenRevocationService
+public sealed class TokenRevocationService(IAppDbContext context, IClock clock, IMemoryCache cache) : ITokenRevocationService
 {
     private static string Key(string jti) => $"revoked:{jti}";
 

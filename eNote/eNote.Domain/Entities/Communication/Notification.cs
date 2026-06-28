@@ -1,6 +1,6 @@
 namespace eNote.Domain.Entities;
 
-public class Notification
+public sealed class Notification
 {
     public int Id { get; private set; }
     public int UserId { get; private set; }

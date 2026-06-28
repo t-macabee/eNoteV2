@@ -15,32 +15,36 @@ namespace eNote.Application.Features.Academic.Courses.Services;
 
 public sealed class CourseService(IAppDbContext context, IMapper mapper, ICurrentActor actor, IInstructorAccessService instructorAccess, ILogger<CourseService> logger) : ICourseService
 {
-    public async Task<CourseDto> GetByIdForInstructorAsync(int id)
+    public async Task<CourseDto> GetByIdForInstructorAsync(int id, CancellationToken cancellationToken = default)
     {
         var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(actor.UserId);
 
         var entity = await instructorAccess.CoursesFor(instructorId)
             .AsNoTracking()
             .Include(c => c.Enrollments)
-            .FirstOrDefaultAsync(c => c.Id == id)
+            .FirstOrDefaultAsync(c => c.Id == id, cancellationToken)
             ?? throw new NotFoundException(Messages.CourseNotFound);
 
         return mapper.Map<CourseDto>(entity);
     }
 
-    public async Task<CourseDto> GetByIdForStudentAsync(int id)
+    public async Task<CourseDto> GetByIdForStudentAsync(int id, CancellationToken cancellationToken = default)
     {
         var studentId = await actor.GetCurrentStudentIdAsync();
 
         var entity = await context.Set<Course>()
             .Include(c => c.Enrollments)
             .AsNoTracking()
-            .FirstOrDefaultAsync(c => c.Id == id && (c.IsPublished || c.Enrollments.Any(e => e.StudentId == studentId && e.EnrollmentStatus == EnrollmentStatus.Active))) ?? throw new NotFoundException(Messages.CourseNotFound);
+            .FirstOrDefaultAsync(c =>
+                c.Id == id &&
+                (c.IsPublished || c.Enrollments.Any(e => e.StudentId == studentId && e.EnrollmentStatus == EnrollmentStatus.Active)),
+                cancellationToken)
+            ?? throw new NotFoundException(Messages.CourseNotFound);
 
         return mapper.Map<CourseDto>(entity);
     }
 
-    public async Task<PagedResult<CourseDto>> GetPagedForInstructorAsync(CourseSearchObject search)
+    public async Task<PagedResult<CourseDto>> GetPagedForInstructorAsync(CourseSearchObject search, CancellationToken cancellationToken = default)
     {
         var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(actor.UserId);
 
@@ -49,10 +53,10 @@ public sealed class CourseService(IAppDbContext context, IMapper mapper, ICurren
             .Include(c => c.Enrollments)
             .ApplySearch(search);
 
-        return await query.ToPagedResultAsync(search, mapper.Map<CourseDto>, q => q.OrderByDescending(x => x.StartDate));
+        return await query.ToPagedResultAsync(search, mapper.Map<CourseDto>, q => q.OrderByDescending(x => x.StartDate), cancellationToken);
     }
 
-    public async Task<PagedResult<CourseDto>> GetPagedForStudentAsync(CourseSearchObject search)
+    public async Task<PagedResult<CourseDto>> GetPagedForStudentAsync(CourseSearchObject search, CancellationToken cancellationToken = default)
     {
         var query = context.Set<Course>()
             .AsNoTracking()
@@ -60,10 +64,10 @@ public sealed class CourseService(IAppDbContext context, IMapper mapper, ICurren
             .Where(c => c.IsPublished)
             .ApplySearch(search);
 
-        return await query.ToPagedResultAsync(search, mapper.Map<CourseDto>, q => q.OrderByDescending(x => x.StartDate));
+        return await query.ToPagedResultAsync(search, mapper.Map<CourseDto>, q => q.OrderByDescending(x => x.StartDate), cancellationToken);
     }
 
-    public async Task<CourseDto> CreateAsync(CourseRequest request)
+    public async Task<CourseDto> CreateAsync(CourseRequest request, CancellationToken cancellationToken = default)
     {
         var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(actor.UserId);
 
@@ -82,35 +86,35 @@ public sealed class CourseService(IAppDbContext context, IMapper mapper, ICurren
         entity.SetPublishedStatus(request.IsPublished);
 
         context.Set<Course>().Add(entity);
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(cancellationToken);
 
         logger.LogInformation("Course {CourseId} created by instructor user {InstructorUserId}", entity.Id, actor.UserId);
 
         return mapper.Map<CourseDto>(entity);
     }
 
-    public async Task<CourseDto> UpdateAsync(int id, CourseRequest request)
+    public async Task<CourseDto> UpdateAsync(int id, CourseRequest request, CancellationToken cancellationToken = default)
     {
         var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(actor.UserId);
 
         var entity = await instructorAccess.CoursesFor(instructorId)
             .Include(c => c.Enrollments)
-            .FirstOrDefaultAsync(c => c.Id == id) ?? throw new NotFoundException(Messages.CourseNotFound);
+            .FirstOrDefaultAsync(c => c.Id == id, cancellationToken) ?? throw new NotFoundException(Messages.CourseNotFound);
 
         entity.UpdateDetails(request.Name.Trim(), request.Description?.Trim(), request.Price, request.StartDate, request.EndDate);
         entity.SetPublishedStatus(request.IsPublished);
         entity.UpdatedById = actor.UserId;
 
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(cancellationToken);
 
         return mapper.Map<CourseDto>(entity);
     }
 
-    public async Task DeleteAsync(int id)
+    public async Task DeleteAsync(int id, CancellationToken cancellationToken = default)
     {
         var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(actor.UserId);
 
-        var entity = await instructorAccess.CoursesFor(instructorId).FirstOrDefaultAsync(c => c.Id == id) ?? throw new NotFoundException(Messages.CourseNotFound);
+        var entity = await instructorAccess.CoursesFor(instructorId).FirstOrDefaultAsync(c => c.Id == id, cancellationToken) ?? throw new NotFoundException(Messages.CourseNotFound);
 
         entity.SoftDelete();
         entity.UpdatedById = actor.UserId;
@@ -118,9 +122,9 @@ public sealed class CourseService(IAppDbContext context, IMapper mapper, ICurren
         await context.Set<Lecture>()
             .Where(l => l.CourseId == id)
             .ExecuteUpdateAsync(s => s.SetProperty(l => l.IsActive, false)
-            .SetProperty(l => l.UpdatedById, actor.UserId));
+            .SetProperty(l => l.UpdatedById, actor.UserId), cancellationToken);
 
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(cancellationToken);
 
         logger.LogInformation("Course {CourseId} soft-deleted by instructor user {InstructorUserId}", id, actor.UserId);
     }

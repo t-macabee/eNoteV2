@@ -14,17 +14,17 @@ public sealed class StudentLectureNoteController(ILectureNoteService service) : 
 {
     [HttpGet]
     [ProducesResponseType(typeof(PagedResult<LectureNoteDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<PagedResult<LectureNoteDto>>> GetForLecture(int lectureId, [FromQuery] LectureNoteSearchObject search)
+    public async Task<ActionResult<PagedResult<LectureNoteDto>>> GetForLecture(int lectureId, [FromQuery] LectureNoteSearchObject search, CancellationToken cancellationToken)
     {
-        var result = await service.GetForStudentAsync(lectureId, search);
+        var result = await service.GetForStudentAsync(lectureId, search, cancellationToken);
         return Ok(result);
     }
 
     [HttpGet("{noteId:int}")]
     [ProducesResponseType(typeof(LectureNoteDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<LectureNoteDto>> GetById(int lectureId, int noteId)
+    public async Task<ActionResult<LectureNoteDto>> GetById(int lectureId, int noteId, CancellationToken cancellationToken)
     {
-        var dto = await service.GetByIdForStudentAsync(lectureId, noteId);
+        var dto = await service.GetByIdForStudentAsync(lectureId, noteId, cancellationToken);
         return Ok(dto);
     }
 }

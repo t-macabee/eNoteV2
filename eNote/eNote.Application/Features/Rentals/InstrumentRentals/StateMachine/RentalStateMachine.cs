@@ -1,8 +1,8 @@
-using eNote.Domain.Entities;
 using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Time;
 using eNote.Domain.Enums;
+using eNote.Domain.Entities.Rentals;
 
 namespace eNote.Application.Features.Rentals.InstrumentRentals.StateMachine;
 

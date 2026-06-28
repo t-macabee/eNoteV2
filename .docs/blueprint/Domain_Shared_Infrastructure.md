@@ -1,6 +1,6 @@
 # Bounded Context: Shared_Infrastructure
 
-**Generated**: 2026-06-28T06:51:06.821823+00:00  
+**Generated**: 2026-06-28T09:04:45.776982+00:00  
 **Commit**: latest  
 **Total Files**: 249
 
@@ -62,7 +62,7 @@ public sealed class RentalStatusChangedPushConsumer(IHubContext<NotificationHub>
 ---
 
 ## File: `eNote\eNote.API\Controllers\Admin\AdminAddressController.cs`
-**Hash**: `e436904fb474` | **Size**: 495 chars
+**Hash**: `55a4861716be` | **Size**: 510 chars
 
 **Classes**: AdminAddressController
 ```cs
@@ -77,7 +77,7 @@ namespace eNote.API.Controllers.Admin;
 [Authorize(Roles = AppRoles.Administrator)]
 [Route("api/admin/addresses")]
 public sealed class AdminAddressController(IAddressService service)
-    : ReferenceCrudController<AddressReferenceDto, AddressRequest, AddressSearchObject>(service)
+    : ReferenceCrudController<AddressReferenceDto, AddressRequest, AddressSearchObject>(service, dto => dto.Id)
 {
 }
 
@@ -86,7 +86,7 @@ public sealed class AdminAddressController(IAddressService service)
 ---
 
 ## File: `eNote\eNote.API\Controllers\Admin\AdminInstructorController.cs`
-**Hash**: `1172236f4fc4` | **Size**: 1058 chars
+**Hash**: `1ce5fb59583c` | **Size**: 1170 chars
 
 **Classes**: AdminInstructorController
 ```cs
@@ -105,17 +105,17 @@ public sealed class AdminInstructorController(IAdminInstructorService service) :
 {
     [HttpGet]
     [ProducesResponseType(typeof(PagedResult<InstructorDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<PagedResult<InstructorDto>>> GetPaged([FromQuery] InstructorSearchObject search)
+    public async Task<ActionResult<PagedResult<InstructorDto>>> GetPaged([FromQuery] InstructorSearchObject search, CancellationToken cancellationToken)
     {
-        PagedResult<InstructorDto> result = await service.GetPagedAsync(search);
+        PagedResult<InstructorDto> result = await service.GetPagedAsync(search, cancellationToken);
         return Ok(result);
     }
 
     [HttpGet("{id:int}")]
     [ProducesResponseType(typeof(InstructorDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<InstructorDto>> GetById(int id)
+    public async Task<ActionResult<InstructorDto>> GetById(int id, CancellationToken cancellationToken)
     {
-        InstructorDto dto = await service.GetByIdAsync(id);
+        InstructorDto dto = await service.GetByIdAsync(id, cancellationToken);
         return Ok(dto);
     }
 }
@@ -125,7 +125,7 @@ public sealed class AdminInstructorController(IAdminInstructorService service) :
 ---
 
 ## File: `eNote\eNote.API\Controllers\Admin\AdminInstrumentTypeController.cs`
-**Hash**: `aa8e271642b2` | **Size**: 534 chars
+**Hash**: `8d8c4a8dbb55` | **Size**: 549 chars
 
 **Classes**: AdminInstrumentTypeController
 ```cs
@@ -140,7 +140,7 @@ namespace eNote.API.Controllers.Admin;
 [Authorize(Roles = AppRoles.Administrator)]
 [Route("api/admin/instrument-types")]
 public sealed class AdminInstrumentTypeController(IInstrumentTypeService service)
-    : ReferenceCrudController<InstrumentTypeDto, InstrumentTypeRequest, InstrumentTypeSearchObject>(service)
+    : ReferenceCrudController<InstrumentTypeDto, InstrumentTypeRequest, InstrumentTypeSearchObject>(service, dto => dto.Id)
 {
 }
 
@@ -149,7 +149,7 @@ public sealed class AdminInstrumentTypeController(IInstrumentTypeService service
 ---
 
 ## File: `eNote\eNote.API\Controllers\Admin\AdminMusicStoreController.cs`
-**Hash**: `239fd416d399` | **Size**: 506 chars
+**Hash**: `9c160738d54c` | **Size**: 521 chars
 
 **Classes**: AdminMusicStoreController
 ```cs
@@ -164,7 +164,7 @@ namespace eNote.API.Controllers.Admin;
 [Authorize(Roles = AppRoles.Administrator)]
 [Route("api/admin/music-stores")]
 public sealed class AdminMusicStoreController(IMusicStoreService service)
-    : ReferenceCrudController<MusicStoreDto, MusicStoreRequest, MusicStoreSearchObject>(service)
+    : ReferenceCrudController<MusicStoreDto, MusicStoreRequest, MusicStoreSearchObject>(service, dto => dto.Id)
 {
 }
 
@@ -173,7 +173,7 @@ public sealed class AdminMusicStoreController(IMusicStoreService service)
 ---
 
 ## File: `eNote\eNote.API\Controllers\Admin\AdminUsersController.cs`
-**Hash**: `1d742f005401` | **Size**: 1910 chars
+**Hash**: `aa1368a6c37d` | **Size**: 2078 chars
 
 **Classes**: AdminUsersController
 ```cs
@@ -193,9 +193,9 @@ public sealed class AdminUsersController(IUserProfileService profileService, IUs
     [HttpGet("{id:int}")]
     [ProducesResponseType(typeof(UserProfileResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<UserProfileResponse>> GetById(int id)
+    public async Task<ActionResult<UserProfileResponse>> GetById(int id, CancellationToken cancellationToken)
     {
-        var profile = await profileService.GetUserAsync(id);
+        var profile = await profileService.GetUserAsync(id, cancellationToken);
 
         if (profile is null)
         {
@@ -208,9 +208,9 @@ public sealed class AdminUsersController(IUserProfileService profileService, IUs
     [HttpPost]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult> Provision([FromBody] UserProvisionRequest request)
+    public async Task<ActionResult> Provision([FromBody] UserProvisionRequest request, CancellationToken cancellationToken)
     {
-        (var userId, var error) = await provisioningService.ProvisionUserAsync(request);
+        (var userId, var error) = await provisioningService.ProvisionUserAsync(request, cancellationToken);
 
         if (error is not null)
         {
@@ -232,9 +232,9 @@ public sealed class AdminUsersController(IUserProfileService profileService, IUs
     [HttpPut("{id:int}/membership")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> UpdateMembership(int id, [FromBody] UpdateMembershipRequest request)
+    public async Task<IActionResult> UpdateMembership(int id, [FromBody] UpdateMembershipRequest request, CancellationToken cancellationToken)
     {
-        await provisioningService.UpdateMembershipAsync(id, request);
+        await provisioningService.UpdateMembershipAsync(id, request, cancellationToken);
         return NoContent();
     }
 }
@@ -244,7 +244,7 @@ public sealed class AdminUsersController(IUserProfileService profileService, IUs
 ---
 
 ## File: `eNote\eNote.API\Controllers\Announcements\InstructorAnnouncementController.cs`
-**Hash**: `0f733a10658c` | **Size**: 3204 chars
+**Hash**: `aefd96451fa1` | **Size**: 3484 chars
 
 **Classes**: InstructorAnnouncementController
 ```cs
@@ -265,25 +265,25 @@ public sealed class InstructorAnnouncementController(ICourseAnnouncementService 
 {
     [HttpGet]
     [ProducesResponseType(typeof(PagedResult<AnnouncementDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<PagedResult<AnnouncementDto>>> GetForCourse(int courseId, [FromQuery] AnnouncementSearchObject search)
+    public async Task<ActionResult<PagedResult<AnnouncementDto>>> GetForCourse(int courseId, [FromQuery] AnnouncementSearchObject search, CancellationToken cancellationToken)
     {
-        var result = await announcementService.GetForCourseAsync(courseId, search);
+        var result = await announcementService.GetForCourseAsync(courseId, search, cancellationToken);
         return Ok(result);
     }
 
     [HttpGet("{announcementId:int}")]
     [ProducesResponseType(typeof(AnnouncementDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<AnnouncementDto>> GetById(int courseId, int announcementId)
+    public async Task<ActionResult<AnnouncementDto>> GetById(int courseId, int announcementId, CancellationToken cancellationToken)
     {
-        var result = await announcementService.GetByIdForCourseAsync(courseId, announcementId);
+        var result = await announcementService.GetByIdForCourseAsync(courseId, announcementId, cancellationToken);
         return Ok(result);
     }
 
     [HttpPost]
     [ProducesResponseType(typeof(AnnouncementDto), StatusCodes.Status201Created)]
-    public async Task<ActionResult<AnnouncementDto>> Create(int courseId, [FromBody] AnnouncementRequest request)
+    public async Task<ActionResult<AnnouncementDto>> Create(int courseId, [FromBody] AnnouncementRequest request, CancellationToken cancellationToken)
     {
-        var result = await announcementService.CreateForCourseAsync(courseId, request);
+        var result = await announcementService.CreateForCourseAsync(courseId, request, cancellationToken);
         return CreatedAtAction(nameof(GetById), new
         {
             courseId,
@@ -293,17 +293,17 @@ public sealed class InstructorAnnouncementController(ICourseAnnouncementService 
 
     [HttpPut("{announcementId:int}")]
     [ProducesResponseType(typeof(AnnouncementDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<AnnouncementDto>> Update(int courseId, int announcementId, [FromBody] AnnouncementRequest request)
+    public async Task<ActionResult<AnnouncementDto>> Update(int courseId, int announcementId, [FromBody] AnnouncementRequest request, CancellationToken cancellationToken)
     {
-        var result = await announcementService.UpdateForCourseAsync(courseId, announcementId, request);
+        var result = await announcementService.UpdateForCourseAsync(courseId, announcementId, request, cancellationToken);
         return Ok(result);
     }
 
     [HttpDelete("{announcementId:int}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public async Task<IActionResult> Delete(int courseId, int announcementId)
+    public async Task<IActionResult> Delete(int courseId, int announcementId, CancellationToken cancellationToken)
     {
-        await announcementService.DeleteForCourseAsync(courseId, announcementId);
+        await announcementService.DeleteForCourseAsync(courseId, announcementId, cancellationToken);
         return NoContent();
     }
 
@@ -330,7 +330,7 @@ public sealed class InstructorAnnouncementController(ICourseAnnouncementService 
 ---
 
 ## File: `eNote\eNote.API\Controllers\Announcements\StoreAnnouncementController.cs`
-**Hash**: `a25715634d3c` | **Size**: 2999 chars
+**Hash**: `a6e20c2aae83` | **Size**: 3279 chars
 
 **Classes**: StoreAnnouncementController
 ```cs
@@ -351,25 +351,25 @@ public sealed class StoreAnnouncementController(IStoreAnnouncementService announ
 {
     [HttpGet]
     [ProducesResponseType(typeof(PagedResult<AnnouncementDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<PagedResult<AnnouncementDto>>> GetForStore([FromQuery] AnnouncementSearchObject search)
+    public async Task<ActionResult<PagedResult<AnnouncementDto>>> GetForStore([FromQuery] AnnouncementSearchObject search, CancellationToken cancellationToken)
     {
-        var result = await announcementService.GetForStoreAsync(search);
+        var result = await announcementService.GetForStoreAsync(search, cancellationToken);
         return Ok(result);
     }
 
     [HttpGet("{announcementId:int}")]
     [ProducesResponseType(typeof(AnnouncementDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<AnnouncementDto>> GetById(int announcementId)
+    public async Task<ActionResult<AnnouncementDto>> GetById(int announcementId, CancellationToken cancellationToken)
     {
-        var result = await announcementService.GetByIdForStoreAsync(announcementId);
+        var result = await announcementService.GetByIdForStoreAsync(announcementId, cancellationToken);
         return Ok(result);
     }
 
     [HttpPost]
     [ProducesResponseType(typeof(AnnouncementDto), StatusCodes.Status201Created)]
-    public async Task<ActionResult<AnnouncementDto>> Create([FromBody] AnnouncementRequest request)
+    public async Task<ActionResult<AnnouncementDto>> Create([FromBody] AnnouncementRequest request, CancellationToken cancellationToken)
     {
-        var result = await announcementService.CreateForStoreAsync(request);
+        var result = await announcementService.CreateForStoreAsync(request, cancellationToken);
         return CreatedAtAction(nameof(GetById), new
         {
             announcementId = result.Id
@@ -378,17 +378,17 @@ public sealed class StoreAnnouncementController(IStoreAnnouncementService announ
 
     [HttpPut("{announcementId:int}")]
     [ProducesResponseType(typeof(AnnouncementDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<AnnouncementDto>> Update(int announcementId, [FromBody] AnnouncementRequest request)
+    public async Task<ActionResult<AnnouncementDto>> Update(int announcementId, [FromBody] AnnouncementRequest request, CancellationToken cancellationToken)
     {
-        var result = await announcementService.UpdateForStoreAsync(announcementId, request);
+        var result = await announcementService.UpdateForStoreAsync(announcementId, request, cancellationToken);
         return Ok(result);
     }
 
     [HttpDelete("{announcementId:int}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public async Task<IActionResult> Delete(int announcementId)
+    public async Task<IActionResult> Delete(int announcementId, CancellationToken cancellationToken)
     {
-        await announcementService.DeleteForStoreAsync(announcementId);
+        await announcementService.DeleteForStoreAsync(announcementId, cancellationToken);
         return NoContent();
     }
 
@@ -415,7 +415,7 @@ public sealed class StoreAnnouncementController(IStoreAnnouncementService announ
 ---
 
 ## File: `eNote\eNote.API\Controllers\Announcements\StudentAnnouncementController.cs`
-**Hash**: `28b62356602b` | **Size**: 901 chars
+**Hash**: `8c97c0e70aa4` | **Size**: 957 chars
 
 **Classes**: StudentAnnouncementController
 ```cs
@@ -435,9 +435,9 @@ public sealed class StudentAnnouncementController(IStudentAnnouncementService an
 {
     [HttpGet]
     [ProducesResponseType(typeof(PagedResult<AnnouncementDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<PagedResult<AnnouncementDto>>> GetFeed([FromQuery] AnnouncementSearchObject search)
+    public async Task<ActionResult<PagedResult<AnnouncementDto>>> GetFeed([FromQuery] AnnouncementSearchObject search, CancellationToken cancellationToken)
     {
-        var result = await announcementService.GetFeedForStudentAsync(search);
+        var result = await announcementService.GetFeedForStudentAsync(search, cancellationToken);
         return Ok(result);
     }
 }
@@ -487,7 +487,7 @@ public abstract class CoreController : ControllerBase
 ---
 
 ## File: `eNote\eNote.API\Controllers\Base\ReferenceCrudController.cs`
-**Hash**: `474bbcfadb13` | **Size**: 1847 chars
+**Hash**: `7fbe98e3cdde` | **Size**: 1978 chars
 
 **Classes**: ReferenceCrudController
 ```cs
@@ -498,49 +498,49 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace eNote.API.Controllers.Base;
 
-public abstract class ReferenceCrudController<TDto, TRequest, TSearch>(IReferenceCrudService<TDto, TRequest, TSearch> service) : CoreController where TSearch : BaseSearchObject
+public abstract class ReferenceCrudController<TDto, TRequest, TSearch>(
+    IReferenceCrudService<TDto, TRequest, TSearch> service,
+    Func<TDto, object> getDtoId) : CoreController where TSearch : BaseSearchObject
 {
     [HttpGet]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    public async Task<ActionResult<PagedResult<TDto>>> GetPaged([FromQuery] TSearch search)
+    public async Task<ActionResult<PagedResult<TDto>>> GetPaged([FromQuery] TSearch search, CancellationToken cancellationToken)
     {
-        PagedResult<TDto> result = await service.GetPagedAsync(search);
+        PagedResult<TDto> result = await service.GetPagedAsync(search, cancellationToken);
         return Ok(result);
     }
 
     [HttpGet("{id:int}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    public async Task<ActionResult<TDto>> GetById(int id)
+    public async Task<ActionResult<TDto>> GetById(int id, CancellationToken cancellationToken)
     {
-        TDto dto = await service.GetByIdAsync(id);
+        TDto dto = await service.GetByIdAsync(id, cancellationToken);
         return Ok(dto);
     }
 
     [HttpPost]
     [ProducesResponseType(StatusCodes.Status201Created)]
-    public async Task<ActionResult<TDto>> Create([FromBody] TRequest request)
+    public async Task<ActionResult<TDto>> Create([FromBody] TRequest request, CancellationToken cancellationToken)
     {
-        TDto dto = await service.CreateAsync(request);
-        return CreatedAtAction(nameof(GetById), new { id = GetDtoId(dto) }, dto);
+        TDto dto = await service.CreateAsync(request, cancellationToken);
+        return CreatedAtAction(nameof(GetById), new { id = getDtoId(dto) }, dto);
     }
 
     [HttpPut("{id:int}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    public async Task<ActionResult<TDto>> Update(int id, [FromBody] TRequest request)
+    public async Task<ActionResult<TDto>> Update(int id, [FromBody] TRequest request, CancellationToken cancellationToken)
     {
-        TDto dto = await service.UpdateAsync(id, request);
+        TDto dto = await service.UpdateAsync(id, request, cancellationToken);
         return Ok(dto);
     }
 
     [HttpDelete("{id:int}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public async Task<IActionResult> Delete(int id)
+    public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
     {
-        await service.DeleteAsync(id);
+        await service.DeleteAsync(id, cancellationToken);
         return NoContent();
     }
-
-    private static object GetDtoId(TDto dto) => typeof(TDto).GetProperty("Id")?.GetValue(dto) ?? throw new InvalidOperationException($"{typeof(TDto).Name} must expose an Id property.");
 }
 
 ```
@@ -636,7 +636,7 @@ public sealed class UploadsController(IWebHostEnvironment env, IFileAccessServic
 ---
 
 ## File: `eNote\eNote.API\Controllers\Instruments\PublicInstrumentController.cs`
-**Hash**: `ed3a5a2d732d` | **Size**: 1059 chars
+**Hash**: `4f7e59955ab7` | **Size**: 1171 chars
 
 **Classes**: PublicInstrumentController
 ```cs
@@ -655,17 +655,17 @@ public sealed class PublicInstrumentController(IInstrumentService instrumentServ
 {
     [HttpGet]
     [ProducesResponseType(typeof(PagedResult<InstrumentDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<PagedResult<InstrumentDto>>> GetPaged([FromQuery] InstrumentSearchObject search)
+    public async Task<ActionResult<PagedResult<InstrumentDto>>> GetPaged([FromQuery] InstrumentSearchObject search, CancellationToken cancellationToken)
     {
-        var result = await instrumentService.GetPublicPagedAsync(search);
+        var result = await instrumentService.GetPublicPagedAsync(search, cancellationToken);
         return Ok(result);
     }
 
     [HttpGet("{id:int}")]
     [ProducesResponseType(typeof(InstrumentDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<InstrumentDto>> GetById(int id)
+    public async Task<ActionResult<InstrumentDto>> GetById(int id, CancellationToken cancellationToken)
     {
-        var result = await instrumentService.GetPublicByIdAsync(id);
+        var result = await instrumentService.GetPublicByIdAsync(id, cancellationToken);
         return Ok(result);
     }
 }
@@ -675,7 +675,7 @@ public sealed class PublicInstrumentController(IInstrumentService instrumentServ
 ---
 
 ## File: `eNote\eNote.API\Controllers\Instruments\StoreInstrumentController.cs`
-**Hash**: `855c2d842cf4` | **Size**: 2737 chars
+**Hash**: `b4e39856728d` | **Size**: 3017 chars
 
 **Classes**: StoreInstrumentController
 ```cs
@@ -696,25 +696,25 @@ public sealed class StoreInstrumentController(IInstrumentService instrumentServi
 {
     [HttpGet]
     [ProducesResponseType(typeof(PagedResult<InstrumentDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<PagedResult<InstrumentDto>>> GetPaged([FromQuery] InstrumentSearchObject search)
+    public async Task<ActionResult<PagedResult<InstrumentDto>>> GetPaged([FromQuery] InstrumentSearchObject search, CancellationToken cancellationToken)
     {
-        var result = await instrumentService.GetPagedAsync(search);
+        var result = await instrumentService.GetPagedAsync(search, cancellationToken);
         return Ok(result);
     }
 
     [HttpGet("{id:int}")]
     [ProducesResponseType(typeof(InstrumentDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<InstrumentDto>> GetById(int id)
+    public async Task<ActionResult<InstrumentDto>> GetById(int id, CancellationToken cancellationToken)
     {
-        var result = await instrumentService.GetByIdAsync(id);
+        var result = await instrumentService.GetByIdAsync(id, cancellationToken);
         return Ok(result);
     }
 
     [HttpPost]
     [ProducesResponseType(typeof(InstrumentDto), StatusCodes.Status201Created)]
-    public async Task<ActionResult<InstrumentDto>> Create([FromBody] InstrumentCreateRequest request)
+    public async Task<ActionResult<InstrumentDto>> Create([FromBody] InstrumentCreateRequest request, CancellationToken cancellationToken)
     {
-        var result = await instrumentService.CreateAsync(request);
+        var result = await instrumentService.CreateAsync(request, cancellationToken);
         return CreatedAtAction(nameof(GetById), new
         {
             id = result.Id
@@ -723,9 +723,9 @@ public sealed class StoreInstrumentController(IInstrumentService instrumentServi
 
     [HttpPut("{id:int}")]
     [ProducesResponseType(typeof(InstrumentDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<InstrumentDto>> Update(int id, [FromBody] InstrumentUpdateRequest request)
+    public async Task<ActionResult<InstrumentDto>> Update(int id, [FromBody] InstrumentUpdateRequest request, CancellationToken cancellationToken)
     {
-        var result = await instrumentService.UpdateAsync(id, request);
+        var result = await instrumentService.UpdateAsync(id, request, cancellationToken);
         return Ok(result);
     }
 
@@ -746,9 +746,9 @@ public sealed class StoreInstrumentController(IInstrumentService instrumentServi
 
     [HttpDelete("{id:int}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public async Task<IActionResult> Delete(int id)
+    public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
     {
-        await instrumentService.DeleteAsync(id);
+        await instrumentService.DeleteAsync(id, cancellationToken);
         return NoContent();
     }
 }
@@ -758,7 +758,7 @@ public sealed class StoreInstrumentController(IInstrumentService instrumentServi
 ---
 
 ## File: `eNote\eNote.API\Controllers\Instruments\StudentInstrumentController.cs`
-**Hash**: `15b8dcc8139b` | **Size**: 1141 chars
+**Hash**: `dcb4263c901e` | **Size**: 1263 chars
 
 **Classes**: StudentInstrumentController
 ```cs
@@ -777,17 +777,17 @@ public sealed class StudentInstrumentController(IRecommendationService recommend
 {
     [HttpGet("recommended")]
     [ProducesResponseType(typeof(IReadOnlyList<InstrumentRecommendationDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<IReadOnlyList<InstrumentRecommendationDto>>> GetRecommended([FromQuery] int count = 5)
+    public async Task<ActionResult<IReadOnlyList<InstrumentRecommendationDto>>> GetRecommended([FromQuery] int count = 5, CancellationToken cancellationToken = default)
     {
-        var result = await recommendationService.GetRecommendedInstrumentsAsync(count);
+        var result = await recommendationService.GetRecommendedInstrumentsAsync(count, cancellationToken);
         return Ok(result);
     }
 
     [HttpPost("{id:int}/view")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public async Task<IActionResult> RecordView(int id)
+    public async Task<IActionResult> RecordView(int id, CancellationToken cancellationToken)
     {
-        await recommendationService.RecordInstrumentViewAsync(id);
+        await recommendationService.RecordInstrumentViewAsync(id, cancellationToken);
         return NoContent();
     }
 }
@@ -797,7 +797,7 @@ public sealed class StudentInstrumentController(IRecommendationService recommend
 ---
 
 ## File: `eNote\eNote.API\Controllers\LectureNotes\InstructorLectureNoteController.cs`
-**Hash**: `a7412e297f10` | **Size**: 2230 chars
+**Hash**: `20976a56cbbb` | **Size**: 2510 chars
 
 **Classes**: InstructorLectureNoteController
 ```cs
@@ -817,25 +817,25 @@ public sealed class InstructorLectureNoteController(ILectureNoteService service)
 {
     [HttpGet]
     [ProducesResponseType(typeof(PagedResult<LectureNoteDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<PagedResult<LectureNoteDto>>> GetForLecture(int lectureId, [FromQuery] LectureNoteSearchObject search)
+    public async Task<ActionResult<PagedResult<LectureNoteDto>>> GetForLecture(int lectureId, [FromQuery] LectureNoteSearchObject search, CancellationToken cancellationToken)
     {
-        var result = await service.GetForLectureAsync(lectureId, search);
+        var result = await service.GetForLectureAsync(lectureId, search, cancellationToken);
         return Ok(result);
     }
 
     [HttpGet("{noteId:int}")]
     [ProducesResponseType(typeof(LectureNoteDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<LectureNoteDto>> GetById(int lectureId, int noteId)
+    public async Task<ActionResult<LectureNoteDto>> GetById(int lectureId, int noteId, CancellationToken cancellationToken)
     {
-        var dto = await service.GetByIdForInstructorAsync(lectureId, noteId);
+        var dto = await service.GetByIdForInstructorAsync(lectureId, noteId, cancellationToken);
         return Ok(dto);
     }
 
     [HttpPost]
     [ProducesResponseType(typeof(LectureNoteDto), StatusCodes.Status201Created)]
-    public async Task<ActionResult<LectureNoteDto>> Create(int lectureId, [FromBody] LectureNoteRequest request)
+    public async Task<ActionResult<LectureNoteDto>> Create(int lectureId, [FromBody] LectureNoteRequest request, CancellationToken cancellationToken)
     {
-        var dto = await service.CreateAsync(lectureId, request);
+        var dto = await service.CreateAsync(lectureId, request, cancellationToken);
         return CreatedAtAction(nameof(GetById), new
         {
             lectureId,
@@ -845,17 +845,17 @@ public sealed class InstructorLectureNoteController(ILectureNoteService service)
 
     [HttpPut("{noteId:int}")]
     [ProducesResponseType(typeof(LectureNoteDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<LectureNoteDto>> Update(int lectureId, int noteId, [FromBody] LectureNoteRequest request)
+    public async Task<ActionResult<LectureNoteDto>> Update(int lectureId, int noteId, [FromBody] LectureNoteRequest request, CancellationToken cancellationToken)
     {
-        var dto = await service.UpdateAsync(lectureId, noteId, request);
+        var dto = await service.UpdateAsync(lectureId, noteId, request, cancellationToken);
         return Ok(dto);
     }
 
     [HttpDelete("{noteId:int}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public async Task<IActionResult> Delete(int lectureId, int noteId)
+    public async Task<IActionResult> Delete(int lectureId, int noteId, CancellationToken cancellationToken)
     {
-        await service.DeleteAsync(lectureId, noteId);
+        await service.DeleteAsync(lectureId, noteId, cancellationToken);
         return NoContent();
     }
 }
@@ -865,7 +865,7 @@ public sealed class InstructorLectureNoteController(ILectureNoteService service)
 ---
 
 ## File: `eNote\eNote.API\Controllers\LectureNotes\StudentLectureNoteController.cs`
-**Hash**: `ebe1f91e9d59` | **Size**: 1202 chars
+**Hash**: `0a6fa8227011` | **Size**: 1314 chars
 
 **Classes**: StudentLectureNoteController
 ```cs
@@ -885,17 +885,17 @@ public sealed class StudentLectureNoteController(ILectureNoteService service) : 
 {
     [HttpGet]
     [ProducesResponseType(typeof(PagedResult<LectureNoteDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<PagedResult<LectureNoteDto>>> GetForLecture(int lectureId, [FromQuery] LectureNoteSearchObject search)
+    public async Task<ActionResult<PagedResult<LectureNoteDto>>> GetForLecture(int lectureId, [FromQuery] LectureNoteSearchObject search, CancellationToken cancellationToken)
     {
-        var result = await service.GetForStudentAsync(lectureId, search);
+        var result = await service.GetForStudentAsync(lectureId, search, cancellationToken);
         return Ok(result);
     }
 
     [HttpGet("{noteId:int}")]
     [ProducesResponseType(typeof(LectureNoteDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<LectureNoteDto>> GetById(int lectureId, int noteId)
+    public async Task<ActionResult<LectureNoteDto>> GetById(int lectureId, int noteId, CancellationToken cancellationToken)
     {
-        var dto = await service.GetByIdForStudentAsync(lectureId, noteId);
+        var dto = await service.GetByIdForStudentAsync(lectureId, noteId, cancellationToken);
         return Ok(dto);
     }
 }
@@ -905,7 +905,7 @@ public sealed class StudentLectureNoteController(ILectureNoteService service) : 
 ---
 
 ## File: `eNote\eNote.API\Controllers\Lectures\InstructorLectureController.cs`
-**Hash**: `bee65a0797ca` | **Size**: 3448 chars
+**Hash**: `27c68486c945` | **Size**: 3896 chars
 
 **Classes**: InstructorLectureController
 ```cs
@@ -926,25 +926,25 @@ public sealed class InstructorLectureController(ILectureService service, ILectur
 {
     [HttpGet]
     [ProducesResponseType(typeof(PagedResult<LectureDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<PagedResult<LectureDto>>> GetMyLectures([FromQuery] LectureSearchObject search)
+    public async Task<ActionResult<PagedResult<LectureDto>>> GetMyLectures([FromQuery] LectureSearchObject search, CancellationToken cancellationToken)
     {
-        var result = await service.GetPagedForInstructorAsync(search);
+        var result = await service.GetPagedForInstructorAsync(search, cancellationToken);
         return Ok(result);
     }
 
     [HttpGet("{id:int}")]
     [ProducesResponseType(typeof(LectureDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<LectureDto>> GetById(int id)
+    public async Task<ActionResult<LectureDto>> GetById(int id, CancellationToken cancellationToken)
     {
-        var dto = await service.GetByIdForInstructorAsync(id);
+        var dto = await service.GetByIdForInstructorAsync(id, cancellationToken);
         return Ok(dto);
     }
 
     [HttpPost]
     [ProducesResponseType(typeof(LectureDto), StatusCodes.Status201Created)]
-    public async Task<ActionResult<LectureDto>> Create([FromBody] LectureCreateRequest request)
+    public async Task<ActionResult<LectureDto>> Create([FromBody] LectureCreateRequest request, CancellationToken cancellationToken)
     {
-        var dto = await service.CreateAsync(request);
+        var dto = await service.CreateAsync(request, cancellationToken);
         return CreatedAtAction(nameof(GetById), new
         {
             id = dto.Id
@@ -953,25 +953,25 @@ public sealed class InstructorLectureController(ILectureService service, ILectur
 
     [HttpPut("{id:int}")]
     [ProducesResponseType(typeof(LectureDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<LectureDto>> Update(int id, [FromBody] LectureUpdateRequest request)
+    public async Task<ActionResult<LectureDto>> Update(int id, [FromBody] LectureUpdateRequest request, CancellationToken cancellationToken)
     {
-        var dto = await service.UpdateAsync(id, request);
+        var dto = await service.UpdateAsync(id, request, cancellationToken);
         return Ok(dto);
     }
 
     [HttpDelete("{id:int}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public async Task<IActionResult> Delete(int id)
+    public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
     {
-        await service.DeleteAsync(id);
+        await service.DeleteAsync(id, cancellationToken);
         return NoContent();
     }
 
     [HttpPost("{id:int}/cancel")]
     [ProducesResponseType(typeof(LectureDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<LectureDto>> Cancel(int id)
+    public async Task<ActionResult<LectureDto>> Cancel(int id, CancellationToken cancellationToken)
     {
-        var dto = await service.CancelAsync(id);
+        var dto = await service.CancelAsync(id, cancellationToken);
         return Ok(dto);
     }
 
@@ -985,17 +985,17 @@ public sealed class InstructorLectureController(ILectureService service, ILectur
 
     [HttpGet("{id:int}/attendance")]
     [ProducesResponseType(typeof(PagedResult<AttendanceDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<PagedResult<AttendanceDto>>> GetAttendance(int id, [FromQuery] AttendanceSearchObject search)
+    public async Task<ActionResult<PagedResult<AttendanceDto>>> GetAttendance(int id, [FromQuery] AttendanceSearchObject search, CancellationToken cancellationToken)
     {
-        var result = await attendanceService.GetAttendanceAsync(id, search);
+        var result = await attendanceService.GetAttendanceAsync(id, search, cancellationToken);
         return Ok(result);
     }
 
     [HttpPut("{id:int}/attendance")]
     [ProducesResponseType(typeof(AttendanceDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<AttendanceDto>> MarkAttendance(int id, [FromBody] MarkAttendanceRequest request)
+    public async Task<ActionResult<AttendanceDto>> MarkAttendance(int id, [FromBody] MarkAttendanceRequest request, CancellationToken cancellationToken)
     {
-        var dto = await attendanceService.MarkAttendanceAsync(id, request);
+        var dto = await attendanceService.MarkAttendanceAsync(id, request, cancellationToken);
         return Ok(dto);
     }
 }
@@ -1005,7 +1005,7 @@ public sealed class InstructorLectureController(ILectureService service, ILectur
 ---
 
 ## File: `eNote\eNote.API\Controllers\Lectures\StudentLectureController.cs`
-**Hash**: `1886f3415a8f` | **Size**: 1448 chars
+**Hash**: `880e366dae1a` | **Size**: 1616 chars
 
 **Classes**: StudentLectureController
 ```cs
@@ -1027,25 +1027,25 @@ public sealed class StudentLectureController(
 {
     [HttpGet]
     [ProducesResponseType(typeof(PagedResult<LectureDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<PagedResult<LectureDto>>> GetAvailable([FromQuery] LectureSearchObject search)
+    public async Task<ActionResult<PagedResult<LectureDto>>> GetAvailable([FromQuery] LectureSearchObject search, CancellationToken cancellationToken)
     {
-        var result = await service.GetPagedForStudentAsync(search);
+        var result = await service.GetPagedForStudentAsync(search, cancellationToken);
         return Ok(result);
     }
 
     [HttpGet("{id:int}")]
     [ProducesResponseType(typeof(LectureDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<LectureDto>> GetById(int id)
+    public async Task<ActionResult<LectureDto>> GetById(int id, CancellationToken cancellationToken)
     {
-        var dto = await service.GetByIdForStudentAsync(id);
+        var dto = await service.GetByIdForStudentAsync(id, cancellationToken);
         return Ok(dto);
     }
 
     [HttpPost("{id:int}/rsvp")]
     [ProducesResponseType(typeof(RsvpResponse), StatusCodes.Status200OK)]
-    public async Task<ActionResult<RsvpResponse>> Rsvp(int id, [FromBody] RsvpRequest request)
+    public async Task<ActionResult<RsvpResponse>> Rsvp(int id, [FromBody] RsvpRequest request, CancellationToken cancellationToken)
     {
-        var response = await attendanceService.RsvpAsync(id, request);
+        var response = await attendanceService.RsvpAsync(id, request, cancellationToken);
         return Ok(response);
     }
 }
@@ -1055,7 +1055,7 @@ public sealed class StudentLectureController(
 ---
 
 ## File: `eNote\eNote.API\Controllers\Notifications\StudentNotificationController.cs`
-**Hash**: `a60cf57005ab` | **Size**: 1782 chars
+**Hash**: `b2484c7be6a4` | **Size**: 1998 chars
 
 **Classes**: StudentNotificationController
 ```cs
@@ -1075,33 +1075,33 @@ public sealed class StudentNotificationController(INotificationService notificat
 {
     [HttpGet]
     [ProducesResponseType(typeof(PagedResult<NotificationDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<PagedResult<NotificationDto>>> GetPaged([FromQuery] NotificationSearchObject search)
+    public async Task<ActionResult<PagedResult<NotificationDto>>> GetPaged([FromQuery] NotificationSearchObject search, CancellationToken cancellationToken)
     {
-        var result = await notificationService.GetPagedAsync(search);
+        var result = await notificationService.GetPagedAsync(search, cancellationToken);
         return Ok(result);
     }
 
     [HttpGet("unread-count")]
     [ProducesResponseType(typeof(NotificationUnreadCountDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<NotificationUnreadCountDto>> GetUnreadCount()
+    public async Task<ActionResult<NotificationUnreadCountDto>> GetUnreadCount(CancellationToken cancellationToken)
     {
-        var result = await notificationService.GetUnreadCountAsync();
+        var result = await notificationService.GetUnreadCountAsync(cancellationToken);
         return Ok(result);
     }
 
     [HttpPatch("{id:int}/read")]
     [ProducesResponseType(typeof(NotificationDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<NotificationDto>> MarkRead(int id)
+    public async Task<ActionResult<NotificationDto>> MarkRead(int id, CancellationToken cancellationToken)
     {
-        var result = await notificationService.MarkReadAsync(id);
+        var result = await notificationService.MarkReadAsync(id, cancellationToken);
         return Ok(result);
     }
 
     [HttpPatch("read-all")]
     [ProducesResponseType(typeof(NotificationUnreadCountDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<NotificationUnreadCountDto>> MarkAllRead()
+    public async Task<ActionResult<NotificationUnreadCountDto>> MarkAllRead(CancellationToken cancellationToken)
     {
-        var result = await notificationService.MarkAllReadAsync();
+        var result = await notificationService.MarkAllReadAsync(cancellationToken);
         return Ok(result);
     }
 }
@@ -1111,7 +1111,7 @@ public sealed class StudentNotificationController(INotificationService notificat
 ---
 
 ## File: `eNote\eNote.API\Controllers\Users\UsersController.cs`
-**Hash**: `6cb3a653205f` | **Size**: 3435 chars
+**Hash**: `2e3f08f5a197` | **Size**: 3487 chars
 
 **Classes**: UsersController
 ```cs
@@ -1130,9 +1130,9 @@ public sealed class UsersController(
     [HttpGet("me")]
     [ProducesResponseType(typeof(UserProfileResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<UserProfileResponse>> GetCurrentUser()
+    public async Task<ActionResult<UserProfileResponse>> GetCurrentUser(CancellationToken cancellationToken)
     {
-        var profile = await profileService.GetCurrentUserAsync();
+        var profile = await profileService.GetCurrentUserAsync(cancellationToken);
 
         if (profile is null)
         {
@@ -1240,7 +1240,7 @@ public sealed class UsersController(
 ---
 
 ## File: `eNote\eNote.API\Extensions\ApplicationServiceExtensions.cs`
-**Hash**: `f9084e1b29ab` | **Size**: 2471 chars
+**Hash**: `5d6e76778713` | **Size**: 2154 chars
 
 **Classes**: ApplicationServiceExtensions
 ### Key Cross-Cutting Interactions
@@ -1288,11 +1288,6 @@ public static class ApplicationServiceExtensions
             .AddClasses(classes => classes.Where(type => type.Name.EndsWith("Service") && !type.IsAbstract))
             .AsImplementedInterfaces()
             .WithScopedLifetime());
-
-        services.AddScoped<ICourseAnnouncementService, AnnouncementService>();
-        services.AddScoped<IStoreAnnouncementService, AnnouncementService>();
-        services.AddScoped<IStudentAnnouncementService, AnnouncementService>();
-        services.AddScoped<IAdminInstructorService, AdminInstructorService>();
 
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddScoped<ICurrentActor, CurrentActor>();
@@ -1817,12 +1812,13 @@ public static class RateLimitingExtensions
 ---
 
 ## File: `eNote\eNote.API\Extensions\SeedExtensions.cs`
-**Hash**: `918c2769667a` | **Size**: 896 chars
+**Hash**: `9ebcc9763606` | **Size**: 999 chars
 
 **Classes**: SeedExtensions
 ```cs
 ﻿using eNote.Infrastructure.Data;
 using eNote.Infrastructure.Data.Seed;
+using eNote.Application.Common.Time;
 using Microsoft.EntityFrameworkCore;
 
 namespace eNote.API.Extensions;
@@ -1848,7 +1844,8 @@ public static class SeedExtensions
         await IdentitySeed.SeedAsync(services);
 
         var context = services.GetRequiredService<ENoteContext>();
-        await DevelopmentDataSeed.SeedAsync(context);
+        var clock = services.GetRequiredService<IClock>();
+        await DevelopmentDataSeed.SeedAsync(context, clock);
 
         return app;
     }
@@ -2090,7 +2087,7 @@ app.Run();
 ---
 
 ## File: `eNote\eNote.API\Services\CurrentUserService.cs`
-**Hash**: `1cf7d17829df` | **Size**: 882 chars
+**Hash**: `965873f0a188` | **Size**: 889 chars
 
 **Classes**: CurrentUserService
 ```cs
@@ -2102,7 +2099,7 @@ using System.Security.Claims;
 
 namespace eNote.API.Services;
 
-public class CurrentUserService(IHttpContextAccessor httpContextAccessor) : ICurrentUserService
+public sealed class CurrentUserService(IHttpContextAccessor httpContextAccessor) : ICurrentUserService
 {
     public int UserId
     {
@@ -2271,7 +2268,7 @@ public class NotFoundException(string? message = null) : AppException(404, "erro
 ---
 
 ## File: `eNote\eNote.Application\Common\Interfaces\ICurrentActor.cs`
-**Hash**: `72bab6703aaa` | **Size**: 367 chars
+**Hash**: `9a2b9b2743ff` | **Size**: 412 chars
 
 **Classes**: 
 **Interfaces**: ICurrentActor
@@ -2289,7 +2286,7 @@ public interface ICurrentActor : ICurrentUserService
     Task<int> GetCurrentStudentIdAsync();
     Task<Instructor> GetCurrentInstructorAsync();
     Task<MusicStoreEmployee> GetCurrentEmployeeAsync();
-    Task<int> GetCurrentStoreIdAsync();
+    Task<int> GetCurrentStoreIdAsync(CancellationToken cancellationToken = default);
 }
 
 ```
@@ -2845,7 +2842,7 @@ public class LectureNoteSearchObject : BaseSearchObject
 ---
 
 ## File: `eNote\eNote.Application\Features\Academic\LectureNotes\Services\ILectureNoteService.cs`
-**Hash**: `c4a44bcda5d1` | **Size**: 795 chars
+**Hash**: `44c06a65a250` | **Size**: 1124 chars
 
 **Classes**: 
 **Interfaces**: ILectureNoteService
@@ -2857,13 +2854,13 @@ namespace eNote.Application.Features.Academic.LectureNotes.Services;
 
 public interface ILectureNoteService
 {
-    Task<PagedResult<LectureNoteDto>> GetForLectureAsync(int lectureId, LectureNoteSearchObject search);
-    Task<LectureNoteDto> GetByIdForInstructorAsync(int lectureId, int noteId);
-    Task<LectureNoteDto> CreateAsync(int lectureId, LectureNoteRequest request);
-    Task<LectureNoteDto> UpdateAsync(int lectureId, int noteId, LectureNoteRequest request);
-    Task DeleteAsync(int lectureId, int noteId);
-    Task<PagedResult<LectureNoteDto>> GetForStudentAsync(int lectureId, LectureNoteSearchObject search);
-    Task<LectureNoteDto> GetByIdForStudentAsync(int lectureId, int noteId);
+    Task<PagedResult<LectureNoteDto>> GetForLectureAsync(int lectureId, LectureNoteSearchObject search, CancellationToken cancellationToken = default);
+    Task<LectureNoteDto> GetByIdForInstructorAsync(int lectureId, int noteId, CancellationToken cancellationToken = default);
+    Task<LectureNoteDto> CreateAsync(int lectureId, LectureNoteRequest request, CancellationToken cancellationToken = default);
+    Task<LectureNoteDto> UpdateAsync(int lectureId, int noteId, LectureNoteRequest request, CancellationToken cancellationToken = default);
+    Task DeleteAsync(int lectureId, int noteId, CancellationToken cancellationToken = default);
+    Task<PagedResult<LectureNoteDto>> GetForStudentAsync(int lectureId, LectureNoteSearchObject search, CancellationToken cancellationToken = default);
+    Task<LectureNoteDto> GetByIdForStudentAsync(int lectureId, int noteId, CancellationToken cancellationToken = default);
 }
 
 ```
@@ -2871,7 +2868,7 @@ public interface ILectureNoteService
 ---
 
 ## File: `eNote\eNote.Application\Features\Academic\LectureNotes\Services\LectureNoteService.cs`
-**Hash**: `5b39e1171be2` | **Size**: 3983 chars
+**Hash**: `f41e849acd28` | **Size**: 4619 chars
 
 **Classes**: LectureNoteService
 ### Key Cross-Cutting Interactions
@@ -2900,7 +2897,7 @@ public sealed class LectureNoteService(
     IInstructorAccessService instructorAccess,
     IMapper mapper) : ILectureNoteService
 {
-    public async Task<PagedResult<LectureNoteDto>> GetForLectureAsync(int lectureId, LectureNoteSearchObject search)
+    public async Task<PagedResult<LectureNoteDto>> GetForLectureAsync(int lectureId, LectureNoteSearchObject search, CancellationToken cancellationToken = default)
     {
         var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(actor.UserId);
 
@@ -2908,16 +2905,16 @@ public sealed class LectureNoteService(
             .AsNoTracking()
             .ApplySearch(search);
 
-        return await query.ToPagedResultAsync(search, mapper.Map<LectureNoteDto>, q => q.OrderByDescending(x => x.CreatedAt));
+        return await query.ToPagedResultAsync(search, mapper.Map<LectureNoteDto>, q => q.OrderByDescending(x => x.CreatedAt), cancellationToken);
     }
 
-    public async Task<LectureNoteDto> GetByIdForInstructorAsync(int lectureId, int noteId) =>
-        mapper.Map<LectureNoteDto>(await GetOwnedNoteAsync(lectureId, noteId));
+    public async Task<LectureNoteDto> GetByIdForInstructorAsync(int lectureId, int noteId, CancellationToken cancellationToken = default) =>
+        mapper.Map<LectureNoteDto>(await GetOwnedNoteAsync(lectureId, noteId, cancellationToken: cancellationToken));
 
-    public async Task<LectureNoteDto> CreateAsync(int lectureId, LectureNoteRequest request)
+    public async Task<LectureNoteDto> CreateAsync(int lectureId, LectureNoteRequest request, CancellationToken cancellationToken = default)
     {
         var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(actor.UserId);
-        await instructorAccess.EnsureOwnsLectureAsync(lectureId, instructorId);
+        await instructorAccess.EnsureOwnsLectureAsync(lectureId, instructorId, cancellationToken);
 
         var entity = new LectureNote(request.Title.Trim(), request.Content.Trim(), lectureId)
         {
@@ -2925,34 +2922,34 @@ public sealed class LectureNoteService(
         };
 
         context.Set<LectureNote>().Add(entity);
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(cancellationToken);
 
         return mapper.Map<LectureNoteDto>(entity);
     }
 
-    public async Task<LectureNoteDto> UpdateAsync(int lectureId, int noteId, LectureNoteRequest request)
+    public async Task<LectureNoteDto> UpdateAsync(int lectureId, int noteId, LectureNoteRequest request, CancellationToken cancellationToken = default)
     {
-        var entity = await GetOwnedNoteAsync(lectureId, noteId, track: true);
+        var entity = await GetOwnedNoteAsync(lectureId, noteId, track: true, cancellationToken: cancellationToken);
 
         entity.UpdateDetails(request.Title.Trim(), request.Content.Trim());
         entity.UpdatedById = actor.UserId;
 
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(cancellationToken);
 
         return mapper.Map<LectureNoteDto>(entity);
     }
 
-    public async Task DeleteAsync(int lectureId, int noteId)
+    public async Task DeleteAsync(int lectureId, int noteId, CancellationToken cancellationToken = default)
     {
-        var entity = await GetOwnedNoteAsync(lectureId, noteId, track: true);
+        var entity = await GetOwnedNoteAsync(lectureId, noteId, track: true, cancellationToken: cancellationToken);
 
         entity.SoftDelete();
         entity.UpdatedById = actor.UserId;
 
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task<PagedResult<LectureNoteDto>> GetForStudentAsync(int lectureId, LectureNoteSearchObject search)
+    public async Task<PagedResult<LectureNoteDto>> GetForStudentAsync(int lectureId, LectureNoteSearchObject search, CancellationToken cancellationToken = default)
     {
         var studentId = await actor.GetCurrentStudentIdAsync();
 
@@ -2962,26 +2959,26 @@ public sealed class LectureNoteService(
             .Where(x => x.LectureId == lectureId)
             .ApplySearch(search);
 
-        return await query.ToPagedResultAsync(search, mapper.Map<LectureNoteDto>, q => q.OrderByDescending(x => x.CreatedAt));
+        return await query.ToPagedResultAsync(search, mapper.Map<LectureNoteDto>, q => q.OrderByDescending(x => x.CreatedAt), cancellationToken);
     }
 
-    public async Task<LectureNoteDto> GetByIdForStudentAsync(int lectureId, int noteId)
+    public async Task<LectureNoteDto> GetByIdForStudentAsync(int lectureId, int noteId, CancellationToken cancellationToken = default)
     {
         var studentId = await actor.GetCurrentStudentIdAsync();
 
         var entity = await context.Set<LectureNote>()
             .AsNoTracking()
             .ForEnrolledStudent(studentId)
-            .FirstOrDefaultAsync(x => x.Id == noteId && x.LectureId == lectureId)
+            .FirstOrDefaultAsync(x => x.Id == noteId && x.LectureId == lectureId, cancellationToken)
             ?? throw new NotFoundException(Messages.LectureNoteNotFound);
 
         return mapper.Map<LectureNoteDto>(entity);
     }
 
-    private async Task<LectureNote> GetOwnedNoteAsync(int lectureId, int noteId, bool track = false)
+    private async Task<LectureNote> GetOwnedNoteAsync(int lectureId, int noteId, bool track = false, CancellationToken cancellationToken = default)
     {
         var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(actor.UserId);
-        return await instructorAccess.GetOwnedLectureNoteAsync(lectureId, noteId, instructorId, track);
+        return await instructorAccess.GetOwnedLectureNoteAsync(lectureId, noteId, instructorId, track, cancellationToken);
     }
 }
 
@@ -3253,7 +3250,7 @@ public class RsvpResponse
 ---
 
 ## File: `eNote\eNote.Application\Features\Academic\Lectures\Services\ILectureAttendanceService.cs`
-**Hash**: `3edd160ac857` | **Size**: 417 chars
+**Hash**: `18474cd3118a` | **Size**: 558 chars
 
 **Classes**: 
 **Interfaces**: ILectureAttendanceService
@@ -3264,9 +3261,9 @@ namespace eNote.Application.Features.Academic.Lectures.Services;
 
 public interface ILectureAttendanceService
 {
-    Task<RsvpResponse> RsvpAsync(int lectureId, RsvpRequest request);
-    Task<AttendanceDto> MarkAttendanceAsync(int lectureId, MarkAttendanceRequest request);
-    Task<PagedResult<AttendanceDto>> GetAttendanceAsync(int lectureId, AttendanceSearchObject search);
+    Task<RsvpResponse> RsvpAsync(int lectureId, RsvpRequest request, CancellationToken cancellationToken = default);
+    Task<AttendanceDto> MarkAttendanceAsync(int lectureId, MarkAttendanceRequest request, CancellationToken cancellationToken = default);
+    Task<PagedResult<AttendanceDto>> GetAttendanceAsync(int lectureId, AttendanceSearchObject search, CancellationToken cancellationToken = default);
 }
 
 ```
@@ -3274,7 +3271,7 @@ public interface ILectureAttendanceService
 ---
 
 ## File: `eNote\eNote.Application\Features\Academic\Lectures\Services\ILectureService.cs`
-**Hash**: `124338b7f247` | **Size**: 689 chars
+**Hash**: `c8590e791baa` | **Size**: 1065 chars
 
 **Classes**: 
 **Interfaces**: ILectureService
@@ -3286,14 +3283,14 @@ namespace eNote.Application.Features.Academic.Lectures.Services;
 
 public interface ILectureService
 {
-    Task<PagedResult<LectureDto>> GetPagedForInstructorAsync(LectureSearchObject search);
-    Task<PagedResult<LectureDto>> GetPagedForStudentAsync(LectureSearchObject search);
-    Task<LectureDto> GetByIdForInstructorAsync(int id);
-    Task<LectureDto> GetByIdForStudentAsync(int id);
-    Task<LectureDto> CreateAsync(LectureCreateRequest request);
-    Task<LectureDto> UpdateAsync(int id, LectureUpdateRequest request);
-    Task DeleteAsync(int id);
-    Task<LectureDto> CancelAsync(int id);
+    Task<PagedResult<LectureDto>> GetPagedForInstructorAsync(LectureSearchObject search, CancellationToken cancellationToken = default);
+    Task<PagedResult<LectureDto>> GetPagedForStudentAsync(LectureSearchObject search, CancellationToken cancellationToken = default);
+    Task<LectureDto> GetByIdForInstructorAsync(int id, CancellationToken cancellationToken = default);
+    Task<LectureDto> GetByIdForStudentAsync(int id, CancellationToken cancellationToken = default);
+    Task<LectureDto> CreateAsync(LectureCreateRequest request, CancellationToken cancellationToken = default);
+    Task<LectureDto> UpdateAsync(int id, LectureUpdateRequest request, CancellationToken cancellationToken = default);
+    Task DeleteAsync(int id, CancellationToken cancellationToken = default);
+    Task<LectureDto> CancelAsync(int id, CancellationToken cancellationToken = default);
 }
 
 ```
@@ -3301,7 +3298,7 @@ public interface ILectureService
 ---
 
 ## File: `eNote\eNote.Application\Features\Academic\Lectures\Services\LectureAttendanceService.cs`
-**Hash**: `6b0a671e7eed` | **Size**: 5568 chars
+**Hash**: `c76c2e24325f` | **Size**: 5773 chars
 
 **Classes**: LectureAttendanceService
 ### Key Cross-Cutting Interactions
@@ -3328,21 +3325,16 @@ namespace eNote.Application.Features.Academic.Lectures.Services;
 
 public sealed class LectureAttendanceService(IAppDbContext context, ICurrentActor actor, IStudentDisplayNameService displayNames, IInstructorAccessService instructorAccess, ILogger<LectureAttendanceService> logger) : ILectureAttendanceService
 {
-    public async Task<RsvpResponse> RsvpAsync(int lectureId, RsvpRequest request)
+    public async Task<RsvpResponse> RsvpAsync(int lectureId, RsvpRequest request, CancellationToken cancellationToken = default)
     {
         var lecture = await context.Set<Lecture>()
             .Include(x => x.Attendances)
             .Include(x => x.Course)
-            .FirstOrDefaultAsync(x => x.Id == lectureId && x.Course.IsPublished && x.LectureStatus != LectureStatus.Cancelled) ?? throw new NotFoundException(Messages.LectureNotFound);
-
-        if (lecture.IsCancelled)
-        {
-            throw new BusinessException(Messages.LectureCancelled);
-        }
+            .FirstOrDefaultAsync(x => x.Id == lectureId && x.Course.IsPublished && x.LectureStatus != LectureStatus.Cancelled, cancellationToken) ?? throw new NotFoundException(Messages.LectureNotFound);
 
         var studentId = await actor.GetCurrentStudentIdAsync();
 
-        if (!await context.IsEnrolledInCourseAsync(studentId, lecture.CourseId))
+        if (!await context.IsEnrolledInCourseAsync(studentId, lecture.CourseId, cancellationToken))
         {
             throw new BusinessException(Messages.StudentNotEnrolled);
         }
@@ -3375,7 +3367,7 @@ public sealed class LectureAttendanceService(IAppDbContext context, ICurrentActo
         try
         {
             context.Set<Lecture>().Entry(lecture).State = EntityState.Modified;
-            await context.SaveChangesAsync();
+            await context.SaveChangesAsync(cancellationToken);
         }
         catch (DbUpdateConcurrencyException ex)
         {
@@ -3386,10 +3378,10 @@ public sealed class LectureAttendanceService(IAppDbContext context, ICurrentActo
         return new RsvpResponse { LectureId = lecture.Id, StudentId = studentId, Confirmed = request.Confirm };
     }
 
-    public async Task<PagedResult<AttendanceDto>> GetAttendanceAsync(int lectureId, AttendanceSearchObject search)
+    public async Task<PagedResult<AttendanceDto>> GetAttendanceAsync(int lectureId, AttendanceSearchObject search, CancellationToken cancellationToken = default)
     {
         var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(actor.UserId);
-        await instructorAccess.EnsureOwnsLectureAsync(lectureId, instructorId);
+        await instructorAccess.EnsureOwnsLectureAsync(lectureId, instructorId, cancellationToken);
 
         var query = context.Set<Attendance>()
             .AsNoTracking()
@@ -3402,20 +3394,20 @@ public sealed class LectureAttendanceService(IAppDbContext context, ICurrentActo
             StudentId = a.StudentId,
             StudentName = names.GetValueOrDefault(a.StudentId, $"Student {a.StudentId}"),
             AttendanceStatus = a.AttendanceStatus
-        }, q => q.OrderBy(x => x.StudentId));
+        }, q => q.OrderBy(x => x.StudentId), cancellationToken);
     }
 
-    public async Task<AttendanceDto> MarkAttendanceAsync(int lectureId, MarkAttendanceRequest request)
+    public async Task<AttendanceDto> MarkAttendanceAsync(int lectureId, MarkAttendanceRequest request, CancellationToken cancellationToken = default)
     {
         var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(actor.UserId);
-        var lecture = await instructorAccess.GetOwnedLectureAsync(lectureId, instructorId, track: true, includeAttendances: true);
+        var lecture = await instructorAccess.GetOwnedLectureAsync(lectureId, instructorId, track: true, includeAttendances: true, cancellationToken: cancellationToken);
 
         if (lecture.IsCancelled)
         {
             throw new BusinessException(Messages.LectureCancelled);
         }
 
-        if (!await context.IsEnrolledInCourseAsync(request.StudentId, lecture.CourseId))
+        if (!await context.IsEnrolledInCourseAsync(request.StudentId, lecture.CourseId, cancellationToken))
         {
             throw new BusinessException(Messages.StudentNotEnrolled);
         }
@@ -3436,11 +3428,11 @@ public sealed class LectureAttendanceService(IAppDbContext context, ICurrentActo
             attendance.UpdatedById = actor.UserId;
         }
 
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(cancellationToken);
 
         var student = attendance.Student ?? await context.Set<Student>()
             .AsNoTracking()
-            .FirstAsync(x => x.Id == attendance.StudentId);
+            .FirstAsync(x => x.Id == attendance.StudentId, cancellationToken);
 
         return new AttendanceDto
         {
@@ -3457,7 +3449,7 @@ public sealed class LectureAttendanceService(IAppDbContext context, ICurrentActo
 ---
 
 ## File: `eNote\eNote.Application\Features\Academic\Lectures\Services\LectureService.cs`
-**Hash**: `a2e73aa9838f` | **Size**: 5055 chars
+**Hash**: `d54ea8c80851` | **Size**: 5727 chars
 
 **Classes**: LectureService
 ### Key Cross-Cutting Interactions
@@ -3488,14 +3480,14 @@ public sealed class LectureService(
     ILogger<LectureService> logger,
     IMapper mapper) : ILectureService
 {
-    public async Task<LectureDto> GetByIdForInstructorAsync(int id)
+    public async Task<LectureDto> GetByIdForInstructorAsync(int id, CancellationToken cancellationToken = default)
     {
         var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(actor.UserId);
-        var entity = await instructorAccess.GetOwnedLectureAsync(id, instructorId, includeAttendances: true);
+        var entity = await instructorAccess.GetOwnedLectureAsync(id, instructorId, includeAttendances: true, cancellationToken: cancellationToken);
         return mapper.Map<LectureDto>(entity);
     }
 
-    public async Task<LectureDto> GetByIdForStudentAsync(int id)
+    public async Task<LectureDto> GetByIdForStudentAsync(int id, CancellationToken cancellationToken = default)
     {
         var studentId = await actor.GetCurrentStudentIdAsync();
 
@@ -3503,13 +3495,13 @@ public sealed class LectureService(
             .Include(x => x.Attendances)
             .AsNoTracking()
             .ForEnrolledStudent(studentId)
-            .FirstOrDefaultAsync(x => x.Id == id)
+            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken)
             ?? throw new NotFoundException(Messages.LectureNotFound);
 
         return mapper.Map<LectureDto>(entity);
     }
 
-    public async Task<PagedResult<LectureDto>> GetPagedForInstructorAsync(LectureSearchObject search)
+    public async Task<PagedResult<LectureDto>> GetPagedForInstructorAsync(LectureSearchObject search, CancellationToken cancellationToken = default)
     {
         var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(actor.UserId);
 
@@ -3518,10 +3510,10 @@ public sealed class LectureService(
             .Include(x => x.Attendances)
             .ApplySearch(search);
 
-        return await query.ToPagedResultAsync(search, mapper.Map<LectureDto>, q => q.OrderByDescending(x => x.LectureTime));
+        return await query.ToPagedResultAsync(search, mapper.Map<LectureDto>, q => q.OrderByDescending(x => x.LectureTime), cancellationToken);
     }
 
-    public async Task<PagedResult<LectureDto>> GetPagedForStudentAsync(LectureSearchObject search)
+    public async Task<PagedResult<LectureDto>> GetPagedForStudentAsync(LectureSearchObject search, CancellationToken cancellationToken = default)
     {
         var studentId = await actor.GetCurrentStudentIdAsync();
 
@@ -3531,13 +3523,13 @@ public sealed class LectureService(
             .ForEnrolledStudent(studentId)
             .ApplySearch(search);
 
-        return await query.ToPagedResultAsync(search, mapper.Map<LectureDto>, q => q.OrderByDescending(x => x.LectureTime));
+        return await query.ToPagedResultAsync(search, mapper.Map<LectureDto>, q => q.OrderByDescending(x => x.LectureTime), cancellationToken);
     }
 
-    public async Task<LectureDto> CreateAsync(LectureCreateRequest request)
+    public async Task<LectureDto> CreateAsync(LectureCreateRequest request, CancellationToken cancellationToken = default)
     {
         var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(actor.UserId);
-        await instructorAccess.EnsureOwnsCourseAsync(request.CourseId, instructorId);
+        await instructorAccess.EnsureOwnsCourseAsync(request.CourseId, instructorId, cancellationToken);
 
         var entity = new Lecture(
             request.Name.Trim(),
@@ -3552,15 +3544,15 @@ public sealed class LectureService(
         };
 
         context.Set<Lecture>().Add(entity);
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(cancellationToken);
 
         return mapper.Map<LectureDto>(entity);
     }
 
-    public async Task<LectureDto> UpdateAsync(int id, LectureUpdateRequest request)
+    public async Task<LectureDto> UpdateAsync(int id, LectureUpdateRequest request, CancellationToken cancellationToken = default)
     {
         var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(actor.UserId);
-        var entity = await instructorAccess.GetOwnedLectureAsync(id, instructorId, track: true);
+        var entity = await instructorAccess.GetOwnedLectureAsync(id, instructorId, track: true, cancellationToken: cancellationToken);
 
         if (entity.IsCancelled)
         {
@@ -3575,28 +3567,28 @@ public sealed class LectureService(
             request.Capacity);
         entity.UpdatedById = actor.UserId;
 
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(cancellationToken);
 
         return mapper.Map<LectureDto>(entity);
     }
 
-    public async Task DeleteAsync(int id)
+    public async Task DeleteAsync(int id, CancellationToken cancellationToken = default)
     {
         var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(actor.UserId);
-        var entity = await instructorAccess.GetOwnedLectureAsync(id, instructorId, track: true);
+        var entity = await instructorAccess.GetOwnedLectureAsync(id, instructorId, track: true, cancellationToken: cancellationToken);
 
         entity.SoftDelete();
         entity.UpdatedById = actor.UserId;
 
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(cancellationToken);
 
         logger.LogInformation("Lecture {LectureId} soft-deleted by instructor user {InstructorUserId}", id, actor.UserId);
     }
 
-    public async Task<LectureDto> CancelAsync(int id)
+    public async Task<LectureDto> CancelAsync(int id, CancellationToken cancellationToken = default)
     {
         var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(actor.UserId);
-        var entity = await instructorAccess.GetOwnedLectureAsync(id, instructorId, track: true);
+        var entity = await instructorAccess.GetOwnedLectureAsync(id, instructorId, track: true, cancellationToken: cancellationToken);
 
         if (entity.IsCancelled)
         {
@@ -3606,7 +3598,7 @@ public sealed class LectureService(
         entity.Cancel();
         entity.UpdatedById = actor.UserId;
 
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(cancellationToken);
 
         return mapper.Map<LectureDto>(entity);
     }
@@ -3703,7 +3695,7 @@ public sealed class AnnouncementSearchObject : BaseSearchObject
 ---
 
 ## File: `eNote\eNote.Application\Features\Communication\Announcements\Services\AnnouncementService.cs`
-**Hash**: `a23d7009a855` | **Size**: 8418 chars
+**Hash**: `bb12449330bc` | **Size**: 9351 chars
 
 **Classes**: AnnouncementService
 ### Key Cross-Cutting Interactions
@@ -3724,13 +3716,14 @@ using eNote.Application.Features.Identity.Instructors;
 using eNote.Domain.Enums;
 using MapsterMapper;
 using Microsoft.EntityFrameworkCore;
+using eNote.Domain.Entities.Rentals;
 
 namespace eNote.Application.Features.Communication.Announcements.Services;
 
 public sealed class AnnouncementService(IAppDbContext context, IClock clock, ICurrentActor actor, IInstructorAccessService instructorAccess, IFileStorageService fileStorage, IMapper mapper)
      : ICourseAnnouncementService, IStoreAnnouncementService, IStudentAnnouncementService
 {
-    public async Task<PagedResult<AnnouncementDto>> GetFeedForStudentAsync(AnnouncementSearchObject search)
+    public async Task<PagedResult<AnnouncementDto>> GetFeedForStudentAsync(AnnouncementSearchObject search, CancellationToken cancellationToken = default)
     {
         var studentId = await actor.GetCurrentStudentIdAsync();
 
@@ -3748,14 +3741,14 @@ public sealed class AnnouncementService(IAppDbContext context, IClock clock, ICu
                     InstrumentRentalStatusSets.History.Contains(r.RentalStatus) &&
                     r.Instrument.MusicStoreId == a.MusicStoreId)));
 
-        return await query.ToPagedResultAsync(search, mapper.Map<AnnouncementDto>, q => q.OrderByDescending(x => x.PublishedAt));
+        return await query.ToPagedResultAsync(search, mapper.Map<AnnouncementDto>, q => q.OrderByDescending(x => x.PublishedAt), cancellationToken);
     }
 
-    public async Task<AnnouncementDto> CreateForCourseAsync(int courseId, AnnouncementRequest request)
+    public async Task<AnnouncementDto> CreateForCourseAsync(int courseId, AnnouncementRequest request, CancellationToken cancellationToken = default)
     {
         var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(actor.UserId);
 
-        if (!await instructorAccess.OwnsCourseAsync(courseId, instructorId))
+        if (!await instructorAccess.OwnsCourseAsync(courseId, instructorId, cancellationToken))
         {
             throw new BusinessException(Messages.AnnouncementCourseForbidden);
         }
@@ -3763,106 +3756,106 @@ public sealed class AnnouncementService(IAppDbContext context, IClock clock, ICu
         var entity = BuildAnnouncement(request, courseId, null);
 
         context.Set<Announcement>().Add(entity);
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(cancellationToken);
 
         return mapper.Map<AnnouncementDto>(entity);
     }
 
-    public async Task<AnnouncementDto> GetByIdForCourseAsync(int courseId, int announcementId)
+    public async Task<AnnouncementDto> GetByIdForCourseAsync(int courseId, int announcementId, CancellationToken cancellationToken = default)
     {
-        var entity = await (await GetCourseAnnouncementQueryAsync(courseId)).FirstOrDefaultAsync(a => a.Id == announcementId) ?? throw new NotFoundException(Messages.AnnouncementNotFound);
+        var entity = await (await GetCourseAnnouncementQueryAsync(courseId)).FirstOrDefaultAsync(a => a.Id == announcementId, cancellationToken) ?? throw new NotFoundException(Messages.AnnouncementNotFound);
 
         return mapper.Map<AnnouncementDto>(entity);
     }
 
-    public async Task<PagedResult<AnnouncementDto>> GetForCourseAsync(int courseId, AnnouncementSearchObject search)
+    public async Task<PagedResult<AnnouncementDto>> GetForCourseAsync(int courseId, AnnouncementSearchObject search, CancellationToken cancellationToken = default)
     {
-        return await (await GetCourseAnnouncementQueryAsync(courseId)).ToPagedResultAsync(search, mapper.Map<AnnouncementDto>, q => q.OrderByDescending(x => x.PublishedAt));
+        return await (await GetCourseAnnouncementQueryAsync(courseId)).ToPagedResultAsync(search, mapper.Map<AnnouncementDto>, q => q.OrderByDescending(x => x.PublishedAt), cancellationToken);
     }
 
-    public async Task<AnnouncementDto> UpdateForCourseAsync(int courseId, int announcementId, AnnouncementRequest request)
+    public async Task<AnnouncementDto> UpdateForCourseAsync(int courseId, int announcementId, AnnouncementRequest request, CancellationToken cancellationToken = default)
     {
-        var entity = await (await GetCourseAnnouncementQueryAsync(courseId, track: true)).FirstOrDefaultAsync(a => a.Id == announcementId) ?? throw new NotFoundException(Messages.AnnouncementNotFound);
+        var entity = await (await GetCourseAnnouncementQueryAsync(courseId, track: true)).FirstOrDefaultAsync(a => a.Id == announcementId, cancellationToken) ?? throw new NotFoundException(Messages.AnnouncementNotFound);
 
         entity.UpdateDetails(request.Title.Trim(), request.Content.Trim());
         entity.UpdatedById = actor.UserId;
 
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(cancellationToken);
 
         return mapper.Map<AnnouncementDto>(entity);
     }
 
-    public async Task DeleteForCourseAsync(int courseId, int announcementId)
+    public async Task DeleteForCourseAsync(int courseId, int announcementId, CancellationToken cancellationToken = default)
     {
-        var entity = await (await GetCourseAnnouncementQueryAsync(courseId, track: true)).FirstOrDefaultAsync(a => a.Id == announcementId) ?? throw new NotFoundException(Messages.AnnouncementNotFound);
+        var entity = await (await GetCourseAnnouncementQueryAsync(courseId, track: true)).FirstOrDefaultAsync(a => a.Id == announcementId, cancellationToken) ?? throw new NotFoundException(Messages.AnnouncementNotFound);
 
         entity.SoftDelete();
         entity.UpdatedById = actor.UserId;
 
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task<AnnouncementDto> CreateForStoreAsync(AnnouncementRequest request)
+    public async Task<AnnouncementDto> CreateForStoreAsync(AnnouncementRequest request, CancellationToken cancellationToken = default)
     {
-        var storeId = await actor.GetCurrentStoreIdAsync();
+        var storeId = await actor.GetCurrentStoreIdAsync(cancellationToken);
 
         var entity = BuildAnnouncement(request, null, storeId);
 
         context.Set<Announcement>().Add(entity);
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(cancellationToken);
 
         return mapper.Map<AnnouncementDto>(entity);
     }
 
-    public async Task<AnnouncementDto> GetByIdForStoreAsync(int announcementId)
+    public async Task<AnnouncementDto> GetByIdForStoreAsync(int announcementId, CancellationToken cancellationToken = default)
     {
-        var storeId = await actor.GetCurrentStoreIdAsync();
+        var storeId = await actor.GetCurrentStoreIdAsync(cancellationToken);
 
         var entity = await context.Set<Announcement>()
             .AsNoTracking()
             .Include(a => a.MusicStore)
-            .FirstOrDefaultAsync(a => a.Id == announcementId && a.MusicStoreId == storeId) ?? throw new NotFoundException(Messages.AnnouncementNotFound);
+            .FirstOrDefaultAsync(a => a.Id == announcementId && a.MusicStoreId == storeId, cancellationToken) ?? throw new NotFoundException(Messages.AnnouncementNotFound);
 
         return mapper.Map<AnnouncementDto>(entity);
     }
 
-    public async Task<PagedResult<AnnouncementDto>> GetForStoreAsync(AnnouncementSearchObject search)
+    public async Task<PagedResult<AnnouncementDto>> GetForStoreAsync(AnnouncementSearchObject search, CancellationToken cancellationToken = default)
     {
-        var storeId = await actor.GetCurrentStoreIdAsync();
+        var storeId = await actor.GetCurrentStoreIdAsync(cancellationToken);
 
         return await context.Set<Announcement>()
             .AsNoTracking()
             .Include(a => a.MusicStore)
             .Where(a => a.MusicStoreId == storeId)
-            .ToPagedResultAsync(search, mapper.Map<AnnouncementDto>, q => q.OrderByDescending(x => x.PublishedAt));
+            .ToPagedResultAsync(search, mapper.Map<AnnouncementDto>, q => q.OrderByDescending(x => x.PublishedAt), cancellationToken);
     }
 
-    public async Task<AnnouncementDto> UpdateForStoreAsync(int announcementId, AnnouncementRequest request)
+    public async Task<AnnouncementDto> UpdateForStoreAsync(int announcementId, AnnouncementRequest request, CancellationToken cancellationToken = default)
     {
-        var storeId = await actor.GetCurrentStoreIdAsync();
+        var storeId = await actor.GetCurrentStoreIdAsync(cancellationToken);
 
         var entity = await context.Set<Announcement>()
-            .FirstOrDefaultAsync(a => a.Id == announcementId && a.MusicStoreId == storeId) ?? throw new NotFoundException(Messages.AnnouncementNotFound);
+            .FirstOrDefaultAsync(a => a.Id == announcementId && a.MusicStoreId == storeId, cancellationToken) ?? throw new NotFoundException(Messages.AnnouncementNotFound);
 
         entity.UpdateDetails(request.Title.Trim(), request.Content.Trim());
         entity.UpdatedById = actor.UserId;
 
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(cancellationToken);
 
         return mapper.Map<AnnouncementDto>(entity);
     }
 
-    public async Task DeleteForStoreAsync(int announcementId)
+    public async Task DeleteForStoreAsync(int announcementId, CancellationToken cancellationToken = default)
     {
-        var storeId = await actor.GetCurrentStoreIdAsync();
+        var storeId = await actor.GetCurrentStoreIdAsync(cancellationToken);
 
         var entity = await context.Set<Announcement>()
-            .FirstOrDefaultAsync(a => a.Id == announcementId && a.MusicStoreId == storeId) ?? throw new NotFoundException(Messages.AnnouncementNotFound);
+            .FirstOrDefaultAsync(a => a.Id == announcementId && a.MusicStoreId == storeId, cancellationToken) ?? throw new NotFoundException(Messages.AnnouncementNotFound);
 
         entity.SoftDelete();
         entity.UpdatedById = actor.UserId;
 
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(cancellationToken);
     }
 
     public async Task<AnnouncementDto> UploadImageForCourseAsync(int courseId, int announcementId, Stream stream, string fileName, string contentType, CancellationToken ct = default)
@@ -3880,7 +3873,7 @@ public sealed class AnnouncementService(IAppDbContext context, IClock clock, ICu
 
     public async Task<AnnouncementDto> UploadImageForStoreAsync(int announcementId, Stream stream, string fileName, string contentType, CancellationToken ct = default)
     {
-        var storeId = await actor.GetCurrentStoreIdAsync();
+        var storeId = await actor.GetCurrentStoreIdAsync(ct);
 
         var entity = await context.Set<Announcement>()
             .FirstOrDefaultAsync(a => a.Id == announcementId && a.MusicStoreId == storeId, ct) ?? throw new NotFoundException(Messages.AnnouncementNotFound);
@@ -3913,7 +3906,7 @@ public sealed class AnnouncementService(IAppDbContext context, IClock clock, ICu
 ---
 
 ## File: `eNote\eNote.Application\Features\Communication\Announcements\Services\ICourseAnnouncementService.cs`
-**Hash**: `ee6ac41cf309` | **Size**: 852 chars
+**Hash**: `047acbf8ef7d` | **Size**: 1087 chars
 
 **Classes**: 
 **Interfaces**: ICourseAnnouncementService
@@ -3925,11 +3918,11 @@ namespace eNote.Application.Features.Communication.Announcements.Services;
 
 public interface ICourseAnnouncementService
 {
-    Task<PagedResult<AnnouncementDto>> GetForCourseAsync(int courseId, AnnouncementSearchObject search);
-    Task<AnnouncementDto> GetByIdForCourseAsync(int courseId, int announcementId);
-    Task<AnnouncementDto> CreateForCourseAsync(int courseId, AnnouncementRequest request);
-    Task<AnnouncementDto> UpdateForCourseAsync(int courseId, int announcementId, AnnouncementRequest request);
-    Task DeleteForCourseAsync(int courseId, int announcementId);
+    Task<PagedResult<AnnouncementDto>> GetForCourseAsync(int courseId, AnnouncementSearchObject search, CancellationToken cancellationToken = default);
+    Task<AnnouncementDto> GetByIdForCourseAsync(int courseId, int announcementId, CancellationToken cancellationToken = default);
+    Task<AnnouncementDto> CreateForCourseAsync(int courseId, AnnouncementRequest request, CancellationToken cancellationToken = default);
+    Task<AnnouncementDto> UpdateForCourseAsync(int courseId, int announcementId, AnnouncementRequest request, CancellationToken cancellationToken = default);
+    Task DeleteForCourseAsync(int courseId, int announcementId, CancellationToken cancellationToken = default);
     Task<AnnouncementDto> UploadImageForCourseAsync(int courseId, int announcementId, Stream stream, string fileName, string contentType, CancellationToken ct = default);
 }
 
@@ -3938,7 +3931,7 @@ public interface ICourseAnnouncementService
 ---
 
 ## File: `eNote\eNote.Application\Features\Communication\Announcements\Services\IStoreAnnouncementService.cs`
-**Hash**: `8dda14d7e4fa` | **Size**: 761 chars
+**Hash**: `24de6066dd8a` | **Size**: 996 chars
 
 **Classes**: 
 **Interfaces**: IStoreAnnouncementService
@@ -3950,11 +3943,11 @@ namespace eNote.Application.Features.Communication.Announcements.Services;
 
 public interface IStoreAnnouncementService
 {
-    Task<PagedResult<AnnouncementDto>> GetForStoreAsync(AnnouncementSearchObject search);
-    Task<AnnouncementDto> GetByIdForStoreAsync(int announcementId);
-    Task<AnnouncementDto> CreateForStoreAsync(AnnouncementRequest request);
-    Task<AnnouncementDto> UpdateForStoreAsync(int announcementId, AnnouncementRequest request);
-    Task DeleteForStoreAsync(int announcementId);
+    Task<PagedResult<AnnouncementDto>> GetForStoreAsync(AnnouncementSearchObject search, CancellationToken cancellationToken = default);
+    Task<AnnouncementDto> GetByIdForStoreAsync(int announcementId, CancellationToken cancellationToken = default);
+    Task<AnnouncementDto> CreateForStoreAsync(AnnouncementRequest request, CancellationToken cancellationToken = default);
+    Task<AnnouncementDto> UpdateForStoreAsync(int announcementId, AnnouncementRequest request, CancellationToken cancellationToken = default);
+    Task DeleteForStoreAsync(int announcementId, CancellationToken cancellationToken = default);
     Task<AnnouncementDto> UploadImageForStoreAsync(int announcementId, Stream stream, string fileName, string contentType, CancellationToken ct = default);
 }
 
@@ -3963,7 +3956,7 @@ public interface IStoreAnnouncementService
 ---
 
 ## File: `eNote\eNote.Application\Features\Communication\Announcements\Services\IStudentAnnouncementService.cs`
-**Hash**: `6422344bb2c2` | **Size**: 323 chars
+**Hash**: `4f18623b1fba` | **Size**: 370 chars
 
 **Classes**: 
 **Interfaces**: IStudentAnnouncementService
@@ -3975,7 +3968,7 @@ namespace eNote.Application.Features.Communication.Announcements.Services;
 
 public interface IStudentAnnouncementService
 {
-    Task<PagedResult<AnnouncementDto>> GetFeedForStudentAsync(AnnouncementSearchObject search);
+    Task<PagedResult<AnnouncementDto>> GetFeedForStudentAsync(AnnouncementSearchObject search, CancellationToken cancellationToken = default);
 }
 
 ```
@@ -4104,10 +4097,11 @@ public interface INotificationService
 ---
 
 ## File: `eNote\eNote.Application\Features\Communication\Notifications\Services\NotificationService.cs`
-**Hash**: `c4d2b4066f58` | **Size**: 2623 chars
+**Hash**: `61ce6f0cd9c0` | **Size**: 2552 chars
 
 **Classes**: NotificationService
 ### Key Cross-Cutting Interactions
+- Uses **ICurrentActor** → Current actor resolution
 - Uses **IAppDbContext|DbContext** → Persistence boundary
 
 ```cs
@@ -4123,11 +4117,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Application.Features.Communication.Notifications.Services;
 
-public sealed class NotificationService(IAppDbContext context, IMapper mapper, ICurrentUserService currentUserService) : INotificationService
+public sealed class NotificationService(IAppDbContext context, IMapper mapper, ICurrentActor actor) : INotificationService
 {
     public async Task<PagedResult<NotificationDto>> GetPagedAsync(NotificationSearchObject search, CancellationToken cancellationToken = default)
     {
-        var userId = currentUserService.UserId;
+        var userId = actor.UserId;
 
         var query = context.Set<Notification>()
             .AsNoTracking()
@@ -4144,7 +4138,7 @@ public sealed class NotificationService(IAppDbContext context, IMapper mapper, I
 
     public async Task<NotificationUnreadCountDto> GetUnreadCountAsync(CancellationToken cancellationToken = default)
     {
-        var userId = currentUserService.UserId;
+        var userId = actor.UserId;
 
         var count = await context.Set<Notification>()
             .AsNoTracking()
@@ -4155,7 +4149,7 @@ public sealed class NotificationService(IAppDbContext context, IMapper mapper, I
 
     public async Task<NotificationDto> MarkReadAsync(int id, CancellationToken cancellationToken = default)
     {
-        var userId = currentUserService.UserId;
+        var userId = actor.UserId;
 
         var notification = await context.Set<Notification>()
             .FirstOrDefaultAsync(x => x.Id == id && x.UserId == userId, cancellationToken)
@@ -4172,7 +4166,7 @@ public sealed class NotificationService(IAppDbContext context, IMapper mapper, I
 
     public async Task<NotificationUnreadCountDto> MarkAllReadAsync(CancellationToken cancellationToken = default)
     {
-        var userId = currentUserService.UserId;
+        var userId = actor.UserId;
 
         await context.Set<Notification>()
             .Where(x => x.UserId == userId && !x.IsRead)
@@ -4187,7 +4181,7 @@ public sealed class NotificationService(IAppDbContext context, IMapper mapper, I
 ---
 
 ## File: `eNote\eNote.Application\Features\Files\Services\FileAccessService.cs`
-**Hash**: `22595b2f4540` | **Size**: 1847 chars
+**Hash**: `6f1cf3b27d0f` | **Size**: 1982 chars
 
 **Classes**: FileAccessService
 ### Key Cross-Cutting Interactions
@@ -4211,10 +4205,13 @@ public sealed class FileAccessService(
     IInstructorAccessService instructorAccess,
     IUserIdentityService identity) : IFileAccessService
 {
+    private const string AssignmentApiPath = "/api/uploads/assignments/";
+    private const string AssignmentLegacyPath = "/uploads/assignments/";
+
     public async Task<bool> CanAccessAssignmentFileAsync(int userId, string fileName, CancellationToken cancellationToken = default)
     {
-        var apiPath = $"/api/uploads/assignments/{fileName}";
-        var legacyPath = $"/uploads/assignments/{fileName}";
+        var apiPath = AssignmentApiPath + fileName;
+        var legacyPath = AssignmentLegacyPath + fileName;
 
         var submission = await context.Set<AssignmentSubmission>()
             .AsNoTracking()
@@ -4272,7 +4269,7 @@ public interface IFileAccessService
 ---
 
 ## File: `eNote\eNote.Application\Features\Identity\Instructors\AdminInstructorService.cs`
-**Hash**: `477b0ac73ca5` | **Size**: 2740 chars
+**Hash**: `25f4f248fa69` | **Size**: 3019 chars
 
 **Classes**: AdminInstructorService
 ### Key Cross-Cutting Interactions
@@ -4292,14 +4289,15 @@ namespace eNote.Application.Features.Identity.Instructors;
 
 public sealed class AdminInstructorService(IAppDbContext context, IUserIdentityService identityService) : IAdminInstructorService
 {
-    public async Task<PagedResult<InstructorDto>> GetPagedAsync(InstructorSearchObject search)
+    public async Task<PagedResult<InstructorDto>> GetPagedAsync(InstructorSearchObject search, CancellationToken cancellationToken = default)
     {
         IQueryable<Instructor> query = context.Set<Instructor>()
             .AsNoTracking()
             .OrderBy(x => x.Id);
 
-        List<Instructor> instructors = await query.ToListAsync();
-        IReadOnlyDictionary<int, UserIdentityDto> users = await identityService.GetUsersBulkAsync(instructors.Select(x => x.AppUserId));
+        // ponytail: in-memory name filter, add SQL join or materialized view if instructor count grows large.
+        List<Instructor> instructors = await query.ToListAsync(cancellationToken);
+        IReadOnlyDictionary<int, UserIdentityDto> users = await identityService.GetUsersBulkAsync(instructors.Select(x => x.AppUserId), cancellationToken);
 
         List<InstructorDto> filtered = [.. instructors
             .Select(x => Map(x, users.GetValueOrDefault(x.AppUserId)))
@@ -4316,13 +4314,13 @@ public sealed class AdminInstructorService(IAppDbContext context, IUserIdentityS
         };
     }
 
-    public async Task<InstructorDto> GetByIdAsync(int id)
+    public async Task<InstructorDto> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
         Instructor entity = await context.Set<Instructor>()
             .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.Id == id) ?? throw new NotFoundException(Messages.InstructorProfileNotFound);
+            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken) ?? throw new NotFoundException(Messages.InstructorProfileNotFound);
 
-        UserIdentityDto? user = await identityService.GetUserAsync(entity.AppUserId);
+        UserIdentityDto? user = await identityService.GetUserAsync(entity.AppUserId, cancellationToken);
 
         return Map(entity, user);
     }
@@ -4359,7 +4357,7 @@ public sealed class AdminInstructorService(IAppDbContext context, IUserIdentityS
 ---
 
 ## File: `eNote\eNote.Application\Features\Identity\Instructors\IAdminInstructorService.cs`
-**Hash**: `f08d26c2e39b` | **Size**: 274 chars
+**Hash**: `b53c7eb30ee7` | **Size**: 368 chars
 
 **Classes**: 
 **Interfaces**: IAdminInstructorService
@@ -4370,8 +4368,8 @@ namespace eNote.Application.Features.Identity.Instructors;
 
 public interface IAdminInstructorService
 {
-    Task<PagedResult<InstructorDto>> GetPagedAsync(InstructorSearchObject search);
-    Task<InstructorDto> GetByIdAsync(int id);
+    Task<PagedResult<InstructorDto>> GetPagedAsync(InstructorSearchObject search, CancellationToken cancellationToken = default);
+    Task<InstructorDto> GetByIdAsync(int id, CancellationToken cancellationToken = default);
 }
 
 ```
@@ -4379,7 +4377,7 @@ public interface IAdminInstructorService
 ---
 
 ## File: `eNote\eNote.Application\Features\Identity\Instructors\IInstructorAccessService.cs`
-**Hash**: `63f9d42ec9b3` | **Size**: 1189 chars
+**Hash**: `5494a45e0e88` | **Size**: 1471 chars
 
 **Classes**: 
 **Interfaces**: IInstructorAccessService
@@ -4396,17 +4394,17 @@ public interface IInstructorAccessService
     Task<Instructor> GetInstructorAsync(int userId);
     Task<int> GetCurrentInstructorIdAsync(int appUserId);
 
-    Task<bool> OwnsCourseAsync(int courseId, int instructorId);
+    Task<bool> OwnsCourseAsync(int courseId, int instructorId, CancellationToken cancellationToken = default);
 
-    Task EnsureOwnsCourseAsync(int courseId, int instructorId);
+    Task EnsureOwnsCourseAsync(int courseId, int instructorId, CancellationToken cancellationToken = default);
 
-    Task EnsureOwnsLectureAsync(int lectureId, int instructorId);
+    Task EnsureOwnsLectureAsync(int lectureId, int instructorId, CancellationToken cancellationToken = default);
 
-    Task<Lecture> GetOwnedLectureAsync(int lectureId, int instructorId, bool track = false, bool includeAttendances = false);
+    Task<Lecture> GetOwnedLectureAsync(int lectureId, int instructorId, bool track = false, bool includeAttendances = false, CancellationToken cancellationToken = default);
 
-    Task<Assignment> GetOwnedAssignmentAsync(int lectureId, int assignmentId, int instructorId, bool track = false);
+    Task<Assignment> GetOwnedAssignmentAsync(int lectureId, int assignmentId, int instructorId, bool track = false, CancellationToken cancellationToken = default);
 
-    Task<LectureNote> GetOwnedLectureNoteAsync(int lectureId, int noteId, int instructorId, bool track = false);
+    Task<LectureNote> GetOwnedLectureNoteAsync(int lectureId, int noteId, int instructorId, bool track = false, CancellationToken cancellationToken = default);
 
     IQueryable<Course> CoursesFor(int instructorId);
 
@@ -4424,7 +4422,7 @@ public interface IInstructorAccessService
 ---
 
 ## File: `eNote\eNote.Application\Features\Identity\Instructors\InstructorAccessService.cs`
-**Hash**: `c83d1ba35a8b` | **Size**: 3966 chars
+**Hash**: `461f9eb9e37c` | **Size**: 4356 chars
 
 **Classes**: InstructorAccessService
 ### Key Cross-Cutting Interactions
@@ -4447,26 +4445,26 @@ public sealed class InstructorAccessService(IAppDbContext context, IUserProfileL
     public Task<Instructor> GetInstructorAsync(int userId) => lookup.GetInstructorAsync(userId);
     public async Task<int> GetCurrentInstructorIdAsync(int appUserId) => (await GetInstructorAsync(appUserId)).Id;
 
-    public Task<bool> OwnsCourseAsync(int courseId, int instructorId) =>
-        context.Set<Course>().AnyAsync(c => c.Id == courseId && c.InstructorId == instructorId);
+    public Task<bool> OwnsCourseAsync(int courseId, int instructorId, CancellationToken cancellationToken = default) =>
+        context.Set<Course>().AnyAsync(c => c.Id == courseId && c.InstructorId == instructorId, cancellationToken);
 
-    public async Task EnsureOwnsCourseAsync(int courseId, int instructorId)
+    public async Task EnsureOwnsCourseAsync(int courseId, int instructorId, CancellationToken cancellationToken = default)
     {
-        if (!await OwnsCourseAsync(courseId, instructorId))
+        if (!await OwnsCourseAsync(courseId, instructorId, cancellationToken))
         {
             throw new AuthorizationException(Messages.CourseNotOwned);
         }
     }
 
-    public async Task EnsureOwnsLectureAsync(int lectureId, int instructorId)
+    public async Task EnsureOwnsLectureAsync(int lectureId, int instructorId, CancellationToken cancellationToken = default)
     {
-        if (!await context.Set<Lecture>().AnyAsync(x => x.Id == lectureId && x.Course.InstructorId == instructorId))
+        if (!await context.Set<Lecture>().AnyAsync(x => x.Id == lectureId && x.Course.InstructorId == instructorId, cancellationToken))
         {
             throw new AuthorizationException(Messages.CourseNotOwned);
         }
     }
 
-    public async Task<Lecture> GetOwnedLectureAsync(int lectureId, int instructorId, bool track = false, bool includeAttendances = false)
+    public async Task<Lecture> GetOwnedLectureAsync(int lectureId, int instructorId, bool track = false, bool includeAttendances = false, CancellationToken cancellationToken = default)
     {
         var query = context.Set<Lecture>()
             .Where(x => x.Id == lectureId && x.Course.InstructorId == instructorId);
@@ -4478,29 +4476,29 @@ public sealed class InstructorAccessService(IAppDbContext context, IUserProfileL
 
         query = track ? query : query.AsNoTracking();
 
-        return await query.FirstOrDefaultAsync()
+        return await query.FirstOrDefaultAsync(cancellationToken)
             ?? throw new NotFoundException(Messages.LectureNotFound);
     }
 
-    public async Task<Assignment> GetOwnedAssignmentAsync(int lectureId, int assignmentId, int instructorId, bool track = false)
+    public async Task<Assignment> GetOwnedAssignmentAsync(int lectureId, int assignmentId, int instructorId, bool track = false, CancellationToken cancellationToken = default)
     {
         var query = context.Set<Assignment>()
             .Where(x => x.Id == assignmentId && x.LectureId == lectureId && x.Lecture.Course.InstructorId == instructorId);
 
         query = track ? query : query.AsNoTracking();
 
-        return await query.FirstOrDefaultAsync()
+        return await query.FirstOrDefaultAsync(cancellationToken)
             ?? throw new NotFoundException(Messages.AssignmentNotFound);
     }
 
-    public async Task<LectureNote> GetOwnedLectureNoteAsync(int lectureId, int noteId, int instructorId, bool track = false)
+    public async Task<LectureNote> GetOwnedLectureNoteAsync(int lectureId, int noteId, int instructorId, bool track = false, CancellationToken cancellationToken = default)
     {
         var query = context.Set<LectureNote>()
             .Where(x => x.Id == noteId && x.LectureId == lectureId && x.Lecture.Course.InstructorId == instructorId);
 
         query = track ? query : query.AsNoTracking();
 
-        return await query.FirstOrDefaultAsync()
+        return await query.FirstOrDefaultAsync(cancellationToken)
             ?? throw new NotFoundException(Messages.LectureNoteNotFound);
     }
 
@@ -4682,7 +4680,7 @@ public record StudentProfile(int Id, DateTime EnrollmentDate, string? FirstName,
 ---
 
 ## File: `eNote\eNote.Application\Features\Identity\Users\Services\CurrentActor.cs`
-**Hash**: `d6c57b492753` | **Size**: 1635 chars
+**Hash**: `60e923d6dae7` | **Size**: 1714 chars
 
 **Classes**: CurrentActor
 ### Key Cross-Cutting Interactions
@@ -4715,19 +4713,19 @@ public sealed class CurrentActor(ICurrentUserService user, IUserProfileLookup lo
     public async Task<Instructor> GetCurrentInstructorAsync() => _instructor ??= await lookup.GetInstructorAsync(user.UserId);
     public async Task<MusicStoreEmployee> GetCurrentEmployeeAsync() => _employee ??= await lookup.GetActiveEmployeeAsync(user.UserId);
 
-    public async Task<int> GetCurrentStoreIdAsync()
+    public async Task<int> GetCurrentStoreIdAsync(CancellationToken cancellationToken = default)
     {
         if (_storeId is not null) return _storeId.Value;
 
         var storeId = await context.Set<MusicStoreEmployee>()
             .AsNoTracking()
             .Where(x => x.AppUserId == user.UserId && x.IsActive)
-            .Select(x => x.MusicStoreId)
-            .SingleOrDefaultAsync();
+            .Select(x => (int?)x.MusicStoreId)
+            .SingleOrDefaultAsync(cancellationToken);
 
-        if (storeId == 0) throw new BusinessException(Messages.ActiveEmployeeStoreNotFound);
+        if (!storeId.HasValue) throw new BusinessException(Messages.ActiveEmployeeStoreNotFound);
 
-        return (_storeId = storeId).Value;
+        return (_storeId = storeId.Value).Value;
     }
 }
 
@@ -4759,7 +4757,7 @@ public interface IStudentDisplayNameService
 ---
 
 ## File: `eNote\eNote.Application\Features\Identity\Users\Services\IUserAccountService.cs`
-**Hash**: `5425cd9cde12` | **Size**: 953 chars
+**Hash**: `d43124932c1b` | **Size**: 1376 chars
 
 **Classes**: 
 **Interfaces**: IUserAccountService
@@ -4768,15 +4766,15 @@ namespace eNote.Application.Features.Identity.Users.Services;
 
 public interface IUserAccountService
 {
-    Task<int?> FindUserIdByUsernameAsync(string username);
-    Task<(int? UserId, string? Error)> CreateUserAsync(string username, string email, string password, string? firstName, string? lastName);
-    Task<(bool Success, string? Error)> AssignSingleRoleAsync(int userId, string role);
-    Task<(bool Success, string? Error)> UpdateExistingUserAsync(int userId, string email, string? firstName, string? lastName, DateTime? dateOfBirth = null);
-    Task<(bool Success, string? Error)> UpdatePictureAsync(int userId, byte[] picture);
-    Task<(byte[]? Data, string? ContentType)> GetPictureAsync(int userId);
-    Task<(bool Success, string? Error)> DeletePictureAsync(int userId);
-    Task<(bool Success, string? Error)> ChangePasswordAsync(int userId, string currentPassword, string newPassword);
-    Task<bool> IsAddressInUseAsync(int addressId);
+    Task<int?> FindUserIdByUsernameAsync(string username, CancellationToken cancellationToken = default);
+    Task<(int? UserId, string? Error)> CreateUserAsync(string username, string email, string password, string? firstName, string? lastName, CancellationToken cancellationToken = default);
+    Task<(bool Success, string? Error)> AssignSingleRoleAsync(int userId, string role, CancellationToken cancellationToken = default);
+    Task<(bool Success, string? Error)> UpdateExistingUserAsync(int userId, string email, string? firstName, string? lastName, DateTime? dateOfBirth = null, CancellationToken cancellationToken = default);
+    Task<(bool Success, string? Error)> UpdatePictureAsync(int userId, byte[] picture, CancellationToken cancellationToken = default);
+    Task<(byte[]? Data, string? ContentType)> GetPictureAsync(int userId, CancellationToken cancellationToken = default);
+    Task<(bool Success, string? Error)> DeletePictureAsync(int userId, CancellationToken cancellationToken = default);
+    Task<(bool Success, string? Error)> ChangePasswordAsync(int userId, string currentPassword, string newPassword, CancellationToken cancellationToken = default);
+    Task<bool> IsAddressInUseAsync(int addressId, CancellationToken cancellationToken = default);
 }
 
 ```
@@ -4784,7 +4782,7 @@ public interface IUserAccountService
 ---
 
 ## File: `eNote\eNote.Application\Features\Identity\Users\Services\IUserIdentityService.cs`
-**Hash**: `803f5065e217` | **Size**: 364 chars
+**Hash**: `f11f6aa78931` | **Size**: 458 chars
 
 **Classes**: 
 **Interfaces**: IUserIdentityService
@@ -4795,8 +4793,8 @@ namespace eNote.Application.Features.Identity.Users.Services;
 
 public interface IUserIdentityService
 {
-    Task<UserIdentityDto?> GetUserAsync(int userId);
-    Task<IReadOnlyDictionary<int, UserIdentityDto>> GetUsersBulkAsync(IEnumerable<int> userIds);
+    Task<UserIdentityDto?> GetUserAsync(int userId, CancellationToken cancellationToken = default);
+    Task<IReadOnlyDictionary<int, UserIdentityDto>> GetUsersBulkAsync(IEnumerable<int> userIds, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<string>> GetRolesAsync(int userId);
 }
 
@@ -4829,7 +4827,7 @@ public interface IUserProfileLookup
 ---
 
 ## File: `eNote\eNote.Application\Features\Identity\Users\Services\IUserProfileService.cs`
-**Hash**: `a5432d62990e` | **Size**: 265 chars
+**Hash**: `38c65c989485` | **Size**: 357 chars
 
 **Classes**: 
 **Interfaces**: IUserProfileService
@@ -4840,8 +4838,8 @@ namespace eNote.Application.Features.Identity.Users.Services;
 
 public interface IUserProfileService
 {
-    Task<UserProfileResponse?> GetCurrentUserAsync();
-    Task<UserProfileResponse?> GetUserAsync(int userId);
+    Task<UserProfileResponse?> GetCurrentUserAsync(CancellationToken cancellationToken = default);
+    Task<UserProfileResponse?> GetUserAsync(int userId, CancellationToken cancellationToken = default);
 }
 
 ```
@@ -4849,7 +4847,7 @@ public interface IUserProfileService
 ---
 
 ## File: `eNote\eNote.Application\Features\Identity\Users\Services\IUserProvisioningService.cs`
-**Hash**: `362f88981525` | **Size**: 475 chars
+**Hash**: `7cab6549b956` | **Size**: 616 chars
 
 **Classes**: 
 **Interfaces**: IUserProvisioningService
@@ -4861,9 +4859,9 @@ namespace eNote.Application.Features.Identity.Users.Services;
 
 public interface IUserProvisioningService
 {
-    Task<(UserProfileResponse? Profile, string? Error)> RegisterStudentAsync(RegisterRequest request);
-    Task<(int UserId, string? Error)> ProvisionUserAsync(UserProvisionRequest request);
-    Task UpdateMembershipAsync(int userId, UpdateMembershipRequest request);
+    Task<(UserProfileResponse? Profile, string? Error)> RegisterStudentAsync(RegisterRequest request, CancellationToken cancellationToken = default);
+    Task<(int UserId, string? Error)> ProvisionUserAsync(UserProvisionRequest request, CancellationToken cancellationToken = default);
+    Task UpdateMembershipAsync(int userId, UpdateMembershipRequest request, CancellationToken cancellationToken = default);
 }
 
 ```
@@ -4968,7 +4966,7 @@ public sealed class UserProfileLookup(IAppDbContext context) : IUserProfileLooku
 ---
 
 ## File: `eNote\eNote.Application\Features\Identity\Users\Services\UserProfileService.cs`
-**Hash**: `7861f42c6e48` | **Size**: 2793 chars
+**Hash**: `813933b58bc4` | **Size**: 2998 chars
 
 **Classes**: UserProfileService
 ### Key Cross-Cutting Interactions
@@ -4994,11 +4992,11 @@ public sealed class UserProfileService(
     IUserProfileLookup lookup,
     ICurrentUserService currentUserService) : IUserProfileService
 {
-    public Task<UserProfileResponse?> GetCurrentUserAsync() => GetUserAsync(currentUserService.UserId);
+    public Task<UserProfileResponse?> GetCurrentUserAsync(CancellationToken cancellationToken = default) => GetUserAsync(currentUserService.UserId, cancellationToken);
 
-    public async Task<UserProfileResponse?> GetUserAsync(int userId)
+    public async Task<UserProfileResponse?> GetUserAsync(int userId, CancellationToken cancellationToken = default)
     {
-        var user = await identity.GetUserAsync(userId);
+        var user = await identity.GetUserAsync(userId, cancellationToken);
 
         if (user == null || !user.IsActive)
         {
@@ -5018,7 +5016,7 @@ public sealed class UserProfileService(
         {
             AppRoles.Student => await BuildStudentProfile(userId, user),
             AppRoles.Instructor => await BuildInstructorProfile(userId, user),
-            AppRoles.StoreEmployee => await BuildMusicStoreProfile(userId, user),
+            AppRoles.StoreEmployee => await BuildMusicStoreProfile(userId, user, cancellationToken),
             AppRoles.Administrator => new AdminProfile(user.FirstName, user.LastName),
             _ => throw new BusinessException(Messages.UnknownRole)
         };
@@ -5040,13 +5038,13 @@ public sealed class UserProfileService(
         return new InstructorProfile(instructor.Id, user.FirstName, user.LastName);
     }
 
-    private async Task<MusicStoreProfile> BuildMusicStoreProfile(int userId, UserIdentityDto user)
+    private async Task<MusicStoreProfile> BuildMusicStoreProfile(int userId, UserIdentityDto user, CancellationToken cancellationToken)
     {
         var employee = await lookup.GetActiveEmployeeAsync(userId);
 
         var shop = await context.Set<MusicStore>()
             .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.Id == employee.MusicStoreId)
+            .FirstOrDefaultAsync(x => x.Id == employee.MusicStoreId, cancellationToken)
             ?? throw new BusinessException(Messages.StoreNotFound);
 
         return new MusicStoreProfile(shop.Id, shop.StoreName, shop.BusinessHours, user.Address);
@@ -5058,7 +5056,7 @@ public sealed class UserProfileService(
 ---
 
 ## File: `eNote\eNote.Application\Features\Identity\Users\Services\UserProvisioningService.cs`
-**Hash**: `fd91a1e7fc64` | **Size**: 5397 chars
+**Hash**: `5d132d709601` | **Size**: 5993 chars
 
 **Classes**: UserProvisioningService
 ### Key Cross-Cutting Interactions
@@ -5083,14 +5081,15 @@ public sealed class UserProvisioningService(
     IUserProfileService profileService,
     IClock clock) : IUserProvisioningService
 {
-    public async Task<(UserProfileResponse? Profile, string? Error)> RegisterStudentAsync(RegisterRequest request)
+    public async Task<(UserProfileResponse? Profile, string? Error)> RegisterStudentAsync(RegisterRequest request, CancellationToken cancellationToken = default)
     {
         (int? UserId, string? Error) createResult = await accountService.CreateUserAsync(
             request.Username,
             request.Email,
             request.Password,
             request.FirstName,
-            request.LastName);
+            request.LastName,
+            cancellationToken);
 
         if (createResult.UserId is null)
         {
@@ -5099,25 +5098,25 @@ public sealed class UserProvisioningService(
 
         var userId = createResult.UserId.Value;
 
-        (var Success, var Error) = await accountService.AssignSingleRoleAsync(userId, AppRoles.Student);
+        (var Success, var Error) = await accountService.AssignSingleRoleAsync(userId, AppRoles.Student, cancellationToken);
 
         if (!Success)
         {
             return (null, Error);
         }
 
-        await EnsureRoleProfileAsync(userId, AppRoles.Student, musicStoreId: null);
-        await context.SaveChangesAsync();
+        await EnsureRoleProfileAsync(userId, AppRoles.Student, null, cancellationToken);
+        await context.SaveChangesAsync(cancellationToken);
 
-        var profile = await profileService.GetUserAsync(userId);
+        var profile = await profileService.GetUserAsync(userId, cancellationToken);
 
         return (profile, null);
     }
 
-    public async Task<(int UserId, string? Error)> ProvisionUserAsync(UserProvisionRequest request)
+    public async Task<(int UserId, string? Error)> ProvisionUserAsync(UserProvisionRequest request, CancellationToken cancellationToken = default)
     {
         var username = request.Username.Trim();
-        var existingUserId = await accountService.FindUserIdByUsernameAsync(username);
+        var existingUserId = await accountService.FindUserIdByUsernameAsync(username, cancellationToken);
 
         int userId;
 
@@ -5129,7 +5128,8 @@ public sealed class UserProvisioningService(
                 userId,
                 request.Email,
                 request.FirstName,
-                request.LastName);
+                request.LastName,
+                cancellationToken: cancellationToken);
 
             if (!updateResult.Success)
             {
@@ -5143,7 +5143,8 @@ public sealed class UserProvisioningService(
                 request.Email,
                 request.Password,
                 request.FirstName,
-                request.LastName);
+                request.LastName,
+                cancellationToken);
 
             if (createResult.UserId is null)
             {
@@ -5153,34 +5154,34 @@ public sealed class UserProvisioningService(
             userId = createResult.UserId.Value;
         }
 
-        (var Success, var Error) = await accountService.AssignSingleRoleAsync(userId, request.Role);
+        (var Success, var Error) = await accountService.AssignSingleRoleAsync(userId, request.Role, cancellationToken);
 
         if (!Success)
         {
             return (userId, Error);
         }
 
-        var storeId = request.MusicStoreId ?? await ResolveDefaultStoreIdAsync(request.Role);
+        var storeId = request.MusicStoreId ?? await ResolveDefaultStoreIdAsync(request.Role, cancellationToken);
 
-        await EnsureRoleProfileAsync(userId, request.Role, storeId);
+        await EnsureRoleProfileAsync(userId, request.Role, storeId, cancellationToken);
 
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(cancellationToken);
 
         return (userId, null);
     }
 
-    public async Task UpdateMembershipAsync(int userId, UpdateMembershipRequest request)
+    public async Task UpdateMembershipAsync(int userId, UpdateMembershipRequest request, CancellationToken cancellationToken = default)
     {
         var student = await context.Set<Student>()
-            .FirstOrDefaultAsync(s => s.AppUserId == userId)
+            .FirstOrDefaultAsync(s => s.AppUserId == userId, cancellationToken)
             ?? throw new NotFoundException(Messages.StudentProfileNotFound);
 
         student.UpdateMembership(request.PaidUntil);
 
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(cancellationToken);
     }
 
-    private async Task<int?> ResolveDefaultStoreIdAsync(string role)
+    private async Task<int?> ResolveDefaultStoreIdAsync(string role, CancellationToken cancellationToken)
     {
         if (role != AppRoles.StoreEmployee)
         {
@@ -5188,15 +5189,15 @@ public sealed class UserProvisioningService(
         }
 
         return await context.Set<MusicStore>()
-            .Select(x => (int?)x.Id).FirstOrDefaultAsync();
+            .Select(x => (int?)x.Id).FirstOrDefaultAsync(cancellationToken);
     }
 
-    private async Task EnsureRoleProfileAsync(int userId, string role, int? musicStoreId)
+    private async Task EnsureRoleProfileAsync(int userId, string role, int? musicStoreId, CancellationToken cancellationToken)
     {
         switch (role)
         {
             case AppRoles.Student:
-                if (!await context.Set<Student>().AnyAsync(x => x.AppUserId == userId))
+                if (!await context.Set<Student>().AnyAsync(x => x.AppUserId == userId, cancellationToken))
                 {
                     context.Set<Student>().Add(new Student(userId, clock.UtcNow));
                 }
@@ -5204,7 +5205,7 @@ public sealed class UserProvisioningService(
                 break;
 
             case AppRoles.Instructor:
-                if (!await context.Set<Instructor>().AnyAsync(x => x.AppUserId == userId))
+                if (!await context.Set<Instructor>().AnyAsync(x => x.AppUserId == userId, cancellationToken))
                 {
                     context.Set<Instructor>().Add(new Instructor(userId));
                 }
@@ -5215,7 +5216,7 @@ public sealed class UserProvisioningService(
                 {
                     var employees = await context.Set<MusicStoreEmployee>()
                         .Where(x => x.AppUserId == userId)
-                        .ToListAsync();
+                        .ToListAsync(cancellationToken);
 
                     if (employees.Count == 0)
                     {
@@ -5379,11 +5380,12 @@ public class UserProvisionRequest
 ---
 
 ## File: `eNote\eNote.Application\Features\Rentals\Instruments\InstrumentAvailabilityExtensions.cs`
-**Hash**: `54572bcbb9b3` | **Size**: 815 chars
+**Hash**: `e475b85d622f` | **Size**: 852 chars
 
 **Classes**: InstrumentAvailabilityExtensions
 ```cs
 using eNote.Domain.Entities;
+using eNote.Domain.Entities.Rentals;
 using eNote.Domain.Enums;
 
 namespace eNote.Application.Features.Rentals.Instruments;
@@ -5572,7 +5574,7 @@ public class InstrumentUpdateRequest
 ---
 
 ## File: `eNote\eNote.Application\Features\Rentals\Instruments\Services\IInstrumentService.cs`
-**Hash**: `a3cccd1a3d6d` | **Size**: 784 chars
+**Hash**: `7210fd0f3cae` | **Size**: 1113 chars
 
 **Classes**: 
 **Interfaces**: IInstrumentService
@@ -5584,13 +5586,13 @@ namespace eNote.Application.Features.Rentals.Instruments.Services;
 
 public interface IInstrumentService
 {
-    Task<InstrumentDto> GetByIdAsync(int id);
-    Task<InstrumentDto> GetPublicByIdAsync(int id);
-    Task<PagedResult<InstrumentDto>> GetPagedAsync(InstrumentSearchObject search);
-    Task<PagedResult<InstrumentDto>> GetPublicPagedAsync(InstrumentSearchObject search);
-    Task<InstrumentDto> CreateAsync(InstrumentCreateRequest request);
-    Task<InstrumentDto> UpdateAsync(int id, InstrumentUpdateRequest request);
-    Task DeleteAsync(int id);
+    Task<InstrumentDto> GetByIdAsync(int id, CancellationToken cancellationToken = default);
+    Task<InstrumentDto> GetPublicByIdAsync(int id, CancellationToken cancellationToken = default);
+    Task<PagedResult<InstrumentDto>> GetPagedAsync(InstrumentSearchObject search, CancellationToken cancellationToken = default);
+    Task<PagedResult<InstrumentDto>> GetPublicPagedAsync(InstrumentSearchObject search, CancellationToken cancellationToken = default);
+    Task<InstrumentDto> CreateAsync(InstrumentCreateRequest request, CancellationToken cancellationToken = default);
+    Task<InstrumentDto> UpdateAsync(int id, InstrumentUpdateRequest request, CancellationToken cancellationToken = default);
+    Task DeleteAsync(int id, CancellationToken cancellationToken = default);
     Task<InstrumentDto> UploadImageAsync(int id, Stream stream, string fileName, string contentType, CancellationToken ct = default);
 }
 
@@ -5599,7 +5601,7 @@ public interface IInstrumentService
 ---
 
 ## File: `eNote\eNote.Application\Features\Rentals\Instruments\Services\InstrumentService.cs`
-**Hash**: `d656f1ffaae1` | **Size**: 5722 chars
+**Hash**: `ffbb51730ab1` | **Size**: 6472 chars
 
 **Classes**: InstrumentService
 ### Key Cross-Cutting Interactions
@@ -5616,6 +5618,7 @@ using eNote.Application.Common.Persistence;
 using eNote.Application.Features.Rentals.Instruments;
 using MapsterMapper;
 using Microsoft.EntityFrameworkCore;
+using eNote.Domain.Entities.Rentals;
 
 namespace eNote.Application.Features.Rentals.Instruments.Services;
 
@@ -5625,31 +5628,31 @@ public sealed class InstrumentService(
     ICurrentActor actor,
     IFileStorageService fileStorage) : IInstrumentService
 {
-    public async Task<InstrumentDto> GetByIdAsync(int id)
+    public async Task<InstrumentDto> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
         var employee = await EnsureStoreAccessAsync();
 
         var entity = await context.Set<Instrument>()
             .AsNoTracking()
             .WithInstrumentDetails()
-            .FirstOrDefaultAsync(x => x.Id == id && x.MusicStoreId == employee.MusicStoreId)
+            .FirstOrDefaultAsync(x => x.Id == id && x.MusicStoreId == employee.MusicStoreId, cancellationToken)
             ?? throw new NotFoundException(Messages.NotFound);
 
         return mapper.Map<InstrumentDto>(entity);
     }
 
-    public async Task<InstrumentDto> GetPublicByIdAsync(int id)
+    public async Task<InstrumentDto> GetPublicByIdAsync(int id, CancellationToken cancellationToken = default)
     {
         var entity = await context.Set<Instrument>()
             .AsNoTracking()
             .WithInstrumentDetails()
-            .FirstOrDefaultAsync(x => x.Id == id)
+            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken)
             ?? throw new NotFoundException(Messages.NotFound);
 
         return mapper.Map<InstrumentDto>(entity);
     }
 
-    public async Task<PagedResult<InstrumentDto>> GetPagedAsync(InstrumentSearchObject search)
+    public async Task<PagedResult<InstrumentDto>> GetPagedAsync(InstrumentSearchObject search, CancellationToken cancellationToken = default)
     {
         var employee = await EnsureStoreAccessAsync();
 
@@ -5659,23 +5662,23 @@ public sealed class InstrumentService(
             .WithInstrumentDetails()
             .ApplySearch(search);
 
-        return await query.ToPagedResultAsync(search, mapper.Map<InstrumentDto>);
+        return await query.ToPagedResultAsync(search, mapper.Map<InstrumentDto>, ct: cancellationToken);
     }
 
-    public async Task<PagedResult<InstrumentDto>> GetPublicPagedAsync(InstrumentSearchObject search)
+    public async Task<PagedResult<InstrumentDto>> GetPublicPagedAsync(InstrumentSearchObject search, CancellationToken cancellationToken = default)
     {
         var query = context.Set<Instrument>()
             .AsNoTracking()
             .WithInstrumentDetails()
             .ApplySearch(search);
 
-        return await query.ToPagedResultAsync(search, mapper.Map<InstrumentDto>);
+        return await query.ToPagedResultAsync(search, mapper.Map<InstrumentDto>, ct: cancellationToken);
     }
 
-    public async Task<InstrumentDto> CreateAsync(InstrumentCreateRequest request)
+    public async Task<InstrumentDto> CreateAsync(InstrumentCreateRequest request, CancellationToken cancellationToken = default)
     {
         var employee = await EnsureStoreAccessAsync();
-        await EnsureInstrumentTypeExistsAsync(request.InstrumentTypeId);
+        await EnsureInstrumentTypeExistsAsync(request.InstrumentTypeId, cancellationToken);
 
         var entity = new Instrument(
             request.Model.Trim(),
@@ -5686,22 +5689,22 @@ public sealed class InstrumentService(
             employee.MusicStoreId);
 
         context.Set<Instrument>().Add(entity);
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(cancellationToken);
 
-        return mapper.Map<InstrumentDto>(await ReloadAsync(entity.Id));
+        return mapper.Map<InstrumentDto>(await ReloadAsync(entity.Id, cancellationToken));
     }
 
-    public async Task<InstrumentDto> UpdateAsync(int id, InstrumentUpdateRequest request)
+    public async Task<InstrumentDto> UpdateAsync(int id, InstrumentUpdateRequest request, CancellationToken cancellationToken = default)
     {
         var employee = await EnsureStoreAccessAsync();
 
         var entity = await context.Set<Instrument>()
-            .FirstOrDefaultAsync(x => x.Id == id && x.MusicStoreId == employee.MusicStoreId)
+            .FirstOrDefaultAsync(x => x.Id == id && x.MusicStoreId == employee.MusicStoreId, cancellationToken)
             ?? throw new NotFoundException(Messages.NotFound);
 
         if (request.InstrumentTypeId is int typeId)
         {
-            await EnsureInstrumentTypeExistsAsync(typeId);
+            await EnsureInstrumentTypeExistsAsync(typeId, cancellationToken);
         }
 
         entity.UpdateDetails(
@@ -5711,9 +5714,9 @@ public sealed class InstrumentService(
             request.ImagePath?.Trim() ?? entity.ImagePath,
             request.InstrumentTypeId ?? entity.InstrumentTypeId);
 
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(cancellationToken);
 
-        return mapper.Map<InstrumentDto>(await ReloadAsync(entity.Id));
+        return mapper.Map<InstrumentDto>(await ReloadAsync(entity.Id, cancellationToken));
     }
 
     public async Task<InstrumentDto> UploadImageAsync(int id, Stream stream, string fileName, string contentType, CancellationToken ct = default)
@@ -5729,39 +5732,39 @@ public sealed class InstrumentService(
 
         await context.SaveChangesAsync(ct);
 
-        return mapper.Map<InstrumentDto>(await ReloadAsync(entity.Id));
+        return mapper.Map<InstrumentDto>(await ReloadAsync(entity.Id, ct));
     }
 
-    public async Task DeleteAsync(int id)
+    public async Task DeleteAsync(int id, CancellationToken cancellationToken = default)
     {
         var employee = await EnsureStoreAccessAsync();
 
         var instrument = await context.Set<Instrument>()
-            .FirstOrDefaultAsync(x => x.Id == id && x.MusicStoreId == employee.MusicStoreId)
+            .FirstOrDefaultAsync(x => x.Id == id && x.MusicStoreId == employee.MusicStoreId, cancellationToken)
             ?? throw new NotFoundException(Messages.NotFound);
 
-        if (await context.Set<InstrumentRental>().WhereBlockingStatus().AnyAsync(r => r.InstrumentId == id))
+        if (await context.Set<InstrumentRental>().WhereBlockingStatus().AnyAsync(r => r.InstrumentId == id, cancellationToken))
         {
             throw new BusinessException(Messages.InstrumentDeleteBlocked);
         }
 
         instrument.SoftDelete();
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(cancellationToken);
     }
 
     private Task<MusicStoreEmployee> EnsureStoreAccessAsync() =>
         actor.GetCurrentEmployeeAsync();
 
-    private async Task EnsureInstrumentTypeExistsAsync(int instrumentTypeId)
+    private async Task EnsureInstrumentTypeExistsAsync(int instrumentTypeId, CancellationToken cancellationToken)
     {
-        if (!await context.Set<InstrumentType>().AnyAsync(x => x.Id == instrumentTypeId))
+        if (!await context.Set<InstrumentType>().AnyAsync(x => x.Id == instrumentTypeId, cancellationToken))
         {
             throw new BusinessException(Messages.InstrumentTypeNotFound);
         }
     }
 
-    private Task<Instrument> ReloadAsync(int id) =>
-        context.Set<Instrument>().AsNoTracking().WithInstrumentDetails().FirstAsync(x => x.Id == id);
+    private Task<Instrument> ReloadAsync(int id, CancellationToken cancellationToken) =>
+        context.Set<Instrument>().AsNoTracking().WithInstrumentDetails().FirstAsync(x => x.Id == id, cancellationToken);
 }
 
 ```
@@ -5809,7 +5812,7 @@ public interface IRecommendationService
 ---
 
 ## File: `eNote\eNote.Application\Features\Rentals\Recommendations\Services\RecommendationService.cs`
-**Hash**: `fdf2e20f3b6f` | **Size**: 12199 chars
+**Hash**: `2828a78abf24` | **Size**: 12464 chars
 
 **Classes**: RecommendationService
 ### Key Cross-Cutting Interactions
@@ -5828,6 +5831,7 @@ using eNote.Application.Features.Rentals.Recommendations;
 using eNote.Domain.Enums;
 using MapsterMapper;
 using Microsoft.EntityFrameworkCore;
+using eNote.Domain.Entities.Rentals;
 
 namespace eNote.Application.Features.Rentals.Recommendations.Services;
 
@@ -5837,6 +5841,9 @@ public sealed class RecommendationService(IAppDbContext context, IMapper mapper,
     private const double ViewWeight = 0.30;
     private const double SimilarityWeight = 0.20;
     private const double PopularityWeight = 0.10;
+    private const double OwnRentalHistoryWeight = 0.60;
+    private const double CollaborativeRentalWeight = 0.40;
+    private const double TypeViewFallbackScore = 0.35;
     private const int CandidatePoolSize = 80;
 
     public async Task<IReadOnlyList<InstrumentRecommendationDto>> GetRecommendedInstrumentsAsync(int count = 5, CancellationToken cancellationToken = default)
@@ -6051,7 +6058,7 @@ public sealed class RecommendationService(IAppDbContext context, IMapper mapper,
 
         if (ownHistoryScore > 0 && collaborativeScore > 0)
         {
-            return ownHistoryScore * 0.6 + collaborativeScore * 0.4;
+            return ownHistoryScore * OwnRentalHistoryWeight + collaborativeScore * CollaborativeRentalWeight;
         }
 
         return Math.Max(ownHistoryScore, collaborativeScore);
@@ -6066,7 +6073,7 @@ public sealed class RecommendationService(IAppDbContext context, IMapper mapper,
 
         if (userTypeCounts.ContainsKey(instrument.InstrumentTypeId))
         {
-            return 0.35;
+            return TypeViewFallbackScore;
         }
 
         return 0;
@@ -6218,7 +6225,7 @@ public sealed class AddressSearchObject : BaseSearchObject
 ---
 
 ## File: `eNote\eNote.Application\Features\Rentals\ReferenceData\Addresses\AddressService.cs`
-**Hash**: `f3cf6a81c159` | **Size**: 1860 chars
+**Hash**: `a3e3aa169276` | **Size**: 1864 chars
 
 **Classes**: AddressService
 ### Key Cross-Cutting Interactions
@@ -6266,7 +6273,7 @@ public sealed class AddressService(IAppDbContext context, IUserAccountService ac
 
     protected override async Task EnsureDeletableAsync(Address entity, CancellationToken ct = default)
     {
-        if (await accountService.IsAddressInUseAsync(entity.Id))
+        if (await accountService.IsAddressInUseAsync(entity.Id, ct))
         {
             throw new BusinessException(Messages.AddressDeleteBlocked);
         }
@@ -6296,7 +6303,7 @@ public interface IAddressService : IReferenceCrudService<AddressReferenceDto, Ad
 ---
 
 ## File: `eNote\eNote.Application\Features\Rentals\ReferenceData\IReferenceCrudService.cs`
-**Hash**: `ff09f19641b6` | **Size**: 467 chars
+**Hash**: `eb0b8b1a5ad7` | **Size**: 702 chars
 
 **Classes**: 
 **Interfaces**: IReferenceCrudService
@@ -6308,11 +6315,11 @@ namespace eNote.Application.Features.Rentals.ReferenceData;
 
 public interface IReferenceCrudService<TDto, TRequest, TSearch> where TSearch : BaseSearchObject
 {
-    Task<PagedResult<TDto>> GetPagedAsync(TSearch search);
-    Task<TDto> GetByIdAsync(int id);
-    Task<TDto> CreateAsync(TRequest request);
-    Task<TDto> UpdateAsync(int id, TRequest request);
-    Task DeleteAsync(int id);
+    Task<PagedResult<TDto>> GetPagedAsync(TSearch search, CancellationToken cancellationToken = default);
+    Task<TDto> GetByIdAsync(int id, CancellationToken cancellationToken = default);
+    Task<TDto> CreateAsync(TRequest request, CancellationToken cancellationToken = default);
+    Task<TDto> UpdateAsync(int id, TRequest request, CancellationToken cancellationToken = default);
+    Task DeleteAsync(int id, CancellationToken cancellationToken = default);
 }
 
 ```
@@ -6601,7 +6608,7 @@ public sealed class MusicStoreService(IAppDbContext context) : ReferenceCrudServ
 ---
 
 ## File: `eNote\eNote.Application\Features\Rentals\ReferenceData\ReferenceCrudService.cs`
-**Hash**: `8ad6c1c66ed1` | **Size**: 2456 chars
+**Hash**: `a3a2e0d69c02` | **Size**: 2841 chars
 
 **Classes**: ReferenceCrudService
 ### Key Cross-Cutting Interactions
@@ -6633,51 +6640,51 @@ public abstract class ReferenceCrudService<TEntity, TDto, TRequest, TSearch>(IAp
     protected virtual Task EnsureDeletableAsync(TEntity entity, CancellationToken ct = default) =>
         Task.CompletedTask;
 
-    public Task<PagedResult<TDto>> GetPagedAsync(TSearch search) =>
-        Order(ApplySearch(Db.Set<TEntity>().AsNoTracking(), search)).ToPagedResultAsync(search, Map);
+    public Task<PagedResult<TDto>> GetPagedAsync(TSearch search, CancellationToken cancellationToken = default) =>
+        Order(ApplySearch(Db.Set<TEntity>().AsNoTracking(), search)).ToPagedResultAsync(search, Map, ct: cancellationToken);
 
-    public async Task<TDto> GetByIdAsync(int id)
+    public async Task<TDto> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
         var entity = await Db.Set<TEntity>()
             .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.Id == id)
+            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken)
             ?? throw new NotFoundException(NotFoundMessage);
 
         return Map(entity);
     }
 
-    public async Task<TDto> CreateAsync(TRequest request)
+    public async Task<TDto> CreateAsync(TRequest request, CancellationToken cancellationToken = default)
     {
         var entity = CreateEntity(request);
 
         Db.Set<TEntity>().Add(entity);
-        await Db.SaveChangesAsync();
+        await Db.SaveChangesAsync(cancellationToken);
 
         return Map(entity);
     }
 
-    public async Task<TDto> UpdateAsync(int id, TRequest request)
+    public async Task<TDto> UpdateAsync(int id, TRequest request, CancellationToken cancellationToken = default)
     {
         var entity = await Db.Set<TEntity>()
-            .FirstOrDefaultAsync(x => x.Id == id)
+            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken)
             ?? throw new NotFoundException(NotFoundMessage);
 
         ApplyUpdate(entity, request);
-        await Db.SaveChangesAsync();
+        await Db.SaveChangesAsync(cancellationToken);
 
         return Map(entity);
     }
 
-    public async Task DeleteAsync(int id)
+    public async Task DeleteAsync(int id, CancellationToken cancellationToken = default)
     {
         var entity = await Db.Set<TEntity>()
-            .FirstOrDefaultAsync(x => x.Id == id)
+            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken)
             ?? throw new NotFoundException(NotFoundMessage);
 
-        await EnsureDeletableAsync(entity);
+        await EnsureDeletableAsync(entity, cancellationToken);
         Db.Set<TEntity>().Remove(entity);
 
-        await Db.SaveChangesAsync();
+        await Db.SaveChangesAsync(cancellationToken);
     }
 }
 ```
@@ -6703,7 +6710,7 @@ public interface IReportService
 ---
 
 ## File: `eNote\eNote.Application\Features\Reports\Services\ReportService.cs`
-**Hash**: `83b56a5c32ba` | **Size**: 8506 chars
+**Hash**: `847eaea7901a` | **Size**: 8560 chars
 
 **Classes**: ReportService
 ### Key Cross-Cutting Interactions
@@ -6728,6 +6735,7 @@ using eNote.Application.Features.Identity.Users.Services;
 using eNote.Application.Features.Academic.Courses.Services;
 using eNote.Application.Features.Rentals.InstrumentRentals.Billing;
 using eNote.Application.Features.Identity.Instructors;
+using eNote.Domain.Entities.Rentals;
 
 namespace eNote.Application.Features.Reports.Services;
 
@@ -6789,7 +6797,7 @@ public sealed class ReportService(IAppDbContext context, IClock clock, IRankingS
 
     public async Task<byte[]> GenerateStoreRentalSummaryPdfAsync(CancellationToken cancellationToken = default)
     {
-        var storeId = await actor.GetCurrentStoreIdAsync();
+        var storeId = await actor.GetCurrentStoreIdAsync(cancellationToken);
 
         var storeName = await context.Set<MusicStore>()
             .AsNoTracking()
@@ -7381,7 +7389,7 @@ public class Attendance : AuditableEntity
 ---
 
 ## File: `eNote\eNote.Domain\Entities\Academic\Course.cs`
-**Hash**: `b5a7f95ffca9` | **Size**: 1636 chars
+**Hash**: `3d549e1b294b` | **Size**: 1643 chars
 
 **Classes**: Course
 ```cs
@@ -7389,7 +7397,7 @@ using eNote.Domain.Entities;
 
 namespace eNote.Domain.Entities;
 
-public class Course : AuditableEntity
+public sealed class Course : AuditableEntity
 {
     public int InstructorId { get; private set; }
     public Instructor Instructor { get; private set; } = null!;
@@ -7488,7 +7496,7 @@ public class Enrollment : AuditableEntity
 ---
 
 ## File: `eNote\eNote.Domain\Entities\Academic\Lecture.cs`
-**Hash**: `24ad7af30a5e` | **Size**: 1968 chars
+**Hash**: `0da4bb934192` | **Size**: 1975 chars
 
 **Classes**: Lecture
 ```cs
@@ -7497,7 +7505,7 @@ using eNote.Domain.Enums;
 
 namespace eNote.Domain.Entities;
 
-public class Lecture : AuditableEntity
+public sealed class Lecture : AuditableEntity
 {
     public int CourseId { get; private set; }
     public Course Course { get; private set; } = null!;
@@ -7671,13 +7679,13 @@ public class Announcement : AuditableEntity
 ---
 
 ## File: `eNote\eNote.Domain\Entities\Communication\Notification.cs`
-**Hash**: `325461e917ae` | **Size**: 755 chars
+**Hash**: `6e62cb7cb5c3` | **Size**: 762 chars
 
 **Classes**: Notification
 ```cs
 namespace eNote.Domain.Entities;
 
-public class Notification
+public sealed class Notification
 {
     public int Id { get; private set; }
     public int UserId { get; private set; }
@@ -7819,15 +7827,15 @@ public class RevokedToken
 ---
 
 ## File: `eNote\eNote.Domain\Entities\Identity\Student.cs`
-**Hash**: `6cca9ab9d45e` | **Size**: 1152 chars
+**Hash**: `9dbf3f89e49c` | **Size**: 1167 chars
 
 **Classes**: Student
 ```cs
-using eNote.Domain.Entities;
+using eNote.Domain.Entities.Rentals;
 
 namespace eNote.Domain.Entities;
 
-public class Student : AuditableEntity
+public sealed class Student : AuditableEntity
 {
     public int AppUserId { get; private set; }
     public DateTime EnrollmentDate { get; private set; }
@@ -7864,11 +7872,11 @@ public class Student : AuditableEntity
 ---
 
 ## File: `eNote\eNote.Domain\Entities\Rentals\Instrument.cs`
-**Hash**: `45de9e036b2b` | **Size**: 1608 chars
+**Hash**: `f0907fddc4b3` | **Size**: 1616 chars
 
 **Classes**: Instrument
 ```cs
-using eNote.Domain.Entities;
+using eNote.Domain.Entities.Rentals;
 using eNote.Domain.Enums;
 
 namespace eNote.Domain.Entities;
@@ -7919,16 +7927,15 @@ public class Instrument : AuditableEntity
 ---
 
 ## File: `eNote\eNote.Domain\Entities\Rentals\InstrumentRental.cs`
-**Hash**: `b18ae6f1c964` | **Size**: 2624 chars
+**Hash**: `22acf170f4a0` | **Size**: 2610 chars
 
 **Classes**: InstrumentRental
 ```cs
-using eNote.Domain.Entities;
 using eNote.Domain.Enums;
 
-namespace eNote.Domain.Entities;
+namespace eNote.Domain.Entities.Rentals;
 
-public class InstrumentRental : AuditableEntity
+public sealed class InstrumentRental : AuditableEntity
 {
     public int StudentProfileId { get; private set; }
     public Student StudentProfile { get; private set; } = null!;
@@ -8665,11 +8672,11 @@ public sealed class InstrumentConfig : IEntityTypeConfiguration<Instrument>
 ---
 
 ## File: `eNote\eNote.Infrastructure\Data\Configurations\InstrumentRentalConfig.cs`
-**Hash**: `3f554f9ff6c4` | **Size**: 1380 chars
+**Hash**: `edc628e0bfdf` | **Size**: 1388 chars
 
 **Classes**: InstrumentRentalConfig
 ```cs
-using eNote.Domain.Entities;
+using eNote.Domain.Entities.Rentals;
 using eNote.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -9137,31 +9144,32 @@ public sealed class ENoteContextFactory : IDesignTimeDbContextFactory<ENoteConte
 ---
 
 ## File: `eNote\eNote.Infrastructure\Data\Seed\DevelopmentDataSeed.cs`
-**Hash**: `e9833cc19444` | **Size**: 10000 chars
+**Hash**: `fd277e22947c` | **Size**: 10069 chars
 
 **Classes**: AccessoriesInstruments, BrassInstruments, CourseSeed, DevelopmentDataSeed, EnrollmentSeed, InstrumentSeed, KeysInstruments, LectureSeed, PercussionInstruments, StringInstruments, StudentMembershipSeed
 ```cs
 using eNote.Domain.Entities;
 using eNote.Domain.Enums;
+using eNote.Application.Common.Time;
 using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Infrastructure.Data.Seed;
 
 public static class DevelopmentDataSeed
 {
-    public static async Task SeedAsync(ENoteContext context)
+    public static async Task SeedAsync(ENoteContext context, IClock clock)
     {
         await CourseSeed.SeedCourses(context);
         await LectureSeed.SeedLectures(context);
         await InstrumentSeed.SeedInstruments(context);
         await EnrollmentSeed.SeedEnrollments(context);
-        await StudentMembershipSeed.SeedMemberships(context);
+        await StudentMembershipSeed.SeedMemberships(context, clock);
     }
 }
 
 internal static class StudentMembershipSeed
 {
-    public static async Task SeedMemberships(ENoteContext context)
+    public static async Task SeedMemberships(ENoteContext context, IClock clock)
     {
         var students = await context.Set<Student>()
             .Where(s => s.MembershipPaidUntil == null)
@@ -9172,7 +9180,7 @@ internal static class StudentMembershipSeed
             return;
         }
 
-        var paidUntil = DateTime.UtcNow.AddYears(1);
+        var paidUntil = clock.UtcNow.AddYears(1);
 
         foreach (Student student in students)
         {
@@ -9626,7 +9634,7 @@ public sealed class SmtpEmailService : IEmailService
 ---
 
 ## File: `eNote\eNote.Infrastructure\Identity\TokenRevocationService.cs`
-**Hash**: `37bdf1092da5` | **Size**: 1846 chars
+**Hash**: `dd981cc24230` | **Size**: 1853 chars
 
 **Classes**: TokenRevocationService
 ### Key Cross-Cutting Interactions
@@ -9642,7 +9650,7 @@ using Microsoft.Extensions.Caching.Memory;
 
 namespace eNote.Infrastructure.Identity;
 
-public class TokenRevocationService(IAppDbContext context, IClock clock, IMemoryCache cache) : ITokenRevocationService
+public sealed class TokenRevocationService(IAppDbContext context, IClock clock, IMemoryCache cache) : ITokenRevocationService
 {
     private static string Key(string jti) => $"revoked:{jti}";
 
@@ -9760,7 +9768,7 @@ public sealed class TokenService(IConfiguration configuration, IClock clock) : I
 ---
 
 ## File: `eNote\eNote.Infrastructure\Identity\UserAccountService.cs`
-**Hash**: `424e07efc9cd` | **Size**: 8207 chars
+**Hash**: `5e3d37abf7d6` | **Size**: 8649 chars
 
 **Classes**: UserAccountService
 ```cs
@@ -9775,14 +9783,14 @@ public sealed class UserAccountService(UserManager<AppUser> userManager) : IUser
 {
     private const int MaxPictureSizeBytes = 5 * 1024 * 1024;
 
-    public async Task<int?> FindUserIdByUsernameAsync(string username)
+    public async Task<int?> FindUserIdByUsernameAsync(string username, CancellationToken cancellationToken = default)
     {
         var user = await userManager.FindByNameAsync(username.Trim());
 
         return user?.Id;
     }
 
-    public async Task<(int? UserId, string? Error)> CreateUserAsync(string username, string email, string password, string? firstName, string? lastName)
+    public async Task<(int? UserId, string? Error)> CreateUserAsync(string username, string email, string password, string? firstName, string? lastName, CancellationToken cancellationToken = default)
     {
         var normalizedUsername = username.Trim();
         var normalizedEmail = email.Trim();
@@ -9819,7 +9827,7 @@ public sealed class UserAccountService(UserManager<AppUser> userManager) : IUser
         return (user.Id, null);
     }
 
-    public async Task<(bool Success, string? Error)> AssignSingleRoleAsync(int userId, string role)
+    public async Task<(bool Success, string? Error)> AssignSingleRoleAsync(int userId, string role, CancellationToken cancellationToken = default)
     {
         var user = await userManager.FindByIdAsync(userId.ToString());
 
@@ -9856,7 +9864,7 @@ public sealed class UserAccountService(UserManager<AppUser> userManager) : IUser
         return (true, null);
     }
 
-    public async Task<(bool Success, string? Error)> ChangePasswordAsync(int userId, string currentPassword, string newPassword)
+    public async Task<(bool Success, string? Error)> ChangePasswordAsync(int userId, string currentPassword, string newPassword, CancellationToken cancellationToken = default)
     {
         var user = await userManager.FindByIdAsync(userId.ToString());
 
@@ -9875,7 +9883,7 @@ public sealed class UserAccountService(UserManager<AppUser> userManager) : IUser
         return (true, null);
     }
 
-    public async Task<(bool Success, string? Error)> UpdateExistingUserAsync(int userId, string email, string? firstName, string? lastName, DateTime? dateOfBirth = null)
+    public async Task<(bool Success, string? Error)> UpdateExistingUserAsync(int userId, string email, string? firstName, string? lastName, DateTime? dateOfBirth = null, CancellationToken cancellationToken = default)
     {
         var user = await userManager.FindByIdAsync(userId.ToString());
 
@@ -9929,7 +9937,7 @@ public sealed class UserAccountService(UserManager<AppUser> userManager) : IUser
         return (true, null);
     }
 
-    public async Task<(bool Success, string? Error)> UpdatePictureAsync(int userId, byte[] picture)
+    public async Task<(bool Success, string? Error)> UpdatePictureAsync(int userId, byte[] picture, CancellationToken cancellationToken = default)
     {
         if (picture.Length == 0 || picture.Length > MaxPictureSizeBytes)
         {
@@ -9961,7 +9969,7 @@ public sealed class UserAccountService(UserManager<AppUser> userManager) : IUser
         return (true, null);
     }
 
-    public async Task<(byte[]? Data, string? ContentType)> GetPictureAsync(int userId)
+    public async Task<(byte[]? Data, string? ContentType)> GetPictureAsync(int userId, CancellationToken cancellationToken = default)
     {
         var user = await userManager.FindByIdAsync(userId.ToString());
 
@@ -9973,7 +9981,7 @@ public sealed class UserAccountService(UserManager<AppUser> userManager) : IUser
         return (picture, DetectContentType(picture));
     }
 
-    public async Task<(bool Success, string? Error)> DeletePictureAsync(int userId)
+    public async Task<(bool Success, string? Error)> DeletePictureAsync(int userId, CancellationToken cancellationToken = default)
     {
         var user = await userManager.FindByIdAsync(userId.ToString());
 
@@ -9995,8 +10003,8 @@ public sealed class UserAccountService(UserManager<AppUser> userManager) : IUser
         return (true, null);
     }
 
-    public async Task<bool> IsAddressInUseAsync(int addressId) =>
-        await userManager.Users.AnyAsync(u => u.AddressId == addressId);
+    public async Task<bool> IsAddressInUseAsync(int addressId, CancellationToken cancellationToken = default) =>
+        await userManager.Users.AnyAsync(u => u.AddressId == addressId, cancellationToken);
 
     private static bool IsValidImage(byte[] data)
     {
@@ -10037,7 +10045,7 @@ public sealed class UserAccountService(UserManager<AppUser> userManager) : IUser
 ---
 
 ## File: `eNote\eNote.Infrastructure\Identity\UserIdentityService.cs`
-**Hash**: `d140e6bf2dc9` | **Size**: 1894 chars
+**Hash**: `795282099cbe` | **Size**: 2024 chars
 
 **Classes**: UserIdentityService
 ```cs
@@ -10050,17 +10058,17 @@ namespace eNote.Infrastructure.Identity;
 
 public sealed class UserIdentityService(UserManager<AppUser> userManager) : IUserIdentityService
 {
-    public async Task<UserIdentityDto?> GetUserAsync(int userId)
+    public async Task<UserIdentityDto?> GetUserAsync(int userId, CancellationToken cancellationToken = default)
     {
         var user = await userManager.Users
             .AsNoTracking()
             .Include(u => u.Address)
-            .FirstOrDefaultAsync(u => u.Id == userId);
+            .FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
 
         return user is null ? null : Map(user);
     }
 
-    public async Task<IReadOnlyDictionary<int, UserIdentityDto>> GetUsersBulkAsync(IEnumerable<int> userIds)
+    public async Task<IReadOnlyDictionary<int, UserIdentityDto>> GetUsersBulkAsync(IEnumerable<int> userIds, CancellationToken cancellationToken = default)
     {
         HashSet<int> ids = [.. userIds];
 
@@ -10073,7 +10081,7 @@ public sealed class UserIdentityService(UserManager<AppUser> userManager) : IUse
             .AsNoTracking()
             .Include(u => u.Address)
             .Where(u => ids.Contains(u.Id))
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         return users.ToDictionary(u => u.Id, Map);
     }

@@ -16,33 +16,33 @@ public sealed class StudentCourseController(
 {
     [HttpGet]
     [ProducesResponseType(typeof(PagedResult<CourseDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<PagedResult<CourseDto>>> GetPublished([FromQuery] CourseSearchObject search)
+    public async Task<ActionResult<PagedResult<CourseDto>>> GetPublished([FromQuery] CourseSearchObject search, CancellationToken cancellationToken)
     {
-        var result = await service.GetPagedForStudentAsync(search);
+        var result = await service.GetPagedForStudentAsync(search, cancellationToken);
         return Ok(result);
     }
 
     [HttpGet("{id:int}")]
     [ProducesResponseType(typeof(CourseDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<CourseDto>> GetById(int id)
+    public async Task<ActionResult<CourseDto>> GetById(int id, CancellationToken cancellationToken)
     {
-        var dto = await service.GetByIdForStudentAsync(id);
+        var dto = await service.GetByIdForStudentAsync(id, cancellationToken);
         return Ok(dto);
     }
 
     [HttpPost("{id:int}/enroll")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public async Task<IActionResult> Enroll(int id)
+    public async Task<IActionResult> Enroll(int id, CancellationToken cancellationToken)
     {
-        await enrollmentService.EnrollAsync(id);
+        await enrollmentService.EnrollAsync(id, cancellationToken);
         return NoContent();
     }
 
     [HttpPost("{id:int}/unenroll")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public async Task<IActionResult> Unenroll(int id)
+    public async Task<IActionResult> Unenroll(int id, CancellationToken cancellationToken)
     {
-        await enrollmentService.UnenrollAsync(id);
+        await enrollmentService.UnenrollAsync(id, cancellationToken);
         return NoContent();
     }
 }

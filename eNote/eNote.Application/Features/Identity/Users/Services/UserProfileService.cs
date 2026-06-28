@@ -16,11 +16,11 @@ public sealed class UserProfileService(
     IUserProfileLookup lookup,
     ICurrentUserService currentUserService) : IUserProfileService
 {
-    public Task<UserProfileResponse?> GetCurrentUserAsync() => GetUserAsync(currentUserService.UserId);
+    public Task<UserProfileResponse?> GetCurrentUserAsync(CancellationToken cancellationToken = default) => GetUserAsync(currentUserService.UserId, cancellationToken);
 
-    public async Task<UserProfileResponse?> GetUserAsync(int userId)
+    public async Task<UserProfileResponse?> GetUserAsync(int userId, CancellationToken cancellationToken = default)
     {
-        var user = await identity.GetUserAsync(userId);
+        var user = await identity.GetUserAsync(userId, cancellationToken);
 
         if (user == null || !user.IsActive)
         {
@@ -40,7 +40,7 @@ public sealed class UserProfileService(
         {
             AppRoles.Student => await BuildStudentProfile(userId, user),
             AppRoles.Instructor => await BuildInstructorProfile(userId, user),
-            AppRoles.StoreEmployee => await BuildMusicStoreProfile(userId, user),
+            AppRoles.StoreEmployee => await BuildMusicStoreProfile(userId, user, cancellationToken),
             AppRoles.Administrator => new AdminProfile(user.FirstName, user.LastName),
             _ => throw new BusinessException(Messages.UnknownRole)
         };
@@ -62,13 +62,13 @@ public sealed class UserProfileService(
         return new InstructorProfile(instructor.Id, user.FirstName, user.LastName);
     }
 
-    private async Task<MusicStoreProfile> BuildMusicStoreProfile(int userId, UserIdentityDto user)
+    private async Task<MusicStoreProfile> BuildMusicStoreProfile(int userId, UserIdentityDto user, CancellationToken cancellationToken)
     {
         var employee = await lookup.GetActiveEmployeeAsync(userId);
 
         var shop = await context.Set<MusicStore>()
             .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.Id == employee.MusicStoreId)
+            .FirstOrDefaultAsync(x => x.Id == employee.MusicStoreId, cancellationToken)
             ?? throw new BusinessException(Messages.StoreNotFound);
 
         return new MusicStoreProfile(shop.Id, shop.StoreName, shop.BusinessHours, user.Address);

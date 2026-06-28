@@ -16,25 +16,25 @@ public sealed class StudentLectureController(
 {
     [HttpGet]
     [ProducesResponseType(typeof(PagedResult<LectureDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<PagedResult<LectureDto>>> GetAvailable([FromQuery] LectureSearchObject search)
+    public async Task<ActionResult<PagedResult<LectureDto>>> GetAvailable([FromQuery] LectureSearchObject search, CancellationToken cancellationToken)
     {
-        var result = await service.GetPagedForStudentAsync(search);
+        var result = await service.GetPagedForStudentAsync(search, cancellationToken);
         return Ok(result);
     }
 
     [HttpGet("{id:int}")]
     [ProducesResponseType(typeof(LectureDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<LectureDto>> GetById(int id)
+    public async Task<ActionResult<LectureDto>> GetById(int id, CancellationToken cancellationToken)
     {
-        var dto = await service.GetByIdForStudentAsync(id);
+        var dto = await service.GetByIdForStudentAsync(id, cancellationToken);
         return Ok(dto);
     }
 
     [HttpPost("{id:int}/rsvp")]
     [ProducesResponseType(typeof(RsvpResponse), StatusCodes.Status200OK)]
-    public async Task<ActionResult<RsvpResponse>> Rsvp(int id, [FromBody] RsvpRequest request)
+    public async Task<ActionResult<RsvpResponse>> Rsvp(int id, [FromBody] RsvpRequest request, CancellationToken cancellationToken)
     {
-        var response = await attendanceService.RsvpAsync(id, request);
+        var response = await attendanceService.RsvpAsync(id, request, cancellationToken);
         return Ok(response);
     }
 }

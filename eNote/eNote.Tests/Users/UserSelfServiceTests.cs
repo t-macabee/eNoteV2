@@ -81,15 +81,15 @@ public sealed class UserSelfServiceTests
         public int? PictureGetUserId { get; private set; }
         public int? PictureDeleteUserId { get; private set; }
 
-        public Task<int?> FindUserIdByUsernameAsync(string username) => Task.FromResult<int?>(null);
+        public Task<int?> FindUserIdByUsernameAsync(string username, CancellationToken cancellationToken = default) => Task.FromResult<int?>(null);
 
-        public Task<(int? UserId, string? Error)> CreateUserAsync(string username, string email, string password, string? firstName, string? lastName) =>
+        public Task<(int? UserId, string? Error)> CreateUserAsync(string username, string email, string password, string? firstName, string? lastName, CancellationToken cancellationToken = default) =>
             Task.FromResult<(int? UserId, string? Error)>((1, null));
 
-        public Task<(bool Success, string? Error)> AssignSingleRoleAsync(int userId, string role) =>
+        public Task<(bool Success, string? Error)> AssignSingleRoleAsync(int userId, string role, CancellationToken cancellationToken = default) =>
             Task.FromResult((true, (string?)null));
 
-        public Task<(bool Success, string? Error)> UpdateExistingUserAsync(int userId, string email, string? firstName, string? lastName, DateTime? dateOfBirth = null)
+        public Task<(bool Success, string? Error)> UpdateExistingUserAsync(int userId, string email, string? firstName, string? lastName, DateTime? dateOfBirth = null, CancellationToken cancellationToken = default)
         {
             UpdatedUserId = userId;
             UpdatedEmail = email;
@@ -97,26 +97,26 @@ public sealed class UserSelfServiceTests
             return Task.FromResult((true, (string?)null));
         }
 
-        public Task<(bool Success, string? Error)> UpdatePictureAsync(int userId, byte[] picture)
+        public Task<(bool Success, string? Error)> UpdatePictureAsync(int userId, byte[] picture, CancellationToken cancellationToken = default)
         {
             PictureUpdateUserId = userId;
             Picture = picture;
             return Task.FromResult((true, (string?)null));
         }
 
-        public Task<(byte[]? Data, string? ContentType)> GetPictureAsync(int userId)
+        public Task<(byte[]? Data, string? ContentType)> GetPictureAsync(int userId, CancellationToken cancellationToken = default)
         {
             PictureGetUserId = userId;
             return Task.FromResult<(byte[]? Data, string? ContentType)>((null, null));
         }
 
-        public Task<(bool Success, string? Error)> DeletePictureAsync(int userId)
+        public Task<(bool Success, string? Error)> DeletePictureAsync(int userId, CancellationToken cancellationToken = default)
         {
             PictureDeleteUserId = userId;
             return Task.FromResult((true, (string?)null));
         }
 
-        public Task<(bool Success, string? Error)> ChangePasswordAsync(int userId, string currentPassword, string newPassword)
+        public Task<(bool Success, string? Error)> ChangePasswordAsync(int userId, string currentPassword, string newPassword, CancellationToken cancellationToken = default)
         {
             PasswordUserId = userId;
             CurrentPassword = currentPassword;
@@ -124,6 +124,6 @@ public sealed class UserSelfServiceTests
             return Task.FromResult((true, (string?)null));
         }
 
-        public Task<bool> IsAddressInUseAsync(int addressId) => Task.FromResult(false);
+        public Task<bool> IsAddressInUseAsync(int addressId, CancellationToken cancellationToken = default) => Task.FromResult(false);
     }
 }

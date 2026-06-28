@@ -13,10 +13,13 @@ public sealed class FileAccessService(
     IInstructorAccessService instructorAccess,
     IUserIdentityService identity) : IFileAccessService
 {
+    private const string AssignmentApiPath = "/api/uploads/assignments/";
+    private const string AssignmentLegacyPath = "/uploads/assignments/";
+
     public async Task<bool> CanAccessAssignmentFileAsync(int userId, string fileName, CancellationToken cancellationToken = default)
     {
-        var apiPath = $"/api/uploads/assignments/{fileName}";
-        var legacyPath = $"/uploads/assignments/{fileName}";
+        var apiPath = AssignmentApiPath + fileName;
+        var legacyPath = AssignmentLegacyPath + fileName;
 
         var submission = await context.Set<AssignmentSubmission>()
             .AsNoTracking()

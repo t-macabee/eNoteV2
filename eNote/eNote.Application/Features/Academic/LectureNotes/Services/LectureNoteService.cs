@@ -18,7 +18,7 @@ public sealed class LectureNoteService(
     IInstructorAccessService instructorAccess,
     IMapper mapper) : ILectureNoteService
 {
-    public async Task<PagedResult<LectureNoteDto>> GetForLectureAsync(int lectureId, LectureNoteSearchObject search)
+    public async Task<PagedResult<LectureNoteDto>> GetForLectureAsync(int lectureId, LectureNoteSearchObject search, CancellationToken cancellationToken = default)
     {
         var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(actor.UserId);
 
@@ -26,16 +26,16 @@ public sealed class LectureNoteService(
             .AsNoTracking()
             .ApplySearch(search);
 
-        return await query.ToPagedResultAsync(search, mapper.Map<LectureNoteDto>, q => q.OrderByDescending(x => x.CreatedAt));
+        return await query.ToPagedResultAsync(search, mapper.Map<LectureNoteDto>, q => q.OrderByDescending(x => x.CreatedAt), cancellationToken);
     }
 
-    public async Task<LectureNoteDto> GetByIdForInstructorAsync(int lectureId, int noteId) =>
-        mapper.Map<LectureNoteDto>(await GetOwnedNoteAsync(lectureId, noteId));
+    public async Task<LectureNoteDto> GetByIdForInstructorAsync(int lectureId, int noteId, CancellationToken cancellationToken = default) =>
+        mapper.Map<LectureNoteDto>(await GetOwnedNoteAsync(lectureId, noteId, cancellationToken: cancellationToken));
 
-    public async Task<LectureNoteDto> CreateAsync(int lectureId, LectureNoteRequest request)
+    public async Task<LectureNoteDto> CreateAsync(int lectureId, LectureNoteRequest request, CancellationToken cancellationToken = default)
     {
         var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(actor.UserId);
-        await instructorAccess.EnsureOwnsLectureAsync(lectureId, instructorId);
+        await instructorAccess.EnsureOwnsLectureAsync(lectureId, instructorId, cancellationToken);
 
         var entity = new LectureNote(request.Title.Trim(), request.Content.Trim(), lectureId)
         {
@@ -43,34 +43,34 @@ public sealed class LectureNoteService(
         };
 
         context.Set<LectureNote>().Add(entity);
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(cancellationToken);
 
         return mapper.Map<LectureNoteDto>(entity);
     }
 
-    public async Task<LectureNoteDto> UpdateAsync(int lectureId, int noteId, LectureNoteRequest request)
+    public async Task<LectureNoteDto> UpdateAsync(int lectureId, int noteId, LectureNoteRequest request, CancellationToken cancellationToken = default)
     {
-        var entity = await GetOwnedNoteAsync(lectureId, noteId, track: true);
+        var entity = await GetOwnedNoteAsync(lectureId, noteId, track: true, cancellationToken: cancellationToken);
 
         entity.UpdateDetails(request.Title.Trim(), request.Content.Trim());
         entity.UpdatedById = actor.UserId;
 
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(cancellationToken);
 
         return mapper.Map<LectureNoteDto>(entity);
     }
 
-    public async Task DeleteAsync(int lectureId, int noteId)
+    public async Task DeleteAsync(int lectureId, int noteId, CancellationToken cancellationToken = default)
     {
-        var entity = await GetOwnedNoteAsync(lectureId, noteId, track: true);
+        var entity = await GetOwnedNoteAsync(lectureId, noteId, track: true, cancellationToken: cancellationToken);
 
         entity.SoftDelete();
         entity.UpdatedById = actor.UserId;
 
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task<PagedResult<LectureNoteDto>> GetForStudentAsync(int lectureId, LectureNoteSearchObject search)
+    public async Task<PagedResult<LectureNoteDto>> GetForStudentAsync(int lectureId, LectureNoteSearchObject search, CancellationToken cancellationToken = default)
     {
         var studentId = await actor.GetCurrentStudentIdAsync();
 
@@ -80,25 +80,25 @@ public sealed class LectureNoteService(
             .Where(x => x.LectureId == lectureId)
             .ApplySearch(search);
 
-        return await query.ToPagedResultAsync(search, mapper.Map<LectureNoteDto>, q => q.OrderByDescending(x => x.CreatedAt));
+        return await query.ToPagedResultAsync(search, mapper.Map<LectureNoteDto>, q => q.OrderByDescending(x => x.CreatedAt), cancellationToken);
     }
 
-    public async Task<LectureNoteDto> GetByIdForStudentAsync(int lectureId, int noteId)
+    public async Task<LectureNoteDto> GetByIdForStudentAsync(int lectureId, int noteId, CancellationToken cancellationToken = default)
     {
         var studentId = await actor.GetCurrentStudentIdAsync();
 
         var entity = await context.Set<LectureNote>()
             .AsNoTracking()
             .ForEnrolledStudent(studentId)
-            .FirstOrDefaultAsync(x => x.Id == noteId && x.LectureId == lectureId)
+            .FirstOrDefaultAsync(x => x.Id == noteId && x.LectureId == lectureId, cancellationToken)
             ?? throw new NotFoundException(Messages.LectureNoteNotFound);
 
         return mapper.Map<LectureNoteDto>(entity);
     }
 
-    private async Task<LectureNote> GetOwnedNoteAsync(int lectureId, int noteId, bool track = false)
+    private async Task<LectureNote> GetOwnedNoteAsync(int lectureId, int noteId, bool track = false, CancellationToken cancellationToken = default)
     {
         var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(actor.UserId);
-        return await instructorAccess.GetOwnedLectureNoteAsync(lectureId, noteId, instructorId, track);
+        return await instructorAccess.GetOwnedLectureNoteAsync(lectureId, noteId, instructorId, track, cancellationToken);
     }
 }

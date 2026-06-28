@@ -1,6 +1,6 @@
 # Bounded Context: Assignments
 
-**Generated**: 2026-06-28T06:51:06.820822+00:00  
+**Generated**: 2026-06-28T09:04:45.775864+00:00  
 **Commit**: latest  
 **Total Files**: 19
 
@@ -25,7 +25,7 @@ This file contains the complete source for the **Assignments** bounded context.
 ---
 
 ## File: `eNote\eNote.API\Controllers\Assignments\InstructorAssignmentController.cs`
-**Hash**: `338ebd21921f` | **Size**: 2280 chars
+**Hash**: `8e22ad1933dc` | **Size**: 2560 chars
 
 **Classes**: InstructorAssignmentController
 ```cs
@@ -45,25 +45,25 @@ public sealed class InstructorAssignmentController(IAssignmentService service) :
 {
     [HttpGet]
     [ProducesResponseType(typeof(PagedResult<AssignmentDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<PagedResult<AssignmentDto>>> GetForLecture(int lectureId, [FromQuery] AssignmentSearchObject search)
+    public async Task<ActionResult<PagedResult<AssignmentDto>>> GetForLecture(int lectureId, [FromQuery] AssignmentSearchObject search, CancellationToken cancellationToken)
     {
-        var result = await service.GetForLectureAsync(lectureId, search);
+        var result = await service.GetForLectureAsync(lectureId, search, cancellationToken);
         return Ok(result);
     }
 
     [HttpGet("{assignmentId:int}")]
     [ProducesResponseType(typeof(AssignmentDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<AssignmentDto>> GetById(int lectureId, int assignmentId)
+    public async Task<ActionResult<AssignmentDto>> GetById(int lectureId, int assignmentId, CancellationToken cancellationToken)
     {
-        var dto = await service.GetByIdForInstructorAsync(lectureId, assignmentId);
+        var dto = await service.GetByIdForInstructorAsync(lectureId, assignmentId, cancellationToken);
         return Ok(dto);
     }
 
     [HttpPost]
     [ProducesResponseType(typeof(AssignmentDto), StatusCodes.Status201Created)]
-    public async Task<ActionResult<AssignmentDto>> Create(int lectureId, [FromBody] AssignmentRequest request)
+    public async Task<ActionResult<AssignmentDto>> Create(int lectureId, [FromBody] AssignmentRequest request, CancellationToken cancellationToken)
     {
-        var dto = await service.CreateAsync(lectureId, request);
+        var dto = await service.CreateAsync(lectureId, request, cancellationToken);
         return CreatedAtAction(nameof(GetById), new
         {
             lectureId,
@@ -73,17 +73,17 @@ public sealed class InstructorAssignmentController(IAssignmentService service) :
 
     [HttpPut("{assignmentId:int}")]
     [ProducesResponseType(typeof(AssignmentDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<AssignmentDto>> Update(int lectureId, int assignmentId, [FromBody] AssignmentRequest request)
+    public async Task<ActionResult<AssignmentDto>> Update(int lectureId, int assignmentId, [FromBody] AssignmentRequest request, CancellationToken cancellationToken)
     {
-        var dto = await service.UpdateAsync(lectureId, assignmentId, request);
+        var dto = await service.UpdateAsync(lectureId, assignmentId, request, cancellationToken);
         return Ok(dto);
     }
 
     [HttpDelete("{assignmentId:int}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public async Task<IActionResult> Delete(int lectureId, int assignmentId)
+    public async Task<IActionResult> Delete(int lectureId, int assignmentId, CancellationToken cancellationToken)
     {
-        await service.DeleteAsync(lectureId, assignmentId);
+        await service.DeleteAsync(lectureId, assignmentId, cancellationToken);
         return NoContent();
     }
 }
@@ -93,7 +93,7 @@ public sealed class InstructorAssignmentController(IAssignmentService service) :
 ---
 
 ## File: `eNote\eNote.API\Controllers\Assignments\InstructorAssignmentSubmissionController.cs`
-**Hash**: `c766557b0cd7` | **Size**: 1455 chars
+**Hash**: `edd8dc26408e` | **Size**: 1567 chars
 
 **Classes**: InstructorAssignmentSubmissionController
 ```cs
@@ -113,17 +113,17 @@ public sealed class InstructorAssignmentSubmissionController(IAssignmentSubmissi
 {
     [HttpGet]
     [ProducesResponseType(typeof(PagedResult<AssignmentSubmissionDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<PagedResult<AssignmentSubmissionDto>>> GetSubmissions(int lectureId, int assignmentId, [FromQuery] SubmissionSearchObject search)
+    public async Task<ActionResult<PagedResult<AssignmentSubmissionDto>>> GetSubmissions(int lectureId, int assignmentId, [FromQuery] SubmissionSearchObject search, CancellationToken cancellationToken)
     {
-        var result = await submissionService.GetSubmissionsAsync(lectureId, assignmentId, search);
+        var result = await submissionService.GetSubmissionsAsync(lectureId, assignmentId, search, cancellationToken);
         return Ok(result);
     }
 
     [HttpPut("{submissionId:int}/grade")]
     [ProducesResponseType(typeof(AssignmentSubmissionDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<AssignmentSubmissionDto>> Grade(int lectureId, int assignmentId, int submissionId, [FromBody] GradeAssignmentRequest request)
+    public async Task<ActionResult<AssignmentSubmissionDto>> Grade(int lectureId, int assignmentId, int submissionId, [FromBody] GradeAssignmentRequest request, CancellationToken cancellationToken)
     {
-        var dto = await submissionService.GradeAsync(lectureId, assignmentId, submissionId, request);
+        var dto = await submissionService.GradeAsync(lectureId, assignmentId, submissionId, request, cancellationToken);
         return Ok(dto);
     }
 }
@@ -133,7 +133,7 @@ public sealed class InstructorAssignmentSubmissionController(IAssignmentSubmissi
 ---
 
 ## File: `eNote\eNote.API\Controllers\Assignments\StudentAssignmentController.cs`
-**Hash**: `23f99ac37e52` | **Size**: 1112 chars
+**Hash**: `20b3af4921f4` | **Size**: 1224 chars
 
 **Classes**: StudentAssignmentController
 ```cs
@@ -153,17 +153,17 @@ public sealed class StudentAssignmentController(IAssignmentService service) : Co
 {
     [HttpGet]
     [ProducesResponseType(typeof(PagedResult<AssignmentDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<PagedResult<AssignmentDto>>> GetMyAssignments([FromQuery] AssignmentSearchObject search)
+    public async Task<ActionResult<PagedResult<AssignmentDto>>> GetMyAssignments([FromQuery] AssignmentSearchObject search, CancellationToken cancellationToken)
     {
-        var result = await service.GetForStudentAsync(search);
+        var result = await service.GetForStudentAsync(search, cancellationToken);
         return Ok(result);
     }
 
     [HttpGet("{id:int}")]
     [ProducesResponseType(typeof(AssignmentDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<AssignmentDto>> GetById(int id)
+    public async Task<ActionResult<AssignmentDto>> GetById(int id, CancellationToken cancellationToken)
     {
-        var dto = await service.GetByIdForStudentAsync(id);
+        var dto = await service.GetByIdForStudentAsync(id, cancellationToken);
         return Ok(dto);
     }
 }
@@ -364,7 +364,7 @@ public class GradeAssignmentRequest
 ---
 
 ## File: `eNote\eNote.Application\Features\Academic\Assignments\Services\AssignmentService.cs`
-**Hash**: `449ee89cf52f` | **Size**: 3934 chars
+**Hash**: `2250cfd6f32c` | **Size**: 4568 chars
 
 **Classes**: AssignmentService
 ### Key Cross-Cutting Interactions
@@ -393,7 +393,7 @@ public sealed class AssignmentService(
     IInstructorAccessService instructorAccess,
     IMapper mapper) : IAssignmentService
 {
-    public async Task<PagedResult<AssignmentDto>> GetForLectureAsync(int lectureId, AssignmentSearchObject search)
+    public async Task<PagedResult<AssignmentDto>> GetForLectureAsync(int lectureId, AssignmentSearchObject search, CancellationToken cancellationToken = default)
     {
         var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(actor.UserId);
 
@@ -401,16 +401,16 @@ public sealed class AssignmentService(
             .AsNoTracking()
             .ApplySearch(search);
 
-        return await query.ToPagedResultAsync(search, mapper.Map<AssignmentDto>, q => q.OrderBy(x => x.DueAt));
+        return await query.ToPagedResultAsync(search, mapper.Map<AssignmentDto>, q => q.OrderBy(x => x.DueAt), cancellationToken);
     }
 
-    public async Task<AssignmentDto> GetByIdForInstructorAsync(int lectureId, int assignmentId) =>
-        mapper.Map<AssignmentDto>(await GetOwnedAssignmentAsync(lectureId, assignmentId));
+    public async Task<AssignmentDto> GetByIdForInstructorAsync(int lectureId, int assignmentId, CancellationToken cancellationToken = default) =>
+        mapper.Map<AssignmentDto>(await GetOwnedAssignmentAsync(lectureId, assignmentId, cancellationToken: cancellationToken));
 
-    public async Task<AssignmentDto> CreateAsync(int lectureId, AssignmentRequest request)
+    public async Task<AssignmentDto> CreateAsync(int lectureId, AssignmentRequest request, CancellationToken cancellationToken = default)
     {
         var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(actor.UserId);
-        await instructorAccess.EnsureOwnsLectureAsync(lectureId, instructorId);
+        await instructorAccess.EnsureOwnsLectureAsync(lectureId, instructorId, cancellationToken);
 
         var entity = new Assignment(request.Title.Trim(), request.Description.Trim(), request.DueAt, lectureId)
         {
@@ -418,34 +418,34 @@ public sealed class AssignmentService(
         };
 
         context.Set<Assignment>().Add(entity);
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(cancellationToken);
 
         return mapper.Map<AssignmentDto>(entity);
     }
 
-    public async Task<AssignmentDto> UpdateAsync(int lectureId, int assignmentId, AssignmentRequest request)
+    public async Task<AssignmentDto> UpdateAsync(int lectureId, int assignmentId, AssignmentRequest request, CancellationToken cancellationToken = default)
     {
-        var entity = await GetOwnedAssignmentAsync(lectureId, assignmentId, track: true);
+        var entity = await GetOwnedAssignmentAsync(lectureId, assignmentId, track: true, cancellationToken: cancellationToken);
 
         entity.UpdateDetails(request.Title.Trim(), request.Description.Trim(), request.DueAt);
         entity.UpdatedById = actor.UserId;
 
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(cancellationToken);
 
         return mapper.Map<AssignmentDto>(entity);
     }
 
-    public async Task DeleteAsync(int lectureId, int assignmentId)
+    public async Task DeleteAsync(int lectureId, int assignmentId, CancellationToken cancellationToken = default)
     {
-        var entity = await GetOwnedAssignmentAsync(lectureId, assignmentId, track: true);
+        var entity = await GetOwnedAssignmentAsync(lectureId, assignmentId, track: true, cancellationToken: cancellationToken);
 
         entity.SoftDelete();
         entity.UpdatedById = actor.UserId;
 
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task<PagedResult<AssignmentDto>> GetForStudentAsync(AssignmentSearchObject search)
+    public async Task<PagedResult<AssignmentDto>> GetForStudentAsync(AssignmentSearchObject search, CancellationToken cancellationToken = default)
     {
         var studentId = await actor.GetCurrentStudentIdAsync();
 
@@ -454,26 +454,26 @@ public sealed class AssignmentService(
             .ForEnrolledStudent(studentId)
             .ApplySearch(search);
 
-        return await query.ToPagedResultAsync(search, mapper.Map<AssignmentDto>, q => q.OrderBy(x => x.DueAt));
+        return await query.ToPagedResultAsync(search, mapper.Map<AssignmentDto>, q => q.OrderBy(x => x.DueAt), cancellationToken);
     }
 
-    public async Task<AssignmentDto> GetByIdForStudentAsync(int assignmentId)
+    public async Task<AssignmentDto> GetByIdForStudentAsync(int assignmentId, CancellationToken cancellationToken = default)
     {
         var studentId = await actor.GetCurrentStudentIdAsync();
 
         var entity = await context.Set<Assignment>()
             .ForEnrolledStudentById(studentId, assignmentId)
             .AsNoTracking()
-            .FirstOrDefaultAsync()
+            .FirstOrDefaultAsync(cancellationToken)
             ?? throw new NotFoundException(Messages.AssignmentNotFound);
 
         return mapper.Map<AssignmentDto>(entity);
     }
 
-    private async Task<Assignment> GetOwnedAssignmentAsync(int lectureId, int assignmentId, bool track = false)
+    private async Task<Assignment> GetOwnedAssignmentAsync(int lectureId, int assignmentId, bool track = false, CancellationToken cancellationToken = default)
     {
         var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(actor.UserId);
-        return await instructorAccess.GetOwnedAssignmentAsync(lectureId, assignmentId, instructorId, track);
+        return await instructorAccess.GetOwnedAssignmentAsync(lectureId, assignmentId, instructorId, track, cancellationToken);
     }
 }
 
@@ -482,7 +482,7 @@ public sealed class AssignmentService(
 ---
 
 ## File: `eNote\eNote.Application\Features\Academic\Assignments\Services\AssignmentSubmissionService.cs`
-**Hash**: `98295f227a9e` | **Size**: 4840 chars
+**Hash**: `25e0556da4f6` | **Size**: 5021 chars
 
 **Classes**: AssignmentSubmissionService
 ### Key Cross-Cutting Interactions
@@ -503,6 +503,7 @@ using eNote.Application.Features.Academic.Assignments;
 using eNote.Application.Features.Identity.Instructors;
 using eNote.Application.Features.Identity.Users.Services;
 using eNote.Application.Features.Academic.Courses;
+using MapsterMapper;
 using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Application.Features.Academic.Assignments.Services;
@@ -513,17 +514,18 @@ public sealed class AssignmentSubmissionService(
     ICurrentActor actor,
     IStudentDisplayNameService displayNames,
     IInstructorAccessService instructorAccess,
-    IFileStorageService fileStorage) : IAssignmentSubmissionService
+    IFileStorageService fileStorage,
+    IMapper mapper) : IAssignmentSubmissionService
 {
     public async Task<AssignmentSubmissionDto> SubmitWithFileAsync(int assignmentId, Stream stream, string fileName, string contentType, CancellationToken ct = default)
     {
         var path = await fileStorage.SaveAssignmentAsync(stream, fileName, contentType, ct);
-        return await SubmitAsync(assignmentId, new AssignmentSubmitRequest { FilePath = path });
+        return await SubmitAsync(assignmentId, new AssignmentSubmitRequest { FilePath = path }, ct);
     }
 
-    public async Task<PagedResult<AssignmentSubmissionDto>> GetSubmissionsAsync(int lectureId, int assignmentId, SubmissionSearchObject search)
+    public async Task<PagedResult<AssignmentSubmissionDto>> GetSubmissionsAsync(int lectureId, int assignmentId, SubmissionSearchObject search, CancellationToken cancellationToken = default)
     {
-        await GetOwnedAssignmentAsync(lectureId, assignmentId);
+        await GetOwnedAssignmentAsync(lectureId, assignmentId, cancellationToken);
 
         var query = context.Set<AssignmentSubmission>()
             .AsNoTracking()
@@ -533,35 +535,36 @@ public sealed class AssignmentSubmissionService(
         return await query.ToPagedResultAsync(
             search,
             items => displayNames.GetStudentDisplayNamesAsync(items.Select(x => x.Student)),
-            (x, names) => MapSubmission(x, x.Student, names.GetValueOrDefault(x.StudentId, $"Student {x.StudentId}")),
-            q => q.OrderBy(x => x.StudentId));
+            (x, names) => MapSubmission(x, names.GetValueOrDefault(x.StudentId, $"Student {x.StudentId}")),
+            q => q.OrderBy(x => x.StudentId),
+            cancellationToken);
     }
 
-    public async Task<AssignmentSubmissionDto> GradeAsync(int lectureId, int assignmentId, int submissionId, GradeAssignmentRequest request)
+    public async Task<AssignmentSubmissionDto> GradeAsync(int lectureId, int assignmentId, int submissionId, GradeAssignmentRequest request, CancellationToken cancellationToken = default)
     {
-        await GetOwnedAssignmentAsync(lectureId, assignmentId);
+        await GetOwnedAssignmentAsync(lectureId, assignmentId, cancellationToken);
 
         var submission = await context.Set<AssignmentSubmission>()
             .Include(x => x.Student)
-            .FirstOrDefaultAsync(x => x.Id == submissionId && x.AssignmentId == assignmentId)
+            .FirstOrDefaultAsync(x => x.Id == submissionId && x.AssignmentId == assignmentId, cancellationToken)
             ?? throw new NotFoundException(Messages.AssignmentSubmissionNotFound);
 
         submission.SetGrade(request.Grade);
         submission.UpdatedById = actor.UserId;
 
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(cancellationToken);
 
-        return MapSubmission(submission, submission.Student, await displayNames.GetStudentDisplayNameAsync(submission.Student));
+        return MapSubmission(submission, await displayNames.GetStudentDisplayNameAsync(submission.Student));
     }
 
-    private async Task<AssignmentSubmissionDto> SubmitAsync(int assignmentId, AssignmentSubmitRequest request)
+    private async Task<AssignmentSubmissionDto> SubmitAsync(int assignmentId, AssignmentSubmitRequest request, CancellationToken cancellationToken)
     {
         var student = await actor.GetCurrentStudentAsync();
 
         var assignment = await context.Set<Assignment>()
             .ForEnrolledStudentById(student.Id, assignmentId)
             .Include(x => x.AssignmentSubmissions)
-            .FirstOrDefaultAsync()
+            .FirstOrDefaultAsync(cancellationToken)
             ?? throw new NotFoundException(Messages.AssignmentNotFound);
 
         var existing = assignment.AssignmentSubmissions.FirstOrDefault(x => x.StudentId == student.Id);
@@ -588,26 +591,23 @@ public sealed class AssignmentSubmissionService(
         existing.Submit(request.FilePath?.Trim(), clock.UtcNow);
         existing.UpdatedById = actor.UserId;
 
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(cancellationToken);
 
-        return MapSubmission(existing, student, await displayNames.GetStudentDisplayNameAsync(student));
+        return MapSubmission(existing, await displayNames.GetStudentDisplayNameAsync(student));
     }
 
-    private async Task<Assignment> GetOwnedAssignmentAsync(int lectureId, int assignmentId)
+    private async Task<Assignment> GetOwnedAssignmentAsync(int lectureId, int assignmentId, CancellationToken cancellationToken = default)
     {
         var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(actor.UserId);
-        return await instructorAccess.GetOwnedAssignmentAsync(lectureId, assignmentId, instructorId);
+        return await instructorAccess.GetOwnedAssignmentAsync(lectureId, assignmentId, instructorId, cancellationToken: cancellationToken);
     }
-    private static AssignmentSubmissionDto MapSubmission(AssignmentSubmission submission, Student student, string studentName) => new()
+
+    private AssignmentSubmissionDto MapSubmission(AssignmentSubmission submission, string studentName)
     {
-        Id = submission.Id,
-        AssignmentId = submission.AssignmentId,
-        StudentId = submission.StudentId,
-        StudentName = studentName,
-        SubmittedAt = submission.SubmittedAt,
-        FilePath = submission.FilePath,
-        Grade = submission.Grade
-    };
+        var dto = mapper.Map<AssignmentSubmissionDto>(submission);
+        dto.StudentName = studentName;
+        return dto;
+    }
 }
 
 ```
@@ -615,7 +615,7 @@ public sealed class AssignmentSubmissionService(
 ---
 
 ## File: `eNote\eNote.Application\Features\Academic\Assignments\Services\IAssignmentService.cs`
-**Hash**: `8e3e9e42d094` | **Size**: 776 chars
+**Hash**: `c293b72d37e2` | **Size**: 1105 chars
 
 **Classes**: 
 **Interfaces**: IAssignmentService
@@ -627,13 +627,13 @@ namespace eNote.Application.Features.Academic.Assignments.Services;
 
 public interface IAssignmentService
 {
-    Task<PagedResult<AssignmentDto>> GetForLectureAsync(int lectureId, AssignmentSearchObject search);
-    Task<AssignmentDto> GetByIdForInstructorAsync(int lectureId, int assignmentId);
-    Task<AssignmentDto> CreateAsync(int lectureId, AssignmentRequest request);
-    Task<AssignmentDto> UpdateAsync(int lectureId, int assignmentId, AssignmentRequest request);
-    Task DeleteAsync(int lectureId, int assignmentId);
-    Task<PagedResult<AssignmentDto>> GetForStudentAsync(AssignmentSearchObject search);
-    Task<AssignmentDto> GetByIdForStudentAsync(int assignmentId);
+    Task<PagedResult<AssignmentDto>> GetForLectureAsync(int lectureId, AssignmentSearchObject search, CancellationToken cancellationToken = default);
+    Task<AssignmentDto> GetByIdForInstructorAsync(int lectureId, int assignmentId, CancellationToken cancellationToken = default);
+    Task<AssignmentDto> CreateAsync(int lectureId, AssignmentRequest request, CancellationToken cancellationToken = default);
+    Task<AssignmentDto> UpdateAsync(int lectureId, int assignmentId, AssignmentRequest request, CancellationToken cancellationToken = default);
+    Task DeleteAsync(int lectureId, int assignmentId, CancellationToken cancellationToken = default);
+    Task<PagedResult<AssignmentDto>> GetForStudentAsync(AssignmentSearchObject search, CancellationToken cancellationToken = default);
+    Task<AssignmentDto> GetByIdForStudentAsync(int assignmentId, CancellationToken cancellationToken = default);
 }
 
 ```
@@ -641,7 +641,7 @@ public interface IAssignmentService
 ---
 
 ## File: `eNote\eNote.Application\Features\Academic\Assignments\Services\IAssignmentSubmissionService.cs`
-**Hash**: `e4d8262ef736` | **Size**: 632 chars
+**Hash**: `5c4ad23bdea5` | **Size**: 726 chars
 
 **Classes**: 
 **Interfaces**: IAssignmentSubmissionService
@@ -654,8 +654,8 @@ namespace eNote.Application.Features.Academic.Assignments.Services;
 public interface IAssignmentSubmissionService
 {
     Task<AssignmentSubmissionDto> SubmitWithFileAsync(int assignmentId, Stream stream, string fileName, string contentType, CancellationToken ct = default);
-    Task<PagedResult<AssignmentSubmissionDto>> GetSubmissionsAsync(int lectureId, int assignmentId, SubmissionSearchObject search);
-    Task<AssignmentSubmissionDto> GradeAsync(int lectureId, int assignmentId, int submissionId, GradeAssignmentRequest request);
+    Task<PagedResult<AssignmentSubmissionDto>> GetSubmissionsAsync(int lectureId, int assignmentId, SubmissionSearchObject search, CancellationToken cancellationToken = default);
+    Task<AssignmentSubmissionDto> GradeAsync(int lectureId, int assignmentId, int submissionId, GradeAssignmentRequest request, CancellationToken cancellationToken = default);
 }
 
 ```

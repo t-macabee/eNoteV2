@@ -39,7 +39,7 @@ public sealed class AddressService(IAppDbContext context, IUserAccountService ac
 
     protected override async Task EnsureDeletableAsync(Address entity, CancellationToken ct = default)
     {
-        if (await accountService.IsAddressInUseAsync(entity.Id))
+        if (await accountService.IsAddressInUseAsync(entity.Id, ct))
         {
             throw new BusinessException(Messages.AddressDeleteBlocked);
         }

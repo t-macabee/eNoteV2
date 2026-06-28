@@ -9,14 +9,14 @@ public sealed class UserAccountService(UserManager<AppUser> userManager) : IUser
 {
     private const int MaxPictureSizeBytes = 5 * 1024 * 1024;
 
-    public async Task<int?> FindUserIdByUsernameAsync(string username)
+    public async Task<int?> FindUserIdByUsernameAsync(string username, CancellationToken cancellationToken = default)
     {
         var user = await userManager.FindByNameAsync(username.Trim());
 
         return user?.Id;
     }
 
-    public async Task<(int? UserId, string? Error)> CreateUserAsync(string username, string email, string password, string? firstName, string? lastName)
+    public async Task<(int? UserId, string? Error)> CreateUserAsync(string username, string email, string password, string? firstName, string? lastName, CancellationToken cancellationToken = default)
     {
         var normalizedUsername = username.Trim();
         var normalizedEmail = email.Trim();
@@ -53,7 +53,7 @@ public sealed class UserAccountService(UserManager<AppUser> userManager) : IUser
         return (user.Id, null);
     }
 
-    public async Task<(bool Success, string? Error)> AssignSingleRoleAsync(int userId, string role)
+    public async Task<(bool Success, string? Error)> AssignSingleRoleAsync(int userId, string role, CancellationToken cancellationToken = default)
     {
         var user = await userManager.FindByIdAsync(userId.ToString());
 
@@ -90,7 +90,7 @@ public sealed class UserAccountService(UserManager<AppUser> userManager) : IUser
         return (true, null);
     }
 
-    public async Task<(bool Success, string? Error)> ChangePasswordAsync(int userId, string currentPassword, string newPassword)
+    public async Task<(bool Success, string? Error)> ChangePasswordAsync(int userId, string currentPassword, string newPassword, CancellationToken cancellationToken = default)
     {
         var user = await userManager.FindByIdAsync(userId.ToString());
 
@@ -109,7 +109,7 @@ public sealed class UserAccountService(UserManager<AppUser> userManager) : IUser
         return (true, null);
     }
 
-    public async Task<(bool Success, string? Error)> UpdateExistingUserAsync(int userId, string email, string? firstName, string? lastName, DateTime? dateOfBirth = null)
+    public async Task<(bool Success, string? Error)> UpdateExistingUserAsync(int userId, string email, string? firstName, string? lastName, DateTime? dateOfBirth = null, CancellationToken cancellationToken = default)
     {
         var user = await userManager.FindByIdAsync(userId.ToString());
 
@@ -163,7 +163,7 @@ public sealed class UserAccountService(UserManager<AppUser> userManager) : IUser
         return (true, null);
     }
 
-    public async Task<(bool Success, string? Error)> UpdatePictureAsync(int userId, byte[] picture)
+    public async Task<(bool Success, string? Error)> UpdatePictureAsync(int userId, byte[] picture, CancellationToken cancellationToken = default)
     {
         if (picture.Length == 0 || picture.Length > MaxPictureSizeBytes)
         {
@@ -195,7 +195,7 @@ public sealed class UserAccountService(UserManager<AppUser> userManager) : IUser
         return (true, null);
     }
 
-    public async Task<(byte[]? Data, string? ContentType)> GetPictureAsync(int userId)
+    public async Task<(byte[]? Data, string? ContentType)> GetPictureAsync(int userId, CancellationToken cancellationToken = default)
     {
         var user = await userManager.FindByIdAsync(userId.ToString());
 
@@ -207,7 +207,7 @@ public sealed class UserAccountService(UserManager<AppUser> userManager) : IUser
         return (picture, DetectContentType(picture));
     }
 
-    public async Task<(bool Success, string? Error)> DeletePictureAsync(int userId)
+    public async Task<(bool Success, string? Error)> DeletePictureAsync(int userId, CancellationToken cancellationToken = default)
     {
         var user = await userManager.FindByIdAsync(userId.ToString());
 
@@ -229,8 +229,8 @@ public sealed class UserAccountService(UserManager<AppUser> userManager) : IUser
         return (true, null);
     }
 
-    public async Task<bool> IsAddressInUseAsync(int addressId) =>
-        await userManager.Users.AnyAsync(u => u.AddressId == addressId);
+    public async Task<bool> IsAddressInUseAsync(int addressId, CancellationToken cancellationToken = default) =>
+        await userManager.Users.AnyAsync(u => u.AddressId == addressId, cancellationToken);
 
     private static bool IsValidImage(byte[] data)
     {

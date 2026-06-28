@@ -1,4 +1,4 @@
-using eNote.Domain.Entities;
+using eNote.Domain.Entities.Rentals;
 using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Application.Features.Rentals.InstrumentRentals;

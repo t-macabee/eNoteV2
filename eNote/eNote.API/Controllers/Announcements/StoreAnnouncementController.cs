@@ -15,25 +15,25 @@ public sealed class StoreAnnouncementController(IStoreAnnouncementService announ
 {
     [HttpGet]
     [ProducesResponseType(typeof(PagedResult<AnnouncementDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<PagedResult<AnnouncementDto>>> GetForStore([FromQuery] AnnouncementSearchObject search)
+    public async Task<ActionResult<PagedResult<AnnouncementDto>>> GetForStore([FromQuery] AnnouncementSearchObject search, CancellationToken cancellationToken)
     {
-        var result = await announcementService.GetForStoreAsync(search);
+        var result = await announcementService.GetForStoreAsync(search, cancellationToken);
         return Ok(result);
     }
 
     [HttpGet("{announcementId:int}")]
     [ProducesResponseType(typeof(AnnouncementDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<AnnouncementDto>> GetById(int announcementId)
+    public async Task<ActionResult<AnnouncementDto>> GetById(int announcementId, CancellationToken cancellationToken)
     {
-        var result = await announcementService.GetByIdForStoreAsync(announcementId);
+        var result = await announcementService.GetByIdForStoreAsync(announcementId, cancellationToken);
         return Ok(result);
     }
 
     [HttpPost]
     [ProducesResponseType(typeof(AnnouncementDto), StatusCodes.Status201Created)]
-    public async Task<ActionResult<AnnouncementDto>> Create([FromBody] AnnouncementRequest request)
+    public async Task<ActionResult<AnnouncementDto>> Create([FromBody] AnnouncementRequest request, CancellationToken cancellationToken)
     {
-        var result = await announcementService.CreateForStoreAsync(request);
+        var result = await announcementService.CreateForStoreAsync(request, cancellationToken);
         return CreatedAtAction(nameof(GetById), new
         {
             announcementId = result.Id
@@ -42,17 +42,17 @@ public sealed class StoreAnnouncementController(IStoreAnnouncementService announ
 
     [HttpPut("{announcementId:int}")]
     [ProducesResponseType(typeof(AnnouncementDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<AnnouncementDto>> Update(int announcementId, [FromBody] AnnouncementRequest request)
+    public async Task<ActionResult<AnnouncementDto>> Update(int announcementId, [FromBody] AnnouncementRequest request, CancellationToken cancellationToken)
     {
-        var result = await announcementService.UpdateForStoreAsync(announcementId, request);
+        var result = await announcementService.UpdateForStoreAsync(announcementId, request, cancellationToken);
         return Ok(result);
     }
 
     [HttpDelete("{announcementId:int}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public async Task<IActionResult> Delete(int announcementId)
+    public async Task<IActionResult> Delete(int announcementId, CancellationToken cancellationToken)
     {
-        await announcementService.DeleteForStoreAsync(announcementId);
+        await announcementService.DeleteForStoreAsync(announcementId, cancellationToken);
         return NoContent();
     }
 

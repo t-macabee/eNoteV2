@@ -23,50 +23,50 @@ public abstract class ReferenceCrudService<TEntity, TDto, TRequest, TSearch>(IAp
     protected virtual Task EnsureDeletableAsync(TEntity entity, CancellationToken ct = default) =>
         Task.CompletedTask;
 
-    public Task<PagedResult<TDto>> GetPagedAsync(TSearch search) =>
-        Order(ApplySearch(Db.Set<TEntity>().AsNoTracking(), search)).ToPagedResultAsync(search, Map);
+    public Task<PagedResult<TDto>> GetPagedAsync(TSearch search, CancellationToken cancellationToken = default) =>
+        Order(ApplySearch(Db.Set<TEntity>().AsNoTracking(), search)).ToPagedResultAsync(search, Map, ct: cancellationToken);
 
-    public async Task<TDto> GetByIdAsync(int id)
+    public async Task<TDto> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
         var entity = await Db.Set<TEntity>()
             .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.Id == id)
+            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken)
             ?? throw new NotFoundException(NotFoundMessage);
 
         return Map(entity);
     }
 
-    public async Task<TDto> CreateAsync(TRequest request)
+    public async Task<TDto> CreateAsync(TRequest request, CancellationToken cancellationToken = default)
     {
         var entity = CreateEntity(request);
 
         Db.Set<TEntity>().Add(entity);
-        await Db.SaveChangesAsync();
+        await Db.SaveChangesAsync(cancellationToken);
 
         return Map(entity);
     }
 
-    public async Task<TDto> UpdateAsync(int id, TRequest request)
+    public async Task<TDto> UpdateAsync(int id, TRequest request, CancellationToken cancellationToken = default)
     {
         var entity = await Db.Set<TEntity>()
-            .FirstOrDefaultAsync(x => x.Id == id)
+            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken)
             ?? throw new NotFoundException(NotFoundMessage);
 
         ApplyUpdate(entity, request);
-        await Db.SaveChangesAsync();
+        await Db.SaveChangesAsync(cancellationToken);
 
         return Map(entity);
     }
 
-    public async Task DeleteAsync(int id)
+    public async Task DeleteAsync(int id, CancellationToken cancellationToken = default)
     {
         var entity = await Db.Set<TEntity>()
-            .FirstOrDefaultAsync(x => x.Id == id)
+            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken)
             ?? throw new NotFoundException(NotFoundMessage);
 
-        await EnsureDeletableAsync(entity);
+        await EnsureDeletableAsync(entity, cancellationToken);
         Db.Set<TEntity>().Remove(entity);
 
-        await Db.SaveChangesAsync();
+        await Db.SaveChangesAsync(cancellationToken);
     }
 }

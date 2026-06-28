@@ -1,9 +1,8 @@
-using eNote.Domain.Entities;
 using eNote.Domain.Enums;
 
-namespace eNote.Domain.Entities;
+namespace eNote.Domain.Entities.Rentals;
 
-public class InstrumentRental : AuditableEntity
+public sealed class InstrumentRental : AuditableEntity
 {
     public int StudentProfileId { get; private set; }
     public Student StudentProfile { get; private set; } = null!;

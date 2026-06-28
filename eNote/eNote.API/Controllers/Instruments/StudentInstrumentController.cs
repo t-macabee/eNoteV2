@@ -13,17 +13,17 @@ public sealed class StudentInstrumentController(IRecommendationService recommend
 {
     [HttpGet("recommended")]
     [ProducesResponseType(typeof(IReadOnlyList<InstrumentRecommendationDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<IReadOnlyList<InstrumentRecommendationDto>>> GetRecommended([FromQuery] int count = 5)
+    public async Task<ActionResult<IReadOnlyList<InstrumentRecommendationDto>>> GetRecommended([FromQuery] int count = 5, CancellationToken cancellationToken = default)
     {
-        var result = await recommendationService.GetRecommendedInstrumentsAsync(count);
+        var result = await recommendationService.GetRecommendedInstrumentsAsync(count, cancellationToken);
         return Ok(result);
     }
 
     [HttpPost("{id:int}/view")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public async Task<IActionResult> RecordView(int id)
+    public async Task<IActionResult> RecordView(int id, CancellationToken cancellationToken)
     {
-        await recommendationService.RecordInstrumentViewAsync(id);
+        await recommendationService.RecordInstrumentViewAsync(id, cancellationToken);
         return NoContent();
     }
 }

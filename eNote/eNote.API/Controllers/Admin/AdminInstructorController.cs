@@ -13,17 +13,17 @@ public sealed class AdminInstructorController(IAdminInstructorService service) :
 {
     [HttpGet]
     [ProducesResponseType(typeof(PagedResult<InstructorDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<PagedResult<InstructorDto>>> GetPaged([FromQuery] InstructorSearchObject search)
+    public async Task<ActionResult<PagedResult<InstructorDto>>> GetPaged([FromQuery] InstructorSearchObject search, CancellationToken cancellationToken)
     {
-        PagedResult<InstructorDto> result = await service.GetPagedAsync(search);
+        PagedResult<InstructorDto> result = await service.GetPagedAsync(search, cancellationToken);
         return Ok(result);
     }
 
     [HttpGet("{id:int}")]
     [ProducesResponseType(typeof(InstructorDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<InstructorDto>> GetById(int id)
+    public async Task<ActionResult<InstructorDto>> GetById(int id, CancellationToken cancellationToken)
     {
-        InstructorDto dto = await service.GetByIdAsync(id);
+        InstructorDto dto = await service.GetByIdAsync(id, cancellationToken);
         return Ok(dto);
     }
 }
