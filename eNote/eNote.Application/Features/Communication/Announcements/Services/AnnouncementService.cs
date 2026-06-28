@@ -32,7 +32,7 @@ public sealed class AnnouncementService(IAppDbContext context, IClock clock, ICu
                     e.CourseId == a.CourseId)) ||
                 (a.MusicStoreId != null && context.Set<InstrumentRental>().Any(r =>
                     r.StudentProfileId == studentId &&
-                    InstrumentRentalStatusSets.History.Contains(r.RentalStatus) &&
+                    (r.RentalStatus == InstrumentRentalStatus.Approved || r.RentalStatus == InstrumentRentalStatus.Active || r.RentalStatus == InstrumentRentalStatus.Completed || r.RentalStatus == InstrumentRentalStatus.ReturnedEarly) &&
                     r.Instrument.MusicStoreId == a.MusicStoreId)));
 
         return await query.ToPagedResultAsync(search, mapper.Map<AnnouncementDto>, q => q.OrderByDescending(x => x.PublishedAt), cancellationToken);

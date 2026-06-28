@@ -8,6 +8,9 @@ COPY ["eNote.Application/eNote.Application.csproj", "eNote.Application/"]
 COPY ["eNote.Domain/eNote.Domain.csproj", "eNote.Domain/"]
 COPY ["eNote.Infrastructure/eNote.Infrastructure.csproj", "eNote.Infrastructure/"]
 COPY ["eNote.Contracts/eNote.Contracts.csproj", "eNote.Contracts/"]
+COPY ["eNote.Tests/eNote.Tests.csproj", "eNote.Tests/"]
+COPY ["Directory.Build.props", "./"]
+COPY ["Directory.Packages.props", "./"]
 
 RUN dotnet restore "eNote.sln"
 

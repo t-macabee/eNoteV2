@@ -1,6 +1,6 @@
 # Bounded Context: Shared_Infrastructure
 
-**Generated**: 2026-06-28T16:22:41.267687+00:00  
+**Generated**: 2026-06-28T21:48:14.412851+00:00  
 **Commit**: latest  
 **Total Files**: 250
 
@@ -3695,7 +3695,7 @@ public sealed class AnnouncementSearchObject : BaseSearchObject
 ---
 
 ## File: `eNote\eNote.Application\Features\Communication\Announcements\Services\AnnouncementService.cs`
-**Hash**: `bb12449330bc` | **Size**: 9351 chars
+**Hash**: `6d607057f7a4` | **Size**: 9506 chars
 
 **Classes**: AnnouncementService
 ### Key Cross-Cutting Interactions
@@ -3738,7 +3738,7 @@ public sealed class AnnouncementService(IAppDbContext context, IClock clock, ICu
                     e.CourseId == a.CourseId)) ||
                 (a.MusicStoreId != null && context.Set<InstrumentRental>().Any(r =>
                     r.StudentProfileId == studentId &&
-                    InstrumentRentalStatusSets.History.Contains(r.RentalStatus) &&
+                    (r.RentalStatus == InstrumentRentalStatus.Approved || r.RentalStatus == InstrumentRentalStatus.Active || r.RentalStatus == InstrumentRentalStatus.Completed || r.RentalStatus == InstrumentRentalStatus.ReturnedEarly) &&
                     r.Instrument.MusicStoreId == a.MusicStoreId)));
 
         return await query.ToPagedResultAsync(search, mapper.Map<AnnouncementDto>, q => q.OrderByDescending(x => x.PublishedAt), cancellationToken);
@@ -5380,7 +5380,7 @@ public class UserProvisionRequest
 ---
 
 ## File: `eNote\eNote.Application\Features\Rentals\Instruments\InstrumentAvailabilityExtensions.cs`
-**Hash**: `e475b85d622f` | **Size**: 852 chars
+**Hash**: `403a7e1d08ab` | **Size**: 972 chars
 
 **Classes**: InstrumentAvailabilityExtensions
 ```cs
@@ -5393,13 +5393,13 @@ namespace eNote.Application.Features.Rentals.Instruments;
 public static class InstrumentAvailabilityExtensions
 {
     public static IQueryable<Instrument> WhereHasBlockingRental(this IQueryable<Instrument> query) =>
-        query.Where(x => x.InstrumentRentals.Any(r => InstrumentRentalStatusSets.Blocking.Contains(r.RentalStatus)));
+        query.Where(x => x.InstrumentRentals.Any(r => r.RentalStatus == InstrumentRentalStatus.Approved || r.RentalStatus == InstrumentRentalStatus.Active));
 
     public static IQueryable<Instrument> WhereHasNoBlockingRental(this IQueryable<Instrument> query) =>
-        query.Where(x => !x.InstrumentRentals.Any(r => InstrumentRentalStatusSets.Blocking.Contains(r.RentalStatus)));
+        query.Where(x => !x.InstrumentRentals.Any(r => r.RentalStatus == InstrumentRentalStatus.Approved || r.RentalStatus == InstrumentRentalStatus.Active));
 
     public static IQueryable<InstrumentRental> WhereBlockingStatus(this IQueryable<InstrumentRental> query) =>
-        query.Where(x => InstrumentRentalStatusSets.Blocking.Contains(x.RentalStatus));
+        query.Where(x => x.RentalStatus == InstrumentRentalStatus.Approved || x.RentalStatus == InstrumentRentalStatus.Active);
 }
 ```
 
@@ -5812,7 +5812,7 @@ public interface IRecommendationService
 ---
 
 ## File: `eNote\eNote.Application\Features\Rentals\Recommendations\Services\RecommendationService.cs`
-**Hash**: `2828a78abf24` | **Size**: 12464 chars
+**Hash**: `c78c1062d07d` | **Size**: 13239 chars
 
 **Classes**: RecommendationService
 ### Key Cross-Cutting Interactions
@@ -5856,7 +5856,7 @@ public sealed class RecommendationService(IAppDbContext context, IMapper mapper,
 
         var userRentals = await context.Set<InstrumentRental>()
             .AsNoTracking()
-            .Where(x => x.StudentProfileId == studentId && InstrumentRentalStatusSets.History.Contains(x.RentalStatus))
+            .Where(x => x.StudentProfileId == studentId && (x.RentalStatus == InstrumentRentalStatus.Approved || x.RentalStatus == InstrumentRentalStatus.Active || x.RentalStatus == InstrumentRentalStatus.Completed || x.RentalStatus == InstrumentRentalStatus.ReturnedEarly))
             .Select(x => new UserRentalSnapshot(x.InstrumentId, x.Instrument.InstrumentTypeId, x.Instrument.Manufacturer))
             .ToListAsync(cancellationToken);
 
@@ -5869,7 +5869,7 @@ public sealed class RecommendationService(IAppDbContext context, IMapper mapper,
 
         Dictionary<int, int> globalRentalCounts = await context.Set<InstrumentRental>()
             .AsNoTracking()
-            .Where(x => InstrumentRentalStatusSets.History.Contains(x.RentalStatus))
+            .Where(x => (x.RentalStatus == InstrumentRentalStatus.Approved || x.RentalStatus == InstrumentRentalStatus.Active || x.RentalStatus == InstrumentRentalStatus.Completed || x.RentalStatus == InstrumentRentalStatus.ReturnedEarly))
             .GroupBy(x => x.InstrumentId)
             .Select(g => new { g.Key, Count = g.Count() })
             .ToDictionaryAsync(x => x.Key, x => x.Count, cancellationToken);
@@ -5970,7 +5970,7 @@ public sealed class RecommendationService(IAppDbContext context, IMapper mapper,
 
         var popularIds = await context.Set<InstrumentRental>()
             .AsNoTracking()
-            .Where(x => InstrumentRentalStatusSets.History.Contains(x.RentalStatus))
+            .Where(x => (x.RentalStatus == InstrumentRentalStatus.Approved || x.RentalStatus == InstrumentRentalStatus.Active || x.RentalStatus == InstrumentRentalStatus.Completed || x.RentalStatus == InstrumentRentalStatus.ReturnedEarly))
             .GroupBy(x => x.InstrumentId)
             .OrderByDescending(g => g.Count())
             .Select(g => g.Key)
@@ -6023,7 +6023,7 @@ public sealed class RecommendationService(IAppDbContext context, IMapper mapper,
             .AsNoTracking()
             .Where(x => rentedInstrumentIds.Contains(x.InstrumentId)
                 && x.StudentProfileId != studentId
-                && InstrumentRentalStatusSets.History.Contains(x.RentalStatus))
+                && (x.RentalStatus == InstrumentRentalStatus.Approved || x.RentalStatus == InstrumentRentalStatus.Active || x.RentalStatus == InstrumentRentalStatus.Completed || x.RentalStatus == InstrumentRentalStatus.ReturnedEarly))
             .Select(x => x.StudentProfileId)
             .Distinct()
             .ToListAsync(cancellationToken);
@@ -6035,7 +6035,7 @@ public sealed class RecommendationService(IAppDbContext context, IMapper mapper,
 
         var collaborativeIds = await context.Set<InstrumentRental>()
             .AsNoTracking()
-            .Where(x => similarStudentIds.Contains(x.StudentProfileId) && InstrumentRentalStatusSets.History.Contains(x.RentalStatus) && !rentedInstrumentIds.Contains(x.InstrumentId))
+            .Where(x => similarStudentIds.Contains(x.StudentProfileId) && (x.RentalStatus == InstrumentRentalStatus.Approved || x.RentalStatus == InstrumentRentalStatus.Active || x.RentalStatus == InstrumentRentalStatus.Completed || x.RentalStatus == InstrumentRentalStatus.ReturnedEarly) && !rentedInstrumentIds.Contains(x.InstrumentId))
             .Select(x => x.InstrumentId)
             .Distinct()
             .ToListAsync(cancellationToken);

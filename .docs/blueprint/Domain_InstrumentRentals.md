@@ -1,6 +1,6 @@
 # Bounded Context: InstrumentRentals
 
-**Generated**: 2026-06-28T16:22:41.265951+00:00  
+**Generated**: 2026-06-28T21:48:14.412851+00:00  
 **Commit**: latest  
 **Total Files**: 23
 
@@ -471,7 +471,7 @@ public interface IRentalQueryService
 ---
 
 ## File: `eNote\eNote.Application\Features\Rentals\InstrumentRentals\Services\RentalCommandService.cs`
-**Hash**: `a2cc07c731d4` | **Size**: 9045 chars
+**Hash**: `9a9399e950c1` | **Size**: 9129 chars
 
 **Classes**: RentalCommandService
 ### Key Cross-Cutting Interactions
@@ -515,7 +515,7 @@ public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, 
                 .FirstOrDefaultAsync(x => x.Id == request.InstrumentId && x.IsActive, cancellationToken) ?? throw new NotFoundException(Messages.InstrumentNotFound);
 
             var locked = await context.Set<InstrumentRental>()
-                .AnyAsync(x => x.InstrumentId == request.InstrumentId && InstrumentRentalStatusSets.Blocking.Contains(x.RentalStatus), cancellationToken);
+                .AnyAsync(x => x.InstrumentId == request.InstrumentId && (x.RentalStatus == InstrumentRentalStatus.Approved || x.RentalStatus == InstrumentRentalStatus.Active), cancellationToken);
 
             if (locked)
             {
@@ -590,7 +590,7 @@ public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, 
         if (trigger is RentalTrigger.Approve or RentalTrigger.Pickup)
         {
             hasConflict = await context.Set<InstrumentRental>()
-                .AnyAsync(x => x.InstrumentId == rental.InstrumentId && x.Id != rental.Id && InstrumentRentalStatusSets.Blocking.Contains(x.RentalStatus), cancellationToken);
+                .AnyAsync(x => x.InstrumentId == rental.InstrumentId && x.Id != rental.Id && (x.RentalStatus == InstrumentRentalStatus.Approved || x.RentalStatus == InstrumentRentalStatus.Active), cancellationToken);
         }
 
         var transitionContext = new RentalTransitionContext

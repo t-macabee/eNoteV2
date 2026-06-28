@@ -34,7 +34,7 @@ public sealed class RecommendationService(IAppDbContext context, IMapper mapper,
 
         var userRentals = await context.Set<InstrumentRental>()
             .AsNoTracking()
-            .Where(x => x.StudentProfileId == studentId && InstrumentRentalStatusSets.History.Contains(x.RentalStatus))
+            .Where(x => x.StudentProfileId == studentId && (x.RentalStatus == InstrumentRentalStatus.Approved || x.RentalStatus == InstrumentRentalStatus.Active || x.RentalStatus == InstrumentRentalStatus.Completed || x.RentalStatus == InstrumentRentalStatus.ReturnedEarly))
             .Select(x => new UserRentalSnapshot(x.InstrumentId, x.Instrument.InstrumentTypeId, x.Instrument.Manufacturer))
             .ToListAsync(cancellationToken);
 
@@ -47,7 +47,7 @@ public sealed class RecommendationService(IAppDbContext context, IMapper mapper,
 
         Dictionary<int, int> globalRentalCounts = await context.Set<InstrumentRental>()
             .AsNoTracking()
-            .Where(x => InstrumentRentalStatusSets.History.Contains(x.RentalStatus))
+            .Where(x => (x.RentalStatus == InstrumentRentalStatus.Approved || x.RentalStatus == InstrumentRentalStatus.Active || x.RentalStatus == InstrumentRentalStatus.Completed || x.RentalStatus == InstrumentRentalStatus.ReturnedEarly))
             .GroupBy(x => x.InstrumentId)
             .Select(g => new { g.Key, Count = g.Count() })
             .ToDictionaryAsync(x => x.Key, x => x.Count, cancellationToken);
@@ -148,7 +148,7 @@ public sealed class RecommendationService(IAppDbContext context, IMapper mapper,
 
         var popularIds = await context.Set<InstrumentRental>()
             .AsNoTracking()
-            .Where(x => InstrumentRentalStatusSets.History.Contains(x.RentalStatus))
+            .Where(x => (x.RentalStatus == InstrumentRentalStatus.Approved || x.RentalStatus == InstrumentRentalStatus.Active || x.RentalStatus == InstrumentRentalStatus.Completed || x.RentalStatus == InstrumentRentalStatus.ReturnedEarly))
             .GroupBy(x => x.InstrumentId)
             .OrderByDescending(g => g.Count())
             .Select(g => g.Key)
@@ -201,7 +201,7 @@ public sealed class RecommendationService(IAppDbContext context, IMapper mapper,
             .AsNoTracking()
             .Where(x => rentedInstrumentIds.Contains(x.InstrumentId)
                 && x.StudentProfileId != studentId
-                && InstrumentRentalStatusSets.History.Contains(x.RentalStatus))
+                && (x.RentalStatus == InstrumentRentalStatus.Approved || x.RentalStatus == InstrumentRentalStatus.Active || x.RentalStatus == InstrumentRentalStatus.Completed || x.RentalStatus == InstrumentRentalStatus.ReturnedEarly))
             .Select(x => x.StudentProfileId)
             .Distinct()
             .ToListAsync(cancellationToken);
@@ -213,7 +213,7 @@ public sealed class RecommendationService(IAppDbContext context, IMapper mapper,
 
         var collaborativeIds = await context.Set<InstrumentRental>()
             .AsNoTracking()
-            .Where(x => similarStudentIds.Contains(x.StudentProfileId) && InstrumentRentalStatusSets.History.Contains(x.RentalStatus) && !rentedInstrumentIds.Contains(x.InstrumentId))
+            .Where(x => similarStudentIds.Contains(x.StudentProfileId) && (x.RentalStatus == InstrumentRentalStatus.Approved || x.RentalStatus == InstrumentRentalStatus.Active || x.RentalStatus == InstrumentRentalStatus.Completed || x.RentalStatus == InstrumentRentalStatus.ReturnedEarly) && !rentedInstrumentIds.Contains(x.InstrumentId))
             .Select(x => x.InstrumentId)
             .Distinct()
             .ToListAsync(cancellationToken);

@@ -34,7 +34,7 @@ public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, 
                 .FirstOrDefaultAsync(x => x.Id == request.InstrumentId && x.IsActive, cancellationToken) ?? throw new NotFoundException(Messages.InstrumentNotFound);
 
             var locked = await context.Set<InstrumentRental>()
-                .AnyAsync(x => x.InstrumentId == request.InstrumentId && InstrumentRentalStatusSets.Blocking.Contains(x.RentalStatus), cancellationToken);
+                .AnyAsync(x => x.InstrumentId == request.InstrumentId && (x.RentalStatus == InstrumentRentalStatus.Approved || x.RentalStatus == InstrumentRentalStatus.Active), cancellationToken);
 
             if (locked)
             {
@@ -109,7 +109,7 @@ public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, 
         if (trigger is RentalTrigger.Approve or RentalTrigger.Pickup)
         {
             hasConflict = await context.Set<InstrumentRental>()
-                .AnyAsync(x => x.InstrumentId == rental.InstrumentId && x.Id != rental.Id && InstrumentRentalStatusSets.Blocking.Contains(x.RentalStatus), cancellationToken);
+                .AnyAsync(x => x.InstrumentId == rental.InstrumentId && x.Id != rental.Id && (x.RentalStatus == InstrumentRentalStatus.Approved || x.RentalStatus == InstrumentRentalStatus.Active), cancellationToken);
         }
 
         var transitionContext = new RentalTransitionContext
