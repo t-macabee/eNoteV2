@@ -1,7 +1,7 @@
-using eNote.Domain.Entities;
 using eNote.Application.Features.Rentals.InstrumentRentals;
 using eNote.Application.Features.Rentals.InstrumentRentals.Billing;
 using Xunit;
+using eNote.Domain.Entities.Rentals;
 
 namespace eNote.Tests.InstrumentRentals;
 

@@ -20,8 +20,7 @@ public sealed class RentalStateMachine(IClock clock) : IRentalStateMachine
         return new RentalTransitionResult(transition.UsesInstrumentLock);
     }
 
-    private static TransitionDefinition? FindTransition(InstrumentRentalStatus currentStatus, RentalTrigger trigger, RentalActor actor) =>
-        Transitions.FirstOrDefault(t => t.From == currentStatus && t.Trigger == trigger && t.Actors.Contains(actor));
+    private static TransitionDefinition? FindTransition(InstrumentRentalStatus currentStatus, RentalTrigger trigger, RentalActor actor) => Transitions.FirstOrDefault(t => t.From == currentStatus && t.Trigger == trigger && t.Actors.Contains(actor));
 
     private static string GetInvalidTransitionMessage(RentalTrigger trigger, RentalActor actor)
     {
@@ -194,10 +193,5 @@ public sealed class RentalStateMachine(IClock clock) : IRentalStateMachine
             UsesInstrumentLock: false),
     ];
 
-    private sealed record TransitionDefinition(
-        InstrumentRentalStatus From, RentalTrigger Trigger, RentalActor[] Actors,
-        Action<InstrumentRental, RentalTransitionContext>? Guard,
-        Action<InstrumentRental, RentalTransitionContext, IClock> Apply,
-        bool UsesInstrumentLock
-    );
+    private sealed record TransitionDefinition(InstrumentRentalStatus From, RentalTrigger Trigger, RentalActor[] Actors, Action<InstrumentRental, RentalTransitionContext>? Guard, Action<InstrumentRental, RentalTransitionContext, IClock> Apply, bool UsesInstrumentLock);
 }

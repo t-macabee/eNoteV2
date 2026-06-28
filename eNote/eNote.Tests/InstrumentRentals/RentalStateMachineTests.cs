@@ -1,9 +1,9 @@
-using eNote.Domain.Entities;
 using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Time;
 using eNote.Application.Features.Rentals.InstrumentRentals.StateMachine;
 using eNote.Domain.Enums;
 using Xunit;
+using eNote.Domain.Entities.Rentals;
 
 namespace eNote.Tests.InstrumentRentals;
 

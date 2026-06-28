@@ -51,6 +51,12 @@ services:
       RabbitMQ__Password: ${RABBITMQ_PASSWORD:-guest}
       Cors__AllowedOrigins__0: http://localhost:3000
       Cors__AllowedOrigins__1: http://localhost:5059
+      Smtp__Host: ${SMTP_HOST:?Set SMTP_HOST in .env}
+      Smtp__From: ${SMTP_FROM:?Set SMTP_FROM in .env}
+      Smtp__Port: ${SMTP_PORT:-587}
+      Smtp__EnableSsl: ${SMTP_ENABLE_SSL:-true}
+      Smtp__Username: ${SMTP_USERNAME}
+      Smtp__Password: ${SMTP_PASSWORD}
     ports:
       - "${API_PORT:-5059}:8080"
     depends_on:

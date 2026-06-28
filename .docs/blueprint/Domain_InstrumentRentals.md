@@ -1,6 +1,6 @@
 # Bounded Context: InstrumentRentals
 
-**Generated**: 2026-06-28T09:04:45.775107+00:00  
+**Generated**: 2026-06-28T09:24:40.232840+00:00  
 **Commit**: latest  
 **Total Files**: 23
 
@@ -807,7 +807,7 @@ public enum RentalActor
 ---
 
 ## File: `eNote\eNote.Application\Features\Rentals\InstrumentRentals\StateMachine\RentalStateMachine.cs`
-**Hash**: `d9eb61cc96b6` | **Size**: 7869 chars
+**Hash**: `761ef80d3ecf` | **Size**: 7823 chars
 
 **Classes**: RentalStateMachine
 ```cs
@@ -833,8 +833,7 @@ public sealed class RentalStateMachine(IClock clock) : IRentalStateMachine
         return new RentalTransitionResult(transition.UsesInstrumentLock);
     }
 
-    private static TransitionDefinition? FindTransition(InstrumentRentalStatus currentStatus, RentalTrigger trigger, RentalActor actor) =>
-        Transitions.FirstOrDefault(t => t.From == currentStatus && t.Trigger == trigger && t.Actors.Contains(actor));
+    private static TransitionDefinition? FindTransition(InstrumentRentalStatus currentStatus, RentalTrigger trigger, RentalActor actor) => Transitions.FirstOrDefault(t => t.From == currentStatus && t.Trigger == trigger && t.Actors.Contains(actor));
 
     private static string GetInvalidTransitionMessage(RentalTrigger trigger, RentalActor actor)
     {
@@ -1007,12 +1006,7 @@ public sealed class RentalStateMachine(IClock clock) : IRentalStateMachine
             UsesInstrumentLock: false),
     ];
 
-    private sealed record TransitionDefinition(
-        InstrumentRentalStatus From, RentalTrigger Trigger, RentalActor[] Actors,
-        Action<InstrumentRental, RentalTransitionContext>? Guard,
-        Action<InstrumentRental, RentalTransitionContext, IClock> Apply,
-        bool UsesInstrumentLock
-    );
+    private sealed record TransitionDefinition(InstrumentRentalStatus From, RentalTrigger Trigger, RentalActor[] Actors, Action<InstrumentRental, RentalTransitionContext>? Guard, Action<InstrumentRental, RentalTransitionContext, IClock> Apply, bool UsesInstrumentLock);
 }
 
 ```

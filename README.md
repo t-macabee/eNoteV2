@@ -13,10 +13,10 @@ ASP.NET Core backend for a music-school platform: courses, lectures, assignments
 1. Copy environment variables:
 
    ```bash
-   cp .env.example .env
+   cp .env.docker.example .env
    ```
 
-   Adjust `ConnectionStrings__DefaultConnection` and `Jwt__Key` (min 32 characters) for your machine.
+   Adjust `ConnectionStrings__DefaultConnection`, `Jwt__Key` (min 32 characters), and `Smtp__*` values for your machine.
 
 2. Restore and apply migrations (from this `eNote/` directory):
 
@@ -38,6 +38,16 @@ ASP.NET Core backend for a music-school platform: courses, lectures, assignments
    ```
 
 API listens on `http://localhost:5059` (or ports in `launchSettings.json`). OpenAPI docs are available via Scalar in Development.
+
+## Flutter frontend
+
+The mobile/desktop client is in a separate repository. To point it at a running API:
+
+```bash
+flutter run --dart-define=API_URL=http://localhost:5059
+```
+
+Replace `http://localhost:5059` with the actual API address (or the `API_PORT` you set in `.env`).
 
 ## Docker
 
