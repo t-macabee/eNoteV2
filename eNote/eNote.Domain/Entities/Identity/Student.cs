@@ -13,7 +13,7 @@ public sealed class Student : AuditableEntity
     public ICollection<InstrumentRental> InstrumentRentals { get; private set; } = new List<InstrumentRental>();
     public ICollection<AssignmentSubmission> AssignmentSubmissions { get; private set; } = new List<AssignmentSubmission>();
 
-    protected Student()
+    private Student()
     {
     }
 

@@ -12,7 +12,7 @@ public sealed class Notification
     public bool IsRead { get; private set; }
     public DateTime CreatedAt { get; private set; }
 
-    protected Notification()
+    private Notification()
     {
     }
 

@@ -25,7 +25,7 @@ public sealed class Lecture : AuditableEntity
     public ICollection<LectureNote> LectureNotes { get; private set; } = new List<LectureNote>();
     public ICollection<Assignment> Assignments { get; private set; } = new List<Assignment>();
 
-    protected Lecture()
+    private Lecture()
     {
     }
 

@@ -24,7 +24,7 @@ public sealed class InstrumentRental : AuditableEntity
 
     public decimal Fee { get; private set; }
 
-    protected InstrumentRental()
+    private InstrumentRental()
     {
     }
 

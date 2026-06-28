@@ -19,7 +19,7 @@ public sealed class Course : AuditableEntity
     public ICollection<Enrollment> Enrollments { get; private set; } = new List<Enrollment>();
     public ICollection<Lecture> Lectures { get; private set; } = new List<Lecture>();
 
-    protected Course()
+    private Course()
     {
     }
 
