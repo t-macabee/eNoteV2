@@ -1,6 +1,6 @@
 # Bounded Context: Shared_Infrastructure
 
-**Generated**: 2026-06-28T06:47:40.782405+00:00  
+**Generated**: 2026-06-28T06:49:19.452411+00:00  
 **Commit**: latest  
 **Total Files**: 249
 
@@ -4683,7 +4683,7 @@ public record StudentProfile(int Id, DateTime EnrollmentDate, string? FirstName,
 ---
 
 ## File: `eNote\eNote.Application\Features\Identity\Users\Services\CurrentActor.cs`
-**Hash**: `2a3c2df7e719` | **Size**: 1644 chars
+**Hash**: `d6c57b492753` | **Size**: 1635 chars
 
 **Classes**: CurrentActor
 ### Key Cross-Cutting Interactions
@@ -4728,8 +4728,7 @@ public sealed class CurrentActor(ICurrentUserService user, IUserProfileLookup lo
 
         if (storeId == 0) throw new BusinessException(Messages.ActiveEmployeeStoreNotFound);
 
-        _storeId = storeId;
-        return storeId;
+        return (_storeId = storeId).Value;
     }
 }
 

@@ -34,7 +34,6 @@ public sealed class CurrentActor(ICurrentUserService user, IUserProfileLookup lo
 
         if (storeId == 0) throw new BusinessException(Messages.ActiveEmployeeStoreNotFound);
 
-        _storeId = storeId;
-        return storeId;
+        return (_storeId = storeId).Value;
     }
 }
