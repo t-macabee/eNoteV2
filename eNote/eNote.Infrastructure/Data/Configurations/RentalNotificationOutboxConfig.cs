@@ -11,8 +11,7 @@ public sealed class RentalNotificationOutboxConfig : IEntityTypeConfiguration<Re
         builder.ToTable("RentalNotificationOutbox");
 
         builder.Property(x => x.PayloadJson)
-            .IsRequired()
-            .HasColumnType("nvarchar(max)");
+            .IsRequired();
 
         builder.Property(x => x.LastError)
             .HasMaxLength(2000);

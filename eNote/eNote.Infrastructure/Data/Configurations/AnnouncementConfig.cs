@@ -36,6 +36,6 @@ public sealed class AnnouncementConfig : IEntityTypeConfiguration<Announcement>
 
         builder.ToTable(t => t.HasCheckConstraint(
             "CK_Announcement_Scope",
-            "([CourseId] IS NOT NULL AND [MusicStoreId] IS NULL) OR ([CourseId] IS NULL AND [MusicStoreId] IS NOT NULL)"));
+            """("CourseId" IS NOT NULL AND "MusicStoreId" IS NULL) OR ("CourseId" IS NULL AND "MusicStoreId" IS NOT NULL)"""));
     }
 }

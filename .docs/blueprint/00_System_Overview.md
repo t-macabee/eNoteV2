@@ -1,6 +1,6 @@
 # 🗺️ eNote System Architecture Overview
 
-**Generated**: 2026-06-28T09:24:40.237747+00:00  
+**Generated**: 2026-06-28T16:06:01.479769+00:00  
 **Commit**: latest
 
 ## Architectural Layers (Clean Architecture)
@@ -27,7 +27,7 @@ Use these files when building or refreshing your mental model:
 - **`Domain_Assignments.md`** — 19 files (core logic, entities, features)
 - **`Domain_Courses.md`** — 17 files (core logic, entities, features)
 - **`Domain_Payments.md`** — 0 files (core logic, entities, features)
-- **`Domain_Shared_Infrastructure.md`** — 249 files (foundational + cross-cutting)
+- **`Domain_Shared_Infrastructure.md`** — 250 files (foundational + cross-cutting)
 
 ---
 

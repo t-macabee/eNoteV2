@@ -12,6 +12,14 @@ namespace eNote.Infrastructure.Data;
 
 public class ENoteContext(DbContextOptions<ENoteContext> options, IClock clock) : IdentityDbContext<AppUser, AppRole, int>(options), IAppDbContext
 {
+    static ENoteContext()
+    {
+        // App is uniformly UTC (DateTime.UtcNow everywhere) and was built on SQL Server datetime2.
+        // Maps DateTime -> 'timestamp without time zone' and accepts any DateTimeKind, so client-supplied
+        // dates (Kind=Unspecified from JSON/query strings) don't trip Npgsql's Kind=Utc enforcement.
+        AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+    }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

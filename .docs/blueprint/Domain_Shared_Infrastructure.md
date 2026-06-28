@@ -1,8 +1,8 @@
 # Bounded Context: Shared_Infrastructure
 
-**Generated**: 2026-06-28T09:24:40.234999+00:00  
+**Generated**: 2026-06-28T16:06:01.477158+00:00  
 **Commit**: latest  
-**Total Files**: 249
+**Total Files**: 250
 
 ---
 
@@ -1240,7 +1240,7 @@ public sealed class UsersController(
 ---
 
 ## File: `eNote\eNote.API\Extensions\ApplicationServiceExtensions.cs`
-**Hash**: `5d6e76778713` | **Size**: 2154 chars
+**Hash**: `10c22346fc3b` | **Size**: 2151 chars
 
 **Classes**: ApplicationServiceExtensions
 ### Key Cross-Cutting Interactions
@@ -1271,7 +1271,7 @@ public static class ApplicationServiceExtensions
     public static IServiceCollection AddApplicationDatabase(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddDbContext<ENoteContext>(options =>
-            options.UseSqlServer(configuration.GetConnectionString("DefaultConnection"),
+            options.UseNpgsql(configuration.GetConnectionString("DefaultConnection"),
             sql => sql.MigrationsAssembly("eNote.Infrastructure")));
 
         return services;
@@ -1412,7 +1412,7 @@ public static class CorsExtensions
 ---
 
 ## File: `eNote\eNote.API\Extensions\HealthCheckExtensions.cs`
-**Hash**: `9412171086f5` | **Size**: 387 chars
+**Hash**: `419a0aecbe7b` | **Size**: 386 chars
 
 **Classes**: HealthCheckExtensions
 ### Key Cross-Cutting Interactions
@@ -1428,7 +1428,7 @@ public static class HealthCheckExtensions
     public static IServiceCollection AddApplicationHealthChecks(this IServiceCollection services)
     {
         services.AddHealthChecks()
-            .AddCheck<DatabaseHealthCheck>("sqlserver")
+            .AddCheck<DatabaseHealthCheck>("database")
             .AddCheck<RabbitMqHealthCheck>("rabbitmq");
 
         return services;
@@ -1902,7 +1902,7 @@ public static class ValidationExtensions
 ---
 
 ## File: `eNote\eNote.API\Health\DatabaseHealthCheck.cs`
-**Hash**: `ab5629df40ce` | **Size**: 752 chars
+**Hash**: `acc4bd51abe2` | **Size**: 746 chars
 
 **Classes**: DatabaseHealthCheck
 ### Key Cross-Cutting Interactions
@@ -1922,11 +1922,11 @@ public sealed class DatabaseHealthCheck(ENoteContext dbContext) : IHealthCheck
         {
             var canConnect = await dbContext.Database.CanConnectAsync(cancellationToken);
 
-            return canConnect ? HealthCheckResult.Healthy("SQL Server is reachable.") : HealthCheckResult.Unhealthy("SQL Server is not reachable.");
+            return canConnect ? HealthCheckResult.Healthy("Database is reachable.") : HealthCheckResult.Unhealthy("Database is not reachable.");
         }
         catch (Exception ex)
         {
-            return HealthCheckResult.Unhealthy("SQL Server health check failed.", ex);
+            return HealthCheckResult.Unhealthy("Database health check failed.", ex);
         }
     }
 }
@@ -7496,7 +7496,7 @@ public class Enrollment : AuditableEntity
 ---
 
 ## File: `eNote\eNote.Domain\Entities\Academic\Lecture.cs`
-**Hash**: `0da4bb934192` | **Size**: 1975 chars
+**Hash**: `d93cd3f91fce` | **Size**: 1977 chars
 
 **Classes**: Lecture
 ```cs
@@ -7521,7 +7521,7 @@ public sealed class Lecture : AuditableEntity
     public LectureStatus LectureStatus { get; private set; }
     public bool IsCancelled => LectureStatus == LectureStatus.Cancelled;
     public bool IsActive { get; private set; } = true;
-    public byte[]? RowVersion { get; set; }
+    public uint Version { get; private set; }
 
     public ICollection<Attendance> Attendances { get; private set; } = new List<Attendance>();
     public ICollection<LectureNote> LectureNotes { get; private set; } = new List<LectureNote>();
@@ -8332,7 +8332,7 @@ public sealed class AddressConfig : IEntityTypeConfiguration<Address>
 ---
 
 ## File: `eNote\eNote.Infrastructure\Data\Configurations\AnnouncementConfig.cs`
-**Hash**: `87ae38403ae8` | **Size**: 1508 chars
+**Hash**: `e47cbdcacde7` | **Size**: 1512 chars
 
 **Classes**: AnnouncementConfig
 ```cs
@@ -8374,7 +8374,7 @@ public sealed class AnnouncementConfig : IEntityTypeConfiguration<Announcement>
 
         builder.ToTable(t => t.HasCheckConstraint(
             "CK_Announcement_Scope",
-            "([CourseId] IS NOT NULL AND [MusicStoreId] IS NULL) OR ([CourseId] IS NULL AND [MusicStoreId] IS NOT NULL)"));
+            """("CourseId" IS NOT NULL AND "MusicStoreId" IS NULL) OR ("CourseId" IS NULL AND "MusicStoreId" IS NOT NULL)"""));
     }
 }
 
@@ -8476,7 +8476,7 @@ public sealed class AttendanceConfig : IEntityTypeConfiguration<Attendance>
 ---
 
 ## File: `eNote\eNote.Infrastructure\Data\Configurations\ConfigurationHelpers.cs`
-**Hash**: `3a6f8e08685e` | **Size**: 1515 chars
+**Hash**: `f71d948efe1a` | **Size**: 1508 chars
 
 **Classes**: ConfigurationHelpers
 ```cs
@@ -8514,7 +8514,7 @@ public static class ConfigurationHelpers
 
     public static PropertyBuilder<DateTime> HasDefaultSqlNow(this PropertyBuilder<DateTime> propertyBuilder)
     {
-        return propertyBuilder.HasDefaultValueSql("GETUTCDATE()");
+        return propertyBuilder.HasDefaultValueSql("now()");
     }
 
     public static IndexBuilder HasUniqueIndex(this EntityTypeBuilder builder, string propertyName)
@@ -8672,7 +8672,7 @@ public sealed class InstrumentConfig : IEntityTypeConfiguration<Instrument>
 ---
 
 ## File: `eNote\eNote.Infrastructure\Data\Configurations\InstrumentRentalConfig.cs`
-**Hash**: `edc628e0bfdf` | **Size**: 1388 chars
+**Hash**: `8948ffef69c8` | **Size**: 1390 chars
 
 **Classes**: InstrumentRentalConfig
 ```cs
@@ -8707,7 +8707,7 @@ public sealed class InstrumentRentalConfig : IEntityTypeConfiguration<Instrument
 
         builder.HasIndex(x => x.InstrumentId)
                .HasFilter(
-                    $"[{nameof(InstrumentRental.RentalStatus)}] IN ({(int)InstrumentRentalStatus.Approved}, {(int)InstrumentRentalStatus.Active})"
+                    $"\"{nameof(InstrumentRental.RentalStatus)}\" IN ({(int)InstrumentRentalStatus.Approved}, {(int)InstrumentRentalStatus.Active})"
                ).IsUnique();
     }
 }
@@ -8765,7 +8765,7 @@ public sealed class InstrumentViewConfig : IEntityTypeConfiguration<InstrumentVi
 ---
 
 ## File: `eNote\eNote.Infrastructure\Data\Configurations\LectureConfig.cs`
-**Hash**: `b404f226958c` | **Size**: 1167 chars
+**Hash**: `9054dabcbbbc` | **Size**: 1164 chars
 
 **Classes**: LectureConfig
 ```cs
@@ -8794,7 +8794,7 @@ public sealed class LectureConfig : IEntityTypeConfiguration<Lecture>
         builder.Ignore(p => p.IsCancelled);
         builder.Property(p => p.IsActive).HasDefaultValue(true);
         builder.HasQueryFilter(p => p.IsActive);
-        builder.Property(p => p.RowVersion).IsRowVersion();
+        builder.Property(p => p.Version).IsRowVersion();
     }
 }
 
@@ -8936,7 +8936,7 @@ public sealed class NotificationConfig : IEntityTypeConfiguration<Notification>
 ---
 
 ## File: `eNote\eNote.Infrastructure\Data\Configurations\RentalNotificationOutboxConfig.cs`
-**Hash**: `9e4ab6a8e806` | **Size**: 667 chars
+**Hash**: `f9dfdcf7c679` | **Size**: 623 chars
 
 **Classes**: RentalNotificationOutboxConfig
 ### Key Cross-Cutting Interactions
@@ -8956,8 +8956,7 @@ public sealed class RentalNotificationOutboxConfig : IEntityTypeConfiguration<Re
         builder.ToTable("RentalNotificationOutbox");
 
         builder.Property(x => x.PayloadJson)
-            .IsRequired()
-            .HasColumnType("nvarchar(max)");
+            .IsRequired();
 
         builder.Property(x => x.LastError)
             .HasMaxLength(2000);
@@ -9025,7 +9024,7 @@ public sealed class StudentConfig : IEntityTypeConfiguration<Student>
 ---
 
 ## File: `eNote\eNote.Infrastructure\Data\ENoteContext.cs`
-**Hash**: `ed6d4798a7cb` | **Size**: 1603 chars
+**Hash**: `d0125d453706` | **Size**: 2027 chars
 
 **Classes**: ENoteContext
 ### Key Cross-Cutting Interactions
@@ -9046,6 +9045,14 @@ namespace eNote.Infrastructure.Data;
 
 public class ENoteContext(DbContextOptions<ENoteContext> options, IClock clock) : IdentityDbContext<AppUser, AppRole, int>(options), IAppDbContext
 {
+    static ENoteContext()
+    {
+        // App is uniformly UTC (DateTime.UtcNow everywhere) and was built on SQL Server datetime2.
+        // Maps DateTime -> 'timestamp without time zone' and accepts any DateTimeKind, so client-supplied
+        // dates (Kind=Unspecified from JSON/query strings) don't trip Npgsql's Kind=Utc enforcement.
+        AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+    }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -9086,7 +9093,7 @@ public class ENoteContext(DbContextOptions<ENoteContext> options, IClock clock) 
 ---
 
 ## File: `eNote\eNote.Infrastructure\Data\ENoteContextFactory.cs`
-**Hash**: `ad245c241c99` | **Size**: 1427 chars
+**Hash**: `c99a0cf88405` | **Size**: 1424 chars
 
 **Classes**: ENoteContextFactory
 ### Key Cross-Cutting Interactions
@@ -9115,7 +9122,7 @@ public sealed class ENoteContextFactory : IDesignTimeDbContextFactory<ENoteConte
             ?? throw new InvalidOperationException("ConnectionStrings__DefaultConnection is missing. Set it in .env or environment variables.");
 
         var optionsBuilder = new DbContextOptionsBuilder<ENoteContext>();
-        optionsBuilder.UseSqlServer(connectionString, sql => sql.MigrationsAssembly("eNote.Infrastructure"));
+        optionsBuilder.UseNpgsql(connectionString, sql => sql.MigrationsAssembly("eNote.Infrastructure"));
 
         return new ENoteContext(optionsBuilder.Options, new SystemClock());
     }
@@ -9533,6 +9540,58 @@ internal static class ModelBuilderSeed
 
 ---
 
+## File: `eNote\eNote.Infrastructure\FileSignatureDetector.cs`
+**Hash**: `e36b432e9538` | **Size**: 1409 chars
+
+**Classes**: FileSignatureDetector
+```cs
+namespace eNote.Infrastructure;
+
+internal static class FileSignatureDetector
+{
+    public const string Jpeg = "image/jpeg";
+    public const string Png = "image/png";
+    public const string Webp = "image/webp";
+    public const string Pdf = "application/pdf";
+    public const string Unknown = "application/octet-stream";
+
+    public static string DetectContentType(ReadOnlySpan<byte> data)
+    {
+        if (data.Length >= 3 && data[0] == 0xFF && data[1] == 0xD8 && data[2] == 0xFF)
+        {
+            return Jpeg;
+        }
+
+        if (data.Length >= 8 &&
+            data[0] == 0x89 && data[1] == 0x50 && data[2] == 0x4E && data[3] == 0x47 &&
+            data[4] == 0x0D && data[5] == 0x0A && data[6] == 0x1A && data[7] == 0x0A)
+        {
+            return Png;
+        }
+
+        if (data.Length >= 12 &&
+            data[0] == 0x52 && data[1] == 0x49 && data[2] == 0x46 && data[3] == 0x46 &&
+            data[8] == 0x57 && data[9] == 0x45 && data[10] == 0x42 && data[11] == 0x50)
+        {
+            return Webp;
+        }
+
+        if (data.Length >= 4 && data[0] == 0x25 && data[1] == 0x50 && data[2] == 0x44 && data[3] == 0x46)
+        {
+            return Pdf;
+        }
+
+        return Unknown;
+    }
+
+    public static bool IsAllowed(ReadOnlySpan<byte> data, string[] allowedContentTypes) =>
+        allowedContentTypes.Contains(DetectContentType(data), StringComparer.OrdinalIgnoreCase);
+}
+
+```
+
+---
+
 ## File: `eNote\eNote.Infrastructure\Identity\AppRole.cs`
 **Hash**: `1ea54f2c80bf` | **Size**: 125 chars
 
@@ -9768,7 +9827,7 @@ public sealed class TokenService(IConfiguration configuration, IClock clock) : I
 ---
 
 ## File: `eNote\eNote.Infrastructure\Identity\UserAccountService.cs`
-**Hash**: `5e3d37abf7d6` | **Size**: 8649 chars
+**Hash**: `e29625cbc1e5` | **Size**: 7983 chars
 
 **Classes**: UserAccountService
 ```cs
@@ -9782,6 +9841,7 @@ namespace eNote.Infrastructure.Identity;
 public sealed class UserAccountService(UserManager<AppUser> userManager) : IUserAccountService
 {
     private const int MaxPictureSizeBytes = 5 * 1024 * 1024;
+    private static readonly string[] AllowedPictureContentTypes = [FileSignatureDetector.Jpeg, FileSignatureDetector.Png, FileSignatureDetector.Webp];
 
     public async Task<int?> FindUserIdByUsernameAsync(string username, CancellationToken cancellationToken = default)
     {
@@ -10006,39 +10066,11 @@ public sealed class UserAccountService(UserManager<AppUser> userManager) : IUser
     public async Task<bool> IsAddressInUseAsync(int addressId, CancellationToken cancellationToken = default) =>
         await userManager.Users.AnyAsync(u => u.AddressId == addressId, cancellationToken);
 
-    private static bool IsValidImage(byte[] data)
-    {
-        if (data.Length < 3)
-        {
-            return false;
-        }
+    private static bool IsValidImage(byte[] data) =>
+        FileSignatureDetector.IsAllowed(data, AllowedPictureContentTypes);
 
-        var isJpeg = data[0] == 0xFF && data[1] == 0xD8 && data[2] == 0xFF;
-        var isPng = data.Length >= 4 && data[0] == 0x89 && data[1] == 0x50 && data[2] == 0x4E && data[3] == 0x47;
-        var isWebp = data.Length >= 12 && data[0] == 0x52 && data[1] == 0x49 && data[2] == 0x46 && data[3] == 0x46;
-
-        return isJpeg || isPng || isWebp;
-    }
-
-    private static string DetectContentType(byte[] data)
-    {
-        if (data.Length >= 3 && data[0] == 0xFF && data[1] == 0xD8 && data[2] == 0xFF)
-        {
-            return "image/jpeg";
-        }
-
-        if (data.Length >= 4 && data[0] == 0x89 && data[1] == 0x50 && data[2] == 0x4E && data[3] == 0x47)
-        {
-            return "image/png";
-        }
-
-        if (data.Length >= 12 && data[0] == 0x52 && data[1] == 0x49 && data[2] == 0x46 && data[3] == 0x46)
-        {
-            return "image/webp";
-        }
-
-        return "application/octet-stream";
-    }
+    private static string DetectContentType(byte[] data) =>
+        FileSignatureDetector.DetectContentType(data);
 }
 ```
 
@@ -10359,7 +10391,7 @@ public sealed class RentalNotificationOutboxPublisher(IServiceProvider services,
 ---
 
 ## File: `eNote\eNote.Infrastructure\Storage\LocalFileStorageService.cs`
-**Hash**: `11e911516bee` | **Size**: 4287 chars
+**Hash**: `18e708d15b9c` | **Size**: 3488 chars
 
 **Classes**: LocalFileStorageService
 ```cs
@@ -10373,8 +10405,8 @@ namespace eNote.Infrastructure.Storage;
 public sealed class LocalFileStorageService(IWebHostEnvironment env) : IFileStorageService
 {
     private const long MaxFileSizeBytes = 5 * 1024 * 1024;
-    private static readonly string[] AllowedImageContentTypes = ["image/jpeg", "image/png", "image/webp"];
-    private static readonly string[] AllowedAssignmentContentTypes = ["application/pdf", "image/jpeg", "image/png"];
+    private static readonly string[] AllowedImageContentTypes = [FileSignatureDetector.Jpeg, FileSignatureDetector.Png, FileSignatureDetector.Webp];
+    private static readonly string[] AllowedAssignmentContentTypes = [FileSignatureDetector.Pdf, FileSignatureDetector.Jpeg, FileSignatureDetector.Png];
 
     public async Task<string> SaveAsync(Stream stream, string fileName, string contentType, string subfolder, CancellationToken ct = default)
     {
@@ -10383,7 +10415,7 @@ public sealed class LocalFileStorageService(IWebHostEnvironment env) : IFileStor
             throw new BusinessException(Messages.FileTooLarge);
         }
 
-        await ValidateImageMagicBytesAsync(stream);
+        await ValidateMagicBytesAsync(stream, AllowedImageContentTypes, ct);
 
         if (!AllowedImageContentTypes.Contains(contentType.ToLowerInvariant()))
         {
@@ -10400,7 +10432,7 @@ public sealed class LocalFileStorageService(IWebHostEnvironment env) : IFileStor
             throw new BusinessException(Messages.FileTooLarge);
         }
 
-        await ValidateAssignmentMagicBytesAsync(stream);
+        await ValidateMagicBytesAsync(stream, AllowedAssignmentContentTypes, ct);
 
         if (!AllowedAssignmentContentTypes.Contains(contentType.ToLowerInvariant()))
         {
@@ -10438,41 +10470,17 @@ public sealed class LocalFileStorageService(IWebHostEnvironment env) : IFileStor
         return $"/api/uploads/{subfolder}/{uniqueName}";
     }
 
-    private static async Task ValidateImageMagicBytesAsync(Stream stream)
+    private static async Task ValidateMagicBytesAsync(Stream stream, string[] allowedContentTypes, CancellationToken ct)
     {
-        var header = new byte[4];
-        var read = await stream.ReadAsync(header.AsMemory(0, 4));
+        var header = new byte[12];
+        var read = await stream.ReadAsync(header.AsMemory(0, header.Length), ct);
 
-        if (read < 3)
+        if (stream.CanSeek)
         {
-            throw new BusinessException(Messages.InvalidFileFormat);
+            stream.Position = 0;
         }
 
-        var isJpeg = header[0] == 0xFF && header[1] == 0xD8 && header[2] == 0xFF;
-        var isPng = header[0] == 0x89 && header[1] == 0x50 && header[2] == 0x4E && header[3] == 0x47;
-        var isRiff = header[0] == 0x52 && header[1] == 0x49 && header[2] == 0x46 && header[3] == 0x46;
-
-        if (!isJpeg && !isPng && !isRiff)
-        {
-            throw new BusinessException(Messages.InvalidFileFormat);
-        }
-    }
-
-    private static async Task ValidateAssignmentMagicBytesAsync(Stream stream)
-    {
-        var header = new byte[4];
-        var read = await stream.ReadAsync(header.AsMemory(0, 4));
-
-        if (read < 3)
-        {
-            throw new BusinessException(Messages.InvalidFileFormat);
-        }
-
-        var isPdf = header[0] == 0x25 && header[1] == 0x50 && header[2] == 0x44 && header[3] == 0x46;
-        var isJpeg = header[0] == 0xFF && header[1] == 0xD8 && header[2] == 0xFF;
-        var isPng = header[0] == 0x89 && header[1] == 0x50 && header[2] == 0x4E && header[3] == 0x47;
-
-        if (!isPdf && !isJpeg && !isPng)
+        if (!FileSignatureDetector.IsAllowed(header.AsSpan(0, read), allowedContentTypes))
         {
             throw new BusinessException(Messages.InvalidFileFormat);
         }

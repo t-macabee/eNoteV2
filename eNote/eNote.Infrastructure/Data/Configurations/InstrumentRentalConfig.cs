@@ -29,7 +29,7 @@ public sealed class InstrumentRentalConfig : IEntityTypeConfiguration<Instrument
 
         builder.HasIndex(x => x.InstrumentId)
                .HasFilter(
-                    $"[{nameof(InstrumentRental.RentalStatus)}] IN ({(int)InstrumentRentalStatus.Approved}, {(int)InstrumentRentalStatus.Active})"
+                    $"\"{nameof(InstrumentRental.RentalStatus)}\" IN ({(int)InstrumentRentalStatus.Approved}, {(int)InstrumentRentalStatus.Active})"
                ).IsUnique();
     }
 }

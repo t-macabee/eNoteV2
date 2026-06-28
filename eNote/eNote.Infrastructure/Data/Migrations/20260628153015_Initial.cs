@@ -1,5 +1,6 @@
 ﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
@@ -17,11 +18,11 @@ public partial class Initial : Migration
             name: "Address",
             columns: table => new
             {
-                Id = table.Column<int>(type: "int", nullable: false)
-                    .Annotation("SqlServer:Identity", "1, 1"),
-                City = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                Street = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                Number = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false)
+                Id = table.Column<int>(type: "integer", nullable: false)
+                    .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                City = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                Street = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                Number = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false)
             },
             constraints: table =>
             {
@@ -32,11 +33,11 @@ public partial class Initial : Migration
             name: "AspNetRoles",
             columns: table => new
             {
-                Id = table.Column<int>(type: "int", nullable: false)
-                    .Annotation("SqlServer:Identity", "1, 1"),
-                Name = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
-                NormalizedName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
-                ConcurrencyStamp = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                Id = table.Column<int>(type: "integer", nullable: false)
+                    .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                Name = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
+                NormalizedName = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
+                ConcurrencyStamp = table.Column<string>(type: "text", nullable: true)
             },
             constraints: table =>
             {
@@ -47,10 +48,10 @@ public partial class Initial : Migration
             name: "InstrumentType",
             columns: table => new
             {
-                Id = table.Column<int>(type: "int", nullable: false)
-                    .Annotation("SqlServer:Identity", "1, 1"),
-                Type = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                MonthlyFee = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false)
+                Id = table.Column<int>(type: "integer", nullable: false)
+                    .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                Type = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                MonthlyFee = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false)
             },
             constraints: table =>
             {
@@ -61,12 +62,12 @@ public partial class Initial : Migration
             name: "InstrumentView",
             columns: table => new
             {
-                Id = table.Column<int>(type: "int", nullable: false)
-                    .Annotation("SqlServer:Identity", "1, 1"),
-                UserId = table.Column<int>(type: "int", nullable: false),
-                InstrumentId = table.Column<int>(type: "int", nullable: false),
-                ViewCount = table.Column<int>(type: "int", nullable: false),
-                LastViewedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                Id = table.Column<int>(type: "integer", nullable: false)
+                    .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                UserId = table.Column<int>(type: "integer", nullable: false),
+                InstrumentId = table.Column<int>(type: "integer", nullable: false),
+                ViewCount = table.Column<int>(type: "integer", nullable: false),
+                LastViewedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: false)
             },
             constraints: table =>
             {
@@ -77,14 +78,14 @@ public partial class Initial : Migration
             name: "MusicStore",
             columns: table => new
             {
-                Id = table.Column<int>(type: "int", nullable: false)
-                    .Annotation("SqlServer:Identity", "1, 1"),
-                StoreName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                BusinessHours = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
-                CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                CreatedById = table.Column<int>(type: "int", nullable: true),
-                UpdatedById = table.Column<int>(type: "int", nullable: true)
+                Id = table.Column<int>(type: "integer", nullable: false)
+                    .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                StoreName = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                BusinessHours = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                CreatedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
+                UpdatedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
+                CreatedById = table.Column<int>(type: "integer", nullable: true),
+                UpdatedById = table.Column<int>(type: "integer", nullable: true)
             },
             constraints: table =>
             {
@@ -95,14 +96,14 @@ public partial class Initial : Migration
             name: "Notification",
             columns: table => new
             {
-                Id = table.Column<int>(type: "int", nullable: false)
-                    .Annotation("SqlServer:Identity", "1, 1"),
-                UserId = table.Column<int>(type: "int", nullable: false),
-                RentalId = table.Column<int>(type: "int", nullable: true),
-                Title = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
-                Body = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: false),
-                IsRead = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
-                CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                Id = table.Column<int>(type: "integer", nullable: false)
+                    .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                UserId = table.Column<int>(type: "integer", nullable: false),
+                RentalId = table.Column<int>(type: "integer", nullable: true),
+                Title = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                Body = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: false),
+                IsRead = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
+                CreatedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: false)
             },
             constraints: table =>
             {
@@ -113,16 +114,16 @@ public partial class Initial : Migration
             name: "RentalNotificationOutbox",
             columns: table => new
             {
-                Id = table.Column<int>(type: "int", nullable: false)
-                    .Annotation("SqlServer:Identity", "1, 1"),
-                PayloadJson = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                PublishedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                Attempts = table.Column<int>(type: "int", nullable: false),
-                LastError = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: true),
-                CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                CreatedById = table.Column<int>(type: "int", nullable: true),
-                UpdatedById = table.Column<int>(type: "int", nullable: true)
+                Id = table.Column<int>(type: "integer", nullable: false)
+                    .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                PayloadJson = table.Column<string>(type: "text", nullable: false),
+                PublishedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
+                Attempts = table.Column<int>(type: "integer", nullable: false),
+                LastError = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: true),
+                CreatedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
+                UpdatedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
+                CreatedById = table.Column<int>(type: "integer", nullable: true),
+                UpdatedById = table.Column<int>(type: "integer", nullable: true)
             },
             constraints: table =>
             {
@@ -133,11 +134,11 @@ public partial class Initial : Migration
             name: "RevokedToken",
             columns: table => new
             {
-                Id = table.Column<int>(type: "int", nullable: false)
-                    .Annotation("SqlServer:Identity", "1, 1"),
-                Jti = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: false),
-                ExpiresAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                RevokedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                Id = table.Column<int>(type: "integer", nullable: false)
+                    .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                Jti = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
+                ExpiresAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
+                RevokedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: false)
             },
             constraints: table =>
             {
@@ -148,28 +149,28 @@ public partial class Initial : Migration
             name: "AspNetUsers",
             columns: table => new
             {
-                Id = table.Column<int>(type: "int", nullable: false)
-                    .Annotation("SqlServer:Identity", "1, 1"),
-                FirstName = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                LastName = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                DateOfBirth = table.Column<DateTime>(type: "datetime2", nullable: true),
-                Picture = table.Column<byte[]>(type: "varbinary(max)", nullable: true),
-                IsActive = table.Column<bool>(type: "bit", nullable: false),
-                AddressId = table.Column<int>(type: "int", nullable: true),
-                UserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
-                NormalizedUserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
-                Email = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
-                NormalizedEmail = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
-                EmailConfirmed = table.Column<bool>(type: "bit", nullable: false),
-                PasswordHash = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                SecurityStamp = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                ConcurrencyStamp = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                PhoneNumber = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                PhoneNumberConfirmed = table.Column<bool>(type: "bit", nullable: false),
-                TwoFactorEnabled = table.Column<bool>(type: "bit", nullable: false),
-                LockoutEnd = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
-                LockoutEnabled = table.Column<bool>(type: "bit", nullable: false),
-                AccessFailedCount = table.Column<int>(type: "int", nullable: false)
+                Id = table.Column<int>(type: "integer", nullable: false)
+                    .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                FirstName = table.Column<string>(type: "text", nullable: true),
+                LastName = table.Column<string>(type: "text", nullable: true),
+                DateOfBirth = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
+                Picture = table.Column<byte[]>(type: "bytea", nullable: true),
+                IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                AddressId = table.Column<int>(type: "integer", nullable: true),
+                UserName = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
+                NormalizedUserName = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
+                Email = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
+                NormalizedEmail = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
+                EmailConfirmed = table.Column<bool>(type: "boolean", nullable: false),
+                PasswordHash = table.Column<string>(type: "text", nullable: true),
+                SecurityStamp = table.Column<string>(type: "text", nullable: true),
+                ConcurrencyStamp = table.Column<string>(type: "text", nullable: true),
+                PhoneNumber = table.Column<string>(type: "text", nullable: true),
+                PhoneNumberConfirmed = table.Column<bool>(type: "boolean", nullable: false),
+                TwoFactorEnabled = table.Column<bool>(type: "boolean", nullable: false),
+                LockoutEnd = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                LockoutEnabled = table.Column<bool>(type: "boolean", nullable: false),
+                AccessFailedCount = table.Column<int>(type: "integer", nullable: false)
             },
             constraints: table =>
             {
@@ -186,11 +187,11 @@ public partial class Initial : Migration
             name: "AspNetRoleClaims",
             columns: table => new
             {
-                Id = table.Column<int>(type: "int", nullable: false)
-                    .Annotation("SqlServer:Identity", "1, 1"),
-                RoleId = table.Column<int>(type: "int", nullable: false),
-                ClaimType = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                ClaimValue = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                Id = table.Column<int>(type: "integer", nullable: false)
+                    .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                RoleId = table.Column<int>(type: "integer", nullable: false),
+                ClaimType = table.Column<string>(type: "text", nullable: true),
+                ClaimValue = table.Column<string>(type: "text", nullable: true)
             },
             constraints: table =>
             {
@@ -207,19 +208,19 @@ public partial class Initial : Migration
             name: "Instrument",
             columns: table => new
             {
-                Id = table.Column<int>(type: "int", nullable: false)
-                    .Annotation("SqlServer:Identity", "1, 1"),
-                InstrumentTypeId = table.Column<int>(type: "int", nullable: false),
-                MusicStoreId = table.Column<int>(type: "int", nullable: false),
-                Model = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                Manufacturer = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                Description = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
-                ImagePath = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                IsActive = table.Column<bool>(type: "bit", nullable: false),
-                CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                CreatedById = table.Column<int>(type: "int", nullable: true),
-                UpdatedById = table.Column<int>(type: "int", nullable: true)
+                Id = table.Column<int>(type: "integer", nullable: false)
+                    .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                InstrumentTypeId = table.Column<int>(type: "integer", nullable: false),
+                MusicStoreId = table.Column<int>(type: "integer", nullable: false),
+                Model = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                Manufacturer = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                Description = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
+                ImagePath = table.Column<string>(type: "text", nullable: true),
+                IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                CreatedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
+                UpdatedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
+                CreatedById = table.Column<int>(type: "integer", nullable: true),
+                UpdatedById = table.Column<int>(type: "integer", nullable: true)
             },
             constraints: table =>
             {
@@ -242,11 +243,11 @@ public partial class Initial : Migration
             name: "AspNetUserClaims",
             columns: table => new
             {
-                Id = table.Column<int>(type: "int", nullable: false)
-                    .Annotation("SqlServer:Identity", "1, 1"),
-                UserId = table.Column<int>(type: "int", nullable: false),
-                ClaimType = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                ClaimValue = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                Id = table.Column<int>(type: "integer", nullable: false)
+                    .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                UserId = table.Column<int>(type: "integer", nullable: false),
+                ClaimType = table.Column<string>(type: "text", nullable: true),
+                ClaimValue = table.Column<string>(type: "text", nullable: true)
             },
             constraints: table =>
             {
@@ -263,10 +264,10 @@ public partial class Initial : Migration
             name: "AspNetUserLogins",
             columns: table => new
             {
-                LoginProvider = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                ProviderKey = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                ProviderDisplayName = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                UserId = table.Column<int>(type: "int", nullable: false)
+                LoginProvider = table.Column<string>(type: "text", nullable: false),
+                ProviderKey = table.Column<string>(type: "text", nullable: false),
+                ProviderDisplayName = table.Column<string>(type: "text", nullable: true),
+                UserId = table.Column<int>(type: "integer", nullable: false)
             },
             constraints: table =>
             {
@@ -283,8 +284,8 @@ public partial class Initial : Migration
             name: "AspNetUserRoles",
             columns: table => new
             {
-                UserId = table.Column<int>(type: "int", nullable: false),
-                RoleId = table.Column<int>(type: "int", nullable: false)
+                UserId = table.Column<int>(type: "integer", nullable: false),
+                RoleId = table.Column<int>(type: "integer", nullable: false)
             },
             constraints: table =>
             {
@@ -307,10 +308,10 @@ public partial class Initial : Migration
             name: "AspNetUserTokens",
             columns: table => new
             {
-                UserId = table.Column<int>(type: "int", nullable: false),
-                LoginProvider = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                Name = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                Value = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                UserId = table.Column<int>(type: "integer", nullable: false),
+                LoginProvider = table.Column<string>(type: "text", nullable: false),
+                Name = table.Column<string>(type: "text", nullable: false),
+                Value = table.Column<string>(type: "text", nullable: true)
             },
             constraints: table =>
             {
@@ -327,13 +328,13 @@ public partial class Initial : Migration
             name: "Instructor",
             columns: table => new
             {
-                Id = table.Column<int>(type: "int", nullable: false)
-                    .Annotation("SqlServer:Identity", "1, 1"),
-                AppUserId = table.Column<int>(type: "int", nullable: false),
-                CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                CreatedById = table.Column<int>(type: "int", nullable: true),
-                UpdatedById = table.Column<int>(type: "int", nullable: true)
+                Id = table.Column<int>(type: "integer", nullable: false)
+                    .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                AppUserId = table.Column<int>(type: "integer", nullable: false),
+                CreatedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
+                UpdatedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
+                CreatedById = table.Column<int>(type: "integer", nullable: true),
+                UpdatedById = table.Column<int>(type: "integer", nullable: true)
             },
             constraints: table =>
             {
@@ -350,16 +351,16 @@ public partial class Initial : Migration
             name: "MusicStoreEmployee",
             columns: table => new
             {
-                Id = table.Column<int>(type: "int", nullable: false)
-                    .Annotation("SqlServer:Identity", "1, 1"),
-                AppUserId = table.Column<int>(type: "int", nullable: false),
-                MusicStoreId = table.Column<int>(type: "int", nullable: false),
-                IsManager = table.Column<bool>(type: "bit", nullable: false),
-                IsActive = table.Column<bool>(type: "bit", nullable: false),
-                CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                CreatedById = table.Column<int>(type: "int", nullable: true),
-                UpdatedById = table.Column<int>(type: "int", nullable: true)
+                Id = table.Column<int>(type: "integer", nullable: false)
+                    .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                AppUserId = table.Column<int>(type: "integer", nullable: false),
+                MusicStoreId = table.Column<int>(type: "integer", nullable: false),
+                IsManager = table.Column<bool>(type: "boolean", nullable: false),
+                IsActive = table.Column<bool>(type: "boolean", nullable: false),
+                CreatedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
+                UpdatedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
+                CreatedById = table.Column<int>(type: "integer", nullable: true),
+                UpdatedById = table.Column<int>(type: "integer", nullable: true)
             },
             constraints: table =>
             {
@@ -382,15 +383,15 @@ public partial class Initial : Migration
             name: "Student",
             columns: table => new
             {
-                Id = table.Column<int>(type: "int", nullable: false)
-                    .Annotation("SqlServer:Identity", "1, 1"),
-                AppUserId = table.Column<int>(type: "int", nullable: false),
-                EnrollmentDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                MembershipPaidUntil = table.Column<DateTime>(type: "datetime2", nullable: true),
-                CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                CreatedById = table.Column<int>(type: "int", nullable: true),
-                UpdatedById = table.Column<int>(type: "int", nullable: true)
+                Id = table.Column<int>(type: "integer", nullable: false)
+                    .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                AppUserId = table.Column<int>(type: "integer", nullable: false),
+                EnrollmentDate = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
+                MembershipPaidUntil = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
+                CreatedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
+                UpdatedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
+                CreatedById = table.Column<int>(type: "integer", nullable: true),
+                UpdatedById = table.Column<int>(type: "integer", nullable: true)
             },
             constraints: table =>
             {
@@ -407,20 +408,20 @@ public partial class Initial : Migration
             name: "Course",
             columns: table => new
             {
-                Id = table.Column<int>(type: "int", nullable: false)
-                    .Annotation("SqlServer:Identity", "1, 1"),
-                InstructorId = table.Column<int>(type: "int", nullable: false),
-                Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                Description = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                Price = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
-                StartDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                EndDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                IsPublished = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
-                IsActive = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
-                CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                CreatedById = table.Column<int>(type: "int", nullable: true),
-                UpdatedById = table.Column<int>(type: "int", nullable: true)
+                Id = table.Column<int>(type: "integer", nullable: false)
+                    .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                InstructorId = table.Column<int>(type: "integer", nullable: false),
+                Name = table.Column<string>(type: "text", nullable: false),
+                Description = table.Column<string>(type: "text", nullable: true),
+                Price = table.Column<decimal>(type: "numeric(18,2)", precision: 18, scale: 2, nullable: false),
+                StartDate = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
+                EndDate = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
+                IsPublished = table.Column<bool>(type: "boolean", nullable: false, defaultValue: false),
+                IsActive = table.Column<bool>(type: "boolean", nullable: false, defaultValue: true),
+                CreatedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
+                UpdatedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
+                CreatedById = table.Column<int>(type: "integer", nullable: true),
+                UpdatedById = table.Column<int>(type: "integer", nullable: true)
             },
             constraints: table =>
             {
@@ -437,25 +438,25 @@ public partial class Initial : Migration
             name: "InstrumentRental",
             columns: table => new
             {
-                Id = table.Column<int>(type: "int", nullable: false)
-                    .Annotation("SqlServer:Identity", "1, 1"),
-                StudentProfileId = table.Column<int>(type: "int", nullable: false),
-                InstrumentId = table.Column<int>(type: "int", nullable: false),
-                RentalStatus = table.Column<int>(type: "int", nullable: false),
-                RequestNote = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                Note = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                RequestedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                ApprovedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                RejectedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                PickedUpAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                ReturnedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                ApprovedById = table.Column<int>(type: "int", nullable: true),
-                RejectedById = table.Column<int>(type: "int", nullable: true),
-                Fee = table.Column<decimal>(type: "decimal(10,2)", precision: 10, scale: 2, nullable: false),
-                CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                CreatedById = table.Column<int>(type: "int", nullable: true),
-                UpdatedById = table.Column<int>(type: "int", nullable: true)
+                Id = table.Column<int>(type: "integer", nullable: false)
+                    .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                StudentProfileId = table.Column<int>(type: "integer", nullable: false),
+                InstrumentId = table.Column<int>(type: "integer", nullable: false),
+                RentalStatus = table.Column<int>(type: "integer", nullable: false),
+                RequestNote = table.Column<string>(type: "text", nullable: true),
+                Note = table.Column<string>(type: "text", nullable: true),
+                RequestedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
+                ApprovedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
+                RejectedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
+                PickedUpAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
+                ReturnedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
+                ApprovedById = table.Column<int>(type: "integer", nullable: true),
+                RejectedById = table.Column<int>(type: "integer", nullable: true),
+                Fee = table.Column<decimal>(type: "numeric(10,2)", precision: 10, scale: 2, nullable: false),
+                CreatedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
+                UpdatedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
+                CreatedById = table.Column<int>(type: "integer", nullable: true),
+                UpdatedById = table.Column<int>(type: "integer", nullable: true)
             },
             constraints: table =>
             {
@@ -478,24 +479,24 @@ public partial class Initial : Migration
             name: "Announcement",
             columns: table => new
             {
-                Id = table.Column<int>(type: "int", nullable: false)
-                    .Annotation("SqlServer:Identity", "1, 1"),
-                CourseId = table.Column<int>(type: "int", nullable: true),
-                MusicStoreId = table.Column<int>(type: "int", nullable: true),
-                Title = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: false),
-                Content = table.Column<string>(type: "nvarchar(4000)", maxLength: 4000, nullable: false),
-                ImagePath = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
-                PublishedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                IsActive = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
-                CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                CreatedById = table.Column<int>(type: "int", nullable: true),
-                UpdatedById = table.Column<int>(type: "int", nullable: true)
+                Id = table.Column<int>(type: "integer", nullable: false)
+                    .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                CourseId = table.Column<int>(type: "integer", nullable: true),
+                MusicStoreId = table.Column<int>(type: "integer", nullable: true),
+                Title = table.Column<string>(type: "character varying(150)", maxLength: 150, nullable: false),
+                Content = table.Column<string>(type: "character varying(4000)", maxLength: 4000, nullable: false),
+                ImagePath = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
+                PublishedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
+                IsActive = table.Column<bool>(type: "boolean", nullable: false, defaultValue: true),
+                CreatedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
+                UpdatedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
+                CreatedById = table.Column<int>(type: "integer", nullable: true),
+                UpdatedById = table.Column<int>(type: "integer", nullable: true)
             },
             constraints: table =>
             {
                 table.PrimaryKey("PK_Announcement", x => x.Id);
-                table.CheckConstraint("CK_Announcement_Scope", "([CourseId] IS NOT NULL AND [MusicStoreId] IS NULL) OR ([CourseId] IS NULL AND [MusicStoreId] IS NOT NULL)");
+                table.CheckConstraint("CK_Announcement_Scope", "(\"CourseId\" IS NOT NULL AND \"MusicStoreId\" IS NULL) OR (\"CourseId\" IS NULL AND \"MusicStoreId\" IS NOT NULL)");
                 table.ForeignKey(
                     name: "FK_Announcement_AspNetUsers_CreatedById",
                     column: x => x.CreatedById,
@@ -520,15 +521,15 @@ public partial class Initial : Migration
             name: "Enrollment",
             columns: table => new
             {
-                Id = table.Column<int>(type: "int", nullable: false)
-                    .Annotation("SqlServer:Identity", "1, 1"),
-                StudentId = table.Column<int>(type: "int", nullable: false),
-                CourseId = table.Column<int>(type: "int", nullable: false),
-                EnrollmentStatus = table.Column<int>(type: "int", nullable: false),
-                CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                CreatedById = table.Column<int>(type: "int", nullable: true),
-                UpdatedById = table.Column<int>(type: "int", nullable: true)
+                Id = table.Column<int>(type: "integer", nullable: false)
+                    .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                StudentId = table.Column<int>(type: "integer", nullable: false),
+                CourseId = table.Column<int>(type: "integer", nullable: false),
+                EnrollmentStatus = table.Column<int>(type: "integer", nullable: false),
+                CreatedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
+                UpdatedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
+                CreatedById = table.Column<int>(type: "integer", nullable: true),
+                UpdatedById = table.Column<int>(type: "integer", nullable: true)
             },
             constraints: table =>
             {
@@ -551,22 +552,22 @@ public partial class Initial : Migration
             name: "Lecture",
             columns: table => new
             {
-                Id = table.Column<int>(type: "int", nullable: false)
-                    .Annotation("SqlServer:Identity", "1, 1"),
-                CourseId = table.Column<int>(type: "int", nullable: false),
-                Name = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
-                Location = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
-                LectureType = table.Column<int>(type: "int", nullable: false),
-                LectureTime = table.Column<DateTime>(type: "datetime2", nullable: false),
-                Duration = table.Column<int>(type: "int", nullable: false),
-                Capacity = table.Column<int>(type: "int", nullable: true),
-                LectureStatus = table.Column<int>(type: "int", nullable: false),
-                IsActive = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
-                RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: true),
-                CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                CreatedById = table.Column<int>(type: "int", nullable: true),
-                UpdatedById = table.Column<int>(type: "int", nullable: true)
+                Id = table.Column<int>(type: "integer", nullable: false)
+                    .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                CourseId = table.Column<int>(type: "integer", nullable: false),
+                Name = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                Location = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                LectureType = table.Column<int>(type: "integer", nullable: false),
+                LectureTime = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
+                Duration = table.Column<int>(type: "integer", nullable: false),
+                Capacity = table.Column<int>(type: "integer", nullable: true),
+                LectureStatus = table.Column<int>(type: "integer", nullable: false),
+                IsActive = table.Column<bool>(type: "boolean", nullable: false, defaultValue: true),
+                xmin = table.Column<uint>(type: "xid", rowVersion: true, nullable: false),
+                CreatedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
+                UpdatedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
+                CreatedById = table.Column<int>(type: "integer", nullable: true),
+                UpdatedById = table.Column<int>(type: "integer", nullable: true)
             },
             constraints: table =>
             {
@@ -583,17 +584,17 @@ public partial class Initial : Migration
             name: "Assignment",
             columns: table => new
             {
-                Id = table.Column<int>(type: "int", nullable: false)
-                    .Annotation("SqlServer:Identity", "1, 1"),
-                LectureId = table.Column<int>(type: "int", nullable: false),
-                Title = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
-                Description = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                DueAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                IsActive = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
-                CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                CreatedById = table.Column<int>(type: "int", nullable: true),
-                UpdatedById = table.Column<int>(type: "int", nullable: true)
+                Id = table.Column<int>(type: "integer", nullable: false)
+                    .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                LectureId = table.Column<int>(type: "integer", nullable: false),
+                Title = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                Description = table.Column<string>(type: "text", nullable: false),
+                DueAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
+                IsActive = table.Column<bool>(type: "boolean", nullable: false, defaultValue: true),
+                CreatedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
+                UpdatedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
+                CreatedById = table.Column<int>(type: "integer", nullable: true),
+                UpdatedById = table.Column<int>(type: "integer", nullable: true)
             },
             constraints: table =>
             {
@@ -610,15 +611,15 @@ public partial class Initial : Migration
             name: "Attendance",
             columns: table => new
             {
-                Id = table.Column<int>(type: "int", nullable: false)
-                    .Annotation("SqlServer:Identity", "1, 1"),
-                StudentId = table.Column<int>(type: "int", nullable: false),
-                LectureId = table.Column<int>(type: "int", nullable: false),
-                AttendanceStatus = table.Column<int>(type: "int", nullable: false),
-                CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                CreatedById = table.Column<int>(type: "int", nullable: true),
-                UpdatedById = table.Column<int>(type: "int", nullable: true)
+                Id = table.Column<int>(type: "integer", nullable: false)
+                    .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                StudentId = table.Column<int>(type: "integer", nullable: false),
+                LectureId = table.Column<int>(type: "integer", nullable: false),
+                AttendanceStatus = table.Column<int>(type: "integer", nullable: false),
+                CreatedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
+                UpdatedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
+                CreatedById = table.Column<int>(type: "integer", nullable: true),
+                UpdatedById = table.Column<int>(type: "integer", nullable: true)
             },
             constraints: table =>
             {
@@ -641,16 +642,16 @@ public partial class Initial : Migration
             name: "LectureNote",
             columns: table => new
             {
-                Id = table.Column<int>(type: "int", nullable: false)
-                    .Annotation("SqlServer:Identity", "1, 1"),
-                LectureId = table.Column<int>(type: "int", nullable: false),
-                Title = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
-                Content = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                IsActive = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
-                CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                CreatedById = table.Column<int>(type: "int", nullable: true),
-                UpdatedById = table.Column<int>(type: "int", nullable: true)
+                Id = table.Column<int>(type: "integer", nullable: false)
+                    .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                LectureId = table.Column<int>(type: "integer", nullable: false),
+                Title = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                Content = table.Column<string>(type: "text", nullable: false),
+                IsActive = table.Column<bool>(type: "boolean", nullable: false, defaultValue: true),
+                CreatedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
+                UpdatedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
+                CreatedById = table.Column<int>(type: "integer", nullable: true),
+                UpdatedById = table.Column<int>(type: "integer", nullable: true)
             },
             constraints: table =>
             {
@@ -667,17 +668,17 @@ public partial class Initial : Migration
             name: "AssignmentSubmission",
             columns: table => new
             {
-                Id = table.Column<int>(type: "int", nullable: false)
-                    .Annotation("SqlServer:Identity", "1, 1"),
-                AssignmentId = table.Column<int>(type: "int", nullable: false),
-                StudentId = table.Column<int>(type: "int", nullable: false),
-                FilePath = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
-                SubmittedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                Grade = table.Column<int>(type: "int", nullable: true),
-                CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                CreatedById = table.Column<int>(type: "int", nullable: true),
-                UpdatedById = table.Column<int>(type: "int", nullable: true)
+                Id = table.Column<int>(type: "integer", nullable: false)
+                    .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                AssignmentId = table.Column<int>(type: "integer", nullable: false),
+                StudentId = table.Column<int>(type: "integer", nullable: false),
+                FilePath = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
+                SubmittedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
+                Grade = table.Column<int>(type: "integer", nullable: true),
+                CreatedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
+                UpdatedAt = table.Column<DateTime>(type: "timestamp without time zone", nullable: true),
+                CreatedById = table.Column<int>(type: "integer", nullable: true),
+                UpdatedById = table.Column<int>(type: "integer", nullable: true)
             },
             constraints: table =>
             {
@@ -749,8 +750,7 @@ public partial class Initial : Migration
             name: "RoleNameIndex",
             table: "AspNetRoles",
             column: "NormalizedName",
-            unique: true,
-            filter: "[NormalizedName] IS NOT NULL");
+            unique: true);
 
         migrationBuilder.CreateIndex(
             name: "IX_AspNetUserClaims_UserId",
@@ -781,8 +781,7 @@ public partial class Initial : Migration
             name: "UserNameIndex",
             table: "AspNetUsers",
             column: "NormalizedUserName",
-            unique: true,
-            filter: "[NormalizedUserName] IS NOT NULL");
+            unique: true);
 
         migrationBuilder.CreateIndex(
             name: "IX_Assignment_LectureId",
@@ -847,7 +846,7 @@ public partial class Initial : Migration
             table: "InstrumentRental",
             column: "InstrumentId",
             unique: true,
-            filter: "[RentalStatus] IN (2, 3)");
+            filter: "\"RentalStatus\" IN (2, 3)");
 
         migrationBuilder.CreateIndex(
             name: "IX_InstrumentRental_StudentProfileId",

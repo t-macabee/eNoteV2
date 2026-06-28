@@ -19,7 +19,7 @@ public static class ApplicationServiceExtensions
     public static IServiceCollection AddApplicationDatabase(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddDbContext<ENoteContext>(options =>
-            options.UseSqlServer(configuration.GetConnectionString("DefaultConnection"),
+            options.UseNpgsql(configuration.GetConnectionString("DefaultConnection"),
             sql => sql.MigrationsAssembly("eNote.Infrastructure")));
 
         return services;

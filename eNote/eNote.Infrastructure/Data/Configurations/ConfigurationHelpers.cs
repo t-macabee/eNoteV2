@@ -32,7 +32,7 @@ public static class ConfigurationHelpers
 
     public static PropertyBuilder<DateTime> HasDefaultSqlNow(this PropertyBuilder<DateTime> propertyBuilder)
     {
-        return propertyBuilder.HasDefaultValueSql("GETUTCDATE()");
+        return propertyBuilder.HasDefaultValueSql("now()");
     }
 
     public static IndexBuilder HasUniqueIndex(this EntityTypeBuilder builder, string propertyName)

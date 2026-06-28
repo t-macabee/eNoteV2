@@ -5,7 +5,7 @@ ASP.NET Core backend for a music-school platform: courses, lectures, assignments
 ## Prerequisites
 
 - [.NET 10 SDK](https://dotnet.microsoft.com/download) (see `global.json`)
-- SQL Server (local instance, LocalDB, or Docker — see repo-root `docker-compose.yml`)
+- PostgreSQL (local instance or Docker — see repo-root `docker-compose.yml`)
 - RabbitMQ (local install or Docker)
 
 ## Quick start
@@ -44,7 +44,7 @@ API listens on `http://localhost:5059` (or ports in `launchSettings.json`). Open
 The mobile/desktop client is in a separate repository. To point it at a running API:
 
 ```bash
-flutter run --dart-define=API_URL=http://localhost:5059
+flutter run --dart-define=API_BASE_URL=http://localhost:5059
 ```
 
 Replace `http://localhost:5059` with the actual API address (or the `API_PORT` you set in `.env`).

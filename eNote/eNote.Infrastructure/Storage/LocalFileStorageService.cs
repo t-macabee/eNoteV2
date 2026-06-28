@@ -8,8 +8,8 @@ namespace eNote.Infrastructure.Storage;
 public sealed class LocalFileStorageService(IWebHostEnvironment env) : IFileStorageService
 {
     private const long MaxFileSizeBytes = 5 * 1024 * 1024;
-    private static readonly string[] AllowedImageContentTypes = ["image/jpeg", "image/png", "image/webp"];
-    private static readonly string[] AllowedAssignmentContentTypes = ["application/pdf", "image/jpeg", "image/png"];
+    private static readonly string[] AllowedImageContentTypes = [FileSignatureDetector.Jpeg, FileSignatureDetector.Png, FileSignatureDetector.Webp];
+    private static readonly string[] AllowedAssignmentContentTypes = [FileSignatureDetector.Pdf, FileSignatureDetector.Jpeg, FileSignatureDetector.Png];
 
     public async Task<string> SaveAsync(Stream stream, string fileName, string contentType, string subfolder, CancellationToken ct = default)
     {
@@ -18,7 +18,7 @@ public sealed class LocalFileStorageService(IWebHostEnvironment env) : IFileStor
             throw new BusinessException(Messages.FileTooLarge);
         }
 
-        await ValidateImageMagicBytesAsync(stream);
+        await ValidateMagicBytesAsync(stream, AllowedImageContentTypes, ct);
 
         if (!AllowedImageContentTypes.Contains(contentType.ToLowerInvariant()))
         {
@@ -35,7 +35,7 @@ public sealed class LocalFileStorageService(IWebHostEnvironment env) : IFileStor
             throw new BusinessException(Messages.FileTooLarge);
         }
 
-        await ValidateAssignmentMagicBytesAsync(stream);
+        await ValidateMagicBytesAsync(stream, AllowedAssignmentContentTypes, ct);
 
         if (!AllowedAssignmentContentTypes.Contains(contentType.ToLowerInvariant()))
         {
@@ -73,41 +73,17 @@ public sealed class LocalFileStorageService(IWebHostEnvironment env) : IFileStor
         return $"/api/uploads/{subfolder}/{uniqueName}";
     }
 
-    private static async Task ValidateImageMagicBytesAsync(Stream stream)
+    private static async Task ValidateMagicBytesAsync(Stream stream, string[] allowedContentTypes, CancellationToken ct)
     {
-        var header = new byte[4];
-        var read = await stream.ReadAsync(header.AsMemory(0, 4));
+        var header = new byte[12];
+        var read = await stream.ReadAsync(header.AsMemory(0, header.Length), ct);
 
-        if (read < 3)
+        if (stream.CanSeek)
         {
-            throw new BusinessException(Messages.InvalidFileFormat);
+            stream.Position = 0;
         }
 
-        var isJpeg = header[0] == 0xFF && header[1] == 0xD8 && header[2] == 0xFF;
-        var isPng = header[0] == 0x89 && header[1] == 0x50 && header[2] == 0x4E && header[3] == 0x47;
-        var isRiff = header[0] == 0x52 && header[1] == 0x49 && header[2] == 0x46 && header[3] == 0x46;
-
-        if (!isJpeg && !isPng && !isRiff)
-        {
-            throw new BusinessException(Messages.InvalidFileFormat);
-        }
-    }
-
-    private static async Task ValidateAssignmentMagicBytesAsync(Stream stream)
-    {
-        var header = new byte[4];
-        var read = await stream.ReadAsync(header.AsMemory(0, 4));
-
-        if (read < 3)
-        {
-            throw new BusinessException(Messages.InvalidFileFormat);
-        }
-
-        var isPdf = header[0] == 0x25 && header[1] == 0x50 && header[2] == 0x44 && header[3] == 0x46;
-        var isJpeg = header[0] == 0xFF && header[1] == 0xD8 && header[2] == 0xFF;
-        var isPng = header[0] == 0x89 && header[1] == 0x50 && header[2] == 0x4E && header[3] == 0x47;
-
-        if (!isPdf && !isJpeg && !isPng)
+        if (!FileSignatureDetector.IsAllowed(header.AsSpan(0, read), allowedContentTypes))
         {
             throw new BusinessException(Messages.InvalidFileFormat);
         }

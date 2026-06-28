@@ -23,6 +23,6 @@ public sealed class LectureConfig : IEntityTypeConfiguration<Lecture>
         builder.Ignore(p => p.IsCancelled);
         builder.Property(p => p.IsActive).HasDefaultValue(true);
         builder.HasQueryFilter(p => p.IsActive);
-        builder.Property(p => p.RowVersion).IsRowVersion();
+        builder.Property(p => p.Version).IsRowVersion();
     }
 }

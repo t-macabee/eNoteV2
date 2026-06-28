@@ -19,7 +19,7 @@ public sealed class Lecture : AuditableEntity
     public LectureStatus LectureStatus { get; private set; }
     public bool IsCancelled => LectureStatus == LectureStatus.Cancelled;
     public bool IsActive { get; private set; } = true;
-    public byte[]? RowVersion { get; set; }
+    public uint Version { get; private set; }
 
     public ICollection<Attendance> Attendances { get; private set; } = new List<Attendance>();
     public ICollection<LectureNote> LectureNotes { get; private set; } = new List<LectureNote>();

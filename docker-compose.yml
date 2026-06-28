@@ -1,22 +1,23 @@
 name: enote
 
 services:
-  sqlserver:
-    image: mcr.microsoft.com/mssql/server:2022-CU13-ubuntu-22.04
-    container_name: enote-sql
+  postgres:
+    image: postgres:16
+    container_name: enote-postgres
     environment:
-      ACCEPT_EULA: "Y"
-      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:?Set MSSQL_SA_PASSWORD in .env (min 8 chars, upper, lower, number, symbol)}
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: "150057"
     ports:
-      - "${SQLSERVER_PORT:-1433}:1433"
+      - "${POSTGRES_PORT:-5432}:5432"
     volumes:
-      - enote-sql-data:/var/opt/mssql
+      - enote-pg-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -Q \"SELECT 1\" || exit 1"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d 150057"]
       interval: 10s
       timeout: 5s
       retries: 12
-      start_period: 40s
+      start_period: 20s
 
   rabbitmq:
     image: rabbitmq:3.13-management
@@ -40,7 +41,7 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_URLS: http://+:8080
-      ConnectionStrings__DefaultConnection: Server=sqlserver,1433;Database=150057;User Id=sa;Password=${MSSQL_SA_PASSWORD};TrustServerCertificate=True;MultipleActiveResultSets=true
+      ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=150057;Username=postgres;Password=${POSTGRES_PASSWORD}
       Jwt__Key: ${JWT__KEY:?Set JWT__KEY in .env (min 32 characters)}
       Jwt__Issuer: ENote.Api
       Jwt__Audience: ENote.Client
@@ -60,7 +61,7 @@ services:
     ports:
       - "${API_PORT:-5059}:8080"
     depends_on:
-      sqlserver:
+      postgres:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
@@ -80,13 +81,13 @@ services:
     container_name: enote-worker
     environment:
       DOTNET_ENVIRONMENT: Development
-      ConnectionStrings__DefaultConnection: Server=sqlserver,1433;Database=150057;User Id=sa;Password=${MSSQL_SA_PASSWORD};TrustServerCertificate=True;MultipleActiveResultSets=true
+      ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=150057;Username=postgres;Password=${POSTGRES_PASSWORD}
       RabbitMQ__Host: rabbitmq
       RabbitMQ__VirtualHost: /
       RabbitMQ__User: ${RABBITMQ_USER:-guest}
       RabbitMQ__Password: ${RABBITMQ_PASSWORD:-guest}
     depends_on:
-      sqlserver:
+      postgres:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
@@ -101,4 +102,4 @@ services:
       start_period: 20s
 
 volumes:
-  enote-sql-data:
+  enote-pg-data:

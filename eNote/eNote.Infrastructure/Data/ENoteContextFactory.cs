@@ -20,7 +20,7 @@ public sealed class ENoteContextFactory : IDesignTimeDbContextFactory<ENoteConte
             ?? throw new InvalidOperationException("ConnectionStrings__DefaultConnection is missing. Set it in .env or environment variables.");
 
         var optionsBuilder = new DbContextOptionsBuilder<ENoteContext>();
-        optionsBuilder.UseSqlServer(connectionString, sql => sql.MigrationsAssembly("eNote.Infrastructure"));
+        optionsBuilder.UseNpgsql(connectionString, sql => sql.MigrationsAssembly("eNote.Infrastructure"));
 
         return new ENoteContext(optionsBuilder.Options, new SystemClock());
     }

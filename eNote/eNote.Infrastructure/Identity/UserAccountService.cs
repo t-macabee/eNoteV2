@@ -8,6 +8,7 @@ namespace eNote.Infrastructure.Identity;
 public sealed class UserAccountService(UserManager<AppUser> userManager) : IUserAccountService
 {
     private const int MaxPictureSizeBytes = 5 * 1024 * 1024;
+    private static readonly string[] AllowedPictureContentTypes = [FileSignatureDetector.Jpeg, FileSignatureDetector.Png, FileSignatureDetector.Webp];
 
     public async Task<int?> FindUserIdByUsernameAsync(string username, CancellationToken cancellationToken = default)
     {
@@ -232,37 +233,9 @@ public sealed class UserAccountService(UserManager<AppUser> userManager) : IUser
     public async Task<bool> IsAddressInUseAsync(int addressId, CancellationToken cancellationToken = default) =>
         await userManager.Users.AnyAsync(u => u.AddressId == addressId, cancellationToken);
 
-    private static bool IsValidImage(byte[] data)
-    {
-        if (data.Length < 3)
-        {
-            return false;
-        }
+    private static bool IsValidImage(byte[] data) =>
+        FileSignatureDetector.IsAllowed(data, AllowedPictureContentTypes);
 
-        var isJpeg = data[0] == 0xFF && data[1] == 0xD8 && data[2] == 0xFF;
-        var isPng = data.Length >= 4 && data[0] == 0x89 && data[1] == 0x50 && data[2] == 0x4E && data[3] == 0x47;
-        var isWebp = data.Length >= 12 && data[0] == 0x52 && data[1] == 0x49 && data[2] == 0x46 && data[3] == 0x46;
-
-        return isJpeg || isPng || isWebp;
-    }
-
-    private static string DetectContentType(byte[] data)
-    {
-        if (data.Length >= 3 && data[0] == 0xFF && data[1] == 0xD8 && data[2] == 0xFF)
-        {
-            return "image/jpeg";
-        }
-
-        if (data.Length >= 4 && data[0] == 0x89 && data[1] == 0x50 && data[2] == 0x4E && data[3] == 0x47)
-        {
-            return "image/png";
-        }
-
-        if (data.Length >= 12 && data[0] == 0x52 && data[1] == 0x49 && data[2] == 0x46 && data[3] == 0x46)
-        {
-            return "image/webp";
-        }
-
-        return "application/octet-stream";
-    }
+    private static string DetectContentType(byte[] data) =>
+        FileSignatureDetector.DetectContentType(data);
 }
