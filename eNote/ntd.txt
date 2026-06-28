@@ -1,0 +1,38 @@
+eNoteV2 — .NET 10 modular monolith. Three compliance tasks. Gate after each: `dotnet build eNote/eNote.sln` (0 errors) + `dotnet test eNote/eNote.sln` (all pass). Stop and report if gate fails.
+---
+## Task 1 — Unify and fix magic-byte validation
+Files to touch:
+- `eNote/eNote.Infrastructure/Storage/LocalFileStorageService.cs`
+- `eNote/eNote.Infrastructure/Identity/UserAccountService.cs`
+- Create: `eNote/eNote.Infrastructure/FileSignatureDetector.cs`
+Problem: magic-byte logic is duplicated across both services, and the WEBP check is broken — it only tests the RIFF header at bytes 0–3; a valid WEBP also requires `57 45 42 50` ("WEBP") at bytes 8–11. An AVI file currently passes as WebP.
+Do:
+1. Create `FileSignatureDetector` (internal static class, same namespace as the infrastructure assembly) with:
+   - Constants for the four MIME strings (jpeg, png, webp, pdf)
+   - `DetectContentType(ReadOnlySpan<byte> data)` — returns the correct MIME or `"application/octet-stream"`
+   - `IsAllowed(ReadOnlySpan<byte> data, string[] allowedContentTypes)` — delegates to DetectContentType
+   - Correct signatures:
+     - JPEG: FF D8 FF (3 bytes)
+     - PNG:  89 50 4E 47 0D 0A 1A 0A (8 bytes)
+     - WebP: 52 49 46 46 at offset 0 AND 57 45 42 50 at offset 8 (12 bytes total)
+     - PDF:  25 50 44 46 (4 bytes)
+2. In `LocalFileStorageService`: replace the two inline `Validate*MagicBytesAsync` methods with a single private `ValidateMagicBytesAsync(Stream stream, string[] allowedContentTypes, CancellationToken ct)` that reads 12 bytes into a buffer, resets `stream.Position = 0`, and calls `FileSignatureDetector.IsAllowed`. Throw `BusinessException(Messages.InvalidFileFormat)` on failure — match the existing throw pattern in the file exactly. Pass CancellationToken through `ReadAsync`.
+3. In `UserAccountService`: delete the inline `IsValidImage(byte[])` and `DetectContentType(byte[])` methods. Replace calls with `FileSignatureDetector.IsAllowed` and `FileSignatureDetector.DetectContentType`.
+No new packages. No new abstractions beyond FileSignatureDetector.
+Gate. 
+---
+## Task 2 — Verify NotificationHub (read-only)
+Read `eNote/eNote.API/Hubs/NotificationHub.cs`. Confirm:
+- `[Authorize]` is present on the class.
+- `OnConnectedAsync` reads the user id from `Context.User` (JWT), never from a client-supplied parameter.
+- Groups are keyed by that JWT user id.
+It is already compliant. Report "Task 2: compliant, no change" and move on immediately.
+---
+## Task 3 — Add exponential retry to MassTransit
+File: `eNote/eNote.Infrastructure/Messaging/MassTransitServiceExtensions.cs`
+Currently `cfg.ConfigureEndpoints(context)` is called with no retry policy. Add before it:
+```csharp
+cfg.UseMessageRetry(r => r.Exponential(4, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(2)));
+
+
+Don't commit anything. Just report back when you're done.

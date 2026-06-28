@@ -1,6 +1,6 @@
 # Bounded Context: Shared_Infrastructure
 
-**Generated**: 2026-06-28T16:06:01.477158+00:00  
+**Generated**: 2026-06-28T16:22:41.267687+00:00  
 **Commit**: latest  
 **Total Files**: 250
 
@@ -9541,7 +9541,7 @@ internal static class ModelBuilderSeed
 ---
 
 ## File: `eNote\eNote.Infrastructure\FileSignatureDetector.cs`
-**Hash**: `e36b432e9538` | **Size**: 1409 chars
+**Hash**: `6f618bbb5c38` | **Size**: 1442 chars
 
 **Classes**: FileSignatureDetector
 ```cs
@@ -9549,42 +9549,41 @@ namespace eNote.Infrastructure;
 
 internal static class FileSignatureDetector
 {
-    public const string Jpeg = "image/jpeg";
-    public const string Png = "image/png";
-    public const string Webp = "image/webp";
-    public const string Pdf = "application/pdf";
-    public const string Unknown = "application/octet-stream";
+    internal const string JpegMimeType = "image/jpeg";
+    internal const string PngMimeType = "image/png";
+    internal const string WebpMimeType = "image/webp";
+    internal const string PdfMimeType = "application/pdf";
 
-    public static string DetectContentType(ReadOnlySpan<byte> data)
+    internal static string DetectContentType(ReadOnlySpan<byte> data)
     {
         if (data.Length >= 3 && data[0] == 0xFF && data[1] == 0xD8 && data[2] == 0xFF)
         {
-            return Jpeg;
+            return JpegMimeType;
         }
 
-        if (data.Length >= 8 &&
-            data[0] == 0x89 && data[1] == 0x50 && data[2] == 0x4E && data[3] == 0x47 &&
-            data[4] == 0x0D && data[5] == 0x0A && data[6] == 0x1A && data[7] == 0x0A)
+        if (data.Length >= 8
+            && data[0] == 0x89 && data[1] == 0x50 && data[2] == 0x4E && data[3] == 0x47
+            && data[4] == 0x0D && data[5] == 0x0A && data[6] == 0x1A && data[7] == 0x0A)
         {
-            return Png;
+            return PngMimeType;
         }
 
-        if (data.Length >= 12 &&
-            data[0] == 0x52 && data[1] == 0x49 && data[2] == 0x46 && data[3] == 0x46 &&
-            data[8] == 0x57 && data[9] == 0x45 && data[10] == 0x42 && data[11] == 0x50)
+        if (data.Length >= 12
+            && data[0] == 0x52 && data[1] == 0x49 && data[2] == 0x46 && data[3] == 0x46
+            && data[8] == 0x57 && data[9] == 0x45 && data[10] == 0x42 && data[11] == 0x50)
         {
-            return Webp;
+            return WebpMimeType;
         }
 
         if (data.Length >= 4 && data[0] == 0x25 && data[1] == 0x50 && data[2] == 0x44 && data[3] == 0x46)
         {
-            return Pdf;
+            return PdfMimeType;
         }
 
-        return Unknown;
+        return "application/octet-stream";
     }
 
-    public static bool IsAllowed(ReadOnlySpan<byte> data, string[] allowedContentTypes) =>
+    internal static bool IsAllowed(ReadOnlySpan<byte> data, string[] allowedContentTypes) =>
         allowedContentTypes.Contains(DetectContentType(data), StringComparer.OrdinalIgnoreCase);
 }
 
@@ -9827,12 +9826,13 @@ public sealed class TokenService(IConfiguration configuration, IClock clock) : I
 ---
 
 ## File: `eNote\eNote.Infrastructure\Identity\UserAccountService.cs`
-**Hash**: `e29625cbc1e5` | **Size**: 7983 chars
+**Hash**: `080a8b1792c4` | **Size**: 7857 chars
 
 **Classes**: UserAccountService
 ```cs
 using eNote.Application.Common.Localization;
 using eNote.Application.Features.Identity.Users.Services;
+using eNote.Infrastructure;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -9841,7 +9841,7 @@ namespace eNote.Infrastructure.Identity;
 public sealed class UserAccountService(UserManager<AppUser> userManager) : IUserAccountService
 {
     private const int MaxPictureSizeBytes = 5 * 1024 * 1024;
-    private static readonly string[] AllowedPictureContentTypes = [FileSignatureDetector.Jpeg, FileSignatureDetector.Png, FileSignatureDetector.Webp];
+    private static readonly string[] AllowedImageContentTypes = [FileSignatureDetector.JpegMimeType, FileSignatureDetector.PngMimeType, FileSignatureDetector.WebpMimeType];
 
     public async Task<int?> FindUserIdByUsernameAsync(string username, CancellationToken cancellationToken = default)
     {
@@ -10004,7 +10004,7 @@ public sealed class UserAccountService(UserManager<AppUser> userManager) : IUser
             return (false, Messages.FileTooLarge);
         }
 
-        if (!IsValidImage(picture))
+        if (!FileSignatureDetector.IsAllowed(picture, AllowedImageContentTypes))
         {
             return (false, Messages.InvalidFileFormat);
         }
@@ -10038,7 +10038,7 @@ public sealed class UserAccountService(UserManager<AppUser> userManager) : IUser
             return (null, null);
         }
 
-        return (picture, DetectContentType(picture));
+        return (picture, FileSignatureDetector.DetectContentType(picture));
     }
 
     public async Task<(bool Success, string? Error)> DeletePictureAsync(int userId, CancellationToken cancellationToken = default)
@@ -10066,12 +10066,8 @@ public sealed class UserAccountService(UserManager<AppUser> userManager) : IUser
     public async Task<bool> IsAddressInUseAsync(int addressId, CancellationToken cancellationToken = default) =>
         await userManager.Users.AnyAsync(u => u.AddressId == addressId, cancellationToken);
 
-    private static bool IsValidImage(byte[] data) =>
-        FileSignatureDetector.IsAllowed(data, AllowedPictureContentTypes);
-
-    private static string DetectContentType(byte[] data) =>
-        FileSignatureDetector.DetectContentType(data);
 }
+
 ```
 
 ---
@@ -10148,7 +10144,7 @@ public sealed class UserIdentityService(UserManager<AppUser> userManager) : IUse
 ---
 
 ## File: `eNote\eNote.Infrastructure\Messaging\MassTransitServiceExtensions.cs`
-**Hash**: `ea4a9593a4b0` | **Size**: 1084 chars
+**Hash**: `aa12af5f0334` | **Size**: 1220 chars
 
 **Classes**: MassTransitServiceExtensions
 ### Key Cross-Cutting Interactions
@@ -10183,6 +10179,7 @@ public static class MassTransitServiceExtensions
                         h.Password(RabbitMqConfiguration.GetPassword(configuration));
                     });
 
+                cfg.UseMessageRetry(r => r.Exponential(4, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(2)));
                 cfg.ConfigureEndpoints(context);
             });
         });
@@ -10391,13 +10388,14 @@ public sealed class RentalNotificationOutboxPublisher(IServiceProvider services,
 ---
 
 ## File: `eNote\eNote.Infrastructure\Storage\LocalFileStorageService.cs`
-**Hash**: `18e708d15b9c` | **Size**: 3488 chars
+**Hash**: `e0d27aa5b630` | **Size**: 3510 chars
 
 **Classes**: LocalFileStorageService
 ```cs
 using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Localization;
+using eNote.Infrastructure;
 using Microsoft.AspNetCore.Hosting;
 
 namespace eNote.Infrastructure.Storage;
@@ -10405,8 +10403,8 @@ namespace eNote.Infrastructure.Storage;
 public sealed class LocalFileStorageService(IWebHostEnvironment env) : IFileStorageService
 {
     private const long MaxFileSizeBytes = 5 * 1024 * 1024;
-    private static readonly string[] AllowedImageContentTypes = [FileSignatureDetector.Jpeg, FileSignatureDetector.Png, FileSignatureDetector.Webp];
-    private static readonly string[] AllowedAssignmentContentTypes = [FileSignatureDetector.Pdf, FileSignatureDetector.Jpeg, FileSignatureDetector.Png];
+    private static readonly string[] AllowedImageContentTypes = [FileSignatureDetector.JpegMimeType, FileSignatureDetector.PngMimeType, FileSignatureDetector.WebpMimeType];
+    private static readonly string[] AllowedAssignmentContentTypes = [FileSignatureDetector.PdfMimeType, FileSignatureDetector.JpegMimeType, FileSignatureDetector.PngMimeType];
 
     public async Task<string> SaveAsync(Stream stream, string fileName, string contentType, string subfolder, CancellationToken ct = default)
     {
@@ -10474,11 +10472,7 @@ public sealed class LocalFileStorageService(IWebHostEnvironment env) : IFileStor
     {
         var header = new byte[12];
         var read = await stream.ReadAsync(header.AsMemory(0, header.Length), ct);
-
-        if (stream.CanSeek)
-        {
-            stream.Position = 0;
-        }
+        stream.Position = 0;
 
         if (!FileSignatureDetector.IsAllowed(header.AsSpan(0, read), allowedContentTypes))
         {
@@ -10486,7 +10480,6 @@ public sealed class LocalFileStorageService(IWebHostEnvironment env) : IFileStor
         }
     }
 }
-
 ```
 
 ---

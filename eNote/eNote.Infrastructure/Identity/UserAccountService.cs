@@ -1,5 +1,6 @@
 using eNote.Application.Common.Localization;
 using eNote.Application.Features.Identity.Users.Services;
+using eNote.Infrastructure;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -8,7 +9,7 @@ namespace eNote.Infrastructure.Identity;
 public sealed class UserAccountService(UserManager<AppUser> userManager) : IUserAccountService
 {
     private const int MaxPictureSizeBytes = 5 * 1024 * 1024;
-    private static readonly string[] AllowedPictureContentTypes = [FileSignatureDetector.Jpeg, FileSignatureDetector.Png, FileSignatureDetector.Webp];
+    private static readonly string[] AllowedImageContentTypes = [FileSignatureDetector.JpegMimeType, FileSignatureDetector.PngMimeType, FileSignatureDetector.WebpMimeType];
 
     public async Task<int?> FindUserIdByUsernameAsync(string username, CancellationToken cancellationToken = default)
     {
@@ -171,7 +172,7 @@ public sealed class UserAccountService(UserManager<AppUser> userManager) : IUser
             return (false, Messages.FileTooLarge);
         }
 
-        if (!IsValidImage(picture))
+        if (!FileSignatureDetector.IsAllowed(picture, AllowedImageContentTypes))
         {
             return (false, Messages.InvalidFileFormat);
         }
@@ -205,7 +206,7 @@ public sealed class UserAccountService(UserManager<AppUser> userManager) : IUser
             return (null, null);
         }
 
-        return (picture, DetectContentType(picture));
+        return (picture, FileSignatureDetector.DetectContentType(picture));
     }
 
     public async Task<(bool Success, string? Error)> DeletePictureAsync(int userId, CancellationToken cancellationToken = default)
@@ -233,9 +234,4 @@ public sealed class UserAccountService(UserManager<AppUser> userManager) : IUser
     public async Task<bool> IsAddressInUseAsync(int addressId, CancellationToken cancellationToken = default) =>
         await userManager.Users.AnyAsync(u => u.AddressId == addressId, cancellationToken);
 
-    private static bool IsValidImage(byte[] data) =>
-        FileSignatureDetector.IsAllowed(data, AllowedPictureContentTypes);
-
-    private static string DetectContentType(byte[] data) =>
-        FileSignatureDetector.DetectContentType(data);
 }

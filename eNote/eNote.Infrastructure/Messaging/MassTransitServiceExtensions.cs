@@ -26,6 +26,7 @@ public static class MassTransitServiceExtensions
                         h.Password(RabbitMqConfiguration.GetPassword(configuration));
                     });
 
+                cfg.UseMessageRetry(r => r.Exponential(4, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(2)));
                 cfg.ConfigureEndpoints(context);
             });
         });

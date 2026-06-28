@@ -1,6 +1,7 @@
 using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Localization;
+using eNote.Infrastructure;
 using Microsoft.AspNetCore.Hosting;
 
 namespace eNote.Infrastructure.Storage;
@@ -8,8 +9,8 @@ namespace eNote.Infrastructure.Storage;
 public sealed class LocalFileStorageService(IWebHostEnvironment env) : IFileStorageService
 {
     private const long MaxFileSizeBytes = 5 * 1024 * 1024;
-    private static readonly string[] AllowedImageContentTypes = [FileSignatureDetector.Jpeg, FileSignatureDetector.Png, FileSignatureDetector.Webp];
-    private static readonly string[] AllowedAssignmentContentTypes = [FileSignatureDetector.Pdf, FileSignatureDetector.Jpeg, FileSignatureDetector.Png];
+    private static readonly string[] AllowedImageContentTypes = [FileSignatureDetector.JpegMimeType, FileSignatureDetector.PngMimeType, FileSignatureDetector.WebpMimeType];
+    private static readonly string[] AllowedAssignmentContentTypes = [FileSignatureDetector.PdfMimeType, FileSignatureDetector.JpegMimeType, FileSignatureDetector.PngMimeType];
 
     public async Task<string> SaveAsync(Stream stream, string fileName, string contentType, string subfolder, CancellationToken ct = default)
     {
@@ -77,11 +78,7 @@ public sealed class LocalFileStorageService(IWebHostEnvironment env) : IFileStor
     {
         var header = new byte[12];
         var read = await stream.ReadAsync(header.AsMemory(0, header.Length), ct);
-
-        if (stream.CanSeek)
-        {
-            stream.Position = 0;
-        }
+        stream.Position = 0;
 
         if (!FileSignatureDetector.IsAllowed(header.AsSpan(0, read), allowedContentTypes))
         {
