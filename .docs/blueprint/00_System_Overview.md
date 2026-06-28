@@ -1,6 +1,6 @@
 # 🗺️ eNote System Architecture Overview
 
-**Generated**: 2026-06-28T06:40:45.059515+00:00  
+**Generated**: 2026-06-28T06:45:22.768042+00:00  
 **Commit**: latest
 
 ## Architectural Layers (Clean Architecture)
@@ -25,9 +25,9 @@ Use these files when building or refreshing your mental model:
 - **`Domain_Auth.md`** — 13 files (core logic, entities, features)
 - **`Domain_InstrumentRentals.md`** — 23 files (core logic, entities, features)
 - **`Domain_Assignments.md`** — 19 files (core logic, entities, features)
-- **`Domain_Courses.md`** — 16 files (core logic, entities, features)
+- **`Domain_Courses.md`** — 17 files (core logic, entities, features)
 - **`Domain_Payments.md`** — 0 files (core logic, entities, features)
-- **`Domain_Shared_Infrastructure.md`** — 250 files (foundational + cross-cutting)
+- **`Domain_Shared_Infrastructure.md`** — 249 files (foundational + cross-cutting)
 
 ---
 

@@ -6,7 +6,6 @@ using eNote.Application.Common.Persistence;
 using eNote.Application.Features.Academic.Courses;
 using eNote.Application.Features.Identity.Instructors;
 using eNote.Application.Features.Identity.Users.Services;
-using eNote.Application.Features.Students;
 using eNote.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 

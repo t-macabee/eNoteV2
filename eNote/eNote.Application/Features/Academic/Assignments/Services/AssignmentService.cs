@@ -6,7 +6,7 @@ using eNote.Application.Common.Paging;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Features.Academic.Assignments;
 using eNote.Application.Features.Identity.Instructors;
-using eNote.Application.Features.Students;
+using eNote.Application.Features.Academic.Courses;
 using MapsterMapper;
 using Microsoft.EntityFrameworkCore;
 

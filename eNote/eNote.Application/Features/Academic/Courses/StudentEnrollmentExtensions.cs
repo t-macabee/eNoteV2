@@ -1,9 +1,9 @@
-using eNote.Domain.Entities;
 using eNote.Application.Common.Persistence;
+using eNote.Domain.Entities;
 using eNote.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 
-namespace eNote.Application.Features.Students;
+namespace eNote.Application.Features.Academic.Courses;
 
 public static class StudentEnrollmentExtensions
 {

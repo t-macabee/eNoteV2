@@ -1,8 +1,8 @@
 # Bounded Context: Courses
 
-**Generated**: 2026-06-28T06:40:45.056587+00:00  
+**Generated**: 2026-06-28T06:45:22.764921+00:00  
 **Commit**: latest  
-**Total Files**: 16
+**Total Files**: 17
 
 ---
 
@@ -655,7 +655,7 @@ public interface IRankingService
 ---
 
 ## File: `eNote\eNote.Application\Features\Academic\Courses\Services\RankingService.cs`
-**Hash**: `9baf52c8750e` | **Size**: 3704 chars
+**Hash**: `bf41e74837ed` | **Size**: 3661 chars
 
 **Classes**: RankingService
 ### Key Cross-Cutting Interactions
@@ -673,7 +673,6 @@ using eNote.Application.Common.Persistence;
 using eNote.Application.Features.Academic.Courses;
 using eNote.Application.Features.Identity.Instructors;
 using eNote.Application.Features.Identity.Users.Services;
-using eNote.Application.Features.Students;
 using eNote.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 
@@ -758,6 +757,40 @@ public sealed class RankingService(IAppDbContext context, ICurrentActor actor, I
     private sealed record StudentGradeStats(int StudentId, double? Average, int Count);
 
     private sealed record RankedStudentEntry(Student Student, double? Average, int Count, string Name);
+}
+
+```
+
+---
+
+## File: `eNote\eNote.Application\Features\Academic\Courses\StudentEnrollmentExtensions.cs`
+**Hash**: `fd418dc182a6` | **Size**: 1500 chars
+
+**Classes**: StudentEnrollmentExtensions
+### Key Cross-Cutting Interactions
+- Uses **IAppDbContext|DbContext** → Persistence boundary
+
+```cs
+using eNote.Application.Common.Persistence;
+using eNote.Domain.Entities;
+using eNote.Domain.Enums;
+using Microsoft.EntityFrameworkCore;
+
+namespace eNote.Application.Features.Academic.Courses;
+
+public static class StudentEnrollmentExtensions
+{
+    public static Task<bool> IsEnrolledInCourseAsync(this IAppDbContext context, int studentId, int courseId) =>
+        context.Set<Enrollment>().AnyAsync(e => e.StudentId == studentId && e.CourseId == courseId && e.EnrollmentStatus == EnrollmentStatus.Active);
+
+    public static IQueryable<Lecture> ForEnrolledStudent(this IQueryable<Lecture> query, int studentId) =>
+        query.Where(x => x.Course.IsPublished && x.LectureStatus != LectureStatus.Cancelled && x.Course.Enrollments.Any(e => e.StudentId == studentId && e.EnrollmentStatus == EnrollmentStatus.Active));
+
+    public static IQueryable<LectureNote> ForEnrolledStudent(this IQueryable<LectureNote> query, int studentId) =>
+        query.Where(x => x.Lecture.Course.IsPublished && x.Lecture.LectureStatus != LectureStatus.Cancelled && x.Lecture.Course.Enrollments.Any(e => e.StudentId == studentId && e.EnrollmentStatus == EnrollmentStatus.Active));
+
+    public static IQueryable<Assignment> ForEnrolledStudent(this IQueryable<Assignment> query, int studentId) =>
+        query.Where(x => x.Lecture.Course.IsPublished && x.Lecture.LectureStatus != LectureStatus.Cancelled && x.Lecture.Course.Enrollments.Any(e => e.StudentId == studentId && e.EnrollmentStatus == EnrollmentStatus.Active));
 }
 
 ```

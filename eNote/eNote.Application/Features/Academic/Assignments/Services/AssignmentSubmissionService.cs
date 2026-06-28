@@ -8,7 +8,7 @@ using eNote.Application.Common.Time;
 using eNote.Application.Features.Academic.Assignments;
 using eNote.Application.Features.Identity.Instructors;
 using eNote.Application.Features.Identity.Users.Services;
-using eNote.Application.Features.Students;
+using eNote.Application.Features.Academic.Courses;
 using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Application.Features.Academic.Assignments.Services;

@@ -1,8 +1,8 @@
 # Bounded Context: Shared_Infrastructure
 
-**Generated**: 2026-06-28T06:40:45.057095+00:00  
+**Generated**: 2026-06-28T06:45:22.765434+00:00  
 **Commit**: latest  
-**Total Files**: 250
+**Total Files**: 249
 
 ---
 
@@ -2871,7 +2871,7 @@ public interface ILectureNoteService
 ---
 
 ## File: `eNote\eNote.Application\Features\Academic\LectureNotes\Services\LectureNoteService.cs`
-**Hash**: `c09f392bf37b` | **Size**: 3976 chars
+**Hash**: `5b39e1171be2` | **Size**: 3983 chars
 
 **Classes**: LectureNoteService
 ### Key Cross-Cutting Interactions
@@ -2880,14 +2880,14 @@ public interface ILectureNoteService
 - Uses **IAppDbContext|DbContext** → Persistence boundary
 
 ```cs
-﻿using eNote.Application.Common.Exceptions;
+using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Paging;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Features.Academic.LectureNotes;
 using eNote.Application.Features.Identity.Instructors;
-using eNote.Application.Features.Students;
+using eNote.Application.Features.Academic.Courses;
 using eNote.Domain.Entities;
 using MapsterMapper;
 using Microsoft.EntityFrameworkCore;
@@ -3301,7 +3301,7 @@ public interface ILectureService
 ---
 
 ## File: `eNote\eNote.Application\Features\Academic\Lectures\Services\LectureAttendanceService.cs`
-**Hash**: `6c787e9c1149` | **Size**: 5560 chars
+**Hash**: `6b0a671e7eed` | **Size**: 5568 chars
 
 **Classes**: LectureAttendanceService
 ### Key Cross-Cutting Interactions
@@ -3319,7 +3319,7 @@ using eNote.Application.Common.Paging;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Features.Identity.Instructors;
 using eNote.Application.Features.Identity.Users.Services;
-using eNote.Application.Features.Students;
+using eNote.Application.Features.Academic.Courses;
 using eNote.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -3457,7 +3457,7 @@ public sealed class LectureAttendanceService(IAppDbContext context, ICurrentActo
 ---
 
 ## File: `eNote\eNote.Application\Features\Academic\Lectures\Services\LectureService.cs`
-**Hash**: `95f61d8a2efe` | **Size**: 5048 chars
+**Hash**: `a2e73aa9838f` | **Size**: 5055 chars
 
 **Classes**: LectureService
 ### Key Cross-Cutting Interactions
@@ -3466,14 +3466,14 @@ public sealed class LectureAttendanceService(IAppDbContext context, ICurrentActo
 - Uses **IAppDbContext|DbContext** → Persistence boundary
 
 ```cs
-﻿using eNote.Application.Common.Exceptions;
+using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Paging;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Features.Academic.Lectures;
 using eNote.Application.Features.Identity.Instructors;
-using eNote.Application.Features.Students;
+using eNote.Application.Features.Academic.Courses;
 using eNote.Domain.Entities;
 using MapsterMapper;
 using Microsoft.EntityFrameworkCore;
@@ -6902,40 +6902,6 @@ public sealed class ReportService(IAppDbContext context, IClock clock, IRankingS
     private static IContainer CellStyle(IContainer container) => container.BorderBottom(1).BorderColor(Colors.Grey.Lighten2).PaddingVertical(4).PaddingHorizontal(2);
 
     private sealed record AttendanceRow(int StudentId, string StudentName, AttendanceStatus Status);
-}
-
-```
-
----
-
-## File: `eNote\eNote.Application\Features\Students\StudentEnrollmentExtensions.cs`
-**Hash**: `edd2e71b73ab` | **Size**: 1492 chars
-
-**Classes**: StudentEnrollmentExtensions
-### Key Cross-Cutting Interactions
-- Uses **IAppDbContext|DbContext** → Persistence boundary
-
-```cs
-using eNote.Domain.Entities;
-using eNote.Application.Common.Persistence;
-using eNote.Domain.Enums;
-using Microsoft.EntityFrameworkCore;
-
-namespace eNote.Application.Features.Students;
-
-public static class StudentEnrollmentExtensions
-{
-    public static Task<bool> IsEnrolledInCourseAsync(this IAppDbContext context, int studentId, int courseId) =>
-        context.Set<Enrollment>().AnyAsync(e => e.StudentId == studentId && e.CourseId == courseId && e.EnrollmentStatus == EnrollmentStatus.Active);
-
-    public static IQueryable<Lecture> ForEnrolledStudent(this IQueryable<Lecture> query, int studentId) =>
-        query.Where(x => x.Course.IsPublished && x.LectureStatus != LectureStatus.Cancelled && x.Course.Enrollments.Any(e => e.StudentId == studentId && e.EnrollmentStatus == EnrollmentStatus.Active));
-
-    public static IQueryable<LectureNote> ForEnrolledStudent(this IQueryable<LectureNote> query, int studentId) =>
-        query.Where(x => x.Lecture.Course.IsPublished && x.Lecture.LectureStatus != LectureStatus.Cancelled && x.Lecture.Course.Enrollments.Any(e => e.StudentId == studentId && e.EnrollmentStatus == EnrollmentStatus.Active));
-
-    public static IQueryable<Assignment> ForEnrolledStudent(this IQueryable<Assignment> query, int studentId) =>
-        query.Where(x => x.Lecture.Course.IsPublished && x.Lecture.LectureStatus != LectureStatus.Cancelled && x.Lecture.Course.Enrollments.Any(e => e.StudentId == studentId && e.EnrollmentStatus == EnrollmentStatus.Active));
 }
 
 ```

@@ -1,6 +1,6 @@
 # Bounded Context: Assignments
 
-**Generated**: 2026-06-28T06:40:45.056023+00:00  
+**Generated**: 2026-06-28T06:45:22.764153+00:00  
 **Commit**: latest  
 **Total Files**: 19
 
@@ -257,13 +257,13 @@ public class AssignmentRequest
 ---
 
 ## File: `eNote\eNote.Application\Features\Academic\Assignments\AssignmentSearchExtensions.cs`
-**Hash**: `bd1c51dc7cf1` | **Size**: 824 chars
+**Hash**: `94a502808331` | **Size**: 832 chars
 
 **Classes**: AssignmentSearchExtensions
 ```cs
 using eNote.Domain.Entities;
 using eNote.Application.Common.Search;
-using eNote.Application.Features.Students;
+using eNote.Application.Features.Academic.Courses;
 
 namespace eNote.Application.Features.Academic.Assignments;
 
@@ -364,7 +364,7 @@ public class GradeAssignmentRequest
 ---
 
 ## File: `eNote\eNote.Application\Features\Academic\Assignments\Services\AssignmentService.cs`
-**Hash**: `d8e3c629b928` | **Size**: 3926 chars
+**Hash**: `449ee89cf52f` | **Size**: 3934 chars
 
 **Classes**: AssignmentService
 ### Key Cross-Cutting Interactions
@@ -381,7 +381,7 @@ using eNote.Application.Common.Paging;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Features.Academic.Assignments;
 using eNote.Application.Features.Identity.Instructors;
-using eNote.Application.Features.Students;
+using eNote.Application.Features.Academic.Courses;
 using MapsterMapper;
 using Microsoft.EntityFrameworkCore;
 
@@ -482,7 +482,7 @@ public sealed class AssignmentService(
 ---
 
 ## File: `eNote\eNote.Application\Features\Academic\Assignments\Services\AssignmentSubmissionService.cs`
-**Hash**: `0b89fb69e87f` | **Size**: 4825 chars
+**Hash**: `a003048c1de6` | **Size**: 4833 chars
 
 **Classes**: AssignmentSubmissionService
 ### Key Cross-Cutting Interactions
@@ -502,7 +502,7 @@ using eNote.Application.Common.Time;
 using eNote.Application.Features.Academic.Assignments;
 using eNote.Application.Features.Identity.Instructors;
 using eNote.Application.Features.Identity.Users.Services;
-using eNote.Application.Features.Students;
+using eNote.Application.Features.Academic.Courses;
 using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Application.Features.Academic.Assignments.Services;

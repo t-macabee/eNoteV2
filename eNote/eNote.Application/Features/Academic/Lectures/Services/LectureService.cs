@@ -1,11 +1,11 @@
-﻿using eNote.Application.Common.Exceptions;
+using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Paging;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Features.Academic.Lectures;
 using eNote.Application.Features.Identity.Instructors;
-using eNote.Application.Features.Students;
+using eNote.Application.Features.Academic.Courses;
 using eNote.Domain.Entities;
 using MapsterMapper;
 using Microsoft.EntityFrameworkCore;
