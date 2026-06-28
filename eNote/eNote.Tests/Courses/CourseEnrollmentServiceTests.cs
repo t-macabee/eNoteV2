@@ -113,10 +113,10 @@ public sealed class CourseEnrollmentServiceTests
     {
         public int UserId => student.AppUserId;
         public bool IsAuthenticated => true;
-        public Task<Student> GetStudentAsync() => Task.FromResult(student);
+        public Task<Student> GetCurrentStudentAsync() => Task.FromResult(student);
         public Task<int> GetCurrentStudentIdAsync() => Task.FromResult(student.Id);
-        public Task<Instructor> GetInstructorAsync() => throw new NotSupportedException();
-        public Task<MusicStoreEmployee> GetActiveEmployeeAsync() => throw new NotSupportedException();
-        public Task<int> GetActiveStoreAsync() => throw new NotSupportedException();
+        public Task<Instructor> GetCurrentInstructorAsync() => throw new NotSupportedException();
+        public Task<MusicStoreEmployee> GetCurrentEmployeeAsync() => throw new NotSupportedException();
+        public Task<int> GetCurrentStoreIdAsync() => throw new NotSupportedException();
     }
 }

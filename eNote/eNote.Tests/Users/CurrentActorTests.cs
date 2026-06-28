@@ -16,8 +16,8 @@ public sealed class CurrentActorTests
         var lookup = new CountingProfileLookup(new Student(appUserId: 42, enrollmentDate: DateTime.UtcNow));
         var actor = new CurrentActor(new TestCurrentUserService(42), lookup, new ThrowingDbContext());
 
-        var first = await actor.GetStudentAsync();
-        var second = await actor.GetStudentAsync();
+        var first = await actor.GetCurrentStudentAsync();
+        var second = await actor.GetCurrentStudentAsync();
 
         Assert.Same(first, second);
         Assert.Equal(1, lookup.StudentLookupCount);

@@ -1,6 +1,6 @@
 # Bounded Context: Courses
 
-**Generated**: 2026-06-28T06:45:22.764921+00:00  
+**Generated**: 2026-06-28T06:47:40.781944+00:00  
 **Commit**: latest  
 **Total Files**: 17
 
@@ -360,7 +360,7 @@ public class CourseSearchObject : BaseSearchObject
 ---
 
 ## File: `eNote\eNote.Application\Features\Academic\Courses\Services\CourseEnrollmentService.cs`
-**Hash**: `854a55fd12a2` | **Size**: 2564 chars
+**Hash**: `5e2e6e319b6c` | **Size**: 2571 chars
 
 **Classes**: CourseEnrollmentService
 ### Key Cross-Cutting Interactions
@@ -388,7 +388,7 @@ public sealed class CourseEnrollmentService(
 {
     public async Task EnrollAsync(int courseId)
     {
-        var student = await actor.GetStudentAsync();
+        var student = await actor.GetCurrentStudentAsync();
 
         if (!student.HasActiveMembership(clock.UtcNow))
         {

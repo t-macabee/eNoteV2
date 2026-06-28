@@ -74,7 +74,7 @@ public sealed class ReportService(IAppDbContext context, IClock clock, IRankingS
 
     public async Task<byte[]> GenerateStoreRentalSummaryPdfAsync(CancellationToken cancellationToken = default)
     {
-        var storeId = await actor.GetActiveStoreAsync();
+        var storeId = await actor.GetCurrentStoreIdAsync();
 
         var storeName = await context.Set<MusicStore>()
             .AsNoTracking()

@@ -17,12 +17,12 @@ public sealed class CurrentActor(ICurrentUserService user, IUserProfileLookup lo
     public int UserId => user.UserId;
     public bool IsAuthenticated => user.IsAuthenticated;
 
-    public async Task<Student> GetStudentAsync() => _student ??= await lookup.GetStudentAsync(user.UserId);
-    public async Task<int> GetCurrentStudentIdAsync() => (await GetStudentAsync()).Id;
-    public async Task<Instructor> GetInstructorAsync() => _instructor ??= await lookup.GetInstructorAsync(user.UserId);
-    public async Task<MusicStoreEmployee> GetActiveEmployeeAsync() => _employee ??= await lookup.GetActiveEmployeeAsync(user.UserId);
+    public async Task<Student> GetCurrentStudentAsync() => _student ??= await lookup.GetStudentAsync(user.UserId);
+    public async Task<int> GetCurrentStudentIdAsync() => (await GetCurrentStudentAsync()).Id;
+    public async Task<Instructor> GetCurrentInstructorAsync() => _instructor ??= await lookup.GetInstructorAsync(user.UserId);
+    public async Task<MusicStoreEmployee> GetCurrentEmployeeAsync() => _employee ??= await lookup.GetActiveEmployeeAsync(user.UserId);
 
-    public async Task<int> GetActiveStoreAsync()
+    public async Task<int> GetCurrentStoreIdAsync()
     {
         if (_storeId is not null) return _storeId.Value;
 

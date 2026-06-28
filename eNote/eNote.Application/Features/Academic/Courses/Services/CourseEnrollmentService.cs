@@ -18,7 +18,7 @@ public sealed class CourseEnrollmentService(
 {
     public async Task EnrollAsync(int courseId)
     {
-        var student = await actor.GetStudentAsync();
+        var student = await actor.GetCurrentStudentAsync();
 
         if (!student.HasActiveMembership(clock.UtcNow))
         {

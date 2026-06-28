@@ -62,7 +62,7 @@ public sealed class AssignmentSubmissionService(
 
     private async Task<AssignmentSubmissionDto> SubmitAsync(int assignmentId, AssignmentSubmitRequest request)
     {
-        var student = await actor.GetStudentAsync();
+        var student = await actor.GetCurrentStudentAsync();
 
         var assignment = await context.Set<Assignment>()
             .ForEnrolledStudentById(student.Id, assignmentId)

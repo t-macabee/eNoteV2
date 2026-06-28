@@ -93,7 +93,7 @@ public sealed class AnnouncementService(IAppDbContext context, IClock clock, ICu
 
     public async Task<AnnouncementDto> CreateForStoreAsync(AnnouncementRequest request)
     {
-        var storeId = await actor.GetActiveStoreAsync();
+        var storeId = await actor.GetCurrentStoreIdAsync();
 
         var entity = new Announcement(request.Title.Trim(), request.Content.Trim(), null, storeId, clock.UtcNow)
         {
@@ -108,7 +108,7 @@ public sealed class AnnouncementService(IAppDbContext context, IClock clock, ICu
 
     public async Task<AnnouncementDto> GetByIdForStoreAsync(int announcementId)
     {
-        var storeId = await actor.GetActiveStoreAsync();
+        var storeId = await actor.GetCurrentStoreIdAsync();
 
         var entity = await context.Set<Announcement>()
             .AsNoTracking()
@@ -120,7 +120,7 @@ public sealed class AnnouncementService(IAppDbContext context, IClock clock, ICu
 
     public async Task<PagedResult<AnnouncementDto>> GetForStoreAsync(AnnouncementSearchObject search)
     {
-        var storeId = await actor.GetActiveStoreAsync();
+        var storeId = await actor.GetCurrentStoreIdAsync();
 
         return await context.Set<Announcement>()
             .AsNoTracking()
@@ -131,7 +131,7 @@ public sealed class AnnouncementService(IAppDbContext context, IClock clock, ICu
 
     public async Task<AnnouncementDto> UpdateForStoreAsync(int announcementId, AnnouncementRequest request)
     {
-        var storeId = await actor.GetActiveStoreAsync();
+        var storeId = await actor.GetCurrentStoreIdAsync();
 
         var entity = await context.Set<Announcement>()
             .FirstOrDefaultAsync(a => a.Id == announcementId && a.MusicStoreId == storeId) ?? throw new NotFoundException(Messages.AnnouncementNotFound);
@@ -146,7 +146,7 @@ public sealed class AnnouncementService(IAppDbContext context, IClock clock, ICu
 
     public async Task DeleteForStoreAsync(int announcementId)
     {
-        var storeId = await actor.GetActiveStoreAsync();
+        var storeId = await actor.GetCurrentStoreIdAsync();
 
         var entity = await context.Set<Announcement>()
             .FirstOrDefaultAsync(a => a.Id == announcementId && a.MusicStoreId == storeId) ?? throw new NotFoundException(Messages.AnnouncementNotFound);
@@ -172,7 +172,7 @@ public sealed class AnnouncementService(IAppDbContext context, IClock clock, ICu
 
     public async Task<AnnouncementDto> UploadImageForStoreAsync(int announcementId, Stream stream, string fileName, string contentType, CancellationToken ct = default)
     {
-        var storeId = await actor.GetActiveStoreAsync();
+        var storeId = await actor.GetCurrentStoreIdAsync();
 
         var entity = await context.Set<Announcement>()
             .FirstOrDefaultAsync(a => a.Id == announcementId && a.MusicStoreId == storeId, ct) ?? throw new NotFoundException(Messages.AnnouncementNotFound);

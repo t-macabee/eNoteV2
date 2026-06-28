@@ -1,6 +1,6 @@
 # Bounded Context: Shared_Infrastructure
 
-**Generated**: 2026-06-28T06:45:22.765434+00:00  
+**Generated**: 2026-06-28T06:47:40.782405+00:00  
 **Commit**: latest  
 **Total Files**: 249
 
@@ -2271,7 +2271,7 @@ public class NotFoundException(string? message = null) : AppException(404, "erro
 ---
 
 ## File: `eNote\eNote.Application\Common\Interfaces\ICurrentActor.cs`
-**Hash**: `6a619c412499` | **Size**: 349 chars
+**Hash**: `72bab6703aaa` | **Size**: 367 chars
 
 **Classes**: 
 **Interfaces**: ICurrentActor
@@ -2285,11 +2285,11 @@ namespace eNote.Application.Common.Interfaces;
 
 public interface ICurrentActor : ICurrentUserService
 {
-    Task<Student> GetStudentAsync();
+    Task<Student> GetCurrentStudentAsync();
     Task<int> GetCurrentStudentIdAsync();
-    Task<Instructor> GetInstructorAsync();
-    Task<MusicStoreEmployee> GetActiveEmployeeAsync();
-    Task<int> GetActiveStoreAsync();
+    Task<Instructor> GetCurrentInstructorAsync();
+    Task<MusicStoreEmployee> GetCurrentEmployeeAsync();
+    Task<int> GetCurrentStoreIdAsync();
 }
 
 ```
@@ -3703,7 +3703,7 @@ public sealed class AnnouncementSearchObject : BaseSearchObject
 ---
 
 ## File: `eNote\eNote.Application\Features\Communication\Announcements\Services\AnnouncementService.cs`
-**Hash**: `8ed50fbddd22` | **Size**: 8382 chars
+**Hash**: `3001518bec58` | **Size**: 8400 chars
 
 **Classes**: AnnouncementService
 ### Key Cross-Cutting Interactions
@@ -3807,7 +3807,7 @@ public sealed class AnnouncementService(IAppDbContext context, IClock clock, ICu
 
     public async Task<AnnouncementDto> CreateForStoreAsync(AnnouncementRequest request)
     {
-        var storeId = await actor.GetActiveStoreAsync();
+        var storeId = await actor.GetCurrentStoreIdAsync();
 
         var entity = new Announcement(request.Title.Trim(), request.Content.Trim(), null, storeId, clock.UtcNow)
         {
@@ -3822,7 +3822,7 @@ public sealed class AnnouncementService(IAppDbContext context, IClock clock, ICu
 
     public async Task<AnnouncementDto> GetByIdForStoreAsync(int announcementId)
     {
-        var storeId = await actor.GetActiveStoreAsync();
+        var storeId = await actor.GetCurrentStoreIdAsync();
 
         var entity = await context.Set<Announcement>()
             .AsNoTracking()
@@ -3834,7 +3834,7 @@ public sealed class AnnouncementService(IAppDbContext context, IClock clock, ICu
 
     public async Task<PagedResult<AnnouncementDto>> GetForStoreAsync(AnnouncementSearchObject search)
     {
-        var storeId = await actor.GetActiveStoreAsync();
+        var storeId = await actor.GetCurrentStoreIdAsync();
 
         return await context.Set<Announcement>()
             .AsNoTracking()
@@ -3845,7 +3845,7 @@ public sealed class AnnouncementService(IAppDbContext context, IClock clock, ICu
 
     public async Task<AnnouncementDto> UpdateForStoreAsync(int announcementId, AnnouncementRequest request)
     {
-        var storeId = await actor.GetActiveStoreAsync();
+        var storeId = await actor.GetCurrentStoreIdAsync();
 
         var entity = await context.Set<Announcement>()
             .FirstOrDefaultAsync(a => a.Id == announcementId && a.MusicStoreId == storeId) ?? throw new NotFoundException(Messages.AnnouncementNotFound);
@@ -3860,7 +3860,7 @@ public sealed class AnnouncementService(IAppDbContext context, IClock clock, ICu
 
     public async Task DeleteForStoreAsync(int announcementId)
     {
-        var storeId = await actor.GetActiveStoreAsync();
+        var storeId = await actor.GetCurrentStoreIdAsync();
 
         var entity = await context.Set<Announcement>()
             .FirstOrDefaultAsync(a => a.Id == announcementId && a.MusicStoreId == storeId) ?? throw new NotFoundException(Messages.AnnouncementNotFound);
@@ -3886,7 +3886,7 @@ public sealed class AnnouncementService(IAppDbContext context, IClock clock, ICu
 
     public async Task<AnnouncementDto> UploadImageForStoreAsync(int announcementId, Stream stream, string fileName, string contentType, CancellationToken ct = default)
     {
-        var storeId = await actor.GetActiveStoreAsync();
+        var storeId = await actor.GetCurrentStoreIdAsync();
 
         var entity = await context.Set<Announcement>()
             .FirstOrDefaultAsync(a => a.Id == announcementId && a.MusicStoreId == storeId, ct) ?? throw new NotFoundException(Messages.AnnouncementNotFound);
@@ -4683,7 +4683,7 @@ public record StudentProfile(int Id, DateTime EnrollmentDate, string? FirstName,
 ---
 
 ## File: `eNote\eNote.Application\Features\Identity\Users\Services\CurrentActor.cs`
-**Hash**: `87194fbed132` | **Size**: 1619 chars
+**Hash**: `2a3c2df7e719` | **Size**: 1644 chars
 
 **Classes**: CurrentActor
 ### Key Cross-Cutting Interactions
@@ -4711,12 +4711,12 @@ public sealed class CurrentActor(ICurrentUserService user, IUserProfileLookup lo
     public int UserId => user.UserId;
     public bool IsAuthenticated => user.IsAuthenticated;
 
-    public async Task<Student> GetStudentAsync() => _student ??= await lookup.GetStudentAsync(user.UserId);
-    public async Task<int> GetCurrentStudentIdAsync() => (await GetStudentAsync()).Id;
-    public async Task<Instructor> GetInstructorAsync() => _instructor ??= await lookup.GetInstructorAsync(user.UserId);
-    public async Task<MusicStoreEmployee> GetActiveEmployeeAsync() => _employee ??= await lookup.GetActiveEmployeeAsync(user.UserId);
+    public async Task<Student> GetCurrentStudentAsync() => _student ??= await lookup.GetStudentAsync(user.UserId);
+    public async Task<int> GetCurrentStudentIdAsync() => (await GetCurrentStudentAsync()).Id;
+    public async Task<Instructor> GetCurrentInstructorAsync() => _instructor ??= await lookup.GetInstructorAsync(user.UserId);
+    public async Task<MusicStoreEmployee> GetCurrentEmployeeAsync() => _employee ??= await lookup.GetActiveEmployeeAsync(user.UserId);
 
-    public async Task<int> GetActiveStoreAsync()
+    public async Task<int> GetCurrentStoreIdAsync()
     {
         if (_storeId is not null) return _storeId.Value;
 
@@ -5601,7 +5601,7 @@ public interface IInstrumentService
 ---
 
 ## File: `eNote\eNote.Application\Features\Rentals\Instruments\Services\InstrumentService.cs`
-**Hash**: `91c5348d1858` | **Size**: 5721 chars
+**Hash**: `d656f1ffaae1` | **Size**: 5722 chars
 
 **Classes**: InstrumentService
 ### Key Cross-Cutting Interactions
@@ -5752,7 +5752,7 @@ public sealed class InstrumentService(
     }
 
     private Task<MusicStoreEmployee> EnsureStoreAccessAsync() =>
-        actor.GetActiveEmployeeAsync();
+        actor.GetCurrentEmployeeAsync();
 
     private async Task EnsureInstrumentTypeExistsAsync(int instrumentTypeId)
     {
@@ -6705,7 +6705,7 @@ public interface IReportService
 ---
 
 ## File: `eNote\eNote.Application\Features\Reports\Services\ReportService.cs`
-**Hash**: `4c8af5c27309` | **Size**: 8503 chars
+**Hash**: `83b56a5c32ba` | **Size**: 8506 chars
 
 **Classes**: ReportService
 ### Key Cross-Cutting Interactions
@@ -6791,7 +6791,7 @@ public sealed class ReportService(IAppDbContext context, IClock clock, IRankingS
 
     public async Task<byte[]> GenerateStoreRentalSummaryPdfAsync(CancellationToken cancellationToken = default)
     {
-        var storeId = await actor.GetActiveStoreAsync();
+        var storeId = await actor.GetCurrentStoreIdAsync();
 
         var storeName = await context.Set<MusicStore>()
             .AsNoTracking()

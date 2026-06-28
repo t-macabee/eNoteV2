@@ -19,7 +19,7 @@ public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, 
     {
         var dto = await ExecuteInTransactionAsync(async () =>
         {
-            var student = await actor.GetStudentAsync();
+            var student = await actor.GetCurrentStudentAsync();
 
             if (!student.HasActiveMembership(clock.UtcNow))
             {
@@ -92,7 +92,7 @@ public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, 
 
     private Task<InstrumentRentalDto> ExecuteStoreTransitionAsync(int rentalId, RentalTrigger trigger, RentalStatusResponse response) => ExecuteInTransactionAsync(async () =>
     {
-        var storeId = await actor.GetActiveStoreAsync();
+        var storeId = await actor.GetCurrentStoreIdAsync();
         var rental = await LoadForStoreAsync(rentalId, storeId);
         var dto = await ExecuteTransitionAsync(rental, trigger, RentalActor.StoreEmployee, actor.UserId, response);
 

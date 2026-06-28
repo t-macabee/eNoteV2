@@ -141,7 +141,7 @@ public sealed class InstrumentService(
     }
 
     private Task<MusicStoreEmployee> EnsureStoreAccessAsync() =>
-        actor.GetActiveEmployeeAsync();
+        actor.GetCurrentEmployeeAsync();
 
     private async Task EnsureInstrumentTypeExistsAsync(int instrumentTypeId)
     {

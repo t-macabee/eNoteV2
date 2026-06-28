@@ -1,6 +1,6 @@
 # Bounded Context: InstrumentRentals
 
-**Generated**: 2026-06-28T06:45:22.762695+00:00  
+**Generated**: 2026-06-28T06:47:40.780484+00:00  
 **Commit**: latest  
 **Total Files**: 23
 
@@ -471,7 +471,7 @@ public interface IRentalQueryService
 ---
 
 ## File: `eNote\eNote.Application\Features\Rentals\InstrumentRentals\Services\RentalCommandService.cs`
-**Hash**: `cc8c2492d251` | **Size**: 7933 chars
+**Hash**: `4787a0146797` | **Size**: 7943 chars
 
 **Classes**: RentalCommandService
 ### Key Cross-Cutting Interactions
@@ -500,7 +500,7 @@ public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, 
     {
         var dto = await ExecuteInTransactionAsync(async () =>
         {
-            var student = await actor.GetStudentAsync();
+            var student = await actor.GetCurrentStudentAsync();
 
             if (!student.HasActiveMembership(clock.UtcNow))
             {
@@ -573,7 +573,7 @@ public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, 
 
     private Task<InstrumentRentalDto> ExecuteStoreTransitionAsync(int rentalId, RentalTrigger trigger, RentalStatusResponse response) => ExecuteInTransactionAsync(async () =>
     {
-        var storeId = await actor.GetActiveStoreAsync();
+        var storeId = await actor.GetCurrentStoreIdAsync();
         var rental = await LoadForStoreAsync(rentalId, storeId);
         var dto = await ExecuteTransitionAsync(rental, trigger, RentalActor.StoreEmployee, actor.UserId, response);
 
@@ -692,7 +692,7 @@ public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, 
 ---
 
 ## File: `eNote\eNote.Application\Features\Rentals\InstrumentRentals\Services\RentalQueryService.cs`
-**Hash**: `3e5549a8dce2` | **Size**: 2744 chars
+**Hash**: `b8137811b7dc` | **Size**: 2750 chars
 
 **Classes**: RentalQueryService
 ### Key Cross-Cutting Interactions
@@ -731,7 +731,7 @@ public sealed class RentalQueryService(IAppDbContext context, IMapper mapper, IC
 
     public async Task<InstrumentRentalDto> GetByIdForStoreAsync(int rentalId)
     {
-        var storeId = await actor.GetActiveStoreAsync();
+        var storeId = await actor.GetCurrentStoreIdAsync();
 
         var entity = await FindRentalAsync(context.Set<InstrumentRental>().Where(x => x.Id == rentalId && x.Instrument.MusicStoreId == storeId));
 
@@ -744,7 +744,7 @@ public sealed class RentalQueryService(IAppDbContext context, IMapper mapper, IC
 
     public async Task<PagedResult<InstrumentRentalDto>> GetPagedForStoreAsync(InstrumentRentalSearchObject search)
     {
-        var storeId = await actor.GetActiveStoreAsync();
+        var storeId = await actor.GetCurrentStoreIdAsync();
 
         return await GetPagedAsync(context.Set<InstrumentRental>().Where(x => x.Instrument.MusicStoreId == storeId), search);
     }

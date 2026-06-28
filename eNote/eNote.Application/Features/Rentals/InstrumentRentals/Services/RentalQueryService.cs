@@ -29,7 +29,7 @@ public sealed class RentalQueryService(IAppDbContext context, IMapper mapper, IC
 
     public async Task<InstrumentRentalDto> GetByIdForStoreAsync(int rentalId)
     {
-        var storeId = await actor.GetActiveStoreAsync();
+        var storeId = await actor.GetCurrentStoreIdAsync();
 
         var entity = await FindRentalAsync(context.Set<InstrumentRental>().Where(x => x.Id == rentalId && x.Instrument.MusicStoreId == storeId));
 
@@ -42,7 +42,7 @@ public sealed class RentalQueryService(IAppDbContext context, IMapper mapper, IC
 
     public async Task<PagedResult<InstrumentRentalDto>> GetPagedForStoreAsync(InstrumentRentalSearchObject search)
     {
-        var storeId = await actor.GetActiveStoreAsync();
+        var storeId = await actor.GetCurrentStoreIdAsync();
 
         return await GetPagedAsync(context.Set<InstrumentRental>().Where(x => x.Instrument.MusicStoreId == storeId), search);
     }

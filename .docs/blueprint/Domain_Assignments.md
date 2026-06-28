@@ -1,6 +1,6 @@
 # Bounded Context: Assignments
 
-**Generated**: 2026-06-28T06:45:22.764153+00:00  
+**Generated**: 2026-06-28T06:47:40.781398+00:00  
 **Commit**: latest  
 **Total Files**: 19
 
@@ -482,7 +482,7 @@ public sealed class AssignmentService(
 ---
 
 ## File: `eNote\eNote.Application\Features\Academic\Assignments\Services\AssignmentSubmissionService.cs`
-**Hash**: `a003048c1de6` | **Size**: 4833 chars
+**Hash**: `98295f227a9e` | **Size**: 4840 chars
 
 **Classes**: AssignmentSubmissionService
 ### Key Cross-Cutting Interactions
@@ -556,7 +556,7 @@ public sealed class AssignmentSubmissionService(
 
     private async Task<AssignmentSubmissionDto> SubmitAsync(int assignmentId, AssignmentSubmitRequest request)
     {
-        var student = await actor.GetStudentAsync();
+        var student = await actor.GetCurrentStudentAsync();
 
         var assignment = await context.Set<Assignment>()
             .ForEnrolledStudentById(student.Id, assignmentId)

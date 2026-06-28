@@ -1,6 +1,6 @@
 # 🗺️ eNote System Architecture Overview
 
-**Generated**: 2026-06-28T06:45:22.768042+00:00  
+**Generated**: 2026-06-28T06:47:40.784875+00:00  
 **Commit**: latest
 
 ## Architectural Layers (Clean Architecture)
