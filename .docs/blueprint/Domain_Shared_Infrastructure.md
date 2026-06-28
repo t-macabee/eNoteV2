@@ -1,6 +1,6 @@
 # Bounded Context: Shared_Infrastructure
 
-**Generated**: 2026-06-28T06:49:19.452411+00:00  
+**Generated**: 2026-06-28T06:51:06.821823+00:00  
 **Commit**: latest  
 **Total Files**: 249
 
@@ -3703,7 +3703,7 @@ public sealed class AnnouncementSearchObject : BaseSearchObject
 ---
 
 ## File: `eNote\eNote.Application\Features\Communication\Announcements\Services\AnnouncementService.cs`
-**Hash**: `3001518bec58` | **Size**: 8400 chars
+**Hash**: `a23d7009a855` | **Size**: 8418 chars
 
 **Classes**: AnnouncementService
 ### Key Cross-Cutting Interactions
@@ -3760,10 +3760,7 @@ public sealed class AnnouncementService(IAppDbContext context, IClock clock, ICu
             throw new BusinessException(Messages.AnnouncementCourseForbidden);
         }
 
-        var entity = new Announcement(request.Title.Trim(), request.Content.Trim(), courseId, null, clock.UtcNow)
-        {
-            CreatedById = actor.UserId
-        };
+        var entity = BuildAnnouncement(request, courseId, null);
 
         context.Set<Announcement>().Add(entity);
         await context.SaveChangesAsync();
@@ -3809,10 +3806,7 @@ public sealed class AnnouncementService(IAppDbContext context, IClock clock, ICu
     {
         var storeId = await actor.GetCurrentStoreIdAsync();
 
-        var entity = new Announcement(request.Title.Trim(), request.Content.Trim(), null, storeId, clock.UtcNow)
-        {
-            CreatedById = actor.UserId
-        };
+        var entity = BuildAnnouncement(request, null, storeId);
 
         context.Set<Announcement>().Add(entity);
         await context.SaveChangesAsync();
@@ -3907,6 +3901,11 @@ public sealed class AnnouncementService(IAppDbContext context, IClock clock, ICu
 
         return instructorAccess.CourseAnnouncementsFor(courseId, instructorId, track);
     }
+
+    private Announcement BuildAnnouncement(AnnouncementRequest request, int? courseId, int? storeId) => new(request.Title.Trim(), request.Content.Trim(), courseId, storeId, clock.UtcNow)
+    {
+        CreatedById = actor.UserId
+    };
 }
 
 ```

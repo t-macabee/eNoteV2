@@ -46,10 +46,7 @@ public sealed class AnnouncementService(IAppDbContext context, IClock clock, ICu
             throw new BusinessException(Messages.AnnouncementCourseForbidden);
         }
 
-        var entity = new Announcement(request.Title.Trim(), request.Content.Trim(), courseId, null, clock.UtcNow)
-        {
-            CreatedById = actor.UserId
-        };
+        var entity = BuildAnnouncement(request, courseId, null);
 
         context.Set<Announcement>().Add(entity);
         await context.SaveChangesAsync();
@@ -95,10 +92,7 @@ public sealed class AnnouncementService(IAppDbContext context, IClock clock, ICu
     {
         var storeId = await actor.GetCurrentStoreIdAsync();
 
-        var entity = new Announcement(request.Title.Trim(), request.Content.Trim(), null, storeId, clock.UtcNow)
-        {
-            CreatedById = actor.UserId
-        };
+        var entity = BuildAnnouncement(request, null, storeId);
 
         context.Set<Announcement>().Add(entity);
         await context.SaveChangesAsync();
@@ -193,4 +187,9 @@ public sealed class AnnouncementService(IAppDbContext context, IClock clock, ICu
 
         return instructorAccess.CourseAnnouncementsFor(courseId, instructorId, track);
     }
+
+    private Announcement BuildAnnouncement(AnnouncementRequest request, int? courseId, int? storeId) => new(request.Title.Trim(), request.Content.Trim(), courseId, storeId, clock.UtcNow)
+    {
+        CreatedById = actor.UserId
+    };
 }
