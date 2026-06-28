@@ -1,6 +1,6 @@
 # Bounded Context: Shared_Infrastructure
 
-**Generated**: 2026-06-28T05:17:02.566914+00:00  
+**Generated**: 2026-06-28T05:23:54.638391+00:00  
 **Commit**: latest  
 **Total Files**: 250
 
@@ -8073,7 +8073,7 @@ public class InstrumentRental : AuditableEntity
 ---
 
 ## File: `eNote\eNote.Domain\Entities\Rentals\InstrumentType.cs`
-**Hash**: `24e040717c69` | **Size**: 307 chars
+**Hash**: `ba3b8d3e0afb` | **Size**: 350 chars
 
 **Classes**: InstrumentType
 ```cs
@@ -8083,10 +8083,12 @@ namespace eNote.Domain.Entities.Rentals;
 
 public class InstrumentType : BaseEntity
 {
+    private readonly List<Instrument> _instruments = [];
+
     public string Type { get; set; } = null!;
     public decimal MonthlyFee { get; set; }
 
-    public ICollection<Instrument> Instruments { get; set; } = new List<Instrument>();
+    public IReadOnlyCollection<Instrument> Instruments => _instruments;
 }
 
 ```
@@ -8133,7 +8135,7 @@ public class InstrumentView
 ---
 
 ## File: `eNote\eNote.Domain\Entities\Rentals\MusicStore.cs`
-**Hash**: `46c08d527ebd` | **Size**: 833 chars
+**Hash**: `eefec022bb7d` | **Size**: 898 chars
 
 **Classes**: MusicStore
 ```cs
@@ -8144,11 +8146,14 @@ namespace eNote.Domain.Entities.Rentals;
 
 public class MusicStore : AuditableEntity
 {
+    private readonly List<MusicStoreEmployee> _employees = [];
+    private readonly List<Instrument> _instruments = [];
+
     public string StoreName { get; private set; } = null!;
     public string BusinessHours { get; private set; } = null!;
 
-    public ICollection<MusicStoreEmployee> Employees { get; private set; } = new List<MusicStoreEmployee>();
-    public ICollection<Instrument> Instruments { get; private set; } = new List<Instrument>();
+    public IReadOnlyCollection<MusicStoreEmployee> Employees => _employees;
+    public IReadOnlyCollection<Instrument> Instruments => _instruments;
 
     protected MusicStore()
     {

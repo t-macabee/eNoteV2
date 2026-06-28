@@ -5,11 +5,14 @@ namespace eNote.Domain.Entities.Rentals;
 
 public class MusicStore : AuditableEntity
 {
+    private readonly List<MusicStoreEmployee> _employees = [];
+    private readonly List<Instrument> _instruments = [];
+
     public string StoreName { get; private set; } = null!;
     public string BusinessHours { get; private set; } = null!;
 
-    public ICollection<MusicStoreEmployee> Employees { get; private set; } = new List<MusicStoreEmployee>();
-    public ICollection<Instrument> Instruments { get; private set; } = new List<Instrument>();
+    public IReadOnlyCollection<MusicStoreEmployee> Employees => _employees;
+    public IReadOnlyCollection<Instrument> Instruments => _instruments;
 
     protected MusicStore()
     {

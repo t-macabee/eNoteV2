@@ -4,8 +4,10 @@ namespace eNote.Domain.Entities.Rentals;
 
 public class InstrumentType : BaseEntity
 {
+    private readonly List<Instrument> _instruments = [];
+
     public string Type { get; set; } = null!;
     public decimal MonthlyFee { get; set; }
 
-    public ICollection<Instrument> Instruments { get; set; } = new List<Instrument>();
+    public IReadOnlyCollection<Instrument> Instruments => _instruments;
 }
