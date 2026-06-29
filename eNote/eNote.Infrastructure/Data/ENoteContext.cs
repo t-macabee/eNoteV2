@@ -1,6 +1,8 @@
 using eNote.Domain.Entities;
 using eNote.Domain.Entities.Shared;
+using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Interfaces;
+using eNote.Application.Common.Localization;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Common.Time;
 using eNote.Infrastructure.Data.Seed;
@@ -15,17 +17,6 @@ namespace eNote.Infrastructure.Data;
 public class ENoteContext(DbContextOptions<ENoteContext> options, IClock clock, ICurrentActor actor) : IdentityDbContext<AppUser, AppRole, int>(options), IAppDbContext
 {
     private int? _storeId;
-
-    static ENoteContext()
-    {
-        // App is uniformly UTC (DateTime.UtcNow everywhere) and was built on SQL Server datetime2.
-        // Maps DateTime -> 'timestamp without time zone' and accepts any DateTimeKind, so client-supplied
-        // dates (Kind=Unspecified from JSON/query strings) don't trip Npgsql's Kind=Utc enforcement.
-        AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
-        // TODO: Remove the legacy timestamp switch once all DateTime inputs are enforced as DateTimeKind.Utc
-        // at the API boundary (via UtcDateTimeConverter or model binding). This switch masks bugs where
-        // DateTimeKind.Unspecified arrives from JSON/query strings. Npgsql 10+ may remove the switch entirely.
-    }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -59,7 +50,7 @@ public class ENoteContext(DbContextOptions<ENoteContext> options, IClock clock, 
     {
         if (_storeId is not null) return _storeId;
         try { _storeId = actor.GetCurrentStoreId(); }
-        catch (InvalidOperationException) { /* Not a store employee; filter will match nothing — safe */ }
+        catch (BusinessException ex) when (ex.Message == Messages.ActiveEmployeeStoreNotFound) { /* Not a store employee; filter will match nothing — safe */ }
         return _storeId;
     }
 

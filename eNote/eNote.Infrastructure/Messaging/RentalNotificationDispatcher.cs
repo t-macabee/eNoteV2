@@ -15,23 +15,24 @@ public sealed class RentalNotificationDispatcher(
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
-    public Task DispatchCreatedAsync(InstrumentRentalDto rental, int studentUserId, CancellationToken cancellationToken = default)
+    public Task DispatchCreatedAsync(InstrumentRentalDto rental, int studentUserId)
     {
-        var message = new RentalStatusChanged(rental.Id, studentUserId, studentUserId, rental.RentalStatus.ToString(), rental.InstrumentModel, "Zahtjev za iznajmljivanje poslan", $"Vaš zahtjev za instrument {rental.InstrumentModel} je poslan prodavnici {rental.StoreName} i čeka odobrenje.", clock.UtcNow);
-
+        var (title, body) = BuildCreatedContent(rental);
+        var message = new RentalStatusChanged(rental.Id, studentUserId, studentUserId, rental.RentalStatus.ToString(), rental.InstrumentModel, title, body, clock.UtcNow);
         EnqueueOutbox(message);
         return Task.CompletedTask;
     }
 
-    public Task DispatchTransitionAsync(InstrumentRentalDto rental, RentalTrigger trigger, int actorUserId, CancellationToken cancellationToken = default)
+    public Task DispatchTransitionAsync(InstrumentRentalDto rental, RentalTrigger trigger, int actorUserId)
     {
-        (var title, var body) = BuildNotificationContent(rental, trigger);
-
+        var (title, body) = BuildNotificationContent(rental, trigger);
         var message = new RentalStatusChanged(rental.Id, rental.StudentUserId, actorUserId, rental.RentalStatus.ToString(), rental.InstrumentModel, title, body, clock.UtcNow);
-
         EnqueueOutbox(message);
         return Task.CompletedTask;
     }
+
+    private static (string Title, string Body) BuildCreatedContent(InstrumentRentalDto rental) =>
+        ("Zahtjev za iznajmljivanje poslan", $"Vaš zahtjev za instrument {rental.InstrumentModel} je poslan prodavnici {rental.StoreName} i čeka odobrenje.");
 
     private void EnqueueOutbox(RentalStatusChanged message)
     {

@@ -1,3 +1,4 @@
+using eNote.API.Converters;
 using eNote.API.Extensions;
 using eNote.API.Hubs;
 using Serilog;
@@ -32,7 +33,11 @@ builder.Services
 
 builder.Services
     .AddControllers()
-    .AddJsonOptions(x => x.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
+    .AddJsonOptions(x =>
+    {
+        x.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+        x.JsonSerializerOptions.Converters.Add(new UtcDateTimeJsonConverter());
+    });
 
 builder.Services.AddApplicationHealthChecks();
 

@@ -52,7 +52,7 @@ public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, 
             await SaveWithLockConflictMessageAsync(Messages.InstrumentReservedOrRented, cancellationToken);
 
             var dto = await LoadDtoAsync(rental.Id, cancellationToken);
-            await notificationDispatcher.DispatchCreatedAsync(dto, actor.UserId, cancellationToken);
+            await notificationDispatcher.DispatchCreatedAsync(dto, actor.UserId);
             await context.SaveChangesAsync(cancellationToken);
 
             return dto;
@@ -89,7 +89,7 @@ public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, 
     private async Task<InstrumentRentalDto> ExecuteTransitionWithNotificationAsync(InstrumentRental rental, RentalTrigger trigger, RentalActor rentalActor, int userId, RentalStatusResponse? response, CancellationToken cancellationToken)
     {
         var dto = await ExecuteTransitionAsync(rental, trigger, rentalActor, userId, response, cancellationToken);
-        await notificationDispatcher.DispatchTransitionAsync(dto, trigger, userId, cancellationToken);
+        await notificationDispatcher.DispatchTransitionAsync(dto, trigger, userId);
         await context.SaveChangesAsync(cancellationToken);
         return dto;
     }

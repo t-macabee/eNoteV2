@@ -43,7 +43,10 @@ public sealed class DiResolutionTests
     }
 
     /// <summary>
-    /// Minimal stub that does not depend on IAppDbContext (same pattern as the fixed CurrentActor).
+    /// Intentionally not reusing TestUtils.StubCurrentActor: that stub's async methods throw
+    /// NotSupportedException when Student/Instructor/Employee are null, which would pollute this
+    /// test with unrelated entity setup. This local stub returns hardcoded values from all members,
+    /// keeping the DI resolution test fully self-contained with zero domain object construction.
     /// </summary>
     private sealed class StubCurrentActor : ICurrentActor
     {
