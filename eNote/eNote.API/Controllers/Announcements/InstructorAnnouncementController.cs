@@ -1,4 +1,4 @@
-﻿using eNote.API.Controllers.Base;
+using eNote.API.Controllers.Base;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Paging;
 using eNote.Application.Constants;
@@ -10,7 +10,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace eNote.API.Controllers.Announcements;
 
 [Authorize(Roles = AppRoles.Instructor)]
-[Route("api/instructor/courses/{courseId:int}/announcements")]
+[Route("api/v{version:apiVersion}/instructor/courses/{courseId:int}/announcements")]
 public sealed class InstructorAnnouncementController(ICourseAnnouncementService announcementService) : CoreController
 {
     [HttpGet]

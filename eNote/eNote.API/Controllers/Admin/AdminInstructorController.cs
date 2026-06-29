@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace eNote.API.Controllers.Admin;
 
 [Authorize(Roles = AppRoles.Administrator)]
-[Route("api/admin/instructors")]
+[Route("api/v{version:apiVersion}/admin/instructors")]
 public sealed class AdminInstructorController(IAdminInstructorService service) : CoreController
 {
     [HttpGet]

@@ -1,4 +1,4 @@
-﻿using eNote.API.Controllers.Base;
+using eNote.API.Controllers.Base;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Paging;
 using eNote.Application.Constants;
@@ -10,7 +10,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace eNote.API.Controllers.Announcements;
 
 [Authorize(Roles = AppRoles.StoreEmployee)]
-[Route("api/shop/announcements")]
+[Route("api/v{version:apiVersion}/shop/announcements")]
 public sealed class StoreAnnouncementController(IStoreAnnouncementService announcementService) : CoreController
 {
     [HttpGet]

@@ -27,6 +27,7 @@ builder.Services
     .AddMapsterMappings()
     .AddApplicationValidation()
     .AddApplicationSignalR()
+    .AddApplicationApiVersioning()
     .AddScalarDocumentation();
 
 builder.Services

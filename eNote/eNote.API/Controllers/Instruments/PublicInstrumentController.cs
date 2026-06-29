@@ -1,4 +1,4 @@
-﻿using eNote.Application.Common.Paging;
+using eNote.Application.Common.Paging;
 using eNote.Application.Features.Rentals.Instruments;
 using eNote.Application.Features.Rentals.Instruments.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -8,7 +8,8 @@ namespace eNote.API.Controllers.Instruments;
 
 [ApiController]
 [AllowAnonymous]
-[Route("api/instruments/public")]
+[ApiVersion("1.0")]
+[Route("api/v{version:apiVersion}/instruments/public")]
 public sealed class PublicInstrumentController(IInstrumentService instrumentService) : ControllerBase
 {
     [HttpGet]

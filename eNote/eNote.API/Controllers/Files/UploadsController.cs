@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace eNote.API.Controllers.Files;
 
 [ApiController]
-[Route("api/uploads")]
+[Route("api/v{version:apiVersion}/uploads")]
 public sealed class UploadsController(IWebHostEnvironment env, IFileAccessService fileAccess, ICurrentUserService currentUser) : CoreController
 {
     [AllowAnonymous]

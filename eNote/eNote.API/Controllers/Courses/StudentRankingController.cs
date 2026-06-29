@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace eNote.API.Controllers.Courses;
 
 [Authorize(Roles = AppRoles.Student)]
-[Route("api/student/courses/{courseId:int}/ranking")]
+[Route("api/v{version:apiVersion}/student/courses/{courseId:int}/ranking")]
 public sealed class StudentRankingController(IRankingService rankingService) : CoreController
 {
     [HttpGet]

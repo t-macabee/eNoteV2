@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace eNote.API.Controllers.Courses;
 
 [Authorize(Roles = AppRoles.Instructor)]
-[Route("api/instructor/courses/{courseId:int}/ranking")]
+[Route("api/v{version:apiVersion}/instructor/courses/{courseId:int}/ranking")]
 public sealed class InstructorRankingController(IRankingService rankingService, IReportService reportService) : CoreController
 {
     [HttpGet]

@@ -1,4 +1,4 @@
-﻿using eNote.API.Controllers.Base;
+using eNote.API.Controllers.Base;
 using eNote.Application.Common.Paging;
 using eNote.Application.Constants;
 using eNote.Application.Features.Academic.Courses;
@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace eNote.API.Controllers.Courses;
 
 [Authorize(Roles = AppRoles.Student)]
-[Route("api/student/courses")]
+[Route("api/v{version:apiVersion}/student/courses")]
 public sealed class StudentCourseController(
     ICourseService service,
     ICourseEnrollmentService enrollmentService) : CoreController

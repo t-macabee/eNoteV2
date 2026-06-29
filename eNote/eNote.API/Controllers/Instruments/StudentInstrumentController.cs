@@ -1,4 +1,4 @@
-﻿using eNote.API.Controllers.Base;
+using eNote.API.Controllers.Base;
 using eNote.Application.Constants;
 using eNote.Application.Features.Rentals.Recommendations;
 using eNote.Application.Features.Rentals.Recommendations.Services;
@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace eNote.API.Controllers.Instruments;
 
 [Authorize(Roles = AppRoles.Student)]
-[Route("api/student/instruments")]
+[Route("api/v{version:apiVersion}/student/instruments")]
 public sealed class StudentInstrumentController(IRecommendationService recommendationService) : CoreController
 {
     [HttpGet("recommended")]

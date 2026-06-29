@@ -10,7 +10,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace eNote.API.Controllers.Instruments;
 
 [Authorize(Roles = AppRoles.StoreEmployee)]
-[Route("api/shop/instruments")]
+[Route("api/v{version:apiVersion}/shop/instruments")]
 public sealed class StoreInstrumentController(IInstrumentService instrumentService) : CoreController
 {
     [HttpGet]

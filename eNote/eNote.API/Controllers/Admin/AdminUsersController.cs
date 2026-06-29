@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace eNote.API.Controllers.Admin;
 
 [Authorize(Roles = AppRoles.Administrator)]
-[Route("api/admin/users")]
+[Route("api/v{version:apiVersion}/admin/users")]
 public sealed class AdminUsersController(IUserProfileService profileService, IUserProvisioningService provisioningService) : CoreController
 {
     [HttpGet("{id:int}")]

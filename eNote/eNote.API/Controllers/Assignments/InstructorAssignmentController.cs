@@ -1,4 +1,4 @@
-﻿using eNote.API.Controllers.Base;
+using eNote.API.Controllers.Base;
 using eNote.Application.Common.Paging;
 using eNote.Application.Constants;
 using eNote.Application.Features.Academic.Assignments;
@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace eNote.API.Controllers.Assignments;
 
 [Authorize(Roles = AppRoles.Instructor)]
-[Route("api/instructor/lectures/{lectureId:int}/assignments")]
+[Route("api/v{version:apiVersion}/instructor/lectures/{lectureId:int}/assignments")]
 public sealed class InstructorAssignmentController(IAssignmentService service) : CoreController
 {
     [HttpGet]

@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace eNote.API.Controllers.Assignments;
 
 [Authorize(Roles = AppRoles.Instructor)]
-[Route("api/instructor/lectures/{lectureId:int}/assignments/{assignmentId:int}/submissions")]
+[Route("api/v{version:apiVersion}/instructor/lectures/{lectureId:int}/assignments/{assignmentId:int}/submissions")]
 public sealed class InstructorAssignmentSubmissionController(IAssignmentSubmissionService submissionService) : CoreController
 {
     [HttpGet]

@@ -1,4 +1,4 @@
-﻿using eNote.API.Controllers.Base;
+using eNote.API.Controllers.Base;
 using eNote.Application.Common.Paging;
 using eNote.Application.Constants;
 using eNote.Application.Features.Rentals.InstrumentRentals;
@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace eNote.API.Controllers.InstrumentRentals;
 
 [Authorize(Roles = AppRoles.Student)]
-[Route("api/student/rentals")]
+[Route("api/v{version:apiVersion}/student/rentals")]
 public sealed class StudentRentalController(IRentalQueryService queryService, IRentalCommandService commandService) : CoreController
 {
     [HttpGet]

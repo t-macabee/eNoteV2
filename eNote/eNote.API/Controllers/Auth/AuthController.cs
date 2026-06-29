@@ -1,4 +1,4 @@
-﻿using eNote.API.Extensions;
+using eNote.API.Extensions;
 using eNote.API.Controllers.Base;
 using eNote.Application.Features.Identity.Auth;
 using eNote.Application.Features.Identity.Auth.Services;
@@ -9,7 +9,8 @@ using Microsoft.AspNetCore.RateLimiting;
 namespace eNote.API.Controllers.Auth;
 
 [ApiController]
-[Route("api/auth")]
+[ApiVersion("1.0")]
+[Route("api/v{version:apiVersion}/auth")]
 [EnableRateLimiting(RateLimitingExtensions.AuthPolicy)]
 public sealed class AuthController(IAuthService authService) : CoreController
 {

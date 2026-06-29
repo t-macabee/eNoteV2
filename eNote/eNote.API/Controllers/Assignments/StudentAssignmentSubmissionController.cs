@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace eNote.API.Controllers.Assignments;
 
 [Authorize(Roles = AppRoles.Student)]
-[Route("api/student/assignments/{id:int}/submit")]
+[Route("api/v{version:apiVersion}/student/assignments/{id:int}/submit")]
 public sealed class StudentAssignmentSubmissionController(IAssignmentSubmissionService submissionService) : CoreController
 {
     [HttpPost]

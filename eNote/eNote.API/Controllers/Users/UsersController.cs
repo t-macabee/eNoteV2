@@ -1,11 +1,11 @@
-﻿using eNote.API.Controllers.Base;
+using eNote.API.Controllers.Base;
 using eNote.Application.Features.Identity.Users;
 using eNote.Application.Features.Identity.Users.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace eNote.API.Controllers.Users;
 
-[Route("api/users")]
+[Route("api/v{version:apiVersion}/users")]
 public sealed class UsersController(
     IUserProfileService profileService,
     IUserSelfService selfService) : CoreController

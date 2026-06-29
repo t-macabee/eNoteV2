@@ -105,7 +105,7 @@ public sealed class AuthService(UserManager<AppUser> userManager, SignInManager<
 
         if (environment.IsDevelopment())
         {
-            logger.LogInformation("Password reset token for {Email}: {Token}", email, token);
+            logger.LogInformation("Password reset token generated for {Email}: {Token}...", email, token[..Math.Min(8, token.Length)]);
         }
 
         return new ForgotPasswordResponse { Message = Messages.PasswordResetEmailSent };

@@ -1,4 +1,4 @@
-﻿using eNote.API.Controllers.Base;
+using eNote.API.Controllers.Base;
 using eNote.Application.Common.Paging;
 using eNote.Application.Constants;
 using eNote.Application.Features.Communication.Notifications;
@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace eNote.API.Controllers.Notifications;
 
 [Authorize(Roles = AppRoles.Student)]
-[Route("api/student/notifications")]
+[Route("api/v{version:apiVersion}/student/notifications")]
 public sealed class StudentNotificationController(INotificationService notificationService) : CoreController
 {
     [HttpGet]
