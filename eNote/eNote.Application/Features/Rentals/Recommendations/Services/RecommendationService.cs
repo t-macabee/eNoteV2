@@ -76,8 +76,18 @@ public sealed class RecommendationService(IAppDbContext context, IMapper mapper,
 
         var preferredTypeIds = userTypeCounts.Keys.ToList();
 
+        HashSet<int> activelyRentedIds = [.. await context.Set<InstrumentRental>()
+            .AsNoTracking()
+            .Where(x => x.StudentProfileId == studentId &&
+                (x.RentalStatus == InstrumentRentalStatus.Approved || x.RentalStatus == InstrumentRentalStatus.Active))
+            .Select(x => x.InstrumentId)
+            .ToListAsync(cancellationToken)];
+
         var candidates = await LoadCandidateInstrumentsAsync(
             preferredTypeIds, collaborativeInstrumentIds, count, globalRentalCounts, cancellationToken);
+
+        if (activelyRentedIds.Count > 0)
+            candidates = candidates.Where(x => !activelyRentedIds.Contains(x.Id)).ToList();
 
         if (candidates.Count == 0)
         {

@@ -102,15 +102,43 @@ public sealed class RentalCommandServiceTests
         return instrument;
     }
 
-    private static RentalCommandService CreateService(ENoteContext context, Student student)
+    [Fact]
+    public async Task CreateRequestAsync_DispatchesCreatedNotification()
     {
-        var mapper = new Mapper();
-        return new RentalCommandService(
-            context,
-            mapper,
-            new FixedClock(Now),
-            new StubCurrentActor(student: student),
-            new RentalStateMachine(new FixedClock(Now)),
-            new NoOpNotificationDispatcher());
+        await using var context = CreateContext();
+        var student = await SeedStudentAsync(context, hasActiveMembership: true);
+        var instrument = await SeedInstrumentAsync(context);
+        var recorder = new RecordingNotificationDispatcher();
+        var service = CreateService(context, student, recorder);
+
+        await service.CreateRequestAsync(new RentalCreateRequest { InstrumentId = instrument.Id });
+
+        Assert.Single(recorder.CreatedCalls);
     }
+
+    [Fact]
+    public async Task ApproveAsync_DispatchesTransitionNotification()
+    {
+        await using var context = CreateContext();
+        var student = await SeedStudentAsync(context, hasActiveMembership: true);
+        var instrument = await SeedInstrumentAsync(context);
+        var rental = new InstrumentRental(instrument.Id, student.Id, instrument.MusicStoreId, Now, null);
+        context.Set<InstrumentRental>().Add(rental);
+        await context.SaveChangesAsync();
+        var recorder = new RecordingNotificationDispatcher();
+        var service = CreateStoreService(context, instrument.MusicStoreId, recorder);
+
+        await service.ApproveAsync(rental.Id, new RentalStatusResponse());
+
+        Assert.Single(recorder.TransitionCalls);
+        Assert.Equal(RentalTrigger.Approve, recorder.TransitionCalls[0].Trigger);
+    }
+
+    private static RentalCommandService CreateService(ENoteContext context, Student student, IRentalNotificationDispatcher? dispatcher = null) =>
+        new(context, new Mapper(), new FixedClock(Now), new StubCurrentActor(student: student),
+            new RentalStateMachine(new FixedClock(Now)), dispatcher ?? new NoOpNotificationDispatcher());
+
+    private static RentalCommandService CreateStoreService(ENoteContext context, int storeId, IRentalNotificationDispatcher? dispatcher = null) =>
+        new(context, new Mapper(), new FixedClock(Now), new StubCurrentActor(storeId: storeId),
+            new RentalStateMachine(new FixedClock(Now)), dispatcher ?? new NoOpNotificationDispatcher());
 }
