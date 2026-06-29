@@ -44,6 +44,7 @@ public static class ApplicationServiceExtensions
         services.AddScoped<IRentalNotificationDispatcher, RentalNotificationDispatcher>();
 
         services.AddScoped<IAppDbContext>(x => x.GetRequiredService<ENoteContext>());
+        services.AddScoped<IMigrationRunner, MigrationRunner>();
         services.AddHostedService<RentalNotificationOutboxPublisher>();
 
         return services;

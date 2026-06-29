@@ -1,10 +1,9 @@
 using eNote.Domain.Entities;
 using eNote.Application.Common.Exceptions;
-using eNote.Application.Common.Interfaces;
-using eNote.Application.Common.Time;
 using eNote.Application.Features.Academic.Courses.Services;
 using eNote.Domain.Enums;
 using eNote.Infrastructure.Data;
+using eNote.Tests.TestUtils;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
@@ -76,7 +75,7 @@ public sealed class CourseEnrollmentServiceTests
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
             .Options;
 
-        return new ENoteContext(options, new FixedClock(Now), new DummyActor());
+        return new ENoteContext(options, new FixedClock(Now), new StubCurrentActor(storeId: 1));
     }
 
     private static async Task<(Student Student, Course Course)> SeedStudentAndCourseAsync(ENoteContext context, bool hasActiveMembership)
@@ -101,35 +100,6 @@ public sealed class CourseEnrollmentServiceTests
         new(
             context,
             new FixedClock(Now),
-            new StubCurrentActor(student),
+            new StubCurrentActor(student: student),
             NullLogger<CourseEnrollmentService>.Instance);
-
-    private sealed class FixedClock(DateTime utcNow) : IClock
-    {
-        public DateTime UtcNow => utcNow;
-    }
-
-    private sealed class StubCurrentActor(Student student) : ICurrentActor
-    {
-        public int UserId => student.AppUserId;
-        public bool IsAuthenticated => true;
-        public Task<Student> GetCurrentStudentAsync() => Task.FromResult(student);
-        public Task<int> GetCurrentStudentIdAsync() => Task.FromResult(student.Id);
-        public Task<Instructor> GetCurrentInstructorAsync() => throw new NotSupportedException();
-        public Task<MusicStoreEmployee> GetCurrentEmployeeAsync() => throw new NotSupportedException();
-        public Task<int> GetCurrentStoreIdAsync(CancellationToken cancellationToken = default) => throw new NotSupportedException();
-        public int GetCurrentStoreId() => 1;
-    }
-
-    private sealed class DummyActor : ICurrentActor
-    {
-        public int UserId => 1;
-        public bool IsAuthenticated => true;
-        public Task<Student> GetCurrentStudentAsync() => throw new NotSupportedException();
-        public Task<int> GetCurrentStudentIdAsync() => throw new NotSupportedException();
-        public Task<Instructor> GetCurrentInstructorAsync() => throw new NotSupportedException();
-        public Task<MusicStoreEmployee> GetCurrentEmployeeAsync() => throw new NotSupportedException();
-        public Task<int> GetCurrentStoreIdAsync(CancellationToken cancellationToken = default) => Task.FromResult(1);
-        public int GetCurrentStoreId() => 1;
-    }
 }

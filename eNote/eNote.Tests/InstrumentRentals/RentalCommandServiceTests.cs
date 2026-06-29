@@ -1,6 +1,5 @@
 using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Interfaces;
-using eNote.Application.Common.Time;
 using eNote.Application.Features.Rentals.InstrumentRentals;
 using eNote.Application.Features.Rentals.InstrumentRentals.Services;
 using eNote.Application.Features.Rentals.InstrumentRentals.StateMachine;
@@ -8,6 +7,7 @@ using eNote.Domain.Entities;
 using eNote.Domain.Entities.Rentals;
 using eNote.Domain.Enums;
 using eNote.Infrastructure.Data;
+using eNote.Tests.TestUtils;
 using MapsterMapper;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
@@ -104,31 +104,8 @@ public sealed class RentalCommandServiceTests
             context,
             mapper,
             new FixedClock(Now),
-            new StubCurrentActor(student),
+            new StubCurrentActor(student: student),
             new RentalStateMachine(new SystemClock()),
             new NoOpNotificationDispatcher());
-    }
-
-    private sealed class FixedClock(DateTime utcNow) : IClock
-    {
-        public DateTime UtcNow => utcNow;
-    }
-
-    private sealed class StubCurrentActor(Student student) : ICurrentActor
-    {
-        public int UserId => student.AppUserId;
-        public bool IsAuthenticated => true;
-        public Task<Student> GetCurrentStudentAsync() => Task.FromResult(student);
-        public Task<int> GetCurrentStudentIdAsync() => Task.FromResult(student.Id);
-        public Task<Instructor> GetCurrentInstructorAsync() => throw new NotSupportedException();
-        public Task<MusicStoreEmployee> GetCurrentEmployeeAsync() => throw new NotSupportedException();
-        public Task<int> GetCurrentStoreIdAsync(CancellationToken cancellationToken = default) => throw new NotSupportedException();
-        public int GetCurrentStoreId() => 1;
-    }
-
-    private sealed class NoOpNotificationDispatcher : IRentalNotificationDispatcher
-    {
-        public Task DispatchCreatedAsync(InstrumentRentalDto rental, int studentUserId, CancellationToken cancellationToken = default) => Task.CompletedTask;
-        public Task DispatchTransitionAsync(InstrumentRentalDto rental, RentalTrigger trigger, int actorUserId, CancellationToken cancellationToken = default) => Task.CompletedTask;
     }
 }

@@ -58,12 +58,12 @@ public sealed class CourseEnrollmentService(
 
     public async Task UnenrollAsync(int courseId, CancellationToken cancellationToken = default)
     {
-        var studentId = await actor.GetCurrentStudentIdAsync();
+        var student = await actor.GetCurrentStudentAsync();
 
         var enrollment = await context.Set<Enrollment>()
             .FirstOrDefaultAsync(e =>
                 e.CourseId == courseId &&
-                e.StudentId == studentId &&
+                e.StudentId == student.Id &&
                 e.EnrollmentStatus == EnrollmentStatus.Active,
                 cancellationToken)
             ?? throw new BusinessException(Messages.StudentNotEnrolled);

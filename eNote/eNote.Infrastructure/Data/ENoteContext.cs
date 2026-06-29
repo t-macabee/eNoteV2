@@ -22,6 +22,9 @@ public class ENoteContext(DbContextOptions<ENoteContext> options, IClock clock, 
         // Maps DateTime -> 'timestamp without time zone' and accepts any DateTimeKind, so client-supplied
         // dates (Kind=Unspecified from JSON/query strings) don't trip Npgsql's Kind=Utc enforcement.
         AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+        // TODO: Remove the legacy timestamp switch once all DateTime inputs are enforced as DateTimeKind.Utc
+        // at the API boundary (via UtcDateTimeConverter or model binding). This switch masks bugs where
+        // DateTimeKind.Unspecified arrives from JSON/query strings. Npgsql 10+ may remove the switch entirely.
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
