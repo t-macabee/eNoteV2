@@ -77,7 +77,7 @@ public sealed class RecommendationService(IAppDbContext context, IMapper mapper,
         var preferredTypeIds = userTypeCounts.Keys.ToList();
 
         var candidates = await LoadCandidateInstrumentsAsync(
-            preferredTypeIds, collaborativeInstrumentIds, count, cancellationToken);
+            preferredTypeIds, collaborativeInstrumentIds, count, globalRentalCounts, cancellationToken);
 
         if (candidates.Count == 0)
         {
@@ -142,18 +142,15 @@ public sealed class RecommendationService(IAppDbContext context, IMapper mapper,
         await context.SaveChangesAsync(cancellationToken);
     }
 
-    private async Task<List<Instrument>> LoadCandidateInstrumentsAsync(IReadOnlyList<int> preferredTypeIds, HashSet<int> collaborativeInstrumentIds, int count, CancellationToken cancellationToken)
+    private async Task<List<Instrument>> LoadCandidateInstrumentsAsync(IReadOnlyList<int> preferredTypeIds, HashSet<int> collaborativeInstrumentIds, int count, Dictionary<int, int> globalRentalCounts, CancellationToken cancellationToken)
     {
         var poolSize = Math.Max(count * 12, CandidatePoolSize);
 
-        var popularIds = await context.Set<InstrumentRental>()
-            .AsNoTracking()
-            .Where(x => (x.RentalStatus == InstrumentRentalStatus.Approved || x.RentalStatus == InstrumentRentalStatus.Active || x.RentalStatus == InstrumentRentalStatus.Completed || x.RentalStatus == InstrumentRentalStatus.ReturnedEarly))
-            .GroupBy(x => x.InstrumentId)
-            .OrderByDescending(g => g.Count())
-            .Select(g => g.Key)
+        var popularIds = globalRentalCounts
+            .OrderByDescending(x => x.Value)
+            .Select(x => x.Key)
             .Take(poolSize / 2)
-            .ToListAsync(cancellationToken);
+            .ToList();
 
         List<int> preferredIds = preferredTypeIds.Count == 0 ? [] : await context.Set<Instrument>()
                 .AsNoTracking()
