@@ -46,6 +46,12 @@ public class ENoteContext(DbContextOptions<ENoteContext> options, IClock clock, 
             }
         }
 
+        // Announcement: already has MusicStoreId column (nullable for course-scoped).
+        // Store employees see their store's announcements + course-scoped ones; others see all.
+        var storeId = GetStoreId();
+        modelBuilder.Entity<Announcement>().HasQueryFilter(a =>
+            a.IsActive && (storeId == null || a.MusicStoreId == null || a.MusicStoreId == storeId));
+
         ModelBuilderSeed.Seed(modelBuilder);
     }
 

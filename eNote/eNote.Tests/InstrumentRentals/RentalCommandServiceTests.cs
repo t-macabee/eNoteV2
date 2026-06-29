@@ -105,7 +105,7 @@ public sealed class RentalCommandServiceTests
             mapper,
             new FixedClock(Now),
             new StubCurrentActor(student: student),
-            new RentalStateMachine(new SystemClock()),
+            new RentalStateMachine(new FixedClock(Now)),
             new NoOpNotificationDispatcher());
     }
 }

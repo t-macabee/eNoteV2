@@ -3,6 +3,7 @@ using eNote.Application.Common.Time;
 using eNote.Application.Features.Rentals.InstrumentRentals.StateMachine;
 using eNote.Domain.Enums;
 using eNote.Domain.Shared;
+using eNote.Tests.TestUtils;
 using Xunit;
 using eNote.Domain.Entities.Rentals;
 
@@ -11,7 +12,7 @@ namespace eNote.Tests.InstrumentRentals;
 public sealed class RentalStateMachineTests
 {
     private static readonly DateTime Now = new(2026, 6, 15, 12, 0, 0, DateTimeKind.Utc);
-    private readonly RentalStateMachine _stateMachine = new(new SystemClock());
+    private readonly RentalStateMachine _stateMachine = new(new FixedClock(Now));
 
     [Fact]
     public void Reject_FromPending_SetsRejectedStatus()

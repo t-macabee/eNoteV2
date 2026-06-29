@@ -7,10 +7,11 @@ public sealed class StubCurrentActor(
     Student? student = null,
     Instructor? instructor = null,
     MusicStoreEmployee? employee = null,
-    int? storeId = null) : ICurrentActor
+    int? storeId = null,
+    bool isAuthenticated = true) : ICurrentActor
 {
     public int UserId => student?.AppUserId ?? 1;
-    public bool IsAuthenticated => true;
+    public bool IsAuthenticated => isAuthenticated;
 
     public Task<Student> GetCurrentStudentAsync() =>
         Task.FromResult(student ?? throw new NotSupportedException());

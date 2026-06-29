@@ -56,10 +56,10 @@ public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, 
             };
 
             context.Set<InstrumentRental>().Add(rental);
-            await context.SaveChangesAsync(cancellationToken);
+            await SaveWithLockConflictMessageAsync(Messages.InstrumentReservedOrRented, cancellationToken);
 
             var dto = await LoadDtoAsync(rental.Id, cancellationToken);
-            await notificationDispatcher.DispatchCreatedAsync(dto, actor.UserId);
+            await notificationDispatcher.DispatchCreatedAsync(dto, actor.UserId, cancellationToken);
 
             return dto;
         }, cancellationToken);
@@ -84,7 +84,7 @@ public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, 
             var rental = await LoadForStudentAsync(rentalId, actor.UserId, cancellationToken);
             var dto = await ExecuteTransitionAsync(rental, RentalTrigger.Cancel, RentalActor.Student, actor.UserId, response, cancellationToken);
 
-            await notificationDispatcher.DispatchTransitionAsync(dto, RentalTrigger.Cancel, actor.UserId);
+            await notificationDispatcher.DispatchTransitionAsync(dto, RentalTrigger.Cancel, actor.UserId, cancellationToken);
 
             return dto;
         }, cancellationToken);
@@ -98,7 +98,7 @@ public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, 
         var rental = await LoadForStoreAsync(rentalId, storeId, cancellationToken);
         var dto = await ExecuteTransitionAsync(rental, trigger, RentalActor.StoreEmployee, actor.UserId, response, cancellationToken);
 
-        await notificationDispatcher.DispatchTransitionAsync(dto, trigger, actor.UserId);
+        await notificationDispatcher.DispatchTransitionAsync(dto, trigger, actor.UserId, cancellationToken);
 
         return dto;
     }, cancellationToken);
