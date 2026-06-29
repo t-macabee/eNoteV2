@@ -2,7 +2,7 @@ using eNote.Application.Features.Rentals.InstrumentRentals;
 
 namespace eNote.Application.Features.Rentals.InstrumentRentals.StateMachine;
 
-public sealed class RentalTransitionContext
+public sealed record RentalTransitionContext
 {
     public required int UserId { get; init; }
     public required RentalActor Actor { get; init; }

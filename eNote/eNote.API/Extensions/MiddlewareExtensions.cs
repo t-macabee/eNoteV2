@@ -7,6 +7,8 @@ namespace eNote.API.Extensions;
 
 public static class MiddlewareExtensions
 {
+    private static readonly JsonSerializerOptions ErrorJsonOptions = new(JsonSerializerDefaults.Web);
+
     public static WebApplication UseErrorHandling(this WebApplication app)
     {
         _ = app.UseExceptionHandler(errorApp =>
@@ -37,7 +39,7 @@ public static class MiddlewareExtensions
                     Message = message
                 };
 
-                await context.Response.WriteAsync(JsonSerializer.Serialize(response));
+                await context.Response.WriteAsync(JsonSerializer.Serialize(response, ErrorJsonOptions));
             });
         });
 
