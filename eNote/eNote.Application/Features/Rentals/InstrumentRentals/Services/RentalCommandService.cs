@@ -137,7 +137,7 @@ public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, 
             await context.SaveChangesAsync(cancellationToken);
         }
 
-        return await LoadDtoAsync(rental.Id, cancellationToken);
+        return await LoadDtoAsync(rental, cancellationToken);
     }
 
     private async Task<InstrumentRental> LoadForStoreAsync(int rentalId, int storeId, CancellationToken cancellationToken)
@@ -166,6 +166,13 @@ public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, 
         }
 
         return rental;
+    }
+
+    private Task<InstrumentRentalDto> LoadDtoAsync(InstrumentRental entity, CancellationToken cancellationToken)
+    {
+        var result = mapper.Map<InstrumentRentalDto>(entity);
+        RentalBilling.ApplyBilling(entity, result, clock.UtcNow);
+        return Task.FromResult(result);
     }
 
     private async Task<InstrumentRentalDto> LoadDtoAsync(int rentalId, CancellationToken cancellationToken)
