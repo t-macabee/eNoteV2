@@ -61,7 +61,15 @@ public sealed class RentalNotificationOutboxPublisher(IServiceProvider services,
             }
         }
 
-        await db.SaveChangesAsync(ct);
-        await tx.CommitAsync(ct);
+        try
+        {
+            await db.SaveChangesAsync(ct);
+            await tx.CommitAsync(ct);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to persist outbox batch");
+            throw;
+        }
     }
 }

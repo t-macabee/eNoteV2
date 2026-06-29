@@ -9,7 +9,8 @@ public sealed class InstrumentRentalConfig : IEntityTypeConfiguration<Instrument
 {
     public void Configure(EntityTypeBuilder<InstrumentRental> builder)
     {
-        // intentionally excludes rentals for inactive instruments globally; use IgnoreQueryFilters() for historical/audit queries
+        // Intentionally excludes rentals for inactive instruments globally.
+        // For audit queries use RentalQueryableExtensions.ForStoreAudit(storeId) — never bare IgnoreQueryFilters(), which also removes the tenant filter.
         builder.HasQueryFilter(r => r.Instrument.IsActive);
 
         builder.HasOne(x => x.StudentProfile)
