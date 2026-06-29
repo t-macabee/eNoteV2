@@ -1,0 +1,64 @@
+## Context
+You are reviewing the same music school management system (codebase: `eNote`). This follow-up focuses on structural organization, naming consistency, and decoupling opportunities. The codebase is clean and modern but has some architectural friction points that could be improved for maintainability and clarity.
+
+## Current State Observations
+
+### Architecture & Folder Structure
+1. **Flat entity namespaces** – Entities are flattened into `eNote.Domain.Entities` and `eNote.Domain.Entities.Rentals`. Recently changed (git log shows). However, `eNote.Domain.Entities.Rentals.Instrument` has a `using eNote.Domain.Entities;` to reference `BaseEntity` – the namespace no longer mirrors the folder hierarchy, causing confusion.
+
+2. **Feature folder inconsistency** – Some feature folders have deep nesting (e.g., `eNote.Application/Features/Academic/Courses/Services/`), while others have sibling sub-domains at the same level (`eNote.Application/Features/Rentals/Recommendations/Services/` and `eNote.Application/Features/Rentals/InstrumentRentals/Services/`). Bounded contexts are not obvious at a glance.
+
+3. **Extensions in wrong layer** – `StudentEnrollmentExtensions` resides in `eNote.Application/Features/Academic/Courses/` but extends `IAppDbContext`. This is an infrastructure concern living in an application feature folder.
+
+4. **Mapping configs scattered** – `InstrumentRentalMappingConfig`, `CourseMappingConfig`, etc. are placed alongside DTOs in feature folders. These are infrastructure concerns (AutoMapper profiles) that belong in the Infrastructure layer, not Application.
+
+### Code Style & Syntax
+5. **Primary constructors used heavily** – Services like `RentalCommandService` have 6+ dependencies, making the constructor parameter list long and hard to read. Traditional constructor blocks would improve readability for such cases.
+
+6. **Expression-bodied members in validators** – Some validators chain 4-5 rules on one line (e.g., `RuleFor(x => x.City).NotEmpty().MaximumLength(100)`). Breaking into separate statements with comments would aid readability.
+
+7. **Inconsistent required vs [Required]** – `RentalTransitionContext` uses `required` keyword (modern), but `RentalCreateRequest` uses `[Required]` attributes. Choose one style consistently.
+
+8. **File-scoped namespaces** – Used everywhere, which is good. However, some files have 3-4 repetitive using statements that could be moved to global usings (e.g., for Xunit, FluentValidation, etc.).
+
+### Decoupling & Domain Modeling
+9. **IAppDbContext is too coarse** – It exposes `DbSet<T>` for all entities, allowing any service to access any table. Narrower interfaces (e.g., `IRentalRepository`) or domain-scoped interfaces would enforce boundaries. For project size, current approach is pragmatic but worth noting.
+
+10. **Notification dispatch is fire‑and‑forget** – `IRentalNotificationDispatcher.DispatchCreatedAsync` is called from `RentalCommandService`, but the implementation (`RentalNotificationOutboxPublisher`) writes to the outbox without awaiting the actual dispatch. This is correct for reliability, but there is **no test** verifying that the outbox entry is created.
+
+11. **Static Messages class** – All error messages live in one static class. This centralizes messages but reduces discoverability (hard to know which messages belong to which domain). Splitting into per-domain message classes would improve maintainability.
+
+12. **Hand‑rolled PagedResult<T>** – Custom paging implementation means each service reimplements the same `ToPagedResultAsync` mapping logic. A generic factory or MediatR pipeline behavior would DRY this up.
+
+### Aggregate Boundaries (Biggest Issue)
+13. **No clear aggregate boundaries** – `InstrumentRental` references `Instrument`, which references `MusicStore`, which references `MusicStoreEmployee`. The object graph is deep; `WithRentalDetails()` joins 4 tables. In DDD terms, `Rental` should probably be its own aggregate with only IDs to other entities (not navigation properties). For a seminar project, the current approach is acceptable, but it suggests a lack of bounded context design.
+
+## Things to Preserve (Do Not Change)
+- Clean and modern C# usage (primary constructors, file‑scoped namespaces, required keyword)
+- Overall code quality and readability
+
+## Action Items (Priority Order)
+1. [High] Fix namespace/folder hierarchy mismatch – align namespaces with folder structure.
+2. [High] Move mapping configurations to Infrastructure layer and extension methods to appropriate locations.
+3. [Medium] Introduce narrower repository interfaces (or at least domain‑scoped `IAppDbContext` subsets).
+4. [Medium] Split static Messages class into per‑domain message classes.
+5. [Medium] Add test for outbox entry creation in notification dispatch.
+6. [Medium] Consolidate `required` vs `[Required]` to a single approach (prefer `required`).
+7. [Low] Refactor large primary constructors to traditional constructors with explicit parameter lists.
+8. [Low] Break long validator chains into multiple statements with comments.
+9. [Low] Add global usings for common namespaces.
+10. [Low] Create a generic `PagedResult<T>` factory to centralize paging logic.
+11. [Optional] Reorganize feature folders to clearly separate bounded contexts (e.g., Academic vs Rentals).
+
+## Questions to Answer
+- Which bounded contexts exist beyond Academic and Rentals? (to guide folder reorganization)
+- Are there plans to introduce MediatR? (would help with paging and cross-cutting concerns)
+- What is the team's preference for primary constructors vs traditional constructors when dependencies exceed a certain threshold (e.g., 5+)?
+- Is there a strategy for aggregate design going forward? (should we refactor navigation properties to IDs?)
+
+## Required Output Format
+For each refactoring task, provide:
+1. Implementation approach with code examples
+2. Migration path (if breaking changes)
+3. Unit/integration test coverage plan
+4. Estimated effort (story points)

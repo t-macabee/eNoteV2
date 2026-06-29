@@ -1,4 +1,5 @@
 using eNote.Domain.Entities;
+using eNote.Domain.Shared;
 using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Localization;
@@ -29,7 +30,7 @@ public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, 
 
             var studentProfileId = student.Id;
 
-            _ = await context.Set<Instrument>()
+            var instrument = await context.Set<Instrument>()
                 .AsNoTracking()
                 .FirstOrDefaultAsync(x => x.Id == request.InstrumentId && x.IsActive, cancellationToken) ?? throw new NotFoundException(Messages.InstrumentNotFound);
 
@@ -49,7 +50,7 @@ public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, 
                 throw new BusinessException(Messages.RentalPendingRequired);
             }
 
-            var rental = new InstrumentRental(request.InstrumentId, studentProfileId, clock.UtcNow, request.Note)
+            var rental = new InstrumentRental(request.InstrumentId, studentProfileId, instrument.MusicStoreId, clock.UtcNow, request.Note)
             {
                 CreatedById = actor.UserId
             };
@@ -122,7 +123,12 @@ public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, 
 
         var result = stateMachine.Fire(rental, trigger, transitionContext);
 
-        if (result.UsesInstrumentLock)
+        if (!result.IsSuccess)
+        {
+            throw new BusinessException(result.Error);
+        }
+
+        if (result.Value.UsesInstrumentLock)
         {
             await SaveWithLockConflictMessageAsync(Messages.InstrumentReservedOrRented, cancellationToken);
         }

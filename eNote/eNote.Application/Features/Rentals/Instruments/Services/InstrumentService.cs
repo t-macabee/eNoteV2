@@ -19,12 +19,10 @@ public sealed class InstrumentService(
 {
     public async Task<InstrumentDto> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
-        var employee = await EnsureStoreAccessAsync();
-
         var entity = await context.Set<Instrument>()
             .AsNoTracking()
             .WithInstrumentDetails()
-            .FirstOrDefaultAsync(x => x.Id == id && x.MusicStoreId == employee.MusicStoreId, cancellationToken)
+            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken)
             ?? throw new NotFoundException(Messages.NotFound);
 
         return mapper.Map<InstrumentDto>(entity);
@@ -43,11 +41,8 @@ public sealed class InstrumentService(
 
     public async Task<PagedResult<InstrumentDto>> GetPagedAsync(InstrumentSearchObject search, CancellationToken cancellationToken = default)
     {
-        var employee = await EnsureStoreAccessAsync();
-
         var query = context.Set<Instrument>()
             .AsNoTracking()
-            .Where(x => x.MusicStoreId == employee.MusicStoreId)
             .WithInstrumentDetails()
             .ApplySearch(search);
 
@@ -88,7 +83,7 @@ public sealed class InstrumentService(
         var employee = await EnsureStoreAccessAsync();
 
         var entity = await context.Set<Instrument>()
-            .FirstOrDefaultAsync(x => x.Id == id && x.MusicStoreId == employee.MusicStoreId, cancellationToken)
+            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken)
             ?? throw new NotFoundException(Messages.NotFound);
 
         if (request.InstrumentTypeId is int typeId)
@@ -113,7 +108,7 @@ public sealed class InstrumentService(
         var employee = await EnsureStoreAccessAsync();
 
         var entity = await context.Set<Instrument>()
-            .FirstOrDefaultAsync(x => x.Id == id && x.MusicStoreId == employee.MusicStoreId, ct)
+            .FirstOrDefaultAsync(x => x.Id == id, ct)
             ?? throw new NotFoundException(Messages.InstrumentNotFound);
 
         var path = await fileStorage.SaveAsync(stream, fileName, contentType, "instruments", ct);
@@ -129,7 +124,7 @@ public sealed class InstrumentService(
         var employee = await EnsureStoreAccessAsync();
 
         var instrument = await context.Set<Instrument>()
-            .FirstOrDefaultAsync(x => x.Id == id && x.MusicStoreId == employee.MusicStoreId, cancellationToken)
+            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken)
             ?? throw new NotFoundException(Messages.NotFound);
 
         if (await context.Set<InstrumentRental>().WhereBlockingStatus().AnyAsync(r => r.InstrumentId == id, cancellationToken))

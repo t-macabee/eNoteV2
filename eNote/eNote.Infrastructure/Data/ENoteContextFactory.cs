@@ -1,5 +1,7 @@
 ﻿using DotNetEnv;
+using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Time;
+using eNote.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration;
@@ -22,7 +24,8 @@ public sealed class ENoteContextFactory : IDesignTimeDbContextFactory<ENoteConte
         var optionsBuilder = new DbContextOptionsBuilder<ENoteContext>();
         optionsBuilder.UseNpgsql(connectionString, sql => sql.MigrationsAssembly("eNote.Infrastructure"));
 
-        return new ENoteContext(optionsBuilder.Options, new SystemClock());
+        var actor = new DesignTimeActor();
+        return new ENoteContext(optionsBuilder.Options, new SystemClock(), actor);
     }
 
     private static void LoadDotEnv()
@@ -41,5 +44,17 @@ public sealed class ENoteContextFactory : IDesignTimeDbContextFactory<ENoteConte
 
             directory = directory.Parent;
         }
+    }
+
+    private sealed class DesignTimeActor : ICurrentActor
+    {
+        public int UserId => 1;
+        public bool IsAuthenticated => true;
+        public Task<Student> GetCurrentStudentAsync() => throw new NotSupportedException();
+        public Task<int> GetCurrentStudentIdAsync() => throw new NotSupportedException();
+        public Task<Instructor> GetCurrentInstructorAsync() => throw new NotSupportedException();
+        public Task<MusicStoreEmployee> GetCurrentEmployeeAsync() => throw new NotSupportedException();
+        public Task<int> GetCurrentStoreIdAsync(CancellationToken cancellationToken = default) => Task.FromResult(1);
+        public int GetCurrentStoreId() => 1;
     }
 }

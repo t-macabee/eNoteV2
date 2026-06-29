@@ -76,7 +76,7 @@ public sealed class CourseEnrollmentServiceTests
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
             .Options;
 
-        return new ENoteContext(options, new FixedClock(Now));
+        return new ENoteContext(options, new FixedClock(Now), new DummyActor());
     }
 
     private static async Task<(Student Student, Course Course)> SeedStudentAndCourseAsync(ENoteContext context, bool hasActiveMembership)
@@ -118,5 +118,18 @@ public sealed class CourseEnrollmentServiceTests
         public Task<Instructor> GetCurrentInstructorAsync() => throw new NotSupportedException();
         public Task<MusicStoreEmployee> GetCurrentEmployeeAsync() => throw new NotSupportedException();
         public Task<int> GetCurrentStoreIdAsync(CancellationToken cancellationToken = default) => throw new NotSupportedException();
+        public int GetCurrentStoreId() => 1;
+    }
+
+    private sealed class DummyActor : ICurrentActor
+    {
+        public int UserId => 1;
+        public bool IsAuthenticated => true;
+        public Task<Student> GetCurrentStudentAsync() => throw new NotSupportedException();
+        public Task<int> GetCurrentStudentIdAsync() => throw new NotSupportedException();
+        public Task<Instructor> GetCurrentInstructorAsync() => throw new NotSupportedException();
+        public Task<MusicStoreEmployee> GetCurrentEmployeeAsync() => throw new NotSupportedException();
+        public Task<int> GetCurrentStoreIdAsync(CancellationToken cancellationToken = default) => Task.FromResult(1);
+        public int GetCurrentStoreId() => 1;
     }
 }

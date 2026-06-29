@@ -36,7 +36,7 @@ public sealed class RentalCommandServiceTests
         await using var context = CreateContext();
         var student = await SeedStudentAsync(context, hasActiveMembership: true);
         var instrument = await SeedInstrumentAsync(context);
-        var existingRental = new InstrumentRental(instrument.Id, 999, Now, null);
+        var existingRental = new InstrumentRental(instrument.Id, 999, instrument.MusicStoreId, Now, null);
         existingRental.Approve(50m, null, Now, 1);
         context.Set<InstrumentRental>().Add(existingRental);
         await context.SaveChangesAsync();
@@ -70,7 +70,7 @@ public sealed class RentalCommandServiceTests
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
             .ConfigureWarnings(warnings => warnings.Ignore(InMemoryEventId.TransactionIgnoredWarning))
             .Options;
-        return new ENoteContext(options, new FixedClock(Now));
+        return new ENoteContext(options, new FixedClock(Now), new StubCurrentActor(new Student(0, Now)));
     }
 
     private static async Task<Student> SeedStudentAsync(ENoteContext context, bool hasActiveMembership)
@@ -123,6 +123,7 @@ public sealed class RentalCommandServiceTests
         public Task<Instructor> GetCurrentInstructorAsync() => throw new NotSupportedException();
         public Task<MusicStoreEmployee> GetCurrentEmployeeAsync() => throw new NotSupportedException();
         public Task<int> GetCurrentStoreIdAsync(CancellationToken cancellationToken = default) => throw new NotSupportedException();
+        public int GetCurrentStoreId() => 1;
     }
 
     private sealed class NoOpNotificationDispatcher : IRentalNotificationDispatcher

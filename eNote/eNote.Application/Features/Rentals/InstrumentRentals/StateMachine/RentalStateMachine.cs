@@ -3,6 +3,7 @@ using eNote.Application.Common.Localization;
 using eNote.Application.Common.Time;
 using eNote.Domain.Enums;
 using eNote.Domain.Entities.Rentals;
+using eNote.Domain.Shared;
 
 namespace eNote.Application.Features.Rentals.InstrumentRentals.StateMachine;
 
@@ -10,14 +11,25 @@ public sealed class RentalStateMachine(IClock clock) : IRentalStateMachine
 {
     private static readonly IReadOnlyList<TransitionDefinition> Transitions = CreateTransitions();
 
-    public RentalTransitionResult Fire(InstrumentRental rental, RentalTrigger trigger, RentalTransitionContext context)
+    public Result<RentalTransitionResult> Fire(InstrumentRental rental, RentalTrigger trigger, RentalTransitionContext context)
     {
-        var transition = FindTransition(rental.RentalStatus, trigger, context.Actor) ?? throw new BusinessException(GetInvalidTransitionMessage(trigger, context.Actor));
+        var transition = FindTransition(rental.RentalStatus, trigger, context.Actor);
+        if (transition is null)
+        {
+            return Result<RentalTransitionResult>.Failure(GetInvalidTransitionMessage(trigger, context.Actor));
+        }
 
-        transition.Guard?.Invoke(rental, context);
+        try
+        {
+            transition.Guard?.Invoke(rental, context);
+        }
+        catch (BusinessException ex)
+        {
+            return Result<RentalTransitionResult>.Failure(ex.Message);
+        }
+
         transition.Apply(rental, context, clock);
-
-        return new RentalTransitionResult(transition.UsesInstrumentLock);
+        return Result<RentalTransitionResult>.Success(new RentalTransitionResult(transition.UsesInstrumentLock));
     }
 
     private static TransitionDefinition? FindTransition(InstrumentRentalStatus currentStatus, RentalTrigger trigger, RentalActor actor) => Transitions.FirstOrDefault(t => t.From == currentStatus && t.Trigger == trigger && t.Actors.Contains(actor));

@@ -1,0 +1,85 @@
+# Owl Alpha Code Review & Refactoring Prompt (Round 3)
+
+## Context
+You are reviewing the music school management system (codebase: `eNote`). This third review focuses on runtime robustness, null safety, query performance, configuration validation, logging practices, and API design. The codebase is modern and clean, but several practical issues could impact production reliability and maintainability.
+
+## Current State Observations
+
+### Asynchronous Code & Cancellation
+1. **CancellationToken not always passed through** – Some async calls in services (e.g., `RecommendationService`) do not pass `cancellationToken` to EF queries like `ToListAsync` and `ToDictionaryAsync`. Under load, uncancellable queries can cause resource leaks and unresponsive requests.
+
+2. **Unnecessary async overhead** – `UserSelfService.UpdateProfileAsync` is marked `async` but just awaits a single call. The async state machine overhead is unnecessary when the inner method already returns a `Task`. Could be simplified (remove `async/await` and return the inner task directly).
+
+### Null Handling & Contract Integrity
+3. **Null‑forgiving operator overuse** – `IUserProfileLookup` returns `Student` (non‑nullable), but the implementation can return `null` via `FirstOrDefaultAsync`. The interface contract lies. Either change return type to `Student?` or handle missing students with a result pattern.
+
+4. **DTO properties as non‑nullable strings with no guarantees** – `InstrumentRentalDto.InstrumentModel` is declared as `string` (non‑nullable), but EF can produce null navigation properties. DTOs should reflect the actual possible nullability or mapping should ensure a default.
+
+### LINQ & Query Performance
+5. **N+1 risk in RecommendationService** – Multiple separate queries to `InstrumentRental`, `InstrumentView`, `Instrument` in a single method. Could be consolidated into a single query or batched to reduce database round trips.
+
+6. **Client‑side evaluation risk** – `BuildReasons` in `RecommendationService` is called inside a `ToPagedResultAsync` projection. It accesses `instrument.InstrumentType.Type`, which may trigger lazy loading or client‑side evaluation. Should `.Include()` the navigation to force server‑side evaluation.
+
+### Security
+7. **No rate limiting on auth endpoints** – You have `EnableRateLimiting` attribute on auth controllers but no actual rate limit configuration in `Program.cs`. The policy is not bound to a real limiter.
+
+8. **CORS origins from env** – Good practice, but no fallback for development. If `Cors__AllowedOrigins__0` is missing, the app may fail to start or block local requests.
+
+### Configuration Validation
+9. **No startup validation** – Configuration is read but not validated at startup. A missing `Jwt__Key` will only fail when a token is requested, not when the app starts. Use `IValidateOptions<T>` or manual validation in `Program.cs` to fail fast.
+
+10. **appsettings.json still exists** – The team's intention was to use only `.env` for configuration. If connection strings or other secrets remain in `appsettings.json`, they could be committed accidentally. Ensure all sensitive values are moved to environment variables.
+
+### Logging
+11. **No structured logging** – `ILogger<T>` is used with string interpolation (`logger.LogInformation("Course {CourseId} created", entity.Id)` is fine, but no Serilog or enrichers for production‑grade structured logging (e.g., with correlation IDs, request context).
+
+12. **Sensitive data in logs** – `ForgotPasswordAsync` logs the reset token in Development. There's no guard to prevent logging sensitive data if the environment check is misconfigured. Consider using `[LogProperties]` or conditional logging.
+
+### Entity Design & Audit
+13. **Inconsistent audit mechanisms** – `AuditableEntity` sets `CreatedAt`/`UpdatedAt` in `SaveChangesAsync`. But `InstrumentRental` updates like `Approve()` set `ApprovedById` directly. Two separate audit patterns – one automatic, one manual. Should unify.
+
+14. **Soft‑delete inconsistency** – Some entities use `IsActive = false` (Course, Lecture, Instrument), others (InstrumentRental) use status changes. The pattern isn't uniformly applied. Decide on a single soft‑delete strategy.
+
+### API Design
+15. **No versioning** – Routes are `api/...` without version prefix. This works now but will make future breaking changes difficult.
+
+16. **Inconsistent route naming** – `api/shop/rentals` (for store employees) vs `api/student/rentals` vs `api/instructor/courses`. Using role prefixes rather than resource names makes the API less intuitive and couples routing to authentication roles.
+
+### Biggest Practical Issue
+17. **No global exception handling for unexpected errors** – `UseErrorHandling` middleware exists, but if a service throws something unexpected (not `BusinessException` or `NotFoundException`), the API returns a 500 with potentially sensitive stack traces or details. The middleware should catch everything and return a sanitized response.
+
+## Things to Preserve (Do Not Change)
+- Modern C# features (primary constructors, file‑scoped namespaces)
+- Clean architecture layering (where applied correctly)
+- Overall code readability
+
+## Action Items (Priority Order)
+1. [Critical] Fix global exception handling to sanitize unexpected errors.
+2. [Critical] Validate configuration at startup (JWT, CORS, connection strings).
+3. [High] Audit all async calls to pass `CancellationToken` down to EF queries.
+4. [High] Resolve null contract violations (make interfaces return nullable types where appropriate).
+5. [High] Eliminate N+1 queries and client‑side evaluation risks.
+6. [High] Implement actual rate limiting for auth endpoints.
+7. [Medium] Add structured logging (Serilog) with enrichers for production.
+8. [Medium] Guard against sensitive data logging (especially in development).
+9. [Medium] Consolidate audit mechanisms (automatic vs manual).
+10. [Medium] Standardize soft‑delete strategy across all entities.
+11. [Medium] Remove `appsettings.json` and move all config to environment variables.
+12. [Low] Remove unnecessary `async/await` overhead where possible.
+13. [Low] Add API versioning (e.g., `/api/v1/...`).
+14. [Low] Revisit route naming to be resource‑based, not role‑based.
+15. [Low] Add CORS fallback for development.
+
+## Questions to Answer
+- What is the desired structured logging format and destination (e.g., Elasticsearch, Application Insights)?
+- Is there an existing rate‑limiting policy defined for auth endpoints?
+- How should sensitive data be handled in logs across environments (e.g., redaction)?
+- What is the preferred global error response shape for clients?
+- Should we introduce a result pattern for all service returns to better represent missing data?
+
+## Required Output Format
+For each refactoring task, provide:
+1. Implementation approach with code examples
+2. Migration path (if breaking changes)
+3. Unit/integration test coverage plan
+4. Estimated effort (story points)

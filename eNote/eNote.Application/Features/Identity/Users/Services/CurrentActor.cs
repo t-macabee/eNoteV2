@@ -36,4 +36,6 @@ public sealed class CurrentActor(ICurrentUserService user, IUserProfileLookup lo
 
         return (_storeId = storeId.Value).Value;
     }
+
+    public int GetCurrentStoreId() => _storeId ?? throw new InvalidOperationException("StoreId not loaded. Call GetCurrentStoreIdAsync first.");
 }

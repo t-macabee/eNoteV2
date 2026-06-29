@@ -29,9 +29,7 @@ public sealed class RentalQueryService(IAppDbContext context, IMapper mapper, IC
 
     public async Task<InstrumentRentalDto> GetByIdForStoreAsync(int rentalId, CancellationToken cancellationToken = default)
     {
-        var storeId = await actor.GetCurrentStoreIdAsync(cancellationToken);
-
-        var entity = await FindRentalAsync(context.Set<InstrumentRental>().Where(x => x.Id == rentalId && x.Instrument.MusicStoreId == storeId), cancellationToken);
+        var entity = await FindRentalAsync(context.Set<InstrumentRental>().Where(x => x.Id == rentalId), cancellationToken);
 
         var dto = mapper.Map<InstrumentRentalDto>(entity);
 
@@ -42,9 +40,7 @@ public sealed class RentalQueryService(IAppDbContext context, IMapper mapper, IC
 
     public async Task<PagedResult<InstrumentRentalDto>> GetPagedForStoreAsync(InstrumentRentalSearchObject search, CancellationToken cancellationToken = default)
     {
-        var storeId = await actor.GetCurrentStoreIdAsync(cancellationToken);
-
-        return await GetPagedAsync(context.Set<InstrumentRental>().Where(x => x.Instrument.MusicStoreId == storeId), search, cancellationToken);
+        return await GetPagedAsync(context.Set<InstrumentRental>(), search, cancellationToken);
     }
 
     private async Task<PagedResult<InstrumentRentalDto>> GetPagedAsync(IQueryable<InstrumentRental> query, InstrumentRentalSearchObject search, CancellationToken cancellationToken)

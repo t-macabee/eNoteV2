@@ -1,13 +1,15 @@
+using eNote.Domain.Entities.Shared;
 using eNote.Domain.Enums;
 
 namespace eNote.Domain.Entities.Rentals;
 
-public sealed class InstrumentRental : AuditableEntity
+public sealed class InstrumentRental : AuditableEntity, ITenantScoped
 {
     public int StudentProfileId { get; private set; }
     public Student StudentProfile { get; private set; } = null!;
     public int InstrumentId { get; private set; }
     public Instrument Instrument { get; private set; } = null!;
+    public int MusicStoreId { get; private set; }
 
     public InstrumentRentalStatus RentalStatus { get; private set; }
     public string? RequestNote { get; private set; }
@@ -28,10 +30,11 @@ public sealed class InstrumentRental : AuditableEntity
     {
     }
 
-    public InstrumentRental(int instrumentId, int studentProfileId, DateTime requestedAt, string? note)
+    public InstrumentRental(int instrumentId, int studentProfileId, int musicStoreId, DateTime requestedAt, string? note)
     {
         InstrumentId = instrumentId;
         StudentProfileId = studentProfileId;
+        MusicStoreId = musicStoreId;
         RequestedAt = requestedAt;
         RequestNote = note;
         RentalStatus = InstrumentRentalStatus.Pending;

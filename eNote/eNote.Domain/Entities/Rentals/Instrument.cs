@@ -1,9 +1,11 @@
 using eNote.Domain.Entities.Rentals;
+using eNote.Domain.Entities.Shared;
+
 using eNote.Domain.Enums;
 
 namespace eNote.Domain.Entities;
 
-public class Instrument : AuditableEntity
+public class Instrument : AuditableEntity, ITenantScoped
 {
     public int InstrumentTypeId { get; private set; }
     public InstrumentType InstrumentType { get; private set; } = null!;

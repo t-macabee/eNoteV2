@@ -12,7 +12,7 @@ public sealed class RentalBillingTests
     [Fact]
     public void ApplyBilling_BeforePickup_DoesNotCharge()
     {
-        var rental = new InstrumentRental(1, 1, Now.AddDays(-2), null);
+        var rental = new InstrumentRental(1, 1, 1, Now.AddDays(-2), null);
         var dto = new InstrumentRentalDto();
 
         RentalBilling.ApplyBilling(rental, dto, Now);
@@ -25,7 +25,7 @@ public sealed class RentalBillingTests
     [Fact]
     public void ApplyBilling_ActiveRental_ChargesAtLeastOneMonth()
     {
-        var rental = new InstrumentRental(1, 1, Now.AddDays(-10), null);
+        var rental = new InstrumentRental(1, 1, 1, Now.AddDays(-10), null);
         rental.Approve(50m, null, Now.AddDays(-5), 1);
         rental.Pickup(Now.AddDays(-3));
 
@@ -41,7 +41,7 @@ public sealed class RentalBillingTests
     [Fact]
     public void ApplyBilling_ReturnedEarly_UsesProratedDailyFee()
     {
-        var rental = new InstrumentRental(1, 1, Now.AddDays(-20), null);
+        var rental = new InstrumentRental(1, 1, 1, Now.AddDays(-20), null);
         rental.Approve(30m, null, Now.AddDays(-10), 1);
         rental.Pickup(Now.AddDays(-5));
         rental.ReturnEarly(Now.AddDays(-2), null);

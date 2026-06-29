@@ -1,0 +1,77 @@
+## Context
+You are reviewing a music school management system built with:
+- .NET/C# (.NET 10)
+- Entity Framework Core
+- Clean Architecture with Domain/Application/Infrastructure/API layers
+- Actor pattern for authentication/authorization
+- CQRS with direct service injection (no MediatR yet)
+
+## Current State Observations
+
+### Architecture Issues to Address
+1. **Business Rule Error Handling**: Services throw `BusinessException` for expected outcomes (e.g., "membership inactive", "instrument already locked"). Refactor to use a `Result<T>` pattern:
+   - Make happy path explicit
+   - Eliminate exception overhead for expected cases
+   - Note: This is a significant refactor - evaluate scope
+
+2. **CQRS Implementation**: Controllers currently inject services directly. Consider:
+   - Introducing MediatR for command/query separation
+   - Enable cross-cutting concerns via pipeline behaviors (logging, validation, caching)
+   - Weight benefits vs. added ceremony
+
+3. **Tenant Isolation Vulnerability**: Current implementation uses `actor.GetCurrentStoreIdAsync()` in queries for `MusicStoreId` filtering. Risk of forgetting to apply filters. Implement global query filters in `IModelBuilder`:
+   - Auto-scope all queries to current store
+   - Prevent accidental cross-tenant data exposure
+
+### Domain Model Improvements
+4. **Enum Standardization**: 
+   - `EnrollmentStatus` and `LectureStatus` currently use `int` with magic numbers
+   - `AttendanceStatus` already has proper enum - apply same pattern consistently
+   - Create explicit enum types for all status fields
+
+5. **Money Value Objects**:
+   - Fees and prices stored as `decimal` only
+   - Create `Money` value object containing `(Amount + Currency)`
+   - Prevents currency mixing and makes monetary intent explicit
+
+### Testing Gaps
+6. **Integration Test Coverage**:
+   - Current tests: Unit + integration tests for services/domain only
+   - Add `WebApplicationFactory` tests hitting actual controller endpoints
+   - Validate routing, authorization, DTO mapping end-to-end
+
+7. **Test Naming Convention**: Inconsistent `Async` suffix usage. Example: `GetStudentAsync_ResolvesStudentOnlyOnce` doesn't use suffix where others do. Standardize naming pattern.
+
+### Operational Concerns (Pragmatic Additions)
+8. **Health Check UI**: Health checks exist but no `/healthz` dashboard or status page. Add visualization.
+
+9. **Request/Response Logging**: No middleware for logging requests/responses. Add Serilog or minimal logging for production debugging.
+
+## Things to Preserve (Do Not Change)
+- **IClock abstraction** - Correct pattern, well-executed
+- **State machine interface** - Clean separation of concerns
+- **Actor pattern** - Solid for auth scoping
+- **Repository-less EF Core** - Appropriate for this system size
+
+## Action Items (Priority Order)
+1. [High] Implement Result<T> pattern for business logic
+2. [High] Add global tenant query filters
+3. [Medium] Standardize enums for EnrollmentStatus and LectureStatus
+4. [Medium] Create Money value object
+5. [Low] Add integration tests with WebApplicationFactory
+6. [Low] Implement request/response logging middleware
+7. [Low] Add health check UI
+8. [Optional] Evaluate MediatR implementation
+
+## Questions to Answer
+- Which services are most critical for Result<T> refactoring?
+- Are there any multi-currency requirements we should account for?
+- What's the current test coverage percentage?
+- What's the deployment environment (on-prem/cloud)?
+
+## Required Output Format
+For each refactoring task, provide:
+1. Implementation approach with code examples
+2. Migration path (if breaking changes)
+3. Unit test coverage plan
+4. Estimated effort (story points)

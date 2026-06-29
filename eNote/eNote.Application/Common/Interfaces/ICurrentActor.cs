@@ -9,4 +9,5 @@ public interface ICurrentActor : ICurrentUserService
     Task<Instructor> GetCurrentInstructorAsync();
     Task<MusicStoreEmployee> GetCurrentEmployeeAsync();
     Task<int> GetCurrentStoreIdAsync(CancellationToken cancellationToken = default);
+    int GetCurrentStoreId();
 }
