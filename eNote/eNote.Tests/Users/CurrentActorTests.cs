@@ -4,6 +4,7 @@ using eNote.Application.Common.Persistence;
 using eNote.Application.Features.Identity.Users.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
+using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
 namespace eNote.Tests.Users;
@@ -14,7 +15,10 @@ public sealed class CurrentActorTests
     public async Task GetStudentAsync_ResolvesStudentOnlyOnce()
     {
         var lookup = new CountingProfileLookup(new Student(appUserId: 42, enrollmentDate: DateTime.UtcNow));
-        var actor = new CurrentActor(new TestCurrentUserService(42), lookup, new ThrowingDbContext());
+        var services = new ServiceCollection()
+            .AddScoped<IAppDbContext>(_ => new ThrowingDbContext())
+            .BuildServiceProvider();
+        var actor = new CurrentActor(new TestCurrentUserService(42), lookup, services);
 
         var first = await actor.GetCurrentStudentAsync();
         var second = await actor.GetCurrentStudentAsync();

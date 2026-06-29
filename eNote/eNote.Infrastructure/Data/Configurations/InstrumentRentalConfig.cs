@@ -32,6 +32,7 @@ public sealed class InstrumentRentalConfig : IEntityTypeConfiguration<Instrument
         builder.HasIndex(x => x.InstrumentId)
                .HasFilter(
                     $"\"{nameof(InstrumentRental.RentalStatus)}\" IN ({(int)InstrumentRentalStatus.Approved}, {(int)InstrumentRentalStatus.Active})"
-               ).IsUnique();
+               ).IsUnique()
+               .HasDatabaseName("UX_InstrumentRental_InstrumentId_ActiveOrApproved");
     }
 }

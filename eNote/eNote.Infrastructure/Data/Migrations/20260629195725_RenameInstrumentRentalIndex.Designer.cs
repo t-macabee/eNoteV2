@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using eNote.Infrastructure.Data;
@@ -11,9 +12,11 @@ using eNote.Infrastructure.Data;
 namespace eNote.Infrastructure.Data.Migrations
 {
     [DbContext(typeof(ENoteContext))]
-    partial class ENoteContextModelSnapshot : ModelSnapshot
+    [Migration("20260629195725_RenameInstrumentRentalIndex")]
+    partial class RenameInstrumentRentalIndex
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -150,7 +153,7 @@ namespace eNote.Infrastructure.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Address", (string)null);
+                    b.ToTable("Address");
 
                     b.HasData(
                         new
@@ -248,7 +251,7 @@ namespace eNote.Infrastructure.Data.Migrations
 
                     b.HasIndex("PublishedAt");
 
-                    b.ToTable("Announcement", null, t =>
+                    b.ToTable("Announcement", t =>
                         {
                             t.HasCheckConstraint("CK_Announcement_Scope", "(\"CourseId\" IS NOT NULL AND \"MusicStoreId\" IS NULL) OR (\"CourseId\" IS NULL AND \"MusicStoreId\" IS NOT NULL)");
                         });
@@ -298,7 +301,7 @@ namespace eNote.Infrastructure.Data.Migrations
 
                     b.HasIndex("LectureId");
 
-                    b.ToTable("Assignment", (string)null);
+                    b.ToTable("Assignment");
                 });
 
             modelBuilder.Entity("eNote.Domain.Entities.AssignmentSubmission", b =>
@@ -343,7 +346,7 @@ namespace eNote.Infrastructure.Data.Migrations
 
                     b.HasIndex("StudentId");
 
-                    b.ToTable("AssignmentSubmission", (string)null);
+                    b.ToTable("AssignmentSubmission");
                 });
 
             modelBuilder.Entity("eNote.Domain.Entities.Attendance", b =>
@@ -382,7 +385,7 @@ namespace eNote.Infrastructure.Data.Migrations
                     b.HasIndex("StudentId", "LectureId")
                         .IsUnique();
 
-                    b.ToTable("Attendance", (string)null);
+                    b.ToTable("Attendance");
                 });
 
             modelBuilder.Entity("eNote.Domain.Entities.Course", b =>
@@ -439,7 +442,7 @@ namespace eNote.Infrastructure.Data.Migrations
 
                     b.HasIndex("InstructorId");
 
-                    b.ToTable("Course", (string)null);
+                    b.ToTable("Course");
                 });
 
             modelBuilder.Entity("eNote.Domain.Entities.Enrollment", b =>
@@ -478,7 +481,7 @@ namespace eNote.Infrastructure.Data.Migrations
                     b.HasIndex("StudentId", "CourseId")
                         .IsUnique();
 
-                    b.ToTable("Enrollment", (string)null);
+                    b.ToTable("Enrollment");
                 });
 
             modelBuilder.Entity("eNote.Domain.Entities.Instructor", b =>
@@ -509,7 +512,7 @@ namespace eNote.Infrastructure.Data.Migrations
                     b.HasIndex("AppUserId")
                         .IsUnique();
 
-                    b.ToTable("Instructor", (string)null);
+                    b.ToTable("Instructor");
                 });
 
             modelBuilder.Entity("eNote.Domain.Entities.Instrument", b =>
@@ -564,7 +567,7 @@ namespace eNote.Infrastructure.Data.Migrations
 
                     b.HasIndex("MusicStoreId");
 
-                    b.ToTable("Instrument", (string)null);
+                    b.ToTable("Instrument");
                 });
 
             modelBuilder.Entity("eNote.Domain.Entities.InstrumentType", b =>
@@ -586,7 +589,7 @@ namespace eNote.Infrastructure.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("InstrumentType", (string)null);
+                    b.ToTable("InstrumentType");
 
                     b.HasData(
                         new
@@ -648,7 +651,7 @@ namespace eNote.Infrastructure.Data.Migrations
                     b.HasIndex("UserId", "InstrumentId")
                         .IsUnique();
 
-                    b.ToTable("InstrumentView", (string)null);
+                    b.ToTable("InstrumentView");
                 });
 
             modelBuilder.Entity("eNote.Domain.Entities.Lecture", b =>
@@ -714,7 +717,7 @@ namespace eNote.Infrastructure.Data.Migrations
 
                     b.HasIndex("CourseId");
 
-                    b.ToTable("Lecture", (string)null);
+                    b.ToTable("Lecture");
                 });
 
             modelBuilder.Entity("eNote.Domain.Entities.LectureNote", b =>
@@ -758,7 +761,7 @@ namespace eNote.Infrastructure.Data.Migrations
 
                     b.HasIndex("LectureId");
 
-                    b.ToTable("LectureNote", (string)null);
+                    b.ToTable("LectureNote");
                 });
 
             modelBuilder.Entity("eNote.Domain.Entities.MusicStore", b =>
@@ -793,7 +796,7 @@ namespace eNote.Infrastructure.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("MusicStore", (string)null);
+                    b.ToTable("MusicStore");
                 });
 
             modelBuilder.Entity("eNote.Domain.Entities.MusicStoreEmployee", b =>
@@ -836,7 +839,7 @@ namespace eNote.Infrastructure.Data.Migrations
                     b.HasIndex("MusicStoreId", "AppUserId")
                         .IsUnique();
 
-                    b.ToTable("MusicStoreEmployee", (string)null);
+                    b.ToTable("MusicStoreEmployee");
                 });
 
             modelBuilder.Entity("eNote.Domain.Entities.Notification", b =>
@@ -879,7 +882,7 @@ namespace eNote.Infrastructure.Data.Migrations
 
                     b.HasIndex("UserId", "RentalId", "Title");
 
-                    b.ToTable("Notification", (string)null);
+                    b.ToTable("Notification");
                 });
 
             modelBuilder.Entity("eNote.Domain.Entities.RentalNotificationOutbox", b =>
@@ -995,7 +998,7 @@ namespace eNote.Infrastructure.Data.Migrations
 
                     b.HasIndex("StudentProfileId");
 
-                    b.ToTable("InstrumentRental", (string)null);
+                    b.ToTable("InstrumentRental");
                 });
 
             modelBuilder.Entity("eNote.Domain.Entities.RevokedToken", b =>
@@ -1022,7 +1025,7 @@ namespace eNote.Infrastructure.Data.Migrations
                     b.HasIndex("Jti")
                         .IsUnique();
 
-                    b.ToTable("RevokedToken", (string)null);
+                    b.ToTable("RevokedToken");
                 });
 
             modelBuilder.Entity("eNote.Domain.Entities.Student", b =>
@@ -1059,7 +1062,7 @@ namespace eNote.Infrastructure.Data.Migrations
                     b.HasIndex("AppUserId")
                         .IsUnique();
 
-                    b.ToTable("Student", (string)null);
+                    b.ToTable("Student");
                 });
 
             modelBuilder.Entity("eNote.Infrastructure.Identity.AppRole", b =>

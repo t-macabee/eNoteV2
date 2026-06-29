@@ -4,15 +4,19 @@ using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace eNote.Application.Features.Identity.Users.Services;
 
-public sealed class CurrentActor(ICurrentUserService user, IUserProfileLookup lookup, IAppDbContext context) : ICurrentActor
+public sealed class CurrentActor(ICurrentUserService user, IUserProfileLookup lookup, IServiceProvider serviceProvider) : ICurrentActor
 {
     private Student? _student;
     private Instructor? _instructor;
     private MusicStoreEmployee? _employee;
     private int? _storeId;
+    private IAppDbContext? _context;
+
+    private IAppDbContext Context => _context ??= serviceProvider.GetRequiredService<IAppDbContext>();
 
     public int UserId => user.UserId;
     public bool IsAuthenticated => user.IsAuthenticated;
@@ -26,7 +30,7 @@ public sealed class CurrentActor(ICurrentUserService user, IUserProfileLookup lo
     {
         if (_storeId is not null) return _storeId.Value;
 
-        var storeId = await context.Set<MusicStoreEmployee>()
+        var storeId = await Context.Set<MusicStoreEmployee>()
             .AsNoTracking()
             .Where(x => x.AppUserId == user.UserId && x.IsActive)
             .Select(x => (int?)x.MusicStoreId)

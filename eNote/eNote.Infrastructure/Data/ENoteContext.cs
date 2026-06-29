@@ -14,7 +14,7 @@ namespace eNote.Infrastructure.Data;
 
 public class ENoteContext(DbContextOptions<ENoteContext> options, IClock clock, ICurrentActor actor) : IdentityDbContext<AppUser, AppRole, int>(options), IAppDbContext
 {
-    private readonly int? _storeId = actor.GetCurrentStoreId();
+    private int? _storeId;
 
     static ENoteContext()
     {
@@ -30,7 +30,7 @@ public class ENoteContext(DbContextOptions<ENoteContext> options, IClock clock, 
 
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(ENoteContext).Assembly);
 
-        // Apply global tenant filter
+        // Apply global tenant filter for ITenantScoped entities (Instrument, InstrumentRental)
         var tenantEntityType = typeof(ITenantScoped);
         foreach (var entityType in modelBuilder.Model.GetEntityTypes())
         {
@@ -46,9 +46,17 @@ public class ENoteContext(DbContextOptions<ENoteContext> options, IClock clock, 
         ModelBuilderSeed.Seed(modelBuilder);
     }
 
+    private int? GetStoreId()
+    {
+        if (_storeId is not null) return _storeId;
+        try { _storeId = actor.GetCurrentStoreId(); }
+        catch (InvalidOperationException) { /* Not a store employee; filter will match nothing — safe */ }
+        return _storeId;
+    }
+
     private static void SetTenantFilter<TEntity>(ModelBuilder modelBuilder, ENoteContext context) where TEntity : class, ITenantScoped
     {
-        modelBuilder.Entity<TEntity>().HasQueryFilter(e => e.MusicStoreId == context._storeId);
+        modelBuilder.Entity<TEntity>().HasQueryFilter(e => e.MusicStoreId == context.GetStoreId());
     }
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

@@ -55,6 +55,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseRateLimiter();
 app.UseAuthentication();
+app.UseMiddleware<eNote.API.Middleware.TenantInitializationMiddleware>();
 app.UseAuthorization();
 
 app.MapHealthChecks("/health").AllowAnonymous();

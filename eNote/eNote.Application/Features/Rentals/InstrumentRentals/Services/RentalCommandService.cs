@@ -188,7 +188,7 @@ public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, 
         {
             await context.SaveChangesAsync(cancellationToken);
         }
-        catch (DbUpdateException ex) when (ex.InnerException?.Message?.Contains("IX_InstrumentRentals_InstrumentId") == true)
+        catch (DbUpdateException ex) when (ex.InnerException?.Message?.Contains("UX_InstrumentRental_InstrumentId_ActiveOrApproved") == true)
         {
             throw new BusinessException(message);
         }
