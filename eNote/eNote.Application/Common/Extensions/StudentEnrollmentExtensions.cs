@@ -3,7 +3,7 @@ using eNote.Domain.Entities;
 using eNote.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 
-namespace eNote.Application.Features.Academic.Courses;
+namespace eNote.Application.Common.Extensions;
 
 public static class StudentEnrollmentExtensions
 {

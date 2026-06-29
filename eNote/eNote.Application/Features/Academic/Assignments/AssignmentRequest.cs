@@ -4,10 +4,7 @@ namespace eNote.Application.Features.Academic.Assignments;
 
 public class AssignmentRequest
 {
-    [Required]
-    public string Title { get; set; } = null!;
-    [Required]
-    public string Description { get; set; } = null!;
-    [Required]
+    public required string Title { get; set; }
+    public required string Description { get; set; }
     public DateTime DueAt { get; set; }
 }

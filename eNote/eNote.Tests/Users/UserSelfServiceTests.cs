@@ -35,7 +35,8 @@ public sealed class UserSelfServiceTests
         var request = new ChangePasswordRequest
         {
             CurrentPassword = "old",
-            NewPassword = "new"
+            NewPassword = "new",
+            ConfirmNewPassword = "new"
         };
 
         await service.ChangePasswordAsync(request);

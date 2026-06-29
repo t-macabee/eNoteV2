@@ -4,13 +4,9 @@ namespace eNote.Application.Features.Identity.Users;
 
 public class ChangePasswordRequest
 {
-    [Required]
-    public string CurrentPassword { get; set; } = null!;
+    public required string CurrentPassword { get; set; }
+    public required string NewPassword { get; set; }
 
-    [Required]
-    public string NewPassword { get; set; } = null!;
-
-    [Required]
     [Compare(nameof(NewPassword), ErrorMessage = "Passwords do not match.")]
-    public string ConfirmNewPassword { get; set; } = null!;
+    public required string ConfirmNewPassword { get; set; }
 }

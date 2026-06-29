@@ -4,8 +4,7 @@ namespace eNote.Application.Features.Academic.Courses;
 
 public class CourseRequest
 {
-    [Required]
-    public string Name { get; set; } = null!;
+    public required string Name { get; set; }
     public string? Description { get; set; }
 
     [Range(0, double.MaxValue, ErrorMessage = "Price must be non-negative.")]

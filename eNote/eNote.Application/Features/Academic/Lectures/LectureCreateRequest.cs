@@ -5,20 +5,13 @@ namespace eNote.Application.Features.Academic.Lectures;
 
 public class LectureCreateRequest
 {
-    [Required]
-    public string Name { get; set; } = null!;
-    [Required]
-    public string Location { get; set; } = null!;
-    [Required]
+    public required string Name { get; set; }
+    public required string Location { get; set; }
     public LectureType LectureType { get; set; }
-
-    [Required]
     public DateTime LectureTime { get; set; }
-    [Required]
     public int Duration { get; set; }
     public int? Capacity { get; set; }
 
-    [Required]
     [Range(1, int.MaxValue)]
     public int CourseId { get; set; }
 }

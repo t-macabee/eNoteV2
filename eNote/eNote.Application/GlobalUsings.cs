@@ -1,0 +1,13 @@
+global using System.Linq;
+global using System.Threading;
+global using System.Threading.Tasks;
+global using Microsoft.EntityFrameworkCore;
+global using eNote.Application.Common.Exceptions;
+global using eNote.Application.Common.Interfaces;
+global using eNote.Application.Common.Localization;
+global using eNote.Application.Common.Paging;
+global using eNote.Application.Common.Persistence;
+global using eNote.Application.Common.Time;
+global using eNote.Application.Common.Extensions;
+global using eNote.Domain.Entities;
+global using eNote.Domain.Enums;
