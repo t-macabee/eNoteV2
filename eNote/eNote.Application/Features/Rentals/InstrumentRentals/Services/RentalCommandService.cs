@@ -35,16 +35,6 @@ public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, 
                 .AsNoTracking()
                 .FirstOrDefaultAsync(x => x.Id == request.InstrumentId && x.IsActive, cancellationToken) ?? throw new NotFoundException(Messages.InstrumentNotFound);
 
-            var locked = await context.Set<InstrumentRental>()
-                .Where(x => x.InstrumentId == request.InstrumentId)
-                .WhereBlockingStatus()
-                .AnyAsync(cancellationToken);
-
-            if (locked)
-            {
-                throw new BusinessException(Messages.InstrumentReservedOrRented);
-            }
-
             var alreadyPending = await context.Set<InstrumentRental>()
                 .AnyAsync(x => x.InstrumentId == request.InstrumentId && x.StudentProfileId == studentProfileId && x.RentalStatus == InstrumentRentalStatus.Pending, cancellationToken);
 
@@ -186,9 +176,7 @@ public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, 
             .FirstOrDefaultAsync(x => x.Id == rentalId, cancellationToken) ?? throw new NotFoundException(Messages.RentalNotFoundAfterUpdate);
 
         var result = mapper.Map<InstrumentRentalDto>(entity);
-
         RentalBilling.ApplyBilling(entity, result, clock.UtcNow);
-
         return result;
     }
 
