@@ -5,6 +5,9 @@ public static class Messages
     public const string NotFound = "ID nije pronađen.";
     public const string BadRequest = "Neispravan zahtjev.";
     public const string InternalError = "Došlo je do greške na serveru.";
+    public const string Unauthorized = "Niste autorizovani.";
+    public const string Forbidden = "Nemate pristup ovom resursu.";
+    public const string Conflict = "Sukob resursa.";
 
     public const string InvalidCredentials = "Pogrešno korisničko ime ili lozinka.";
     public const string AccountLocked = "Nalog je privremeno zaključan. Pokušajte ponovo kasnije.";

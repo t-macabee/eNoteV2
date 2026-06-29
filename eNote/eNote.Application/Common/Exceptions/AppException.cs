@@ -1,3 +1,5 @@
+using eNote.Application.Common.Localization;
+
 namespace eNote.Application.Common.Exceptions;
 
 public abstract class AppException(int statusCode, string errorCode, string? message = null) : Exception(message ?? GetDefaultMessage(statusCode))
@@ -7,11 +9,11 @@ public abstract class AppException(int statusCode, string errorCode, string? mes
 
     private static string GetDefaultMessage(int statusCode) => statusCode switch
     {
-        400 => Localization.Messages.BadRequest,
-        401 => "Niste autorizovani.",
-        403 => "Nemate pristup ovom resursu.",
-        404 => Localization.Messages.NotFound,
-        409 => "Sukob resursa.",
-        _ => Localization.Messages.InternalError
+        400 => Messages.BadRequest,
+        401 => Messages.Unauthorized,
+        403 => Messages.Forbidden,
+        404 => Messages.NotFound,
+        409 => Messages.Conflict,
+        _ => Messages.InternalError
     };
 }

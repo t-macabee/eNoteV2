@@ -37,9 +37,9 @@ public sealed class AuthController(IAuthService authService) : CoreController
     [AllowAnonymous]
     [HttpPost("forgot-password")]
     [ProducesResponseType(typeof(ForgotPasswordResponse), StatusCodes.Status200OK)]
-    public async Task<ActionResult<ForgotPasswordResponse>> ForgotPassword([FromBody] ForgotPasswordRequest request)
+    public async Task<ActionResult<ForgotPasswordResponse>> ForgotPassword([FromBody] ForgotPasswordRequest request, CancellationToken cancellationToken)
     {
-        ForgotPasswordResponse response = await authService.ForgotPasswordAsync(request, HttpContext.RequestAborted);
+        ForgotPasswordResponse response = await authService.ForgotPasswordAsync(request, cancellationToken);
         return Ok(response);
     }
 
@@ -47,9 +47,9 @@ public sealed class AuthController(IAuthService authService) : CoreController
     [HttpPost("reset-password")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
+    public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request, CancellationToken cancellationToken)
     {
-        await authService.ResetPasswordAsync(request, HttpContext.RequestAborted);
+        await authService.ResetPasswordAsync(request, cancellationToken);
         return NoContent();
     }
 
