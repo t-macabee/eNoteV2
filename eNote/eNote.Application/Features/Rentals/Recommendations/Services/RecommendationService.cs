@@ -35,7 +35,7 @@ public sealed class RecommendationService(IAppDbContext context, IMapper mapper,
         var userRentals = await context.Set<InstrumentRental>()
             .AsNoTracking()
             .Where(x => x.StudentProfileId == studentId && (x.RentalStatus == InstrumentRentalStatus.Approved || x.RentalStatus == InstrumentRentalStatus.Active || x.RentalStatus == InstrumentRentalStatus.Completed || x.RentalStatus == InstrumentRentalStatus.ReturnedEarly))
-            .Select(x => new UserRentalSnapshot(x.InstrumentId, x.Instrument.InstrumentTypeId, x.Instrument.Manufacturer))
+            .Select(x => new UserRentalSnapshot(x.InstrumentId, x.Instrument.InstrumentTypeId, x.Instrument.Manufacturer, x.RentalStatus))
             .ToListAsync(cancellationToken);
 
         HashSet<int> rentedInstrumentIds = [.. userRentals.Select(x => x.InstrumentId)];
@@ -76,12 +76,9 @@ public sealed class RecommendationService(IAppDbContext context, IMapper mapper,
 
         var preferredTypeIds = userTypeCounts.Keys.ToList();
 
-        HashSet<int> activelyRentedIds = [.. await context.Set<InstrumentRental>()
-            .AsNoTracking()
-            .Where(x => x.StudentProfileId == studentId &&
-                (x.RentalStatus == InstrumentRentalStatus.Approved || x.RentalStatus == InstrumentRentalStatus.Active))
-            .Select(x => x.InstrumentId)
-            .ToListAsync(cancellationToken)];
+        HashSet<int> activelyRentedIds = [.. userRentals
+            .Where(x => x.RentalStatus == InstrumentRentalStatus.Approved || x.RentalStatus == InstrumentRentalStatus.Active)
+            .Select(x => x.InstrumentId)];
 
         var candidates = await LoadCandidateInstrumentsAsync(
             preferredTypeIds, collaborativeInstrumentIds, count, globalRentalCounts, cancellationToken);
@@ -323,7 +320,7 @@ public sealed class RecommendationService(IAppDbContext context, IMapper mapper,
 
     private static int NormalizeCount(int count) => count < 1 ? 1 : count > 20 ? 20 : count;
 
-    private sealed record UserRentalSnapshot(int InstrumentId, int InstrumentTypeId, string Manufacturer);
+    private sealed record UserRentalSnapshot(int InstrumentId, int InstrumentTypeId, string Manufacturer, InstrumentRentalStatus RentalStatus);
 
     private sealed record InstrumentViewSnapshot(int ViewCount, DateTime LastViewedAt);
 

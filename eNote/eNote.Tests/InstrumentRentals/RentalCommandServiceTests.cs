@@ -8,7 +8,6 @@ using eNote.Domain.Entities.Rentals;
 using eNote.Domain.Enums;
 using eNote.Infrastructure.Data;
 using eNote.Tests.TestUtils;
-using MapsterMapper;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Xunit;
@@ -135,10 +134,10 @@ public sealed class RentalCommandServiceTests
     }
 
     private static RentalCommandService CreateService(ENoteContext context, Student student, IRentalNotificationDispatcher? dispatcher = null) =>
-        new(context, new Mapper(), new FixedClock(Now), new StubCurrentActor(student: student),
+        new(context, TestMapper.Create(), new FixedClock(Now), new StubCurrentActor(student: student),
             new RentalStateMachine(new FixedClock(Now)), dispatcher ?? new NoOpNotificationDispatcher());
 
     private static RentalCommandService CreateStoreService(ENoteContext context, int storeId, IRentalNotificationDispatcher? dispatcher = null) =>
-        new(context, new Mapper(), new FixedClock(Now), new StubCurrentActor(storeId: storeId),
+        new(context, TestMapper.Create(), new FixedClock(Now), new StubCurrentActor(storeId: storeId),
             new RentalStateMachine(new FixedClock(Now)), dispatcher ?? new NoOpNotificationDispatcher());
 }

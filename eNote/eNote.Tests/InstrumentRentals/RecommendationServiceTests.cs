@@ -2,7 +2,6 @@ using eNote.Application.Features.Rentals.Recommendations.Services;
 using eNote.Domain.Entities.Rentals;
 using eNote.Infrastructure.Data;
 using eNote.Tests.TestUtils;
-using MapsterMapper;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Xunit;
@@ -143,5 +142,5 @@ public sealed class RecommendationServiceTests
     }
 
     private static RecommendationService CreateService(ENoteContext context, Student student) =>
-        new(context, new Mapper(), new StubCurrentActor(student: student, storeId: 1), new FixedClock(Now));
+        new(context, TestMapper.Create(), new StubCurrentActor(student: student, storeId: 1), new FixedClock(Now));
 }
