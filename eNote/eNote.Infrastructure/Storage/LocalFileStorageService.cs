@@ -51,18 +51,14 @@ public sealed class LocalFileStorageService(IWebHostEnvironment env) : IFileStor
         var uploadsRoot = Path.Combine(env.WebRootPath ?? Path.Combine(env.ContentRootPath, "wwwroot"), "uploads", subfolder);
         Directory.CreateDirectory(uploadsRoot);
 
-        var ext = Path.GetExtension(fileName).ToLowerInvariant();
-        if (string.IsNullOrEmpty(ext))
+        var ext = contentType.ToLowerInvariant() switch
         {
-            ext = contentType switch
-            {
-                "image/jpeg" => ".jpg",
-                "image/png" => ".png",
-                "image/webp" => ".webp",
-                "application/pdf" => ".pdf",
-                _ => ".bin"
-            };
-        }
+            "image/jpeg" => ".jpg",
+            "image/png" => ".png",
+            "image/webp" => ".webp",
+            "application/pdf" => ".pdf",
+            _ => throw new BusinessException(Messages.InvalidFileFormat)
+        };
 
         var uniqueName = $"{Guid.NewGuid()}{ext}";
         var fullPath = Path.Combine(uploadsRoot, uniqueName);

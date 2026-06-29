@@ -20,7 +20,7 @@ public static class MiddlewareExtensions
                 (var statusCode, var errorCode, var message) = exception switch
                 {
                     AppException appEx => (appEx.StatusCode, appEx.ErrorCode, appEx.Message),
-                    ArgumentException => (400, "error.bad_request", exception?.Message ?? Messages.BadRequest),
+                    ArgumentException => (400, "error.bad_request", Messages.BadRequest),
                     _ => (500, "error.internal", Messages.InternalError)
                 };
 
