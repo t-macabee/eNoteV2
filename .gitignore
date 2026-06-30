@@ -95,3 +95,6 @@ graphify*/
 
 # Added by code-review-graph
 .code-review-graph/
+/.clinerules/workflow
+/eNote/Phase1_ComponentInventory.md
+/eNote/Phase2_ContractAdherenceAudit.md

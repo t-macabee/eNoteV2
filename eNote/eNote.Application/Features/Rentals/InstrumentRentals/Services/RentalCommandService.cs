@@ -111,6 +111,8 @@ public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, 
             UserId = userId,
             Actor = actor,
             HasInstrumentLockConflict = hasConflict,
+            MonthlyFee = rental.Instrument.InstrumentType.MonthlyFee,
+            IsInstrumentActive = rental.Instrument.IsActive,
             Response = response
         };
 

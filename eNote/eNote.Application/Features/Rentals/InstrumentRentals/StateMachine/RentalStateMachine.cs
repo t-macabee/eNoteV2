@@ -63,9 +63,9 @@ public sealed class RentalStateMachine(IClock clock) : IRentalStateMachine
         }
     }
 
-    private static void GuardInstrumentActive(InstrumentRental rental)
+    private static void GuardInstrumentActive(RentalTransitionContext context)
     {
-        if (!rental.Instrument.IsActive)
+        if (!context.IsInstrumentActive)
         {
             throw new BusinessException(Messages.InstrumentInactive);
         }
@@ -108,12 +108,12 @@ public sealed class RentalStateMachine(IClock clock) : IRentalStateMachine
             Actors: [RentalActor.StoreEmployee],
             Guard: (rental, context) =>
             {
-                GuardInstrumentActive(rental);
+                GuardInstrumentActive(context);
                 GuardNoInstrumentLockConflict(context);
             },
             Apply: (rental, context, time) =>
             {
-                rental.Approve(rental.Instrument.InstrumentType.MonthlyFee, context.Response?.Note, time.UtcNow, context.UserId);
+                rental.Approve(context.MonthlyFee, context.Response?.Note, time.UtcNow, context.UserId);
                 ApplyAuditFields(rental, context, time);
             },
             UsesInstrumentLock: true),
@@ -149,7 +149,7 @@ public sealed class RentalStateMachine(IClock clock) : IRentalStateMachine
             Actors: [RentalActor.StoreEmployee],
             Guard: (rental, context) =>
             {
-                GuardInstrumentActive(rental);
+                GuardInstrumentActive(context);
                 if (rental.PickedUpAt.HasValue) { throw new BusinessException(Messages.RentalAlreadyPickedUp); }
                 GuardNoInstrumentLockConflict(context);
             },
