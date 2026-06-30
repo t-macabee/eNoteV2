@@ -9,10 +9,6 @@ public sealed class InstrumentRentalConfig : IEntityTypeConfiguration<Instrument
 {
     public void Configure(EntityTypeBuilder<InstrumentRental> builder)
     {
-        // Intentionally excludes rentals for inactive instruments globally.
-        // For audit queries use RentalQueryableExtensions.ForStoreAudit(storeId) — never bare IgnoreQueryFilters(), which also removes the tenant filter.
-        builder.HasQueryFilter(r => r.Instrument.IsActive);
-
         builder.HasOne(x => x.StudentProfile)
                .WithMany(s => s.InstrumentRentals)
                .HasForeignKey(x => x.StudentProfileId)
@@ -31,9 +27,7 @@ public sealed class InstrumentRentalConfig : IEntityTypeConfiguration<Instrument
                .HasConversion<int>();
 
         builder.HasIndex(x => x.InstrumentId)
-               .HasFilter(
-                    $"\"{nameof(InstrumentRental.RentalStatus)}\" IN ({(int)InstrumentRentalStatus.Approved}, {(int)InstrumentRentalStatus.Active})"
-               ).IsUnique()
+               .HasFilter($"\"{nameof(InstrumentRental.RentalStatus)}\" IN ({(int)InstrumentRentalStatus.Approved}, {(int)InstrumentRentalStatus.Active})").IsUnique()
                .HasDatabaseName("UX_InstrumentRental_InstrumentId_ActiveOrApproved");
     }
 }

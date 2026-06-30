@@ -26,6 +26,10 @@ public static class ConfigurationExtensions
         {
             errors.Add("JWT__Key (minimum 32 characters)");
         }
+        else if (jwtKey == "ThisIsASecretKeyThatIsAtLeast32CharactersLong!")
+        {
+            errors.Add("JWT__Key (placeholder value — must be changed before deployment)");
+        }
 
         if (string.IsNullOrWhiteSpace(configuration["Jwt:Issuer"]))
         {

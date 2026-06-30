@@ -1,10 +1,10 @@
-using eNote.Domain.Entities;
-using eNote.Domain.Entities.Shared;
 using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Interfaces;
-using eNote.Application.Common.Localization;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Common.Time;
+using eNote.Domain.Entities;
+using eNote.Domain.Entities.Rentals;
+using eNote.Domain.Entities.Shared;
 using eNote.Infrastructure.Data.Seed;
 using eNote.Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -24,8 +24,8 @@ public class ENoteContext(DbContextOptions<ENoteContext> options, IClock clock, 
 
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(ENoteContext).Assembly);
 
-        // Apply global tenant filter for ITenantScoped entities (Instrument, InstrumentRental)
         var tenantEntityType = typeof(ITenantScoped);
+
         foreach (var entityType in modelBuilder.Model.GetEntityTypes())
         {
             if (tenantEntityType.IsAssignableFrom(entityType.ClrType))
@@ -33,15 +33,16 @@ public class ENoteContext(DbContextOptions<ENoteContext> options, IClock clock, 
                 var method = typeof(ENoteContext)
                     .GetMethod(nameof(SetTenantFilter), System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!
                     .MakeGenericMethod(entityType.ClrType);
-                method.Invoke(null, new object[] { modelBuilder, this });
+
+                method.Invoke(null, [modelBuilder, this]);
             }
         }
 
-        // Announcement: already has MusicStoreId column (nullable for course-scoped).
-        // Store employees see their store's announcements + course-scoped ones; others see all.
+        modelBuilder.Entity<InstrumentRental>().HasQueryFilter(r => r.Instrument.IsActive && (GetStoreId() == null || r.MusicStoreId == GetStoreId()));
+
         var storeId = GetStoreId();
-        modelBuilder.Entity<Announcement>().HasQueryFilter(a =>
-            a.IsActive && (storeId == null || a.MusicStoreId == null || a.MusicStoreId == storeId));
+
+        modelBuilder.Entity<Announcement>().HasQueryFilter(a => a.IsActive && (storeId == null || a.MusicStoreId == null || a.MusicStoreId == storeId));
 
         ModelBuilderSeed.Seed(modelBuilder);
     }
@@ -50,13 +51,8 @@ public class ENoteContext(DbContextOptions<ENoteContext> options, IClock clock, 
     {
         if (_storeId is not null) return _storeId;
         try { _storeId = actor.GetCurrentStoreId(); }
-        catch (BusinessException ex) when (ex.Message == Messages.ActiveEmployeeStoreNotFound) { /* Not a store employee; filter will match nothing — safe */ }
+        catch (StoreNotResolvedException) { }
         return _storeId;
-    }
-
-    private static void SetTenantFilter<TEntity>(ModelBuilder modelBuilder, ENoteContext context) where TEntity : class, ITenantScoped
-    {
-        modelBuilder.Entity<TEntity>().HasQueryFilter(e => e.MusicStoreId == context.GetStoreId());
     }
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
@@ -77,6 +73,11 @@ public class ENoteContext(DbContextOptions<ENoteContext> options, IClock clock, 
         }
 
         return await base.SaveChangesAsync(cancellationToken);
+    }
+
+    private static void SetTenantFilter<TEntity>(ModelBuilder modelBuilder, ENoteContext context) where TEntity : class, ITenantScoped
+    {
+        modelBuilder.Entity<TEntity>().HasQueryFilter(e => context.GetStoreId() == null || e.MusicStoreId == context.GetStoreId());
     }
 
     public async Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default)

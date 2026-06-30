@@ -16,6 +16,7 @@ public sealed class AuthService(UserManager<AppUser> userManager, SignInManager<
     public async Task<AuthResponse> LoginAsync(LoginRequest model, CancellationToken cancellationToken = default)
     {
         var username = model.Username.Trim();
+
         AppUser? user = await userManager.FindByNameAsync(username);
 
         if (user == null || !user.IsActive)
@@ -67,12 +68,7 @@ public sealed class AuthService(UserManager<AppUser> userManager, SignInManager<
             throw new BusinessException(error);
         }
 
-        AppUser? user = await userManager.FindByNameAsync(model.Username.Trim());
-
-        if (user is null)
-        {
-            throw new BusinessException(Messages.InternalError);
-        }
+        AppUser? user = await userManager.FindByNameAsync(model.Username.Trim()) ?? throw new BusinessException(Messages.InternalError);
 
         IList<string> roles = await userManager.GetRolesAsync(user);
 
@@ -92,6 +88,7 @@ public sealed class AuthService(UserManager<AppUser> userManager, SignInManager<
     public async Task<ForgotPasswordResponse> ForgotPasswordAsync(ForgotPasswordRequest request, CancellationToken cancellationToken = default)
     {
         var email = request.Email.Trim();
+
         AppUser? user = await userManager.FindByEmailAsync(email);
 
         if (user is null || !user.IsActive)
@@ -125,7 +122,10 @@ public sealed class AuthService(UserManager<AppUser> userManager, SignInManager<
         if (!result.Succeeded)
         {
             var errors = string.Join("; ", result.Errors.Select(e => e.Description));
-            throw new BusinessException(Messages.PasswordResetFailed + " " + errors);
+
+            logger.LogWarning("Password reset failed for user {UserId}: {Errors}", user.Id, errors);
+
+            throw new BusinessException(Messages.PasswordResetFailed);
         }
     }
 }

@@ -1,7 +1,6 @@
 using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Localization;
-using eNote.Infrastructure;
 using Microsoft.AspNetCore.Hosting;
 
 namespace eNote.Infrastructure.Storage;
@@ -14,7 +13,11 @@ public sealed class LocalFileStorageService(IWebHostEnvironment env) : IFileStor
 
     public async Task<string> SaveAsync(Stream stream, string fileName, string contentType, string subfolder, CancellationToken ct = default)
     {
-        if (stream.CanSeek && stream.Length > MaxFileSizeBytes)
+        if (!stream.CanSeek)
+        {
+            throw new BusinessException(Messages.FileTooLarge);
+        }
+        if (stream.Length > MaxFileSizeBytes)
         {
             throw new BusinessException(Messages.FileTooLarge);
         }
@@ -26,12 +29,16 @@ public sealed class LocalFileStorageService(IWebHostEnvironment env) : IFileStor
             throw new BusinessException(Messages.InvalidFileFormat);
         }
 
-        return await SaveToDiskAsync(stream, fileName, contentType, subfolder, ct);
+        return await SaveToDiskAsync(stream, fileName, subfolder, ct);
     }
 
     public async Task<string> SaveAssignmentAsync(Stream stream, string fileName, string contentType, CancellationToken ct = default)
     {
-        if (stream.CanSeek && stream.Length > MaxFileSizeBytes)
+        if (!stream.CanSeek)
+        {
+            throw new BusinessException(Messages.FileTooLarge);
+        }
+        if (stream.Length > MaxFileSizeBytes)
         {
             throw new BusinessException(Messages.FileTooLarge);
         }
@@ -43,15 +50,24 @@ public sealed class LocalFileStorageService(IWebHostEnvironment env) : IFileStor
             throw new BusinessException(Messages.InvalidFileFormat);
         }
 
-        return await SaveToDiskAsync(stream, fileName, contentType, "assignments", ct);
+        return await SaveToDiskAsync(stream, fileName, "assignments", ct);
     }
 
-    private async Task<string> SaveToDiskAsync(Stream stream, string fileName, string contentType, string subfolder, CancellationToken ct)
+    private async Task<string> SaveToDiskAsync(Stream stream, string fileName, string subfolder, CancellationToken ct)
     {
         var uploadsRoot = Path.Combine(env.WebRootPath ?? Path.Combine(env.ContentRootPath, "wwwroot"), "uploads", subfolder);
+
         Directory.CreateDirectory(uploadsRoot);
 
-        var ext = contentType.ToLowerInvariant() switch
+        var header = new byte[12];
+        var read = await stream.ReadAsync(header.AsMemory(0, header.Length), ct);
+
+        stream.Position = 0;
+
+        var detectedType = FileSignatureDetector.DetectContentType(header.AsSpan(0, read));
+
+
+        var ext = detectedType switch
         {
             "image/jpeg" => ".jpg",
             "image/png" => ".png",
@@ -63,10 +79,9 @@ public sealed class LocalFileStorageService(IWebHostEnvironment env) : IFileStor
         var uniqueName = $"{Guid.NewGuid()}{ext}";
         var fullPath = Path.Combine(uploadsRoot, uniqueName);
 
-        stream.Position = 0;
         await using FileStream fileStream = File.Create(fullPath);
-        await stream.CopyToAsync(fileStream, ct);
 
+        await stream.CopyToAsync(fileStream, ct);
         return $"/api/uploads/{subfolder}/{uniqueName}";
     }
 
@@ -74,6 +89,7 @@ public sealed class LocalFileStorageService(IWebHostEnvironment env) : IFileStor
     {
         var header = new byte[12];
         var read = await stream.ReadAsync(header.AsMemory(0, header.Length), ct);
+
         stream.Position = 0;
 
         if (!FileSignatureDetector.IsAllowed(header.AsSpan(0, read), allowedContentTypes))

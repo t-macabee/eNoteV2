@@ -1,9 +1,3 @@
-using eNote.Domain.Entities;
-using eNote.Application.Common.Exceptions;
-using eNote.Application.Common.Interfaces;
-using eNote.Application.Common.Localization;
-using eNote.Application.Common.Persistence;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace eNote.Application.Features.Identity.Users.Services;
@@ -13,6 +7,7 @@ public sealed class CurrentActor(ICurrentUserService user, IUserProfileLookup lo
     private Student? _student;
     private Instructor? _instructor;
     private MusicStoreEmployee? _employee;
+
     private int? _storeId;
     private IAppDbContext? _context;
 
@@ -36,10 +31,10 @@ public sealed class CurrentActor(ICurrentUserService user, IUserProfileLookup lo
             .Select(x => (int?)x.MusicStoreId)
             .SingleOrDefaultAsync(cancellationToken);
 
-        if (!storeId.HasValue) throw new BusinessException(Messages.ActiveEmployeeStoreNotFound);
+        if (!storeId.HasValue) throw new StoreNotResolvedException(Messages.ActiveEmployeeStoreNotFound);
 
         return (_storeId = storeId.Value).Value;
     }
 
-    public int GetCurrentStoreId() => _storeId ?? throw new BusinessException(Messages.ActiveEmployeeStoreNotFound);
+    public int GetCurrentStoreId() => _storeId ?? throw new StoreNotResolvedException(Messages.ActiveEmployeeStoreNotFound);
 }

@@ -3,13 +3,9 @@ using System.Text.Json.Serialization;
 
 namespace eNote.API.Converters;
 
-// Enforces DateTimeKind.Utc on all incoming DateTime values at the API boundary,
-// allowing the Npgsql legacy timestamp switch to be removed.
 internal sealed class UtcDateTimeJsonConverter : JsonConverter<DateTime>
 {
-    public override DateTime Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
-        DateTime.SpecifyKind(reader.GetDateTime(), DateTimeKind.Utc);
+    public override DateTime Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) => DateTime.SpecifyKind(reader.GetDateTime(), DateTimeKind.Utc);
 
-    public override void Write(Utf8JsonWriter writer, DateTime value, JsonSerializerOptions options) =>
-        writer.WriteStringValue(value.ToUniversalTime());
+    public override void Write(Utf8JsonWriter writer, DateTime value, JsonSerializerOptions options) => writer.WriteStringValue(value.ToUniversalTime());
 }

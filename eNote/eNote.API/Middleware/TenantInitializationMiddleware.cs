@@ -11,7 +11,7 @@ public sealed class TenantInitializationMiddleware(RequestDelegate next)
         if (httpContext.User.Identity?.IsAuthenticated == true)
         {
             try { await actor.GetCurrentStoreIdAsync(httpContext.RequestAborted); }
-            catch (BusinessException ex) when (ex.Message == Messages.ActiveEmployeeStoreNotFound) { /* Not a store employee; tenant filter will match nothing — safe */ }
+            catch (StoreNotResolvedException) { /* Not a store employee; tenant filter will match nothing — safe */ }
         }
 
         await next(httpContext);
