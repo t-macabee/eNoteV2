@@ -30,11 +30,6 @@ public static class ConfigurationHelpers
         return propertyBuilder.HasDefaultValue(false);
     }
 
-    public static PropertyBuilder<DateTime> HasDefaultSqlNow(this PropertyBuilder<DateTime> propertyBuilder)
-    {
-        return propertyBuilder.HasDefaultValueSql("now()");
-    }
-
     public static IndexBuilder HasUniqueIndex(this EntityTypeBuilder builder, string propertyName)
     {
         return builder.HasIndex(propertyName).IsUnique();
