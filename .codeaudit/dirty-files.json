@@ -1,8 +1,0 @@
-{
-  "schemaVersion": 1,
-  "dirtyFiles": [
-    "eNote/eNote.Domain/Entities/Shared/ITenantScoped.cs"
-  ],
-  "deletedFiles": [],
-  "markedAt": "2026-07-02T23:33:40.8191691Z"
-}
