@@ -1,4 +1,5 @@
 using eNote.Domain.Entities.Rentals;
+using eNote.Domain.Enums;
 
 namespace eNote.Application.Features.Rentals.InstrumentRentals.Billing;
 
@@ -66,6 +67,4 @@ public static class RentalBilling
     }
 
     private readonly record struct BillingResult(int? MonthsCharged, int? DaysCharged, decimal? DailyFee, decimal? TotalFee, bool IsProrated);
-
-    private readonly record struct HookE2ETestMarker;
 }
