@@ -89,6 +89,17 @@ ios/Runner/GeneratedPluginRegistrant.*
 /task.txt
 .aider*
 
+# Claude Code / agent artifacts (keep local, do not commit)
+.claude/
+CLAUDE.md
+.tokensave/
+.codeaudit/
+.semantic/
+
+# Indexer build artifacts (source is committed, build locally)
+tools/Indexer/bin/
+tools/Indexer/obj/
+
 # Generated / local agent artifacts
 graphify*/
 **/scripts/
