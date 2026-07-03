@@ -1,8 +1,3 @@
-using eNote.Domain.Entities;
-using eNote.Application.Common.Localization;
-using eNote.Application.Common.Persistence;
-using Microsoft.EntityFrameworkCore;
-
 namespace eNote.Application.Features.Identity.Users.Services;
 
 public sealed class UserProfileLookup(IAppDbContext context) : IUserProfileLookup

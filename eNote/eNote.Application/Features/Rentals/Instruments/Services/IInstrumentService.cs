@@ -1,6 +1,3 @@
-using eNote.Application.Common.Paging;
-using eNote.Application.Features.Rentals.Instruments;
-
 namespace eNote.Application.Features.Rentals.Instruments.Services;
 
 public interface IInstrumentService

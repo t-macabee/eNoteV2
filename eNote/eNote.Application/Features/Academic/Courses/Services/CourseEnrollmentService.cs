@@ -1,11 +1,3 @@
-using eNote.Application.Common.Exceptions;
-using eNote.Application.Common.Interfaces;
-using eNote.Application.Common.Localization;
-using eNote.Application.Common.Persistence;
-using eNote.Application.Common.Time;
-using eNote.Domain.Entities;
-using eNote.Domain.Enums;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace eNote.Application.Features.Academic.Courses.Services;

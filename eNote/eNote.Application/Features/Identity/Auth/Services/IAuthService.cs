@@ -1,5 +1,3 @@
-using eNote.Application.Features.Identity.Auth;
-
 namespace eNote.Application.Features.Identity.Auth.Services;
 
 public interface IAuthService

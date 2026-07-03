@@ -1,0 +1,125 @@
+{
+  "schemaVersion": 1,
+  "symbolId": "eNote.Infrastructure.Messaging.RentalNotificationDispatcher",
+  "fingerprint": "40105EDA1416CA7E",
+  "generatedAt": "2026-07-02T00:00:00Z",
+  "status": "proposed",
+  "facts": {
+    "kind": "Class",
+    "namespace": "eNote.Infrastructure.Messaging",
+    "inherits": null,
+    "Implements": [
+      "eNote.Application.Common.Interfaces.IRentalNotificationDispatcher"
+    ],
+    "sourceFile": "eNote/eNote.Infrastructure/Messaging/RentalNotificationDispatcher.cs",
+    "dependencies": [
+      "eNote.Application.Common.Persistence.IAppDbContext",
+      "eNote.Application.Common.Time.IClock",
+      "eNote.Application.Features.Rentals.InstrumentRentals.InstrumentRentalDto",
+      "eNote.Application.Features.Rentals.InstrumentRentals.StateMachine.RentalTrigger",
+      "eNote.Contracts.Rentals.RentalStatusChanged",
+      "eNote.Domain.Entities.RentalNotificationOutbox"
+    ]
+  },
+  "interpretation": {
+    "architecturalRole": {
+      "value": "InfrastructureService",
+      "confidence": 0.90
+    },
+    "responsibility": {
+      "value": "Enqueues rental notification messages into the outbox table by constructing RentalStatusChanged messages with locale-specific Croatian title/body text and serializing them as outbox rows, without persisting them (the caller owns SaveChanges).",
+      "confidence": 0.95
+    },
+    "Owns": [
+      "Building a RentalStatusChanged message with recipient/actor IDs, rental details, and human-readable Croatian title/body for newly created rental requests (DispatchCreatedAsync)",
+      "Building a RentalStatusChanged message with recipient/actor IDs, rental details, and trigger-specific Croatian title/body for state transitions (DispatchTransitionAsync \u2014 handles Approve, Reject, Pickup, Complete, Cancel, ReturnEarly, and unknown triggers via a default fallback)",
+      "Serializing the message to JSON (JsonSerializerDefaults.Web) and creating an unpersisted RentalNotificationOutbox entity via EnqueueOutbox",
+      "Conditionally omitting the rejection reason from the notification body when rental.Note is null or whitespace (Reject trigger arm)"
+    ],
+    "doesNotOwn": [
+      "Calling SaveChangesAsync to persist the outbox row \u2014 this is delegated entirely to the caller\u0027s unit of work or transaction boundary",
+      "Publishing messages to the message broker \u2014 the outbox row is consumed later by RentalNotificationOutboxPublisher, a separate BackgroundService",
+      "Logging \u2014 the class has no ILogger unlike the Publisher; serialization/DB failures surface as raw exceptions to the caller with no dedicated log trail",
+      "Error handling \u2014 the class does not wrap any operation in try/catch; exceptions propagate directly to the caller",
+      "Determining who should receive the notification \u2014 recipient IDs (studentUserId, actorUserId) are supplied by the caller and placed verbatim into the message"
+    ],
+    "collaborators": [
+      {
+        "symbol": "eNote.Application.Common.Persistence.IAppDbContext",
+        "relationship": "Injects",
+        "detail": "Injected via constructor; used in EnqueueOutbox to call Set\u003CRentalNotificationOutbox\u003E().Add(entry)"
+      },
+      {
+        "symbol": "eNote.Application.Common.Time.IClock",
+        "relationship": "Injects",
+        "detail": "Injected via constructor; provides clock.UtcNow as the OccurredAt timestamp in every RentalStatusChanged message"
+      },
+      {
+        "symbol": "eNote.Application.Features.Rentals.InstrumentRentals.InstrumentRentalDto",
+        "relationship": "Accepts",
+        "detail": "Received as a parameter in both public methods; properties like Id, InstrumentModel, StoreName, RentalStatus, Fee, Note, StudentUserId are read to populate the outbound notification"
+      },
+      {
+        "symbol": "eNote.Application.Features.Rentals.InstrumentRentals.StateMachine.RentalTrigger",
+        "relationship": "Accepts",
+        "detail": "Received as a parameter in DispatchTransitionAsync; switched over to select the appropriate notification title/body"
+      },
+      {
+        "symbol": "eNote.Contracts.Rentals.RentalStatusChanged",
+        "relationship": "Creates",
+        "detail": "Constructs a new RentalStatusChanged instance in both public methods, populated with rental data and locale-specific text, then serializes it to JSON"
+      },
+      {
+        "symbol": "eNote.Domain.Entities.RentalNotificationOutbox",
+        "relationship": "Creates",
+        "detail": "Creates a new RentalNotificationOutbox entity with the serialized JSON as PayloadJson and adds it to the DbSet"
+      },
+      {
+        "symbol": "eNote.Application.Common.Interfaces.IRentalNotificationDispatcher",
+        "relationship": "Implements",
+        "detail": "Implements the 2-method interface (DispatchCreatedAsync, DispatchTransitionAsync) that defines the notification enqueue contract"
+      }
+    ],
+    "contracts": [
+      "DispatchCreatedAsync always produces a notification with title \u0027Zahtjev za iznajmljivanje poslan\u0027 and a body mentioning the instrument model and store name",
+      "DispatchTransitionAsync produces trigger-specific notification text for each known RentalTrigger value (Approve includes the monthly fee; Reject conditionally includes the reason; Pickup/Complete/Cancel/ReturnEarly have fixed texts)",
+      "For any unknown RentalTrigger value, the switch default arm produces a generic title \u0027Status iznajmljivanja promijenjen\u0027 without crashing",
+      "The Reject arm never crashes on null/whitespace Note \u2014 it conditionally omits the reason text via string.IsNullOrWhiteSpace check",
+      "EnqueueOutbox always creates a new RentalNotificationOutbox entity with non-null PayloadJson and adds it to the DbSet; it never calls SaveChangesAsync"
+    ],
+    "assumptions": [
+      "The caller will call SaveChangesAsync after invoking this dispatcher \u2014 if the caller forgets, the outbox row never reaches the database and the notification is silently lost with no exception or log",
+      "InstrumentRentalDto properties used in message construction (Id, InstrumentModel, StoreName, Fee, etc.) are non-null and have valid values \u2014 null model names or zero IDs are accepted without validation",
+      "The caller manages its own transaction scope \u2014 this class does not begin or commit any database transaction"
+    ],
+    "invariants": [
+      "All RentalStatusChanged messages are constructed with a non-null OccurredAt timestamp from clock.UtcNow",
+      "The message\u0027s studentActorId in DispatchCreatedAsync is always the studentUserId parameter (the student is both the subject and the initiator of the creation event)",
+      "The message\u0027s studentActorId in DispatchTransitionAsync is always the actorUserId parameter (distinct from the rental\u0027s owner StudentUserId)"
+    ],
+    "failureModes": [
+      "Silent notification loss if the caller never calls SaveChangesAsync \u2014 no exception is thrown and no record exists to indicate the notification was dropped at the application level",
+      "JsonSerializer.Serialize exception propagates raw to the caller \u2014 no catch block exists in EnqueueOutbox",
+      "DbSet.Add exception propagates raw to the caller \u2014 no catch block exists in EnqueueOutbox",
+      "A new RentalTrigger enum value added without updating the switch produces a generic, uninformative notification title \u2014 the default arm catches all values but provides no specific guidance to the end user about what happened"
+    ],
+    "architecturalNotes": [
+      "The SaveChanges delegation is a deliberate architectural choice (thin enqueuer pattern), but the lack of a guard or warning means a developer who is unaware of this contract could silently lose notifications in a new code path",
+      "Unlike RentalNotificationOutboxPublisher, this class has no logging \u2014 failures surface only as caller-side exceptions with no dedicated audit trail for debugging notification delivery issues",
+      "The switch default arm is defensive against new enum values, but the generic message it produces (no reference to the actual trigger name) makes it a poor experience for future extension"
+    ]
+  },
+  "evidence": {
+    "primaryMethods": [
+      "DispatchCreatedAsync",
+      "DispatchTransitionAsync",
+      "EnqueueOutbox"
+    ],
+    "primaryFields": []
+  },
+  "review": {
+    "status": "pending",
+    "reviewedBy": null,
+    "reviewedAt": null
+  }
+}

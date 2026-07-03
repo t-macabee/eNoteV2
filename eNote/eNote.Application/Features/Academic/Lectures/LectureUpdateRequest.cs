@@ -1,5 +1,3 @@
-using System.ComponentModel.DataAnnotations;
-
 namespace eNote.Application.Features.Academic.Lectures;
 
 public class LectureUpdateRequest

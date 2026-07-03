@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 1,
+  "symbolId": "eNote.API.Middleware.TenantInitializationMiddleware",
+  "fingerprint": "DA1C216F37C232C5",
+  "generatedAt": "2026-07-02T00:00:00Z",
+  "status": "proposed",
+  "facts": {
+    "kind": "Class",
+    "namespace": "eNote.API.Middleware",
+    "inherits": null,
+    "Implements": [],
+    "sourceFile": "eNote/eNote.API/Middleware/TenantInitializationMiddleware.cs",
+    "dependencies": [
+      "eNote.Application.Common.Interfaces.ICurrentActor",
+      "eNote.Application.Common.Exceptions.StoreNotResolvedException"
+    ]
+  },
+  "interpretation": {
+    "architecturalRole": {
+      "value": "Middleware",
+      "confidence": 0.95
+    },
+    "responsibility": {
+      "value": "For authenticated requests, eagerly resolves and caches the current store id on ICurrentActor early in the pipeline, so later code paths (including EF Core\u0027s per-request tenant query filter) get a warm value instead of resolving it lazily on first use.",
+      "confidence": 0.85
+    },
+    "Owns": [
+      "Pre-warming actor.GetCurrentStoreIdAsync() once per authenticated request",
+      "Swallowing StoreNotResolvedException so non-store roles (students, instructors) pass through unaffected"
+    ],
+    "doesNotOwn": [
+      "Actual tenant data filtering \u2014 that is enforced by ENoteContext\u0027s global query filters (OnModelCreating), which call the same ICurrentActor.GetCurrentStoreId() this middleware pre-warms",
+      "Authentication itself \u2014 this middleware only acts on already-authenticated requests"
+    ],
+    "collaborators": [
+      {
+        "symbol": "eNote.Application.Common.Interfaces.ICurrentActor",
+        "relationship": "Calls",
+        "detail": "GetCurrentStoreIdAsync() \u2014 the same resolution path EF Core\u0027s query filters use synchronously via GetCurrentStoreId()"
+      }
+    ],
+    "contracts": [
+      "A request from a non-store-employee role (no resolvable store) proceeds normally \u2014 StoreNotResolvedException is not surfaced as an error."
+    ],
+    "assumptions": [
+      "ICurrentActor caches the resolved store id internally (e.g. in a per-request/scoped field) so that this middleware\u0027s early resolution is actually reused by ENoteContext\u0027s later query-filter calls rather than re-querying. If ICurrentActor is not scoped/cached correctly, this middleware provides no benefit and is purely inert.",
+      "This middleware is registered early enough in the pipeline (after authentication, before any DB-touching endpoint code) for the pre-warm to matter."
+    ],
+    "invariants": [],
+    "failureModes": [
+      "None surfaced to the caller \u2014 StoreNotResolvedException is caught and ignored by design."
+    ],
+    "architecturalNotes": [
+      "This class does not itself enforce tenant isolation \u2014 that lives in eNote.Infrastructure.Data.ENoteContext.OnModelCreating, which reflects over all ITenantScoped entity types and applies a HasQueryFilter scoped to GetStoreId(). This middleware is purely a performance/warm-cache concern; a bug here would affect latency, not correctness. A bug in the ENoteContext filter setup is the actual tenant-isolation risk."
+    ]
+  },
+  "evidence": {
+    "primaryMethods": [
+      "InvokeAsync"
+    ],
+    "primaryFields": []
+  },
+  "review": {
+    "status": "pending",
+    "reviewedBy": null,
+    "reviewedAt": null
+  }
+}

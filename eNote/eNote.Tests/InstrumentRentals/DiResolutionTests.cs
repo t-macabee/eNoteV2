@@ -1,10 +1,6 @@
-using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Persistence;
-using eNote.Application.Common.Time;
-using eNote.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit;
 
 namespace eNote.Tests.InstrumentRentals;
 

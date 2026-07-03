@@ -1,6 +1,3 @@
-using eNote.Application.Common.Interfaces;
-using eNote.Application.Features.Identity.Users;
-
 namespace eNote.Application.Features.Identity.Users.Services;
 
 public sealed class UserSelfService(

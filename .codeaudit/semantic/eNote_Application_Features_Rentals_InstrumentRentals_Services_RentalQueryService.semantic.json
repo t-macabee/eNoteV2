@@ -1,0 +1,97 @@
+{
+  "schemaVersion": 1,
+  "symbolId": "eNote.Application.Features.Rentals.InstrumentRentals.Services.RentalQueryService",
+  "fingerprint": "8A58AC343B649407",
+  "generatedAt": "2026-07-02T00:00:00Z",
+  "status": "proposed",
+  "facts": {
+    "kind": "Class",
+    "namespace": "eNote.Application.Features.Rentals.InstrumentRentals.Services",
+    "inherits": null,
+    "Implements": [
+      "eNote.Application.Features.Rentals.InstrumentRentals.Services.IRentalQueryService"
+    ],
+    "sourceFile": "eNote/eNote.Application/Features/Rentals/InstrumentRentals/Services/RentalQueryService.cs",
+    "dependencies": [
+      "eNote.Application.Common.Interfaces.ICurrentActor",
+      "eNote.Application.Common.Paging.PagedResult\u003CInstrumentRentalDto\u003E",
+      "eNote.Application.Common.Persistence.IAppDbContext",
+      "eNote.Application.Common.Time.IClock",
+      "eNote.Application.Features.Rentals.InstrumentRentals.Billing.RentalBilling",
+      "eNote.Application.Features.Rentals.InstrumentRentals.InstrumentRentalSearchObject",
+      "eNote.Domain.Entities.Rentals.InstrumentRental",
+      "MapsterMapper.IMapper"
+    ]
+  },
+  "interpretation": {
+    "architecturalRole": {
+      "value": "ApplicationService",
+      "confidence": 0.9
+    },
+    "responsibility": {
+      "value": "Read-only access to rentals for both students and store staff: single-rental lookups and paged/search listings, with billing figures computed on the fly for every returned DTO.",
+      "confidence": 0.95
+    },
+    "Owns": [
+      "Mapping InstrumentRental entities to InstrumentRentalDto and attaching computed billing fields via RentalBilling",
+      "Student-scoped filtering for GetByIdForStudentAsync / GetPagedForStudentAsync (filters by StudentProfile.AppUserId == actor.UserId)",
+      "Paging/search orchestration via GetPagedAsync"
+    ],
+    "doesNotOwn": [
+      "Store-scoped filtering for the store-facing queries \u2014 GetByIdForStoreAsync and GetPagedForStoreAsync do not filter by the caller\u0027s store at all",
+      "Billing calculation logic \u2014 delegated to RentalBilling",
+      "Write access \u2014 this service is read-only, no state mutation"
+    ],
+    "collaborators": [
+      {
+        "symbol": "eNote.Application.Common.Interfaces.ICurrentActor",
+        "relationship": "Injects",
+        "detail": "Used only in the student-facing methods to scope by AppUserId"
+      },
+      {
+        "symbol": "eNote.Application.Features.Rentals.InstrumentRentals.Billing.RentalBilling",
+        "relationship": "Calls",
+        "detail": "Applied to every DTO before it\u0027s returned"
+      },
+      {
+        "symbol": "eNote.Application.Common.Persistence.IAppDbContext",
+        "relationship": "Injects",
+        "detail": "Read-only queries via context.Set\u003CInstrumentRental\u003E()"
+      }
+    ],
+    "contracts": [
+      "GetByIdForStudentAsync and GetPagedForStudentAsync only ever return rentals owned by the calling student (AppUserId filter is applied at the query level, not in memory).",
+      "GetByIdForStoreAsync and GetPagedForStoreAsync return matching rentals across ALL stores with no MusicStoreId filter applied in this class \u2014 tenant scoping for these two methods is not enforced here.",
+      "Every returned DTO has billing fields populated as of \u0027now\u0027 at query time \u2014 billing is not cached or stale."
+    ],
+    "assumptions": [
+      "Callers of GetByIdForStoreAsync / GetPagedForStoreAsync are expected to already be scoped to their own store by a controller-level filter or middleware before reaching this service \u2014 the class itself does not verify or restrict by MusicStoreId.",
+      "actor.UserId reflects the currently authenticated student and cannot be spoofed by the caller."
+    ],
+    "invariants": [],
+    "failureModes": [
+      "NotFoundException when a lookup by id matches no row (or matches a row outside the caller\u0027s own scope for the student-facing methods, which is indistinguishable from not existing \u2014 same exception, so no ownership is leaked).",
+      "Silent over-broad results for the store-facing methods if a scoping filter is missing upstream \u2014 this is a data-exposure risk, not a thrown exception."
+    ],
+    "architecturalNotes": [
+      "This is the counterpart flagged by the external blast-radius review as the tenant-isolation risk point: GetByIdForStoreAsync and GetPagedForStoreAsync are unscoped by design (CQRS read-side keeps scoping in the controller/middleware layer), but that means a missing or buggy upstream filter is a direct cross-tenant data leak with no defense-in-depth at this layer.",
+      "GetPagedForStudentAsync / GetPagedForStoreAsync differ only in the base IQueryable passed to GetPagedAsync \u2014 the shared paging/search/billing pipeline is common to both."
+    ]
+  },
+  "evidence": {
+    "primaryMethods": [
+      "GetByIdForStudentAsync",
+      "GetPagedForStudentAsync",
+      "GetByIdForStoreAsync",
+      "GetPagedForStoreAsync",
+      "GetPagedAsync",
+      "FindRentalAsync"
+    ],
+    "primaryFields": []
+  },
+  "review": {
+    "status": "pending",
+    "reviewedBy": null,
+    "reviewedAt": null
+  }
+}

@@ -2,7 +2,6 @@
 using eNote.Infrastructure.Data.Seed;
 using eNote.Application.Common.Time;
 using eNote.Infrastructure.Data;
-using Microsoft.EntityFrameworkCore;
 
 namespace eNote.API.Extensions;
 

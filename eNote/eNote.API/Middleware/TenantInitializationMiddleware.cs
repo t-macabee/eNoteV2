@@ -1,6 +1,5 @@
 using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Interfaces;
-using eNote.Application.Common.Localization;
 
 namespace eNote.API.Middleware;
 

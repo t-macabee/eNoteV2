@@ -1,9 +1,6 @@
 using eNote.Application.Common.Localization;
 using eNote.Application.Features.Academic.Lectures;
 using eNote.Application.Validation;
-using eNote.Domain.Enums;
-using FluentValidation.Results;
-using Xunit;
 
 namespace eNote.Tests.Validation;
 

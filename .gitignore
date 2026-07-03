@@ -99,3 +99,11 @@ graphify*/
 /eNote/Phase1_ComponentInventory.md
 /eNote/Phase2_ContractAdherenceAudit.md
 /eNote/docs/audit/Phase3_CorrectnessSecurityReview.md
+
+# Node / headroom MCP (dev tooling, not part of the project)
+node_modules/
+package.json
+package-lock.json
+
+# JetBrains Qodana (local static analysis, not committed)
+eNote/qodana.yaml

@@ -1,5 +1,3 @@
-using eNote.Domain.Enums;
-
 namespace eNote.Application.Features.Rentals.InstrumentRentals;
 
 public class InstrumentRentalDto

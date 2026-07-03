@@ -1,5 +1,3 @@
-using eNote.Domain.Entities;
-using eNote.Domain.Enums;
 using Mapster;
 
 namespace eNote.Application.Features.Academic.Lectures;

@@ -1,6 +1,3 @@
-using eNote.Application.Common.Interfaces;
-using eNote.Domain.Entities;
-
 namespace eNote.Tests.TestUtils;
 
 public sealed class StubCurrentActor(

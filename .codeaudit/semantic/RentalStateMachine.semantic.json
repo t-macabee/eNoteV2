@@ -1,0 +1,152 @@
+{
+  "schemaVersion": 1,
+  "symbolId": "eNote.Application.Features.Rentals.InstrumentRentals.StateMachine.RentalStateMachine",
+  "fingerprint": "E3D3487E7F6F5327",
+  "generatedAt": "2026-07-02T16:00:00Z",
+  "status": "proposed",
+  "facts": {
+    "kind": "Class",
+    "namespace": "eNote.Application.Features.Rentals.InstrumentRentals.StateMachine",
+    "inherits": null,
+    "Implements": [
+      "eNote.Application.Features.Rentals.InstrumentRentals.StateMachine.IRentalStateMachine"
+    ],
+    "sourceFile": "eNote/eNote.Application/Features/Rentals/InstrumentRentals/StateMachine/RentalStateMachine.cs",
+    "dependencies": [
+      "eNote.Application.Common.Exceptions.BusinessException",
+      "eNote.Application.Common.Localization.Messages",
+      "eNote.Application.Common.Time.IClock",
+      "eNote.Application.Features.Rentals.InstrumentRentals.StateMachine.IRentalStateMachine",
+      "eNote.Application.Features.Rentals.InstrumentRentals.StateMachine.RentalActor",
+      "eNote.Application.Features.Rentals.InstrumentRentals.StateMachine.RentalTransitionContext",
+      "eNote.Application.Features.Rentals.InstrumentRentals.StateMachine.RentalTransitionResult",
+      "eNote.Application.Features.Rentals.InstrumentRentals.StateMachine.RentalTrigger",
+      "eNote.Domain.Entities.Rentals.InstrumentRental",
+      "eNote.Domain.Enums.InstrumentRentalStatus",
+      "eNote.Domain.Shared.Result\u003CRentalTransitionResult\u003E"
+    ]
+  },
+  "interpretation": {
+    "architecturalRole": {
+      "value": "StateMachine",
+      "confidence": 0.99
+    },
+    "responsibility": {
+      "value": "Orchestrates valid state transitions for instrument rental lifecycles. Accepts a rental entity, a trigger, and contextual data; validates the transition against a static table of business-rule-guarded transitions; and mutates the rental entity on success.",
+      "confidence": 0.98
+    },
+    "Owns": [
+      "Rental lifecycle state transition rules \u2014 defining which (from-status, trigger, actor) combinations are valid",
+      "Transition-side validation via guard lambdas \u2014 instrument active checks, lock conflict checks, pickup/return gating",
+      "Transient error handling \u2014 catching BusinessException from guards and converting to Result.Failure",
+      "Audit field population \u2014 setting UpdatedById on every successful transition"
+    ],
+    "doesNotOwn": [
+      "Persistence of the rental entity after mutation \u2014 caller\u0027s responsibility",
+      "User authentication and authorization \u2014 actor identity is passed in, not verified here",
+      "Instrument lock management \u2014 conflict flag is passed in, not computed here",
+      "Notification dispatching \u2014 no event publishing after transitions",
+      "Database transactions or unit of work scoping"
+    ],
+    "collaborators": [
+      {
+        "symbol": "eNote.Application.Features.Rentals.InstrumentRentals.StateMachine.IRentalStateMachine",
+        "relationship": "Implements"
+      },
+      {
+        "symbol": "eNote.Application.Common.Time.IClock",
+        "relationship": "Injects"
+      },
+      {
+        "symbol": "eNote.Domain.Entities.Rentals.InstrumentRental",
+        "relationship": "Mutates"
+      },
+      {
+        "symbol": "eNote.Application.Features.Rentals.InstrumentRentals.StateMachine.RentalTransitionContext",
+        "relationship": "Accepts"
+      },
+      {
+        "symbol": "eNote.Application.Features.Rentals.InstrumentRentals.StateMachine.RentalTrigger",
+        "relationship": "Accepts"
+      },
+      {
+        "symbol": "eNote.Application.Features.Rentals.InstrumentRentals.StateMachine.RentalActor",
+        "relationship": "ReferencesStatically"
+      },
+      {
+        "symbol": "eNote.Domain.Enums.InstrumentRentalStatus",
+        "relationship": "ReferencesStatically"
+      },
+      {
+        "symbol": "eNote.Application.Features.Rentals.InstrumentRentals.StateMachine.RentalTransitionResult",
+        "relationship": "Returns"
+      },
+      {
+        "symbol": "eNote.Domain.Shared.Result\u003CRentalTransitionResult\u003E",
+        "relationship": "Returns"
+      },
+      {
+        "symbol": "eNote.Application.Common.Exceptions.BusinessException",
+        "relationship": "Calls"
+      },
+      {
+        "symbol": "eNote.Application.Common.Localization.Messages",
+        "relationship": "ReferencesStatically"
+      }
+    ],
+    "contracts": [
+      "Every transition is validated by its guard before the Apply lambda executes \u2014 if the guard throws BusinessException, the entity is never mutated.",
+      "Fire never throws to the caller. BusinessException from guards is caught and returned as Result.Failure. Unexpected exceptions propagate.",
+      "All successful transitions apply ApplyAuditFields to set UpdatedById on the rental entity.",
+      "A descriptive error message is always returned for invalid transitions \u2014 either state-specific or a generic access-denied message depending on whether the trigger\u002Bactor combination is valid for any state."
+    ],
+    "assumptions": [
+      "At most one TransitionDefinition exists for any (From, Trigger, Actor) tuple \u2014 FirstOrDefault picks the first if duplicates exist.",
+      "Actor authorization has already been enforced by the caller \u2014 the state machine only checks that the actor is in the allowed set, not that the caller IS that actor.",
+      "Instrument lock conflict detection runs externally and its result is passed via RentalTransitionContext.HasInstrumentLockConflict.",
+      "IClock implementation is thread-safe and returns monotonically non-decreasing UTC time.",
+      "InstrumentRental entity methods (Approve, Reject, Cancel, Pickup, Complete, ReturnEarly) are safe to call once per valid transition.",
+      "Persistence of mutated state is the caller\u0027s responsibility after a successful Fire."
+    ],
+    "invariants": [
+      "The transition table is immutable for the lifetime of the process \u2014 created once via a static readonly field initialized by CreateTransitions().",
+      "Every transition\u0027s Guard (if non-null) executes before its Apply \u2014 if Guard throws, Apply is skipped.",
+      "The class is sealed and cannot be subclassed, ensuring transition logic cannot be overridden via inheritance.",
+      "A null transition lookup always produces a descriptive error \u2014 either a state-specific message (if the trigger\u002Bactor combination exists for any state) or a generic access-denied message."
+    ],
+    "failureModes": [
+      "Invalid transition requested for the current rental status \u2014 returns Result.Failure with a state-specific message.",
+      "Access denied \u2014 the actor is not in the allowed set for any transition with the given trigger.",
+      "Instrument lock conflict \u2014 guard throws BusinessException, caught and returned as failure.",
+      "Instrument inactive \u2014 guard throws BusinessException, caught and returned as failure."
+    ],
+    "architecturalNotes": [
+      "Uses primary constructor injection for IClock \u2014 clean, minimal DI surface.",
+      "Transitions are defined as a static collection initialized inline, making the complete state graph visible in a single expression.",
+      "The guard/apply pattern cleanly separates validation from mutation \u2014 guards can throw BusinessException without side effects."
+    ]
+  },
+  "evidence": {
+    "primaryMethods": [
+      "Fire",
+      "FindTransition",
+      "GetInvalidTransitionMessage",
+      "GetWrongStateMessage",
+      "CreateTransitions",
+      "GuardNoInstrumentLockConflict",
+      "GuardInstrumentActive",
+      "GuardNotPickedUp",
+      "GuardNotReturned",
+      "GuardPickedUp",
+      "ApplyAuditFields"
+    ],
+    "primaryFields": [
+      "Transitions"
+    ]
+  },
+  "review": {
+    "status": "pending",
+    "reviewedBy": null,
+    "reviewedAt": null
+  }
+}

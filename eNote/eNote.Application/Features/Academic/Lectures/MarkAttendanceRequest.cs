@@ -1,4 +1,3 @@
-using eNote.Domain.Enums;
 using System.ComponentModel.DataAnnotations;
 
 namespace eNote.Application.Features.Academic.Lectures;

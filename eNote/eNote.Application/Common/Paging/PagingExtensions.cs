@@ -1,5 +1,4 @@
 ﻿using eNote.Application.Common.Search;
-using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Application.Common.Paging;
 

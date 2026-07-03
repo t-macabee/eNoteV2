@@ -1,10 +1,3 @@
-using eNote.Domain.Entities;
-using eNote.Application.Common.Exceptions;
-using eNote.Application.Common.Localization;
-using eNote.Application.Common.Persistence;
-using eNote.Application.Features.Rentals.ReferenceData;
-using Microsoft.EntityFrameworkCore;
-
 namespace eNote.Application.Features.Rentals.ReferenceData.MusicStores;
 
 public sealed class MusicStoreService(IAppDbContext context) : ReferenceCrudService<MusicStore, MusicStoreDto, MusicStoreRequest, MusicStoreSearchObject>(context), IMusicStoreService

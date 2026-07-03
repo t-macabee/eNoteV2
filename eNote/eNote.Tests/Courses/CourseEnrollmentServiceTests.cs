@@ -1,12 +1,7 @@
-using eNote.Domain.Entities;
-using eNote.Application.Common.Exceptions;
 using eNote.Application.Features.Academic.Courses.Services;
-using eNote.Domain.Enums;
-using eNote.Infrastructure.Data;
 using eNote.Tests.TestUtils;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
-using Xunit;
 
 namespace eNote.Tests.Courses;
 

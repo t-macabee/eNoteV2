@@ -1,4 +1,4 @@
-using eNote.Application.Features.Academic.Courses;
+using eNote.Application.Features.Shared;
 using Mapster;
 
 namespace eNote.API.Extensions;

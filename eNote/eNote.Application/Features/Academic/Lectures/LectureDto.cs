@@ -1,5 +1,3 @@
-using eNote.Domain.Enums;
-
 namespace eNote.Application.Features.Academic.Lectures;
 
 public class LectureDto

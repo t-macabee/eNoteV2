@@ -1,5 +1,4 @@
 using eNote.Application.Common.Search;
-using eNote.Domain.Entities;
 
 namespace eNote.Application.Features.Academic.LectureNotes;
 

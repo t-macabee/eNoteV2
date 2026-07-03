@@ -1,6 +1,4 @@
-using eNote.Domain.Entities;
 using eNote.Application.Common.Search;
-using eNote.Application.Features.Academic.Courses;
 
 namespace eNote.Application.Features.Academic.Assignments;
 

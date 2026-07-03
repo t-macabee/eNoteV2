@@ -1,6 +1,3 @@
-using eNote.Application.Common.Paging;
-using eNote.Application.Features.Communication.Notifications;
-
 namespace eNote.Application.Features.Communication.Notifications.Services;
 
 public interface INotificationService

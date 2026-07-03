@@ -1,8 +1,3 @@
-using eNote.Application.Common.Persistence;
-using eNote.Domain.Entities;
-using eNote.Domain.Enums;
-using Microsoft.EntityFrameworkCore;
-
 namespace eNote.Application.Common.Extensions;
 
 public static class StudentEnrollmentExtensions

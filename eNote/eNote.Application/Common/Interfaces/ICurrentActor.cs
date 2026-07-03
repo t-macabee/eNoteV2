@@ -1,5 +1,3 @@
-using eNote.Domain.Entities;
-
 namespace eNote.Application.Common.Interfaces;
 
 public interface ICurrentActor : ICurrentUserService

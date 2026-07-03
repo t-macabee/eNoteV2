@@ -1,5 +1,4 @@
 using eNote.Application.Features.Identity.Auth;
-using eNote.Application.Features.Identity.Users;
 
 namespace eNote.Application.Features.Identity.Users.Services;
 

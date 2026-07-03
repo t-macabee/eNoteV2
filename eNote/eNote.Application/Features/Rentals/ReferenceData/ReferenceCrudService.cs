@@ -1,9 +1,4 @@
-using eNote.Domain.Entities;
-using eNote.Application.Common.Exceptions;
-using eNote.Application.Common.Paging;
-using eNote.Application.Common.Persistence;
 using eNote.Application.Common.Search;
-using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Application.Features.Rentals.ReferenceData;
 

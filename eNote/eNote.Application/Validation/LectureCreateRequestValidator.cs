@@ -1,4 +1,3 @@
-using eNote.Application.Common.Localization;
 using eNote.Application.Features.Academic.Lectures;
 using FluentValidation;
 

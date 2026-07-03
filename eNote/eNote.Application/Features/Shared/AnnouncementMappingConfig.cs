@@ -1,8 +1,7 @@
-using eNote.Domain.Entities;
-using eNote.Domain.Enums;
+using eNote.Application.Features.Communication.Announcements;
 using Mapster;
 
-namespace eNote.Application.Features.Communication.Announcements;
+namespace eNote.Application.Features.Shared;
 
 public sealed class AnnouncementMappingConfig : IRegister
 {

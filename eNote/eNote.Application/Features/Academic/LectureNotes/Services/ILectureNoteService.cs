@@ -1,6 +1,3 @@
-using eNote.Application.Common.Paging;
-using eNote.Application.Features.Academic.LectureNotes;
-
 namespace eNote.Application.Features.Academic.LectureNotes.Services;
 
 public interface ILectureNoteService

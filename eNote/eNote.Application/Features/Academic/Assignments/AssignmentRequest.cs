@@ -1,5 +1,3 @@
-using System.ComponentModel.DataAnnotations;
-
 namespace eNote.Application.Features.Academic.Assignments;
 
 public class AssignmentRequest

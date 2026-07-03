@@ -1,0 +1,111 @@
+{
+  "schemaVersion": 1,
+  "symbolId": "eNote.API.Extensions.BearerSecurityTransformer",
+  "fingerprint": "E8D8BA7057BD3650",
+  "generatedAt": "2026-07-02T00:00:00Z",
+  "status": "proposed",
+  "facts": {
+    "kind": "Class",
+    "namespace": "eNote.API.Extensions",
+    "inherits": null,
+    "Implements": [
+      "Microsoft.AspNetCore.OpenApi.IOpenApiDocumentTransformer"
+    ],
+    "sourceFile": "eNote/eNote.API/Extensions/OpenAPIExtensions.cs",
+    "dependencies": [
+      "Microsoft.OpenApi.OpenApiComponents",
+      "Microsoft.OpenApi.OpenApiDocument",
+      "Microsoft.OpenApi.SecuritySchemeType",
+      "Microsoft.AspNetCore.OpenApi.OpenApiDocumentTransformerContext",
+      "Microsoft.OpenApi.Models.OpenApiSecurityScheme",
+      "Microsoft.OpenApi.Models.OpenApiSecurityRequirement",
+      "Microsoft.OpenApi.Models.OpenApiSecuritySchemeReference"
+    ]
+  },
+  "interpretation": {
+    "architecturalRole": {
+      "value": "Configuration",
+      "confidence": 0.88
+    },
+    "responsibility": {
+      "value": "Adds a global Bearer JWT security scheme to the OpenAPI document at generation time and requires it on every operation by default.",
+      "confidence": 0.95
+    },
+    "Owns": [
+      "Registering a \u0027Bearer\u0027 HTTP/bearer/JWT security scheme in document.Components.SecuritySchemes",
+      "Setting a global document.Security requirement that applies Bearer auth to all operations by default",
+      "Guaranteeing document.Components and its SecuritySchemes dictionary are non-null before modification"
+    ],
+    "doesNotOwn": [
+      "Removal of the global security requirement for unauthenticated or anonymous endpoints (delegated to AnonymousOperationTransformer via a separate IOpenApiOperationTransformer)",
+      "Actual HTTP request authorization at runtime (handled by ASP.NET Core\u0027s AuthorizationMiddleware, not OpenAPI)",
+      "Validation or verification of JWT tokens during request processing"
+    ],
+    "collaborators": [
+      {
+        "symbol": "Microsoft.OpenApi.OpenApiDocument",
+        "relationship": "Mutates",
+        "detail": "Adds a SecurityScheme under Components and sets the global Security requirement array on the document instance"
+      },
+      {
+        "symbol": "Microsoft.OpenApi.OpenApiComponents",
+        "relationship": "Mutates",
+        "detail": "Ensures non-null and adds the \u0027Bearer\u0027 entry to the SecuritySchemes dictionary"
+      },
+      {
+        "symbol": "Microsoft.OpenApi.Models.OpenApiSecurityScheme",
+        "relationship": "Creates",
+        "detail": "Constructs a new SecurityScheme instance with Type=Http, Scheme=\u0027bearer\u0027, BearerFormat=\u0027JWT\u0027 and a Croatian description"
+      },
+      {
+        "symbol": "Microsoft.OpenApi.Models.OpenApiSecurityRequirement",
+        "relationship": "Creates",
+        "detail": "Constructs a new security requirement referencing the Bearer scheme with empty scopes"
+      },
+      {
+        "symbol": "Microsoft.AspNetCore.OpenApi.IOpenApiDocumentTransformer",
+        "relationship": "Implements",
+        "detail": "Implements the single-method interface that the ASP.NET Core OpenAPI infrastructure invokes during document generation"
+      },
+      {
+        "symbol": "Microsoft.AspNetCore.OpenApi.OpenApiDocumentTransformerContext",
+        "relationship": "Accepts",
+        "detail": "Received as a parameter in TransformAsync but never read \u2014 the context is unused"
+      }
+    ],
+    "contracts": [
+      "After TransformAsync runs, document.Components.SecuritySchemes contains an entry named \u0027Bearer\u0027",
+      "After TransformAsync runs, document.Security contains exactly one security requirement referencing the Bearer scheme with no scopes",
+      "If document.Components is null on entry, it is initialized to a new OpenApiComponents before any mutation (no NullReferenceException)",
+      "If document.Components.SecuritySchemes is null on entry, it is initialized to an empty dictionary before Add is called"
+    ],
+    "assumptions": [
+      "No other document transformer has registered a security scheme with the key \u0027Bearer\u0027 \u2014 if one has, Add() on line 38 throws ArgumentException and the entire API doc generation fails (no graceful fallback or duplicate check)",
+      "No other document transformer has pre-populated document.Security with global requirements \u2014 the assignment on line 46 overwrites them silently without merging",
+      "The \u0027document\u0027 parameter passed by the framework infrastructure is never null (no guard on line 33)"
+    ],
+    "invariants": [
+      "The Bearer security scheme entry always has Type=SecuritySchemeType.Http, Scheme=\u0022bearer\u0022, BearerFormat=\u0022JWT\u0022 \u2014 these values are hard-coded and never vary by configuration",
+      "The global security requirement always has an empty scopes array (no OAuth scopes are configured or expected)"
+    ],
+    "failureModes": [
+      "ArgumentException at doc-generation time if another transformer has already registered a scheme named \u0027Bearer\u0027 (line 38 \u2014 Add with duplicate key)",
+      "Silent loss of any global Security requirements set by other transformers registered before this one (line 46 \u2014 assignment overwrites rather than merges)"
+    ],
+    "architecturalNotes": [
+      "Documentation-layer only \u2014 this class has zero effect on actual request authorization; it only controls what the Swagger/Scalar UI displays",
+      "Fragile if the project ever registers additional security-scheme document transformers (e.g., an API key scheme): the current transformer does not check for existing keys and overwrites global requirements without merging"
+    ]
+  },
+  "evidence": {
+    "primaryMethods": [
+      "TransformAsync"
+    ],
+    "primaryFields": []
+  },
+  "review": {
+    "status": "pending",
+    "reviewedBy": null,
+    "reviewedAt": null
+  }
+}

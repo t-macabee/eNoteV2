@@ -1,5 +1,3 @@
-using eNote.Application.Common.Localization;
-
 namespace eNote.Application.Common.Exceptions;
 
 public abstract class AppException(int statusCode, string errorCode, string? message = null) : Exception(message ?? GetDefaultMessage(statusCode))

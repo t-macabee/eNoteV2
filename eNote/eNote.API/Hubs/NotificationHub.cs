@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using System.IdentityModel.Tokens.Jwt;
-using Microsoft.Extensions.Logging;
 
 namespace eNote.API.Hubs;
 

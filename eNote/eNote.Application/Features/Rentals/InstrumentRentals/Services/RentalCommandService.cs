@@ -1,16 +1,7 @@
-using eNote.Domain.Entities;
-using eNote.Domain.Shared;
-using eNote.Application.Common.Exceptions;
-using eNote.Application.Common.Interfaces;
-using eNote.Application.Common.Localization;
-using eNote.Application.Common.Persistence;
-using eNote.Application.Common.Time;
 using eNote.Application.Features.Rentals.InstrumentRentals.Billing;
 using eNote.Application.Features.Rentals.InstrumentRentals.StateMachine;
 using eNote.Application.Features.Rentals.Instruments;
-using eNote.Domain.Enums;
 using MapsterMapper;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using eNote.Domain.Entities.Rentals;
 

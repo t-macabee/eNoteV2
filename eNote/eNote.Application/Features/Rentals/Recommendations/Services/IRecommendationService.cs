@@ -1,5 +1,3 @@
-using eNote.Application.Features.Rentals.Recommendations;
-
 namespace eNote.Application.Features.Rentals.Recommendations.Services;
 
 public interface IRecommendationService

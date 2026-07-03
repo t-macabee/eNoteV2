@@ -1,6 +1,3 @@
-using eNote.Domain.Entities;
-using Xunit;
-
 namespace eNote.Tests.Domain;
 
 public sealed class StudentMembershipTests

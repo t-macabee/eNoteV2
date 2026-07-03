@@ -1,0 +1,84 @@
+{
+  "schemaVersion": 1,
+  "symbolId": "eNote.Infrastructure.Identity.TokenRevocationService",
+  "fingerprint": "161D2AA1864E3749",
+  "generatedAt": "2026-07-02T00:00:00Z",
+  "status": "proposed",
+  "facts": {
+    "kind": "Class",
+    "namespace": "eNote.Infrastructure.Identity",
+    "inherits": null,
+    "Implements": [
+      "eNote.Application.Features.Identity.Auth.Services.ITokenRevocationService"
+    ],
+    "sourceFile": "eNote/eNote.Infrastructure/Identity/TokenRevocationService.cs",
+    "dependencies": [
+      "eNote.Application.Common.Persistence.IAppDbContext",
+      "eNote.Application.Common.Time.IClock",
+      "Microsoft.Extensions.Caching.Memory.IMemoryCache",
+      "eNote.Domain.Entities.RevokedToken"
+    ]
+  },
+  "interpretation": {
+    "architecturalRole": {
+      "value": "InfrastructureService",
+      "confidence": 0.9
+    },
+    "responsibility": {
+      "value": "Tracks revoked JWTs by jti across a two-tier store \u2014 an in-memory cache for fast-path checks and the RevokedToken DB table as the durable source of truth \u2014 so logged-out tokens are rejected before their natural expiry.",
+      "confidence": 0.95
+    },
+    "Owns": [
+      "RevokeAsync: writes the jti to both the memory cache and the RevokedToken table (guarded against duplicate insert)",
+      "IsRevokedAsync: cache-first lookup, falling back to a DB query; on a DB hit, backfills the cache with a 1-hour TTL"
+    ],
+    "doesNotOwn": [
+      "Token issuance or the jti claim\u0027s origin \u2014 that\u0027s TokenService\u0027s responsibility",
+      "Cache eviction policy beyond the explicit 1-hour TTL on backfill \u2014 no proactive cleanup of expired RevokedToken rows"
+    ],
+    "collaborators": [
+      {
+        "symbol": "Microsoft.Extensions.Caching.Memory.IMemoryCache",
+        "relationship": "Injects",
+        "detail": "Fast-path revocation check, avoids a DB round trip on every request for previously-seen revocations"
+      },
+      {
+        "symbol": "eNote.Application.Common.Persistence.IAppDbContext",
+        "relationship": "Injects",
+        "detail": "Durable revocation record via the RevokedToken table"
+      },
+      {
+        "symbol": "eNote.Application.Common.Time.IClock",
+        "relationship": "Injects",
+        "detail": "Used in the ExpiresAt \u003E now filter for the DB lookup"
+      }
+    ],
+    "contracts": [
+      "Once RevokeAsync completes, IsRevokedAsync returns true for that jti until its recorded expiry, from either the cache or the DB.",
+      "RevokeAsync does not insert a duplicate row for a jti that\u0027s already revoked."
+    ],
+    "assumptions": [
+      "The expiresAt value passed into RevokeAsync is expected to match the token\u0027s actual \u0060exp\u0060 claim. If a caller passes an incorrect (earlier) expiresAt, the DB lookup\u0027s \u0060x.ExpiresAt \u003E clock.UtcNow\u0060 filter could stop matching a still-nominally-valid-but-revoked token as revoked before the token\u0027s real expiry \u2014 however, since expired tokens are already rejected by standard JWT lifetime validation regardless, this is only a gap for tokens revoked with a wrong (too-early) expiresAt.",
+      "Only a single process\u0027s IMemoryCache is involved \u2014 this service does not synchronize revocation state across multiple app instances beyond what the shared DB table provides. A revocation on instance A is only cache-fast on instance A; instance B falls through to the DB until it independently caches the same jti."
+    ],
+    "invariants": [],
+    "failureModes": [
+      "Multi-instance staleness \u2014 a just-revoked token is DB-durable but not cache-fast on other instances until their first DB-backed check for that jti."
+    ],
+    "architecturalNotes": [
+      "Cache-then-DB with backfill is a reasonable design for reducing DB load on the hot path (every authenticated request implicitly checks revocation), while keeping the DB as the source of truth for correctness."
+    ]
+  },
+  "evidence": {
+    "primaryMethods": [
+      "RevokeAsync",
+      "IsRevokedAsync"
+    ],
+    "primaryFields": []
+  },
+  "review": {
+    "status": "pending",
+    "reviewedBy": null,
+    "reviewedAt": null
+  }
+}

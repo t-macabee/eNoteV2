@@ -11,6 +11,6 @@ public class AppUser : IdentityUser<int>
     public byte[]? Picture { get; set; }
     public bool IsActive { get; set; }
 
-    public int? AddressId { get; set; }
-    public Address? Address { get; set; }
+    public int? AddressId { get; init; }
+    public Address? Address { get; init; }
 }

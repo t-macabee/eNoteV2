@@ -1,5 +1,3 @@
-using eNote.Domain.Entities;
-
 namespace eNote.Application.Features.Identity.Users.Services;
 
 public interface IStudentDisplayNameService

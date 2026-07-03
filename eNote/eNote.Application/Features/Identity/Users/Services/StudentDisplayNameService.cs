@@ -1,6 +1,3 @@
-using eNote.Domain.Entities;
-using eNote.Application.Features.Identity.Users;
-
 namespace eNote.Application.Features.Identity.Users.Services;
 
 public sealed class StudentDisplayNameService(IUserIdentityService identity) : IStudentDisplayNameService

@@ -1,16 +1,10 @@
-using eNote.Application.Common.Exceptions;
-using eNote.Application.Common.Interfaces;
 using eNote.Application.Features.Rentals.InstrumentRentals;
 using eNote.Application.Features.Rentals.InstrumentRentals.Services;
 using eNote.Application.Features.Rentals.InstrumentRentals.StateMachine;
-using eNote.Domain.Entities;
 using eNote.Domain.Entities.Rentals;
-using eNote.Domain.Enums;
-using eNote.Infrastructure.Data;
 using eNote.Tests.TestUtils;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
-using Xunit;
 
 namespace eNote.Tests.InstrumentRentals;
 

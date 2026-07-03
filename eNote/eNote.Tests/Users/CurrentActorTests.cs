@@ -1,11 +1,8 @@
-using eNote.Domain.Entities;
-using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Features.Identity.Users.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.DependencyInjection;
-using Xunit;
 
 namespace eNote.Tests.Users;
 

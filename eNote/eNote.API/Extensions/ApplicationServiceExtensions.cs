@@ -3,8 +3,6 @@ using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Common.Time;
 using eNote.Application.Features.Academic.Courses.Services;
-using eNote.Application.Features.Communication.Announcements.Services;
-using eNote.Application.Features.Identity.Instructors;
 using eNote.Application.Features.Identity.Users.Services;
 using eNote.Application.Features.Rentals.InstrumentRentals.StateMachine;
 using eNote.Infrastructure.Data;

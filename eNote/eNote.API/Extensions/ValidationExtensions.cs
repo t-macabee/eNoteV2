@@ -1,4 +1,4 @@
-using eNote.Application.Features.Communication.Announcements;
+using eNote.Application.Features.Shared;
 using FluentValidation;
 using FluentValidation.AspNetCore;
 

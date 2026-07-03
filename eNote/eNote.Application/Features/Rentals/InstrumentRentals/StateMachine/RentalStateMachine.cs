@@ -1,7 +1,3 @@
-using eNote.Application.Common.Exceptions;
-using eNote.Application.Common.Localization;
-using eNote.Application.Common.Time;
-using eNote.Domain.Enums;
 using eNote.Domain.Entities.Rentals;
 using eNote.Domain.Shared;
 

@@ -1,6 +1,3 @@
-using eNote.Domain.Entities;
-using Microsoft.EntityFrameworkCore;
-
 namespace eNote.Application.Features.Rentals.Instruments;
 
 public static class InstrumentQueryableExtensions

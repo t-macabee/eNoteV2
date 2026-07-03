@@ -1,12 +1,4 @@
-using eNote.Domain.Entities;
-using eNote.Application.Common.Exceptions;
-using eNote.Application.Common.Interfaces;
-using eNote.Application.Common.Localization;
-using eNote.Application.Common.Paging;
-using eNote.Application.Common.Persistence;
-using eNote.Application.Features.Rentals.Instruments;
 using MapsterMapper;
-using Microsoft.EntityFrameworkCore;
 using eNote.Domain.Entities.Rentals;
 
 namespace eNote.Application.Features.Rentals.Instruments.Services;

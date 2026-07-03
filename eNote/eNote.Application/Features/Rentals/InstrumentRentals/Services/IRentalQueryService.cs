@@ -1,6 +1,3 @@
-using eNote.Application.Common.Paging;
-using eNote.Application.Features.Rentals.InstrumentRentals;
-
 namespace eNote.Application.Features.Rentals.InstrumentRentals.Services;
 
 public interface IRentalQueryService
