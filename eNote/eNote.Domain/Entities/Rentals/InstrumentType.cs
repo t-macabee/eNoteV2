@@ -2,6 +2,7 @@ namespace eNote.Domain.Entities;
 
 public class InstrumentType : BaseEntity
 {
+    // ReSharper disable once CollectionNeverUpdated.Local — EF Core backing field
     private readonly List<Instrument> _instruments = [];
 
     public string Type { get; set; } = null!;

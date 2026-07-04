@@ -21,7 +21,7 @@ public sealed class AssignmentSubmissionService(
 
     public async Task<PagedResult<AssignmentSubmissionDto>> GetSubmissionsAsync(int lectureId, int assignmentId, SubmissionSearchObject search, CancellationToken cancellationToken = default)
     {
-        await GetOwnedAssignmentAsync(lectureId, assignmentId, cancellationToken);
+        _ = await GetOwnedAssignmentAsync(lectureId, assignmentId, cancellationToken);
 
         var query = context.Set<AssignmentSubmission>()
             .AsNoTracking()
@@ -38,7 +38,7 @@ public sealed class AssignmentSubmissionService(
 
     public async Task<AssignmentSubmissionDto> GradeAsync(int lectureId, int assignmentId, int submissionId, GradeAssignmentRequest request, CancellationToken cancellationToken = default)
     {
-        await GetOwnedAssignmentAsync(lectureId, assignmentId, cancellationToken);
+        _ = await GetOwnedAssignmentAsync(lectureId, assignmentId, cancellationToken);
 
         var submission = await context.Set<AssignmentSubmission>()
             .Include(x => x.Student)
