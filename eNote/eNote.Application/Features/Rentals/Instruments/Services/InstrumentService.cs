@@ -72,7 +72,7 @@ public sealed class InstrumentService(
 
     public async Task<InstrumentDto> UpdateAsync(int id, InstrumentUpdateRequest request, CancellationToken cancellationToken = default)
     {
-        var employee = await EnsureStoreAccessAsync();
+        await EnsureStoreAccessAsync();
 
         var entity = await context.Set<Instrument>()
             .FirstOrDefaultAsync(x => x.Id == id, cancellationToken)
@@ -97,7 +97,7 @@ public sealed class InstrumentService(
 
     public async Task<InstrumentDto> UploadImageAsync(int id, Stream stream, string fileName, string contentType, CancellationToken ct = default)
     {
-        var employee = await EnsureStoreAccessAsync();
+        await EnsureStoreAccessAsync();
 
         var entity = await context.Set<Instrument>()
             .FirstOrDefaultAsync(x => x.Id == id, ct)
@@ -113,7 +113,7 @@ public sealed class InstrumentService(
 
     public async Task DeleteAsync(int id, CancellationToken cancellationToken = default)
     {
-        var employee = await EnsureStoreAccessAsync();
+        await EnsureStoreAccessAsync();
 
         var instrument = await context.Set<Instrument>()
             .FirstOrDefaultAsync(x => x.Id == id, cancellationToken)

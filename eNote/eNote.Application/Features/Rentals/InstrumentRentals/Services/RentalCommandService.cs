@@ -85,7 +85,7 @@ public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, 
         return dto;
     }
 
-    private async Task<InstrumentRentalDto> ExecuteTransitionAsync(InstrumentRental rental, RentalTrigger trigger, RentalActor actor, int userId, RentalStatusResponse? response, CancellationToken cancellationToken)
+    private async Task<InstrumentRentalDto> ExecuteTransitionAsync(InstrumentRental rental, RentalTrigger trigger, RentalActor rentalActor, int userId, RentalStatusResponse? response, CancellationToken cancellationToken)
     {
         var hasConflict = false;
 
@@ -100,7 +100,7 @@ public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, 
         var transitionContext = new RentalTransitionContext
         {
             UserId = userId,
-            Actor = actor,
+            Actor = rentalActor,
             HasInstrumentLockConflict = hasConflict,
             MonthlyFee = rental.Instrument.InstrumentType.MonthlyFee,
             IsInstrumentActive = rental.Instrument.IsActive,
