@@ -17,7 +17,7 @@ public sealed class RecommendationServiceTests
         var student = await SeedStudentAsync(context);
         var service = CreateService(context, student);
 
-        var result = await service.GetRecommendedInstrumentsAsync(5);
+        var result = await service.GetRecommendedInstrumentsAsync();
 
         Assert.Empty(result);
     }
@@ -35,7 +35,7 @@ public sealed class RecommendationServiceTests
         await context.SaveChangesAsync();
         var service = CreateService(context, student);
 
-        var result = await service.GetRecommendedInstrumentsAsync(5);
+        var result = await service.GetRecommendedInstrumentsAsync();
 
         Assert.Empty(result);
     }
@@ -56,7 +56,7 @@ public sealed class RecommendationServiceTests
         await context.SaveChangesAsync();
         var service = CreateService(context, student);
 
-        var result = await service.GetRecommendedInstrumentsAsync(5);
+        var result = await service.GetRecommendedInstrumentsAsync();
 
         Assert.NotEmpty(result);
         Assert.Contains(result, r => r.Instrument.Id == instrument.Id);
@@ -85,7 +85,7 @@ public sealed class RecommendationServiceTests
 
         var service = CreateService(context, student);
 
-        var result = await service.GetRecommendedInstrumentsAsync(5);
+        var result = await service.GetRecommendedInstrumentsAsync();
 
         Assert.NotEmpty(result);
         Assert.Equal(instrumentA.Id, result[0].Instrument.Id);

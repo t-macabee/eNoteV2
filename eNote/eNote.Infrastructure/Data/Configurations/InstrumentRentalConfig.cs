@@ -21,7 +21,7 @@ public sealed class InstrumentRentalConfig : IEntityTypeConfiguration<Instrument
 
         builder.Property(x => x.MusicStoreId).IsRequired();
 
-        builder.Property(x => x.Fee).HasDecimalPrecision(10, 2).IsRequired();
+        builder.Property(x => x.Fee).HasDecimalPrecision(10).IsRequired();
 
         builder.Property(x => x.RentalStatus)
                .HasConversion<int>();

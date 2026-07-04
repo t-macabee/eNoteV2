@@ -4,13 +4,13 @@ public sealed class UserProfileLookup(IAppDbContext context) : IUserProfileLooku
 {
     public async Task<Student> GetStudentAsync(int userId) =>
         await context.Set<Student>().AsNoTracking().FirstOrDefaultAsync(x => x.AppUserId == userId)
-        ?? throw new Common.Exceptions.BusinessException(Messages.StudentProfileNotFound);
+        ?? throw new BusinessException(Messages.StudentProfileNotFound);
 
     public async Task<Instructor> GetInstructorAsync(int userId) =>
         await context.Set<Instructor>().AsNoTracking().FirstOrDefaultAsync(x => x.AppUserId == userId)
-        ?? throw new Common.Exceptions.BusinessException(Messages.InstructorProfileNotFound);
+        ?? throw new BusinessException(Messages.InstructorProfileNotFound);
 
     public async Task<MusicStoreEmployee> GetActiveEmployeeAsync(int userId) =>
         await context.Set<MusicStoreEmployee>().AsNoTracking().FirstOrDefaultAsync(x => x.AppUserId == userId && x.IsActive)
-        ?? throw new Common.Exceptions.BusinessException(Messages.EmployeeProfileNotFound);
+        ?? throw new BusinessException(Messages.EmployeeProfileNotFound);
 }

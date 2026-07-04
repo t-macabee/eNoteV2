@@ -78,7 +78,7 @@ public sealed class InstrumentService(
             .FirstOrDefaultAsync(x => x.Id == id, cancellationToken)
             ?? throw new NotFoundException(Messages.NotFound);
 
-        if (request.InstrumentTypeId is int typeId)
+        if (request.InstrumentTypeId is { } typeId)
         {
             await EnsureInstrumentTypeExistsAsync(typeId, cancellationToken);
         }

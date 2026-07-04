@@ -96,7 +96,7 @@ public sealed class RentalStateMachineTests
         var rental = new InstrumentRental(1, 1, 1, Now, null);
         var type = new InstrumentType { Type = "Guitar", MonthlyFee = 50m };
         var instrument = new Instrument("M", "MFR", null, null, 1, 1);
-        SetProperty<Instrument>(instrument, nameof(Instrument.InstrumentType), type);
+        SetProperty(instrument, nameof(Instrument.InstrumentType), type);
         SetInstrument(rental, instrument);
         var ctx = new RentalTransitionContext { UserId = 10, Actor = RentalActor.StoreEmployee, HasInstrumentLockConflict = true, MonthlyFee = 50m, IsInstrumentActive = true };
 
@@ -111,7 +111,7 @@ public sealed class RentalStateMachineTests
         var rental = new InstrumentRental(1, 1, 1, Now, null);
         var type = new InstrumentType { Type = "Guitar", MonthlyFee = 50m };
         var instrument = new Instrument("M", "MFR", null, null, 1, 1);
-        SetProperty<Instrument>(instrument, nameof(Instrument.InstrumentType), type);
+        SetProperty(instrument, nameof(Instrument.InstrumentType), type);
         SetInstrument(rental, instrument);
         var ctx = new RentalTransitionContext { UserId = 10, Actor = RentalActor.StoreEmployee, HasInstrumentLockConflict = false, MonthlyFee = 50m, IsInstrumentActive = true };
 
@@ -168,7 +168,7 @@ public sealed class RentalStateMachineTests
     }
 
     private static void SetInstrument(InstrumentRental rental, Instrument instrument) =>
-        SetProperty<InstrumentRental>(rental, nameof(InstrumentRental.Instrument), instrument);
+        SetProperty(rental, nameof(InstrumentRental.Instrument), instrument);
 
     private static void SetProperty<T>(T obj, string propertyName, object value) =>
         typeof(T).GetProperty(propertyName)!.SetValue(obj, value);

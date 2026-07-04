@@ -1,5 +1,4 @@
 using eNote.Domain.Entities.Rentals;
-using eNote.Domain.Enums;
 
 namespace eNote.Application.Features.Rentals.InstrumentRentals.Billing;
 

@@ -27,7 +27,7 @@ public sealed class TokenService(IConfiguration configuration, IClock clock) : I
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["Jwt:Key"]!));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
-        var expirationDays = configuration.GetValue<int>("Jwt:ExpirationDays", 7);
+        var expirationDays = configuration.GetValue("Jwt:ExpirationDays", 7);
 
         var token = new JwtSecurityToken(
             issuer: configuration["Jwt:Issuer"],

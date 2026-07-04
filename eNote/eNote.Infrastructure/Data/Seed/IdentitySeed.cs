@@ -30,10 +30,10 @@ public static class IdentitySeed
 
         (string, string, string, int?)[] testUsers = new[]
         {
-            ("admin", "admin@enote.com", AppRoles.Administrator, (int?)null),
-            ("instructor", "instructor@enote.com", AppRoles.Instructor, (int?)null),
-            ("student", "student@enote.com", AppRoles.Student, (int?)null),
-            ("storeemployee", "storeEmployee@enote.com", AppRoles.StoreEmployee, (int?)defaultStoreId)
+            ("admin", "admin@enote.com", AppRoles.Administrator, default(int?)),
+            ("instructor", "instructor@enote.com", AppRoles.Instructor, default(int?)),
+            ("student", "student@enote.com", AppRoles.Student, default(int?)),
+            ("storeemployee", "storeEmployee@enote.com", AppRoles.StoreEmployee, defaultStoreId)
         };
 
         foreach ((var username, var email, var role, var storeId) in testUsers)

@@ -49,16 +49,16 @@ public sealed class DiResolutionTests
     {
         public int UserId => 1;
         public bool IsAuthenticated => true;
-        public System.Threading.Tasks.Task<eNote.Domain.Entities.Identity.Student> GetCurrentStudentAsync()
-            => System.Threading.Tasks.Task.FromResult(new eNote.Domain.Entities.Identity.Student(1, System.DateTime.UtcNow));
-        public System.Threading.Tasks.Task<int> GetCurrentStudentIdAsync()
-            => System.Threading.Tasks.Task.FromResult(1);
-        public System.Threading.Tasks.Task<eNote.Domain.Entities.Identity.Instructor> GetCurrentInstructorAsync()
-            => throw new System.NotSupportedException();
-        public System.Threading.Tasks.Task<eNote.Domain.Entities.Identity.MusicStoreEmployee> GetCurrentEmployeeAsync()
-            => throw new System.NotSupportedException();
-        public System.Threading.Tasks.Task<int> GetCurrentStoreIdAsync(System.Threading.CancellationToken ct = default)
-            => System.Threading.Tasks.Task.FromResult(1);
+        public Task<eNote.Domain.Entities.Identity.Student> GetCurrentStudentAsync()
+            => Task.FromResult(new eNote.Domain.Entities.Identity.Student(1, DateTime.UtcNow));
+        public Task<int> GetCurrentStudentIdAsync()
+            => Task.FromResult(1);
+        public Task<eNote.Domain.Entities.Identity.Instructor> GetCurrentInstructorAsync()
+            => throw new NotSupportedException();
+        public Task<eNote.Domain.Entities.Identity.MusicStoreEmployee> GetCurrentEmployeeAsync()
+            => throw new NotSupportedException();
+        public Task<int> GetCurrentStoreIdAsync(CancellationToken ct = default)
+            => Task.FromResult(1);
         public int GetCurrentStoreId() => 1;
     }
 }
