@@ -155,7 +155,7 @@ public sealed class UserProvisioningService(
                     var primary = employees.FirstOrDefault(x => x.IsActive) ?? employees[0];
                     primary.IsActive = true;
 
-                    foreach (MusicStoreEmployee? employee in employees.Where(x => x.Id != primary.Id))
+                    foreach (MusicStoreEmployee employee in employees.Where(x => x.Id != primary.Id))
                     {
                         employee.IsActive = false;
                     }

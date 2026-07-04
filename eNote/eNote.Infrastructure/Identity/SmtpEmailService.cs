@@ -34,13 +34,11 @@ public sealed class SmtpEmailService : IEmailService
 
         using var client = new SmtpClient(_host, _port)
         {
-            EnableSsl = _enableSsl
+            EnableSsl = _enableSsl,
+            Credentials = !string.IsNullOrWhiteSpace(_username)
+                ? new NetworkCredential(_username, _password)
+                : null
         };
-
-        if (!string.IsNullOrWhiteSpace(_username))
-        {
-            client.Credentials = new NetworkCredential(_username, _password);
-        }
 
         await client.SendMailAsync(message, cancellationToken);
     }

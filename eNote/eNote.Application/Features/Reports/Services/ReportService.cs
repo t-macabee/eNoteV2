@@ -137,7 +137,7 @@ public sealed class ReportService(IAppDbContext context, IClock clock, IRankingS
         var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(actor.UserId);
         var lecture = await instructorAccess.GetOwnedLectureAsync(lectureId, instructorId, includeAttendances: true);
 
-        var nameMap = await displayNames.GetStudentDisplayNamesAsync(lecture.Attendances.Select(a => a.Student).Where(s => s is not null)!);
+        var nameMap = await displayNames.GetStudentDisplayNamesAsync(lecture.Attendances.Select(a => a.Student));
 
         var rows = lecture.Attendances.OrderBy(a => a.StudentId).Select(a =>
             new AttendanceRow(a.StudentId, nameMap.GetValueOrDefault(a.StudentId, $"Student {a.StudentId}"), a.AttendanceStatus)).ToList();

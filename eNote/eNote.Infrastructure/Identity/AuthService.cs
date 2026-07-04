@@ -68,7 +68,7 @@ public sealed class AuthService(UserManager<AppUser> userManager, SignInManager<
             throw new BusinessException(error);
         }
 
-        AppUser? user = await userManager.FindByNameAsync(model.Username.Trim()) ?? throw new BusinessException(Messages.InternalError);
+        AppUser user = await userManager.FindByNameAsync(model.Username.Trim()) ?? throw new BusinessException(Messages.InternalError);
 
         IList<string> roles = await userManager.GetRolesAsync(user);
 

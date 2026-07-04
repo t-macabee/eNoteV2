@@ -52,7 +52,7 @@ public sealed class UploadsController(IWebHostEnvironment env, IFileAccessServic
             return BadRequest();
         }
 
-        var uploadsRoot = Path.Combine(env.WebRootPath ?? Path.Combine(env.ContentRootPath, "wwwroot"), "uploads", subfolder);
+        var uploadsRoot = Path.Combine(env.WebRootPath, "uploads", subfolder);
         var fullPath = Path.GetFullPath(Path.Combine(uploadsRoot, fileName));
 
         if (!fullPath.StartsWith(Path.GetFullPath(uploadsRoot), StringComparison.OrdinalIgnoreCase) || !System.IO.File.Exists(fullPath))

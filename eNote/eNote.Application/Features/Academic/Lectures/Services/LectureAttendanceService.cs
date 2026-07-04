@@ -111,9 +111,7 @@ public sealed class LectureAttendanceService(IAppDbContext context, ICurrentActo
 
         await context.SaveChangesAsync(cancellationToken);
 
-        var student = attendance.Student ?? await context.Set<Student>()
-            .AsNoTracking()
-            .FirstAsync(x => x.Id == attendance.StudentId, cancellationToken);
+        var student = attendance.Student;
 
         return new AttendanceDto
         {

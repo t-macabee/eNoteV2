@@ -55,7 +55,7 @@ public sealed class LocalFileStorageService(IWebHostEnvironment env) : IFileStor
 
     private async Task<string> SaveToDiskAsync(Stream stream, string fileName, string subfolder, CancellationToken ct)
     {
-        var uploadsRoot = Path.Combine(env.WebRootPath ?? Path.Combine(env.ContentRootPath, "wwwroot"), "uploads", subfolder);
+        var uploadsRoot = Path.Combine(env.WebRootPath, "uploads", subfolder);
 
         Directory.CreateDirectory(uploadsRoot);
 

@@ -29,9 +29,10 @@ public sealed class DiResolutionTests
 
         // This should NOT throw InvalidOperationException about circular dependency
         using var scope = provider.CreateScope();
+        var sp = scope.ServiceProvider;
         var exception = Record.Exception(() =>
         {
-            var context = scope.ServiceProvider.GetRequiredService<IAppDbContext>();
+            var context = sp.GetRequiredService<IAppDbContext>();
             Assert.NotNull(context);
         });
 
