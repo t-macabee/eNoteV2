@@ -1,6 +1,8 @@
 using eNote.Domain.Enums;
+using eNote.Domain.Entities.Shared.Base;
 
-namespace eNote.Domain.Entities;
+using eNote.Domain.Entities.Identity;
+namespace eNote.Domain.Entities.Academic;
 
 public class Attendance : AuditableEntity
 {

@@ -1,4 +1,6 @@
-namespace eNote.Domain.Entities;
+using eNote.Domain.Entities.Shared.Base;
+using eNote.Domain.Entities.Identity;
+namespace eNote.Domain.Entities.Academic;
 
 public sealed class Course : AuditableEntity
 {

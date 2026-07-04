@@ -1,4 +1,4 @@
-namespace eNote.Domain.Entities;
+namespace eNote.Domain.Entities.Rentals;
 
 public class InstrumentView
 {

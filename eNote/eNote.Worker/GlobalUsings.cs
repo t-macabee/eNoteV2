@@ -1,7 +1,3 @@
-global using Xunit;
-global using eNote.Application.Common.Exceptions;
-global using eNote.Application.Common.Interfaces;
-global using eNote.Application.Common.Time;
 global using eNote.Domain.Entities;
 global using eNote.Domain.Entities.Academic;
 global using eNote.Domain.Entities.Assignments;
@@ -10,5 +6,3 @@ global using eNote.Domain.Entities.Identity;
 global using eNote.Domain.Entities.Rentals;
 global using eNote.Domain.Entities.Shared;
 global using eNote.Domain.Entities.Shared.Base;
-global using eNote.Domain.Enums;
-global using eNote.Infrastructure.Data;

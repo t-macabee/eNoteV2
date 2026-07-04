@@ -1,6 +1,7 @@
+using eNote.Application.Features.Academic.Lectures;
 using Mapster;
 
-namespace eNote.Application.Features.Academic.Lectures;
+namespace eNote.Application.Features.Shared;
 
 public sealed class LectureMappingConfig : IRegister
 {

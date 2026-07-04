@@ -1,9 +1,10 @@
 using eNote.Domain.Entities.Rentals;
 using eNote.Domain.Entities.Shared;
+using eNote.Domain.Entities.Shared.Base;
 
 using eNote.Domain.Enums;
 
-namespace eNote.Domain.Entities;
+namespace eNote.Domain.Entities.Rentals;
 
 public class Instrument : AuditableEntity, ITenantScoped
 {

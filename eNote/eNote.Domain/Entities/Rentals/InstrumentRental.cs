@@ -1,6 +1,8 @@
 using eNote.Domain.Entities.Shared;
 using eNote.Domain.Enums;
+using eNote.Domain.Entities.Shared.Base;
 
+using eNote.Domain.Entities.Identity;
 namespace eNote.Domain.Entities.Rentals;
 
 public sealed class InstrumentRental : AuditableEntity, ITenantScoped

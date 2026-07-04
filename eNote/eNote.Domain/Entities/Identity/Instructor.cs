@@ -1,4 +1,6 @@
-namespace eNote.Domain.Entities;
+using eNote.Domain.Entities.Shared.Base;
+using eNote.Domain.Entities.Academic;
+namespace eNote.Domain.Entities.Identity;
 
 public class Instructor : AuditableEntity
 {

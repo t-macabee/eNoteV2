@@ -1,4 +1,7 @@
-namespace eNote.Domain.Entities;
+using eNote.Domain.Entities.Shared.Base;
+using eNote.Domain.Entities.Academic;
+using eNote.Domain.Entities.Rentals;
+namespace eNote.Domain.Entities.Communication;
 
 public class Announcement : AuditableEntity
 {

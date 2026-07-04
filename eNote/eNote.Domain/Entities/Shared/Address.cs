@@ -1,4 +1,5 @@
-namespace eNote.Domain.Entities;
+using eNote.Domain.Entities.Shared.Base;
+namespace eNote.Domain.Entities.Shared;
 
 public class Address : BaseEntity
 {

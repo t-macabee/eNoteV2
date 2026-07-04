@@ -1,6 +1,7 @@
+using eNote.Application.Features.Rentals.Instruments;
 using Mapster;
 
-namespace eNote.Application.Features.Rentals.Instruments;
+namespace eNote.Application.Features.Shared;
 
 public sealed class InstrumentMappingConfig : IRegister
 {
