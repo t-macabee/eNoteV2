@@ -291,7 +291,7 @@ public class Program
 
         var fp = ComputeFingerprint(symbol, compilation);
         if (_useJson)
-            WriteJsonResult("fingerprint", new { symbol = symbolName, fingerprint = fp, provenance = "compiler" });
+            WriteJsonResult("fingerprint", new { symbol = symbolName, fingerprint = fp, provenance = "compiler_proved" });
         else
             Console.WriteLine($"Fingerprint: {fp}");
     }
@@ -389,7 +389,7 @@ public class Program
                 same,
                 updated,
                 unmatched,
-                provenance = "compiler"
+                provenance = "compiler_proved"
             });
         else
             Console.WriteLine($"Recompute complete. Updated: {updated}/{semanticFiles.Length}.");
@@ -436,7 +436,7 @@ public class Program
         File.Move(tmp, DirtyFilePath, overwrite: true);
 
         if (_useJson)
-            return new { dirtyFiles = merged.DirtyFiles, deletedFiles = merged.DeletedFiles, markedAt = merged.MarkedAt, provenance = "indexer" };
+            return new { dirtyFiles = merged.DirtyFiles, deletedFiles = merged.DeletedFiles, markedAt = merged.MarkedAt, provenance = "indexer_observed" };
         return null;
     }
 
@@ -609,7 +609,7 @@ public class Program
                 flaggedStale = flaggedStaleCount,
                 flaggedDependents = flaggedDepCount,
                 manifestCleared,
-                provenance = "compiler"
+                provenance = "compiler_proved"
             });
         else
             Console.WriteLine("Sweep complete.");
@@ -685,13 +685,12 @@ public class Program
 
         if (_useJson)
         {
-            WriteJsonResult("lint", new { ok = !foundIssues, violations, provenance = "indexer" });
+            WriteJsonResult("lint", new { ok = !foundIssues, violations, provenance = "indexer_observed" });
         }
         else
         {
             if (!foundIssues)
                 Console.WriteLine("Lint OK — all relationship values use PascalCase.");
-            // Exit with 0 even when violations found
         }
     }
 
@@ -700,7 +699,7 @@ public class Program
         if (!File.Exists(DirtyFilePath))
         {
             if (_useJson)
-                WriteJsonResult("impact", new { affected = new List<object>(), provenance = "indexer" });
+                WriteJsonResult("impact", new { affected = new List<object>(), provenance = "indexer_observed" });
             else
                 Console.WriteLine("[]");
             return;
@@ -712,7 +711,7 @@ public class Program
         if (manifest == null || (manifest.DirtyFiles == null || manifest.DirtyFiles.Count == 0))
         {
             if (_useJson)
-                WriteJsonResult("impact", new { affected = new List<object>(), provenance = "indexer" });
+                WriteJsonResult("impact", new { affected = new List<object>(), provenance = "indexer_observed" });
             else
                 Console.WriteLine("[]");
             return;
@@ -736,14 +735,12 @@ public class Program
             var sourceFile = node?["facts"]?["sourceFile"]?.GetValue<string>();
             if (symbolId == null || sourceFile == null) continue;
 
-            // Direct match: the dirty file IS this symbol's source file
             if (dirtyFiles.Contains(sourceFile))
             {
                 results.Add(new { semanticFile = $"{SanitizeId(symbolId)}.semantic.json", reason = "direct", via = symbolId });
                 continue;
             }
 
-            // Dependency match: the dirty file's symbol appears as a collaborator
             var collaborators = node?["interpretation"]?["collaborators"]?.AsArray();
             if (collaborators == null) continue;
 
@@ -751,8 +748,6 @@ public class Program
             {
                 var depSymbol = c?["symbol"]?.GetValue<string>();
                 if (depSymbol == null) continue;
-                // Check if depSymbol is a curated symbol whose sourceFile is dirty
-                // We use the fact that depSymbol might map to a semantic file with a known sourceFile
                 var depSanitized = SanitizeId(depSymbol);
                 var depPath = Path.Combine(SemanticDir, $"{depSanitized}.semantic.json");
                 if (File.Exists(depPath))
@@ -774,7 +769,7 @@ public class Program
         }
 
         if (_useJson)
-            WriteJsonResult("impact", new { affected = results, provenance = "indexer" });
+            WriteJsonResult("impact", new { affected = results, provenance = "indexer_observed" });
         else
         {
             var output = JsonSerializer.Serialize(results, JsonOptions);
@@ -804,7 +799,7 @@ public class Program
                 solutionPath = SolutionPath,
                 dirtyManifest,
                 curatedEntryCount,
-                provenance = "indexer"
+                provenance = "indexer_observed"
             });
             return;
         }
