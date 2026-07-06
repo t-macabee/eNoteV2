@@ -12,6 +12,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.MSBuild;
+using Microsoft.CodeAnalysis.FindSymbols;
 
 namespace RoslynIndexer;
 
@@ -72,6 +73,21 @@ public class Program
                     }
                     break;
 
+                case "who-references":
+                    var wrSymbol = args.FirstOrDefault(a => a.StartsWith("--symbol="))?.Split('=', 2)[1];
+                    if (string.IsNullOrEmpty(wrSymbol))
+                    {
+                        if (_useJson)
+                            WriteJsonResult("who-references", new { error = "Missing required argument --symbol=Namespace.ClassName" });
+                        else
+                            Console.WriteLine("Usage: --mode=who-references --symbol=Namespace.ClassName [--json]");
+                    }
+                    else
+                    {
+                        await WhoReferencesAsync(wrSymbol);
+                    }
+                    break;
+
                 case "recompute-all":
                     await RecomputeAllFingerprintsAsync();
                     break;
@@ -104,6 +120,7 @@ public class Program
                     Console.WriteLine("Commands:");
                     Console.WriteLine("  --mode=load");
                     Console.WriteLine("  --mode=fingerprint --symbol=X");
+                    Console.WriteLine("  --mode=who-references --symbol=X [--json]");
                     Console.WriteLine("  --mode=recompute-all");
                     Console.WriteLine("  --mode=mark-dirty --files=PATH [--deleted=PATH]");
                     Console.WriteLine("  --mode=sweep");
@@ -270,6 +287,240 @@ public class Program
             return $"UNRESOLVED:{error.Name}";
 
         return type.ToDisplayString();
+    }
+
+    private static List<object> GetBlindSpots()
+    {
+        return new List<object>
+        {
+            new { reason = "reflection_and_strings", provenance = "not_determinable" },
+            new { reason = "string_based_DI_registration", provenance = "not_determinable" },
+            new { reason = "configuration_strings", provenance = "not_determinable" },
+            new { reason = "external_consumers_flutter_frontend", provenance = "not_determinable" }
+        };
+    }
+
+    private static async Task WhoReferencesAsync(string symbolName)
+    {
+        var solution = await LoadSolutionAsync();
+        var symbol = await FindTypeSymbolAsync(solution, symbolName);
+
+        if (symbol == null)
+        {
+            if (_useJson)
+                WriteJsonResult("who-references", new
+                {
+                    symbol = symbolName,
+                    resolved = false,
+                    error = "Symbol not found",
+                    blindSpots = GetBlindSpots(),
+                    provenance = "compiler_proved"
+                });
+            else
+                Console.WriteLine($"Symbol not found: {symbolName}");
+            Environment.Exit(1);
+            return;
+        }
+
+        var referencedSymbols = await SymbolFinder.FindReferencesAsync(symbol, solution);
+        var allRefs = referencedSymbols.SelectMany(r => r.Locations).ToList();
+
+        var referenceDetails = new List<object>();
+        foreach (var refLoc in allRefs)
+        {
+            string? containingSymbol = null;
+            try
+            {
+                var doc = refLoc.Document;
+                var syntaxTree = await doc.GetSyntaxTreeAsync();
+                if (syntaxTree != null)
+                {
+                    var root = await syntaxTree.GetRootAsync();
+                    var token = root.FindToken(refLoc.Location.SourceSpan.Start);
+                    var node = token.Parent;
+                    while (node != null && !(node is BaseTypeDeclarationSyntax
+                        || node is MethodDeclarationSyntax
+                        || node is PropertyDeclarationSyntax
+                        || node is ConstructorDeclarationSyntax
+                        || node is BaseFieldDeclarationSyntax))
+                    {
+                        node = node.Parent;
+                    }
+                    if (node != null)
+                    {
+                        var model = await doc.GetSemanticModelAsync();
+                        if (model != null)
+                        {
+                            var declaredSymbol = model.GetDeclaredSymbol(node);
+                            if (declaredSymbol != null)
+                                containingSymbol = declaredSymbol.ToDisplayString();
+                        }
+                    }
+                }
+            }
+            catch { /* best effort */ }
+
+            var lineSpan = refLoc.Location.GetLineSpan();
+            referenceDetails.Add(new
+            {
+                file = refLoc.Location.SourceTree?.FilePath != null
+                    ? GetRelativePath(refLoc.Location.SourceTree.FilePath)
+                    : refLoc.Location.SourceTree?.FilePath,
+                line = lineSpan.StartLinePosition.Line + 1,
+                project = refLoc.Document.Project.Name,
+                containingSymbol,
+                locationProvenance = "compiler_proved"
+            });
+        }
+
+        var declarationSites = symbol.Locations
+            .Where(l => l.IsInSource)
+            .Select(l =>
+            {
+                var lineSpan = l.GetLineSpan();
+                return new
+                {
+                    file = l.SourceTree?.FilePath != null
+                        ? GetRelativePath(l.SourceTree.FilePath)
+                        : l.SourceTree?.FilePath,
+                    line = lineSpan.StartLinePosition.Line + 1
+                };
+            })
+            .ToList();
+
+        // --- Derived summary fields (F2.1) ---
+        var uniqueFilesSet = new HashSet<string>();
+        var uniqueProjectsSet = new HashSet<string>();
+        var uniqueContainingSymbolsSet = new HashSet<string>();
+        var projectCounts = new Dictionary<string, int>();
+        var fileCounts = new Dictionary<string, int>();
+        var containingSymbolCounts = new Dictionary<string, int>();
+        var generatedCount = 0;
+
+        foreach (var rd in referenceDetails)
+        {
+            dynamic rdDynamic = rd;
+            string? file = rdDynamic.file;
+            string? project = rdDynamic.project;
+            string? containingSymbol = rdDynamic.containingSymbol;
+
+            if (file != null)
+            {
+                uniqueFilesSet.Add(file);
+                fileCounts.TryGetValue(file, out var fc);
+                fileCounts[file] = fc + 1;
+
+                var lower = file.ToLowerInvariant();
+                if (lower.Contains("/migrations/") ||
+                    lower.Contains(".g.cs") ||
+                    lower.Contains(".designer.cs") ||
+                    lower.Contains(".generated.cs") ||
+                    lower.Contains("/obj/"))
+                {
+                    generatedCount++;
+                }
+            }
+
+            if (project != null)
+            {
+                uniqueProjectsSet.Add(project);
+                projectCounts.TryGetValue(project, out var pc);
+                projectCounts[project] = pc + 1;
+            }
+
+            if (!string.IsNullOrEmpty(containingSymbol))
+            {
+                uniqueContainingSymbolsSet.Add(containingSymbol);
+                containingSymbolCounts.TryGetValue(containingSymbol, out var sc);
+                containingSymbolCounts[containingSymbol] = sc + 1;
+            }
+        }
+
+        // Self-reference: count references whose file+line matches a declaration site
+        var declSiteKeys = new HashSet<string>();
+        foreach (dynamic decl in declarationSites)
+        {
+            string? file = decl.file;
+            int line = decl.line;
+            if (file != null)
+                declSiteKeys.Add($"{file}:{line}");
+        }
+
+        var selfReferenceCount = 0;
+        foreach (dynamic rd in referenceDetails)
+        {
+            string? file = rd.file;
+            int line = rd.line;
+            if (file != null && declSiteKeys.Contains($"{file}:{line}"))
+                selfReferenceCount++;
+        }
+
+        var fieldProvenance = new
+        {
+            referenceCount = "compiler_proved",
+            references = "compiler_proved",
+            declarationSites = "compiler_proved",
+            uniqueFiles = "compiler_proved",
+            uniqueProjects = "compiler_proved",
+            uniqueContainingSymbols = "compiler_proved",
+            referenceBuckets = "compiler_proved",
+            generatedReferenceCount = "indexer_observed",
+            selfReferenceCount = selfReferenceCount > 0 ? "compiler_proved" : "indexer_observed",
+            blindSpots = "not_determinable"
+        };
+
+        var blindSpots = GetBlindSpots();
+        if (selfReferenceCount == 0)
+        {
+            blindSpots.Add(new
+            {
+                reason = "self_reference_classification",
+                detail = "File+line matching between declarations and references yields 0; deeper semantic check needed for true self-references",
+                provenance = "not_determinable"
+            });
+        }
+
+        if (_useJson)
+        {
+            WriteJsonResult("who-references", new
+            {
+                symbol = symbolName,
+                resolved = true,
+                declarationSites,
+                referenceCount = allRefs.Count,
+                references = referenceDetails,
+                uniqueFiles = uniqueFilesSet.Count,
+                uniqueProjects = uniqueProjectsSet.Count,
+                uniqueContainingSymbols = uniqueContainingSymbolsSet.Count,
+                referenceBuckets = new
+                {
+                    byProject = projectCounts,
+                    byFile = fileCounts,
+                    byContainingSymbol = containingSymbolCounts
+                },
+                generatedReferenceCount = generatedCount,
+                selfReferenceCount,
+                blindSpots,
+                provenance = "compiler_proved",
+                fieldProvenance
+            });
+        }
+        else
+        {
+            Console.WriteLine($"Symbol: {symbolName}");
+            Console.WriteLine($"Resolved: true");
+            foreach (dynamic decl in declarationSites)
+                Console.WriteLine($"  Declaration: {decl.file}:{decl.line}");
+            Console.WriteLine($"References found: {allRefs.Count}");
+            foreach (dynamic rd in referenceDetails)
+            {
+                var containing = rd.containingSymbol != null
+                    ? $" -- containing symbol: {rd.containingSymbol}"
+                    : "";
+                Console.WriteLine($"  {rd.file}:{rd.line} (project: {rd.project}){containing}");
+            }
+            Console.WriteLine("Blind spots: reflection_and_strings, string_based_DI_registration, configuration_strings, external_consumers_flutter_frontend");
+        }
     }
 
     private static async Task ComputeFingerprintOnlyAsync(string symbolName)
