@@ -96,8 +96,9 @@ CLAUDE.md
 .codeaudit/
 .semantic/
 
-# Indexer — local development tool only (not uploaded to GitHub)
-tools/Indexer/
+# Indexer build outputs
+tools/Indexer/bin/
+tools/Indexer/obj/
 
 # Generated / local agent artifacts
 graphify*/
