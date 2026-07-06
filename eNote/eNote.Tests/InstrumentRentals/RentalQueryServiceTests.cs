@@ -1,6 +1,5 @@
 using eNote.Application.Features.Rentals.InstrumentRentals;
 using eNote.Application.Features.Rentals.InstrumentRentals.Services;
-using eNote.Domain.Entities.Rentals;
 using eNote.Tests.TestUtils;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;

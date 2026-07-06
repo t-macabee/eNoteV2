@@ -1,4 +1,3 @@
-using eNote.Domain.Entities;
 using eNote.Contracts.Rentals;
 using eNote.Infrastructure.Data;
 using MassTransit;

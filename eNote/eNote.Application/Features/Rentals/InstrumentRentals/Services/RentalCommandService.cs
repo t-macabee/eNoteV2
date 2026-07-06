@@ -3,7 +3,6 @@ using eNote.Application.Features.Rentals.InstrumentRentals.StateMachine;
 using eNote.Application.Features.Rentals.Instruments;
 using MapsterMapper;
 using Microsoft.EntityFrameworkCore.Storage;
-using eNote.Domain.Entities.Rentals;
 
 namespace eNote.Application.Features.Rentals.InstrumentRentals.Services;
 

@@ -4,8 +4,7 @@
     <PackageReference Include="Mapster" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" />
-    <PackageReference Include="Microsoft.Extensions.Identity.Core" />
-    <PackageReference Include="Microsoft.OpenApi" />
+    <PackageReference Include="Microsoft.Extensions.Identity.Core" />  
     <PackageReference Include="QuestPDF" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" />
   </ItemGroup>

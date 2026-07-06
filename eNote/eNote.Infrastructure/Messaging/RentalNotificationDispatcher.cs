@@ -1,4 +1,3 @@
-using eNote.Domain.Entities;
 using System.Text.Json;
 using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Persistence;

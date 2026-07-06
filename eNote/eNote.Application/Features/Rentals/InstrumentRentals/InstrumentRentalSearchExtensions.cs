@@ -1,5 +1,4 @@
 using eNote.Application.Common.Search;
-using eNote.Domain.Entities.Rentals;
 
 namespace eNote.Application.Features.Rentals.InstrumentRentals;
 

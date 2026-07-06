@@ -1,4 +1,3 @@
-using eNote.Domain.Entities.Shared.Base;
 namespace eNote.Domain.Entities.Academic;
 
 public class LectureNote : AuditableEntity

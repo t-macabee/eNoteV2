@@ -1,5 +1,3 @@
-using eNote.Domain.Entities.Shared.Base;
-using eNote.Domain.Entities.Academic;
 namespace eNote.Domain.Entities.Assignments;
 
 public class Assignment : AuditableEntity

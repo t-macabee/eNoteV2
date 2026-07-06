@@ -1,4 +1,3 @@
-using eNote.Domain.Entities;
 using eNote.Domain.Enums;
 using eNote.Application.Common.Time;
 using Microsoft.EntityFrameworkCore;

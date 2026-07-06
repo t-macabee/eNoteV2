@@ -1,8 +1,3 @@
-using eNote.Domain.Entities.Rentals;
-using eNote.Domain.Entities.Shared.Base;
-
-using eNote.Domain.Entities.Academic;
-using eNote.Domain.Entities.Assignments;
 namespace eNote.Domain.Entities.Identity;
 
 public sealed class Student : AuditableEntity

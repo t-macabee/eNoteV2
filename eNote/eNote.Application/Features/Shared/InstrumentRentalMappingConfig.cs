@@ -1,5 +1,4 @@
 using eNote.Application.Features.Rentals.InstrumentRentals;
-using eNote.Domain.Entities.Rentals;
 using Mapster;
 
 namespace eNote.Application.Features.Shared;

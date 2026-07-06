@@ -1,4 +1,3 @@
-using eNote.Domain.Entities.Rentals;
 using eNote.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;

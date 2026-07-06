@@ -1,7 +1,6 @@
 ﻿using DotNetEnv;
 using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Time;
-using eNote.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration;

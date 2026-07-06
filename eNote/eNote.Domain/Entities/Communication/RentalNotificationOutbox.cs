@@ -1,4 +1,3 @@
-using eNote.Domain.Entities.Shared.Base;
 namespace eNote.Domain.Entities.Communication;
 
 public class RentalNotificationOutbox : AuditableEntity

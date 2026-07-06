@@ -1,4 +1,3 @@
-using eNote.Domain.Entities;
 using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Localization;
 using eNote.Application.Constants;

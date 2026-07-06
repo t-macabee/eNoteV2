@@ -7,8 +7,7 @@
   <ItemGroup>
     <PackageReference Include="DotNetEnv" />
     <PackageReference Include="MassTransit.RabbitMQ" />
-    <PackageReference Include="Microsoft.Extensions.Hosting" />
-    <PackageReference Include="Microsoft.OpenApi" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" />    
   </ItemGroup>
 
   <ItemGroup>

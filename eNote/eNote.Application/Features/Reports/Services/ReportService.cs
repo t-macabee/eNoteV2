@@ -7,7 +7,6 @@ using eNote.Application.Features.Identity.Users.Services;
 using eNote.Application.Features.Academic.Courses.Services;
 using eNote.Application.Features.Rentals.InstrumentRentals.Billing;
 using eNote.Application.Features.Identity.Instructors;
-using eNote.Domain.Entities.Rentals;
 
 namespace eNote.Application.Features.Reports.Services;
 

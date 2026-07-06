@@ -1,4 +1,3 @@
-using eNote.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Infrastructure.Data.Seed;

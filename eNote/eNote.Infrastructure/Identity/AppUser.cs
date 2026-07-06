@@ -1,5 +1,4 @@
 using System.ComponentModel.DataAnnotations;
-using eNote.Domain.Entities;
 using Microsoft.AspNetCore.Identity;
 
 namespace eNote.Infrastructure.Identity;

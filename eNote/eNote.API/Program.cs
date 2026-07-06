@@ -13,6 +13,9 @@ Log.Logger = new LoggerConfiguration()
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 builder.Host.UseApplicationLogging();
+Console.WriteLine($"Jwt:Key = '{builder.Configuration["Jwt:Key"]}'");
+Console.WriteLine($"Env Jwt__Key = '{Environment.GetEnvironmentVariable("Jwt__Key")}'");
+Console.WriteLine($"Connection = '{builder.Configuration.GetConnectionString("DefaultConnection")}'");
 builder.Configuration.ValidateRequiredSettings();
 
 builder.Services
@@ -28,8 +31,7 @@ builder.Services
     .AddMapsterMappings()
     .AddApplicationValidation()
     .AddApplicationSignalR()
-    .AddApplicationApiVersioning()
-    .AddScalarDocumentation();
+    .AddApplicationApiVersioning();
 
 builder.Services
     .AddControllers()
@@ -54,7 +56,6 @@ app.UseErrorHandling();
 if (app.Environment.IsDevelopment())
 {
     await app.MigrateAsync();
-    app.MapScalarDocumentation();
     await app.SeedDevelopmentData();
 }
 

@@ -1,5 +1,3 @@
-using eNote.Domain.Entities.Shared.Base;
-using eNote.Domain.Entities.Rentals;
 namespace eNote.Domain.Entities.Identity;
 
 public class MusicStoreEmployee : AuditableEntity

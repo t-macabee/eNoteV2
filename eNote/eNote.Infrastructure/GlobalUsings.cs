@@ -1,4 +1,3 @@
-global using eNote.Domain.Entities;
 global using eNote.Domain.Entities.Academic;
 global using eNote.Domain.Entities.Assignments;
 global using eNote.Domain.Entities.Communication;

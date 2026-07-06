@@ -1,4 +1,3 @@
-using eNote.Domain.Entities;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Common.Time;
 using eNote.Application.Features.Identity.Auth.Services;

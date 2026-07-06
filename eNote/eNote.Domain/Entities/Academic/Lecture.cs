@@ -1,7 +1,4 @@
 using eNote.Domain.Enums;
-using eNote.Domain.Entities.Shared.Base;
-
-using eNote.Domain.Entities.Assignments;
 namespace eNote.Domain.Entities.Academic;
 
 public sealed class Lecture : AuditableEntity

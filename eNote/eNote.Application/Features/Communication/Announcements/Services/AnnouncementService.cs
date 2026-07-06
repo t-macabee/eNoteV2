@@ -1,6 +1,5 @@
 using eNote.Application.Features.Identity.Instructors;
 using MapsterMapper;
-using eNote.Domain.Entities.Rentals;
 
 namespace eNote.Application.Features.Communication.Announcements.Services;
 

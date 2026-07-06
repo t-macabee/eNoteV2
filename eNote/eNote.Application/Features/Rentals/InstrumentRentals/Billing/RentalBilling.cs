@@ -1,5 +1,3 @@
-using eNote.Domain.Entities.Rentals;
-
 namespace eNote.Application.Features.Rentals.InstrumentRentals.Billing;
 
 public static class RentalBilling

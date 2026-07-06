@@ -1,6 +1,5 @@
 using eNote.Application.Features.Rentals.InstrumentRentals.Billing;
 using MapsterMapper;
-using eNote.Domain.Entities.Rentals;
 
 namespace eNote.Application.Features.Rentals.InstrumentRentals.Services;
 
