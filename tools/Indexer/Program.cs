@@ -19,6 +19,8 @@ namespace RoslynIndexer;
 record DirtyManifest(int SchemaVersion, List<string> DirtyFiles, List<string> DeletedFiles, string MarkedAt);
 record DeclarationSite(string? File, int Line);
 record ReferenceDetail(string? File, int Line, string Project, string? ContainingSymbol, string LocationProvenance);
+record DiscoveredType(string SymbolId, string Kind, string KindCategory, string Namespace, string Project,
+    string SourceFile, string Accessibility, string? Inherits, List<string> Implements, List<string> Dependencies);
 
 public class Program
 {
@@ -114,8 +116,12 @@ public class Program
                     await ImpactModeAsync();
                     break;
 
+                case "discover":
+                    await DiscoverAsync(args);
+                    break;
                 default:
-                    Console.WriteLine("Commands:");                    
+                    Console.WriteLine("Commands:");
+                    Console.WriteLine("  --mode=discover [--kind=X] [--project=X] [--json]");
                     Console.WriteLine("  --mode=fingerprint --symbol=X");
                     Console.WriteLine("  --mode=who-references --symbol=X [--json]");
                     Console.WriteLine("  --mode=recompute-all");
@@ -419,6 +425,284 @@ public class Program
             new { reason = "configuration_strings", provenance = "not_determinable" },
             new { reason = "external_consumers_flutter_frontend", provenance = "not_determinable" }
         };
+    }
+
+    private static bool IsGeneratedFile(string filePath)
+    {
+        var lower = filePath.ToLowerInvariant().Replace('\\', '/');
+        return lower.Contains("/migrations/")
+            || lower.Contains("/obj/")
+            || lower.Contains("/.nuget/")
+            || lower.EndsWith(".g.cs")
+            || lower.EndsWith(".designer.cs")
+            || lower.EndsWith(".generated.cs");
+    }
+
+    private static bool IsBclType(ITypeSymbol type)
+    {
+        var ns = type.ContainingNamespace?.ToDisplayString() ?? "";
+        return ns == "System" || ns.StartsWith("System.");
+    }
+
+    private static void CollectTypeDeps(HashSet<string> deps, ITypeSymbol type)
+    {
+        if (!IsBclType(type))
+            deps.Add(type.ToDisplayString());
+
+        if (type is INamedTypeSymbol named)
+        {
+            foreach (var targ in named.TypeArguments)
+                CollectTypeDeps(deps, targ);
+        }
+    }
+
+    private static List<string> ExtractDependencies(INamedTypeSymbol symbol)
+    {
+        var deps = new HashSet<string>();
+
+        if (symbol.BaseType != null && symbol.BaseType.SpecialType != SpecialType.System_Object)
+            CollectTypeDeps(deps, symbol.BaseType);
+
+        foreach (var iface in symbol.AllInterfaces)
+            CollectTypeDeps(deps, iface);
+
+        foreach (var member in symbol.GetMembers())
+        {
+            if (!SymbolEqualityComparer.Default.Equals(member.ContainingType, symbol))
+                continue;
+
+            switch (member)
+            {
+                case IFieldSymbol field:
+                    CollectTypeDeps(deps, field.Type);
+                    break;
+                case IPropertySymbol prop:
+                    CollectTypeDeps(deps, prop.Type);
+                    break;
+                case IMethodSymbol method when method.MethodKind == MethodKind.Constructor:
+                    foreach (var p in method.Parameters)
+                        CollectTypeDeps(deps, p.Type);
+                    break;
+                case IMethodSymbol method when method.MethodKind == MethodKind.Ordinary:
+                    foreach (var p in method.Parameters)
+                        CollectTypeDeps(deps, p.Type);
+                    CollectTypeDeps(deps, method.ReturnType);
+                    break;
+            }
+        }
+
+        deps.Remove(symbol.ToDisplayString());
+        return deps.OrderBy(d => d).ToList();
+    }
+
+    private static bool InheritsFrom(INamedTypeSymbol? symbol, string fullMetadataName)
+    {
+        var current = symbol;
+        while (current != null)
+        {
+            var name = current.ToDisplayString();
+            var genericIdx = name.IndexOf('<');
+            if (genericIdx >= 0 ? name[..genericIdx] == fullMetadataName : name == fullMetadataName)
+                return true;
+            current = current.BaseType;
+        }
+        return false;
+    }
+
+    private static bool ImplementsInterface(INamedTypeSymbol symbol, string prefix)
+    {
+        return symbol.AllInterfaces.Any(i =>
+        {
+            var name = i.ToDisplayString();
+            if (name == prefix) return true;
+            var genericIdx = name.IndexOf('<');
+            return genericIdx >= 0 && name[..genericIdx] == prefix;
+        });
+    }
+
+    private static string ClassifyKind(INamedTypeSymbol symbol)
+    {
+        if (symbol.TypeKind == TypeKind.Interface)
+            return "interface";
+
+        var name = symbol.Name;
+        var nameLower = name.ToLowerInvariant();
+        var ns = symbol.ContainingNamespace?.ToDisplayString() ?? "";
+        var nsLower = ns.ToLowerInvariant();
+
+        if (InheritsFrom(symbol, "Microsoft.AspNetCore.Mvc.ControllerBase"))
+            return "controller";
+
+        if (nameLower.EndsWith("command") && ImplementsInterface(symbol, "MediatR.IRequest"))
+            return "command";
+
+        if (nameLower.EndsWith("query") && ImplementsInterface(symbol, "MediatR.IRequest"))
+            return "query";
+
+        if (symbol.AllInterfaces.Any(i => i.Name.EndsWith("IRepository")))
+            return "repository";
+
+        if (nameLower.EndsWith("service"))
+            return "service";
+
+        if (ImplementsInterface(symbol, "MediatR.IRequestHandler"))
+            return "handler";
+
+        if (InheritsFrom(symbol.BaseType, "FluentValidation.AbstractValidator"))
+            return "validator";
+
+        if (InheritsFrom(symbol, "Microsoft.Extensions.Hosting.BackgroundService")
+            || ImplementsInterface(symbol, "Microsoft.Extensions.Hosting.IHostedService"))
+            return "hosted-service";
+
+        // Must be AFTER command/query checks (those catch MediatR Request types first)
+        if (nameLower.EndsWith("dto") || nameLower.EndsWith("response") || nameLower.EndsWith("request")
+            || nsLower.Contains(".dtos.") || nsLower.Contains(".models."))
+            return "dto";
+
+        if (nsLower.Contains(".domain.entities."))
+            return "entity";
+
+        if (symbol.TypeKind == TypeKind.Enum)
+            return "enum";
+
+        if (nameLower.EndsWith("middleware"))
+            return "middleware";
+
+        if (nameLower.EndsWith("extensions") || nameLower.EndsWith("configuration"))
+            return "configuration";
+
+        return "unclassified";
+    }
+
+    private static DiscoveredType BuildDiscoveredType(INamedTypeSymbol symbol, string projectName, string filePath)
+    {
+        return new DiscoveredType(
+            SymbolId: symbol.ToDisplayString(),
+            Kind: symbol.TypeKind.ToString(),
+            KindCategory: ClassifyKind(symbol),
+            Namespace: symbol.ContainingNamespace?.ToDisplayString() ?? "",
+            Project: projectName,
+            SourceFile: GetRelativePath(filePath),
+            Accessibility: symbol.DeclaredAccessibility.ToString(),
+            Inherits: symbol.BaseType != null && symbol.BaseType.SpecialType != SpecialType.System_Object
+                ? symbol.BaseType.ToDisplayString()
+                : null,
+            Implements: symbol.AllInterfaces.Select(i => i.ToDisplayString()).ToList(),
+            Dependencies: ExtractDependencies(symbol)
+        );
+    }
+
+    private static async Task DiscoverAsync(string[] args)
+    {
+        var kindFilter = args.FirstOrDefault(a => a.StartsWith("--kind="))?.Split('=', 2)[1];
+        var projectFilter = args.FirstOrDefault(a => a.StartsWith("--project="))?.Split('=', 2)[1];
+
+        if (!_useJson)
+            WriteProgress("Discovering types...");
+
+        var solution = await LoadSolutionAsync();
+        var allTypes = new List<DiscoveredType>();
+        var seen = new HashSet<string>();
+
+        foreach (var project in solution.Projects)
+        {
+            if (projectFilter != null
+                && !string.Equals(project.Name, projectFilter, StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            var compilation = await project.GetCompilationAsync();
+            if (compilation == null) continue;
+
+            foreach (var document in project.Documents)
+            {
+                var filePath = document.FilePath ?? "";
+                if (IsGeneratedFile(filePath)) continue;
+
+                var syntaxTree = await document.GetSyntaxTreeAsync();
+                if (syntaxTree == null) continue;
+
+                var root = await syntaxTree.GetRootAsync();
+                var model = compilation.GetSemanticModel(syntaxTree);
+
+                foreach (var typeDecl in root.DescendantNodes().OfType<TypeDeclarationSyntax>())
+                {
+                    if (model.GetDeclaredSymbol(typeDecl) is not INamedTypeSymbol namedSymbol)
+                        continue;
+
+                    if (!seen.Add(namedSymbol.ToDisplayString()))
+                        continue;
+
+                    var entry = BuildDiscoveredType(namedSymbol, project.Name, filePath);
+                    allTypes.Add(entry);
+                }
+            }
+        }
+
+        if (kindFilter != null)
+        {
+            var filters = kindFilter.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            allTypes = allTypes.Where(t => filters.Contains(t.KindCategory, StringComparer.OrdinalIgnoreCase)).ToList();
+        }
+
+        var byKindCategory = allTypes.GroupBy(t => t.KindCategory)
+            .ToDictionary(g => g.Key, g => g.Count());
+        var byProject = allTypes.GroupBy(t => t.Project)
+            .ToDictionary(g => g.Key, g => g.GroupBy(t => t.KindCategory).ToDictionary(gg => gg.Key, gg => gg.Count()));
+
+        var summary = new
+        {
+            totalTypes = allTypes.Count,
+            byKindCategory,
+            byProject
+        };
+
+        if (_useJson)
+        {
+            WriteJsonResult("discover", new
+            {
+                summary,
+                types = allTypes,
+                provenance = "compiler_proved",
+                fieldProvenance = new
+                {
+                    kind = "compiler_proved",
+                    kindCategory = "indexer_observed",
+                    ns = "compiler_proved",
+                    project = "compiler_proved",
+                    sourceFile = "compiler_proved",
+                    accessibility = "compiler_proved",
+                    inherits = "compiler_proved",
+                    implements = "compiler_proved",
+                    dependencies = "compiler_proved",
+                    summary = "compiler_proved",
+                    blindSpots = "not_determinable"
+                },
+                blindSpots = GetBlindSpots()
+            });
+        }
+        else
+        {
+            Console.WriteLine($"\nDiscovered {allTypes.Count} types across {allTypes.Select(t => t.Project).Distinct().Count()} projects.\n");
+
+            foreach (var cat in byKindCategory.OrderBy(k => k.Key))
+            {
+                Console.WriteLine($"  {cat.Key}: {cat.Value}");
+                var typesInCat = allTypes.Where(t => t.KindCategory == cat.Key).ToList();
+                var byProj = typesInCat.GroupBy(t => t.Project);
+                foreach (var pg in byProj)
+                {
+                    Console.WriteLine($"    {pg.Key}:");
+                    foreach (var t in pg)
+                        Console.WriteLine($"      {t.SymbolId}");
+                }
+                Console.WriteLine();
+            }
+
+            Console.WriteLine("Blind spots:");
+            foreach (var bs in GetBlindSpots())
+                Console.WriteLine($"  [not_determinable] {bs.GetType().GetProperty("reason")?.GetValue(bs)}");
+        }
     }
 
     private static async Task WhoReferencesAsync(string symbolName)
