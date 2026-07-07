@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "symbolId": "eNote.Infrastructure.Messaging.RentalNotificationOutboxPublisher",
-  "fingerprint": "542CCE189B35EE4F",
+  "fingerprint": "873710C780030EF6",
   "generatedAt": "2026-07-02T00:00:00Z",
   "status": "proposed",
   "facts": {
@@ -10,68 +10,120 @@
     "inherits": "Microsoft.Extensions.Hosting.BackgroundService",
     "Implements": [],
     "sourceFile": "eNote/eNote.Infrastructure/Messaging/RentalNotificationOutboxPublisher.cs",
-    "dependencies": ["eNote.Application.Common.Persistence.IAppDbContext", "eNote.Application.Common.Time.IClock", "eNote.Contracts.Rentals.RentalStatusChanged", "eNote.Domain.Entities.RentalNotificationOutbox", "MassTransit.IPublishEndpoint", "Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction", "System.Threading.PeriodicTimer"]
+    "dependencies": [
+      "eNote.Application.Common.Persistence.IAppDbContext",
+      "eNote.Application.Common.Time.IClock",
+      "eNote.Contracts.Rentals.RentalStatusChanged",
+      "eNote.Domain.Entities.RentalNotificationOutbox",
+      "MassTransit.IPublishEndpoint",
+      "Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction",
+      "System.Threading.PeriodicTimer"
+    ]
   },
   "interpretation": {
-    "architecturalRole": { "value": "BackgroundJob", "confidence": 0.95 },
-    "responsibility": { "value": "Polls the RentalNotificationOutbox table every 5 seconds, publishes pending outbox messages to MassTransit within a database transaction, and updates the outbox rows with published-at timestamps or failure counters.", "confidence": 0.95 },
+    "architecturalRole": {
+      "value": "BackgroundJob",
+      "confidence": 0.95
+    },
+    "responsibility": {
+      "value": "Polls the RentalNotificationOutbox table every 5 seconds, publishes pending outbox messages to MassTransit within a database transaction, and updates the outbox rows with published-at timestamps or failure counters.",
+      "confidence": 0.95
+    },
     "Owns": [
-      "Polling the outbox table every 5 seconds via PeriodicTimer for messages with PublishedAt == null and Attempts < 5, ordered by CreatedAt, in batches of up to 50",
-      "Publishing deserialized RentalStatusChanged messages to MassTransit's IPublishEndpoint per-message within a batch",
+      "Polling the outbox table every 5 seconds via PeriodicTimer for messages with PublishedAt == null and Attempts \u003C 5, ordered by CreatedAt, in batches of up to 50",
+      "Publishing deserialized RentalStatusChanged messages to MassTransit\u0027s IPublishEndpoint per-message within a batch",
       "Handling per-message failures by incrementing Attempts, truncating the error message to 2000 characters in LastError, logging the error, and continuing to the next message (no rethrow per message)",
-      "Persisting the entire batch's state changes (PublishedAt updates, Attempts increments, LastError writes) within a single database transaction — rolling back the whole batch on SaveChanges/Commit failure",
+      "Persisting the entire batch\u0027s state changes (PublishedAt updates, Attempts increments, LastError writes) within a single database transaction \u2014 rolling back the whole batch on SaveChanges/Commit failure",
       "Graceful shutdown on OperationCanceledException via the try/catch around the PeriodicTimer loop"
     ],
     "doesNotOwn": [
       "Creating or enqueuing the outbox messages (owned by RentalNotificationDispatcher, which builds the RentalStatusChanged message and creates the outbox row)",
-      "Dead-letter queue management or alerting for messages that exceed Attempts >= 5 — these are silently excluded from the query and forgotten",
-      "Idempotency guarantees for downstream consumers — the class provides at-least-once delivery (messages may be re-published after a batch transaction rollback), but does not enforce or verify consumer idempotency",
-      "Configuration of poll interval or batch size — both are hard-coded constants (5 seconds, 50 messages)"
+      "Dead-letter queue management or alerting for messages that exceed Attempts \u003E= 5 \u2014 these are silently excluded from the query and forgotten",
+      "Idempotency guarantees for downstream consumers \u2014 the class provides at-least-once delivery (messages may be re-published after a batch transaction rollback), but does not enforce or verify consumer idempotency",
+      "Configuration of poll interval or batch size \u2014 both are hard-coded constants (5 seconds, 50 messages)"
     ],
     "collaborators": [
-      { "symbol": "System.Threading.PeriodicTimer", "relationship": "Creates", "detail": "Creates a PeriodicTimer(TimeSpan.FromSeconds(5)) in ExecuteAsync to drive the poll loop at a fixed 5-second interval" },
-      { "symbol": "eNote.Application.Common.Persistence.IAppDbContext", "relationship": "Injects", "detail": "Resolved per-scope from IServiceProvider; used to query outbox rows, persist state changes, and begin/commit transactions" },
-      { "symbol": "MassTransit.IPublishEndpoint", "relationship": "Calls", "detail": "Resolved per-scope; Publish(RentalStatusChanged) is called for each successfully deserialized outbox message in the batch" },
-      { "symbol": "eNote.Application.Common.Time.IClock", "relationship": "Injects", "detail": "Resolved per-scope; provides clock.UtcNow to set the PublishedAt timestamp on successfully published messages" },
-      { "symbol": "eNote.Contracts.Rentals.RentalStatusChanged", "relationship": "Accepts", "detail": "Deserialized from PayloadJson and published to the MassTransit bus; the target type for outbox message serialization" },
-      { "symbol": "eNote.Domain.Entities.RentalNotificationOutbox", "relationship": "Mutates", "detail": "Queried for unprocessed messages (PublishedAt == null, Attempts < 5); mutated in-place (PublishedAt, Attempts, LastError) and persisted via SaveChangesAsync" },
-      { "symbol": "Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction", "relationship": "Creates", "detail": "Created via db.BeginTransactionAsync() to wrap the entire batch's mutations in an atomic unit" },
-      { "symbol": "Microsoft.Extensions.Logging.ILogger<RentalNotificationOutboxPublisher>", "relationship": "Injects", "detail": "Injected via constructor; used to log per-message publish failures and batch-level SaveChanges/Commit failures" }
+      {
+        "symbol": "System.Threading.PeriodicTimer",
+        "relationship": "Creates",
+        "detail": "Creates a PeriodicTimer(TimeSpan.FromSeconds(5)) in ExecuteAsync to drive the poll loop at a fixed 5-second interval"
+      },
+      {
+        "symbol": "eNote.Application.Common.Persistence.IAppDbContext",
+        "relationship": "Injects",
+        "detail": "Resolved per-scope from IServiceProvider; used to query outbox rows, persist state changes, and begin/commit transactions"
+      },
+      {
+        "symbol": "MassTransit.IPublishEndpoint",
+        "relationship": "Calls",
+        "detail": "Resolved per-scope; Publish(RentalStatusChanged) is called for each successfully deserialized outbox message in the batch"
+      },
+      {
+        "symbol": "eNote.Application.Common.Time.IClock",
+        "relationship": "Injects",
+        "detail": "Resolved per-scope; provides clock.UtcNow to set the PublishedAt timestamp on successfully published messages"
+      },
+      {
+        "symbol": "eNote.Contracts.Rentals.RentalStatusChanged",
+        "relationship": "Accepts",
+        "detail": "Deserialized from PayloadJson and published to the MassTransit bus; the target type for outbox message serialization"
+      },
+      {
+        "symbol": "eNote.Domain.Entities.RentalNotificationOutbox",
+        "relationship": "Mutates",
+        "detail": "Queried for unprocessed messages (PublishedAt == null, Attempts \u003C 5); mutated in-place (PublishedAt, Attempts, LastError) and persisted via SaveChangesAsync"
+      },
+      {
+        "symbol": "Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction",
+        "relationship": "Creates",
+        "detail": "Created via db.BeginTransactionAsync() to wrap the entire batch\u0027s mutations in an atomic unit"
+      },
+      {
+        "symbol": "Microsoft.Extensions.Logging.ILogger\u003CRentalNotificationOutboxPublisher\u003E",
+        "relationship": "Injects",
+        "detail": "Injected via constructor; used to log per-message publish failures and batch-level SaveChanges/Commit failures"
+      }
     ],
     "contracts": [
-      "Every 5 seconds, at most 50 unprocessed outbox messages (PublishedAt == null && Attempts < 5) are fetched in CreatedAt order and processed",
+      "Every 5 seconds, at most 50 unprocessed outbox messages (PublishedAt == null \u0026\u0026 Attempts \u003C 5) are fetched in CreatedAt order and processed",
       "Each successfully published message has its PublishedAt set to the current UTC time",
       "Each message that throws during deserialization or publish has its Attempts incremented by 1 and its LastError set to the exception message (truncated to 2000 chars if necessary)",
-      "All state changes (PublishedAt, Attempts, LastError) across the entire batch are persisted atomically within a single database transaction — if SaveChanges or Commit fails, the entire batch rolls back and will be retried on the next tick",
+      "All state changes (PublishedAt, Attempts, LastError) across the entire batch are persisted atomically within a single database transaction \u2014 if SaveChanges or Commit fails, the entire batch rolls back and will be retried on the next tick",
       "On graceful shutdown, the polling loop exits cleanly via OperationCanceledException catch without rethrowing"
     ],
     "assumptions": [
-      "Downstream MassTransit consumers are idempotent — a batch transaction rollback after partial publish success causes the already-published messages to be re-published on the next tick (at-least-once delivery pattern)",
-      "Messages with Attempts >= 5 have permanently failed and can be silently abandoned — no dead-letter queue, no monitoring hook, no admin alert exists for these messages",
-      "The database is always reachable — if SaveChangesAsync repeatedly fails, the class retries every 5 seconds with no backoff or circuit breaker; only an application shutdown stops the loop",
+      "Downstream MassTransit consumers are idempotent \u2014 a batch transaction rollback after partial publish success causes the already-published messages to be re-published on the next tick (at-least-once delivery pattern)",
+      "Messages with Attempts \u003E= 5 have permanently failed and can be silently abandoned \u2014 no dead-letter queue, no monitoring hook, no admin alert exists for these messages",
+      "The database is always reachable \u2014 if SaveChangesAsync repeatedly fails, the class retries every 5 seconds with no backoff or circuit breaker; only an application shutdown stops the loop",
       "A batch size of 50 and a poll interval of 5 seconds are sufficient for the expected notification volume"
     ],
     "invariants": [
-      "Every message in a batch is processed sequentially within the same DB transaction — either all succeed (commit) or all roll back",
-      "Per-message failures never cause the entire batch to abort — the exception is caught per message, the error is recorded, and the loop continues to the next message",
+      "Every message in a batch is processed sequentially within the same DB transaction \u2014 either all succeed (commit) or all roll back",
+      "Per-message failures never cause the entire batch to abort \u2014 the exception is caught per message, the error is recorded, and the loop continues to the next message",
       "The ErrorMessage stored in LastError is never longer than 2000 characters (enforced by explicit truncation)",
       "The PeriodicTimer is created once and disposed when the BackgroundService stops"
     ],
     "failureModes": [
-      "Silent notification loss after 5 failed attempts — messages with Attempts >= 5 are excluded by the WHERE clause and never retried; no alert, no dead-letter queue, no administrative visibility",
-      "Duplicate notification delivery on batch transaction rollback — if one message publishes successfully but a later message fails and the subsequent SaveChanges/Commit fails, the entire batch (including the successful publish) is retried, producing duplicate downstream deliveries",
-      "Unbounded retry loop at 5-second intervals if the database is unavailable — SaveChangesAsync throws every cycle with no backoff; only host shutdown via OperationCanceledException stops it",
-      "Payload deserialization failure for a single corrupt message is handled gracefully (logged, Attempts incremented, continues) — but if the corruption pattern is persistent, the message eventually hits Attempts 5 and is abandoned"
+      "Silent notification loss after 5 failed attempts \u2014 messages with Attempts \u003E= 5 are excluded by the WHERE clause and never retried; no alert, no dead-letter queue, no administrative visibility",
+      "Duplicate notification delivery on batch transaction rollback \u2014 if one message publishes successfully but a later message fails and the subsequent SaveChanges/Commit fails, the entire batch (including the successful publish) is retried, producing duplicate downstream deliveries",
+      "Unbounded retry loop at 5-second intervals if the database is unavailable \u2014 SaveChangesAsync throws every cycle with no backoff; only host shutdown via OperationCanceledException stops it",
+      "Payload deserialization failure for a single corrupt message is handled gracefully (logged, Attempts incremented, continues) \u2014 but if the corruption pattern is persistent, the message eventually hits Attempts 5 and is abandoned"
     ],
     "architecturalNotes": [
-      "The lack of a dead-letter queue is the most significant operational gap — failed-outbox messages are silently invisible to operators. For a school rental system with low volume this may be acceptable, but it is worth documenting as a known monitoring blind spot.",
+      "The lack of a dead-letter queue is the most significant operational gap \u2014 failed-outbox messages are silently invisible to operators. For a school rental system with low volume this may be acceptable, but it is worth documenting as a known monitoring blind spot.",
       "The at-least-once delivery guarantee (due to batch transaction rollback) is the correct choice for a notification outbox, but it means every downstream RentalStatusChanged consumer must handle duplicates gracefully.",
       "The hard-coded 5-second/50-message constants are reasonable for the current domain but would need extraction to configuration if the notification volume grows significantly."
     ]
   },
   "evidence": {
-    "primaryMethods": ["ExecuteAsync", "ProcessBatchAsync"],
-    "primaryFields": ["Interval", "JsonOptions"]
+    "primaryMethods": [
+      "ExecuteAsync",
+      "ProcessBatchAsync"
+    ],
+    "primaryFields": [
+      "Interval",
+      "JsonOptions"
+    ]
   },
   "review": {
     "status": "pending",

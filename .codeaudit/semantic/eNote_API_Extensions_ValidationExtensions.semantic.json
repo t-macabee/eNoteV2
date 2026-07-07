@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "symbolId": "eNote.API.Extensions.ValidationExtensions",
-  "fingerprint": "B375041748768973",
+  "fingerprint": "70F176B7D9DD5141",
   "generatedAt": "2026-07-03T00:00:00Z",
   "status": "proposed",
   "facts": {
@@ -17,53 +17,70 @@
     ]
   },
   "interpretation": {
-    "architecturalRole": { "value": "Configuration", "confidence": 0.95 },
+    "architecturalRole": {
+      "value": "Configuration",
+      "confidence": 0.95
+    },
     "responsibility": {
-      "value": "Registers FluentValidation into the ASP.NET Core pipeline — enables automatic validation (AddFluentValidationAutoValidation) and discovers all validators from the Application assembly using AnnouncementMappingConfig as the anchor type for assembly scanning.",
+      "value": "Registers FluentValidation into the ASP.NET Core pipeline \u2014 enables automatic validation (AddFluentValidationAutoValidation) and discovers all validators from the Application assembly using AnnouncementMappingConfig as the anchor type for assembly scanning.",
       "confidence": 0.95
     },
     "Owns": [
       "Calling AddFluentValidationAutoValidation() to enable automatic model validation on controller action parameters",
-      "Calling AddValidatorsFromAssemblyContaining<AnnouncementMappingConfig>() to register all AbstractValidator<T> implementations from the eNote.Application assembly"
+      "Calling AddValidatorsFromAssemblyContaining\u003CAnnouncementMappingConfig\u003E() to register all AbstractValidator\u003CT\u003E implementations from the eNote.Application assembly"
     ],
     "doesNotOwn": [
-      "Individual validator definitions — those live in eNote.Application.Validation as separate AbstractValidator<T> classes discovered by the assembly scan",
-      "Validation error formatting or localization — the default FluentValidation ASP.NET Core integration handles error response formatting; this class does not customize it",
-      "MediatR pipeline behaviors for validation — no IPipelineBehavior is registered; validation is controller-level only via FluentValidation.AspNetCore"
+      "Individual validator definitions \u2014 those live in eNote.Application.Validation as separate AbstractValidator\u003CT\u003E classes discovered by the assembly scan",
+      "Validation error formatting or localization \u2014 the default FluentValidation ASP.NET Core integration handles error response formatting; this class does not customize it",
+      "MediatR pipeline behaviors for validation \u2014 no IPipelineBehavior is registered; validation is controller-level only via FluentValidation.AspNetCore"
     ],
     "collaborators": [
-      { "symbol": "eNote.Application.Features.Shared.AnnouncementMappingConfig", "relationship": "ReferencesStatically", "detail": "Used as the anchor type for AddValidatorsFromAssemblyContaining to scan eNote.Application for all AbstractValidator<T> classes" },
-      { "symbol": "FluentValidation.AspNetCore", "relationship": "Calls", "detail": "AddFluentValidationAutoValidation() is called to wire automatic model validation into the ASP.NET Core MVC pipeline" },
-      { "symbol": "FluentValidation", "relationship": "Calls", "detail": "AddValidatorsFromAssemblyContaining<T>() is called to register all validators in the scanned assembly" }
+      {
+        "symbol": "eNote.Application.Features.Shared.AnnouncementMappingConfig",
+        "relationship": "ReferencesStatically",
+        "detail": "Used as the anchor type for AddValidatorsFromAssemblyContaining to scan eNote.Application for all AbstractValidator\u003CT\u003E classes"
+      },
+      {
+        "symbol": "FluentValidation.AspNetCore",
+        "relationship": "Calls",
+        "detail": "AddFluentValidationAutoValidation() is called to wire automatic model validation into the ASP.NET Core MVC pipeline"
+      },
+      {
+        "symbol": "FluentValidation",
+        "relationship": "Calls",
+        "detail": "AddValidatorsFromAssemblyContaining\u003CT\u003E() is called to register all validators in the scanned assembly"
+      }
     ],
     "contracts": [
-      "Every AbstractValidator<T> in the eNote.Application assembly is automatically discovered and registered without per-validator manual wiring",
+      "Every AbstractValidator\u003CT\u003E in the eNote.Application assembly is automatically discovered and registered without per-validator manual wiring",
       "Automatic validation runs on all controller action parameters decorated with [FromBody] or similar model-binding attributes"
     ],
     "assumptions": [
-      "The AnnouncementMappingConfig class is a reliable anchor — it must remain in eNote.Application and must not be moved to another assembly, or validator discovery silently stops",
-      "AddFluentValidationAutoValidation() does not conflict with any custom model validation or custom model binding that may also produce error responses — stack-wise, FluentValidation runs before action execution but after model binding",
-      "No validator disables automatic validation on specific endpoints via [IgnoreAutoValidation] or similar — all endpoints with model-bound parameters get validated",
-      "The default FluentValidation error response format (ProblemDetails with validation errors) is acceptable for the API's consumers"
+      "The AnnouncementMappingConfig class is a reliable anchor \u2014 it must remain in eNote.Application and must not be moved to another assembly, or validator discovery silently stops",
+      "AddFluentValidationAutoValidation() does not conflict with any custom model validation or custom model binding that may also produce error responses \u2014 stack-wise, FluentValidation runs before action execution but after model binding",
+      "No validator disables automatic validation on specific endpoints via [IgnoreAutoValidation] or similar \u2014 all endpoints with model-bound parameters get validated",
+      "The default FluentValidation error response format (ProblemDetails with validation errors) is acceptable for the API\u0027s consumers"
     ],
     "invariants": [
-      "All validators for request DTOs are in a single assembly (eNote.Application) — no validators exist in other projects",
+      "All validators for request DTOs are in a single assembly (eNote.Application) \u2014 no validators exist in other projects",
       "Validation registration is always called during startup service configuration as part of the fluent builder chain in Program.cs"
     ],
     "failureModes": [
-      "If AddFluentValidationAutoValidation() is called but no AddValidatorsFromAssemblyContaining is configured, no validators are registered and all models pass validation — a silent no-op that looks like everything works but actually provides no validation",
+      "If AddFluentValidationAutoValidation() is called but no AddValidatorsFromAssemblyContaining is configured, no validators are registered and all models pass validation \u2014 a silent no-op that looks like everything works but actually provides no validation",
       "If a validator throws an unexpected exception during validation (not a validation failure, but a crash), FluentValidation catches it and may produce a 500 or unexpected error depending on the error-handling middleware order",
-      "Multiple assemblies containing validators would require additional AddValidatorsFromAssemblyContaining calls — this class currently only scans eNote.Application"
+      "Multiple assemblies containing validators would require additional AddValidatorsFromAssemblyContaining calls \u2014 this class currently only scans eNote.Application"
     ],
     "architecturalNotes": [
-      "This class represents the FluentValidation integration point — validation conventions for 20+ request validators are all wired through this single registration call.",
-      "The choice of AnnouncementMappingConfig as the scan anchor is an arbitrary File → New Item artifact; any class in eNote.Application would work. If AnnouncementMappingConfig is ever deleted, this registration silently stops discovering validators with no compile-time error.",
-      "No custom IValidatorInterceptor or IValidatorFactory is registered — all FluentValidation behavior uses default conventions.",
-      "Currently no MediatR pipeline validation behavior exists in the codebase — validation is exclusively at the controller/model-binding layer."
+      "This class represents the FluentValidation integration point \u2014 validation conventions for 20\u002B request validators are all wired through this single registration call.",
+      "The choice of AnnouncementMappingConfig as the scan anchor is an arbitrary File \u2192 New Item artifact; any class in eNote.Application would work. If AnnouncementMappingConfig is ever deleted, this registration silently stops discovering validators with no compile-time error.",
+      "No custom IValidatorInterceptor or IValidatorFactory is registered \u2014 all FluentValidation behavior uses default conventions.",
+      "Currently no MediatR pipeline validation behavior exists in the codebase \u2014 validation is exclusively at the controller/model-binding layer."
     ]
   },
   "evidence": {
-    "primaryMethods": ["AddApplicationValidation"],
+    "primaryMethods": [
+      "AddApplicationValidation"
+    ],
     "primaryFields": []
   },
   "review": {

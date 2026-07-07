@@ -17,7 +17,8 @@ using Microsoft.CodeAnalysis.FindSymbols;
 namespace RoslynIndexer;
 
 record DirtyManifest(int SchemaVersion, List<string> DirtyFiles, List<string> DeletedFiles, string MarkedAt);
-
+record DeclarationSite(string? File, int Line);
+record ReferenceDetail(string? File, int Line, string Project, string? ContainingSymbol, string LocationProvenance);
 
 public class Program
 {
@@ -49,15 +50,6 @@ public class Program
         {
             switch (mode)
             {
-                case "load":
-                    var loadSol = await LoadSolutionAsync();
-                    var loadProjectCount = loadSol.Projects.Count();
-                    if (_useJson)
-                        WriteJsonResult("load", new { projectCount = loadProjectCount });
-                    else
-                        Console.WriteLine($"Loaded {loadProjectCount} projects.");
-                    break;
-
                 case "fingerprint":
                     var fpSymbol = args.FirstOrDefault(a => a.StartsWith("--symbol="))?.Split('=', 2)[1];
                     if (string.IsNullOrEmpty(fpSymbol))
@@ -117,8 +109,7 @@ public class Program
                     break;
 
                 default:
-                    Console.WriteLine("Commands:");
-                    Console.WriteLine("  --mode=load");
+                    Console.WriteLine("Commands:");                    
                     Console.WriteLine("  --mode=fingerprint --symbol=X");
                     Console.WriteLine("  --mode=who-references --symbol=X [--json]");
                     Console.WriteLine("  --mode=recompute-all");
@@ -228,7 +219,7 @@ public class Program
         return solution;
     }
 
-    private static async Task<INamedTypeSymbol?> FindTypeSymbolAsync(Solution solution, string name)
+    private static async Task<(INamedTypeSymbol? Type, Compilation? Compilation)> FindTypeSymbolAsync(Solution solution, string name)
     {
         foreach (var project in solution.Projects)
         {
@@ -236,50 +227,103 @@ public class Program
             if (compilation == null) continue;
 
             var type = compilation.GetTypeByMetadataName(name);
-            if (type != null) return type;
+            if (type != null) return (type, compilation);
         }
-        return null;
+        return (null, null);
     }
 
     private static string ComputeFingerprint(ISymbol symbol, Compilation compilation)
     {
-        var parts = new List<string>
-        {
-            symbol.Name,
-            symbol.DeclaredAccessibility.ToString()
-        };
-
-        if (symbol is IMethodSymbol method)
-        {
-            parts.Add(method.ReturnType.ToDisplayString());
-            parts.Add(string.Join(",", method.Parameters.Select(p => p.Type.ToDisplayString())));
-        }
+        var parts = new List<string>();
 
         if (symbol is INamedTypeSymbol namedType)
         {
-            var refs = namedType.GetMembers()
-                .OfType<ITypeSymbol>()
-                .Select(ResolveTypeName)
-                .OrderBy(x => x);
-            parts.AddRange(refs);
+            parts.Add($"type:{namedType.ToDisplayString()}");
+            parts.Add($"access:{namedType.DeclaredAccessibility}");
+            parts.Add($"kind:{namedType.TypeKind}");
+            parts.Add($"ns:{namedType.ContainingNamespace?.ToDisplayString() ?? ""}");
 
-            var publicMethods = namedType.GetMembers()
+            if (namedType.BaseType != null && namedType.BaseType.SpecialType != SpecialType.System_Object)
+                parts.Add($"base:{ResolveTypeName(namedType.BaseType)}");
+
+            parts.AddRange(namedType.Interfaces
+                .Select(i => $"iface:{ResolveTypeName(i)}")
+                .OrderBy(x => x));
+
+            parts.AddRange(namedType.TypeParameters
+                .Select(FormatTypeParameter)
+                .OrderBy(x => x));
+
+            parts.AddRange(namedType.GetMembers()
+                .OfType<INamedTypeSymbol>()
+                .Select(t => $"nested:{ResolveTypeName(t)}")
+                .OrderBy(x => x));
+
+            parts.AddRange(namedType.GetMembers()
                 .OfType<IMethodSymbol>()
-                .Where(m => m.DeclaredAccessibility == Accessibility.Public && !m.IsStatic && m.MethodKind == MethodKind.Ordinary)
-                .Select(m =>
-                {
-                    var returnType = m.ReturnType?.ToDisplayString() ?? "void";
-                    var paramTypes = string.Join(",", m.Parameters.Select(p => p.Type?.ToDisplayString() ?? "?"));
-                    return $"{m.Name}({paramTypes})->{returnType}";
-                })
-                .OrderBy(x => x);
-            parts.AddRange(publicMethods);
+                .Where(m => m.MethodKind == MethodKind.Constructor)
+                .Select(FormatConstructor)
+                .OrderBy(x => x));
+
+            parts.AddRange(namedType.GetMembers()
+                .OfType<IFieldSymbol>()
+                .Select(FormatField)
+                .OrderBy(x => x));
+
+            parts.AddRange(namedType.GetMembers()
+                .OfType<IPropertySymbol>()
+                .Select(FormatProperty)
+                .OrderBy(x => x));
+
+            parts.AddRange(namedType.GetMembers()
+                .OfType<IMethodSymbol>()
+                .Where(m => m.MethodKind == MethodKind.Ordinary)
+                .Select(FormatMethod)
+                .OrderBy(x => x));
+        }
+        else if (symbol is IMethodSymbol method)
+        {
+            parts.Add($"type:{symbol.ToDisplayString()}");
+            parts.Add($"access:{symbol.DeclaredAccessibility}");
+            parts.Add(ResolveTypeName(method.ReturnType));
+            parts.Add(string.Join(",", method.Parameters.Select(p => ResolveTypeName(p.Type))));
+        }
+        else
+        {
+            parts.Add($"type:{symbol.ToDisplayString()}");
+            parts.Add($"access:{symbol.DeclaredAccessibility}");
         }
 
         var canonicalized = string.Join("|", parts);
         var hash = XxHash3.Hash(Encoding.UTF8.GetBytes(canonicalized));
         return Convert.ToHexString(hash);
     }
+
+    private static string FormatTypeParameter(ITypeParameterSymbol tp)
+    {
+        var constraints = tp.ConstraintTypes
+            .Select(ResolveTypeName)
+            .OrderBy(x => x);
+        var constraintList = string.Join(",", constraints);
+        return $"tparam:{tp.Name}|{tp.Variance}|{constraintList}";
+    }
+
+    private static string FormatConstructor(IMethodSymbol ctor) =>
+        $"ctor:{ctor.DeclaredAccessibility}:{StaticFlag(ctor.IsStatic)}:{ctor.Name}({FormatParameterTypes(ctor)})";
+
+    private static string FormatField(IFieldSymbol field) =>
+        $"field:{field.DeclaredAccessibility}:{StaticFlag(field.IsStatic)}:{field.Name}:{ResolveTypeName(field.Type)}";
+
+    private static string FormatProperty(IPropertySymbol prop) =>
+        $"prop:{prop.DeclaredAccessibility}:{StaticFlag(prop.IsStatic)}:{prop.Name}:{ResolveTypeName(prop.Type)}:{prop.GetMethod?.DeclaredAccessibility}:{prop.SetMethod?.DeclaredAccessibility}";
+
+    private static string FormatMethod(IMethodSymbol method) =>
+        $"method:{method.DeclaredAccessibility}:{StaticFlag(method.IsStatic)}:{method.Name}({FormatParameterTypes(method)})->{ResolveTypeName(method.ReturnType)}";
+
+    private static string FormatParameterTypes(IMethodSymbol method) =>
+        string.Join(",", method.Parameters.Select(p => ResolveTypeName(p.Type)));
+
+    private static string StaticFlag(bool isStatic) => isStatic ? "static" : "instance";
 
     private static string ResolveTypeName(ITypeSymbol type)
     {
@@ -303,7 +347,7 @@ public class Program
     private static async Task WhoReferencesAsync(string symbolName)
     {
         var solution = await LoadSolutionAsync();
-        var symbol = await FindTypeSymbolAsync(solution, symbolName);
+        var (symbol, _) = await FindTypeSymbolAsync(solution, symbolName);
 
         if (symbol == null)
         {
@@ -325,7 +369,7 @@ public class Program
         var referencedSymbols = await SymbolFinder.FindReferencesAsync(symbol, solution);
         var allRefs = referencedSymbols.SelectMany(r => r.Locations).ToList();
 
-        var referenceDetails = new List<object>();
+        var referenceDetails = new List<ReferenceDetail>();
         foreach (var refLoc in allRefs)
         {
             string? containingSymbol = null;
@@ -361,16 +405,15 @@ public class Program
             catch { /* best effort */ }
 
             var lineSpan = refLoc.Location.GetLineSpan();
-            referenceDetails.Add(new
-            {
-                file = refLoc.Location.SourceTree?.FilePath != null
+            referenceDetails.Add(new ReferenceDetail(
+                File: refLoc.Location.SourceTree?.FilePath != null
                     ? GetRelativePath(refLoc.Location.SourceTree.FilePath)
                     : refLoc.Location.SourceTree?.FilePath,
-                line = lineSpan.StartLinePosition.Line + 1,
-                project = refLoc.Document.Project.Name,
-                containingSymbol,
-                locationProvenance = "compiler_proved"
-            });
+                Line: lineSpan.StartLinePosition.Line + 1,
+                Project: refLoc.Document.Project.Name,
+                ContainingSymbol: containingSymbol,
+                LocationProvenance: "compiler_proved"
+            ));
         }
 
         var declarationSites = symbol.Locations
@@ -378,13 +421,12 @@ public class Program
             .Select(l =>
             {
                 var lineSpan = l.GetLineSpan();
-                return new
-                {
-                    file = l.SourceTree?.FilePath != null
+                return new DeclarationSite(
+                    File: l.SourceTree?.FilePath != null
                         ? GetRelativePath(l.SourceTree.FilePath)
                         : l.SourceTree?.FilePath,
-                    line = lineSpan.StartLinePosition.Line + 1
-                };
+                    Line: lineSpan.StartLinePosition.Line + 1
+                );
             })
             .ToList();
 
@@ -399,10 +441,9 @@ public class Program
 
         foreach (var rd in referenceDetails)
         {
-            dynamic rdDynamic = rd;
-            string? file = rdDynamic.file;
-            string? project = rdDynamic.project;
-            string? containingSymbol = rdDynamic.containingSymbol;
+            string? file = rd.File;
+            string? project = rd.Project;
+            string? containingSymbol = rd.ContainingSymbol;
 
             if (file != null)
             {
@@ -438,19 +479,19 @@ public class Program
 
         // Self-reference: count references whose file+line matches a declaration site
         var declSiteKeys = new HashSet<string>();
-        foreach (dynamic decl in declarationSites)
+        foreach (var decl in declarationSites)
         {
-            string? file = decl.file;
-            int line = decl.line;
+            string? file = decl.File;
+            int line = decl.Line;
             if (file != null)
                 declSiteKeys.Add($"{file}:{line}");
         }
 
         var selfReferenceCount = 0;
-        foreach (dynamic rd in referenceDetails)
+        foreach (var rd in referenceDetails)
         {
-            string? file = rd.file;
-            int line = rd.line;
+            string? file = rd.File;
+            int line = rd.Line;
             if (file != null && declSiteKeys.Contains($"{file}:{line}"))
                 selfReferenceCount++;
         }
@@ -509,15 +550,15 @@ public class Program
         {
             Console.WriteLine($"Symbol: {symbolName}");
             Console.WriteLine($"Resolved: true");
-            foreach (dynamic decl in declarationSites)
-                Console.WriteLine($"  Declaration: {decl.file}:{decl.line}");
+            foreach (var decl in declarationSites)
+                Console.WriteLine($"  Declaration: {decl.File}:{decl.Line}");
             Console.WriteLine($"References found: {allRefs.Count}");
-            foreach (dynamic rd in referenceDetails)
+            foreach (var rd in referenceDetails)
             {
-                var containing = rd.containingSymbol != null
-                    ? $" -- containing symbol: {rd.containingSymbol}"
+                var containing = rd.ContainingSymbol != null
+                    ? $" -- containing symbol: {rd.ContainingSymbol}"
                     : "";
-                Console.WriteLine($"  {rd.file}:{rd.line} (project: {rd.project}){containing}");
+                Console.WriteLine($"  {rd.File}:{rd.Line} (project: {rd.Project}){containing}");
             }
             Console.WriteLine("Blind spots: reflection_and_strings, string_based_DI_registration, configuration_strings, external_consumers_flutter_frontend");
         }
@@ -526,7 +567,7 @@ public class Program
     private static async Task ComputeFingerprintOnlyAsync(string symbolName)
     {
         var solution = await LoadSolutionAsync();
-        var symbol = await FindTypeSymbolAsync(solution, symbolName);
+        var (symbol, compilation) = await FindTypeSymbolAsync(solution, symbolName);
         if (symbol == null)
         {
             if (_useJson)
@@ -536,9 +577,14 @@ public class Program
             return;
         }
 
-        var compilation = solution.Projects
-            .First(p => p.Documents.Any(d => symbol.Locations.Any(l => l.SourceTree?.FilePath == d.FilePath)))
-            .GetCompilationAsync().Result!;
+        if (compilation == null)
+        {
+            if (_useJson)
+                WriteJsonResult("fingerprint", new { symbol = symbolName, error = "Containing compilation not found" });
+            else
+                Console.WriteLine($"Containing compilation not found for: {symbolName}");
+            return;
+        }
 
         var fp = ComputeFingerprint(symbol, compilation);
         if (_useJson)
@@ -768,8 +814,7 @@ public class Program
                 {
                     await FlagSemanticStaleAsync(sid, "source_deleted");
                     flaggedStaleCount++;
-                    await FlagDependentsStaleAsync(sid, dependentSymbolIds);
-                    flaggedDepCount++;
+                    flaggedDepCount += await FlagDependentsStaleAsync(sid, dependentSymbolIds);
                 }
             }
             processed.Add(deletedFile);
@@ -820,8 +865,7 @@ public class Program
                             WriteProgress($"  Fingerprint changed for: {symbolId}");
                             await FlagSemanticStaleAsync(symbolId, "fingerprint_changed");
                             flaggedStaleCount++;
-                            await FlagDependentsStaleAsync(symbolId, dependentSymbolIds);
-                            flaggedDepCount++;
+                            flaggedDepCount += await FlagDependentsStaleAsync(symbolId, dependentSymbolIds);
                         }
                     }
                 }
@@ -866,19 +910,19 @@ public class Program
             Console.WriteLine("Sweep complete.");
     }
     
-    private static async Task FlagSemanticStaleAsync(string symbolId, string reason)
+    private static async Task<bool> FlagSemanticStaleAsync(string symbolId, string reason)
     {
         var semanticPath = Path.Combine(SemanticDir, $"{SanitizeId(symbolId)}.semantic.json");
         if (!File.Exists(semanticPath))
-            return;
+            return false;
 
         var text = await File.ReadAllTextAsync(semanticPath);
         var node = JsonNode.Parse(text)?.AsObject();
         if (node == null)
-            return;
+            return false;
 
         if (node["status"]?.GetValue<string>() == "stale")
-            return;
+            return false;
 
         node["status"] = "stale";
         node["staleReason"] = reason;
@@ -890,13 +934,16 @@ public class Program
         File.Move(tmp, semanticPath, overwrite: true);
 
         WriteProgress($"  Semantic entry flagged stale ({reason}): {symbolId}");
+        return true;
     }
 
-    private static async Task FlagDependentsStaleAsync(string symbolId, Dictionary<string, List<string>> dependentSymbolIds)
+    private static async Task<int> FlagDependentsStaleAsync(string symbolId, Dictionary<string, List<string>> dependentSymbolIds)
     {
-        if (!dependentSymbolIds.TryGetValue(symbolId, out var dependents)) return;
+        if (!dependentSymbolIds.TryGetValue(symbolId, out var dependents)) return 0;
+        var count = 0;
         foreach (var dep in dependents)
-            await FlagSemanticStaleAsync(dep, $"dependency_stale:{symbolId}");
+            count += await FlagSemanticStaleAsync(dep, $"dependency_stale:{symbolId}") ? 1 : 0;
+        return count;
     }
 
     private static async Task LintModeAsync()
@@ -959,7 +1006,7 @@ public class Program
         var manifestText = await File.ReadAllTextAsync(DirtyFilePath);
         var manifest = JsonSerializer.Deserialize<DirtyManifest>(manifestText, JsonOptions);
 
-        if (manifest == null || (manifest.DirtyFiles == null || manifest.DirtyFiles.Count == 0))
+        if (manifest == null || ((manifest.DirtyFiles?.Count ?? 0) == 0 && (manifest.DeletedFiles?.Count ?? 0) == 0))
         {
             if (_useJson)
                 WriteJsonResult("impact", new { affected = new List<object>(), provenance = "indexer_observed" });
@@ -968,7 +1015,8 @@ public class Program
             return;
         }
 
-        var dirtyFiles = new HashSet<string>(manifest.DirtyFiles);
+        var affectedFiles = new HashSet<string>(
+            (manifest.DirtyFiles ?? []).Concat(manifest.DeletedFiles ?? []));
         var semanticFiles = Directory.GetFiles(SemanticDir, "*.semantic.json");
         var results = new List<object>();
 
@@ -986,7 +1034,7 @@ public class Program
             var sourceFile = node?["facts"]?["sourceFile"]?.GetValue<string>();
             if (symbolId == null || sourceFile == null) continue;
 
-            if (dirtyFiles.Contains(sourceFile))
+            if (affectedFiles.Contains(sourceFile))
             {
                 results.Add(new { semanticFile = $"{SanitizeId(symbolId)}.semantic.json", reason = "direct", via = symbolId });
                 continue;
@@ -1008,7 +1056,7 @@ public class Program
                         var depText = await File.ReadAllTextAsync(depPath);
                         var depNode = JsonNode.Parse(depText);
                         var depSource = depNode?["facts"]?["sourceFile"]?.GetValue<string>();
-                        if (depSource != null && dirtyFiles.Contains(depSource))
+                        if (depSource != null && affectedFiles.Contains(depSource))
                         {
                             results.Add(new { semanticFile = $"{SanitizeId(symbolId)}.semantic.json", reason = "dependency", via = depSymbol });
                             break;

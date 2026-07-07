@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "symbolId": "eNote.API.Extensions.ApplicationServiceExtensions",
-  "fingerprint": "BD6D8D7D75A460D3",
+  "fingerprint": "1E5B81E3B251E060",
   "generatedAt": "2026-07-03T00:00:00Z",
   "status": "proposed",
   "facts": {
@@ -24,64 +24,94 @@
     ]
   },
   "interpretation": {
-    "architecturalRole": { "value": "Configuration", "confidence": 0.95 },
+    "architecturalRole": {
+      "value": "Configuration",
+      "confidence": 0.95
+    },
     "responsibility": {
-      "value": "Serves as the centralized DI registration entry point for the API project — configures EF Core DbContext (ENoteContext with Npgsql), registers all application services via Scrutor assembly scanning, sets up scoped per-request services (CurrentUserService, CurrentActor, UserProfileLookup), and wires concrete implementations to their application-layer interfaces.",
+      "value": "Serves as the centralized DI registration entry point for the API project \u2014 configures EF Core DbContext (ENoteContext with Npgsql), registers all application services via Scrutor assembly scanning, sets up scoped per-request services (CurrentUserService, CurrentActor, UserProfileLookup), and wires concrete implementations to their application-layer interfaces.",
       "confidence": 0.95
     },
     "Owns": [
       "Registering ENoteContext with Npgsql provider and specifying eNote.Infrastructure as the migrations assembly",
       "Scrutor-based convention-scanning: all classes named *Service from the Application and Infrastructure assemblies that are not abstract are registered against their implemented interfaces with scoped lifetime",
-      "Explicit scoped registration of ICurrentUserService → CurrentUserService, ICurrentActor → CurrentActor, IUserProfileLookup → UserProfileLookup",
-      "Explicit scoped registration of IRentalStateMachine → RentalStateMachine and IRentalNotificationDispatcher → RentalNotificationDispatcher",
+      "Explicit scoped registration of ICurrentUserService \u2192 CurrentUserService, ICurrentActor \u2192 CurrentActor, IUserProfileLookup \u2192 UserProfileLookup",
+      "Explicit scoped registration of IRentalStateMachine \u2192 RentalStateMachine and IRentalNotificationDispatcher \u2192 RentalNotificationDispatcher",
       "Registration of IAppDbContext as scoped proxy to ENoteContext",
-      "Registration of IMigrationRunner → MigrationRunner as scoped",
-      "Registration of IClock → SystemClock as singleton",
+      "Registration of IMigrationRunner \u2192 MigrationRunner as scoped",
+      "Registration of IClock \u2192 SystemClock as singleton",
       "Registration of RentalNotificationOutboxPublisher as hosted service (BackgroundService)",
       "Enabling MemoryCache and IHttpContextAccessor for downstream services"
     ],
     "doesNotOwn": [
-      "Other extension method groups (validation, identity, messaging, CORS, rate limiting, OpenAPI, etc.) — those are registered in separate static extension classes called by Program.cs before or after AddApplicationServices",
-      "Service lifetime decisions — those are embedded in the Scrutor registration (scoped by convention) and the explicit registrations above; this class is where those decisions are made visible but the actual policy is implemented by Scrutor",
-      "Middleware pipeline ordering — the order of UseMiddleware calls in Program.cs determines execution order"
+      "Other extension method groups (validation, identity, messaging, CORS, rate limiting, OpenAPI, etc.) \u2014 those are registered in separate static extension classes called by Program.cs before or after AddApplicationServices",
+      "Service lifetime decisions \u2014 those are embedded in the Scrutor registration (scoped by convention) and the explicit registrations above; this class is where those decisions are made visible but the actual policy is implemented by Scrutor",
+      "Middleware pipeline ordering \u2014 the order of UseMiddleware calls in Program.cs determines execution order"
     ],
     "collaborators": [
-      { "symbol": "eNote.Infrastructure.Data.ENoteContext", "relationship": "ReferencesStatically", "detail": "Registered as scoped DbContext via AddDbContext<ENoteContext>(UseNpgsql), and again as scoped IAppDbContext proxy" },
-      { "symbol": "eNote.API.Services.CurrentUserService", "relationship": "ReferencesStatically", "detail": "Registered explicitly as scoped implementation of ICurrentUserService" },
-      { "symbol": "eNote.Application.Features.Identity.Users.Services.CurrentActor", "relationship": "ReferencesStatically", "detail": "Registered explicitly as scoped implementation of ICurrentActor" },
-      { "symbol": "eNote.Application.Common.Time.SystemClock", "relationship": "ReferencesStatically", "detail": "Registered as singleton implementation of IClock" },
-      { "symbol": "eNote.Infrastructure.Messaging.RentalNotificationOutboxPublisher", "relationship": "ReferencesStatically", "detail": "Registered as hosted service via AddHostedService<RentalNotificationOutboxPublisher>()" },
-      { "symbol": "eNote.Domain.Entities.Shared.ITenantScoped", "relationship": "ReferencesStatically", "detail": "Referenced indirectly — the tenant filter pattern in ENoteContext depends on service lifetime choices made here (scoped ICurrentActor)" }
+      {
+        "symbol": "eNote.Infrastructure.Data.ENoteContext",
+        "relationship": "ReferencesStatically",
+        "detail": "Registered as scoped DbContext via AddDbContext\u003CENoteContext\u003E(UseNpgsql), and again as scoped IAppDbContext proxy"
+      },
+      {
+        "symbol": "eNote.API.Services.CurrentUserService",
+        "relationship": "ReferencesStatically",
+        "detail": "Registered explicitly as scoped implementation of ICurrentUserService"
+      },
+      {
+        "symbol": "eNote.Application.Features.Identity.Users.Services.CurrentActor",
+        "relationship": "ReferencesStatically",
+        "detail": "Registered explicitly as scoped implementation of ICurrentActor"
+      },
+      {
+        "symbol": "eNote.Application.Common.Time.SystemClock",
+        "relationship": "ReferencesStatically",
+        "detail": "Registered as singleton implementation of IClock"
+      },
+      {
+        "symbol": "eNote.Infrastructure.Messaging.RentalNotificationOutboxPublisher",
+        "relationship": "ReferencesStatically",
+        "detail": "Registered as hosted service via AddHostedService\u003CRentalNotificationOutboxPublisher\u003E()"
+      },
+      {
+        "symbol": "eNote.Domain.Entities.Shared.ITenantScoped",
+        "relationship": "ReferencesStatically",
+        "detail": "Referenced indirectly \u2014 the tenant filter pattern in ENoteContext depends on service lifetime choices made here (scoped ICurrentActor)"
+      }
     ],
     "contracts": [
-      "All *Service classes in eNote.Application and eNote.Infrastructure that have at least one implemented interface are auto-registered as scoped — no further manual registration is needed for new service classes matching this convention",
-      "ENoteContext is registered with Npgsql and the migrations assembly is set to eNote.Infrastructure — all EF Core migrations must reside in that assembly",
+      "All *Service classes in eNote.Application and eNote.Infrastructure that have at least one implemented interface are auto-registered as scoped \u2014 no further manual registration is needed for new service classes matching this convention",
+      "ENoteContext is registered with Npgsql and the migrations assembly is set to eNote.Infrastructure \u2014 all EF Core migrations must reside in that assembly",
       "The ICurrentActor service is scoped, ensuring tenant state is per-request and isolated between concurrent requests"
     ],
     "assumptions": [
-      "Scrutor's FromAssembliesOf(typeof(AuthService), typeof(CourseService)) picks up both eNote.Application and eNote.Infrastructure because AuthService is in Infrastructure and CourseService is in Application — both assemblies are covered by these two anchor types",
-      "The naming convention (class name ends with 'Service', is not abstract) is sufficient to catch all application-layer services without false positives — any class matching this pattern but NOT meant to be a DI service will be incorrectly registered",
-      "Singleton registration of SystemClock means all callers share the same clock instance — this is correct for production but means tests using this registration share state",
+      "Scrutor\u0027s FromAssembliesOf(typeof(AuthService), typeof(CourseService)) picks up both eNote.Application and eNote.Infrastructure because AuthService is in Infrastructure and CourseService is in Application \u2014 both assemblies are covered by these two anchor types",
+      "The naming convention (class name ends with \u0027Service\u0027, is not abstract) is sufficient to catch all application-layer services without false positives \u2014 any class matching this pattern but NOT meant to be a DI service will be incorrectly registered",
+      "Singleton registration of SystemClock means all callers share the same clock instance \u2014 this is correct for production but means tests using this registration share state",
       "AddMemoryCache is called here, making IMemoryCache available application-wide but with default eviction/compaction settings that may need tuning under memory pressure"
     ],
     "invariants": [
-      "All application service DI registration is visible in exactly two places: this class's AddApplicationServices method and the Scrutor scan; no service is registered implicitly elsewhere",
-      "EF Core migrations assembly is pinned to eNote.Infrastructure — any migration in another assembly will not be discovered"
+      "All application service DI registration is visible in exactly two places: this class\u0027s AddApplicationServices method and the Scrutor scan; no service is registered implicitly elsewhere",
+      "EF Core migrations assembly is pinned to eNote.Infrastructure \u2014 any migration in another assembly will not be discovered"
     ],
     "failureModes": [
-      "If Scrutor cannot resolve an interface for a *Service class (e.g., a public service class with no interface), it throws at startup — AddApplicationServices would crash during service collection buildup",
-      "If a new *Service class has ambiguous constructor dependencies, Scrutor's convention registration will fail at service resolution time, not at composition root time — a late failure that may not be caught by basic startup tests",
+      "If Scrutor cannot resolve an interface for a *Service class (e.g., a public service class with no interface), it throws at startup \u2014 AddApplicationServices would crash during service collection buildup",
+      "If a new *Service class has ambiguous constructor dependencies, Scrutor\u0027s convention registration will fail at service resolution time, not at composition root time \u2014 a late failure that may not be caught by basic startup tests",
       "If ApplicationServiceExtensions is called before AddApplicationDatabase, the ENoteContext registration is missing and any service depending on IAppDbContext fails at resolution time"
     ],
     "architecturalNotes": [
-      "HIGH BLAST RADIUS — this single method registers the entire service graph. A misconfiguration (wrong lifetime, missing registration, circular dependency) surfaces as a startup failure and blocks all endpoints.",
-      "The separation between AddApplicationDatabase (database infra) and AddApplicationServices (business services) is intentional — database configuration needs the IConfiguration parameter, while business services do not.",
-      "Scrutor's convention-based scanning is a tradeoff: it eliminates repetitive AddScoped<IService, Service>() boilerplate but introduces implicit registration that can be hard to debug when something goes wrong.",
-      "Currently no Scrutor filtering excludes test doubles or transient implementation classes — any public non-abstract *Service in the scanned assemblies becomes a scoped DI service."
+      "HIGH BLAST RADIUS \u2014 this single method registers the entire service graph. A misconfiguration (wrong lifetime, missing registration, circular dependency) surfaces as a startup failure and blocks all endpoints.",
+      "The separation between AddApplicationDatabase (database infra) and AddApplicationServices (business services) is intentional \u2014 database configuration needs the IConfiguration parameter, while business services do not.",
+      "Scrutor\u0027s convention-based scanning is a tradeoff: it eliminates repetitive AddScoped\u003CIService, Service\u003E() boilerplate but introduces implicit registration that can be hard to debug when something goes wrong.",
+      "Currently no Scrutor filtering excludes test doubles or transient implementation classes \u2014 any public non-abstract *Service in the scanned assemblies becomes a scoped DI service."
     ]
   },
   "evidence": {
-    "primaryMethods": ["AddApplicationDatabase", "AddApplicationServices"],
+    "primaryMethods": [
+      "AddApplicationDatabase",
+      "AddApplicationServices"
+    ],
     "primaryFields": []
   },
   "review": {
