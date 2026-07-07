@@ -24,6 +24,12 @@ public class Program
 {
     private const int SchemaVersion = 2;
     private const string IndexerVersion = "1.1.0";
+
+    private const string ProvenanceCompilerProved = "compiler_proved";
+    private const string ProvenanceIndexerObserved = "indexer_observed";
+    private const string ProvenanceCacheSuggests = "cache_suggests";
+    private const string ProvenanceNotDeterminable = "not_determinable";
+
     private static bool _useJson;
 
     private static readonly string GitRoot = ResolveGitRoot();
@@ -569,16 +575,16 @@ public class Program
 
         var fieldProvenance = new
         {
-            referenceCount = "compiler_proved",
-            references = "compiler_proved",
-            declarationSites = "compiler_proved",
-            uniqueFiles = "compiler_proved",
-            uniqueProjects = "compiler_proved",
-            uniqueContainingSymbols = "compiler_proved",
-            referenceBuckets = "compiler_proved",
-            generatedReferenceCount = "indexer_observed",
-            selfReferenceCount = selfReferenceCount > 0 ? "compiler_proved" : "indexer_observed",
-            blindSpots = "not_determinable"
+            referenceCount = ProvenanceCompilerProved,
+            references = ProvenanceCompilerProved,
+            declarationSites = ProvenanceCompilerProved,
+            uniqueFiles = ProvenanceCompilerProved,
+            uniqueProjects = ProvenanceCompilerProved,
+            uniqueContainingSymbols = ProvenanceCompilerProved,
+            referenceBuckets = ProvenanceCompilerProved,
+            generatedReferenceCount = ProvenanceIndexerObserved,
+            selfReferenceCount = selfReferenceCount > 0 ? ProvenanceCompilerProved : ProvenanceIndexerObserved,
+            blindSpots = ProvenanceNotDeterminable
         };
 
         var blindSpots = GetBlindSpots();
@@ -1023,7 +1029,15 @@ public class Program
                 flaggedStale = flaggedStaleCount,
                 flaggedDependents = flaggedDepCount,
                 manifestCleared,
-                provenance = "compiler_proved"
+                provenance = ProvenanceCompilerProved,
+                fieldProvenance = new
+                {
+                    flaggedStale = ProvenanceCompilerProved,
+                    flaggedDependents = ProvenanceCacheSuggests,
+                    manifestCleared = ProvenanceIndexerObserved,
+                    dirtyProcessed = ProvenanceIndexerObserved,
+                    deletedProcessed = ProvenanceIndexerObserved
+                }
             });
         else
             Console.WriteLine("Sweep complete.");
@@ -1116,7 +1130,7 @@ public class Program
         if (!File.Exists(DirtyFilePath))
         {
             if (_useJson)
-                WriteJsonResult("impact", new { affected = new List<object>(), provenance = "indexer_observed" });
+                WriteJsonResult("impact", new { affected = new List<object>(), provenance = ProvenanceIndexerObserved, fieldProvenance = new { affected = ProvenanceIndexerObserved } });
             else
                 Console.WriteLine("[]");
             return;
@@ -1128,7 +1142,7 @@ public class Program
         if (manifest == null || ((manifest.DirtyFiles?.Count ?? 0) == 0 && (manifest.DeletedFiles?.Count ?? 0) == 0))
         {
             if (_useJson)
-                WriteJsonResult("impact", new { affected = new List<object>(), provenance = "indexer_observed" });
+                WriteJsonResult("impact", new { affected = new List<object>(), provenance = ProvenanceIndexerObserved, fieldProvenance = new { affected = ProvenanceIndexerObserved } });
             else
                 Console.WriteLine("[]");
             return;
@@ -1155,7 +1169,7 @@ public class Program
 
             if (affectedFiles.Contains(sourceFile))
             {
-                results.Add(new { semanticFile = $"{SanitizeId(symbolId)}.semantic.json", reason = "direct", via = symbolId });
+                results.Add(new { semanticFile = $"{SanitizeId(symbolId)}.semantic.json", reason = "direct", via = symbolId, provenance = ProvenanceCompilerProved });
                 continue;
             }
 
@@ -1177,7 +1191,7 @@ public class Program
                         var depSource = depNode?["facts"]?["sourceFile"]?.GetValue<string>();
                         if (depSource != null && affectedFiles.Contains(depSource))
                         {
-                            results.Add(new { semanticFile = $"{SanitizeId(symbolId)}.semantic.json", reason = "dependency", via = depSymbol });
+                            results.Add(new { semanticFile = $"{SanitizeId(symbolId)}.semantic.json", reason = "dependency", via = depSymbol, provenance = ProvenanceCacheSuggests });
                             break;
                         }
                     }
@@ -1187,7 +1201,7 @@ public class Program
         }
 
         if (_useJson)
-            WriteJsonResult("impact", new { affected = results, provenance = "indexer_observed" });
+            WriteJsonResult("impact", new { affected = results, provenance = ProvenanceIndexerObserved, fieldProvenance = new { affected = ProvenanceCacheSuggests } });
         else
         {
             var output = JsonSerializer.Serialize(results, JsonOptions);
