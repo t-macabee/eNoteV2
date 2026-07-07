@@ -1,7 +1,10 @@
 {
   "schemaVersion": 1,
   "symbolId": "eNote.Infrastructure.Identity.AuthService",
-  "fingerprint": "78DD359BDEB852FE",
+  "fingerprint": {
+    "surface": "43258A3018B18BA0",
+    "dependency": "D25FFE2C9B4D8FE9"
+  },
   "generatedAt": "2026-07-02T00:00:00Z",
   "status": "proposed",
   "facts": {

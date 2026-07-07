@@ -1,7 +1,10 @@
 {
   "schemaVersion": 1,
   "symbolId": "eNote.API.Extensions.ApplicationServiceExtensions",
-  "fingerprint": "1E5B81E3B251E060",
+  "fingerprint": {
+    "surface": "1E5B81E3B251E060",
+    "dependency": "2D06800538D394C2"
+  },
   "generatedAt": "2026-07-03T00:00:00Z",
   "status": "proposed",
   "facts": {

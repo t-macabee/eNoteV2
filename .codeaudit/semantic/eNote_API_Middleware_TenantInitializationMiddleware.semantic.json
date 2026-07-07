@@ -1,7 +1,10 @@
 {
   "schemaVersion": 1,
   "symbolId": "eNote.API.Middleware.TenantInitializationMiddleware",
-  "fingerprint": "88BC8F9DB99AF339",
+  "fingerprint": {
+    "surface": "88BC8F9DB99AF339",
+    "dependency": "2D06800538D394C2"
+  },
   "generatedAt": "2026-07-02T00:00:00Z",
   "status": "proposed",
   "facts": {

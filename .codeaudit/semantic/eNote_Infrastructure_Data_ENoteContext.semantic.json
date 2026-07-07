@@ -1,7 +1,10 @@
 {
   "schemaVersion": 1,
   "symbolId": "eNote.Infrastructure.Data.ENoteContext",
-  "fingerprint": "444CF0EEC788F838",
+  "fingerprint": {
+    "surface": "613DD9E6D2E06A15",
+    "dependency": "DE93958B4F43DCA9"
+  },
   "generatedAt": "2026-07-03T00:00:00Z",
   "status": "proposed",
   "facts": {

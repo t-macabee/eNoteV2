@@ -1,7 +1,10 @@
 {
   "schemaVersion": 1,
   "symbolId": "eNote.Application.Features.Rentals.InstrumentRentals.StateMachine.RentalStateMachine",
-  "fingerprint": "8B2E991EA357A6A2",
+  "fingerprint": {
+    "surface": "1F36F90850EEAE95",
+    "dependency": "89D643AF75EFE3DA"
+  },
   "generatedAt": "2026-07-02T16:00:00Z",
   "status": "proposed",
   "facts": {

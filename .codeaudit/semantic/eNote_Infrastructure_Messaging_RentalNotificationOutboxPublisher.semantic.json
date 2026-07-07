@@ -1,7 +1,10 @@
 {
   "schemaVersion": 1,
   "symbolId": "eNote.Infrastructure.Messaging.RentalNotificationOutboxPublisher",
-  "fingerprint": "873710C780030EF6",
+  "fingerprint": {
+    "surface": "182C1321189E3164",
+    "dependency": "C800174E3CFE66D8"
+  },
   "generatedAt": "2026-07-02T00:00:00Z",
   "status": "proposed",
   "facts": {

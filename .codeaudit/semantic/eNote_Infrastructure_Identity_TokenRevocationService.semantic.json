@@ -1,7 +1,10 @@
 {
   "schemaVersion": 1,
   "symbolId": "eNote.Infrastructure.Identity.TokenRevocationService",
-  "fingerprint": "A24CB7C03D0D46CB",
+  "fingerprint": {
+    "surface": "1D72A1A1DC8E80F0",
+    "dependency": "3839132E8F1AB4AA"
+  },
   "generatedAt": "2026-07-02T00:00:00Z",
   "status": "proposed",
   "facts": {

@@ -22,7 +22,7 @@ record ReferenceDetail(string? File, int Line, string Project, string? Containin
 
 public class Program
 {
-    private const int SchemaVersion = 1;
+    private const int SchemaVersion = 2;
     private const string IndexerVersion = "1.1.0";
     private static bool _useJson;
 
@@ -292,6 +292,77 @@ public class Program
         {
             parts.Add($"type:{symbol.ToDisplayString()}");
             parts.Add($"access:{symbol.DeclaredAccessibility}");
+        }
+
+        var canonicalized = string.Join("|", parts);
+        var hash = XxHash3.Hash(Encoding.UTF8.GetBytes(canonicalized));
+        return Convert.ToHexString(hash);
+    }
+
+    private static string ComputeSurfaceHash(INamedTypeSymbol namedType)
+    {
+        var parts = new List<string>();
+
+        parts.Add($"type:{namedType.ToDisplayString()}");
+        parts.Add($"access:{namedType.DeclaredAccessibility}");
+        parts.Add($"kind:{namedType.TypeKind}");
+        parts.Add($"ns:{namedType.ContainingNamespace?.ToDisplayString() ?? ""}");
+
+        parts.AddRange(namedType.TypeParameters
+            .Select(tp => $"tparam:{tp.Name}|{tp.Variance}")
+            .OrderBy(x => x));
+
+        parts.AddRange(namedType.GetMembers()
+            .OfType<INamedTypeSymbol>()
+            .Select(t => $"nested:{ResolveTypeName(t)}")
+            .OrderBy(x => x));
+
+        parts.AddRange(namedType.GetMembers()
+            .OfType<IMethodSymbol>()
+            .Where(m => m.MethodKind == MethodKind.Constructor)
+            .Select(FormatConstructor)
+            .OrderBy(x => x));
+
+        parts.AddRange(namedType.GetMembers()
+            .OfType<IFieldSymbol>()
+            .Select(FormatField)
+            .OrderBy(x => x));
+
+        parts.AddRange(namedType.GetMembers()
+            .OfType<IPropertySymbol>()
+            .Select(FormatProperty)
+            .OrderBy(x => x));
+
+        parts.AddRange(namedType.GetMembers()
+            .OfType<IMethodSymbol>()
+            .Where(m => m.MethodKind == MethodKind.Ordinary)
+            .Select(FormatMethod)
+            .OrderBy(x => x));
+
+        var canonicalized = string.Join("|", parts);
+        var hash = XxHash3.Hash(Encoding.UTF8.GetBytes(canonicalized));
+        return Convert.ToHexString(hash);
+    }
+
+    private static string ComputeDependencyHash(INamedTypeSymbol namedType)
+    {
+        var parts = new List<string>();
+
+        if (namedType.BaseType != null && namedType.BaseType.SpecialType != SpecialType.System_Object)
+            parts.Add($"base:{ResolveTypeName(namedType.BaseType)}");
+
+        parts.AddRange(namedType.Interfaces
+            .Select(i => $"iface:{ResolveTypeName(i)}")
+            .OrderBy(x => x));
+
+        foreach (var tp in namedType.TypeParameters)
+        {
+            var constraints = tp.ConstraintTypes
+                .Select(ResolveTypeName)
+                .OrderBy(x => x)
+                .ToList();
+            if (constraints.Count > 0)
+                parts.Add($"tparam_constraint:{tp.Name}:{string.Join(",", constraints)}");
         }
 
         var canonicalized = string.Join("|", parts);
@@ -586,11 +657,23 @@ public class Program
             return;
         }
 
-        var fp = ComputeFingerprint(symbol, compilation);
-        if (_useJson)
-            WriteJsonResult("fingerprint", new { symbol = symbolName, fingerprint = fp, provenance = "compiler_proved" });
+        if (symbol is INamedTypeSymbol namedType)
+        {
+            var surface = ComputeSurfaceHash(namedType);
+            var dependency = ComputeDependencyHash(namedType);
+            if (_useJson)
+                WriteJsonResult("fingerprint", new { symbol = symbolName, fingerprint = new { surface, dependency }, provenance = "compiler_proved" });
+            else
+                Console.WriteLine($"Surface:     {surface}\nDependency:  {dependency}");
+        }
         else
-            Console.WriteLine($"Fingerprint: {fp}");
+        {
+            var fp = ComputeFingerprint(symbol, compilation);
+            if (_useJson)
+                WriteJsonResult("fingerprint", new { symbol = symbolName, fingerprint = fp, provenance = "compiler_proved" });
+            else
+                Console.WriteLine($"Fingerprint: {fp}");
+        }
     }
 
     private static async Task RecomputeAllFingerprintsAsync()
@@ -645,21 +728,35 @@ public class Program
                     if (!curatedSymbols.TryGetValue(symbolId, out var sfPath)) continue;
                     if (!matched.Add(symbolId)) continue;
 
-                    var newFingerprint = ComputeFingerprint(namedSymbol, compilation);
+                    var newSurface = ComputeSurfaceHash(namedSymbol);
+                    var newDependency = ComputeDependencyHash(namedSymbol);
 
                     var fileText = await File.ReadAllTextAsync(sfPath);
                     var node = JsonNode.Parse(fileText)?.AsObject();
                     if (node == null) continue;
 
-                    var oldFingerprint = node["fingerprint"]?.GetValue<string>();
-                    if (newFingerprint == oldFingerprint)
+                    var fpNode = node["fingerprint"];
+                    var isV1 = fpNode is JsonValue;
+                    string? oldSurface = null, oldDependency = null;
+
+                    if (!isV1 && fpNode is JsonObject fpObj)
+                    {
+                        oldSurface = fpObj["surface"]?.GetValue<string>();
+                        oldDependency = fpObj["dependency"]?.GetValue<string>();
+                    }
+
+                    if (!isV1 && newSurface == oldSurface && newDependency == oldDependency)
                     {
                         WriteProgress($"  [SAME]    {symbolId}");
                         same++;
                         continue;
                     }
 
-                    node["fingerprint"] = newFingerprint;
+                    node["fingerprint"] = new JsonObject
+                    {
+                        ["surface"] = newSurface,
+                        ["dependency"] = newDependency
+                    };
                     var json = node.ToJsonString(JsonOptions);
                     var tmp = sfPath + ".tmp";
                     await File.WriteAllTextAsync(tmp, json);
@@ -763,7 +860,7 @@ public class Program
         WriteProgress($"Sweeping {manifest.DirtyFiles?.Count ?? 0} dirty, {manifest.DeletedFiles?.Count ?? 0} deleted...");
 
         var sourceFileToSymbolIds = new Dictionary<string, List<string>>();
-        var curatedFingerprints = new Dictionary<string, string>();
+        var curatedFingerprints = new Dictionary<string, (string? Surface, string? Dependency, bool IsV1)>();
         var dependentSymbolIds = new Dictionary<string, List<string>>();
         
         var semanticFiles = Directory.GetFiles(SemanticDir, "*.semantic.json");
@@ -774,15 +871,26 @@ public class Program
             if (node == null) continue;
 
             var symbolId = node["symbolId"]?.GetValue<string>();
-            var fingerprint = node["fingerprint"]?.GetValue<string>();
+            var fpNode = node["fingerprint"];
             var sourceFile = node["facts"]?["sourceFile"]?.GetValue<string>();
 
-            if (symbolId == null || fingerprint == null || sourceFile == null) continue;
+            if (symbolId == null || sourceFile == null) continue;
+
+            string? storedSurface = null, storedDependency = null;
+            bool isV1Fingerprint = fpNode is JsonValue;
+
+            if (!isV1Fingerprint && fpNode is JsonObject fpObj)
+            {
+                storedSurface = fpObj["surface"]?.GetValue<string>();
+                storedDependency = fpObj["dependency"]?.GetValue<string>();
+            }
+
+            if (!isV1Fingerprint && (storedSurface == null || storedDependency == null)) continue;
 
             if (!sourceFileToSymbolIds.ContainsKey(sourceFile))
                 sourceFileToSymbolIds[sourceFile] = new List<string>();
             sourceFileToSymbolIds[sourceFile].Add(symbolId);
-            curatedFingerprints[symbolId] = fingerprint;
+            curatedFingerprints[symbolId] = (storedSurface, storedDependency, isV1Fingerprint);
 
             var collaborators = node["interpretation"]?["collaborators"]?.AsArray();
             if (collaborators != null)
@@ -858,9 +966,20 @@ public class Program
                         var symbolId = namedSymbol.ToDisplayString();
                         if (!curatedSymbolIds.Contains(symbolId)) continue;
 
-                        var currentFingerprint = ComputeFingerprint(namedSymbol, compilation);
-                        if (curatedFingerprints.TryGetValue(symbolId, out var storedFingerprint)
-                            && currentFingerprint != storedFingerprint)
+                        if (!curatedFingerprints.TryGetValue(symbolId, out var fpInfo)) continue;
+
+                        if (fpInfo.IsV1)
+                        {
+                            WriteProgress($"  V1 fingerprint detected for: {symbolId} — marking as fingerprint_v1_migration");
+                            await FlagSemanticStaleAsync(symbolId, "fingerprint_v1_migration");
+                            flaggedStaleCount++;
+                            flaggedDepCount += await FlagDependentsStaleAsync(symbolId, dependentSymbolIds);
+                            continue;
+                        }
+
+                        var newSurface = ComputeSurfaceHash(namedSymbol);
+                        var newDependency = ComputeDependencyHash(namedSymbol);
+                        if (newSurface != fpInfo.Surface || newDependency != fpInfo.Dependency)
                         {
                             WriteProgress($"  Fingerprint changed for: {symbolId}");
                             await FlagSemanticStaleAsync(symbolId, "fingerprint_changed");

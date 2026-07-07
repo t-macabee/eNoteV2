@@ -1,7 +1,10 @@
 {
   "schemaVersion": 1,
   "symbolId": "eNote.Domain.Entities.Shared.ITenantScoped",
-  "fingerprint": "80D2EA28E70DA907",
+  "fingerprint": {
+    "surface": "80D2EA28E70DA907",
+    "dependency": "2D06800538D394C2"
+  },
   "generatedAt": "2026-07-02T00:00:00Z",
   "status": "proposed",
   "facts": {

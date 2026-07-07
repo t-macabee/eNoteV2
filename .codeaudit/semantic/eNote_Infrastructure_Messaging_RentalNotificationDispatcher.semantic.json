@@ -1,7 +1,10 @@
 {
   "schemaVersion": 1,
   "symbolId": "eNote.Infrastructure.Messaging.RentalNotificationDispatcher",
-  "fingerprint": "E3F7BFF7AD2B673E",
+  "fingerprint": {
+    "surface": "69D3A29FDFB57392",
+    "dependency": "D0836F2A74AD9416"
+  },
   "generatedAt": "2026-07-02T00:00:00Z",
   "status": "proposed",
   "facts": {

@@ -1,7 +1,10 @@
 {
   "schemaVersion": 1,
   "symbolId": "eNote.Application.Features.Rentals.ReferenceData.ReferenceCrudService\u003CTEntity, TDto, TRequest, TSearch\u003E",
-  "fingerprint": "EB4002373FBD3303",
+  "fingerprint": {
+    "surface": "E56102FAF0EBF10A",
+    "dependency": "A9D81E98B66810EF"
+  },
   "generatedAt": "2026-07-02T00:00:00Z",
   "status": "proposed",
   "facts": {

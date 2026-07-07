@@ -1,7 +1,10 @@
 {
   "schemaVersion": 1,
   "symbolId": "eNote.Application.Features.Rentals.InstrumentRentals.Billing.RentalBilling",
-  "fingerprint": "9C2C32EE313E0CF5",
+  "fingerprint": {
+    "surface": "9C2C32EE313E0CF5",
+    "dependency": "2D06800538D394C2"
+  },
   "generatedAt": "2026-07-02T00:00:00Z",
   "status": "proposed",
   "facts": {
