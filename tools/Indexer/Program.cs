@@ -21,6 +21,7 @@ record DeclarationSite(string? File, int Line);
 record ReferenceDetail(string? File, int Line, string Project, string? ContainingSymbol, string LocationProvenance);
 record DiscoveredType(string SymbolId, string Kind, string KindCategory, string Namespace, string Project,
     string SourceFile, string Accessibility, string? Inherits, List<string> Implements, List<string> Dependencies);
+record FanSummary(int Count, List<string> Sources, Dictionary<string, int> ByProject);
 
 public class Program
 {
@@ -119,9 +120,14 @@ public class Program
                 case "discover":
                     await DiscoverAsync(args);
                     break;
+
+                case "structure":
+                    await StructureAsync(args);
+                    break;
                 default:
                     Console.WriteLine("Commands:");
                     Console.WriteLine("  --mode=discover [--kind=X] [--project=X] [--json]");
+                    Console.WriteLine("  --mode=structure --symbol=X [--depth=2] [--json]");
                     Console.WriteLine("  --mode=fingerprint --symbol=X");
                     Console.WriteLine("  --mode=who-references --symbol=X [--json]");
                     Console.WriteLine("  --mode=recompute-all");
@@ -702,6 +708,234 @@ public class Program
             Console.WriteLine("Blind spots:");
             foreach (var bs in GetBlindSpots())
                 Console.WriteLine($"  [not_determinable] {bs.GetType().GetProperty("reason")?.GetValue(bs)}");
+        }
+    }
+
+    private static string ComputeComplexityTier(
+        string symbolId, string project, string accessibility,
+        Dictionary<string, HashSet<string>> outgoingEdges,
+        Dictionary<string, HashSet<string>> incomingEdges,
+        Dictionary<string, string> typeToProject)
+    {
+        var fanOut = outgoingEdges.TryGetValue(symbolId, out var outSet) ? outSet : new HashSet<string>();
+        var fanIn = incomingEdges.TryGetValue(symbolId, out var inSet) ? inSet : new HashSet<string>();
+
+        if (fanIn.Count == 0 && fanOut.Count == 0)
+            return "isolated";
+
+        var allNeighbours = new HashSet<string>(fanIn);
+        allNeighbours.UnionWith(fanOut);
+
+        var sameProject = allNeighbours.All(n =>
+            typeToProject.TryGetValue(n, out var p) && string.Equals(p, project, StringComparison.OrdinalIgnoreCase));
+
+        if (sameProject)
+            return "project_local";
+
+        var isPublic = string.Equals(accessibility, "Public", StringComparison.OrdinalIgnoreCase);
+        if (isPublic)
+            return "public_surface";
+
+        return "cross_project";
+    }
+
+    private static FanSummary BuildFanSummary(
+        string symbolId,
+        Dictionary<string, HashSet<string>> edges,
+        Dictionary<string, string> typeToProject)
+    {
+        var sources = edges.TryGetValue(symbolId, out var set)
+            ? set.OrderBy(s => s).ToList()
+            : new List<string>();
+
+        var byProject = sources
+            .GroupBy(s => typeToProject.TryGetValue(s, out var p) ? p : "(unknown)")
+            .ToDictionary(g => g.Key, g => g.Count());
+
+        return new FanSummary(sources.Count, sources, byProject);
+    }
+
+    private static async Task StructureAsync(string[] args)
+    {
+        var symbolFilter = args.FirstOrDefault(a => a.StartsWith("--symbol="))?.Split('=', 2)[1];
+        var depth = 1;
+        var depthArg = args.FirstOrDefault(a => a.StartsWith("--depth="));
+        if (depthArg != null)
+            int.TryParse(depthArg.Split('=', 2)[1], out depth);
+
+        if (string.IsNullOrEmpty(symbolFilter))
+        {
+            if (_useJson)
+                WriteJsonResult("structure", new { error = "Missing required argument --symbol=Namespace.ClassName" });
+            else
+                Console.WriteLine("Usage: --mode=structure --symbol=Namespace.ClassName [--depth=2] [--json]");
+            return;
+        }
+
+        if (!_useJson)
+            WriteProgress("Analyzing structure...");
+
+        var solution = await LoadSolutionAsync();
+
+        var outgoingEdges = new Dictionary<string, HashSet<string>>();
+        var typeToProject = new Dictionary<string, string>();
+        var typeToAccessibility = new Dictionary<string, string>();
+        var typeToKind = new Dictionary<string, string>();
+        var typeToKindCategory = new Dictionary<string, string>();
+        var typeToNamespace = new Dictionary<string, string>();
+        var typeToSourceFile = new Dictionary<string, string>();
+        var typeToInherits = new Dictionary<string, string?>();
+        var typeToImplements = new Dictionary<string, List<string>>();
+
+        var seen = new HashSet<string>();
+
+        foreach (var project in solution.Projects)
+        {
+            var compilation = await project.GetCompilationAsync();
+            if (compilation == null) continue;
+
+            foreach (var document in project.Documents)
+            {
+                var filePath = document.FilePath ?? "";
+                if (IsGeneratedFile(filePath)) continue;
+
+                var syntaxTree = await document.GetSyntaxTreeAsync();
+                if (syntaxTree == null) continue;
+
+                var root = await syntaxTree.GetRootAsync();
+                var model = compilation.GetSemanticModel(syntaxTree);
+
+                foreach (var typeDecl in root.DescendantNodes().OfType<TypeDeclarationSyntax>())
+                {
+                    if (model.GetDeclaredSymbol(typeDecl) is not INamedTypeSymbol namedSymbol)
+                        continue;
+
+                    var symbolId = namedSymbol.ToDisplayString();
+                    if (!seen.Add(symbolId))
+                        continue;
+
+                    typeToProject[symbolId] = project.Name;
+                    typeToAccessibility[symbolId] = namedSymbol.DeclaredAccessibility.ToString();
+                    typeToKind[symbolId] = namedSymbol.TypeKind.ToString();
+                    typeToKindCategory[symbolId] = ClassifyKind(namedSymbol);
+                    typeToNamespace[symbolId] = namedSymbol.ContainingNamespace?.ToDisplayString() ?? "";
+                    typeToSourceFile[symbolId] = GetRelativePath(filePath);
+                    typeToInherits[symbolId] = namedSymbol.BaseType != null
+                        && namedSymbol.BaseType.SpecialType != SpecialType.System_Object
+                        ? namedSymbol.BaseType.ToDisplayString()
+                        : null;
+                    typeToImplements[symbolId] = namedSymbol.AllInterfaces
+                        .Select(i => i.ToDisplayString()).ToList();
+
+                    var deps = ExtractDependencies(namedSymbol);
+                    outgoingEdges[symbolId] = new HashSet<string>(deps);
+                }
+            }
+        }
+
+        // Invert graph
+        var incomingEdges = new Dictionary<string, HashSet<string>>();
+        foreach (var (src, deps) in outgoingEdges)
+        {
+            foreach (var dep in deps)
+            {
+                if (!incomingEdges.ContainsKey(dep))
+                    incomingEdges[dep] = new HashSet<string>();
+                incomingEdges[dep].Add(src);
+            }
+        }
+
+        if (!typeToProject.ContainsKey(symbolFilter))
+        {
+            if (_useJson)
+                WriteJsonResult("structure", new { symbol = symbolFilter, resolved = false, error = "Symbol not found" });
+            else
+                Console.WriteLine($"Symbol not found: {symbolFilter}");
+            return;
+        }
+
+        var fanIn = BuildFanSummary(symbolFilter, incomingEdges, typeToProject);
+        var fanOut = BuildFanSummary(symbolFilter, outgoingEdges, typeToProject);
+
+        var tier = ComputeComplexityTier(
+            symbolFilter, typeToProject[symbolFilter], typeToAccessibility[symbolFilter],
+            outgoingEdges, incomingEdges, typeToProject);
+
+        object? depth2 = null;
+        if (depth >= 2)
+        {
+            var expandedFanOut = fanOut.Sources
+                .ToDictionary(s => s, s => outgoingEdges.TryGetValue(s, out var d) ? d.Count : 0);
+            var expandedFanIn = fanIn.Sources
+                .ToDictionary(s => s, s => incomingEdges.TryGetValue(s, out var d) ? d.Count : 0);
+            depth2 = new { fanOutCounts = expandedFanOut, fanInCounts = expandedFanIn };
+        }
+
+        if (_useJson)
+        {
+            WriteJsonResult("structure", new
+            {
+                symbol = symbolFilter,
+                resolved = true,
+                kind = typeToKind[symbolFilter],
+                kindCategory = typeToKindCategory[symbolFilter],
+                ns = typeToNamespace[symbolFilter],
+                project = typeToProject[symbolFilter],
+                sourceFile = typeToSourceFile[symbolFilter],
+                accessibility = typeToAccessibility[symbolFilter],
+                inherits = typeToInherits[symbolFilter],
+                implements = typeToImplements[symbolFilter],
+                complexityTier = tier,
+                fanIn,
+                fanOut,
+                depth2,
+                provenance = "compiler_proved",
+                fieldProvenance = new
+                {
+                    kind = "compiler_proved",
+                    kindCategory = "indexer_observed",
+                    ns = "compiler_proved",
+                    project = "compiler_proved",
+                    sourceFile = "compiler_proved",
+                    accessibility = "compiler_proved",
+                    inherits = "compiler_proved",
+                    implements = "compiler_proved",
+                    complexityTier = "indexer_observed",
+                    fanIn = "compiler_proved",
+                    fanOut = "compiler_proved",
+                    depth2 = "compiler_proved",
+                    blindSpots = "not_determinable"
+                },
+                blindSpots = GetBlindSpots()
+            });
+        }
+        else
+        {
+            Console.WriteLine($"\nSymbol: {symbolFilter}");
+            Console.WriteLine($"  Kind:           {typeToKind[symbolFilter]} ({typeToKindCategory[symbolFilter]})");
+            Console.WriteLine($"  Namespace:      {typeToNamespace[symbolFilter]}");
+            Console.WriteLine($"  Project:        {typeToProject[symbolFilter]}");
+            Console.WriteLine($"  Source file:    {typeToSourceFile[symbolFilter]}");
+            Console.WriteLine($"  Accessibility:  {typeToAccessibility[symbolFilter]}");
+            Console.WriteLine($"  Complexity tier: {tier}");
+            Console.WriteLine($"\n  Fan-in:  {fanIn.Count}");
+            foreach (var s in fanIn.Sources)
+                Console.WriteLine($"    ← {s}");
+            Console.WriteLine($"\n  Fan-out: {fanOut.Count}");
+            foreach (var s in fanOut.Sources)
+                Console.WriteLine($"    → {s}");
+
+            if (depth2 != null)
+            {
+                Console.WriteLine("\n  Depth-2 fan-out counts:");
+                var d2Out = ((dynamic)depth2).fanOutCounts;
+                foreach (var kv in (Dictionary<string, int>)d2Out)
+                    Console.WriteLine($"    {kv.Key}: {kv.Value}");
+                Console.WriteLine("  Depth-2 fan-in counts:");
+                var d2In = ((dynamic)depth2).fanInCounts;
+                foreach (var kv in (Dictionary<string, int>)d2In)
+                    Console.WriteLine($"    {kv.Key}: {kv.Value}");
+            }
         }
     }
 
