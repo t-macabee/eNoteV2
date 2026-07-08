@@ -96,10 +96,6 @@ CLAUDE.md
 .codeaudit/
 .semantic/
 
-# Indexer build outputs
-tools/Indexer/bin/
-tools/Indexer/obj/
-
 # Generated / local agent artifacts
 graphify*/
 **/scripts/
