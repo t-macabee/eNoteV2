@@ -36,11 +36,11 @@ public class Program
     private static bool _useJson;
 
     private static readonly string GitRoot = ResolveGitRoot();
-    private static readonly string CodeAuditDir = Path.Combine(GitRoot, ".codeaudit");
-    private static readonly string SemanticDir = Path.Combine(CodeAuditDir, "semantic");
-    private static readonly string DirtyFilePath = Path.Combine(CodeAuditDir, "dirty-files.json");
+    private static string CodeAuditDir = null!;
+    private static string SemanticDir = null!;
+    private static string DirtyFilePath = null!;
 
-    private static readonly string SolutionPath = Path.Combine(GitRoot, "eNote", "eNote.sln");
+    private static string SolutionPath = null!;
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -51,6 +51,36 @@ public class Program
     public static async Task Main(string[] args)
     {
         _useJson = args.Contains("--json");
+
+        // Argument resolution: CLI arg > env var > hard error (no defaults)
+        //   --solution=        / INDEXER_SOLUTION_PATH
+        //   --output-dir=      / INDEXER_OUTPUT_DIR
+        var solutionPathArg = args.FirstOrDefault(a => a.StartsWith("--solution="))?.Split('=', 2)[1]
+            ?? Environment.GetEnvironmentVariable("INDEXER_SOLUTION_PATH");
+        if (string.IsNullOrEmpty(solutionPathArg) || !File.Exists(solutionPathArg))
+        {
+            Console.Error.WriteLine("ERROR: --solution=path or INDEXER_SOLUTION_PATH is required and must point to an existing .sln file.");
+            Environment.Exit(1);
+        }
+        SolutionPath = solutionPathArg;
+
+        var outputDirArg = args.FirstOrDefault(a => a.StartsWith("--output-dir="))?.Split('=', 2)[1]
+            ?? Environment.GetEnvironmentVariable("INDEXER_OUTPUT_DIR");
+        if (string.IsNullOrEmpty(outputDirArg))
+        {
+            Console.Error.WriteLine("ERROR: --output-dir=path or INDEXER_OUTPUT_DIR is required.");
+            Environment.Exit(1);
+        }
+        var outputDir = Path.GetFullPath(outputDirArg);
+        CodeAuditDir = Path.Combine(outputDir, ".codeaudit");
+        SemanticDir = Path.Combine(CodeAuditDir, "semantic");
+        DirtyFilePath = Path.Combine(CodeAuditDir, "dirty-files.json");
+
+        // Warn if solution path is not under the resolved git root
+        var gitRootNormalized = GitRoot.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar;
+        if (!SolutionPath.StartsWith(gitRootNormalized, StringComparison.OrdinalIgnoreCase))
+            Console.Error.WriteLine($"WARNING: solution path '{SolutionPath}' is not under git root '{GitRoot}' — relative paths may be incorrect.");
+
         EnsureDirectories();
 
         var mode = args.FirstOrDefault(a => a.StartsWith("--mode="))?.Split('=', 2)[1] ?? "help";
@@ -125,6 +155,10 @@ public class Program
                     await StructureAsync(args);
                     break;
                 default:
+                    Console.WriteLine("Required arguments:");
+                    Console.WriteLine("  --solution=PATH      Path to the .sln file (or INDEXER_SOLUTION_PATH env var)");
+                    Console.WriteLine("  --output-dir=PATH    Output directory for .codeaudit artifacts (or INDEXER_OUTPUT_DIR env var)");
+                    Console.WriteLine();
                     Console.WriteLine("Commands:");
                     Console.WriteLine("  --mode=discover [--kind=X] [--project=X] [--json]");
                     Console.WriteLine("  --mode=structure --symbol=X [--depth=2] [--json]");
