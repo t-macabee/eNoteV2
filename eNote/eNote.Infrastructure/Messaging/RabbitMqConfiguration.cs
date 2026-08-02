@@ -19,7 +19,5 @@ public static class RabbitMqConfiguration
         configuration["RabbitMQ:Password"] ?? "guest";
 
     public static bool IsConfigured(IConfiguration configuration) =>
-        !string.IsNullOrWhiteSpace(configuration["RabbitMQ:Host"])
-        || !string.IsNullOrWhiteSpace(configuration["RabbitMQ:User"])
-        || !string.IsNullOrWhiteSpace(configuration["RabbitMQ:Username"]);
+        !string.IsNullOrWhiteSpace(configuration["RabbitMQ:Host"]);
 }

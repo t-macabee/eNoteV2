@@ -1,3 +1,5 @@
+using eNote.Application.Features.Communication.Announcements;
+using eNote.Application.Features.Communication.Announcements.Services;
 using eNote.Application.Features.Rentals.InstrumentRentals;
 using eNote.Application.Features.Rentals.InstrumentRentals.Services;
 using eNote.Application.Features.Rentals.Instruments;
@@ -6,6 +8,7 @@ using eNote.Application.Features.Rentals.Recommendations.Services;
 using eNote.Tests.TestUtils;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
+using eNote.Domain.Entities.Communication;
 
 namespace eNote.Tests.InstrumentRentals;
 
@@ -119,6 +122,27 @@ public sealed class TenantIsolationTests
 
         var service = new RecommendationService(context, TestMapper.Create(), new StubCurrentActor(storeId: store1.Id), new FixedClock(Now));
         await Assert.ThrowsAsync<NotFoundException>(() => service.RecordInstrumentViewAsync(instr2.Id));
+    }
+
+    [Fact]
+    public async Task GetForStoreAsync_ExcludesOtherStoreAnnouncements()
+    {
+        await using var context = CreateContext(storeId: 1);
+
+        var store1 = await SeedStoreAsync(context, "Store A");
+        var store2 = await SeedStoreAsync(context, "Store B");
+        var store1Announcement = new Announcement("Store A announcement", "Content", null, store1.Id, Now);
+        var store2Announcement = new Announcement("Store B announcement", "Content", null, store2.Id, Now);
+
+        context.Set<Announcement>().AddRange(store1Announcement, store2Announcement);
+        await context.SaveChangesAsync();
+
+        var service = new AnnouncementService(context, new FixedClock(Now), new StubCurrentActor(storeId: store1.Id), null!, null!, TestMapper.Create());
+        var result = await service.GetForStoreAsync(new AnnouncementSearchObject { PageSize = 10 });
+
+        Assert.Single(result.Items);
+        Assert.Equal(store1Announcement.Id, result.Items[0].Id);
+        Assert.DoesNotContain(result.Items, item => item.Id == store2Announcement.Id);
     }
 
     private static ENoteContext CreateContext(int storeId, string? dbName = null)

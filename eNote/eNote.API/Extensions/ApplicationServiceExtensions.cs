@@ -1,3 +1,4 @@
+using eNote.API.Consumers;
 using eNote.API.Services;
 using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Persistence;
@@ -23,10 +24,12 @@ public static class ApplicationServiceExtensions
         return services;
     }
 
-    public static IServiceCollection AddApplicationServices(this IServiceCollection services)
+    public static IServiceCollection AddApplicationServices(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddMemoryCache();
         services.AddHttpContextAccessor();
+        services.AddRabbitMqMassTransit(configuration, bus => bus.AddConsumer<RentalStatusChangedPushConsumer>());
+        services.AddSignalR();
         services.AddSingleton<IClock, SystemClock>();
 
         services.Scan(scan => scan

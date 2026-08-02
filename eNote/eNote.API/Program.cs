@@ -13,9 +13,6 @@ Log.Logger = new LoggerConfiguration()
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 builder.Host.UseApplicationLogging();
-Console.WriteLine($"Jwt:Key = '{builder.Configuration["Jwt:Key"]}'");
-Console.WriteLine($"Env Jwt__Key = '{Environment.GetEnvironmentVariable("Jwt__Key")}'");
-Console.WriteLine($"Connection = '{builder.Configuration.GetConnectionString("DefaultConnection")}'");
 builder.Configuration.ValidateRequiredSettings();
 
 builder.Services
@@ -23,14 +20,12 @@ builder.Services
     .AddApplicationIdentity()
     .AddJwtAuthentication(builder.Configuration)
     .AddAuthorization()
-    .AddApplicationServices()
-    .AddApplicationMessaging(builder.Configuration)
+    .AddApplicationServices(builder.Configuration)
     .AddApplicationCors(builder.Configuration, builder.Environment)
     .AddApplicationRateLimiting()
     .AddResponseCompression(opts => opts.EnableForHttps = true)
     .AddMapsterMappings()
     .AddApplicationValidation()
-    .AddApplicationSignalR()
     .AddApplicationApiVersioning();
 
 builder.Services

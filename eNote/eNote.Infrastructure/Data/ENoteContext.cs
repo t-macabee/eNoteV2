@@ -37,9 +37,7 @@ public class ENoteContext(DbContextOptions<ENoteContext> options, IClock clock, 
 
         modelBuilder.Entity<InstrumentRental>().HasQueryFilter(r => r.Instrument.IsActive && (GetStoreId() == null || r.MusicStoreId == GetStoreId()));
 
-        var storeId = GetStoreId();
-
-        modelBuilder.Entity<Announcement>().HasQueryFilter(a => a.IsActive && (storeId == null || a.MusicStoreId == null || a.MusicStoreId == storeId));
+        modelBuilder.Entity<Announcement>().HasQueryFilter(a => a.IsActive && (GetStoreId() == null || a.MusicStoreId == null || a.MusicStoreId == GetStoreId()));
 
         ModelBuilderSeed.Seed(modelBuilder);
     }

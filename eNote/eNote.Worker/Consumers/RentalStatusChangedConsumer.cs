@@ -1,11 +1,12 @@
+using eNote.Application.Common.Persistence;
 using eNote.Contracts.Rentals;
-using eNote.Infrastructure.Data;
+using eNote.Domain.Entities.Communication;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Worker.Consumers;
 
-public sealed class RentalStatusChangedConsumer(ENoteContext dbContext, ILogger<RentalStatusChangedConsumer> logger) : IConsumer<RentalStatusChanged>
+public sealed class RentalStatusChangedConsumer(IAppDbContext dbContext, ILogger<RentalStatusChangedConsumer> logger) : IConsumer<RentalStatusChanged>
 {
     public async Task Consume(ConsumeContext<RentalStatusChanged> context)
     {

@@ -8,7 +8,7 @@ global using eNote.Application.Common.Localization;
 global using eNote.Application.Common.Paging;
 global using eNote.Application.Common.Persistence;
 global using eNote.Application.Common.Time;
-global using eNote.Application.Common.Extensions;
+global using eNote.Application.Features.Academic;
 global using eNote.Domain.Entities.Academic;
 global using eNote.Domain.Entities.Assignments;
 global using eNote.Domain.Entities.Communication;

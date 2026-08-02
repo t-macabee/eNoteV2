@@ -1,4 +1,4 @@
-﻿using DotNetEnv;
+﻿using eNote.Infrastructure.Configuration;
 using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Time;
 using Microsoft.EntityFrameworkCore;
@@ -11,7 +11,7 @@ public sealed class ENoteContextFactory : IDesignTimeDbContextFactory<ENoteConte
 {
     public ENoteContext CreateDbContext(string[] args)
     {
-        LoadDotEnv();
+        DotEnvConfiguration.Load();
 
         var configuration = new ConfigurationBuilder()
             .AddEnvironmentVariables()
@@ -25,24 +25,6 @@ public sealed class ENoteContextFactory : IDesignTimeDbContextFactory<ENoteConte
 
         var actor = new DesignTimeActor();
         return new ENoteContext(optionsBuilder.Options, new SystemClock(), actor);
-    }
-
-    private static void LoadDotEnv()
-    {
-        var directory = new DirectoryInfo(Directory.GetCurrentDirectory());
-
-        while (directory is not null)
-        {
-            var envFile = Path.Combine(directory.FullName, ".env");
-
-            if (File.Exists(envFile))
-            {
-                Env.Load(envFile);
-                return;
-            }
-
-            directory = directory.Parent;
-        }
     }
 
     private sealed class DesignTimeActor : ICurrentActor

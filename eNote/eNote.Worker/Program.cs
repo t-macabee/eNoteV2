@@ -1,7 +1,9 @@
+using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Time;
 using eNote.Infrastructure.Configuration;
 using eNote.Infrastructure.Data;
 using eNote.Infrastructure.Messaging;
+using eNote.Worker;
 using eNote.Worker.Consumers;
 using Microsoft.EntityFrameworkCore;
 
@@ -26,6 +28,7 @@ if (!RabbitMqConfiguration.IsConfigured(builder.Configuration))
 }
 
 builder.Services.AddSingleton<IClock, SystemClock>();
+builder.Services.AddScoped<ICurrentActor, WorkerActor>();
 builder.Services.AddDbContext<ENoteContext>(options =>
 options.UseNpgsql(connectionString, sql => sql.MigrationsAssembly("eNote.Infrastructure")));
 builder.Services.AddScoped<eNote.Application.Common.Persistence.IAppDbContext>(sp => sp.GetRequiredService<ENoteContext>());

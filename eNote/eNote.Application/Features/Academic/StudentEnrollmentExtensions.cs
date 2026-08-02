@@ -1,4 +1,4 @@
-namespace eNote.Application.Common.Extensions;
+namespace eNote.Application.Features.Academic;
 
 public static class StudentEnrollmentExtensions
 {

@@ -2,7 +2,7 @@ using eNote.Application.Common.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace eNote.Tests.InstrumentRentals;
+namespace eNote.Tests.Data;
 
 /// <summary>
 /// Verifies the DI container can resolve IAppDbContext without circular dependency errors.
