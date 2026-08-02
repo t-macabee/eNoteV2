@@ -5,11 +5,20 @@ using eNote.Infrastructure.Data;
 using eNote.Infrastructure.Messaging;
 using eNote.Worker;
 using eNote.Worker.Consumers;
+using eNote.Worker.Extensions;
+using eNote.Worker.Health;
 using Microsoft.EntityFrameworkCore;
+using Serilog;
 
 DotEnvConfiguration.Load();
 
 HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
+
+Log.Logger = new LoggerConfiguration()
+    .WriteTo.File("logs/enote-worker-bootstrap-.json", rollingInterval: RollingInterval.Day)
+    .CreateBootstrapLogger();
+
+builder.Services.AddApplicationLogging(builder.Configuration);
 
 builder.Configuration
     .AddEnvironmentVariables()
@@ -34,6 +43,8 @@ options.UseNpgsql(connectionString, sql => sql.MigrationsAssembly("eNote.Infrast
 builder.Services.AddScoped<eNote.Application.Common.Persistence.IAppDbContext>(sp => sp.GetRequiredService<ENoteContext>());
 
 builder.Services.AddRabbitMqMassTransit(builder.Configuration, bus => bus.AddConsumer<RentalStatusChangedConsumer>());
+builder.Services.AddHealthChecks().AddCheck<WorkerHealthCheck>("database");
+builder.Services.AddHostedService<DatabaseHeartbeatService>();
 
 IHost host = builder.Build();
 host.Run();

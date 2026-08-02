@@ -1,4 +1,4 @@
-using eNote.Application.Validation;
+using eNote.Application.Validation.Identity;
 using FluentValidation;
 using FluentValidation.AspNetCore;
 

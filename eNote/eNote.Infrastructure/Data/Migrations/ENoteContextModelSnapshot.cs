@@ -879,6 +879,9 @@ namespace eNote.Infrastructure.Data.Migrations
 
                     b.HasIndex("UserId", "RentalId", "Title");
 
+                    b.HasIndex("UserId", "RentalId", "CreatedAt")
+                        .IsUnique();
+
                     b.ToTable("Notification", (string)null);
                 });
 

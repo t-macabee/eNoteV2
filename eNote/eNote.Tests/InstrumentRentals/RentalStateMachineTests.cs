@@ -92,11 +92,8 @@ public sealed class RentalStateMachineTests
     [Fact]
     public void Approve_Fails_WhenLockConflict()
     {
-        var rental = new InstrumentRental(1, 1, 1, Now, null);
-        var type = new InstrumentType { Type = "Guitar", MonthlyFee = 50m };
         var instrument = new Instrument("M", "MFR", null, null, 1, 1);
-        SetProperty(instrument, nameof(Instrument.InstrumentType), type);
-        SetInstrument(rental, instrument);
+        var rental = InstrumentRental.CreateWithInstrument(1, 1, 1, Now, null, instrument);
         var ctx = new RentalTransitionContext { UserId = 10, Actor = RentalActor.StoreEmployee, HasInstrumentLockConflict = true, MonthlyFee = 50m, IsInstrumentActive = true };
 
         var result = _stateMachine.Fire(rental, RentalTrigger.Approve, ctx);
@@ -107,11 +104,8 @@ public sealed class RentalStateMachineTests
     [Fact]
     public void Approve_Succeeds_SetsApprovedStatus()
     {
-        var rental = new InstrumentRental(1, 1, 1, Now, null);
-        var type = new InstrumentType { Type = "Guitar", MonthlyFee = 50m };
         var instrument = new Instrument("M", "MFR", null, null, 1, 1);
-        SetProperty(instrument, nameof(Instrument.InstrumentType), type);
-        SetInstrument(rental, instrument);
+        var rental = InstrumentRental.CreateWithInstrument(1, 1, 1, Now, null, instrument);
         var ctx = new RentalTransitionContext { UserId = 10, Actor = RentalActor.StoreEmployee, HasInstrumentLockConflict = false, MonthlyFee = 50m, IsInstrumentActive = true };
 
         var result = _stateMachine.Fire(rental, RentalTrigger.Approve, ctx);
@@ -124,10 +118,9 @@ public sealed class RentalStateMachineTests
     [Fact]
     public void Pickup_Succeeds_SetsActiveStatus()
     {
-        var rental = new InstrumentRental(1, 1, 1, Now, null);
-        rental.Approve(50m, null, Now, 10);
         var instrument = new Instrument("M", "MFR", null, null, 1, 1);
-        SetInstrument(rental, instrument);
+        var rental = InstrumentRental.CreateWithInstrument(1, 1, 1, Now, null, instrument);
+        rental.Approve(50m, null, Now, 10);
         var ctx = new RentalTransitionContext { UserId = 10, Actor = RentalActor.StoreEmployee, HasInstrumentLockConflict = false, MonthlyFee = 50m, IsInstrumentActive = true };
 
         var result = _stateMachine.Fire(rental, RentalTrigger.Pickup, ctx);
@@ -166,9 +159,4 @@ public sealed class RentalStateMachineTests
         Assert.Equal(InstrumentRentalStatus.ReturnedEarly, rental.RentalStatus);
     }
 
-    private static void SetInstrument(InstrumentRental rental, Instrument instrument) =>
-        SetProperty(rental, nameof(InstrumentRental.Instrument), instrument);
-
-    private static void SetProperty<T>(T obj, string propertyName, object value) =>
-        typeof(T).GetProperty(propertyName)!.SetValue(obj, value);
 }

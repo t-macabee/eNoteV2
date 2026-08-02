@@ -1,4 +1,4 @@
-using eNote.Application.Features.Shared;
+using eNote.Application.Features.Mapping;
 using Mapster;
 using MapsterMapper;
 
