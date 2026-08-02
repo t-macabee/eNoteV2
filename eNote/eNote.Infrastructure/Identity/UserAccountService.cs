@@ -1,14 +1,14 @@
 using eNote.Application.Common.Localization;
+using eNote.Application.Common.Interfaces;
+using eNote.Application.Common.Exceptions;
 using eNote.Application.Features.Identity.Users.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Infrastructure.Identity;
 
-public sealed class UserAccountService(UserManager<AppUser> userManager) : IUserAccountService
+public sealed class UserAccountService(UserManager<AppUser> userManager, IFileStorageService fileStorage) : IUserAccountService
 {
-    private const int MaxPictureSizeBytes = 5 * 1024 * 1024;
-    private static readonly string[] AllowedImageContentTypes = [FileSignatureDetector.JpegMimeType, FileSignatureDetector.PngMimeType, FileSignatureDetector.WebpMimeType];
 
     public async Task<int?> FindUserIdByUsernameAsync(string username, CancellationToken cancellationToken = default)
     {
@@ -164,18 +164,8 @@ public sealed class UserAccountService(UserManager<AppUser> userManager) : IUser
         return (true, null);
     }
 
-    public async Task<(bool Success, string? Error)> UpdatePictureAsync(int userId, byte[] picture, CancellationToken cancellationToken = default)
+    public async Task<(bool Success, string? Error)> UpdatePictureAsync(int userId, Stream picture, string fileName, string contentType, CancellationToken cancellationToken = default)
     {
-        if (picture.Length == 0 || picture.Length > MaxPictureSizeBytes)
-        {
-            return (false, Messages.FileTooLarge);
-        }
-
-        if (!FileSignatureDetector.IsAllowed(picture, AllowedImageContentTypes))
-        {
-            return (false, Messages.InvalidFileFormat);
-        }
-
         var user = await userManager.FindByIdAsync(userId.ToString());
 
         if (user is null)
@@ -183,29 +173,46 @@ public sealed class UserAccountService(UserManager<AppUser> userManager) : IUser
             return (false, Messages.NotFound);
         }
 
-        user.Picture = picture;
+        string picturePath;
+        try
+        {
+            picturePath = await fileStorage.SaveAsync(picture, fileName, contentType, "profile-pictures", cancellationToken);
+        }
+        catch (BusinessException exception)
+        {
+            return (false, exception.Message);
+        }
+
+        var previousPicturePath = user.PicturePath;
+        user.PicturePath = picturePath;
 
         var updateResult = await userManager.UpdateAsync(user);
 
         if (!updateResult.Succeeded)
         {
+            await fileStorage.DeleteAsync(picturePath, cancellationToken);
             var errors = string.Join("; ", updateResult.Errors.Select(e => e.Description));
             return (false, Messages.UserUpdateFailed(user.UserName!, errors));
+        }
+
+        if (!string.IsNullOrWhiteSpace(previousPicturePath))
+        {
+            await fileStorage.DeleteAsync(previousPicturePath, cancellationToken);
         }
 
         return (true, null);
     }
 
-    public async Task<(byte[]? Data, string? ContentType)> GetPictureAsync(int userId, CancellationToken cancellationToken = default)
+    public async Task<(Stream? Data, string? ContentType)> GetPictureAsync(int userId, CancellationToken cancellationToken = default)
     {
         var user = await userManager.FindByIdAsync(userId.ToString());
 
-        if (user?.Picture is not { Length: > 0 } picture)
+        if (string.IsNullOrWhiteSpace(user?.PicturePath))
         {
             return (null, null);
         }
 
-        return (picture, FileSignatureDetector.DetectContentType(picture));
+        return await fileStorage.OpenReadAsync(user.PicturePath, cancellationToken);
     }
 
     public async Task<(bool Success, string? Error)> DeletePictureAsync(int userId, CancellationToken cancellationToken = default)
@@ -217,7 +224,8 @@ public sealed class UserAccountService(UserManager<AppUser> userManager) : IUser
             return (false, Messages.NotFound);
         }
 
-        user.Picture = null;
+        var previousPicturePath = user.PicturePath;
+        user.PicturePath = null;
 
         var updateResult = await userManager.UpdateAsync(user);
 
@@ -225,6 +233,11 @@ public sealed class UserAccountService(UserManager<AppUser> userManager) : IUser
         {
             var errors = string.Join("; ", updateResult.Errors.Select(e => e.Description));
             return (false, Messages.UserUpdateFailed(user.UserName!, errors));
+        }
+
+        if (!string.IsNullOrWhiteSpace(previousPicturePath))
+        {
+            await fileStorage.DeleteAsync(previousPicturePath, cancellationToken);
         }
 
         return (true, null);

@@ -55,7 +55,7 @@ public sealed class AuthService(UserManager<AppUser> userManager, SignInManager<
 
     public async Task<AuthResponse> RegisterAsync(RegisterRequest model, CancellationToken cancellationToken = default)
     {
-        (_, var error) = await userProvisioning.RegisterStudentAsync(model, cancellationToken);
+        (var registration, var error) = await userProvisioning.RegisterStudentAsync(model, cancellationToken);
 
         if (error is not null)
         {
@@ -67,17 +67,14 @@ public sealed class AuthService(UserManager<AppUser> userManager, SignInManager<
             throw new BusinessException(error);
         }
 
-        AppUser user = await userManager.FindByNameAsync(model.Username.Trim()) ?? throw new BusinessException(Messages.InternalError);
-
-        IList<string> roles = await userManager.GetRolesAsync(user);
-
-        var token = tokenService.GenerateToken(user.Id, user.UserName!, roles);
+        var registeredUser = registration ?? throw new BusinessException(Messages.InternalError);
+        var token = tokenService.GenerateToken(registeredUser.UserId, registeredUser.Username, registeredUser.Roles.ToList());
 
         return new AuthResponse
         {
-            UserId = user.Id,
-            Username = user.UserName!,
-            Roles = roles.ToList().AsReadOnly(),
+            UserId = registeredUser.UserId,
+            Username = registeredUser.Username,
+            Roles = registeredUser.Roles,
             Token = token
         };
     }

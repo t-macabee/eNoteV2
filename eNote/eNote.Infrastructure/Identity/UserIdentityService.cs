@@ -49,7 +49,7 @@ public sealed class UserIdentityService(UserManager<AppUser> userManager) : IUse
         FirstName = user.FirstName,
         LastName = user.LastName,
         DateOfBirth = user.DateOfBirth,
-        HasPicture = user.Picture is { Length: > 0 },
+        HasPicture = !string.IsNullOrWhiteSpace(user.PicturePath),
         Address = user.Address is null ? null : new UserAddressDto
         {
             City = user.Address.City,

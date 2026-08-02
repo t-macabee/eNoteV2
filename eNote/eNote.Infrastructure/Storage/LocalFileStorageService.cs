@@ -53,6 +53,40 @@ public sealed class LocalFileStorageService(IWebHostEnvironment env) : IFileStor
         return await SaveToDiskAsync(stream, fileName, "assignments", ct);
     }
 
+    public Task<(Stream? Data, string? ContentType)> OpenReadAsync(string path, CancellationToken ct = default)
+    {
+        var fullPath = ResolveUploadPath(path);
+
+        if (fullPath is null || !File.Exists(fullPath))
+        {
+            return Task.FromResult<(Stream? Data, string? ContentType)>((null, null));
+        }
+
+        var contentType = Path.GetExtension(fullPath).ToLowerInvariant() switch
+        {
+            ".jpg" or ".jpeg" => FileSignatureDetector.JpegMimeType,
+            ".png" => FileSignatureDetector.PngMimeType,
+            ".webp" => FileSignatureDetector.WebpMimeType,
+            ".pdf" => FileSignatureDetector.PdfMimeType,
+            _ => "application/octet-stream"
+        };
+
+        Stream stream = File.OpenRead(fullPath);
+        return Task.FromResult<(Stream? Data, string? ContentType)>((stream, contentType));
+    }
+
+    public Task DeleteAsync(string path, CancellationToken ct = default)
+    {
+        var fullPath = ResolveUploadPath(path);
+
+        if (fullPath is not null && File.Exists(fullPath))
+        {
+            File.Delete(fullPath);
+        }
+
+        return Task.CompletedTask;
+    }
+
     private async Task<string> SaveToDiskAsync(Stream stream, string fileName, string subfolder, CancellationToken ct)
     {
         var uploadsRoot = Path.Combine(env.WebRootPath, "uploads", subfolder);
@@ -96,5 +130,19 @@ public sealed class LocalFileStorageService(IWebHostEnvironment env) : IFileStor
         {
             throw new BusinessException(Messages.InvalidFileFormat);
         }
+    }
+
+    private string? ResolveUploadPath(string path)
+    {
+        if (!path.StartsWith("/api/uploads/", StringComparison.Ordinal) || path.Contains('?', StringComparison.Ordinal) || path.Contains('#', StringComparison.Ordinal))
+        {
+            return null;
+        }
+
+        var relativePath = path["/api/uploads/".Length..].Replace('/', Path.DirectorySeparatorChar);
+        var uploadsRoot = Path.GetFullPath(Path.Combine(env.WebRootPath, "uploads"));
+        var fullPath = Path.GetFullPath(Path.Combine(uploadsRoot, relativePath));
+
+        return fullPath.StartsWith(uploadsRoot + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase) ? fullPath : null;
     }
 }

@@ -7,10 +7,10 @@ public sealed class UserSelfService(
     public Task<(bool Success, string? Error)> UpdateProfileAsync(UpdateProfileRequest request)
         => accountService.UpdateExistingUserAsync(currentUserService.UserId, request.Email, request.FirstName, request.LastName, request.DateOfBirth);
 
-    public Task<(bool Success, string? Error)> UpdatePictureAsync(byte[] picture)
-        => accountService.UpdatePictureAsync(currentUserService.UserId, picture);
+    public Task<(bool Success, string? Error)> UpdatePictureAsync(Stream picture, string fileName, string contentType)
+        => accountService.UpdatePictureAsync(currentUserService.UserId, picture, fileName, contentType);
 
-    public Task<(byte[]? Data, string? ContentType)> GetPictureAsync()
+    public Task<(Stream? Data, string? ContentType)> GetPictureAsync()
         => accountService.GetPictureAsync(currentUserService.UserId);
 
     public Task<(bool Success, string? Error)> DeletePictureAsync()

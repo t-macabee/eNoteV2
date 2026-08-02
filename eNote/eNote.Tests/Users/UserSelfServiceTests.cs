@@ -49,9 +49,9 @@ public sealed class UserSelfServiceTests
     {
         var account = new RecordingUserAccountService();
         var service = new UserSelfService(account, new TestCurrentUserService(11));
-        byte[] picture = [1, 2, 3];
+        await using var picture = new MemoryStream([1, 2, 3]);
 
-        await service.UpdatePictureAsync(picture);
+        await service.UpdatePictureAsync(picture, "picture.png", "image/png");
         await service.GetPictureAsync();
         await service.DeletePictureAsync();
 
@@ -76,7 +76,7 @@ public sealed class UserSelfServiceTests
         public string? CurrentPassword { get; private set; }
         public string? NewPassword { get; private set; }
         public int? PictureUpdateUserId { get; private set; }
-        public byte[]? Picture { get; private set; }
+        public Stream? Picture { get; private set; }
         public int? PictureGetUserId { get; private set; }
         public int? PictureDeleteUserId { get; private set; }
 
@@ -96,17 +96,17 @@ public sealed class UserSelfServiceTests
             return Task.FromResult((true, (string?)null));
         }
 
-        public Task<(bool Success, string? Error)> UpdatePictureAsync(int userId, byte[] picture, CancellationToken cancellationToken = default)
+        public Task<(bool Success, string? Error)> UpdatePictureAsync(int userId, Stream picture, string fileName, string contentType, CancellationToken cancellationToken = default)
         {
             PictureUpdateUserId = userId;
             Picture = picture;
             return Task.FromResult((true, (string?)null));
         }
 
-        public Task<(byte[]? Data, string? ContentType)> GetPictureAsync(int userId, CancellationToken cancellationToken = default)
+        public Task<(Stream? Data, string? ContentType)> GetPictureAsync(int userId, CancellationToken cancellationToken = default)
         {
             PictureGetUserId = userId;
-            return Task.FromResult<(byte[]? Data, string? ContentType)>((null, null));
+            return Task.FromResult<(Stream? Data, string? ContentType)>((null, null));
         }
 
         public Task<(bool Success, string? Error)> DeletePictureAsync(int userId, CancellationToken cancellationToken = default)

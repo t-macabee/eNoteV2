@@ -8,6 +8,8 @@ public sealed class AppUserConfig : IEntityTypeConfiguration<AppUser>
 {
     public void Configure(EntityTypeBuilder<AppUser> builder)
     {
+        builder.Property(u => u.PicturePath).HasMaxLength(512);
+
         builder.HasOne(u => u.Address)
                .WithMany()
                .HasForeignKey(u => u.AddressId)

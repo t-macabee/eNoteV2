@@ -55,10 +55,7 @@ public sealed class UsersController(
         }
 
         await using var stream = file.OpenReadStream();
-        using var buffer = new MemoryStream();
-        await stream.CopyToAsync(buffer);
-
-        (var success, var error) = await selfService.UpdatePictureAsync(buffer.ToArray());
+        (var success, var error) = await selfService.UpdatePictureAsync(stream, file.FileName, file.ContentType);
 
         if (!success)
         {

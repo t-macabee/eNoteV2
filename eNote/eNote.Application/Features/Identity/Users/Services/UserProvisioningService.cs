@@ -6,10 +6,9 @@ namespace eNote.Application.Features.Identity.Users.Services;
 public sealed class UserProvisioningService(
     IAppDbContext context,
     IUserAccountService accountService,
-    IUserProfileService profileService,
     IClock clock) : IUserProvisioningService
 {
-    public async Task<(UserProfileResponse? Profile, string? Error)> RegisterStudentAsync(RegisterRequest request, CancellationToken cancellationToken = default)
+    public async Task<(RegistrationResult? Registration, string? Error)> RegisterStudentAsync(RegisterRequest request, CancellationToken cancellationToken = default)
     {
         (int? UserId, string? Error) createResult = await accountService.CreateUserAsync(
             request.Username,
@@ -36,9 +35,7 @@ public sealed class UserProvisioningService(
         await EnsureRoleProfileAsync(userId, AppRoles.Student, null, cancellationToken);
         await context.SaveChangesAsync(cancellationToken);
 
-        var profile = await profileService.GetUserAsync(userId, cancellationToken);
-
-        return (profile, null);
+        return (new RegistrationResult(userId, request.Username.Trim(), [AppRoles.Student]), null);
     }
 
     public async Task<(int UserId, string? Error)> ProvisionUserAsync(UserProvisionRequest request, CancellationToken cancellationToken = default)
