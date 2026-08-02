@@ -1,4 +1,5 @@
 using eNote.Tests.TestUtils;
+using eNote.Domain.Entities.Assignments;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 
@@ -8,6 +9,39 @@ public sealed class ENoteContextTests
 {
     private static readonly DateTime Baseline = new(2026, 7, 3, 10, 0, 0, DateTimeKind.Utc);
     private static readonly DateTime Later = new(2026, 7, 3, 14, 0, 0, DateTimeKind.Utc);
+
+    [Theory]
+    [InlineData(typeof(Assignment))]
+    [InlineData(typeof(Course))]
+    [InlineData(typeof(Instrument))]
+    [InlineData(typeof(Lecture))]
+    [InlineData(typeof(LectureNote))]
+    public void Model_SoftDeletableEntities_HaveActiveQueryFilter(Type entityType)
+    {
+        using var context = CreateContext(Baseline);
+
+        var filter = context.Model.FindEntityType(entityType)?
+            .GetDeclaredQueryFilters()
+            .Select(queryFilter => queryFilter.Expression)
+            .SingleOrDefault();
+
+        Assert.NotNull(filter);
+        Assert.Contains("IsActive", filter.ToString());
+    }
+
+    [Fact]
+    public void Model_MusicStoreEmployee_HasTenantQueryFilter()
+    {
+        using var context = CreateContext(Baseline);
+
+        var filter = context.Model.FindEntityType(typeof(MusicStoreEmployee))?
+            .GetDeclaredQueryFilters()
+            .Select(queryFilter => queryFilter.Expression)
+            .SingleOrDefault();
+
+        Assert.NotNull(filter);
+        Assert.Contains("MusicStoreId", filter.ToString());
+    }
 
     [Fact]
     public async Task SaveChangesAsync_SetsCreatedAt_WhenEntityAdded()

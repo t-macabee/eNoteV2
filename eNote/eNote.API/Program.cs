@@ -1,10 +1,13 @@
 using eNote.API.Converters;
 using eNote.API.Extensions;
 using eNote.API.Hubs;
+using eNote.API.Consumers;
+using eNote.Infrastructure;
+using MassTransit;
 using Serilog;
 using System.Text.Json.Serialization;
 
-eNote.API.Extensions.ConfigurationExtensions.LoadDotEnv();
+DependencyInjection.LoadEnvironment();
 
 Log.Logger = new LoggerConfiguration()
     .WriteTo.Console()
@@ -16,8 +19,8 @@ builder.Host.UseApplicationLogging();
 builder.Configuration.ValidateRequiredSettings();
 
 builder.Services
-    .AddApplicationDatabase(builder.Configuration)
-    .AddApplicationIdentity()
+    .AddInfrastructure(builder.Configuration, bus => bus.AddConsumer<RentalStatusChangedPushConsumer>())
+    .AddInfrastructureIdentity()
     .AddJwtAuthentication(builder.Configuration)
     .AddAuthorization()
     .AddApplicationServices(builder.Configuration)
@@ -36,7 +39,7 @@ builder.Services
         x.JsonSerializerOptions.Converters.Add(new UtcDateTimeJsonConverter());
     });
 
-builder.Services.AddApplicationHealthChecks();
+builder.Services.AddInfrastructureHealthChecks();
 
 WebApplication app = builder.Build();
 
@@ -50,8 +53,7 @@ app.UseErrorHandling();
 
 if (app.Environment.IsDevelopment())
 {
-    await app.MigrateAsync();
-    await app.SeedDevelopmentData();
+    await app.InitializeDevelopmentDataAsync();
 }
 
 app.UseRateLimiter();

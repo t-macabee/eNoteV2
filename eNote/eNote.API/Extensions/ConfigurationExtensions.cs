@@ -1,12 +1,7 @@
-using eNote.Infrastructure.Configuration;
-using eNote.Infrastructure.Messaging;
-
 namespace eNote.API.Extensions;
 
 public static class ConfigurationExtensions
 {
-    public static void LoadDotEnv() => DotEnvConfiguration.Load();
-
     public static void ValidateRequiredSettings(this IConfiguration configuration)
     {
         var errors = new List<string>();
@@ -41,7 +36,8 @@ public static class ConfigurationExtensions
             errors.Add("JWT__Audience");
         }
 
-        if (!RabbitMqConfiguration.IsConfigured(configuration))
+        if (string.IsNullOrWhiteSpace(configuration["RabbitMQ:Host"]) &&
+            string.IsNullOrWhiteSpace(configuration["RabbitMQ:User"]))
         {
             errors.Add("RabbitMQ__Host (or RabbitMQ__User)");
         }

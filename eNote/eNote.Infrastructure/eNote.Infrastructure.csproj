@@ -19,6 +19,7 @@
     </PackageReference>
     <PackageReference Include="MimeKit" />
     <PackageReference Include="QuestPDF" />
+    <PackageReference Include="Scrutor" />
   </ItemGroup>
 
   <ItemGroup>

@@ -1,8 +1,9 @@
 using eNote.Infrastructure.Messaging;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using RabbitMQ.Client;
 
-namespace eNote.API.Health;
+namespace eNote.Infrastructure.Health;
 
 public sealed class RabbitMqHealthCheck(IConfiguration configuration) : IHealthCheck
 {
@@ -19,8 +20,9 @@ public sealed class RabbitMqHealthCheck(IConfiguration configuration) : IHealthC
             };
 
             await using var connection = await factory.CreateConnectionAsync(cancellationToken);
-
-            return connection.IsOpen ? HealthCheckResult.Healthy("RabbitMQ is reachable.") : HealthCheckResult.Unhealthy("RabbitMQ connection could not be opened.");
+            return connection.IsOpen
+                ? HealthCheckResult.Healthy("RabbitMQ is reachable.")
+                : HealthCheckResult.Unhealthy("RabbitMQ connection could not be opened.");
         }
         catch (Exception ex)
         {

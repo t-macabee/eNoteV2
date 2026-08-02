@@ -1,6 +1,6 @@
 namespace eNote.Domain.Entities.Identity;
 
-public class MusicStoreEmployee : AuditableEntity
+public class MusicStoreEmployee : AuditableEntity, ITenantScoped
 {
     public int AppUserId { get; private set; }
     public int MusicStoreId { get; private set; }

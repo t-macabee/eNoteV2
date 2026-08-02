@@ -1,9 +1,6 @@
 ﻿using eNote.Application.Common.Localization;
 using eNote.Application.Features.Identity.Auth.Services;
-using eNote.Infrastructure.Data;
-using eNote.Infrastructure.Identity;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -13,27 +10,6 @@ namespace eNote.API.Extensions;
 
 public static class IdentityExtensions
 {
-    public static IServiceCollection AddApplicationIdentity(this IServiceCollection services)
-    {
-        services.AddIdentityCore<AppUser>(options =>
-        {
-            options.Password.RequireDigit = true;
-            options.Password.RequireNonAlphanumeric = true;
-            options.Password.RequireUppercase = true;
-            options.Password.RequireLowercase = true;
-            options.Password.RequiredLength = 8;
-            options.Lockout.AllowedForNewUsers = true;
-            options.Lockout.MaxFailedAccessAttempts = 5;
-            options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
-        })
-        .AddRoles<AppRole>()
-        .AddEntityFrameworkStores<ENoteContext>()
-        .AddSignInManager<SignInManager<AppUser>>()
-        .AddDefaultTokenProviders();
-
-        return services;
-    }
-
     public static IServiceCollection AddJwtAuthentication(this IServiceCollection services, IConfiguration config)
     {
         var key = Encoding.UTF8.GetBytes(config["Jwt:Key"]!);
