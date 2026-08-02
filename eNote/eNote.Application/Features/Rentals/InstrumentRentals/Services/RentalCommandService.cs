@@ -122,7 +122,7 @@ public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, 
             await context.SaveChangesAsync(cancellationToken);
         }
 
-        return await LoadDtoAsync(rental, cancellationToken);
+        return LoadDto(rental);
     }
 
     private async Task<InstrumentRental> LoadForStoreAsync(int rentalId, int storeId, CancellationToken cancellationToken)
@@ -154,11 +154,11 @@ public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, 
     }
 
     // ponytail: no DB fetch — caller must pass an entity loaded via WithRentalDetails() or navigation fields map blank, not null
-    private Task<InstrumentRentalDto> LoadDtoAsync(InstrumentRental entity, CancellationToken cancellationToken)
+    private InstrumentRentalDto LoadDto(InstrumentRental entity)
     {
         var result = mapper.Map<InstrumentRentalDto>(entity);
         RentalBilling.ApplyBilling(entity, result, clock.UtcNow);
-        return Task.FromResult(result);
+        return result;
     }
 
     private async Task<InstrumentRentalDto> LoadDtoAsync(int rentalId, CancellationToken cancellationToken)

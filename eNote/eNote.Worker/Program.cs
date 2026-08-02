@@ -41,6 +41,7 @@ builder.Services.AddScoped<ICurrentActor, WorkerActor>();
 builder.Services.AddDbContext<ENoteContext>(options =>
 options.UseNpgsql(connectionString, sql => sql.MigrationsAssembly("eNote.Infrastructure")));
 builder.Services.AddScoped<eNote.Application.Common.Persistence.IAppDbContext>(sp => sp.GetRequiredService<ENoteContext>());
+builder.Services.AddScoped<eNote.Application.Common.Persistence.IDatabaseHealthProbe, eNote.Infrastructure.Health.DatabaseHealthProbe>();
 
 builder.Services.AddRabbitMqMassTransit(builder.Configuration, bus => bus.AddConsumer<RentalStatusChangedConsumer>());
 builder.Services.AddHealthChecks().AddCheck<WorkerHealthCheck>("database");

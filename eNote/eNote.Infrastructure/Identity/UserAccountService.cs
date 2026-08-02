@@ -190,14 +190,14 @@ public sealed class UserAccountService(UserManager<AppUser> userManager, IFileSt
 
         if (!updateResult.Succeeded)
         {
-            await fileStorage.DeleteAsync(picturePath, cancellationToken);
+            fileStorage.Delete(picturePath);
             var errors = string.Join("; ", updateResult.Errors.Select(e => e.Description));
             return (false, Messages.UserUpdateFailed(user.UserName!, errors));
         }
 
         if (!string.IsNullOrWhiteSpace(previousPicturePath))
         {
-            await fileStorage.DeleteAsync(previousPicturePath, cancellationToken);
+            fileStorage.Delete(previousPicturePath);
         }
 
         return (true, null);
@@ -212,7 +212,7 @@ public sealed class UserAccountService(UserManager<AppUser> userManager, IFileSt
             return (null, null);
         }
 
-        return await fileStorage.OpenReadAsync(user.PicturePath, cancellationToken);
+        return fileStorage.OpenRead(user.PicturePath);
     }
 
     public async Task<(bool Success, string? Error)> DeletePictureAsync(int userId, CancellationToken cancellationToken = default)
@@ -237,7 +237,7 @@ public sealed class UserAccountService(UserManager<AppUser> userManager, IFileSt
 
         if (!string.IsNullOrWhiteSpace(previousPicturePath))
         {
-            await fileStorage.DeleteAsync(previousPicturePath, cancellationToken);
+            fileStorage.Delete(previousPicturePath);
         }
 
         return (true, null);

@@ -16,7 +16,7 @@ public sealed class AssignmentSubmissionService(
     public async Task<AssignmentSubmissionDto> SubmitWithFileAsync(int assignmentId, Stream stream, string fileName, string contentType, CancellationToken ct = default)
     {
         var path = await fileStorage.SaveAssignmentAsync(stream, fileName, contentType, ct);
-        return await SubmitAsync(assignmentId, new AssignmentSubmitRequest { FilePath = path }, ct);
+        return await SubmitAsync(assignmentId, path, ct);
     }
 
     public async Task<PagedResult<AssignmentSubmissionDto>> GetSubmissionsAsync(int lectureId, int assignmentId, SubmissionSearchObject search, CancellationToken cancellationToken = default)
@@ -53,7 +53,7 @@ public sealed class AssignmentSubmissionService(
         return MapSubmission(submission, await displayNames.GetStudentDisplayNameAsync(submission.Student));
     }
 
-    private async Task<AssignmentSubmissionDto> SubmitAsync(int assignmentId, AssignmentSubmitRequest request, CancellationToken cancellationToken)
+    private async Task<AssignmentSubmissionDto> SubmitAsync(int assignmentId, string filePath, CancellationToken cancellationToken)
     {
         var student = await actor.GetCurrentStudentAsync();
 
@@ -84,7 +84,7 @@ public sealed class AssignmentSubmissionService(
             assignment.AssignmentSubmissions.Add(existing);
         }
 
-        existing.Submit(request.FilePath?.Trim(), clock.UtcNow);
+        existing.Submit(filePath?.Trim(), clock.UtcNow);
         existing.UpdatedById = actor.UserId;
 
         await context.SaveChangesAsync(cancellationToken);

@@ -53,13 +53,13 @@ public sealed class LocalFileStorageService(IWebHostEnvironment env) : IFileStor
         return await SaveToDiskAsync(stream, fileName, "assignments", ct);
     }
 
-    public Task<(Stream? Data, string? ContentType)> OpenReadAsync(string path, CancellationToken ct = default)
+    public (Stream? Data, string? ContentType) OpenRead(string path)
     {
         var fullPath = ResolveUploadPath(path);
 
         if (fullPath is null || !File.Exists(fullPath))
         {
-            return Task.FromResult<(Stream? Data, string? ContentType)>((null, null));
+            return (null, null);
         }
 
         var contentType = Path.GetExtension(fullPath).ToLowerInvariant() switch
@@ -71,11 +71,10 @@ public sealed class LocalFileStorageService(IWebHostEnvironment env) : IFileStor
             _ => "application/octet-stream"
         };
 
-        Stream stream = File.OpenRead(fullPath);
-        return Task.FromResult<(Stream? Data, string? ContentType)>((stream, contentType));
+        return (File.OpenRead(fullPath), contentType);
     }
 
-    public Task DeleteAsync(string path, CancellationToken ct = default)
+    public void Delete(string path)
     {
         var fullPath = ResolveUploadPath(path);
 
@@ -83,8 +82,6 @@ public sealed class LocalFileStorageService(IWebHostEnvironment env) : IFileStor
         {
             File.Delete(fullPath);
         }
-
-        return Task.CompletedTask;
     }
 
     private async Task<string> SaveToDiskAsync(Stream stream, string fileName, string subfolder, CancellationToken ct)

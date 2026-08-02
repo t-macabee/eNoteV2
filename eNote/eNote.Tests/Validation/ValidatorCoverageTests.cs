@@ -30,6 +30,13 @@ public sealed class ValidatorCoverageTests
         Assert.True(new ResetPasswordRequestValidator().Validate(new ResetPasswordRequest { Email = "student@example.com", Token = "token", NewPassword = "password1" }).IsValid);
         Assert.True(new ChangePasswordRequestValidator().Validate(new ChangePasswordRequest { CurrentPassword = "oldpassword", NewPassword = "password1", ConfirmNewPassword = "password1" }).IsValid);
         Assert.True(new UpdateProfileRequestValidator().Validate(new UpdateProfileRequest { Email = "student@example.com" }).IsValid);
+        Assert.True(new UserProvisionRequestValidator().Validate(ValidUserProvision()).IsValid);
+        Assert.True(new UpdateMembershipRequestValidator().Validate(new UpdateMembershipRequest { PaidUntil = DateTime.UtcNow.AddDays(1) }).IsValid);
+        Assert.True(new UpdateMembershipRequestValidator().Validate(new UpdateMembershipRequest { PaidUntil = null }).IsValid);
+        Assert.True(new InstrumentUpdateRequestValidator().Validate(new InstrumentUpdateRequest { Model = "Model", Manufacturer = "Maker", InstrumentTypeId = 1 }).IsValid);
+        Assert.True(new InstrumentUpdateRequestValidator().Validate(new InstrumentUpdateRequest()).IsValid);
+        Assert.True(new RsvpRequestValidator().Validate(new RsvpRequest { Confirm = true, Note = new string('x', 500) }).IsValid);
+        Assert.True(new MarkAttendanceRequestValidator().Validate(new MarkAttendanceRequest { StudentId = 1, AttendanceStatus = AttendanceStatus.Present }).IsValid);
         Assert.True(new RentalCreateRequestValidator().Validate(new RentalCreateRequest { InstrumentId = 1 }).IsValid);
         Assert.True(new InstrumentCreateRequestValidator().Validate(new InstrumentCreateRequest { Model = "Model", Manufacturer = "Maker", InstrumentTypeId = 1 }).IsValid);
         Assert.True(new CourseRequestValidator().Validate(new CourseRequest { Name = "Course", Price = 0 }).IsValid);
@@ -110,6 +117,25 @@ public sealed class ValidatorCoverageTests
     }
 
     [Fact]
+    public void NewValidators_RejectMissingAndBoundaryValues()
+    {
+        AssertInvalid(new UserProvisionRequestValidator().Validate(new UserProvisionRequest { Username = "", Email = "student@example.com", Password = "Password1!", Role = "Student" }), nameof(UserProvisionRequest.Username));
+        AssertInvalid(new UserProvisionRequestValidator().Validate(new UserProvisionRequest { Username = "user", Email = "bad", Password = "Password1!", Role = "Student" }), nameof(UserProvisionRequest.Email));
+        AssertInvalid(new UserProvisionRequestValidator().Validate(new UserProvisionRequest { Username = "user", Email = "student@example.com", Password = "short", Role = "Student" }), nameof(UserProvisionRequest.Password));
+        AssertInvalid(new UserProvisionRequestValidator().Validate(new UserProvisionRequest { Username = "user", Email = "student@example.com", Password = "Password1!", Role = "UnknownRole" }), nameof(UserProvisionRequest.Role));
+        AssertInvalid(new UserProvisionRequestValidator().Validate(new UserProvisionRequest { Username = "user", Email = "student@example.com", Password = "Password1!", Role = "Student", MusicStoreId = 0 }), nameof(UserProvisionRequest.MusicStoreId));
+        AssertInvalid(new UpdateMembershipRequestValidator().Validate(new UpdateMembershipRequest { PaidUntil = DateTime.UtcNow.AddDays(-1) }), nameof(UpdateMembershipRequest.PaidUntil));
+        AssertInvalid(new InstrumentUpdateRequestValidator().Validate(new InstrumentUpdateRequest { Model = "" }), nameof(InstrumentUpdateRequest.Model));
+        AssertInvalid(new InstrumentUpdateRequestValidator().Validate(new InstrumentUpdateRequest { Manufacturer = "" }), nameof(InstrumentUpdateRequest.Manufacturer));
+        AssertInvalid(new InstrumentUpdateRequestValidator().Validate(new InstrumentUpdateRequest { Description = "" }), nameof(InstrumentUpdateRequest.Description));
+        AssertInvalid(new InstrumentUpdateRequestValidator().Validate(new InstrumentUpdateRequest { ImagePath = "" }), nameof(InstrumentUpdateRequest.ImagePath));
+        AssertInvalid(new InstrumentUpdateRequestValidator().Validate(new InstrumentUpdateRequest { InstrumentTypeId = 0 }), nameof(InstrumentUpdateRequest.InstrumentTypeId));
+        AssertInvalid(new RsvpRequestValidator().Validate(new RsvpRequest { Note = new string('x', 501) }), nameof(RsvpRequest.Note));
+        AssertInvalid(new MarkAttendanceRequestValidator().Validate(new MarkAttendanceRequest { StudentId = 0, AttendanceStatus = AttendanceStatus.Present }), nameof(MarkAttendanceRequest.StudentId));
+        AssertInvalid(new MarkAttendanceRequestValidator().Validate(new MarkAttendanceRequest { StudentId = 1, AttendanceStatus = (AttendanceStatus)99 }), nameof(MarkAttendanceRequest.AttendanceStatus));
+    }
+
+    [Fact]
     public void AnnouncementValidator_RejectsMissingRequiredFields()
     {
         AssertInvalid(new AnnouncementRequestValidator().Validate(new AnnouncementRequest("", "Content")), nameof(AnnouncementRequest.Title));
@@ -118,5 +144,13 @@ public sealed class ValidatorCoverageTests
 
     private static LectureCreateRequest ValidLectureCreate() => new() { CourseId = 1, Name = "Name", Location = "Room", LectureTime = DateTime.UtcNow, Duration = 60 };
     private static LectureUpdateRequest ValidLectureUpdate() => new() { Name = "Name", Location = "Room", LectureTime = DateTime.UtcNow, Duration = 60 };
+    private static UserProvisionRequest ValidUserProvision() => new()
+    {
+        Username = "user",
+        Email = "student@example.com",
+        Password = "Password1!",
+        Role = "Student",
+        MusicStoreId = 1
+    };
     private static void AssertInvalid(ValidationResult result, string propertyName) => Assert.Contains(result.Errors, error => error.PropertyName == propertyName);
 }
