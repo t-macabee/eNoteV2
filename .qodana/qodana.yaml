@@ -1,0 +1,15 @@
+version: "1.0"
+#-------------------------------------------------------------------------------#
+#               Qodana analysis is configured by qodana.yaml file             #
+#             https://www.jetbrains.com/help/qodana/qodana-yaml.html          #
+#-------------------------------------------------------------------------------#
+linter: jetbrains/qodana-dotnet:latest
+bootstrap: dotnet restore eNote/eNote.sln
+
+# Full-coverage audit pass: the codebase needs a structural rebuild after an
+# earlier AI-assisted change went off the rails, so this intentionally runs
+# the broadest predefined profile (security + correctness + complexity +
+# dead code + duplication + naming + style) instead of a curated include
+# list. No include/exclude narrowing until findings have been triaged.
+profile:
+  name: qodana.recommended
