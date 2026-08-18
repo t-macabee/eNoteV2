@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace eNote.Tests.Users;
+namespace eNote.Tests.Identity;
 
 public sealed class CurrentActorTests
 {

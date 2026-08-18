@@ -3,7 +3,7 @@ using eNote.Tests.TestUtils;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 
-namespace eNote.Tests.Courses;
+namespace eNote.Tests.Academic;
 
 public sealed class CourseEnrollmentServiceTests
 {

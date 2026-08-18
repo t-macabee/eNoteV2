@@ -1,7 +1,7 @@
 using eNote.Application.Features.Identity.Users.Services;
 using eNote.Application.Features.Identity.Users;
 
-namespace eNote.Tests.Users;
+namespace eNote.Tests.Identity;
 
 public sealed class UserSelfServiceTests
 {

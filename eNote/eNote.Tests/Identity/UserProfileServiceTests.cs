@@ -6,7 +6,7 @@ using eNote.Application.Features.Identity.Users.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 
-namespace eNote.Tests.Users;
+namespace eNote.Tests.Identity;
 
 public sealed class UserProfileServiceTests
 {
