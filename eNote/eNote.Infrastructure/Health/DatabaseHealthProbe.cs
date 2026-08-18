@@ -1,6 +1,5 @@
 using eNote.Application.Common.Persistence;
 using eNote.Infrastructure.Data;
-using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Infrastructure.Health;
 

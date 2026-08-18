@@ -1,6 +1,6 @@
-﻿using eNote.Infrastructure.Configuration;
-using eNote.Application.Common.Interfaces;
+﻿using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Time;
+using eNote.Infrastructure.Configuration;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration;

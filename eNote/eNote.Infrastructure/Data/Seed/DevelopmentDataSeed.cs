@@ -1,5 +1,5 @@
-using eNote.Domain.Enums;
 using eNote.Application.Common.Time;
+using eNote.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Infrastructure.Data.Seed;

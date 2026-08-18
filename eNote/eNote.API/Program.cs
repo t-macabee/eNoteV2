@@ -1,9 +1,8 @@
+using eNote.API.Consumers;
 using eNote.API.Converters;
 using eNote.API.Extensions;
 using eNote.API.Hubs;
-using eNote.API.Consumers;
 using eNote.Infrastructure;
-using MassTransit;
 using Serilog;
 using System.Text.Json.Serialization;
 

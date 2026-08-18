@@ -1,4 +1,3 @@
-using eNote.Application.Common.Exceptions;
 using eNote.Infrastructure.Storage;
 using eNote.Tests.TestUtils;
 

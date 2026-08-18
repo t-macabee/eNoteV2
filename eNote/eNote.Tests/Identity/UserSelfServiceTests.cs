@@ -1,5 +1,5 @@
-using eNote.Application.Features.Identity.Users.Services;
 using eNote.Application.Features.Identity.Users;
+using eNote.Application.Features.Identity.Users.Services;
 
 namespace eNote.Tests.Identity;
 

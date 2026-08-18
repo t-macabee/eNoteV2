@@ -1,8 +1,8 @@
 using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Localization;
 using eNote.Application.Constants;
-using eNote.Application.Features.Identity.Users.Services;
 using eNote.Application.Features.Identity.Users;
+using eNote.Application.Features.Identity.Users.Services;
 using eNote.Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;

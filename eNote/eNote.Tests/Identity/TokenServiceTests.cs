@@ -1,4 +1,3 @@
-using eNote.Application.Features.Identity.Auth.Services;
 using eNote.Infrastructure.Identity;
 using eNote.Tests.TestUtils;
 using Microsoft.Extensions.Configuration;

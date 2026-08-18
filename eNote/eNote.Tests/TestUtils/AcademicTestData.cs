@@ -1,6 +1,4 @@
 using eNote.Application.Features.Identity.Instructors;
-using eNote.Tests.TestUtils;
-using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Tests.TestUtils;
 

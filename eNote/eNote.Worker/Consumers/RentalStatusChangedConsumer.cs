@@ -22,10 +22,10 @@ public sealed class RentalStatusChangedConsumer(IAppDbContext dbContext, ILogger
             await dbContext.SaveChangesAsync(context.CancellationToken);
         }
         catch (DbUpdateException ex) when (ex.InnerException is PostgresException
-            {
-                SqlState: PostgresErrorCodes.UniqueViolation,
-                ConstraintName: "IX_Notification_UserId_RentalId_CreatedAt"
-            })
+        {
+            SqlState: PostgresErrorCodes.UniqueViolation,
+            ConstraintName: "IX_Notification_UserId_RentalId_CreatedAt"
+        })
         {
             logger.LogWarning("Skipping duplicate rental notification for rental {RentalId} and user {UserId}.", message.RentalId, message.StudentUserId);
             return;

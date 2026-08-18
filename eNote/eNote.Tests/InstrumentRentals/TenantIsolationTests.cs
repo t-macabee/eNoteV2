@@ -5,10 +5,10 @@ using eNote.Application.Features.Rentals.InstrumentRentals.Services;
 using eNote.Application.Features.Rentals.Instruments;
 using eNote.Application.Features.Rentals.Instruments.Services;
 using eNote.Application.Features.Rentals.Recommendations.Services;
+using eNote.Domain.Entities.Communication;
 using eNote.Tests.TestUtils;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
-using eNote.Domain.Entities.Communication;
 
 namespace eNote.Tests.InstrumentRentals;
 

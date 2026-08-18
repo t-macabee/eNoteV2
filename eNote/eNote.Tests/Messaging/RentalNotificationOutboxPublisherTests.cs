@@ -1,5 +1,4 @@
 using eNote.Application.Common.Persistence;
-using eNote.Application.Common.Time;
 using eNote.Contracts.Rentals;
 using eNote.Domain.Entities.Communication;
 using eNote.Infrastructure.Messaging;

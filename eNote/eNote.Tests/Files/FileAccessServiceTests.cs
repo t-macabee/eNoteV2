@@ -1,11 +1,8 @@
 using eNote.Application.Constants;
 using eNote.Application.Features.Files.Services;
 using eNote.Application.Features.Identity.Instructors;
-using eNote.Application.Features.Identity.Users;
-using eNote.Application.Features.Identity.Users.Services;
 using eNote.Domain.Entities.Assignments;
 using eNote.Tests.TestUtils;
-using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Tests.Files;
 

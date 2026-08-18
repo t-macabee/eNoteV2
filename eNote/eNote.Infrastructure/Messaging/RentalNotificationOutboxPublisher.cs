@@ -1,4 +1,3 @@
-using System.Text.Json;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Common.Time;
 using eNote.Contracts.Rentals;
@@ -7,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using System.Text.Json;
 
 namespace eNote.Infrastructure.Messaging;
 

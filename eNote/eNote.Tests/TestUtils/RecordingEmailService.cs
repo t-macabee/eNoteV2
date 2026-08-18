@@ -1,5 +1,3 @@
-using eNote.Application.Common.Interfaces;
-
 namespace eNote.Tests.TestUtils;
 
 public sealed class RecordingEmailService : IEmailService

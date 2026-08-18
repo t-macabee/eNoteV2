@@ -1,5 +1,5 @@
-using eNote.Tests.TestUtils;
 using eNote.Domain.Entities.Assignments;
+using eNote.Tests.TestUtils;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 

@@ -1,8 +1,6 @@
 using eNote.Application.Features.Identity.Instructors;
-using eNote.Application.Features.Identity.Users.Services;
 using eNote.Domain.Entities.Assignments;
 using eNote.Tests.TestUtils;
-using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Tests.Identity;
 

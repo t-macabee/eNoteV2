@@ -14,7 +14,6 @@ using eNote.Application.Validation.Academic;
 using eNote.Application.Validation.Communication;
 using eNote.Application.Validation.Identity;
 using eNote.Application.Validation.Rentals;
-using FluentValidation;
 using FluentValidation.Results;
 
 namespace eNote.Tests.Validation;

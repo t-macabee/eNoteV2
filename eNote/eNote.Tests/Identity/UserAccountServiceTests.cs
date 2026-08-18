@@ -66,7 +66,7 @@ public sealed class UserAccountServiceTests
         var result = await service.AssignSingleRoleAsync(userId, "Instructor");
 
         Assert.True(result.Success);
-        var roles = await harness.UserManager.GetRolesAsync((await harness.UserManager.FindByIdAsync(userId.ToString()))!);        Assert.Equal(["Instructor"], roles);
+        var roles = await harness.UserManager.GetRolesAsync((await harness.UserManager.FindByIdAsync(userId.ToString()))!); Assert.Equal(["Instructor"], roles);
     }
 
     [Fact]

@@ -1,7 +1,6 @@
 using eNote.Application.Features.Academic.Lectures;
 using eNote.Application.Features.Academic.Lectures.Services;
 using eNote.Tests.TestUtils;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace eNote.Tests.Academic;

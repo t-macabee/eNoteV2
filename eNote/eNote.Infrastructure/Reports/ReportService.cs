@@ -1,8 +1,7 @@
-using System.Globalization;
-using eNote.Application.Features.Academic.Courses.Services;
 using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Common.Time;
+using eNote.Application.Features.Academic.Courses.Services;
 using eNote.Application.Features.Identity.Instructors;
 using eNote.Application.Features.Identity.Users.Services;
 using eNote.Application.Features.Rentals.InstrumentRentals;
@@ -13,6 +12,7 @@ using Microsoft.EntityFrameworkCore;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
+using System.Globalization;
 
 namespace eNote.Infrastructure.Reports;
 

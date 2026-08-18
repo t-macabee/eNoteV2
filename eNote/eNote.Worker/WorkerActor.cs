@@ -1,6 +1,5 @@
 using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Interfaces;
-using eNote.Domain.Entities.Academic;
 using eNote.Domain.Entities.Identity;
 
 namespace eNote.Worker;
