@@ -19,7 +19,6 @@ builder.Configuration.ValidateRequiredSettings();
 
 builder.Services
     .AddInfrastructure(builder.Configuration, bus => bus.AddConsumer<RentalStatusChangedPushConsumer>())
-    .AddInfrastructureIdentity()
     .AddJwtAuthentication(builder.Configuration)
     .AddAuthorization()
     .AddApplicationServices(builder.Configuration)

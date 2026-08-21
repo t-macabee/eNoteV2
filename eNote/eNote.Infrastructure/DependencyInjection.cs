@@ -26,6 +26,7 @@ public static class DependencyInjection
             ?? throw new InvalidOperationException("ConnectionStrings__DefaultConnection is required.");
 
         services.AddSingleton<IClock, SystemClock>();
+        services.AddMemoryCache();
         services.Scan(scan => scan
             .FromAssembliesOf(typeof(DependencyInjection))
             .AddClasses(classes => classes.Where(type => type.Name.EndsWith("Service") && !type.IsAbstract))
@@ -40,12 +41,26 @@ public static class DependencyInjection
         services.AddScoped<IRentalNotificationDispatcher, RentalNotificationDispatcher>();
         services.AddHostedService<RentalNotificationOutboxPublisher>();
         services.AddRabbitMqMassTransit(configuration, configureBus);
+        services.AddInfrastructureIdentity();
 
         return services;
     }
 
+    /// <summary>
+    /// Registered unconditionally from <see cref="AddInfrastructure"/> (not opt-in per host): the
+    /// blanket "*Service" scan above picks up <c>UserAccountService</c>, which needs
+    /// <see cref="UserManager{TUser}"/> regardless of which host runs the scan. All registrations
+    /// here are inert until resolved — none require host-specific types (no
+    /// IHttpContextAccessor is needed just to register SignInManager, only to construct one).
+    /// AddDataProtection() is included because AddDefaultTokenProviders() needs
+    /// IDataProtectionProvider for DataProtectorTokenProvider — ASP.NET Core's web host
+    /// (WebApplication.CreateBuilder) registers this for free, but a generic Host (the Worker) or
+    /// a bare ServiceCollection does not. Safe/idempotent to call more than once (TryAdd internally).
+    /// </summary>
     public static IServiceCollection AddInfrastructureIdentity(this IServiceCollection services)
     {
+        services.AddDataProtection();
+
         services.AddIdentityCore<AppUser>(options =>
         {
             options.Password.RequireDigit = true;
