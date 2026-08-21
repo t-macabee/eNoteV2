@@ -33,7 +33,7 @@ public sealed class RecommendationService(IAppDbContext context, IMapper mapper,
         Dictionary<int, InstrumentViewSnapshot> viewMap = await context.Set<InstrumentView>()
             .AsNoTracking()
             .Where(x => x.UserId == userId)
-            .ToDictionaryAsync(x => x.InstrumentId, x => new InstrumentViewSnapshot(x.ViewCount, x.LastViewedAt), cancellationToken);
+            .ToDictionaryAsync(x => x.InstrumentId, x => new InstrumentViewSnapshot(x.ViewCount), cancellationToken);
 
         Dictionary<int, int> globalRentalCounts = await context.Set<InstrumentRental>()
             .AsNoTracking()
@@ -312,7 +312,7 @@ public sealed class RecommendationService(IAppDbContext context, IMapper mapper,
 
     private sealed record UserRentalSnapshot(int InstrumentId, int InstrumentTypeId, string Manufacturer, InstrumentRentalStatus RentalStatus);
 
-    private sealed record InstrumentViewSnapshot(int ViewCount, DateTime LastViewedAt);
+    private sealed record InstrumentViewSnapshot(int ViewCount);
 
     private sealed record ScoredRecommendation(Instrument Instrument, double Score, List<string> Reasons);
 }

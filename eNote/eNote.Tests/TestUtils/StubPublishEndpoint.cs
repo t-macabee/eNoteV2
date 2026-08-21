@@ -8,7 +8,7 @@ public sealed class StubPublishEndpoint : IPublishEndpoint
 
     public Task Publish<T>(T message, CancellationToken cancellationToken = default) where T : class
     {
-        Published.Add(message!);
+        Published.Add(message);
         return Task.CompletedTask;
     }
 
@@ -26,7 +26,7 @@ public sealed class StubPublishEndpoint : IPublishEndpoint
 
     public Task Publish(object message, Type messageType, CancellationToken cancellationToken = default)
     {
-        Published.Add(message!);
+        Published.Add(message);
         return Task.CompletedTask;
     }
 
@@ -35,7 +35,7 @@ public sealed class StubPublishEndpoint : IPublishEndpoint
 
     public Task Publish<T>(object values, CancellationToken cancellationToken = default) where T : class
     {
-        Published.Add(values!);
+        Published.Add(values);
         return Task.CompletedTask;
     }
 

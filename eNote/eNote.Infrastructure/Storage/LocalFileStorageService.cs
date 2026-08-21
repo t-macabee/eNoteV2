@@ -29,7 +29,7 @@ public sealed class LocalFileStorageService(IWebHostEnvironment env) : IFileStor
             throw new BusinessException(Messages.InvalidFileFormat);
         }
 
-        return await SaveToDiskAsync(stream, fileName, subfolder, ct);
+        return await SaveToDiskAsync(stream, subfolder, ct);
     }
 
     public async Task<string> SaveAssignmentAsync(Stream stream, string fileName, string contentType, CancellationToken ct = default)
@@ -50,7 +50,7 @@ public sealed class LocalFileStorageService(IWebHostEnvironment env) : IFileStor
             throw new BusinessException(Messages.InvalidFileFormat);
         }
 
-        return await SaveToDiskAsync(stream, fileName, "assignments", ct);
+        return await SaveToDiskAsync(stream, "assignments", ct);
     }
 
     public (Stream? Data, string? ContentType) OpenRead(string path)
@@ -84,7 +84,7 @@ public sealed class LocalFileStorageService(IWebHostEnvironment env) : IFileStor
         }
     }
 
-    private async Task<string> SaveToDiskAsync(Stream stream, string fileName, string subfolder, CancellationToken ct)
+    private async Task<string> SaveToDiskAsync(Stream stream, string subfolder, CancellationToken ct)
     {
         var uploadsRoot = Path.Combine(env.WebRootPath, "uploads", subfolder);
 

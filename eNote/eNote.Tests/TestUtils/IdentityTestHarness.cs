@@ -27,7 +27,7 @@ public static class IdentityTestHarness
         services.AddScoped<IAuthenticationSchemeProvider>(_ => new StubAuthenticationSchemeProvider());
         services.AddScoped<IUserConfirmation<AppUser>>(_ => new ConfirmedUserConfirmation());
 
-        services.AddIdentityCore<AppUser>(options => { })
+        services.AddIdentityCore<AppUser>(_ => { })
             .AddRoles<AppRole>()
             .AddEntityFrameworkStores<ENoteContext>()
             .AddSignInManager<SignInManager<AppUser>>()

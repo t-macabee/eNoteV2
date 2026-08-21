@@ -94,6 +94,11 @@ ios/Runner/GeneratedPluginRegistrant.*
 CLAUDE.md
 .tokensave/
 .semantic/
+.lurp/
+.mcp.json
+HANDOFF.md
+.repograph/
+index.db
 
 # Generated / local agent artifacts
 graphify*/

@@ -49,13 +49,13 @@ public sealed class DiResolutionTests
     {
         public int UserId => 1;
         public bool IsAuthenticated => true;
-        public Task<eNote.Domain.Entities.Identity.Student> GetCurrentStudentAsync()
-            => Task.FromResult(new eNote.Domain.Entities.Identity.Student(1, DateTime.UtcNow));
+        public Task<Student> GetCurrentStudentAsync()
+            => Task.FromResult(new Student(1, DateTime.UtcNow));
         public Task<int> GetCurrentStudentIdAsync()
             => Task.FromResult(1);
-        public Task<eNote.Domain.Entities.Identity.Instructor> GetCurrentInstructorAsync()
+        public Task<Instructor> GetCurrentInstructorAsync()
             => throw new NotSupportedException();
-        public Task<eNote.Domain.Entities.Identity.MusicStoreEmployee> GetCurrentEmployeeAsync()
+        public Task<MusicStoreEmployee> GetCurrentEmployeeAsync()
             => throw new NotSupportedException();
         public Task<int> GetCurrentStoreIdAsync(CancellationToken ct = default)
             => Task.FromResult(1);

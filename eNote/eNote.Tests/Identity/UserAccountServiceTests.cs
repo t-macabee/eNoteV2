@@ -172,20 +172,18 @@ public sealed class UserAccountServiceTests
         var identity = IdentityTestHarness.Create(context);
         await identity.RoleManager.CreateAsync(new AppRole { Name = "Student" });
         var fileStorage = new RecordingFileStorageService();
-        return new Harness(context, identity.UserManager, identity.RoleManager, fileStorage, new UserAccountService(identity.UserManager, fileStorage));
+        return new Harness(identity.UserManager, identity.RoleManager, fileStorage, new UserAccountService(identity.UserManager, fileStorage));
     }
 
     private static MemoryStream PngStream() =>
         new([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
 
     private sealed class Harness(
-        ENoteContext context,
         UserManager<AppUser> userManager,
         RoleManager<AppRole> roleManager,
         RecordingFileStorageService fileStorage,
         UserAccountService service)
     {
-        public ENoteContext Context => context;
         public UserManager<AppUser> UserManager => userManager;
         public RoleManager<AppRole> RoleManager => roleManager;
         public RecordingFileStorageService FileStorage => fileStorage;

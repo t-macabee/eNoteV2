@@ -172,17 +172,15 @@ public sealed class AuthServiceTests
         await identity.UserManager.CreateAsync(user, "Password1!");
         await identity.UserManager.AddToRoleAsync(user, withRole);
 
-        return new Harness(context, identity.UserManager, identity.RoleManager, identity.SignInManager, user);
+        return new Harness(identity.UserManager, identity.RoleManager, identity.SignInManager, user);
     }
 
     private sealed class Harness(
-        ENoteContext context,
         UserManager<AppUser> userManager,
         RoleManager<AppRole> roleManager,
         SignInManager<AppUser> signInManager,
         AppUser user)
     {
-        public ENoteContext Context => context;
         public UserManager<AppUser> UserManager => userManager;
         public RoleManager<AppRole> RoleManager => roleManager;
         public AppUser User => user;

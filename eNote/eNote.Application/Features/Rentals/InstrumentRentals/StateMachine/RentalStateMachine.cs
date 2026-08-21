@@ -90,7 +90,7 @@ public sealed class RentalStateMachine(IClock clock) : IRentalStateMachine
         }
     }
 
-    private static void ApplyAuditFields(InstrumentRental rental, RentalTransitionContext context, IClock time)
+    private static void ApplyAuditFields(InstrumentRental rental, RentalTransitionContext context)
     {
         rental.UpdatedById = context.UserId;
     }
@@ -101,7 +101,7 @@ public sealed class RentalStateMachine(IClock clock) : IRentalStateMachine
             From: InstrumentRentalStatus.Pending,
             Trigger: RentalTrigger.Approve,
             Actors: [RentalActor.StoreEmployee],
-            Guard: (rental, context) =>
+            Guard: (_, context) =>
             {
                 GuardInstrumentActive(context);
                 GuardNoInstrumentLockConflict(context);
@@ -109,7 +109,7 @@ public sealed class RentalStateMachine(IClock clock) : IRentalStateMachine
             Apply: (rental, context, time) =>
             {
                 rental.Approve(context.MonthlyFee, context.Response?.Note, time.UtcNow, context.UserId);
-                ApplyAuditFields(rental, context, time);
+                ApplyAuditFields(rental, context);
             },
             UsesInstrumentLock: true),
 
@@ -121,7 +121,7 @@ public sealed class RentalStateMachine(IClock clock) : IRentalStateMachine
             Apply: (rental, context, time) =>
             {
                 rental.Reject(time.UtcNow, context.Response?.Note, context.UserId);
-                ApplyAuditFields(rental, context, time);
+                ApplyAuditFields(rental, context);
             },
             UsesInstrumentLock: false),
 
@@ -134,7 +134,7 @@ public sealed class RentalStateMachine(IClock clock) : IRentalStateMachine
             {
                 var note = !string.IsNullOrWhiteSpace(context.Response?.Note) ? context.Response.Note : rental.Note;
                 rental.Cancel(time.UtcNow, note);
-                ApplyAuditFields(rental, context, time);
+                ApplyAuditFields(rental, context);
             },
             UsesInstrumentLock: false),
 
@@ -152,7 +152,7 @@ public sealed class RentalStateMachine(IClock clock) : IRentalStateMachine
             {
                 var note = !string.IsNullOrWhiteSpace(context.Response?.Note) ? context.Response.Note : rental.Note;
                 rental.Pickup(time.UtcNow, note);
-                ApplyAuditFields(rental, context, time);
+                ApplyAuditFields(rental, context);
             },
             UsesInstrumentLock: true),
 
@@ -165,7 +165,7 @@ public sealed class RentalStateMachine(IClock clock) : IRentalStateMachine
             {
                 var note = !string.IsNullOrWhiteSpace(context.Response?.Note) ? context.Response.Note : rental.Note;
                 rental.Cancel(time.UtcNow, note);
-                ApplyAuditFields(rental, context, time);
+                ApplyAuditFields(rental, context);
             },
             UsesInstrumentLock: false),
 
@@ -178,7 +178,7 @@ public sealed class RentalStateMachine(IClock clock) : IRentalStateMachine
             {
                 var note = !string.IsNullOrWhiteSpace(context.Response?.Note) ? context.Response.Note : rental.Note;
                 rental.Complete(time.UtcNow, note);
-                ApplyAuditFields(rental, context, time);
+                ApplyAuditFields(rental, context);
             },
             UsesInstrumentLock: false),
 
@@ -195,7 +195,7 @@ public sealed class RentalStateMachine(IClock clock) : IRentalStateMachine
             {
                 var note = !string.IsNullOrWhiteSpace(context.Response?.Note) ? context.Response.Note : rental.Note;
                 rental.ReturnEarly(time.UtcNow, note);
-                ApplyAuditFields(rental, context, time);
+                ApplyAuditFields(rental, context);
             },
             UsesInstrumentLock: false),
     ];
