@@ -5,6 +5,7 @@ using eNote.Infrastructure.Data;
 using eNote.Infrastructure.Data.Seed;
 using eNote.Infrastructure.Health;
 using eNote.Infrastructure.Identity;
+using eNote.Infrastructure.Reports;
 using eNote.Infrastructure.Messaging;
 using MassTransit;
 using Microsoft.AspNetCore.Identity;
@@ -29,7 +30,11 @@ public static class DependencyInjection
         services.AddMemoryCache();
         services.Scan(scan => scan
             .FromAssembliesOf(typeof(DependencyInjection))
-            .AddClasses(classes => classes.Where(type => type.Name.EndsWith("Service") && !type.IsAbstract))
+            .AddClasses(classes => classes.Where(type =>
+                type.Name.EndsWith("Service")
+                && !type.IsAbstract
+                && type != typeof(ReportService)
+                && type != typeof(AuthService)))
             .AsImplementedInterfaces()
             .WithScopedLifetime());
         services.AddDbContext<ENoteContext>(options => options.UseNpgsql(
