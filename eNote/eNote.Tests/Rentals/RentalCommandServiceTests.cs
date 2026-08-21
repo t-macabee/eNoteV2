@@ -5,7 +5,7 @@ using eNote.Tests.TestUtils;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 
-namespace eNote.Tests.InstrumentRentals;
+namespace eNote.Tests.Rentals;
 
 public sealed class RentalCommandServiceTests
 {

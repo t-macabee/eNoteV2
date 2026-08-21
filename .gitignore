@@ -99,6 +99,7 @@ CLAUDE.md
 HANDOFF.md
 .repograph/
 index.db
+opencode.json
 
 # Generated / local agent artifacts
 graphify*/

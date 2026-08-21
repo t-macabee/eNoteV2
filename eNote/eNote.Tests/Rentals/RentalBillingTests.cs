@@ -1,7 +1,7 @@
 using eNote.Application.Features.Rentals.InstrumentRentals;
 using eNote.Application.Features.Rentals.InstrumentRentals.Billing;
 
-namespace eNote.Tests.InstrumentRentals;
+namespace eNote.Tests.Rentals;
 
 public sealed class RentalBillingTests
 {

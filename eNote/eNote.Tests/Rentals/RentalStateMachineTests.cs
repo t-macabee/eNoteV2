@@ -1,7 +1,7 @@
 using eNote.Application.Features.Rentals.InstrumentRentals.StateMachine;
 using eNote.Tests.TestUtils;
 
-namespace eNote.Tests.InstrumentRentals;
+namespace eNote.Tests.Rentals;
 
 public sealed class RentalStateMachineTests
 {

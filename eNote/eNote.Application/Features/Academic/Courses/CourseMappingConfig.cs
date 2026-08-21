@@ -1,7 +1,6 @@
-using eNote.Application.Features.Academic.Courses;
 using Mapster;
 
-namespace eNote.Application.Features.Mapping;
+namespace eNote.Application.Features.Academic.Courses;
 
 public sealed class CourseMappingConfig : IRegister
 {

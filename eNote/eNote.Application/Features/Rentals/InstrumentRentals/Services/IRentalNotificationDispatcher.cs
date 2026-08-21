@@ -1,7 +1,7 @@
 ﻿using eNote.Application.Features.Rentals.InstrumentRentals;
 using eNote.Application.Features.Rentals.InstrumentRentals.StateMachine;
 
-namespace eNote.Application.Common.Interfaces;
+namespace eNote.Application.Features.Rentals.InstrumentRentals.Services;
 
 public interface IRentalNotificationDispatcher
 {
