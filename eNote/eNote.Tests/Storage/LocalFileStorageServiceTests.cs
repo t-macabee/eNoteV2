@@ -1,5 +1,5 @@
 using eNote.Infrastructure.Storage;
-using eNote.Tests.TestUtils;
+using Microsoft.Extensions.Configuration;
 
 namespace eNote.Tests.Storage;
 
@@ -106,12 +106,13 @@ public sealed class LocalFileStorageServiceTests : IDisposable
 
     private LocalFileStorageService CreateService()
     {
-        var env = new StubWebHostEnvironment
-        {
-            WebRootPath = _webRoot,
-            ContentRootPath = _webRoot
-        };
-        return new LocalFileStorageService(env);
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["Storage:Root"] = _webRoot
+            })
+            .Build();
+        return new LocalFileStorageService(configuration);
     }
 
     private static MemoryStream PngStream() =>

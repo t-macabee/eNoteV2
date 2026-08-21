@@ -1,15 +1,29 @@
 using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Localization;
-using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Configuration;
 
 namespace eNote.Infrastructure.Storage;
 
-public sealed class LocalFileStorageService(IWebHostEnvironment env) : IFileStorageService
+public sealed class LocalFileStorageService : IFileStorageService
 {
     private const long MaxFileSizeBytes = 5 * 1024 * 1024;
     private static readonly string[] AllowedImageContentTypes = [FileSignatureDetector.JpegMimeType, FileSignatureDetector.PngMimeType, FileSignatureDetector.WebpMimeType];
     private static readonly string[] AllowedAssignmentContentTypes = [FileSignatureDetector.PdfMimeType, FileSignatureDetector.JpegMimeType, FileSignatureDetector.PngMimeType];
+
+    private readonly string _rootPath;
+
+    public LocalFileStorageService(IConfiguration configuration)
+    {
+        var configuredRoot = configuration["Storage:Root"];
+
+        if (string.IsNullOrWhiteSpace(configuredRoot))
+        {
+            configuredRoot = Path.Combine(Directory.GetCurrentDirectory(), "storage");
+        }
+
+        _rootPath = Path.GetFullPath(configuredRoot);
+    }
 
     public async Task<string> SaveAsync(Stream stream, string fileName, string contentType, string subfolder, CancellationToken ct = default)
     {
@@ -86,7 +100,7 @@ public sealed class LocalFileStorageService(IWebHostEnvironment env) : IFileStor
 
     private async Task<string> SaveToDiskAsync(Stream stream, string subfolder, CancellationToken ct)
     {
-        var uploadsRoot = Path.Combine(env.WebRootPath, "uploads", subfolder);
+        var uploadsRoot = Path.Combine(_rootPath, "uploads", subfolder);
 
         Directory.CreateDirectory(uploadsRoot);
 
@@ -137,7 +151,7 @@ public sealed class LocalFileStorageService(IWebHostEnvironment env) : IFileStor
         }
 
         var relativePath = path["/api/uploads/".Length..].Replace('/', Path.DirectorySeparatorChar);
-        var uploadsRoot = Path.GetFullPath(Path.Combine(env.WebRootPath, "uploads"));
+        var uploadsRoot = Path.GetFullPath(Path.Combine(_rootPath, "uploads"));
         var fullPath = Path.GetFullPath(Path.Combine(uploadsRoot, relativePath));
 
         return fullPath.StartsWith(uploadsRoot + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase) ? fullPath : null;
