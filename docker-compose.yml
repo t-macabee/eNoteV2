@@ -61,6 +61,8 @@ services:
       Smtp__PasswordResetUrl: ${SMTP_PASSWORD_RESET_URL:?Set SMTP_PASSWORD_RESET_URL in .env}
     ports:
       - "${API_PORT:-5059}:8080"
+    volumes:
+      - enote-uploads:/app/wwwroot/uploads
     depends_on:
       postgres:
         condition: service_healthy
@@ -104,3 +106,4 @@ services:
 
 volumes:
   enote-pg-data:
+  enote-uploads:

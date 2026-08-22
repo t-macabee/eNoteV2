@@ -3,6 +3,7 @@ using eNote.API.Converters;
 using eNote.API.Extensions;
 using eNote.API.Hubs;
 using eNote.Infrastructure;
+using Microsoft.Extensions.FileProviders;
 using Serilog;
 using System.Text.Json.Serialization;
 
@@ -46,7 +47,17 @@ if (!app.Environment.IsDevelopment())
     app.UseHttpsRedirection();
     app.UseResponseCompression();
 }
-app.UseStaticFiles();
+// Scoped to wwwroot/instruments only — NOT a blanket app.UseStaticFiles().
+// Storage:Root defaults to "wwwroot" (see appsettings.json), so
+// LocalFileStorageService writes real uploads (assignment submissions,
+// profile pictures) under wwwroot/uploads/. Those must stay reachable only
+// through UploadsController's authenticated, ownership-checked route —
+// serving the whole wwwroot tree here would expose them anonymously.
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(Path.Combine(app.Environment.WebRootPath, "instruments")),
+    RequestPath = "/instruments"
+});
 app.UseCors(CorsExtensions.PolicyName);
 app.UseErrorHandling();
 
