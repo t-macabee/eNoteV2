@@ -97,6 +97,8 @@ CLAUDE.md
 .lurp/
 .mcp.json
 HANDOFF.md
+IMPLEMENTATION_STATUS.md
+investigation-*.md
 .repograph/
 index.db
 opencode.json
