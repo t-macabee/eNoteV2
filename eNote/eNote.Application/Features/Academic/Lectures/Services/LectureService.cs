@@ -98,6 +98,17 @@ public sealed class LectureService(
             throw new BusinessException(Messages.LectureCancelled);
         }
 
+        if (request.Capacity.HasValue)
+        {
+            var confirmedCount = await context.Set<Attendance>()
+                .CountAsync(a => a.LectureId == id && a.AttendanceStatus == AttendanceStatus.Present, cancellationToken);
+
+            if (request.Capacity.Value < confirmedCount)
+            {
+                throw new ConflictException(Messages.LectureCapacityBelowConfirmed);
+            }
+        }
+
         var location = request.Location.Trim().ToLower();
 
         if (await context.Set<Lecture>().HasLocationConflictAsync(location, request.LectureTime, request.Duration, id, cancellationToken) ||

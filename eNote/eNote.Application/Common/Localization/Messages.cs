@@ -35,6 +35,7 @@ public static class Messages
     public const string LectureFull = "Predavanje je popunjeno.";
     public const string LectureRsvpConflict = "Sukob pri rezervaciji predavanja. Pokušajte ponovo.";
     public const string LectureTimeConflict = "Termin predavanja se preklapa s postojećim predavanjem.";
+    public const string LectureCapacityBelowConfirmed = "Kapacitet ne može biti manji od broja već potvrđenih prisustava.";
 
     public const string InstrumentTypeNotFound = "Vrsta instrumenta ne postoji.";
     public const string InstrumentNotFound = "Instrument nije pronađen.";
