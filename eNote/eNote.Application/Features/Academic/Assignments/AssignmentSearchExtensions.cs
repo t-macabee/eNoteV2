@@ -4,11 +4,16 @@ namespace eNote.Application.Features.Academic.Assignments;
 
 public static class AssignmentSearchExtensions
 {
-    public static IQueryable<Assignment> ApplySearch(this IQueryable<Assignment> query, AssignmentSearchObject search) =>
-        query
+    public static IQueryable<Assignment> ApplySearch(this IQueryable<Assignment> query, AssignmentSearchObject search)
+    {
+        var dueAfter = search.DueAfter.HasValue ? DateTime.SpecifyKind(search.DueAfter.Value, DateTimeKind.Utc) : (DateTime?)null;
+        var dueBefore = search.DueBefore.HasValue ? DateTime.SpecifyKind(search.DueBefore.Value, DateTimeKind.Utc) : (DateTime?)null;
+
+        return query
             .WhereContainsIf(search.Title, x => x.Title.Contains(search.Title!))
-            .WhereEqualsIf(search.DueAfter, x => x.DueAt >= search.DueAfter!.Value)
-            .WhereEqualsIf(search.DueBefore, x => x.DueAt <= search.DueBefore!.Value);
+            .WhereEqualsIf(dueAfter, x => x.DueAt >= dueAfter!.Value)
+            .WhereEqualsIf(dueBefore, x => x.DueAt <= dueBefore!.Value);
+    }
 
     public static IQueryable<Assignment> ForEnrolledStudentById(this IQueryable<Assignment> query, int studentId, int assignmentId) =>
         query.ForEnrolledStudent(studentId).Where(x => x.Id == assignmentId);

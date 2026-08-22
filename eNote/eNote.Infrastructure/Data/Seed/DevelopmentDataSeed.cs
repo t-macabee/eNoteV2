@@ -54,10 +54,10 @@ internal static class CourseSeed
             .Select(i => i.Id)
             .FirstAsync();
 
-        var c1 = new Course("Osnove teorije muzike", "Uvod u osnove teorije muzike.", 800, new DateTime(2024, 8, 10), new DateTime(2024, 10, 10), instructorId);
+        var c1 = new Course("Osnove teorije muzike", "Uvod u osnove teorije muzike.", 800, DateTime.SpecifyKind(new DateTime(2024, 8, 10), DateTimeKind.Utc), DateTime.SpecifyKind(new DateTime(2024, 10, 10), DateTimeKind.Utc), instructorId);
         c1.SetPublishedStatus(true);
 
-        var c2 = new Course("Napredne tehnike gitare", "Napredne tehnike i improvizacija.", 800, new DateTime(2024, 9, 12), new DateTime(2024, 10, 12), instructorId);
+        var c2 = new Course("Napredne tehnike gitare", "Napredne tehnike i improvizacija.", 800, DateTime.SpecifyKind(new DateTime(2024, 9, 12), DateTimeKind.Utc), DateTime.SpecifyKind(new DateTime(2024, 10, 12), DateTimeKind.Utc), instructorId);
         c2.SetPublishedStatus(true);
 
         context.Set<Course>().AddRange(c1, c2);
@@ -85,8 +85,8 @@ internal static class LectureSeed
         }
 
         context.AddRange(
-            new Lecture("Uvodno predavanje", "Amfiteatar gradskog BKC-a", 90, new DateTime(2024, 8, 11, 19, 30, 0), LectureType.Theoretical, null, courses[0].Id),
-            new Lecture("Uvodno predavanje", "Amfiteatar gradskog BKC-a", 60, new DateTime(2024, 8, 19, 19, 30, 0), LectureType.Theoretical, null, courses[1].Id)
+            new Lecture("Uvodno predavanje", "Amfiteatar gradskog BKC-a", 90, DateTime.SpecifyKind(new DateTime(2024, 8, 11, 19, 30, 0), DateTimeKind.Utc), LectureType.Theoretical, null, courses[0].Id),
+            new Lecture("Uvodno predavanje", "Amfiteatar gradskog BKC-a", 60, DateTime.SpecifyKind(new DateTime(2024, 8, 19, 19, 30, 0), DateTimeKind.Utc), LectureType.Theoretical, null, courses[1].Id)
         );
 
         await context.SaveChangesAsync();
