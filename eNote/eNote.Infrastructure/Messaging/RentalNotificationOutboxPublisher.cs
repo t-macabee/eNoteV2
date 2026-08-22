@@ -15,6 +15,10 @@ public sealed class RentalNotificationOutboxPublisher(IServiceProvider services,
     private static readonly TimeSpan Interval = TimeSpan.FromSeconds(5);
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
+    private const int MaxAttempts = 5;
+    private const int BatchSize = 50;
+    private const int MaxStoredErrorLength = 2000;
+
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         using var timer = new PeriodicTimer(Interval);
@@ -35,9 +39,9 @@ public sealed class RentalNotificationOutboxPublisher(IServiceProvider services,
         var clock = scope.ServiceProvider.GetRequiredService<IClock>();
 
         var messages = await db.Set<RentalNotificationOutbox>()
-            .Where(x => x.PublishedAt == null && x.Attempts < 5)
+            .Where(x => x.PublishedAt == null && x.Attempts < MaxAttempts)
             .OrderBy(x => x.CreatedAt)
-            .Take(50)
+            .Take(BatchSize)
             .ToListAsync(ct);
 
         if (messages.Count == 0) return;
@@ -55,7 +59,7 @@ public sealed class RentalNotificationOutboxPublisher(IServiceProvider services,
             catch (Exception ex)
             {
                 message.Attempts++;
-                message.LastError = ex.Message.Length > 2000 ? ex.Message[..2000] : ex.Message;
+                message.LastError = ex.Message.Length > MaxStoredErrorLength ? ex.Message[..MaxStoredErrorLength] : ex.Message;
                 logger.LogError(ex, "Failed to publish outbox message {Id}", message.Id);
             }
         }

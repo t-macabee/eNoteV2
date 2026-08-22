@@ -1,0 +1,22 @@
+namespace eNote.Application.Constants;
+
+/// <summary>
+/// Names of DB-level unique indexes/constraints that application code needs to recognize
+/// by name (e.g. to translate a <see cref="Microsoft.EntityFrameworkCore.DbUpdateException"/>
+/// into a friendly error). Kept as shared constants so a rename is a compile error instead of
+/// a silently-broken string match.
+/// </summary>
+public static class DbConstraintNames
+{
+    /// <summary>
+    /// Enforces at most one Approved/Active rental per instrument at a time.
+    /// Defined in <c>InstrumentRentalConfig</c>.
+    /// </summary>
+    public const string InstrumentRentalActiveOrApprovedUniqueIndex = "UX_InstrumentRental_InstrumentId_ActiveOrApproved";
+
+    /// <summary>
+    /// Prevents duplicate rental-status notifications for the same user/rental/timestamp.
+    /// Defined in the <c>AddNotificationUniqueIndex</c> migration (no fluent EF config counterpart).
+    /// </summary>
+    public const string NotificationUserRentalCreatedAtUniqueIndex = "IX_Notification_UserId_RentalId_CreatedAt";
+}

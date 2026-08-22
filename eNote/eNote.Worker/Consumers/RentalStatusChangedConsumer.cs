@@ -1,4 +1,5 @@
 using eNote.Application.Common.Persistence;
+using eNote.Application.Constants;
 using eNote.Contracts.Rentals;
 using eNote.Domain.Entities.Communication;
 using MassTransit;
@@ -24,7 +25,7 @@ public sealed class RentalStatusChangedConsumer(IAppDbContext dbContext, ILogger
         catch (DbUpdateException ex) when (ex.InnerException is PostgresException
         {
             SqlState: PostgresErrorCodes.UniqueViolation,
-            ConstraintName: "IX_Notification_UserId_RentalId_CreatedAt"
+            ConstraintName: DbConstraintNames.NotificationUserRentalCreatedAtUniqueIndex
         })
         {
             logger.LogWarning("Skipping duplicate rental notification for rental {RentalId} and user {UserId}.", message.RentalId, message.StudentUserId);

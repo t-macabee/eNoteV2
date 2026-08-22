@@ -1,3 +1,4 @@
+using eNote.Application.Constants;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
@@ -13,7 +14,7 @@ public partial class AddNotificationUniqueIndex : Migration
     protected override void Up(MigrationBuilder migrationBuilder)
     {
         migrationBuilder.CreateIndex(
-            name: "IX_Notification_UserId_RentalId_CreatedAt",
+            name: DbConstraintNames.NotificationUserRentalCreatedAtUniqueIndex,
             table: "Notification",
             columns: new[] { "UserId", "RentalId", "CreatedAt" },
             unique: true);
@@ -22,7 +23,7 @@ public partial class AddNotificationUniqueIndex : Migration
     protected override void Down(MigrationBuilder migrationBuilder)
     {
         migrationBuilder.DropIndex(
-            name: "IX_Notification_UserId_RentalId_CreatedAt",
+            name: DbConstraintNames.NotificationUserRentalCreatedAtUniqueIndex,
             table: "Notification");
     }
 }

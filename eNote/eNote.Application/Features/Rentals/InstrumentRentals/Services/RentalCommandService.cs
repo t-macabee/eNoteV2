@@ -1,3 +1,4 @@
+using eNote.Application.Constants;
 using eNote.Application.Features.Rentals.InstrumentRentals.Billing;
 using eNote.Application.Features.Rentals.InstrumentRentals.StateMachine;
 using eNote.Application.Features.Rentals.Instruments;
@@ -179,7 +180,7 @@ public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, 
         {
             await context.SaveChangesAsync(cancellationToken);
         }
-        catch (DbUpdateException ex) when (ex.InnerException?.Message?.Contains("UX_InstrumentRental_InstrumentId_ActiveOrApproved") == true)
+        catch (DbUpdateException ex) when (ex.InnerException?.Message?.Contains(DbConstraintNames.InstrumentRentalActiveOrApprovedUniqueIndex) == true)
         {
             throw new BusinessException(message);
         }

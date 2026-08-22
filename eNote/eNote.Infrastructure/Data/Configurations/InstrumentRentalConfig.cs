@@ -1,3 +1,4 @@
+using eNote.Application.Constants;
 using eNote.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -27,6 +28,6 @@ public sealed class InstrumentRentalConfig : IEntityTypeConfiguration<Instrument
 
         builder.HasIndex(x => x.InstrumentId)
                .HasFilter($"\"{nameof(InstrumentRental.RentalStatus)}\" IN ({(int)InstrumentRentalStatus.Approved}, {(int)InstrumentRentalStatus.Active})").IsUnique()
-               .HasDatabaseName("UX_InstrumentRental_InstrumentId_ActiveOrApproved");
+               .HasDatabaseName(DbConstraintNames.InstrumentRentalActiveOrApprovedUniqueIndex);
     }
 }
