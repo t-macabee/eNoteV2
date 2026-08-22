@@ -1,10 +1,7 @@
 using eNote.API.Consumers;
 using eNote.API.Extensions;
-using eNote.Application;
-using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Persistence;
 using eNote.Infrastructure;
-using eNote.Tests.TestUtils;
 using eNote.Worker;
 using eNote.Worker.Consumers;
 using Microsoft.EntityFrameworkCore;
@@ -12,7 +9,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 
 namespace eNote.Tests.Data;
 

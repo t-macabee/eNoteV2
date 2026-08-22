@@ -1,5 +1,4 @@
-﻿using eNote.Application.Features.Rentals.InstrumentRentals;
-using eNote.Application.Features.Rentals.InstrumentRentals.StateMachine;
+﻿using eNote.Application.Features.Rentals.InstrumentRentals.StateMachine;
 
 namespace eNote.Application.Features.Rentals.InstrumentRentals.Services;
 

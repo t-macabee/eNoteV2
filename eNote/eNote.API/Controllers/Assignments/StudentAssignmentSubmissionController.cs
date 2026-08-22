@@ -13,6 +13,7 @@ namespace eNote.API.Controllers.Assignments;
 public sealed class StudentAssignmentSubmissionController(IAssignmentSubmissionService submissionService) : CoreController
 {
     [HttpPost]
+    [RequestSizeLimit(5 * 1024 * 1024)]
     [ProducesResponseType(typeof(AssignmentSubmissionDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<AssignmentSubmissionDto>> Submit(int id, IFormFile? file, CancellationToken ct)
