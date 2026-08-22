@@ -62,6 +62,14 @@ public sealed class LectureService(
         var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(actor.UserId);
         await instructorAccess.EnsureOwnsCourseAsync(request.CourseId, instructorId, cancellationToken);
 
+        var location = request.Location.Trim().ToLower();
+
+        if (await context.Set<Lecture>().HasLocationConflictAsync(location, request.LectureTime, request.Duration, cancellationToken: cancellationToken) ||
+            await context.Set<Lecture>().HasInstructorConflictAsync(instructorId, request.LectureTime, request.Duration, cancellationToken: cancellationToken))
+        {
+            throw new ConflictException(Messages.LectureTimeConflict);
+        }
+
         var entity = new Lecture(
             request.Name.Trim(),
             request.Location.Trim(),
@@ -88,6 +96,14 @@ public sealed class LectureService(
         if (entity.IsCancelled)
         {
             throw new BusinessException(Messages.LectureCancelled);
+        }
+
+        var location = request.Location.Trim().ToLower();
+
+        if (await context.Set<Lecture>().HasLocationConflictAsync(location, request.LectureTime, request.Duration, id, cancellationToken) ||
+            await context.Set<Lecture>().HasInstructorConflictAsync(instructorId, request.LectureTime, request.Duration, id, cancellationToken))
+        {
+            throw new ConflictException(Messages.LectureTimeConflict);
         }
 
         entity.UpdateDetails(

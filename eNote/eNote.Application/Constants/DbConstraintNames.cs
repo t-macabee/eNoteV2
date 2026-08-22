@@ -19,4 +19,10 @@ public static class DbConstraintNames
     /// Defined in the <c>AddNotificationUniqueIndex</c> migration (no fluent EF config counterpart).
     /// </summary>
     public const string NotificationUserRentalCreatedAtUniqueIndex = "IX_Notification_UserId_RentalId_CreatedAt";
+
+    /// <summary>
+    /// Enforces at most one submission per student per assignment.
+    /// Defined in <c>AssignmentSubmissionConfig</c>.
+    /// </summary>
+    public const string AssignmentSubmissionAssignmentIdStudentIdUniqueIndex = "UX_AssignmentSubmission_AssignmentId_StudentId";
 }

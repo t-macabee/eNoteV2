@@ -1,3 +1,4 @@
+using eNote.Application.Constants;
 using eNote.Application.Features.Identity.Instructors;
 using eNote.Application.Features.Identity.Users.Services;
 using MapsterMapper;
@@ -87,9 +88,21 @@ public sealed class AssignmentSubmissionService(
         existing.Submit(filePath?.Trim(), clock.UtcNow);
         existing.UpdatedById = actor.UserId;
 
-        await context.SaveChangesAsync(cancellationToken);
+        await SaveWithSubmissionConflictMessageAsync(cancellationToken);
 
         return MapSubmission(existing, await displayNames.GetStudentDisplayNameAsync(student));
+    }
+
+    private async Task SaveWithSubmissionConflictMessageAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            await context.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException ex) when (ex.InnerException?.Message?.Contains(DbConstraintNames.AssignmentSubmissionAssignmentIdStudentIdUniqueIndex) == true)
+        {
+            throw new ConflictException(Messages.AssignmentAlreadySubmitted);
+        }
     }
 
     private async Task<Assignment> GetOwnedAssignmentAsync(int lectureId, int assignmentId, CancellationToken cancellationToken = default)

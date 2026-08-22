@@ -1,3 +1,4 @@
+using eNote.Application.Constants;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -21,5 +22,9 @@ public sealed class AssignmentSubmissionConfig : IEntityTypeConfiguration<Assign
 
         builder.Property(s => s.Grade).HasDefaultValue(null);
         builder.Property(s => s.FilePath).HasMaxLength(500);
+
+        builder.HasIndex(s => new { s.AssignmentId, s.StudentId })
+               .IsUnique()
+               .HasDatabaseName(DbConstraintNames.AssignmentSubmissionAssignmentIdStudentIdUniqueIndex);
     }
 }
