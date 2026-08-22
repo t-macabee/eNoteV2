@@ -8,7 +8,7 @@ namespace eNote.API.Controllers.Files;
 
 [ApiController]
 [Route("api/v{version:apiVersion}/uploads")]
-public sealed class UploadsController(IWebHostEnvironment env, IFileAccessService fileAccess, ICurrentUserService currentUser) : CoreController
+public sealed class UploadsController(IFileStorageService fileStorage, IFileAccessService fileAccess, ICurrentUserService currentUser) : CoreController
 {
     [AllowAnonymous]
     [HttpGet("instruments/{fileName}")]
@@ -52,28 +52,15 @@ public sealed class UploadsController(IWebHostEnvironment env, IFileAccessServic
             return BadRequest();
         }
 
-        var uploadsRoot = Path.Combine(env.WebRootPath, "uploads", subfolder);
-        var fullPath = Path.GetFullPath(Path.Combine(uploadsRoot, fileName));
+        var (data, contentType) = fileStorage.OpenRead($"/api/uploads/{subfolder}/{fileName}");
 
-        if (!fullPath.StartsWith(Path.GetFullPath(uploadsRoot), StringComparison.OrdinalIgnoreCase) || !System.IO.File.Exists(fullPath))
+        if (data is null)
         {
             return NotFound();
         }
 
-        var contentType = GetContentType(fileName);
-
-        return PhysicalFile(fullPath, contentType, enableRangeProcessing: true);
+        return File(data, contentType ?? "application/octet-stream", enableRangeProcessing: true);
     }
 
     private static bool IsSafeFileName(string fileName) => !string.IsNullOrWhiteSpace(fileName) && fileName == Path.GetFileName(fileName) && !fileName.Contains("..", StringComparison.Ordinal);
-
-    private static string GetContentType(string fileName) => Path.GetExtension(fileName).ToLowerInvariant()
-        switch
-    {
-        ".jpg" or ".jpeg" => "image/jpeg",
-        ".png" => "image/png",
-        ".webp" => "image/webp",
-        ".pdf" => "application/pdf",
-        _ => "application/octet-stream"
-    };
 }
