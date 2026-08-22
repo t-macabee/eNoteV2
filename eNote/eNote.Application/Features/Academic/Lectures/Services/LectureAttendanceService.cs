@@ -95,6 +95,16 @@ public sealed class LectureAttendanceService(IAppDbContext context, ICurrentActo
 
         var attendance = lecture.Attendances.FirstOrDefault(x => x.StudentId == request.StudentId);
 
+        if (request.AttendanceStatus == AttendanceStatus.Present)
+        {
+            var confirmedCount = lecture.Attendances.Count(a => a.AttendanceStatus == AttendanceStatus.Present);
+
+            if (lecture.Capacity.HasValue && confirmedCount >= lecture.Capacity.Value && (attendance is null || attendance.AttendanceStatus != AttendanceStatus.Present))
+            {
+                throw new ConflictException(Messages.LectureFull);
+            }
+        }
+
         if (attendance is null)
         {
             attendance = new Attendance(request.StudentId, lecture.Id, request.AttendanceStatus)
