@@ -111,6 +111,140 @@ public sealed class LectureServiceTests
         await Assert.ThrowsAsync<NotFoundException>(() => service.GetByIdForStudentAsync(harness.Lecture.Id));
     }
 
+    [Fact]
+    public async Task CreateAsync_Throws_WhenLocationOverlaps_IgnoringCase()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var service = CreateService(harness.Context, harness.Instructor);
+
+        await Assert.ThrowsAsync<ConflictException>(() =>
+            service.CreateAsync(new LectureCreateRequest
+            {
+                CourseId = harness.Course.Id,
+                Name = "Overlap",
+                Location = "ROOM 1",
+                Duration = 60,
+                LectureTime = Now.AddMinutes(30),
+                LectureType = LectureType.Practical
+            }));
+    }
+
+    [Fact]
+    public async Task CreateAsync_Throws_WhenInstructorOverlaps_AtDifferentLocation()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var service = CreateService(harness.Context, harness.Instructor);
+
+        await Assert.ThrowsAsync<ConflictException>(() =>
+            service.CreateAsync(new LectureCreateRequest
+            {
+                CourseId = harness.Course.Id,
+                Name = "Overlap elsewhere",
+                Location = "Room 9",
+                Duration = 60,
+                LectureTime = Now.AddMinutes(30),
+                LectureType = LectureType.Theoretical
+            }));
+    }
+
+    [Fact]
+    public async Task CreateAsync_AllowsBackToBackLectures()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var service = CreateService(harness.Context, harness.Instructor);
+
+        var dto = await service.CreateAsync(new LectureCreateRequest
+        {
+            CourseId = harness.Course.Id,
+            Name = "Next lesson",
+            Location = "Room 1",
+            Duration = 60,
+            LectureTime = Now.AddMinutes(60),
+            LectureType = LectureType.Practical
+        });
+
+        Assert.Equal("Next lesson", dto.Name);
+    }
+
+    [Fact]
+    public async Task CreateAsync_IgnoresCancelledLectures()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        harness.Context.Set<Lecture>().Single(l => l.Id == harness.Lecture.Id).Cancel();
+        await harness.Context.SaveChangesAsync();
+        var service = CreateService(harness.Context, harness.Instructor);
+
+        var dto = await service.CreateAsync(new LectureCreateRequest
+        {
+            CourseId = harness.Course.Id,
+            Name = "Replacement",
+            Location = "Room 1",
+            Duration = 60,
+            LectureTime = Now.AddMinutes(30),
+            LectureType = LectureType.Practical
+        });
+
+        Assert.Equal("Replacement", dto.Name);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_Throws_WhenMovedIntoOverlap()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var other = new Lecture("Second lesson", "Room 2", 60, Now.AddDays(1), LectureType.Theoretical, null, harness.Course.Id);
+        harness.Context.Set<Lecture>().Add(other);
+        await harness.Context.SaveChangesAsync();
+        var service = CreateService(harness.Context, harness.Instructor);
+
+        await Assert.ThrowsAsync<ConflictException>(() =>
+            service.UpdateAsync(other.Id, new LectureUpdateRequest
+            {
+                Name = "Second lesson",
+                Location = "Room 1",
+                Duration = 60,
+                LectureTime = Now.AddMinutes(30)
+            }));
+    }
+
+    [Fact]
+    public async Task UpdateAsync_Throws_WhenCapacityBelowConfirmedCount()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        harness.Context.Set<Attendance>().Add(new Attendance(harness.Student.Id, harness.Lecture.Id, AttendanceStatus.Present));
+        await harness.Context.SaveChangesAsync();
+        var service = CreateService(harness.Context, harness.Instructor);
+
+        await Assert.ThrowsAsync<ConflictException>(() =>
+            service.UpdateAsync(harness.Lecture.Id, new LectureUpdateRequest
+            {
+                Name = "First lesson",
+                Location = "Room 1",
+                Duration = 60,
+                LectureTime = Now,
+                Capacity = 0
+            }));
+    }
+
+    [Fact]
+    public async Task UpdateAsync_CancelledCheck_PrecedesCapacityValidation()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        harness.Context.Set<Lecture>().Single(l => l.Id == harness.Lecture.Id).Cancel();
+        harness.Context.Set<Attendance>().Add(new Attendance(harness.Student.Id, harness.Lecture.Id, AttendanceStatus.Present));
+        await harness.Context.SaveChangesAsync();
+        var service = CreateService(harness.Context, harness.Instructor);
+
+        await Assert.ThrowsAsync<BusinessException>(() =>
+            service.UpdateAsync(harness.Lecture.Id, new LectureUpdateRequest
+            {
+                Name = "First lesson",
+                Location = "Room 1",
+                Duration = 60,
+                LectureTime = Now,
+                Capacity = 0
+            }));
+    }
+
     private static LectureService CreateService(ENoteContext context, Instructor instructor, StubCurrentActor? actor = null) =>
         new(context,
             actor ?? new StubCurrentActor(instructor: instructor),

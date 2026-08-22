@@ -85,10 +85,12 @@ public sealed class ValidatorCoverageTests
         AssertInvalid(new LectureCreateRequestValidator().Validate(new LectureCreateRequest { CourseId = 1, Name = "Name", Location = "", LectureTime = DateTime.UtcNow, Duration = 60 }), nameof(LectureCreateRequest.Location));
         AssertInvalid(new LectureCreateRequestValidator().Validate(new LectureCreateRequest { CourseId = 1, Name = "Name", Location = "Room", LectureTime = default, Duration = 60 }), nameof(LectureCreateRequest.LectureTime));
         AssertInvalid(new LectureCreateRequestValidator().Validate(new LectureCreateRequest { CourseId = 1, Name = "Name", Location = "Room", LectureTime = DateTime.UtcNow, Duration = 0 }), nameof(LectureCreateRequest.Duration));
+        AssertInvalid(new LectureCreateRequestValidator().Validate(new LectureCreateRequest { CourseId = 1, Name = "Name", Location = "Room", LectureTime = DateTime.UtcNow, Duration = 60, Capacity = 0 }), nameof(LectureCreateRequest.Capacity));
         AssertInvalid(new LectureUpdateRequestValidator().Validate(new LectureUpdateRequest { Name = "", Location = "Room", LectureTime = DateTime.UtcNow, Duration = 60 }), nameof(LectureUpdateRequest.Name));
         AssertInvalid(new LectureUpdateRequestValidator().Validate(new LectureUpdateRequest { Name = "Name", Location = "", LectureTime = DateTime.UtcNow, Duration = 60 }), nameof(LectureUpdateRequest.Location));
         AssertInvalid(new LectureUpdateRequestValidator().Validate(new LectureUpdateRequest { Name = "Name", Location = "Room", LectureTime = default, Duration = 60 }), nameof(LectureUpdateRequest.LectureTime));
         AssertInvalid(new LectureUpdateRequestValidator().Validate(new LectureUpdateRequest { Name = "Name", Location = "Room", LectureTime = DateTime.UtcNow, Duration = 0 }), nameof(LectureUpdateRequest.Duration));
+        AssertInvalid(new LectureUpdateRequestValidator().Validate(new LectureUpdateRequest { Name = "Name", Location = "Room", LectureTime = DateTime.UtcNow, Duration = 60, Capacity = -5 }), nameof(LectureUpdateRequest.Capacity));
         AssertInvalid(new LectureNoteRequestValidator().Validate(new LectureNoteRequest { Title = "", Content = "Content" }), nameof(LectureNoteRequest.Title));
         AssertInvalid(new LectureNoteRequestValidator().Validate(new LectureNoteRequest { Title = "Title", Content = "" }), nameof(LectureNoteRequest.Content));
     }

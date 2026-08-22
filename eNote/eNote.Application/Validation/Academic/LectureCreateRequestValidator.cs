@@ -12,5 +12,6 @@ public sealed class LectureCreateRequestValidator : AbstractValidator<LectureCre
         RuleFor(x => x.Location).NotEmpty();
         RuleFor(x => x.LectureTime).NotEmpty();
         RuleFor(x => x.Duration).GreaterThan(0);
+        RuleFor(x => x.Capacity).GreaterThan(0).When(x => x.Capacity.HasValue);
     }
 }

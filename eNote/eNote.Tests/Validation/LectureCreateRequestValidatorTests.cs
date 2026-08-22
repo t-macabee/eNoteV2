@@ -31,6 +31,18 @@ public sealed class LectureCreateRequestValidatorTests
         Assert.Empty(result.Errors);
     }
 
+    [Fact]
+    public void Validate_RejectsNonPositiveCapacity()
+    {
+        var request = ValidRequest();
+        request.Capacity = 0;
+
+        var result = _validator.Validate(request);
+
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, e => e.PropertyName == nameof(LectureCreateRequest.Capacity));
+    }
+
     private static LectureCreateRequest ValidRequest() => new()
     {
         CourseId = 1,

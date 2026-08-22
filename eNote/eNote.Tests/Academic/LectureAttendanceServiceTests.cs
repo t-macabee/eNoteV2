@@ -105,6 +105,49 @@ public sealed class LectureAttendanceServiceTests
     }
 
     [Fact]
+    public async Task MarkAttendanceAsync_Throws_WhenLectureFull()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        harness.Context.Set<Lecture>().Single(l => l.Id == harness.Lecture.Id).UpdateDetails(
+            "First lesson", "Room 1", 60, Now, capacity: 1);
+        harness.Context.Set<Attendance>().Add(new Attendance(harness.Student.Id, harness.Lecture.Id, AttendanceStatus.Present));
+        await harness.Context.SaveChangesAsync();
+        var otherStudent = new Student(88, Now);
+        harness.Context.Set<Student>().Add(otherStudent);
+        await harness.Context.SaveChangesAsync();
+        harness.Context.Set<Enrollment>().Add(new Enrollment(otherStudent.Id, harness.Course.Id, EnrollmentStatus.Active));
+        await harness.Context.SaveChangesAsync();
+        var service = CreateService(harness.Context, harness.Instructor, harness.Student);
+
+        await Assert.ThrowsAsync<ConflictException>(() =>
+            service.MarkAttendanceAsync(harness.Lecture.Id, new MarkAttendanceRequest
+            {
+                StudentId = otherStudent.Id,
+                AttendanceStatus = AttendanceStatus.Present
+            }));
+    }
+
+    [Fact]
+    public async Task MarkAttendanceAsync_AllowsReconfirm_AtFullCapacity()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        harness.Context.Set<Lecture>().Single(l => l.Id == harness.Lecture.Id).UpdateDetails(
+            "First lesson", "Room 1", 60, Now, capacity: 1);
+        harness.Context.Set<Attendance>().Add(new Attendance(harness.Student.Id, harness.Lecture.Id, AttendanceStatus.Present));
+        await harness.Context.SaveChangesAsync();
+        var service = CreateService(harness.Context, harness.Instructor, harness.Student);
+
+        var dto = await service.MarkAttendanceAsync(harness.Lecture.Id, new MarkAttendanceRequest
+        {
+            StudentId = harness.Student.Id,
+            AttendanceStatus = AttendanceStatus.Present
+        });
+
+        Assert.Equal(AttendanceStatus.Present, dto.AttendanceStatus);
+        Assert.Single(await harness.Context.Set<Attendance>().ToListAsync());
+    }
+
+    [Fact]
     public async Task GetAttendanceAsync_Throws_WhenLectureNotOwned()
     {
         var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);

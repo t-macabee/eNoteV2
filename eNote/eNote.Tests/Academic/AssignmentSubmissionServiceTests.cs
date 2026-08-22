@@ -1,3 +1,6 @@
+using eNote.Application.Common.Localization;
+using eNote.Application.Common.Persistence;
+using eNote.Application.Constants;
 using eNote.Application.Features.Academic.Assignments;
 using eNote.Application.Features.Academic.Assignments.Services;
 using eNote.Application.Features.Identity.Users.Services;
@@ -100,12 +103,52 @@ public sealed class AssignmentSubmissionServiceTests
             service.GradeAsync(harness.Lecture.Id, assignment.Id, submission.Id, new GradeAssignmentRequest { Grade = 85 }));
     }
 
-    private static AssignmentSubmissionService CreateService(ENoteContext context, Instructor instructor, IFileStorageService fileStorage, Student student) =>
+    [Fact]
+    public async Task SubmitWithFileAsync_TranslatesUniqueIndexViolation_ToConflict()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var assignment = new Assignment("Homework", "Do it", Now.AddDays(7), harness.Lecture.Id);
+        harness.Context.Set<Assignment>().Add(assignment);
+        await harness.Context.SaveChangesAsync();
+        var inner = new Exception($"duplicate key value violates unique constraint \"{DbConstraintNames.AssignmentSubmissionAssignmentIdStudentIdUniqueIndex}\"");
+        var context = new ThrowingSaveDbContext(harness.Context, new DbUpdateException("Unique constraint violated.", inner));
+        var service = CreateService(context, harness.Context, harness.Instructor, new RecordingFileStorageService(), harness.Student);
+        using var stream = new MemoryStream([1, 2, 3]);
+
+        var ex = await Assert.ThrowsAsync<ConflictException>(() =>
+            service.SubmitWithFileAsync(assignment.Id, stream, "hw.pdf", "application/pdf"));
+
+        Assert.Equal(Messages.AssignmentAlreadySubmitted, ex.Message);
+    }
+
+    [Fact]
+    public async Task InMemoryProvider_AcceptsDuplicateSubmissions_Characterization()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var assignment = new Assignment("Homework", "Do it", Now.AddDays(7), harness.Lecture.Id);
+        harness.Context.Set<Assignment>().Add(assignment);
+        await harness.Context.SaveChangesAsync();
+        var first = new AssignmentSubmission(assignment.Id, harness.Student.Id);
+        first.Submit("/hw1.pdf", Now);
+        var second = new AssignmentSubmission(assignment.Id, harness.Student.Id);
+        second.Submit("/hw2.pdf", Now);
+        harness.Context.Set<AssignmentSubmission>().Add(first);
+        harness.Context.Set<AssignmentSubmission>().Add(second);
+
+        await harness.Context.SaveChangesAsync();
+
+        Assert.Equal(2, await harness.Context.Set<AssignmentSubmission>().CountAsync());
+    }
+
+    private static AssignmentSubmissionService CreateService(IAppDbContext context, Instructor instructor, IFileStorageService fileStorage, Student student) =>
+        CreateService(context, (ENoteContext)context, instructor, fileStorage, student);
+
+    private static AssignmentSubmissionService CreateService(IAppDbContext context, ENoteContext accessContext, Instructor instructor, IFileStorageService fileStorage, Student student) =>
         new(context,
             new FixedClock(Now),
             new StubCurrentActor(student: student),
             new StubDisplayNameService(),
-            AcademicTestData.CreateInstructorAccess(context, instructor),
+            AcademicTestData.CreateInstructorAccess(accessContext, instructor),
             fileStorage,
             TestMapper.Create());
 
