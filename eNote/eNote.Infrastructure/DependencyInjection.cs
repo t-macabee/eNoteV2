@@ -66,6 +66,13 @@ public static class DependencyInjection
     {
         services.AddDataProtection();
 
+        // AddSignInManager needs IAuthenticationSchemeProvider (via SignInManager's
+        // HttpContextAccessor-independent constructor dependencies). ASP.NET Core web hosts
+        // get this from their authentication services; a generic Host (the Worker) must
+        // register it explicitly or host build validation fails. TryAdd-based, so the API's
+        // later AddAuthentication(...) call is unaffected.
+        services.AddAuthenticationCore();
+
         services.AddIdentityCore<AppUser>(options =>
         {
             options.Password.RequireDigit = true;
