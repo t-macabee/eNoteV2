@@ -30,12 +30,24 @@ public sealed class AssignmentSubmissionService(
             .Include(x => x.Student)
             .Where(x => x.AssignmentId == assignmentId);
 
-        return await query.ToPagedResultAsync(
-            search,
-            items => displayNames.GetStudentDisplayNamesAsync(items.Select(x => x.Student)),
-            (x, names) => MapSubmission(x, names.GetValueOrDefault(x.StudentId, $"Student {x.StudentId}")),
-            q => q.OrderBy(x => x.StudentId),
-            cancellationToken);
+        var (page, pageSize) = PagingLimits.Normalize(search.Page, search.PageSize);
+        var total = search.IncludeTotalCount ? await query.CountAsync(cancellationToken) : (int?)null;
+
+        var submissions = await query
+            .OrderBy(x => x.StudentId)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
+
+        var names = await displayNames.GetStudentDisplayNamesAsync(submissions.Select(x => x.Student));
+
+        return new PagedResult<AssignmentSubmissionDto>
+        {
+            Items = [.. submissions.Select(x => MapSubmission(x, names.GetValueOrDefault(x.StudentId, $"Student {x.StudentId}")))],
+            Page = page,
+            PageSize = pageSize,
+            TotalCount = total
+        };
     }
 
     public async Task<AssignmentSubmissionDto> GradeAsync(int lectureId, int assignmentId, int submissionId, GradeAssignmentRequest request, CancellationToken cancellationToken = default)

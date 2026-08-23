@@ -1,15 +1,23 @@
-using eNote.Application.Common.Search;
-
 namespace eNote.Application.Features.Rentals.Instruments;
 
 public static class InstrumentSearchExtensions
 {
     public static IQueryable<Instrument> ApplySearch(this IQueryable<Instrument> query, InstrumentSearchObject search)
     {
-        query = query
-            .WhereContainsIf(search.Model, x => x.Model.Contains(search.Model!))
-            .WhereContainsIf(search.Manufacturer, x => x.Manufacturer.Contains(search.Manufacturer!))
-            .WhereEqualsIf(search.InstrumentTypeId, x => x.InstrumentTypeId == search.InstrumentTypeId!.Value);
+        if (!string.IsNullOrWhiteSpace(search.Model))
+        {
+            query = query.Where(x => x.Model.Contains(search.Model!));
+        }
+
+        if (!string.IsNullOrWhiteSpace(search.Manufacturer))
+        {
+            query = query.Where(x => x.Manufacturer.Contains(search.Manufacturer!));
+        }
+
+        if (search.InstrumentTypeId.HasValue)
+        {
+            query = query.Where(x => x.InstrumentTypeId == search.InstrumentTypeId.Value);
+        }
 
         if (!search.IsAvailable.HasValue)
         {

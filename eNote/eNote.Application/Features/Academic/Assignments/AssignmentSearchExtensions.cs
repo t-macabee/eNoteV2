@@ -6,13 +6,25 @@ public static class AssignmentSearchExtensions
 {
     public static IQueryable<Assignment> ApplySearch(this IQueryable<Assignment> query, AssignmentSearchObject search)
     {
-        var dueAfter = search.DueAfter.HasValue ? DateTime.SpecifyKind(search.DueAfter.Value, DateTimeKind.Utc) : (DateTime?)null;
-        var dueBefore = search.DueBefore.HasValue ? DateTime.SpecifyKind(search.DueBefore.Value, DateTimeKind.Utc) : (DateTime?)null;
+        var dueAfter = search.DueAfter.ToUtc();
+        var dueBefore = search.DueBefore.ToUtc();
 
-        return query
-            .WhereContainsIf(search.Title, x => x.Title.Contains(search.Title!))
-            .WhereEqualsIf(dueAfter, x => x.DueAt >= dueAfter!.Value)
-            .WhereEqualsIf(dueBefore, x => x.DueAt <= dueBefore!.Value);
+        if (!string.IsNullOrWhiteSpace(search.Title))
+        {
+            query = query.Where(x => x.Title.Contains(search.Title!));
+        }
+
+        if (dueAfter.HasValue)
+        {
+            query = query.Where(x => x.DueAt >= dueAfter.Value);
+        }
+
+        if (dueBefore.HasValue)
+        {
+            query = query.Where(x => x.DueAt <= dueBefore.Value);
+        }
+
+        return query;
     }
 
     public static IQueryable<Assignment> ForEnrolledStudentById(this IQueryable<Assignment> query, int studentId, int assignmentId) =>

@@ -69,13 +69,30 @@ public sealed class LectureAttendanceService(IAppDbContext context, ICurrentActo
             .Include(x => x.Student)
             .Where(x => x.LectureId == lectureId);
 
-        return await query.ToPagedResultAsync(search, items => displayNames.GetStudentDisplayNamesAsync(items.Select(a => a.Student)), (a, names) => new AttendanceDto
+        var (page, pageSize) = PagingLimits.Normalize(search.Page, search.PageSize);
+        var total = search.IncludeTotalCount ? await query.CountAsync(cancellationToken) : (int?)null;
+
+        var attendances = await query
+            .OrderBy(x => x.StudentId)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
+
+        var names = await displayNames.GetStudentDisplayNamesAsync(attendances.Select(a => a.Student));
+
+        return new PagedResult<AttendanceDto>
         {
-            Id = a.Id,
-            StudentId = a.StudentId,
-            StudentName = names.GetValueOrDefault(a.StudentId, $"Student {a.StudentId}"),
-            AttendanceStatus = a.AttendanceStatus
-        }, q => q.OrderBy(x => x.StudentId), cancellationToken);
+            Items = [.. attendances.Select(a => new AttendanceDto
+            {
+                Id = a.Id,
+                StudentId = a.StudentId,
+                StudentName = names.GetValueOrDefault(a.StudentId, $"Student {a.StudentId}"),
+                AttendanceStatus = a.AttendanceStatus
+            })],
+            Page = page,
+            PageSize = pageSize,
+            TotalCount = total
+        };
     }
 
     public async Task<AttendanceDto> MarkAttendanceAsync(int lectureId, MarkAttendanceRequest request, CancellationToken cancellationToken = default)
