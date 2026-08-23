@@ -21,9 +21,9 @@ public sealed class Lecture : AuditableEntity
     public bool IsActive { get; private set; } = true;
     public uint Version { get; private set; }
 
-    public ICollection<Attendance> Attendances { get; private set; } = new List<Attendance>();
-    public ICollection<LectureNote> LectureNotes { get; private set; } = new List<LectureNote>();
-    public ICollection<Assignment> Assignments { get; private set; } = new List<Assignment>();
+    public ICollection<Attendance> Attendances { get; private set; } = [];
+    public ICollection<LectureNote> LectureNotes { get; private set; } = [];
+    public ICollection<Assignment> Assignments { get; private set; } = [];
 
     private Lecture()
     {

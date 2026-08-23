@@ -1,5 +1,8 @@
 using eNote.Application.Common.Persistence;
 using eNote.Application.Common.Time;
+using eNote.Contracts.Assignments;
+using eNote.Contracts.Communication;
+using eNote.Contracts.Lectures;
 using eNote.Contracts.Rentals;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
@@ -52,7 +55,14 @@ public sealed class RentalNotificationOutboxPublisher(IServiceProvider services,
         {
             try
             {
-                var payload = JsonSerializer.Deserialize<RentalStatusChanged>(message.PayloadJson, JsonOptions)!;
+                object payload = message.MessageType switch
+                {
+                    NotificationMessageTypes.RentalStatusChanged => JsonSerializer.Deserialize<RentalStatusChanged>(message.PayloadJson, JsonOptions)!,
+                    NotificationMessageTypes.LectureCancelled => JsonSerializer.Deserialize<LectureCancelled>(message.PayloadJson, JsonOptions)!,
+                    NotificationMessageTypes.SubmissionGraded => JsonSerializer.Deserialize<SubmissionGraded>(message.PayloadJson, JsonOptions)!,
+                    _ => throw new InvalidOperationException($"Unknown notification outbox message type '{message.MessageType}'.")
+                };
+
                 await publisher.Publish(payload, ct);
                 message.PublishedAt = clock.UtcNow;
             }

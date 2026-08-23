@@ -6,10 +6,10 @@ public sealed class Student : AuditableEntity
     public DateTime EnrollmentDate { get; private set; }
     public DateTime? MembershipPaidUntil { get; private set; }
 
-    public ICollection<Attendance> Attendances { get; private set; } = new List<Attendance>();
-    public ICollection<Enrollment> Enrollments { get; private set; } = new List<Enrollment>();
-    public ICollection<InstrumentRental> InstrumentRentals { get; private set; } = new List<InstrumentRental>();
-    public ICollection<AssignmentSubmission> AssignmentSubmissions { get; private set; } = new List<AssignmentSubmission>();
+    public ICollection<Attendance> Attendances { get; private set; } = [];
+    public ICollection<Enrollment> Enrollments { get; private set; } = [];
+    public ICollection<InstrumentRental> InstrumentRentals { get; private set; } = [];
+    public ICollection<AssignmentSubmission> AssignmentSubmissions { get; private set; } = [];
 
     private Student()
     {

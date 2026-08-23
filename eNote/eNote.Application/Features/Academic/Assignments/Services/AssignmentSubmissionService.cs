@@ -12,6 +12,7 @@ public sealed class AssignmentSubmissionService(
     IStudentDisplayNameService displayNames,
     IInstructorAccessService instructorAccess,
     IFileStorageService fileStorage,
+    ISubmissionNotificationDispatcher notificationDispatcher,
     IMapper mapper) : IAssignmentSubmissionService
 {
     public async Task<AssignmentSubmissionDto> SubmitWithFileAsync(int assignmentId, Stream stream, string fileName, string contentType, CancellationToken ct = default)
@@ -39,7 +40,7 @@ public sealed class AssignmentSubmissionService(
 
     public async Task<AssignmentSubmissionDto> GradeAsync(int lectureId, int assignmentId, int submissionId, GradeAssignmentRequest request, CancellationToken cancellationToken = default)
     {
-        _ = await GetOwnedAssignmentAsync(lectureId, assignmentId, cancellationToken);
+        var assignment = await GetOwnedAssignmentAsync(lectureId, assignmentId, cancellationToken);
 
         var submission = await context.Set<AssignmentSubmission>()
             .Include(x => x.Student)
@@ -49,7 +50,9 @@ public sealed class AssignmentSubmissionService(
         submission.SetGrade(request.Grade);
         submission.UpdatedById = actor.UserId;
 
-        await context.SaveChangesAsync(cancellationToken);
+        await notificationDispatcher.DispatchGradedAsync(submission.Id, submission.Student.AppUserId, assignment.Title, request.Grade);
+
+        await context.SaveChangesAsync(cancellationToken); // saves the grade and the outbox row queued above, same unit of work
 
         return MapSubmission(submission, await displayNames.GetStudentDisplayNameAsync(submission.Student));
     }

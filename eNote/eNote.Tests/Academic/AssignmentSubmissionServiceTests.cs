@@ -83,6 +83,32 @@ public sealed class AssignmentSubmissionServiceTests
         Assert.Equal(85, row.Grade);
     }
 
+    // Contract: §7.2 requires a notification on submission grading (AssignmentSubmissionService.cs
+    // GradeAsync). Proves the dispatch fires for the submitting student, addressed by their
+    // AppUser id, carrying the assignment title and the grade just recorded.
+    [Fact]
+    public async Task GradeAsync_DispatchesGradedNotification_ForSubmittingStudent()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var assignment = new Assignment("Homework", "Do it", Now.AddDays(7), harness.Lecture.Id);
+        harness.Context.Set<Assignment>().Add(assignment);
+        await harness.Context.SaveChangesAsync();
+        var submission = new AssignmentSubmission(assignment.Id, harness.Student.Id);
+        submission.Submit("/api/uploads/assignments/hw.pdf", Now);
+        harness.Context.Set<AssignmentSubmission>().Add(submission);
+        await harness.Context.SaveChangesAsync();
+        var dispatcher = new RecordingSubmissionNotificationDispatcher();
+        var service = CreateService(harness.Context, harness.Instructor, new RecordingFileStorageService(), harness.Student, dispatcher);
+
+        await service.GradeAsync(harness.Lecture.Id, assignment.Id, submission.Id, new GradeAssignmentRequest { Grade = 85 });
+
+        var call = Assert.Single(dispatcher.GradedCalls);
+        Assert.Equal(submission.Id, call.SubmissionId);
+        Assert.Equal(harness.Student.AppUserId, call.StudentUserId);
+        Assert.Equal("Homework", call.AssignmentTitle);
+        Assert.Equal(85, call.Grade);
+    }
+
     [Fact]
     public async Task GradeAsync_Throws_WhenInstructorDoesNotOwnAssignment()
     {
@@ -140,16 +166,17 @@ public sealed class AssignmentSubmissionServiceTests
         Assert.Equal(2, await harness.Context.Set<AssignmentSubmission>().CountAsync());
     }
 
-    private static AssignmentSubmissionService CreateService(IAppDbContext context, Instructor instructor, IFileStorageService fileStorage, Student student) =>
-        CreateService(context, (ENoteContext)context, instructor, fileStorage, student);
+    private static AssignmentSubmissionService CreateService(IAppDbContext context, Instructor instructor, IFileStorageService fileStorage, Student student, ISubmissionNotificationDispatcher? notificationDispatcher = null) =>
+        CreateService(context, (ENoteContext)context, instructor, fileStorage, student, notificationDispatcher);
 
-    private static AssignmentSubmissionService CreateService(IAppDbContext context, ENoteContext accessContext, Instructor instructor, IFileStorageService fileStorage, Student student) =>
+    private static AssignmentSubmissionService CreateService(IAppDbContext context, ENoteContext accessContext, Instructor instructor, IFileStorageService fileStorage, Student student, ISubmissionNotificationDispatcher? notificationDispatcher = null) =>
         new(context,
             new FixedClock(Now),
             new StubCurrentActor(student: student),
             new StubDisplayNameService(),
             AcademicTestData.CreateInstructorAccess(accessContext, instructor),
             fileStorage,
+            notificationDispatcher ?? new NoOpSubmissionNotificationDispatcher(),
             TestMapper.Create());
 
     private sealed class StubDisplayNameService : IStudentDisplayNameService

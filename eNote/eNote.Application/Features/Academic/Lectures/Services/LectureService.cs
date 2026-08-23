@@ -8,6 +8,7 @@ public sealed class LectureService(
     IAppDbContext context,
     ICurrentActor actor,
     IInstructorAccessService instructorAccess,
+    ILectureNotificationDispatcher notificationDispatcher,
     ILogger<LectureService> logger,
     IMapper mapper) : ILectureService
 {
@@ -156,7 +157,14 @@ public sealed class LectureService(
         entity.Cancel();
         entity.UpdatedById = actor.UserId;
 
-        await context.SaveChangesAsync(cancellationToken);
+        var enrolledStudentUserIds = await context.Set<Enrollment>()
+            .Where(e => e.CourseId == entity.CourseId && e.EnrollmentStatus == EnrollmentStatus.Active)
+            .Select(e => e.Student.AppUserId)
+            .ToListAsync(cancellationToken);
+
+        await notificationDispatcher.DispatchCancelledAsync(entity.Id, entity.Name, enrolledStudentUserIds);
+
+        await context.SaveChangesAsync(cancellationToken); // saves the lecture status change and the outbox rows queued above, same unit of work
 
         return mapper.Map<LectureDto>(entity);
     }

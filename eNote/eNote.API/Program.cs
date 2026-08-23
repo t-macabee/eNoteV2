@@ -19,7 +19,12 @@ builder.Host.UseApplicationLogging();
 builder.Configuration.ValidateRequiredSettings();
 
 builder.Services
-    .AddInfrastructure(builder.Configuration, bus => bus.AddConsumer<RentalStatusChangedPushConsumer>())
+    .AddInfrastructure(builder.Configuration, bus =>
+    {
+        bus.AddConsumer<RentalStatusChangedPushConsumer>();
+        bus.AddConsumer<LectureCancelledPushConsumer>();
+        bus.AddConsumer<SubmissionGradedPushConsumer>();
+    })
     .AddJwtAuthentication(builder.Configuration)
     .AddAuthorization()
     .AddApplicationServices(builder.Configuration)

@@ -25,4 +25,18 @@ public static class DbConstraintNames
     /// Defined in <c>AssignmentSubmissionConfig</c>.
     /// </summary>
     public const string AssignmentSubmissionAssignmentIdStudentIdUniqueIndex = "UX_AssignmentSubmission_AssignmentId_StudentId";
+
+    /// <summary>
+    /// Prevents duplicate lecture-cancellation notifications for the same user/lecture/timestamp
+    /// (mirrors <see cref="NotificationUserRentalCreatedAtUniqueIndex"/>). Defined in the
+    /// <c>AddLectureAndSubmissionNotificationLinks</c> migration.
+    /// </summary>
+    public const string NotificationUserLectureCreatedAtUniqueIndex = "IX_Notification_UserId_LectureId_CreatedAt";
+
+    /// <summary>
+    /// Prevents duplicate submission-graded notifications for the same user/submission/timestamp
+    /// (mirrors <see cref="NotificationUserRentalCreatedAtUniqueIndex"/>). Defined in the
+    /// <c>AddLectureAndSubmissionNotificationLinks</c> migration.
+    /// </summary>
+    public const string NotificationUserSubmissionCreatedAtUniqueIndex = "IX_Notification_UserId_SubmissionId_CreatedAt";
 }

@@ -10,7 +10,7 @@ public class Assignment : AuditableEntity
     public DateTime DueAt { get; private set; }
     public bool IsActive { get; private set; } = true;
 
-    public ICollection<AssignmentSubmission> AssignmentSubmissions { get; private set; } = new List<AssignmentSubmission>();
+    public ICollection<AssignmentSubmission> AssignmentSubmissions { get; private set; } = [];
 
     protected Assignment()
     {

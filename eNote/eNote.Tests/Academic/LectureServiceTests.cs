@@ -99,6 +99,45 @@ public sealed class LectureServiceTests
         Assert.True(dto.IsCancelled);
     }
 
+    // Contract: §7.2 requires a notification on lecture cancellation (eNote.Application/Features/
+    // Academic/Lectures/Services/LectureService.cs CancelAsync). Proves the dispatch fires for the
+    // currently-enrolled student, addressed by their AppUser id (not their Student profile id).
+    [Fact]
+    public async Task CancelAsync_DispatchesCancelledNotification_ForEnrolledStudent()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var dispatcher = new RecordingLectureNotificationDispatcher();
+        var service = CreateService(harness.Context, harness.Instructor, notificationDispatcher: dispatcher);
+
+        await service.CancelAsync(harness.Lecture.Id);
+
+        var call = Assert.Single(dispatcher.CancelledCalls);
+        Assert.Equal(harness.Lecture.Id, call.LectureId);
+        Assert.Equal(harness.Lecture.Name, call.LectureName);
+        Assert.Equal([harness.Student.AppUserId], call.EnrolledStudentUserIds);
+    }
+
+    // Regression: a student whose enrollment is no longer Active must not be notified —
+    // ForEnrolledStudent-style filtering (StudentEnrollmentExtensions.cs) is duplicated by hand in
+    // LectureService.CancelAsync's own enrollment query, so this guards that query independently.
+    [Fact]
+    public async Task CancelAsync_ExcludesStudentsWithInactiveEnrollment_FromNotification()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var droppedStudent = new Student(60, Now);
+        harness.Context.Set<Student>().Add(droppedStudent);
+        await harness.Context.SaveChangesAsync();
+        harness.Context.Set<Enrollment>().Add(new Enrollment(droppedStudent.Id, harness.Course.Id, EnrollmentStatus.Canceled));
+        await harness.Context.SaveChangesAsync();
+        var dispatcher = new RecordingLectureNotificationDispatcher();
+        var service = CreateService(harness.Context, harness.Instructor, notificationDispatcher: dispatcher);
+
+        await service.CancelAsync(harness.Lecture.Id);
+
+        var call = Assert.Single(dispatcher.CancelledCalls);
+        Assert.DoesNotContain(droppedStudent.AppUserId, call.EnrolledStudentUserIds);
+    }
+
     [Fact]
     public async Task GetByIdForStudentAsync_Throws_WhenNotEnrolled()
     {
@@ -245,10 +284,11 @@ public sealed class LectureServiceTests
             }));
     }
 
-    private static LectureService CreateService(ENoteContext context, Instructor instructor, StubCurrentActor? actor = null) =>
+    private static LectureService CreateService(ENoteContext context, Instructor instructor, StubCurrentActor? actor = null, ILectureNotificationDispatcher? notificationDispatcher = null) =>
         new(context,
             actor ?? new StubCurrentActor(instructor: instructor),
             AcademicTestData.CreateInstructorAccess(context, instructor),
+            notificationDispatcher ?? new NoOpLectureNotificationDispatcher(),
             NullLogger<LectureService>.Instance,
             TestMapper.Create());
 }

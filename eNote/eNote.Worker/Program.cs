@@ -32,7 +32,12 @@ if (rabbitMqError is not null)
 }
 
 builder.Services.AddScoped<ICurrentActor, WorkerActor>();
-builder.Services.AddInfrastructure(builder.Configuration, bus => bus.AddConsumer<RentalStatusChangedConsumer>());
+builder.Services.AddInfrastructure(builder.Configuration, bus =>
+{
+    bus.AddConsumer<RentalStatusChangedConsumer>();
+    bus.AddConsumer<LectureCancelledConsumer>();
+    bus.AddConsumer<SubmissionGradedConsumer>();
+});
 builder.Services.AddInfrastructureHealthChecks();
 builder.Services.AddHostedService<DatabaseHeartbeatService>();
 

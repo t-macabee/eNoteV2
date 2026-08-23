@@ -4,7 +4,7 @@ public class Instructor : AuditableEntity
 {
     public int AppUserId { get; private set; }
 
-    public ICollection<Course> Courses { get; private set; } = new List<Course>();
+    public ICollection<Course> Courses { get; private set; } = [];
 
     protected Instructor()
     {

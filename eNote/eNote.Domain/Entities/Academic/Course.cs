@@ -14,8 +14,8 @@ public sealed class Course : AuditableEntity
     public bool IsPublished { get; private set; }
     public bool IsActive { get; private set; } = true;
 
-    public ICollection<Enrollment> Enrollments { get; private set; } = new List<Enrollment>();
-    public ICollection<Lecture> Lectures { get; private set; } = new List<Lecture>();
+    public ICollection<Enrollment> Enrollments { get; private set; } = [];
+    public ICollection<Lecture> Lectures { get; private set; } = [];
 
     private Course()
     {

@@ -1,6 +1,9 @@
 global using eNote.Application.Common.Exceptions;
 global using eNote.Application.Common.Interfaces;
 global using eNote.Application.Common.Time;
+global using eNote.Contracts.Assignments;
+global using eNote.Contracts.Communication;
+global using eNote.Contracts.Lectures;
 global using eNote.Domain.Entities.Academic;
 global using eNote.Domain.Entities.Identity;
 global using eNote.Domain.Entities.Rentals;

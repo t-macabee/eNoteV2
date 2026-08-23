@@ -1,5 +1,7 @@
 using eNote.Application.Common.Persistence;
 using eNote.Application.Common.Time;
+using eNote.Application.Features.Academic.Assignments.Services;
+using eNote.Application.Features.Academic.Lectures.Services;
 using eNote.Application.Features.Rentals.InstrumentRentals.Services;
 using eNote.Infrastructure.Data;
 using eNote.Infrastructure.Data.Seed;
@@ -44,6 +46,8 @@ public static class DependencyInjection
         services.AddScoped<IMigrationRunner, MigrationRunner>();
         services.AddScoped<IDatabaseHealthProbe, DatabaseHealthProbe>();
         services.AddScoped<IRentalNotificationDispatcher, RentalNotificationDispatcher>();
+        services.AddScoped<ILectureNotificationDispatcher, LectureNotificationDispatcher>();
+        services.AddScoped<ISubmissionNotificationDispatcher, SubmissionNotificationDispatcher>();
         services.AddHostedService<RentalNotificationOutboxPublisher>();
         services.AddRabbitMqMassTransit(configuration, configureBus);
         services.AddInfrastructureIdentity();

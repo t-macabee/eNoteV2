@@ -3,8 +3,8 @@ using eNote.Application.Common.Time;
 using eNote.Application.Features.Rentals.InstrumentRentals;
 using eNote.Application.Features.Rentals.InstrumentRentals.Services;
 using eNote.Application.Features.Rentals.InstrumentRentals.StateMachine;
+using eNote.Contracts.Communication;
 using eNote.Contracts.Rentals;
-using System.Text.Json;
 
 namespace eNote.Infrastructure.Messaging;
 
@@ -12,8 +12,6 @@ public sealed class RentalNotificationDispatcher(
     IAppDbContext context,
     IClock clock) : IRentalNotificationDispatcher
 {
-    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
-
     public Task DispatchCreatedAsync(InstrumentRentalDto rental, int studentUserId)
     {
         var (title, body) = BuildCreatedContent(rental);
@@ -33,15 +31,8 @@ public sealed class RentalNotificationDispatcher(
     private static (string Title, string Body) BuildCreatedContent(InstrumentRentalDto rental) =>
         ("Zahtjev za iznajmljivanje poslan", $"Vaš zahtjev za instrument {rental.InstrumentModel} je poslan prodavnici {rental.StoreName} i čeka odobrenje.");
 
-    private void EnqueueOutbox(RentalStatusChanged message)
-    {
-        var entry = new RentalNotificationOutbox
-        {
-            PayloadJson = JsonSerializer.Serialize(message, JsonOptions)
-        };
-
-        context.Set<RentalNotificationOutbox>().Add(entry);
-    }
+    private void EnqueueOutbox(RentalStatusChanged message) =>
+        NotificationOutboxWriter.Enqueue(context, NotificationMessageTypes.RentalStatusChanged, message);
 
     private static (string Title, string Body) BuildNotificationContent(InstrumentRentalDto rental, RentalTrigger trigger) =>
         trigger switch

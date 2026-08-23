@@ -4,6 +4,8 @@ public class NotificationDto
 {
     public int Id { get; set; }
     public int? RentalId { get; set; }
+    public int? LectureId { get; set; }
+    public int? SubmissionId { get; set; }
 
     public string Title { get; set; } = null!;
     public string Body { get; set; } = null!;
