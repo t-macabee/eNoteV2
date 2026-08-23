@@ -1,7 +1,10 @@
+using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Common.Time;
 using eNote.Application.Features.Academic.Assignments.Services;
 using eNote.Application.Features.Academic.Lectures.Services;
+using eNote.Application.Features.Identity.Auth.Services;
+using eNote.Application.Features.Identity.Users.Services;
 using eNote.Application.Features.Rentals.InstrumentRentals.Services;
 using eNote.Infrastructure.Data;
 using eNote.Infrastructure.Data.Seed;
@@ -9,6 +12,7 @@ using eNote.Infrastructure.Health;
 using eNote.Infrastructure.Identity;
 using eNote.Infrastructure.Messaging;
 using eNote.Infrastructure.Reports;
+using eNote.Infrastructure.Storage;
 using MassTransit;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -30,15 +34,12 @@ public static class DependencyInjection
 
         services.AddSingleton<IClock, SystemClock>();
         services.AddMemoryCache();
-        services.Scan(scan => scan
-            .FromAssembliesOf(typeof(DependencyInjection))
-            .AddClasses(classes => classes.Where(type =>
-                type.Name.EndsWith("Service")
-                && !type.IsAbstract
-                && type != typeof(ReportService)
-                && type != typeof(AuthService)))
-            .AsImplementedInterfaces()
-            .WithScopedLifetime());
+        services.AddScoped<IEmailService, SmtpEmailService>();
+        services.AddScoped<IFileStorageService, LocalFileStorageService>();
+        services.AddScoped<ITokenRevocationService, TokenRevocationService>();
+        services.AddScoped<ITokenService, TokenService>();
+        services.AddScoped<IUserAccountService, UserAccountService>();
+        services.AddScoped<IUserIdentityService, UserIdentityService>();
         services.AddDbContext<ENoteContext>(options => options.UseSqlServer(
             connectionString,
             sql => sql.MigrationsAssembly(typeof(ENoteContext).Assembly.FullName)));
