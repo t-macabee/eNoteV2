@@ -1,5 +1,3 @@
-using eNote.Domain.Entities.Rentals;
-
 namespace eNote.Tests.Rentals;
 
 public sealed class RentalBillingTests

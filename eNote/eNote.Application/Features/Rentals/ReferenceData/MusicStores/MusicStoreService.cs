@@ -1,6 +1,3 @@
-using eNote.Application.Common.Paging;
-using eNote.Application.Common.Search;
-
 namespace eNote.Application.Features.Rentals.ReferenceData.MusicStores;
 
 public sealed class MusicStoreService(IAppDbContext context) : IMusicStoreService

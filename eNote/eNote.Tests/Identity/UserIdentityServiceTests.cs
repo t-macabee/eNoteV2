@@ -1,6 +1,5 @@
 using eNote.Infrastructure.Identity;
 using eNote.Tests.TestUtils;
-using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Tests.Identity;
 

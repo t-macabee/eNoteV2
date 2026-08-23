@@ -2,7 +2,6 @@ using eNote.Application.Common.Localization;
 using eNote.Infrastructure.Identity;
 using eNote.Tests.TestUtils;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Tests.Identity;
 

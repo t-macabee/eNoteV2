@@ -10,7 +10,7 @@ public sealed class TenantInitializationMiddleware(RequestDelegate next)
         if (httpContext.User.Identity?.IsAuthenticated == true)
         {
             try { await storeContext.GetCurrentStoreIdAsync(httpContext.RequestAborted); }
-            catch (StoreNotResolvedException) {  }
+            catch (StoreNotResolvedException) { }
         }
 
         await next(httpContext);

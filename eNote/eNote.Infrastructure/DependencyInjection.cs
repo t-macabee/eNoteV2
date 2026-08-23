@@ -11,7 +11,6 @@ using eNote.Infrastructure.Data.Seed;
 using eNote.Infrastructure.Health;
 using eNote.Infrastructure.Identity;
 using eNote.Infrastructure.Messaging;
-using eNote.Infrastructure.Reports;
 using eNote.Infrastructure.Storage;
 using MassTransit;
 using Microsoft.AspNetCore.Identity;

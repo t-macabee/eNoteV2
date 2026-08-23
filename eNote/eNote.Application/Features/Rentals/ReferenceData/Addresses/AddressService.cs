@@ -1,5 +1,3 @@
-using eNote.Application.Common.Paging;
-using eNote.Application.Common.Search;
 using eNote.Application.Features.Identity.Users.Services;
 
 namespace eNote.Application.Features.Rentals.ReferenceData.Addresses;

@@ -1,5 +1,3 @@
-using eNote.Application.Common.Search;
-
 namespace eNote.Application.Features.Rentals.ReferenceData.InstrumentTypes;
 
 public sealed class InstrumentTypeService(IAppDbContext context) : IInstrumentTypeService
