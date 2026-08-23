@@ -24,7 +24,7 @@ builder.Services
         bus.AddConsumer<RentalStatusChangedPushConsumer>();
         bus.AddConsumer<LectureCancelledPushConsumer>();
         bus.AddConsumer<SubmissionGradedPushConsumer>();
-    })
+    }, registerNotificationOutboxPublisher: false)
     .AddJwtAuthentication(builder.Configuration)
     .AddAuthorization()
     .AddApplicationServices(builder.Configuration)

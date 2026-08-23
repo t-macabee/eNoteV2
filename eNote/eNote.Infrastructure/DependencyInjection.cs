@@ -27,7 +27,8 @@ public static class DependencyInjection
     public static IServiceCollection AddInfrastructure(
         this IServiceCollection services,
         IConfiguration configuration,
-        Action<IBusRegistrationConfigurator>? configureBus = null)
+        Action<IBusRegistrationConfigurator>? configureBus = null,
+        bool registerNotificationOutboxPublisher = true)
     {
         var connectionString = configuration.GetConnectionString("DefaultConnection")
             ?? throw new InvalidOperationException("ConnectionStrings__DefaultConnection is required.");
@@ -49,7 +50,12 @@ public static class DependencyInjection
         services.AddScoped<IRentalNotificationDispatcher, RentalNotificationDispatcher>();
         services.AddScoped<ILectureNotificationDispatcher, LectureNotificationDispatcher>();
         services.AddScoped<ISubmissionNotificationDispatcher, SubmissionNotificationDispatcher>();
-        services.AddHostedService<RentalNotificationOutboxPublisher>();
+        // Only one process may drain the outbox, or concurrent pollers can publish the same row twice.
+        // Worker owns this by default; the API opts out (see eNote.API/Program.cs).
+        if (registerNotificationOutboxPublisher)
+        {
+            services.AddHostedService<RentalNotificationOutboxPublisher>();
+        }
         services.AddRabbitMqMassTransit(configuration, configureBus);
         services.AddInfrastructureIdentity();
 
