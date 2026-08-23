@@ -1,4 +1,5 @@
 using eNote.Application.Constants;
+using eNote.Infrastructure.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -8,6 +9,26 @@ public sealed class NotificationConfig : IEntityTypeConfiguration<Notification>
 {
     public void Configure(EntityTypeBuilder<Notification> builder)
     {
+        builder.HasOne<AppUser>()
+               .WithMany()
+               .HasForeignKey(x => x.UserId)
+               .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasOne<InstrumentRental>()
+               .WithMany()
+               .HasForeignKey(x => x.RentalId)
+               .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne<Lecture>()
+               .WithMany()
+               .HasForeignKey(x => x.LectureId)
+               .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne<AssignmentSubmission>()
+               .WithMany()
+               .HasForeignKey(x => x.SubmissionId)
+               .OnDelete(DeleteBehavior.Restrict);
+
         builder.Property(x => x.Title).HasMaxLength(200).IsRequired();
         builder.Property(x => x.Body).HasMaxLength(2000).IsRequired();
         builder.Property(x => x.IsRead).HasDefaultValue(false);

@@ -3,14 +3,14 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-#pragma warning disable CA1814
+#pragma warning disable CA1814 // Prefer jagged arrays over multidimensional
 
 namespace eNote.Infrastructure.Data.Migrations
 {
-
+    /// <inheritdoc />
     public partial class Initial : Migration
     {
-
+        /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
@@ -58,22 +58,6 @@ namespace eNote.Infrastructure.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "InstrumentView",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    UserId = table.Column<int>(type: "int", nullable: false),
-                    InstrumentId = table.Column<int>(type: "int", nullable: false),
-                    ViewCount = table.Column<int>(type: "int", nullable: false),
-                    LastViewedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_InstrumentView", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "MusicStore",
                 columns: table => new
                 {
@@ -89,26 +73,6 @@ namespace eNote.Infrastructure.Data.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_MusicStore", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Notification",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    UserId = table.Column<int>(type: "int", nullable: false),
-                    RentalId = table.Column<int>(type: "int", nullable: true),
-                    LectureId = table.Column<int>(type: "int", nullable: true),
-                    SubmissionId = table.Column<int>(type: "int", nullable: true),
-                    Title = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
-                    Body = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: false),
-                    IsRead = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Notification", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -407,6 +371,34 @@ namespace eNote.Infrastructure.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "InstrumentView",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    UserId = table.Column<int>(type: "int", nullable: false),
+                    InstrumentId = table.Column<int>(type: "int", nullable: false),
+                    ViewCount = table.Column<int>(type: "int", nullable: false),
+                    LastViewedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_InstrumentView", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_InstrumentView_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_InstrumentView_Instrument_InstrumentId",
+                        column: x => x.InstrumentId,
+                        principalTable: "Instrument",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Course",
                 columns: table => new
                 {
@@ -566,7 +558,7 @@ namespace eNote.Infrastructure.Data.Migrations
                     Capacity = table.Column<int>(type: "int", nullable: true),
                     LectureStatus = table.Column<int>(type: "int", nullable: false),
                     IsActive = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
-                    Version = table.Column<long>(type: "bigint", rowVersion: true, nullable: false),
+                    Version = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedById = table.Column<int>(type: "int", nullable: true),
@@ -696,6 +688,50 @@ namespace eNote.Infrastructure.Data.Migrations
                         name: "FK_AssignmentSubmission_Student_StudentId",
                         column: x => x.StudentId,
                         principalTable: "Student",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Notification",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    UserId = table.Column<int>(type: "int", nullable: false),
+                    RentalId = table.Column<int>(type: "int", nullable: true),
+                    LectureId = table.Column<int>(type: "int", nullable: true),
+                    SubmissionId = table.Column<int>(type: "int", nullable: true),
+                    Title = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    Body = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: false),
+                    IsRead = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Notification", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Notification_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Notification_AssignmentSubmission_SubmissionId",
+                        column: x => x.SubmissionId,
+                        principalTable: "AssignmentSubmission",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Notification_InstrumentRental_RentalId",
+                        column: x => x.RentalId,
+                        principalTable: "InstrumentRental",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Notification_Lecture_LectureId",
+                        column: x => x.LectureId,
+                        principalTable: "Lecture",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
@@ -860,6 +896,11 @@ namespace eNote.Infrastructure.Data.Migrations
                 filter: "\"RentalStatus\" IN (2, 3)");
 
             migrationBuilder.CreateIndex(
+                name: "IX_InstrumentView_InstrumentId",
+                table: "InstrumentView",
+                column: "InstrumentId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_InstrumentView_LastViewedAt",
                 table: "InstrumentView",
                 column: "LastViewedAt");
@@ -896,6 +937,21 @@ namespace eNote.Infrastructure.Data.Migrations
                 name: "IX_Notification_CreatedAt",
                 table: "Notification",
                 column: "CreatedAt");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Notification_LectureId",
+                table: "Notification",
+                column: "LectureId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Notification_RentalId",
+                table: "Notification",
+                column: "RentalId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Notification_SubmissionId",
+                table: "Notification",
+                column: "SubmissionId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Notification_UserId_IsRead",
@@ -946,6 +1002,7 @@ namespace eNote.Infrastructure.Data.Migrations
                 unique: true);
         }
 
+        /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
@@ -967,16 +1024,10 @@ namespace eNote.Infrastructure.Data.Migrations
                 name: "AspNetUserTokens");
 
             migrationBuilder.DropTable(
-                name: "AssignmentSubmission");
-
-            migrationBuilder.DropTable(
                 name: "Attendance");
 
             migrationBuilder.DropTable(
                 name: "Enrollment");
-
-            migrationBuilder.DropTable(
-                name: "InstrumentRental");
 
             migrationBuilder.DropTable(
                 name: "InstrumentView");
@@ -998,6 +1049,12 @@ namespace eNote.Infrastructure.Data.Migrations
 
             migrationBuilder.DropTable(
                 name: "AspNetRoles");
+
+            migrationBuilder.DropTable(
+                name: "AssignmentSubmission");
+
+            migrationBuilder.DropTable(
+                name: "InstrumentRental");
 
             migrationBuilder.DropTable(
                 name: "Assignment");

@@ -5,7 +5,7 @@ ASP.NET Core backend for a music-school platform: courses, lectures, assignments
 ## Prerequisites
 
 - [.NET 10 SDK](https://dotnet.microsoft.com/download) (see `global.json`)
-- PostgreSQL (local instance or Docker — see repo-root `docker-compose.yml`)
+- SQL Server (local instance or Docker — see repo-root `docker-compose.yml`)
 - RabbitMQ (local install or Docker)
 
 ## Quick start
