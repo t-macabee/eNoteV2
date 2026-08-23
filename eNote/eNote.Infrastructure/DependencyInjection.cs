@@ -39,7 +39,7 @@ public static class DependencyInjection
                 && type != typeof(AuthService)))
             .AsImplementedInterfaces()
             .WithScopedLifetime());
-        services.AddDbContext<ENoteContext>(options => options.UseNpgsql(
+        services.AddDbContext<ENoteContext>(options => options.UseSqlServer(
             connectionString,
             sql => sql.MigrationsAssembly(typeof(ENoteContext).Assembly.FullName)));
         services.AddScoped<IAppDbContext>(provider => provider.GetRequiredService<ENoteContext>());

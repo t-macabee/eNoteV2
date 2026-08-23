@@ -3,8 +3,8 @@ using eNote.Application.Constants;
 using eNote.Contracts.Rentals;
 using eNote.Domain.Entities.Communication;
 using MassTransit;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
-using Npgsql;
 
 namespace eNote.Worker.Consumers;
 
@@ -22,11 +22,10 @@ public sealed class RentalStatusChangedConsumer(IAppDbContext dbContext, ILogger
         {
             await dbContext.SaveChangesAsync(context.CancellationToken);
         }
-        catch (DbUpdateException ex) when (ex.InnerException is PostgresException
+        catch (DbUpdateException ex) when (ex.InnerException is SqlException
         {
-            SqlState: PostgresErrorCodes.UniqueViolation,
-            ConstraintName: DbConstraintNames.NotificationUserRentalCreatedAtUniqueIndex
-        })
+            Number: 2601 or 2627
+        } sqlEx && sqlEx.Message.Contains(DbConstraintNames.NotificationUserRentalCreatedAtUniqueIndex))
         {
             logger.LogWarning("Skipping duplicate rental notification for rental {RentalId} and user {UserId}.", message.RentalId, message.StudentUserId);
             return;

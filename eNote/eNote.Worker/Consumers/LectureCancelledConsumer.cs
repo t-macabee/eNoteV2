@@ -3,8 +3,8 @@ using eNote.Application.Constants;
 using eNote.Contracts.Lectures;
 using eNote.Domain.Entities.Communication;
 using MassTransit;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
-using Npgsql;
 
 namespace eNote.Worker.Consumers;
 
@@ -22,11 +22,10 @@ public sealed class LectureCancelledConsumer(IAppDbContext dbContext, ILogger<Le
         {
             await dbContext.SaveChangesAsync(context.CancellationToken);
         }
-        catch (DbUpdateException ex) when (ex.InnerException is PostgresException
+        catch (DbUpdateException ex) when (ex.InnerException is SqlException
         {
-            SqlState: PostgresErrorCodes.UniqueViolation,
-            ConstraintName: DbConstraintNames.NotificationUserLectureCreatedAtUniqueIndex
-        })
+            Number: 2601 or 2627
+        } sqlEx && sqlEx.Message.Contains(DbConstraintNames.NotificationUserLectureCreatedAtUniqueIndex))
         {
             logger.LogWarning("Skipping duplicate lecture-cancelled notification for lecture {LectureId} and user {UserId}.", message.LectureId, message.StudentUserId);
             return;

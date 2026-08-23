@@ -79,7 +79,7 @@ public sealed class DiResolutionTests
     {
         var values = new Dictionary<string, string?>
         {
-            ["ConnectionStrings:DefaultConnection"] = "Host=localhost;Database=x;",
+            ["ConnectionStrings:DefaultConnection"] = "Server=localhost;Database=x;",
             ["Smtp:Host"] = "localhost",
             ["Smtp:From"] = "noreply@example.com",
             ["Smtp:PasswordResetUrl"] = "https://localhost/reset-password",

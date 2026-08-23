@@ -3,8 +3,8 @@ using eNote.Application.Constants;
 using eNote.Contracts.Assignments;
 using eNote.Domain.Entities.Communication;
 using MassTransit;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
-using Npgsql;
 
 namespace eNote.Worker.Consumers;
 
@@ -22,11 +22,10 @@ public sealed class SubmissionGradedConsumer(IAppDbContext dbContext, ILogger<Su
         {
             await dbContext.SaveChangesAsync(context.CancellationToken);
         }
-        catch (DbUpdateException ex) when (ex.InnerException is PostgresException
+        catch (DbUpdateException ex) when (ex.InnerException is SqlException
         {
-            SqlState: PostgresErrorCodes.UniqueViolation,
-            ConstraintName: DbConstraintNames.NotificationUserSubmissionCreatedAtUniqueIndex
-        })
+            Number: 2601 or 2627
+        } sqlEx && sqlEx.Message.Contains(DbConstraintNames.NotificationUserSubmissionCreatedAtUniqueIndex))
         {
             logger.LogWarning("Skipping duplicate submission-graded notification for submission {SubmissionId} and user {UserId}.", message.SubmissionId, message.StudentUserId);
             return;
