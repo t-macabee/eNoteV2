@@ -10,7 +10,7 @@ using Microsoft.Extensions.Logging;
 
 namespace eNote.Infrastructure.Identity;
 
-public sealed class AuthService(UserManager<AppUser> userManager, SignInManager<AppUser> signInManager, ITokenService tokenService, IUserProvisioningService userProvisioning, ITokenRevocationService tokenRevocationService, IEmailService emailService, IHostEnvironment environment, ILogger<AuthService> logger) : IAuthService
+internal sealed class AuthService(UserManager<AppUser> userManager, SignInManager<AppUser> signInManager, ITokenService tokenService, IUserProvisioningService userProvisioning, ITokenRevocationService tokenRevocationService, IEmailService emailService, IHostEnvironment environment, ILogger<AuthService> logger) : IAuthService
 {
     public async Task<AuthResponse> LoginAsync(LoginRequest model, CancellationToken cancellationToken = default)
     {

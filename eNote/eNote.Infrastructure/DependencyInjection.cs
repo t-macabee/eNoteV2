@@ -6,11 +6,13 @@ using eNote.Application.Features.Academic.Lectures.Services;
 using eNote.Application.Features.Identity.Auth.Services;
 using eNote.Application.Features.Identity.Users.Services;
 using eNote.Application.Features.Rentals.InstrumentRentals.Services;
+using eNote.Application.Features.Reports.Services;
 using eNote.Infrastructure.Data;
 using eNote.Infrastructure.Data.Seed;
 using eNote.Infrastructure.Health;
 using eNote.Infrastructure.Identity;
 using eNote.Infrastructure.Messaging;
+using eNote.Infrastructure.Reports;
 using eNote.Infrastructure.Storage;
 using MassTransit;
 using Microsoft.AspNetCore.Identity;
@@ -61,6 +63,20 @@ public static class DependencyInjection
         services.AddRabbitMqMassTransit(configuration, configureBus);
         services.AddInfrastructureIdentity();
 
+        return services;
+    }
+
+    /// <summary>
+    /// Infra impls of Application ports whose object graph reaches back into the
+    /// Application layer (ReportService needs RankingService/InstructorAccessService;
+    /// AuthService needs IUserProvisioningService). MUST be composed by a host that
+    /// also calls AddApplication() — do not fold into AddInfrastructure(), which the
+    /// Worker calls without AddApplication.
+    /// </summary>
+    public static IServiceCollection AddInfrastructureApplicationPorts(this IServiceCollection services)
+    {
+        services.AddScoped<IReportService, ReportService>();
+        services.AddScoped<IAuthService, AuthService>();
         return services;
     }
 

@@ -14,7 +14,7 @@ using System.Globalization;
 
 namespace eNote.Infrastructure.Reports;
 
-public sealed class ReportService(IAppDbContext context, IClock clock, RankingService rankingService, InstructorAccessService instructorAccess, ICurrentUserContext currentUser, IStoreContext stores, IStudentDisplayNameService displayNames) : IReportService
+internal sealed class ReportService(IAppDbContext context, IClock clock, RankingService rankingService, InstructorAccessService instructorAccess, ICurrentUserContext currentUser, IStoreContext stores, IStudentDisplayNameService displayNames) : IReportService
 {
     private static readonly CultureInfo ReportCulture = CultureInfo.GetCultureInfo("bs-BA");
 
