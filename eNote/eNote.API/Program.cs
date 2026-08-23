@@ -18,6 +18,15 @@ WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 builder.Host.UseApplicationLogging();
 builder.Configuration.ValidateRequiredSettings();
 
+if (builder.Environment.IsDevelopment())
+{
+    builder.Host.UseDefaultServiceProvider((context, options) =>
+    {
+        options.ValidateScopes = true;
+        options.ValidateOnBuild = true;
+    });
+}
+
 builder.Services
     .AddInfrastructure(builder.Configuration, bus =>
     {
