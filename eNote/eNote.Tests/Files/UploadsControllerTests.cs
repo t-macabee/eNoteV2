@@ -5,11 +5,6 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace eNote.Tests.Files;
 
-// UploadsController previously read straight off disk via IWebHostEnvironment.WebRootPath,
-// bypassing IFileStorageService, and had zero test coverage. These lock in the behavior of
-// the refactored Serve() (now routed through IFileStorageService.OpenRead) so a future
-// change can't silently regress the exact upload-path contract or drop range support.
-
 public sealed class UploadsControllerTests
 {
     [Fact]

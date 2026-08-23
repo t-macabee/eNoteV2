@@ -4,15 +4,13 @@
 
 namespace eNote.Infrastructure.Data.Migrations
 {
-    /// <inheritdoc />
+
     public partial class FixLectureVersionRowVersionType : Migration
     {
-        /// <inheritdoc />
+
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            // SQL Server won't ALTER COLUMN ... to timestamp/rowversion in place
-            // (Error 4927), so drop and re-add instead. Lecture had no rows at the
-            // time of this migration, so there is no data to preserve.
+
             migrationBuilder.DropColumn(
                 name: "Version",
                 table: "Lecture");
@@ -25,7 +23,6 @@ namespace eNote.Infrastructure.Data.Migrations
                 nullable: false);
         }
 
-        /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropColumn(

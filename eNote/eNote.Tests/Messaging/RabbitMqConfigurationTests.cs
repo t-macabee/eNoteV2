@@ -5,10 +5,6 @@ namespace eNote.Tests.Messaging;
 
 public sealed class RabbitMqConfigurationTests
 {
-    // Regression: GetMissingConfigurationError is what both the API's
-    // ValidateRequiredSettings and the Worker's startup check rely on to fail
-    // fast instead of silently falling back to GetHost/GetUsername's
-    // "localhost"/"guest" defaults.
 
     [Fact]
     public void GetMissingConfigurationError_ReturnsError_WhenHostAndUserBothMissing()

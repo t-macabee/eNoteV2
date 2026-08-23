@@ -81,7 +81,7 @@ public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, 
     {
         var dto = await ExecuteTransitionAsync(rental, trigger, rentalActor, userId, response, cancellationToken);
         await notificationDispatcher.DispatchTransitionAsync(dto, trigger, userId);
-        await context.SaveChangesAsync(cancellationToken); // saves the outbox row queued above; rental state was already saved inside ExecuteTransitionAsync, same transaction
+        await context.SaveChangesAsync(cancellationToken);
         return dto;
     }
 
@@ -154,7 +154,6 @@ public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, 
         return rental;
     }
 
-    // ponytail: no DB fetch — caller must pass an entity loaded via WithRentalDetails() or navigation fields map blank, not null
     private InstrumentRentalDto LoadDto(InstrumentRental entity)
     {
         var result = mapper.Map<InstrumentRentalDto>(entity);

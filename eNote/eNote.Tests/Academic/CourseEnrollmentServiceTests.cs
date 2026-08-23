@@ -57,7 +57,7 @@ public sealed class CourseEnrollmentServiceTests
     [Fact]
     public async Task UnenrollAsync_Succeeds_WhenMembershipIsInactive()
     {
-        // Unenrollment does not check membership — you can always leave a course.
+
         await using var context = CreateContext();
         var (student, course) = await SeedStudentAndCourseAsync(context, hasActiveMembership: false);
         context.Set<Enrollment>().Add(new Enrollment(student.Id, course.Id, EnrollmentStatus.Active));

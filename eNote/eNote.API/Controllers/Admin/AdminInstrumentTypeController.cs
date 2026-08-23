@@ -8,7 +8,6 @@ namespace eNote.API.Controllers.Admin;
 
 [Authorize(Roles = AppRoles.Administrator)]
 [Route("api/v{version:apiVersion}/admin/instrument-types")]
-public sealed class AdminInstrumentTypeController(IInstrumentTypeService service)
-    : ReferenceCrudController<InstrumentTypeDto, InstrumentTypeRequest, InstrumentTypeSearchObject>(service, dto => dto.Id)
+public sealed class AdminInstrumentTypeController(IInstrumentTypeService service) : ReferenceCrudController<InstrumentTypeDto, InstrumentTypeRequest, InstrumentTypeSearchObject>(service, dto => dto.Id)
 {
 }

@@ -8,7 +8,6 @@ namespace eNote.API.Controllers.Admin;
 
 [Authorize(Roles = AppRoles.Administrator)]
 [Route("api/v{version:apiVersion}/admin/music-stores")]
-public sealed class AdminMusicStoreController(IMusicStoreService service)
-    : ReferenceCrudController<MusicStoreDto, MusicStoreRequest, MusicStoreSearchObject>(service, dto => dto.Id)
+public sealed class AdminMusicStoreController(IMusicStoreService service) : ReferenceCrudController<MusicStoreDto, MusicStoreRequest, MusicStoreSearchObject>(service, dto => dto.Id)
 {
 }

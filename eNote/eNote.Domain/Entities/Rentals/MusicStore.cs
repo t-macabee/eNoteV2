@@ -2,9 +2,9 @@ namespace eNote.Domain.Entities.Rentals;
 
 public class MusicStore : AuditableEntity
 {
-    // ReSharper disable once CollectionNeverUpdated.Local — EF Core backing field
+
     private readonly List<MusicStoreEmployee> _employees = [];
-    // ReSharper disable once CollectionNeverUpdated.Local — EF Core backing field
+
     private readonly List<Instrument> _instruments = [];
 
     public string StoreName { get; private set; } = null!;

@@ -11,7 +11,6 @@ public sealed class AdminInstructorService(IAppDbContext context, IUserIdentityS
             .AsNoTracking()
             .OrderBy(x => x.Id);
 
-        // ponytail: in-memory name filter, add SQL join or materialized view if instructor count grows large.
         List<Instructor> instructors = await query.ToListAsync(cancellationToken);
         IReadOnlyDictionary<int, UserIdentityDto> users = await identityService.GetUsersBulkAsync(instructors.Select(x => x.AppUserId), cancellationToken);
 

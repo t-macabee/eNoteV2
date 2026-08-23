@@ -15,7 +15,7 @@ public class Instrument : AuditableEntity, ITenantScoped
     public string? ImagePath { get; private set; }
 
     public bool IsActive { get; private set; } = true;
-    // In-memory only. Do NOT use in IQueryable LINQ — use InstrumentAvailabilityExtensions instead.
+
     public bool IsAvailable =>
         IsActive && !InstrumentRentals.Any(x => x.RentalStatus.BlocksInstrument());
 

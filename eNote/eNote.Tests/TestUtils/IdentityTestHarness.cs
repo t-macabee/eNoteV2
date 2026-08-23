@@ -12,10 +12,7 @@ public sealed record IdentityServices(
 
 public static class IdentityTestHarness
 {
-    /// <summary>
-    /// Builds the ASP.NET Core Identity graph (UserManager, RoleManager, SignInManager, token
-    /// providers) the same way the production API does, over the supplied in-memory context.
-    /// </summary>
+
     public static IdentityServices Create(ENoteContext context)
     {
         var services = new ServiceCollection();

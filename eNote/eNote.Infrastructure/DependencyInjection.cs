@@ -55,26 +55,10 @@ public static class DependencyInjection
         return services;
     }
 
-    /// <summary>
-    /// Registered unconditionally from <see cref="AddInfrastructure"/> (not opt-in per host): the
-    /// blanket "*Service" scan above picks up <c>UserAccountService</c>, which needs
-    /// <see cref="UserManager{TUser}"/> regardless of which host runs the scan. All registrations
-    /// here are inert until resolved — none require host-specific types (no
-    /// IHttpContextAccessor is needed just to register SignInManager, only to construct one).
-    /// AddDataProtection() is included because AddDefaultTokenProviders() needs
-    /// IDataProtectionProvider for DataProtectorTokenProvider — ASP.NET Core's web host
-    /// (WebApplication.CreateBuilder) registers this for free, but a generic Host (the Worker) or
-    /// a bare ServiceCollection does not. Safe/idempotent to call more than once (TryAdd internally).
-    /// </summary>
     public static IServiceCollection AddInfrastructureIdentity(this IServiceCollection services)
     {
         services.AddDataProtection();
 
-        // AddSignInManager needs IAuthenticationSchemeProvider (via SignInManager's
-        // HttpContextAccessor-independent constructor dependencies). ASP.NET Core web hosts
-        // get this from their authentication services; a generic Host (the Worker) must
-        // register it explicitly or host build validation fails. TryAdd-based, so the API's
-        // later AddAuthentication(...) call is unaffected.
         services.AddAuthenticationCore();
 
         services.AddIdentityCore<AppUser>(options =>

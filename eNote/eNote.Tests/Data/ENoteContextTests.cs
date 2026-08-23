@@ -74,7 +74,6 @@ public sealed class ENoteContextTests
 
         await act.SaveChangesAsync();
 
-        // Stamps untouched — entity was never in Added or Modified state in this context
         Assert.Equal(Baseline, student.CreatedAt);
         Assert.Null(student.UpdatedAt);
     }
@@ -99,8 +98,8 @@ public sealed class ENoteContextTests
 
         await act.SaveChangesAsync();
 
-        Assert.Equal(Baseline, student.CreatedAt); // Original CreatedAt preserved
-        Assert.Equal(Later, student.UpdatedAt);    // Set to clock value at modification time
+        Assert.Equal(Baseline, student.CreatedAt);
+        Assert.Equal(Later, student.UpdatedAt);
     }
 
     [Fact]
@@ -120,8 +119,6 @@ public sealed class ENoteContextTests
 
         Assert.Equal(EntityState.Deleted, act.Entry(student).State);
 
-        // Should complete without exception — Deleted state is not in
-        // the Added/Modified set inspected by the timestamp-stamping loop.
         await act.SaveChangesAsync();
 
         var count = await act.Set<Student>().CountAsync();

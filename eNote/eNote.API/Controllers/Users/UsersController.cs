@@ -6,9 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace eNote.API.Controllers.Users;
 
 [Route("api/v{version:apiVersion}/users")]
-public sealed class UsersController(
-    IUserProfileService profileService,
-    IUserSelfService selfService) : CoreController
+public sealed class UsersController(IUserProfileService profileService, IUserSelfService selfService) : CoreController
 {
     [HttpGet("me")]
     [ProducesResponseType(typeof(UserProfileResponse), StatusCodes.Status200OK)]

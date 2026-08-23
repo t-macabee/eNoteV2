@@ -52,7 +52,7 @@ public sealed class AssignmentSubmissionService(
 
         await notificationDispatcher.DispatchGradedAsync(submission.Id, submission.Student.AppUserId, assignment.Title, request.Grade);
 
-        await context.SaveChangesAsync(cancellationToken); // saves the grade and the outbox row queued above, same unit of work
+        await context.SaveChangesAsync(cancellationToken);
 
         return MapSubmission(submission, await displayNames.GetStudentDisplayNameAsync(submission.Student));
     }

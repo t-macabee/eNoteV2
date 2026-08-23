@@ -5,9 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace eNote.API.Controllers.Base;
 
-public abstract class ReferenceCrudController<TDto, TRequest, TSearch>(
-    IReferenceCrudService<TDto, TRequest, TSearch> service,
-    Func<TDto, object> getDtoId) : CoreController where TSearch : BaseSearchObject
+public abstract class ReferenceCrudController<TDto, TRequest, TSearch>(IReferenceCrudService<TDto, TRequest, TSearch> service, Func<TDto, object> getDtoId) : CoreController where TSearch : BaseSearchObject
 {
     [HttpGet]
     [ProducesResponseType(StatusCodes.Status200OK)]

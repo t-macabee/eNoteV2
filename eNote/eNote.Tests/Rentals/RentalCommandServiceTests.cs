@@ -25,8 +25,7 @@ public sealed class RentalCommandServiceTests
     [Fact]
     public async Task CreateRequestAsync_Succeeds_WhenInstrumentAlreadyLocked()
     {
-        // Pre-check removed: Pending requests are accepted even for reserved instruments.
-        // The unique index enforces exclusivity at Approve/Pickup time, not at request creation.
+
         await using var context = CreateContext();
         var student = await SeedStudentAsync(context, hasActiveMembership: true);
         var instrument = await SeedInstrumentAsync(context);

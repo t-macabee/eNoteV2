@@ -83,9 +83,6 @@ public sealed class AssignmentSubmissionServiceTests
         Assert.Equal(85, row.Grade);
     }
 
-    // Contract: §7.2 requires a notification on submission grading (AssignmentSubmissionService.cs
-    // GradeAsync). Proves the dispatch fires for the submitting student, addressed by their
-    // AppUser id, carrying the assignment title and the grade just recorded.
     [Fact]
     public async Task GradeAsync_DispatchesGradedNotification_ForSubmittingStudent()
     {

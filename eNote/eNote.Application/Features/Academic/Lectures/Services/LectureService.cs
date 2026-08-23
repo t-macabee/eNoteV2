@@ -164,7 +164,7 @@ public sealed class LectureService(
 
         await notificationDispatcher.DispatchCancelledAsync(entity.Id, entity.Name, enrolledStudentUserIds);
 
-        await context.SaveChangesAsync(cancellationToken); // saves the lecture status change and the outbox rows queued above, same unit of work
+        await context.SaveChangesAsync(cancellationToken);
 
         return mapper.Map<LectureDto>(entity);
     }

@@ -35,7 +35,7 @@ public sealed class ENoteContextFactory : IDesignTimeDbContextFactory<ENoteConte
         public Task<int> GetCurrentStudentIdAsync() => Task.FromException<int>(new NotSupportedException());
         public Task<Instructor> GetCurrentInstructorAsync() => Task.FromException<Instructor>(new NotSupportedException());
         public Task<MusicStoreEmployee> GetCurrentEmployeeAsync() => Task.FromException<MusicStoreEmployee>(new NotSupportedException());
-        public Task<int> GetCurrentStoreIdAsync(CancellationToken cancellationToken = default) => Task.FromResult(1); // design-time only: single-store seed context
+        public Task<int> GetCurrentStoreIdAsync(CancellationToken cancellationToken = default) => Task.FromResult(1);
         public int GetCurrentStoreId() => 1;
     }
 }

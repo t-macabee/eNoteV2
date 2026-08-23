@@ -42,8 +42,7 @@ public sealed class RecommendationServiceTests
     [Fact]
     public async Task GetRecommendedInstrumentsAsync_CompletedRentalsDoNotExcludeInstrument()
     {
-        // Completed rentals are NOT actively rented — the instrument should remain eligible
-        // for recommendation (student may want to re-rent it).
+
         await using var context = CreateContext();
         var student = await SeedStudentAsync(context);
         var instrument = await SeedInstrumentAsync(context);
@@ -69,7 +68,6 @@ public sealed class RecommendationServiceTests
         var (typeA, typeB) = await SeedTwoTypesAsync(context);
         var store = await SeedStoreAsync(context);
 
-        // instrumentA: preferred type + global popularity; instrumentB: unknown type
         var instrumentA = new Instrument("InstrA", "YAM", null, null, typeA.Id, store.Id);
         var instrumentB = new Instrument("InstrB", "ROL", null, null, typeB.Id, store.Id);
         context.Set<Instrument>().AddRange(instrumentA, instrumentB);

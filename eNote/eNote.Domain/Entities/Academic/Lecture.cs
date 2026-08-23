@@ -12,7 +12,6 @@ public sealed class Lecture : AuditableEntity
 
     public DateTime LectureTime { get; private set; }
 
-    /// <summary>Duration in minutes.</summary>
     public int Duration { get; private set; }
     public int? Capacity { get; private set; }
 

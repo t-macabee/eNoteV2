@@ -111,7 +111,6 @@ public sealed class LocalFileStorageService : IFileStorageService
 
         var detectedType = FileSignatureDetector.DetectContentType(header.AsSpan(0, read));
 
-
         var ext = detectedType switch
         {
             "image/jpeg" => ".jpg",

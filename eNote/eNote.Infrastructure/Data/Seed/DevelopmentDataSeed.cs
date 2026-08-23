@@ -107,7 +107,6 @@ internal static class InstrumentSeed
             .Select(s => s.Id)
             .FirstAsync();
 
-        // ponytail: IDs are stable - seeded via HasData with explicit values in ModelBuilderSeed
         const int stringTypeId = 1;
         const int percussionTypeId = 2;
         const int brassTypeId = 3;

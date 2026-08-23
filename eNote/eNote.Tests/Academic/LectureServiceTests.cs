@@ -99,9 +99,6 @@ public sealed class LectureServiceTests
         Assert.True(dto.IsCancelled);
     }
 
-    // Contract: §7.2 requires a notification on lecture cancellation (eNote.Application/Features/
-    // Academic/Lectures/Services/LectureService.cs CancelAsync). Proves the dispatch fires for the
-    // currently-enrolled student, addressed by their AppUser id (not their Student profile id).
     [Fact]
     public async Task CancelAsync_DispatchesCancelledNotification_ForEnrolledStudent()
     {
@@ -117,9 +114,6 @@ public sealed class LectureServiceTests
         Assert.Equal([harness.Student.AppUserId], call.EnrolledStudentUserIds);
     }
 
-    // Regression: a student whose enrollment is no longer Active must not be notified —
-    // ForEnrolledStudent-style filtering (StudentEnrollmentExtensions.cs) is duplicated by hand in
-    // LectureService.CancelAsync's own enrollment query, so this guards that query independently.
     [Fact]
     public async Task CancelAsync_ExcludesStudentsWithInactiveEnrollment_FromNotification()
     {
