@@ -1,37 +1,73 @@
+using eNote.Application.Common.Search;
+
 namespace eNote.Application.Features.Rentals.ReferenceData.InstrumentTypes;
 
-public sealed class InstrumentTypeService(IAppDbContext context)
-    : ReferenceCrudService<InstrumentType, InstrumentTypeDto, InstrumentTypeRequest, InstrumentTypeSearchObject>(context), IInstrumentTypeService
+public sealed class InstrumentTypeService(IAppDbContext context) : IInstrumentTypeService
 {
-    protected override string NotFoundMessage => Messages.InstrumentTypeNotFound;
+    private IAppDbContext Db => context;
 
-    protected override InstrumentTypeDto Map(InstrumentType entity) => new()
+    public Task<PagedResult<InstrumentTypeDto>> GetPagedAsync(InstrumentTypeSearchObject search, CancellationToken cancellationToken = default) =>
+        Db.Set<InstrumentType>().AsNoTracking()
+            .ApplySearch(search)
+            .ToPagedResultAsync(search, Map, q => q.OrderBy(x => x.Type), ct: cancellationToken);
+
+    public async Task<InstrumentTypeDto> GetByIdAsync(int id, CancellationToken cancellationToken = default)
+    {
+        var entity = await Db.Set<InstrumentType>()
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken)
+            ?? throw new NotFoundException(Messages.InstrumentTypeNotFound);
+
+        return Map(entity);
+    }
+
+    public async Task<InstrumentTypeDto> CreateAsync(InstrumentTypeRequest request, CancellationToken cancellationToken = default)
+    {
+        var entity = new InstrumentType
+        {
+            Type = request.Type.Trim(),
+            MonthlyFee = request.MonthlyFee
+        };
+
+        Db.Set<InstrumentType>().Add(entity);
+        await Db.SaveChangesAsync(cancellationToken);
+
+        return Map(entity);
+    }
+
+    public async Task<InstrumentTypeDto> UpdateAsync(int id, InstrumentTypeRequest request, CancellationToken cancellationToken = default)
+    {
+        var entity = await Db.Set<InstrumentType>()
+            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken)
+            ?? throw new NotFoundException(Messages.InstrumentTypeNotFound);
+
+        entity.Type = request.Type.Trim();
+        entity.MonthlyFee = request.MonthlyFee;
+
+        await Db.SaveChangesAsync(cancellationToken);
+
+        return Map(entity);
+    }
+
+    public async Task DeleteAsync(int id, CancellationToken cancellationToken = default)
+    {
+        var entity = await Db.Set<InstrumentType>()
+            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken)
+            ?? throw new NotFoundException(Messages.InstrumentTypeNotFound);
+
+        if (await Db.Set<Instrument>().AnyAsync(x => x.InstrumentTypeId == entity.Id, cancellationToken))
+        {
+            throw new BusinessException(Messages.InstrumentTypeDeleteBlocked);
+        }
+
+        Db.Set<InstrumentType>().Remove(entity);
+        await Db.SaveChangesAsync(cancellationToken);
+    }
+
+    private static InstrumentTypeDto Map(InstrumentType entity) => new()
     {
         Id = entity.Id,
         Type = entity.Type,
         MonthlyFee = entity.MonthlyFee
     };
-
-    protected override InstrumentType CreateEntity(InstrumentTypeRequest request) => new()
-    {
-        Type = request.Type.Trim(),
-        MonthlyFee = request.MonthlyFee
-    };
-
-    protected override void ApplyUpdate(InstrumentType entity, InstrumentTypeRequest request)
-    {
-        entity.Type = request.Type.Trim();
-        entity.MonthlyFee = request.MonthlyFee;
-    }
-
-    protected override IQueryable<InstrumentType> ApplySearch(IQueryable<InstrumentType> query, InstrumentTypeSearchObject search) => query.ApplySearch(search);
-    protected override IOrderedQueryable<InstrumentType> Order(IQueryable<InstrumentType> query) => query.OrderBy(x => x.Type);
-
-    protected override async Task EnsureDeletableAsync(InstrumentType entity, CancellationToken ct = default)
-    {
-        if (await Db.Set<Instrument>().AnyAsync(x => x.InstrumentTypeId == entity.Id, ct))
-        {
-            throw new BusinessException(Messages.InstrumentTypeDeleteBlocked);
-        }
-    }
 }

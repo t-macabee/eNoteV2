@@ -11,7 +11,6 @@ using eNote.Application.Features.Rentals.InstrumentRentals.Services;
 using eNote.Application.Features.Rentals.InstrumentRentals.StateMachine;
 using eNote.Application.Features.Rentals.Instruments.Services;
 using eNote.Application.Features.Rentals.Recommendations.Services;
-using eNote.Application.Features.Rentals.ReferenceData;
 using eNote.Application.Features.Rentals.ReferenceData.Addresses;
 using eNote.Application.Features.Rentals.ReferenceData.InstrumentTypes;
 using eNote.Application.Features.Rentals.ReferenceData.MusicStores;
@@ -25,12 +24,9 @@ public static class DependencyInjection
     public static IServiceCollection AddApplication(this IServiceCollection services)
     {
         services.AddScoped<IAddressService, AddressService>();
-        services.AddScoped<IReferenceCrudService<AddressReferenceDto, AddressRequest, AddressSearchObject>, AddressService>();
         services.AddScoped<IFileAccessService, FileAccessService>();
         services.AddScoped<IInstrumentTypeService, InstrumentTypeService>();
-        services.AddScoped<IReferenceCrudService<InstrumentTypeDto, InstrumentTypeRequest, InstrumentTypeSearchObject>, InstrumentTypeService>();
         services.AddScoped<IMusicStoreService, MusicStoreService>();
-        services.AddScoped<IReferenceCrudService<MusicStoreDto, MusicStoreRequest, MusicStoreSearchObject>, MusicStoreService>();
         services.AddScoped<IStudentDisplayNameService, StudentDisplayNameService>();
         services.AddScoped<IUserProvisioningService, UserProvisioningService>();
 
