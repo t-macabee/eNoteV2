@@ -1,4 +1,3 @@
-using eNote.Application.Features.Rentals.InstrumentRentals.Billing;
 using MapsterMapper;
 
 namespace eNote.Application.Features.Rentals.InstrumentRentals.Services;
@@ -11,7 +10,7 @@ public sealed class RentalQueryService(IAppDbContext context, IMapper mapper, IC
 
         var dto = mapper.Map<InstrumentRentalDto>(entity);
 
-        RentalBilling.ApplyBilling(entity, dto, clock.UtcNow);
+        dto.ApplyCharges(entity, entity.CalculateCharges(clock.UtcNow));
 
         return dto;
     }
@@ -25,7 +24,7 @@ public sealed class RentalQueryService(IAppDbContext context, IMapper mapper, IC
 
         var dto = mapper.Map<InstrumentRentalDto>(entity);
 
-        RentalBilling.ApplyBilling(entity, dto, clock.UtcNow);
+        dto.ApplyCharges(entity, entity.CalculateCharges(clock.UtcNow));
 
         return dto;
     }
@@ -42,7 +41,7 @@ public sealed class RentalQueryService(IAppDbContext context, IMapper mapper, IC
         return await query.AsNoTracking().WithRentalDetails().ApplySearch(search).OrderByDescending(x => x.RequestedAt).ToPagedResultAsync(search, entity =>
         {
             var dto = mapper.Map<InstrumentRentalDto>(entity);
-            RentalBilling.ApplyBilling(entity, dto, now);
+            dto.ApplyCharges(entity, entity.CalculateCharges(now));
 
             return dto;
         }, ct: cancellationToken);

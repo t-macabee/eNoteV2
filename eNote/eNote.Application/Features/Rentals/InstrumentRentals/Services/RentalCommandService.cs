@@ -1,5 +1,4 @@
 using eNote.Application.Constants;
-using eNote.Application.Features.Rentals.InstrumentRentals.Billing;
 using eNote.Application.Features.Rentals.Instruments;
 using MapsterMapper;
 using Microsoft.EntityFrameworkCore.Storage;
@@ -156,7 +155,7 @@ public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, 
     private InstrumentRentalDto LoadDto(InstrumentRental entity)
     {
         var result = mapper.Map<InstrumentRentalDto>(entity);
-        RentalBilling.ApplyBilling(entity, result, clock.UtcNow);
+        result.ApplyCharges(entity, entity.CalculateCharges(clock.UtcNow));
         return result;
     }
 
@@ -168,7 +167,7 @@ public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, 
             .FirstOrDefaultAsync(x => x.Id == rentalId, cancellationToken) ?? throw new NotFoundException(Messages.RentalNotFoundAfterUpdate);
 
         var result = mapper.Map<InstrumentRentalDto>(entity);
-        RentalBilling.ApplyBilling(entity, result, clock.UtcNow);
+        result.ApplyCharges(entity, entity.CalculateCharges(clock.UtcNow));
         return result;
     }
 

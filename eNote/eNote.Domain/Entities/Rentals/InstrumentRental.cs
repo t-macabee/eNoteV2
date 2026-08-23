@@ -26,6 +26,60 @@ public sealed class InstrumentRental : AuditableEntity, ITenantScoped
 
     public decimal Fee { get; private set; }
 
+    private const int DaysPerBillingCycle = 30;
+
+    /// <summary>
+    /// Computes the charges due for this rental as of <paramref name="now"/>.
+    /// Nothing is billed before pickup or when the status is not billing-eligible.
+    /// An early return is prorated by day (fee / 30, capped at the monthly fee);
+    /// every other billable status charges whole months (ceiling of days / 30, minimum 1).
+    /// </summary>
+    public RentalCharges CalculateCharges(DateTime now)
+    {
+        if (!PickedUpAt.HasValue)
+        {
+            return new RentalCharges(null, null, null, null, false);
+        }
+
+        if (!RentalStatus.IsBillingEligible())
+        {
+            return new RentalCharges(null, null, null, null, false);
+        }
+
+        var start = PickedUpAt.Value;
+        var end = ReturnedAt ?? now;
+
+        if (end < start)
+        {
+            end = start;
+        }
+
+        var daysCharged = (int)Math.Ceiling((end - start).TotalDays);
+
+        if (daysCharged < 1)
+        {
+            daysCharged = 1;
+        }
+
+        if (RentalStatus == InstrumentRentalStatus.ReturnedEarly)
+        {
+            var dailyFee = Fee / DaysPerBillingCycle;
+            var prorated = daysCharged * dailyFee;
+            var totalFee = prorated > Fee ? Fee : prorated;
+
+            return new RentalCharges(MonthsCharged: null, DaysCharged: daysCharged, DailyFee: decimal.Round(dailyFee, 2), TotalFee: decimal.Round(totalFee, 2), IsProrated: true);
+        }
+
+        var monthsCharged = (int)Math.Ceiling((end - start).TotalDays / DaysPerBillingCycle);
+
+        if (monthsCharged < 1)
+        {
+            monthsCharged = 1;
+        }
+
+        return new RentalCharges(MonthsCharged: monthsCharged, DaysCharged: null, DailyFee: null, TotalFee: monthsCharged * Fee, IsProrated: false);
+    }
+
     private InstrumentRental()
     {
     }

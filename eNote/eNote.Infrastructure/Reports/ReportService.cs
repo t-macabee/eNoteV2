@@ -5,7 +5,6 @@ using eNote.Application.Features.Academic.Courses.Services;
 using eNote.Application.Features.Identity.Instructors;
 using eNote.Application.Features.Identity.Users.Services;
 using eNote.Application.Features.Rentals.InstrumentRentals;
-using eNote.Application.Features.Rentals.InstrumentRentals.Billing;
 using eNote.Application.Features.Reports.Services;
 using eNote.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
@@ -53,7 +52,7 @@ public sealed class ReportService(IAppDbContext context, IClock clock, RankingSe
             {
                 table.ColumnsDefinition(columns => { columns.ConstantColumn(35); columns.RelativeColumn(2); columns.RelativeColumn(2); columns.RelativeColumn(2); columns.RelativeColumn(2); });
                 table.Header(header => { header.Cell().Element(CellStyle).Text("ID"); header.Cell().Element(CellStyle).Text("Instrument"); header.Cell().Element(CellStyle).Text("Status"); header.Cell().Element(CellStyle).Text("Naknada"); header.Cell().Element(CellStyle).Text("Ukupno"); });
-                foreach (var rental in rentals) { var dto = new InstrumentRentalDto { Fee = rental.Fee, RentalStatus = rental.RentalStatus }; RentalBilling.ApplyBilling(rental, dto, clock.UtcNow); table.Cell().Element(CellStyle).Text(rental.Id.ToString()); table.Cell().Element(CellStyle).Text(rental.Instrument.Model); table.Cell().Element(CellStyle).Text(rental.RentalStatus.ToString()); table.Cell().Element(CellStyle).Text(rental.Fee.ToString("F2", ReportCulture)); table.Cell().Element(CellStyle).Text(dto.TotalFee?.ToString("F2", ReportCulture) ?? "-"); }
+                foreach (var rental in rentals) { var charges = rental.CalculateCharges(clock.UtcNow); table.Cell().Element(CellStyle).Text(rental.Id.ToString()); table.Cell().Element(CellStyle).Text(rental.Instrument.Model); table.Cell().Element(CellStyle).Text(rental.RentalStatus.ToString()); table.Cell().Element(CellStyle).Text(rental.Fee.ToString("F2", ReportCulture)); table.Cell().Element(CellStyle).Text(charges.TotalFee?.ToString("F2", ReportCulture) ?? "-"); }
             });
             page.Footer().AlignRight().Text($"Generisano: {clock.UtcNow:dd.MM.yyyy HH:mm} UTC").FontSize(9);
         })).GeneratePdf();
