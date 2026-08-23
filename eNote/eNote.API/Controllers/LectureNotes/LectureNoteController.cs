@@ -12,7 +12,7 @@ namespace eNote.API.Controllers.LectureNotes;
 [Route("api/v{version:apiVersion}/student/lectures/{lectureId:int}/notes")]
 public sealed class LectureNoteController(LectureNoteService service) : CoreController
 {
-    // ── Instructor actions ──────────────────────────────────────────
+    // Instructor
 
     [Authorize(Roles = AppRoles.Instructor)]
     [HttpGet("~/api/v{version:apiVersion}/instructor/lectures/{lectureId:int}/notes")]
@@ -59,7 +59,7 @@ public sealed class LectureNoteController(LectureNoteService service) : CoreCont
         return NoContent();
     }
 
-    // ── Student actions ─────────────────────────────────────────────
+    // Student
 
     [Authorize(Roles = AppRoles.Student)]
     [HttpGet("~/api/v{version:apiVersion}/student/lectures/{lectureId:int}/notes")]
