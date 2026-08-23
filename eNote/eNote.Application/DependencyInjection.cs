@@ -51,7 +51,7 @@ public static class DependencyInjection
         services.AddScoped<UserSelfService>();
 
         services.AddScoped<IUserProfileLookup, UserProfileLookup>();
-        services.AddScoped<ICurrentActor, CurrentActor>();
+        services.AddScoped<IStudentContext, CurrentActor>();
 
         return services;
     }

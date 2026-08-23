@@ -8,7 +8,7 @@ namespace eNote.Application.Features.Academic.Assignments.Services;
 public sealed class AssignmentSubmissionService(
     IAppDbContext context,
     IClock clock,
-    ICurrentActor actor,
+    ICurrentUserContext currentUser, IStudentContext students,
     IStudentDisplayNameService displayNames,
     InstructorAccessService instructorAccess,
     IFileStorageService fileStorage,
@@ -60,7 +60,7 @@ public sealed class AssignmentSubmissionService(
             ?? throw new NotFoundException(Messages.AssignmentSubmissionNotFound);
 
         submission.SetGrade(request.Grade);
-        submission.UpdatedById = actor.UserId;
+        submission.UpdatedById = currentUser.UserId;
 
         await notificationDispatcher.DispatchGradedAsync(submission.Id, submission.Student.AppUserId, assignment.Title, request.Grade);
 
@@ -71,7 +71,7 @@ public sealed class AssignmentSubmissionService(
 
     private async Task<AssignmentSubmissionDto> SubmitAsync(int assignmentId, string filePath, CancellationToken cancellationToken)
     {
-        var student = await actor.GetCurrentStudentAsync();
+        var student = await students.GetCurrentStudentAsync();
 
         var assignment = await context.Set<Assignment>()
             .ForEnrolledStudentById(student.Id, assignmentId)
@@ -95,13 +95,13 @@ public sealed class AssignmentSubmissionService(
         {
             existing = new AssignmentSubmission(assignment.Id, student.Id)
             {
-                CreatedById = actor.UserId
+                CreatedById = currentUser.UserId
             };
             assignment.AssignmentSubmissions.Add(existing);
         }
 
         existing.Submit(filePath?.Trim(), clock.UtcNow);
-        existing.UpdatedById = actor.UserId;
+        existing.UpdatedById = currentUser.UserId;
 
         await SaveWithSubmissionConflictMessageAsync(cancellationToken);
 
@@ -122,7 +122,7 @@ public sealed class AssignmentSubmissionService(
 
     private async Task<Assignment> GetOwnedAssignmentAsync(int lectureId, int assignmentId, CancellationToken cancellationToken = default)
     {
-        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(actor.UserId);
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId);
         return await instructorAccess.GetOwnedAssignmentAsync(lectureId, assignmentId, instructorId, cancellationToken: cancellationToken);
     }
 

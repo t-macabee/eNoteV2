@@ -22,7 +22,8 @@ public sealed class DiResolutionTests
         services.AddDbContext<ENoteContext>(options => options.UseInMemoryDatabase(Guid.NewGuid().ToString()));
         services.AddSingleton<IClock, SystemClock>();
         services.AddScoped<IAppDbContext>(x => x.GetRequiredService<ENoteContext>());
-        services.AddScoped<ICurrentActor>(_ => new StubCurrentActor());
+        services.AddScoped<IStoreContext>(x => x.GetRequiredService<ENoteContext>());
+        services.AddScoped<ICurrentUserContext>(_ => new StubCurrentActor());
 
         var provider = services.BuildServiceProvider();
         using var scope = provider.CreateScope();
@@ -69,7 +70,7 @@ public sealed class DiResolutionTests
         services.AddSingleton<IConfiguration>(configuration);
         services.AddSingleton<IHostEnvironment>(new FakeHostEnvironment());
 
-        services.AddScoped<ICurrentActor, WorkerActor>();
+        services.AddScoped<ICurrentUserContext, WorkerActor>();
         services.AddInfrastructure(configuration, bus => bus.AddConsumer<RentalStatusChangedConsumer>());
 
         await AssertAllENoteInterfacesResolvable(services);
@@ -132,15 +133,9 @@ public sealed class DiResolutionTests
         public IFileProvider ContentRootFileProvider { get; set; } = new NullFileProvider();
     }
 
-    private sealed class StubCurrentActor : ICurrentActor
+    private sealed class StubCurrentActor : ICurrentUserContext
     {
         public int UserId => 1;
         public bool IsAuthenticated => true;
-        public Task<Student> GetCurrentStudentAsync() => Task.FromResult(new Student(1, DateTime.UtcNow));
-        public Task<int> GetCurrentStudentIdAsync() => Task.FromResult(1);
-        public Task<Instructor> GetCurrentInstructorAsync() => throw new NotSupportedException();
-        public Task<MusicStoreEmployee> GetCurrentEmployeeAsync() => throw new NotSupportedException();
-        public Task<int> GetCurrentStoreIdAsync(CancellationToken ct = default) => Task.FromResult(1);
-        public int GetCurrentStoreId() => 1;
     }
 }

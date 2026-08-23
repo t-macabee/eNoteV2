@@ -5,7 +5,7 @@ public sealed class StubCurrentActor(
     Instructor? instructor = null,
     MusicStoreEmployee? employee = null,
     int? storeId = null,
-    bool isAuthenticated = true) : ICurrentActor
+    bool isAuthenticated = true) : ICurrentUserContext, IStudentContext, IStoreContext
 {
     public int UserId => student?.AppUserId ?? 1;
     public bool IsAuthenticated => isAuthenticated;
@@ -24,6 +24,4 @@ public sealed class StubCurrentActor(
 
     public Task<int> GetCurrentStoreIdAsync(CancellationToken cancellationToken = default) =>
         Task.FromResult(storeId ?? 1);
-
-    public int GetCurrentStoreId() => storeId ?? 1;
 }

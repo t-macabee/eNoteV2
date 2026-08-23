@@ -3,18 +3,18 @@ using MapsterMapper;
 
 namespace eNote.Application.Features.Communication.Announcements.Services;
 
-public sealed class InstructorAnnouncementService(IAppDbContext context, IClock clock, ICurrentActor actor, InstructorAccessService instructorAccess, IFileStorageService fileStorage, IMapper mapper)
+public sealed class InstructorAnnouncementService(IAppDbContext context, IClock clock, ICurrentUserContext currentUser, InstructorAccessService instructorAccess, IFileStorageService fileStorage, IMapper mapper)
 {
     public async Task<AnnouncementDto> CreateForCourseAsync(int courseId, AnnouncementRequest request, CancellationToken cancellationToken = default)
     {
-        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(actor.UserId);
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId);
 
         if (!await instructorAccess.OwnsCourseAsync(courseId, instructorId, cancellationToken))
         {
             throw new BusinessException(Messages.AnnouncementCourseForbidden);
         }
 
-        var entity = AnnouncementBuilder.Build(request, courseId, null, clock, actor);
+        var entity = AnnouncementBuilder.Build(request, courseId, null, clock, currentUser);
 
         context.Set<Announcement>().Add(entity);
         await context.SaveChangesAsync(cancellationToken);
@@ -39,7 +39,7 @@ public sealed class InstructorAnnouncementService(IAppDbContext context, IClock 
         var entity = await (await GetCourseAnnouncementQueryAsync(courseId, track: true)).FirstOrDefaultAsync(a => a.Id == announcementId, cancellationToken) ?? throw new NotFoundException(Messages.AnnouncementNotFound);
 
         entity.UpdateDetails(request.Title.Trim(), request.Content.Trim());
-        entity.UpdatedById = actor.UserId;
+        entity.UpdatedById = currentUser.UserId;
 
         await context.SaveChangesAsync(cancellationToken);
 
@@ -51,7 +51,7 @@ public sealed class InstructorAnnouncementService(IAppDbContext context, IClock 
         var entity = await (await GetCourseAnnouncementQueryAsync(courseId, track: true)).FirstOrDefaultAsync(a => a.Id == announcementId, cancellationToken) ?? throw new NotFoundException(Messages.AnnouncementNotFound);
 
         entity.SoftDelete();
-        entity.UpdatedById = actor.UserId;
+        entity.UpdatedById = currentUser.UserId;
 
         await context.SaveChangesAsync(cancellationToken);
     }
@@ -62,7 +62,7 @@ public sealed class InstructorAnnouncementService(IAppDbContext context, IClock 
         var path = await fileStorage.SaveAsync(stream, fileName, contentType, "announcements", ct);
 
         entity.SetImagePath(path);
-        entity.UpdatedById = actor.UserId;
+        entity.UpdatedById = currentUser.UserId;
 
         await context.SaveChangesAsync(ct);
 
@@ -71,7 +71,7 @@ public sealed class InstructorAnnouncementService(IAppDbContext context, IClock 
 
     private async Task<IQueryable<Announcement>> GetCourseAnnouncementQueryAsync(int courseId, bool track = false)
     {
-        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(actor.UserId);
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId);
 
         return instructorAccess.CourseAnnouncementsFor(courseId, instructorId, track);
     }

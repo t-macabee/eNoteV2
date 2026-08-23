@@ -1,6 +1,6 @@
 namespace eNote.Application.Common.Interfaces;
 
-public interface ICurrentUserService
+public interface ICurrentUserContext
 {
     int UserId { get; }
     bool IsAuthenticated { get; }

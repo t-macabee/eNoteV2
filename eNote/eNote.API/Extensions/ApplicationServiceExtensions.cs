@@ -16,7 +16,7 @@ public static class ApplicationServiceExtensions
         services.AddHttpContextAccessor();
         services.AddSignalR();
 
-        services.AddScoped<ICurrentUserService, CurrentUserService>();
+        services.AddScoped<ICurrentUserContext, CurrentUserService>();
 
         services.AddScoped<IReportService, ReportService>();
         services.AddScoped<IAuthService, AuthService>();

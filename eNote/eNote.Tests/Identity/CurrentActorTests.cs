@@ -1,8 +1,4 @@
-using eNote.Application.Common.Persistence;
 using eNote.Application.Features.Identity.Users.Services;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace eNote.Tests.Identity;
 
@@ -12,10 +8,7 @@ public sealed class CurrentActorTests
     public async Task GetStudentAsync_ResolvesStudentOnlyOnce()
     {
         var lookup = new CountingProfileLookup(new Student(appUserId: 42, enrollmentDate: DateTime.UtcNow));
-        var services = new ServiceCollection()
-            .AddScoped<IAppDbContext>(_ => new ThrowingDbContext())
-            .BuildServiceProvider();
-        var actor = new CurrentActor(new TestCurrentUserService(42), lookup, services);
+        var actor = new CurrentActor(new TestCurrentUserContext(42), lookup);
 
         var first = await actor.GetCurrentStudentAsync();
         var second = await actor.GetCurrentStudentAsync();
@@ -24,7 +17,7 @@ public sealed class CurrentActorTests
         Assert.Equal(1, lookup.StudentLookupCount);
     }
 
-    private sealed class TestCurrentUserService(int userId) : ICurrentUserService
+    private sealed class TestCurrentUserContext(int userId) : ICurrentUserContext
     {
         public int UserId => userId;
         public bool IsAuthenticated => true;
@@ -42,12 +35,5 @@ public sealed class CurrentActorTests
 
         public Task<Instructor> GetInstructorAsync(int userId) => throw new NotSupportedException();
         public Task<MusicStoreEmployee> GetActiveEmployeeAsync(int userId) => throw new NotSupportedException();
-    }
-
-    private sealed class ThrowingDbContext : IAppDbContext
-    {
-        public DbSet<TEntity> Set<TEntity>() where TEntity : class => throw new NotSupportedException();
-        public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default) => throw new NotSupportedException();
-        public Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default) => throw new NotSupportedException();
     }
 }

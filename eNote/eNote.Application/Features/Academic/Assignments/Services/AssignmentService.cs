@@ -5,13 +5,13 @@ namespace eNote.Application.Features.Academic.Assignments.Services;
 
 public sealed class AssignmentService(
     IAppDbContext context,
-    ICurrentActor actor,
+    ICurrentUserContext currentUser, IStudentContext students,
     InstructorAccessService instructorAccess,
     IMapper mapper)
 {
     public async Task<PagedResult<AssignmentDto>> GetForLectureAsync(int lectureId, AssignmentSearchObject search, CancellationToken cancellationToken = default)
     {
-        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(actor.UserId);
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId);
 
         var query = instructorAccess.AssignmentsForLecture(lectureId, instructorId)
             .AsNoTracking()
@@ -25,12 +25,12 @@ public sealed class AssignmentService(
 
     public async Task<AssignmentDto> CreateAsync(int lectureId, AssignmentRequest request, CancellationToken cancellationToken = default)
     {
-        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(actor.UserId);
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId);
         await instructorAccess.EnsureOwnsLectureAsync(lectureId, instructorId, cancellationToken);
 
         var entity = new Assignment(request.Title.Trim(), request.Description.Trim(), request.DueAt, lectureId)
         {
-            CreatedById = actor.UserId
+            CreatedById = currentUser.UserId
         };
 
         context.Set<Assignment>().Add(entity);
@@ -44,7 +44,7 @@ public sealed class AssignmentService(
         var entity = await GetOwnedAssignmentAsync(lectureId, assignmentId, track: true, cancellationToken: cancellationToken);
 
         entity.UpdateDetails(request.Title.Trim(), request.Description.Trim(), request.DueAt);
-        entity.UpdatedById = actor.UserId;
+        entity.UpdatedById = currentUser.UserId;
 
         await context.SaveChangesAsync(cancellationToken);
 
@@ -56,14 +56,14 @@ public sealed class AssignmentService(
         var entity = await GetOwnedAssignmentAsync(lectureId, assignmentId, track: true, cancellationToken: cancellationToken);
 
         entity.SoftDelete();
-        entity.UpdatedById = actor.UserId;
+        entity.UpdatedById = currentUser.UserId;
 
         await context.SaveChangesAsync(cancellationToken);
     }
 
     public async Task<PagedResult<AssignmentDto>> GetForStudentAsync(AssignmentSearchObject search, CancellationToken cancellationToken = default)
     {
-        var studentId = await actor.GetCurrentStudentIdAsync();
+        var studentId = await students.GetCurrentStudentIdAsync();
 
         var query = context.Set<Assignment>()
             .AsNoTracking()
@@ -75,7 +75,7 @@ public sealed class AssignmentService(
 
     public async Task<AssignmentDto> GetByIdForStudentAsync(int assignmentId, CancellationToken cancellationToken = default)
     {
-        var studentId = await actor.GetCurrentStudentIdAsync();
+        var studentId = await students.GetCurrentStudentIdAsync();
 
         var entity = await context.Set<Assignment>()
             .ForEnrolledStudentById(studentId, assignmentId)
@@ -88,7 +88,7 @@ public sealed class AssignmentService(
 
     private async Task<Assignment> GetOwnedAssignmentAsync(int lectureId, int assignmentId, bool track = false, CancellationToken cancellationToken = default)
     {
-        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(actor.UserId);
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId);
         return await instructorAccess.GetOwnedAssignmentAsync(lectureId, assignmentId, instructorId, track, cancellationToken);
     }
 }

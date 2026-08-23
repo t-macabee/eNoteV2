@@ -166,15 +166,19 @@ public sealed class AssignmentSubmissionServiceTests
     private static AssignmentSubmissionService CreateService(IAppDbContext context, Instructor instructor, IFileStorageService fileStorage, Student student, ISubmissionNotificationDispatcher? notificationDispatcher = null) =>
         CreateService(context, (ENoteContext)context, instructor, fileStorage, student, notificationDispatcher);
 
-    private static AssignmentSubmissionService CreateService(IAppDbContext context, ENoteContext accessContext, Instructor instructor, IFileStorageService fileStorage, Student student, ISubmissionNotificationDispatcher? notificationDispatcher = null) =>
-        new(context,
+    private static AssignmentSubmissionService CreateService(IAppDbContext context, ENoteContext accessContext, Instructor instructor, IFileStorageService fileStorage, Student student, ISubmissionNotificationDispatcher? notificationDispatcher = null)
+    {
+        var currentUser = new StubCurrentActor(student: student);
+        return new(context,
             new FixedClock(Now),
-            new StubCurrentActor(student: student),
+            currentUser,
+            currentUser,
             new StubDisplayNameService(),
             AcademicTestData.CreateInstructorAccess(accessContext, instructor),
             fileStorage,
             notificationDispatcher ?? new NoOpSubmissionNotificationDispatcher(),
             TestMapper.Create());
+    }
 
     private sealed class StubDisplayNameService : IStudentDisplayNameService
     {

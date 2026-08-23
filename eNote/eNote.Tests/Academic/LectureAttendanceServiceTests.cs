@@ -160,12 +160,16 @@ public sealed class LectureAttendanceServiceTests
             service.GetAttendanceAsync(harness.Lecture.Id, new AttendanceSearchObject { Page = 1, PageSize = 10 }));
     }
 
-    private static LectureAttendanceService CreateService(ENoteContext context, Instructor instructor, Student student) =>
-        new(context,
-            new StubCurrentActor(student: student),
+    private static LectureAttendanceService CreateService(ENoteContext context, Instructor instructor, Student student)
+    {
+        var currentUser = new StubCurrentActor(student: student);
+        return new(context,
+            currentUser,
+            currentUser,
             new StubDisplayNameService(),
             AcademicTestData.CreateInstructorAccess(context, instructor),
             NullLogger<LectureAttendanceService>.Instance);
+    }
 
     private sealed class StubDisplayNameService : IStudentDisplayNameService
     {

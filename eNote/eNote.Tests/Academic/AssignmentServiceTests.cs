@@ -97,9 +97,13 @@ public sealed class AssignmentServiceTests
         Assert.Equal("Homework", dto.Title);
     }
 
-    private static AssignmentService CreateService(ENoteContext context, Instructor instructor, StubCurrentActor? actor = null) =>
-        new(context,
-            actor ?? new StubCurrentActor(instructor: instructor),
+    private static AssignmentService CreateService(ENoteContext context, Instructor instructor, StubCurrentActor? actor = null)
+    {
+        var currentUser = actor ?? new StubCurrentActor(instructor: instructor);
+        return new(context,
+            currentUser,
+            currentUser,
             AcademicTestData.CreateInstructorAccess(context, instructor),
             TestMapper.Create());
+    }
 }

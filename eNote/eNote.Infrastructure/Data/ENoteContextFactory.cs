@@ -23,19 +23,13 @@ public sealed class ENoteContextFactory : IDesignTimeDbContextFactory<ENoteConte
         var optionsBuilder = new DbContextOptionsBuilder<ENoteContext>();
         optionsBuilder.UseSqlServer(connectionString, sql => sql.MigrationsAssembly("eNote.Infrastructure"));
 
-        var actor = new DesignTimeActor();
-        return new ENoteContext(optionsBuilder.Options, new SystemClock(), actor);
+        var currentUser = new DesignTimeUserContext();
+        return new ENoteContext(optionsBuilder.Options, new SystemClock(), currentUser);
     }
 
-    private sealed class DesignTimeActor : ICurrentActor
+    private sealed class DesignTimeUserContext : ICurrentUserContext
     {
         public int UserId => 1;
         public bool IsAuthenticated => true;
-        public Task<Student> GetCurrentStudentAsync() => Task.FromException<Student>(new NotSupportedException());
-        public Task<int> GetCurrentStudentIdAsync() => Task.FromException<int>(new NotSupportedException());
-        public Task<Instructor> GetCurrentInstructorAsync() => Task.FromException<Instructor>(new NotSupportedException());
-        public Task<MusicStoreEmployee> GetCurrentEmployeeAsync() => Task.FromException<MusicStoreEmployee>(new NotSupportedException());
-        public Task<int> GetCurrentStoreIdAsync(CancellationToken cancellationToken = default) => Task.FromResult(1);
-        public int GetCurrentStoreId() => 1;
     }
 }

@@ -75,10 +75,14 @@ public sealed class CourseServiceTests
         Assert.True(dto.IsPublished);
     }
 
-    private static CourseService CreateService(ENoteContext context, Instructor instructor, StubCurrentActor? actor = null) =>
-        new(context,
+    private static CourseService CreateService(ENoteContext context, Instructor instructor, StubCurrentActor? actor = null)
+    {
+        var currentUser = actor ?? new StubCurrentActor(instructor: instructor);
+        return new(context,
             TestMapper.Create(),
-            actor ?? new StubCurrentActor(instructor: instructor),
+            currentUser,
+            currentUser,
             AcademicTestData.CreateInstructorAccess(context, instructor),
             NullLogger<CourseService>.Instance);
+    }
 }

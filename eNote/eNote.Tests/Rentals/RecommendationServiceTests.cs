@@ -94,7 +94,7 @@ public sealed class RecommendationServiceTests
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
             .ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning))
             .Options;
-        return new ENoteContext(options, new FixedClock(Now), new StubCurrentActor(storeId: 1));
+        return new ENoteContext(options, new FixedClock(Now), new StubCurrentActor(storeId: 1)) { ExplicitStoreId = 1 };
     }
 
     private static async Task<Student> SeedStudentAsync(ENoteContext context)
@@ -136,6 +136,9 @@ public sealed class RecommendationServiceTests
         return store;
     }
 
-    private static RecommendationService CreateService(ENoteContext context, Student student) =>
-        new(context, TestMapper.Create(), new StubCurrentActor(student: student, storeId: 1), new FixedClock(Now));
+    private static RecommendationService CreateService(ENoteContext context, Student student)
+    {
+        var currentUser = new StubCurrentActor(student: student, storeId: 1);
+        return new(context, TestMapper.Create(), currentUser, currentUser, new FixedClock(Now));
+    }
 }

@@ -1,11 +1,9 @@
 namespace eNote.Application.Common.Interfaces;
 
-public interface ICurrentActor : ICurrentUserService
+public interface IStudentContext
 {
     Task<Student> GetCurrentStudentAsync();
     Task<int> GetCurrentStudentIdAsync();
     Task<Instructor> GetCurrentInstructorAsync();
     Task<MusicStoreEmployee> GetCurrentEmployeeAsync();
-    Task<int> GetCurrentStoreIdAsync(CancellationToken cancellationToken = default);
-    int GetCurrentStoreId();
 }

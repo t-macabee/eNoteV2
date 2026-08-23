@@ -86,7 +86,7 @@ public sealed class CourseEnrollmentServiceTests
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
             .Options;
 
-        return new ENoteContext(options, new FixedClock(Now), new StubCurrentActor(storeId: 1));
+        return new ENoteContext(options, new FixedClock(Now), new StubCurrentActor(storeId: 1)) { ExplicitStoreId = 1 };
     }
 
     private static async Task<(Student Student, Course Course)> SeedStudentAndCourseAsync(ENoteContext context, bool hasActiveMembership)
@@ -107,10 +107,14 @@ public sealed class CourseEnrollmentServiceTests
         return (student, course);
     }
 
-    private static CourseEnrollmentService CreateService(ENoteContext context, Student student) =>
-        new(
+    private static CourseEnrollmentService CreateService(ENoteContext context, Student student)
+    {
+        var currentUser = new StubCurrentActor(student: student);
+        return new(
             context,
             new FixedClock(Now),
-            new StubCurrentActor(student: student),
+            currentUser,
+            currentUser,
             NullLogger<CourseEnrollmentService>.Instance);
+    }
 }

@@ -120,7 +120,7 @@ public sealed class TenantIsolationTests
         var store2 = await SeedStoreAsync(context, "Store B");
         var instr2 = await SeedInstrumentAsync(context, store2.Id);
 
-        var service = new RecommendationService(context, TestMapper.Create(), new StubCurrentActor(storeId: store1.Id), new FixedClock(Now));
+        var service = new RecommendationService(context, TestMapper.Create(), new StubCurrentActor(storeId: store1.Id), new StubCurrentActor(storeId: store1.Id), new FixedClock(Now));
         await Assert.ThrowsAsync<NotFoundException>(() => service.RecordInstrumentViewAsync(instr2.Id));
     }
 
@@ -137,7 +137,7 @@ public sealed class TenantIsolationTests
         context.Set<Announcement>().AddRange(store1Announcement, store2Announcement);
         await context.SaveChangesAsync();
 
-        var service = new StoreAnnouncementService(context, new FixedClock(Now), new StubCurrentActor(storeId: store1.Id), null!, TestMapper.Create());
+        var service = new StoreAnnouncementService(context, new FixedClock(Now), new StubCurrentActor(storeId: store1.Id), new StubCurrentActor(storeId: store1.Id), null!, TestMapper.Create());
         var result = await service.GetForStoreAsync(new AnnouncementSearchObject { PageSize = 10 });
 
         Assert.Single(result.Items);
@@ -152,7 +152,7 @@ public sealed class TenantIsolationTests
             .ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning))
             .Options;
 
-        return new ENoteContext(options, new FixedClock(Now), new StubCurrentActor(storeId: storeId));
+        return new ENoteContext(options, new FixedClock(Now), new StubCurrentActor(storeId: storeId)) { ExplicitStoreId = storeId };
     }
 
     private static async Task<(int Store1Id, int Store2Id, int Rental1Id, int Rental2Id)> SeedTwoStoresWithRentalsAsync(ENoteContext context)

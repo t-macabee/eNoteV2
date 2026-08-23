@@ -278,11 +278,15 @@ public sealed class LectureServiceTests
             }));
     }
 
-    private static LectureService CreateService(ENoteContext context, Instructor instructor, StubCurrentActor? actor = null, ILectureNotificationDispatcher? notificationDispatcher = null) =>
-        new(context,
-            actor ?? new StubCurrentActor(instructor: instructor),
+    private static LectureService CreateService(ENoteContext context, Instructor instructor, StubCurrentActor? actor = null, ILectureNotificationDispatcher? notificationDispatcher = null)
+    {
+        var currentUser = actor ?? new StubCurrentActor(instructor: instructor);
+        return new(context,
+            currentUser,
+            currentUser,
             AcademicTestData.CreateInstructorAccess(context, instructor),
             notificationDispatcher ?? new NoOpLectureNotificationDispatcher(),
             NullLogger<LectureService>.Instance,
             TestMapper.Create());
+    }
 }

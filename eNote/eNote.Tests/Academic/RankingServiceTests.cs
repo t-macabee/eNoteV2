@@ -88,11 +88,15 @@ public sealed class RankingServiceTests
         return submission;
     }
 
-    private static RankingService CreateService(ENoteContext context, Instructor instructor, Student student) =>
-        new(context,
-            new StubCurrentActor(student: student),
+    private static RankingService CreateService(ENoteContext context, Instructor instructor, Student student)
+    {
+        var currentUser = new StubCurrentActor(student: student);
+        return new(context,
+            currentUser,
+            currentUser,
             new StubDisplayNameService(),
             AcademicTestData.CreateInstructorAccess(context, instructor));
+    }
 
     private sealed class StubDisplayNameService : IStudentDisplayNameService
     {

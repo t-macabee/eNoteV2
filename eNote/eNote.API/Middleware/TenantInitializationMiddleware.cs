@@ -5,11 +5,11 @@ namespace eNote.API.Middleware;
 
 public sealed class TenantInitializationMiddleware(RequestDelegate next)
 {
-    public async Task InvokeAsync(HttpContext httpContext, ICurrentActor actor)
+    public async Task InvokeAsync(HttpContext httpContext, IStoreContext storeContext)
     {
         if (httpContext.User.Identity?.IsAuthenticated == true)
         {
-            try { await actor.GetCurrentStoreIdAsync(httpContext.RequestAborted); }
+            try { await storeContext.GetCurrentStoreIdAsync(httpContext.RequestAborted); }
             catch (StoreNotResolvedException) {  }
         }
 

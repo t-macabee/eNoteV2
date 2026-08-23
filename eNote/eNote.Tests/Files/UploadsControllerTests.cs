@@ -134,7 +134,7 @@ public sealed class UploadsControllerTests
         IFileAccessService accessService) =>
         new(storage, accessService, new TestCurrentUserService(userId: 1));
 
-    private sealed class TestCurrentUserService(int userId) : ICurrentUserService
+    private sealed class TestCurrentUserService(int userId) : ICurrentUserContext
     {
         public int UserId => userId;
         public bool IsAuthenticated => true;

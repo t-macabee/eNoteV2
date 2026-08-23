@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging;
 
 namespace eNote.Application.Features.Academic.Lectures.Services;
 
-public sealed class LectureAttendanceService(IAppDbContext context, ICurrentActor actor, IStudentDisplayNameService displayNames, InstructorAccessService instructorAccess, ILogger<LectureAttendanceService> logger)
+public sealed class LectureAttendanceService(IAppDbContext context, ICurrentUserContext currentUser, IStudentContext students, IStudentDisplayNameService displayNames, InstructorAccessService instructorAccess, ILogger<LectureAttendanceService> logger)
 {
     public async Task<RsvpResponse> RsvpAsync(int lectureId, RsvpRequest request, CancellationToken cancellationToken = default)
     {
@@ -13,7 +13,7 @@ public sealed class LectureAttendanceService(IAppDbContext context, ICurrentActo
             .Include(x => x.Course)
             .FirstOrDefaultAsync(x => x.Id == lectureId && x.Course.IsPublished && x.LectureStatus != LectureStatus.Cancelled, cancellationToken) ?? throw new NotFoundException(Messages.LectureNotFound);
 
-        var studentId = await actor.GetCurrentStudentIdAsync();
+        var studentId = await students.GetCurrentStudentIdAsync();
 
         if (!await context.IsEnrolledInCourseAsync(studentId, lecture.CourseId, cancellationToken))
         {
@@ -52,7 +52,7 @@ public sealed class LectureAttendanceService(IAppDbContext context, ICurrentActo
         }
         catch (DbUpdateConcurrencyException ex)
         {
-            logger.LogWarning(ex, "Concurrency conflict while RSVPing for lecture {LectureId} by student user {StudentUserId}", lectureId, actor.UserId);
+            logger.LogWarning(ex, "Concurrency conflict while RSVPing for lecture {LectureId} by student user {StudentUserId}", lectureId, currentUser.UserId);
             throw new ConflictException(Messages.LectureRsvpConflict);
         }
 
@@ -61,7 +61,7 @@ public sealed class LectureAttendanceService(IAppDbContext context, ICurrentActo
 
     public async Task<PagedResult<AttendanceDto>> GetAttendanceAsync(int lectureId, AttendanceSearchObject search, CancellationToken cancellationToken = default)
     {
-        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(actor.UserId);
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId);
         await instructorAccess.EnsureOwnsLectureAsync(lectureId, instructorId, cancellationToken);
 
         var query = context.Set<Attendance>()
@@ -97,7 +97,7 @@ public sealed class LectureAttendanceService(IAppDbContext context, ICurrentActo
 
     public async Task<AttendanceDto> MarkAttendanceAsync(int lectureId, MarkAttendanceRequest request, CancellationToken cancellationToken = default)
     {
-        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(actor.UserId);
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId);
         var lecture = await instructorAccess.GetOwnedLectureAsync(lectureId, instructorId, track: true, includeAttendances: true, cancellationToken: cancellationToken);
 
         if (lecture.IsCancelled)
@@ -126,14 +126,14 @@ public sealed class LectureAttendanceService(IAppDbContext context, ICurrentActo
         {
             attendance = new Attendance(request.StudentId, lecture.Id, request.AttendanceStatus)
             {
-                CreatedById = actor.UserId
+                CreatedById = currentUser.UserId
             };
             lecture.Attendances.Add(attendance);
         }
         else
         {
             attendance.UpdateStatus(request.AttendanceStatus);
-            attendance.UpdatedById = actor.UserId;
+            attendance.UpdatedById = currentUser.UserId;
         }
 
         await context.SaveChangesAsync(cancellationToken);

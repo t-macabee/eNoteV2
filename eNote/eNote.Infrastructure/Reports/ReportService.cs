@@ -15,7 +15,7 @@ using System.Globalization;
 
 namespace eNote.Infrastructure.Reports;
 
-public sealed class ReportService(IAppDbContext context, IClock clock, RankingService rankingService, InstructorAccessService instructorAccess, ICurrentActor actor, IStudentDisplayNameService displayNames) : IReportService
+public sealed class ReportService(IAppDbContext context, IClock clock, RankingService rankingService, InstructorAccessService instructorAccess, ICurrentUserContext currentUser, IStoreContext stores, IStudentDisplayNameService displayNames) : IReportService
 {
     private static readonly CultureInfo ReportCulture = CultureInfo.GetCultureInfo("bs-BA");
 
@@ -41,7 +41,7 @@ public sealed class ReportService(IAppDbContext context, IClock clock, RankingSe
 
     public async Task<byte[]> GenerateStoreRentalSummaryPdfAsync(CancellationToken cancellationToken = default)
     {
-        var storeId = await actor.GetCurrentStoreIdAsync(cancellationToken);
+        var storeId = await stores.GetCurrentStoreIdAsync(cancellationToken);
         var storeName = await context.Set<MusicStore>().AsNoTracking().Where(s => s.Id == storeId).Select(s => s.StoreName).FirstOrDefaultAsync(cancellationToken) ?? $"Prodavnica {storeId}";
         var rentals = await context.Set<InstrumentRental>().AsNoTracking().Include(x => x.Instrument).Include(x => x.StudentProfile).Where(x => x.Instrument.MusicStoreId == storeId).OrderByDescending(x => x.RequestedAt).ToListAsync(cancellationToken);
         return Document.Create(container => container.Page(page =>
@@ -60,7 +60,7 @@ public sealed class ReportService(IAppDbContext context, IClock clock, RankingSe
 
     public async Task<byte[]> GenerateLectureAttendancePdfAsync(int lectureId, CancellationToken cancellationToken = default)
     {
-        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(actor.UserId);
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId);
         var lecture = await instructorAccess.GetOwnedLectureAsync(lectureId, instructorId, includeAttendances: true);
         var nameMap = await displayNames.GetStudentDisplayNamesAsync(lecture.Attendances.Select(a => a.Student));
         var rows = lecture.Attendances.OrderBy(a => a.StudentId).Select(a => new AttendanceRow(nameMap.GetValueOrDefault(a.StudentId, $"Student {a.StudentId}"), a.AttendanceStatus)).ToList();

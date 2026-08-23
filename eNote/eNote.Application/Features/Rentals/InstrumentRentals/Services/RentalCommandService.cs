@@ -5,13 +5,13 @@ using Microsoft.EntityFrameworkCore.Storage;
 
 namespace eNote.Application.Features.Rentals.InstrumentRentals.Services;
 
-public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, IClock clock, ICurrentActor actor, IRentalNotificationDispatcher notificationDispatcher)
+public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, IClock clock, ICurrentUserContext currentUser, IStudentContext students, IStoreContext stores, IRentalNotificationDispatcher notificationDispatcher)
 {
     public async Task<InstrumentRentalDto> CreateRequestAsync(RentalCreateRequest request, CancellationToken cancellationToken = default)
     {
         var dto = await ExecuteInTransactionAsync(async () =>
         {
-            var student = await actor.GetCurrentStudentAsync();
+            var student = await students.GetCurrentStudentAsync();
 
             if (!student.HasActiveMembership(clock.UtcNow))
             {
@@ -34,14 +34,14 @@ public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, 
 
             var rental = new InstrumentRental(request.InstrumentId, studentProfileId, instrument.MusicStoreId, clock.UtcNow, request.Note)
             {
-                CreatedById = actor.UserId
+                CreatedById = currentUser.UserId
             };
 
             context.Set<InstrumentRental>().Add(rental);
             await SaveWithLockConflictMessageAsync(Messages.InstrumentReservedOrRented, cancellationToken);
 
             var dto = await LoadDtoAsync(rental.Id, cancellationToken);
-            await notificationDispatcher.DispatchCreatedAsync(dto, actor.UserId);
+            await notificationDispatcher.DispatchCreatedAsync(dto, currentUser.UserId);
             await context.SaveChangesAsync(cancellationToken);
 
             return dto;
@@ -63,16 +63,16 @@ public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, 
     public Task<InstrumentRentalDto> CancelAsync(int rentalId, RentalStatusResponse response, CancellationToken cancellationToken = default) =>
         ExecuteInTransactionAsync(async () =>
         {
-            var rental = await LoadForStudentAsync(rentalId, actor.UserId, cancellationToken);
-            return await ExecuteTransitionWithNotificationAsync(rental, RentalTrigger.Cancel, RentalActor.Student, actor.UserId, response, cancellationToken);
+            var rental = await LoadForStudentAsync(rentalId, currentUser.UserId, cancellationToken);
+            return await ExecuteTransitionWithNotificationAsync(rental, RentalTrigger.Cancel, RentalActor.Student, currentUser.UserId, response, cancellationToken);
         }, cancellationToken);
 
     private Task<InstrumentRentalDto> ExecuteStoreTransitionAsync(int rentalId, RentalTrigger trigger, RentalStatusResponse response, CancellationToken cancellationToken) =>
         ExecuteInTransactionAsync(async () =>
         {
-            var storeId = await actor.GetCurrentStoreIdAsync(cancellationToken);
+            var storeId = await stores.GetCurrentStoreIdAsync(cancellationToken);
             var rental = await LoadForStoreAsync(rentalId, storeId, cancellationToken);
-            return await ExecuteTransitionWithNotificationAsync(rental, trigger, RentalActor.StoreEmployee, actor.UserId, response, cancellationToken);
+            return await ExecuteTransitionWithNotificationAsync(rental, trigger, RentalActor.StoreEmployee, currentUser.UserId, response, cancellationToken);
         }, cancellationToken);
 
     private async Task<InstrumentRentalDto> ExecuteTransitionWithNotificationAsync(InstrumentRental rental, RentalTrigger trigger, RentalActor rentalActor, int userId, RentalStatusResponse? response, CancellationToken cancellationToken)

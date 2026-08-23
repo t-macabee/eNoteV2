@@ -1,40 +1,13 @@
-using Microsoft.Extensions.DependencyInjection;
-
 namespace eNote.Application.Features.Identity.Users.Services;
 
-public sealed class CurrentActor(ICurrentUserService user, IUserProfileLookup lookup, IServiceProvider serviceProvider) : ICurrentActor
+public sealed class CurrentActor(ICurrentUserContext user, IUserProfileLookup lookup) : IStudentContext
 {
     private Student? _student;
     private Instructor? _instructor;
     private MusicStoreEmployee? _employee;
 
-    private int? _storeId;
-    private IAppDbContext? _context;
-
-    private IAppDbContext Context => _context ??= serviceProvider.GetRequiredService<IAppDbContext>();
-
-    public int UserId => user.UserId;
-    public bool IsAuthenticated => user.IsAuthenticated;
-
     public async Task<Student> GetCurrentStudentAsync() => _student ??= await lookup.GetStudentAsync(user.UserId);
     public async Task<int> GetCurrentStudentIdAsync() => (await GetCurrentStudentAsync()).Id;
     public async Task<Instructor> GetCurrentInstructorAsync() => _instructor ??= await lookup.GetInstructorAsync(user.UserId);
     public async Task<MusicStoreEmployee> GetCurrentEmployeeAsync() => _employee ??= await lookup.GetActiveEmployeeAsync(user.UserId);
-
-    public async Task<int> GetCurrentStoreIdAsync(CancellationToken cancellationToken = default)
-    {
-        if (_storeId is not null) return _storeId.Value;
-
-        var storeId = await Context.Set<MusicStoreEmployee>()
-            .AsNoTracking()
-            .Where(x => x.AppUserId == user.UserId && x.IsActive)
-            .Select(x => (int?)x.MusicStoreId)
-            .SingleOrDefaultAsync(cancellationToken);
-
-        if (!storeId.HasValue) throw new StoreNotResolvedException(Messages.ActiveEmployeeStoreNotFound);
-
-        return (_storeId = storeId.Value).Value;
-    }
-
-    public int GetCurrentStoreId() => _storeId ?? throw new StoreNotResolvedException(Messages.ActiveEmployeeStoreNotFound);
 }

@@ -28,7 +28,7 @@ if (rabbitMqError is not null)
     throw new InvalidOperationException("Missing required configuration: " + rabbitMqError);
 }
 
-builder.Services.AddScoped<ICurrentActor, WorkerActor>();
+builder.Services.AddScoped<ICurrentUserContext, WorkerActor>();
 builder.Services.AddInfrastructure(builder.Configuration, bus =>
 {
     bus.AddConsumer<RentalStatusChangedConsumer>();

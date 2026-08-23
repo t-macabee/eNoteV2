@@ -8,7 +8,7 @@ namespace eNote.API.Controllers.Files;
 
 [ApiController]
 [Route("api/v{version:apiVersion}/uploads")]
-public sealed class UploadsController(IFileStorageService fileStorage, IFileAccessService fileAccess, ICurrentUserService currentUser) : CoreController
+public sealed class UploadsController(IFileStorageService fileStorage, IFileAccessService fileAccess, ICurrentUserContext currentUser) : CoreController
 {
     [AllowAnonymous]
     [HttpGet("instruments/{fileName}")]

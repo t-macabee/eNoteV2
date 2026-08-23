@@ -86,7 +86,7 @@ public sealed class RentalQueryServiceTests
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
             .ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning))
             .Options;
-        return new ENoteContext(options, new FixedClock(Now), new StubCurrentActor(storeId: 1));
+        return new ENoteContext(options, new FixedClock(Now), new StubCurrentActor(storeId: 1)) { ExplicitStoreId = 1 };
     }
 
     private static async Task<Student> SeedStudentAsync(ENoteContext context, int appUserId)

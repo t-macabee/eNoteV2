@@ -1,5 +1,6 @@
 using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Interfaces;
+using eNote.Application.Common.Localization;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Common.Time;
 using eNote.Infrastructure.Data.Seed;
@@ -11,9 +12,16 @@ using Microsoft.EntityFrameworkCore.Storage;
 
 namespace eNote.Infrastructure.Data;
 
-public class ENoteContext(DbContextOptions<ENoteContext> options, IClock clock, ICurrentActor actor) : IdentityDbContext<AppUser, AppRole, int>(options), IAppDbContext
+public class ENoteContext(DbContextOptions<ENoteContext> options, IClock clock, ICurrentUserContext currentUser) : IdentityDbContext<AppUser, AppRole, int>(options), IAppDbContext, IStoreContext
 {
     private int? _storeId;
+    private bool _storeResolved;
+
+    /// <summary>
+    /// Bypasses database store-id resolution when set (tests and tooling).
+    /// Production requests resolve the store through <see cref="GetCurrentStoreIdAsync"/> instead.
+    /// </summary>
+    public int? ExplicitStoreId { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -60,10 +68,30 @@ public class ENoteContext(DbContextOptions<ENoteContext> options, IClock clock, 
 
     private int? GetStoreId()
     {
-        if (_storeId is not null) return _storeId;
-        try { _storeId = actor.GetCurrentStoreId(); }
-        catch (StoreNotResolvedException) { }
+        if (!_storeResolved && ExplicitStoreId.HasValue)
+        {
+            _storeId = ExplicitStoreId;
+            _storeResolved = true;
+        }
+
         return _storeId;
+    }
+
+    public async Task<int> GetCurrentStoreIdAsync(CancellationToken cancellationToken = default)
+    {
+        if (!_storeResolved)
+        {
+            var storeId = await Set<MusicStoreEmployee>()
+                .AsNoTracking()
+                .Where(x => x.AppUserId == currentUser.UserId && x.IsActive)
+                .Select(x => (int?)x.MusicStoreId)
+                .SingleOrDefaultAsync(cancellationToken);
+
+            _storeId = storeId ?? throw new StoreNotResolvedException(Messages.ActiveEmployeeStoreNotFound);
+            _storeResolved = true;
+        }
+
+        return _storeId!.Value;
     }
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

@@ -12,6 +12,6 @@ public static class TestDbContextFactory
             .UseInMemoryDatabase(databaseName)
             .ConfigureWarnings(warnings => warnings.Ignore(InMemoryEventId.TransactionIgnoredWarning))
             .Options;
-        return new ENoteContext(options, new FixedClock(now), new StubCurrentActor(new Student(0, now)));
+        return new ENoteContext(options, new FixedClock(now), new StubCurrentActor(new Student(0, now))) { ExplicitStoreId = 1 };
     }
 }

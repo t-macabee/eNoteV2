@@ -45,6 +45,9 @@ public static class DependencyInjection
             connectionString,
             sql => sql.MigrationsAssembly(typeof(ENoteContext).Assembly.FullName)));
         services.AddScoped<IAppDbContext>(provider => provider.GetRequiredService<ENoteContext>());
+        // ENoteContext owns tenant store-id resolution (it feeds its global query filters),
+        // so IStoreContext is satisfied by the same scoped instance.
+        services.AddScoped<IStoreContext>(provider => provider.GetRequiredService<ENoteContext>());
         services.AddScoped<IMigrationRunner, MigrationRunner>();
         services.AddScoped<IDatabaseHealthProbe, DatabaseHealthProbe>();
         services.AddScoped<IRentalNotificationDispatcher, RentalNotificationDispatcher>();

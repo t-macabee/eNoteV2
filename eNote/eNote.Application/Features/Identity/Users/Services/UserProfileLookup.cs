@@ -1,10 +1,8 @@
-using Microsoft.Extensions.DependencyInjection;
-
 namespace eNote.Application.Features.Identity.Users.Services;
 
-public sealed class UserProfileLookup(IServiceProvider serviceProvider) : IUserProfileLookup
+public sealed class UserProfileLookup(IAppDbContext context) : IUserProfileLookup
 {
-    private IAppDbContext Context => serviceProvider.GetRequiredService<IAppDbContext>();
+    private IAppDbContext Context => context;
 
     public async Task<Student> GetStudentAsync(int userId) =>
         await Context.Set<Student>().AsNoTracking().FirstOrDefaultAsync(x => x.AppUserId == userId)

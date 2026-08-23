@@ -3,7 +3,7 @@ using MapsterMapper;
 
 namespace eNote.Application.Features.Rentals.Recommendations.Services;
 
-public sealed class RecommendationService(IAppDbContext context, IMapper mapper, ICurrentActor actor, IClock clock)
+public sealed class RecommendationService(IAppDbContext context, IMapper mapper, ICurrentUserContext currentUser, IStudentContext students, IClock clock)
 {
     private const double RentalWeight = 0.40;
     private const double ViewWeight = 0.30;
@@ -18,9 +18,9 @@ public sealed class RecommendationService(IAppDbContext context, IMapper mapper,
     {
         count = NormalizeCount(count);
 
-        var studentId = await actor.GetCurrentStudentIdAsync();
+        var studentId = await students.GetCurrentStudentIdAsync();
 
-        var userId = actor.UserId;
+        var userId = currentUser.UserId;
 
         var userRentals = await context.Set<InstrumentRental>()
             .AsNoTracking()
@@ -120,7 +120,7 @@ public sealed class RecommendationService(IAppDbContext context, IMapper mapper,
             throw new NotFoundException(Messages.InstrumentNotFound);
         }
 
-        var userId = actor.UserId;
+        var userId = currentUser.UserId;
 
         var now = clock.UtcNow;
 

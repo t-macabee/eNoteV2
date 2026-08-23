@@ -2,11 +2,11 @@ using MapsterMapper;
 
 namespace eNote.Application.Features.Communication.Announcements.Services;
 
-public sealed class StudentAnnouncementFeedService(IAppDbContext context, ICurrentActor actor, IMapper mapper)
+public sealed class StudentAnnouncementFeedService(IAppDbContext context, IStudentContext students, IMapper mapper)
 {
     public async Task<PagedResult<AnnouncementDto>> GetFeedForStudentAsync(AnnouncementSearchObject search, CancellationToken cancellationToken = default)
     {
-        var studentId = await actor.GetCurrentStudentIdAsync();
+        var studentId = await students.GetCurrentStudentIdAsync();
 
         var query = context.Set<Announcement>()
             .AsNoTracking()

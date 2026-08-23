@@ -65,7 +65,7 @@ public sealed class RentalCommandServiceTests
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
             .ConfigureWarnings(warnings => warnings.Ignore(InMemoryEventId.TransactionIgnoredWarning))
             .Options;
-        return new ENoteContext(options, new FixedClock(Now), new StubCurrentActor(new Student(0, Now)));
+        return new ENoteContext(options, new FixedClock(Now), new StubCurrentActor(new Student(0, Now))) { ExplicitStoreId = 1 };
     }
 
     private static async Task<Student> SeedStudentAsync(ENoteContext context, bool hasActiveMembership)
@@ -124,11 +124,17 @@ public sealed class RentalCommandServiceTests
         Assert.Equal(RentalTrigger.Approve, recorder.TransitionCalls[0].Trigger);
     }
 
-    private static RentalCommandService CreateService(ENoteContext context, Student student, IRentalNotificationDispatcher? dispatcher = null) =>
-        new(context, TestMapper.Create(), new FixedClock(Now), new StubCurrentActor(student: student),
+    private static RentalCommandService CreateService(ENoteContext context, Student student, IRentalNotificationDispatcher? dispatcher = null)
+    {
+        var currentUser = new StubCurrentActor(student: student);
+        return new(context, TestMapper.Create(), new FixedClock(Now), currentUser, currentUser, currentUser,
             dispatcher ?? new NoOpNotificationDispatcher());
+    }
 
-    private static RentalCommandService CreateStoreService(ENoteContext context, int storeId, IRentalNotificationDispatcher? dispatcher = null) =>
-        new(context, TestMapper.Create(), new FixedClock(Now), new StubCurrentActor(storeId: storeId),
+    private static RentalCommandService CreateStoreService(ENoteContext context, int storeId, IRentalNotificationDispatcher? dispatcher = null)
+    {
+        var currentUser = new StubCurrentActor(storeId: storeId);
+        return new(context, TestMapper.Create(), new FixedClock(Now), currentUser, currentUser, currentUser,
             dispatcher ?? new NoOpNotificationDispatcher());
+    }
 }

@@ -61,7 +61,7 @@ public sealed class UserSelfServiceTests
         Assert.Equal(11, account.PictureDeleteUserId);
     }
 
-    private sealed class TestCurrentUserService(int userId) : ICurrentUserService
+    private sealed class TestCurrentUserService(int userId) : ICurrentUserContext
     {
         public int UserId => userId;
         public bool IsAuthenticated => true;

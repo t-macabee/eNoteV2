@@ -5,7 +5,7 @@ namespace eNote.Application.Features.Rentals.Instruments.Services;
 public sealed class InstrumentService(
     IAppDbContext context,
     IMapper mapper,
-    ICurrentActor actor,
+    IStudentContext students,
     IFileStorageService fileStorage)
 {
     public async Task<InstrumentDto> GetByIdAsync(int id, CancellationToken cancellationToken = default)
@@ -128,7 +128,7 @@ public sealed class InstrumentService(
     }
 
     private Task<MusicStoreEmployee> EnsureStoreAccessAsync() =>
-        actor.GetCurrentEmployeeAsync();
+        students.GetCurrentEmployeeAsync();
 
     private async Task EnsureInstrumentTypeExistsAsync(int instrumentTypeId, CancellationToken cancellationToken)
     {

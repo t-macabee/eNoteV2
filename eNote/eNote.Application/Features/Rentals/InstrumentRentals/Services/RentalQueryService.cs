@@ -2,11 +2,11 @@ using MapsterMapper;
 
 namespace eNote.Application.Features.Rentals.InstrumentRentals.Services;
 
-public sealed class RentalQueryService(IAppDbContext context, IMapper mapper, ICurrentActor actor, IClock clock)
+public sealed class RentalQueryService(IAppDbContext context, IMapper mapper, ICurrentUserContext currentUser, IClock clock)
 {
     public async Task<InstrumentRentalDto> GetByIdForStudentAsync(int rentalId, CancellationToken cancellationToken = default)
     {
-        var entity = await FindRentalAsync(context.Set<InstrumentRental>().Where(x => x.Id == rentalId && x.StudentProfile.AppUserId == actor.UserId), cancellationToken);
+        var entity = await FindRentalAsync(context.Set<InstrumentRental>().Where(x => x.Id == rentalId && x.StudentProfile.AppUserId == currentUser.UserId), cancellationToken);
 
         var dto = mapper.Map<InstrumentRentalDto>(entity);
 
@@ -16,7 +16,7 @@ public sealed class RentalQueryService(IAppDbContext context, IMapper mapper, IC
     }
 
     public Task<PagedResult<InstrumentRentalDto>> GetPagedForStudentAsync(InstrumentRentalSearchObject search, CancellationToken cancellationToken = default) => GetPagedAsync(context.Set<InstrumentRental>()
-        .Where(x => x.StudentProfile.AppUserId == actor.UserId), search, cancellationToken);
+        .Where(x => x.StudentProfile.AppUserId == currentUser.UserId), search, cancellationToken);
 
     public async Task<InstrumentRentalDto> GetByIdForStoreAsync(int rentalId, CancellationToken cancellationToken = default)
     {

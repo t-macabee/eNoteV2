@@ -2,11 +2,11 @@ using MapsterMapper;
 
 namespace eNote.Application.Features.Communication.Notifications.Services;
 
-public sealed class NotificationService(IAppDbContext context, IMapper mapper, ICurrentActor actor)
+public sealed class NotificationService(IAppDbContext context, IMapper mapper, ICurrentUserContext currentUser)
 {
     public async Task<PagedResult<NotificationDto>> GetPagedAsync(NotificationSearchObject search, CancellationToken cancellationToken = default)
     {
-        var userId = actor.UserId;
+        var userId = currentUser.UserId;
 
         var query = context.Set<Notification>()
             .AsNoTracking()
@@ -23,7 +23,7 @@ public sealed class NotificationService(IAppDbContext context, IMapper mapper, I
 
     public async Task<NotificationUnreadCountDto> GetUnreadCountAsync(CancellationToken cancellationToken = default)
     {
-        var userId = actor.UserId;
+        var userId = currentUser.UserId;
 
         var count = await context.Set<Notification>()
             .AsNoTracking()
@@ -34,7 +34,7 @@ public sealed class NotificationService(IAppDbContext context, IMapper mapper, I
 
     public async Task<NotificationDto> MarkReadAsync(int id, CancellationToken cancellationToken = default)
     {
-        var userId = actor.UserId;
+        var userId = currentUser.UserId;
 
         var notification = await context.Set<Notification>()
             .FirstOrDefaultAsync(x => x.Id == id && x.UserId == userId, cancellationToken)
@@ -51,7 +51,7 @@ public sealed class NotificationService(IAppDbContext context, IMapper mapper, I
 
     public async Task<NotificationUnreadCountDto> MarkAllReadAsync(CancellationToken cancellationToken = default)
     {
-        var userId = actor.UserId;
+        var userId = currentUser.UserId;
 
         await context.Set<Notification>()
             .Where(x => x.UserId == userId && !x.IsRead)

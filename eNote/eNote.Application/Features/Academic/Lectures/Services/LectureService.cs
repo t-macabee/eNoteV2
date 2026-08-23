@@ -6,7 +6,7 @@ namespace eNote.Application.Features.Academic.Lectures.Services;
 
 public sealed class LectureService(
     IAppDbContext context,
-    ICurrentActor actor,
+    ICurrentUserContext currentUser, IStudentContext students,
     InstructorAccessService instructorAccess,
     ILectureNotificationDispatcher notificationDispatcher,
     ILogger<LectureService> logger,
@@ -14,14 +14,14 @@ public sealed class LectureService(
 {
     public async Task<LectureDto> GetByIdForInstructorAsync(int id, CancellationToken cancellationToken = default)
     {
-        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(actor.UserId);
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId);
         var entity = await instructorAccess.GetOwnedLectureAsync(id, instructorId, includeAttendances: true, cancellationToken: cancellationToken);
         return mapper.Map<LectureDto>(entity);
     }
 
     public async Task<LectureDto> GetByIdForStudentAsync(int id, CancellationToken cancellationToken = default)
     {
-        var studentId = await actor.GetCurrentStudentIdAsync();
+        var studentId = await students.GetCurrentStudentIdAsync();
 
         var entity = await context.Set<Lecture>()
             .Include(x => x.Attendances)
@@ -35,7 +35,7 @@ public sealed class LectureService(
 
     public async Task<PagedResult<LectureDto>> GetPagedForInstructorAsync(LectureSearchObject search, CancellationToken cancellationToken = default)
     {
-        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(actor.UserId);
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId);
 
         var query = instructorAccess.LecturesFor(instructorId)
             .AsNoTracking()
@@ -47,7 +47,7 @@ public sealed class LectureService(
 
     public async Task<PagedResult<LectureDto>> GetPagedForStudentAsync(LectureSearchObject search, CancellationToken cancellationToken = default)
     {
-        var studentId = await actor.GetCurrentStudentIdAsync();
+        var studentId = await students.GetCurrentStudentIdAsync();
 
         var query = context.Set<Lecture>()
             .AsNoTracking()
@@ -60,7 +60,7 @@ public sealed class LectureService(
 
     public async Task<LectureDto> CreateAsync(LectureCreateRequest request, CancellationToken cancellationToken = default)
     {
-        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(actor.UserId);
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId);
         await instructorAccess.EnsureOwnsCourseAsync(request.CourseId, instructorId, cancellationToken);
 
         var location = request.Location.Trim().ToLower();
@@ -80,7 +80,7 @@ public sealed class LectureService(
             request.Capacity,
             request.CourseId)
         {
-            CreatedById = actor.UserId
+            CreatedById = currentUser.UserId
         };
 
         context.Set<Lecture>().Add(entity);
@@ -91,7 +91,7 @@ public sealed class LectureService(
 
     public async Task<LectureDto> UpdateAsync(int id, LectureUpdateRequest request, CancellationToken cancellationToken = default)
     {
-        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(actor.UserId);
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId);
         var entity = await instructorAccess.GetOwnedLectureAsync(id, instructorId, track: true, cancellationToken: cancellationToken);
 
         if (entity.IsCancelled)
@@ -124,7 +124,7 @@ public sealed class LectureService(
             request.Duration,
             request.LectureTime,
             request.Capacity);
-        entity.UpdatedById = actor.UserId;
+        entity.UpdatedById = currentUser.UserId;
 
         await context.SaveChangesAsync(cancellationToken);
 
@@ -133,20 +133,20 @@ public sealed class LectureService(
 
     public async Task DeleteAsync(int id, CancellationToken cancellationToken = default)
     {
-        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(actor.UserId);
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId);
         var entity = await instructorAccess.GetOwnedLectureAsync(id, instructorId, track: true, cancellationToken: cancellationToken);
 
         entity.SoftDelete();
-        entity.UpdatedById = actor.UserId;
+        entity.UpdatedById = currentUser.UserId;
 
         await context.SaveChangesAsync(cancellationToken);
 
-        logger.LogInformation("Lecture {LectureId} soft-deleted by instructor user {InstructorUserId}", id, actor.UserId);
+        logger.LogInformation("Lecture {LectureId} soft-deleted by instructor user {InstructorUserId}", id, currentUser.UserId);
     }
 
     public async Task<LectureDto> CancelAsync(int id, CancellationToken cancellationToken = default)
     {
-        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(actor.UserId);
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId);
         var entity = await instructorAccess.GetOwnedLectureAsync(id, instructorId, track: true, cancellationToken: cancellationToken);
 
         if (entity.IsCancelled)
@@ -155,7 +155,7 @@ public sealed class LectureService(
         }
 
         entity.Cancel();
-        entity.UpdatedById = actor.UserId;
+        entity.UpdatedById = currentUser.UserId;
 
         var enrolledStudentUserIds = await context.Set<Enrollment>()
             .Where(e => e.CourseId == entity.CourseId && e.EnrollmentStatus == EnrollmentStatus.Active)
