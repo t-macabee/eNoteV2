@@ -33,7 +33,9 @@ public static class DependencyInjection
         services.AddScoped<AssignmentService>();
         services.AddScoped<AssignmentSubmissionService>();
         services.AddScoped<AdminInstructorService>();
-        services.AddScoped<AnnouncementService>();
+        services.AddScoped<InstructorAnnouncementService>();
+        services.AddScoped<StoreAnnouncementService>();
+        services.AddScoped<StudentAnnouncementFeedService>();
         services.AddScoped<CourseService>();
         services.AddScoped<CourseEnrollmentService>();
         services.AddScoped<InstrumentService>();

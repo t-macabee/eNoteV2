@@ -10,13 +10,13 @@ namespace eNote.API.Controllers.Announcements;
 
 [Authorize(Roles = AppRoles.Student)]
 [Route("api/v{version:apiVersion}/student/announcements")]
-public sealed class StudentAnnouncementController(AnnouncementService announcementService) : CoreController
+public sealed class StudentAnnouncementController(StudentAnnouncementFeedService feedService) : CoreController
 {
     [HttpGet]
     [ProducesResponseType(typeof(PagedResult<AnnouncementDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<PagedResult<AnnouncementDto>>> GetFeed([FromQuery] AnnouncementSearchObject search, CancellationToken cancellationToken)
     {
-        var result = await announcementService.GetFeedForStudentAsync(search, cancellationToken);
+        var result = await feedService.GetFeedForStudentAsync(search, cancellationToken);
         return Ok(result);
     }
 }

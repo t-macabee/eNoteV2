@@ -11,7 +11,7 @@ namespace eNote.API.Controllers.Announcements;
 
 [Authorize(Roles = AppRoles.Instructor)]
 [Route("api/v{version:apiVersion}/instructor/courses/{courseId:int}/announcements")]
-public sealed class InstructorAnnouncementController(AnnouncementService announcementService) : CoreController
+public sealed class InstructorAnnouncementController(InstructorAnnouncementService announcementService) : CoreController
 {
     [HttpGet]
     [ProducesResponseType(typeof(PagedResult<AnnouncementDto>), StatusCodes.Status200OK)]
