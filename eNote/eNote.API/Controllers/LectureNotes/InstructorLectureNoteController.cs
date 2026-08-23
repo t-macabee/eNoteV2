@@ -10,7 +10,7 @@ namespace eNote.API.Controllers.LectureNotes;
 
 [Authorize(Roles = AppRoles.Instructor)]
 [Route("api/v{version:apiVersion}/instructor/lectures/{lectureId:int}/notes")]
-public sealed class InstructorLectureNoteController(ILectureNoteService service) : CoreController
+public sealed class InstructorLectureNoteController(LectureNoteService service) : CoreController
 {
     [HttpGet]
     [ProducesResponseType(typeof(PagedResult<LectureNoteDto>), StatusCodes.Status200OK)]

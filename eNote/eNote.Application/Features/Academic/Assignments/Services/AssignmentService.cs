@@ -6,8 +6,8 @@ namespace eNote.Application.Features.Academic.Assignments.Services;
 public sealed class AssignmentService(
     IAppDbContext context,
     ICurrentActor actor,
-    IInstructorAccessService instructorAccess,
-    IMapper mapper) : IAssignmentService
+    InstructorAccessService instructorAccess,
+    IMapper mapper)
 {
     public async Task<PagedResult<AssignmentDto>> GetForLectureAsync(int lectureId, AssignmentSearchObject search, CancellationToken cancellationToken = default)
     {

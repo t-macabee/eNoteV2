@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore.Storage;
 
 namespace eNote.Application.Features.Rentals.InstrumentRentals.Services;
 
-public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, IClock clock, ICurrentActor actor, IRentalStateMachine stateMachine, IRentalNotificationDispatcher notificationDispatcher) : IRentalCommandService
+public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, IClock clock, ICurrentActor actor, IRentalStateMachine stateMachine, IRentalNotificationDispatcher notificationDispatcher)
 {
     public async Task<InstrumentRentalDto> CreateRequestAsync(RentalCreateRequest request, CancellationToken cancellationToken = default)
     {

@@ -10,7 +10,7 @@ namespace eNote.API.Controllers.Instruments;
 [AllowAnonymous]
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/instruments/public")]
-public sealed class PublicInstrumentController(IInstrumentService instrumentService) : ControllerBase
+public sealed class PublicInstrumentController(InstrumentService instrumentService) : ControllerBase
 {
     [HttpGet]
     [ProducesResponseType(typeof(PagedResult<InstrumentDto>), StatusCodes.Status200OK)]

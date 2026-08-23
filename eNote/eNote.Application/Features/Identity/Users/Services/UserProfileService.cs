@@ -7,7 +7,7 @@ public sealed class UserProfileService(
     IAppDbContext context,
     IUserIdentityService identity,
     IUserProfileLookup lookup,
-    ICurrentUserService currentUserService) : IUserProfileService
+    ICurrentUserService currentUserService)
 {
     public Task<UserProfileResponse?> GetCurrentUserAsync(CancellationToken cancellationToken = default) => GetUserAsync(currentUserService.UserId, cancellationToken);
 

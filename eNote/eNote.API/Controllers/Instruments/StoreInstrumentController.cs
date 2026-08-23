@@ -11,7 +11,7 @@ namespace eNote.API.Controllers.Instruments;
 
 [Authorize(Roles = AppRoles.StoreEmployee)]
 [Route("api/v{version:apiVersion}/shop/instruments")]
-public sealed class StoreInstrumentController(IInstrumentService instrumentService) : CoreController
+public sealed class StoreInstrumentController(InstrumentService instrumentService) : CoreController
 {
     [HttpGet]
     [ProducesResponseType(typeof(PagedResult<InstrumentDto>), StatusCodes.Status200OK)]

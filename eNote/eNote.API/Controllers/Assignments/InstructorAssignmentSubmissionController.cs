@@ -10,7 +10,7 @@ namespace eNote.API.Controllers.Assignments;
 
 [Authorize(Roles = AppRoles.Instructor)]
 [Route("api/v{version:apiVersion}/instructor/lectures/{lectureId:int}/assignments/{assignmentId:int}/submissions")]
-public sealed class InstructorAssignmentSubmissionController(IAssignmentSubmissionService submissionService) : CoreController
+public sealed class InstructorAssignmentSubmissionController(AssignmentSubmissionService submissionService) : CoreController
 {
     [HttpGet]
     [ProducesResponseType(typeof(PagedResult<AssignmentSubmissionDto>), StatusCodes.Status200OK)]

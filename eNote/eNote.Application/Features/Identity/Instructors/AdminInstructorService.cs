@@ -3,7 +3,7 @@ using eNote.Application.Features.Identity.Users.Services;
 
 namespace eNote.Application.Features.Identity.Instructors;
 
-public sealed class AdminInstructorService(IAppDbContext context, IUserIdentityService identityService) : IAdminInstructorService
+public sealed class AdminInstructorService(IAppDbContext context, IUserIdentityService identityService)
 {
     public async Task<PagedResult<InstructorDto>> GetPagedAsync(InstructorSearchObject search, CancellationToken cancellationToken = default)
     {

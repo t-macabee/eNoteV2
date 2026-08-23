@@ -9,7 +9,7 @@ namespace eNote.API.Controllers.Instruments;
 
 [Authorize(Roles = AppRoles.Student)]
 [Route("api/v{version:apiVersion}/student/instruments")]
-public sealed class StudentInstrumentController(IRecommendationService recommendationService) : CoreController
+public sealed class StudentInstrumentController(RecommendationService recommendationService) : CoreController
 {
     [HttpGet("recommended")]
     [ProducesResponseType(typeof(IReadOnlyList<InstrumentRecommendationDto>), StatusCodes.Status200OK)]

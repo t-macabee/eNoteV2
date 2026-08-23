@@ -7,7 +7,7 @@ namespace eNote.Application.Features.Files.Services;
 public sealed class FileAccessService(
     IAppDbContext context,
     IUserProfileLookup lookup,
-    IInstructorAccessService instructorAccess,
+    InstructorAccessService instructorAccess,
     IUserIdentityService identity) : IFileAccessService
 {
     private const string AssignmentApiPath = "/api/uploads/assignments/";

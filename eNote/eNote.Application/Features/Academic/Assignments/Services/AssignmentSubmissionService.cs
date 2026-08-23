@@ -10,10 +10,10 @@ public sealed class AssignmentSubmissionService(
     IClock clock,
     ICurrentActor actor,
     IStudentDisplayNameService displayNames,
-    IInstructorAccessService instructorAccess,
+    InstructorAccessService instructorAccess,
     IFileStorageService fileStorage,
     ISubmissionNotificationDispatcher notificationDispatcher,
-    IMapper mapper) : IAssignmentSubmissionService
+    IMapper mapper)
 {
     public async Task<AssignmentSubmissionDto> SubmitWithFileAsync(int assignmentId, Stream stream, string fileName, string contentType, CancellationToken ct = default)
     {

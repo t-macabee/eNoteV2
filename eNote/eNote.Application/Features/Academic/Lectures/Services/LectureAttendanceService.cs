@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging;
 
 namespace eNote.Application.Features.Academic.Lectures.Services;
 
-public sealed class LectureAttendanceService(IAppDbContext context, ICurrentActor actor, IStudentDisplayNameService displayNames, IInstructorAccessService instructorAccess, ILogger<LectureAttendanceService> logger) : ILectureAttendanceService
+public sealed class LectureAttendanceService(IAppDbContext context, ICurrentActor actor, IStudentDisplayNameService displayNames, InstructorAccessService instructorAccess, ILogger<LectureAttendanceService> logger)
 {
     public async Task<RsvpResponse> RsvpAsync(int lectureId, RsvpRequest request, CancellationToken cancellationToken = default)
     {

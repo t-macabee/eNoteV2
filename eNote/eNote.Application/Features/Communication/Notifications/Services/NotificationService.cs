@@ -2,7 +2,7 @@ using MapsterMapper;
 
 namespace eNote.Application.Features.Communication.Notifications.Services;
 
-public sealed class NotificationService(IAppDbContext context, IMapper mapper, ICurrentActor actor) : INotificationService
+public sealed class NotificationService(IAppDbContext context, IMapper mapper, ICurrentActor actor)
 {
     public async Task<PagedResult<NotificationDto>> GetPagedAsync(NotificationSearchObject search, CancellationToken cancellationToken = default)
     {

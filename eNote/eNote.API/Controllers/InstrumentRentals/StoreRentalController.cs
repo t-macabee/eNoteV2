@@ -11,7 +11,7 @@ namespace eNote.API.Controllers.InstrumentRentals;
 
 [Authorize(Roles = AppRoles.StoreEmployee)]
 [Route("api/v{version:apiVersion}/shop/rentals")]
-public sealed class StoreRentalController(IRentalQueryService queryService, IRentalCommandService commandService, IReportService reportService) : CoreController
+public sealed class StoreRentalController(RentalQueryService queryService, RentalCommandService commandService, IReportService reportService) : CoreController
 {
     [HttpGet("report")]
     [ProducesResponseType(StatusCodes.Status200OK)]

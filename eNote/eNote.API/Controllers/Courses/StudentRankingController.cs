@@ -9,7 +9,7 @@ namespace eNote.API.Controllers.Courses;
 
 [Authorize(Roles = AppRoles.Student)]
 [Route("api/v{version:apiVersion}/student/courses/{courseId:int}/ranking")]
-public sealed class StudentRankingController(IRankingService rankingService) : CoreController
+public sealed class StudentRankingController(RankingService rankingService) : CoreController
 {
     [HttpGet]
     [ProducesResponseType(typeof(IReadOnlyList<CourseRankingEntryDto>), StatusCodes.Status200OK)]

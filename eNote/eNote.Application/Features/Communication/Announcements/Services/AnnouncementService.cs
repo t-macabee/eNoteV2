@@ -3,8 +3,7 @@ using MapsterMapper;
 
 namespace eNote.Application.Features.Communication.Announcements.Services;
 
-public sealed class AnnouncementService(IAppDbContext context, IClock clock, ICurrentActor actor, IInstructorAccessService instructorAccess, IFileStorageService fileStorage, IMapper mapper)
-     : ICourseAnnouncementService, IStoreAnnouncementService, IStudentAnnouncementService
+public sealed class AnnouncementService(IAppDbContext context, IClock clock, ICurrentActor actor, InstructorAccessService instructorAccess, IFileStorageService fileStorage, IMapper mapper)
 {
     public async Task<PagedResult<AnnouncementDto>> GetFeedForStudentAsync(AnnouncementSearchObject search, CancellationToken cancellationToken = default)
     {

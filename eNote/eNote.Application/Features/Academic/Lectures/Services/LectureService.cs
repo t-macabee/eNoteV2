@@ -7,10 +7,10 @@ namespace eNote.Application.Features.Academic.Lectures.Services;
 public sealed class LectureService(
     IAppDbContext context,
     ICurrentActor actor,
-    IInstructorAccessService instructorAccess,
+    InstructorAccessService instructorAccess,
     ILectureNotificationDispatcher notificationDispatcher,
     ILogger<LectureService> logger,
-    IMapper mapper) : ILectureService
+    IMapper mapper)
 {
     public async Task<LectureDto> GetByIdForInstructorAsync(int id, CancellationToken cancellationToken = default)
     {

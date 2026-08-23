@@ -3,7 +3,7 @@ using MapsterMapper;
 
 namespace eNote.Application.Features.Rentals.InstrumentRentals.Services;
 
-public sealed class RentalQueryService(IAppDbContext context, IMapper mapper, ICurrentActor actor, IClock clock) : IRentalQueryService
+public sealed class RentalQueryService(IAppDbContext context, IMapper mapper, ICurrentActor actor, IClock clock)
 {
     public async Task<InstrumentRentalDto> GetByIdForStudentAsync(int rentalId, CancellationToken cancellationToken = default)
     {

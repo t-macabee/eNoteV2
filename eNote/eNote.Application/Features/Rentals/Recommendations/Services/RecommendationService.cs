@@ -3,7 +3,7 @@ using MapsterMapper;
 
 namespace eNote.Application.Features.Rentals.Recommendations.Services;
 
-public sealed class RecommendationService(IAppDbContext context, IMapper mapper, ICurrentActor actor, IClock clock) : IRecommendationService
+public sealed class RecommendationService(IAppDbContext context, IMapper mapper, ICurrentActor actor, IClock clock)
 {
     private const double RentalWeight = 0.40;
     private const double ViewWeight = 0.30;

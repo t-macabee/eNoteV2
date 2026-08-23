@@ -103,7 +103,7 @@ public sealed class AnnouncementServiceTests
     private static AnnouncementService CreateService(
         ENoteContext context,
         Instructor instructor,
-        IInstructorAccessService instructorAccess,
+        InstructorAccessService instructorAccess,
         int storeId = 1,
         StubCurrentActor? actor = null) =>
         new(context,

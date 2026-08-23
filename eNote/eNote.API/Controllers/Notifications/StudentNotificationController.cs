@@ -10,7 +10,7 @@ namespace eNote.API.Controllers.Notifications;
 
 [Authorize(Roles = AppRoles.Student)]
 [Route("api/v{version:apiVersion}/student/notifications")]
-public sealed class StudentNotificationController(INotificationService notificationService) : CoreController
+public sealed class StudentNotificationController(NotificationService notificationService) : CoreController
 {
     [HttpGet]
     [ProducesResponseType(typeof(PagedResult<NotificationDto>), StatusCodes.Status200OK)]

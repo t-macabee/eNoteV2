@@ -6,7 +6,7 @@ public sealed class CourseEnrollmentService(
     IAppDbContext context,
     IClock clock,
     ICurrentActor actor,
-    ILogger<CourseEnrollmentService> logger) : ICourseEnrollmentService
+    ILogger<CourseEnrollmentService> logger)
 {
     public async Task EnrollAsync(int courseId, CancellationToken cancellationToken = default)
     {

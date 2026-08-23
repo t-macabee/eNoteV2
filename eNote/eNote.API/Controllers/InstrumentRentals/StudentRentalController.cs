@@ -10,7 +10,7 @@ namespace eNote.API.Controllers.InstrumentRentals;
 
 [Authorize(Roles = AppRoles.Student)]
 [Route("api/v{version:apiVersion}/student/rentals")]
-public sealed class StudentRentalController(IRentalQueryService queryService, IRentalCommandService commandService) : CoreController
+public sealed class StudentRentalController(RentalQueryService queryService, RentalCommandService commandService) : CoreController
 {
     [HttpGet]
     [ProducesResponseType(typeof(PagedResult<InstrumentRentalDto>), StatusCodes.Status200OK)]

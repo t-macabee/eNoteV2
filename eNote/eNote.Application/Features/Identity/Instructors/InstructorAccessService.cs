@@ -2,7 +2,7 @@ using eNote.Application.Features.Identity.Users.Services;
 
 namespace eNote.Application.Features.Identity.Instructors;
 
-public sealed class InstructorAccessService(IAppDbContext context, IUserProfileLookup lookup) : IInstructorAccessService
+public sealed class InstructorAccessService(IAppDbContext context, IUserProfileLookup lookup)
 {
     public Task<Instructor> GetInstructorAsync(int userId) => lookup.GetInstructorAsync(userId);
     public async Task<int> GetCurrentInstructorIdAsync(int appUserId) => (await GetInstructorAsync(appUserId)).Id;

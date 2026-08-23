@@ -6,8 +6,8 @@ namespace eNote.Application.Features.Academic.LectureNotes.Services;
 public sealed class LectureNoteService(
     IAppDbContext context,
     ICurrentActor actor,
-    IInstructorAccessService instructorAccess,
-    IMapper mapper) : ILectureNoteService
+    InstructorAccessService instructorAccess,
+    IMapper mapper)
 {
     public async Task<PagedResult<LectureNoteDto>> GetForLectureAsync(int lectureId, LectureNoteSearchObject search, CancellationToken cancellationToken = default)
     {

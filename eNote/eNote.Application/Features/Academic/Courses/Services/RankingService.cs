@@ -3,7 +3,7 @@ using eNote.Application.Features.Identity.Users.Services;
 
 namespace eNote.Application.Features.Academic.Courses.Services;
 
-public sealed class RankingService(IAppDbContext context, ICurrentActor actor, IStudentDisplayNameService displayNames, IInstructorAccessService instructorAccess) : IRankingService
+public sealed class RankingService(IAppDbContext context, ICurrentActor actor, IStudentDisplayNameService displayNames, InstructorAccessService instructorAccess)
 {
     public async Task<IReadOnlyList<CourseRankingEntryDto>> GetForInstructorAsync(int courseId, CancellationToken cancellationToken = default)
     {

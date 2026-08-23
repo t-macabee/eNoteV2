@@ -10,7 +10,7 @@ namespace eNote.API.Controllers.Assignments;
 
 [Authorize(Roles = AppRoles.Student)]
 [Route("api/v{version:apiVersion}/student/assignments/{id:int}/submit")]
-public sealed class StudentAssignmentSubmissionController(IAssignmentSubmissionService submissionService) : CoreController
+public sealed class StudentAssignmentSubmissionController(AssignmentSubmissionService submissionService) : CoreController
 {
     [HttpPost]
     [RequestSizeLimit(5 * 1024 * 1024)]

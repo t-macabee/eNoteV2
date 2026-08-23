@@ -10,7 +10,7 @@ namespace eNote.API.Controllers.Courses;
 
 [Authorize(Roles = AppRoles.Instructor)]
 [Route("api/v{version:apiVersion}/instructor/courses")]
-public sealed class InstructorCourseController(ICourseService service) : CoreController
+public sealed class InstructorCourseController(CourseService service) : CoreController
 {
     [HttpGet]
     [ProducesResponseType(typeof(PagedResult<CourseDto>), StatusCodes.Status200OK)]

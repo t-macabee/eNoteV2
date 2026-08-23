@@ -9,7 +9,7 @@ namespace eNote.API.Controllers.Admin;
 
 [Authorize(Roles = AppRoles.Administrator)]
 [Route("api/v{version:apiVersion}/admin/instructors")]
-public sealed class AdminInstructorController(IAdminInstructorService service) : CoreController
+public sealed class AdminInstructorController(AdminInstructorService service) : CoreController
 {
     [HttpGet]
     [ProducesResponseType(typeof(PagedResult<InstructorDto>), StatusCodes.Status200OK)]

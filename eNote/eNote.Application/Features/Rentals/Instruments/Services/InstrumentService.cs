@@ -6,7 +6,7 @@ public sealed class InstrumentService(
     IAppDbContext context,
     IMapper mapper,
     ICurrentActor actor,
-    IFileStorageService fileStorage) : IInstrumentService
+    IFileStorageService fileStorage)
 {
     public async Task<InstrumentDto> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {

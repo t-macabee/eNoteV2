@@ -2,7 +2,7 @@ namespace eNote.Application.Features.Identity.Users.Services;
 
 public sealed class UserSelfService(
     IUserAccountService accountService,
-    ICurrentUserService currentUserService) : IUserSelfService
+    ICurrentUserService currentUserService)
 {
     public Task<(bool Success, string? Error)> UpdateProfileAsync(UpdateProfileRequest request)
         => accountService.UpdateExistingUserAsync(currentUserService.UserId, request.Email, request.FirstName, request.LastName, request.DateOfBirth);

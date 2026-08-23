@@ -1,10 +1,10 @@
-﻿using eNote.Application.Features.Identity.Instructors;
+using eNote.Application.Features.Identity.Instructors;
 using MapsterMapper;
 using Microsoft.Extensions.Logging;
 
 namespace eNote.Application.Features.Academic.Courses.Services;
 
-public sealed class CourseService(IAppDbContext context, IMapper mapper, ICurrentActor actor, IInstructorAccessService instructorAccess, ILogger<CourseService> logger) : ICourseService
+public sealed class CourseService(IAppDbContext context, IMapper mapper, ICurrentActor actor, InstructorAccessService instructorAccess, ILogger<CourseService> logger)
 {
     public async Task<CourseDto> GetByIdForInstructorAsync(int id, CancellationToken cancellationToken = default)
     {
