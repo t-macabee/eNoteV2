@@ -1,4 +1,4 @@
-namespace eNote.Infrastructure;
+namespace eNote.Infrastructure.Storage;
 
 internal static class FileSignatureDetector
 {

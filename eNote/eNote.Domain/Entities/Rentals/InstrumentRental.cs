@@ -1,3 +1,4 @@
+using eNote.Domain.Entities.Rentals.Transitions;
 using eNote.Domain.Enums;
 using eNote.Domain.Shared;
 

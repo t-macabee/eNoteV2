@@ -7,6 +7,7 @@ global using eNote.Contracts.Lectures;
 global using eNote.Domain.Entities.Academic;
 global using eNote.Domain.Entities.Identity;
 global using eNote.Domain.Entities.Rentals;
+global using eNote.Domain.Entities.Rentals.Transitions;
 global using eNote.Domain.Enums;
 global using eNote.Infrastructure.Data;
 global using Xunit;

@@ -1,4 +1,4 @@
-namespace eNote.Domain.Entities.Rentals;
+namespace eNote.Domain.Enums;
 
 public enum RentalTrigger
 {
