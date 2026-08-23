@@ -1,12 +1,8 @@
-using eNote.Application.Features.Rentals.InstrumentRentals.StateMachine;
-using eNote.Tests.TestUtils;
-
 namespace eNote.Tests.Rentals;
 
-public sealed class RentalStateMachineTests
+public sealed class InstrumentRentalTransitionTests
 {
     private static readonly DateTime Now = new(2026, 6, 15, 12, 0, 0, DateTimeKind.Utc);
-    private readonly RentalStateMachine _stateMachine = new(new FixedClock(Now));
 
     [Fact]
     public void Reject_FromPending_SetsRejectedStatus()
@@ -21,7 +17,7 @@ public sealed class RentalStateMachineTests
             IsInstrumentActive = true
         };
 
-        var result = _stateMachine.Fire(rental, RentalTrigger.Reject, context);
+        var result = rental.Transition(RentalTrigger.Reject, context, Now);
 
         Assert.True(result.IsSuccess);
         Assert.Equal(InstrumentRentalStatus.Rejected, rental.RentalStatus);
@@ -41,7 +37,7 @@ public sealed class RentalStateMachineTests
             IsInstrumentActive = true
         };
 
-        var result = _stateMachine.Fire(rental, RentalTrigger.Cancel, context);
+        var result = rental.Transition(RentalTrigger.Cancel, context, Now);
 
         Assert.True(result.IsSuccess);
         Assert.Equal(InstrumentRentalStatus.Canceled, rental.RentalStatus);
@@ -61,7 +57,7 @@ public sealed class RentalStateMachineTests
             IsInstrumentActive = true
         };
 
-        var result = _stateMachine.Fire(rental, RentalTrigger.Pickup, context);
+        var result = rental.Transition(RentalTrigger.Pickup, context, Now);
 
         Assert.False(result.IsSuccess);
         Assert.NotNull(result.Error);
@@ -73,7 +69,7 @@ public sealed class RentalStateMachineTests
         var rental = new InstrumentRental(1, 1, 1, Now, null);
         var ctx = new RentalTransitionContext { UserId = 10, Actor = RentalActor.StoreEmployee, HasInstrumentLockConflict = false, MonthlyFee = 50m, IsInstrumentActive = true };
 
-        var result = _stateMachine.Fire(rental, RentalTrigger.Complete, ctx);
+        var result = rental.Transition(RentalTrigger.Complete, ctx, Now);
 
         Assert.False(result.IsSuccess);
     }
@@ -84,7 +80,7 @@ public sealed class RentalStateMachineTests
         var rental = new InstrumentRental(1, 1, 1, Now, null);
         var ctx = new RentalTransitionContext { UserId = 10, Actor = RentalActor.StoreEmployee, HasInstrumentLockConflict = false, MonthlyFee = 50m, IsInstrumentActive = false };
 
-        var result = _stateMachine.Fire(rental, RentalTrigger.Approve, ctx);
+        var result = rental.Transition(RentalTrigger.Approve, ctx, Now);
 
         Assert.False(result.IsSuccess);
     }
@@ -96,7 +92,7 @@ public sealed class RentalStateMachineTests
         var rental = InstrumentRental.CreateWithInstrument(1, 1, 1, Now, null, instrument);
         var ctx = new RentalTransitionContext { UserId = 10, Actor = RentalActor.StoreEmployee, HasInstrumentLockConflict = true, MonthlyFee = 50m, IsInstrumentActive = true };
 
-        var result = _stateMachine.Fire(rental, RentalTrigger.Approve, ctx);
+        var result = rental.Transition(RentalTrigger.Approve, ctx, Now);
 
         Assert.False(result.IsSuccess);
     }
@@ -108,7 +104,7 @@ public sealed class RentalStateMachineTests
         var rental = InstrumentRental.CreateWithInstrument(1, 1, 1, Now, null, instrument);
         var ctx = new RentalTransitionContext { UserId = 10, Actor = RentalActor.StoreEmployee, HasInstrumentLockConflict = false, MonthlyFee = 50m, IsInstrumentActive = true };
 
-        var result = _stateMachine.Fire(rental, RentalTrigger.Approve, ctx);
+        var result = rental.Transition(RentalTrigger.Approve, ctx, Now);
 
         Assert.True(result.IsSuccess);
         Assert.Equal(InstrumentRentalStatus.Approved, rental.RentalStatus);
@@ -123,7 +119,7 @@ public sealed class RentalStateMachineTests
         rental.Approve(50m, null, Now, 10);
         var ctx = new RentalTransitionContext { UserId = 10, Actor = RentalActor.StoreEmployee, HasInstrumentLockConflict = false, MonthlyFee = 50m, IsInstrumentActive = true };
 
-        var result = _stateMachine.Fire(rental, RentalTrigger.Pickup, ctx);
+        var result = rental.Transition(RentalTrigger.Pickup, ctx, Now);
 
         Assert.True(result.IsSuccess);
         Assert.Equal(InstrumentRentalStatus.Active, rental.RentalStatus);
@@ -138,7 +134,7 @@ public sealed class RentalStateMachineTests
         rental.Pickup(Now);
         var ctx = new RentalTransitionContext { UserId = 10, Actor = RentalActor.StoreEmployee, HasInstrumentLockConflict = false, MonthlyFee = 50m, IsInstrumentActive = true };
 
-        var result = _stateMachine.Fire(rental, RentalTrigger.Complete, ctx);
+        var result = rental.Transition(RentalTrigger.Complete, ctx, Now);
 
         Assert.True(result.IsSuccess);
         Assert.Equal(InstrumentRentalStatus.Completed, rental.RentalStatus);
@@ -153,10 +149,9 @@ public sealed class RentalStateMachineTests
         rental.Pickup(Now);
         var ctx = new RentalTransitionContext { UserId = 10, Actor = RentalActor.StoreEmployee, HasInstrumentLockConflict = false, MonthlyFee = 50m, IsInstrumentActive = true };
 
-        var result = _stateMachine.Fire(rental, RentalTrigger.ReturnEarly, ctx);
+        var result = rental.Transition(RentalTrigger.ReturnEarly, ctx, Now);
 
         Assert.True(result.IsSuccess);
         Assert.Equal(InstrumentRentalStatus.ReturnedEarly, rental.RentalStatus);
     }
-
 }

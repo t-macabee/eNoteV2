@@ -1,13 +1,12 @@
 using eNote.Application.Constants;
 using eNote.Application.Features.Rentals.InstrumentRentals.Billing;
-using eNote.Application.Features.Rentals.InstrumentRentals.StateMachine;
 using eNote.Application.Features.Rentals.Instruments;
 using MapsterMapper;
 using Microsoft.EntityFrameworkCore.Storage;
 
 namespace eNote.Application.Features.Rentals.InstrumentRentals.Services;
 
-public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, IClock clock, ICurrentActor actor, IRentalStateMachine stateMachine, IRentalNotificationDispatcher notificationDispatcher)
+public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, IClock clock, ICurrentActor actor, IRentalNotificationDispatcher notificationDispatcher)
 {
     public async Task<InstrumentRentalDto> CreateRequestAsync(RentalCreateRequest request, CancellationToken cancellationToken = default)
     {
@@ -104,10 +103,10 @@ public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, 
             HasInstrumentLockConflict = hasConflict,
             MonthlyFee = rental.Instrument.InstrumentType.MonthlyFee,
             IsInstrumentActive = rental.Instrument.IsActive,
-            Response = response
+            ResponseNote = response?.Note
         };
 
-        var result = stateMachine.Fire(rental, trigger, transitionContext);
+        var result = rental.Transition(trigger, transitionContext, clock.UtcNow);
 
         if (!result.IsSuccess)
         {

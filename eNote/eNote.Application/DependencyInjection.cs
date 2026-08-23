@@ -8,7 +8,6 @@ using eNote.Application.Features.Files.Services;
 using eNote.Application.Features.Identity.Instructors;
 using eNote.Application.Features.Identity.Users.Services;
 using eNote.Application.Features.Rentals.InstrumentRentals.Services;
-using eNote.Application.Features.Rentals.InstrumentRentals.StateMachine;
 using eNote.Application.Features.Rentals.Instruments.Services;
 using eNote.Application.Features.Rentals.Recommendations.Services;
 using eNote.Application.Features.Rentals.ReferenceData.Addresses;
@@ -51,7 +50,6 @@ public static class DependencyInjection
         services.AddScoped<UserProfileService>();
         services.AddScoped<UserSelfService>();
 
-        services.AddScoped<IRentalStateMachine, RentalStateMachine>();
         services.AddScoped<IUserProfileLookup, UserProfileLookup>();
         services.AddScoped<ICurrentActor, CurrentActor>();
 

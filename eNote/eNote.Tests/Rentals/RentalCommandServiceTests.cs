@@ -1,6 +1,5 @@
 using eNote.Application.Features.Rentals.InstrumentRentals;
 using eNote.Application.Features.Rentals.InstrumentRentals.Services;
-using eNote.Application.Features.Rentals.InstrumentRentals.StateMachine;
 using eNote.Tests.TestUtils;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
@@ -127,9 +126,9 @@ public sealed class RentalCommandServiceTests
 
     private static RentalCommandService CreateService(ENoteContext context, Student student, IRentalNotificationDispatcher? dispatcher = null) =>
         new(context, TestMapper.Create(), new FixedClock(Now), new StubCurrentActor(student: student),
-            new RentalStateMachine(new FixedClock(Now)), dispatcher ?? new NoOpNotificationDispatcher());
+            dispatcher ?? new NoOpNotificationDispatcher());
 
     private static RentalCommandService CreateStoreService(ENoteContext context, int storeId, IRentalNotificationDispatcher? dispatcher = null) =>
         new(context, TestMapper.Create(), new FixedClock(Now), new StubCurrentActor(storeId: storeId),
-            new RentalStateMachine(new FixedClock(Now)), dispatcher ?? new NoOpNotificationDispatcher());
+            dispatcher ?? new NoOpNotificationDispatcher());
 }

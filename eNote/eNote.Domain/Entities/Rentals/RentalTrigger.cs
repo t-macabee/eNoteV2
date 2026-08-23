@@ -1,4 +1,4 @@
-namespace eNote.Application.Features.Rentals.InstrumentRentals.StateMachine;
+namespace eNote.Domain.Entities.Rentals;
 
 public enum RentalTrigger
 {

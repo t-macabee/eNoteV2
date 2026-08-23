@@ -1,6 +1,5 @@
 using eNote.Application.Features.Rentals.InstrumentRentals;
 using eNote.Application.Features.Rentals.InstrumentRentals.Services;
-using eNote.Application.Features.Rentals.InstrumentRentals.StateMachine;
 
 namespace eNote.Tests.TestUtils;
 

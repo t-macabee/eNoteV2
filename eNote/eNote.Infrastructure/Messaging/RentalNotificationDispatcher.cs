@@ -2,7 +2,6 @@ using eNote.Application.Common.Persistence;
 using eNote.Application.Common.Time;
 using eNote.Application.Features.Rentals.InstrumentRentals;
 using eNote.Application.Features.Rentals.InstrumentRentals.Services;
-using eNote.Application.Features.Rentals.InstrumentRentals.StateMachine;
 using eNote.Contracts.Communication;
 using eNote.Contracts.Rentals;
 

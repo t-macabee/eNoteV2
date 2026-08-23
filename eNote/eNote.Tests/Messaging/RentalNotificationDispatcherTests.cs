@@ -1,5 +1,4 @@
 using eNote.Application.Features.Rentals.InstrumentRentals;
-using eNote.Application.Features.Rentals.InstrumentRentals.StateMachine;
 using eNote.Contracts.Rentals;
 using eNote.Domain.Entities.Communication;
 using eNote.Infrastructure.Messaging;
