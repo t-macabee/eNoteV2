@@ -10,6 +10,11 @@ namespace eNote.Infrastructure.Identity;
 
 public sealed class TokenService(IConfiguration configuration, IClock clock) : ITokenService
 {
+    private readonly string _jwtKey = configuration["Jwt:Key"]!;
+    private readonly string? _jwtIssuer = configuration["Jwt:Issuer"];
+    private readonly string? _jwtAudience = configuration["Jwt:Audience"];
+    private readonly int _jwtExpirationDays = configuration.GetValue("Jwt:ExpirationDays", 7);
+
     public string GenerateToken(int userId, string username, IList<string> roles)
     {
         var claims = new List<Claim>
@@ -24,16 +29,14 @@ public sealed class TokenService(IConfiguration configuration, IClock clock) : I
             claims.Add(new Claim(ClaimTypes.Role, role));
         }
 
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["Jwt:Key"]!));
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtKey));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
-        var expirationDays = configuration.GetValue("Jwt:ExpirationDays", 7);
-
         var token = new JwtSecurityToken(
-            issuer: configuration["Jwt:Issuer"],
-            audience: configuration["Jwt:Audience"],
+            issuer: _jwtIssuer,
+            audience: _jwtAudience,
             claims: claims,
-            expires: clock.UtcNow.AddDays(expirationDays),
+            expires: clock.UtcNow.AddDays(_jwtExpirationDays),
             signingCredentials: creds
         );
 

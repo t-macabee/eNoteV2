@@ -17,7 +17,7 @@ public sealed class InstrumentRentalConfig : IEntityTypeConfiguration<Instrument
         builder.HasOne(x => x.Instrument)
                .WithMany(x => x.InstrumentRentals)
                .HasForeignKey(x => x.InstrumentId)
-               .OnDelete(DeleteBehavior.Cascade);
+               .OnDelete(DeleteBehavior.Restrict);
 
         builder.Property(x => x.MusicStoreId).IsRequired();
 

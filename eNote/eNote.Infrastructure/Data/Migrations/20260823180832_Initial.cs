@@ -461,7 +461,7 @@ namespace eNote.Infrastructure.Data.Migrations
                         column: x => x.InstrumentId,
                         principalTable: "Instrument",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_InstrumentRental_Student_StudentProfileId",
                         column: x => x.StudentProfileId,

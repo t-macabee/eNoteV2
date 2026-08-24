@@ -1477,7 +1477,7 @@ namespace eNote.Infrastructure.Data.Migrations
                     b.HasOne("eNote.Domain.Entities.Rentals.Instrument", "Instrument")
                         .WithMany("InstrumentRentals")
                         .HasForeignKey("InstrumentId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("eNote.Domain.Entities.Identity.Student", "StudentProfile")
