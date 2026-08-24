@@ -27,11 +27,31 @@ public sealed class RentalNotificationDispatcher(
         return Task.CompletedTask;
     }
 
+    public Task DispatchPaymentRefundedAsync(InstrumentRentalDto rental, long refundedCents, int actorUserId)
+    {
+        var amount = refundedCents / 100m;
+        var message = new RentalRefunded(
+            rental.Id,
+            rental.StudentUserId,
+            actorUserId,
+            refundedCents,
+            rental.InstrumentModel,
+            "Uplata vraćena",
+            $"Za iznajmljivanje instrumenta {rental.InstrumentModel} vraćeno je {amount:F2} EUR.",
+            clock.UtcNow);
+
+        EnqueueRefundOutbox(message);
+        return Task.CompletedTask;
+    }
+
     private static (string Title, string Body) BuildCreatedContent(InstrumentRentalDto rental) =>
         ("Zahtjev za iznajmljivanje poslan", $"Vaš zahtjev za instrument {rental.InstrumentModel} je poslan prodavnici {rental.StoreName} i čeka odobrenje.");
 
     private void EnqueueOutbox(RentalStatusChanged message) =>
         NotificationOutboxWriter.Enqueue(context, NotificationMessageTypes.RentalStatusChanged, message);
+
+    private void EnqueueRefundOutbox(RentalRefunded message) =>
+        NotificationOutboxWriter.Enqueue(context, NotificationMessageTypes.PaymentRefunded, message);
 
     private static (string Title, string Body) BuildNotificationContent(InstrumentRentalDto rental, RentalTrigger trigger) =>
         trigger switch

@@ -24,6 +24,7 @@
     </PackageReference>
     <PackageReference Include="MimeKit" />
     <PackageReference Include="QuestPDF" />
+    <PackageReference Include="Stripe.net" />
   </ItemGroup>
 
   <ItemGroup>

@@ -38,6 +38,22 @@ public static class ConfigurationExtensions
             errors.Add("JWT__Audience");
         }
 
+        var stripeSecretKey = configuration["Stripe:SecretKey"];
+
+        if (string.IsNullOrWhiteSpace(stripeSecretKey))
+        {
+            errors.Add("Stripe__SecretKey");
+        }
+        else if (!stripeSecretKey.StartsWith("sk_", StringComparison.Ordinal))
+        {
+            errors.Add("Stripe__SecretKey (must start with sk_)");
+        }
+
+        if (string.IsNullOrWhiteSpace(configuration["Stripe:WebhookSecret"]))
+        {
+            errors.Add("Stripe__WebhookSecret");
+        }
+
         var rabbitMqError = RabbitMqConfiguration.GetMissingConfigurationError(configuration);
 
         if (rabbitMqError is not null)

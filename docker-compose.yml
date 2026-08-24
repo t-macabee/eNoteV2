@@ -58,6 +58,11 @@ services:
       Smtp__Username: ${SMTP_USERNAME}
       Smtp__Password: ${SMTP_PASSWORD}
       Smtp__PasswordResetUrl: ${SMTP_PASSWORD_RESET_URL:?Set SMTP_PASSWORD_RESET_URL in .env}
+      Stripe__SecretKey: ${STRIPE_SECRET_KEY:?Set STRIPE_SECRET_KEY in .env}
+      Stripe__PublishableKey: ${STRIPE_PUBLISHABLE_KEY:-}
+      Stripe__WebhookSecret: ${STRIPE_WEBHOOK_SECRET:?Set STRIPE_WEBHOOK_SECRET in .env}
+      Stripe__Currency: ${STRIPE_CURRENCY:-eur}
+      Stripe__StatementDescriptor: ${STRIPE_STATEMENT_DESCRIPTOR:-ENOTE Rental}
     ports:
       - "${API_PORT:-5059}:8080"
     volumes:
@@ -88,6 +93,11 @@ services:
       RabbitMQ__VirtualHost: /
       RabbitMQ__User: ${RABBITMQ_USER:-guest}
       RabbitMQ__Password: ${RABBITMQ_PASSWORD:-guest}
+      Stripe__SecretKey: ${STRIPE_SECRET_KEY:?Set STRIPE_SECRET_KEY in .env}
+      Stripe__PublishableKey: ${STRIPE_PUBLISHABLE_KEY:-}
+      Stripe__WebhookSecret: ${STRIPE_WEBHOOK_SECRET:?Set STRIPE_WEBHOOK_SECRET in .env}
+      Stripe__Currency: ${STRIPE_CURRENCY:-eur}
+      Stripe__StatementDescriptor: ${STRIPE_STATEMENT_DESCRIPTOR:-ENOTE Rental}
     depends_on:
       sqlserver:
         condition: service_healthy

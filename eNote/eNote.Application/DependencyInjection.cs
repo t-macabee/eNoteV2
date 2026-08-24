@@ -9,6 +9,8 @@ using eNote.Application.Features.Identity.Instructors;
 using eNote.Application.Features.Identity.Users.Services;
 using eNote.Application.Features.Rentals.InstrumentRentals.Services;
 using eNote.Application.Features.Rentals.Instruments.Services;
+using eNote.Application.Features.Rentals.Payments;
+using eNote.Application.Features.Rentals.Payments.Services;
 using eNote.Application.Features.Rentals.Recommendations.Services;
 using eNote.Application.Features.Rentals.ReferenceData.Addresses;
 using eNote.Application.Features.Rentals.ReferenceData.InstrumentTypes;
@@ -46,6 +48,7 @@ public static class DependencyInjection
         services.AddScoped<RankingService>();
         services.AddScoped<RentalCommandService>();
         services.AddScoped<RentalQueryService>();
+        services.AddScoped<IRentalPaymentService, RentalPaymentService>();
         services.AddScoped<RecommendationService>();
         services.AddScoped<UserProfileService>();
         services.AddScoped<UserSelfService>();

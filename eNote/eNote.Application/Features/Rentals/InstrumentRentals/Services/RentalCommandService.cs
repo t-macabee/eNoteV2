@@ -32,6 +32,16 @@ public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, 
                 throw new BusinessException(Messages.RentalPendingRequired);
             }
 
+            var hasUnpaidDebt = await context.Set<InstrumentRental>()
+                .AnyAsync(x => x.StudentProfileId == studentProfileId
+                    && (x.RentalStatus == InstrumentRentalStatus.Completed || x.RentalStatus == InstrumentRentalStatus.ReturnedEarly)
+                    && !x.IsPaid, cancellationToken);
+
+            if (hasUnpaidDebt)
+            {
+                throw new BusinessException(Messages.RentalUnpaidDebt);
+            }
+
             var rental = new InstrumentRental(request.InstrumentId, studentProfileId, instrument.MusicStoreId, clock.UtcNow, request.Note)
             {
                 CreatedById = currentUser.UserId

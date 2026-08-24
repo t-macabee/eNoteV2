@@ -7,6 +7,7 @@ public sealed class RecordingNotificationDispatcher : IRentalNotificationDispatc
 {
     public List<(InstrumentRentalDto Rental, int StudentUserId)> CreatedCalls { get; } = [];
     public List<(InstrumentRentalDto Rental, RentalTrigger Trigger, int ActorUserId)> TransitionCalls { get; } = [];
+    public List<(InstrumentRentalDto Rental, long RefundedCents, int ActorUserId)> RefundCalls { get; } = [];
 
     public Task DispatchCreatedAsync(InstrumentRentalDto rental, int studentUserId)
     {
@@ -17,6 +18,12 @@ public sealed class RecordingNotificationDispatcher : IRentalNotificationDispatc
     public Task DispatchTransitionAsync(InstrumentRentalDto rental, RentalTrigger trigger, int actorUserId)
     {
         TransitionCalls.Add((rental, trigger, actorUserId));
+        return Task.CompletedTask;
+    }
+
+    public Task DispatchPaymentRefundedAsync(InstrumentRentalDto rental, long refundedCents, int actorUserId)
+    {
+        RefundCalls.Add((rental, refundedCents, actorUserId));
         return Task.CompletedTask;
     }
 }

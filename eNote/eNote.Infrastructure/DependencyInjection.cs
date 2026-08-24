@@ -6,12 +6,14 @@ using eNote.Application.Features.Academic.Lectures.Services;
 using eNote.Application.Features.Identity.Auth.Services;
 using eNote.Application.Features.Identity.Users.Services;
 using eNote.Application.Features.Rentals.InstrumentRentals.Services;
+using eNote.Application.Features.Rentals.Payments.Services;
 using eNote.Application.Features.Reports.Services;
 using eNote.Infrastructure.Data;
 using eNote.Infrastructure.Data.Seed;
 using eNote.Infrastructure.Health;
 using eNote.Infrastructure.Identity;
 using eNote.Infrastructure.Messaging;
+using eNote.Infrastructure.Payments.Stripe;
 using eNote.Infrastructure.Reports;
 using eNote.Infrastructure.Storage;
 using MassTransit;
@@ -54,6 +56,9 @@ public static class DependencyInjection
         services.AddScoped<IRentalNotificationDispatcher, RentalNotificationDispatcher>();
         services.AddScoped<ILectureNotificationDispatcher, LectureNotificationDispatcher>();
         services.AddScoped<ISubmissionNotificationDispatcher, SubmissionNotificationDispatcher>();
+        services.AddScoped(provider => BuildStripeOptions(configuration));
+        services.AddScoped<IPaymentGateway, StripePaymentGateway>();
+        services.AddScoped<StripeWebhookService>();
         // Only one process may drain the outbox, or concurrent pollers can publish the same row twice.
         // Worker owns this by default; the API opts out (see eNote.API/Program.cs).
         if (registerNotificationOutboxPublisher)
@@ -112,6 +117,20 @@ public static class DependencyInjection
             .Services;
 
     public static void LoadEnvironment() => Configuration.DotEnvConfiguration.Load();
+
+    private static StripeOptions BuildStripeOptions(IConfiguration configuration)
+    {
+        var section = configuration.GetSection("Stripe");
+
+        return new StripeOptions
+        {
+            SecretKey = section["SecretKey"] ?? string.Empty,
+            PublishableKey = section["PublishableKey"] ?? string.Empty,
+            WebhookSecret = section["WebhookSecret"] ?? string.Empty,
+            Currency = string.IsNullOrWhiteSpace(section["Currency"]) ? "eur" : section["Currency"]!.Trim().ToLowerInvariant(),
+            StatementDescriptor = string.IsNullOrWhiteSpace(section["StatementDescriptor"]) ? "ENOTE Rental" : section["StatementDescriptor"]!
+        };
+    }
 
     public static async Task<IHost> InitializeDevelopmentDataAsync(this IHost host)
     {

@@ -59,6 +59,13 @@ public static class Messages
     public const string RentalInstrumentMissing = "Instrument nije pronađen za ovaj zahtjev.";
     public const string RentalAccessDenied = "Nemate pravo nad ovim zahtjevom.";
 
+    public const string PaymentAlreadyCompleted = "Stavka je već plaćena.";
+    public const string PaymentNotPayableInStatus = "Iznajmljivanje nije u stanju koje dozvoljava plaćanje.";
+    public const string RefundExceedsCharged = "Iznos povrata premašuje naplaćeni iznos.";
+    public const string PaymentNotFound = "Plaćanje nije pronađeno.";
+    public const string RentalUnpaidDebt = "Imate neizmireno dugovanje od prethodnog iznajmljivanja. Izmirite ga prije novog zahtjeva.";
+    public const string StripeWebhookSignatureInvalid = "Neispravan Stripe webhook potpis.";
+
     public const string NotificationNotFound = "Notifikacija nije pronađena.";
 
     public const string AnnouncementNotFound = "Obavijest nije pronađena.";
