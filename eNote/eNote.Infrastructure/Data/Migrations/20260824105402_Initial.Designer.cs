@@ -12,7 +12,7 @@ using eNote.Infrastructure.Data;
 namespace eNote.Infrastructure.Data.Migrations
 {
     [DbContext(typeof(ENoteContext))]
-    [Migration("20260823180832_Initial")]
+    [Migration("20260824105402_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -849,6 +849,10 @@ namespace eNote.Infrastructure.Data.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<decimal?>("AmountPaid")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("decimal(10,2)");
+
                     b.Property<DateTime?>("ApprovedAt")
                         .HasColumnType("datetime2");
 
@@ -868,11 +872,19 @@ namespace eNote.Infrastructure.Data.Migrations
                     b.Property<int>("InstrumentId")
                         .HasColumnType("int");
 
+                    b.Property<bool>("IsPaid")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
                     b.Property<int>("MusicStoreId")
                         .HasColumnType("int");
 
                     b.Property<string>("Note")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("PaidAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<DateTime?>("PickedUpAt")
                         .HasColumnType("datetime2");
@@ -1035,6 +1047,131 @@ namespace eNote.Infrastructure.Data.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("MusicStore");
+                });
+
+            modelBuilder.Entity("eNote.Domain.Entities.Rentals.RentalPayment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<long>("AmountChargedCents")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("CreatedById")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("nvarchar(3)");
+
+                    b.Property<int>("InstrumentRentalId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("MusicStoreId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("PaidAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("RefundedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<long?>("RefundedCents")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<string>("StripeChargeId")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<string>("StripeEventId")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<string>("StripePaymentIntentId")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<string>("StripeRefundId")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("UpdatedById")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("StripeEventId")
+                        .IsUnique()
+                        .HasDatabaseName("UX_RentalPayment_StripeEventId")
+                        .HasFilter("\"StripeEventId\" IS NOT NULL");
+
+                    b.HasIndex("StripePaymentIntentId")
+                        .IsUnique()
+                        .HasDatabaseName("UX_RentalPayment_PaymentIntentId");
+
+                    b.HasIndex("InstrumentRentalId", "Status");
+
+                    b.ToTable("RentalPayment");
+                });
+
+            modelBuilder.Entity("eNote.Domain.Entities.Rentals.StripeWebhookEvent", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("CreatedById")
+                        .HasColumnType("int");
+
+                    b.Property<string>("PayloadJson")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("ProcessedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("StripeEventId")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("UpdatedById")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("StripeEventId")
+                        .IsUnique()
+                        .HasDatabaseName("UX_StripeWebhookEvent_StripeEventId");
+
+                    b.ToTable("StripeWebhookEvent");
                 });
 
             modelBuilder.Entity("eNote.Domain.Entities.Shared.Address", b =>
@@ -1509,6 +1646,17 @@ namespace eNote.Infrastructure.Data.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("eNote.Domain.Entities.Rentals.RentalPayment", b =>
+                {
+                    b.HasOne("eNote.Domain.Entities.Rentals.InstrumentRental", "InstrumentRental")
+                        .WithMany("Payments")
+                        .HasForeignKey("InstrumentRentalId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("InstrumentRental");
+                });
+
             modelBuilder.Entity("eNote.Infrastructure.Identity.AppUser", b =>
                 {
                     b.HasOne("eNote.Domain.Entities.Shared.Address", "Address")
@@ -1559,6 +1707,11 @@ namespace eNote.Infrastructure.Data.Migrations
             modelBuilder.Entity("eNote.Domain.Entities.Rentals.Instrument", b =>
                 {
                     b.Navigation("InstrumentRentals");
+                });
+
+            modelBuilder.Entity("eNote.Domain.Entities.Rentals.InstrumentRental", b =>
+                {
+                    b.Navigation("Payments");
                 });
 
             modelBuilder.Entity("eNote.Domain.Entities.Rentals.InstrumentType", b =>

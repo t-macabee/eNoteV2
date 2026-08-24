@@ -27,6 +27,12 @@ public sealed class InstrumentRental : AuditableEntity, ITenantScoped
 
     public decimal Fee { get; private set; }
 
+    public bool IsPaid { get; private set; }
+    public DateTime? PaidAt { get; private set; }
+    public decimal? AmountPaid { get; private set; }
+
+    public ICollection<RentalPayment> Payments { get; private set; } = [];
+
     private const int DaysPerBillingCycle = 30;
 
     /// <summary>
@@ -151,6 +157,23 @@ public sealed class InstrumentRental : AuditableEntity, ITenantScoped
         Note = note;
         ReturnedAt = returnedAt;
         RentalStatus = InstrumentRentalStatus.ReturnedEarly;
+    }
+
+    /// <summary>
+    /// Marks the rental as paid using the exact cents charged for the succeeded
+    /// Stripe payment. The PaymentIntent id is not cached on the rental; it lives
+    /// on the <see cref="RentalPayment"/> attempt row, so it isn't a parameter here.
+    /// Per product decision, paying stays permanent: a later refund
+    /// (<see cref="RentalPayment.ApplyRefund"/>) does NOT flip <see cref="IsPaid"/>
+    /// back to false — once paid, the rental stays paid even if a courtesy refund is
+    /// later issued. There is no corresponding MarkRefunded on this entity for that
+    /// reason: refund state lives entirely on RentalPayment.
+    /// </summary>
+    public void MarkPaid(long cents, DateTime paidAt)
+    {
+        IsPaid = true;
+        PaidAt = paidAt;
+        AmountPaid = cents / 100m;
     }
 
     /// <summary>

@@ -23,6 +23,12 @@ public sealed class InstrumentRentalConfig : IEntityTypeConfiguration<Instrument
 
         builder.Property(x => x.Fee).HasDecimalPrecision(10).IsRequired();
 
+        builder.Property(x => x.IsPaid).HasDefaultFalse();
+
+        builder.Property(x => x.PaidAt);
+
+        builder.Property(x => x.AmountPaid).HasDecimalPrecision(10);
+
         builder.Property(x => x.RentalStatus)
                .HasConversion<int>();
 

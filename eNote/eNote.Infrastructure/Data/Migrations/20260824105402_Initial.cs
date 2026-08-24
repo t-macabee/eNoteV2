@@ -112,6 +112,26 @@ namespace eNote.Infrastructure.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "StripeWebhookEvent",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    StripeEventId = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: false),
+                    Type = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: false),
+                    PayloadJson = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ProcessedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedById = table.Column<int>(type: "int", nullable: true),
+                    UpdatedById = table.Column<int>(type: "int", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_StripeWebhookEvent", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "AspNetUsers",
                 columns: table => new
                 {
@@ -448,6 +468,9 @@ namespace eNote.Infrastructure.Data.Migrations
                     ApprovedById = table.Column<int>(type: "int", nullable: true),
                     RejectedById = table.Column<int>(type: "int", nullable: true),
                     Fee = table.Column<decimal>(type: "decimal(10,2)", precision: 10, scale: 2, nullable: false),
+                    IsPaid = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
+                    PaidAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    AmountPaid = table.Column<decimal>(type: "decimal(10,2)", precision: 10, scale: 2, nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedById = table.Column<int>(type: "int", nullable: true),
@@ -573,6 +596,40 @@ namespace eNote.Infrastructure.Data.Migrations
                         principalTable: "Course",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "RentalPayment",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    InstrumentRentalId = table.Column<int>(type: "int", nullable: false),
+                    MusicStoreId = table.Column<int>(type: "int", nullable: false),
+                    StripePaymentIntentId = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: false),
+                    StripeChargeId = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: true),
+                    AmountChargedCents = table.Column<long>(type: "bigint", nullable: false),
+                    Currency = table.Column<string>(type: "nvarchar(3)", maxLength: 3, nullable: false),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    StripeEventId = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: true),
+                    PaidAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    RefundedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    RefundedCents = table.Column<long>(type: "bigint", nullable: true),
+                    StripeRefundId = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedById = table.Column<int>(type: "int", nullable: true),
+                    UpdatedById = table.Column<int>(type: "int", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_RentalPayment", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_RentalPayment_InstrumentRental_InstrumentRentalId",
+                        column: x => x.InstrumentRentalId,
+                        principalTable: "InstrumentRental",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -990,9 +1047,33 @@ namespace eNote.Infrastructure.Data.Migrations
                 column: "PublishedAt");
 
             migrationBuilder.CreateIndex(
+                name: "IX_RentalPayment_InstrumentRentalId_Status",
+                table: "RentalPayment",
+                columns: new[] { "InstrumentRentalId", "Status" });
+
+            migrationBuilder.CreateIndex(
+                name: "UX_RentalPayment_PaymentIntentId",
+                table: "RentalPayment",
+                column: "StripePaymentIntentId",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "UX_RentalPayment_StripeEventId",
+                table: "RentalPayment",
+                column: "StripeEventId",
+                unique: true,
+                filter: "\"StripeEventId\" IS NOT NULL");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_RevokedToken_Jti",
                 table: "RevokedToken",
                 column: "Jti",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "UX_StripeWebhookEvent_StripeEventId",
+                table: "StripeWebhookEvent",
+                column: "StripeEventId",
                 unique: true);
 
             migrationBuilder.CreateIndex(
@@ -1045,7 +1126,13 @@ namespace eNote.Infrastructure.Data.Migrations
                 name: "RentalNotificationOutbox");
 
             migrationBuilder.DropTable(
+                name: "RentalPayment");
+
+            migrationBuilder.DropTable(
                 name: "RevokedToken");
+
+            migrationBuilder.DropTable(
+                name: "StripeWebhookEvent");
 
             migrationBuilder.DropTable(
                 name: "AspNetRoles");

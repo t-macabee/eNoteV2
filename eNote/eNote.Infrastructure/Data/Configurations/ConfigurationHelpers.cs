@@ -25,6 +25,11 @@ public static class ConfigurationHelpers
         return propertyBuilder.HasPrecision(precision, scale);
     }
 
+    public static PropertyBuilder<decimal?> HasDecimalPrecision(this PropertyBuilder<decimal?> propertyBuilder, int precision = 18, int scale = 2)
+    {
+        return propertyBuilder.HasPrecision(precision, scale);
+    }
+
     public static PropertyBuilder<bool> HasDefaultFalse(this PropertyBuilder<bool> propertyBuilder)
     {
         return propertyBuilder.HasDefaultValue(false);

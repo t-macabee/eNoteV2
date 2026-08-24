@@ -12,4 +12,10 @@ public static class DbConstraintNames
     public const string NotificationUserLectureCreatedAtUniqueIndex = "IX_Notification_UserId_LectureId_CreatedAt";
 
     public const string NotificationUserSubmissionCreatedAtUniqueIndex = "IX_Notification_UserId_SubmissionId_CreatedAt";
+
+    public const string RentalPaymentStripePaymentIntentIdUniqueIndex = "UX_RentalPayment_PaymentIntentId";
+
+    public const string RentalPaymentStripeEventIdUniqueIndex = "UX_RentalPayment_StripeEventId";
+
+    public const string StripeWebhookEventStripeEventIdUniqueIndex = "UX_StripeWebhookEvent_StripeEventId";
 }
