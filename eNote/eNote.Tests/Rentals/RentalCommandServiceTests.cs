@@ -1,3 +1,4 @@
+using eNote.Application.Common.Localization;
 using eNote.Application.Features.Rentals.InstrumentRentals;
 using eNote.Application.Features.Rentals.InstrumentRentals.Services;
 using eNote.Tests.TestUtils;
@@ -59,6 +60,103 @@ public sealed class RentalCommandServiceTests
         Assert.NotNull(rental);
     }
 
+    [Fact]
+    public async Task CreateRequestAsync_BlockedByUnpaidDebt()
+    {
+        await using var context = CreateContext();
+        var student = await SeedStudentAsync(context, hasActiveMembership: true);
+        var instrument = await SeedInstrumentAsync(context);
+        var unpaid = new InstrumentRental(instrument.Id, student.Id, instrument.MusicStoreId, Now.AddDays(-20), null);
+        unpaid.Approve(50m, null, Now.AddDays(-19), 1);
+        unpaid.Pickup(Now.AddDays(-19));
+        unpaid.Complete(Now.AddDays(-5), null);
+        context.Set<InstrumentRental>().Add(unpaid);
+        await context.SaveChangesAsync();
+
+        var newInstrument = await SeedExtraInstrumentAsync(context, instrument);
+        var service = CreateService(context, student);
+
+        var ex = await Assert.ThrowsAsync<BusinessException>(() => service.CreateRequestAsync(new RentalCreateRequest { InstrumentId = newInstrument.Id }));
+
+        Assert.Equal(Messages.RentalUnpaidDebt, ex.Message);
+    }
+
+    [Fact]
+    public async Task CreateRequestAsync_BlockedByUnpaidReturnedEarlyDebt()
+    {
+        await using var context = CreateContext();
+        var student = await SeedStudentAsync(context, hasActiveMembership: true);
+        var instrument = await SeedInstrumentAsync(context);
+        var unpaid = new InstrumentRental(instrument.Id, student.Id, instrument.MusicStoreId, Now.AddDays(-20), null);
+        unpaid.Approve(50m, null, Now.AddDays(-19), 1);
+        unpaid.Pickup(Now.AddDays(-19));
+        unpaid.ReturnEarly(Now.AddDays(-5), null);
+        context.Set<InstrumentRental>().Add(unpaid);
+        await context.SaveChangesAsync();
+
+        var newInstrument = await SeedExtraInstrumentAsync(context, instrument);
+        var service = CreateService(context, student);
+
+        var ex = await Assert.ThrowsAsync<BusinessException>(() => service.CreateRequestAsync(new RentalCreateRequest { InstrumentId = newInstrument.Id }));
+
+        Assert.Equal(Messages.RentalUnpaidDebt, ex.Message);
+    }
+
+    [Fact]
+    public async Task CreateRequestAsync_AllowedWhenAllPastRentalsPaid()
+    {
+        await using var context = CreateContext();
+        var student = await SeedStudentAsync(context, hasActiveMembership: true);
+        var instrument = await SeedInstrumentAsync(context);
+        var paid = new InstrumentRental(instrument.Id, student.Id, instrument.MusicStoreId, Now.AddDays(-20), null);
+        paid.Approve(50m, null, Now.AddDays(-19), 1);
+        paid.Pickup(Now.AddDays(-19));
+        paid.Complete(Now.AddDays(-5), null);
+        paid.MarkPaid(5000, Now);
+        context.Set<InstrumentRental>().Add(paid);
+        await context.SaveChangesAsync();
+
+        var newInstrument = await SeedExtraInstrumentAsync(context, instrument);
+        var service = CreateService(context, student);
+
+        var result = await service.CreateRequestAsync(new RentalCreateRequest { InstrumentId = newInstrument.Id });
+
+        Assert.NotNull(result);
+        Assert.Equal(InstrumentRentalStatus.Pending, result.RentalStatus);
+    }
+
+    [Fact]
+    public async Task CreateRequestAsync_Allowed_WhenUnpaidRentalIsNotTerminal()
+    {
+        await using var context = CreateContext();
+        var student = await SeedStudentAsync(context, hasActiveMembership: true);
+        var instrument = await SeedInstrumentAsync(context);
+
+        var pending = new InstrumentRental(instrument.Id, student.Id, instrument.MusicStoreId, Now, null);
+        context.Set<InstrumentRental>().Add(pending);
+
+        var approvedInstrument = await SeedExtraInstrumentAsync(context, instrument);
+        var approved = new InstrumentRental(approvedInstrument.Id, student.Id, approvedInstrument.MusicStoreId, Now.AddDays(-5), null);
+        approved.Approve(50m, null, Now.AddDays(-4), 1);
+        context.Set<InstrumentRental>().Add(approved);
+
+        var activeInstrument = await SeedExtraInstrumentAsync(context, instrument);
+        var active = new InstrumentRental(activeInstrument.Id, student.Id, activeInstrument.MusicStoreId, Now.AddDays(-5), null);
+        active.Approve(50m, null, Now.AddDays(-4), 1);
+        active.Pickup(Now.AddDays(-4));
+        context.Set<InstrumentRental>().Add(active);
+
+        await context.SaveChangesAsync();
+
+        var newInstrument = await SeedExtraInstrumentAsync(context, instrument);
+        var service = CreateService(context, student);
+
+        var result = await service.CreateRequestAsync(new RentalCreateRequest { InstrumentId = newInstrument.Id });
+
+        Assert.NotNull(result);
+        Assert.Equal(InstrumentRentalStatus.Pending, result.RentalStatus);
+    }
+
     private static ENoteContext CreateContext()
     {
         var options = new DbContextOptionsBuilder<ENoteContext>()
@@ -87,6 +185,14 @@ public sealed class RentalCommandServiceTests
         await context.SaveChangesAsync();
 
         var instrument = new Instrument("Stradivarius", "Yamaha", null, null, 1, store.Id);
+        context.Set<Instrument>().Add(instrument);
+        await context.SaveChangesAsync();
+        return instrument;
+    }
+
+    private static async Task<Instrument> SeedExtraInstrumentAsync(ENoteContext context, Instrument reference)
+    {
+        var instrument = new Instrument("Second Model", "Second Manufacturer", null, null, reference.InstrumentTypeId, reference.MusicStoreId);
         context.Set<Instrument>().Add(instrument);
         await context.SaveChangesAsync();
         return instrument;
