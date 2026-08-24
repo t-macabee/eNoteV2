@@ -1,6 +1,5 @@
 using eNote.Application.Common.Localization;
 using eNote.Application.Features.Rentals.InstrumentRentals.Services;
-using eNote.Application.Features.Rentals.Payments;
 using eNote.Application.Features.Rentals.Payments.Services;
 using eNote.Tests.TestUtils;
 using Microsoft.EntityFrameworkCore;
@@ -9,13 +8,6 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace eNote.Tests.Rentals;
 
-/// <summary>
-/// Application-layer tests for RentalPaymentService. Uses EF InMemory + a fake
-/// IPaymentGateway, so no Stripe network calls are made. These cover the billing
-/// moment guard, server-computed amounts/currency, intent idempotency, refund
-/// behavior, the unpaid-debt guard is covered in RentalCommandServiceTests, and
-/// the student/store authorization boundaries.
-/// </summary>
 public sealed class RentalPaymentServiceTests
 {
     private static readonly DateTime Now = new(2026, 6, 15, 12, 0, 0, DateTimeKind.Utc);

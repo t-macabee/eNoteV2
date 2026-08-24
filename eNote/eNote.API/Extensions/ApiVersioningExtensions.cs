@@ -1,5 +1,5 @@
+using Asp.Versioning;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Versioning;
 
 namespace eNote.API.Extensions;
 
@@ -15,6 +15,17 @@ public static class ApiVersioningExtensions
             options.AssumeDefaultVersionWhenUnspecified = true;
             options.ReportApiVersions = true;
             options.ApiVersionReader = new UrlSegmentApiVersionReader();
+        })
+        .AddMvc()
+        .AddApiExplorer(options =>
+        {
+            options.GroupNameFormat = "'v'VVV";
+            options.SubstituteApiVersionInUrl = true;
+        })
+        .AddOpenApi(options =>
+        {
+            options.Document.AddDocumentTransformer<BearerSecuritySchemeTransformer>();
+            options.Document.AddOperationTransformer<BearerSecurityRequirementOperationTransformer>();
         });
 
         return services;

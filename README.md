@@ -16,7 +16,7 @@ ASP.NET Core backend for a music-school platform: courses, lectures, assignments
    cp .env.docker.example .env
    ```
 
-   Adjust `ConnectionStrings__DefaultConnection`, `Jwt__Key` (min 32 characters), and `Smtp__*` values for your machine.
+   Adjust `ConnectionStrings__DefaultConnection`, `Jwt__Key` (min 32 characters), `Smtp__*`, and `STRIPE_*` values for your machine.
 
 2. Restore and apply migrations (from this `eNote/` directory):
 
@@ -69,6 +69,27 @@ On first run in Development, these accounts are created (password from `Seed__De
 | instructor      | Instructor     | instructor@enote.com     |
 | student         | Student        | student@enote.com        |
 | storeemployee   | StoreEmployee  | storeEmployee@enote.com  |
+
+## Payments (Stripe)
+
+Instrument rentals are billed once via Stripe when a rental reaches `Complete`
+or `ReturnedEarly` (server-computed total, EUR by default). Requires
+`STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` — see `.env.docker.example`
+for the full list (`STRIPE_PUBLISHABLE_KEY`, `STRIPE_CURRENCY`,
+`STRIPE_STATEMENT_DESCRIPTOR` are optional). Point your Stripe webhook (or
+`stripe listen`) at `POST /api/v{version}/payments/stripe/webhook`.
+
+| Endpoint | Role |
+|----------|------|
+| `POST /api/v{version}/student/rentals/{rentalId}/payments/create-intent` | Student |
+| `GET /api/v{version}/student/rentals/{rentalId}/payments` | Student |
+| `POST /api/v{version}/shop/rentals/{rentalId}/payments/refund` | StoreEmployee |
+| `POST /api/v{version}/payments/stripe/webhook` | Stripe (signature-verified, anonymous) |
+
+A refund does not reset a rental's paid status — once paid, a rental stays
+paid; refunds are a store courtesy, not a reversal of the debt guard.
+Students with an unpaid completed/returned rental are blocked from
+requesting a new rental until it's paid.
 
 ## PDF reports
 

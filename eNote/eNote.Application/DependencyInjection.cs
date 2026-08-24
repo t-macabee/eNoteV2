@@ -9,7 +9,6 @@ using eNote.Application.Features.Identity.Instructors;
 using eNote.Application.Features.Identity.Users.Services;
 using eNote.Application.Features.Rentals.InstrumentRentals.Services;
 using eNote.Application.Features.Rentals.Instruments.Services;
-using eNote.Application.Features.Rentals.Payments;
 using eNote.Application.Features.Rentals.Payments.Services;
 using eNote.Application.Features.Rentals.Recommendations.Services;
 using eNote.Application.Features.Rentals.ReferenceData.Addresses;

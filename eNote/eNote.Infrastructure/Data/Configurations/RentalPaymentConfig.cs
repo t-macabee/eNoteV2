@@ -1,5 +1,4 @@
 using eNote.Application.Constants;
-using eNote.Domain.Entities.Rentals;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 

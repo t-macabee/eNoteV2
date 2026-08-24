@@ -1,5 +1,4 @@
 using eNote.Application.Constants;
-using eNote.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 

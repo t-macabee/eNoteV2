@@ -1,9 +1,11 @@
+using Asp.Versioning;
 using eNote.API.Consumers;
 using eNote.API.Converters;
 using eNote.API.Extensions;
 using eNote.API.Hubs;
 using eNote.Infrastructure;
 using Microsoft.Extensions.FileProviders;
+using Scalar.AspNetCore;
 using Serilog;
 using System.Text.Json.Serialization;
 
@@ -73,6 +75,16 @@ app.UseErrorHandling();
 if (app.Environment.IsDevelopment())
 {
     await app.InitializeDevelopmentDataAsync();
+
+    app.MapOpenApi().WithDocumentPerVersion();
+
+    app.MapScalarApiReference(options =>
+    {
+        foreach (var description in app.DescribeApiVersions())
+        {
+            options.AddDocument(description.GroupName, description.GroupName);
+        }
+    });
 }
 
 app.UseRateLimiter();

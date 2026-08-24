@@ -1,3 +1,4 @@
+using Asp.Versioning;
 using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Localization;
 using Microsoft.AspNetCore.Authorization;

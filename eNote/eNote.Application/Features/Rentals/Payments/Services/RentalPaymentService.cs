@@ -1,6 +1,5 @@
 using eNote.Application.Features.Rentals.InstrumentRentals;
 using eNote.Application.Features.Rentals.InstrumentRentals.Services;
-using eNote.Application.Features.Rentals.Payments.Services;
 using MapsterMapper;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Logging;
@@ -160,7 +159,6 @@ public sealed class RentalPaymentService(
 
     private async Task EnsureCanCreatePaymentIntentAsync(InstrumentRental rental, CancellationToken cancellationToken)
     {
-        // Decided point 1: billing only at Completed/ReturnedEarly and only while unpaid.
         if (rental.RentalStatus is not (InstrumentRentalStatus.Completed or InstrumentRentalStatus.ReturnedEarly))
         {
             throw new BusinessException(Messages.PaymentNotPayableInStatus);
@@ -175,8 +173,6 @@ public sealed class RentalPaymentService(
         {
             throw new BusinessException(Messages.PaymentAlreadyCompleted);
         }
-
-        // Denormalized IsPaid safety: never trust the cached flag alone under concurrency.
         if (await context.Set<RentalPayment>().AnyAsync(p => p.InstrumentRentalId == rental.Id && p.Status == PaymentStatus.Succeeded, cancellationToken))
         {
             throw new BusinessException(Messages.PaymentAlreadyCompleted);

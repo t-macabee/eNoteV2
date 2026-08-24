@@ -1,12 +1,8 @@
-using eNote.Domain.Entities.Shared;
 using eNote.Domain.Enums;
 
 namespace eNote.Domain.Entities.Rentals;
 
-/// <summary>
-/// One Stripe payment attempt for an instrument rental. A rental may have several
-/// attempts over its lifetime; the unique Stripe PaymentIntent id keeps them idempotent.
-/// </summary>
+
 public sealed class RentalPayment : AuditableEntity, ITenantScoped
 {
     public int InstrumentRentalId { get; private set; }
