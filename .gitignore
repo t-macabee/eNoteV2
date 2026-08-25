@@ -121,3 +121,5 @@ package-lock.json
 
 # JetBrains Qodana (local static analysis, not committed)
 eNote/qodana.yaml
+qodana.yaml
+.qodana/

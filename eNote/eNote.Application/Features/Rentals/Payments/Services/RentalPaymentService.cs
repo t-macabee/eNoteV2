@@ -1,4 +1,3 @@
-using eNote.Application.Common.Exceptions;
 using eNote.Application.Features.Rentals.InstrumentRentals;
 using eNote.Application.Features.Rentals.InstrumentRentals.Services;
 using MapsterMapper;

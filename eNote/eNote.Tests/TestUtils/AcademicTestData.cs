@@ -1,5 +1,4 @@
 using eNote.Application.Features.Identity.Instructors;
-using MapsterMapper;
 
 namespace eNote.Tests.TestUtils;
 

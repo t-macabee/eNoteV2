@@ -1,7 +1,5 @@
 using eNote.Application.Features.Rentals.Recommendations.Services;
 using eNote.Tests.TestUtils;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Diagnostics;
 
 namespace eNote.Tests.Rentals;
 

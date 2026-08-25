@@ -78,7 +78,7 @@ public sealed class LectureAttendanceService(IAppDbContext context, ICurrentUser
             .Take(pageSize)
             .ToListAsync(cancellationToken);
 
-        var names = await displayNames.GetStudentDisplayNamesAsync(attendances.Select(a => a.Student));
+        var names = await displayNames.GetStudentDisplayNamesAsync(attendances.Select(a => a.Student!));
 
         return new PagedResult<AttendanceDto>
         {

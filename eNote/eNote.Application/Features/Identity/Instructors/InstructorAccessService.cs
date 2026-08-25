@@ -33,7 +33,7 @@ public sealed class InstructorAccessService(IAppDbContext context, IUserProfileL
 
         if (includeAttendances)
         {
-            query = query.Include(x => x.Attendances);
+            query = query.Include(x => x.Attendances).ThenInclude(a => a.Student);
         }
 
         query = track ? query : query.AsNoTracking();

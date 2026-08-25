@@ -1,8 +1,7 @@
-using eNote.Application.Common.Exceptions;
+using eNote.API.Controllers.InstrumentRentals;
 using eNote.Application.Common.Localization;
 using eNote.Application.Features.Rentals.InstrumentRentals.Services;
 using eNote.Application.Features.Rentals.Payments.Services;
-using eNote.API.Controllers.InstrumentRentals;
 using eNote.Tests.TestUtils;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
@@ -209,7 +208,9 @@ public sealed class RentalPaymentServiceTests
         var instrument = await RentalTestData.SeedInstrumentAsync(context);
         var rental = await SeedPaidRentalAsync(context, instrument, student);
         var gateway = new FakePaymentGateway();
-        var service = CreateService(context, CreateStoreActor(), gateway);
+        var storeActor = CreateStoreActor();
+        var dispatcher = new RecordingNotificationDispatcher();
+        var service = CreateService(context, storeActor, gateway, dispatcher);
 
         var dto = await service.RefundAsync(rental.Id, null);
 
@@ -220,6 +221,9 @@ public sealed class RentalPaymentServiceTests
         Assert.Single(gateway.RefundCalls);
         Assert.Equal("pi_test_1", gateway.RefundCalls[0].PaymentIntentId);
         Assert.Equal(5000, gateway.RefundCalls[0].AmountCents);
+        Assert.Single(dispatcher.RefundCalls);
+        Assert.Equal(5000, dispatcher.RefundCalls[0].RefundedCents);
+        Assert.Equal(storeActor.UserId, dispatcher.RefundCalls[0].ActorUserId);
     }
 
     [Fact]

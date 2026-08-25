@@ -1,5 +1,4 @@
 using Asp.Versioning;
-using Microsoft.AspNetCore.Mvc;
 
 namespace eNote.API.Extensions;
 

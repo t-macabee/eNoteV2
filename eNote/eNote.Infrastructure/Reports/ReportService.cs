@@ -60,7 +60,7 @@ internal sealed class ReportService(IAppDbContext context, IClock clock, Ranking
     {
         var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId);
         var lecture = await instructorAccess.GetOwnedLectureAsync(lectureId, instructorId, includeAttendances: true);
-        var nameMap = await displayNames.GetStudentDisplayNamesAsync(lecture.Attendances.Select(a => a.Student));
+        var nameMap = await displayNames.GetStudentDisplayNamesAsync(lecture.Attendances.Select(a => a.Student!));
         var rows = lecture.Attendances.OrderBy(a => a.StudentId).Select(a => new AttendanceRow(nameMap.GetValueOrDefault(a.StudentId, $"Student {a.StudentId}"), a.AttendanceStatus)).ToList();
         return Document.Create(container => container.Page(page =>
         {

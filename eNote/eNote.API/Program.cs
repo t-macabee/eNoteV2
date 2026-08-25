@@ -1,4 +1,3 @@
-using Asp.Versioning;
 using eNote.API.Consumers;
 using eNote.API.Converters;
 using eNote.API.Extensions;

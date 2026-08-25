@@ -4,7 +4,7 @@ namespace eNote.Domain.Entities.Academic;
 public class Attendance : AuditableEntity
 {
     public int StudentId { get; private set; }
-    public Student Student { get; private set; } = null!;
+    public Student? Student { get; private set; }
     public int LectureId { get; private set; }
     public Lecture Lecture { get; private set; } = null!;
 
