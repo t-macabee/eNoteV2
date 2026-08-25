@@ -109,7 +109,7 @@ public sealed class UserAccountServiceTests
 
         Assert.True(result.Success);
         var updated = (await harness.UserManager.FindByIdAsync(user.Id.ToString()))!;
-        Assert.StartsWith("/api/uploads/profile-pictures/", updated.PicturePath);
+        Assert.StartsWith("/api/v1/uploads/profile-pictures/", updated.PicturePath);
         Assert.Contains("/api/uploads/profile-pictures/old.png", harness.FileStorage.DeletedPaths);
     }
 

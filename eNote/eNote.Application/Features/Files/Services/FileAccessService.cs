@@ -10,13 +10,15 @@ public sealed class FileAccessService(
     InstructorAccessService instructorAccess,
     IUserIdentityService identity) : IFileAccessService
 {
-    private const string AssignmentApiPath = "/api/uploads/assignments/";
-    private const string AssignmentLegacyPath = "/uploads/assignments/";
+    private const string AssignmentApiPath = "/api/v1/uploads/assignments/";
+    private const string AssignmentLegacyPath = "/api/uploads/assignments/";
+    private const string AssignmentLegacyPathV0 = "/uploads/assignments/";
 
     public async Task<bool> CanAccessAssignmentFileAsync(int userId, string fileName, CancellationToken cancellationToken = default)
     {
         var apiPath = AssignmentApiPath + fileName;
         var legacyPath = AssignmentLegacyPath + fileName;
+        var legacyPathV0 = AssignmentLegacyPathV0 + fileName;
 
         var submission = await context.Set<AssignmentSubmission>()
             .AsNoTracking()
@@ -24,7 +26,7 @@ public sealed class FileAccessService(
                 .ThenInclude(x => x.Lecture)
                 .ThenInclude(x => x.Course)
             .Include(x => x.Student)
-            .FirstOrDefaultAsync(x => x.FilePath == apiPath || x.FilePath == legacyPath, cancellationToken);
+            .FirstOrDefaultAsync(x => x.FilePath == apiPath || x.FilePath == legacyPath || x.FilePath == legacyPathV0, cancellationToken);
 
         if (submission is null)
         {

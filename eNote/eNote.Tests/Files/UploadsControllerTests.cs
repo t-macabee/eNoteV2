@@ -21,7 +21,7 @@ public sealed class UploadsControllerTests
         var fileResult = Assert.IsType<FileStreamResult>(result);
         Assert.Equal("image/webp", fileResult.ContentType);
         Assert.True(fileResult.EnableRangeProcessing);
-        Assert.Equal(["/api/uploads/instruments/strat.webp"], storage.OpenReadCalls);
+        Assert.Equal(["/api/v1/uploads/instruments/strat.webp"], storage.OpenReadCalls);
     }
 
     [Fact]
@@ -66,7 +66,7 @@ public sealed class UploadsControllerTests
 
         var fileResult = Assert.IsType<FileStreamResult>(result);
         Assert.Equal("image/png", fileResult.ContentType);
-        Assert.Equal(["/api/uploads/announcements/banner.png"], storage.OpenReadCalls);
+        Assert.Equal(["/api/v1/uploads/announcements/banner.png"], storage.OpenReadCalls);
     }
 
     [Fact]
@@ -110,7 +110,7 @@ public sealed class UploadsControllerTests
 
         var fileResult = Assert.IsType<FileStreamResult>(result);
         Assert.Equal("application/pdf", fileResult.ContentType);
-        Assert.Equal(["/api/uploads/assignments/hw.pdf"], storage.OpenReadCalls);
+        Assert.Equal(["/api/v1/uploads/assignments/hw.pdf"], storage.OpenReadCalls);
     }
 
     [Fact]

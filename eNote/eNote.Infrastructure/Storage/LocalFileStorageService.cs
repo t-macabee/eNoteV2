@@ -8,6 +8,7 @@ namespace eNote.Infrastructure.Storage;
 public sealed class LocalFileStorageService : IFileStorageService
 {
     private const long MaxFileSizeBytes = 5 * 1024 * 1024;
+    public const string UploadsRoutePrefix = "/api/v1/uploads";
     private static readonly string[] AllowedImageContentTypes = [FileSignatureDetector.JpegMimeType, FileSignatureDetector.PngMimeType, FileSignatureDetector.WebpMimeType];
     private static readonly string[] AllowedAssignmentContentTypes = [FileSignatureDetector.PdfMimeType, FileSignatureDetector.JpegMimeType, FileSignatureDetector.PngMimeType];
 
@@ -126,7 +127,7 @@ public sealed class LocalFileStorageService : IFileStorageService
         await using FileStream fileStream = File.Create(fullPath);
 
         await stream.CopyToAsync(fileStream, ct);
-        return $"/api/uploads/{subfolder}/{uniqueName}";
+        return $"{UploadsRoutePrefix}/{subfolder}/{uniqueName}";
     }
 
     private static async Task ValidateMagicBytesAsync(Stream stream, string[] allowedContentTypes, CancellationToken ct)
@@ -144,12 +145,12 @@ public sealed class LocalFileStorageService : IFileStorageService
 
     private string? ResolveUploadPath(string path)
     {
-        if (!path.StartsWith("/api/uploads/", StringComparison.Ordinal) || path.Contains('?', StringComparison.Ordinal) || path.Contains('#', StringComparison.Ordinal))
+        if (!path.StartsWith(UploadsRoutePrefix + "/", StringComparison.Ordinal) || path.Contains('?', StringComparison.Ordinal) || path.Contains('#', StringComparison.Ordinal))
         {
             return null;
         }
 
-        var relativePath = path["/api/uploads/".Length..].Replace('/', Path.DirectorySeparatorChar);
+        var relativePath = path[(UploadsRoutePrefix + "/").Length..].Replace('/', Path.DirectorySeparatorChar);
         var uploadsRoot = Path.GetFullPath(Path.Combine(_rootPath, "uploads"));
         var fullPath = Path.GetFullPath(Path.Combine(uploadsRoot, relativePath));
 

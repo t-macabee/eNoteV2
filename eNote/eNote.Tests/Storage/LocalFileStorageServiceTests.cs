@@ -29,7 +29,7 @@ public sealed class LocalFileStorageServiceTests : IDisposable
 
         var path = await service.SaveAsync(stream, "picture.png", "image/png", "profile-pictures");
 
-        Assert.StartsWith("/api/uploads/profile-pictures/", path);
+        Assert.StartsWith("/api/v1/uploads/profile-pictures/", path);
         Assert.True(File.Exists(Path.Combine(_webRoot, "uploads", "profile-pictures", Path.GetFileName(path))));
         Assert.EndsWith(".png", path);
     }
@@ -63,7 +63,7 @@ public sealed class LocalFileStorageServiceTests : IDisposable
     {
         var service = CreateService();
 
-        var (data, contentType) = service.OpenRead("/api/uploads/profile-pictures/missing.png");
+        var (data, contentType) = service.OpenRead("/api/v1/uploads/profile-pictures/missing.png");
 
         Assert.Null(data);
         Assert.Null(contentType);
@@ -74,7 +74,7 @@ public sealed class LocalFileStorageServiceTests : IDisposable
     {
         var service = CreateService();
 
-        var (data, contentType) = service.OpenRead("/api/uploads/../../secret.png");
+        var (data, contentType) = service.OpenRead("/api/v1/uploads/../../secret.png");
 
         Assert.Null(data);
         Assert.Null(contentType);
@@ -100,7 +100,7 @@ public sealed class LocalFileStorageServiceTests : IDisposable
 
         var path = await service.SaveAssignmentAsync(stream, "hw.pdf", "application/pdf");
 
-        Assert.StartsWith("/api/uploads/assignments/", path);
+        Assert.StartsWith("/api/v1/uploads/assignments/", path);
         Assert.EndsWith(".pdf", path);
     }
 

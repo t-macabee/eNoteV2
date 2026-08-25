@@ -1,6 +1,7 @@
 using eNote.API.Controllers.Base;
 using eNote.Application.Common.Interfaces;
 using eNote.Application.Features.Files.Services;
+using eNote.Infrastructure.Storage;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -52,7 +53,7 @@ public sealed class UploadsController(IFileStorageService fileStorage, IFileAcce
             return BadRequest();
         }
 
-        var (data, contentType) = fileStorage.OpenRead($"/api/uploads/{subfolder}/{fileName}");
+        var (data, contentType) = fileStorage.OpenRead($"{LocalFileStorageService.UploadsRoutePrefix}/{subfolder}/{fileName}");
 
         if (data is null)
         {
