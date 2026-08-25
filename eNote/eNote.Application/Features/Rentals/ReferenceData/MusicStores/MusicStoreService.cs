@@ -1,6 +1,6 @@
 namespace eNote.Application.Features.Rentals.ReferenceData.MusicStores;
 
-public sealed class MusicStoreService(IAppDbContext context) : IMusicStoreService
+public sealed class MusicStoreService(IAppDbContext context)
 {
     private IAppDbContext Db => context;
 

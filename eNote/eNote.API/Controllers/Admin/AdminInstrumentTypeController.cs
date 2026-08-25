@@ -9,7 +9,7 @@ namespace eNote.API.Controllers.Admin;
 
 [Authorize(Roles = AppRoles.Administrator)]
 [Route("api/v{version:apiVersion}/admin/instrument-types")]
-public sealed class AdminInstrumentTypeController(IInstrumentTypeService service) : CoreController
+public sealed class AdminInstrumentTypeController(InstrumentTypeService service) : CoreController
 {
     [HttpGet]
     [ProducesResponseType(StatusCodes.Status200OK)]

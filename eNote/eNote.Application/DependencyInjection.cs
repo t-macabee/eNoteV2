@@ -23,10 +23,10 @@ public static class DependencyInjection
 
     public static IServiceCollection AddApplication(this IServiceCollection services)
     {
-        services.AddScoped<IAddressService, AddressService>();
+        services.AddScoped<AddressService>();
         services.AddScoped<IFileAccessService, FileAccessService>();
-        services.AddScoped<IInstrumentTypeService, InstrumentTypeService>();
-        services.AddScoped<IMusicStoreService, MusicStoreService>();
+        services.AddScoped<InstrumentTypeService>();
+        services.AddScoped<MusicStoreService>();
         services.AddScoped<IStudentDisplayNameService, StudentDisplayNameService>();
         services.AddScoped<IUserProvisioningService, UserProvisioningService>();
 

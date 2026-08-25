@@ -9,7 +9,7 @@ namespace eNote.API.Controllers.Admin;
 
 [Authorize(Roles = AppRoles.Administrator)]
 [Route("api/v{version:apiVersion}/admin/addresses")]
-public sealed class AdminAddressController(IAddressService service) : CoreController
+public sealed class AdminAddressController(AddressService service) : CoreController
 {
     [HttpGet]
     [ProducesResponseType(StatusCodes.Status200OK)]

@@ -9,7 +9,7 @@ namespace eNote.API.Controllers.Admin;
 
 [Authorize(Roles = AppRoles.Administrator)]
 [Route("api/v{version:apiVersion}/admin/music-stores")]
-public sealed class AdminMusicStoreController(IMusicStoreService service) : CoreController
+public sealed class AdminMusicStoreController(MusicStoreService service) : CoreController
 {
     [HttpGet]
     [ProducesResponseType(StatusCodes.Status200OK)]

@@ -2,7 +2,7 @@ using eNote.Application.Features.Identity.Users.Services;
 
 namespace eNote.Application.Features.Rentals.ReferenceData.Addresses;
 
-public sealed class AddressService(IAppDbContext context, IUserAccountService accountService) : IAddressService
+public sealed class AddressService(IAppDbContext context, IUserAccountService accountService)
 {
     private IAppDbContext Db => context;
 

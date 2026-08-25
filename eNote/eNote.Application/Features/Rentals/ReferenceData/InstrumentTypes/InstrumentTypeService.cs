@@ -1,6 +1,6 @@
 namespace eNote.Application.Features.Rentals.ReferenceData.InstrumentTypes;
 
-public sealed class InstrumentTypeService(IAppDbContext context) : IInstrumentTypeService
+public sealed class InstrumentTypeService(IAppDbContext context)
 {
     private IAppDbContext Db => context;
 
