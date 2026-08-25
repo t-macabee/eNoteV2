@@ -60,24 +60,24 @@ public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, 
         return dto;
     }
 
-    public Task<InstrumentRentalDto> ApproveAsync(int rentalId, RentalStatusRequest request, CancellationToken cancellationToken = default) => ExecuteStoreTransitionAsync(rentalId, RentalTrigger.Approve, request, cancellationToken);
+    public Task<InstrumentRentalDto> ApproveAsync(int rentalId, RentalStatusRequest? request, CancellationToken cancellationToken = default) => ExecuteStoreTransitionAsync(rentalId, RentalTrigger.Approve, request, cancellationToken);
 
-    public Task<InstrumentRentalDto> RejectAsync(int rentalId, RentalStatusRequest request, CancellationToken cancellationToken = default) => ExecuteStoreTransitionAsync(rentalId, RentalTrigger.Reject, request, cancellationToken);
+    public Task<InstrumentRentalDto> RejectAsync(int rentalId, RentalStatusRequest? request, CancellationToken cancellationToken = default) => ExecuteStoreTransitionAsync(rentalId, RentalTrigger.Reject, request, cancellationToken);
 
-    public Task<InstrumentRentalDto> PickupAsync(int rentalId, RentalStatusRequest request, CancellationToken cancellationToken = default) => ExecuteStoreTransitionAsync(rentalId, RentalTrigger.Pickup, request, cancellationToken);
+    public Task<InstrumentRentalDto> PickupAsync(int rentalId, RentalStatusRequest? request, CancellationToken cancellationToken = default) => ExecuteStoreTransitionAsync(rentalId, RentalTrigger.Pickup, request, cancellationToken);
 
-    public Task<InstrumentRentalDto> CompleteAsync(int rentalId, RentalStatusRequest request, CancellationToken cancellationToken = default) => ExecuteStoreTransitionAsync(rentalId, RentalTrigger.Complete, request, cancellationToken);
+    public Task<InstrumentRentalDto> CompleteAsync(int rentalId, RentalStatusRequest? request, CancellationToken cancellationToken = default) => ExecuteStoreTransitionAsync(rentalId, RentalTrigger.Complete, request, cancellationToken);
 
-    public Task<InstrumentRentalDto> ReturnEarlyAsync(int rentalId, RentalStatusRequest request, CancellationToken cancellationToken = default) => ExecuteStoreTransitionAsync(rentalId, RentalTrigger.ReturnEarly, request, cancellationToken);
+    public Task<InstrumentRentalDto> ReturnEarlyAsync(int rentalId, RentalStatusRequest? request, CancellationToken cancellationToken = default) => ExecuteStoreTransitionAsync(rentalId, RentalTrigger.ReturnEarly, request, cancellationToken);
 
-    public Task<InstrumentRentalDto> CancelAsync(int rentalId, RentalStatusRequest request, CancellationToken cancellationToken = default) =>
+    public Task<InstrumentRentalDto> CancelAsync(int rentalId, RentalStatusRequest? request, CancellationToken cancellationToken = default) =>
         ExecuteInTransactionAsync(async () =>
         {
             var rental = await LoadForStudentAsync(rentalId, currentUser.UserId, cancellationToken);
             return await ExecuteTransitionWithNotificationAsync(rental, RentalTrigger.Cancel, RentalActor.Student, currentUser.UserId, request, cancellationToken);
         }, cancellationToken);
 
-    private Task<InstrumentRentalDto> ExecuteStoreTransitionAsync(int rentalId, RentalTrigger trigger, RentalStatusRequest request, CancellationToken cancellationToken) =>
+    private Task<InstrumentRentalDto> ExecuteStoreTransitionAsync(int rentalId, RentalTrigger trigger, RentalStatusRequest? request, CancellationToken cancellationToken) =>
         ExecuteInTransactionAsync(async () =>
         {
             var storeId = await stores.GetCurrentStoreIdAsync(cancellationToken);
