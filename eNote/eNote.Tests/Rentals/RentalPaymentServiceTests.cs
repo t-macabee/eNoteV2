@@ -1,6 +1,8 @@
+using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Localization;
 using eNote.Application.Features.Rentals.InstrumentRentals.Services;
 using eNote.Application.Features.Rentals.Payments.Services;
+using eNote.API.Controllers.InstrumentRentals;
 using eNote.Tests.TestUtils;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
@@ -331,6 +333,44 @@ public sealed class RentalPaymentServiceTests
         Assert.Equal(PaymentStatus.Refunded, dto.Status);
     }
 
+    // ---- Payment provider failure (Stripe unavailable) ---------------------
+
+    [Fact]
+    public async Task CreatePaymentIntent_WhenGatewayThrows_ServiceThrows_PaymentProviderUnavailable()
+    {
+        var (context, student, currentUser) = await CreateStudentContextAsync();
+        var instrument = await SeedInstrumentAsync(context);
+        var rental = CreateCompletedRental(instrument, student.Id);
+        context.Set<InstrumentRental>().Add(rental);
+        await context.SaveChangesAsync();
+        var service = CreateService(context, currentUser, new ThrowingPaymentGateway());
+
+        var ex = await Assert.ThrowsAsync<PaymentProviderUnavailableException>(
+            () => service.CreatePaymentIntentAsync(rental.Id));
+
+        Assert.Equal(400, ex.StatusCode);
+        Assert.Equal("error.payment_provider_unavailable", ex.ErrorCode);
+        Assert.Equal(Messages.PaymentProviderUnavailable, ex.Message);
+    }
+
+    [Fact]
+    public async Task CreatePaymentIntent_WhenGatewayThrows_ControllerSurfaces_TypedError()
+    {
+        var (context, student, currentUser) = await CreateStudentContextAsync();
+        var instrument = await SeedInstrumentAsync(context);
+        var rental = CreateCompletedRental(instrument, student.Id);
+        context.Set<InstrumentRental>().Add(rental);
+        await context.SaveChangesAsync();
+        var service = CreateService(context, currentUser, new ThrowingPaymentGateway());
+        var controller = new RentalPaymentsController(service);
+
+        var ex = await Assert.ThrowsAsync<PaymentProviderUnavailableException>(
+            () => controller.CreateIntent(rental.Id, CancellationToken.None));
+
+        Assert.Equal(400, ex.StatusCode);
+        Assert.Equal("error.payment_provider_unavailable", ex.ErrorCode);
+    }
+
     // ---- Helpers ----------------------------------------------------------
 
     private static ENoteContext CreateContext(StubCurrentActor currentUser)
@@ -413,7 +453,7 @@ public sealed class RentalPaymentServiceTests
     private static RentalPaymentService CreateService(
         ENoteContext context,
         StubCurrentActor currentUser,
-        FakePaymentGateway? gateway = null,
+        IPaymentGateway? gateway = null,
         IRentalNotificationDispatcher? dispatcher = null)
     {
         return new(

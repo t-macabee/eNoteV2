@@ -63,6 +63,7 @@ public static class Messages
     public const string PaymentNotPayableInStatus = "Iznajmljivanje nije u stanju koje dozvoljava plaćanje.";
     public const string RefundExceedsCharged = "Iznos povrata premašuje naplaćeni iznos.";
     public const string PaymentNotFound = "Plaćanje nije pronađeno.";
+    public const string PaymentProviderUnavailable = "Plaćanje trenutno nije dostupno. Pokušajte ponovo kasnije.";
     public const string RentalUnpaidDebt = "Imate neizmireno dugovanje od prethodnog iznajmljivanja. Izmirite ga prije novog zahtjeva.";
     public const string StripeWebhookSignatureInvalid = "Neispravan Stripe webhook potpis.";
 

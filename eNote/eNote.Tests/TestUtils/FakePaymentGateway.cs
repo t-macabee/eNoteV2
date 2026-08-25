@@ -73,3 +73,29 @@ public sealed record FakeGatewayRefundCall(
     long? AmountCents,
     string Reason,
     string IdempotencyKey);
+
+public sealed class ThrowingPaymentGateway : IPaymentGateway
+{
+    public Exception ExceptionToThrow { get; init; } = new InvalidOperationException("Stripe is unavailable.");
+
+    public Task<PaymentIntentData> CreatePaymentIntentAsync(
+        long amountCents,
+        string currency,
+        IReadOnlyDictionary<string, string> metadata,
+        string idempotencyKey,
+        CancellationToken cancellationToken = default)
+        => throw ExceptionToThrow;
+
+    public Task<PaymentIntentData> RetrievePaymentIntentAsync(
+        string paymentIntentId,
+        CancellationToken cancellationToken = default)
+        => throw ExceptionToThrow;
+
+    public Task<RefundData> CreateRefundAsync(
+        string paymentIntentId,
+        long? amountCents,
+        string reason,
+        string idempotencyKey,
+        CancellationToken cancellationToken = default)
+        => throw ExceptionToThrow;
+}

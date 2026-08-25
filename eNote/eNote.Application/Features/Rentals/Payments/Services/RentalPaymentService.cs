@@ -1,3 +1,4 @@
+using eNote.Application.Common.Exceptions;
 using eNote.Application.Features.Rentals.InstrumentRentals;
 using eNote.Application.Features.Rentals.InstrumentRentals.Services;
 using MapsterMapper;
@@ -38,7 +39,9 @@ public sealed class RentalPaymentService(
             {
                 logger.LogInformation("Reusing requires-action PaymentIntent {PaymentIntentId} for rental {RentalId}", existing.StripePaymentIntentId, rental.Id);
 
-                var current = await paymentGateway.RetrievePaymentIntentAsync(existing.StripePaymentIntentId, cancellationToken);
+                var current = await InvokeGatewayAsync(
+                    () => paymentGateway.RetrievePaymentIntentAsync(existing.StripePaymentIntentId, cancellationToken),
+                    cancellationToken);
                 return new CreatePaymentIntentResponse(
                     rental.Id,
                     current.Id,
@@ -66,7 +69,9 @@ public sealed class RentalPaymentService(
                 ["studentId"] = rental.StudentProfile.AppUserId.ToString()
             };
 
-            var intent = await paymentGateway.CreatePaymentIntentAsync(cents, currency, metadata, idempotencyKey, cancellationToken);
+            var intent = await InvokeGatewayAsync(
+                () => paymentGateway.CreatePaymentIntentAsync(cents, currency, metadata, idempotencyKey, cancellationToken),
+                cancellationToken);
             var payment = new RentalPayment(
                 rental.Id,
                 rental.MusicStoreId,
@@ -141,6 +146,18 @@ public sealed class RentalPaymentService(
 
             return Map(payment);
         }, cancellationToken);
+    }
+
+    private static async Task<T> InvokeGatewayAsync<T>(Func<Task<T>> call, CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await call();
+        }
+        catch (Exception ex) when (ex is not AppException and not OperationCanceledException)
+        {
+            throw new PaymentProviderUnavailableException(Messages.PaymentProviderUnavailable);
+        }
     }
 
     private async Task<InstrumentRental> LoadForStudentAsync(int rentalId, CancellationToken cancellationToken)
