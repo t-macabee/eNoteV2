@@ -224,7 +224,7 @@ public sealed class RentalCommandServiceTests
         var recorder = new RecordingNotificationDispatcher();
         var service = CreateStoreService(context, instrument.MusicStoreId, recorder);
 
-        await service.ApproveAsync(rental.Id, new RentalStatusResponse());
+        await service.ApproveAsync(rental.Id, new RentalStatusRequest());
 
         Assert.Single(recorder.TransitionCalls);
         Assert.Equal(RentalTrigger.Approve, recorder.TransitionCalls[0].Trigger);

@@ -48,45 +48,45 @@ public sealed class RentalController(
     [Authorize(Roles = AppRoles.StoreEmployee)]
     [HttpPost("~/api/v{version:apiVersion}/shop/rentals/{id:int}/approve")]
     [ProducesResponseType(typeof(InstrumentRentalDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<InstrumentRentalDto>> Approve(int id, [FromBody] RentalStatusResponse response, CancellationToken cancellationToken)
+    public async Task<ActionResult<InstrumentRentalDto>> Approve(int id, [FromBody] RentalStatusRequest request, CancellationToken cancellationToken)
     {
-        var dto = await commandService.ApproveAsync(id, response, cancellationToken);
+        var dto = await commandService.ApproveAsync(id, request, cancellationToken);
         return Ok(dto);
     }
 
     [Authorize(Roles = AppRoles.StoreEmployee)]
     [HttpPost("~/api/v{version:apiVersion}/shop/rentals/{id:int}/reject")]
     [ProducesResponseType(typeof(InstrumentRentalDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<InstrumentRentalDto>> Reject(int id, [FromBody] RentalStatusResponse response, CancellationToken cancellationToken)
+    public async Task<ActionResult<InstrumentRentalDto>> Reject(int id, [FromBody] RentalStatusRequest request, CancellationToken cancellationToken)
     {
-        var dto = await commandService.RejectAsync(id, response, cancellationToken);
+        var dto = await commandService.RejectAsync(id, request, cancellationToken);
         return Ok(dto);
     }
 
     [Authorize(Roles = AppRoles.StoreEmployee)]
     [HttpPost("~/api/v{version:apiVersion}/shop/rentals/{id:int}/pickup")]
     [ProducesResponseType(typeof(InstrumentRentalDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<InstrumentRentalDto>> Pickup(int id, [FromBody] RentalStatusResponse response, CancellationToken cancellationToken)
+    public async Task<ActionResult<InstrumentRentalDto>> Pickup(int id, [FromBody] RentalStatusRequest request, CancellationToken cancellationToken)
     {
-        var dto = await commandService.PickupAsync(id, response, cancellationToken);
+        var dto = await commandService.PickupAsync(id, request, cancellationToken);
         return Ok(dto);
     }
 
     [Authorize(Roles = AppRoles.StoreEmployee)]
     [HttpPost("~/api/v{version:apiVersion}/shop/rentals/{id:int}/complete")]
     [ProducesResponseType(typeof(InstrumentRentalDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<InstrumentRentalDto>> Complete(int id, [FromBody] RentalStatusResponse response, CancellationToken cancellationToken)
+    public async Task<ActionResult<InstrumentRentalDto>> Complete(int id, [FromBody] RentalStatusRequest request, CancellationToken cancellationToken)
     {
-        var dto = await commandService.CompleteAsync(id, response, cancellationToken);
+        var dto = await commandService.CompleteAsync(id, request, cancellationToken);
         return Ok(dto);
     }
 
     [Authorize(Roles = AppRoles.StoreEmployee)]
     [HttpPost("~/api/v{version:apiVersion}/shop/rentals/{id:int}/return-early")]
     [ProducesResponseType(typeof(InstrumentRentalDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<InstrumentRentalDto>> ReturnEarly(int id, [FromBody] RentalStatusResponse response, CancellationToken cancellationToken)
+    public async Task<ActionResult<InstrumentRentalDto>> ReturnEarly(int id, [FromBody] RentalStatusRequest request, CancellationToken cancellationToken)
     {
-        var dto = await commandService.ReturnEarlyAsync(id, response, cancellationToken);
+        var dto = await commandService.ReturnEarlyAsync(id, request, cancellationToken);
         return Ok(dto);
     }
 
@@ -122,9 +122,9 @@ public sealed class RentalController(
     [Authorize(Roles = AppRoles.Student)]
     [HttpPost("~/api/v{version:apiVersion}/student/rentals/{id:int}/cancel")]
     [ProducesResponseType(typeof(InstrumentRentalDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<InstrumentRentalDto>> Cancel(int id, [FromBody] RentalStatusResponse response, CancellationToken cancellationToken)
+    public async Task<ActionResult<InstrumentRentalDto>> Cancel(int id, [FromBody] RentalStatusRequest request, CancellationToken cancellationToken)
     {
-        var dto = await commandService.CancelAsync(id, response, cancellationToken);
+        var dto = await commandService.CancelAsync(id, request, cancellationToken);
         return Ok(dto);
     }
 }
