@@ -23,7 +23,7 @@ public sealed class InstrumentController(
     [ProducesResponseType(typeof(PagedResult<InstrumentDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<PagedResult<InstrumentDto>>> GetPublicPaged([FromQuery] InstrumentSearchObject search, CancellationToken cancellationToken)
     {
-        var result = await instrumentService.GetPublicPagedAsync(search, cancellationToken);
+        var result = await instrumentService.GetPagedAsync(search, publicView: true, cancellationToken);
         return Ok(result);
     }
 
@@ -32,7 +32,7 @@ public sealed class InstrumentController(
     [ProducesResponseType(typeof(InstrumentDto), StatusCodes.Status200OK)]
     public async Task<ActionResult<InstrumentDto>> GetPublicById(int id, CancellationToken cancellationToken)
     {
-        var result = await instrumentService.GetPublicByIdAsync(id, cancellationToken);
+        var result = await instrumentService.GetByIdAsync(id, publicView: true, cancellationToken);
         return Ok(result);
     }
 
@@ -43,7 +43,7 @@ public sealed class InstrumentController(
     [ProducesResponseType(typeof(PagedResult<InstrumentDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<PagedResult<InstrumentDto>>> GetStorePaged([FromQuery] InstrumentSearchObject search, CancellationToken cancellationToken)
     {
-        var result = await instrumentService.GetPagedAsync(search, cancellationToken);
+        var result = await instrumentService.GetPagedAsync(search, cancellationToken: cancellationToken);
         return Ok(result);
     }
 
@@ -52,7 +52,7 @@ public sealed class InstrumentController(
     [ProducesResponseType(typeof(InstrumentDto), StatusCodes.Status200OK)]
     public async Task<ActionResult<InstrumentDto>> GetStoreById(int id, CancellationToken cancellationToken)
     {
-        var result = await instrumentService.GetByIdAsync(id, cancellationToken);
+        var result = await instrumentService.GetByIdAsync(id, cancellationToken: cancellationToken);
         return Ok(result);
     }
 

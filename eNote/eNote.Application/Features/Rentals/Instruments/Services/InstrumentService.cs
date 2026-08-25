@@ -8,44 +8,35 @@ public sealed class InstrumentService(
     IStudentContext students,
     IFileStorageService fileStorage)
 {
-    public async Task<InstrumentDto> GetByIdAsync(int id, CancellationToken cancellationToken = default)
+    public async Task<InstrumentDto> GetByIdAsync(int id, bool publicView = false, CancellationToken cancellationToken = default)
     {
-        var entity = await context.Set<Instrument>()
+        var query = context.Set<Instrument>()
             .AsNoTracking()
-            .WithInstrumentDetails()
+            .WithInstrumentDetails();
+
+        if (publicView)
+        {
+            query = query.IgnoreQueryFilters().Where(x => x.IsActive);
+        }
+
+        var entity = await query
             .FirstOrDefaultAsync(x => x.Id == id, cancellationToken)
             ?? throw new NotFoundException(Messages.NotFound);
 
         return mapper.Map<InstrumentDto>(entity);
     }
 
-    public async Task<InstrumentDto> GetPublicByIdAsync(int id, CancellationToken cancellationToken = default)
-    {
-        var entity = await context.Set<Instrument>()
-            .AsNoTracking()
-            .WithInstrumentDetails()
-            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken)
-            ?? throw new NotFoundException(Messages.NotFound);
-
-        return mapper.Map<InstrumentDto>(entity);
-    }
-
-    public async Task<PagedResult<InstrumentDto>> GetPagedAsync(InstrumentSearchObject search, CancellationToken cancellationToken = default)
+    public async Task<PagedResult<InstrumentDto>> GetPagedAsync(InstrumentSearchObject search, bool publicView = false, CancellationToken cancellationToken = default)
     {
         var query = context.Set<Instrument>()
             .AsNoTracking()
             .WithInstrumentDetails()
             .ApplySearch(search);
 
-        return await query.ToPagedResultAsync(search, mapper.Map<InstrumentDto>, ct: cancellationToken);
-    }
-
-    public async Task<PagedResult<InstrumentDto>> GetPublicPagedAsync(InstrumentSearchObject search, CancellationToken cancellationToken = default)
-    {
-        var query = context.Set<Instrument>()
-            .AsNoTracking()
-            .WithInstrumentDetails()
-            .ApplySearch(search);
+        if (publicView)
+        {
+            query = query.IgnoreQueryFilters().Where(x => x.IsActive);
+        }
 
         return await query.ToPagedResultAsync(search, mapper.Map<InstrumentDto>, ct: cancellationToken);
     }
