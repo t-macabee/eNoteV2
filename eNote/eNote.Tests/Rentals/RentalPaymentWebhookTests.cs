@@ -88,7 +88,7 @@ public sealed class RentalPaymentWebhookTests
     private static async Task<(ENoteContext Context, InstrumentRental Rental, RentalPayment Payment)> SeedRequiresActionPaymentAsync()
     {
         var (context, student, instrument) = await SeedBaseAsync();
-        var rental = CreateCompletedRental(instrument, student.Id);
+        var rental = RentalTestData.CreateCompletedRental(instrument, student.Id, Now);
         context.Set<InstrumentRental>().Add(rental);
         await context.SaveChangesAsync();
 
@@ -101,7 +101,7 @@ public sealed class RentalPaymentWebhookTests
     private static async Task<(ENoteContext Context, InstrumentRental Rental, RentalPayment Payment)> SeedSucceededPaymentAsync()
     {
         var (context, student, instrument) = await SeedBaseAsync();
-        var rental = CreateCompletedRental(instrument, student.Id);
+        var rental = RentalTestData.CreateCompletedRental(instrument, student.Id, Now);
         context.Set<InstrumentRental>().Add(rental);
         await context.SaveChangesAsync();
 
@@ -140,15 +140,6 @@ public sealed class RentalPaymentWebhookTests
         await context.SaveChangesAsync();
 
         return (context, student, instrument);
-    }
-
-    private static InstrumentRental CreateCompletedRental(Instrument instrument, int studentId)
-    {
-        var rental = new InstrumentRental(instrument.Id, studentId, instrument.MusicStoreId, Now.AddDays(-10), null);
-        rental.Approve(50m, null, Now.AddDays(-9), 1);
-        rental.Pickup(Now.AddDays(-9));
-        rental.Complete(Now.AddDays(-3), null);
-        return rental;
     }
 
     private static StripeWebhookService CreateWebhookService(ENoteContext context) =>

@@ -1,4 +1,5 @@
 using eNote.Application.Features.Identity.Instructors;
+using MapsterMapper;
 
 namespace eNote.Tests.TestUtils;
 
@@ -37,6 +38,20 @@ public static class AcademicTestData
 
     public static InstructorAccessService CreateInstructorAccess(ENoteContext context, Instructor instructor) =>
         new(context, new StubUserProfileLookup(instructor: instructor));
+
+    public static T CreateService<T>(
+        ENoteContext context, Instructor instructor, StubCurrentActor? actor = null)
+        where T : class
+    {
+        var currentUser = actor ?? new StubCurrentActor(instructor: instructor);
+        return (T)Activator.CreateInstance(
+            typeof(T),
+            context,
+            currentUser,
+            currentUser,
+            CreateInstructorAccess(context, instructor),
+            TestMapper.Create())!;
+    }
 }
 
 public sealed record AcademicHarness(

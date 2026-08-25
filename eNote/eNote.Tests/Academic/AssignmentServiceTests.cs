@@ -14,7 +14,7 @@ public sealed class AssignmentServiceTests
     public async Task CreateAsync_CreatesAssignment_ForOwnedLecture()
     {
         var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
-        var service = CreateService(harness.Context, harness.Instructor);
+        var service = AcademicTestData.CreateService<AssignmentService>(harness.Context, harness.Instructor);
 
         var dto = await service.CreateAsync(harness.Lecture.Id, new AssignmentRequest
         {
@@ -34,7 +34,7 @@ public sealed class AssignmentServiceTests
         var otherInstructor = new Instructor(300);
         harness.Context.Set<Instructor>().Add(otherInstructor);
         await harness.Context.SaveChangesAsync();
-        var service = CreateService(harness.Context, otherInstructor);
+        var service = AcademicTestData.CreateService<AssignmentService>(harness.Context, otherInstructor);
 
         await Assert.ThrowsAsync<AuthorizationException>(() =>
             service.CreateAsync(harness.Lecture.Id, new AssignmentRequest
@@ -52,7 +52,7 @@ public sealed class AssignmentServiceTests
         var assignment = new Assignment("Homework", "Old", Now.AddDays(7), harness.Lecture.Id);
         harness.Context.Set<Assignment>().Add(assignment);
         await harness.Context.SaveChangesAsync();
-        var service = CreateService(harness.Context, harness.Instructor);
+        var service = AcademicTestData.CreateService<AssignmentService>(harness.Context, harness.Instructor);
 
         var dto = await service.UpdateAsync(harness.Lecture.Id, assignment.Id, new AssignmentRequest
         {
@@ -72,7 +72,7 @@ public sealed class AssignmentServiceTests
         var assignment = new Assignment("Homework", "Old", Now.AddDays(7), harness.Lecture.Id);
         harness.Context.Set<Assignment>().Add(assignment);
         await harness.Context.SaveChangesAsync();
-        var service = CreateService(harness.Context, harness.Instructor);
+        var service = AcademicTestData.CreateService<AssignmentService>(harness.Context, harness.Instructor);
 
         await service.DeleteAsync(harness.Lecture.Id, assignment.Id);
 
@@ -89,7 +89,7 @@ public sealed class AssignmentServiceTests
         harness.Context.Set<Assignment>().Add(new Assignment("Hidden", "Not for you", Now.AddDays(7), 9999));
         await harness.Context.SaveChangesAsync();
         var actor = new StubCurrentActor(student: harness.Student);
-        var service = CreateService(harness.Context, harness.Instructor, actor);
+        var service = AcademicTestData.CreateService<AssignmentService>(harness.Context, harness.Instructor, actor);
 
         var result = await service.GetForStudentAsync(new AssignmentSearchObject { Page = 1, PageSize = 10 });
 
@@ -97,13 +97,4 @@ public sealed class AssignmentServiceTests
         Assert.Equal("Homework", dto.Title);
     }
 
-    private static AssignmentService CreateService(ENoteContext context, Instructor instructor, StubCurrentActor? actor = null)
-    {
-        var currentUser = actor ?? new StubCurrentActor(instructor: instructor);
-        return new(context,
-            currentUser,
-            currentUser,
-            AcademicTestData.CreateInstructorAccess(context, instructor),
-            TestMapper.Create());
-    }
 }

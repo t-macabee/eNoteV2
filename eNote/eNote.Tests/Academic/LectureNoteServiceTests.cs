@@ -13,7 +13,7 @@ public sealed class LectureNoteServiceTests
     public async Task CreateAsync_CreatesNote_ForOwnedLecture()
     {
         var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
-        var service = CreateService(harness.Context, harness.Instructor);
+        var service = AcademicTestData.CreateService<LectureNoteService>(harness.Context, harness.Instructor);
 
         var dto = await service.CreateAsync(harness.Lecture.Id, new LectureNoteRequest { Title = "Scales", Content = "A minor pentatonic" });
 
@@ -28,7 +28,7 @@ public sealed class LectureNoteServiceTests
         var otherInstructor = new Instructor(300);
         harness.Context.Set<Instructor>().Add(otherInstructor);
         await harness.Context.SaveChangesAsync();
-        var service = CreateService(harness.Context, otherInstructor);
+        var service = AcademicTestData.CreateService<LectureNoteService>(harness.Context, otherInstructor);
 
         await Assert.ThrowsAsync<AuthorizationException>(() =>
             service.CreateAsync(harness.Lecture.Id, new LectureNoteRequest { Title = "Scales", Content = "Content" }));
@@ -41,7 +41,7 @@ public sealed class LectureNoteServiceTests
         var note = new LectureNote("Scales", "Old", harness.Lecture.Id);
         harness.Context.Set<LectureNote>().Add(note);
         await harness.Context.SaveChangesAsync();
-        var service = CreateService(harness.Context, harness.Instructor);
+        var service = AcademicTestData.CreateService<LectureNoteService>(harness.Context, harness.Instructor);
 
         var dto = await service.UpdateAsync(harness.Lecture.Id, note.Id, new LectureNoteRequest { Title = "Scales v2", Content = "New" });
 
@@ -56,7 +56,7 @@ public sealed class LectureNoteServiceTests
         var note = new LectureNote("Scales", "Content", harness.Lecture.Id);
         harness.Context.Set<LectureNote>().Add(note);
         await harness.Context.SaveChangesAsync();
-        var service = CreateService(harness.Context, harness.Instructor);
+        var service = AcademicTestData.CreateService<LectureNoteService>(harness.Context, harness.Instructor);
 
         await service.DeleteAsync(harness.Lecture.Id, note.Id);
 
@@ -71,7 +71,7 @@ public sealed class LectureNoteServiceTests
         harness.Context.Set<LectureNote>().Add(new LectureNote("Visible", "Content", harness.Lecture.Id));
         harness.Context.Set<LectureNote>().Add(new LectureNote("Hidden", "Content", 9999));
         await harness.Context.SaveChangesAsync();
-        var service = CreateService(harness.Context, harness.Instructor, new StubCurrentActor(student: harness.Student));
+        var service = AcademicTestData.CreateService<LectureNoteService>(harness.Context, harness.Instructor, new StubCurrentActor(student: harness.Student));
 
         var result = await service.GetForStudentAsync(harness.Lecture.Id, new LectureNoteSearchObject { Page = 1, PageSize = 10 });
 
@@ -79,13 +79,4 @@ public sealed class LectureNoteServiceTests
         Assert.Equal("Visible", dto.Title);
     }
 
-    private static LectureNoteService CreateService(ENoteContext context, Instructor instructor, StubCurrentActor? actor = null)
-    {
-        var currentUser = actor ?? new StubCurrentActor(instructor: instructor);
-        return new(context,
-            currentUser,
-            currentUser,
-            AcademicTestData.CreateInstructorAccess(context, instructor),
-            TestMapper.Create());
-    }
 }

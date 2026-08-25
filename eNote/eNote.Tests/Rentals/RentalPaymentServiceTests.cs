@@ -20,7 +20,7 @@ public sealed class RentalPaymentServiceTests
     public async Task CreatePaymentIntent_FromPending_Throws_NotPayable()
     {
         var (context, student, currentUser) = await CreateStudentContextAsync();
-        var instrument = await SeedInstrumentAsync(context);
+        var instrument = await RentalTestData.SeedInstrumentAsync(context);
         var rental = new InstrumentRental(instrument.Id, student.Id, instrument.MusicStoreId, Now, null);
         context.Set<InstrumentRental>().Add(rental);
         await context.SaveChangesAsync();
@@ -35,7 +35,7 @@ public sealed class RentalPaymentServiceTests
     public async Task CreatePaymentIntent_FromApproved_Throws_NotPayable()
     {
         var (context, student, currentUser) = await CreateStudentContextAsync();
-        var instrument = await SeedInstrumentAsync(context);
+        var instrument = await RentalTestData.SeedInstrumentAsync(context);
         var rental = new InstrumentRental(instrument.Id, student.Id, instrument.MusicStoreId, Now, null);
         rental.Approve(50m, null, Now, 1);
         context.Set<InstrumentRental>().Add(rental);
@@ -51,7 +51,7 @@ public sealed class RentalPaymentServiceTests
     public async Task CreatePaymentIntent_FromActive_Throws_NotPayable()
     {
         var (context, student, currentUser) = await CreateStudentContextAsync();
-        var instrument = await SeedInstrumentAsync(context);
+        var instrument = await RentalTestData.SeedInstrumentAsync(context);
         var rental = new InstrumentRental(instrument.Id, student.Id, instrument.MusicStoreId, Now, null);
         rental.Approve(50m, null, Now, 1);
         rental.Pickup(Now);
@@ -68,8 +68,8 @@ public sealed class RentalPaymentServiceTests
     public async Task CreatePaymentIntent_FromCompleted_Succeeds()
     {
         var (context, student, currentUser) = await CreateStudentContextAsync();
-        var instrument = await SeedInstrumentAsync(context);
-        var rental = CreateCompletedRental(instrument, student.Id);
+        var instrument = await RentalTestData.SeedInstrumentAsync(context);
+        var rental = RentalTestData.CreateCompletedRental(instrument, student.Id, Now);
         context.Set<InstrumentRental>().Add(rental);
         await context.SaveChangesAsync();
         var gateway = new FakePaymentGateway();
@@ -92,7 +92,7 @@ public sealed class RentalPaymentServiceTests
     public async Task CreatePaymentIntent_FromReturnedEarly_Succeeds()
     {
         var (context, student, currentUser) = await CreateStudentContextAsync();
-        var instrument = await SeedInstrumentAsync(context);
+        var instrument = await RentalTestData.SeedInstrumentAsync(context);
         var rental = CreateReturnedEarlyRental(instrument, student.Id);
         context.Set<InstrumentRental>().Add(rental);
         await context.SaveChangesAsync();
@@ -112,8 +112,8 @@ public sealed class RentalPaymentServiceTests
         // recomputed from rental.CalculateCharges on the server. This test locks in
         // that behavior and the decided EUR currency.
         var (context, student, currentUser) = await CreateStudentContextAsync();
-        var instrument = await SeedInstrumentAsync(context);
-        var rental = CreateCompletedRental(instrument, student.Id);
+        var instrument = await RentalTestData.SeedInstrumentAsync(context);
+        var rental = RentalTestData.CreateCompletedRental(instrument, student.Id, Now);
         context.Set<InstrumentRental>().Add(rental);
         await context.SaveChangesAsync();
         var gateway = new FakePaymentGateway();
@@ -131,8 +131,8 @@ public sealed class RentalPaymentServiceTests
     public async Task CreatePaymentIntent_Idempotent_SecondCallReturnsSameIntent()
     {
         var (context, student, currentUser) = await CreateStudentContextAsync();
-        var instrument = await SeedInstrumentAsync(context);
-        var rental = CreateCompletedRental(instrument, student.Id);
+        var instrument = await RentalTestData.SeedInstrumentAsync(context);
+        var rental = RentalTestData.CreateCompletedRental(instrument, student.Id, Now);
         context.Set<InstrumentRental>().Add(rental);
         await context.SaveChangesAsync();
         var gateway = new FakePaymentGateway();
@@ -151,8 +151,8 @@ public sealed class RentalPaymentServiceTests
     public async Task CreatePaymentIntent_AlreadyPaid_Throws_PaymentAlreadyCompleted()
     {
         var (context, student, currentUser) = await CreateStudentContextAsync();
-        var instrument = await SeedInstrumentAsync(context);
-        var rental = CreateCompletedRental(instrument, student.Id);
+        var instrument = await RentalTestData.SeedInstrumentAsync(context);
+        var rental = RentalTestData.CreateCompletedRental(instrument, student.Id, Now);
         rental.MarkPaid(5000, Now);
         context.Set<InstrumentRental>().Add(rental);
         await context.SaveChangesAsync();
@@ -171,8 +171,8 @@ public sealed class RentalPaymentServiceTests
         // Denormalized IsPaid safety: even if the cached flag were stale, a
         // succeeded RentalPayment row must block a second intent.
         var (context, student, currentUser) = await CreateStudentContextAsync();
-        var instrument = await SeedInstrumentAsync(context);
-        var rental = CreateCompletedRental(instrument, student.Id);
+        var instrument = await RentalTestData.SeedInstrumentAsync(context);
+        var rental = RentalTestData.CreateCompletedRental(instrument, student.Id, Now);
         context.Set<InstrumentRental>().Add(rental);
         await context.SaveChangesAsync();
         context.Set<RentalPayment>().Add(new RentalPayment(rental.Id, rental.MusicStoreId, "pi_test_existing", 5000, "eur", PaymentStatus.Succeeded));
@@ -190,8 +190,8 @@ public sealed class RentalPaymentServiceTests
     public async Task Refund_Fails_WhenNoSucceededPayment()
     {
         var (context, student, _) = await CreateStudentContextAsync();
-        var instrument = await SeedInstrumentAsync(context);
-        var rental = CreateCompletedRental(instrument, student.Id);
+        var instrument = await RentalTestData.SeedInstrumentAsync(context);
+        var rental = RentalTestData.CreateCompletedRental(instrument, student.Id, Now);
         rental.MarkPaid(5000, Now);
         context.Set<InstrumentRental>().Add(rental);
         await context.SaveChangesAsync();
@@ -206,7 +206,7 @@ public sealed class RentalPaymentServiceTests
     public async Task Refund_Full_SetsRefunded()
     {
         var (context, student, _) = await CreateStudentContextAsync();
-        var instrument = await SeedInstrumentAsync(context);
+        var instrument = await RentalTestData.SeedInstrumentAsync(context);
         var rental = await SeedPaidRentalAsync(context, instrument, student);
         var gateway = new FakePaymentGateway();
         var service = CreateService(context, CreateStoreActor(), gateway);
@@ -226,7 +226,7 @@ public sealed class RentalPaymentServiceTests
     public async Task Refund_Partial_LeavesPartiallyRefunded()
     {
         var (context, student, _) = await CreateStudentContextAsync();
-        var instrument = await SeedInstrumentAsync(context);
+        var instrument = await RentalTestData.SeedInstrumentAsync(context);
         var rental = await SeedPaidRentalAsync(context, instrument, student);
         var service = CreateService(context, CreateStoreActor());
 
@@ -241,7 +241,7 @@ public sealed class RentalPaymentServiceTests
     public async Task Refund_ExceedsCharged_Throws()
     {
         var (context, student, _) = await CreateStudentContextAsync();
-        var instrument = await SeedInstrumentAsync(context);
+        var instrument = await RentalTestData.SeedInstrumentAsync(context);
         var rental = await SeedPaidRentalAsync(context, instrument, student);
         var gateway = new FakePaymentGateway();
         var service = CreateService(context, CreateStoreActor(), gateway);
@@ -258,7 +258,7 @@ public sealed class RentalPaymentServiceTests
         // Regression for the decided behavior: a refund must not flip IsPaid back
         // to false. This is the service-level version of the domain test.
         var (context, student, _) = await CreateStudentContextAsync();
-        var instrument = await SeedInstrumentAsync(context);
+        var instrument = await RentalTestData.SeedInstrumentAsync(context);
         var rental = await SeedPaidRentalAsync(context, instrument, student);
         var service = CreateService(context, CreateStoreActor());
 
@@ -277,8 +277,8 @@ public sealed class RentalPaymentServiceTests
     public async Task Student_CanCreateIntent_ForOwnRental()
     {
         var (context, student, currentUser) = await CreateStudentContextAsync();
-        var instrument = await SeedInstrumentAsync(context);
-        var rental = CreateCompletedRental(instrument, student.Id);
+        var instrument = await RentalTestData.SeedInstrumentAsync(context);
+        var rental = RentalTestData.CreateCompletedRental(instrument, student.Id, Now);
         context.Set<InstrumentRental>().Add(rental);
         await context.SaveChangesAsync();
         var service = CreateService(context, currentUser);
@@ -294,8 +294,8 @@ public sealed class RentalPaymentServiceTests
     {
         var (context, studentA, currentUserA) = await CreateStudentContextAsync(appUserId: 100);
         var studentB = await SeedStudentAsync(context, appUserId: 200);
-        var instrument = await SeedInstrumentAsync(context);
-        var rental = CreateCompletedRental(instrument, studentB.Id);
+        var instrument = await RentalTestData.SeedInstrumentAsync(context);
+        var rental = RentalTestData.CreateCompletedRental(instrument, studentB.Id, Now);
         context.Set<InstrumentRental>().Add(rental);
         await context.SaveChangesAsync();
         var service = CreateService(context, currentUserA);
@@ -309,8 +309,8 @@ public sealed class RentalPaymentServiceTests
     public async Task StoreEmployee_CannotCreateIntent()
     {
         var (context, student, _) = await CreateStudentContextAsync();
-        var instrument = await SeedInstrumentAsync(context);
-        var rental = CreateCompletedRental(instrument, student.Id);
+        var instrument = await RentalTestData.SeedInstrumentAsync(context);
+        var rental = RentalTestData.CreateCompletedRental(instrument, student.Id, Now);
         context.Set<InstrumentRental>().Add(rental);
         await context.SaveChangesAsync();
         var service = CreateService(context, CreateStoreActor());
@@ -324,7 +324,7 @@ public sealed class RentalPaymentServiceTests
     public async Task StoreEmployee_CanRefund()
     {
         var (context, student, _) = await CreateStudentContextAsync();
-        var instrument = await SeedInstrumentAsync(context);
+        var instrument = await RentalTestData.SeedInstrumentAsync(context);
         var rental = await SeedPaidRentalAsync(context, instrument, student);
         var service = CreateService(context, CreateStoreActor());
 
@@ -339,8 +339,8 @@ public sealed class RentalPaymentServiceTests
     public async Task CreatePaymentIntent_WhenGatewayThrows_ServiceThrows_PaymentProviderUnavailable()
     {
         var (context, student, currentUser) = await CreateStudentContextAsync();
-        var instrument = await SeedInstrumentAsync(context);
-        var rental = CreateCompletedRental(instrument, student.Id);
+        var instrument = await RentalTestData.SeedInstrumentAsync(context);
+        var rental = RentalTestData.CreateCompletedRental(instrument, student.Id, Now);
         context.Set<InstrumentRental>().Add(rental);
         await context.SaveChangesAsync();
         var service = CreateService(context, currentUser, new ThrowingPaymentGateway());
@@ -357,8 +357,8 @@ public sealed class RentalPaymentServiceTests
     public async Task CreatePaymentIntent_WhenGatewayThrows_ControllerSurfaces_TypedError()
     {
         var (context, student, currentUser) = await CreateStudentContextAsync();
-        var instrument = await SeedInstrumentAsync(context);
-        var rental = CreateCompletedRental(instrument, student.Id);
+        var instrument = await RentalTestData.SeedInstrumentAsync(context);
+        var rental = RentalTestData.CreateCompletedRental(instrument, student.Id, Now);
         context.Set<InstrumentRental>().Add(rental);
         await context.SaveChangesAsync();
         var service = CreateService(context, currentUser, new ThrowingPaymentGateway());
@@ -402,31 +402,6 @@ public sealed class RentalPaymentServiceTests
         return student;
     }
 
-    private static async Task<Instrument> SeedInstrumentAsync(ENoteContext context)
-    {
-        var type = new InstrumentType { Type = "Guitar", MonthlyFee = 50m };
-        context.Set<InstrumentType>().Add(type);
-        await context.SaveChangesAsync();
-
-        var store = new MusicStore("Music Shop", "09-17");
-        context.Set<MusicStore>().Add(store);
-        await context.SaveChangesAsync();
-
-        var instrument = new Instrument("Stradivarius", "Yamaha", null, null, type.Id, store.Id);
-        context.Set<Instrument>().Add(instrument);
-        await context.SaveChangesAsync();
-        return instrument;
-    }
-
-    private static InstrumentRental CreateCompletedRental(Instrument instrument, int studentId)
-    {
-        var rental = new InstrumentRental(instrument.Id, studentId, instrument.MusicStoreId, Now.AddDays(-10), null);
-        rental.Approve(50m, null, Now.AddDays(-9), 1);
-        rental.Pickup(Now.AddDays(-9));
-        rental.Complete(Now.AddDays(-3), null);
-        return rental;
-    }
-
     private static InstrumentRental CreateReturnedEarlyRental(Instrument instrument, int studentId)
     {
         var rental = new InstrumentRental(instrument.Id, studentId, instrument.MusicStoreId, Now.AddDays(-10), null);
@@ -438,7 +413,7 @@ public sealed class RentalPaymentServiceTests
 
     private static async Task<InstrumentRental> SeedPaidRentalAsync(ENoteContext context, Instrument instrument, Student student)
     {
-        var rental = CreateCompletedRental(instrument, student.Id);
+        var rental = RentalTestData.CreateCompletedRental(instrument, student.Id, Now);
         context.Set<InstrumentRental>().Add(rental);
         await context.SaveChangesAsync();
 

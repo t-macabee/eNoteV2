@@ -16,7 +16,7 @@ public sealed class RentalCommandServiceTests
     {
         await using var context = CreateContext();
         var student = await SeedStudentAsync(context, hasActiveMembership: false);
-        var instrument = await SeedInstrumentAsync(context);
+        var instrument = await RentalTestData.SeedInstrumentAsync(context);
         var service = CreateService(context, student);
 
         await Assert.ThrowsAsync<BusinessException>(() => service.CreateRequestAsync(new RentalCreateRequest { InstrumentId = instrument.Id }));
@@ -28,7 +28,7 @@ public sealed class RentalCommandServiceTests
 
         await using var context = CreateContext();
         var student = await SeedStudentAsync(context, hasActiveMembership: true);
-        var instrument = await SeedInstrumentAsync(context);
+        var instrument = await RentalTestData.SeedInstrumentAsync(context);
         var existingRental = new InstrumentRental(instrument.Id, 999, instrument.MusicStoreId, Now, null);
         existingRental.Approve(50m, null, Now, 1);
         context.Set<InstrumentRental>().Add(existingRental);
@@ -46,7 +46,7 @@ public sealed class RentalCommandServiceTests
     {
         await using var context = CreateContext();
         var student = await SeedStudentAsync(context, hasActiveMembership: true);
-        var instrument = await SeedInstrumentAsync(context);
+        var instrument = await RentalTestData.SeedInstrumentAsync(context);
         var service = CreateService(context, student);
 
         var request = new RentalCreateRequest { InstrumentId = instrument.Id, Note = "please" };
@@ -65,7 +65,7 @@ public sealed class RentalCommandServiceTests
     {
         await using var context = CreateContext();
         var student = await SeedStudentAsync(context, hasActiveMembership: true);
-        var instrument = await SeedInstrumentAsync(context);
+        var instrument = await RentalTestData.SeedInstrumentAsync(context);
         var unpaid = new InstrumentRental(instrument.Id, student.Id, instrument.MusicStoreId, Now.AddDays(-20), null);
         unpaid.Approve(50m, null, Now.AddDays(-19), 1);
         unpaid.Pickup(Now.AddDays(-19));
@@ -86,7 +86,7 @@ public sealed class RentalCommandServiceTests
     {
         await using var context = CreateContext();
         var student = await SeedStudentAsync(context, hasActiveMembership: true);
-        var instrument = await SeedInstrumentAsync(context);
+        var instrument = await RentalTestData.SeedInstrumentAsync(context);
         var unpaid = new InstrumentRental(instrument.Id, student.Id, instrument.MusicStoreId, Now.AddDays(-20), null);
         unpaid.Approve(50m, null, Now.AddDays(-19), 1);
         unpaid.Pickup(Now.AddDays(-19));
@@ -107,7 +107,7 @@ public sealed class RentalCommandServiceTests
     {
         await using var context = CreateContext();
         var student = await SeedStudentAsync(context, hasActiveMembership: true);
-        var instrument = await SeedInstrumentAsync(context);
+        var instrument = await RentalTestData.SeedInstrumentAsync(context);
         var paid = new InstrumentRental(instrument.Id, student.Id, instrument.MusicStoreId, Now.AddDays(-20), null);
         paid.Approve(50m, null, Now.AddDays(-19), 1);
         paid.Pickup(Now.AddDays(-19));
@@ -130,7 +130,7 @@ public sealed class RentalCommandServiceTests
     {
         await using var context = CreateContext();
         var student = await SeedStudentAsync(context, hasActiveMembership: true);
-        var instrument = await SeedInstrumentAsync(context);
+        var instrument = await RentalTestData.SeedInstrumentAsync(context);
 
         var pending = new InstrumentRental(instrument.Id, student.Id, instrument.MusicStoreId, Now, null);
         context.Set<InstrumentRental>().Add(pending);
@@ -175,21 +175,6 @@ public sealed class RentalCommandServiceTests
         return student;
     }
 
-    private static async Task<Instrument> SeedInstrumentAsync(ENoteContext context)
-    {
-        context.Set<InstrumentType>().Add(new InstrumentType { Type = "Guitar", MonthlyFee = 50m });
-        await context.SaveChangesAsync();
-
-        var store = new MusicStore("Music Shop", "09-17");
-        context.Set<MusicStore>().Add(store);
-        await context.SaveChangesAsync();
-
-        var instrument = new Instrument("Stradivarius", "Yamaha", null, null, 1, store.Id);
-        context.Set<Instrument>().Add(instrument);
-        await context.SaveChangesAsync();
-        return instrument;
-    }
-
     private static async Task<Instrument> SeedExtraInstrumentAsync(ENoteContext context, Instrument reference)
     {
         var instrument = new Instrument("Second Model", "Second Manufacturer", null, null, reference.InstrumentTypeId, reference.MusicStoreId);
@@ -203,7 +188,7 @@ public sealed class RentalCommandServiceTests
     {
         await using var context = CreateContext();
         var student = await SeedStudentAsync(context, hasActiveMembership: true);
-        var instrument = await SeedInstrumentAsync(context);
+        var instrument = await RentalTestData.SeedInstrumentAsync(context);
         var recorder = new RecordingNotificationDispatcher();
         var service = CreateService(context, student, recorder);
 
@@ -217,7 +202,7 @@ public sealed class RentalCommandServiceTests
     {
         await using var context = CreateContext();
         var student = await SeedStudentAsync(context, hasActiveMembership: true);
-        var instrument = await SeedInstrumentAsync(context);
+        var instrument = await RentalTestData.SeedInstrumentAsync(context);
         var rental = new InstrumentRental(instrument.Id, student.Id, instrument.MusicStoreId, Now, null);
         context.Set<InstrumentRental>().Add(rental);
         await context.SaveChangesAsync();

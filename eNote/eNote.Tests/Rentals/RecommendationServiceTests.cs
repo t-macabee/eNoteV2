@@ -12,7 +12,7 @@ public sealed class RecommendationServiceTests
     [Fact]
     public async Task GetRecommendedInstrumentsAsync_ReturnsEmpty_WhenNoCandidates()
     {
-        await using var context = CreateContext();
+        await using var context = RentalTestData.CreateContext(Now);
         var student = await SeedStudentAsync(context);
         var service = CreateService(context, student);
 
@@ -24,9 +24,9 @@ public sealed class RecommendationServiceTests
     [Fact]
     public async Task GetRecommendedInstrumentsAsync_ExcludesInstrumentsWithActiveRentals()
     {
-        await using var context = CreateContext();
+        await using var context = RentalTestData.CreateContext(Now);
         var student = await SeedStudentAsync(context);
-        var instrument = await SeedInstrumentAsync(context);
+        var instrument = await RentalTestData.SeedInstrumentAsync(context);
         var rental = new InstrumentRental(instrument.Id, student.Id, instrument.MusicStoreId, Now.AddDays(-10), null);
         rental.Approve(50m, null, Now.AddDays(-10), 1);
         rental.Pickup(Now.AddDays(-5));
@@ -43,9 +43,9 @@ public sealed class RecommendationServiceTests
     public async Task GetRecommendedInstrumentsAsync_CompletedRentalsDoNotExcludeInstrument()
     {
 
-        await using var context = CreateContext();
+        await using var context = RentalTestData.CreateContext(Now);
         var student = await SeedStudentAsync(context);
-        var instrument = await SeedInstrumentAsync(context);
+        var instrument = await RentalTestData.SeedInstrumentAsync(context);
         var rental = new InstrumentRental(instrument.Id, student.Id, instrument.MusicStoreId, Now.AddDays(-30), null);
         rental.Approve(50m, null, Now.AddDays(-30), 1);
         rental.Pickup(Now.AddDays(-25));
@@ -63,7 +63,7 @@ public sealed class RecommendationServiceTests
     [Fact]
     public async Task GetRecommendedInstrumentsAsync_HigherScoredInstrumentRanksFirst()
     {
-        await using var context = CreateContext();
+        await using var context = RentalTestData.CreateContext(Now);
         var student = await SeedStudentAsync(context);
         var (typeA, typeB) = await SeedTwoTypesAsync(context);
         var store = await SeedStoreAsync(context);
@@ -88,15 +88,6 @@ public sealed class RecommendationServiceTests
         Assert.Equal(instrumentA.Id, result[0].Instrument.Id);
     }
 
-    private static ENoteContext CreateContext()
-    {
-        var options = new DbContextOptionsBuilder<ENoteContext>()
-            .UseInMemoryDatabase(Guid.NewGuid().ToString())
-            .ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning))
-            .Options;
-        return new ENoteContext(options, new FixedClock(Now), new StubCurrentActor(storeId: 1)) { ExplicitStoreId = 1 };
-    }
-
     private static async Task<Student> SeedStudentAsync(ENoteContext context)
     {
         var student = new Student(appUserId: 100, Now.AddMonths(-1));
@@ -104,19 +95,6 @@ public sealed class RecommendationServiceTests
         context.Set<Student>().Add(student);
         await context.SaveChangesAsync();
         return student;
-    }
-
-    private static async Task<Instrument> SeedInstrumentAsync(ENoteContext context)
-    {
-        context.Set<InstrumentType>().Add(new InstrumentType { Type = "Guitar", MonthlyFee = 50m });
-        await context.SaveChangesAsync();
-        var store = new MusicStore("Music Shop", "09-17");
-        context.Set<MusicStore>().Add(store);
-        await context.SaveChangesAsync();
-        var instrument = new Instrument("Stradivarius", "Yamaha", null, null, 1, store.Id);
-        context.Set<Instrument>().Add(instrument);
-        await context.SaveChangesAsync();
-        return instrument;
     }
 
     private static async Task<(InstrumentType TypeA, InstrumentType TypeB)> SeedTwoTypesAsync(ENoteContext context)
