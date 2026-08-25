@@ -5,7 +5,6 @@ using eNote.Application.Common.Time;
 using eNote.Application.Constants;
 using eNote.Application.Features.Rentals.Payments.Services;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Logging;
 using Stripe;
 
@@ -78,7 +77,7 @@ public sealed class StripeWebhookService(
 
     private async Task HandlePaymentIntentSucceededAsync(string paymentIntentId, string? chargeId, string eventId, string rawJson, CancellationToken cancellationToken)
     {
-        await ExecuteInTransactionAsync(async () =>
+        await context.ExecuteInTransactionAsync(async () =>
         {
             var payment = await context.Set<RentalPayment>()
                 .Include(p => p.InstrumentRental)
@@ -108,7 +107,7 @@ public sealed class StripeWebhookService(
 
     private async Task HandlePaymentIntentFailedAsync(string paymentIntentId, string eventId, string rawJson, CancellationToken cancellationToken)
     {
-        await ExecuteInTransactionAsync(async () =>
+        await context.ExecuteInTransactionAsync(async () =>
         {
             var payment = await context.Set<RentalPayment>()
                 .FirstOrDefaultAsync(p => p.StripePaymentIntentId == paymentIntentId, cancellationToken);
@@ -136,7 +135,7 @@ public sealed class StripeWebhookService(
 
     private async Task HandleChargeRefundedAsync(Charge charge, string eventId, string rawJson, CancellationToken cancellationToken)
     {
-        await ExecuteInTransactionAsync(async () =>
+        await context.ExecuteInTransactionAsync(async () =>
         {
             if (string.IsNullOrWhiteSpace(charge.PaymentIntentId))
             {
@@ -190,19 +189,4 @@ public sealed class StripeWebhookService(
         }
     }
 
-    private async Task ExecuteInTransactionAsync(Func<Task> action, CancellationToken cancellationToken)
-    {
-        using IDbContextTransaction transaction = await context.BeginTransactionAsync(cancellationToken);
-
-        try
-        {
-            await action();
-            await transaction.CommitAsync(cancellationToken);
-        }
-        catch
-        {
-            await transaction.RollbackAsync(cancellationToken);
-            throw;
-        }
-    }
 }

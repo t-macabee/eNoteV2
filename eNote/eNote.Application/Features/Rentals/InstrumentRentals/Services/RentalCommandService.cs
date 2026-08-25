@@ -1,7 +1,6 @@
 using eNote.Application.Constants;
 using eNote.Application.Features.Rentals.Instruments;
 using MapsterMapper;
-using Microsoft.EntityFrameworkCore.Storage;
 
 namespace eNote.Application.Features.Rentals.InstrumentRentals.Services;
 
@@ -9,7 +8,7 @@ public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, 
 {
     public async Task<InstrumentRentalDto> CreateRequestAsync(RentalCreateRequest request, CancellationToken cancellationToken = default)
     {
-        var dto = await ExecuteInTransactionAsync(async () =>
+        var dto = await context.ExecuteInTransactionAsync(async () =>
         {
             var student = await students.GetCurrentStudentAsync();
 
@@ -71,14 +70,14 @@ public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, 
     public Task<InstrumentRentalDto> ReturnEarlyAsync(int rentalId, RentalStatusRequest? request, CancellationToken cancellationToken = default) => ExecuteStoreTransitionAsync(rentalId, RentalTrigger.ReturnEarly, request, cancellationToken);
 
     public Task<InstrumentRentalDto> CancelAsync(int rentalId, RentalStatusRequest? request, CancellationToken cancellationToken = default) =>
-        ExecuteInTransactionAsync(async () =>
+        context.ExecuteInTransactionAsync(async () =>
         {
             var rental = await LoadForStudentAsync(rentalId, currentUser.UserId, cancellationToken);
             return await ExecuteTransitionWithNotificationAsync(rental, RentalTrigger.Cancel, RentalActor.Student, currentUser.UserId, request, cancellationToken);
         }, cancellationToken);
 
     private Task<InstrumentRentalDto> ExecuteStoreTransitionAsync(int rentalId, RentalTrigger trigger, RentalStatusRequest? request, CancellationToken cancellationToken) =>
-        ExecuteInTransactionAsync(async () =>
+        context.ExecuteInTransactionAsync(async () =>
         {
             var storeId = await stores.GetCurrentStoreIdAsync(cancellationToken);
             var rental = await LoadForStoreAsync(rentalId, storeId, cancellationToken);
@@ -193,21 +192,4 @@ public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, 
         }
     }
 
-    private async Task<T> ExecuteInTransactionAsync<T>(Func<Task<T>> action, CancellationToken cancellationToken)
-    {
-        using IDbContextTransaction transaction = await context.BeginTransactionAsync(cancellationToken);
-
-        try
-        {
-            var result = await action();
-            await transaction.CommitAsync(cancellationToken);
-
-            return result;
-        }
-        catch
-        {
-            await transaction.RollbackAsync(cancellationToken);
-            throw;
-        }
-    }
 }

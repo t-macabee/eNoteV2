@@ -2,7 +2,6 @@ using eNote.Application.Common.Exceptions;
 using eNote.Application.Features.Rentals.InstrumentRentals;
 using eNote.Application.Features.Rentals.InstrumentRentals.Services;
 using MapsterMapper;
-using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Logging;
 
 namespace eNote.Application.Features.Rentals.Payments.Services;
@@ -22,7 +21,7 @@ public sealed class RentalPaymentService(
 
     public async Task<CreatePaymentIntentResponse> CreatePaymentIntentAsync(int rentalId, CancellationToken cancellationToken = default)
     {
-        return await ExecuteInTransactionAsync(async () =>
+        return await context.ExecuteInTransactionAsync(async () =>
         {
             var rental = await LoadForStudentAsync(rentalId, cancellationToken);
 
@@ -103,7 +102,7 @@ public sealed class RentalPaymentService(
 
     public async Task<RentalPaymentDto> RefundAsync(int rentalId, long? amountCents, CancellationToken cancellationToken = default)
     {
-        return await ExecuteInTransactionAsync(async () =>
+        return await context.ExecuteInTransactionAsync(async () =>
         {
             var storeId = await stores.GetCurrentStoreIdAsync(cancellationToken);
             var rental = await context.Set<InstrumentRental>()
@@ -215,20 +214,4 @@ public sealed class RentalPaymentService(
         _ => PaymentStatus.Failed
     };
 
-    private async Task<T> ExecuteInTransactionAsync<T>(Func<Task<T>> action, CancellationToken cancellationToken)
-    {
-        using IDbContextTransaction transaction = await context.BeginTransactionAsync(cancellationToken);
-
-        try
-        {
-            var result = await action();
-            await transaction.CommitAsync(cancellationToken);
-            return result;
-        }
-        catch
-        {
-            await transaction.RollbackAsync(cancellationToken);
-            throw;
-        }
-    }
 }
