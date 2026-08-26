@@ -1,68 +1,45 @@
+using eNote.Application.Common.Crud;
+using eNote.Application.Common.Persistence;
+using eNote.Domain.Entities.Rentals;
+
 namespace eNote.Application.Features.Rentals.ReferenceData.MusicStores;
 
-public sealed class MusicStoreService(IAppDbContext context)
+public sealed class MusicStoreService(IAppDbContext context) : ReferenceDataCrudService<MusicStore, MusicStoreDto, MusicStoreRequest, MusicStoreSearchObject>(context)
 {
-    private IAppDbContext Db => context;
-
-    public Task<PagedResult<MusicStoreDto>> GetPagedAsync(MusicStoreSearchObject search, CancellationToken cancellationToken = default) =>
-        Db.Set<MusicStore>().AsNoTracking()
-            .ApplySearch(search)
-            .ToPagedResultAsync(search, Map, q => q.OrderBy(x => x.StoreName), ct: cancellationToken);
-
-    public async Task<MusicStoreDto> GetByIdAsync(int id, CancellationToken cancellationToken = default)
-    {
-        var entity = await Db.Set<MusicStore>()
-            .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken)
-            ?? throw new NotFoundException(Messages.StoreNotFound);
-
-        return Map(entity);
-    }
-
-    public async Task<MusicStoreDto> CreateAsync(MusicStoreRequest request, CancellationToken cancellationToken = default)
-    {
-        var entity = new MusicStore(request.StoreName.Trim(), request.BusinessHours.Trim());
-
-        Db.Set<MusicStore>().Add(entity);
-        await Db.SaveChangesAsync(cancellationToken);
-
-        return Map(entity);
-    }
-
-    public async Task<MusicStoreDto> UpdateAsync(int id, MusicStoreRequest request, CancellationToken cancellationToken = default)
-    {
-        var entity = await Db.Set<MusicStore>()
-            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken)
-            ?? throw new NotFoundException(Messages.StoreNotFound);
-
-        entity.UpdateDetails(request.StoreName.Trim(), request.BusinessHours.Trim());
-        await Db.SaveChangesAsync(cancellationToken);
-
-        return Map(entity);
-    }
-
-    public async Task DeleteAsync(int id, CancellationToken cancellationToken = default)
-    {
-        var entity = await Db.Set<MusicStore>()
-            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken)
-            ?? throw new NotFoundException(Messages.StoreNotFound);
-
-        var inUse = await Db.Set<Instrument>().AnyAsync(x => x.MusicStoreId == entity.Id, cancellationToken)
-            || await Db.Set<MusicStoreEmployee>().AnyAsync(x => x.MusicStoreId == entity.Id, cancellationToken);
-
-        if (inUse)
-        {
-            throw new BusinessException(Messages.MusicStoreDeleteBlocked);
-        }
-
-        Db.Set<MusicStore>().Remove(entity);
-        await Db.SaveChangesAsync(cancellationToken);
-    }
-
-    private static MusicStoreDto Map(MusicStore entity) => new()
+    protected override MusicStoreDto Map(MusicStore entity) => new()
     {
         Id = entity.Id,
         StoreName = entity.StoreName,
         BusinessHours = entity.BusinessHours
     };
+
+    protected override MusicStore CreateEntity(MusicStoreRequest request) => new(request.StoreName.Trim(), request.BusinessHours.Trim());
+
+    protected override void UpdateEntity(MusicStore entity, MusicStoreRequest request)
+    {
+        entity.UpdateDetails(request.StoreName.Trim(), request.BusinessHours.Trim());
+    }
+
+    protected override IQueryable<MusicStore> ApplySearch(IQueryable<MusicStore> query, MusicStoreSearchObject search)
+    {
+        return query.ApplySearch(search);
+    }
+
+    protected override IOrderedQueryable<MusicStore> ApplyDefaultOrder(IQueryable<MusicStore> query)
+    {
+        return query.OrderBy(x => x.StoreName);
+    }
+
+    protected override string NotFoundMessage => Messages.StoreNotFound;
+
+    protected override async Task EnsureDeletableAsync(MusicStore entity, CancellationToken ct)
+    {
+        var inUse = await Db.Set<Instrument>().AnyAsync(x => x.MusicStoreId == entity.Id, ct)
+            || await Db.Set<MusicStoreEmployee>().AnyAsync(x => x.MusicStoreId == entity.Id, ct);
+
+        if (inUse)
+        {
+            throw new BusinessException(Messages.MusicStoreDeleteBlocked);
+        }
+    }
 }
