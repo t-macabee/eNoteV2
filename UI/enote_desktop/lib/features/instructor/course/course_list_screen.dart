@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
 import '../../../widgets/entity_list_screen.dart';
+import '../lecture/lecture_list_screen.dart';
 import 'course_form_screen.dart';
 import 'course_provider.dart';
 
@@ -73,6 +74,22 @@ class _CourseListScreenState extends State<CourseListScreen> {
         // Custom confirm message: delete also deactivates lectures.
         // EntityListScreen's built-in dialog is generic, so we disable it
         // and handle confirmation here to show the specific soft-delete text.
+        extraActions: (context, item) => [
+          IconButton(
+            icon: const Icon(Icons.event_note, size: 18),
+            tooltip: 'Predavanja',
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => LectureListScreen(
+                    courseId: item.id,
+                    courseName: item.name,
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
         onDelete: (context, item) async {
           final provider = context.read<CourseProvider>();
           final confirmed = await confirmDialog(

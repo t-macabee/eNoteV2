@@ -7,6 +7,7 @@ import 'features/admin/address/address_provider.dart';
 import 'features/admin/instructor/instructor_provider.dart';
 import 'features/admin/instrument_type/instrument_type_provider.dart';
 import 'features/instructor/course/course_provider.dart';
+import 'features/instructor/lecture/lecture_provider.dart';
 import 'features/admin/music_store/music_store_provider.dart';
 import 'features/admin/users/user_provision_service.dart';
 import 'shell/login_screen.dart';
@@ -49,6 +50,9 @@ class MyApp extends StatelessWidget {
         ),
         ProxyProvider<ApiClient, CourseProvider>(
           update: (_, apiClient, _) => CourseProvider(apiClient: apiClient),
+        ),
+        ProxyProvider<ApiClient, LectureProvider>(
+          update: (_, apiClient, _) => LectureProvider(apiClient: apiClient),
         ),
         ProxyProvider<ApiClient, UserProvisionService>(
           update: (_, apiClient, _) => UserProvisionService(apiClient: apiClient),

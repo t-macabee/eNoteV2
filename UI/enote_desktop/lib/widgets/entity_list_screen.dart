@@ -28,6 +28,7 @@ class EntityListConfig<T> {
   final EntityFetcher<T> fetcher;
   final void Function(BuildContext context, T item)? onEdit;
   final Future<bool?> Function(BuildContext context, T item)? onDelete;
+  final List<Widget> Function(BuildContext context, T item)? extraActions;
   final VoidCallback? onAdd;
   final Widget? trailing;
   final String? addLabel;
@@ -41,6 +42,7 @@ class EntityListConfig<T> {
     this.searchHint = 'Pretraži...',
     this.onEdit,
     this.onDelete,
+    this.extraActions,
     this.onAdd,
     this.trailing,
     this.addLabel = 'Dodaj',
@@ -184,7 +186,7 @@ class EntityListScreenState<T> extends State<EntityListScreen<T>> {
   }
 
   Widget _buildTable() {
-    final hasActions = widget.config.onEdit != null || widget.config.onDelete != null;
+    final hasActions = widget.config.onEdit != null || widget.config.onDelete != null || widget.config.extraActions != null;
 
     return SingleChildScrollView(
       child: DataTable(
@@ -221,6 +223,8 @@ class EntityListScreenState<T> extends State<EntityListScreen<T>> {
                               size: 18, color: Colors.red),
                           onPressed: () => _deleteItem(item),
                         ),
+                      if (widget.config.extraActions != null)
+                        ...widget.config.extraActions!(context, item),
                     ],
                   ),
                 ),
