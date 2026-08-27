@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
 import '../features/admin/address/address_list_screen.dart';
+import '../features/admin/instrument_type/instrument_type_list_screen.dart';
 import '../features/admin/music_store/music_store_list_screen.dart';
 import 'role_menu.dart';
 
@@ -27,6 +28,12 @@ class _MasterScreenState extends State<MasterScreen> {
       screenBuilder: _buildMusicStoreList,
       allowedRoles: [UserRole.administrator],
     ),
+    RoleMenuEntry(
+      icon: Icons.music_note,
+      label: 'Tipovi instrumenata',
+      screenBuilder: _buildInstrumentTypeList,
+      allowedRoles: [UserRole.administrator],
+    ),
   ];
 
   RoleMenuEntry? _selectedEntry;
@@ -37,6 +44,10 @@ class _MasterScreenState extends State<MasterScreen> {
 
   static Widget _buildMusicStoreList(BuildContext context) {
     return const MusicStoreListScreen();
+  }
+
+  static Widget _buildInstrumentTypeList(BuildContext context) {
+    return const InstrumentTypeListScreen();
   }
 
   @override

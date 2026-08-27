@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'config.dart';
 import 'package:enote_core/enote_core.dart';
 import 'features/admin/address/address_provider.dart';
+import 'features/admin/instrument_type/instrument_type_provider.dart';
 import 'features/admin/music_store/music_store_provider.dart';
 import 'shell/login_screen.dart';
 import 'shell/master_screen.dart';
@@ -36,6 +37,9 @@ class MyApp extends StatelessWidget {
         ),
         ProxyProvider<ApiClient, MusicStoreProvider>(
           update: (_, apiClient, _) => MusicStoreProvider(apiClient: apiClient),
+        ),
+        ProxyProvider<ApiClient, InstrumentTypeProvider>(
+          update: (_, apiClient, _) => InstrumentTypeProvider(apiClient: apiClient),
         ),
       ],
       child: MaterialApp(
