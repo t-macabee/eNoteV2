@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:jwt_decoder/jwt_decoder.dart';
 
 import '../api/api_error_mapper.dart';
+import '../api/api_exception.dart';
 import '../models/identity/auth_models.dart';
 
 class AuthState extends ChangeNotifier {
@@ -105,7 +106,7 @@ class AuthState extends ChangeNotifier {
     );
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception(
+      throw ApiException(
           ApiErrorMapper.mapError(response.statusCode, response.body));
     }
 

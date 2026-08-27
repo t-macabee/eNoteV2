@@ -1,0 +1,1 @@
+const String kApiBaseUrl = 'http://localhost:5059/api/v1/';

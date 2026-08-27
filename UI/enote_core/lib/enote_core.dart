@@ -18,6 +18,7 @@ export 'providers/base_provider.dart';
 export 'validators/validators.dart';
 export 'api/api_client.dart';
 export 'api/api_error_mapper.dart';
+export 'api/api_exception.dart';
 export 'auth/auth_state.dart';
 export 'notifications/notification_controller.dart';
 export 'widgets/confirm_dialog.dart';

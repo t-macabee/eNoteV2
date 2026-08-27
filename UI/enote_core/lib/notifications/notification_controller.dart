@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 
 import '../api/api_client.dart';
 import '../api/api_error_mapper.dart';
+import '../api/api_exception.dart';
 import '../models/communication/communication_models.dart';
 
 /// Shared state behind the shell's notification bell and the full
@@ -62,7 +63,7 @@ class NotificationController extends ChangeNotifier {
             (search ?? NotificationSearchObject(pageSize: 50)).toQueryMap(),
       );
       if (response.statusCode >= 400) {
-        throw Exception(ApiErrorMapper.mapError(response.statusCode, response.body));
+        throw ApiException(ApiErrorMapper.mapError(response.statusCode, response.body));
       }
       final data = jsonDecode(response.body) as Map<String, dynamic>;
       final items = (data['items'] as List<dynamic>? ?? []);
@@ -95,7 +96,7 @@ class NotificationController extends ChangeNotifier {
   Future<void> markRead(int id) async {
     final response = await apiClient.patch('$endpoint/$id/read');
     if (response.statusCode >= 400) {
-      throw Exception(ApiErrorMapper.mapError(response.statusCode, response.body));
+      throw ApiException(ApiErrorMapper.mapError(response.statusCode, response.body));
     }
 
     final index = _notifications.indexWhere((n) => n.id == id);
@@ -109,7 +110,7 @@ class NotificationController extends ChangeNotifier {
   Future<void> markAllRead() async {
     final response = await apiClient.patch('$endpoint/read-all');
     if (response.statusCode >= 400) {
-      throw Exception(ApiErrorMapper.mapError(response.statusCode, response.body));
+      throw ApiException(ApiErrorMapper.mapError(response.statusCode, response.body));
     }
 
     _notifications = _notifications.map(_markedRead).toList();

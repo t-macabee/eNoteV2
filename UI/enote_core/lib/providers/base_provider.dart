@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 
 import '../api/api_client.dart';
 import '../api/api_error_mapper.dart';
+import '../api/api_exception.dart';
 import '../paging/paged_result.dart';
 
 abstract class BaseProvider<T> with ChangeNotifier {
@@ -21,7 +22,7 @@ abstract class BaseProvider<T> with ChangeNotifier {
     final response = await apiClient.get(endpoint, queryParams: params);
 
     if (response.statusCode >= 400) {
-      throw Exception(ApiErrorMapper.mapError(response.statusCode, response.body));
+      throw ApiException(ApiErrorMapper.mapError(response.statusCode, response.body));
     }
 
     final data = jsonDecode(response.body) as Map<String, dynamic>;
@@ -45,7 +46,7 @@ abstract class BaseProvider<T> with ChangeNotifier {
     final response = await apiClient.get('$endpoint/$id');
 
     if (response.statusCode >= 400) {
-      throw Exception(ApiErrorMapper.mapError(response.statusCode, response.body));
+      throw ApiException(ApiErrorMapper.mapError(response.statusCode, response.body));
     }
 
     final data = jsonDecode(response.body) as Map<String, dynamic>;
@@ -56,7 +57,7 @@ abstract class BaseProvider<T> with ChangeNotifier {
     final response = await apiClient.post(endpoint, body: request);
 
     if (response.statusCode >= 400) {
-      throw Exception(ApiErrorMapper.mapError(response.statusCode, response.body));
+      throw ApiException(ApiErrorMapper.mapError(response.statusCode, response.body));
     }
 
     if (response.statusCode == 204 || response.body.isEmpty) {
@@ -73,7 +74,7 @@ abstract class BaseProvider<T> with ChangeNotifier {
     final response = await apiClient.put('$endpoint/$id', body: request);
 
     if (response.statusCode >= 400) {
-      throw Exception(ApiErrorMapper.mapError(response.statusCode, response.body));
+      throw ApiException(ApiErrorMapper.mapError(response.statusCode, response.body));
     }
 
     final data = jsonDecode(response.body) as Map<String, dynamic>;
@@ -85,7 +86,7 @@ abstract class BaseProvider<T> with ChangeNotifier {
     final response = await apiClient.delete('$endpoint/$id');
 
     if (response.statusCode >= 400) {
-      throw Exception(ApiErrorMapper.mapError(response.statusCode, response.body));
+      throw ApiException(ApiErrorMapper.mapError(response.statusCode, response.body));
     }
 
     notifyListeners();

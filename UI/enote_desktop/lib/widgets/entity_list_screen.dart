@@ -56,10 +56,10 @@ class EntityListScreen<T> extends StatefulWidget {
   const EntityListScreen({super.key, required this.config, this.floatingActionButton});
 
   @override
-  State<EntityListScreen<T>> createState() => _EntityListScreenState<T>();
+  State<EntityListScreen<T>> createState() => EntityListScreenState<T>();
 }
 
-class _EntityListScreenState<T> extends State<EntityListScreen<T>> {
+class EntityListScreenState<T> extends State<EntityListScreen<T>> {
   late final TextEditingController _searchController;
   List<T> _items = [];
   int _currentPage = 1;
@@ -117,6 +117,10 @@ class _EntityListScreenState<T> extends State<EntityListScreen<T>> {
         setState(() => _isLoading = false);
       }
     }
+  }
+
+  void refresh() {
+    _loadPage();
   }
 
   Future<void> _deleteItem(T item) async {
