@@ -6,6 +6,7 @@ import '../../../widgets/entity_list_screen.dart';
 import '../announcement/announcement_list_screen.dart';
 import '../announcement/announcement_provider.dart';
 import '../lecture/lecture_list_screen.dart';
+import '../ranking/ranking_screen.dart';
 import 'course_form_screen.dart';
 import 'course_provider.dart';
 
@@ -107,6 +108,20 @@ class _CourseListScreenState extends State<CourseListScreen> {
                       courseId: item.id,
                       courseName: item.name,
                     ),
+                  ),
+                ),
+              );
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.leaderboard, size: 18),
+            tooltip: 'Rangiranje',
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => RankingScreen(
+                    courseId: item.id,
+                    courseName: item.name,
                   ),
                 ),
               );
