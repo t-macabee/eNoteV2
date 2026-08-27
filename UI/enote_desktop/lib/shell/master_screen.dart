@@ -7,6 +7,7 @@ import '../features/admin/instructor/instructor_list_screen.dart';
 import '../features/admin/instrument_type/instrument_type_list_screen.dart';
 import '../features/admin/music_store/music_store_list_screen.dart';
 import '../features/admin/users/user_provision_form_screen.dart';
+import '../features/instructor/course/course_list_screen.dart';
 import 'role_menu.dart';
 
 class MasterScreen extends StatefulWidget {
@@ -43,6 +44,12 @@ class _MasterScreenState extends State<MasterScreen> {
       allowedRoles: [UserRole.administrator],
     ),
     RoleMenuEntry(
+      icon: Icons.class_,
+      label: 'Kursevi',
+      screenBuilder: _buildCourseList,
+      allowedRoles: [UserRole.instructor],
+    ),
+    RoleMenuEntry(
       icon: Icons.person_add,
       label: 'Korisnici',
       screenBuilder: _buildUserProvision,
@@ -66,6 +73,10 @@ class _MasterScreenState extends State<MasterScreen> {
 
   static Widget _buildInstructorList(BuildContext context) {
     return const InstructorListScreen();
+  }
+
+  static Widget _buildCourseList(BuildContext context) {
+    return const CourseListScreen();
   }
 
   static Widget _buildUserProvision(BuildContext context) {
