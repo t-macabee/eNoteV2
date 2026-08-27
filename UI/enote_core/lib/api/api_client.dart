@@ -71,6 +71,15 @@ class ApiClient {
     return response;
   }
 
+  Future<http.Response> patch(String path, {Object? body}) async {
+    final response = await _httpClient.patch(
+      _uri(path),
+      headers: _headers,
+      body: body != null ? jsonEncode(body) : null,
+    );
+    return response;
+  }
+
   Future<http.Response> delete(String path) async {
     final response = await _httpClient.delete(
       _uri(path),
