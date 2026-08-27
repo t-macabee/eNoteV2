@@ -6,6 +6,7 @@ using eNote.Application.Features.Rentals.Instruments;
 using eNote.Application.Features.Rentals.Instruments.Services;
 using eNote.Application.Features.Rentals.Recommendations;
 using eNote.Application.Features.Rentals.Recommendations.Services;
+using eNote.Application.Features.Rentals.ReferenceData.InstrumentTypes;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -14,7 +15,8 @@ namespace eNote.API.Controllers.Instruments;
 [Route("api/v{version:apiVersion}/instruments")]
 public sealed class InstrumentController(
     InstrumentService instrumentService,
-    RecommendationService recommendationService) : CoreController
+    RecommendationService recommendationService,
+    InstrumentTypeService instrumentTypeService) : CoreController
 {
     // ── Public actions (no auth required) ───────────────────────────
 
@@ -97,6 +99,15 @@ public sealed class InstrumentController(
     {
         await instrumentService.DeleteAsync(id, cancellationToken);
         return NoContent();
+    }
+
+    [Authorize(Roles = AppRoles.StoreEmployee)]
+    [HttpGet("~/api/v{version:apiVersion}/shop/instrument-types")]
+    [ProducesResponseType(typeof(PagedResult<InstrumentTypeDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<PagedResult<InstrumentTypeDto>>> GetInstrumentTypes(
+        [FromQuery] InstrumentTypeSearchObject search, CancellationToken cancellationToken)
+    {
+        return Ok(await instrumentTypeService.GetPagedAsync(search, cancellationToken));
     }
 
     // ── Student actions ─────────────────────────────────────────────

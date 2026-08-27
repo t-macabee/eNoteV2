@@ -4,6 +4,7 @@ class InstrumentDto {
   final String manufacturer;
   final String? description;
   final String? imagePath;
+  final int instrumentTypeId;
   final String instrumentType;
   final String musicStore;
   final bool isAvailable;
@@ -14,6 +15,7 @@ class InstrumentDto {
     required this.manufacturer,
     this.description,
     this.imagePath,
+    required this.instrumentTypeId,
     required this.instrumentType,
     required this.musicStore,
     required this.isAvailable,
@@ -26,6 +28,7 @@ class InstrumentDto {
       manufacturer: json['manufacturer'] as String? ?? '',
       description: json['description'] as String?,
       imagePath: json['imagePath'] as String?,
+      instrumentTypeId: json['instrumentTypeId'] as int? ?? 0,
       instrumentType: json['instrumentType'] as String? ?? '',
       musicStore: json['musicStore'] as String? ?? '',
       isAvailable: json['isAvailable'] as bool? ?? false,
@@ -38,6 +41,7 @@ class InstrumentDto {
     'manufacturer': manufacturer,
     if (description != null) 'description': description,
     if (imagePath != null) 'imagePath': imagePath,
+    'instrumentTypeId': instrumentTypeId,
     'instrumentType': instrumentType,
     'musicStore': musicStore,
     'isAvailable': isAvailable,

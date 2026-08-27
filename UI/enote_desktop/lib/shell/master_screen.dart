@@ -8,6 +8,7 @@ import '../features/admin/instrument_type/instrument_type_list_screen.dart';
 import '../features/admin/music_store/music_store_list_screen.dart';
 import '../features/admin/users/user_provision_form_screen.dart';
 import '../features/instructor/course/course_list_screen.dart';
+import '../features/store_employee/instrument/instrument_list_screen.dart';
 import 'role_menu.dart';
 
 class MasterScreen extends StatefulWidget {
@@ -55,6 +56,12 @@ class _MasterScreenState extends State<MasterScreen> {
       screenBuilder: _buildUserProvision,
       allowedRoles: [UserRole.administrator],
     ),
+    RoleMenuEntry(
+      icon: Icons.piano,
+      label: 'Instrumenti',
+      screenBuilder: _buildInstrumentList,
+      allowedRoles: [UserRole.storeEmployee],
+    ),
   ];
 
   RoleMenuEntry? _selectedEntry;
@@ -81,6 +88,10 @@ class _MasterScreenState extends State<MasterScreen> {
 
   static Widget _buildUserProvision(BuildContext context) {
     return const UserProvisionFormScreen();
+  }
+
+  static Widget _buildInstrumentList(BuildContext context) {
+    return const InstrumentListScreen();
   }
 
   @override

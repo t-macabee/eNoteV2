@@ -10,6 +10,8 @@ import 'features/instructor/course/course_provider.dart';
 import 'features/instructor/lecture/lecture_provider.dart';
 import 'features/admin/music_store/music_store_provider.dart';
 import 'features/admin/users/user_provision_service.dart';
+import 'features/store_employee/instrument/instrument_provider.dart';
+import 'features/store_employee/instrument/shop_instrument_type_provider.dart';
 import 'shell/login_screen.dart';
 import 'shell/master_screen.dart';
 
@@ -58,6 +60,13 @@ class MyApp extends StatelessWidget {
         // depends on the lecture being viewed (instructor/lectures/{lectureId}/notes),
         // so it is instantiated per-navigation via a screen-scoped
         // ChangeNotifierProvider in LectureListScreen._openNotes.
+        ProxyProvider<ApiClient, InstrumentProvider>(
+          update: (_, apiClient, _) => InstrumentProvider(apiClient: apiClient),
+        ),
+        ProxyProvider<ApiClient, ShopInstrumentTypeProvider>(
+          update: (_, apiClient, _) =>
+              ShopInstrumentTypeProvider(apiClient: apiClient),
+        ),
         ProxyProvider<ApiClient, UserProvisionService>(
           update: (_, apiClient, _) => UserProvisionService(apiClient: apiClient),
         ),
