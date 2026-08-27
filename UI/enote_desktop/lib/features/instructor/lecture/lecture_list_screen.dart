@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
 import '../../../widgets/entity_list_screen.dart';
+import '../assignment/assignment_list_screen.dart';
+import '../assignment/assignment_provider.dart';
 import '../lecture_note/lecture_note_list_screen.dart';
 import '../lecture_note/lecture_note_provider.dart';
 import 'lecture_attendance_screen.dart';
@@ -121,6 +123,24 @@ class _LectureListScreenState extends State<LectureListScreen> {
     );
   }
 
+  void _openAssignments(LectureDto lecture) {
+    final apiClient = context.read<ApiClient>();
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => ChangeNotifierProvider<AssignmentProvider>(
+          create: (_) => AssignmentProvider(
+            apiClient: apiClient,
+            lectureId: lecture.id,
+          ),
+          child: AssignmentListScreen(
+            lectureId: lecture.id,
+            lectureName: lecture.name,
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return EntityListScreen<LectureDto>(
@@ -200,6 +220,11 @@ class _LectureListScreenState extends State<LectureListScreen> {
             icon: const Icon(Icons.note, size: 18),
             tooltip: 'Bilješke',
             onPressed: () => _openNotes(item),
+          ),
+          IconButton(
+            icon: const Icon(Icons.assignment, size: 18),
+            tooltip: 'Zadaci',
+            onPressed: () => _openAssignments(item),
           ),
         ],
       ),
