@@ -18,12 +18,10 @@ class AuthState extends ChangeNotifier {
   List<String> _roles = [];
 
   AuthState({
-    String baseUrl = '',
-    String? Function()? tokenReader,
-    void Function(String? token)? tokenWriter,
-  })  : _baseUrl = baseUrl,
-        _tokenReader = tokenReader,
-        _tokenWriter = tokenWriter {
+    this._baseUrl = '',
+    this._tokenReader,
+    this._tokenWriter,
+  }) {
     _accessToken = _tokenReader?.call();
     _decodeToken(_accessToken);
   }

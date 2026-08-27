@@ -33,6 +33,7 @@ dependencies:
   enote_core:
     path: ../enote_core
   provider: ^6.1.4
+  printing: ^5.14.2
 
 dev_dependencies:
   flutter_test:
