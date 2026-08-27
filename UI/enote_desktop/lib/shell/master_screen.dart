@@ -3,8 +3,10 @@ import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
 import '../features/admin/address/address_list_screen.dart';
+import '../features/admin/instructor/instructor_list_screen.dart';
 import '../features/admin/instrument_type/instrument_type_list_screen.dart';
 import '../features/admin/music_store/music_store_list_screen.dart';
+import '../features/admin/users/user_provision_form_screen.dart';
 import 'role_menu.dart';
 
 class MasterScreen extends StatefulWidget {
@@ -34,6 +36,18 @@ class _MasterScreenState extends State<MasterScreen> {
       screenBuilder: _buildInstrumentTypeList,
       allowedRoles: [UserRole.administrator],
     ),
+    RoleMenuEntry(
+      icon: Icons.school,
+      label: 'Instruktori',
+      screenBuilder: _buildInstructorList,
+      allowedRoles: [UserRole.administrator],
+    ),
+    RoleMenuEntry(
+      icon: Icons.person_add,
+      label: 'Korisnici',
+      screenBuilder: _buildUserProvision,
+      allowedRoles: [UserRole.administrator],
+    ),
   ];
 
   RoleMenuEntry? _selectedEntry;
@@ -48,6 +62,14 @@ class _MasterScreenState extends State<MasterScreen> {
 
   static Widget _buildInstrumentTypeList(BuildContext context) {
     return const InstrumentTypeListScreen();
+  }
+
+  static Widget _buildInstructorList(BuildContext context) {
+    return const InstructorListScreen();
+  }
+
+  static Widget _buildUserProvision(BuildContext context) {
+    return const UserProvisionFormScreen();
   }
 
   @override
