@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 
 import 'api_error_mapper.dart';
 import '../auth/auth_state.dart';
@@ -85,6 +86,37 @@ class ApiClient {
       _uri(path),
       headers: _headers,
     );
+    return response;
+  }
+
+
+  Future<http.Response> postMultipart(
+    String path, {
+    required List<int> bytes,
+    required String fileName,
+    required String contentType,
+  }) async {
+    final uri = _uri(path);
+    final request = http.MultipartRequest('POST', uri);
+
+    final token = authState.accessToken;
+    if (token != null) {
+      request.headers['Authorization'] = 'Bearer $token';
+    }
+
+    final mediaType = contentType.split('/');
+    final multipartFile = http.MultipartFile.fromBytes(
+      'file',
+      bytes,
+      filename: fileName,
+      contentType: mediaType.length == 2
+          ? MediaType(mediaType[0], mediaType[1])
+          : null,
+    );
+    request.files.add(multipartFile);
+
+    final streamedResponse = await _httpClient.send(request);
+    final response = await http.Response.fromStream(streamedResponse);
     return response;
   }
 

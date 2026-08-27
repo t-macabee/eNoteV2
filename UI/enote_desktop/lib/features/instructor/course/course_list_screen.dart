@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
 import '../../../widgets/entity_list_screen.dart';
+import '../announcement/announcement_list_screen.dart';
+import '../announcement/announcement_provider.dart';
 import '../lecture/lecture_list_screen.dart';
 import 'course_form_screen.dart';
 import 'course_provider.dart';
@@ -84,6 +86,27 @@ class _CourseListScreenState extends State<CourseListScreen> {
                   builder: (_) => LectureListScreen(
                     courseId: item.id,
                     courseName: item.name,
+                  ),
+                ),
+              );
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.campaign, size: 18),
+            tooltip: 'Objave',
+            onPressed: () {
+              final apiClient = context.read<ApiClient>();
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => ChangeNotifierProvider<AnnouncementProvider>(
+                    create: (_) => AnnouncementProvider(
+                      apiClient: apiClient,
+                      courseId: item.id,
+                    ),
+                    child: AnnouncementListScreen(
+                      courseId: item.id,
+                      courseName: item.name,
+                    ),
                   ),
                 ),
               );

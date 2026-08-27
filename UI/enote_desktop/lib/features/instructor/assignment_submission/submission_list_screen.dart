@@ -77,8 +77,9 @@ class _SubmissionListScreenState extends State<SubmissionListScreen> {
                       setDialogState(() => isSaving = true);
                       try {
                         await provider.grade(item.id, parsed);
-                        if (dialogCtx.mounted)
+                        if (dialogCtx.mounted) {
                           Navigator.of(dialogCtx).pop(parsed);
+                        }
                       } catch (e) {
                         if (dialogCtx.mounted) {
                           ErrorBanner.show(dialogCtx, message: e.toString());

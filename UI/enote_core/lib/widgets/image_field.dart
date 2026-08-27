@@ -15,6 +15,17 @@ class ImageField extends StatefulWidget {
   final ImageUploadCallback? onUpload;
   final Future<Uint8List?> Function()? imagePicker;
 
+  /// Base URL used to resolve a server-relative [imageUrl] (one starting with
+  /// `/`). Such paths are API routes (e.g. `/api/v1/uploads/...`), not static
+  /// files, so they must be fetched over the network with auth — not via
+  /// [Image.file]. When null, a leading-`/` url falls back to [Image.file].
+  final String? baseUrl;
+
+  /// Returns the current auth token (if any) used to build the
+  /// `Authorization: Bearer` header for an authenticated network image fetch.
+  /// Read at build time so it reflects the latest token.
+  final String? Function()? tokenProvider;
+
   const ImageField({
     super.key,
     this.imageUrl,
@@ -25,6 +36,8 @@ class ImageField extends StatefulWidget {
     this.onPick,
     this.onUpload,
     this.imagePicker,
+    this.baseUrl,
+    this.tokenProvider,
   });
 
   @override
@@ -88,6 +101,23 @@ class _ImageFieldState extends State<ImageField> {
         );
       }
       if (trimmed.startsWith('/')) {
+        final base = widget.baseUrl;
+        if (base != null && base.isNotEmpty) {
+          final token = widget.tokenProvider?.call();
+          final headers =
+              token != null ? {'Authorization': 'Bearer $token'} : null;
+          return ClipRRect(
+            borderRadius: BorderRadius.circular(widget.borderRadius),
+            child: Image.network(
+              '$base$trimmed',
+              headers: headers,
+              width: widget.size,
+              height: widget.size,
+              fit: BoxFit.cover,
+              errorBuilder: (_, _, _) => _placeholder(),
+            ),
+          );
+        }
         return ClipRRect(
           borderRadius: BorderRadius.circular(widget.borderRadius),
           child: Image.file(
