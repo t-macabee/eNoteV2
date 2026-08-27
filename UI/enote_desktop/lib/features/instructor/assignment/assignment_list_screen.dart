@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
 import '../../../widgets/entity_list_screen.dart';
+import '../assignment_submission/submission_list_screen.dart';
+import '../assignment_submission/submission_provider.dart';
 import 'assignment_form_screen.dart';
 import 'assignment_provider.dart';
 
@@ -35,6 +37,26 @@ class AssignmentListScreen extends StatefulWidget {
 
 class _AssignmentListScreenState extends State<AssignmentListScreen> {
   final _listKey = GlobalKey<EntityListScreenState<AssignmentDto>>();
+
+  void _openSubmissions(AssignmentDto assignment) {
+    final apiClient = context.read<ApiClient>();
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => ChangeNotifierProvider<SubmissionProvider>(
+          create: (_) => SubmissionProvider(
+            apiClient: apiClient,
+            lectureId: widget.lectureId,
+            assignmentId: assignment.id,
+          ),
+          child: SubmissionListScreen(
+            lectureId: widget.lectureId,
+            assignmentId: assignment.id,
+            assignmentTitle: assignment.title,
+          ),
+        ),
+      ),
+    );
+  }
 
   Future<void> _openForm([AssignmentDto? existing]) async {
     await Navigator.of(context).push(
@@ -85,6 +107,13 @@ class _AssignmentListScreenState extends State<AssignmentListScreen> {
           await provider.remove(item.id);
           return true;
         },
+        extraActions: (context, item) => [
+          IconButton(
+            icon: const Icon(Icons.grading, size: 18),
+            tooltip: 'Predaje',
+            onPressed: () => _openSubmissions(item),
+          ),
+        ],
       ),
     );
   }
