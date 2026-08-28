@@ -9,9 +9,10 @@ import '../api/api_exception.dart';
 import '../models/identity/auth_models.dart';
 
 class AuthState extends ChangeNotifier {
-  String _baseUrl;
+  final String _baseUrl;
   final String? Function()? _tokenReader;
   final void Function(String? token)? _tokenWriter;
+  final http.Client _httpClient;
 
   String? _accessToken;
   int? _userId;
@@ -22,7 +23,8 @@ class AuthState extends ChangeNotifier {
     this._baseUrl = '',
     this._tokenReader,
     this._tokenWriter,
-  }) {
+    http.Client? httpClient,
+  }) : _httpClient = httpClient ?? http.Client() {
     _accessToken = _tokenReader?.call();
     _decodeToken(_accessToken);
   }
@@ -100,7 +102,7 @@ class AuthState extends ChangeNotifier {
     final body =
         jsonEncode(LoginRequest(username: username, password: password).toJson());
 
-    final response = await http.post(
+    final response = await _httpClient.post(
       uri,
       headers: {'Content-Type': 'application/json'},
       body: body,
@@ -128,15 +130,5 @@ class AuthState extends ChangeNotifier {
     _tokenWriter?.call(null);
     notifyListeners();
     return Future.value();
-  }
-
-  void setToken(String token) {
-    _accessToken = token;
-    _tokenWriter?.call(token);
-    _decodeToken(token);
-  }
-
-  set baseUrl(String value) {
-    _baseUrl = value;
   }
 }

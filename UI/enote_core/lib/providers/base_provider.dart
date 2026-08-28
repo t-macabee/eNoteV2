@@ -27,7 +27,6 @@ abstract class BaseProvider<T> with ChangeNotifier {
     }
 
     final result = parsePage<T>(response, fromJson, params: params);
-    notifyListeners();
     return result;
   }
 
