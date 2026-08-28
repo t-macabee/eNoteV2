@@ -31,28 +31,13 @@ class RentalPaymentDto {
       paymentIntentId: json['paymentIntentId'] as String? ?? '',
       amountCents: (json['amountCents'] as num?)?.toInt() ?? 0,
       currency: json['currency'] as String? ?? '',
-      status: _parseStatus(json['status']),
+      status: PaymentStatus.fromDynamic(json['status']),
       paidAt: parseDate(json['paidAt']),
       refundedAt: parseDate(json['refundedAt']),
       refundedCents: (json['refundedCents'] as num?)?.toInt(),
     );
   }
 
-  static PaymentStatus _parseStatus(dynamic value) {
-    if (value is String) return PaymentStatus.fromJson(value);
-    if (value is int) {
-      return switch (value) {
-        1 => PaymentStatus.requiresAction,
-        2 => PaymentStatus.succeeded,
-        3 => PaymentStatus.failed,
-        4 => PaymentStatus.canceled,
-        5 => PaymentStatus.refunded,
-        6 => PaymentStatus.partiallyRefunded,
-        _ => PaymentStatus.requiresAction,
-      };
-    }
-    return PaymentStatus.requiresAction;
-  }
 }
 
 class CreatePaymentIntentResponse {

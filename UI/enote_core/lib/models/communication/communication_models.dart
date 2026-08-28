@@ -34,7 +34,7 @@ class AnnouncementDto {
       title: json['title'] as String? ?? '',
       content: json['content'] as String? ?? '',
       imagePath: json['imagePath'] as String?,
-      scope: _parseScope(json['scope']),
+      scope: AnnouncementScope.fromDynamic(json['scope']),
       courseName: json['courseName'] as String?,
       storeName: json['storeName'] as String?,
       publishedAt: parseDate(json['publishedAt']) ?? DateTime.now(),
@@ -53,14 +53,6 @@ class AnnouncementDto {
     if (storeName != null) 'storeName': storeName,
     'publishedAt': publishedAt.toIso8601String(),
   };
-}
-
-AnnouncementScope _parseScope(dynamic value) {
-  if (value is String) return AnnouncementScope.fromJson(value);
-  if (value is int) {
-    return value == 1 ? AnnouncementScope.course : AnnouncementScope.musicStore;
-  }
-  return AnnouncementScope.course;
 }
 
 class AnnouncementRequest {

@@ -97,7 +97,8 @@ class AuthState extends ChangeNotifier {
 
   Future<void> login(String username, String password) async {
     final uri = Uri.parse('${_baseUrl}auth/login');
-    final body = jsonEncode({'username': username, 'password': password});
+    final body =
+        jsonEncode(LoginRequest(username: username, password: password).toJson());
 
     final response = await http.post(
       uri,

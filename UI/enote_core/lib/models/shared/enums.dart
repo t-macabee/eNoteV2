@@ -109,6 +109,14 @@ enum AnnouncementScope {
     'MusicStore' => AnnouncementScope.musicStore,
     _ => AnnouncementScope.course,
   };
+
+  static AnnouncementScope fromDynamic(dynamic value) {
+    if (value is String) return AnnouncementScope.fromJson(value);
+    if (value is int) {
+      return value == 1 ? AnnouncementScope.course : AnnouncementScope.musicStore;
+    }
+    return AnnouncementScope.course;
+  }
 }
 
 enum PaymentStatus {
@@ -137,6 +145,22 @@ enum PaymentStatus {
     'PartiallyRefunded' => PaymentStatus.partiallyRefunded,
     _ => PaymentStatus.requiresAction,
   };
+
+  static PaymentStatus fromDynamic(dynamic value) {
+    if (value is String) return PaymentStatus.fromJson(value);
+    if (value is int) {
+      return switch (value) {
+        1 => PaymentStatus.requiresAction,
+        2 => PaymentStatus.succeeded,
+        3 => PaymentStatus.failed,
+        4 => PaymentStatus.canceled,
+        5 => PaymentStatus.refunded,
+        6 => PaymentStatus.partiallyRefunded,
+        _ => PaymentStatus.requiresAction,
+      };
+    }
+    return PaymentStatus.requiresAction;
+  }
 }
 
 enum RentalTrigger {

@@ -126,6 +126,7 @@ class _UserProvisionFormScreenState extends State<UserProvisionFormScreen> {
         ],
       ],
       onSave: _save,
+      showCloseButton: false,
     );
   }
 }

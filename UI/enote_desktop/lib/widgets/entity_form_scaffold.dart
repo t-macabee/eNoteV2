@@ -4,7 +4,8 @@ import 'package:enote_core/enote_core.dart';
 
 /// Generic add/edit form scaffold shared by every desktop CRUD screen.
 ///
-/// - Renders an AppBar with an "X" close button (RS2 UX rule).
+/// - Renders an AppBar with an "X" close button (RS2 UX rule), unless
+///   [EntityFormScaffold.showCloseButton] is `false`.
 /// - Wraps the given fields in a [Form] and validates on save.
 /// - On successful save of a *new* entity, clears the fields and stays open
 ///   (so the user can keep adding records); on successful save of an
@@ -23,6 +24,11 @@ class EntityFormScaffold extends StatefulWidget {
   /// widgets it owns, not a screen's own fields.
   final VoidCallback? onReset;
 
+  /// Whether to render the AppBar's close "X". Screens that are not pushed
+  /// onto the navigation stack (e.g. opened straight from the drawer) have
+  /// no route to pop, so they pass `false`.
+  final bool showCloseButton;
+
   const EntityFormScaffold({
     super.key,
     required this.title,
@@ -32,6 +38,7 @@ class EntityFormScaffold extends StatefulWidget {
     this.saveLabel = 'Sačuvaj',
     this.savedMessage = 'Uspješno sačuvano.',
     this.onReset,
+    this.showCloseButton = true,
   });
 
   @override
@@ -79,11 +86,13 @@ class _EntityFormScaffoldState extends State<EntityFormScaffold> {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.title),
-        leading: IconButton(
-          icon: const Icon(Icons.close),
-          tooltip: 'Zatvori',
-          onPressed: () => Navigator.of(context).pop(false),
-        ),
+        leading: widget.showCloseButton
+            ? IconButton(
+                icon: const Icon(Icons.close),
+                tooltip: 'Zatvori',
+                onPressed: () => Navigator.of(context).pop(false),
+              )
+            : null,
       ),
       body: Form(
         key: _formKey,
