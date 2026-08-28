@@ -37,7 +37,7 @@ class _LoginScreenState extends State<LoginScreen> {
       );
     } catch (e) {
       if (mounted) {
-        ErrorBanner.show(context, message: e.toString());
+        ErrorBanner.show(context, message: userMessage(e));
       }
     } finally {
       if (mounted) {

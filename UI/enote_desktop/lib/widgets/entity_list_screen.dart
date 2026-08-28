@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import 'package:enote_core/enote_core.dart';
@@ -81,6 +83,8 @@ class EntityListScreenState<T> extends State<EntityListScreen<T>> {
   int? _totalCount;
   bool _isLoading = false;
   String _currentSearch = '';
+  Timer? _searchDebounce;
+  int _requestId = 0;
 
   @override
   void initState() {
@@ -92,6 +96,7 @@ class EntityListScreenState<T> extends State<EntityListScreen<T>> {
 
   @override
   void dispose() {
+    _searchDebounce?.cancel();
     _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
     super.dispose();
@@ -99,14 +104,18 @@ class EntityListScreenState<T> extends State<EntityListScreen<T>> {
 
   void _onSearchChanged() {
     final value = _searchController.text;
-    if (value != _currentSearch) {
-      _currentSearch = value;
-      _currentPage = 1;
-      _loadPage();
-    }
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(const Duration(milliseconds: 300), () {
+      if (value != _currentSearch) {
+        _currentSearch = value;
+        _currentPage = 1;
+        _loadPage();
+      }
+    });
   }
 
   Future<void> _loadPage() async {
+    final requestId = ++_requestId;
     setState(() => _isLoading = true);
 
     try {
@@ -115,19 +124,21 @@ class EntityListScreenState<T> extends State<EntityListScreen<T>> {
         _pageSize,
         _currentSearch,
       );
+      if (requestId != _requestId) return;
       setState(() {
         _items = result.items;
         _totalCount = result.totalCount;
       });
     } catch (e) {
+      if (requestId != _requestId) return;
       if (mounted) {
         ErrorBanner.show(
           context,
-          message: e.toString(),
+          message: userMessage(e),
         );
       }
     } finally {
-      if (mounted) {
+      if (requestId == _requestId && mounted) {
         setState(() => _isLoading = false);
       }
     }

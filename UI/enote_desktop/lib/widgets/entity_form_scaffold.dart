@@ -17,6 +17,12 @@ class EntityFormScaffold extends StatefulWidget {
   final String saveLabel;
   final String savedMessage;
 
+  /// Called right after [FormState.reset] on a successful create, so a
+  /// screen can null out any state it mirrors outside the [Form] (e.g. a
+  /// date picker's `DateTime?` field) — [FormState.reset] only resets the
+  /// widgets it owns, not a screen's own fields.
+  final VoidCallback? onReset;
+
   const EntityFormScaffold({
     super.key,
     required this.title,
@@ -25,6 +31,7 @@ class EntityFormScaffold extends StatefulWidget {
     this.isEditMode = false,
     this.saveLabel = 'Sačuvaj',
     this.savedMessage = 'Uspješno sačuvano.',
+    this.onReset,
   });
 
   @override
@@ -53,11 +60,12 @@ class _EntityFormScaffoldState extends State<EntityFormScaffold> {
           Navigator.of(context).pop(true);
         } else {
           _formKey.currentState?.reset();
+          widget.onReset?.call();
         }
       }
     } catch (e) {
       if (mounted) {
-        ErrorBanner.show(context, message: e.toString());
+        ErrorBanner.show(context, message: userMessage(e));
       }
     } finally {
       if (mounted) {

@@ -137,14 +137,12 @@ class _RentalListScreenState extends State<RentalListScreen> {
             'instrumentId': _selectedInstrumentId,
         }),
         onEdit: (context, item) async {
-          final refreshed = await Navigator.of(context).push<bool>(
+          await Navigator.of(context).push<bool>(
             MaterialPageRoute<bool>(
               builder: (_) => RentalDetailScreen(rentalId: item.id),
             ),
           );
-          if (refreshed == true) {
-            _listKey.currentState?.refresh();
-          }
+          _listKey.currentState?.refresh();
         },
         showAddButton: false,
         showDeleteConfirmation: false,

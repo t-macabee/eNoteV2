@@ -79,7 +79,7 @@ class _InstrumentFormScreenState extends State<InstrumentFormScreen> {
       return updated.imagePath;
     } catch (e) {
       if (mounted) {
-        ErrorBanner.show(context, message: e.toString());
+        ErrorBanner.show(context, message: userMessage(e));
       }
       return null;
     }

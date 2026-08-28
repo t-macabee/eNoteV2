@@ -82,7 +82,7 @@ class _SubmissionListScreenState extends State<SubmissionListScreen> {
                         }
                       } catch (e) {
                         if (dialogCtx.mounted) {
-                          ErrorBanner.show(dialogCtx, message: e.toString());
+                          ErrorBanner.show(dialogCtx, message: userMessage(e));
                         }
                         setDialogState(() => isSaving = false);
                       }

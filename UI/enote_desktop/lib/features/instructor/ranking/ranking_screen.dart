@@ -51,7 +51,7 @@ class _RankingScreenState extends State<RankingScreen> {
       });
     } catch (e) {
       if (mounted) {
-        ErrorBanner.show(context, message: e.toString());
+        ErrorBanner.show(context, message: userMessage(e));
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);

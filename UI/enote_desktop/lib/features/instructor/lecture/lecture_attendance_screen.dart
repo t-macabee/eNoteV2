@@ -64,7 +64,7 @@ class _LectureAttendanceScreenState extends State<LectureAttendanceScreen> {
       });
     } catch (e) {
       if (mounted) {
-        ErrorBanner.show(context, message: e.toString());
+        ErrorBanner.show(context, message: userMessage(e));
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -88,7 +88,7 @@ class _LectureAttendanceScreenState extends State<LectureAttendanceScreen> {
       _load();
     } catch (e) {
       if (!mounted) return;
-      ErrorBanner.show(context, message: e.toString());
+      ErrorBanner.show(context, message: userMessage(e));
     }
   }
 

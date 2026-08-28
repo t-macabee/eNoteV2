@@ -265,6 +265,7 @@ class _LectureFormScreenState extends State<LectureFormScreen> {
         ),
       ],
       onSave: _save,
+      onReset: () => setState(() => _lectureTime = null),
     );
   }
 }

@@ -30,7 +30,7 @@ class _PdfReportButtonState extends State<PdfReportButton> {
       return await widget.fetchPdf();
     } catch (e) {
       if (mounted) {
-        ErrorBanner.show(context, message: e.toString());
+        ErrorBanner.show(context, message: userMessage(e));
       }
       return null;
     } finally {

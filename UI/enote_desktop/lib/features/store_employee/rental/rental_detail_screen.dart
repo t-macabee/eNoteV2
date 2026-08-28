@@ -49,7 +49,7 @@ class _RentalDetailScreenState extends State<RentalDetailScreen> {
       });
     } catch (e) {
       if (mounted) {
-        ErrorBanner.show(context, message: e.toString());
+        ErrorBanner.show(context, message: userMessage(e));
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -80,7 +80,7 @@ class _RentalDetailScreenState extends State<RentalDetailScreen> {
       );
     } catch (e) {
       if (mounted) {
-        ErrorBanner.show(context, message: e.toString());
+        ErrorBanner.show(context, message: userMessage(e));
       }
     } finally {
       if (mounted) setState(() => _isRefunding = false);
@@ -168,37 +168,29 @@ class _RentalDetailScreenState extends State<RentalDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return PopScope(
-      canPop: true,
-      onPopInvokedWithResult: (didPop, _) {
-        if (didPop && _rental != null) {
-          Navigator.of(context).pop(true);
-        }
-      },
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text(_rental != null
-              ? 'Iznajmljivanje #${_rental!.id} — ${_rental!.instrumentModel}'
-              : 'Iznajmljivanje'),
-        ),
-        body: _isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : _rental == null
-                ? Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Text('Greška pri učitavanju.'),
-                        const SizedBox(height: 16),
-                        ElevatedButton(
-                          onPressed: _load,
-                          child: const Text('Pokušaj ponovo'),
-                        ),
-                      ],
-                    ),
-                  )
-                : _buildBody(),
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(_rental != null
+            ? 'Iznajmljivanje #${_rental!.id} — ${_rental!.instrumentModel}'
+            : 'Iznajmljivanje'),
       ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _rental == null
+              ? Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text('Greška pri učitavanju.'),
+                      const SizedBox(height: 16),
+                      ElevatedButton(
+                        onPressed: _load,
+                        child: const Text('Pokušaj ponovo'),
+                      ),
+                    ],
+                  ),
+                )
+              : _buildBody(),
     );
   }
 

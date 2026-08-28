@@ -127,6 +127,10 @@ class _CourseFormScreenState extends State<CourseFormScreen> {
         ),
       ],
       onSave: _save,
+      onReset: () => setState(() {
+        _startDate = null;
+        _endDate = null;
+      }),
     );
   }
 }

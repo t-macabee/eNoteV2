@@ -107,7 +107,7 @@ class _RentalTransitionActionRowState extends State<RentalTransitionActionRow> {
       await widget.onTransition(action.trigger, note: note);
     } catch (e) {
       if (mounted) {
-        ErrorBanner.show(context, message: e.toString());
+        ErrorBanner.show(context, message: userMessage(e));
       }
     } finally {
       if (mounted) {

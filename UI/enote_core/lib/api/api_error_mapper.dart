@@ -1,5 +1,18 @@
 import 'dart:convert';
 
+import 'api_exception.dart';
+
+/// Maps any caught error to Bosnian text safe to show a user.
+///
+/// [ApiException] already carries a message produced by [ApiErrorMapper], so
+/// it passes through unchanged. Anything else (socket errors, timeouts, a
+/// stray [FormatException], ...) is a lower-level failure the user has no
+/// use for — collapse it to one generic sentence instead of leaking Dart's
+/// exception text.
+String userMessage(Object e) => e is ApiException
+    ? e.message
+    : 'Nije moguće povezati se sa serverom. Pokušajte ponovo.';
+
 class ApiError {
   final int status;
   final String code;

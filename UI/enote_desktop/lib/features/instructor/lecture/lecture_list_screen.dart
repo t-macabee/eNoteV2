@@ -90,7 +90,7 @@ class _LectureListScreenState extends State<LectureListScreen> {
       _listKey.currentState?.refresh();
     } catch (e) {
       if (!mounted) return;
-      ErrorBanner.show(context, message: e.toString());
+      ErrorBanner.show(context, message: userMessage(e));
     }
   }
 

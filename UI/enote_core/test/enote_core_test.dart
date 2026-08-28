@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:enote_core/enote_core.dart';
@@ -13,6 +15,24 @@ void main() {
       final validator = Validators.required('Ime');
       expect(validator(''), isNotNull);
       expect(validator('Ana'), isNull);
+    });
+  });
+
+  group('userMessage', () {
+    test('passes an ApiException\'s mapped message through unchanged', () {
+      final apiException = ApiException('Nemate pristup ovom resursu.');
+      expect(userMessage(apiException), 'Nemate pristup ovom resursu.');
+    });
+
+    test('collapses any other error to the generic Bosnian fallback', () {
+      expect(
+        userMessage(const SocketException('Connection refused')),
+        'Nije moguće povezati se sa serverom. Pokušajte ponovo.',
+      );
+      expect(
+        userMessage(const FormatException('unexpected token')),
+        'Nije moguće povezati se sa serverom. Pokušajte ponovo.',
+      );
     });
   });
 
