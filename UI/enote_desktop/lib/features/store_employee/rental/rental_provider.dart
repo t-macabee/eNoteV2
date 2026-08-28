@@ -24,6 +24,37 @@ class RentalProvider extends BaseProvider<InstrumentRentalDto> {
   Future<InstrumentRentalDto> returnEarly(int id, {String? note}) =>
       _transition(id, 'return-early', note);
 
+  Future<RentalPaymentDto> refund(int rentalId, {int? amountCents}) async {
+    final response = await apiClient.post(
+      '$endpoint/$rentalId/payments/refund',
+      body: RefundRequest(amountCents: amountCents).toJson(),
+    );
+
+    if (response.statusCode >= 400) {
+      throw ApiException(
+          ApiErrorMapper.mapError(response.statusCode, response.body));
+    }
+
+    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    notifyListeners();
+    return RentalPaymentDto.fromJson(data);
+  }
+
+  Future<RentalPaymentDto?> getPaymentStatus(int rentalId) async {
+    final response = await apiClient.get('$endpoint/$rentalId/payments');
+
+    if (response.statusCode == 404) {
+      return null;
+    }
+    if (response.statusCode >= 400) {
+      throw ApiException(
+          ApiErrorMapper.mapError(response.statusCode, response.body));
+    }
+
+    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    return RentalPaymentDto.fromJson(data);
+  }
+
   Future<InstrumentRentalDto> _transition(
       int id, String action, String? note) async {
     final response = await apiClient.post('$endpoint/$id/$action',

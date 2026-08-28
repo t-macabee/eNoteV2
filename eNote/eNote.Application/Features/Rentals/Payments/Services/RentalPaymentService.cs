@@ -99,6 +99,26 @@ public sealed class RentalPaymentService(
         return Map(payment);
     }
 
+    public async Task<RentalPaymentDto> GetPaymentStatusForStoreAsync(int rentalId, CancellationToken cancellationToken = default)
+    {
+        var storeId = await stores.GetCurrentStoreIdAsync(cancellationToken);
+        var rental = await context.Set<InstrumentRental>()
+            .WithRentalDetails()
+            .FirstOrDefaultAsync(x => x.Id == rentalId, cancellationToken) ?? throw new NotFoundException(Messages.RentalNotFound);
+
+        if (rental.MusicStoreId != storeId)
+        {
+            throw new BusinessException(Messages.RentalAccessDenied);
+        }
+
+        var payment = await context.Set<RentalPayment>()
+            .Where(p => p.InstrumentRentalId == rental.Id)
+            .OrderByDescending(p => p.CreatedAt)
+            .FirstOrDefaultAsync(cancellationToken) ?? throw new NotFoundException(Messages.PaymentNotFound);
+
+        return Map(payment);
+    }
+
     public async Task<RentalPaymentDto> RefundAsync(int rentalId, long? amountCents, CancellationToken cancellationToken = default)
     {
         return await context.ExecuteInTransactionAsync(async () =>

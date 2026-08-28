@@ -34,6 +34,15 @@ public sealed class RentalPaymentsController(IRentalPaymentService payments) : C
     }
 
     [Authorize(Roles = AppRoles.StoreEmployee)]
+    [HttpGet("~/api/v{version:apiVersion}/shop/rentals/{rentalId:int}/payments")]
+    [ProducesResponseType(typeof(RentalPaymentDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<RentalPaymentDto>> GetStatusForStore(int rentalId, CancellationToken cancellationToken)
+    {
+        var result = await payments.GetPaymentStatusForStoreAsync(rentalId, cancellationToken);
+        return Ok(result);
+    }
+
+    [Authorize(Roles = AppRoles.StoreEmployee)]
     [HttpPost("~/api/v{version:apiVersion}/shop/rentals/{rentalId:int}/payments/refund")]
     [ProducesResponseType(typeof(RentalPaymentDto), StatusCodes.Status200OK)]
     public async Task<ActionResult<RentalPaymentDto>> Refund(int rentalId, [FromBody] RefundRequest? request, CancellationToken cancellationToken)

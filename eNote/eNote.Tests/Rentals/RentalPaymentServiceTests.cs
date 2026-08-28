@@ -275,6 +275,70 @@ public sealed class RentalPaymentServiceTests
         Assert.Equal(50m, reloaded.AmountPaid);
     }
 
+    // ---- GetPaymentStatusForStore ----------------------------------------
+
+    [Fact]
+    public async Task GetPaymentStatusForStore_Succeeds_ReturnsLatestPayment()
+    {
+        var (context, student, _) = await CreateStudentContextAsync();
+        var instrument = await RentalTestData.SeedInstrumentAsync(context);
+        var rental = await SeedPaidRentalAsync(context, instrument, student);
+        var service = CreateService(context, CreateStoreActor());
+
+        var dto = await service.GetPaymentStatusForStoreAsync(rental.Id);
+
+        Assert.Equal(rental.Id, dto.RentalId);
+        Assert.Equal(PaymentStatus.Succeeded, dto.Status);
+        Assert.Equal(5000, dto.AmountCents);
+    }
+
+    [Fact]
+    public async Task GetPaymentStatusForStore_AfterRefund_ReturnsRefundedStatus()
+    {
+        var (context, student, _) = await CreateStudentContextAsync();
+        var instrument = await RentalTestData.SeedInstrumentAsync(context);
+        var rental = await SeedPaidRentalAsync(context, instrument, student);
+        var service = CreateService(context, CreateStoreActor());
+
+        await service.RefundAsync(rental.Id, null);
+        var dto = await service.GetPaymentStatusForStoreAsync(rental.Id);
+
+        Assert.Equal(PaymentStatus.Refunded, dto.Status);
+        Assert.Equal(5000, dto.RefundedCents);
+        Assert.NotNull(dto.RefundedAt);
+    }
+
+    [Fact]
+    public async Task GetPaymentStatusForStore_WrongStore_Throws()
+    {
+        var (context, student, _) = await CreateStudentContextAsync();
+        var instrument = await RentalTestData.SeedInstrumentAsync(context);
+        var rental = await SeedPaidRentalAsync(context, instrument, student);
+        var service = CreateService(context, new StubCurrentActor(storeId: 2));
+
+        var ex = await Assert.ThrowsAsync<BusinessException>(() => service.GetPaymentStatusForStoreAsync(rental.Id));
+
+        Assert.Equal(Messages.RentalAccessDenied, ex.Message);
+    }
+
+    [Fact]
+    public async Task GetPaymentStatusForStore_NoPayment_ThrowsNotFound()
+    {
+        var (context, student, _) = await CreateStudentContextAsync();
+        var instrument = await RentalTestData.SeedInstrumentAsync(context);
+        var rental = RentalTestData.CreateCompletedRental(instrument, student.Id, Now);
+        rental.MarkPaid(5000, Now);
+        context.Set<InstrumentRental>().Add(rental);
+        await context.SaveChangesAsync();
+
+        var gateway = new FakePaymentGateway();
+        var service = CreateService(context, CreateStoreActor(), gateway);
+
+        var ex = await Assert.ThrowsAsync<NotFoundException>(() => service.GetPaymentStatusForStoreAsync(rental.Id));
+
+        Assert.Equal(Messages.PaymentNotFound, ex.Message);
+    }
+
     // ---- Authorization ----------------------------------------------------
 
     [Fact]

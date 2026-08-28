@@ -16,8 +16,10 @@ class RentalDetailScreen extends StatefulWidget {
 
 class _RentalDetailScreenState extends State<RentalDetailScreen> {
   InstrumentRentalDto? _rental;
+  RentalPaymentDto? _payment;
   bool _isLoading = true;
   bool _isTransitioning = false;
+  bool _isRefunding = false;
 
   @override
   void initState() {
@@ -28,9 +30,16 @@ class _RentalDetailScreenState extends State<RentalDetailScreen> {
   Future<void> _load() async {
     setState(() => _isLoading = true);
     try {
-      final rental = await context.read<RentalProvider>().getById(widget.rentalId);
+      final provider = context.read<RentalProvider>();
+      final rental = await provider.getById(widget.rentalId);
+      final payment = rental.isPaid
+          ? await provider.getPaymentStatus(widget.rentalId)
+          : null;
       if (!mounted) return;
-      setState(() => _rental = rental);
+      setState(() {
+        _rental = rental;
+        _payment = payment;
+      });
     } catch (e) {
       if (mounted) {
         ErrorBanner.show(context, message: e.toString());
@@ -38,6 +47,94 @@ class _RentalDetailScreenState extends State<RentalDetailScreen> {
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  Future<void> _onRefund() async {
+    final provider = context.read<RentalProvider>();
+    final input = await _promptForRefundAmount();
+    if (input == null) return;
+
+    int? amountCents;
+    if (input.isNotEmpty) {
+      final amount = double.parse(input.replaceAll(',', '.'));
+      amountCents = (amount * 100).round();
+    }
+
+    setState(() => _isRefunding = true);
+    try {
+      final result = await provider.refund(
+        _rental!.id,
+        amountCents: amountCents,
+      );
+      if (!mounted) return;
+      setState(() => _payment = result);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Povrat obrađen.')),
+      );
+    } catch (e) {
+      if (mounted) {
+        ErrorBanner.show(context, message: e.toString());
+      }
+    } finally {
+      if (mounted) setState(() => _isRefunding = false);
+    }
+  }
+
+  Future<String?> _promptForRefundAmount() {
+    final controller = TextEditingController();
+    return showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => StatefulBuilder(builder: (ctx, setLocal) {
+        final text = controller.text.trim();
+        final hasValue = text.isNotEmpty;
+        final parsed = hasValue ? double.tryParse(text.replaceAll(',', '.')) : null;
+        final invalid = hasValue && (parsed == null || parsed < 0);
+        return AlertDialog(
+          title: const Text('Refundiraj'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Unesite iznos za djelomični povrat. '
+                  'Ostavite prazno za puni povrat.'),
+              const SizedBox(height: 12),
+              TextField(
+                controller: controller,
+                autofocus: true,
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
+                decoration: InputDecoration(
+                  labelText: 'Iznos (KM)',
+                  hintText: 'Prazno = puni povrat',
+                  errorText: invalid ? 'Unesite važeći iznos.' : null,
+                  border: const OutlineInputBorder(),
+                ),
+                onChanged: (_) => setLocal(() {}),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                controller.dispose();
+                Navigator.pop(context);
+              },
+              child: const Text('Otkaži'),
+            ),
+            ElevatedButton(
+              onPressed: invalid
+                  ? null
+                  : () {
+                      final input = controller.text.trim();
+                      controller.dispose();
+                      Navigator.pop(context, input);
+                    },
+              child: const Text('Potvrdi'),
+            ),
+          ],
+        );
+      }),
+    );
   }
 
   Future<void> _onTransition(RentalTrigger trigger, {String? note}) async {
@@ -318,6 +415,43 @@ class _RentalDetailScreenState extends State<RentalDetailScreen> {
                   ? 'Da (${rental.amountPaid?.toStringAsFixed(2) ?? '-'} KM${rental.paidAt != null ? ' — ${rental.paidAt!.day}.${rental.paidAt!.month}.${rental.paidAt!.year}.' : ''})'
                   : 'Ne',
             ),
+            if (_payment != null && (_payment!.refundedCents ?? 0) > 0) ...[
+              const SizedBox(height: 8),
+              _chargeRow(
+                'Povrađeno',
+                '${((_payment!.refundedCents ?? 0) / 100).toStringAsFixed(2)} KM',
+              ),
+              _chargeRow(
+                'Datum povraćaja',
+                '${_payment!.refundedAt!.day}.${_payment!.refundedAt!.month}.${_payment!.refundedAt!.year}.',
+              ),
+              _chargeRow(
+                'Status',
+                _payment!.status == PaymentStatus.refunded
+                    ? 'Puni povrat'
+                    : 'Djelomični povrat',
+              ),
+            ],
+            if (rental.isPaid &&
+                (_payment == null
+                    ? 0
+                    : _payment!.amountCents - (_payment!.refundedCents ?? 0)) > 0) ...[
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: _isRefunding ? null : _onRefund,
+                  icon: _isRefunding
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.payment_outlined),
+                  label: const Text('Refundiraj'),
+                ),
+              ),
+            ],
           ],
         ),
       ),
