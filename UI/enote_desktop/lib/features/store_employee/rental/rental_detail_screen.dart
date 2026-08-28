@@ -197,8 +197,7 @@ class _RentalDetailScreenState extends State<RentalDetailScreen> {
                 borderRadius: BorderRadius.circular(8),
                 child: ImageField(
                   imageUrl: rental.instrumentImagePath,
-                  baseUrl: context.read<ApiClient>().baseUrl,
-                  tokenProvider: () => context.read<AuthState>().accessToken,
+                  apiClient: context.read<ApiClient>(),
                   editable: false,
                   size: 100,
                 ),

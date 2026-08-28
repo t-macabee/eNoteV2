@@ -24,6 +24,12 @@ class ApiClient {
     };
   }
 
+  /// Public alias of the headers this client attaches to every authenticated
+  /// request — exposed so callers that need the bearer token for something
+  /// outside [ApiClient] itself (e.g. [ImageField]'s [Image.network] headers)
+  /// don't have to reach through [authState] directly.
+  Map<String, String> get authHeaders => _headers;
+
   Uri _uri(String path, [Map<String, dynamic>? queryParams]) {
     final uri = Uri.parse('$baseUrl$path');
     if (queryParams == null || queryParams.isEmpty) {

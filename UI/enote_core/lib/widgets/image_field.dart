@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import '../api/api_client.dart';
+
 typedef ImageUploadCallback = Future<String?> Function(Uint8List bytes, String fileName, String contentType);
 
 class ImageField extends StatefulWidget {
@@ -11,16 +13,14 @@ class ImageField extends StatefulWidget {
   final ImageUploadCallback? onUpload;
   final Future<Uint8List?> Function()? imagePicker;
 
-  /// Base URL used to resolve a server-relative [imageUrl] (one starting with
-  /// `/`). Such paths are API routes (e.g. `/api/v1/uploads/...`), not static
-  /// files, so they must be fetched over the network with auth — not via
-  /// [Image.file]. When null, a leading-`/` url falls back to [Image.file].
-  final String? baseUrl;
-
-  /// Returns the current auth token (if any) used to build the
-  /// `Authorization: Bearer` header for an authenticated network image fetch.
-  /// Read at build time so it reflects the latest token.
-  final String? Function()? tokenProvider;
+  /// The API client used to resolve a server-relative [imageUrl] (one starting
+  /// with `/`). Such paths are API routes (e.g. `/api/v1/uploads/...`), not
+  /// static files, so they must be fetched over the network with auth — not via
+  /// [Image.file]. The full URL is built from [ApiClient.baseUrl] and the auth
+  /// headers from [ApiClient.authHeaders], read at build time so they reflect
+  /// the latest token. When null, a leading-`/` url falls back to the
+  /// placeholder.
+  final ApiClient? apiClient;
 
   const ImageField({
     super.key,
@@ -30,8 +30,7 @@ class ImageField extends StatefulWidget {
     this.editable = true,
     this.onUpload,
     this.imagePicker,
-    this.baseUrl,
-    this.tokenProvider,
+    this.apiClient,
   });
 
   @override
@@ -95,16 +94,13 @@ class _ImageFieldState extends State<ImageField> {
         );
       }
       if (trimmed.startsWith('/')) {
-        final base = widget.baseUrl;
-        if (base != null && base.isNotEmpty) {
-          final token = widget.tokenProvider?.call();
-          final headers =
-              token != null ? {'Authorization': 'Bearer $token'} : null;
+        final client = widget.apiClient;
+        if (client != null) {
           return ClipRRect(
             borderRadius: BorderRadius.circular(widget.borderRadius),
             child: Image.network(
-              '$base$trimmed',
-              headers: headers,
+              '${client.baseUrl}$trimmed',
+              headers: client.authHeaders,
               width: widget.size,
               height: widget.size,
               fit: BoxFit.cover,

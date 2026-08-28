@@ -169,9 +169,7 @@ class _InstrumentFormScreenState extends State<InstrumentFormScreen> {
             imageUrl: _currentImagePath,
             imagePicker: _pickImageBytes,
             onUpload: _uploadImage,
-            baseUrl: context.read<InstrumentProvider>().apiClient.baseUrl,
-            tokenProvider: () =>
-                context.read<InstrumentProvider>().apiClient.authState.accessToken,
+            apiClient: context.read<ApiClient>(),
           ),
         ],
       ],

@@ -124,9 +124,7 @@ class _AnnouncementFormScreenState extends State<AnnouncementFormScreen> {
             imageUrl: _currentImagePath,
             imagePicker: _pickImageBytes,
             onUpload: _uploadImage,
-            baseUrl: context.read<AnnouncementProvider>().apiClient.baseUrl,
-            tokenProvider: () =>
-                context.read<AnnouncementProvider>().apiClient.authState.accessToken,
+            apiClient: context.read<ApiClient>(),
           ),
         ],
       ],
