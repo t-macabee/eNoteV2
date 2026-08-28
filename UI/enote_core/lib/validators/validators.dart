@@ -64,17 +64,6 @@ class Validators {
     return null;
   }
 
-  static String? numeric(String? value) {
-    if (value == null || value.trim().isEmpty) {
-      return 'Vrednost je obavezna.';
-    }
-    final numericRegex = RegExp(r'^\d+([.,]\d+)?$');
-    if (!numericRegex.hasMatch(value.trim())) {
-      return 'Unesite numeričku vrednost.';
-    }
-    return null;
-  }
-
   static String? nonNegativeDecimal(String? value) {
     if (value == null || value.trim().isEmpty) {
       return 'Vrednost je obavezna.';
@@ -103,15 +92,4 @@ class Validators {
     return null;
   };
 
-  static String? Function(String?) maxLength(int max) => (String? value) {
-    if (value == null || value.isEmpty) {
-      return null;
-    }
-    if (value.length > max) {
-      return 'Maksimalna dužina je $max karaktera.';
-    }
-    return null;
-  };
-
-  static String? optional(String? value) => null;
 }

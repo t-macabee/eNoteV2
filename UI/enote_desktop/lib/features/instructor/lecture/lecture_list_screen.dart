@@ -10,20 +10,10 @@ import '../lecture_note/lecture_note_provider.dart';
 import 'lecture_attendance_screen.dart';
 import 'lecture_form_screen.dart';
 import 'lecture_provider.dart';
+import 'lecture_type_label.dart';
 
-String _formatDateTime(DateTime d) {
-  final day = d.day.toString().padLeft(2, '0');
-  final month = d.month.toString().padLeft(2, '0');
-  final hour = d.hour.toString().padLeft(2, '0');
-  final minute = d.minute.toString().padLeft(2, '0');
-  return '$day.$month.${d.year}. $hour:$minute';
-}
 
-String _lectureTypeLabel(LectureType type) => switch (type) {
-      LectureType.theoretical => 'Teorijsko',
-      LectureType.practical => 'Praktično',
-      LectureType.combined => 'Kombinovano',
-    };
+
 
 String _lectureStatusLabel(LectureDto lecture) {
   if (lecture.isCancelled) return 'Otkazano';
@@ -154,11 +144,11 @@ class _LectureListScreenState extends State<LectureListScreen> {
           ),
           ColumnSpec<LectureDto>(
             label: 'Tip',
-            value: (item) => _lectureTypeLabel(item.lectureType),
+            value: (item) => lectureTypeLabel(item.lectureType),
           ),
           ColumnSpec<LectureDto>(
             label: 'Vrijeme',
-            value: (item) => _formatDateTime(item.lectureTime),
+            value: (item) => formatDateTime(item.lectureTime),
           ),
           ColumnSpec<LectureDto>(
             label: 'Trajanje (min)',

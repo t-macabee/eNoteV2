@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 
-String _formatDate(DateTime d) {
-  final day = d.day.toString().padLeft(2, '0');
-  final month = d.month.toString().padLeft(2, '0');
-  return '$day.$month.${d.year}.';
-}
+import 'package:enote_core/enote_core.dart';
+
+
 
 /// Reusable date-picker form field shaped like a [TextFormField].
 ///
@@ -30,7 +28,7 @@ class DateField extends FormField<DateTime?> {
   }) : super(
           builder: (FormFieldState<DateTime?> state) {
             final value = state.value;
-            final text = value != null ? _formatDate(value) : '';
+            final text = value != null ? formatDate(value) : '';
 
             return InputDecorator(
               isEmpty: value == null,

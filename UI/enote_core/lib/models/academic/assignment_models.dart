@@ -1,3 +1,4 @@
+import '../../formatting/formatters.dart';
 class AssignmentDto {
   final int id;
   final int lectureId;
@@ -19,7 +20,7 @@ class AssignmentDto {
       lectureId: json['lectureId'] as int? ?? 0,
       title: json['title'] as String? ?? '',
       description: json['description'] as String? ?? '',
-      dueAt: _parseDate(json['dueAt']) ?? DateTime.now(),
+      dueAt: parseDate(json['dueAt']) ?? DateTime.now(),
     );
   }
 
@@ -50,22 +51,6 @@ class AssignmentRequest {
   };
 }
 
-class AssignmentSearchObject {
-  final int? page;
-  final int? pageSize;
-  final bool? includeTotalCount;
-  final String? title;
-
-  AssignmentSearchObject({this.page, this.pageSize, this.includeTotalCount, this.title});
-
-  Map<String, dynamic> toQueryMap() => {
-    if (page != null) 'page': page,
-    if (pageSize != null) 'pageSize': pageSize,
-    if (includeTotalCount != null) 'includeTotalCount': includeTotalCount,
-    if (title != null && title!.isNotEmpty) 'title': title,
-  };
-}
-
 class AssignmentSubmissionDto {
   final int id;
   final int assignmentId;
@@ -92,7 +77,7 @@ class AssignmentSubmissionDto {
       studentId: json['studentId'] as int? ?? 0,
       studentName: json['studentName'] as String?,
       filePath: json['filePath'] as String?,
-      submittedAt: _parseDate(json['submittedAt']),
+      submittedAt: parseDate(json['submittedAt']),
       grade: json['grade'] as int?,
     );
   }
@@ -116,29 +101,3 @@ class GradeAssignmentRequest {
   Map<String, dynamic> toJson() => {'grade': grade};
 }
 
-class SubmissionSearchObject {
-  final int? page;
-  final int? pageSize;
-  final bool? includeTotalCount;
-
-  SubmissionSearchObject({this.page, this.pageSize, this.includeTotalCount});
-
-  Map<String, dynamic> toQueryMap() => {
-    if (page != null) 'page': page,
-    if (pageSize != null) 'pageSize': pageSize,
-    if (includeTotalCount != null) 'includeTotalCount': includeTotalCount,
-  };
-}
-
-DateTime? _parseDate(dynamic value) {
-  if (value == null) return null;
-  if (value is DateTime) return value;
-  if (value is String) {
-    try {
-      return DateTime.parse(value);
-    } catch (_) {
-      return null;
-    }
-  }
-  return null;
-}

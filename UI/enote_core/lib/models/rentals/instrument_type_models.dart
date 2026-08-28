@@ -36,23 +36,3 @@ class InstrumentTypeRequest {
   };
 }
 
-class InstrumentTypeSearchObject {
-  final int? page;
-  final int? pageSize;
-  final bool? includeTotalCount;
-  final String? type;
-
-  InstrumentTypeSearchObject({
-    this.page,
-    this.pageSize,
-    this.includeTotalCount,
-    this.type,
-  });
-
-  Map<String, dynamic> toQueryMap() => {
-    if (page != null) 'page': page,
-    if (pageSize != null) 'pageSize': pageSize,
-    if (includeTotalCount != null) 'includeTotalCount': includeTotalCount,
-    if (type != null) 'type': type,
-  };
-}

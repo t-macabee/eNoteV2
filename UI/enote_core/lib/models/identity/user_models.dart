@@ -1,3 +1,4 @@
+import '../../formatting/formatters.dart';
 class UserProfileResponse {
   final String role;
   final UserProfile profile;
@@ -50,14 +51,14 @@ class UserProfile {
         lastName: profile['lastName'] as String?,
         username: profile['username'] as String?,
         email: profile['email'] as String?,
-        dateOfBirth: _parseDate(profile['dateOfBirth']),
+        dateOfBirth: parseDate(profile['dateOfBirth']),
         address: profile['address'] != null
             ? UserAddressDto.fromJson(
                 Map<String, dynamic>.from(profile['address']))
             : null,
         isActive: profile['isActive'] as bool?,
-        enrollmentDate: _parseDate(profile['enrollmentDate']),
-        membershipPaidUntil: _parseDate(profile['membershipPaidUntil']),
+        enrollmentDate: parseDate(profile['enrollmentDate']),
+        membershipPaidUntil: parseDate(profile['membershipPaidUntil']),
         storeName: profile['storeName'] as String?,
         businessHours: profile['businessHours'] as String?,
       );
@@ -68,14 +69,14 @@ class UserProfile {
       lastName: json['lastName'] as String?,
       username: json['username'] as String?,
       email: json['email'] as String?,
-      dateOfBirth: _parseDate(json['dateOfBirth']),
+      dateOfBirth: parseDate(json['dateOfBirth']),
       address: json['address'] != null
           ? UserAddressDto.fromJson(
               Map<String, dynamic>.from(json['address']))
           : null,
       isActive: json['isActive'] as bool?,
-      enrollmentDate: _parseDate(json['enrollmentDate']),
-      membershipPaidUntil: _parseDate(json['membershipPaidUntil']),
+      enrollmentDate: parseDate(json['enrollmentDate']),
+      membershipPaidUntil: parseDate(json['membershipPaidUntil']),
       storeName: json['storeName'] as String?,
       businessHours: json['businessHours'] as String?,
     );
@@ -139,7 +140,7 @@ class UserIdentityDto {
           ? UserAddressDto.fromJson(
               Map<String, dynamic>.from(json['address']))
           : null,
-      dateOfBirth: _parseDate(json['dateOfBirth']),
+      dateOfBirth: parseDate(json['dateOfBirth']),
       hasPicture: json['hasPicture'] as bool? ?? false,
       isActive: json['isActive'] as bool? ?? false,
     );
@@ -180,36 +181,3 @@ class InstructorDto {
   };
 }
 
-class InstructorSearchObject {
-  final int? page;
-  final int? pageSize;
-  final bool? includeTotalCount;
-  final String? name;
-
-  InstructorSearchObject({
-    this.page,
-    this.pageSize,
-    this.includeTotalCount,
-    this.name,
-  });
-
-  Map<String, dynamic> toQueryMap() => {
-    if (page != null) 'page': page,
-    if (pageSize != null) 'pageSize': pageSize,
-    if (includeTotalCount != null) 'includeTotalCount': includeTotalCount,
-    if (name != null) 'name': name,
-  };
-}
-
-DateTime? _parseDate(dynamic value) {
-  if (value == null) return null;
-  if (value is DateTime) return value;
-  if (value is String) {
-    try {
-      return DateTime.parse(value);
-    } catch (_) {
-      return null;
-    }
-  }
-  return null;
-}

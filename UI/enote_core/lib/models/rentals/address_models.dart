@@ -46,26 +46,3 @@ class AddressRequest {
   };
 }
 
-class AddressSearchObject {
-  final int? page;
-  final int? pageSize;
-  final bool? includeTotalCount;
-  final String? city;
-  final String? street;
-
-  AddressSearchObject({
-    this.page,
-    this.pageSize,
-    this.includeTotalCount,
-    this.city,
-    this.street,
-  });
-
-  Map<String, dynamic> toQueryMap() => {
-    if (page != null) 'page': page,
-    if (pageSize != null) 'pageSize': pageSize,
-    if (includeTotalCount != null) 'includeTotalCount': includeTotalCount,
-    if (city != null) 'city': city,
-    if (street != null) 'street': street,
-  };
-}

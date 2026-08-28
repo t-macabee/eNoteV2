@@ -1,5 +1,4 @@
 export 'models/shared/enums.dart';
-export 'models/shared/search_params.dart';
 export 'models/identity/auth_models.dart';
 export 'models/identity/user_models.dart';
 export 'models/academic/course_models.dart';
@@ -26,3 +25,4 @@ export 'widgets/error_banner.dart';
 export 'widgets/image_field.dart';
 export 'widgets/notification_badge.dart';
 export 'widgets/notification_list.dart';
+export 'formatting/formatters.dart';

@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
 
 import '../api/api_client.dart';
 import '../api/api_error_mapper.dart';
@@ -25,21 +26,53 @@ abstract class BaseProvider<T> with ChangeNotifier {
       throw ApiException(ApiErrorMapper.mapError(response.statusCode, response.body));
     }
 
+    final result = parsePage<T>(response, fromJson, params: params);
+    notifyListeners();
+    return result;
+  }
+
+  @protected
+  PagedResult<R> parsePage<R>(
+    http.Response response,
+    R Function(Map<String, dynamic>) fromJsonT, {
+    Map<String, dynamic>? params,
+  }) {
     final data = jsonDecode(response.body) as Map<String, dynamic>;
     final items = (data['items'] as List<dynamic>? ?? []);
     final page = data['page'] as int? ?? params?['page'] as int? ?? 1;
     final pageSize = data['pageSize'] as int? ?? params?['pageSize'] as int? ?? 20;
     final totalCount = data['totalCount'] as int?;
-
-    final result = PagedResult<T>(
-      items: items.map((e) => fromJson(Map<String, dynamic>.from(e))).toList(),
+    return PagedResult<R>(
+      items: items.map((e) => fromJsonT(Map<String, dynamic>.from(e))).toList(),
       page: page,
       pageSize: pageSize,
       totalCount: totalCount,
     );
+  }
 
+  Future<T> uploadImage(
+    int id,
+    List<int> bytes,
+    String fileName,
+    String contentType,
+  ) async {
+    final response = await apiClient.postMultipart(
+      '$endpoint/$id/image',
+      bytes: bytes,
+      fileName: fileName,
+      contentType: contentType,
+    );
+
+    if (response.statusCode >= 400) {
+      throw ApiException(
+        ApiErrorMapper.mapError(response.statusCode, response.body),
+      );
+    }
+
+    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    final updated = fromJson(data);
     notifyListeners();
-    return result;
+    return updated;
   }
 
   Future<T> getById(int id) async {

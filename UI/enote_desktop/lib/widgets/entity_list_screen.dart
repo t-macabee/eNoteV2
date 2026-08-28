@@ -9,13 +9,11 @@ typedef ColumnValueBuilder<T> = dynamic Function(T item);
 class ColumnSpec<T> {
   final String label;
   final ColumnValueBuilder<T> value;
-  final bool sortable;
   final TextStyle? Function(T item)? style;
 
   ColumnSpec({
     required this.label,
     required this.value,
-    this.sortable = false,
     this.style,
   });
 }
@@ -67,9 +65,8 @@ class EntityListConfig<T> {
 
 class EntityListScreen<T> extends StatefulWidget {
   final EntityListConfig<T> config;
-  final Widget? floatingActionButton;
 
-  const EntityListScreen({super.key, required this.config, this.floatingActionButton});
+  const EntityListScreen({super.key, required this.config});
 
   @override
   State<EntityListScreen<T>> createState() => EntityListScreenState<T>();

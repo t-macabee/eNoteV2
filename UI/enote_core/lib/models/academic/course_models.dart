@@ -1,3 +1,4 @@
+import '../../formatting/formatters.dart';
 class CourseDto {
   final int id;
   final int instructorId;
@@ -28,8 +29,8 @@ class CourseDto {
       name: json['name'] as String? ?? '',
       description: json['description'] as String?,
       isPublished: json['isPublished'] as bool? ?? false,
-      startDate: _parseDate(json['startDate']),
-      endDate: _parseDate(json['endDate']),
+      startDate: parseDate(json['startDate']),
+      endDate: parseDate(json['endDate']),
       price: (json['price'] as num?)?.toDouble() ?? 0.0,
       enrolledCount: json['enrolledCount'] as int? ?? 0,
     );
@@ -101,39 +102,3 @@ class CourseRankingEntryDto {
   }
 }
 
-class CourseSearchObject {
-  final int? page;
-  final int? pageSize;
-  final bool? includeTotalCount;
-  final String? name;
-  final bool? isPublished;
-
-  CourseSearchObject({
-    this.page,
-    this.pageSize,
-    this.includeTotalCount,
-    this.name,
-    this.isPublished,
-  });
-
-  Map<String, dynamic> toQueryMap() => {
-    if (page != null) 'page': page,
-    if (pageSize != null) 'pageSize': pageSize,
-    if (includeTotalCount != null) 'includeTotalCount': includeTotalCount,
-    if (name != null) 'name': name,
-    if (isPublished != null) 'isPublished': isPublished,
-  };
-}
-
-DateTime? _parseDate(dynamic value) {
-  if (value == null) return null;
-  if (value is DateTime) return value;
-  if (value is String) {
-    try {
-      return DateTime.parse(value);
-    } catch (_) {
-      return null;
-    }
-  }
-  return null;
-}

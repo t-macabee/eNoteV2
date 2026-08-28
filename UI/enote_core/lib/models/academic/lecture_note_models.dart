@@ -40,18 +40,3 @@ class LectureNoteRequest {
   };
 }
 
-class LectureNoteSearchObject {
-  final int? page;
-  final int? pageSize;
-  final bool? includeTotalCount;
-  final String? title;
-
-  LectureNoteSearchObject({this.page, this.pageSize, this.includeTotalCount, this.title});
-
-  Map<String, dynamic> toQueryMap() => {
-    if (page != null) 'page': page,
-    if (pageSize != null) 'pageSize': pageSize,
-    if (includeTotalCount != null) 'includeTotalCount': includeTotalCount,
-    if (title != null && title!.isNotEmpty) 'title': title,
-  };
-}

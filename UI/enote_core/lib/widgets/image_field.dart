@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
@@ -7,11 +5,9 @@ typedef ImageUploadCallback = Future<String?> Function(Uint8List bytes, String f
 
 class ImageField extends StatefulWidget {
   final String? imageUrl;
-  final String? placeholderAsset;
   final double size;
   final double borderRadius;
   final bool editable;
-  final VoidCallback? onPick;
   final ImageUploadCallback? onUpload;
   final Future<Uint8List?> Function()? imagePicker;
 
@@ -29,11 +25,9 @@ class ImageField extends StatefulWidget {
   const ImageField({
     super.key,
     this.imageUrl,
-    this.placeholderAsset,
     this.size = 120,
     this.borderRadius = 8,
     this.editable = true,
-    this.onPick,
     this.onUpload,
     this.imagePicker,
     this.baseUrl,
@@ -118,29 +112,8 @@ class _ImageFieldState extends State<ImageField> {
             ),
           );
         }
-        return ClipRRect(
-          borderRadius: BorderRadius.circular(widget.borderRadius),
-          child: Image.file(
-            File(trimmed),
-            width: widget.size,
-            height: widget.size,
-            fit: BoxFit.cover,
-            errorBuilder: (_, _, _) => _placeholder(),
-          ),
-        );
+        return _placeholder();
       }
-    }
-
-    if (widget.placeholderAsset != null) {
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(widget.borderRadius),
-        child: Image.asset(
-          widget.placeholderAsset!,
-          width: widget.size,
-          height: widget.size,
-          fit: BoxFit.cover,
-        ),
-      );
     }
 
     return _placeholder();
@@ -157,7 +130,6 @@ class _ImageFieldState extends State<ImageField> {
   Future<void> _pickImage() async {
     final picker = widget.imagePicker;
     if (picker == null) {
-      widget.onPick?.call();
       return;
     }
 
@@ -172,10 +144,7 @@ class _ImageFieldState extends State<ImageField> {
 
     if (widget.onUpload != null) {
       setState(() => _isUploading = true);
-      final uploadedUrl = await widget.onUpload!(bytes, _localFileName!, _localContentType!);
-      if (mounted && uploadedUrl != null) {
-        widget.onPick?.call();
-      }
+      await widget.onUpload!(bytes, _localFileName!, _localContentType!);
       setState(() => _isUploading = false);
     }
   }

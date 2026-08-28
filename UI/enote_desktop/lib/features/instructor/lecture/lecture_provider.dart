@@ -29,16 +29,10 @@ class LectureProvider extends BaseProvider<LectureDto> {
     if (response.statusCode >= 400) {
       throw ApiException(ApiErrorMapper.mapError(response.statusCode, response.body));
     }
-    final data = jsonDecode(response.body) as Map<String, dynamic>;
-    final items = (data['items'] as List<dynamic>? ?? []);
-    final page = data['page'] as int? ?? params?['page'] as int? ?? 1;
-    final pageSize = data['pageSize'] as int? ?? params?['pageSize'] as int? ?? 20;
-    final totalCount = data['totalCount'] as int?;
-    return PagedResult<AttendanceDto>(
-      items: items.map((e) => AttendanceDto.fromJson(Map<String, dynamic>.from(e))).toList(),
-      page: page,
-      pageSize: pageSize,
-      totalCount: totalCount,
+    return parsePage<AttendanceDto>(
+      response,
+      (json) => AttendanceDto.fromJson(json),
+      params: params,
     );
   }
 

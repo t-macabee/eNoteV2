@@ -1,12 +1,8 @@
 import 'package:flutter/material.dart';
 
-String _formatDateTime(DateTime d) {
-  final day = d.day.toString().padLeft(2, '0');
-  final month = d.month.toString().padLeft(2, '0');
-  final hour = d.hour.toString().padLeft(2, '0');
-  final minute = d.minute.toString().padLeft(2, '0');
-  return '$day.$month.${d.year}. $hour:$minute';
-}
+import 'package:enote_core/enote_core.dart';
+
+
 
 /// Date+time picker form field — same [FormField<DateTime?>] shape as
 /// [DateField] but composes [showDatePicker] + [showTimePicker] since
@@ -29,7 +25,7 @@ class DateTimeField extends FormField<DateTime?> {
   }) : super(
           builder: (FormFieldState<DateTime?> state) {
             final value = state.value;
-            final text = value != null ? _formatDateTime(value) : '';
+            final text = value != null ? formatDateTime(value) : '';
 
             Future<void> pickDateTime() async {
               final context = state.context;

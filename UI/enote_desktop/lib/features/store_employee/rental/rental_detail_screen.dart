@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
-import '../../../widgets/rental_transition_action_row.dart';
+import 'rental_transition_action_row.dart';
+import 'rental_status_display.dart';
+import 'rental_refund_dialog.dart';
 import 'rental_provider.dart';
 
 class RentalDetailScreen extends StatefulWidget {
@@ -58,7 +60,7 @@ class _RentalDetailScreenState extends State<RentalDetailScreen> {
 
   Future<void> _onRefund() async {
     final provider = context.read<RentalProvider>();
-    final input = await _promptForRefundAmount();
+    final input = await showRefundAmountDialog(context);
     if (input == null) return;
 
     int? amountCents;
@@ -87,62 +89,6 @@ class _RentalDetailScreenState extends State<RentalDetailScreen> {
     }
   }
 
-  Future<String?> _promptForRefundAmount() {
-    final controller = TextEditingController();
-    return showDialog<String>(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => StatefulBuilder(builder: (ctx, setLocal) {
-        final text = controller.text.trim();
-        final hasValue = text.isNotEmpty;
-        final parsed = hasValue ? double.tryParse(text.replaceAll(',', '.')) : null;
-        final invalid = hasValue && (parsed == null || parsed < 0);
-        return AlertDialog(
-          title: const Text('Refundiraj'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text('Unesite iznos za djelomični povrat. '
-                  'Ostavite prazno za puni povrat.'),
-              const SizedBox(height: 12),
-              TextField(
-                controller: controller,
-                autofocus: true,
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
-                decoration: InputDecoration(
-                  labelText: 'Iznos (KM)',
-                  hintText: 'Prazno = puni povrat',
-                  errorText: invalid ? 'Unesite važeći iznos.' : null,
-                  border: const OutlineInputBorder(),
-                ),
-                onChanged: (_) => setLocal(() {}),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                controller.dispose();
-                Navigator.pop(context);
-              },
-              child: const Text('Otkaži'),
-            ),
-            ElevatedButton(
-              onPressed: invalid
-                  ? null
-                  : () {
-                      final input = controller.text.trim();
-                      controller.dispose();
-                      Navigator.pop(context, input);
-                    },
-              child: const Text('Potvrdi'),
-            ),
-          ],
-        );
-      }),
-    );
-  }
 
   Future<void> _onTransition(RentalTrigger trigger, {String? note}) async {
     setState(() => _isTransitioning = true);
@@ -222,8 +168,8 @@ class _RentalDetailScreenState extends State<RentalDetailScreen> {
   }
 
   Widget _buildStatusChip(InstrumentRentalStatus status) {
-    final label = _statusLabel(status);
-    final color = _statusColor(status);
+    final label = rentalStatusLabel(status);
+    final color = rentalStatusColor(status);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
@@ -330,7 +276,7 @@ class _RentalDetailScreenState extends State<RentalDetailScreen> {
             child: Text(label, style: const TextStyle(color: Colors.grey, fontSize: 13)),
           ),
           Text(
-            '${date.day}.${date.month}.${date.year}. ${date.hour}:${date.minute.toString().padLeft(2, '0')}',
+            formatDateTime(date),
             style: const TextStyle(fontSize: 13),
           ),
           if (suffix != null)
@@ -411,7 +357,7 @@ class _RentalDetailScreenState extends State<RentalDetailScreen> {
             _chargeRow(
               'Plaćeno',
               rental.isPaid
-                  ? 'Da (${rental.amountPaid?.toStringAsFixed(2) ?? '-'} KM${rental.paidAt != null ? ' — ${rental.paidAt!.day}.${rental.paidAt!.month}.${rental.paidAt!.year}.' : ''})'
+                  ? 'Da (${rental.amountPaid?.toStringAsFixed(2) ?? '-'} KM${rental.paidAt != null ? ' — ${formatDate(rental.paidAt!)}' : ''})'
                   : 'Ne',
             ),
             if (_payment != null && (_payment!.refundedCents ?? 0) > 0) ...[
@@ -422,7 +368,7 @@ class _RentalDetailScreenState extends State<RentalDetailScreen> {
               ),
               _chargeRow(
                 'Datum povraćaja',
-                '${_payment!.refundedAt!.day}.${_payment!.refundedAt!.month}.${_payment!.refundedAt!.year}.',
+                '${formatDate(_payment!.refundedAt!)}',
               ),
               _chargeRow(
                 'Status',
@@ -470,23 +416,4 @@ class _RentalDetailScreenState extends State<RentalDetailScreen> {
     );
   }
 
-  static String _statusLabel(InstrumentRentalStatus status) => switch (status) {
-        InstrumentRentalStatus.pending => 'Na čekanju',
-        InstrumentRentalStatus.approved => 'Odobreno',
-        InstrumentRentalStatus.active => 'Aktivno',
-        InstrumentRentalStatus.completed => 'Završeno',
-        InstrumentRentalStatus.rejected => 'Odbijeno',
-        InstrumentRentalStatus.canceled => 'Otkazano',
-        InstrumentRentalStatus.returnedEarly => 'Prijevremeni povrat',
-      };
-
-  static Color _statusColor(InstrumentRentalStatus status) => switch (status) {
-        InstrumentRentalStatus.pending => Colors.orange,
-        InstrumentRentalStatus.approved => Colors.blue,
-        InstrumentRentalStatus.active => Colors.green,
-        InstrumentRentalStatus.completed => Colors.grey,
-        InstrumentRentalStatus.rejected => Colors.red,
-        InstrumentRentalStatus.canceled => Colors.red.shade300,
-        InstrumentRentalStatus.returnedEarly => Colors.purple,
-      };
 }

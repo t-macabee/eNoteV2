@@ -1,4 +1,5 @@
 import 'package:enote_core/models/shared/enums.dart';
+import '../../formatting/formatters.dart';
 
 class InstrumentRentalDto {
   final int id;
@@ -78,11 +79,11 @@ class InstrumentRentalDto {
       rentalStatus: _parseStatus(json['rentalStatus']),
       requestNote: json['requestNote'] as String?,
       note: json['note'] as String?,
-      requestedAt: _parseDate(json['requestedAt']) ?? DateTime.now(),
-      approvedAt: _parseDate(json['approvedAt']),
-      rejectedAt: _parseDate(json['rejectedAt']),
-      pickedUpAt: _parseDate(json['pickedUpAt']),
-      returnedAt: _parseDate(json['returnedAt']),
+      requestedAt: parseDate(json['requestedAt']) ?? DateTime.now(),
+      approvedAt: parseDate(json['approvedAt']),
+      rejectedAt: parseDate(json['rejectedAt']),
+      pickedUpAt: parseDate(json['pickedUpAt']),
+      returnedAt: parseDate(json['returnedAt']),
       approvedById: json['approvedById'] as int?,
       rejectedById: json['rejectedById'] as int?,
       fee: (json['fee'] as num?)?.toDouble() ?? 0.0,
@@ -93,7 +94,7 @@ class InstrumentRentalDto {
       totalFee: (json['totalFee'] as num?)?.toDouble(),
       isPaid: json['isPaid'] as bool? ?? false,
       amountPaid: (json['amountPaid'] as num?)?.toDouble(),
-      paidAt: _parseDate(json['paidAt']),
+      paidAt: parseDate(json['paidAt']),
     );
   }
 
@@ -157,39 +158,3 @@ class RentalStatusRequest {
   };
 }
 
-class InstrumentRentalSearchObject {
-  final int? page;
-  final int? pageSize;
-  final bool? includeTotalCount;
-  final int? instrumentId;
-  final InstrumentRentalStatus? rentalStatus;
-
-  InstrumentRentalSearchObject({
-    this.page,
-    this.pageSize,
-    this.includeTotalCount,
-    this.instrumentId,
-    this.rentalStatus,
-  });
-
-  Map<String, dynamic> toQueryMap() => {
-    if (page != null) 'page': page,
-    if (pageSize != null) 'pageSize': pageSize,
-    if (includeTotalCount != null) 'includeTotalCount': includeTotalCount,
-    if (instrumentId != null) 'instrumentId': instrumentId,
-    if (rentalStatus != null) 'rentalStatus': rentalStatus!.toJson(),
-  };
-}
-
-DateTime? _parseDate(dynamic value) {
-  if (value == null) return null;
-  if (value is DateTime) return value;
-  if (value is String) {
-    try {
-      return DateTime.parse(value);
-    } catch (_) {
-      return null;
-    }
-  }
-  return null;
-}

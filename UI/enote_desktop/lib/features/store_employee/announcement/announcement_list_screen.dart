@@ -6,17 +6,6 @@ import '../../../widgets/entity_list_screen.dart';
 import 'announcement_form_screen.dart';
 import 'announcement_provider.dart';
 
-String _truncate(String text, int maxLength) {
-  if (text.length <= maxLength) return text;
-  return '${text.substring(0, maxLength)}…';
-}
-
-String _formatDate(DateTime d) {
-  final day = d.day.toString().padLeft(2, '0');
-  final month = d.month.toString().padLeft(2, '0');
-  return '$day.$month.${d.year}.';
-}
-
 class AnnouncementListScreen extends StatefulWidget {
   const AnnouncementListScreen({super.key});
 
@@ -49,11 +38,11 @@ class _AnnouncementListScreenState extends State<AnnouncementListScreen> {
           ),
           ColumnSpec<AnnouncementDto>(
             label: 'Sadržaj',
-            value: (item) => _truncate(item.content, 80),
+            value: (item) => truncate(item.content, 80),
           ),
           ColumnSpec<AnnouncementDto>(
             label: 'Datum objave',
-            value: (item) => _formatDate(item.publishedAt),
+            value: (item) => formatDate(item.publishedAt),
           ),
         ],
         fetcher: (page, pageSize, search) =>

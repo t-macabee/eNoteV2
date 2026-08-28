@@ -9,6 +9,7 @@ import '../../../widgets/pdf_report_button.dart';
 import '../instrument/instrument_provider.dart';
 import 'rental_detail_screen.dart';
 import 'rental_provider.dart';
+import 'rental_status_display.dart';
 
 class RentalListScreen extends StatefulWidget {
   const RentalListScreen({super.key});
@@ -48,7 +49,7 @@ class _RentalListScreenState extends State<RentalListScreen> {
               items: [
                 const DropdownMenuItem(value: null, child: Text('Svi statusi')),
                 for (final status in InstrumentRentalStatus.values)
-                  DropdownMenuItem(value: status, child: Text(_statusLabel(status))),
+                  DropdownMenuItem(value: status, child: Text(rentalStatusLabel(status))),
               ],
               onChanged: (value) {
                 setState(() => _selectedStatus = value);
@@ -107,16 +108,15 @@ class _RentalListScreenState extends State<RentalListScreen> {
           ),
           ColumnSpec<InstrumentRentalDto>(
             label: 'Status',
-            value: (item) => _statusLabel(item.rentalStatus),
+            value: (item) => rentalStatusLabel(item.rentalStatus),
             style: (item) => TextStyle(
-              color: _statusColor(item.rentalStatus),
+              color: rentalStatusColor(item.rentalStatus),
               fontWeight: FontWeight.w600,
             ),
           ),
           ColumnSpec<InstrumentRentalDto>(
             label: 'Zatraženo',
-            value: (item) =>
-                '${item.requestedAt.day}.${item.requestedAt.month}.${item.requestedAt.year}.',
+            value: (item) => formatDate(item.requestedAt),
           ),
           ColumnSpec<InstrumentRentalDto>(
             label: 'Naknada / Ukupno',
@@ -163,23 +163,4 @@ class _RentalListScreenState extends State<RentalListScreen> {
     );
   }
 
-  static String _statusLabel(InstrumentRentalStatus status) => switch (status) {
-        InstrumentRentalStatus.pending => 'Na čekanju',
-        InstrumentRentalStatus.approved => 'Odobreno',
-        InstrumentRentalStatus.active => 'Aktivno',
-        InstrumentRentalStatus.completed => 'Završeno',
-        InstrumentRentalStatus.rejected => 'Odbijeno',
-        InstrumentRentalStatus.canceled => 'Otkazano',
-        InstrumentRentalStatus.returnedEarly => 'Prijevremeni povrat',
-      };
-
-  static Color _statusColor(InstrumentRentalStatus status) => switch (status) {
-        InstrumentRentalStatus.pending => Colors.orange,
-        InstrumentRentalStatus.approved => Colors.blue,
-        InstrumentRentalStatus.active => Colors.green,
-        InstrumentRentalStatus.completed => Colors.grey,
-        InstrumentRentalStatus.rejected => Colors.red,
-        InstrumentRentalStatus.canceled => Colors.red.shade300,
-        InstrumentRentalStatus.returnedEarly => Colors.purple,
-      };
 }

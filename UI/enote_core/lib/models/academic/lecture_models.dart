@@ -1,4 +1,5 @@
 import '../shared/enums.dart';
+import '../../formatting/formatters.dart';
 
 class LectureDto {
   final int id;
@@ -39,7 +40,7 @@ class LectureDto {
           ? LectureStatus.fromJson(statusValue)
           : LectureStatus.scheduled,
       isCancelled: json['isCancelled'] as bool? ?? false,
-      lectureTime: _parseDate(json['lectureTime']) ?? DateTime.now(),
+      lectureTime: parseDate(json['lectureTime']) ?? DateTime.now(),
       duration: json['duration'] as int? ?? 0,
       capacity: json['capacity'] as int?,
       attendeeCount: json['attendeeCount'] as int? ?? 0,
@@ -111,39 +112,6 @@ class LectureUpdateRequest {
     'lectureTime': lectureTime.toIso8601String(),
     'duration': duration,
     if (capacity != null) 'capacity': capacity,
-  };
-}
-
-class LectureSearchObject {
-  final int? page;
-  final int? pageSize;
-  final bool? includeTotalCount;
-  final int? courseId;
-  final String? name;
-  final LectureType? lectureType;
-  final DateTime? from;
-  final DateTime? to;
-
-  LectureSearchObject({
-    this.page,
-    this.pageSize,
-    this.includeTotalCount,
-    this.courseId,
-    this.name,
-    this.lectureType,
-    this.from,
-    this.to,
-  });
-
-  Map<String, dynamic> toQueryMap() => {
-    if (page != null) 'page': page,
-    if (pageSize != null) 'pageSize': pageSize,
-    if (includeTotalCount != null) 'includeTotalCount': includeTotalCount,
-    if (courseId != null) 'courseId': courseId,
-    if (name != null) 'name': name,
-    if (lectureType != null) 'lectureType': lectureType!.toJson(),
-    if (from != null) 'from': from!.toIso8601String(),
-    if (to != null) 'to': to!.toIso8601String(),
   };
 }
 
@@ -227,29 +195,3 @@ class RsvpResponse {
   }
 }
 
-class AttendanceSearchObject {
-  final int? page;
-  final int? pageSize;
-  final bool? includeTotalCount;
-
-  AttendanceSearchObject({this.page, this.pageSize, this.includeTotalCount});
-
-  Map<String, dynamic> toQueryMap() => {
-    if (page != null) 'page': page,
-    if (pageSize != null) 'pageSize': pageSize,
-    if (includeTotalCount != null) 'includeTotalCount': includeTotalCount,
-  };
-}
-
-DateTime? _parseDate(dynamic value) {
-  if (value == null) return null;
-  if (value is DateTime) return value;
-  if (value is String) {
-    try {
-      return DateTime.parse(value);
-    } catch (_) {
-      return null;
-    }
-  }
-  return null;
-}

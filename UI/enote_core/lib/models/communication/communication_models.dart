@@ -1,4 +1,5 @@
 import 'package:enote_core/models/shared/enums.dart';
+import '../../formatting/formatters.dart';
 
 class AnnouncementDto {
   final int id;
@@ -36,7 +37,7 @@ class AnnouncementDto {
       scope: _parseScope(json['scope']),
       courseName: json['courseName'] as String?,
       storeName: json['storeName'] as String?,
-      publishedAt: _parseDate(json['publishedAt']) ?? DateTime.now(),
+      publishedAt: parseDate(json['publishedAt']) ?? DateTime.now(),
     );
   }
 
@@ -74,20 +75,6 @@ class AnnouncementRequest {
   };
 }
 
-class AnnouncementSearchObject {
-  final int? page;
-  final int? pageSize;
-  final bool? includeTotalCount;
-
-  AnnouncementSearchObject({this.page, this.pageSize, this.includeTotalCount});
-
-  Map<String, dynamic> toQueryMap() => {
-    if (page != null) 'page': page,
-    if (pageSize != null) 'pageSize': pageSize,
-    if (includeTotalCount != null) 'includeTotalCount': includeTotalCount,
-  };
-}
-
 class NotificationDto {
   final int id;
   final int? rentalId;
@@ -118,7 +105,7 @@ class NotificationDto {
       title: json['title'] as String? ?? '',
       body: json['body'] as String? ?? '',
       isRead: json['isRead'] as bool? ?? false,
-      createdAt: _parseDate(json['createdAt']) ?? DateTime.now(),
+      createdAt: parseDate(json['createdAt']) ?? DateTime.now(),
     );
   }
 
@@ -191,20 +178,8 @@ class NotificationPushDto {
       submissionId: json['submissionId'] as int?,
       title: json['title'] as String? ?? '',
       body: json['body'] as String? ?? '',
-      createdAt: _parseDate(json['createdAt']) ?? DateTime.now(),
+      createdAt: parseDate(json['createdAt']) ?? DateTime.now(),
     );
   }
 }
 
-DateTime? _parseDate(dynamic value) {
-  if (value == null) return null;
-  if (value is DateTime) return value;
-  if (value is String) {
-    try {
-      return DateTime.parse(value);
-    } catch (_) {
-      return null;
-    }
-  }
-  return null;
-}

@@ -36,23 +36,3 @@ class MusicStoreRequest {
   };
 }
 
-class MusicStoreSearchObject {
-  final int? page;
-  final int? pageSize;
-  final bool? includeTotalCount;
-  final String? storeName;
-
-  MusicStoreSearchObject({
-    this.page,
-    this.pageSize,
-    this.includeTotalCount,
-    this.storeName,
-  });
-
-  Map<String, dynamic> toQueryMap() => {
-    if (page != null) 'page': page,
-    if (pageSize != null) 'pageSize': pageSize,
-    if (includeTotalCount != null) 'includeTotalCount': includeTotalCount,
-    if (storeName != null) 'storeName': storeName,
-  };
-}

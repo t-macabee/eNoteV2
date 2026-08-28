@@ -8,18 +8,7 @@ import '../assignment_submission/submission_provider.dart';
 import 'assignment_form_screen.dart';
 import 'assignment_provider.dart';
 
-String _truncate(String text, int maxLength) {
-  if (text.length <= maxLength) return text;
-  return '${text.substring(0, maxLength)}…';
-}
 
-String _formatDateTime(DateTime d) {
-  final day = d.day.toString().padLeft(2, '0');
-  final month = d.month.toString().padLeft(2, '0');
-  final hour = d.hour.toString().padLeft(2, '0');
-  final minute = d.minute.toString().padLeft(2, '0');
-  return '$day.$month.${d.year}. $hour:$minute';
-}
 
 class AssignmentListScreen extends StatefulWidget {
   final int lectureId;
@@ -86,11 +75,11 @@ class _AssignmentListScreenState extends State<AssignmentListScreen> {
           ),
           ColumnSpec<AssignmentDto>(
             label: 'Opis',
-            value: (item) => _truncate(item.description, 80),
+            value: (item) => truncate(item.description, 80),
           ),
           ColumnSpec<AssignmentDto>(
             label: 'Rok',
-            value: (item) => _formatDateTime(item.dueAt),
+            value: (item) => formatDateTime(item.dueAt),
           ),
         ],
         fetcher: (page, pageSize, search) =>

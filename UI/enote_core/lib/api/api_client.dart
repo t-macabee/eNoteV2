@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 
-import 'api_error_mapper.dart';
 import '../auth/auth_state.dart';
 
 class ApiClient {
@@ -120,14 +119,5 @@ class ApiClient {
     return response;
   }
 
-  String? getResponseBodyMessage(http.Response response) {
-    if (response.statusCode >= 200 && response.statusCode < 300) {
-      return null;
-    }
-    return ApiErrorMapper.mapError(response.statusCode, response.body);
-  }
 
-  void dispose() {
-    _httpClient.close();
-  }
 }

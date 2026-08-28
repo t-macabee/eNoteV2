@@ -96,32 +96,3 @@ class InstrumentUpdateRequest {
   };
 }
 
-class InstrumentSearchObject {
-  final int? page;
-  final int? pageSize;
-  final bool? includeTotalCount;
-  final String? model;
-  final String? manufacturer;
-  final int? instrumentTypeId;
-  final bool? isAvailable;
-
-  InstrumentSearchObject({
-    this.page,
-    this.pageSize,
-    this.includeTotalCount,
-    this.model,
-    this.manufacturer,
-    this.instrumentTypeId,
-    this.isAvailable,
-  });
-
-  Map<String, dynamic> toQueryMap() => {
-    if (page != null) 'page': page,
-    if (pageSize != null) 'pageSize': pageSize,
-    if (includeTotalCount != null) 'includeTotalCount': includeTotalCount,
-    if (model != null) 'model': model,
-    if (manufacturer != null) 'manufacturer': manufacturer,
-    if (instrumentTypeId != null) 'instrumentTypeId': instrumentTypeId,
-    if (isAvailable != null) 'isAvailable': isAvailable,
-  };
-}

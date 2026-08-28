@@ -6,10 +6,7 @@ import '../../../widgets/entity_list_screen.dart';
 import 'lecture_note_form_screen.dart';
 import 'lecture_note_provider.dart';
 
-String _truncate(String text, int maxLength) {
-  if (text.length <= maxLength) return text;
-  return '${text.substring(0, maxLength)}…';
-}
+
 
 class LectureNoteListScreen extends StatefulWidget {
   final int lectureId;
@@ -56,7 +53,7 @@ class _LectureNoteListScreenState extends State<LectureNoteListScreen> {
           ),
           ColumnSpec<LectureNoteDto>(
             label: 'Sadržaj',
-            value: (item) => _truncate(item.content, 80),
+            value: (item) => truncate(item.content, 80),
           ),
         ],
         fetcher: (page, pageSize, search) =>

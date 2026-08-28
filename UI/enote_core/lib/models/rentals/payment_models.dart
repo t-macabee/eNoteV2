@@ -1,4 +1,5 @@
 import 'package:enote_core/models/shared/enums.dart';
+import '../../formatting/formatters.dart';
 
 class RentalPaymentDto {
   final int id;
@@ -31,8 +32,8 @@ class RentalPaymentDto {
       amountCents: (json['amountCents'] as num?)?.toInt() ?? 0,
       currency: json['currency'] as String? ?? '',
       status: _parseStatus(json['status']),
-      paidAt: _parseDate(json['paidAt']),
-      refundedAt: _parseDate(json['refundedAt']),
+      paidAt: parseDate(json['paidAt']),
+      refundedAt: parseDate(json['refundedAt']),
       refundedCents: (json['refundedCents'] as num?)?.toInt(),
     );
   }
@@ -93,15 +94,3 @@ class RefundRequest {
   };
 }
 
-DateTime? _parseDate(dynamic value) {
-  if (value == null) return null;
-  if (value is DateTime) return value;
-  if (value is String) {
-    try {
-      return DateTime.parse(value);
-    } catch (_) {
-      return null;
-    }
-  }
-  return null;
-}

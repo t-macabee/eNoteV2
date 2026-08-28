@@ -6,6 +6,7 @@ import 'package:enote_core/enote_core.dart';
 import '../../../widgets/date_time_field.dart';
 import '../../../widgets/entity_form_scaffold.dart';
 import 'lecture_provider.dart';
+import 'lecture_type_label.dart';
 
 class LectureFormScreen extends StatefulWidget {
   final int courseId;
@@ -164,7 +165,7 @@ class _LectureFormScreenState extends State<LectureFormScreen> {
               items: LectureType.values
                   .map((t) => DropdownMenuItem(
                         value: t,
-                        child: Text(_lectureTypeLabel(t)),
+                        child: Text(lectureTypeLabel(t)),
                       ))
                   .toList(),
               onChanged: null,
@@ -215,7 +216,7 @@ class _LectureFormScreenState extends State<LectureFormScreen> {
           items: LectureType.values
               .map((t) => DropdownMenuItem(
                     value: t,
-                    child: Text(_lectureTypeLabel(t)),
+                    child: Text(lectureTypeLabel(t)),
                   ))
               .toList(),
           onChanged: _isEditMode
@@ -270,8 +271,3 @@ class _LectureFormScreenState extends State<LectureFormScreen> {
   }
 }
 
-String _lectureTypeLabel(LectureType type) => switch (type) {
-      LectureType.theoretical => 'Teorijsko',
-      LectureType.practical => 'Praktično',
-      LectureType.combined => 'Kombinovano',
-    };

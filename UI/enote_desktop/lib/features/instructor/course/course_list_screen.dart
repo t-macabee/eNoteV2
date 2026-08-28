@@ -10,12 +10,7 @@ import '../ranking/ranking_screen.dart';
 import 'course_form_screen.dart';
 import 'course_provider.dart';
 
-String _formatDate(DateTime? d) {
-  if (d == null) return '-';
-  final day = d.day.toString().padLeft(2, '0');
-  final month = d.month.toString().padLeft(2, '0');
-  return '$day.$month.${d.year}.';
-}
+
 
 class CourseListScreen extends StatefulWidget {
   const CourseListScreen({super.key});
@@ -61,7 +56,7 @@ class _CourseListScreenState extends State<CourseListScreen> {
           ),
           ColumnSpec<CourseDto>(
             label: 'Datum početka',
-            value: (item) => _formatDate(item.startDate),
+            value: (item) => formatDateNullable(item.startDate),
           ),
         ],
         fetcher: (page, pageSize, search) =>

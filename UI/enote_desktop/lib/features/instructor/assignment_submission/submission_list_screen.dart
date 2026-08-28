@@ -6,13 +6,7 @@ import 'package:enote_core/enote_core.dart';
 import '../../../widgets/entity_list_screen.dart';
 import 'submission_provider.dart';
 
-String _formatDateTime(DateTime d) {
-  final day = d.day.toString().padLeft(2, '0');
-  final month = d.month.toString().padLeft(2, '0');
-  final hour = d.hour.toString().padLeft(2, '0');
-  final minute = d.minute.toString().padLeft(2, '0');
-  return '$day.$month.${d.year}. $hour:$minute';
-}
+
 
 class SubmissionListScreen extends StatefulWidget {
   final int lectureId;
@@ -125,7 +119,7 @@ class _SubmissionListScreenState extends State<SubmissionListScreen> {
           ColumnSpec<AssignmentSubmissionDto>(
             label: 'Predato',
             value: (item) => item.submittedAt != null
-                ? _formatDateTime(item.submittedAt!)
+                ? formatDateTime(item.submittedAt!)
                 : '-',
           ),
           ColumnSpec<AssignmentSubmissionDto>(
