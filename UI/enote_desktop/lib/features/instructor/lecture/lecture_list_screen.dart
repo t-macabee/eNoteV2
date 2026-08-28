@@ -42,14 +42,6 @@ class _LectureListScreenState extends State<LectureListScreen> {
   final _listKey = GlobalKey<EntityListScreenState<LectureDto>>();
 
   Future<void> _openForm([LectureDto? existing]) async {
-    if (existing != null && existing.isCancelled) {
-      if (!mounted) return;
-      ErrorBanner.show(
-        context,
-        message: 'Otkazano predavanje se ne može uređivati.',
-      );
-      return;
-    }
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => LectureFormScreen(

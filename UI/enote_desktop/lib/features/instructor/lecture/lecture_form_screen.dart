@@ -58,6 +58,8 @@ class _LectureFormScreenState extends State<LectureFormScreen> {
   }
 
   Future<bool> _save() async {
+    if (_isCancelled) return false;
+
     if (_lectureTime == null) {
       ErrorBanner.show(context, message: 'Vrijeme predavanja je obavezno.');
       return false;
@@ -112,99 +114,46 @@ class _LectureFormScreenState extends State<LectureFormScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final readOnly = _isCancelled;
-
-    if (readOnly) {
-      return Scaffold(
-        appBar: AppBar(
-          title: const Text('Uredi predavanje'),
-          leading: IconButton(
-            icon: const Icon(Icons.close),
-            tooltip: 'Zatvori',
-            onPressed: () => Navigator.of(context).pop(false),
-          ),
-        ),
-        body: ListView(
-          padding: const EdgeInsets.all(24),
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.orange.shade50,
-                border: Border.all(color: Colors.orange.shade200),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Row(
-                children: [
-                  Icon(Icons.warning_amber, color: Colors.orange),
-                  SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Ovo predavanje je otkazano i ne može se uređivati.',
-                      style: TextStyle(color: Colors.orange),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _nameController,
-              decoration: const InputDecoration(labelText: 'Naziv'),
-              enabled: false,
-            ),
-            TextFormField(
-              controller: _locationController,
-              decoration: const InputDecoration(labelText: 'Lokacija'),
-              enabled: false,
-            ),
-            const SizedBox(height: 8),
-            DropdownButtonFormField<LectureType>(
-              initialValue: _lectureType,
-              decoration: const InputDecoration(labelText: 'Tip predavanja'),
-              items: LectureType.values
-                  .map((t) => DropdownMenuItem(
-                        value: t,
-                        child: Text(lectureTypeLabel(t)),
-                      ))
-                  .toList(),
-              onChanged: null,
-            ),
-            const SizedBox(height: 8),
-            DateTimeField(
-              labelText: 'Vrijeme predavanja',
-              initialValue: _lectureTime,
-              enabled: false,
-            ),
-            const SizedBox(height: 8),
-            TextFormField(
-              controller: _durationController,
-              decoration: const InputDecoration(labelText: 'Trajanje (min)'),
-              enabled: false,
-            ),
-            TextFormField(
-              controller: _capacityController,
-              decoration: const InputDecoration(labelText: 'Kapacitet'),
-              enabled: false,
-            ),
-          ],
-        ),
-      );
-    }
+    final enabled = !_isCancelled;
 
     return EntityFormScaffold(
       title: _isEditMode ? 'Uredi predavanje' : 'Dodaj predavanje',
       isEditMode: _isEditMode,
       fieldsBuilder: (_) => [
+        if (_isCancelled) ...[
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.orange.shade50,
+              border: Border.all(color: Colors.orange.shade200),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Row(
+              children: [
+                Icon(Icons.warning_amber, color: Colors.orange),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Ovo predavanje je otkazano i ne može se uređivati.',
+                    style: TextStyle(color: Colors.orange),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+        ],
         TextFormField(
           controller: _nameController,
           decoration: const InputDecoration(labelText: 'Naziv'),
-          validator: Validators.required('Naziv'),
+          enabled: enabled,
+          validator: enabled ? Validators.required('Naziv') : null,
         ),
         TextFormField(
           controller: _locationController,
           decoration: const InputDecoration(labelText: 'Lokacija'),
-          validator: Validators.required('Lokacija'),
+          enabled: enabled,
+          validator: enabled ? Validators.required('Lokacija') : null,
         ),
         const SizedBox(height: 8),
         DropdownButtonFormField<LectureType>(
@@ -219,19 +168,24 @@ class _LectureFormScreenState extends State<LectureFormScreen> {
                     child: Text(lectureTypeLabel(t)),
                   ))
               .toList(),
-          onChanged: _isEditMode
-              ? null
-              : (value) {
+          onChanged: enabled && !_isEditMode
+              ? (value) {
                   if (value != null) setState(() => _lectureType = value);
-                },
-          validator: (value) => value == null ? 'Tip je obavezan.' : null,
+                }
+              : null,
+          validator: enabled
+              ? (value) => value == null ? 'Tip je obavezan.' : null
+              : null,
         ),
         const SizedBox(height: 8),
         DateTimeField(
           labelText: 'Vrijeme predavanja',
           initialValue: _lectureTime,
-          onChanged: (value) => _lectureTime = value,
-          validator: (value) => value == null ? 'Vrijeme je obavezno.' : null,
+          enabled: enabled,
+          onChanged: enabled ? (value) => _lectureTime = value : null,
+          validator: enabled
+              ? (value) => value == null ? 'Vrijeme je obavezno.' : null
+              : null,
         ),
         const SizedBox(height: 8),
         TextFormField(
@@ -240,14 +194,10 @@ class _LectureFormScreenState extends State<LectureFormScreen> {
             labelText: 'Trajanje (minute)',
             hintText: 'npr. 90',
           ),
+          enabled: enabled,
           keyboardType: TextInputType.number,
           inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-          validator: (value) {
-            if (value == null || value.trim().isEmpty) return 'Trajanje je obavezno.';
-            final parsed = int.tryParse(value.trim());
-            if (parsed == null || parsed <= 0) return 'Unesite pozitivan broj.';
-            return null;
-          },
+          validator: enabled ? _validateDuration : null,
         ),
         TextFormField(
           controller: _capacityController,
@@ -255,19 +205,29 @@ class _LectureFormScreenState extends State<LectureFormScreen> {
             labelText: 'Kapacitet (opcionalno)',
             hintText: 'ostavite prazno za neograničeno',
           ),
+          enabled: enabled,
           keyboardType: TextInputType.number,
           inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-          validator: (value) {
-            if (value == null || value.trim().isEmpty) return null;
-            final parsed = int.tryParse(value.trim());
-            if (parsed == null || parsed < 0) return 'Unesite nenegativan broj.';
-            return null;
-          },
+          validator: enabled ? _validateCapacity : null,
         ),
       ],
       onSave: _save,
       onReset: () => setState(() => _lectureTime = null),
     );
+  }
+
+  String? _validateDuration(String? value) {
+    if (value == null || value.trim().isEmpty) return 'Trajanje je obavezno.';
+    final parsed = int.tryParse(value.trim());
+    if (parsed == null || parsed <= 0) return 'Unesite pozitivan broj.';
+    return null;
+  }
+
+  String? _validateCapacity(String? value) {
+    if (value == null || value.trim().isEmpty) return null;
+    final parsed = int.tryParse(value.trim());
+    if (parsed == null || parsed < 0) return 'Unesite nenegativan broj.';
+    return null;
   }
 }
 
