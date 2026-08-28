@@ -40,44 +40,42 @@ class MyApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider<AuthState>.value(value: authState),
         Provider<ApiClient>.value(value: apiClient),
-        ProxyProvider<ApiClient, AddressProvider>(
-          update: (_, apiClient, _) => AddressProvider(apiClient: apiClient),
+        ChangeNotifierProvider<AddressProvider>(
+          create: (_) => AddressProvider(apiClient: apiClient),
         ),
-        ProxyProvider<ApiClient, MusicStoreProvider>(
-          update: (_, apiClient, _) => MusicStoreProvider(apiClient: apiClient),
+        ChangeNotifierProvider<MusicStoreProvider>(
+          create: (_) => MusicStoreProvider(apiClient: apiClient),
         ),
-        ProxyProvider<ApiClient, InstrumentTypeProvider>(
-          update: (_, apiClient, _) => InstrumentTypeProvider(apiClient: apiClient),
+        ChangeNotifierProvider<InstrumentTypeProvider>(
+          create: (_) => InstrumentTypeProvider(apiClient: apiClient),
         ),
-        ProxyProvider<ApiClient, InstructorProvider>(
-          update: (_, apiClient, _) => InstructorProvider(apiClient: apiClient),
+        ChangeNotifierProvider<InstructorProvider>(
+          create: (_) => InstructorProvider(apiClient: apiClient),
         ),
-        ProxyProvider<ApiClient, CourseProvider>(
-          update: (_, apiClient, _) => CourseProvider(apiClient: apiClient),
+        ChangeNotifierProvider<CourseProvider>(
+          create: (_) => CourseProvider(apiClient: apiClient),
         ),
-        ProxyProvider<ApiClient, LectureProvider>(
-          update: (_, apiClient, _) => LectureProvider(apiClient: apiClient),
+        ChangeNotifierProvider<LectureProvider>(
+          create: (_) => LectureProvider(apiClient: apiClient),
         ),
         // Note: LectureNoteProvider is NOT registered globally — its endpoint
         // depends on the lecture being viewed (instructor/lectures/{lectureId}/notes),
         // so it is instantiated per-navigation via a screen-scoped
         // ChangeNotifierProvider in LectureListScreen._openNotes.
-        ProxyProvider<ApiClient, InstrumentProvider>(
-          update: (_, apiClient, _) => InstrumentProvider(apiClient: apiClient),
+        ChangeNotifierProvider<InstrumentProvider>(
+          create: (_) => InstrumentProvider(apiClient: apiClient),
         ),
-        ProxyProvider<ApiClient, ShopInstrumentTypeProvider>(
-          update: (_, apiClient, _) =>
-              ShopInstrumentTypeProvider(apiClient: apiClient),
+        ChangeNotifierProvider<ShopInstrumentTypeProvider>(
+          create: (_) => ShopInstrumentTypeProvider(apiClient: apiClient),
         ),
-        ProxyProvider<ApiClient, RentalProvider>(
-          update: (_, apiClient, _) => RentalProvider(apiClient: apiClient),
+        ChangeNotifierProvider<RentalProvider>(
+          create: (_) => RentalProvider(apiClient: apiClient),
         ),
-        ProxyProvider<ApiClient, StoreAnnouncementProvider>(
-          update: (_, apiClient, _) =>
-              StoreAnnouncementProvider(apiClient: apiClient),
+        ChangeNotifierProvider<StoreAnnouncementProvider>(
+          create: (_) => StoreAnnouncementProvider(apiClient: apiClient),
         ),
-        ProxyProvider<ApiClient, UserProvisionService>(
-          update: (_, apiClient, _) => UserProvisionService(apiClient: apiClient),
+        Provider<UserProvisionService>(
+          create: (_) => UserProvisionService(apiClient: apiClient),
         ),
       ],
       child: MaterialApp(

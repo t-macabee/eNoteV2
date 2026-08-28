@@ -126,6 +126,10 @@ class _UserProvisionFormScreenState extends State<UserProvisionFormScreen> {
         ],
       ],
       onSave: _save,
+      onReset: () => setState(() {
+        _role = null;
+        _musicStoreId = null;
+      }),
       showCloseButton: false,
     );
   }
