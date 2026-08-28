@@ -6,9 +6,11 @@ class InstrumentRentalDto {
   final int musicStoreId;
   final int studentProfileId;
   final int studentUserId;
+  final String? studentName;
   final String instrumentModel;
   final String instrumentType;
   final String storeName;
+  final String? instrumentImagePath;
   final InstrumentRentalStatus rentalStatus;
   final String? requestNote;
   final String? note;
@@ -35,9 +37,11 @@ class InstrumentRentalDto {
     required this.musicStoreId,
     required this.studentProfileId,
     required this.studentUserId,
+    this.studentName,
     required this.instrumentModel,
     required this.instrumentType,
     required this.storeName,
+    this.instrumentImagePath,
     required this.rentalStatus,
     this.requestNote,
     this.note,
@@ -66,9 +70,11 @@ class InstrumentRentalDto {
       musicStoreId: json['musicStoreId'] as int? ?? 0,
       studentProfileId: json['studentProfileId'] as int? ?? 0,
       studentUserId: json['studentUserId'] as int? ?? 0,
+      studentName: json['studentName'] as String?,
       instrumentModel: json['instrumentModel'] as String? ?? '',
       instrumentType: json['instrumentType'] as String? ?? '',
       storeName: json['storeName'] as String? ?? '',
+      instrumentImagePath: json['instrumentImagePath'] as String?,
       rentalStatus: _parseStatus(json['rentalStatus']),
       requestNote: json['requestNote'] as String?,
       note: json['note'] as String?,
@@ -97,9 +103,11 @@ class InstrumentRentalDto {
     'musicStoreId': musicStoreId,
     'studentProfileId': studentProfileId,
     'studentUserId': studentUserId,
+    if (studentName != null) 'studentName': studentName,
     'instrumentModel': instrumentModel,
     'instrumentType': instrumentType,
     'storeName': storeName,
+    if (instrumentImagePath != null) 'instrumentImagePath': instrumentImagePath,
     'rentalStatus': rentalStatus.toJson(),
     if (requestNote != null) 'requestNote': requestNote,
     if (note != null) 'note': note,

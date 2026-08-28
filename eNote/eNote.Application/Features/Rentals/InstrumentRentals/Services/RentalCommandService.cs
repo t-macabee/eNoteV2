@@ -1,10 +1,11 @@
 using eNote.Application.Constants;
+using eNote.Application.Features.Identity.Users.Services;
 using eNote.Application.Features.Rentals.Instruments;
 using MapsterMapper;
 
 namespace eNote.Application.Features.Rentals.InstrumentRentals.Services;
 
-public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, IClock clock, ICurrentUserContext currentUser, IStudentContext students, IStoreContext stores, IRentalNotificationDispatcher notificationDispatcher)
+public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, IClock clock, ICurrentUserContext currentUser, IStudentContext students, IStoreContext stores, IRentalNotificationDispatcher notificationDispatcher, IStudentDisplayNameService displayNames)
 {
     public async Task<InstrumentRentalDto> CreateRequestAsync(RentalCreateRequest request, CancellationToken cancellationToken = default)
     {
@@ -130,7 +131,7 @@ public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, 
             await context.SaveChangesAsync(cancellationToken);
         }
 
-        return LoadDto(rental);
+        return await LoadDtoAsync(rental);
     }
 
     private async Task<InstrumentRental> LoadForStoreAsync(int rentalId, int storeId, CancellationToken cancellationToken)
@@ -161,10 +162,11 @@ public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, 
         return rental;
     }
 
-    private InstrumentRentalDto LoadDto(InstrumentRental entity)
+    private async Task<InstrumentRentalDto> LoadDtoAsync(InstrumentRental entity)
     {
         var result = mapper.Map<InstrumentRentalDto>(entity);
         result.ApplyCharges(entity, entity.CalculateCharges(clock.UtcNow));
+        result.StudentName = await displayNames.GetStudentDisplayNameAsync(entity.StudentProfile);
         return result;
     }
 
@@ -177,6 +179,7 @@ public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, 
 
         var result = mapper.Map<InstrumentRentalDto>(entity);
         result.ApplyCharges(entity, entity.CalculateCharges(clock.UtcNow));
+        result.StudentName = await displayNames.GetStudentDisplayNameAsync(entity.StudentProfile);
         return result;
     }
 

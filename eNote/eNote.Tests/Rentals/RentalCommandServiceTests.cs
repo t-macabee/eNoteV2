@@ -1,4 +1,5 @@
 using eNote.Application.Common.Localization;
+using eNote.Application.Features.Identity.Users.Services;
 using eNote.Application.Features.Rentals.InstrumentRentals;
 using eNote.Application.Features.Rentals.InstrumentRentals.Services;
 using eNote.Tests.TestUtils;
@@ -219,13 +220,20 @@ public sealed class RentalCommandServiceTests
     {
         var currentUser = new StubCurrentActor(student: student);
         return new(context, TestMapper.Create(), new FixedClock(Now), currentUser, currentUser, currentUser,
-            dispatcher ?? new NoOpNotificationDispatcher());
+            dispatcher ?? new NoOpNotificationDispatcher(), new StubDisplayNameService());
     }
 
     private static RentalCommandService CreateStoreService(ENoteContext context, int storeId, IRentalNotificationDispatcher? dispatcher = null)
     {
         var currentUser = new StubCurrentActor(storeId: storeId);
         return new(context, TestMapper.Create(), new FixedClock(Now), currentUser, currentUser, currentUser,
-            dispatcher ?? new NoOpNotificationDispatcher());
+            dispatcher ?? new NoOpNotificationDispatcher(), new StubDisplayNameService());
+    }
+
+    private sealed class StubDisplayNameService : IStudentDisplayNameService
+    {
+        public Task<string> GetStudentDisplayNameAsync(Student student) => Task.FromResult($"Student {student.Id}");
+        public Task<IReadOnlyDictionary<int, string>> GetStudentDisplayNamesAsync(IEnumerable<Student> students) =>
+            Task.FromResult<IReadOnlyDictionary<int, string>>(students.ToDictionary(s => s.Id, s => $"Student {s.Id}"));
     }
 }

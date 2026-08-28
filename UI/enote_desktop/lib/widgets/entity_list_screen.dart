@@ -35,6 +35,16 @@ class EntityListConfig<T> {
   final bool showAddButton;
   final bool showDeleteConfirmation;
 
+  /// Shows the built-in free-text search box. Set false when the backend
+  /// endpoint doesn't support free-text search (the box would otherwise sit
+  /// there doing nothing) — pair with [filterBar] for real filter controls.
+  final bool showSearchBar;
+
+  /// Optional filter controls rendered above the table, in place of (or
+  /// alongside) the search box — e.g. status/FK dropdowns for a resource the
+  /// backend only filters by discrete fields, not free text.
+  final Widget? filterBar;
+
   const EntityListConfig({
     required this.title,
     required this.columns,
@@ -48,6 +58,8 @@ class EntityListConfig<T> {
     this.addLabel = 'Dodaj',
     this.showAddButton = true,
     this.showDeleteConfirmation = true,
+    this.showSearchBar = true,
+    this.filterBar,
   });
 }
 
@@ -151,7 +163,8 @@ class EntityListScreenState<T> extends State<EntityListScreen<T>> {
       ),
       body: Column(
         children: [
-          _buildSearchBar(),
+          if (widget.config.showSearchBar) _buildSearchBar(),
+          if (widget.config.filterBar != null) widget.config.filterBar!,
           Expanded(
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())

@@ -1,5 +1,6 @@
 using eNote.Application.Features.Communication.Announcements;
 using eNote.Application.Features.Communication.Announcements.Services;
+using eNote.Application.Features.Identity.Users.Services;
 using eNote.Application.Features.Rentals.InstrumentRentals;
 using eNote.Application.Features.Rentals.InstrumentRentals.Services;
 using eNote.Application.Features.Rentals.Instruments;
@@ -201,8 +202,15 @@ public sealed class TenantIsolationTests
         return instrument;
     }
 
-    private static RentalQueryService CreateRentalQueryService(ENoteContext context, int storeId) => new(context, TestMapper.Create(), new StubCurrentActor(storeId: storeId), new FixedClock(Now));
+    private static RentalQueryService CreateRentalQueryService(ENoteContext context, int storeId) => new(context, TestMapper.Create(), new StubCurrentActor(storeId: storeId), new FixedClock(Now), new StubDisplayNameService());
 
     private static InstrumentService CreateInstrumentService(ENoteContext context, int storeId) =>
         new(context, TestMapper.Create(), new StubCurrentActor(storeId: storeId, employee: new MusicStoreEmployee(appUserId: 1, musicStoreId: storeId, isManager: false)), new StubFileStorageService());
+
+    private sealed class StubDisplayNameService : IStudentDisplayNameService
+    {
+        public Task<string> GetStudentDisplayNameAsync(Student student) => Task.FromResult($"Student {student.Id}");
+        public Task<IReadOnlyDictionary<int, string>> GetStudentDisplayNamesAsync(IEnumerable<Student> students) =>
+            Task.FromResult<IReadOnlyDictionary<int, string>>(students.ToDictionary(s => s.Id, s => $"Student {s.Id}"));
+    }
 }

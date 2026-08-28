@@ -1,8 +1,10 @@
+using eNote.Application.Features.Identity.Users.Services;
+using eNote.Application.Common.Paging;
 using MapsterMapper;
 
 namespace eNote.Application.Features.Rentals.InstrumentRentals.Services;
 
-public sealed class RentalQueryService(IAppDbContext context, IMapper mapper, ICurrentUserContext currentUser, IClock clock)
+public sealed class RentalQueryService(IAppDbContext context, IMapper mapper, ICurrentUserContext currentUser, IClock clock, IStudentDisplayNameService displayNames)
 {
     public async Task<InstrumentRentalDto> GetByIdForStudentAsync(int rentalId, CancellationToken cancellationToken = default)
     {
@@ -25,6 +27,7 @@ public sealed class RentalQueryService(IAppDbContext context, IMapper mapper, IC
         var dto = mapper.Map<InstrumentRentalDto>(entity);
 
         dto.ApplyCharges(entity, entity.CalculateCharges(clock.UtcNow));
+        dto.StudentName = await displayNames.GetStudentDisplayNameAsync(entity.StudentProfile);
 
         return dto;
     }
@@ -37,14 +40,28 @@ public sealed class RentalQueryService(IAppDbContext context, IMapper mapper, IC
     private async Task<PagedResult<InstrumentRentalDto>> GetPagedAsync(IQueryable<InstrumentRental> query, InstrumentRentalSearchObject search, CancellationToken cancellationToken)
     {
         var now = clock.UtcNow;
+        var (page, pageSize) = PagingLimits.Normalize(search.Page, search.PageSize);
+        var total = search.IncludeTotalCount ? await query.CountAsync(cancellationToken) : (int?)null;
 
-        return await query.AsNoTracking().WithRentalDetails().ApplySearch(search).OrderByDescending(x => x.RequestedAt).ToPagedResultAsync(search, entity =>
+        var entities = await query.AsNoTracking().WithRentalDetails().ApplySearch(search)
+            .OrderByDescending(x => x.RequestedAt)
+            .Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(cancellationToken);
+
+        var names = await displayNames.GetStudentDisplayNamesAsync(entities.Select(e => e.StudentProfile));
+
+        return new PagedResult<InstrumentRentalDto>
         {
-            var dto = mapper.Map<InstrumentRentalDto>(entity);
-            dto.ApplyCharges(entity, entity.CalculateCharges(now));
-
-            return dto;
-        }, ct: cancellationToken);
+            Items = [.. entities.Select(e =>
+            {
+                var dto = mapper.Map<InstrumentRentalDto>(e);
+                dto.ApplyCharges(e, e.CalculateCharges(now));
+                dto.StudentName = names.GetValueOrDefault(e.StudentProfile.Id, $"Student {e.StudentProfile.Id}");
+                return dto;
+            })],
+            Page = page,
+            PageSize = pageSize,
+            TotalCount = total
+        };
     }
 
     private static async Task<InstrumentRental> FindRentalAsync(IQueryable<InstrumentRental> query, CancellationToken cancellationToken) => await query

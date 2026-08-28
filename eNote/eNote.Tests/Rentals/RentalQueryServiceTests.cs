@@ -1,3 +1,4 @@
+using eNote.Application.Features.Identity.Users.Services;
 using eNote.Application.Features.Rentals.InstrumentRentals;
 using eNote.Application.Features.Rentals.InstrumentRentals.Services;
 using eNote.Tests.TestUtils;
@@ -88,5 +89,12 @@ public sealed class RentalQueryServiceTests
     }
 
     private static RentalQueryService CreateService(ENoteContext context, Student student) =>
-        new(context, TestMapper.Create(), new StubCurrentActor(student: student, storeId: 1), new FixedClock(Now));
+        new(context, TestMapper.Create(), new StubCurrentActor(student: student, storeId: 1), new FixedClock(Now), new StubDisplayNameService());
+
+    private sealed class StubDisplayNameService : IStudentDisplayNameService
+    {
+        public Task<string> GetStudentDisplayNameAsync(Student student) => Task.FromResult($"Student {student.Id}");
+        public Task<IReadOnlyDictionary<int, string>> GetStudentDisplayNamesAsync(IEnumerable<Student> students) =>
+            Task.FromResult<IReadOnlyDictionary<int, string>>(students.ToDictionary(s => s.Id, s => $"Student {s.Id}"));
+    }
 }

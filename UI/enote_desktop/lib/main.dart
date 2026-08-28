@@ -12,6 +12,7 @@ import 'features/admin/music_store/music_store_provider.dart';
 import 'features/admin/users/user_provision_service.dart';
 import 'features/store_employee/instrument/instrument_provider.dart';
 import 'features/store_employee/instrument/shop_instrument_type_provider.dart';
+import 'features/store_employee/rental/rental_provider.dart';
 import 'shell/login_screen.dart';
 import 'shell/master_screen.dart';
 
@@ -66,6 +67,9 @@ class MyApp extends StatelessWidget {
         ProxyProvider<ApiClient, ShopInstrumentTypeProvider>(
           update: (_, apiClient, _) =>
               ShopInstrumentTypeProvider(apiClient: apiClient),
+        ),
+        ProxyProvider<ApiClient, RentalProvider>(
+          update: (_, apiClient, _) => RentalProvider(apiClient: apiClient),
         ),
         ProxyProvider<ApiClient, UserProvisionService>(
           update: (_, apiClient, _) => UserProvisionService(apiClient: apiClient),

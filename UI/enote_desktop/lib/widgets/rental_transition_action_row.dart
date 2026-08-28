@@ -92,7 +92,7 @@ class _RentalTransitionActionRowState extends State<RentalTransitionActionRow> {
     String? note;
     if (action.requiresNote) {
       note = await _promptForNote(action.label);
-      if (note == null) return; // dialog cancelled
+      if (note == null) return; // dialog cancelled or empty
     } else {
       final confirmed = await confirmDialog(
         context: context,
@@ -121,28 +121,42 @@ class _RentalTransitionActionRowState extends State<RentalTransitionActionRow> {
     return showDialog<String>(
       context: context,
       barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        title: Text(actionLabel),
-        content: TextField(
-          controller: noteController,
-          autofocus: true,
-          maxLines: 3,
-          decoration: const InputDecoration(
-            labelText: 'Razlog',
-            border: OutlineInputBorder(),
+      builder: (context) => StatefulBuilder(builder: (ctx, setLocal) {
+        final isEmpty = noteController.text.trim().isEmpty;
+        return AlertDialog(
+          title: Text(actionLabel),
+          content: TextField(
+            controller: noteController,
+            autofocus: true,
+            maxLines: 3,
+            decoration: InputDecoration(
+              labelText: 'Razlog *',
+              errorText: isEmpty ? 'Razlog je obavezan.' : null,
+              border: const OutlineInputBorder(),
+            ),
+            onChanged: (_) => setLocal(() {}),
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Otkaži'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, noteController.text.trim()),
-            child: const Text('Potvrdi'),
-          ),
-        ],
-      ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                noteController.dispose();
+                Navigator.pop(context);
+              },
+              child: const Text('Otkaži'),
+            ),
+            ElevatedButton(
+              onPressed: isEmpty
+                  ? null
+                  : () {
+                      final text = noteController.text.trim();
+                      noteController.dispose();
+                      Navigator.pop(context, text);
+                    },
+              child: const Text('Potvrdi'),
+            ),
+          ],
+        );
+      }),
     );
   }
 

@@ -9,6 +9,7 @@ import '../features/admin/music_store/music_store_list_screen.dart';
 import '../features/admin/users/user_provision_form_screen.dart';
 import '../features/instructor/course/course_list_screen.dart';
 import '../features/store_employee/instrument/instrument_list_screen.dart';
+import '../features/store_employee/rental/rental_list_screen.dart';
 import 'role_menu.dart';
 
 class MasterScreen extends StatefulWidget {
@@ -62,6 +63,12 @@ class _MasterScreenState extends State<MasterScreen> {
       screenBuilder: _buildInstrumentList,
       allowedRoles: [UserRole.storeEmployee],
     ),
+    RoleMenuEntry(
+      icon: Icons.assignment,
+      label: 'Zahtjevi',
+      screenBuilder: _buildRentalList,
+      allowedRoles: [UserRole.storeEmployee],
+    ),
   ];
 
   RoleMenuEntry? _selectedEntry;
@@ -92,6 +99,10 @@ class _MasterScreenState extends State<MasterScreen> {
 
   static Widget _buildInstrumentList(BuildContext context) {
     return const InstrumentListScreen();
+  }
+
+  static Widget _buildRentalList(BuildContext context) {
+    return const RentalListScreen();
   }
 
   @override
