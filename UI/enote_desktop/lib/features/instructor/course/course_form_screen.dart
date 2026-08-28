@@ -58,7 +58,11 @@ class _CourseFormScreenState extends State<CourseFormScreen> {
     }
 
     final rawPrice = _priceController.text.trim().replaceAll(',', '.');
-    final price = double.parse(rawPrice);
+    final price = double.tryParse(rawPrice);
+    if (price == null) {
+      ErrorBanner.show(context, message: 'Unesite važeći broj.');
+      return false;
+    }
 
     final descriptionText = _descriptionController.text.trim();
     final request = CourseRequest(

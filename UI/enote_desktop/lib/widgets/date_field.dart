@@ -30,6 +30,30 @@ class DateField extends FormField<DateTime?> {
             final value = state.value;
             final text = value != null ? formatDate(value) : '';
 
+            Future<void> pickDate() async {
+              final context = state.context;
+              final now = DateTime.now();
+              final initialDate = value ?? now;
+              final first = firstDate ?? DateTime(2000);
+              final last = lastDate ?? DateTime(2100);
+              final clampedInitial = initialDate.isBefore(first)
+                  ? first
+                  : initialDate.isAfter(last)
+                      ? last
+                      : initialDate;
+
+              final picked = await showDatePicker(
+                context: context,
+                initialDate: clampedInitial,
+                firstDate: first,
+                lastDate: last,
+              );
+              if (picked == null) return;
+
+              state.didChange(picked);
+              onChanged?.call(picked);
+            }
+
             return InputDecorator(
               isEmpty: value == null,
               decoration: InputDecoration(
@@ -52,57 +76,13 @@ class DateField extends FormField<DateTime?> {
                     IconButton(
                       icon: const Icon(Icons.calendar_today, size: 18),
                       tooltip: 'Odaberi datum',
-                      onPressed: enabled
-                          ? () async {
-                              final context = state.context;
-                              final now = DateTime.now();
-                              final initialDate = value ?? now;
-                              final first = firstDate ?? DateTime(2000);
-                              final last = lastDate ?? DateTime(2100);
-                              final picked = await showDatePicker(
-                                context: context,
-                                initialDate: initialDate.isBefore(first)
-                                    ? first
-                                    : initialDate.isAfter(last)
-                                        ? last
-                                        : initialDate,
-                                firstDate: first,
-                                lastDate: last,
-                              );
-                              if (picked != null) {
-                                state.didChange(picked);
-                                onChanged?.call(picked);
-                              }
-                            }
-                          : null,
+                      onPressed: enabled ? pickDate : null,
                     ),
                   ],
                 ),
               ),
               child: InkWell(
-                onTap: enabled
-                    ? () async {
-                        final context = state.context;
-                        final now = DateTime.now();
-                        final initialDate = value ?? now;
-                        final first = firstDate ?? DateTime(2000);
-                        final last = lastDate ?? DateTime(2100);
-                        final picked = await showDatePicker(
-                          context: context,
-                          initialDate: initialDate.isBefore(first)
-                              ? first
-                              : initialDate.isAfter(last)
-                                  ? last
-                                  : initialDate,
-                          firstDate: first,
-                          lastDate: last,
-                        );
-                        if (picked != null) {
-                          state.didChange(picked);
-                          onChanged?.call(picked);
-                        }
-                      }
-                    : null,
+                onTap: enabled ? pickDate : null,
                 child: Text(
                   text.isEmpty ? '' : text,
                   style: TextStyle(

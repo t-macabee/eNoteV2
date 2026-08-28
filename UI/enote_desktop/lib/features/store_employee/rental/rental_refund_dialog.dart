@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
 
-Future<String?> showRefundAmountDialog(BuildContext context) {
+/// Returns the confirmed refund amount in KM, or `null` when cancelled.
+/// An empty input confirms a full refund, reported as `0`.
+Future<double?> showRefundAmountDialog(BuildContext context) {
   final controller = TextEditingController();
-  return showDialog<String>(
+  return showDialog<double>(
     context: context,
     barrierDismissible: false,
     builder: (context) => StatefulBuilder(builder: (ctx, setLocal) {
       final text = controller.text.trim();
       final hasValue = text.isNotEmpty;
       final parsed = hasValue ? double.tryParse(text.replaceAll(',', '.')) : null;
-      final invalid = hasValue && (parsed == null || parsed < 0);
+      final invalid = hasValue && (parsed == null || parsed <= 0);
       return AlertDialog(
         title: const Text('Refundiraj'),
         content: Column(
@@ -45,9 +47,9 @@ Future<String?> showRefundAmountDialog(BuildContext context) {
             onPressed: invalid
                 ? null
                 : () {
-                    final input = controller.text.trim();
+                    final amount = parsed ?? 0.0;
                     controller.dispose();
-                    Navigator.pop(context, input);
+                    Navigator.pop(context, amount);
                   },
             child: const Text('Potvrdi'),
           ),

@@ -60,14 +60,10 @@ class _RentalDetailScreenState extends State<RentalDetailScreen> {
 
   Future<void> _onRefund() async {
     final provider = context.read<RentalProvider>();
-    final input = await showRefundAmountDialog(context);
-    if (input == null) return;
+    final amount = await showRefundAmountDialog(context);
+    if (amount == null) return;
 
-    int? amountCents;
-    if (input.isNotEmpty) {
-      final amount = double.parse(input.replaceAll(',', '.'));
-      amountCents = (amount * 100).round();
-    }
+    final amountCents = amount > 0 ? (amount * 100).round() : null;
 
     setState(() => _isRefunding = true);
     try {
