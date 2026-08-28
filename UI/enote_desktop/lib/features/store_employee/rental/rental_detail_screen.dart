@@ -32,9 +32,16 @@ class _RentalDetailScreenState extends State<RentalDetailScreen> {
     try {
       final provider = context.read<RentalProvider>();
       final rental = await provider.getById(widget.rentalId);
-      final payment = rental.isPaid
-          ? await provider.getPaymentStatus(widget.rentalId)
-          : null;
+      RentalPaymentDto? payment;
+      if (rental.isPaid) {
+        try {
+          payment = await provider.getPaymentStatus(widget.rentalId);
+        } catch (_) {
+          // Best-effort: a payment-status hiccup shouldn't blank the
+          // whole screen when the rental itself loaded successfully.
+          payment = null;
+        }
+      }
       if (!mounted) return;
       setState(() {
         _rental = rental;
