@@ -8,6 +8,7 @@ import '../features/admin/instrument_type/instrument_type_list_screen.dart';
 import '../features/admin/music_store/music_store_list_screen.dart';
 import '../features/admin/users/user_provision_form_screen.dart';
 import '../features/instructor/course/course_list_screen.dart';
+import '../features/store_employee/announcement/announcement_list_screen.dart';
 import '../features/store_employee/instrument/instrument_list_screen.dart';
 import '../features/store_employee/rental/rental_list_screen.dart';
 import 'role_menu.dart';
@@ -69,6 +70,12 @@ class _MasterScreenState extends State<MasterScreen> {
       screenBuilder: _buildRentalList,
       allowedRoles: [UserRole.storeEmployee],
     ),
+    RoleMenuEntry(
+      icon: Icons.campaign,
+      label: 'Objave',
+      screenBuilder: _buildAnnouncementList,
+      allowedRoles: [UserRole.storeEmployee],
+    ),
   ];
 
   RoleMenuEntry? _selectedEntry;
@@ -103,6 +110,10 @@ class _MasterScreenState extends State<MasterScreen> {
 
   static Widget _buildRentalList(BuildContext context) {
     return const RentalListScreen();
+  }
+
+  static Widget _buildAnnouncementList(BuildContext context) {
+    return const AnnouncementListScreen();
   }
 
   @override

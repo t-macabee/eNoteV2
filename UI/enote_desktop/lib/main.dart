@@ -10,6 +10,7 @@ import 'features/instructor/course/course_provider.dart';
 import 'features/instructor/lecture/lecture_provider.dart';
 import 'features/admin/music_store/music_store_provider.dart';
 import 'features/admin/users/user_provision_service.dart';
+import 'features/store_employee/announcement/announcement_provider.dart';
 import 'features/store_employee/instrument/instrument_provider.dart';
 import 'features/store_employee/instrument/shop_instrument_type_provider.dart';
 import 'features/store_employee/rental/rental_provider.dart';
@@ -70,6 +71,10 @@ class MyApp extends StatelessWidget {
         ),
         ProxyProvider<ApiClient, RentalProvider>(
           update: (_, apiClient, _) => RentalProvider(apiClient: apiClient),
+        ),
+        ProxyProvider<ApiClient, StoreAnnouncementProvider>(
+          update: (_, apiClient, _) =>
+              StoreAnnouncementProvider(apiClient: apiClient),
         ),
         ProxyProvider<ApiClient, UserProvisionService>(
           update: (_, apiClient, _) => UserProvisionService(apiClient: apiClient),
