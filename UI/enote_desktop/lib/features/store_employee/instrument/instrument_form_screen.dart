@@ -184,6 +184,15 @@ class _InstrumentFormScreenState extends State<InstrumentFormScreen> {
         ],
       ],
       onSave: _save,
+      onReset: () {
+        _modelController.clear();
+        _manufacturerController.clear();
+        _descriptionController.clear();
+        setState(() {
+          _selectedInstrumentTypeId = null;
+          _currentImagePath = null;
+        });
+      },
     );
   }
 }

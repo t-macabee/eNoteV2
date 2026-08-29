@@ -2,6 +2,7 @@ using eNote.API.Controllers.Base;
 using eNote.Application.Common.Paging;
 using eNote.Application.Constants;
 using eNote.Application.Features.Rentals.ReferenceData.MusicStores;
+using eNote.Application.Features.Reports.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -9,7 +10,7 @@ namespace eNote.API.Controllers.Admin;
 
 [Authorize(Roles = AppRoles.Administrator)]
 [Route("api/v{version:apiVersion}/admin/music-stores")]
-public sealed class AdminMusicStoreController(MusicStoreService service) : CoreController
+public sealed class AdminMusicStoreController(MusicStoreService service, IReportService reportService) : CoreController
 {
     [HttpGet]
     [ProducesResponseType(StatusCodes.Status200OK)]
@@ -49,5 +50,13 @@ public sealed class AdminMusicStoreController(MusicStoreService service) : CoreC
     {
         await service.DeleteAsync(id, cancellationToken);
         return NoContent();
+    }
+
+    [HttpGet("report")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetReport(CancellationToken cancellationToken)
+    {
+        var pdf = await reportService.GenerateAdminMusicStoreReportAsync(cancellationToken);
+        return File(pdf, "application/pdf", "music-stores-report.pdf");
     }
 }

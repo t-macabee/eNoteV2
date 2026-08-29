@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'config.dart';
 import 'package:enote_core/enote_core.dart';
 import 'features/admin/address/address_provider.dart';
+import 'features/admin/city/city_provider.dart';
 import 'features/admin/instructor/instructor_provider.dart';
 import 'features/admin/instrument_type/instrument_type_provider.dart';
 import 'features/instructor/course/course_provider.dart';
@@ -42,6 +43,9 @@ class MyApp extends StatelessWidget {
         Provider<ApiClient>.value(value: apiClient),
         ChangeNotifierProvider<AddressProvider>(
           create: (_) => AddressProvider(apiClient: apiClient),
+        ),
+        ChangeNotifierProvider<CityProvider>(
+          create: (_) => CityProvider(apiClient: apiClient),
         ),
         ChangeNotifierProvider<MusicStoreProvider>(
           create: (_) => MusicStoreProvider(apiClient: apiClient),

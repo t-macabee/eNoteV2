@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
 import '../features/admin/address/address_list_screen.dart';
+import '../features/admin/city/city_list_screen.dart';
 import '../features/admin/instructor/instructor_list_screen.dart';
 import '../features/admin/instrument_type/instrument_type_list_screen.dart';
 import '../features/admin/music_store/music_store_list_screen.dart';
@@ -22,6 +23,12 @@ class MasterScreen extends StatefulWidget {
 
 class _MasterScreenState extends State<MasterScreen> {
   static const _entries = <RoleMenuEntry>[
+    RoleMenuEntry(
+      icon: Icons.location_city,
+      label: 'Gradovi',
+      screenBuilder: _buildCityList,
+      allowedRoles: [UserRole.administrator],
+    ),
     RoleMenuEntry(
       icon: Icons.location_on,
       label: 'Adrese',
@@ -81,6 +88,10 @@ class _MasterScreenState extends State<MasterScreen> {
   RoleMenuEntry? _selectedEntry;
   AuthState? _authState;
   NotificationController? _notificationController;
+
+  static Widget _buildCityList(BuildContext context) {
+    return const CityListScreen();
+  }
 
   static Widget _buildAddressList(BuildContext context) {
     return const AddressListScreen();

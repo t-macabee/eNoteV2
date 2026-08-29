@@ -126,10 +126,17 @@ class _UserProvisionFormScreenState extends State<UserProvisionFormScreen> {
         ],
       ],
       onSave: _save,
-      onReset: () => setState(() {
-        _role = null;
-        _musicStoreId = null;
-      }),
+      onReset: () {
+        _usernameController.clear();
+        _emailController.clear();
+        _passwordController.clear();
+        _firstNameController.clear();
+        _lastNameController.clear();
+        setState(() {
+          _role = null;
+          _musicStoreId = null;
+        });
+      },
       showCloseButton: false,
     );
   }

@@ -212,7 +212,16 @@ class _LectureFormScreenState extends State<LectureFormScreen> {
         ),
       ],
       onSave: _save,
-      onReset: () => setState(() => _lectureTime = null),
+      onReset: () {
+        _nameController.clear();
+        _locationController.clear();
+        _durationController.clear();
+        _capacityController.clear();
+        setState(() {
+          _lectureTime = null;
+          _lectureType = LectureType.theoretical;
+        });
+      },
     );
   }
 

@@ -94,6 +94,11 @@ class _AssignmentFormScreenState extends State<AssignmentFormScreen> {
         ),
       ],
       onSave: _save,
+      onReset: () {
+        _titleController.clear();
+        _descriptionController.clear();
+        setState(() => _dueAt = null);
+      },
     );
   }
 }

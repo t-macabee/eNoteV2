@@ -22,13 +22,42 @@ class RankingScreen extends StatefulWidget {
 }
 
 class _RankingScreenState extends State<RankingScreen> {
-  List<CourseRankingEntryDto> _items = [];
+  List<CourseRankingEntryDto> _allItems = [];
+  List<CourseRankingEntryDto> _filteredItems = [];
   bool _isLoading = true;
+  final _searchController = TextEditingController();
+  String _searchQuery = '';
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) => _load());
+    _searchController.addListener(_onSearchChanged);
+  }
+
+  @override
+  void dispose() {
+    _searchController.removeListener(_onSearchChanged);
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _onSearchChanged() {
+    final query = _searchController.text.trim().toLowerCase();
+    setState(() {
+      _searchQuery = query;
+      _applyFilter();
+    });
+  }
+
+  void _applyFilter() {
+    if (_searchQuery.isEmpty) {
+      _filteredItems = List.from(_allItems);
+    } else {
+      _filteredItems = _allItems
+          .where((e) => e.studentName.toLowerCase().contains(_searchQuery))
+          .toList();
+    }
   }
 
   Future<void> _load() async {
@@ -44,10 +73,12 @@ class _RankingScreenState extends State<RankingScreen> {
         );
       }
       final list = jsonDecode(response.body) as List;
+      final items = list
+          .map((e) => CourseRankingEntryDto.fromJson(e as Map<String, dynamic>))
+          .toList();
       setState(() {
-        _items = list
-            .map((e) => CourseRankingEntryDto.fromJson(e as Map<String, dynamic>))
-            .toList();
+        _allItems = items;
+        _applyFilter();
       });
     } catch (e) {
       if (mounted) {
@@ -85,17 +116,33 @@ class _RankingScreenState extends State<RankingScreen> {
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : _items.isEmpty
+          : _allItems.isEmpty
               ? const Center(child: Text('Nema podataka o rangiranju.'))
-              : SingleChildScrollView(
-                  child: DataTable(
-                    columns: const [
-                      DataColumn(label: Text('Rang')),
-                      DataColumn(label: Text('Student')),
-                      DataColumn(label: Text('Prosjek')),
-                      DataColumn(label: Text('Broj ocijenjenih predaja')),
-                    ],
-                    rows: _items.map((item) {
+              : Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: TextField(
+                        controller: _searchController,
+                        decoration: const InputDecoration(
+                          labelText: 'Pretraži po imenu studenta',
+                          prefixIcon: Icon(Icons.search),
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: _filteredItems.isEmpty
+                          ? const Center(child: Text('Nema rezultata za pretragu.'))
+                          : SingleChildScrollView(
+                              child: DataTable(
+                                columns: const [
+                                  DataColumn(label: Text('Rang')),
+                                  DataColumn(label: Text('Student')),
+                                  DataColumn(label: Text('Prosjek')),
+                                  DataColumn(label: Text('Broj ocijenjenih predaja')),
+                                ],
+                                rows: _filteredItems.map((item) {
                       return DataRow(
                         cells: [
                           DataCell(Text(item.rank.toString())),
@@ -111,7 +158,10 @@ class _RankingScreenState extends State<RankingScreen> {
                         ],
                       );
                     }).toList(),
-                  ),
+                              ),
+                            ),
+                    ),
+                  ],
                 ),
     );
   }

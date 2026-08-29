@@ -129,6 +129,11 @@ class _AnnouncementFormScreenState extends State<AnnouncementFormScreen> {
         ],
       ],
       onSave: _save,
+      onReset: () {
+        _titleController.clear();
+        _contentController.clear();
+        setState(() => _currentImagePath = null);
+      },
     );
   }
 }

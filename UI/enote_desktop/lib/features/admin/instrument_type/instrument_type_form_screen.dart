@@ -61,6 +61,10 @@ class _InstrumentTypeFormScreenState extends State<InstrumentTypeFormScreen> {
           ? 'Dodaj tip instrumenta'
           : 'Uredi tip instrumenta',
       isEditMode: widget.existing != null,
+      onReset: () {
+        _typeController.clear();
+        _monthlyFeeController.clear();
+      },
       fieldsBuilder: (_) => [
         TextFormField(
           controller: _typeController,

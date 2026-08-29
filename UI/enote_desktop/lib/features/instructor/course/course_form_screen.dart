@@ -131,10 +131,16 @@ class _CourseFormScreenState extends State<CourseFormScreen> {
         ),
       ],
       onSave: _save,
-      onReset: () => setState(() {
-        _startDate = null;
-        _endDate = null;
-      }),
+      onReset: () {
+        _nameController.clear();
+        _descriptionController.clear();
+        _priceController.clear();
+        setState(() {
+          _startDate = null;
+          _endDate = null;
+          _isPublished = false;
+        });
+      },
     );
   }
 }

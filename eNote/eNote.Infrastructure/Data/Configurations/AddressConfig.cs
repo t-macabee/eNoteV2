@@ -7,7 +7,10 @@ public sealed class AddressConfig : IEntityTypeConfiguration<Address>
 {
     public void Configure(EntityTypeBuilder<Address> builder)
     {
-        builder.Property(a => a.City).HasStringConfig(100, true);
+        builder.HasOne(a => a.City)
+               .WithMany(c => c.Addresses)
+               .HasForeignKey(a => a.CityId)
+               .OnDelete(DeleteBehavior.Restrict);
         builder.Property(a => a.Street).HasStringConfig(100, true);
         builder.Property(a => a.Number).HasStringConfig(20, true);
     }

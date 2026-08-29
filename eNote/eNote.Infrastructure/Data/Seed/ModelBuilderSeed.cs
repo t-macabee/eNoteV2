@@ -6,18 +6,30 @@ internal static class ModelBuilderSeed
 {
     public static void Seed(ModelBuilder modelBuilder)
     {
+        SeedCities(modelBuilder);
         SeedAddresses(modelBuilder);
         SeedInstrumentTypes(modelBuilder);
+    }
+
+    private static void SeedCities(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<City>().HasData(
+            new City { Id = 1, Name = "Sarajevo" },
+            new City { Id = 2, Name = "Mostar" },
+            new City { Id = 3, Name = "Banja Luka" },
+            new City { Id = 4, Name = "Tuzla" },
+            new City { Id = 5, Name = "Zenica" }
+        );
     }
 
     private static void SeedAddresses(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Address>().HasData(
-            new Address { Id = 1, City = "Sarajevo", Street = "Bistrik", Number = "12" },
-            new Address { Id = 2, City = "Sarajevo", Street = "Maršala Tita", Number = "15" },
-            new Address { Id = 3, City = "Sarajevo", Street = "Mula Mustafe Bašeskije", Number = "8" },
-            new Address { Id = 4, City = "Sarajevo", Street = "Obala Kulina bana", Number = "18" },
-            new Address { Id = 5, City = "Sarajevo", Street = "Veliki Alifakovac", Number = "14" }
+            new Address { Id = 1, CityId = 1, Street = "Bistrik", Number = "12" },
+            new Address { Id = 2, CityId = 1, Street = "Maršala Tita", Number = "15" },
+            new Address { Id = 3, CityId = 1, Street = "Mula Mustafe Bašeskije", Number = "8" },
+            new Address { Id = 4, CityId = 1, Street = "Obala Kulina bana", Number = "18" },
+            new Address { Id = 5, CityId = 1, Street = "Veliki Alifakovac", Number = "14" }
         );
     }
 

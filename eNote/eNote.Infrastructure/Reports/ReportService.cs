@@ -76,6 +76,23 @@ internal sealed class ReportService(IAppDbContext context, IClock clock, Ranking
         })).GeneratePdf();
     }
 
+    public async Task<byte[]> GenerateAdminMusicStoreReportAsync(CancellationToken cancellationToken = default)
+    {
+        var stores = await context.Set<MusicStore>().AsNoTracking().OrderBy(s => s.StoreName).ToListAsync(cancellationToken);
+        return Document.Create(container => container.Page(page =>
+        {
+            page.Margin(30);
+            page.Header().Text("Izvještaj — Muzičke prodavnice").Bold().FontSize(18);
+            page.Content().PaddingVertical(10).Table(table =>
+            {
+                table.ColumnsDefinition(columns => { columns.ConstantColumn(35); columns.RelativeColumn(3); columns.RelativeColumn(2); });
+                table.Header(header => { header.Cell().Element(CellStyle).Text("ID"); header.Cell().Element(CellStyle).Text("Naziv"); header.Cell().Element(CellStyle).Text("Radno vrijeme"); });
+                foreach (var store in stores) { table.Cell().Element(CellStyle).Text(store.Id.ToString()); table.Cell().Element(CellStyle).Text(store.StoreName); table.Cell().Element(CellStyle).Text(store.BusinessHours); }
+            });
+            page.Footer().AlignRight().Text($"Generisano: {clock.UtcNow:dd.MM.yyyy HH:mm} UTC").FontSize(9);
+        })).GeneratePdf();
+    }
+
     private static IContainer CellStyle(IContainer container) => container.BorderBottom(1).BorderColor(Colors.Grey.Lighten2).PaddingVertical(4).PaddingHorizontal(2);
     private sealed record AttendanceRow(string StudentName, AttendanceStatus Status);
 }

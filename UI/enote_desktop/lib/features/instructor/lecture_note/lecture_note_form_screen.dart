@@ -78,6 +78,10 @@ class _LectureNoteFormScreenState extends State<LectureNoteFormScreen> {
         ),
       ],
       onSave: _save,
+      onReset: () {
+        _titleController.clear();
+        _contentController.clear();
+      },
     );
   }
 }

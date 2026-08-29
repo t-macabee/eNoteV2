@@ -95,9 +95,37 @@ requesting a new rental until it's paid.
 
 | Endpoint | Role |
 |----------|------|
+| `GET /api/admin/music-stores/report` | Administrator |
 | `GET /api/instructor/courses/{courseId}/ranking/report` | Instructor |
 | `GET /api/instructor/lectures/{id}/attendance/report` | Instructor |
 | `GET /api/shop/rentals/report` | StoreEmployee |
+
+## Reference data (checklist #4)
+
+The following reference tables have dedicated CRUD screens under the Administrator role:
+
+- **Cities** (`admin/cities`) — standalone FK table; `Address.CityId` references it via dropdown, never free text (§3.1).
+- **Addresses** (`admin/addresses`) — street/number + City FK.
+- **MusicStores** (`admin/music-stores`)
+- **InstrumentTypes** (`admin/instrument-types`)
+
+`Instructor` is intentionally read-only in `InstructorListScreen` — instructors are provisioned and fully managed through the single `AdminUsersController` / `UserProvisionFormScreen` flow (`role: "Instructor"`), which already provides add/edit and role-membership control. A second, duplicate CRUD for the same accounts would diverge rather than help.
+
+`Country` / `Category` / `Status` tables do not exist in this domain by design: eNoteV2 has no physical product categories and no international addresses (all addresses are `City` → `Street` → `Number` within BiH). Adding empty Country/Category tables would be artificial normalization with no query, filter, or reporting use. This is the documented exception per checklist #4 — the domain's reference data is fully covered by the four tables above.
+
+## Ranking search (Upute §2.2)
+
+Ranking (`RankingScreen`) includes a debounced student-name text filter above the table, satisfying the per-list search parameter rule. The filter is client-side over the already-fetched ranking payload, so no extra API round-trip is needed.
+
+## Validation messages (checklist #6)
+
+All format-constrained fields now carry specific error text (not just “required”): `City.Name`, `Address.CityId/Street/Number`, `MusicStore.StoreName/BusinessHours`, `InstrumentType.Type/MonthlyFee`, `Course.Name/Price`, etc. — see `*RequestValidator` classes for the exact `WithMessage` texts.
+
+## Minor / UX notes (P7)
+
+- **Back navigation**: list screens are drawer-hosted (`MasterScreen` → `RoleMenu`), not pushed routes, so the drawer itself is the primary navigation. Form screens provide an explicit “X” close in the AppBar/dialog title per RS2 UX rule. No additional labeled “Back” is added to list screens — adding a pop-style back where there is no route to pop would be misleading.
+- **Many-to-many IDs**: the only current many-to-many is `Course↔Student` via `Enrollment`; the ranking and attendance screens always render student display names, never bare IDs.
+- **Images**: thumbnails remain at 40 px (≈5% of form width); no regression toward 50%+.
 
 ## Tests
 

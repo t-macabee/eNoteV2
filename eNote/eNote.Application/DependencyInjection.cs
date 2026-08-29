@@ -12,6 +12,7 @@ using eNote.Application.Features.Rentals.Instruments.Services;
 using eNote.Application.Features.Rentals.Payments.Services;
 using eNote.Application.Features.Rentals.Recommendations.Services;
 using eNote.Application.Features.Rentals.ReferenceData.Addresses;
+using eNote.Application.Features.Rentals.ReferenceData.Cities;
 using eNote.Application.Features.Rentals.ReferenceData.InstrumentTypes;
 using eNote.Application.Features.Rentals.ReferenceData.MusicStores;
 using Microsoft.Extensions.DependencyInjection;
@@ -24,6 +25,7 @@ public static class DependencyInjection
     public static IServiceCollection AddApplication(this IServiceCollection services)
     {
         services.AddScoped<AddressService>();
+        services.AddScoped<CityService>();
         services.AddScoped<IFileAccessService, FileAccessService>();
         services.AddScoped<InstrumentTypeService>();
         services.AddScoped<MusicStoreService>();

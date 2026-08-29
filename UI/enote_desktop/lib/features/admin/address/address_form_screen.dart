@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
+import '../../../widgets/async_dropdown.dart';
 import '../../../widgets/entity_form_scaffold.dart';
+import '../city/city_provider.dart';
 import 'address_provider.dart';
 
 class AddressFormScreen extends StatefulWidget {
@@ -15,16 +17,16 @@ class AddressFormScreen extends StatefulWidget {
 }
 
 class _AddressFormScreenState extends State<AddressFormScreen> {
-  final _cityController = TextEditingController();
   final _streetController = TextEditingController();
   final _numberController = TextEditingController();
+  int? _selectedCityId;
 
   @override
   void initState() {
     super.initState();
     final existing = widget.existing;
     if (existing != null) {
-      _cityController.text = existing.city;
+      _selectedCityId = existing.cityId;
       _streetController.text = existing.street;
       _numberController.text = existing.number;
     }
@@ -32,7 +34,6 @@ class _AddressFormScreenState extends State<AddressFormScreen> {
 
   @override
   void dispose() {
-    _cityController.dispose();
     _streetController.dispose();
     _numberController.dispose();
     super.dispose();
@@ -41,7 +42,7 @@ class _AddressFormScreenState extends State<AddressFormScreen> {
   Future<bool> _save() async {
     final provider = context.read<AddressProvider>();
     final request = AddressRequest(
-      city: _cityController.text.trim(),
+      cityId: _selectedCityId!,
       street: _streetController.text.trim(),
       number: _numberController.text.trim(),
     );
@@ -57,13 +58,37 @@ class _AddressFormScreenState extends State<AddressFormScreen> {
   @override
   Widget build(BuildContext context) {
     return EntityFormScaffold(
-      title: widget.existing == null ? 'Dodaj grad' : 'Uredi grad',
+      title: widget.existing == null ? 'Dodaj adresu' : 'Uredi adresu',
       isEditMode: widget.existing != null,
+      onReset: () {
+        _streetController.clear();
+        _numberController.clear();
+        setState(() => _selectedCityId = null);
+      },
       fieldsBuilder: (_) => [
-        TextFormField(
-          controller: _cityController,
-          decoration: const InputDecoration(labelText: 'Grad'),
-          validator: Validators.required('Grad'),
+        AsyncDropdown<CityDto>(
+          label: 'Grad',
+          value: _selectedCityId,
+          fetcher: () async {
+            final provider = context.read<CityProvider>();
+            final result = await provider.search({
+              'page': 1,
+              'pageSize': 100,
+              'includeTotalCount': true,
+            });
+            return result.items;
+          },
+          itemLabel: (item) => item.name,
+          itemId: (item) => item.id,
+          onChanged: (id, item) {
+            setState(() {
+              _selectedCityId = id as int?;
+            });
+          },
+          validator: (value) {
+            if (value == null) return 'Grad je obavezan';
+            return null;
+          },
         ),
         TextFormField(
           controller: _streetController,

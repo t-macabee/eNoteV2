@@ -55,6 +55,10 @@ class _MusicStoreFormScreenState extends State<MusicStoreFormScreen> {
     return EntityFormScaffold(
       title: widget.existing == null ? 'Dodaj prodavnicu' : 'Uredi prodavnicu',
       isEditMode: widget.existing != null,
+      onReset: () {
+        _storeNameController.clear();
+        _businessHoursController.clear();
+      },
       fieldsBuilder: (_) => [
         TextFormField(
           controller: _storeNameController,

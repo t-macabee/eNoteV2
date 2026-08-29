@@ -6,7 +6,7 @@ public static class AddressSearchExtensions
     {
         if (!string.IsNullOrWhiteSpace(search.City))
         {
-            query = query.Where(x => x.City.Contains(search.City!));
+            query = query.Where(x => x.City.Name.Contains(search.City!));
         }
 
         if (!string.IsNullOrWhiteSpace(search.Street))
