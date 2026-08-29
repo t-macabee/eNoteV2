@@ -41,7 +41,7 @@ public sealed class StudentDisplayNameServiceTests
         var student = await context.Set<Student>().SingleAsync();
         var service = new StudentDisplayNameService(new StubUserIdentityService());
 
-        Assert.Equal($"Student {student.Id}", await service.GetStudentDisplayNameAsync(student));
+        Assert.Equal("Nepoznat korisnik", await service.GetStudentDisplayNameAsync(student));
     }
 
     [Fact]
@@ -65,6 +65,6 @@ public sealed class StudentDisplayNameServiceTests
 
         Assert.Equal("Jane Doe", names[students[0].Id]);
         Assert.Equal("asmith", names[students[1].Id]);
-        Assert.Equal($"Student {students[2].Id}", names[students[2].Id]);
+        Assert.Equal("Nepoznat korisnik", names[students[2].Id]);
     }
 }
