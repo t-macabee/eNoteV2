@@ -46,7 +46,7 @@ public sealed class ValidatorCoverageTests
         Assert.True(new LectureNoteRequestValidator().Validate(new LectureNoteRequest { Title = "Title", Content = "Content" }).IsValid);
         Assert.True(new InstrumentTypeRequestValidator().Validate(new InstrumentTypeRequest { Type = "Guitar", MonthlyFee = 0 }).IsValid);
         Assert.True(new MusicStoreRequestValidator().Validate(new MusicStoreRequest { StoreName = "Store", BusinessHours = "08-16" }).IsValid);
-        Assert.True(new AddressRequestValidator().Validate(new AddressRequest { City = "Sarajevo", Street = "Street", Number = "1" }).IsValid);
+        Assert.True(new AddressRequestValidator().Validate(new AddressRequest { CityId = 1, Street = "Street", Number = "1" }).IsValid);
         Assert.True(new AnnouncementRequestValidator().Validate(new AnnouncementRequest("Title", "Content")).IsValid);
     }
 
@@ -109,12 +109,11 @@ public sealed class ValidatorCoverageTests
         AssertInvalid(new MusicStoreRequestValidator().Validate(new MusicStoreRequest { StoreName = new string('x', 101), BusinessHours = "08-16" }), nameof(MusicStoreRequest.StoreName));
         AssertInvalid(new MusicStoreRequestValidator().Validate(new MusicStoreRequest { StoreName = "Store", BusinessHours = "" }), nameof(MusicStoreRequest.BusinessHours));
         AssertInvalid(new MusicStoreRequestValidator().Validate(new MusicStoreRequest { StoreName = "Store", BusinessHours = new string('x', 51) }), nameof(MusicStoreRequest.BusinessHours));
-        AssertInvalid(new AddressRequestValidator().Validate(new AddressRequest { City = "", Street = "Street", Number = "1" }), nameof(AddressRequest.City));
-        AssertInvalid(new AddressRequestValidator().Validate(new AddressRequest { City = new string('x', 101), Street = "Street", Number = "1" }), nameof(AddressRequest.City));
-        AssertInvalid(new AddressRequestValidator().Validate(new AddressRequest { City = "City", Street = "", Number = "1" }), nameof(AddressRequest.Street));
-        AssertInvalid(new AddressRequestValidator().Validate(new AddressRequest { City = "City", Street = new string('x', 101), Number = "1" }), nameof(AddressRequest.Street));
-        AssertInvalid(new AddressRequestValidator().Validate(new AddressRequest { City = "City", Street = "Street", Number = "" }), nameof(AddressRequest.Number));
-        AssertInvalid(new AddressRequestValidator().Validate(new AddressRequest { City = "City", Street = "Street", Number = new string('x', 21) }), nameof(AddressRequest.Number));
+        AssertInvalid(new AddressRequestValidator().Validate(new AddressRequest { CityId = 0, Street = "Street", Number = "1" }), nameof(AddressRequest.CityId));
+        AssertInvalid(new AddressRequestValidator().Validate(new AddressRequest { CityId = 1, Street = "", Number = "1" }), nameof(AddressRequest.Street));
+        AssertInvalid(new AddressRequestValidator().Validate(new AddressRequest { CityId = 1, Street = new string('x', 101), Number = "1" }), nameof(AddressRequest.Street));
+        AssertInvalid(new AddressRequestValidator().Validate(new AddressRequest { CityId = 1, Street = "Street", Number = "" }), nameof(AddressRequest.Number));
+        AssertInvalid(new AddressRequestValidator().Validate(new AddressRequest { CityId = 1, Street = "Street", Number = new string('x', 21) }), nameof(AddressRequest.Number));
     }
 
     [Fact]
