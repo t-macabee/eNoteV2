@@ -38,6 +38,67 @@ class _AnnouncementListScreenState extends State<AnnouncementListScreen> {
     _listKey.currentState?.refresh();
   }
 
+  Widget _thumbnail(BuildContext context, String? imagePath) {
+    const size = 40.0;
+    if (imagePath == null || imagePath.trim().isEmpty) {
+      return Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          color: Colors.grey.shade300,
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: Icon(Icons.image, size: 20, color: Colors.grey.shade600),
+      );
+    }
+    final trimmed = imagePath.trim();
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(4),
+        child: Image.network(
+          trimmed,
+          width: size,
+          height: size,
+          fit: BoxFit.cover,
+          errorBuilder: (_, _, _) => Container(
+            width: size,
+            height: size,
+            color: Colors.grey.shade300,
+            child: Icon(Icons.image, size: 20, color: Colors.grey.shade600),
+          ),
+        ),
+      );
+    }
+    if (trimmed.startsWith('/')) {
+      final client = context.read<ApiClient>();
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(4),
+        child: Image.network(
+          '${client.baseUrl}$trimmed',
+          headers: client.authHeaders,
+          width: size,
+          height: size,
+          fit: BoxFit.cover,
+          errorBuilder: (_, _, _) => Container(
+            width: size,
+            height: size,
+            color: Colors.grey.shade300,
+            child: Icon(Icons.image, size: 20, color: Colors.grey.shade600),
+          ),
+        ),
+      );
+    }
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: Colors.grey.shade300,
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Icon(Icons.image, size: 20, color: Colors.grey.shade600),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return EntityListScreen<AnnouncementDto>(
@@ -48,6 +109,13 @@ class _AnnouncementListScreenState extends State<AnnouncementListScreen> {
           ColumnSpec<AnnouncementDto>(
             label: 'Naslov',
             value: (item) => item.title,
+            cellBuilder: (context, item) => Row(
+              children: [
+                _thumbnail(context, item.imagePath),
+                const SizedBox(width: 8),
+                Text(item.title),
+              ],
+            ),
           ),
           ColumnSpec<AnnouncementDto>(
             label: 'Sadržaj',

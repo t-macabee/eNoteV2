@@ -55,7 +55,7 @@ public sealed class RentalQueryService(IAppDbContext context, IMapper mapper, IC
             {
                 var dto = mapper.Map<InstrumentRentalDto>(e);
                 dto.ApplyCharges(e, e.CalculateCharges(now));
-                dto.StudentName = names.GetValueOrDefault(e.StudentProfile.Id, $"Student {e.StudentProfile.Id}");
+                dto.StudentName = names.GetValueOrDefault(e.StudentProfile.Id, "Nepoznat korisnik");
                 return dto;
             })],
             Page = page,

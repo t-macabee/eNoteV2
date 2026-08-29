@@ -5,16 +5,19 @@ import 'package:flutter/material.dart';
 import 'package:enote_core/enote_core.dart';
 
 typedef ColumnValueBuilder<T> = dynamic Function(T item);
+typedef ColumnCellBuilder<T> = Widget Function(BuildContext context, T item);
 
 class ColumnSpec<T> {
   final String label;
   final ColumnValueBuilder<T> value;
   final TextStyle? Function(T item)? style;
+  final ColumnCellBuilder<T>? cellBuilder;
 
   ColumnSpec({
     required this.label,
     required this.value,
     this.style,
+    this.cellBuilder,
   });
 }
 
@@ -219,10 +222,12 @@ class EntityListScreenState<T> extends State<EntityListScreen<T>> {
           return DataRow(
             cells: [
               ...widget.config.columns.map((col) => DataCell(
-                    Text(
-                      col.value(item)?.toString() ?? '-',
-                      style: col.style?.call(item),
-                    ),
+                    col.cellBuilder != null
+                        ? col.cellBuilder!(context, item)
+                        : Text(
+                            col.value(item)?.toString() ?? '-',
+                            style: col.style?.call(item),
+                          ),
                     onTap: widget.config.onEdit != null
                         ? () => widget.config.onEdit!(context, item)
                         : null,

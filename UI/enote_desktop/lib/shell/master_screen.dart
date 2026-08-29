@@ -79,6 +79,8 @@ class _MasterScreenState extends State<MasterScreen> {
   ];
 
   RoleMenuEntry? _selectedEntry;
+  AuthState? _authState;
+  NotificationController? _notificationController;
 
   static Widget _buildAddressList(BuildContext context) {
     return const AddressListScreen();
@@ -128,6 +130,42 @@ class _MasterScreenState extends State<MasterScreen> {
     }
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final authState = context.read<AuthState>();
+    final notificationController = context.read<NotificationController>();
+    if (!identical(_authState, authState)) {
+      _authState?.removeListener(_onAuthChanged);
+      _authState = authState;
+      _authState!.addListener(_onAuthChanged);
+    }
+    if (!identical(_notificationController, notificationController)) {
+      _notificationController = notificationController;
+      if (authState.isAuthenticated) {
+        _notificationController!.startPolling();
+      }
+    }
+  }
+
+  void _onAuthChanged() {
+    final authState = _authState;
+    final controller = _notificationController;
+    if (authState == null || controller == null) return;
+    if (authState.isAuthenticated) {
+      controller.startPolling();
+    } else {
+      controller.stopPolling();
+    }
+  }
+
+  @override
+  void dispose() {
+    _authState?.removeListener(_onAuthChanged);
+    _notificationController?.stopPolling();
+    super.dispose();
+  }
+
   List<UserRole> _currentRoles() {
     return context
         .read<AuthState>()
@@ -147,6 +185,15 @@ class _MasterScreenState extends State<MasterScreen> {
     });
   }
 
+  void _openNotifications() {
+    final controller = context.read<NotificationController>();
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => NotificationListView(controller: controller),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final roles = _currentRoles();
@@ -156,6 +203,12 @@ class _MasterScreenState extends State<MasterScreen> {
         title: const Text('eNote V2'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: [
+          Consumer<NotificationController>(
+            builder: (context, controller, _) => NotificationBadge(
+              controller: controller,
+              onTap: _openNotifications,
+            ),
+          ),
           IconButton(
             icon: const Icon(Icons.logout),
             tooltip: 'Odjava',

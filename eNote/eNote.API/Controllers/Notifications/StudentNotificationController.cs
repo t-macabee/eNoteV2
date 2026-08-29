@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace eNote.API.Controllers.Notifications;
 
-[Authorize(Roles = AppRoles.Student)]
+[Authorize(Roles = $"{AppRoles.Administrator},{AppRoles.Instructor},{AppRoles.StoreEmployee},{AppRoles.Student}")]
 [Route("api/v{version:apiVersion}/student/notifications")]
 public sealed class StudentNotificationController(NotificationService notificationService) : CoreController
 {

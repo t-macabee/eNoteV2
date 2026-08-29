@@ -74,6 +74,12 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider<StoreAnnouncementProvider>(
           create: (_) => StoreAnnouncementProvider(apiClient: apiClient),
         ),
+        ChangeNotifierProvider<NotificationController>(
+          create: (_) => NotificationController(
+            apiClient: apiClient,
+            endpoint: 'student/notifications',
+          ),
+        ),
         Provider<UserProvisionService>(
           create: (_) => UserProvisionService(apiClient: apiClient),
         ),

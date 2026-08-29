@@ -4,6 +4,8 @@ using eNote.Application.Features.Rentals.InstrumentRentals;
 using eNote.Application.Features.Rentals.InstrumentRentals.Services;
 using eNote.Contracts.Communication;
 using eNote.Contracts.Rentals;
+using eNote.Domain.Entities.Identity;
+using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Infrastructure.Messaging;
 
@@ -11,12 +13,29 @@ public sealed class RentalNotificationDispatcher(
     IAppDbContext context,
     IClock clock) : IRentalNotificationDispatcher
 {
-    public Task DispatchCreatedAsync(InstrumentRentalDto rental, int studentUserId)
+    public async Task DispatchCreatedAsync(InstrumentRentalDto rental, int studentUserId)
     {
         var (title, body) = BuildCreatedContent(rental);
         var message = new RentalStatusChanged(rental.Id, studentUserId, studentUserId, rental.RentalStatus.ToString(), rental.InstrumentModel, title, body, clock.UtcNow);
         EnqueueOutbox(message);
-        return Task.CompletedTask;
+
+        // Desktop-relevant notification: inform responsible StoreEmployees about the new request.
+        // Follows the same outbox + Worker consumer pattern used for student notifications.
+        var now = clock.UtcNow;
+        var employeeUserIds = await context.Set<MusicStoreEmployee>()
+            .AsNoTracking()
+            .IgnoreQueryFilters()
+            .Where(x => x.MusicStoreId == rental.MusicStoreId && x.IsActive)
+            .Select(x => x.AppUserId)
+            .ToListAsync();
+
+        foreach (var employeeUserId in employeeUserIds)
+        {
+            if (employeeUserId == studentUserId) continue;
+            var (empTitle, empBody) = BuildStoreCreatedContent(rental);
+            var empMessage = new RentalStatusChanged(rental.Id, employeeUserId, studentUserId, rental.RentalStatus.ToString(), rental.InstrumentModel, empTitle, empBody, now);
+            EnqueueOutbox(empMessage);
+        }
     }
 
     public Task DispatchTransitionAsync(InstrumentRentalDto rental, RentalTrigger trigger, int actorUserId)
@@ -46,6 +65,9 @@ public sealed class RentalNotificationDispatcher(
 
     private static (string Title, string Body) BuildCreatedContent(InstrumentRentalDto rental) =>
         ("Zahtjev za iznajmljivanje poslan", $"Vaš zahtjev za instrument {rental.InstrumentModel} je poslan prodavnici {rental.StoreName} i čeka odobrenje.");
+
+    private static (string Title, string Body) BuildStoreCreatedContent(InstrumentRentalDto rental) =>
+        ("Novi zahtjev za iznajmljivanje", $"Zaprimljen je novi zahtjev za instrument {rental.InstrumentModel} u prodavnici {rental.StoreName}.");
 
     private void EnqueueOutbox(RentalStatusChanged message) =>
         NotificationOutboxWriter.Enqueue(context, NotificationMessageTypes.RentalStatusChanged, message);
