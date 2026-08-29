@@ -12,7 +12,7 @@ using eNote.Infrastructure.Data;
 namespace eNote.Infrastructure.Data.Migrations
 {
     [DbContext(typeof(ENoteContext))]
-    [Migration("20260828215915_Initial")]
+    [Migration("20260829172744_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -1182,10 +1182,8 @@ namespace eNote.Infrastructure.Data.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("City")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                    b.Property<int>("CityId")
+                        .HasColumnType("int");
 
                     b.Property<string>("Number")
                         .IsRequired()
@@ -1199,43 +1197,93 @@ namespace eNote.Infrastructure.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CityId");
+
                     b.ToTable("Address");
 
                     b.HasData(
                         new
                         {
                             Id = 1,
-                            City = "Sarajevo",
+                            CityId = 1,
                             Number = "12",
                             Street = "Bistrik"
                         },
                         new
                         {
                             Id = 2,
-                            City = "Sarajevo",
+                            CityId = 1,
                             Number = "15",
                             Street = "Maršala Tita"
                         },
                         new
                         {
                             Id = 3,
-                            City = "Sarajevo",
+                            CityId = 1,
                             Number = "8",
                             Street = "Mula Mustafe Bašeskije"
                         },
                         new
                         {
                             Id = 4,
-                            City = "Sarajevo",
+                            CityId = 1,
                             Number = "18",
                             Street = "Obala Kulina bana"
                         },
                         new
                         {
                             Id = 5,
-                            City = "Sarajevo",
+                            CityId = 1,
                             Number = "14",
                             Street = "Veliki Alifakovac"
+                        });
+                });
+
+            modelBuilder.Entity("eNote.Domain.Entities.Shared.City", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("City");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Name = "Sarajevo"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Name = "Mostar"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Name = "Banja Luka"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            Name = "Tuzla"
+                        },
+                        new
+                        {
+                            Id = 5,
+                            Name = "Zenica"
                         });
                 });
 
@@ -1657,6 +1705,17 @@ namespace eNote.Infrastructure.Data.Migrations
                     b.Navigation("InstrumentRental");
                 });
 
+            modelBuilder.Entity("eNote.Domain.Entities.Shared.Address", b =>
+                {
+                    b.HasOne("eNote.Domain.Entities.Shared.City", "City")
+                        .WithMany("Addresses")
+                        .HasForeignKey("CityId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("City");
+                });
+
             modelBuilder.Entity("eNote.Infrastructure.Identity.AppUser", b =>
                 {
                     b.HasOne("eNote.Domain.Entities.Shared.Address", "Address")
@@ -1724,6 +1783,11 @@ namespace eNote.Infrastructure.Data.Migrations
                     b.Navigation("Employees");
 
                     b.Navigation("Instruments");
+                });
+
+            modelBuilder.Entity("eNote.Domain.Entities.Shared.City", b =>
+                {
+                    b.Navigation("Addresses");
                 });
 #pragma warning restore 612, 618
         }
