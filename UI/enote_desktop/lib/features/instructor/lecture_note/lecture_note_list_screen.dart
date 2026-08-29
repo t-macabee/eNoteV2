@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
+import '../../../widgets/entity_form_scaffold.dart';
 import '../../../widgets/entity_list_screen.dart';
 import 'lecture_note_form_screen.dart';
 import 'lecture_note_provider.dart';
@@ -26,14 +27,15 @@ class _LectureNoteListScreenState extends State<LectureNoteListScreen> {
   final _listKey = GlobalKey<EntityListScreenState<LectureNoteDto>>();
 
   Future<void> _openForm([LectureNoteDto? existing]) async {
-    await Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => ChangeNotifierProvider<LectureNoteProvider>.value(
-          value: context.read<LectureNoteProvider>(),
-          child: LectureNoteFormScreen(
-            lectureId: widget.lectureId,
-            existing: existing,
-          ),
+    final provider = context.read<LectureNoteProvider>();
+    await EntityFormScaffold.showAsDialog(
+      context,
+      builder: (_) => ChangeNotifierProvider<LectureNoteProvider>.value(
+        value: provider,
+        child: LectureNoteFormScreen(
+          lectureId: widget.lectureId,
+          existing: existing,
+          presentation: EntityFormPresentation.dialog,
         ),
       ),
     );

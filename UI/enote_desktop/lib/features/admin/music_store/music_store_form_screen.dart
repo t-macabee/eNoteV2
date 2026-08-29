@@ -8,7 +8,16 @@ import 'music_store_provider.dart';
 class MusicStoreFormScreen extends StatefulWidget {
   final MusicStoreDto? existing;
 
-  const MusicStoreFormScreen({super.key, this.existing});
+  /// How the wrapped [EntityFormScaffold] is presented — pass
+  /// [EntityFormPresentation.dialog] when opened via
+  /// [EntityFormScaffold.showAsDialog].
+  final EntityFormPresentation presentation;
+
+  const MusicStoreFormScreen({
+    super.key,
+    this.existing,
+    this.presentation = EntityFormPresentation.page,
+  });
 
   @override
   State<MusicStoreFormScreen> createState() => _MusicStoreFormScreenState();
@@ -53,6 +62,7 @@ class _MusicStoreFormScreenState extends State<MusicStoreFormScreen> {
   @override
   Widget build(BuildContext context) {
     return EntityFormScaffold(
+      presentation: widget.presentation,
       title: widget.existing == null ? 'Dodaj prodavnicu' : 'Uredi prodavnicu',
       isEditMode: widget.existing != null,
       onReset: () {

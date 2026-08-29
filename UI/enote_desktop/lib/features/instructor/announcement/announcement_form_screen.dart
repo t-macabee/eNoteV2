@@ -11,10 +11,16 @@ class AnnouncementFormScreen extends StatefulWidget {
   final int courseId;
   final AnnouncementDto? existing;
 
+  /// How the wrapped [EntityFormScaffold] is presented — pass
+  /// [EntityFormPresentation.dialog] when opened via
+  /// [EntityFormScaffold.showAsDialog].
+  final EntityFormPresentation presentation;
+
   const AnnouncementFormScreen({
     super.key,
     required this.courseId,
     this.existing,
+    this.presentation = EntityFormPresentation.page,
   });
 
   @override
@@ -100,6 +106,7 @@ class _AnnouncementFormScreenState extends State<AnnouncementFormScreen> {
   @override
   Widget build(BuildContext context) {
     return EntityFormScaffold(
+      presentation: widget.presentation,
       title: _isEditMode ? 'Uredi objavu' : 'Dodaj objavu',
       isEditMode: _isEditMode,
       fieldsBuilder: (_) => [

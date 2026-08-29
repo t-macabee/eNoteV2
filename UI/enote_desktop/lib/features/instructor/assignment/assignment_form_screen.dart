@@ -10,10 +10,16 @@ class AssignmentFormScreen extends StatefulWidget {
   final int lectureId;
   final AssignmentDto? existing;
 
+  /// How the wrapped [EntityFormScaffold] is presented — pass
+  /// [EntityFormPresentation.dialog] when opened via
+  /// [EntityFormScaffold.showAsDialog].
+  final EntityFormPresentation presentation;
+
   const AssignmentFormScreen({
     super.key,
     required this.lectureId,
     this.existing,
+    this.presentation = EntityFormPresentation.page,
   });
 
   @override
@@ -69,6 +75,7 @@ class _AssignmentFormScreenState extends State<AssignmentFormScreen> {
   @override
   Widget build(BuildContext context) {
     return EntityFormScaffold(
+      presentation: widget.presentation,
       title: _isEditMode ? 'Uredi zadatak' : 'Dodaj zadatak',
       isEditMode: _isEditMode,
       fieldsBuilder: (_) => [

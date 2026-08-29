@@ -10,7 +10,16 @@ import 'announcement_provider.dart';
 class AnnouncementFormScreen extends StatefulWidget {
   final AnnouncementDto? existing;
 
-  const AnnouncementFormScreen({super.key, this.existing});
+  /// How the wrapped [EntityFormScaffold] is presented — pass
+  /// [EntityFormPresentation.dialog] when opened via
+  /// [EntityFormScaffold.showAsDialog].
+  final EntityFormPresentation presentation;
+
+  const AnnouncementFormScreen({
+    super.key,
+    this.existing,
+    this.presentation = EntityFormPresentation.page,
+  });
 
   @override
   State<AnnouncementFormScreen> createState() => _AnnouncementFormScreenState();
@@ -95,6 +104,7 @@ class _AnnouncementFormScreenState extends State<AnnouncementFormScreen> {
   @override
   Widget build(BuildContext context) {
     return EntityFormScaffold(
+      presentation: widget.presentation,
       title: _isEditMode ? 'Uredi objavu' : 'Dodaj objavu',
       isEditMode: _isEditMode,
       fieldsBuilder: (_) => [

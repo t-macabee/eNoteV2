@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
+import '../../../widgets/entity_form_scaffold.dart';
 import '../../../widgets/entity_list_screen.dart';
 import '../../../widgets/pdf_report_button.dart';
 import 'music_store_form_screen.dart';
@@ -20,9 +21,11 @@ class _MusicStoreListScreenState extends State<MusicStoreListScreen> {
   final _listKey = GlobalKey<EntityListScreenState<MusicStoreDto>>();
 
   Future<void> _openForm([MusicStoreDto? existing]) async {
-    await Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => MusicStoreFormScreen(existing: existing),
+    await EntityFormScaffold.showAsDialog(
+      context,
+      builder: (_) => MusicStoreFormScreen(
+        existing: existing,
+        presentation: EntityFormPresentation.dialog,
       ),
     );
     _listKey.currentState?.refresh();

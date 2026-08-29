@@ -210,34 +210,41 @@ class _MasterScreenState extends State<MasterScreen> {
     final roles = _currentRoles();
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('eNote V2'),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        actions: [
-          Consumer<NotificationController>(
-            builder: (context, controller, _) => NotificationBadge(
-              controller: controller,
-              onTap: _openNotifications,
-            ),
+      body: Row(
+        children: [
+          RoleMenu(
+            entries: _entries,
+            currentRoles: roles,
+            selected: _selectedEntry,
+            onSelect: _onEntrySelected,
+            onLogout: _logout,
           ),
-          IconButton(
-            icon: const Icon(Icons.logout),
-            tooltip: 'Odjava',
-            onPressed: _logout,
+          Expanded(
+            child: Scaffold(
+              appBar: AppBar(
+                title: const Text('eNote V2'),
+                actions: [
+                  Consumer<NotificationController>(
+                    builder: (context, controller, _) => NotificationBadge(
+                      controller: controller,
+                      onTap: _openNotifications,
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.logout),
+                    tooltip: 'Odjava',
+                    onPressed: _logout,
+                  ),
+                ],
+              ),
+              body: _selectedEntry?.screenBuilder(context) ??
+                  const Center(
+                    child: Text('Molimo odaberite opciju iz izbornika.'),
+                  ),
+            ),
           ),
         ],
       ),
-      drawer: RoleMenu(
-        entries: _entries,
-        currentRoles: roles,
-        selected: _selectedEntry,
-        onSelect: _onEntrySelected,
-        onLogout: _logout,
-      ),
-      body: _selectedEntry?.screenBuilder(context) ??
-          const Center(
-            child: Text('Molimo odaberite opciju iz izbornika.'),
-          ),
     );
   }
 }

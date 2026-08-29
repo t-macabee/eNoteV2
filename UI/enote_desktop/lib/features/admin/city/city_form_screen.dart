@@ -8,7 +8,16 @@ import 'city_provider.dart';
 class CityFormScreen extends StatefulWidget {
   final CityDto? existing;
 
-  const CityFormScreen({super.key, this.existing});
+  /// How the wrapped [EntityFormScaffold] is presented — pass
+  /// [EntityFormPresentation.dialog] when opened via
+  /// [EntityFormScaffold.showAsDialog].
+  final EntityFormPresentation presentation;
+
+  const CityFormScreen({
+    super.key,
+    this.existing,
+    this.presentation = EntityFormPresentation.page,
+  });
 
   @override
   State<CityFormScreen> createState() => _CityFormScreenState();
@@ -47,6 +56,7 @@ class _CityFormScreenState extends State<CityFormScreen> {
   @override
   Widget build(BuildContext context) {
     return EntityFormScaffold(
+      presentation: widget.presentation,
       title: widget.existing == null ? 'Dodaj grad' : 'Uredi grad',
       isEditMode: widget.existing != null,
       onReset: () => _nameController.clear(),

@@ -12,10 +12,16 @@ class LectureFormScreen extends StatefulWidget {
   final int courseId;
   final LectureDto? existing;
 
+  /// How the wrapped [EntityFormScaffold] is presented — pass
+  /// [EntityFormPresentation.dialog] when opened via
+  /// [EntityFormScaffold.showAsDialog].
+  final EntityFormPresentation presentation;
+
   const LectureFormScreen({
     super.key,
     required this.courseId,
     this.existing,
+    this.presentation = EntityFormPresentation.page,
   });
 
   @override
@@ -117,6 +123,7 @@ class _LectureFormScreenState extends State<LectureFormScreen> {
     final enabled = !_isCancelled;
 
     return EntityFormScaffold(
+      presentation: widget.presentation,
       title: _isEditMode ? 'Uredi predavanje' : 'Dodaj predavanje',
       isEditMode: _isEditMode,
       fieldsBuilder: (_) => [

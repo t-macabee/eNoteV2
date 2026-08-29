@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import 'config.dart';
 import 'package:enote_core/enote_core.dart';
+import 'theme/app_theme.dart';
 import 'features/admin/address/address_provider.dart';
 import 'features/admin/city/city_provider.dart';
 import 'features/admin/instructor/instructor_provider.dart';
@@ -90,9 +91,7 @@ class MyApp extends StatelessWidget {
       ],
       child: MaterialApp(
         title: 'eNote V2',
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        ),
+        theme: AppTheme.dark,
         home: Consumer<AuthState>(
           builder: (context, authState, _) {
             if (!authState.isAuthenticated) {

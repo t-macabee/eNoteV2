@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
+import '../../../widgets/entity_form_scaffold.dart';
 import '../../../widgets/entity_list_screen.dart';
 import '../assignment_submission/submission_list_screen.dart';
 import '../assignment_submission/submission_provider.dart';
@@ -48,14 +49,15 @@ class _AssignmentListScreenState extends State<AssignmentListScreen> {
   }
 
   Future<void> _openForm([AssignmentDto? existing]) async {
-    await Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => ChangeNotifierProvider<AssignmentProvider>.value(
-          value: context.read<AssignmentProvider>(),
-          child: AssignmentFormScreen(
-            lectureId: widget.lectureId,
-            existing: existing,
-          ),
+    final provider = context.read<AssignmentProvider>();
+    await EntityFormScaffold.showAsDialog(
+      context,
+      builder: (_) => ChangeNotifierProvider<AssignmentProvider>.value(
+        value: provider,
+        child: AssignmentFormScreen(
+          lectureId: widget.lectureId,
+          existing: existing,
+          presentation: EntityFormPresentation.dialog,
         ),
       ),
     );

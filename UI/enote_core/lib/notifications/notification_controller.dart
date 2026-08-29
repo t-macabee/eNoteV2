@@ -58,7 +58,14 @@ class NotificationController extends ChangeNotifier {
   Future<void> refresh({NotificationSearchObject? search}) async {
     _isLoading = true;
     _error = null;
-    notifyListeners();
+    // Deferred: refresh() can be called synchronously from a widget's
+    // didChangeDependencies/initState (e.g. MasterScreen.startPolling on
+    // login), which runs mid-build. Notifying listeners before any `await`
+    // would try to rebuild an ancestor Provider while the framework is still
+    // building this frame ("setState() or markNeedsBuild() called during
+    // build"). scheduleMicrotask pushes the notification past the end of
+    // the current build/frame.
+    scheduleMicrotask(notifyListeners);
 
     try {
       final response = await apiClient.get(

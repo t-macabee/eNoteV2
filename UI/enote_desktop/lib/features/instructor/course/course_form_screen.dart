@@ -10,7 +10,16 @@ import 'course_provider.dart';
 class CourseFormScreen extends StatefulWidget {
   final CourseDto? existing;
 
-  const CourseFormScreen({super.key, this.existing});
+  /// How the wrapped [EntityFormScaffold] is presented — pass
+  /// [EntityFormPresentation.dialog] when opened via
+  /// [EntityFormScaffold.showAsDialog].
+  final EntityFormPresentation presentation;
+
+  const CourseFormScreen({
+    super.key,
+    this.existing,
+    this.presentation = EntityFormPresentation.page,
+  });
 
   @override
   State<CourseFormScreen> createState() => _CourseFormScreenState();
@@ -86,6 +95,7 @@ class _CourseFormScreenState extends State<CourseFormScreen> {
   @override
   Widget build(BuildContext context) {
     return EntityFormScaffold(
+      presentation: widget.presentation,
       title: widget.existing == null ? 'Dodaj kurs' : 'Uredi kurs',
       isEditMode: widget.existing != null,
       fieldsBuilder: (_) => [

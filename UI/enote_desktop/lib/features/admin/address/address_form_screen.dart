@@ -10,7 +10,16 @@ import 'address_provider.dart';
 class AddressFormScreen extends StatefulWidget {
   final AddressReferenceDto? existing;
 
-  const AddressFormScreen({super.key, this.existing});
+  /// How the wrapped [EntityFormScaffold] is presented — pass
+  /// [EntityFormPresentation.dialog] when opened via
+  /// [EntityFormScaffold.showAsDialog].
+  final EntityFormPresentation presentation;
+
+  const AddressFormScreen({
+    super.key,
+    this.existing,
+    this.presentation = EntityFormPresentation.page,
+  });
 
   @override
   State<AddressFormScreen> createState() => _AddressFormScreenState();
@@ -58,6 +67,7 @@ class _AddressFormScreenState extends State<AddressFormScreen> {
   @override
   Widget build(BuildContext context) {
     return EntityFormScaffold(
+      presentation: widget.presentation,
       title: widget.existing == null ? 'Dodaj adresu' : 'Uredi adresu',
       isEditMode: widget.existing != null,
       onReset: () {

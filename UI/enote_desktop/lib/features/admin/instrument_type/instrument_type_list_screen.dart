@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
+import '../../../widgets/entity_form_scaffold.dart';
 import '../../../widgets/entity_list_screen.dart';
 import 'instrument_type_form_screen.dart';
 import 'instrument_type_provider.dart';
@@ -18,9 +19,11 @@ class _InstrumentTypeListScreenState extends State<InstrumentTypeListScreen> {
   final _listKey = GlobalKey<EntityListScreenState<InstrumentTypeDto>>();
 
   Future<void> _openForm([InstrumentTypeDto? existing]) async {
-    await Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => InstrumentTypeFormScreen(existing: existing),
+    await EntityFormScaffold.showAsDialog(
+      context,
+      builder: (_) => InstrumentTypeFormScreen(
+        existing: existing,
+        presentation: EntityFormPresentation.dialog,
       ),
     );
     _listKey.currentState?.refresh();

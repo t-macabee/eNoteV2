@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
+import '../../../widgets/entity_form_scaffold.dart';
 import '../../../widgets/entity_list_screen.dart';
 import 'city_form_screen.dart';
 import 'city_provider.dart';
@@ -17,9 +18,11 @@ class _CityListScreenState extends State<CityListScreen> {
   final _listKey = GlobalKey<EntityListScreenState<CityDto>>();
 
   Future<void> _openForm([CityDto? existing]) async {
-    await Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => CityFormScreen(existing: existing),
+    await EntityFormScaffold.showAsDialog(
+      context,
+      builder: (_) => CityFormScreen(
+        existing: existing,
+        presentation: EntityFormPresentation.dialog,
       ),
     );
     _listKey.currentState?.refresh();

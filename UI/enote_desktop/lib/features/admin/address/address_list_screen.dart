@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
+import '../../../widgets/entity_form_scaffold.dart';
 import '../../../widgets/entity_list_screen.dart';
 import 'address_form_screen.dart';
 import 'address_provider.dart';
@@ -17,9 +18,11 @@ class _AddressListScreenState extends State<AddressListScreen> {
   final _listKey = GlobalKey<EntityListScreenState<AddressReferenceDto>>();
 
   Future<void> _openForm([AddressReferenceDto? existing]) async {
-    await Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => AddressFormScreen(existing: existing),
+    await EntityFormScaffold.showAsDialog(
+      context,
+      builder: (_) => AddressFormScreen(
+        existing: existing,
+        presentation: EntityFormPresentation.dialog,
       ),
     );
     _listKey.currentState?.refresh();
