@@ -1,10 +1,5 @@
 import 'package:flutter/material.dart';
 
-/// A FK-style dropdown backed by an async data source (e.g. a provider's
-/// `getPage`/`search`). Handles its own loading/error/empty states so every
-/// form that needs a DB-populated dropdown (city, instrument type, course,
-/// instructor, ...) can reuse one widget instead of hand-rolling a
-/// FutureBuilder + DropdownButtonFormField each time.
 class AsyncDropdown<T> extends StatefulWidget {
   final String label;
   final Future<List<T>> Function() fetcher;
@@ -89,8 +84,9 @@ class _AsyncDropdownState<T> extends State<AsyncDropdown<T>> {
         }
 
         final items = snapshot.data ?? const [];
-        final currentValue =
-            items.any((e) => widget.itemId(e) == widget.value) ? widget.value : null;
+        final currentValue = items.any((e) => widget.itemId(e) == widget.value)
+            ? widget.value
+            : null;
 
         return DropdownButtonFormField<Object>(
           initialValue: currentValue,
@@ -111,9 +107,9 @@ class _AsyncDropdownState<T> extends State<AsyncDropdown<T>> {
           onChanged: widget.enabled
               ? (id) {
                   final item = items.cast<T?>().firstWhere(
-                        (e) => e != null && widget.itemId(e) == id,
-                        orElse: () => null,
-                      );
+                    (e) => e != null && widget.itemId(e) == id,
+                    orElse: () => null,
+                  );
                   widget.onChanged(id, item);
                 }
               : null,

@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-
 import 'package:enote_core/enote_core.dart';
 
 typedef ColumnValueBuilder<T> = dynamic Function(T item);
@@ -22,7 +21,10 @@ class ColumnSpec<T> {
 }
 
 typedef EntityFetcher<T> = Future<PagedResult<T>> Function(
-    int page, int pageSize, String search);
+  int page,
+  int pageSize,
+  String search,
+);
 
 class EntityListConfig<T> {
   final String title;
@@ -37,15 +39,7 @@ class EntityListConfig<T> {
   final String? addLabel;
   final bool showAddButton;
   final bool showDeleteConfirmation;
-
-  /// Shows the built-in free-text search box. Set false when the backend
-  /// endpoint doesn't support free-text search (the box would otherwise sit
-  /// there doing nothing) — pair with [filterBar] for real filter controls.
   final bool showSearchBar;
-
-  /// Optional filter controls rendered above the table, in place of (or
-  /// alongside) the search box — e.g. status/FK dropdowns for a resource the
-  /// backend only filters by discrete fields, not free text.
   final Widget? filterBar;
 
   const EntityListConfig({
@@ -132,10 +126,7 @@ class EntityListScreenState<T> extends State<EntityListScreen<T>> {
     } catch (e) {
       if (requestId != _requestId) return;
       if (mounted) {
-        ErrorBanner.show(
-          context,
-          message: userMessage(e),
-        );
+        ErrorBanner.show(context, message: userMessage(e));
       }
     } finally {
       if (requestId == _requestId && mounted) {
@@ -168,9 +159,7 @@ class EntityListScreenState<T> extends State<EntityListScreen<T>> {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.config.title),
-        actions: [
-          if (widget.config.trailing != null) widget.config.trailing!,
-        ],
+        actions: [if (widget.config.trailing != null) widget.config.trailing!],
       ),
       body: Column(
         children: [
@@ -180,8 +169,8 @@ class EntityListScreenState<T> extends State<EntityListScreen<T>> {
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : _items.isEmpty
-                    ? const Center(child: Text('Nema podataka.'))
-                    : _buildTable(),
+                ? const Center(child: Text('Nema podataka.'))
+                : _buildTable(),
           ),
           _buildPagination(),
         ],
@@ -210,7 +199,10 @@ class EntityListScreenState<T> extends State<EntityListScreen<T>> {
   }
 
   Widget _buildTable() {
-    final hasActions = widget.config.onEdit != null || widget.config.onDelete != null || widget.config.extraActions != null;
+    final hasActions =
+        widget.config.onEdit != null ||
+        widget.config.onDelete != null ||
+        widget.config.extraActions != null;
 
     return SingleChildScrollView(
       child: DataTable(
@@ -221,17 +213,19 @@ class EntityListScreenState<T> extends State<EntityListScreen<T>> {
         rows: _items.map((item) {
           return DataRow(
             cells: [
-              ...widget.config.columns.map((col) => DataCell(
-                    col.cellBuilder != null
-                        ? col.cellBuilder!(context, item)
-                        : Text(
-                            col.value(item)?.toString() ?? '-',
-                            style: col.style?.call(item),
-                          ),
-                    onTap: widget.config.onEdit != null
-                        ? () => widget.config.onEdit!(context, item)
-                        : null,
-                  )),
+              ...widget.config.columns.map(
+                (col) => DataCell(
+                  col.cellBuilder != null
+                      ? col.cellBuilder!(context, item)
+                      : Text(
+                          col.value(item)?.toString() ?? '-',
+                          style: col.style?.call(item),
+                        ),
+                  onTap: widget.config.onEdit != null
+                      ? () => widget.config.onEdit!(context, item)
+                      : null,
+                ),
+              ),
               if (hasActions)
                 DataCell(
                   Row(
@@ -240,13 +234,15 @@ class EntityListScreenState<T> extends State<EntityListScreen<T>> {
                       if (widget.config.onEdit != null)
                         IconButton(
                           icon: const Icon(Icons.edit, size: 18),
-                          onPressed: () =>
-                              widget.config.onEdit!(context, item),
+                          onPressed: () => widget.config.onEdit!(context, item),
                         ),
                       if (widget.config.onDelete != null)
                         IconButton(
-                          icon: const Icon(Icons.delete,
-                              size: 18, color: Colors.red),
+                          icon: const Icon(
+                            Icons.delete,
+                            size: 18,
+                            color: Colors.red,
+                          ),
                           onPressed: () => _deleteItem(item),
                         ),
                       if (widget.config.extraActions != null)

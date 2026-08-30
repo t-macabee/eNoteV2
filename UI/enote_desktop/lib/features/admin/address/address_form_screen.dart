@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
 import 'package:enote_core/enote_core.dart';
+
 import '../../../widgets/async_dropdown.dart';
 import '../../../widgets/entity_form_scaffold.dart';
 import '../city/city_provider.dart';
@@ -9,10 +9,6 @@ import 'address_provider.dart';
 
 class AddressFormScreen extends StatefulWidget {
   final AddressReferenceDto? existing;
-
-  /// How the wrapped [EntityFormScaffold] is presented — pass
-  /// [EntityFormPresentation.dialog] when opened via
-  /// [EntityFormScaffold.showAsDialog].
   final EntityFormPresentation presentation;
 
   const AddressFormScreen({

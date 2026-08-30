@@ -2,7 +2,6 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:printing/printing.dart';
-
 import 'package:enote_core/enote_core.dart';
 
 class PdfReportButton extends StatefulWidget {

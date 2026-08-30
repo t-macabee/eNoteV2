@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-/// App-wide dark theme, calibrated against the "Instrumenti" mockup.
 class AppTheme {
   AppTheme._();
 
@@ -17,24 +16,25 @@ class AppTheme {
   static const Color error = Color(0xFFEF4444);
 
   static ThemeData get dark {
-    final colorScheme = ColorScheme.fromSeed(
-      seedColor: primary,
-      brightness: Brightness.dark,
-    ).copyWith(
-      primary: primary,
-      onPrimary: onPrimary,
-      surface: background,
-      onSurface: textPrimary,
-      onSurfaceVariant: textSecondary,
-      outline: outline,
-      outlineVariant: outline,
-      surfaceContainerLowest: surfaceContainer,
-      surfaceContainerLow: surfaceContainer,
-      surfaceContainer: surfaceContainer,
-      surfaceContainerHigh: surfaceContainer,
-      surfaceContainerHighest: surfaceContainer,
-      error: error,
-    );
+    final colorScheme =
+        ColorScheme.fromSeed(
+          seedColor: primary,
+          brightness: Brightness.dark,
+        ).copyWith(
+          primary: primary,
+          onPrimary: onPrimary,
+          surface: background,
+          onSurface: textPrimary,
+          onSurfaceVariant: textSecondary,
+          outline: outline,
+          outlineVariant: outline,
+          surfaceContainerLowest: surfaceContainer,
+          surfaceContainerLow: surfaceContainer,
+          surfaceContainer: surfaceContainer,
+          surfaceContainerHigh: surfaceContainer,
+          surfaceContainerHighest: surfaceContainer,
+          error: error,
+        );
 
     final baseTextTheme = ThemeData(
       brightness: Brightness.dark,
@@ -58,9 +58,7 @@ class AppTheme {
         color: textTertiary,
         letterSpacing: 1.2,
       ),
-      labelMedium: baseTextTheme.labelMedium?.copyWith(
-        color: textTertiary,
-      ),
+      labelMedium: baseTextTheme.labelMedium?.copyWith(color: textTertiary),
     );
 
     return ThemeData(
@@ -80,9 +78,7 @@ class AppTheme {
         style: FilledButton.styleFrom(
           backgroundColor: primary,
           foregroundColor: onPrimary,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
@@ -90,9 +86,7 @@ class AppTheme {
           backgroundColor: primary,
           foregroundColor: onPrimary,
           elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
@@ -123,19 +117,14 @@ class AppTheme {
           borderSide: const BorderSide(color: error),
         ),
       ),
-      dividerTheme: const DividerThemeData(
-        color: outline,
-        thickness: 1,
-      ),
+      dividerTheme: const DividerThemeData(color: outline, thickness: 1),
       listTileTheme: const ListTileThemeData(
         iconColor: textSecondary,
         selectedColor: primary,
         selectedTileColor: Color(0x1FE8863F),
       ),
       iconTheme: const IconThemeData(color: textSecondary),
-      progressIndicatorTheme: const ProgressIndicatorThemeData(
-        color: primary,
-      ),
+      progressIndicatorTheme: const ProgressIndicatorThemeData(color: primary),
     );
   }
 }
