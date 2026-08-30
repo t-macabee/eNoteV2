@@ -2,12 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
-import '../features/admin/address/address_list_screen.dart';
-import '../features/admin/city/city_list_screen.dart';
-import '../features/admin/instructor/instructor_list_screen.dart';
-import '../features/admin/instrument_type/instrument_type_list_screen.dart';
+import '../features/admin/course/admin_course_stub_screen.dart';
+import '../features/admin/event/event_list_screen.dart';
 import '../features/admin/music_store/music_store_list_screen.dart';
-import '../features/admin/users/user_provision_form_screen.dart';
+import '../features/admin/users/user_grid_screen.dart';
 import '../features/instructor/course/course_list_screen.dart';
 import '../features/store_employee/announcement/announcement_list_screen.dart';
 import '../features/store_employee/instrument/instrument_list_screen.dart';
@@ -22,17 +20,18 @@ class MasterScreen extends StatefulWidget {
 }
 
 class _MasterScreenState extends State<MasterScreen> {
+  // Administrator shell shape (Admin IA rework): 4 top-level tabs — Users,
+  // Music Stores, Courses, Events. Gradovi/Adrese/Tipovi instrumenata no
+  // longer have standalone sidebar entries (their screens/providers still
+  // exist on disk, just unrouted from here — see the rework prompt, point 6,
+  // for the still-open question of where their CRUD should live). Instructor
+  // accounts are folded into the Users tab; the separate "Instruktori" entry
+  // is gone.
   static const _entries = <RoleMenuEntry>[
     RoleMenuEntry(
-      icon: Icons.location_city,
-      label: 'Gradovi',
-      screenBuilder: _buildCityList,
-      allowedRoles: [UserRole.administrator],
-    ),
-    RoleMenuEntry(
-      icon: Icons.location_on,
-      label: 'Adrese',
-      screenBuilder: _buildAddressList,
+      icon: Icons.people_outline,
+      label: 'Korisnici',
+      screenBuilder: _buildUserGrid,
       allowedRoles: [UserRole.administrator],
     ),
     RoleMenuEntry(
@@ -42,15 +41,15 @@ class _MasterScreenState extends State<MasterScreen> {
       allowedRoles: [UserRole.administrator],
     ),
     RoleMenuEntry(
-      icon: Icons.music_note,
-      label: 'Tipovi instrumenata',
-      screenBuilder: _buildInstrumentTypeList,
+      icon: Icons.class_,
+      label: 'Kursevi',
+      screenBuilder: _buildAdminCourseStub,
       allowedRoles: [UserRole.administrator],
     ),
     RoleMenuEntry(
-      icon: Icons.school,
-      label: 'Instruktori',
-      screenBuilder: _buildInstructorList,
+      icon: Icons.event,
+      label: 'Događaji',
+      screenBuilder: _buildEventList,
       allowedRoles: [UserRole.administrator],
     ),
     RoleMenuEntry(
@@ -58,12 +57,6 @@ class _MasterScreenState extends State<MasterScreen> {
       label: 'Kursevi',
       screenBuilder: _buildCourseList,
       allowedRoles: [UserRole.instructor],
-    ),
-    RoleMenuEntry(
-      icon: Icons.person_add,
-      label: 'Korisnici',
-      screenBuilder: _buildUserProvision,
-      allowedRoles: [UserRole.administrator],
     ),
     RoleMenuEntry(
       icon: Icons.piano,
@@ -89,32 +82,24 @@ class _MasterScreenState extends State<MasterScreen> {
   AuthState? _authState;
   NotificationController? _notificationController;
 
-  static Widget _buildCityList(BuildContext context) {
-    return const CityListScreen();
-  }
-
-  static Widget _buildAddressList(BuildContext context) {
-    return const AddressListScreen();
-  }
-
   static Widget _buildMusicStoreList(BuildContext context) {
     return const MusicStoreListScreen();
-  }
-
-  static Widget _buildInstrumentTypeList(BuildContext context) {
-    return const InstrumentTypeListScreen();
-  }
-
-  static Widget _buildInstructorList(BuildContext context) {
-    return const InstructorListScreen();
   }
 
   static Widget _buildCourseList(BuildContext context) {
     return const CourseListScreen();
   }
 
-  static Widget _buildUserProvision(BuildContext context) {
-    return const UserProvisionFormScreen();
+  static Widget _buildUserGrid(BuildContext context) {
+    return const UserGridScreen();
+  }
+
+  static Widget _buildAdminCourseStub(BuildContext context) {
+    return const AdminCourseStubScreen();
+  }
+
+  static Widget _buildEventList(BuildContext context) {
+    return const EventListScreen();
   }
 
   static Widget _buildInstrumentList(BuildContext context) {

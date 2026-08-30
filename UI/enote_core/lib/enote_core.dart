@@ -25,6 +25,7 @@ export 'widgets/confirm_dialog.dart';
 export 'widgets/error_banner.dart';
 export 'widgets/image_field.dart';
 export 'widgets/image_thumbnail.dart';
+export 'widgets/network_image.dart';
 export 'widgets/notification_badge.dart';
 export 'widgets/notification_list.dart';
 export 'formatting/formatters.dart';

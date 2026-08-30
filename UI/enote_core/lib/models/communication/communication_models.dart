@@ -146,6 +146,94 @@ class NotificationUnreadCountDto {
   }
 }
 
+class EventDto {
+  final int id;
+  final String title;
+  final String description;
+  final DateTime startsAt;
+  final DateTime? endsAt;
+  final int? addressId;
+  final String? addressStreet;
+  final String? addressCity;
+  final int? courseId;
+  final String? courseName;
+  final int? instructorId;
+
+  EventDto({
+    required this.id,
+    required this.title,
+    required this.description,
+    required this.startsAt,
+    this.endsAt,
+    this.addressId,
+    this.addressStreet,
+    this.addressCity,
+    this.courseId,
+    this.courseName,
+    this.instructorId,
+  });
+
+  factory EventDto.fromJson(Map<String, dynamic> json) {
+    return EventDto(
+      id: json['id'] as int? ?? 0,
+      title: json['title'] as String? ?? '',
+      description: json['description'] as String? ?? '',
+      startsAt: parseDate(json['startsAt']) ?? DateTime.now(),
+      endsAt: parseDate(json['endsAt']),
+      addressId: json['addressId'] as int?,
+      addressStreet: json['addressStreet'] as String?,
+      addressCity: json['addressCity'] as String?,
+      courseId: json['courseId'] as int?,
+      courseName: json['courseName'] as String?,
+      instructorId: json['instructorId'] as int?,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'title': title,
+    'description': description,
+    'startsAt': startsAt.toIso8601String(),
+    if (endsAt != null) 'endsAt': endsAt!.toIso8601String(),
+    if (addressId != null) 'addressId': addressId,
+    if (addressStreet != null) 'addressStreet': addressStreet,
+    if (addressCity != null) 'addressCity': addressCity,
+    if (courseId != null) 'courseId': courseId,
+    if (courseName != null) 'courseName': courseName,
+    if (instructorId != null) 'instructorId': instructorId,
+  };
+}
+
+class EventRequest {
+  final String title;
+  final String description;
+  final DateTime startsAt;
+  final DateTime? endsAt;
+  final int? addressId;
+  final int? courseId;
+  final int? instructorId;
+
+  EventRequest({
+    required this.title,
+    required this.description,
+    required this.startsAt,
+    this.endsAt,
+    this.addressId,
+    this.courseId,
+    this.instructorId,
+  });
+
+  Map<String, dynamic> toJson() => {
+    'title': title,
+    'description': description,
+    'startsAt': startsAt.toIso8601String(),
+    if (endsAt != null) 'endsAt': endsAt!.toIso8601String(),
+    if (addressId != null) 'addressId': addressId,
+    if (courseId != null) 'courseId': courseId,
+    if (instructorId != null) 'instructorId': instructorId,
+  };
+}
+
 class NotificationPushDto {
   final int? rentalId;
   final int? lectureId;
