@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:enote_core/enote_core.dart';
 import '../theme/app_theme.dart';
 
-const _kSidebarWidth = 240.0;
+const _kSidebarWidth = 280.0;
 
 class RoleMenuEntry {
   final IconData icon;
@@ -26,6 +26,7 @@ class RoleMenu extends StatelessWidget {
   final RoleMenuEntry? selected;
   final ValueChanged<RoleMenuEntry> onSelect;
   final VoidCallback? onLogout;
+  final VoidCallback? onNotificationsTap;
 
   const RoleMenu({
     super.key,
@@ -34,6 +35,7 @@ class RoleMenu extends StatelessWidget {
     required this.onSelect,
     this.selected,
     this.onLogout,
+    this.onNotificationsTap,
   });
 
   List<RoleMenuEntry> get visibleEntries => entries
@@ -45,6 +47,7 @@ class RoleMenu extends StatelessWidget {
     final authState = context.watch<AuthState>();
     final username = authState.username;
     final topRole = authState.topRole;
+    final notificationController = context.watch<NotificationController>();
 
     return Container(
       width: _kSidebarWidth,
@@ -81,17 +84,6 @@ class RoleMenu extends StatelessWidget {
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
                           fontStyle: FontStyle.italic,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      SizedBox(height: 2),
-                      Text(
-                        'MUSIC MANAGEMENT',
-                        style: TextStyle(
-                          color: AppTheme.textTertiary,
-                          fontSize: 9,
-                          letterSpacing: 1.2,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -169,6 +161,11 @@ class RoleMenu extends StatelessWidget {
                       ],
                     ),
                   ),
+                  if (onNotificationsTap != null)
+                    NotificationBadge(
+                      controller: notificationController,
+                      onTap: onNotificationsTap!,
+                    ),
                   if (onLogout != null)
                     IconButton(
                       icon: const Icon(Icons.logout, size: 18),

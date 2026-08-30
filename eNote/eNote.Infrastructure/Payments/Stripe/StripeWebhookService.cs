@@ -7,6 +7,7 @@ using eNote.Application.Features.Rentals.Payments.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Stripe;
+using StripeEvent = Stripe.Event;
 
 namespace eNote.Infrastructure.Payments.Stripe;
 
@@ -27,7 +28,7 @@ public sealed class StripeWebhookService(
 
     public async Task HandleAsync(string rawJson, string signatureHeader, CancellationToken cancellationToken = default)
     {
-        Event stripeEvent;
+        StripeEvent stripeEvent;
 
         try
         {
@@ -42,7 +43,7 @@ public sealed class StripeWebhookService(
         await HandleAsync(stripeEvent, rawJson, cancellationToken);
     }
 
-    public async Task HandleAsync(Event stripeEvent, string rawJson, CancellationToken cancellationToken = default)
+    public async Task HandleAsync(StripeEvent stripeEvent, string rawJson, CancellationToken cancellationToken = default)
     {
         // Fast-path replay guard; the transactional handlers below repeat it to close races.
         if (await context.Set<StripeWebhookEvent>().AnyAsync(e => e.StripeEventId == stripeEvent.Id, cancellationToken))

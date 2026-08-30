@@ -1,5 +1,4 @@
 using eNote.Application.Common.Crud;
-using eNote.Application.Common.Persistence;
 
 namespace eNote.Application.Features.Rentals.ReferenceData.Cities;
 

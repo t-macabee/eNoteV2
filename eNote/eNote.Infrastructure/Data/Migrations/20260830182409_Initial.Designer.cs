@@ -12,7 +12,7 @@ using eNote.Infrastructure.Data;
 namespace eNote.Infrastructure.Data.Migrations
 {
     [DbContext(typeof(ENoteContext))]
-    [Migration("20260829172744_Initial")]
+    [Migration("20260830182409_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -528,6 +528,69 @@ namespace eNote.Infrastructure.Data.Migrations
                     b.ToTable("Announcement", t =>
                         {
                             t.HasCheckConstraint("CK_Announcement_Scope", "(\"CourseId\" IS NOT NULL AND \"MusicStoreId\" IS NULL) OR (\"CourseId\" IS NULL AND \"MusicStoreId\" IS NOT NULL)");
+                        });
+                });
+
+            modelBuilder.Entity("eNote.Domain.Entities.Communication.Event", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("AddressId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("CourseId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("CreatedById")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
+                    b.Property<DateTime?>("EndsAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("InstructorId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("StartsAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("UpdatedById")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AddressId");
+
+                    b.HasIndex("CourseId");
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("InstructorId");
+
+                    b.HasIndex("StartsAt");
+
+                    b.ToTable("Event", t =>
+                        {
+                            t.HasCheckConstraint("CK_Event_EndsAfterStarts", "\"EndsAt\" IS NULL OR \"EndsAt\" > \"StartsAt\"");
                         });
                 });
 
@@ -1580,6 +1643,35 @@ namespace eNote.Infrastructure.Data.Migrations
                     b.Navigation("Course");
 
                     b.Navigation("MusicStore");
+                });
+
+            modelBuilder.Entity("eNote.Domain.Entities.Communication.Event", b =>
+                {
+                    b.HasOne("eNote.Domain.Entities.Shared.Address", "Address")
+                        .WithMany()
+                        .HasForeignKey("AddressId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("eNote.Domain.Entities.Academic.Course", "Course")
+                        .WithMany()
+                        .HasForeignKey("CourseId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("eNote.Infrastructure.Identity.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("eNote.Domain.Entities.Identity.Instructor", "Instructor")
+                        .WithMany()
+                        .HasForeignKey("InstructorId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Address");
+
+                    b.Navigation("Course");
+
+                    b.Navigation("Instructor");
                 });
 
             modelBuilder.Entity("eNote.Domain.Entities.Communication.Notification", b =>

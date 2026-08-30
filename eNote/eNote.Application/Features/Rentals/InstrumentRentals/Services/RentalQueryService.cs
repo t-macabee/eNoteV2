@@ -1,5 +1,4 @@
 using eNote.Application.Features.Identity.Users.Services;
-using eNote.Application.Common.Paging;
 using MapsterMapper;
 
 namespace eNote.Application.Features.Rentals.InstrumentRentals.Services;

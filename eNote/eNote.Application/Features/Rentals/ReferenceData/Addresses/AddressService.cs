@@ -1,7 +1,5 @@
 using eNote.Application.Common.Crud;
-using eNote.Application.Common.Persistence;
 using eNote.Application.Features.Identity.Users.Services;
-using eNote.Domain.Entities.Shared;
 
 namespace eNote.Application.Features.Rentals.ReferenceData.Addresses;
 

@@ -1,8 +1,5 @@
-using eNote.Application.Common.Interfaces;
-using eNote.Application.Common.Paging;
 using eNote.Application.Common.Search;
 using eNote.Domain.Entities.Shared.Base;
-using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Application.Common.Crud;
 

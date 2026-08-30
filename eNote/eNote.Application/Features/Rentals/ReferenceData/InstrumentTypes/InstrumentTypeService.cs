@@ -1,6 +1,4 @@
 using eNote.Application.Common.Crud;
-using eNote.Application.Common.Persistence;
-using eNote.Domain.Entities.Rentals;
 
 namespace eNote.Application.Features.Rentals.ReferenceData.InstrumentTypes;
 

@@ -586,6 +586,54 @@ namespace eNote.Infrastructure.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Event",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Title = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(4000)", maxLength: 4000, nullable: false),
+                    StartsAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    EndsAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    AddressId = table.Column<int>(type: "int", nullable: true),
+                    CourseId = table.Column<int>(type: "int", nullable: true),
+                    InstructorId = table.Column<int>(type: "int", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedById = table.Column<int>(type: "int", nullable: true),
+                    UpdatedById = table.Column<int>(type: "int", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Event", x => x.Id);
+                    table.CheckConstraint("CK_Event_EndsAfterStarts", "\"EndsAt\" IS NULL OR \"EndsAt\" > \"StartsAt\"");
+                    table.ForeignKey(
+                        name: "FK_Event_Address_AddressId",
+                        column: x => x.AddressId,
+                        principalTable: "Address",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Event_AspNetUsers_CreatedById",
+                        column: x => x.CreatedById,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Event_Course_CourseId",
+                        column: x => x.CourseId,
+                        principalTable: "Course",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Event_Instructor_InstructorId",
+                        column: x => x.InstructorId,
+                        principalTable: "Instructor",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Lecture",
                 columns: table => new
                 {
@@ -967,6 +1015,31 @@ namespace eNote.Infrastructure.Data.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_Event_AddressId",
+                table: "Event",
+                column: "AddressId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Event_CourseId",
+                table: "Event",
+                column: "CourseId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Event_CreatedById",
+                table: "Event",
+                column: "CreatedById");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Event_InstructorId",
+                table: "Event",
+                column: "InstructorId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Event_StartsAt",
+                table: "Event",
+                column: "StartsAt");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Instructor_AppUserId",
                 table: "Instructor",
                 column: "AppUserId",
@@ -1151,6 +1224,9 @@ namespace eNote.Infrastructure.Data.Migrations
 
             migrationBuilder.DropTable(
                 name: "Enrollment");
+
+            migrationBuilder.DropTable(
+                name: "Event");
 
             migrationBuilder.DropTable(
                 name: "InstrumentView");

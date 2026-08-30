@@ -218,30 +218,13 @@ class _MasterScreenState extends State<MasterScreen> {
             selected: _selectedEntry,
             onSelect: _onEntrySelected,
             onLogout: _logout,
+            onNotificationsTap: _openNotifications,
           ),
           Expanded(
-            child: Scaffold(
-              appBar: AppBar(
-                title: const Text('eNote V2'),
-                actions: [
-                  Consumer<NotificationController>(
-                    builder: (context, controller, _) => NotificationBadge(
-                      controller: controller,
-                      onTap: _openNotifications,
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.logout),
-                    tooltip: 'Odjava',
-                    onPressed: _logout,
-                  ),
-                ],
-              ),
-              body: _selectedEntry?.screenBuilder(context) ??
-                  const Center(
-                    child: Text('Molimo odaberite opciju iz izbornika.'),
-                  ),
-            ),
+            child: _selectedEntry?.screenBuilder(context) ??
+                const Center(
+                  child: Text('Molimo odaberite opciju iz izbornika.'),
+                ),
           ),
         ],
       ),

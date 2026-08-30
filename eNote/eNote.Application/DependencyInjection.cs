@@ -3,6 +3,7 @@ using eNote.Application.Features.Academic.Courses.Services;
 using eNote.Application.Features.Academic.LectureNotes.Services;
 using eNote.Application.Features.Academic.Lectures.Services;
 using eNote.Application.Features.Communication.Announcements.Services;
+using eNote.Application.Features.Communication.Events;
 using eNote.Application.Features.Communication.Notifications.Services;
 using eNote.Application.Features.Files.Services;
 using eNote.Application.Features.Identity.Instructors;
@@ -26,6 +27,7 @@ public static class DependencyInjection
     {
         services.AddScoped<AddressService>();
         services.AddScoped<CityService>();
+        services.AddScoped<EventService>();
         services.AddScoped<IFileAccessService, FileAccessService>();
         services.AddScoped<InstrumentTypeService>();
         services.AddScoped<MusicStoreService>();

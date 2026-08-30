@@ -4,7 +4,6 @@ using eNote.Application.Features.Rentals.InstrumentRentals;
 using eNote.Application.Features.Rentals.InstrumentRentals.Services;
 using eNote.Contracts.Communication;
 using eNote.Contracts.Rentals;
-using eNote.Domain.Entities.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Infrastructure.Messaging;

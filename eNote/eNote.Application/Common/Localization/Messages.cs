@@ -93,6 +93,9 @@ public static class Messages
     public const string FileTooLarge = "Veličina fajla prelazi maksimalno dozvoljenih 5 MB.";
     public const string InvalidFileFormat = "Dozvoljeni formati su JPEG, PNG i WebP.";
 
+    public const string EventNotFound = "Događaj nije pronađen.";
+    public const string EventEndsBeforeStarts = "Vrijeme završetka mora biti nakon vremena početka.";
+
     public static string RoleCreateFailed(string role, string errors) =>
         $"Greška pri kreiranju uloge {role}: {errors}";
 
