@@ -1,10 +1,10 @@
-import 'package:file_picker/file_picker.dart';
+import 'package:enote_core/enote_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import 'package:enote_core/enote_core.dart';
 import '../../../widgets/entity_form_scaffold.dart';
+import '../../../widgets/image_upload_helper.dart';
 import 'announcement_provider.dart';
 
 class AnnouncementFormScreen extends StatefulWidget {
@@ -50,40 +50,25 @@ class _AnnouncementFormScreenState extends State<AnnouncementFormScreen> {
     super.dispose();
   }
 
-  Future<Uint8List?> _pickImageBytes() async {
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.image,
-      withData: true,
-    );
-    if (result == null || result.files.isEmpty) return null;
-    return result.files.first.bytes;
-  }
-
   Future<String?> _uploadImage(
-      Uint8List bytes, String fileName, String contentType) async {
+      Uint8List bytes, String fileName, String contentType) {
     final provider = context.read<StoreAnnouncementProvider>();
-    try {
-      final updated = await provider.uploadImage(
-        widget.existing!.id,
-        bytes,
-        fileName,
-        contentType,
-      );
-      if (mounted) {
-        setState(() {
-          _currentImagePath = updated.imagePath;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Slika uspješno postavljena.')),
-        );
-      }
-      return updated.imagePath;
-    } catch (e) {
-      if (mounted) {
-        ErrorBanner.show(context, message: userMessage(e));
-      }
-      return null;
-    }
+    return uploadImageFor(
+      provider,
+      widget.existing!.id,
+      bytes,
+      fileName,
+      contentType,
+      context: context,
+      onSuccess: (updated) {
+        if (mounted) {
+          setState(() {
+            _currentImagePath = updated.imagePath;
+          });
+        }
+        return updated.imagePath;
+      },
+    );
   }
 
   Future<bool> _save() async {
@@ -127,7 +112,7 @@ class _AnnouncementFormScreenState extends State<AnnouncementFormScreen> {
           const SizedBox(height: 8),
           ImageField(
             imageUrl: _currentImagePath,
-            imagePicker: _pickImageBytes,
+            imagePicker: pickImageBytes,
             onUpload: _uploadImage,
             apiClient: context.read<ApiClient>(),
           ),

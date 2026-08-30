@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../api/api_client.dart';
+import 'network_image.dart';
 
 typedef ImageUploadCallback = Future<String?> Function(Uint8List bytes, String fileName, String contentType);
 
@@ -13,13 +14,6 @@ class ImageField extends StatefulWidget {
   final ImageUploadCallback? onUpload;
   final Future<Uint8List?> Function()? imagePicker;
 
-  /// The API client used to resolve a server-relative [imageUrl] (one starting
-  /// with `/`). Such paths are API routes (e.g. `/api/v1/uploads/...`), not
-  /// static files, so they must be fetched over the network with auth — not via
-  /// [Image.file]. The full URL is built from [ApiClient.baseUrl] and the auth
-  /// headers from [ApiClient.authHeaders], read at build time so they reflect
-  /// the latest token. When null, a leading-`/` url falls back to the
-  /// placeholder.
   final ApiClient? apiClient;
 
   const ImageField({
@@ -79,40 +73,13 @@ class _ImageFieldState extends State<ImageField> {
       );
     }
 
-    if (widget.imageUrl != null && widget.imageUrl!.isNotEmpty) {
-      final trimmed = widget.imageUrl!.trim();
-      if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
-        return ClipRRect(
-          borderRadius: BorderRadius.circular(widget.borderRadius),
-          child: Image.network(
-            trimmed,
-            width: widget.size,
-            height: widget.size,
-            fit: BoxFit.cover,
-            errorBuilder: (_, _, _) => _placeholder(),
-          ),
-        );
-      }
-      if (trimmed.startsWith('/')) {
-        final client = widget.apiClient;
-        if (client != null) {
-          return ClipRRect(
-            borderRadius: BorderRadius.circular(widget.borderRadius),
-            child: Image.network(
-              '${client.baseUrl}$trimmed',
-              headers: client.authHeaders,
-              width: widget.size,
-              height: widget.size,
-              fit: BoxFit.cover,
-              errorBuilder: (_, _, _) => _placeholder(),
-            ),
-          );
-        }
-        return _placeholder();
-      }
-    }
-
-    return _placeholder();
+    return networkImageOrPlaceholder(
+      widget.imageUrl,
+      widget.apiClient,
+      size: widget.size,
+      borderRadius: widget.borderRadius,
+      placeholder: _placeholder,
+    );
   }
 
   Widget _placeholder() {

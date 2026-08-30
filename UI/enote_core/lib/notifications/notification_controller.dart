@@ -8,18 +8,6 @@ import '../api/api_error_mapper.dart';
 import '../api/api_exception.dart';
 import '../models/communication/communication_models.dart';
 
-/// Not wired in `enote_desktop`. Intended consumer is the planned
-/// `enote_mobile` Student app; `startPolling()` is deliberately never called
-/// from desktop. Swap polling for SignalR without either widget changing.
-///
-/// Shared state behind the shell's notification bell and the full
-/// notification screen. One controller instance drives both widgets, so
-/// marking something read from the list updates the bell's count with no
-/// separate fetch, and the two never fall out of sync.
-///
-/// Polls on a timer for now — swapping the polling loop for a SignalR push
-/// subscription later (see the Flutter plan's risk register) can happen
-/// entirely inside this class without either widget changing.
 class NotificationController extends ChangeNotifier {
   final ApiClient apiClient;
   final String endpoint;
