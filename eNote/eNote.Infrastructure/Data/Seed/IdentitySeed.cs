@@ -91,7 +91,7 @@ internal static class StoreSeed
             return storeId.Value;
         }
 
-        var store = new MusicStore("Test Music Store", "09:00-17:00");
+        var store = new MusicStore("Test Music Store", "09:00-17:00", addressId: 1);
 
         context.Set<MusicStore>().Add(store);
 

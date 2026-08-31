@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
-import '../features/admin/course/admin_course_stub_screen.dart';
+import '../features/admin/course/admin_course_list_screen.dart';
 import '../features/admin/event/event_list_screen.dart';
 import '../features/admin/music_store/music_store_list_screen.dart';
 import '../features/admin/users/user_grid_screen.dart';
@@ -43,7 +43,7 @@ class _MasterScreenState extends State<MasterScreen> {
     RoleMenuEntry(
       icon: Icons.class_,
       label: 'Kursevi',
-      screenBuilder: _buildAdminCourseStub,
+      screenBuilder: _buildAdminCourseList,
       allowedRoles: [UserRole.administrator],
     ),
     RoleMenuEntry(
@@ -94,8 +94,8 @@ class _MasterScreenState extends State<MasterScreen> {
     return const UserGridScreen();
   }
 
-  static Widget _buildAdminCourseStub(BuildContext context) {
-    return const AdminCourseStubScreen();
+  static Widget _buildAdminCourseList(BuildContext context) {
+    return const AdminCourseListScreen();
   }
 
   static Widget _buildEventList(BuildContext context) {

@@ -7,11 +7,33 @@ public static class DevelopmentDataSeed
 {
     public static async Task SeedAsync(ENoteContext context, IClock clock)
     {
+        await MusicStoreSeed.SeedStores(context);
         await CourseSeed.SeedCourses(context);
         await LectureSeed.SeedLectures(context);
         await InstrumentSeed.SeedInstruments(context);
         await EnrollmentSeed.SeedEnrollments(context);
         await StudentMembershipSeed.SeedMemberships(context, clock);
+    }
+}
+
+internal static class MusicStoreSeed
+{
+    // IdentitySeed.StoreSeed always creates exactly one default store first
+    // (see EnsureDefaultStoreAsync), so ">1" is the right idempotency check
+    // here rather than "any at all".
+    public static async Task SeedStores(ENoteContext context)
+    {
+        if (await context.Set<MusicStore>().CountAsync() > 1)
+        {
+            return;
+        }
+
+        context.Set<MusicStore>().AddRange(
+            new MusicStore("Muzička radnja Mostar", "08:00-16:00", addressId: 6),
+            new MusicStore("Muzička radnja Banja Luka", "10:00-18:00", addressId: 7)
+        );
+
+        await context.SaveChangesAsync();
     }
 }
 

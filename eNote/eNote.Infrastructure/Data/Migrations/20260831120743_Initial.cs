@@ -893,7 +893,9 @@ namespace eNote.Infrastructure.Data.Migrations
                     { 2, 1, "15", "Maršala Tita" },
                     { 3, 1, "8", "Mula Mustafe Bašeskije" },
                     { 4, 1, "18", "Obala Kulina bana" },
-                    { 5, 1, "14", "Veliki Alifakovac" }
+                    { 5, 1, "14", "Veliki Alifakovac" },
+                    { 6, 2, "5", "Maršala Tita" },
+                    { 7, 3, "20", "Kralja Petra I Karađorđevića" }
                 });
 
             migrationBuilder.CreateIndex(

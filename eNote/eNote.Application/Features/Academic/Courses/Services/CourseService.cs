@@ -1,10 +1,12 @@
 using eNote.Application.Features.Identity.Instructors;
+using eNote.Application.Features.Identity.Users;
+using eNote.Application.Features.Identity.Users.Services;
 using MapsterMapper;
 using Microsoft.Extensions.Logging;
 
 namespace eNote.Application.Features.Academic.Courses.Services;
 
-public sealed class CourseService(IAppDbContext context, IMapper mapper, ICurrentUserContext currentUser, IStudentContext students, InstructorAccessService instructorAccess, ILogger<CourseService> logger)
+public sealed class CourseService(IAppDbContext context, IMapper mapper, ICurrentUserContext currentUser, IStudentContext students, InstructorAccessService instructorAccess, ILogger<CourseService> logger, IUserIdentityService identityService)
 {
     public async Task<CourseDto> GetByIdForInstructorAsync(int id, CancellationToken cancellationToken = default)
     {
@@ -56,6 +58,71 @@ public sealed class CourseService(IAppDbContext context, IMapper mapper, ICurren
             .ApplySearch(search);
 
         return await query.ToPagedResultAsync(search, mapper.Map<CourseDto>, q => q.OrderByDescending(x => x.StartDate), cancellationToken);
+    }
+
+    public async Task<PagedResult<CourseDto>> GetPagedForAdminAsync(CourseSearchObject search, CancellationToken cancellationToken = default)
+    {
+        var query = context.Set<Course>()
+            .AsNoTracking()
+            .Include(c => c.Enrollments)
+            .Include(c => c.Instructor)
+            .ApplySearch(search);
+
+        (var page, var pageSize) = PagingLimits.Normalize(search.Page, search.PageSize);
+
+        var appUserIds = await query
+            .OrderByDescending(c => c.StartDate)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(c => c.Instructor.AppUserId)
+            .Distinct()
+            .ToListAsync(cancellationToken);
+
+        var users = await identityService.GetUsersBulkAsync(appUserIds, cancellationToken);
+
+        return await query.ToPagedResultAsync(
+            search,
+            entity => MapAdmin(entity, users),
+            q => q.OrderByDescending(x => x.StartDate),
+            cancellationToken);
+    }
+
+    public async Task<CourseDto> GetByIdForAdminAsync(int id, CancellationToken cancellationToken = default)
+    {
+        var entity = await context.Set<Course>()
+            .AsNoTracking()
+            .Include(c => c.Enrollments)
+            .Include(c => c.Instructor)
+            .FirstOrDefaultAsync(c => c.Id == id, cancellationToken)
+            ?? throw new NotFoundException(Messages.CourseNotFound);
+
+        var dto = mapper.Map<CourseDto>(entity);
+        dto.InstructorName = await ResolveInstructorNameAsync(entity.Instructor.AppUserId, cancellationToken);
+        return dto;
+    }
+
+    private CourseDto MapAdmin(Course course, IReadOnlyDictionary<int, UserIdentityDto> users)
+    {
+        var dto = mapper.Map<CourseDto>(course);
+        dto.InstructorName = FormatInstructorName(users.GetValueOrDefault(course.Instructor.AppUserId));
+        return dto;
+    }
+
+    private async Task<string?> ResolveInstructorNameAsync(int appUserId, CancellationToken cancellationToken)
+    {
+        var user = await identityService.GetUserAsync(appUserId, cancellationToken);
+        return FormatInstructorName(user);
+    }
+
+    private static string? FormatInstructorName(UserIdentityDto? user)
+    {
+        if (user is null)
+        {
+            return null;
+        }
+
+        var fullName = $"{user.FirstName} {user.LastName}".Trim();
+        return string.IsNullOrWhiteSpace(fullName) ? user.Username : fullName;
     }
 
     public async Task<CourseDto> CreateAsync(CourseRequest request, CancellationToken cancellationToken = default)

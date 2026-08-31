@@ -9,6 +9,7 @@ class CourseDto {
   final DateTime? endDate;
   final double price;
   final int enrolledCount;
+  final String? instructorName;
 
   CourseDto({
     required this.id,
@@ -20,6 +21,7 @@ class CourseDto {
     this.endDate,
     required this.price,
     required this.enrolledCount,
+    this.instructorName,
   });
 
   factory CourseDto.fromJson(Map<String, dynamic> json) {
@@ -33,6 +35,7 @@ class CourseDto {
       endDate: parseDate(json['endDate']),
       price: (json['price'] as num?)?.toDouble() ?? 0.0,
       enrolledCount: json['enrolledCount'] as int? ?? 0,
+      instructorName: json['instructorName'] as String?,
     );
   }
 
@@ -46,6 +49,7 @@ class CourseDto {
     if (endDate != null) 'endDate': endDate!.toIso8601String(),
     'price': price,
     'enrolledCount': enrolledCount,
+    if (instructorName != null) 'instructorName': instructorName,
   };
 }
 

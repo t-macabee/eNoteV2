@@ -29,7 +29,9 @@ internal static class ModelBuilderSeed
             new Address { Id = 2, CityId = 1, Street = "Maršala Tita", Number = "15" },
             new Address { Id = 3, CityId = 1, Street = "Mula Mustafe Bašeskije", Number = "8" },
             new Address { Id = 4, CityId = 1, Street = "Obala Kulina bana", Number = "18" },
-            new Address { Id = 5, CityId = 1, Street = "Veliki Alifakovac", Number = "14" }
+            new Address { Id = 5, CityId = 1, Street = "Veliki Alifakovac", Number = "14" },
+            new Address { Id = 6, CityId = 2, Street = "Maršala Tita", Number = "5" },
+            new Address { Id = 7, CityId = 3, Street = "Kralja Petra I Karađorđevića", Number = "20" }
         );
     }
 

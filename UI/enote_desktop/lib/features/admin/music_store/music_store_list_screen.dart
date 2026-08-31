@@ -7,6 +7,7 @@ import 'package:enote_core/enote_core.dart';
 import '../../../widgets/entity_form_scaffold.dart';
 import '../../../widgets/entity_grid_screen.dart';
 import '../../../widgets/pdf_report_button.dart';
+import '../city/city_provider.dart';
 import 'music_store_form_screen.dart';
 import 'music_store_provider.dart';
 
@@ -19,6 +20,31 @@ class MusicStoreListScreen extends StatefulWidget {
 
 class _MusicStoreListScreenState extends State<MusicStoreListScreen> {
   final _gridKey = GlobalKey<EntityGridScreenState<MusicStoreDto>>();
+
+  /// null = "Svi gradovi" (default) — no city filter applied.
+  int? _cityId;
+  List<CityDto> _cities = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCities();
+  }
+
+  Future<void> _loadCities() async {
+    final result = await context.read<CityProvider>().search({
+      'page': 1,
+      'pageSize': 100,
+      'includeTotalCount': true,
+    });
+    if (!mounted) return;
+    setState(() => _cities = result.items);
+  }
+
+  void _applyFilters() {
+    setState(() {});
+    _gridKey.currentState?.refresh(resetPage: true);
+  }
 
   Future<void> _openForm([MusicStoreDto? existing]) async {
     await EntityFormScaffold.showAsDialog(
@@ -47,12 +73,34 @@ class _MusicStoreListScreenState extends State<MusicStoreListScreen> {
           await context.read<MusicStoreProvider>().remove(item.id);
           return true;
         },
+        filterBar: SizedBox(
+          width: 220,
+          child: DropdownButtonFormField<int?>(
+            initialValue: _cityId,
+            decoration: const InputDecoration(labelText: 'Grad'),
+            items: [
+              const DropdownMenuItem(value: null, child: Text('Svi gradovi')),
+              ..._cities.map(
+                (city) => DropdownMenuItem(value: city.id, child: Text(city.name)),
+              ),
+            ],
+            onChanged: (cityId) {
+              _cityId = cityId;
+              _applyFilters();
+            },
+          ),
+        ),
+        // Read `_cityId` at call time (a field), not a snapshot — matches
+        // UserGridScreen's rationale: setState doesn't rebuild
+        // synchronously, so this closure must see the latest value even if
+        // it runs against a stale build.
         fetcher: (page, pageSize, search) =>
             context.read<MusicStoreProvider>().search({
           'page': page,
           'pageSize': pageSize,
           'includeTotalCount': true,
           if (search.isNotEmpty) 'storeName': search,
+          if (_cityId != null) 'cityId': _cityId,
         }),
         onAdd: () => _openForm(),
         trailing: PdfReportButton(

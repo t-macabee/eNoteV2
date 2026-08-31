@@ -15,4 +15,6 @@ public class CourseDto
     public decimal Price { get; set; }
 
     public int EnrolledCount { get; set; }
+
+    public string? InstructorName { get; set; }
 }

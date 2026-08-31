@@ -6,6 +6,7 @@ import 'package:enote_core/enote_core.dart';
 import 'theme/app_theme.dart';
 import 'features/admin/address/address_provider.dart';
 import 'features/admin/city/city_provider.dart';
+import 'features/admin/course/admin_course_provider.dart';
 import 'features/admin/event/event_provider.dart';
 import 'features/admin/instructor/instructor_provider.dart';
 import 'features/admin/instrument_type/instrument_type_provider.dart';
@@ -63,6 +64,9 @@ class MyApp extends StatelessWidget {
         ),
         ChangeNotifierProvider<CourseProvider>(
           create: (_) => CourseProvider(apiClient: apiClient),
+        ),
+        ChangeNotifierProvider<AdminCourseProvider>(
+          create: (_) => AdminCourseProvider(apiClient: apiClient),
         ),
         ChangeNotifierProvider<LectureProvider>(
           create: (_) => LectureProvider(apiClient: apiClient),

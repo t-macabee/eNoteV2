@@ -1301,6 +1301,20 @@ namespace eNote.Infrastructure.Data.Migrations
                             CityId = 1,
                             Number = "14",
                             Street = "Veliki Alifakovac"
+                        },
+                        new
+                        {
+                            Id = 6,
+                            CityId = 2,
+                            Number = "5",
+                            Street = "Maršala Tita"
+                        },
+                        new
+                        {
+                            Id = 7,
+                            CityId = 3,
+                            Number = "20",
+                            Street = "Kralja Petra I Karađorđevića"
                         });
                 });
 
