@@ -4,4 +4,5 @@ public sealed class MusicStoreRequest
 {
     public string StoreName { get; set; } = null!;
     public string BusinessHours { get; set; } = null!;
+    public int? AddressId { get; set; }
 }

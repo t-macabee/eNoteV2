@@ -10,6 +10,11 @@ public sealed class MusicStoreConfig : IEntityTypeConfiguration<MusicStore>
         builder.Property(m => m.StoreName).HasStringConfig(100, true);
         builder.Property(m => m.BusinessHours).HasStringConfig(50, true);
 
+        builder.HasOne(x => x.Address)
+            .WithMany()
+            .HasForeignKey(x => x.AddressId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         builder.HasMany(x => x.Employees)
                .WithOne(e => e.MusicStore)
                .HasForeignKey(e => e.MusicStoreId)
@@ -19,5 +24,7 @@ public sealed class MusicStoreConfig : IEntityTypeConfiguration<MusicStore>
                .WithOne(i => i.MusicStore)
                .HasForeignKey(i => i.MusicStoreId)
                .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasIndex(x => x.AddressId);
     }
 }

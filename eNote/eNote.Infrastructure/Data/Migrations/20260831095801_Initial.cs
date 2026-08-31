@@ -29,6 +29,37 @@ namespace eNote.Infrastructure.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "AspNetUsers",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    FirstName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
+                    LastName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
+                    DateOfBirth = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    PicturePath = table.Column<string>(type: "nvarchar(512)", maxLength: 512, nullable: true),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false),
+                    UserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
+                    NormalizedUserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
+                    Email = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
+                    NormalizedEmail = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
+                    EmailConfirmed = table.Column<bool>(type: "bit", nullable: false),
+                    PasswordHash = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    SecurityStamp = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ConcurrencyStamp = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    PhoneNumber = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    PhoneNumberConfirmed = table.Column<bool>(type: "bit", nullable: false),
+                    TwoFactorEnabled = table.Column<bool>(type: "bit", nullable: false),
+                    LockoutEnd = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    LockoutEnabled = table.Column<bool>(type: "bit", nullable: false),
+                    AccessFailedCount = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AspNetUsers", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "City",
                 columns: table => new
                 {
@@ -53,24 +84,6 @@ namespace eNote.Infrastructure.Data.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_InstrumentType", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "MusicStore",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    StoreName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    BusinessHours = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    CreatedById = table.Column<int>(type: "int", nullable: true),
-                    UpdatedById = table.Column<int>(type: "int", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_MusicStore", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -148,100 +161,6 @@ namespace eNote.Infrastructure.Data.Migrations
                         principalTable: "AspNetRoles",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Address",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    CityId = table.Column<int>(type: "int", nullable: false),
-                    Street = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    Number = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Address", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Address_City_CityId",
-                        column: x => x.CityId,
-                        principalTable: "City",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Instrument",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    InstrumentTypeId = table.Column<int>(type: "int", nullable: false),
-                    MusicStoreId = table.Column<int>(type: "int", nullable: false),
-                    Model = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    Manufacturer = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    Description = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
-                    ImagePath = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    CreatedById = table.Column<int>(type: "int", nullable: true),
-                    UpdatedById = table.Column<int>(type: "int", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Instrument", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Instrument_InstrumentType_InstrumentTypeId",
-                        column: x => x.InstrumentTypeId,
-                        principalTable: "InstrumentType",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_Instrument_MusicStore_MusicStoreId",
-                        column: x => x.MusicStoreId,
-                        principalTable: "MusicStore",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "AspNetUsers",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    FirstName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
-                    LastName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
-                    DateOfBirth = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    PicturePath = table.Column<string>(type: "nvarchar(512)", maxLength: 512, nullable: true),
-                    IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    AddressId = table.Column<int>(type: "int", nullable: true),
-                    UserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
-                    NormalizedUserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
-                    Email = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
-                    NormalizedEmail = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
-                    EmailConfirmed = table.Column<bool>(type: "bit", nullable: false),
-                    PasswordHash = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    SecurityStamp = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    ConcurrencyStamp = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    PhoneNumber = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    PhoneNumberConfirmed = table.Column<bool>(type: "bit", nullable: false),
-                    TwoFactorEnabled = table.Column<bool>(type: "bit", nullable: false),
-                    LockoutEnd = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
-                    LockoutEnabled = table.Column<bool>(type: "bit", nullable: false),
-                    AccessFailedCount = table.Column<int>(type: "int", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_AspNetUsers", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_AspNetUsers_Address_AddressId",
-                        column: x => x.AddressId,
-                        principalTable: "Address",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -353,66 +272,6 @@ namespace eNote.Infrastructure.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "InstrumentView",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    UserId = table.Column<int>(type: "int", nullable: false),
-                    InstrumentId = table.Column<int>(type: "int", nullable: false),
-                    ViewCount = table.Column<int>(type: "int", nullable: false),
-                    LastViewedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_InstrumentView", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_InstrumentView_AspNetUsers_UserId",
-                        column: x => x.UserId,
-                        principalTable: "AspNetUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_InstrumentView_Instrument_InstrumentId",
-                        column: x => x.InstrumentId,
-                        principalTable: "Instrument",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "MusicStoreEmployee",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    AppUserId = table.Column<int>(type: "int", nullable: false),
-                    MusicStoreId = table.Column<int>(type: "int", nullable: false),
-                    IsManager = table.Column<bool>(type: "bit", nullable: false),
-                    IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    CreatedById = table.Column<int>(type: "int", nullable: true),
-                    UpdatedById = table.Column<int>(type: "int", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_MusicStoreEmployee", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_MusicStoreEmployee_AspNetUsers_AppUserId",
-                        column: x => x.AppUserId,
-                        principalTable: "AspNetUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_MusicStoreEmployee_MusicStore_MusicStoreId",
-                        column: x => x.MusicStoreId,
-                        principalTable: "MusicStore",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "Student",
                 columns: table => new
                 {
@@ -435,6 +294,27 @@ namespace eNote.Infrastructure.Data.Migrations
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Address",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    CityId = table.Column<int>(type: "int", nullable: false),
+                    Street = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    Number = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Address", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Address_City_CityId",
+                        column: x => x.CityId,
+                        principalTable: "City",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -468,28 +348,14 @@ namespace eNote.Infrastructure.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "InstrumentRental",
+                name: "MusicStore",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    StudentProfileId = table.Column<int>(type: "int", nullable: false),
-                    InstrumentId = table.Column<int>(type: "int", nullable: false),
-                    MusicStoreId = table.Column<int>(type: "int", nullable: false),
-                    RentalStatus = table.Column<int>(type: "int", nullable: false),
-                    RequestNote = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Note = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    RequestedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    ApprovedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    RejectedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    PickedUpAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    ReturnedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    ApprovedById = table.Column<int>(type: "int", nullable: true),
-                    RejectedById = table.Column<int>(type: "int", nullable: true),
-                    Fee = table.Column<decimal>(type: "decimal(10,2)", precision: 10, scale: 2, nullable: false),
-                    IsPaid = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
-                    PaidAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    AmountPaid = table.Column<decimal>(type: "decimal(10,2)", precision: 10, scale: 2, nullable: true),
+                    StoreName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    BusinessHours = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    AddressId = table.Column<int>(type: "int", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedById = table.Column<int>(type: "int", nullable: true),
@@ -497,61 +363,13 @@ namespace eNote.Infrastructure.Data.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_InstrumentRental", x => x.Id);
+                    table.PrimaryKey("PK_MusicStore", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_InstrumentRental_Instrument_InstrumentId",
-                        column: x => x.InstrumentId,
-                        principalTable: "Instrument",
+                        name: "FK_MusicStore_Address_AddressId",
+                        column: x => x.AddressId,
+                        principalTable: "Address",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_InstrumentRental_Student_StudentProfileId",
-                        column: x => x.StudentProfileId,
-                        principalTable: "Student",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Announcement",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    CourseId = table.Column<int>(type: "int", nullable: true),
-                    MusicStoreId = table.Column<int>(type: "int", nullable: true),
-                    Title = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: false),
-                    Content = table.Column<string>(type: "nvarchar(4000)", maxLength: 4000, nullable: false),
-                    ImagePath = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
-                    PublishedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    IsActive = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    CreatedById = table.Column<int>(type: "int", nullable: true),
-                    UpdatedById = table.Column<int>(type: "int", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Announcement", x => x.Id);
-                    table.CheckConstraint("CK_Announcement_Scope", "(\"CourseId\" IS NOT NULL AND \"MusicStoreId\" IS NULL) OR (\"CourseId\" IS NULL AND \"MusicStoreId\" IS NOT NULL)");
-                    table.ForeignKey(
-                        name: "FK_Announcement_AspNetUsers_CreatedById",
-                        column: x => x.CreatedById,
-                        principalTable: "AspNetUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_Announcement_Course_CourseId",
-                        column: x => x.CourseId,
-                        principalTable: "Course",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_Announcement_MusicStore_MusicStoreId",
-                        column: x => x.MusicStoreId,
-                        principalTable: "MusicStore",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -666,23 +484,18 @@ namespace eNote.Infrastructure.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "RentalPayment",
+                name: "Announcement",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    InstrumentRentalId = table.Column<int>(type: "int", nullable: false),
-                    MusicStoreId = table.Column<int>(type: "int", nullable: false),
-                    StripePaymentIntentId = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: false),
-                    StripeChargeId = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: true),
-                    AmountChargedCents = table.Column<long>(type: "bigint", nullable: false),
-                    Currency = table.Column<string>(type: "nvarchar(3)", maxLength: 3, nullable: false),
-                    Status = table.Column<int>(type: "int", nullable: false),
-                    StripeEventId = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: true),
-                    PaidAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    RefundedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    RefundedCents = table.Column<long>(type: "bigint", nullable: true),
-                    StripeRefundId = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: true),
+                    CourseId = table.Column<int>(type: "int", nullable: true),
+                    MusicStoreId = table.Column<int>(type: "int", nullable: true),
+                    Title = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: false),
+                    Content = table.Column<string>(type: "nvarchar(4000)", maxLength: 4000, nullable: false),
+                    ImagePath = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    PublishedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedById = table.Column<int>(type: "int", nullable: true),
@@ -690,13 +503,93 @@ namespace eNote.Infrastructure.Data.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_RentalPayment", x => x.Id);
+                    table.PrimaryKey("PK_Announcement", x => x.Id);
+                    table.CheckConstraint("CK_Announcement_Scope", "(\"CourseId\" IS NOT NULL AND \"MusicStoreId\" IS NULL) OR (\"CourseId\" IS NULL AND \"MusicStoreId\" IS NOT NULL)");
                     table.ForeignKey(
-                        name: "FK_RentalPayment_InstrumentRental_InstrumentRentalId",
-                        column: x => x.InstrumentRentalId,
-                        principalTable: "InstrumentRental",
+                        name: "FK_Announcement_AspNetUsers_CreatedById",
+                        column: x => x.CreatedById,
+                        principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Announcement_Course_CourseId",
+                        column: x => x.CourseId,
+                        principalTable: "Course",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Announcement_MusicStore_MusicStoreId",
+                        column: x => x.MusicStoreId,
+                        principalTable: "MusicStore",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Instrument",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    InstrumentTypeId = table.Column<int>(type: "int", nullable: false),
+                    MusicStoreId = table.Column<int>(type: "int", nullable: false),
+                    Model = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    Manufacturer = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
+                    ImagePath = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedById = table.Column<int>(type: "int", nullable: true),
+                    UpdatedById = table.Column<int>(type: "int", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Instrument", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Instrument_InstrumentType_InstrumentTypeId",
+                        column: x => x.InstrumentTypeId,
+                        principalTable: "InstrumentType",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Instrument_MusicStore_MusicStoreId",
+                        column: x => x.MusicStoreId,
+                        principalTable: "MusicStore",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "MusicStoreEmployee",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    AppUserId = table.Column<int>(type: "int", nullable: false),
+                    MusicStoreId = table.Column<int>(type: "int", nullable: false),
+                    IsManager = table.Column<bool>(type: "bit", nullable: false),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedById = table.Column<int>(type: "int", nullable: true),
+                    UpdatedById = table.Column<int>(type: "int", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_MusicStoreEmployee", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_MusicStoreEmployee_AspNetUsers_AppUserId",
+                        column: x => x.AppUserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_MusicStoreEmployee_MusicStore_MusicStoreId",
+                        column: x => x.MusicStoreId,
+                        principalTable: "MusicStore",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -784,6 +677,79 @@ namespace eNote.Infrastructure.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "InstrumentRental",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    StudentProfileId = table.Column<int>(type: "int", nullable: false),
+                    InstrumentId = table.Column<int>(type: "int", nullable: false),
+                    MusicStoreId = table.Column<int>(type: "int", nullable: false),
+                    RentalStatus = table.Column<int>(type: "int", nullable: false),
+                    RequestNote = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Note = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    RequestedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    ApprovedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    RejectedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    PickedUpAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    ReturnedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    ApprovedById = table.Column<int>(type: "int", nullable: true),
+                    RejectedById = table.Column<int>(type: "int", nullable: true),
+                    Fee = table.Column<decimal>(type: "decimal(10,2)", precision: 10, scale: 2, nullable: false),
+                    IsPaid = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
+                    PaidAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    AmountPaid = table.Column<decimal>(type: "decimal(10,2)", precision: 10, scale: 2, nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedById = table.Column<int>(type: "int", nullable: true),
+                    UpdatedById = table.Column<int>(type: "int", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_InstrumentRental", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_InstrumentRental_Instrument_InstrumentId",
+                        column: x => x.InstrumentId,
+                        principalTable: "Instrument",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_InstrumentRental_Student_StudentProfileId",
+                        column: x => x.StudentProfileId,
+                        principalTable: "Student",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "InstrumentView",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    UserId = table.Column<int>(type: "int", nullable: false),
+                    InstrumentId = table.Column<int>(type: "int", nullable: false),
+                    ViewCount = table.Column<int>(type: "int", nullable: false),
+                    LastViewedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_InstrumentView", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_InstrumentView_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_InstrumentView_Instrument_InstrumentId",
+                        column: x => x.InstrumentId,
+                        principalTable: "Instrument",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "AssignmentSubmission",
                 columns: table => new
                 {
@@ -812,6 +778,40 @@ namespace eNote.Infrastructure.Data.Migrations
                         name: "FK_AssignmentSubmission_Student_StudentId",
                         column: x => x.StudentId,
                         principalTable: "Student",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "RentalPayment",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    InstrumentRentalId = table.Column<int>(type: "int", nullable: false),
+                    MusicStoreId = table.Column<int>(type: "int", nullable: false),
+                    StripePaymentIntentId = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: false),
+                    StripeChargeId = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: true),
+                    AmountChargedCents = table.Column<long>(type: "bigint", nullable: false),
+                    Currency = table.Column<string>(type: "nvarchar(3)", maxLength: 3, nullable: false),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    StripeEventId = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: true),
+                    PaidAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    RefundedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    RefundedCents = table.Column<long>(type: "bigint", nullable: true),
+                    StripeRefundId = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedById = table.Column<int>(type: "int", nullable: true),
+                    UpdatedById = table.Column<int>(type: "int", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_RentalPayment", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_RentalPayment_InstrumentRental_InstrumentRentalId",
+                        column: x => x.InstrumentRentalId,
+                        principalTable: "InstrumentRental",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
@@ -954,11 +954,6 @@ namespace eNote.Infrastructure.Data.Migrations
                 column: "NormalizedEmail");
 
             migrationBuilder.CreateIndex(
-                name: "IX_AspNetUsers_AddressId",
-                table: "AspNetUsers",
-                column: "AddressId");
-
-            migrationBuilder.CreateIndex(
                 name: "UserNameIndex",
                 table: "AspNetUsers",
                 column: "NormalizedUserName",
@@ -1092,6 +1087,11 @@ namespace eNote.Infrastructure.Data.Migrations
                 name: "IX_LectureNote_LectureId",
                 table: "LectureNote",
                 column: "LectureId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_MusicStore_AddressId",
+                table: "MusicStore",
+                column: "AddressId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_MusicStoreEmployee_AppUserId",
@@ -1283,16 +1283,16 @@ namespace eNote.Infrastructure.Data.Migrations
                 name: "Course");
 
             migrationBuilder.DropTable(
-                name: "Instructor");
-
-            migrationBuilder.DropTable(
-                name: "AspNetUsers");
-
-            migrationBuilder.DropTable(
                 name: "Address");
 
             migrationBuilder.DropTable(
+                name: "Instructor");
+
+            migrationBuilder.DropTable(
                 name: "City");
+
+            migrationBuilder.DropTable(
+                name: "AspNetUsers");
         }
     }
 }

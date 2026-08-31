@@ -89,29 +89,26 @@ class _UserGridScreenState extends State<UserGridScreen> {
                 ),
               )
             : null,
-        filterBar: Align(
-          alignment: Alignment.centerLeft,
-          child: SizedBox(
-            width: 220,
-            child: DropdownButtonFormField<UserRole?>(
-              initialValue: _role,
-              decoration: const InputDecoration(labelText: 'Uloga'),
-              items: const [
-                DropdownMenuItem(value: null, child: Text('Svi korisnici')),
-                DropdownMenuItem(
-                  value: UserRole.instructor,
-                  child: Text('Instruktor'),
-                ),
-                DropdownMenuItem(
-                  value: UserRole.student,
-                  child: Text('Student'),
-                ),
-              ],
-              onChanged: (role) {
-                _role = role;
-                _applyFilters();
-              },
-            ),
+        filterBar: SizedBox(
+          width: 220,
+          child: DropdownButtonFormField<UserRole?>(
+            initialValue: _role,
+            decoration: const InputDecoration(labelText: 'Uloga'),
+            items: const [
+              DropdownMenuItem(value: null, child: Text('Svi korisnici')),
+              DropdownMenuItem(
+                value: UserRole.instructor,
+                child: Text('Instruktor'),
+              ),
+              DropdownMenuItem(
+                value: UserRole.student,
+                child: Text('Student'),
+              ),
+            ],
+            onChanged: (role) {
+              _role = role;
+              _applyFilters();
+            },
           ),
         ),
         fetcher: (page, pageSize, search) async {

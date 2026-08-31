@@ -1,12 +1,9 @@
 using eNote.Application.Common.Crud;
-using eNote.Application.Features.Identity.Users.Services;
 
 namespace eNote.Application.Features.Rentals.ReferenceData.Addresses;
 
-public sealed class AddressService(IAppDbContext context, IUserAccountService accountService) : ReferenceDataCrudService<Address, AddressReferenceDto, AddressRequest, AddressSearchObject>(context)
+public sealed class AddressService(IAppDbContext context) : ReferenceDataCrudService<Address, AddressReferenceDto, AddressRequest, AddressSearchObject>(context)
 {
-    private readonly IUserAccountService _accountService = accountService;
-
     protected override AddressReferenceDto Map(Address entity) => new()
     {
         Id = entity.Id,
@@ -59,7 +56,10 @@ public sealed class AddressService(IAppDbContext context, IUserAccountService ac
 
     protected override async Task EnsureDeletableAsync(Address entity, CancellationToken ct)
     {
-        if (await _accountService.IsAddressInUseAsync(entity.Id, ct))
+        var inUse = await Db.Set<Event>().AnyAsync(x => x.AddressId == entity.Id, ct)
+            || await Db.Set<MusicStore>().AnyAsync(x => x.AddressId == entity.Id, ct);
+
+        if (inUse)
         {
             throw new BusinessException(Messages.AddressDeleteBlocked);
         }

@@ -11,8 +11,6 @@ public sealed class UserIdentityService(UserManager<AppUser> userManager) : IUse
     {
         var user = await userManager.Users
             .AsNoTracking()
-            .Include(u => u.Address)
-            .ThenInclude(a => a!.City)
             .FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
 
         return user is null ? null : Map(user);
@@ -29,8 +27,6 @@ public sealed class UserIdentityService(UserManager<AppUser> userManager) : IUse
 
         var users = await userManager.Users
             .AsNoTracking()
-            .Include(u => u.Address)
-            .ThenInclude(a => a!.City)
             .Where(u => ids.Contains(u.Id))
             .ToListAsync(cancellationToken);
 
@@ -52,12 +48,6 @@ public sealed class UserIdentityService(UserManager<AppUser> userManager) : IUse
         LastName = user.LastName,
         DateOfBirth = user.DateOfBirth,
         HasPicture = !string.IsNullOrWhiteSpace(user.PicturePath),
-        Address = user.Address is null ? null : new UserAddressDto
-        {
-            City = user.Address.City.Name,
-            Street = user.Address.Street,
-            Number = user.Address.Number
-        },
         IsActive = user.IsActive
     };
 }

@@ -9,6 +9,11 @@ public static class MusicStoreSearchExtensions
             query = query.Where(x => x.StoreName.Contains(search.StoreName!));
         }
 
+        if (search.CityId.HasValue)
+        {
+            query = query.Where(x => x.Address != null && x.Address.CityId == search.CityId.Value);
+        }
+
         return query;
     }
 }

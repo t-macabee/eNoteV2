@@ -51,8 +51,10 @@ class _EventListScreenState extends State<EventListScreen> {
         titleOf: (item) => item.title,
         subtitleOf: (item) => formatDateTime(item.startsAt),
         filterBar: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Expanded(
+            SizedBox(
+              width: 280,
               child: DateField(
                 labelText: 'Od',
                 initialValue: _from,
@@ -63,7 +65,8 @@ class _EventListScreenState extends State<EventListScreen> {
               ),
             ),
             const SizedBox(width: 12),
-            Expanded(
+            SizedBox(
+              width: 280,
               child: DateField(
                 labelText: 'Do',
                 initialValue: _to,
@@ -74,7 +77,8 @@ class _EventListScreenState extends State<EventListScreen> {
               ),
             ),
             const SizedBox(width: 12),
-            Expanded(
+            SizedBox(
+              width: 280,
               child: AsyncDropdown<InstructorDto>(
                 label: 'Instruktor',
                 fetcher: () async {

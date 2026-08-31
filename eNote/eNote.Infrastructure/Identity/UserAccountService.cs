@@ -3,7 +3,6 @@ using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Localization;
 using eNote.Application.Features.Identity.Users.Services;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Infrastructure.Identity;
 
@@ -242,8 +241,4 @@ public sealed class UserAccountService(UserManager<AppUser> userManager, IFileSt
 
         return (true, null);
     }
-
-    public async Task<bool> IsAddressInUseAsync(int addressId, CancellationToken cancellationToken = default) =>
-        await userManager.Users.AnyAsync(u => u.AddressId == addressId, cancellationToken);
-
 }

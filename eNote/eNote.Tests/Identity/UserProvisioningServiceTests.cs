@@ -171,7 +171,5 @@ public sealed class UserProvisioningServiceTests
 
         public Task<(bool Success, string? Error)> ChangePasswordAsync(int userId, string currentPassword, string newPassword, CancellationToken cancellationToken = default) =>
             Task.FromResult((true, (string?)null));
-
-        public Task<bool> IsAddressInUseAsync(int addressId, CancellationToken cancellationToken = default) => Task.FromResult(false);
     }
 }

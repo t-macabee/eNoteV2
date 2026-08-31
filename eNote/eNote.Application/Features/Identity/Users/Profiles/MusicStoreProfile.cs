@@ -1,3 +1,3 @@
 namespace eNote.Application.Features.Identity.Users.Profiles;
 
-public record MusicStoreProfile(int Id, string StoreName, string BusinessHours, UserAddressDto? Address) : IUserProfile;
+public record MusicStoreProfile(int Id, string StoreName, string BusinessHours) : IUserProfile;

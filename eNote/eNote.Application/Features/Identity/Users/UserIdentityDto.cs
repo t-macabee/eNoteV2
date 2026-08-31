@@ -7,7 +7,6 @@ public class UserIdentityDto
     public string Username { get; set; } = null!;
     public string? FirstName { get; set; }
     public string? LastName { get; set; }
-    public UserAddressDto? Address { get; set; }
 
     public DateTime? DateOfBirth { get; set; }
     public bool HasPicture { get; set; }

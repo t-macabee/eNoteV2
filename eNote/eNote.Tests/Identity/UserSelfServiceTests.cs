@@ -122,7 +122,5 @@ public sealed class UserSelfServiceTests
             NewPassword = newPassword;
             return Task.FromResult((true, (string?)null));
         }
-
-        public Task<bool> IsAddressInUseAsync(int addressId, CancellationToken cancellationToken = default) => Task.FromResult(false);
     }
 }

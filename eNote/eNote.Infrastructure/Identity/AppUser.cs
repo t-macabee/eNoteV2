@@ -13,7 +13,4 @@ public class AppUser : IdentityUser<int>
     [MaxLength(512)]
     public string? PicturePath { get; set; }
     public bool IsActive { get; set; }
-
-    public int? AddressId { get; init; }
-    public Address? Address { get; init; }
 }

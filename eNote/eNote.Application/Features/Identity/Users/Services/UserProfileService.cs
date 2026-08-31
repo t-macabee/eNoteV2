@@ -45,7 +45,7 @@ public sealed class UserProfileService(
     {
         var student = await lookup.GetStudentAsync(userId);
 
-        return new StudentProfile(student.Id, student.EnrollmentDate, user.FirstName, user.LastName, user.DateOfBirth, user.Address, student.MembershipPaidUntil);
+        return new StudentProfile(student.Id, student.EnrollmentDate, user.FirstName, user.LastName, user.DateOfBirth, student.MembershipPaidUntil);
     }
 
     private async Task<InstructorProfile> BuildInstructorProfile(int userId, UserIdentityDto user)
@@ -64,6 +64,6 @@ public sealed class UserProfileService(
             .FirstOrDefaultAsync(x => x.Id == employee.MusicStoreId, cancellationToken)
             ?? throw new BusinessException(Messages.StoreNotFound);
 
-        return new MusicStoreProfile(shop.Id, shop.StoreName, shop.BusinessHours, user.Address);
+        return new MusicStoreProfile(shop.Id, shop.StoreName, shop.BusinessHours);
     }
 }

@@ -5,7 +5,7 @@ import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
 import '../../../widgets/entity_form_scaffold.dart';
-import '../../../widgets/entity_list_screen.dart';
+import '../../../widgets/entity_grid_screen.dart';
 import '../../../widgets/pdf_report_button.dart';
 import 'music_store_form_screen.dart';
 import 'music_store_provider.dart';
@@ -18,7 +18,7 @@ class MusicStoreListScreen extends StatefulWidget {
 }
 
 class _MusicStoreListScreenState extends State<MusicStoreListScreen> {
-  final _listKey = GlobalKey<EntityListScreenState<MusicStoreDto>>();
+  final _gridKey = GlobalKey<EntityGridScreenState<MusicStoreDto>>();
 
   Future<void> _openForm([MusicStoreDto? existing]) async {
     await EntityFormScaffold.showAsDialog(
@@ -28,25 +28,25 @@ class _MusicStoreListScreenState extends State<MusicStoreListScreen> {
         presentation: EntityFormPresentation.dialog,
       ),
     );
-    _listKey.currentState?.refresh();
+    _gridKey.currentState?.refresh();
   }
 
   @override
   Widget build(BuildContext context) {
-    return EntityListScreen<MusicStoreDto>(
-      key: _listKey,
-      config: EntityListConfig<MusicStoreDto>(
+    return EntityGridScreen<MusicStoreDto>(
+      key: _gridKey,
+      config: EntityGridConfig<MusicStoreDto>(
         title: 'Muzičke prodavnice',
-        columns: [
-          ColumnSpec<MusicStoreDto>(
-            label: 'Naziv',
-            value: (item) => item.storeName,
-          ),
-          ColumnSpec<MusicStoreDto>(
-            label: 'Radno vrijeme',
-            value: (item) => item.businessHours,
-          ),
-        ],
+        searchHint: 'Pretraži...',
+        placeholderIcon: Icons.storefront_outlined,
+        titleOf: (item) => item.storeName,
+        subtitleOf: (item) => item.businessHours,
+        aboveGrid: const SizedBox(height: 12),
+        onTap: (context, item) => _openForm(item),
+        onDelete: (context, item) async {
+          await context.read<MusicStoreProvider>().remove(item.id);
+          return true;
+        },
         fetcher: (page, pageSize, search) =>
             context.read<MusicStoreProvider>().search({
           'page': page,
@@ -55,11 +55,6 @@ class _MusicStoreListScreenState extends State<MusicStoreListScreen> {
           if (search.isNotEmpty) 'storeName': search,
         }),
         onAdd: () => _openForm(),
-        onEdit: (context, item) => _openForm(item),
-        onDelete: (context, item) async {
-          await context.read<MusicStoreProvider>().remove(item.id);
-          return true;
-        },
         trailing: PdfReportButton(
           label: 'Izvještaj',
           fileName: 'music-stores-report.pdf',

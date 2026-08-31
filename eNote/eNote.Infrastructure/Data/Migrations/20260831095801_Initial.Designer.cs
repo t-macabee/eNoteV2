@@ -12,7 +12,7 @@ using eNote.Infrastructure.Data;
 namespace eNote.Infrastructure.Data.Migrations
 {
     [DbContext(typeof(ENoteContext))]
-    [Migration("20260830182409_Initial")]
+    [Migration("20260831095801_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -1085,6 +1085,9 @@ namespace eNote.Infrastructure.Data.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<int?>("AddressId")
+                        .HasColumnType("int");
+
                     b.Property<string>("BusinessHours")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -1108,6 +1111,8 @@ namespace eNote.Infrastructure.Data.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("AddressId");
 
                     b.ToTable("MusicStore");
                 });
@@ -1391,9 +1396,6 @@ namespace eNote.Infrastructure.Data.Migrations
                     b.Property<int>("AccessFailedCount")
                         .HasColumnType("int");
 
-                    b.Property<int?>("AddressId")
-                        .HasColumnType("int");
-
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
                         .HasColumnType("nvarchar(max)");
@@ -1457,8 +1459,6 @@ namespace eNote.Infrastructure.Data.Migrations
                         .HasColumnType("nvarchar(256)");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("AddressId");
 
                     b.HasIndex("NormalizedEmail")
                         .HasDatabaseName("EmailIndex");
@@ -1786,6 +1786,16 @@ namespace eNote.Infrastructure.Data.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("eNote.Domain.Entities.Rentals.MusicStore", b =>
+                {
+                    b.HasOne("eNote.Domain.Entities.Shared.Address", "Address")
+                        .WithMany()
+                        .HasForeignKey("AddressId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Address");
+                });
+
             modelBuilder.Entity("eNote.Domain.Entities.Rentals.RentalPayment", b =>
                 {
                     b.HasOne("eNote.Domain.Entities.Rentals.InstrumentRental", "InstrumentRental")
@@ -1806,16 +1816,6 @@ namespace eNote.Infrastructure.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("City");
-                });
-
-            modelBuilder.Entity("eNote.Infrastructure.Identity.AppUser", b =>
-                {
-                    b.HasOne("eNote.Domain.Entities.Shared.Address", "Address")
-                        .WithMany()
-                        .HasForeignKey("AddressId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.Navigation("Address");
                 });
 
             modelBuilder.Entity("eNote.Domain.Entities.Academic.Course", b =>

@@ -33,6 +33,9 @@ class EntityGridConfig<T> {
   final String searchHint;
   final bool showSearchBar;
 
+  /// Rendered in the [AppBar] actions, e.g. a [PdfReportButton].
+  final Widget? trailing;
+
   /// Rendered next to the search field, in the same row. Keep it compact
   /// (e.g. wrap a dropdown in a width-bounded, left-aligned box) — it is
   /// given the remaining row width via [Expanded], not a fixed slot.
@@ -66,6 +69,7 @@ class EntityGridConfig<T> {
     this.showAddButton = true,
     this.searchHint = 'Pretraži...',
     this.showSearchBar = true,
+    this.trailing,
     this.filterBar,
     this.aboveGrid,
     this.belowGrid,
@@ -176,7 +180,10 @@ class EntityGridScreenState<T> extends State<EntityGridScreen<T>> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(widget.config.title)),
+      appBar: AppBar(
+        title: Text(widget.config.title),
+        actions: [if (widget.config.trailing != null) widget.config.trailing!],
+      ),
       body: Column(
         children: [
           _buildFilterRow(),
@@ -197,41 +204,56 @@ class EntityGridScreenState<T> extends State<EntityGridScreen<T>> {
           _buildPagination(),
         ],
       ),
-      floatingActionButton: widget.config.showAddButton
-          ? FloatingActionButton.extended(
-              onPressed: widget.config.onAdd,
-              icon: const Icon(Icons.add),
-              label: Text(widget.config.addLabel ?? 'Dodaj'),
-            )
-          : null,
     );
   }
 
   Widget _buildFilterRow() {
     final showSearch = widget.config.showSearchBar;
     final filterBar = widget.config.filterBar;
-    if (!showSearch && filterBar == null) return const SizedBox.shrink();
+    final showAdd = widget.config.showAddButton;
+    if (!showSearch && filterBar == null && !showAdd) {
+      return const SizedBox.shrink();
+    }
 
     return Padding(
       padding: const EdgeInsets.all(16),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (showSearch)
-            SizedBox(
-              width: 280,
-              child: TextField(
-                controller: _searchController,
-                decoration: InputDecoration(
-                  hintText: widget.config.searchHint,
-                  prefixIcon: const Icon(Icons.search),
-                  border: const OutlineInputBorder(),
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (showSearch)
+              Expanded(
+                child: TextField(
+                  controller: _searchController,
+                  decoration: InputDecoration(
+                    hintText: widget.config.searchHint,
+                    prefixIcon: const Icon(Icons.search),
+                    border: const OutlineInputBorder(),
+                  ),
                 ),
               ),
-            ),
-          if (showSearch && filterBar != null) const SizedBox(width: 12),
-          if (filterBar != null) Expanded(child: filterBar),
-        ],
+            if (showSearch && filterBar != null) const SizedBox(width: 12),
+            // Placed directly (no Expanded/Flexible): filterBar must size
+            // itself to its own content (e.g. a Row with
+            // MainAxisSize.min, or a fixed-width SizedBox). Giving it a
+            // flex share here would compete with the search field's
+            // Expanded for the row's free space — the search field is the
+            // only child that should grow to fill leftover width, so any
+            // space filterBar doesn't use stays with it.
+            ?filterBar,
+            if (showAdd) ...[
+              const SizedBox(width: 12),
+              ConstrainedBox(
+                constraints: const BoxConstraints(minWidth: 200),
+                child: ElevatedButton.icon(
+                  onPressed: widget.config.onAdd,
+                  icon: const Icon(Icons.add),
+                  label: Text(widget.config.addLabel ?? 'Dodaj'),
+                ),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }
