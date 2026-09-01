@@ -2,14 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
+import '../../../widgets/entity_form_scaffold.dart';
 import '../../../widgets/entity_list_screen.dart';
+import 'admin_course_form_screen.dart';
 import 'admin_course_provider.dart';
 
-/// Read-only admin course overview: paged list across ALL instructors.
+/// Admin course overview: paged list across ALL instructors.
 ///
-/// No Add button and no edit/delete row actions — course create/update/delete
-/// stays Instructor-owned. Admins can filter by name (search bar) and
-/// published status, and see which instructor owns each course.
+/// Admins can create a course on an instructor's behalf (e.g. account-access
+/// issues) and assign it to a specific instructor. Edit/delete stays
+/// Instructor-owned. Admins can filter by name (search bar) and published
+/// status, and see which instructor owns each course.
 class AdminCourseListScreen extends StatefulWidget {
   const AdminCourseListScreen({super.key});
 
@@ -25,6 +28,16 @@ class _AdminCourseListScreenState extends State<AdminCourseListScreen> {
 
   void _applyFilters() {
     setState(() {});
+    _listKey.currentState?.refresh();
+  }
+
+  Future<void> _openForm() async {
+    await EntityFormScaffold.showAsDialog(
+      context,
+      builder: (_) => const AdminCourseFormScreen(
+        presentation: EntityFormPresentation.dialog,
+      ),
+    );
     _listKey.currentState?.refresh();
   }
 
@@ -61,7 +74,8 @@ class _AdminCourseListScreenState extends State<AdminCourseListScreen> {
             value: (item) => formatDateNullable(item.startDate),
           ),
         ],
-        showAddButton: false,
+        showAddButton: true,
+        inlineToolbar: true,
         filterBar: SizedBox(
           width: 220,
           child: DropdownButtonFormField<bool?>(
@@ -78,6 +92,7 @@ class _AdminCourseListScreenState extends State<AdminCourseListScreen> {
             },
           ),
         ),
+        onAdd: _openForm,
         fetcher: (page, pageSize, search) =>
             context.read<AdminCourseProvider>().search({
           'page': page,

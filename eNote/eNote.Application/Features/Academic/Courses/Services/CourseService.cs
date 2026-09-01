@@ -151,6 +151,41 @@ public sealed class CourseService(IAppDbContext context, IMapper mapper, ICurren
         return mapper.Map<CourseDto>(entity);
     }
 
+    public async Task<CourseDto> CreateForAdminAsync(CourseRequest request, CancellationToken cancellationToken = default)
+    {
+        if (request.InstructorId is not { } instructorId)
+        {
+            throw new BusinessException(Messages.InstructorIdRequired);
+        }
+
+        var instructorExists = await context.Set<Instructor>().AnyAsync(i => i.Id == instructorId, cancellationToken);
+        if (!instructorExists)
+        {
+            throw new NotFoundException(Messages.InstructorProfileNotFound);
+        }
+
+        logger.LogInformation("Creating course {CourseName} for instructor {InstructorId} by admin user {AdminUserId}", request.Name, instructorId, currentUser.UserId);
+
+        var entity = new Course(
+            request.Name.Trim(),
+            request.Description?.Trim(),
+            request.Price,
+            request.StartDate,
+            request.EndDate,
+            instructorId)
+        {
+            CreatedById = currentUser.UserId
+        };
+        entity.SetPublishedStatus(request.IsPublished);
+
+        context.Set<Course>().Add(entity);
+        await context.SaveChangesAsync(cancellationToken);
+
+        logger.LogInformation("Course {CourseId} created for instructor {InstructorId} by admin user {AdminUserId}", entity.Id, instructorId, currentUser.UserId);
+
+        return mapper.Map<CourseDto>(entity);
+    }
+
     public async Task<CourseDto> UpdateAsync(int id, CourseRequest request, CancellationToken cancellationToken = default)
     {
         var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId);

@@ -42,6 +42,12 @@ class EntityListConfig<T> {
   final bool showSearchBar;
   final Widget? filterBar;
 
+  /// When true, render search + filterBar + Add button in a single row
+  /// (matching EntityGridScreen's toolbar), with Add as an inline
+  /// ElevatedButton.icon instead of a floating action button. Default false
+  /// keeps every existing consumer's stacked-rows + FAB layout unchanged.
+  final bool inlineToolbar;
+
   const EntityListConfig({
     required this.title,
     required this.columns,
@@ -57,6 +63,7 @@ class EntityListConfig<T> {
     this.showDeleteConfirmation = true,
     this.showSearchBar = true,
     this.filterBar,
+    this.inlineToolbar = false,
   });
 }
 
@@ -163,8 +170,12 @@ class EntityListScreenState<T> extends State<EntityListScreen<T>> {
       ),
       body: Column(
         children: [
-          if (widget.config.showSearchBar) _buildSearchBar(),
-          if (widget.config.filterBar != null) widget.config.filterBar!,
+          if (widget.config.inlineToolbar)
+            _buildInlineToolbar()
+          else ...[
+            if (widget.config.showSearchBar) _buildSearchBar(),
+            if (widget.config.filterBar != null) widget.config.filterBar!,
+          ],
           Expanded(
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
@@ -175,12 +186,54 @@ class EntityListScreenState<T> extends State<EntityListScreen<T>> {
           _buildPagination(),
         ],
       ),
-      floatingActionButton: widget.config.showAddButton
-          ? FloatingActionButton.extended(
-              onPressed: widget.config.onAdd,
-              label: Text(widget.config.addLabel ?? 'Dodaj'),
-            )
-          : null,
+      floatingActionButton:
+          !widget.config.inlineToolbar && widget.config.showAddButton
+              ? FloatingActionButton.extended(
+                  onPressed: widget.config.onAdd,
+                  label: Text(widget.config.addLabel ?? 'Dodaj'),
+                )
+              : null,
+    );
+  }
+
+  Widget _buildInlineToolbar() {
+    final showSearch = widget.config.showSearchBar;
+    final filterBar = widget.config.filterBar;
+    final showAdd = widget.config.showAddButton;
+
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (showSearch)
+              Expanded(
+                child: TextField(
+                  controller: _searchController,
+                  decoration: InputDecoration(
+                    hintText: widget.config.searchHint,
+                    prefixIcon: const Icon(Icons.search),
+                    border: const OutlineInputBorder(),
+                  ),
+                ),
+              ),
+            if (showSearch && filterBar != null) const SizedBox(width: 12),
+            ?filterBar,
+            if (showAdd) ...[
+              const SizedBox(width: 12),
+              ConstrainedBox(
+                constraints: const BoxConstraints(minWidth: 200),
+                child: ElevatedButton.icon(
+                  onPressed: widget.config.onAdd,
+                  icon: const Icon(Icons.add),
+                  label: Text(widget.config.addLabel ?? 'Dodaj'),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
     );
   }
 

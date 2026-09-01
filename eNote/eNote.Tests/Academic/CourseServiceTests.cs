@@ -146,6 +146,51 @@ public sealed class CourseServiceTests
     }
 
     [Fact]
+    public async Task CreateForAdminAsync_AssignsCourseToSpecifiedInstructor()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var actor = new StubCurrentActor();
+        var service = CreateService(harness.Context, harness.Instructor, actor);
+        var request = new CourseRequest
+        {
+            Name = "Admin Piano",
+            Price = 120m,
+            StartDate = Now,
+            EndDate = Now.AddMonths(2),
+            IsPublished = true,
+            InstructorId = harness.Instructor.Id
+        };
+
+        var dto = await service.CreateForAdminAsync(request);
+
+        Assert.Equal(harness.Instructor.Id, dto.InstructorId);
+        var row = await harness.Context.Set<Course>().SingleAsync(c => c.Name == "Admin Piano");
+        Assert.Equal(harness.Instructor.Id, row.InstructorId);
+        Assert.Equal(actor.UserId, row.CreatedById);
+        Assert.NotEqual(harness.Instructor.AppUserId, row.CreatedById);
+    }
+
+    [Fact]
+    public async Task CreateForAdminAsync_WithoutInstructorId_ThrowsBusinessException()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var service = CreateService(harness.Context, harness.Instructor);
+        var request = new CourseRequest { Name = "No Instructor", Price = 100m, StartDate = Now };
+
+        await Assert.ThrowsAsync<BusinessException>(() => service.CreateForAdminAsync(request));
+    }
+
+    [Fact]
+    public async Task CreateForAdminAsync_UnknownInstructorId_ThrowsNotFound()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var service = CreateService(harness.Context, harness.Instructor);
+        var request = new CourseRequest { Name = "Ghost Instructor", Price = 100m, InstructorId = 9999 };
+
+        await Assert.ThrowsAsync<NotFoundException>(() => service.CreateForAdminAsync(request));
+    }
+
+    [Fact]
     public async Task GetPagedForAdminAsync_WithRealIdentityService_DoesNotThrowOnMultiInstructorPage()
     {
         await using var context = TestDbContextFactory.CreateContext(Now);
