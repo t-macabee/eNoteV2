@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
+
 import '../../../theme/app_theme.dart';
 import '../../../widgets/entity_grid_screen.dart';
 import '../instructor/instructor_provider.dart';
@@ -42,9 +43,7 @@ class _UserGridScreenState extends State<UserGridScreen> {
 
   Future<void> _openProvisionForm() async {
     await Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => const UserProvisionFormScreen(),
-      ),
+      MaterialPageRoute<void>(builder: (_) => const UserProvisionFormScreen()),
     );
     _gridKey.currentState?.refresh();
   }
@@ -70,9 +69,24 @@ class _UserGridScreenState extends State<UserGridScreen> {
         searchHint: 'Pretraži po imenu...',
         placeholderIcon: Icons.person_outline,
         titleOf: _displayName,
-        subtitleOf: (item) => item.username ?? '-',
-        emptyMessage: _role == UserRole.student ? _studentGapMessage : 'Nema podataka.',
-        aboveGrid: _role == null ? const EntitySectionLabel('Instruktori') : null,
+        onDelete: (context, item) async {
+          final apiClient = context.read<ApiClient>();
+          final response = await apiClient.delete(
+            'admin/users/${item.appUserId}',
+          );
+          if (response.statusCode >= 400) {
+            throw ApiException(
+              ApiErrorMapper.mapError(response.statusCode, response.body),
+            );
+          }
+          return true;
+        },
+        emptyMessage: _role == UserRole.student
+            ? _studentGapMessage
+            : 'Nema podataka.',
+        aboveGrid: _role == null
+            ? const EntitySectionLabel('Instruktori')
+            : null,
         belowGrid: _role == null
             ? const Padding(
                 padding: EdgeInsets.only(top: 24),
@@ -100,10 +114,7 @@ class _UserGridScreenState extends State<UserGridScreen> {
                 value: UserRole.instructor,
                 child: Text('Instruktor'),
               ),
-              DropdownMenuItem(
-                value: UserRole.student,
-                child: Text('Student'),
-              ),
+              DropdownMenuItem(value: UserRole.student, child: Text('Student')),
             ],
             onChanged: (role) {
               _role = role;

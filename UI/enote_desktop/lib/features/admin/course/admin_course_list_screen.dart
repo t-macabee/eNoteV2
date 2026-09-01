@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
+
 import '../../../widgets/entity_form_scaffold.dart';
 import '../../../widgets/entity_grid_screen.dart';
 import 'admin_course_form_screen.dart';
@@ -50,8 +51,10 @@ class _AdminCourseListScreenState extends State<AdminCourseListScreen> {
         searchHint: 'Pretraži po nazivu...',
         placeholderIcon: Icons.class_,
         titleOf: (item) => item.name,
-        subtitleOf: (item) =>
-            '${item.instructorName ?? "-"} · ${item.price.toStringAsFixed(2)}',
+        onDelete: (context, item) async {
+          await context.read<AdminCourseProvider>().remove(item.id);
+          return true;
+        },
         filterBar: SizedBox(
           width: 220,
           child: DropdownButtonFormField<bool?>(
@@ -71,12 +74,12 @@ class _AdminCourseListScreenState extends State<AdminCourseListScreen> {
         onAdd: _openForm,
         fetcher: (page, pageSize, search) =>
             context.read<AdminCourseProvider>().search({
-          'page': page,
-          'pageSize': pageSize,
-          'includeTotalCount': true,
-          if (search.isNotEmpty) 'name': search,
-          if (_isPublished != null) 'isPublished': _isPublished,
-        }),
+              'page': page,
+              'pageSize': pageSize,
+              'includeTotalCount': true,
+              if (search.isNotEmpty) 'name': search,
+              if (_isPublished != null) 'isPublished': _isPublished,
+            }),
       ),
     );
   }
