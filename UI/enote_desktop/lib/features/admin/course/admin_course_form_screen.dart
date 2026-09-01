@@ -38,14 +38,6 @@ class _AdminCourseFormScreenState extends State<AdminCourseFormScreen> {
   int? _instructorId;
   bool _isPublished = false;
 
-  // Bumped on every reset so the AsyncDropdown below remounts instead of
-  // keeping its stale internal selection. DropdownButtonFormField's
-  // `initialValue` only applies on first build — EntityFormScaffold calls
-  // FormState.reset() *before* onReset() clears _instructorId, so without a
-  // changing key the dropdown would keep showing the previous instructor
-  // (while _instructorId, the value actually sent, is already null).
-  int _formGeneration = 0;
-
   @override
   void dispose() {
     _nameController.dispose();
@@ -134,7 +126,6 @@ class _AdminCourseFormScreenState extends State<AdminCourseFormScreen> {
         ),
         const SizedBox(height: 8),
         AsyncDropdown<InstructorDto>(
-          key: ValueKey(_formGeneration),
           label: 'Instruktor',
           fetcher: () async {
             final result = await context.read<InstructorProvider>().search({
@@ -166,7 +157,6 @@ class _AdminCourseFormScreenState extends State<AdminCourseFormScreen> {
           _endDate = null;
           _instructorId = null;
           _isPublished = false;
-          _formGeneration++;
         });
       },
     );

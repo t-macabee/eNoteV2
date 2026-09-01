@@ -123,3 +123,6 @@ package-lock.json
 eNote/qodana.yaml
 qodana.yaml
 .qodana/
+
+# Poolside (local agent tooling, not part of the project)
+.poolside/

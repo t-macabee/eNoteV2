@@ -30,11 +30,26 @@ class AsyncDropdown<T> extends StatefulWidget {
 
 class _AsyncDropdownState<T> extends State<AsyncDropdown<T>> {
   late Future<List<T>> _future;
+  Object? _lastValue;
+  int _fieldGeneration = 0;
 
   @override
   void initState() {
     super.initState();
     _future = widget.fetcher();
+    _lastValue = widget.value;
+  }
+
+  @override
+  void didUpdateWidget(covariant AsyncDropdown<T> oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    if (widget.value != _lastValue) {
+      _lastValue = widget.value;
+      setState(() {
+        _fieldGeneration++;
+      });
+    }
   }
 
   Future<void> _reload() async {
@@ -89,6 +104,7 @@ class _AsyncDropdownState<T> extends State<AsyncDropdown<T>> {
             : null;
 
         return DropdownButtonFormField<Object>(
+          key: ValueKey(_fieldGeneration),
           initialValue: currentValue,
           decoration: InputDecoration(
             labelText: widget.label,

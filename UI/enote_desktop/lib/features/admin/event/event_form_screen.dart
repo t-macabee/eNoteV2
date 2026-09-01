@@ -41,15 +41,6 @@ class _EventFormScreenState extends State<EventFormScreen> {
   int? _addressId;
   int? _instructorId;
 
-  // Bumped on every reset so the AsyncDropdowns below remount instead of
-  // keeping their stale internal selection. DropdownButtonFormField's
-  // `initialValue` only applies on first build — EntityFormScaffold calls
-  // FormState.reset() *before* onReset() clears _addressId/_instructorId,
-  // so without a changing key the dropdowns would keep showing the
-  // previous selection (while the state fields actually sent are already
-  // null).
-  int _formGeneration = 0;
-
   @override
   void initState() {
     super.initState();
@@ -136,7 +127,6 @@ class _EventFormScreenState extends State<EventFormScreen> {
         ),
         const SizedBox(height: 16),
         AsyncDropdown<AddressReferenceDto>(
-          key: ValueKey('address-$_formGeneration'),
           label: 'Adresa',
           fetcher: () async {
             final result = await context.read<AddressProvider>().search({
@@ -154,7 +144,6 @@ class _EventFormScreenState extends State<EventFormScreen> {
         ),
         const SizedBox(height: 16),
         AsyncDropdown<InstructorDto>(
-          key: ValueKey('instructor-$_formGeneration'),
           label: 'Instruktor',
           fetcher: () async {
             final result = await context.read<InstructorProvider>().search({
@@ -184,7 +173,6 @@ class _EventFormScreenState extends State<EventFormScreen> {
           _endsAt = null;
           _addressId = null;
           _instructorId = null;
-          _formGeneration++;
         });
       },
     );
