@@ -1,3 +1,4 @@
+using eNote.Application.Common.Localization;
 using eNote.Application.Constants;
 using eNote.Application.Features.Identity.Auth;
 using eNote.Application.Features.Identity.Users;
@@ -136,6 +137,33 @@ public sealed class UserProvisioningServiceTests
             service.UpdateMembershipAsync(999, new UpdateMembershipRequest { PaidUntil = Now.AddMonths(1) }));
     }
 
+    [Fact]
+    public async Task DeactivateUserAsync_DelegatesToSetActiveWithFalse()
+    {
+        await using var context = TestDbContextFactory.CreateContext(Now);
+        var account = new RecordingUserAccountService();
+        var service = CreateService(context, account);
+
+        var (success, error) = await service.DeactivateUserAsync(42);
+
+        Assert.True(success);
+        Assert.Null(error);
+        Assert.Equal((42, false), account.SetActiveCall);
+    }
+
+    [Fact]
+    public async Task DeactivateUserAsync_ReturnsError_WhenAccountServiceFails()
+    {
+        await using var context = TestDbContextFactory.CreateContext(Now);
+        var account = new RecordingUserAccountService { SetActiveResult = (false, Messages.NotFound) };
+        var service = CreateService(context, account);
+
+        var (success, error) = await service.DeactivateUserAsync(999);
+
+        Assert.False(success);
+        Assert.Equal(Messages.NotFound, error);
+    }
+
     private static UserProvisioningService CreateService(ENoteContext context, IUserAccountService account) =>
         new(context, account, new FixedClock(Now));
 
@@ -144,6 +172,8 @@ public sealed class UserProvisioningServiceTests
         public int? CreateUserId { get; set; } = 7;
         public int? ExistingUserId { get; set; }
         public bool UpdatedExisting { get; private set; }
+        public (int UserId, bool IsActive)? SetActiveCall { get; private set; }
+        public (bool Success, string? Error) SetActiveResult { get; set; } = (true, null);
 
         public Task<int?> FindUserIdByUsernameAsync(string username, CancellationToken cancellationToken = default) =>
             Task.FromResult(ExistingUserId);
@@ -171,5 +201,11 @@ public sealed class UserProvisioningServiceTests
 
         public Task<(bool Success, string? Error)> ChangePasswordAsync(int userId, string currentPassword, string newPassword, CancellationToken cancellationToken = default) =>
             Task.FromResult((true, (string?)null));
+
+        public Task<(bool Success, string? Error)> SetActiveAsync(int userId, bool isActive, CancellationToken cancellationToken = default)
+        {
+            SetActiveCall = (userId, isActive);
+            return Task.FromResult(SetActiveResult);
+        }
     }
 }

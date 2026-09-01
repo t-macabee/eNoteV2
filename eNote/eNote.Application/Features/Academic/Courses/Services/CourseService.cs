@@ -209,16 +209,30 @@ public sealed class CourseService(IAppDbContext context, IMapper mapper, ICurren
 
         var entity = await instructorAccess.CoursesFor(instructorId).FirstOrDefaultAsync(c => c.Id == id, cancellationToken) ?? throw new NotFoundException(Messages.CourseNotFound);
 
+        await SoftDeleteCourseAsync(entity, cancellationToken);
+
+        logger.LogInformation("Course {CourseId} soft-deleted by instructor user {InstructorUserId}", id, currentUser.UserId);
+    }
+
+    public async Task DeleteForAdminAsync(int id, CancellationToken cancellationToken = default)
+    {
+        var entity = await context.Set<Course>().FirstOrDefaultAsync(c => c.Id == id, cancellationToken) ?? throw new NotFoundException(Messages.CourseNotFound);
+
+        await SoftDeleteCourseAsync(entity, cancellationToken);
+
+        logger.LogInformation("Course {CourseId} soft-deleted by admin user {AdminUserId}", id, currentUser.UserId);
+    }
+
+    private async Task SoftDeleteCourseAsync(Course entity, CancellationToken cancellationToken)
+    {
         entity.SoftDelete();
         entity.UpdatedById = currentUser.UserId;
 
         await context.Set<Lecture>()
-            .Where(l => l.CourseId == id)
+            .Where(l => l.CourseId == entity.Id)
             .ExecuteUpdateAsync(s => s.SetProperty(l => l.IsActive, false)
             .SetProperty(l => l.UpdatedById, currentUser.UserId), cancellationToken);
 
         await context.SaveChangesAsync(cancellationToken);
-
-        logger.LogInformation("Course {CourseId} soft-deleted by instructor user {InstructorUserId}", id, currentUser.UserId);
     }
 }

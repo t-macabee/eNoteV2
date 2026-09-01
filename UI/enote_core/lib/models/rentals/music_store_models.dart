@@ -2,11 +2,17 @@ class MusicStoreDto {
   final int id;
   final String storeName;
   final String businessHours;
+  final int? addressId;
+  final String? addressStreet;
+  final String? addressCity;
 
   MusicStoreDto({
     required this.id,
     required this.storeName,
     required this.businessHours,
+    this.addressId,
+    this.addressStreet,
+    this.addressCity,
   });
 
   factory MusicStoreDto.fromJson(Map<String, dynamic> json) {
@@ -14,6 +20,9 @@ class MusicStoreDto {
       id: json['id'] as int? ?? 0,
       storeName: json['storeName'] as String? ?? '',
       businessHours: json['businessHours'] as String? ?? '',
+      addressId: json['addressId'] as int?,
+      addressStreet: json['addressStreet'] as String?,
+      addressCity: json['addressCity'] as String?,
     );
   }
 
@@ -21,6 +30,9 @@ class MusicStoreDto {
     'id': id,
     'storeName': storeName,
     'businessHours': businessHours,
+    if (addressId != null) 'addressId': addressId,
+    if (addressStreet != null) 'addressStreet': addressStreet,
+    if (addressCity != null) 'addressCity': addressCity,
   };
 }
 

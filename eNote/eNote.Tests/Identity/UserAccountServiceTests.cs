@@ -165,6 +165,33 @@ public sealed class UserAccountServiceTests
         Assert.True(await harness.UserManager.CheckPasswordAsync(user, "Newpassword1!"));
     }
 
+    [Fact]
+    public async Task SetActiveAsync_DeactivatesUser()
+    {
+        var harness = await CreateHarnessAsync();
+        var service = harness.Service;
+        await service.CreateUserAsync("jdoe", "jdoe@example.com", "Password1!", null, null);
+        var userId = (await harness.UserManager.FindByNameAsync("jdoe"))!.Id;
+
+        var result = await service.SetActiveAsync(userId, false);
+
+        Assert.True(result.Success);
+        Assert.Null(result.Error);
+        var user = (await harness.UserManager.FindByIdAsync(userId.ToString()))!;
+        Assert.False(user.IsActive);
+    }
+
+    [Fact]
+    public async Task SetActiveAsync_ReturnsError_ForMissingUser()
+    {
+        var harness = await CreateHarnessAsync();
+
+        var result = await harness.Service.SetActiveAsync(999, false);
+
+        Assert.False(result.Success);
+        Assert.Equal(Messages.NotFound, result.Error);
+    }
+
     private static async Task<Harness> CreateHarnessAsync()
     {
         var context = TestDbContextFactory.CreateContext(Now);

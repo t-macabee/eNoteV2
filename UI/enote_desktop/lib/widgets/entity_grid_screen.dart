@@ -55,6 +55,21 @@ class EntityGridConfig<T> {
   final int pageSize;
   final String emptyMessage;
 
+  /// Optional grouping key for the loaded page of items. When set, the grid
+  /// is split into sections — one [EntitySectionLabel] per distinct key value
+  /// (sorted alphabetically, case-insensitive), each followed by its own
+  /// [GridView] using the same delegate/card widget as the flat grid. When
+  /// null, the grid renders as a single flat [GridView] (every screen using
+  /// this widget today).
+  ///
+  /// Caveat: grouping applies within the loaded page only — consistent with
+  /// how the flat grid already paginates. With the current seed data (a
+  /// handful of stores/cities) everything fits on one page in practice, so
+  /// this reads as full grouping. If the dataset ever exceeds a page, a
+  /// city's stores could split across pages — acceptable for this admin
+  /// screen, not worth solving now.
+  final String Function(T item)? groupKeyOf;
+
   const EntityGridConfig({
     required this.title,
     required this.fetcher,
@@ -77,6 +92,7 @@ class EntityGridConfig<T> {
     this.childAspectRatio = 0.85,
     this.pageSize = 24,
     this.emptyMessage = 'Nema podataka.',
+    this.groupKeyOf,
   });
 }
 
@@ -258,34 +274,72 @@ class EntityGridScreenState<T> extends State<EntityGridScreen<T>> {
     );
   }
 
+  Widget _buildGridView(List<T> items) {
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+        maxCrossAxisExtent: widget.config.maxCrossAxisExtent,
+        childAspectRatio: widget.config.childAspectRatio,
+        mainAxisSpacing: 24,
+        crossAxisSpacing: 24,
+      ),
+      itemCount: items.length,
+      itemBuilder: (context, index) {
+        final item = items[index];
+        return _EntityGridCard<T>(
+          item: item,
+          config: widget.config,
+          onDelete: widget.config.onDelete != null
+              ? () => _deleteItem(item)
+              : null,
+        );
+      },
+    );
+  }
+
+  /// Builds the children for the body [Column] when [groupKeyOf] is set:
+  /// the loaded page of [_items] is grouped by that key (sorted
+  /// alphabetically, case-insensitive), and each group is rendered as an
+  /// [EntitySectionLabel] followed by its own [GridView], with spacing
+  /// between sections.
+  List<Widget> _buildGroupedChildren(String Function(T item) groupKeyOf) {
+    final groups = <String, List<T>>{};
+    for (final item in _items) {
+      groups.putIfAbsent(groupKeyOf(item), () => []).add(item);
+    }
+
+    final sortedKeys =
+        groups.keys.toList()..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+
+    final children = <Widget>[];
+    for (var i = 0; i < sortedKeys.length; i++) {
+      final key = sortedKeys[i];
+      children.addAll([
+        EntitySectionLabel(key),
+        const SizedBox(height: 12),
+        _buildGridView(groups[key]!),
+      ]);
+      if (i != sortedKeys.length - 1) {
+        children.add(const SizedBox(height: 24));
+      }
+    }
+    return children;
+  }
+
   Widget _buildBody() {
+    final groupKeyOf = widget.config.groupKeyOf;
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (widget.config.aboveGrid != null) widget.config.aboveGrid!,
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-              maxCrossAxisExtent: widget.config.maxCrossAxisExtent,
-              childAspectRatio: widget.config.childAspectRatio,
-              mainAxisSpacing: 24,
-              crossAxisSpacing: 24,
-            ),
-            itemCount: _items.length,
-            itemBuilder: (context, index) {
-              final item = _items[index];
-              return _EntityGridCard<T>(
-                item: item,
-                config: widget.config,
-                onDelete: widget.config.onDelete != null
-                    ? () => _deleteItem(item)
-                    : null,
-              );
-            },
-          ),
+          if (groupKeyOf == null) ...[
+            _buildGridView(_items),
+          ] else ...[
+            ..._buildGroupedChildren(groupKeyOf),
+          ],
           if (widget.config.belowGrid != null) widget.config.belowGrid!,
         ],
       ),
@@ -463,6 +517,37 @@ class _EntityGridCardState<T> extends State<_EntityGridCard<T>> {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// A section header rendered above a group of entity grid cards (or above a
+/// static section of content). Promoted out of `user_grid_screen.dart` so the
+/// User grid ("Instruktori"/"Studenti" labels) and the grouped Music Store
+/// grid share one definition with an identical look.
+class EntitySectionLabel extends StatelessWidget {
+  final String label;
+
+  const EntitySectionLabel(this.label, {super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              color: AppTheme.textPrimary,
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(width: 12),
+          const Expanded(child: Divider(color: AppTheme.outline)),
+        ],
       ),
     );
   }

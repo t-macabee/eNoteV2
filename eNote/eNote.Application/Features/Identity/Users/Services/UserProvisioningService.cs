@@ -106,6 +106,9 @@ public sealed class UserProvisioningService(
         await context.SaveChangesAsync(cancellationToken);
     }
 
+    public Task<(bool Success, string? Error)> DeactivateUserAsync(int userId, CancellationToken cancellationToken = default) =>
+        accountService.SetActiveAsync(userId, false, cancellationToken);
+
     private async Task<int?> ResolveDefaultStoreIdAsync(string role, CancellationToken cancellationToken)
     {
         if (role != AppRoles.StoreEmployee)

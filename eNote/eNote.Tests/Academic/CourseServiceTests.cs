@@ -244,6 +244,19 @@ public sealed class CourseServiceTests
         Assert.Equal("Alice Smith", result.Items.Single(c => c.Name == "Violin").InstructorName);
     }
 
+    // NOTE: The happy-path of DeleteForAdminAsync (and instructor DeleteAsync) deactivates the
+    // course's Lectures via ExecuteUpdateAsync, which the EF Core InMemory test provider cannot
+    // translate. Same reason NotificationService.MarkAllReadAsync has no unit test here. Only the
+    // 404 branch (which runs before ExecuteUpdate) is unit-testable under the current harness.
+    [Fact]
+    public async Task DeleteForAdminAsync_Throws_WhenCourseMissing()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var service = CreateService(harness.Context, harness.Instructor);
+
+        await Assert.ThrowsAsync<NotFoundException>(() => service.DeleteForAdminAsync(999));
+    }
+
     private static async Task CreateActiveUserAsync(UserManager<AppUser> userManager, int id, string username, string firstName, string lastName)
     {
         await userManager.CreateAsync(new AppUser

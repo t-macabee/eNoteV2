@@ -109,6 +109,27 @@ public sealed class UserAccountService(UserManager<AppUser> userManager, IFileSt
         return (true, null);
     }
 
+    public async Task<(bool Success, string? Error)> SetActiveAsync(int userId, bool isActive, CancellationToken cancellationToken = default)
+    {
+        var user = await userManager.FindByIdAsync(userId.ToString());
+
+        if (user is null)
+        {
+            return (false, Messages.NotFound);
+        }
+
+        user.IsActive = isActive;
+
+        var result = await userManager.UpdateAsync(user);
+
+        if (!result.Succeeded)
+        {
+            return (false, string.Join("; ", result.Errors.Select(e => e.Description)));
+        }
+
+        return (true, null);
+    }
+
     public async Task<(bool Success, string? Error)> UpdateExistingUserAsync(int userId, string email, string? firstName, string? lastName, DateTime? dateOfBirth = null, CancellationToken cancellationToken = default)
     {
         var user = await userManager.FindByIdAsync(userId.ToString());

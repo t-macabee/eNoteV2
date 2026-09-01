@@ -228,6 +228,9 @@ public sealed class AuthServiceTests
             Task.FromResult((7, (string?)null));
 
         public Task UpdateMembershipAsync(int userId, UpdateMembershipRequest request, CancellationToken cancellationToken = default) => Task.CompletedTask;
+
+        public Task<(bool Success, string? Error)> DeactivateUserAsync(int userId, CancellationToken cancellationToken = default) =>
+            Task.FromResult((true, (string?)null));
     }
 
     private sealed class StubHostEnvironment : IHostEnvironment

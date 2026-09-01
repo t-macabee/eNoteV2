@@ -58,4 +58,22 @@ public sealed class AdminUsersController(UserProfileService profileService, IUse
         await provisioningService.UpdateMembershipAsync(id, request, cancellationToken);
         return NoContent();
     }
+
+    [HttpDelete("{id:int}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Deactivate(int id, CancellationToken cancellationToken)
+    {
+        (var success, var error) = await provisioningService.DeactivateUserAsync(id, cancellationToken);
+
+        if (!success)
+        {
+            return NotFound(new
+            {
+                message = error
+            });
+        }
+
+        return NoContent();
+    }
 }

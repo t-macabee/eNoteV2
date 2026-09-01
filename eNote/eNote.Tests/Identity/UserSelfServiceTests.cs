@@ -122,5 +122,8 @@ public sealed class UserSelfServiceTests
             NewPassword = newPassword;
             return Task.FromResult((true, (string?)null));
         }
+
+        public Task<(bool Success, string? Error)> SetActiveAsync(int userId, bool isActive, CancellationToken cancellationToken = default) =>
+            Task.FromResult((true, (string?)null));
     }
 }

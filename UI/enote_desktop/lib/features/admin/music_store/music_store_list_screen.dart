@@ -102,6 +102,12 @@ class _MusicStoreListScreenState extends State<MusicStoreListScreen> {
           if (_cityId != null) 'cityId': _cityId,
         }),
         onAdd: () => _openForm(),
+        // Only group by city when no specific city filter is active — when
+        // one city is selected every visible row already shares it, so a
+        // section header would be redundant.
+        groupKeyOf: _cityId == null
+            ? (store) => store.addressCity ?? 'Nepoznat grad'
+            : null,
         trailing: PdfReportButton(
           label: 'Izvještaj',
           fileName: 'music-stores-report.pdf',

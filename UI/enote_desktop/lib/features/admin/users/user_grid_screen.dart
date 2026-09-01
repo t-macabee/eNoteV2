@@ -72,14 +72,14 @@ class _UserGridScreenState extends State<UserGridScreen> {
         titleOf: _displayName,
         subtitleOf: (item) => item.username ?? '-',
         emptyMessage: _role == UserRole.student ? _studentGapMessage : 'Nema podataka.',
-        aboveGrid: _role == null ? const _SectionLabel('Instruktori') : null,
+        aboveGrid: _role == null ? const EntitySectionLabel('Instruktori') : null,
         belowGrid: _role == null
             ? const Padding(
                 padding: EdgeInsets.only(top: 24),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _SectionLabel('Studenti'),
+                    EntitySectionLabel('Studenti'),
                     SizedBox(height: 12),
                     Text(
                       _studentGapMessage,
@@ -131,33 +131,6 @@ class _UserGridScreenState extends State<UserGridScreen> {
         },
         onAdd: () => _openProvisionForm(),
         addLabel: 'Kreiraj korisnika',
-      ),
-    );
-  }
-}
-
-class _SectionLabel extends StatelessWidget {
-  final String label;
-
-  const _SectionLabel(this.label);
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
-        children: [
-          Text(
-            label,
-            style: const TextStyle(
-              color: AppTheme.textPrimary,
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(width: 12),
-          const Expanded(child: Divider(color: AppTheme.outline)),
-        ],
       ),
     );
   }
