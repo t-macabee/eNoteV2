@@ -33,4 +33,8 @@
     <ProjectReference Include="..\eNote.Contracts\eNote.Contracts.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Data\Migrations\" />
+  </ItemGroup>
+
 </Project>

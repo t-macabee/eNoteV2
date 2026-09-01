@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
 import '../../../widgets/entity_form_scaffold.dart';
-import '../../../widgets/entity_list_screen.dart';
+import '../../../widgets/entity_grid_screen.dart';
 import 'admin_course_form_screen.dart';
 import 'admin_course_provider.dart';
 
@@ -21,14 +21,14 @@ class AdminCourseListScreen extends StatefulWidget {
 }
 
 class _AdminCourseListScreenState extends State<AdminCourseListScreen> {
-  final _listKey = GlobalKey<EntityListScreenState<CourseDto>>();
+  final _gridKey = GlobalKey<EntityGridScreenState<CourseDto>>();
 
   /// null = "Svi" (default) — no published-status filter applied.
   bool? _isPublished;
 
   void _applyFilters() {
     setState(() {});
-    _listKey.currentState?.refresh();
+    _gridKey.currentState?.refresh(resetPage: true);
   }
 
   Future<void> _openForm() async {
@@ -38,44 +38,20 @@ class _AdminCourseListScreenState extends State<AdminCourseListScreen> {
         presentation: EntityFormPresentation.dialog,
       ),
     );
-    _listKey.currentState?.refresh();
+    _gridKey.currentState?.refresh();
   }
 
   @override
   Widget build(BuildContext context) {
-    return EntityListScreen<CourseDto>(
-      key: _listKey,
-      config: EntityListConfig<CourseDto>(
+    return EntityGridScreen<CourseDto>(
+      key: _gridKey,
+      config: EntityGridConfig<CourseDto>(
         title: 'Kursevi',
         searchHint: 'Pretraži po nazivu...',
-        columns: [
-          ColumnSpec<CourseDto>(
-            label: 'Naziv',
-            value: (item) => item.name,
-          ),
-          ColumnSpec<CourseDto>(
-            label: 'Instruktor',
-            value: (item) => item.instructorName ?? '-',
-          ),
-          ColumnSpec<CourseDto>(
-            label: 'Cijena',
-            value: (item) => item.price.toStringAsFixed(2),
-          ),
-          ColumnSpec<CourseDto>(
-            label: 'Objavljen',
-            value: (item) => item.isPublished ? 'Da' : 'Ne',
-          ),
-          ColumnSpec<CourseDto>(
-            label: 'Broj upisanih',
-            value: (item) => item.enrolledCount,
-          ),
-          ColumnSpec<CourseDto>(
-            label: 'Datum početka',
-            value: (item) => formatDateNullable(item.startDate),
-          ),
-        ],
-        showAddButton: true,
-        inlineToolbar: true,
+        placeholderIcon: Icons.class_,
+        titleOf: (item) => item.name,
+        subtitleOf: (item) =>
+            '${item.instructorName ?? "-"} · ${item.price.toStringAsFixed(2)}',
         filterBar: SizedBox(
           width: 220,
           child: DropdownButtonFormField<bool?>(

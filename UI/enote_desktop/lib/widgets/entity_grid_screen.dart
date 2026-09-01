@@ -73,7 +73,7 @@ class EntityGridConfig<T> {
     this.filterBar,
     this.aboveGrid,
     this.belowGrid,
-    this.maxCrossAxisExtent = 170,
+    this.maxCrossAxisExtent = 220,
     this.childAspectRatio = 0.85,
     this.pageSize = 24,
     this.emptyMessage = 'Nema podataka.',
@@ -271,8 +271,8 @@ class EntityGridScreenState<T> extends State<EntityGridScreen<T>> {
             gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
               maxCrossAxisExtent: widget.config.maxCrossAxisExtent,
               childAspectRatio: widget.config.childAspectRatio,
-              mainAxisSpacing: 16,
-              crossAxisSpacing: 16,
+              mainAxisSpacing: 24,
+              crossAxisSpacing: 24,
             ),
             itemCount: _items.length,
             itemBuilder: (context, index) {
@@ -371,7 +371,7 @@ class _EntityGridCardState<T> extends State<_EntityGridCard<T>> {
         onTap: config.onTap != null ? () => config.onTap!(context, item) : null,
         child: Card(
           color: AppTheme.surfaceContainer,
-          margin: EdgeInsets.zero,
+          margin: const EdgeInsets.all(8),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),
             side: const BorderSide(color: AppTheme.outline),

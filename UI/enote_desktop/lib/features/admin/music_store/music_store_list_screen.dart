@@ -67,7 +67,6 @@ class _MusicStoreListScreenState extends State<MusicStoreListScreen> {
         placeholderIcon: Icons.storefront_outlined,
         titleOf: (item) => item.storeName,
         subtitleOf: (item) => item.businessHours,
-        aboveGrid: const SizedBox(height: 12),
         onTap: (context, item) => _openForm(item),
         onDelete: (context, item) async {
           await context.read<MusicStoreProvider>().remove(item.id);
