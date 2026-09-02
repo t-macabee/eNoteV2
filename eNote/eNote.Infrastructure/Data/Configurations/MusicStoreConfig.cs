@@ -9,6 +9,8 @@ public sealed class MusicStoreConfig : IEntityTypeConfiguration<MusicStore>
     {
         builder.Property(m => m.StoreName).HasStringConfig(100, true);
         builder.Property(m => m.BusinessHours).HasStringConfig(50, true);
+        builder.Property(m => m.PhoneNumber).HasStringConfig(30, false);
+        builder.Property(m => m.ImagePath).HasMaxLength(500);
 
         builder.HasOne(x => x.Address)
             .WithMany()

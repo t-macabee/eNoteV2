@@ -2,23 +2,33 @@ using eNote.Application.Common.Crud;
 
 namespace eNote.Application.Features.Rentals.ReferenceData.MusicStores;
 
-public sealed class MusicStoreService(IAppDbContext context) : ReferenceDataCrudService<MusicStore, MusicStoreDto, MusicStoreRequest, MusicStoreSearchObject>(context)
+public sealed class MusicStoreService(IAppDbContext context, IFileStorageService fileStorage) : ReferenceDataCrudService<MusicStore, MusicStoreDto, MusicStoreRequest, MusicStoreSearchObject>(context)
 {
     protected override MusicStoreDto Map(MusicStore entity) => new()
     {
         Id = entity.Id,
         StoreName = entity.StoreName,
         BusinessHours = entity.BusinessHours,
+        PhoneNumber = entity.PhoneNumber,
+        ImagePath = entity.ImagePath,
         AddressId = entity.AddressId,
         AddressStreet = entity.Address?.Street,
         AddressCity = entity.Address?.City?.Name
     };
 
-    protected override MusicStore CreateEntity(MusicStoreRequest request) => new(request.StoreName.Trim(), request.BusinessHours.Trim(), request.AddressId);
+    protected override MusicStore CreateEntity(MusicStoreRequest request) => new(
+        request.StoreName.Trim(),
+        request.BusinessHours.Trim(),
+        request.AddressId,
+        request.PhoneNumber?.Trim());
 
     protected override void UpdateEntity(MusicStore entity, MusicStoreRequest request)
     {
-        entity.UpdateDetails(request.StoreName.Trim(), request.BusinessHours.Trim(), request.AddressId);
+        entity.UpdateDetails(
+            request.StoreName.Trim(),
+            request.BusinessHours.Trim(),
+            request.AddressId,
+            request.PhoneNumber?.Trim());
     }
 
     public override async Task<PagedResult<MusicStoreDto>> GetPagedAsync(MusicStoreSearchObject search, CancellationToken cancellationToken = default)
@@ -54,6 +64,22 @@ public sealed class MusicStoreService(IAppDbContext context) : ReferenceDataCrud
         await Db.SaveChangesAsync(cancellationToken);
         var reloaded = await Db.Set<MusicStore>().AsNoTracking().Include(x => x.Address).ThenInclude(a => a!.City).FirstOrDefaultAsync(x => x.Id == id, cancellationToken)
             ?? throw new NotFoundException(NotFoundMessage);
+        return Map(reloaded);
+    }
+
+    public async Task<MusicStoreDto> UploadImageAsync(int id, Stream stream, string fileName, string contentType, CancellationToken ct = default)
+    {
+        var entity = await Db.Set<MusicStore>().FirstOrDefaultAsync(x => x.Id == id, ct)
+            ?? throw new NotFoundException(NotFoundMessage);
+
+        var path = await fileStorage.SaveAsync(stream, fileName, contentType, "music-stores", ct);
+        entity.UpdateImagePath(path);
+
+        await Db.SaveChangesAsync(ct);
+
+        var reloaded = await Db.Set<MusicStore>().AsNoTracking().Include(x => x.Address).ThenInclude(a => a!.City).FirstOrDefaultAsync(x => x.Id == id, ct)
+            ?? throw new NotFoundException(NotFoundMessage);
+
         return Map(reloaded);
     }
 

@@ -9,6 +9,8 @@ public class MusicStore : AuditableEntity
 
     public string StoreName { get; private set; } = null!;
     public string BusinessHours { get; private set; } = null!;
+    public string? PhoneNumber { get; private set; }
+    public string? ImagePath { get; private set; }
 
     public int? AddressId { get; private set; }
     public Address? Address { get; private set; }
@@ -20,17 +22,21 @@ public class MusicStore : AuditableEntity
     {
     }
 
-    public MusicStore(string storeName, string businessHours, int? addressId = null)
+    public MusicStore(string storeName, string businessHours, int? addressId = null, string? phoneNumber = null)
     {
         StoreName = storeName;
         BusinessHours = businessHours;
         AddressId = addressId;
+        PhoneNumber = phoneNumber;
     }
 
-    public void UpdateDetails(string storeName, string businessHours, int? addressId = null)
+    public void UpdateDetails(string storeName, string businessHours, int? addressId = null, string? phoneNumber = null)
     {
         StoreName = storeName;
         BusinessHours = businessHours;
         AddressId = addressId;
+        PhoneNumber = phoneNumber;
     }
+
+    public void UpdateImagePath(string path) => ImagePath = path;
 }

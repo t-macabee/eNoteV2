@@ -1,4 +1,5 @@
 using eNote.API.Controllers.Base;
+using eNote.Application.Common.Localization;
 using eNote.Application.Common.Paging;
 using eNote.Application.Constants;
 using eNote.Application.Features.Rentals.ReferenceData.MusicStores;
@@ -42,6 +43,21 @@ public sealed class AdminMusicStoreController(MusicStoreService service, IReport
     {
         MusicStoreDto dto = await service.UpdateAsync(id, request, cancellationToken);
         return Ok(dto);
+    }
+
+    [HttpPost("{id:int}/image")]
+    [ProducesResponseType(typeof(MusicStoreDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<MusicStoreDto>> UploadImage(int id, IFormFile? file, CancellationToken ct)
+    {
+        if (file is null || file.Length == 0)
+        {
+            return BadRequest(new { message = Messages.FileNotProvided });
+        }
+
+        await using Stream stream = file.OpenReadStream();
+        var result = await service.UploadImageAsync(id, stream, file.FileName, file.ContentType, ct);
+        return Ok(result);
     }
 
     [HttpDelete("{id:int}")]

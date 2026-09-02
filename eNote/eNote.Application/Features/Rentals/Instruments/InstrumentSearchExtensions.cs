@@ -19,6 +19,11 @@ public static class InstrumentSearchExtensions
             query = query.Where(x => x.InstrumentTypeId == search.InstrumentTypeId.Value);
         }
 
+        if (search.MusicStoreId.HasValue)
+        {
+            query = query.Where(x => x.MusicStoreId == search.MusicStoreId.Value);
+        }
+
         if (!search.IsAvailable.HasValue)
         {
             return query;

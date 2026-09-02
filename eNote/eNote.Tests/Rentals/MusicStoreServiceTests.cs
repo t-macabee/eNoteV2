@@ -14,12 +14,13 @@ public sealed class MusicStoreServiceTests
     {
         var ctx = TestDbContextFactory.CreateContext(Now);
         var address = await SeedAddressAsync(ctx, "Sarajevo", "Main St");
-        var service = new MusicStoreService(ctx);
+        var service = CreateService(ctx);
 
         var dto = await service.CreateAsync(new MusicStoreRequest
         {
             StoreName = "Music Shop",
             BusinessHours = "09-17",
+            PhoneNumber = "+38761111222",
             AddressId = address.Id
         });
 
@@ -27,6 +28,7 @@ public sealed class MusicStoreServiceTests
         Assert.Equal("Main St", dto.AddressStreet);
         Assert.Equal("Sarajevo", dto.AddressCity);
         Assert.Equal("Music Shop", dto.StoreName);
+        Assert.Equal("+38761111222", dto.PhoneNumber);
         Assert.NotEqual(0, dto.Id);
     }
 
@@ -34,7 +36,7 @@ public sealed class MusicStoreServiceTests
     public async Task CreateAsync_WithoutAddress_ReturnsNullAddressFields()
     {
         var ctx = TestDbContextFactory.CreateContext(Now);
-        var service = new MusicStoreService(ctx);
+        var service = CreateService(ctx);
 
         var dto = await service.CreateAsync(new MusicStoreRequest
         {
@@ -46,6 +48,7 @@ public sealed class MusicStoreServiceTests
         Assert.Null(dto.AddressId);
         Assert.Null(dto.AddressStreet);
         Assert.Null(dto.AddressCity);
+        Assert.Null(dto.PhoneNumber);
     }
 
     [Fact]
@@ -53,12 +56,13 @@ public sealed class MusicStoreServiceTests
     {
         var ctx = TestDbContextFactory.CreateContext(Now);
         var address = await SeedAddressAsync(ctx, "Mostar", "Old Street");
-        var service = new MusicStoreService(ctx);
+        var service = CreateService(ctx);
 
         var created = await service.CreateAsync(new MusicStoreRequest
         {
             StoreName = "Shop A",
             BusinessHours = "09-17",
+            PhoneNumber = "+38762333444",
             AddressId = address.Id
         });
 
@@ -67,6 +71,7 @@ public sealed class MusicStoreServiceTests
         Assert.Equal(address.Id, fetched.AddressId);
         Assert.Equal("Old Street", fetched.AddressStreet);
         Assert.Equal("Mostar", fetched.AddressCity);
+        Assert.Equal("+38762333444", fetched.PhoneNumber);
     }
 
     // contract: Update round-trips AddressId and returns populated AddressStreet/AddressCity
@@ -76,12 +81,13 @@ public sealed class MusicStoreServiceTests
         var ctx = TestDbContextFactory.CreateContext(Now);
         var address1 = await SeedAddressAsync(ctx, "Sarajevo", "Street 1");
         var address2 = await SeedAddressAsync(ctx, "Tuzla", "Street 2");
-        var service = new MusicStoreService(ctx);
+        var service = CreateService(ctx);
 
         var created = await service.CreateAsync(new MusicStoreRequest
         {
             StoreName = "Shop",
             BusinessHours = "09-17",
+            PhoneNumber = "+38761111111",
             AddressId = address1.Id
         });
 
@@ -89,6 +95,7 @@ public sealed class MusicStoreServiceTests
         {
             StoreName = "Shop Updated",
             BusinessHours = "10-18",
+            PhoneNumber = "+38762222222",
             AddressId = address2.Id
         });
 
@@ -96,6 +103,7 @@ public sealed class MusicStoreServiceTests
         Assert.Equal("Street 2", updated.AddressStreet);
         Assert.Equal("Tuzla", updated.AddressCity);
         Assert.Equal("Shop Updated", updated.StoreName);
+        Assert.Equal("+38762222222", updated.PhoneNumber);
     }
 
     [Fact]
@@ -103,12 +111,13 @@ public sealed class MusicStoreServiceTests
     {
         var ctx = TestDbContextFactory.CreateContext(Now);
         var address = await SeedAddressAsync(ctx, "Sarajevo", "Street 1");
-        var service = new MusicStoreService(ctx);
+        var service = CreateService(ctx);
 
         var created = await service.CreateAsync(new MusicStoreRequest
         {
             StoreName = "Shop",
             BusinessHours = "09-17",
+            PhoneNumber = "+38761111111",
             AddressId = address.Id
         });
 
@@ -116,12 +125,14 @@ public sealed class MusicStoreServiceTests
         {
             StoreName = "Shop",
             BusinessHours = "09-17",
+            PhoneNumber = null,
             AddressId = null
         });
 
         Assert.Null(updated.AddressId);
         Assert.Null(updated.AddressStreet);
         Assert.Null(updated.AddressCity);
+        Assert.Null(updated.PhoneNumber);
     }
 
     [Fact]
@@ -129,27 +140,53 @@ public sealed class MusicStoreServiceTests
     {
         var ctx = TestDbContextFactory.CreateContext(Now);
         var address = await SeedAddressAsync(ctx, "Zenica", "Center St");
-        var service = new MusicStoreService(ctx);
+        var service = CreateService(ctx);
 
         var created = await service.CreateAsync(new MusicStoreRequest
         {
             StoreName = "No Address Initially",
             BusinessHours = "09-17",
+            PhoneNumber = null,
             AddressId = null
         });
 
         Assert.Null(created.AddressId);
+        Assert.Null(created.PhoneNumber);
 
         var updated = await service.UpdateAsync(created.Id, new MusicStoreRequest
         {
             StoreName = "No Address Initially",
             BusinessHours = "09-17",
+            PhoneNumber = "+38763333333",
             AddressId = address.Id
         });
 
         Assert.Equal(address.Id, updated.AddressId);
         Assert.Equal("Center St", updated.AddressStreet);
         Assert.Equal("Zenica", updated.AddressCity);
+        Assert.Equal("+38763333333", updated.PhoneNumber);
+    }
+
+    [Fact]
+    public async Task UploadImageAsync_SavesFile_AndUpdatesMusicStoreImagePath()
+    {
+        var ctx = TestDbContextFactory.CreateContext(Now);
+        var service = CreateService(ctx);
+
+        var created = await service.CreateAsync(new MusicStoreRequest
+        {
+            StoreName = "Image Store",
+            BusinessHours = "09-17"
+        });
+
+        using var stream = new MemoryStream([1, 2, 3]);
+        var updated = await service.UploadImageAsync(created.Id, stream, "store.png", "image/png");
+
+        Assert.NotNull(updated.ImagePath);
+        Assert.Contains("music-stores", updated.ImagePath);
+
+        var fetched = await service.GetByIdAsync(created.Id);
+        Assert.Equal(updated.ImagePath, fetched.ImagePath);
     }
 
     // contract: GetPagedAsync filters by CityId correctly
@@ -161,7 +198,7 @@ public sealed class MusicStoreServiceTests
         var cityMostar = await SeedCityAsync(ctx, "Mostar");
         var addrSarajevo = await SeedAddressWithCityAsync(ctx, citySarajevo, "Street A");
         var addrMostar = await SeedAddressWithCityAsync(ctx, cityMostar, "Street B");
-        var service = new MusicStoreService(ctx);
+        var service = CreateService(ctx);
 
         await service.CreateAsync(new MusicStoreRequest { StoreName = "Shop Sarajevo 1", BusinessHours = "09-17", AddressId = addrSarajevo.Id });
         await service.CreateAsync(new MusicStoreRequest { StoreName = "Shop Sarajevo 2", BusinessHours = "09-17", AddressId = addrSarajevo.Id });
@@ -186,7 +223,7 @@ public sealed class MusicStoreServiceTests
         var ctx = TestDbContextFactory.CreateContext(Now);
         var city = await SeedCityAsync(ctx, "Sarajevo");
         var addr = await SeedAddressWithCityAsync(ctx, city, "Street A");
-        var service = new MusicStoreService(ctx);
+        var service = CreateService(ctx);
 
         await service.CreateAsync(new MusicStoreRequest { StoreName = "With Address", BusinessHours = "09-17", AddressId = addr.Id });
         await service.CreateAsync(new MusicStoreRequest { StoreName = "Without Address", BusinessHours = "09-17", AddressId = null });
@@ -201,7 +238,7 @@ public sealed class MusicStoreServiceTests
     public async Task GetPagedAsync_FiltersByStoreName_StillWorks()
     {
         var ctx = TestDbContextFactory.CreateContext(Now);
-        var service = new MusicStoreService(ctx);
+        var service = CreateService(ctx);
 
         await service.CreateAsync(new MusicStoreRequest { StoreName = "Music Shop Alpha", BusinessHours = "09-17" });
         await service.CreateAsync(new MusicStoreRequest { StoreName = "Music Shop Beta", BusinessHours = "09-17" });
@@ -224,7 +261,7 @@ public sealed class MusicStoreServiceTests
         var cityMostar = await SeedCityAsync(ctx, "Mostar");
         var addrSarajevo = await SeedAddressWithCityAsync(ctx, citySarajevo, "Street A");
         var addrMostar = await SeedAddressWithCityAsync(ctx, cityMostar, "Street B");
-        var service = new MusicStoreService(ctx);
+        var service = CreateService(ctx);
 
         await service.CreateAsync(new MusicStoreRequest { StoreName = "Music Shop Sarajevo", BusinessHours = "09-17", AddressId = addrSarajevo.Id });
         await service.CreateAsync(new MusicStoreRequest { StoreName = "Music Shop Mostar", BusinessHours = "09-17", AddressId = addrMostar.Id });
@@ -234,6 +271,9 @@ public sealed class MusicStoreServiceTests
         Assert.Single(filtered.Items);
         Assert.Equal("Music Shop Sarajevo", filtered.Items[0].StoreName);
     }
+
+    private static MusicStoreService CreateService(ENoteContext ctx, IFileStorageService? fileStorage = null) =>
+        new(ctx, fileStorage ?? new StubFileStorageService());
 
     private static async Task<City> SeedCityAsync(ENoteContext ctx, string name)
     {

@@ -5,6 +5,8 @@ public sealed class MusicStoreDto
     public int Id { get; init; }
     public string StoreName { get; init; } = null!;
     public string BusinessHours { get; init; } = null!;
+    public string? PhoneNumber { get; init; }
+    public string? ImagePath { get; init; }
     public int? AddressId { get; init; }
     public string? AddressStreet { get; init; }
     public string? AddressCity { get; init; }
