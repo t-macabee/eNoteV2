@@ -8,6 +8,7 @@ import '../../../widgets/entity_form_scaffold.dart';
 import '../../../widgets/entity_grid_screen.dart';
 import '../../../widgets/pdf_report_button.dart';
 import '../city/city_provider.dart';
+import 'music_store_detail_screen.dart';
 import 'music_store_form_screen.dart';
 import 'music_store_provider.dart';
 
@@ -66,7 +67,14 @@ class _MusicStoreListScreenState extends State<MusicStoreListScreen> {
         searchHint: 'Pretraži...',
         placeholderIcon: Icons.storefront_outlined,
         titleOf: (item) => item.storeName,
-        onTap: (context, item) => _openForm(item),
+        onTap: (context, item) async {
+          await Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => MusicStoreDetailScreen(storeId: item.id),
+            ),
+          );
+          _gridKey.currentState?.refresh();
+        },
         onDelete: (context, item) async {
           await context.read<MusicStoreProvider>().remove(item.id);
           return true;

@@ -14,6 +14,7 @@ import 'features/admin/instrument_type/instrument_type_provider.dart';
 import 'features/instructor/course/course_provider.dart';
 import 'features/instructor/lecture/lecture_provider.dart';
 import 'features/admin/music_store/music_store_provider.dart';
+import 'features/admin/music_store/store_instrument_provider.dart';
 import 'features/admin/users/user_provision_service.dart';
 import 'features/store_employee/announcement/announcement_provider.dart';
 import 'features/store_employee/instrument/instrument_provider.dart';
@@ -53,6 +54,9 @@ class MyApp extends StatelessWidget {
         ),
         ChangeNotifierProvider<MusicStoreProvider>(
           create: (_) => MusicStoreProvider(apiClient: apiClient),
+        ),
+        ChangeNotifierProvider<StoreInstrumentProvider>(
+          create: (_) => StoreInstrumentProvider(apiClient: apiClient),
         ),
         ChangeNotifierProvider<InstrumentTypeProvider>(
           create: (_) => InstrumentTypeProvider(apiClient: apiClient),

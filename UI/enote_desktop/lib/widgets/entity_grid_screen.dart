@@ -33,6 +33,11 @@ class EntityGridConfig<T> {
   final String searchHint;
   final bool showSearchBar;
 
+  /// When true, renders just the search bar + grid + pagination, with no
+  /// Scaffold/AppBar of its own — for embedding inside another screen's
+  /// layout, e.g. a detail screen's side panel.
+  final bool embedded;
+
   /// Rendered in the [AppBar] actions, e.g. a [PdfReportButton].
   final Widget? trailing;
 
@@ -84,6 +89,7 @@ class EntityGridConfig<T> {
     this.showAddButton = true,
     this.searchHint = 'Pretraži...',
     this.showSearchBar = true,
+    this.embedded = false,
     this.trailing,
     this.filterBar,
     this.aboveGrid,
@@ -195,31 +201,39 @@ class EntityGridScreenState<T> extends State<EntityGridScreen<T>> {
 
   @override
   Widget build(BuildContext context) {
+    final content = _buildContent();
+    if (widget.config.embedded) {
+      return content;
+    }
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.config.title),
         actions: [if (widget.config.trailing != null) widget.config.trailing!],
       ),
-      body: Column(
-        children: [
-          _buildFilterRow(),
-          Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : _items.isEmpty &&
-                        widget.config.aboveGrid == null &&
-                        widget.config.belowGrid == null
-                ? Center(
-                    child: Text(
-                      widget.config.emptyMessage,
-                      style: const TextStyle(color: AppTheme.textSecondary),
-                    ),
-                  )
-                : _buildBody(),
-          ),
-          _buildPagination(),
-        ],
-      ),
+      body: content,
+    );
+  }
+
+  Widget _buildContent() {
+    return Column(
+      children: [
+        _buildFilterRow(),
+        Expanded(
+          child: _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : _items.isEmpty &&
+                      widget.config.aboveGrid == null &&
+                      widget.config.belowGrid == null
+                  ? Center(
+                      child: Text(
+                        widget.config.emptyMessage,
+                        style: const TextStyle(color: AppTheme.textSecondary),
+                      ),
+                    )
+                  : _buildBody(),
+        ),
+        _buildPagination(),
+      ],
     );
   }
 
