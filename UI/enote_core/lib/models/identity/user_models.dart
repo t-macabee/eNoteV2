@@ -181,3 +181,47 @@ class InstructorDto {
   };
 }
 
+class StudentDto {
+  final int id;
+  final int appUserId;
+  final String? firstName;
+  final String? lastName;
+  final String? username;
+  final DateTime? enrollmentDate;
+  final DateTime? membershipPaidUntil;
+
+  StudentDto({
+    required this.id,
+    required this.appUserId,
+    this.firstName,
+    this.lastName,
+    this.username,
+    this.enrollmentDate,
+    this.membershipPaidUntil,
+  });
+
+  factory StudentDto.fromJson(Map<String, dynamic> json) {
+    return StudentDto(
+      id: json['id'] as int? ?? 0,
+      appUserId: json['appUserId'] as int? ?? 0,
+      firstName: json['firstName'] as String?,
+      lastName: json['lastName'] as String?,
+      username: json['username'] as String?,
+      enrollmentDate: parseDate(json['enrollmentDate']),
+      membershipPaidUntil: parseDate(json['membershipPaidUntil']),
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'appUserId': appUserId,
+    if (firstName != null) 'firstName': firstName,
+    if (lastName != null) 'lastName': lastName,
+    if (username != null) 'username': username,
+    if (enrollmentDate != null)
+      'enrollmentDate': enrollmentDate!.toIso8601String(),
+    if (membershipPaidUntil != null)
+      'membershipPaidUntil': membershipPaidUntil!.toIso8601String(),
+  };
+}
+

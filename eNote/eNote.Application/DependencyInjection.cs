@@ -7,6 +7,7 @@ using eNote.Application.Features.Communication.Events;
 using eNote.Application.Features.Communication.Notifications.Services;
 using eNote.Application.Features.Files.Services;
 using eNote.Application.Features.Identity.Instructors;
+using eNote.Application.Features.Identity.Students;
 using eNote.Application.Features.Identity.Users.Services;
 using eNote.Application.Features.Rentals.InstrumentRentals.Services;
 using eNote.Application.Features.Rentals.Instruments.Services;
@@ -37,6 +38,7 @@ public static class DependencyInjection
         services.AddScoped<AssignmentService>();
         services.AddScoped<AssignmentSubmissionService>();
         services.AddScoped<AdminInstructorService>();
+        services.AddScoped<AdminStudentService>();
         services.AddScoped<InstructorAnnouncementService>();
         services.AddScoped<StoreAnnouncementService>();
         services.AddScoped<StudentAnnouncementFeedService>();

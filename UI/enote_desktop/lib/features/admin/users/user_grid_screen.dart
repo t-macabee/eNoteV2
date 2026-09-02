@@ -3,24 +3,25 @@ import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
 
-import '../../../theme/app_theme.dart';
 import '../../../widgets/entity_grid_screen.dart';
 import '../instructor/instructor_provider.dart';
+import '../student/student_provider.dart';
 import 'user_provision_form_screen.dart';
 
-const String _studentGapMessage =
-    'Prikaz studenata još nije dostupan — nedostaje admin endpoint za listu '
-    'studenata.';
+class _UserListItem {
+  final int appUserId;
+  final String displayName;
+  final UserRole role;
+
+  const _UserListItem({
+    required this.appUserId,
+    required this.displayName,
+    required this.role,
+  });
+}
 
 /// Administrator "Users" tab — card grid of Students + Instructors,
 /// filterable by name and role.
-///
-/// Only the Instructor side is backed by a real endpoint today
-/// (`AdminInstructorController.GetPaged`). There is no admin-scoped Student
-/// list endpoint (`AdminUsersController` only has `GetById`/`Provision`/
-/// `UpdateMembership`) — see the Admin IA rework prompt, point 2. Selecting
-/// "Student" (or the "Svi korisnici" default, which shows both sections)
-/// surfaces that gap instead of silently showing wrong data.
 class UserGridScreen extends StatefulWidget {
   const UserGridScreen({super.key});
 
@@ -29,16 +30,20 @@ class UserGridScreen extends StatefulWidget {
 }
 
 class _UserGridScreenState extends State<UserGridScreen> {
-  final _gridKey = GlobalKey<EntityGridScreenState<InstructorDto>>();
+  final _gridKey = GlobalKey<EntityGridScreenState<_UserListItem>>();
 
   /// null = "Svi korisnici" (default) — shows Instruktori + Studenti as two
   /// labeled sections. Otherwise filters to just that role.
   UserRole? _role;
 
-  static String _displayName(InstructorDto item) {
-    final name = '${item.firstName ?? ''} ${item.lastName ?? ''}'.trim();
+  static String _formatDisplayName(
+    String? firstName,
+    String? lastName,
+    String? username,
+  ) {
+    final name = '${firstName ?? ''} ${lastName ?? ''}'.trim();
     if (name.isNotEmpty) return name;
-    return item.username ?? '-';
+    return username ?? '-';
   }
 
   Future<void> _openProvisionForm() async {
@@ -62,13 +67,13 @@ class _UserGridScreenState extends State<UserGridScreen> {
     // be running against this build's (about-to-be-stale) config. Reading
     // the field directly keeps every closure correct regardless of when it
     // was created.
-    return EntityGridScreen<InstructorDto>(
+    return EntityGridScreen<_UserListItem>(
       key: _gridKey,
-      config: EntityGridConfig<InstructorDto>(
+      config: EntityGridConfig<_UserListItem>(
         title: 'Korisnici',
         searchHint: 'Pretraži po imenu...',
         placeholderIcon: Icons.person_outline,
-        titleOf: _displayName,
+        titleOf: (item) => item.displayName,
         onDelete: (context, item) async {
           final apiClient = context.read<ApiClient>();
           final response = await apiClient.delete(
@@ -81,27 +86,10 @@ class _UserGridScreenState extends State<UserGridScreen> {
           }
           return true;
         },
-        emptyMessage: _role == UserRole.student
-            ? _studentGapMessage
-            : 'Nema podataka.',
-        aboveGrid: _role == null
-            ? const EntitySectionLabel('Instruktori')
-            : null,
-        belowGrid: _role == null
-            ? const Padding(
-                padding: EdgeInsets.only(top: 24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    EntitySectionLabel('Studenti'),
-                    SizedBox(height: 12),
-                    Text(
-                      _studentGapMessage,
-                      style: TextStyle(color: AppTheme.textSecondary),
-                    ),
-                  ],
-                ),
-              )
+        groupKeyOf: _role == null
+            ? (item) => item.role == UserRole.instructor
+                ? 'Instruktori'
+                : 'Studenti'
             : null,
         filterBar: SizedBox(
           width: 220,
@@ -123,22 +111,101 @@ class _UserGridScreenState extends State<UserGridScreen> {
           ),
         ),
         fetcher: (page, pageSize, search) async {
-          if (_role == UserRole.student) {
-            return PagedResult<InstructorDto>(
-              items: const [],
-              page: page,
-              pageSize: pageSize,
-              totalCount: 0,
-            );
-          }
-          // null (Svi korisnici) and UserRole.instructor both show
-          // Instruktori — it's the only role with real data.
-          return context.read<InstructorProvider>().search({
+          final query = {
             'page': page,
             'pageSize': pageSize,
             'includeTotalCount': true,
             if (search.isNotEmpty) 'name': search,
-          });
+          };
+
+          if (_role == UserRole.instructor) {
+            final result =
+                await context.read<InstructorProvider>().search(query);
+            return PagedResult<_UserListItem>(
+              items: result.items
+                  .map(
+                    (i) => _UserListItem(
+                      appUserId: i.appUserId,
+                      displayName: _formatDisplayName(
+                        i.firstName,
+                        i.lastName,
+                        i.username,
+                      ),
+                      role: UserRole.instructor,
+                    ),
+                  )
+                  .toList(),
+              page: result.page,
+              pageSize: result.pageSize,
+              totalCount: result.totalCount,
+            );
+          }
+
+          if (_role == UserRole.student) {
+            final result = await context.read<StudentProvider>().search(query);
+            return PagedResult<_UserListItem>(
+              items: result.items
+                  .map(
+                    (s) => _UserListItem(
+                      appUserId: s.appUserId,
+                      displayName: _formatDisplayName(
+                        s.firstName,
+                        s.lastName,
+                        s.username,
+                      ),
+                      role: UserRole.student,
+                    ),
+                  )
+                  .toList(),
+              page: result.page,
+              pageSize: result.pageSize,
+              totalCount: result.totalCount,
+            );
+          }
+
+          // _role == null: fetch both instructors and students concurrently
+          final instructorFuture =
+              context.read<InstructorProvider>().search(query);
+          final studentFuture = context.read<StudentProvider>().search(query);
+          final results = await Future.wait([instructorFuture, studentFuture]);
+          final instructorResult = results[0] as PagedResult<InstructorDto>;
+          final studentResult = results[1] as PagedResult<StudentDto>;
+
+          final instructorItems = instructorResult.items.map(
+            (i) => _UserListItem(
+              appUserId: i.appUserId,
+              displayName: _formatDisplayName(
+                i.firstName,
+                i.lastName,
+                i.username,
+              ),
+              role: UserRole.instructor,
+            ),
+          );
+          final studentItems = studentResult.items.map(
+            (s) => _UserListItem(
+              appUserId: s.appUserId,
+              displayName: _formatDisplayName(
+                s.firstName,
+                s.lastName,
+                s.username,
+              ),
+              role: UserRole.student,
+            ),
+          );
+
+          final totalCount = (instructorResult.totalCount != null ||
+                  studentResult.totalCount != null)
+              ? (instructorResult.totalCount ?? 0) +
+                  (studentResult.totalCount ?? 0)
+              : null;
+
+          return PagedResult<_UserListItem>(
+            items: [...instructorItems, ...studentItems],
+            page: page,
+            pageSize: pageSize,
+            totalCount: totalCount,
+          );
         },
         onAdd: () => _openProvisionForm(),
         addLabel: 'Kreiraj korisnika',
