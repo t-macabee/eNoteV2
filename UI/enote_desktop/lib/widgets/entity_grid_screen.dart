@@ -490,30 +490,6 @@ class _EntityGridCardState<T> extends State<_EntityGridCard<T>> {
                   ),
                 ),
               ),
-              if (widget.onDelete != null)
-                Positioned(
-                  top: 4,
-                  right: 4,
-                  child: AnimatedOpacity(
-                    opacity: _isHovered ? 1.0 : 0.0,
-                    duration: const Duration(milliseconds: 200),
-                    child: Material(
-                      color: Colors.black54,
-                      shape: const CircleBorder(),
-                      child: SizedBox(
-                        width: 28,
-                        height: 28,
-                        child: IconButton(
-                          icon: const Icon(Icons.delete, size: 14, color: Colors.white),
-                          tooltip: 'Obriši',
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(),
-                          onPressed: widget.onDelete,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
             ],
           ),
         ),

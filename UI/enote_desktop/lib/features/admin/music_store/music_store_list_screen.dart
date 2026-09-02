@@ -66,7 +66,6 @@ class _MusicStoreListScreenState extends State<MusicStoreListScreen> {
         searchHint: 'Pretraži...',
         placeholderIcon: Icons.storefront_outlined,
         titleOf: (item) => item.storeName,
-        subtitleOf: (item) => item.businessHours,
         onTap: (context, item) => _openForm(item),
         onDelete: (context, item) async {
           await context.read<MusicStoreProvider>().remove(item.id);
