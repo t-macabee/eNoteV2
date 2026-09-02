@@ -121,6 +121,10 @@ void main() {
     await tester.pump();
     await tester.pumpAndSettle();
 
+    // Exactly one app bar — the embedded instrument grid must not render
+    // its own nested Scaffold/AppBar on top of this screen's.
+    expect(find.byType(AppBar), findsOneWidget);
+
     // Verify left panel details
     expect(find.text('Muzička Kuća Sarajevo'), findsWidgets);
     expect(find.text('Titova 10, Sarajevo'), findsOneWidget);
