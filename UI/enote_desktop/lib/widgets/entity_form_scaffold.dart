@@ -133,7 +133,7 @@ class _EntityFormScaffoldState extends State<EntityFormScaffold> {
     final maxHeight = MediaQuery.sizeOf(context).height * 0.8;
     return AlertDialog(
       constraints: BoxConstraints(maxWidth: 640, maxHeight: maxHeight),
-      titlePadding: const EdgeInsets.fromLTRB(24, 8, 4, 0),
+      titlePadding: const EdgeInsets.fromLTRB(24, 20, 8, 0),
       title: Row(
         children: [
           Expanded(child: Text(widget.title)),
@@ -144,24 +144,44 @@ class _EntityFormScaffoldState extends State<EntityFormScaffold> {
           ),
         ],
       ),
-      contentPadding: const EdgeInsets.fromLTRB(24, 8, 24, 0),
+      contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
       content: SizedBox(
         width: 520,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.only(bottom: 24),
+          padding: const EdgeInsets.only(bottom: 12),
           child: Form(
             key: _formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                ...widget.fieldsBuilder(context),
-                const SizedBox(height: 24),
-                _buildSaveButton(),
-              ],
+              children: widget.fieldsBuilder(context),
             ),
           ),
         ),
       ),
+      actionsPadding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+      actions: [
+        Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Divider(),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton(
+                  onPressed: _isSaving
+                      ? null
+                      : () => Navigator.of(context).pop(false),
+                  child: const Text('Otkaži'),
+                ),
+                const SizedBox(width: 12),
+                _buildSaveButton(),
+              ],
+            ),
+          ],
+        ),
+      ],
     );
   }
 }

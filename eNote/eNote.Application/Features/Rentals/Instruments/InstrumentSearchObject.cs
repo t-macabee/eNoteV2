@@ -4,6 +4,7 @@ namespace eNote.Application.Features.Rentals.Instruments;
 
 public class InstrumentSearchObject : BaseSearchObject
 {
+    public string? Search { get; set; }
     public string? Model { get; set; }
     public string? Manufacturer { get; set; }
     public int? InstrumentTypeId { get; set; }
@@ -11,3 +12,4 @@ public class InstrumentSearchObject : BaseSearchObject
 
     public bool? IsAvailable { get; set; }
 }
+

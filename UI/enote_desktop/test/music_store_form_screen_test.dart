@@ -9,6 +9,7 @@ import 'package:enote_core/enote_core.dart';
 import 'package:enote_desktop/features/admin/address/address_provider.dart';
 import 'package:enote_desktop/features/admin/music_store/music_store_form_screen.dart';
 import 'package:enote_desktop/features/admin/music_store/music_store_provider.dart';
+import 'package:enote_desktop/widgets/entity_form_scaffold.dart';
 
 class _StoreFormRecordingHttpClient extends http.BaseClient {
   final List<String?> postedBodies = [];
@@ -102,5 +103,76 @@ void main() {
     expect(body['businessHours'], equals('08:00 - 16:00'));
     expect(body['phoneNumber'], equals('+387 61 111 222'));
     expect(body['addressId'], equals(2));
+  });
+
+  testWidgets('MusicStoreFormScreen dialog mode renders Otkaži and Sačuvaj in actions row, and edit mode shows image auto-save label',
+      (WidgetTester tester) async {
+    final authState = AuthState(baseUrl: 'http://localhost:5059/api/v1/');
+    final httpClient = _StoreFormRecordingHttpClient();
+    final apiClient = ApiClient(
+      baseUrl: 'http://localhost:5059/api/v1/',
+      authState: authState,
+      httpClient: httpClient,
+    );
+    final musicStoreProvider = MusicStoreProvider(apiClient: apiClient);
+    final addressProvider = AddressProvider(apiClient: apiClient);
+
+    final existingStore = MusicStoreDto(
+      id: 5,
+      storeName: 'Postojeća Prodavnica',
+      businessHours: '09:00 - 17:00',
+      phoneNumber: '+387 33 000 111',
+      addressId: 1,
+      addressStreet: 'Maršala Tita 1',
+      addressCity: 'Sarajevo',
+      imagePath: '/images/store5.jpg',
+    );
+
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          Provider<ApiClient>.value(value: apiClient),
+          ChangeNotifierProvider<MusicStoreProvider>.value(value: musicStoreProvider),
+          ChangeNotifierProvider<AddressProvider>.value(value: addressProvider),
+        ],
+        child: MaterialApp(
+          home: Builder(
+            builder: (context) => Scaffold(
+              body: Center(
+                child: ElevatedButton(
+                  onPressed: () => EntityFormScaffold.showAsDialog(
+                    context,
+                    builder: (_) => MusicStoreFormScreen(
+                      existing: existingStore,
+                      presentation: EntityFormPresentation.dialog,
+                    ),
+                  ),
+                  child: const Text('Open Dialog'),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Open Dialog'));
+    await tester.pumpAndSettle();
+
+    // Verify dialog title
+    expect(find.text('Uredi prodavnicu'), findsOneWidget);
+
+    // Verify image auto-save helper text is present in edit mode
+    expect(find.text('Slika se automatski sprema prilikom odabira.'), findsOneWidget);
+
+    // Verify actions row contains Otkaži and Sačuvaj
+    expect(find.widgetWithText(TextButton, 'Otkaži'), findsOneWidget);
+    expect(find.widgetWithText(FilledButton, 'Sačuvaj'), findsOneWidget);
+
+    // Tapping Otkaži closes the dialog
+    await tester.tap(find.widgetWithText(TextButton, 'Otkaži'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Uredi prodavnicu'), findsNothing);
   });
 }

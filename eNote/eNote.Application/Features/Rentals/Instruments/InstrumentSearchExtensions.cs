@@ -4,6 +4,11 @@ public static class InstrumentSearchExtensions
 {
     public static IQueryable<Instrument> ApplySearch(this IQueryable<Instrument> query, InstrumentSearchObject search)
     {
+        if (!string.IsNullOrWhiteSpace(search.Search))
+        {
+            query = query.Where(x => x.Model.Contains(search.Search!) || x.Manufacturer.Contains(search.Search!));
+        }
+
         if (!string.IsNullOrWhiteSpace(search.Model))
         {
             query = query.Where(x => x.Model.Contains(search.Model!));

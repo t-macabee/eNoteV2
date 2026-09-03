@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../theme/app_theme.dart';
 import '../../../widgets/async_dropdown.dart';
 import '../../../widgets/entity_form_scaffold.dart';
 import '../../../widgets/image_upload_helper.dart';
@@ -45,8 +46,8 @@ class _InstrumentFormScreenState extends State<InstrumentFormScreen> {
       _modelController.text = existing.model;
       _manufacturerController.text = existing.manufacturer;
       _descriptionController.text = existing.description ?? '';
-      _currentImagePath = existing.imagePath;
       _selectedInstrumentTypeId = existing.instrumentTypeId;
+      _currentImagePath = existing.imagePath;
     }
   }
 
@@ -81,14 +82,14 @@ class _InstrumentFormScreenState extends State<InstrumentFormScreen> {
 
   Future<bool> _save() async {
     final provider = context.read<InstrumentProvider>();
+    final desc = _descriptionController.text.trim();
 
-    if (!_isEditMode) {
+    if (widget.existing == null) {
       final request = InstrumentCreateRequest(
         model: _modelController.text.trim(),
         manufacturer: _manufacturerController.text.trim(),
-        description: _descriptionController.text.trim().isEmpty
-            ? null
-            : _descriptionController.text.trim(),
+        description: desc.isEmpty ? null : desc,
+        imagePath: _currentImagePath,
         instrumentTypeId: _selectedInstrumentTypeId!,
       );
       await provider.insert(request.toJson());
@@ -96,9 +97,8 @@ class _InstrumentFormScreenState extends State<InstrumentFormScreen> {
       final request = InstrumentUpdateRequest(
         model: _modelController.text.trim(),
         manufacturer: _manufacturerController.text.trim(),
-        description: _descriptionController.text.trim().isEmpty
-            ? null
-            : _descriptionController.text.trim(),
+        description: desc.isEmpty ? null : desc,
+        imagePath: _currentImagePath,
         instrumentTypeId: _selectedInstrumentTypeId,
       );
       await provider.update(widget.existing!.id, request.toJson());
@@ -118,20 +118,20 @@ class _InstrumentFormScreenState extends State<InstrumentFormScreen> {
           decoration: const InputDecoration(labelText: 'Model'),
           validator: Validators.required('Model'),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 18),
         TextFormField(
           controller: _manufacturerController,
           decoration: const InputDecoration(labelText: 'Proizvođač'),
           validator: Validators.required('Proizvođač'),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 18),
         TextFormField(
           controller: _descriptionController,
           decoration: const InputDecoration(labelText: 'Opis'),
           maxLines: 3,
           minLines: 1,
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 18),
         AsyncDropdown<InstrumentTypeDto>(
           label: 'Tip instrumenta',
           value: _selectedInstrumentTypeId,
@@ -159,12 +159,23 @@ class _InstrumentFormScreenState extends State<InstrumentFormScreen> {
         if (_isEditMode) ...[
           const SizedBox(height: 24),
           const Text('Slika', style: TextStyle(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 4),
+          const Text(
+            'Slika se automatski sprema prilikom odabira.',
+            style: TextStyle(
+              fontSize: 12,
+              color: AppTheme.textSecondary,
+            ),
+          ),
           const SizedBox(height: 8),
-          ImageField(
-            imageUrl: _currentImagePath,
-            imagePicker: pickImageBytes,
-            onUpload: _uploadImage,
-            apiClient: context.read<ApiClient>(),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: ImageField(
+              imageUrl: _currentImagePath,
+              imagePicker: pickImageBytes,
+              onUpload: _uploadImage,
+              apiClient: context.read<ApiClient>(),
+            ),
           ),
         ],
       ],

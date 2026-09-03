@@ -62,6 +62,38 @@ public sealed class InstrumentServiceTests
         Assert.Equal("Yamaha Pacifica", filtered.Items[0].Model);
     }
 
+    [Fact]
+    public async Task GetPagedAsync_FiltersBySearch_MatchesModelOrManufacturer()
+    {
+        var ctx = CreateContext();
+        var type = await SeedInstrumentTypeAsync(ctx, "Guitar");
+        var store = await SeedStoreAsync(ctx, "Music Shop Sarajevo");
+
+        await SeedInstrumentAsync(ctx, store.Id, type.Id, "Pacifica 112V", "Yamaha");
+        await SeedInstrumentAsync(ctx, store.Id, type.Id, "Stratocaster", "Fender");
+        await SeedInstrumentAsync(ctx, store.Id, type.Id, "Les Paul", "Gibson");
+
+        var service = CreateInstrumentService(ctx);
+
+        // Search matches Model
+        var modelMatch = await service.GetPagedAsync(new InstrumentSearchObject
+        {
+            Search = "Stratocaster"
+        }, publicView: true);
+        Assert.Single(modelMatch.Items);
+        Assert.Equal("Stratocaster", modelMatch.Items[0].Model);
+
+        // Search matches Manufacturer
+        var mfrMatch = await service.GetPagedAsync(new InstrumentSearchObject
+        {
+            Search = "Yamaha"
+        }, publicView: true);
+        Assert.Single(mfrMatch.Items);
+        Assert.Equal("Pacifica 112V", mfrMatch.Items[0].Model);
+        Assert.Equal("Yamaha", mfrMatch.Items[0].Manufacturer);
+    }
+
+
     private static ENoteContext CreateContext()
     {
         var options = new DbContextOptionsBuilder<ENoteContext>()

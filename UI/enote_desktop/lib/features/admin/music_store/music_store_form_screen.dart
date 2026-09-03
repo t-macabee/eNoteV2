@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
+import '../../../theme/app_theme.dart';
 import '../../../widgets/async_dropdown.dart';
 import '../../../widgets/entity_form_scaffold.dart';
 import '../../../widgets/image_upload_helper.dart';
@@ -117,18 +118,18 @@ class _MusicStoreFormScreenState extends State<MusicStoreFormScreen> {
           decoration: const InputDecoration(labelText: 'Naziv'),
           validator: Validators.required('Naziv'),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 18),
         TextFormField(
           controller: _businessHoursController,
           decoration: const InputDecoration(labelText: 'Radno vrijeme'),
           validator: Validators.required('Radno vrijeme'),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 18),
         TextFormField(
           controller: _phoneNumberController,
           decoration: const InputDecoration(labelText: 'Broj telefona'),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 18),
         AsyncDropdown<AddressReferenceDto>(
           label: 'Adresa',
           value: _selectedAddressId,
@@ -152,12 +153,23 @@ class _MusicStoreFormScreenState extends State<MusicStoreFormScreen> {
         if (_isEditMode) ...[
           const SizedBox(height: 24),
           const Text('Slika', style: TextStyle(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 4),
+          const Text(
+            'Slika se automatski sprema prilikom odabira.',
+            style: TextStyle(
+              fontSize: 12,
+              color: AppTheme.textSecondary,
+            ),
+          ),
           const SizedBox(height: 8),
-          ImageField(
-            imageUrl: _currentImagePath,
-            imagePicker: pickImageBytes,
-            onUpload: _uploadImage,
-            apiClient: context.read<ApiClient>(),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: ImageField(
+              imageUrl: _currentImagePath,
+              imagePicker: pickImageBytes,
+              onUpload: _uploadImage,
+              apiClient: context.read<ApiClient>(),
+            ),
           ),
         ],
       ],

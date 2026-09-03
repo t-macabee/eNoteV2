@@ -5,6 +5,7 @@ import 'package:enote_core/enote_core.dart';
 import '../../../theme/app_theme.dart';
 import '../../../widgets/entity_form_scaffold.dart';
 import '../../../widgets/entity_grid_screen.dart';
+import '../instrument_type/instrument_type_provider.dart';
 import 'music_store_form_screen.dart';
 import 'music_store_provider.dart';
 import 'store_instrument_provider.dart';
@@ -22,11 +23,37 @@ class _MusicStoreDetailScreenState extends State<MusicStoreDetailScreen> {
   final _gridKey = GlobalKey<EntityGridScreenState<InstrumentDto>>();
   MusicStoreDto? _store;
   bool _isLoading = true;
+  int? _instrumentTypeId;
+  List<InstrumentTypeDto> _instrumentTypes = [];
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _loadStore());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadStore();
+      _loadInstrumentTypes();
+    });
+  }
+
+  Future<void> _loadInstrumentTypes() async {
+    try {
+      final result = await context.read<InstrumentTypeProvider>().search({
+        'page': 1,
+        'pageSize': 100,
+        'includeTotalCount': false,
+      });
+      if (!mounted) return;
+      setState(() {
+        _instrumentTypes = result.items;
+      });
+    } catch (_) {
+      // Non-fatal if instrument types fail to load
+    }
+  }
+
+  void _applyFilters() {
+    setState(() {});
+    _gridKey.currentState?.refresh(resetPage: true);
   }
 
   Future<void> _loadStore() async {
@@ -60,6 +87,7 @@ class _MusicStoreDetailScreenState extends State<MusicStoreDetailScreen> {
     );
     if (!mounted) return;
     await _loadStore();
+    _gridKey.currentState?.refresh();
   }
 
   @override
@@ -106,13 +134,44 @@ class _MusicStoreDetailScreenState extends State<MusicStoreDetailScreen> {
                           subtitleOf: (i) => i.manufacturer,
                           imageUrlOf: (i) => i.imagePath,
                           showAddButton: false,
+                          filterBar: SizedBox(
+                            width: 220,
+                            child: DropdownButtonFormField<int?>(
+                              isExpanded: true,
+                              initialValue: _instrumentTypeId,
+                              decoration: const InputDecoration(labelText: 'Tip instrumenta'),
+                              items: [
+                                const DropdownMenuItem(
+                                  value: null,
+                                  child: Text('Svi instrumenti'),
+                                ),
+                                ..._instrumentTypes.map(
+                                  (type) => DropdownMenuItem(
+                                    value: type.id,
+                                    child: Text(type.type),
+                                  ),
+                                ),
+                              ],
+                              onChanged: (typeId) {
+                                _instrumentTypeId = typeId;
+                                _applyFilters();
+                              },
+                            ),
+                          ),
+                          groupKeyOf: _instrumentTypeId == null
+                              ? (i) => i.instrumentType.isNotEmpty
+                                  ? i.instrumentType
+                                  : 'Ostalo'
+                              : null,
                           fetcher: (page, pageSize, search) =>
                               context.read<StoreInstrumentProvider>().search({
                             'page': page,
                             'pageSize': pageSize,
                             'includeTotalCount': true,
                             'musicStoreId': widget.storeId,
-                            if (search.isNotEmpty) 'model': search,
+                            if (_instrumentTypeId != null)
+                              'instrumentTypeId': _instrumentTypeId,
+                            if (search.isNotEmpty) 'search': search,
                           }),
                         ),
                       ),

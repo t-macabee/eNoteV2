@@ -15,6 +15,7 @@ class ImageField extends StatefulWidget {
   final Future<Uint8List?> Function()? imagePicker;
 
   final ApiClient? apiClient;
+  final AlignmentGeometry alignment;
 
   const ImageField({
     super.key,
@@ -25,6 +26,7 @@ class ImageField extends StatefulWidget {
     this.onUpload,
     this.imagePicker,
     this.apiClient,
+    this.alignment = Alignment.centerLeft,
   });
 
   @override
@@ -39,19 +41,22 @@ class _ImageFieldState extends State<ImageField> {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: widget.editable ? _pickImage : null,
-      child: Container(
-        width: widget.size,
-        height: widget.size,
-        decoration: BoxDecoration(
-          color: Colors.grey.shade300,
-          borderRadius: BorderRadius.circular(widget.borderRadius),
-          border: widget.editable
-              ? Border.all(color: Colors.grey.shade400, width: 2)
-              : null,
+    return Align(
+      alignment: widget.alignment,
+      child: GestureDetector(
+        onTap: widget.editable ? _pickImage : null,
+        child: Container(
+          width: widget.size,
+          height: widget.size,
+          decoration: BoxDecoration(
+            color: Colors.grey.shade300,
+            borderRadius: BorderRadius.circular(widget.borderRadius),
+            border: widget.editable
+                ? Border.all(color: Colors.grey.shade400, width: 2)
+                : null,
+          ),
+          child: _buildContent(),
         ),
-        child: _buildContent(),
       ),
     );
   }
