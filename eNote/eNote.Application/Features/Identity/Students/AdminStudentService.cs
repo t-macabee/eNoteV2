@@ -1,9 +1,13 @@
+using eNote.Application.Features.Identity.Instructors;
 using eNote.Application.Features.Identity.Users;
 using eNote.Application.Features.Identity.Users.Services;
 
 namespace eNote.Application.Features.Identity.Students;
 
-public sealed class AdminStudentService(IAppDbContext context, IUserIdentityService identityService)
+public sealed class AdminStudentService(
+    IAppDbContext context,
+    IUserIdentityService identityService,
+    InstructorAccessService? instructorAccess = null)
 {
     public async Task<PagedResult<StudentDto>> GetPagedAsync(StudentSearchObject search, CancellationToken cancellationToken = default)
     {
@@ -11,6 +15,41 @@ public sealed class AdminStudentService(IAppDbContext context, IUserIdentityServ
             .AsNoTracking()
             .OrderBy(x => x.Id);
 
+        return await BuildPagedResultAsync(query, search, cancellationToken);
+    }
+
+    public async Task<PagedResult<StudentDto>> GetPagedForInstructorAsync(
+        int instructorId,
+        StudentSearchObject search,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(instructorAccess);
+
+        var instructorCourses = instructorAccess.CoursesFor(instructorId);
+
+        IQueryable<Student> query = context.Set<Enrollment>()
+            .AsNoTracking()
+            .Join(
+                instructorCourses,
+                e => e.CourseId,
+                c => c.Id,
+                (e, c) => e.StudentId)
+            .Distinct()
+            .Join(
+                context.Set<Student>().AsNoTracking(),
+                studentId => studentId,
+                s => s.Id,
+                (studentId, s) => s)
+            .OrderBy(x => x.Id);
+
+        return await BuildPagedResultAsync(query, search, cancellationToken);
+    }
+
+    private async Task<PagedResult<StudentDto>> BuildPagedResultAsync(
+        IQueryable<Student> query,
+        StudentSearchObject search,
+        CancellationToken cancellationToken)
+    {
         List<Student> students = await query.ToListAsync(cancellationToken);
         IReadOnlyDictionary<int, UserIdentityDto> users = await identityService.GetUsersBulkAsync(students.Select(x => x.AppUserId), cancellationToken);
 

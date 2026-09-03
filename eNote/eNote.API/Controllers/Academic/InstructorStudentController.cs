@@ -1,6 +1,8 @@
 using eNote.API.Controllers.Base;
+using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Paging;
 using eNote.Application.Constants;
+using eNote.Application.Features.Identity.Instructors;
 using eNote.Application.Features.Identity.Students;
 using eNote.Application.Features.Identity.Users;
 using eNote.Application.Features.Identity.Users.Services;
@@ -13,7 +15,9 @@ namespace eNote.API.Controllers.Academic;
 [Route("api/v{version:apiVersion}/instructor/students")]
 public sealed class InstructorStudentController(
     AdminStudentService studentService,
-    IUserProvisioningService provisioningService) : CoreController
+    IUserProvisioningService provisioningService,
+    ICurrentUserContext currentUser,
+    InstructorAccessService instructorAccess) : CoreController
 {
     [HttpGet]
     [ProducesResponseType(typeof(PagedResult<StudentDto>), StatusCodes.Status200OK)]
@@ -21,7 +25,8 @@ public sealed class InstructorStudentController(
         [FromQuery] StudentSearchObject search,
         CancellationToken cancellationToken)
     {
-        var result = await studentService.GetPagedAsync(search, cancellationToken);
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId);
+        var result = await studentService.GetPagedForInstructorAsync(instructorId, search, cancellationToken);
         return Ok(result);
     }
 
