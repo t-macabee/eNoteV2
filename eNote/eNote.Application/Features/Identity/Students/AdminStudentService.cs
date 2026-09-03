@@ -7,7 +7,7 @@ namespace eNote.Application.Features.Identity.Students;
 public sealed class AdminStudentService(
     IAppDbContext context,
     IUserIdentityService identityService,
-    InstructorAccessService? instructorAccess = null)
+    InstructorAccessService instructorAccess)
 {
     public async Task<PagedResult<StudentDto>> GetPagedAsync(StudentSearchObject search, CancellationToken cancellationToken = default)
     {
@@ -23,8 +23,6 @@ public sealed class AdminStudentService(
         StudentSearchObject search,
         CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(instructorAccess);
-
         var instructorCourses = instructorAccess.CoursesFor(instructorId);
 
         IQueryable<Student> query = context.Set<Enrollment>()

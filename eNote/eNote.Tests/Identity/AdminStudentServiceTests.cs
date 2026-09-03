@@ -24,7 +24,8 @@ public sealed class AdminStudentServiceTests
             [2] = StubUserIdentityService.User(2, "asmith", "Alice", "Smith"),
             [3] = StubUserIdentityService.User(3, "brown", "Bob", "Brown")
         });
-        var service = new AdminStudentService(context, identity);
+        var instructorAccess = new InstructorAccessService(context, new StubUserProfileLookup(instructor: new Instructor(100)));
+        var service = new AdminStudentService(context, identity, instructorAccess);
 
         var result = await service.GetPagedAsync(new StudentSearchObject { Name = "Smith" });
 
@@ -43,7 +44,8 @@ public sealed class AdminStudentServiceTests
             new Student(3, Now));
         await context.SaveChangesAsync();
         var identity = new StubUserIdentityService();
-        var service = new AdminStudentService(context, identity);
+        var instructorAccess = new InstructorAccessService(context, new StubUserProfileLookup(instructor: new Instructor(100)));
+        var service = new AdminStudentService(context, identity, instructorAccess);
 
         var result = await service.GetPagedAsync(new StudentSearchObject { Page = 2, PageSize = 1 });
 
@@ -56,7 +58,8 @@ public sealed class AdminStudentServiceTests
     public async Task GetByIdAsync_Throws_WhenStudentMissing()
     {
         await using var context = TestDbContextFactory.CreateContext(Now);
-        var service = new AdminStudentService(context, new StubUserIdentityService());
+        var instructorAccess = new InstructorAccessService(context, new StubUserProfileLookup(instructor: new Instructor(100)));
+        var service = new AdminStudentService(context, new StubUserIdentityService(), instructorAccess);
 
         await Assert.ThrowsAsync<NotFoundException>(() => service.GetByIdAsync(999));
     }
@@ -73,7 +76,8 @@ public sealed class AdminStudentServiceTests
         {
             [42] = StubUserIdentityService.User(42, "jdoe", "Jane", "Doe")
         });
-        var service = new AdminStudentService(context, identity);
+        var instructorAccess = new InstructorAccessService(context, new StubUserProfileLookup(instructor: new Instructor(100)));
+        var service = new AdminStudentService(context, identity, instructorAccess);
 
         var dto = await service.GetByIdAsync(1);
 
