@@ -23,7 +23,6 @@ public static class Messages
 
     public const string StudentProfileNotFound = "Student profil nije pronađen.";
     public const string InstructorProfileNotFound = "Instruktor profil nije pronađen.";
-    public const string InstructorIdRequired = "Instruktor je obavezan.";
     public const string EmployeeProfileNotFound = "Profil uposlenika radnje nije pronađen.";
     public const string ActiveEmployeeStoreNotFound = "Profil uposlenika radnje nije pronađen ili nije aktivan.";
 

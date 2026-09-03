@@ -355,6 +355,8 @@ namespace eNote.Infrastructure.Data.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     StoreName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     BusinessHours = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    PhoneNumber = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: true),
+                    ImagePath = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
                     AddressId = table.Column<int>(type: "int", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),

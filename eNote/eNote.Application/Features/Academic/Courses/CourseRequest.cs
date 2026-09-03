@@ -13,5 +13,4 @@ public class CourseRequest
     public DateTime? StartDate { get; set; }
     public DateTime? EndDate { get; set; }
     public bool IsPublished { get; set; }
-    public int? InstructorId { get; set; }
 }

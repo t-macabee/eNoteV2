@@ -60,7 +60,6 @@ class CourseRequest {
   final DateTime? startDate;
   final DateTime? endDate;
   final bool isPublished;
-  final int? instructorId;
 
   CourseRequest({
     required this.name,
@@ -69,7 +68,6 @@ class CourseRequest {
     this.startDate,
     this.endDate,
     required this.isPublished,
-    this.instructorId,
   });
 
   Map<String, dynamic> toJson() => {
@@ -79,7 +77,6 @@ class CourseRequest {
     if (startDate != null) 'startDate': startDate!.toIso8601String(),
     if (endDate != null) 'endDate': endDate!.toIso8601String(),
     'isPublished': isPublished,
-    if (instructorId != null) 'instructorId': instructorId,
   };
 }
 

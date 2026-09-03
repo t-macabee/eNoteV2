@@ -2,10 +2,10 @@ import 'package:enote_core/enote_core.dart';
 
 /// Admin-scoped course provider (admin/courses).
 ///
-/// Admins can create a course on an instructor's behalf (via [insert]) and
-/// soft-delete any course regardless of owning instructor (via [remove]),
-/// both inherited from [BaseProvider] and backed by admin/courses endpoints.
-/// Update is still deliberately absent here; course edit stays Instructor-owned.
+/// Read-only in practice: `AdminCourseController` only exposes `GetPaged`/
+/// `GetById` for cross-system oversight. Course create/edit/delete is
+/// Instructor-owned (`CourseController`) — nothing here calls the
+/// [BaseProvider] insert/update/remove methods this class still inherits.
 class AdminCourseProvider extends BaseProvider<CourseDto> {
   AdminCourseProvider({
     required super.apiClient,

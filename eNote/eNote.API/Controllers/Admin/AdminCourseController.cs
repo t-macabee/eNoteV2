@@ -28,20 +28,4 @@ public sealed class AdminCourseController(CourseService service) : CoreControlle
         return Ok(dto);
     }
 
-    [HttpPost]
-    [ProducesResponseType(typeof(CourseDto), StatusCodes.Status201Created)]
-    public async Task<ActionResult<CourseDto>> Create([FromBody] CourseRequest request, CancellationToken cancellationToken)
-    {
-        CourseDto dto = await service.CreateForAdminAsync(request, cancellationToken);
-        return CreatedAtAction(nameof(GetById), new { id = dto.Id }, dto);
-    }
-
-    [HttpDelete("{id:int}")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
-    {
-        await service.DeleteForAdminAsync(id, cancellationToken);
-        return NoContent();
-    }
 }

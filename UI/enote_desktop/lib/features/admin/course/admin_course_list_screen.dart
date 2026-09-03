@@ -3,17 +3,14 @@ import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
 
-import '../../../widgets/entity_form_scaffold.dart';
 import '../../../widgets/entity_grid_screen.dart';
-import 'admin_course_form_screen.dart';
 import 'admin_course_provider.dart';
 
-/// Admin course overview: paged list across ALL instructors.
-///
-/// Admins can create a course on an instructor's behalf (e.g. account-access
-/// issues) and assign it to a specific instructor. Edit/delete stays
-/// Instructor-owned. Admins can filter by name (search bar) and published
-/// status, and see which instructor owns each course.
+/// Admin course overview: paged, read-only list across ALL instructors, for
+/// cross-system oversight. Course create/edit/delete is Instructor-owned
+/// (`CourseController`) — Admin has no write access here. Admins can filter
+/// by name (search bar) and published status, and see which instructor owns
+/// each course.
 class AdminCourseListScreen extends StatefulWidget {
   const AdminCourseListScreen({super.key});
 
@@ -32,16 +29,6 @@ class _AdminCourseListScreenState extends State<AdminCourseListScreen> {
     _gridKey.currentState?.refresh(resetPage: true);
   }
 
-  Future<void> _openForm() async {
-    await EntityFormScaffold.showAsDialog(
-      context,
-      builder: (_) => const AdminCourseFormScreen(
-        presentation: EntityFormPresentation.dialog,
-      ),
-    );
-    _gridKey.currentState?.refresh();
-  }
-
   @override
   Widget build(BuildContext context) {
     return EntityGridScreen<CourseDto>(
@@ -51,10 +38,6 @@ class _AdminCourseListScreenState extends State<AdminCourseListScreen> {
         searchHint: 'Pretraži po nazivu...',
         placeholderIcon: Icons.class_,
         titleOf: (item) => item.name,
-        onDelete: (context, item) async {
-          await context.read<AdminCourseProvider>().remove(item.id);
-          return true;
-        },
         filterBar: SizedBox(
           width: 220,
           child: DropdownButtonFormField<bool?>(
@@ -71,7 +54,7 @@ class _AdminCourseListScreenState extends State<AdminCourseListScreen> {
             },
           ),
         ),
-        onAdd: _openForm,
+        showAddButton: false,
         fetcher: (page, pageSize, search) =>
             context.read<AdminCourseProvider>().search({
               'page': page,
