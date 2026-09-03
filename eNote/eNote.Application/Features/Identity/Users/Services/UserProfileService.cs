@@ -64,6 +64,6 @@ public sealed class UserProfileService(
             .FirstOrDefaultAsync(x => x.Id == employee.MusicStoreId, cancellationToken)
             ?? throw new BusinessException(Messages.StoreNotFound);
 
-        return new MusicStoreProfile(shop.Id, shop.StoreName, shop.BusinessHours);
+        return new MusicStoreProfile(shop.Id, shop.StoreName, shop.BusinessHours, employee.IsManager);
     }
 }

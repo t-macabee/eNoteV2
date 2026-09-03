@@ -7,7 +7,9 @@ import '../features/admin/event/event_list_screen.dart';
 import '../features/admin/music_store/music_store_list_screen.dart';
 import '../features/admin/users/user_grid_screen.dart';
 import '../features/instructor/course/course_list_screen.dart';
+import '../features/instructor/student/instructor_student_list_screen.dart';
 import '../features/store_employee/announcement/announcement_list_screen.dart';
+import '../features/store_employee/employee/shop_employee_list_screen.dart';
 import '../features/store_employee/instrument/instrument_list_screen.dart';
 import '../features/store_employee/rental/rental_list_screen.dart';
 import 'role_menu.dart';
@@ -59,9 +61,21 @@ class _MasterScreenState extends State<MasterScreen> {
       allowedRoles: [UserRole.instructor],
     ),
     RoleMenuEntry(
+      icon: Icons.school_outlined,
+      label: 'Studenti',
+      screenBuilder: _buildInstructorStudentList,
+      allowedRoles: [UserRole.instructor],
+    ),
+    RoleMenuEntry(
       icon: Icons.piano,
       label: 'Instrumenti',
       screenBuilder: _buildInstrumentList,
+      allowedRoles: [UserRole.storeEmployee],
+    ),
+    RoleMenuEntry(
+      icon: Icons.badge_outlined,
+      label: 'Zaposlenici',
+      screenBuilder: _buildShopEmployeeList,
       allowedRoles: [UserRole.storeEmployee],
     ),
     RoleMenuEntry(
@@ -88,6 +102,14 @@ class _MasterScreenState extends State<MasterScreen> {
 
   static Widget _buildCourseList(BuildContext context) {
     return const CourseListScreen();
+  }
+
+  static Widget _buildInstructorStudentList(BuildContext context) {
+    return const InstructorStudentListScreen();
+  }
+
+  static Widget _buildShopEmployeeList(BuildContext context) {
+    return const ShopEmployeeListScreen();
   }
 
   static Widget _buildUserGrid(BuildContext context) {

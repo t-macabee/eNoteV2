@@ -12,7 +12,13 @@ public sealed class UserProvisionRequestValidator : AbstractValidator<UserProvis
         RuleFor(x => x.Email).NotEmpty().EmailAddress().WithMessage("Ispravna email adresa je obavezna.");
         RuleFor(x => x.Password).NotEmpty().MinimumLength(8).WithMessage("Lozinka mora imati najmanje 8 znakova.");
         RuleFor(x => x.Role).NotEmpty().Must(BeKnownRole).WithMessage("Nepoznata uloga.");
-        RuleFor(x => x.MusicStoreId).GreaterThan(0).When(x => x.MusicStoreId.HasValue).WithMessage("MusicStoreId mora biti veći od 0.");
+        RuleFor(x => x.MusicStoreId)
+            .NotNull().WithMessage("Prodavnica je obavezna za uposlenika radnje.")
+            .GreaterThan(0).WithMessage("MusicStoreId mora biti veći od 0.")
+            .When(x => x.Role == AppRoles.StoreEmployee);
+        RuleFor(x => x.MusicStoreId)
+            .GreaterThan(0).WithMessage("MusicStoreId mora biti veći od 0.")
+            .When(x => x.Role != AppRoles.StoreEmployee && x.MusicStoreId.HasValue);
     }
 
     private static bool BeKnownRole(string role) =>

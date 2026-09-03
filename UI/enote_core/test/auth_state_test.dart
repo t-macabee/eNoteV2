@@ -8,12 +8,18 @@ import 'package:enote_core/enote_core.dart';
 String _base64UrlSegment(String input) =>
     base64Url.encode(utf8.encode(input)).replaceAll('=', '');
 
-String _fakeJwt({String subject = '1', String username = 'ana', String role = 'Instructor'}) {
+String _fakeJwt({
+  String subject = '1',
+  String username = 'ana',
+  String role = 'Instructor',
+  bool isManager = false,
+}) {
   final header = _base64UrlSegment(jsonEncode({'alg': 'none', 'typ': 'JWT'}));
   final payload = _base64UrlSegment(jsonEncode({
     'sub': subject,
     'unique_name': username,
     'role': role,
+    if (isManager) 'is_manager': true,
     'exp': DateTime.now()
         .add(const Duration(days: 1))
         .millisecondsSinceEpoch ~/
@@ -98,6 +104,32 @@ void main() {
         )),
       );
       expect(authState.isAuthenticated, isFalse);
+    });
+
+    test('is_manager claim is correctly decoded into authState.isManager', () async {
+      final httpClient = _RecordingHttpClient(body: {
+        'userId': 2,
+        'username': 'manager_bob',
+        'roles': ['StoreEmployee'],
+        'token': _fakeJwt(
+          subject: '2',
+          username: 'manager_bob',
+          role: 'StoreEmployee',
+          isManager: true,
+        ),
+      });
+      final authState = AuthState(
+        baseUrl: 'http://localhost:5059/api/v1/',
+        httpClient: httpClient,
+      );
+
+      await authState.login('manager_bob', 'password');
+
+      expect(authState.isAuthenticated, isTrue);
+      expect(authState.isManager, isTrue);
+
+      await authState.logout();
+      expect(authState.isManager, isFalse);
     });
   });
 }

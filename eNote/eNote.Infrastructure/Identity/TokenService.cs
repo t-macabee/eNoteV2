@@ -15,7 +15,7 @@ public sealed class TokenService(IConfiguration configuration, IClock clock) : I
     private readonly string? _jwtAudience = configuration["Jwt:Audience"];
     private readonly int _jwtExpirationDays = configuration.GetValue("Jwt:ExpirationDays", 7);
 
-    public string GenerateToken(int userId, string username, IList<string> roles)
+    public string GenerateToken(int userId, string username, IList<string> roles, bool isManager = false)
     {
         var claims = new List<Claim>
         {
@@ -23,6 +23,11 @@ public sealed class TokenService(IConfiguration configuration, IClock clock) : I
             new(JwtRegisteredClaimNames.UniqueName, username),
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
+
+        if (isManager)
+        {
+            claims.Add(new Claim("is_manager", "true"));
+        }
 
         foreach (var role in roles)
         {

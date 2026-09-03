@@ -13,10 +13,12 @@ import 'features/admin/student/student_provider.dart';
 import 'features/admin/instrument_type/instrument_type_provider.dart';
 import 'features/instructor/course/course_provider.dart';
 import 'features/instructor/lecture/lecture_provider.dart';
+import 'features/instructor/student/instructor_student_provider.dart';
 import 'features/admin/music_store/music_store_provider.dart';
 import 'features/admin/music_store/store_instrument_provider.dart';
 import 'features/admin/users/user_provision_service.dart';
 import 'features/store_employee/announcement/announcement_provider.dart';
+import 'features/store_employee/employee/shop_employee_provider.dart';
 import 'features/store_employee/instrument/instrument_provider.dart';
 import 'features/store_employee/instrument/shop_instrument_type_provider.dart';
 import 'features/store_employee/rental/rental_provider.dart';
@@ -79,6 +81,9 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider<LectureProvider>(
           create: (_) => LectureProvider(apiClient: apiClient),
         ),
+        ChangeNotifierProvider<InstructorStudentProvider>(
+          create: (_) => InstructorStudentProvider(apiClient: apiClient),
+        ),
         // Note: LectureNoteProvider is NOT registered globally — its endpoint
         // depends on the lecture being viewed (instructor/lectures/{lectureId}/notes),
         // so it is instantiated per-navigation via a screen-scoped
@@ -94,6 +99,9 @@ class MyApp extends StatelessWidget {
         ),
         ChangeNotifierProvider<StoreAnnouncementProvider>(
           create: (_) => StoreAnnouncementProvider(apiClient: apiClient),
+        ),
+        ChangeNotifierProvider<ShopEmployeeProvider>(
+          create: (_) => ShopEmployeeProvider(apiClient: apiClient),
         ),
         ChangeNotifierProvider<NotificationController>(
           create: (_) => NotificationController(

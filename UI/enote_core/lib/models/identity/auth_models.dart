@@ -182,3 +182,27 @@ class UpdateMembershipRequest {
     if (paidUntil != null) 'paidUntil': paidUntil!.toIso8601String(),
   };
 }
+
+class DelegatedUserCreateRequest {
+  final String username;
+  final String email;
+  final String password;
+  final String? firstName;
+  final String? lastName;
+
+  DelegatedUserCreateRequest({
+    required this.username,
+    required this.email,
+    required this.password,
+    this.firstName,
+    this.lastName,
+  });
+
+  Map<String, dynamic> toJson() => {
+    'username': username,
+    'email': email,
+    'password': password,
+    if (firstName != null) 'firstName': firstName,
+    if (lastName != null) 'lastName': lastName,
+  };
+}

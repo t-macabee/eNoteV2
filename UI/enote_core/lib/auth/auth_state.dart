@@ -18,6 +18,7 @@ class AuthState extends ChangeNotifier {
   int? _userId;
   String? _username;
   List<String> _roles = [];
+  bool _isManager = false;
 
   AuthState({
     this._baseUrl = '',
@@ -33,6 +34,7 @@ class AuthState extends ChangeNotifier {
   int? get userId => _userId;
   String? get username => _username;
   List<String> get roles => List.unmodifiable(_roles);
+  bool get isManager => _isManager;
   bool get isAuthenticated => _accessToken != null && !_isTokenExpired;
 
   bool get _isTokenExpired {
@@ -61,12 +63,15 @@ class AuthState extends ChangeNotifier {
       _userId = null;
       _username = null;
       _roles = [];
+      _isManager = false;
       return;
     }
     try {
       final decoded = JwtDecoder.decode(token);
       _userId = _parseInt(decoded['sub']);
       _username = decoded['unique_name'] as String?;
+      final managerClaim = decoded['is_manager'];
+      _isManager = managerClaim == true || managerClaim == 'true';
       final roleClaim = decoded['role'];
       final roleUri =
           'http://schemas.microsoft.com/ws/2008/06/identity/claims/role';
@@ -87,6 +92,7 @@ class AuthState extends ChangeNotifier {
       _userId = null;
       _username = null;
       _roles = [];
+      _isManager = false;
     }
   }
 
@@ -127,6 +133,7 @@ class AuthState extends ChangeNotifier {
     _userId = null;
     _username = null;
     _roles = [];
+    _isManager = false;
     _tokenWriter?.call(null);
     notifyListeners();
     return Future.value();

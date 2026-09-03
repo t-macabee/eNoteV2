@@ -225,3 +225,49 @@ class StudentDto {
   };
 }
 
+class ShopEmployeeDto {
+  final int id;
+  final int appUserId;
+  final int musicStoreId;
+  final String? firstName;
+  final String? lastName;
+  final String? username;
+  final bool isManager;
+  final bool isActive;
+
+  ShopEmployeeDto({
+    required this.id,
+    required this.appUserId,
+    required this.musicStoreId,
+    this.firstName,
+    this.lastName,
+    this.username,
+    required this.isManager,
+    required this.isActive,
+  });
+
+  factory ShopEmployeeDto.fromJson(Map<String, dynamic> json) {
+    return ShopEmployeeDto(
+      id: json['id'] as int? ?? 0,
+      appUserId: json['appUserId'] as int? ?? 0,
+      musicStoreId: json['musicStoreId'] as int? ?? 0,
+      firstName: json['firstName'] as String?,
+      lastName: json['lastName'] as String?,
+      username: json['username'] as String?,
+      isManager: json['isManager'] as bool? ?? false,
+      isActive: json['isActive'] as bool? ?? true,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'appUserId': appUserId,
+    'musicStoreId': musicStoreId,
+    if (firstName != null) 'firstName': firstName,
+    if (lastName != null) 'lastName': lastName,
+    if (username != null) 'username': username,
+    'isManager': isManager,
+    'isActive': isActive,
+  };
+}
+

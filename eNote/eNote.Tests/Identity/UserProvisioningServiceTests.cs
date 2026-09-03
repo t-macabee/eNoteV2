@@ -164,8 +164,151 @@ public sealed class UserProvisioningServiceTests
         Assert.Equal(Messages.NotFound, error);
     }
 
-    private static UserProvisioningService CreateService(ENoteContext context, IUserAccountService account) =>
-        new(context, account, new FixedClock(Now));
+    [Fact]
+    public async Task ProvisionUserAsync_FirstEmployeeIsManager_SecondEmployeeIsNotManager()
+    {
+        await using var context = TestDbContextFactory.CreateContext(Now);
+        var store = new MusicStore("Music Shop", "09-17");
+        context.Set<MusicStore>().Add(store);
+        await context.SaveChangesAsync();
+
+        var account = new RecordingUserAccountService { CreateUserId = 10 };
+        var service = CreateService(context, account);
+
+        // First employee
+        var (firstId, _) = await service.ProvisionUserAsync(new UserProvisionRequest
+        {
+            Username = "emp1",
+            Email = "emp1@example.com",
+            Password = "Password1!",
+            Role = AppRoles.StoreEmployee,
+            MusicStoreId = store.Id
+        });
+
+        var firstEmp = await context.Set<MusicStoreEmployee>().SingleAsync(e => e.AppUserId == firstId);
+        Assert.True(firstEmp.IsManager);
+
+        // Second employee
+        account.CreateUserId = 11;
+        var (secondId, _) = await service.ProvisionUserAsync(new UserProvisionRequest
+        {
+            Username = "emp2",
+            Email = "emp2@example.com",
+            Password = "Password1!",
+            Role = AppRoles.StoreEmployee,
+            MusicStoreId = store.Id
+        });
+
+        var secondEmp = await context.Set<MusicStoreEmployee>().SingleAsync(e => e.AppUserId == secondId);
+        Assert.False(secondEmp.IsManager);
+    }
+
+    [Fact]
+    public async Task ProvisionStudentByInstructorAsync_CreatesStudentProfile()
+    {
+        await using var context = TestDbContextFactory.CreateContext(Now);
+        var account = new RecordingUserAccountService { CreateUserId = 20 };
+        var service = CreateService(context, account);
+
+        var (userId, error) = await service.ProvisionStudentByInstructorAsync(new DelegatedUserCreateRequest
+        {
+            Username = "delegatedstudent",
+            Email = "delstudent@example.com",
+            Password = "Password1!",
+            FirstName = "Tarik",
+            LastName = "Student"
+        });
+
+        Assert.Null(error);
+        Assert.Equal(20, userId);
+        var student = await context.Set<Student>().SingleAsync(s => s.AppUserId == 20);
+        Assert.NotNull(student);
+    }
+
+    [Fact]
+    public async Task ProvisionEmployeeByManagerAsync_Succeeds_WhenCallerIsManager()
+    {
+        await using var context = TestDbContextFactory.CreateContext(Now);
+        var store = new MusicStore("Music Shop", "09-17");
+        context.Set<MusicStore>().Add(store);
+        await context.SaveChangesAsync();
+
+        var managerEmployee = new MusicStoreEmployee(appUserId: 50, musicStoreId: store.Id, isManager: true);
+        context.Set<MusicStoreEmployee>().Add(managerEmployee);
+        await context.SaveChangesAsync();
+
+        var actor = new StubCurrentActor(userId: 50);
+        var account = new RecordingUserAccountService { CreateUserId = 51 };
+        var service = CreateService(context, account, actor);
+
+        var (userId, error) = await service.ProvisionEmployeeByManagerAsync(new DelegatedUserCreateRequest
+        {
+            Username = "newhire",
+            Email = "newhire@example.com",
+            Password = "Password1!",
+            FirstName = "Amir",
+            LastName = "Worker"
+        });
+
+        Assert.Null(error);
+        Assert.Equal(51, userId);
+        var employee = await context.Set<MusicStoreEmployee>().SingleAsync(e => e.AppUserId == 51);
+        Assert.Equal(store.Id, employee.MusicStoreId);
+        Assert.False(employee.IsManager);
+    }
+
+    [Fact]
+    public async Task ProvisionEmployeeByManagerAsync_ThrowsAuthorizationException_WhenCallerNotManager()
+    {
+        await using var context = TestDbContextFactory.CreateContext(Now);
+        var store = new MusicStore("Music Shop", "09-17");
+        context.Set<MusicStore>().Add(store);
+        await context.SaveChangesAsync();
+
+        var regularEmployee = new MusicStoreEmployee(appUserId: 60, musicStoreId: store.Id, isManager: false);
+        context.Set<MusicStoreEmployee>().Add(regularEmployee);
+        await context.SaveChangesAsync();
+
+        var actor = new StubCurrentActor(userId: 60);
+        var account = new RecordingUserAccountService { CreateUserId = 61 };
+        var service = CreateService(context, account, actor);
+
+        var ex = await Assert.ThrowsAsync<AuthorizationException>(() =>
+            service.ProvisionEmployeeByManagerAsync(new DelegatedUserCreateRequest
+            {
+                Username = "newhire2",
+                Email = "newhire2@example.com",
+                Password = "Password1!"
+            }));
+
+        Assert.Equal(Messages.ManagerRoleRequired, ex.Message);
+    }
+
+    [Fact]
+    public async Task IsStoreManagerAsync_ReturnsCorrectStatus()
+    {
+        await using var context = TestDbContextFactory.CreateContext(Now);
+        var store = new MusicStore("Music Shop", "09-17");
+        context.Set<MusicStore>().Add(store);
+        await context.SaveChangesAsync();
+
+        var manager = new MusicStoreEmployee(appUserId: 70, musicStoreId: store.Id, isManager: true);
+        var regular = new MusicStoreEmployee(appUserId: 71, musicStoreId: store.Id, isManager: false);
+        context.Set<MusicStoreEmployee>().AddRange(manager, regular);
+        await context.SaveChangesAsync();
+
+        var service = CreateService(context, new RecordingUserAccountService());
+
+        Assert.True(await service.IsStoreManagerAsync(70));
+        Assert.False(await service.IsStoreManagerAsync(71));
+        Assert.False(await service.IsStoreManagerAsync(999));
+    }
+
+    private static UserProvisioningService CreateService(
+        ENoteContext context,
+        IUserAccountService account,
+        ICurrentUserContext? currentUser = null) =>
+        new(context, account, new FixedClock(Now), currentUser ?? new StubCurrentActor());
 
     private sealed class RecordingUserAccountService : IUserAccountService
     {

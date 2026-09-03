@@ -200,7 +200,7 @@ public sealed class AuthServiceTests
 
     private sealed class StubTokenService : ITokenService
     {
-        public string GenerateToken(int userId, string username, IList<string> roles) => "generated-token";
+        public string GenerateToken(int userId, string username, IList<string> roles, bool isManager = false) => "generated-token";
     }
 
     private sealed class RecordingTokenRevocationService(List<(string Jti, DateTime ExpiresAt)> calls) : ITokenRevocationService
@@ -231,6 +231,14 @@ public sealed class AuthServiceTests
 
         public Task<(bool Success, string? Error)> DeactivateUserAsync(int userId, CancellationToken cancellationToken = default) =>
             Task.FromResult((true, (string?)null));
+
+        public Task<bool> IsStoreManagerAsync(int userId, CancellationToken cancellationToken = default) => Task.FromResult(false);
+
+        public Task<(int UserId, string? Error)> ProvisionStudentByInstructorAsync(DelegatedUserCreateRequest request, CancellationToken cancellationToken = default) =>
+            Task.FromResult((7, (string?)null));
+
+        public Task<(int UserId, string? Error)> ProvisionEmployeeByManagerAsync(DelegatedUserCreateRequest request, CancellationToken cancellationToken = default) =>
+            Task.FromResult((7, (string?)null));
     }
 
     private sealed class StubHostEnvironment : IHostEnvironment

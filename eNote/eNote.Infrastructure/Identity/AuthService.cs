@@ -1,6 +1,7 @@
 using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Localization;
+using eNote.Application.Constants;
 using eNote.Application.Features.Identity.Auth;
 using eNote.Application.Features.Identity.Auth.Services;
 using eNote.Application.Features.Identity.Users.Services;
@@ -42,7 +43,13 @@ internal sealed class AuthService(UserManager<AppUser> userManager, SignInManage
             throw new BusinessException(Messages.UserSingleRoleRequired);
         }
 
-        var token = tokenService.GenerateToken(user.Id, user.UserName!, roles);
+        bool isManager = false;
+        if (roles.Contains(AppRoles.StoreEmployee))
+        {
+            isManager = await userProvisioning.IsStoreManagerAsync(user.Id, cancellationToken);
+        }
+
+        var token = tokenService.GenerateToken(user.Id, user.UserName!, roles, isManager);
 
         return new AuthResponse
         {

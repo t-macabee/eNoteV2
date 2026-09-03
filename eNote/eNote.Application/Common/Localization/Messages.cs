@@ -20,11 +20,13 @@ public static class Messages
     public const string UserSingleRoleRequired = "Korisnik mora imati tačno jednu ulogu.";
     public const string UnknownRole = "Nepoznata uloga.";
     public const string StoreNotFound = "Radnja nije pronađena.";
+    public const string MusicStoreRequiredForEmployee = "Prodavnica je obavezna za uposlenika radnje.";
 
     public const string StudentProfileNotFound = "Student profil nije pronađen.";
     public const string InstructorProfileNotFound = "Instruktor profil nije pronađen.";
     public const string EmployeeProfileNotFound = "Profil uposlenika radnje nije pronađen.";
     public const string ActiveEmployeeStoreNotFound = "Profil uposlenika radnje nije pronađen ili nije aktivan.";
+    public const string ManagerRoleRequired = "Samo voditelj radnje može upravljati zaposlenicima.";
 
     public const string CourseNotFound = "Kurs nije pronađen.";
     public const string CourseIdRequired = "Kurs je obavezan.";
@@ -95,6 +97,7 @@ public static class Messages
 
     public const string EventNotFound = "Događaj nije pronađen.";
     public const string EventEndsBeforeStarts = "Vrijeme završetka mora biti nakon vremena početka.";
+    public const string AdminEventPlatformWideOnly = "Administrator može upravljati samo događajima na nivou platforme.";
 
     public static string RoleCreateFailed(string role, string errors) =>
         $"Greška pri kreiranju uloge {role}: {errors}";

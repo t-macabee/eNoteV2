@@ -1,12 +1,19 @@
+using eNote.Application.Common.Exceptions;
+using eNote.Application.Common.Interfaces;
+using eNote.Application.Common.Localization;
 using eNote.Application.Constants;
 using eNote.Application.Features.Identity.Auth;
+using eNote.Domain.Entities.Identity;
+using eNote.Domain.Entities.Rentals;
+using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Application.Features.Identity.Users.Services;
 
 public sealed class UserProvisioningService(
     IAppDbContext context,
     IUserAccountService accountService,
-    IClock clock) : IUserProvisioningService
+    IClock clock,
+    ICurrentUserContext? currentUserContext = null) : IUserProvisioningService
 {
     public async Task<(RegistrationResult? Registration, string? Error)> RegisterStudentAsync(RegisterRequest request, CancellationToken cancellationToken = default)
     {
@@ -88,11 +95,103 @@ public sealed class UserProvisioningService(
 
         var storeId = request.MusicStoreId ?? await ResolveDefaultStoreIdAsync(request.Role, cancellationToken);
 
-        await EnsureRoleProfileAsync(userId, request.Role, storeId, cancellationToken);
+        await EnsureRoleProfileAsync(userId, request.Role, storeId, cancellationToken, request.IsManager);
 
         await context.SaveChangesAsync(cancellationToken);
 
         return (userId, null);
+    }
+
+    public async Task<(int UserId, string? Error)> ProvisionStudentByInstructorAsync(
+        DelegatedUserCreateRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var username = request.Username.Trim();
+        (int? userId, string? error) = await accountService.CreateUserAsync(
+            username,
+            request.Email.Trim(),
+            request.Password,
+            request.FirstName?.Trim(),
+            request.LastName?.Trim(),
+            cancellationToken);
+
+        if (userId is null)
+        {
+            return (0, error);
+        }
+
+        (var success, var roleError) = await accountService.AssignSingleRoleAsync(
+            userId.Value,
+            AppRoles.Student,
+            cancellationToken);
+
+        if (!success)
+        {
+            return (userId.Value, roleError);
+        }
+
+        await EnsureRoleProfileAsync(userId.Value, AppRoles.Student, null, cancellationToken);
+        await context.SaveChangesAsync(cancellationToken);
+
+        return (userId.Value, null);
+    }
+
+    public async Task<(int UserId, string? Error)> ProvisionEmployeeByManagerAsync(
+        DelegatedUserCreateRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        if (currentUserContext is null || !currentUserContext.IsAuthenticated)
+        {
+            throw new AuthorizationException(Messages.Unauthorized);
+        }
+
+        var currentEmployee = await context.Set<MusicStoreEmployee>()
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(x => x.AppUserId == currentUserContext.UserId && x.IsActive, cancellationToken)
+            ?? throw new BusinessException(Messages.EmployeeProfileNotFound);
+
+        if (!currentEmployee.IsManager)
+        {
+            throw new AuthorizationException(Messages.ManagerRoleRequired);
+        }
+
+        var storeId = currentEmployee.MusicStoreId;
+        var username = request.Username.Trim();
+
+        (int? userId, string? error) = await accountService.CreateUserAsync(
+            username,
+            request.Email.Trim(),
+            request.Password,
+            request.FirstName?.Trim(),
+            request.LastName?.Trim(),
+            cancellationToken);
+
+        if (userId is null)
+        {
+            return (0, error);
+        }
+
+        (var success, var roleError) = await accountService.AssignSingleRoleAsync(
+            userId.Value,
+            AppRoles.StoreEmployee,
+            cancellationToken);
+
+        if (!success)
+        {
+            return (userId.Value, roleError);
+        }
+
+        await EnsureRoleProfileAsync(userId.Value, AppRoles.StoreEmployee, storeId, cancellationToken, isManager: false);
+        await context.SaveChangesAsync(cancellationToken);
+
+        return (userId.Value, null);
+    }
+
+    public async Task<bool> IsStoreManagerAsync(int userId, CancellationToken cancellationToken = default)
+    {
+        return await context.Set<MusicStoreEmployee>()
+            .IgnoreQueryFilters()
+            .AnyAsync(x => x.AppUserId == userId && x.IsActive && x.IsManager, cancellationToken);
     }
 
     public async Task UpdateMembershipAsync(int userId, UpdateMembershipRequest request, CancellationToken cancellationToken = default)
@@ -120,7 +219,12 @@ public sealed class UserProvisioningService(
             .Select(x => (int?)x.Id).FirstOrDefaultAsync(cancellationToken);
     }
 
-    private async Task EnsureRoleProfileAsync(int userId, string role, int? musicStoreId, CancellationToken cancellationToken)
+    private async Task EnsureRoleProfileAsync(
+        int userId,
+        string role,
+        int? musicStoreId,
+        CancellationToken cancellationToken,
+        bool? isManager = null)
     {
         switch (role)
         {
@@ -143,17 +247,28 @@ public sealed class UserProvisioningService(
             case AppRoles.StoreEmployee when musicStoreId.HasValue:
                 {
                     var employees = await context.Set<MusicStoreEmployee>()
+                        .IgnoreQueryFilters()
                         .Where(x => x.AppUserId == userId)
                         .ToListAsync(cancellationToken);
 
                     if (employees.Count == 0)
                     {
-                        context.Set<MusicStoreEmployee>().Add(new MusicStoreEmployee(userId, musicStoreId.Value, true));
+                        var isFirstEmployeeForStore = !await context.Set<MusicStoreEmployee>()
+                            .IgnoreQueryFilters()
+                            .AnyAsync(x => x.MusicStoreId == musicStoreId.Value, cancellationToken);
+
+                        bool managerFlag = isManager ?? isFirstEmployeeForStore;
+
+                        context.Set<MusicStoreEmployee>().Add(new MusicStoreEmployee(userId, musicStoreId.Value, managerFlag));
                         break;
                     }
 
                     var primary = employees.FirstOrDefault(x => x.IsActive) ?? employees[0];
                     primary.IsActive = true;
+                    if (isManager.HasValue)
+                    {
+                        primary.SetManager(isManager.Value);
+                    }
 
                     foreach (MusicStoreEmployee employee in employees.Where(x => x.Id != primary.Id))
                     {

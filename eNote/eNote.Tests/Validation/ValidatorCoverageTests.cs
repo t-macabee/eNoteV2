@@ -30,6 +30,7 @@ public sealed class ValidatorCoverageTests
         Assert.True(new ChangePasswordRequestValidator().Validate(new ChangePasswordRequest { CurrentPassword = "oldpassword", NewPassword = "password1", ConfirmNewPassword = "password1" }).IsValid);
         Assert.True(new UpdateProfileRequestValidator().Validate(new UpdateProfileRequest { Email = "student@example.com" }).IsValid);
         Assert.True(new UserProvisionRequestValidator().Validate(ValidUserProvision()).IsValid);
+        Assert.True(new DelegatedUserCreateRequestValidator().Validate(new DelegatedUserCreateRequest { Username = "student", Email = "student@example.com", Password = "password1" }).IsValid);
         Assert.True(new UpdateMembershipRequestValidator().Validate(new UpdateMembershipRequest { PaidUntil = DateTime.UtcNow.AddDays(1) }).IsValid);
         Assert.True(new UpdateMembershipRequestValidator().Validate(new UpdateMembershipRequest { PaidUntil = null }).IsValid);
         Assert.True(new InstrumentUpdateRequestValidator().Validate(new InstrumentUpdateRequest { Model = "Model", Manufacturer = "Maker", InstrumentTypeId = 1 }).IsValid);
@@ -69,6 +70,9 @@ public sealed class ValidatorCoverageTests
         AssertInvalid(new ChangePasswordRequestValidator().Validate(new ChangePasswordRequest { CurrentPassword = "oldpassword", NewPassword = "password1", ConfirmNewPassword = "different" }), nameof(ChangePasswordRequest.ConfirmNewPassword));
         AssertInvalid(new UpdateProfileRequestValidator().Validate(new UpdateProfileRequest { Email = "" }), nameof(UpdateProfileRequest.Email));
         AssertInvalid(new UpdateProfileRequestValidator().Validate(new UpdateProfileRequest { Email = "bad" }), nameof(UpdateProfileRequest.Email));
+        AssertInvalid(new DelegatedUserCreateRequestValidator().Validate(new DelegatedUserCreateRequest { Username = "", Email = "student@example.com", Password = "password1" }), nameof(DelegatedUserCreateRequest.Username));
+        AssertInvalid(new UserProvisionRequestValidator().Validate(new UserProvisionRequest { Username = "emp", Email = "emp@example.com", Password = "password1", Role = "StoreEmployee", MusicStoreId = null }), nameof(UserProvisionRequest.MusicStoreId));
+        AssertInvalid(new UserProvisionRequestValidator().Validate(new UserProvisionRequest { Username = "emp", Email = "emp@example.com", Password = "password1", Role = "StoreEmployee", MusicStoreId = 0 }), nameof(UserProvisionRequest.MusicStoreId));
     }
 
     [Fact]

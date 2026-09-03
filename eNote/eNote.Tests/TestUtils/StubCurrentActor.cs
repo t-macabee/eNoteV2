@@ -5,9 +5,10 @@ public sealed class StubCurrentActor(
     Instructor? instructor = null,
     MusicStoreEmployee? employee = null,
     int? storeId = null,
-    bool isAuthenticated = true) : ICurrentUserContext, IStudentContext, IStoreContext
+    bool isAuthenticated = true,
+    int? userId = null) : ICurrentUserContext, IStudentContext, IStoreContext
 {
-    public int UserId => student?.AppUserId ?? 1;
+    public int UserId => userId ?? student?.AppUserId ?? 1;
     public bool IsAuthenticated => isAuthenticated;
 
     public Task<Student> GetCurrentStudentAsync() =>

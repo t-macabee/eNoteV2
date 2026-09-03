@@ -19,4 +19,6 @@ public class MusicStoreEmployee : AuditableEntity, ITenantScoped
         MusicStoreId = musicStoreId;
         IsManager = isManager;
     }
+
+    public void SetManager(bool isManager) => IsManager = isManager;
 }
