@@ -126,7 +126,6 @@ class _MusicStoreDetailScreenState extends State<MusicStoreDetailScreen> {
                       child: EntityGridScreen<InstrumentDto>(
                         key: _gridKey,
                         config: EntityGridConfig<InstrumentDto>(
-                          title: 'Instrumenti',
                           embedded: true,
                           searchHint: 'Pretraži instrumente...',
                           placeholderIcon: Icons.music_note,

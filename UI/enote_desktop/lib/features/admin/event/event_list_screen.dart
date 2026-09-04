@@ -45,7 +45,6 @@ class _EventListScreenState extends State<EventListScreen> {
     return EntityGridScreen<EventDto>(
       key: _gridKey,
       config: EntityGridConfig<EventDto>(
-        title: 'Događaji',
         searchHint: 'Pretraži po nazivu...',
         placeholderIcon: Icons.event_outlined,
         titleOf: (item) => item.title,

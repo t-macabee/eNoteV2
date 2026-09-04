@@ -33,7 +33,6 @@ class _InstrumentListScreenState extends State<InstrumentListScreen> {
     return EntityListScreen<InstrumentDto>(
       key: _listKey,
       config: EntityListConfig<InstrumentDto>(
-        title: 'Instrumenti',
         columns: [
           ColumnSpec<InstrumentDto>(
             label: 'Model',

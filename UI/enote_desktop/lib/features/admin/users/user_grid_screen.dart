@@ -70,7 +70,6 @@ class _UserGridScreenState extends State<UserGridScreen> {
     return EntityGridScreen<_UserListItem>(
       key: _gridKey,
       config: EntityGridConfig<_UserListItem>(
-        title: 'Korisnici',
         searchHint: 'Pretraži po imenu...',
         placeholderIcon: Icons.person_outline,
         titleOf: (item) => item.displayName,

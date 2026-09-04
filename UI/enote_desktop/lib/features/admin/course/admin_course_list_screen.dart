@@ -34,7 +34,6 @@ class _AdminCourseListScreenState extends State<AdminCourseListScreen> {
     return EntityGridScreen<CourseDto>(
       key: _gridKey,
       config: EntityGridConfig<CourseDto>(
-        title: 'Kursevi',
         searchHint: 'Pretraži po nazivu...',
         placeholderIcon: Icons.class_,
         titleOf: (item) => item.name,

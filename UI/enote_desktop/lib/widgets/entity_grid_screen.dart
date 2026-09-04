@@ -19,7 +19,7 @@ typedef EntityGridFetcher<T> = Future<PagedResult<T>> Function(
 /// pattern this adapts (square card, cover image or placeholder,
 /// black-scrim overlay that fades in on hover).
 class EntityGridConfig<T> {
-  final String title;
+  final String? title;
   final EntityGridFetcher<T> fetcher;
   final String Function(T item) titleOf;
   final String? Function(T item)? subtitleOf;
@@ -76,7 +76,7 @@ class EntityGridConfig<T> {
   final String Function(T item)? groupKeyOf;
 
   const EntityGridConfig({
-    required this.title,
+    this.title,
     required this.fetcher,
     required this.titleOf,
     this.subtitleOf,
@@ -207,7 +207,7 @@ class EntityGridScreenState<T> extends State<EntityGridScreen<T>> {
     }
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.config.title),
+        title: widget.config.title != null ? Text(widget.config.title!) : null,
         actions: [if (widget.config.trailing != null) widget.config.trailing!],
       ),
       body: content,
@@ -252,13 +252,16 @@ class EntityGridScreenState<T> extends State<EntityGridScreen<T>> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             if (showSearch)
-              Expanded(
-                child: TextField(
-                  controller: _searchController,
-                  decoration: InputDecoration(
-                    hintText: widget.config.searchHint,
-                    prefixIcon: const Icon(Icons.search),
-                    border: const OutlineInputBorder(),
+              Flexible(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 420),
+                  child: TextField(
+                    controller: _searchController,
+                    decoration: InputDecoration(
+                      hintText: widget.config.searchHint,
+                      prefixIcon: const Icon(Icons.search),
+                      border: const OutlineInputBorder(),
+                    ),
                   ),
                 ),
               ),

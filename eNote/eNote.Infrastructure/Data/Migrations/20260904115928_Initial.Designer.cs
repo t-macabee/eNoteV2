@@ -12,7 +12,7 @@ using eNote.Infrastructure.Data;
 namespace eNote.Infrastructure.Data.Migrations
 {
     [DbContext(typeof(ENoteContext))]
-    [Migration("20260903082805_Initial")]
+    [Migration("20260904115928_Initial")]
     partial class Initial
     {
         /// <inheritdoc />

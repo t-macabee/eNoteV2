@@ -44,7 +44,6 @@ class _InstructorStudentListScreenState
     return EntityGridScreen<StudentDto>(
       key: _gridKey,
       config: EntityGridConfig<StudentDto>(
-        title: 'Studenti',
         fetcher: (page, pageSize, search) => provider.search(
           search.isEmpty
               ? {'page': page, 'pageSize': pageSize}

@@ -63,7 +63,6 @@ class _MusicStoreListScreenState extends State<MusicStoreListScreen> {
     return EntityGridScreen<MusicStoreDto>(
       key: _gridKey,
       config: EntityGridConfig<MusicStoreDto>(
-        title: 'Muzičke prodavnice',
         searchHint: 'Pretraži...',
         placeholderIcon: Icons.storefront_outlined,
         titleOf: (item) => item.storeName,

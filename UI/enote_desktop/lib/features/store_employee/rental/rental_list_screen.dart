@@ -96,7 +96,6 @@ class _RentalListScreenState extends State<RentalListScreen> {
     return EntityListScreen<InstrumentRentalDto>(
       key: _listKey,
       config: EntityListConfig<InstrumentRentalDto>(
-        title: 'Zahtjevi za iznajmljivanje',
         columns: [
           ColumnSpec<InstrumentRentalDto>(
             label: 'Instrument',

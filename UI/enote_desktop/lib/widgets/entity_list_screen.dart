@@ -27,7 +27,7 @@ typedef EntityFetcher<T> = Future<PagedResult<T>> Function(
 );
 
 class EntityListConfig<T> {
-  final String title;
+  final String? title;
   final List<ColumnSpec<T>> columns;
   final String searchHint;
   final EntityFetcher<T> fetcher;
@@ -49,7 +49,7 @@ class EntityListConfig<T> {
   final bool inlineToolbar;
 
   const EntityListConfig({
-    required this.title,
+    this.title,
     required this.columns,
     required this.fetcher,
     this.searchHint = 'Pretraži...',
@@ -165,7 +165,7 @@ class EntityListScreenState<T> extends State<EntityListScreen<T>> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.config.title),
+        title: widget.config.title != null ? Text(widget.config.title!) : null,
         actions: [if (widget.config.trailing != null) widget.config.trailing!],
       ),
       body: Column(
@@ -208,13 +208,16 @@ class EntityListScreenState<T> extends State<EntityListScreen<T>> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             if (showSearch)
-              Expanded(
-                child: TextField(
-                  controller: _searchController,
-                  decoration: InputDecoration(
-                    hintText: widget.config.searchHint,
-                    prefixIcon: const Icon(Icons.search),
-                    border: const OutlineInputBorder(),
+              Flexible(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 420),
+                  child: TextField(
+                    controller: _searchController,
+                    decoration: InputDecoration(
+                      hintText: widget.config.searchHint,
+                      prefixIcon: const Icon(Icons.search),
+                      border: const OutlineInputBorder(),
+                    ),
                   ),
                 ),
               ),
@@ -240,12 +243,18 @@ class EntityListScreenState<T> extends State<EntityListScreen<T>> {
   Widget _buildSearchBar() {
     return Padding(
       padding: const EdgeInsets.all(16),
-      child: TextField(
-        controller: _searchController,
-        decoration: InputDecoration(
-          hintText: widget.config.searchHint,
-          prefixIcon: const Icon(Icons.search),
-          border: const OutlineInputBorder(),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 420),
+          child: TextField(
+            controller: _searchController,
+            decoration: InputDecoration(
+              hintText: widget.config.searchHint,
+              prefixIcon: const Icon(Icons.search),
+              border: const OutlineInputBorder(),
+            ),
+          ),
         ),
       ),
     );

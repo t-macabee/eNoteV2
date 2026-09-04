@@ -131,7 +131,7 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    expect(find.text('Studenti'), findsWidgets);
+    expect(find.text('Edin Dzeko'), findsOneWidget);
     expect(find.text('Kreiraj studenta'), findsOneWidget);
 
     await tester.tap(find.text('Kreiraj studenta'));
@@ -174,7 +174,7 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    expect(find.text('Zaposlenici'), findsWidgets);
+    expect(find.text('Miralem Pjanic'), findsOneWidget);
     expect(find.text('Kreiraj zaposlenika'), findsNothing);
   });
 
@@ -213,7 +213,7 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    expect(find.text('Zaposlenici'), findsWidgets);
+    expect(find.text('Miralem Pjanic'), findsOneWidget);
     expect(find.text('Kreiraj zaposlenika'), findsOneWidget);
 
     await tester.tap(find.text('Kreiraj zaposlenika'));

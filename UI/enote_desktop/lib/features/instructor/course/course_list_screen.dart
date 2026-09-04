@@ -39,7 +39,6 @@ class _CourseListScreenState extends State<CourseListScreen> {
     return EntityListScreen<CourseDto>(
       key: _listKey,
       config: EntityListConfig<CourseDto>(
-        title: 'Kursevi',
         columns: [
           ColumnSpec<CourseDto>(
             label: 'Naziv',

@@ -33,7 +33,6 @@ class _AnnouncementListScreenState extends State<AnnouncementListScreen> {
     return EntityListScreen<AnnouncementDto>(
       key: _listKey,
       config: EntityListConfig<AnnouncementDto>(
-        title: 'Objave',
         columns: [
           ColumnSpec<AnnouncementDto>(
             label: 'Naslov',
