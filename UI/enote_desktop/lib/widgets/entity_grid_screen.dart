@@ -25,6 +25,7 @@ class EntityGridConfig<T> {
   final String? Function(T item)? subtitleOf;
   final String? Function(T item)? imageUrlOf;
   final IconData placeholderIcon;
+  final String? Function(T item)? badgeOf;
   final void Function(BuildContext context, T item)? onTap;
   final Future<bool?> Function(BuildContext context, T item)? onDelete;
   final VoidCallback? onAdd;
@@ -82,6 +83,7 @@ class EntityGridConfig<T> {
     this.subtitleOf,
     this.imageUrlOf,
     this.placeholderIcon = Icons.image_outlined,
+    this.badgeOf,
     this.onTap,
     this.onDelete,
     this.onAdd,
@@ -430,6 +432,7 @@ class _EntityGridCardState<T> extends State<_EntityGridCard<T>> {
     final title = config.titleOf(item);
     final subtitle = config.subtitleOf?.call(item);
     final imageUrl = config.imageUrlOf?.call(item);
+    final badge = config.badgeOf?.call(item);
     final apiClient = context.read<ApiClient>();
 
     return MouseRegion(
@@ -507,6 +510,41 @@ class _EntityGridCardState<T> extends State<_EntityGridCard<T>> {
                   ),
                 ),
               ),
+              if (badge != null && badge.isNotEmpty)
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.75),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: AppTheme.outline),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.visibility_outlined,
+                          size: 12,
+                          color: AppTheme.textSecondary,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          badge,
+                          style: const TextStyle(
+                            color: AppTheme.textSecondary,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
             ],
           ),
         ),

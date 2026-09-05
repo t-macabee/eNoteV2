@@ -25,6 +25,14 @@ class _EventListScreenState extends State<EventListScreen> {
   int? _instructorId;
 
   Future<void> _openForm([EventDto? existing]) async {
+    if (existing != null && existing.isScoped) {
+      ErrorBanner.show(
+        context,
+        message:
+            'Administrator može upravljati samo događajima na nivou platforme.',
+      );
+      return;
+    }
     await EntityFormScaffold.showAsDialog(
       context,
       builder: (_) => EventFormScreen(
@@ -48,7 +56,14 @@ class _EventListScreenState extends State<EventListScreen> {
         searchHint: 'Pretraži po nazivu...',
         placeholderIcon: Icons.event_outlined,
         titleOf: (item) => item.title,
-        subtitleOf: (item) => formatDateTime(item.startsAt),
+        subtitleOf: (item) {
+          final time = formatDateTime(item.startsAt);
+          if (item.isScoped) {
+            return '$time • Samo pregled';
+          }
+          return time;
+        },
+        badgeOf: (item) => item.isScoped ? 'Samo pregled' : null,
         filterBar: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -119,8 +134,26 @@ class _EventListScreenState extends State<EventListScreen> {
           if (_instructorId != null) 'instructorId': _instructorId,
         }),
         onAdd: () => _openForm(),
-        onTap: (context, item) => _openForm(item),
+        onTap: (context, item) {
+          if (item.isScoped) {
+            ErrorBanner.show(
+              context,
+              message:
+                  'Administrator može upravljati samo događajima na nivou platforme.',
+            );
+            return;
+          }
+          _openForm(item);
+        },
         onDelete: (context, item) async {
+          if (item.isScoped) {
+            ErrorBanner.show(
+              context,
+              message:
+                  'Administrator može upravljati samo događajima na nivou platforme.',
+            );
+            return false;
+          }
           await context.read<EventProvider>().remove(item.id);
           return true;
         },

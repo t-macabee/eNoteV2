@@ -173,6 +173,9 @@ class EventDto {
     this.instructorId,
   });
 
+  bool get isPlatformWide => courseId == null && instructorId == null;
+  bool get isScoped => !isPlatformWide;
+
   factory EventDto.fromJson(Map<String, dynamic> json) {
     return EventDto(
       id: json['id'] as int? ?? 0,
