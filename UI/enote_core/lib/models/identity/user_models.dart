@@ -229,6 +229,7 @@ class ShopEmployeeDto {
   final int id;
   final int appUserId;
   final int musicStoreId;
+  final String? storeName;
   final String? firstName;
   final String? lastName;
   final String? username;
@@ -239,6 +240,7 @@ class ShopEmployeeDto {
     required this.id,
     required this.appUserId,
     required this.musicStoreId,
+    this.storeName,
     this.firstName,
     this.lastName,
     this.username,
@@ -246,11 +248,14 @@ class ShopEmployeeDto {
     required this.isActive,
   });
 
+  String? get musicStoreName => storeName;
+
   factory ShopEmployeeDto.fromJson(Map<String, dynamic> json) {
     return ShopEmployeeDto(
       id: json['id'] as int? ?? 0,
       appUserId: json['appUserId'] as int? ?? 0,
       musicStoreId: json['musicStoreId'] as int? ?? 0,
+      storeName: json['storeName'] as String? ?? json['musicStoreName'] as String?,
       firstName: json['firstName'] as String?,
       lastName: json['lastName'] as String?,
       username: json['username'] as String?,
@@ -263,6 +268,7 @@ class ShopEmployeeDto {
     'id': id,
     'appUserId': appUserId,
     'musicStoreId': musicStoreId,
+    if (storeName != null) 'storeName': storeName,
     if (firstName != null) 'firstName': firstName,
     if (lastName != null) 'lastName': lastName,
     if (username != null) 'username': username,

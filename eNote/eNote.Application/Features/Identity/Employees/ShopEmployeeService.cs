@@ -27,6 +27,8 @@ public sealed class ShopEmployeeService(
 
         var employees = await context.Set<MusicStoreEmployee>()
             .IgnoreQueryFilters()
+            .AsNoTracking()
+            .Include(x => x.MusicStore)
             .Where(x => x.MusicStoreId == storeId && x.IsActive)
             .OrderBy(x => x.Id)
             .ToListAsync(cancellationToken);
@@ -50,19 +52,82 @@ public sealed class ShopEmployeeService(
         };
     }
 
-    private static ShopEmployeeDto Map(MusicStoreEmployee entity, UserIdentityDto? user) => new()
+    public async Task<PagedResult<ShopEmployeeDto>> GetPagedAsync(
+        ShopEmployeeSearchObject search,
+        CancellationToken cancellationToken = default)
+    {
+        IQueryable<MusicStoreEmployee> query = context.Set<MusicStoreEmployee>()
+            .IgnoreQueryFilters()
+            .AsNoTracking()
+            .Include(x => x.MusicStore)
+            .OrderBy(x => x.Id);
+
+        if (search.MusicStoreId.HasValue)
+        {
+            query = query.Where(x => x.MusicStoreId == search.MusicStoreId.Value);
+        }
+
+        if (search.IsActive.HasValue)
+        {
+            query = query.Where(x => x.IsActive == search.IsActive.Value);
+        }
+
+        List<MusicStoreEmployee> employees = await query.ToListAsync(cancellationToken);
+
+        var users = await identityService.GetUsersBulkAsync(
+            employees.Select(x => x.AppUserId),
+            cancellationToken);
+
+        List<ShopEmployeeDto> filtered = [.. employees
+            .Select(x => Map(x, users.GetValueOrDefault(x.AppUserId)))
+            .Where(x => MatchesName(x, search.Name))];
+
+        (var page, var pageSize) = PagingLimits.Normalize(search.Page, search.PageSize);
+
+        return new PagedResult<ShopEmployeeDto>
+        {
+            Items = [.. filtered.Skip((page - 1) * pageSize).Take(pageSize)],
+            Page = page,
+            PageSize = pageSize,
+            TotalCount = search.IncludeTotalCount ? filtered.Count : null
+        };
+    }
+
+    public async Task<ShopEmployeeDto> GetByIdAsync(
+        int id,
+        CancellationToken cancellationToken = default)
+    {
+        MusicStoreEmployee entity = await context.Set<MusicStoreEmployee>()
+            .IgnoreQueryFilters()
+            .AsNoTracking()
+            .Include(x => x.MusicStore)
+            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken)
+            ?? await context.Set<MusicStoreEmployee>()
+                .IgnoreQueryFilters()
+                .AsNoTracking()
+                .Include(x => x.MusicStore)
+                .FirstOrDefaultAsync(x => x.AppUserId == id, cancellationToken)
+            ?? throw new NotFoundException(Messages.EmployeeProfileNotFound);
+
+        UserIdentityDto? user = await identityService.GetUserAsync(entity.AppUserId, cancellationToken);
+
+        return Map(entity, user);
+    }
+
+    internal static ShopEmployeeDto Map(MusicStoreEmployee entity, UserIdentityDto? user) => new()
     {
         Id = entity.Id,
         AppUserId = entity.AppUserId,
         MusicStoreId = entity.MusicStoreId,
+        StoreName = entity.MusicStore?.StoreName,
         FirstName = user?.FirstName,
         LastName = user?.LastName,
         Username = user?.Username,
         IsManager = entity.IsManager,
-        IsActive = entity.IsActive
+        IsActive = entity.IsActive && (user?.IsActive ?? true)
     };
 
-    private static bool MatchesName(ShopEmployeeDto dto, string? name)
+    internal static bool MatchesName(ShopEmployeeDto dto, string? name)
     {
         if (string.IsNullOrWhiteSpace(name))
         {

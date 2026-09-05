@@ -6,21 +6,24 @@ import 'package:enote_core/enote_core.dart';
 import '../../../widgets/entity_grid_screen.dart';
 import '../instructor/instructor_provider.dart';
 import '../student/student_provider.dart';
+import 'store_employee_provider.dart';
 import 'user_provision_form_screen.dart';
 
 class _UserListItem {
   final int appUserId;
   final String displayName;
   final UserRole role;
+  final String? storeName;
 
   const _UserListItem({
     required this.appUserId,
     required this.displayName,
     required this.role,
+    this.storeName,
   });
 }
 
-/// Administrator "Users" tab — card grid of Students + Instructors,
+/// Administrator "Users" tab — card grid of Students + Instructors + StoreEmployees,
 /// filterable by name and role.
 class UserGridScreen extends StatefulWidget {
   const UserGridScreen({super.key});
@@ -32,7 +35,7 @@ class UserGridScreen extends StatefulWidget {
 class _UserGridScreenState extends State<UserGridScreen> {
   final _gridKey = GlobalKey<EntityGridScreenState<_UserListItem>>();
 
-  /// null = "Svi korisnici" (default) — shows Instruktori + Studenti as two
+  /// null = "Svi korisnici" (default) — shows Instruktori + Studenti + StoreEmployee as
   /// labeled sections. Otherwise filters to just that role.
   UserRole? _role;
 
@@ -73,6 +76,10 @@ class _UserGridScreenState extends State<UserGridScreen> {
         searchHint: 'Pretraži po imenu...',
         placeholderIcon: Icons.person_outline,
         titleOf: (item) => item.displayName,
+        subtitleOf: (item) =>
+            item.storeName != null && item.storeName!.isNotEmpty
+                ? item.storeName
+                : null,
         onDelete: (context, item) async {
           final apiClient = context.read<ApiClient>();
           final response = await apiClient.delete(
@@ -86,13 +93,17 @@ class _UserGridScreenState extends State<UserGridScreen> {
           return true;
         },
         groupKeyOf: _role == null
-            ? (item) => item.role == UserRole.instructor
-                ? 'Instruktori'
-                : 'Studenti'
+            ? (item) => switch (item.role) {
+                UserRole.instructor => 'Instruktori',
+                UserRole.student => 'Studenti',
+                UserRole.storeEmployee => 'StoreEmployee',
+                _ => item.role.label,
+              }
             : null,
         filterBar: SizedBox(
           width: 220,
           child: DropdownButtonFormField<UserRole?>(
+            isExpanded: true,
             initialValue: _role,
             decoration: const InputDecoration(labelText: 'Uloga'),
             items: const [
@@ -102,6 +113,10 @@ class _UserGridScreenState extends State<UserGridScreen> {
                 child: Text('Instruktor'),
               ),
               DropdownMenuItem(value: UserRole.student, child: Text('Student')),
+              DropdownMenuItem(
+                value: UserRole.storeEmployee,
+                child: Text('StoreEmployee'),
+              ),
             ],
             onChanged: (role) {
               _role = role;
@@ -162,13 +177,44 @@ class _UserGridScreenState extends State<UserGridScreen> {
             );
           }
 
-          // _role == null: fetch both instructors and students concurrently
+          if (_role == UserRole.storeEmployee) {
+            final result =
+                await context.read<StoreEmployeeProvider>().search(query);
+            return PagedResult<_UserListItem>(
+              items: result.items
+                  .map(
+                    (e) => _UserListItem(
+                      appUserId: e.appUserId,
+                      displayName: _formatDisplayName(
+                        e.firstName,
+                        e.lastName,
+                        e.username,
+                      ),
+                      role: UserRole.storeEmployee,
+                      storeName: e.storeName,
+                    ),
+                  )
+                  .toList(),
+              page: result.page,
+              pageSize: result.pageSize,
+              totalCount: result.totalCount,
+            );
+          }
+
+          // _role == null: fetch instructors, students, and store employees concurrently
           final instructorFuture =
               context.read<InstructorProvider>().search(query);
           final studentFuture = context.read<StudentProvider>().search(query);
-          final results = await Future.wait([instructorFuture, studentFuture]);
+          final employeeFuture =
+              context.read<StoreEmployeeProvider>().search(query);
+          final results = await Future.wait([
+            instructorFuture,
+            studentFuture,
+            employeeFuture,
+          ]);
           final instructorResult = results[0] as PagedResult<InstructorDto>;
           final studentResult = results[1] as PagedResult<StudentDto>;
+          final employeeResult = results[2] as PagedResult<ShopEmployeeDto>;
 
           final instructorItems = instructorResult.items.map(
             (i) => _UserListItem(
@@ -192,15 +238,29 @@ class _UserGridScreenState extends State<UserGridScreen> {
               role: UserRole.student,
             ),
           );
+          final employeeItems = employeeResult.items.map(
+            (e) => _UserListItem(
+              appUserId: e.appUserId,
+              displayName: _formatDisplayName(
+                e.firstName,
+                e.lastName,
+                e.username,
+              ),
+              role: UserRole.storeEmployee,
+              storeName: e.storeName,
+            ),
+          );
 
           final totalCount = (instructorResult.totalCount != null ||
-                  studentResult.totalCount != null)
+                  studentResult.totalCount != null ||
+                  employeeResult.totalCount != null)
               ? (instructorResult.totalCount ?? 0) +
-                  (studentResult.totalCount ?? 0)
+                  (studentResult.totalCount ?? 0) +
+                  (employeeResult.totalCount ?? 0)
               : null;
 
           return PagedResult<_UserListItem>(
-            items: [...instructorItems, ...studentItems],
+            items: [...instructorItems, ...studentItems, ...employeeItems],
             page: page,
             pageSize: pageSize,
             totalCount: totalCount,

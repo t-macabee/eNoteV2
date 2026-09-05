@@ -10,6 +10,7 @@ import 'features/admin/course/admin_course_provider.dart';
 import 'features/admin/event/event_provider.dart';
 import 'features/admin/instructor/instructor_provider.dart';
 import 'features/admin/student/student_provider.dart';
+import 'features/admin/users/store_employee_provider.dart';
 import 'features/admin/instrument_type/instrument_type_provider.dart';
 import 'features/instructor/course/course_provider.dart';
 import 'features/instructor/lecture/lecture_provider.dart';
@@ -68,6 +69,9 @@ class MyApp extends StatelessWidget {
         ),
         ChangeNotifierProvider<StudentProvider>(
           create: (_) => StudentProvider(apiClient: apiClient),
+        ),
+        ChangeNotifierProvider<StoreEmployeeProvider>(
+          create: (_) => StoreEmployeeProvider(apiClient: apiClient),
         ),
         ChangeNotifierProvider<EventProvider>(
           create: (_) => EventProvider(apiClient: apiClient),
