@@ -14,12 +14,14 @@ class _UserListItem {
   final String displayName;
   final UserRole role;
   final String? storeName;
+  final DateTime? membershipPaidUntil;
 
   const _UserListItem({
     required this.appUserId,
     required this.displayName,
     required this.role,
     this.storeName,
+    this.membershipPaidUntil,
   });
 }
 
@@ -56,6 +58,53 @@ class _UserGridScreenState extends State<UserGridScreen> {
     _gridKey.currentState?.refresh();
   }
 
+  Future<void> _renewMembership(
+    BuildContext context,
+    _UserListItem item,
+  ) async {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final initialDate = (item.membershipPaidUntil != null &&
+            item.membershipPaidUntil!.isAfter(today))
+        ? DateTime(
+            item.membershipPaidUntil!.year,
+            item.membershipPaidUntil!.month + 1,
+            item.membershipPaidUntil!.day,
+          )
+        : DateTime(now.year, now.month + 1, now.day);
+
+    final pickedDate = await showDatePicker(
+      context: context,
+      initialDate: initialDate.isBefore(today) ? today : initialDate,
+      firstDate: today,
+      lastDate: DateTime(today.year + 10),
+      helpText: 'Produži članstvo',
+      confirmText: 'Sačuvaj',
+      cancelText: 'Odustani',
+    );
+
+    if (pickedDate == null || !context.mounted) return;
+
+    try {
+      final apiClient = context.read<ApiClient>();
+      final request = UpdateMembershipRequest(paidUntil: pickedDate);
+      final response = await apiClient.put(
+        'admin/users/${item.appUserId}/membership',
+        body: request.toJson(),
+      );
+      if (response.statusCode >= 400) {
+        throw ApiException(
+          ApiErrorMapper.mapError(response.statusCode, response.body),
+        );
+      }
+      _gridKey.currentState?.refresh();
+    } catch (e) {
+      if (context.mounted) {
+        ErrorBanner.show(context, message: userMessage(e));
+      }
+    }
+  }
+
   void _applyFilters() {
     setState(() {});
     _gridKey.currentState?.refresh(resetPage: true);
@@ -76,10 +125,18 @@ class _UserGridScreenState extends State<UserGridScreen> {
         searchHint: 'Pretraži po imenu...',
         placeholderIcon: Icons.person_outline,
         titleOf: (item) => item.displayName,
-        subtitleOf: (item) =>
+        subtitleOf: (item) => switch (item.role) {
+          UserRole.student => 'Produži članstvo',
+          UserRole.storeEmployee =>
             item.storeName != null && item.storeName!.isNotEmpty
                 ? item.storeName
                 : null,
+          _ => null,
+        },
+        onTap: (context, item) async {
+          if (item.role != UserRole.student) return;
+          await _renewMembership(context, item);
+        },
         onDelete: (context, item) async {
           final apiClient = context.read<ApiClient>();
           final response = await apiClient.delete(
@@ -168,6 +225,7 @@ class _UserGridScreenState extends State<UserGridScreen> {
                         s.username,
                       ),
                       role: UserRole.student,
+                      membershipPaidUntil: s.membershipPaidUntil,
                     ),
                   )
                   .toList(),
@@ -236,6 +294,7 @@ class _UserGridScreenState extends State<UserGridScreen> {
                 s.username,
               ),
               role: UserRole.student,
+              membershipPaidUntil: s.membershipPaidUntil,
             ),
           );
           final employeeItems = employeeResult.items.map(

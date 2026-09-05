@@ -7,10 +7,7 @@ import '../../../widgets/async_dropdown.dart';
 import '../music_store/music_store_provider.dart';
 import 'user_provision_service.dart';
 
-/// Provisions a user via `POST admin/users`. There is no list/search or
-/// activate/deactivate endpoint on `AdminUsersController`, so this form is
-/// the only Users screen — always create mode (re-provisioning an existing
-/// username updates its profile/role server-side instead of failing).
+/// Provisions a user via POST admin/users; UserGridScreen is the list/search/deactivate screen.
 class UserProvisionFormScreen extends StatefulWidget {
   const UserProvisionFormScreen({super.key});
 
