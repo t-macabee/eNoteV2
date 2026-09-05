@@ -58,18 +58,22 @@ class _MasterScreenState extends State<MasterScreen> {
       label: 'Gradovi',
       screenBuilder: _buildCityList,
       allowedRoles: [UserRole.administrator],
+      isDialog: true,
+      dividerBefore: true,
     ),
     RoleMenuEntry(
       icon: Icons.location_on,
       label: 'Adrese',
       screenBuilder: _buildAddressList,
       allowedRoles: [UserRole.administrator],
+      isDialog: true,
     ),
     RoleMenuEntry(
       icon: Icons.music_note,
       label: 'Tipovi instrumenata',
       screenBuilder: _buildInstrumentTypeList,
       allowedRoles: [UserRole.administrator],
+      isDialog: true,
     ),
     RoleMenuEntry(
       icon: Icons.class_,
@@ -170,7 +174,7 @@ class _MasterScreenState extends State<MasterScreen> {
     super.initState();
     final roles = _currentRoles();
     for (final entry in _entries) {
-      if (entry.allowedRoles.any(roles.contains)) {
+      if (!entry.isDialog && entry.allowedRoles.any(roles.contains)) {
         _selectedEntry = entry;
         break;
       }
@@ -227,6 +231,24 @@ class _MasterScreenState extends State<MasterScreen> {
   }
 
   void _onEntrySelected(RoleMenuEntry entry) {
+    if (entry.isDialog) {
+      showDialog<void>(
+        context: context,
+        builder: (dialogContext) => Dialog(
+          clipBehavior: Clip.antiAlias,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 48, vertical: 36),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(
+              maxWidth: 960,
+              maxHeight: 720,
+            ),
+            child: entry.screenBuilder(dialogContext),
+          ),
+        ),
+      );
+      return;
+    }
     setState(() {
       _selectedEntry = entry;
     });

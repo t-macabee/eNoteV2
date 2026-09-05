@@ -9,7 +9,12 @@ import 'user_provision_service.dart';
 
 /// Provisions a user via POST admin/users; UserGridScreen is the list/search/deactivate screen.
 class UserProvisionFormScreen extends StatefulWidget {
-  const UserProvisionFormScreen({super.key});
+  final EntityFormPresentation presentation;
+
+  const UserProvisionFormScreen({
+    super.key,
+    this.presentation = EntityFormPresentation.page,
+  });
 
   @override
   State<UserProvisionFormScreen> createState() =>
@@ -56,6 +61,7 @@ class _UserProvisionFormScreenState extends State<UserProvisionFormScreen> {
   Widget build(BuildContext context) {
     return EntityFormScaffold(
       title: 'Kreiraj korisnika',
+      presentation: widget.presentation,
       fieldsBuilder: (context) => [
         TextFormField(
           controller: _usernameController,

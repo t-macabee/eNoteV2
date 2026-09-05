@@ -11,12 +11,16 @@ class RoleMenuEntry {
   final String label;
   final WidgetBuilder screenBuilder;
   final List<UserRole> allowedRoles;
+  final bool isDialog;
+  final bool dividerBefore;
 
   const RoleMenuEntry({
     required this.icon,
     required this.label,
     required this.screenBuilder,
     required this.allowedRoles,
+    this.isDialog = false,
+    this.dividerBefore = false,
   });
 }
 
@@ -98,13 +102,19 @@ class RoleMenu extends StatelessWidget {
             child: ListView(
               padding: const EdgeInsets.symmetric(horizontal: 8),
               children: [
-                for (final entry in visibleEntries)
+                for (final entry in visibleEntries) ...[
+                  if (entry.dividerBefore)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+                      child: Divider(color: AppTheme.outline, height: 1),
+                    ),
                   _NavRow(
                     icon: entry.icon,
                     label: entry.label,
-                    selected: identical(entry, selected),
+                    selected: !entry.isDialog && identical(entry, selected),
                     onTap: () => onSelect(entry),
                   ),
+                ],
               ],
             ),
           ),

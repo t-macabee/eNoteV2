@@ -1,8 +1,12 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
 
+import '../../../theme/app_theme.dart';
+import '../../../widgets/entity_form_scaffold.dart';
 import '../../../widgets/entity_grid_screen.dart';
 import '../instructor/instructor_provider.dart';
 import '../student/student_provider.dart';
@@ -12,16 +16,28 @@ import 'user_provision_form_screen.dart';
 class _UserListItem {
   final int appUserId;
   final String displayName;
+  final String? username;
+  final String? firstName;
+  final String? lastName;
   final UserRole role;
   final String? storeName;
   final DateTime? membershipPaidUntil;
+  final DateTime? enrollmentDate;
+  final bool? isManager;
+  final bool? isActive;
 
   const _UserListItem({
     required this.appUserId,
     required this.displayName,
+    this.username,
+    this.firstName,
+    this.lastName,
     required this.role,
     this.storeName,
     this.membershipPaidUntil,
+    this.enrollmentDate,
+    this.isManager,
+    this.isActive,
   });
 }
 
@@ -52,13 +68,16 @@ class _UserGridScreenState extends State<UserGridScreen> {
   }
 
   Future<void> _openProvisionForm() async {
-    await Navigator.of(context).push(
-      MaterialPageRoute<void>(builder: (_) => const UserProvisionFormScreen()),
+    await EntityFormScaffold.showAsDialog(
+      context,
+      builder: (_) => const UserProvisionFormScreen(
+        presentation: EntityFormPresentation.dialog,
+      ),
     );
     _gridKey.currentState?.refresh();
   }
 
-  Future<void> _renewMembership(
+  Future<DateTime?> _renewMembership(
     BuildContext context,
     _UserListItem item,
   ) async {
@@ -83,7 +102,7 @@ class _UserGridScreenState extends State<UserGridScreen> {
       cancelText: 'Odustani',
     );
 
-    if (pickedDate == null || !context.mounted) return;
+    if (pickedDate == null || !context.mounted) return null;
 
     try {
       final apiClient = context.read<ApiClient>();
@@ -98,11 +117,23 @@ class _UserGridScreenState extends State<UserGridScreen> {
         );
       }
       _gridKey.currentState?.refresh();
+      return pickedDate;
     } catch (e) {
       if (context.mounted) {
         ErrorBanner.show(context, message: userMessage(e));
       }
+      return null;
     }
+  }
+
+  void _showUserDetailsDialog(BuildContext context, _UserListItem item) {
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => _UserDetailsDialog(
+        item: item,
+        onRenewMembership: () => _renewMembership(context, item),
+      ),
+    );
   }
 
   void _applyFilters() {
@@ -126,17 +157,37 @@ class _UserGridScreenState extends State<UserGridScreen> {
         placeholderIcon: Icons.person_outline,
         titleOf: (item) => item.displayName,
         subtitleOf: (item) => switch (item.role) {
-          UserRole.student => 'Produži članstvo',
+          UserRole.student => item.membershipPaidUntil != null
+              ? 'Članarina do: ${formatDate(item.membershipPaidUntil!)}'
+              : (item.username != null ? '@${item.username}' : 'Student'),
           UserRole.storeEmployee =>
             item.storeName != null && item.storeName!.isNotEmpty
                 ? item.storeName
-                : null,
-          _ => null,
+                : (item.username != null ? '@${item.username}' : null),
+          UserRole.instructor =>
+            item.username != null ? '@${item.username}' : null,
+          _ => item.username != null ? '@${item.username}' : null,
         },
-        onTap: (context, item) async {
-          if (item.role != UserRole.student) return;
-          await _renewMembership(context, item);
+        cardActions: (context, item) {
+          if (item.role != UserRole.student) return const [];
+          return [
+            OutlinedButton.icon(
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Colors.white,
+                side: const BorderSide(color: Colors.white70),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                visualDensity: VisualDensity.compact,
+              ),
+              onPressed: () => _renewMembership(context, item),
+              icon: const Icon(Icons.edit_calendar, size: 14),
+              label: const Text(
+                'Produži članstvo',
+                style: TextStyle(fontSize: 12),
+              ),
+            ),
+          ];
         },
+        onTap: (context, item) => _showUserDetailsDialog(context, item),
         onDelete: (context, item) async {
           final apiClient = context.read<ApiClient>();
           final response = await apiClient.delete(
@@ -202,6 +253,9 @@ class _UserGridScreenState extends State<UserGridScreen> {
                         i.lastName,
                         i.username,
                       ),
+                      username: i.username,
+                      firstName: i.firstName,
+                      lastName: i.lastName,
                       role: UserRole.instructor,
                     ),
                   )
@@ -224,8 +278,12 @@ class _UserGridScreenState extends State<UserGridScreen> {
                         s.lastName,
                         s.username,
                       ),
+                      username: s.username,
+                      firstName: s.firstName,
+                      lastName: s.lastName,
                       role: UserRole.student,
                       membershipPaidUntil: s.membershipPaidUntil,
+                      enrollmentDate: s.enrollmentDate,
                     ),
                   )
                   .toList(),
@@ -248,8 +306,13 @@ class _UserGridScreenState extends State<UserGridScreen> {
                         e.lastName,
                         e.username,
                       ),
+                      username: e.username,
+                      firstName: e.firstName,
+                      lastName: e.lastName,
                       role: UserRole.storeEmployee,
                       storeName: e.storeName,
+                      isManager: e.isManager,
+                      isActive: e.isActive,
                     ),
                   )
                   .toList(),
@@ -282,6 +345,9 @@ class _UserGridScreenState extends State<UserGridScreen> {
                 i.lastName,
                 i.username,
               ),
+              username: i.username,
+              firstName: i.firstName,
+              lastName: i.lastName,
               role: UserRole.instructor,
             ),
           );
@@ -293,8 +359,12 @@ class _UserGridScreenState extends State<UserGridScreen> {
                 s.lastName,
                 s.username,
               ),
+              username: s.username,
+              firstName: s.firstName,
+              lastName: s.lastName,
               role: UserRole.student,
               membershipPaidUntil: s.membershipPaidUntil,
+              enrollmentDate: s.enrollmentDate,
             ),
           );
           final employeeItems = employeeResult.items.map(
@@ -305,8 +375,13 @@ class _UserGridScreenState extends State<UserGridScreen> {
                 e.lastName,
                 e.username,
               ),
+              username: e.username,
+              firstName: e.firstName,
+              lastName: e.lastName,
               role: UserRole.storeEmployee,
               storeName: e.storeName,
+              isManager: e.isManager,
+              isActive: e.isActive,
             ),
           );
 
@@ -329,5 +404,325 @@ class _UserGridScreenState extends State<UserGridScreen> {
         addLabel: 'Kreiraj korisnika',
       ),
     );
+  }
+}
+
+class _UserDetailsDialog extends StatefulWidget {
+  final _UserListItem item;
+  final Future<DateTime?> Function() onRenewMembership;
+
+  const _UserDetailsDialog({
+    required this.item,
+    required this.onRenewMembership,
+  });
+
+  @override
+  State<_UserDetailsDialog> createState() => _UserDetailsDialogState();
+}
+
+class _UserDetailsDialogState extends State<_UserDetailsDialog> {
+  DateTime? _membershipPaidUntil;
+  UserProfile? _profile;
+  bool _isLoadingProfile = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _membershipPaidUntil = widget.item.membershipPaidUntil;
+    _fetchProfile();
+  }
+
+  Future<void> _fetchProfile() async {
+    try {
+      final apiClient = context.read<ApiClient>();
+      final response =
+          await apiClient.get('admin/users/${widget.item.appUserId}');
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
+        final profileResponse = UserProfileResponse.fromJson(data);
+        if (mounted) {
+          setState(() {
+            _profile = profileResponse.profile;
+            if (_profile?.membershipPaidUntil != null) {
+              _membershipPaidUntil = _profile!.membershipPaidUntil;
+            }
+          });
+        }
+      }
+    } catch (_) {
+      // Ignored: fallback to basic item info
+    } finally {
+      if (mounted) {
+        setState(() => _isLoadingProfile = false);
+      }
+    }
+  }
+
+  Future<void> _handleRenew() async {
+    final updatedDate = await widget.onRenewMembership();
+    if (updatedDate != null && mounted) {
+      setState(() {
+        _membershipPaidUntil = updatedDate;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final item = widget.item;
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final isMembershipActive = _membershipPaidUntil != null &&
+        (_membershipPaidUntil!.isAfter(today) ||
+            _membershipPaidUntil!.isAtSameMomentAs(today));
+
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      clipBehavior: Clip.antiAlias,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 520),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  CircleAvatar(
+                    radius: 28,
+                    backgroundColor: AppTheme.primary,
+                    child: Text(
+                      _initials(item.displayName),
+                      style: const TextStyle(
+                        color: AppTheme.onPrimary,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          item.displayName,
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                            color: AppTheme.textPrimary,
+                          ),
+                        ),
+                        if (item.username != null &&
+                            item.username!.isNotEmpty) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            '@${item.username}',
+                            style: const TextStyle(
+                              fontSize: 13,
+                              color: AppTheme.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  Chip(
+                    label: Text(
+                      item.role.label,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    backgroundColor: AppTheme.primary.withValues(alpha: 0.12),
+                    side: BorderSide.none,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              const Divider(height: 1),
+              const SizedBox(height: 16),
+              _buildInfoRow(
+                icon: Icons.person_outline,
+                label: 'Ime i prezime',
+                value: item.displayName,
+              ),
+              if (_profile?.email != null && _profile!.email!.isNotEmpty)
+                _buildInfoRow(
+                  icon: Icons.email_outlined,
+                  label: 'Email',
+                  value: _profile!.email!,
+                ),
+              if (item.role == UserRole.storeEmployee) ...[
+                if (item.storeName != null && item.storeName!.isNotEmpty)
+                  _buildInfoRow(
+                    icon: Icons.store_outlined,
+                    label: 'Muzička prodavnica',
+                    value: item.storeName!,
+                  ),
+                _buildInfoRow(
+                  icon: Icons.badge_outlined,
+                  label: 'Pozicija',
+                  value: item.isManager == true
+                      ? 'Voditelj radnje'
+                      : 'Uposlenik radnje',
+                ),
+              ],
+              if (item.role == UserRole.student) ...[
+                if (item.enrollmentDate != null ||
+                    _profile?.enrollmentDate != null)
+                  _buildInfoRow(
+                    icon: Icons.calendar_today_outlined,
+                    label: 'Datum upisa',
+                    value: formatDate(
+                      item.enrollmentDate ?? _profile!.enrollmentDate!,
+                    ),
+                  ),
+                _buildMembershipStatusRow(isMembershipActive),
+              ],
+              if (_isLoadingProfile) ...[
+                const SizedBox(height: 12),
+                const Center(
+                  child: SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                ),
+              ],
+              const SizedBox(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('Zatvori'),
+                  ),
+                  if (item.role == UserRole.student) ...[
+                    const SizedBox(width: 8),
+                    FilledButton.icon(
+                      onPressed: _handleRenew,
+                      icon: const Icon(Icons.edit_calendar, size: 18),
+                      label: const Text('Produži članstvo'),
+                    ),
+                  ],
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMembershipStatusRow(bool isActive) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            Icons.card_membership_outlined,
+            size: 20,
+            color: isActive ? Colors.green : Colors.orange,
+          ),
+          const SizedBox(width: 12),
+          const SizedBox(
+            width: 140,
+            child: Text(
+              'Status članarine:',
+              style: TextStyle(
+                color: AppTheme.textSecondary,
+                fontSize: 13,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Row(
+              children: [
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: isActive
+                        ? Colors.green.withValues(alpha: 0.15)
+                        : Colors.red.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    isActive ? 'Aktivna' : 'Istekla / Nema',
+                    style: TextStyle(
+                      color:
+                          isActive ? Colors.green.shade700 : Colors.red.shade700,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+                if (_membershipPaidUntil != null) ...[
+                  const SizedBox(width: 8),
+                  Text(
+                    'do ${formatDate(_membershipPaidUntil!)}',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: AppTheme.textPrimary,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoRow({
+    required IconData icon,
+    required String label,
+    required String value,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 20, color: AppTheme.textSecondary),
+          const SizedBox(width: 12),
+          SizedBox(
+            width: 140,
+            child: Text(
+              label,
+              style: const TextStyle(
+                color: AppTheme.textSecondary,
+                fontSize: 13,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(
+                color: AppTheme.textPrimary,
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  static String _initials(String name) {
+    final parts = name.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty);
+    if (parts.isEmpty) return '?';
+    final chars = parts.take(2).map((p) => p[0].toUpperCase()).toList();
+    return chars.join();
   }
 }

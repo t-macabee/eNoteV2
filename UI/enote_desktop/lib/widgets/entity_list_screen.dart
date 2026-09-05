@@ -166,7 +166,28 @@ class EntityListScreenState<T> extends State<EntityListScreen<T>> {
     return Scaffold(
       appBar: AppBar(
         title: widget.config.title != null ? Text(widget.config.title!) : null,
-        actions: [if (widget.config.trailing != null) widget.config.trailing!],
+        leading: Navigator.of(context).canPop()
+            ? IconButton(
+                icon: const Icon(Icons.close),
+                tooltip: 'Zatvori',
+                onPressed: () => Navigator.of(context).pop(),
+              )
+            : null,
+        actions: [
+          if (widget.config.trailing != null) ...[
+            widget.config.trailing!,
+            const SizedBox(width: 12),
+          ],
+          if (widget.config.showAddButton && widget.config.onAdd != null) ...[
+            ElevatedButton.icon(
+              onPressed: widget.config.onAdd,
+              icon: const Icon(Icons.add),
+              label: Text(widget.config.addLabel ?? 'Dodaj'),
+            ),
+            const SizedBox(width: 16),
+          ] else if (widget.config.trailing != null)
+            const SizedBox(width: 4),
+        ],
       ),
       body: Column(
         children: [
@@ -186,20 +207,15 @@ class EntityListScreenState<T> extends State<EntityListScreen<T>> {
           _buildPagination(),
         ],
       ),
-      floatingActionButton:
-          !widget.config.inlineToolbar && widget.config.showAddButton
-              ? FloatingActionButton.extended(
-                  onPressed: widget.config.onAdd,
-                  label: Text(widget.config.addLabel ?? 'Dodaj'),
-                )
-              : null,
     );
   }
 
   Widget _buildInlineToolbar() {
     final showSearch = widget.config.showSearchBar;
     final filterBar = widget.config.filterBar;
-    final showAdd = widget.config.showAddButton;
+    if (!showSearch && filterBar == null) {
+      return const SizedBox.shrink();
+    }
 
     return Padding(
       padding: const EdgeInsets.all(16),
@@ -223,17 +239,6 @@ class EntityListScreenState<T> extends State<EntityListScreen<T>> {
               ),
             if (showSearch && filterBar != null) const SizedBox(width: 12),
             ?filterBar,
-            if (showAdd) ...[
-              const SizedBox(width: 12),
-              ConstrainedBox(
-                constraints: const BoxConstraints(minWidth: 200),
-                child: ElevatedButton.icon(
-                  onPressed: widget.config.onAdd,
-                  icon: const Icon(Icons.add),
-                  label: Text(widget.config.addLabel ?? 'Dodaj'),
-                ),
-              ),
-            ],
           ],
         ),
       ),

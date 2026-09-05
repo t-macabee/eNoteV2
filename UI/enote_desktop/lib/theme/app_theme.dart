@@ -90,6 +90,7 @@ class AppTheme {
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
+        floatingLabelBehavior: FloatingLabelBehavior.always,
         filled: true,
         fillColor: surfaceContainer,
         prefixIconColor: textSecondary,

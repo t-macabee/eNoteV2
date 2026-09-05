@@ -28,6 +28,7 @@ class EntityGridConfig<T> {
   final String? Function(T item)? badgeOf;
   final void Function(BuildContext context, T item)? onTap;
   final Future<bool?> Function(BuildContext context, T item)? onDelete;
+  final List<Widget> Function(BuildContext context, T item)? cardActions;
   final VoidCallback? onAdd;
   final String? addLabel;
   final bool showAddButton;
@@ -86,6 +87,7 @@ class EntityGridConfig<T> {
     this.badgeOf,
     this.onTap,
     this.onDelete,
+    this.cardActions,
     this.onAdd,
     this.addLabel = 'Dodaj',
     this.showAddButton = true,
@@ -210,7 +212,21 @@ class EntityGridScreenState<T> extends State<EntityGridScreen<T>> {
     return Scaffold(
       appBar: AppBar(
         title: widget.config.title != null ? Text(widget.config.title!) : null,
-        actions: [if (widget.config.trailing != null) widget.config.trailing!],
+        actions: [
+          if (widget.config.trailing != null) ...[
+            widget.config.trailing!,
+            const SizedBox(width: 12),
+          ],
+          if (widget.config.showAddButton && widget.config.onAdd != null) ...[
+            ElevatedButton.icon(
+              onPressed: widget.config.onAdd,
+              icon: const Icon(Icons.add),
+              label: Text(widget.config.addLabel ?? 'Dodaj'),
+            ),
+            const SizedBox(width: 16),
+          ] else if (widget.config.trailing != null)
+            const SizedBox(width: 4),
+        ],
       ),
       body: content,
     );
@@ -242,8 +258,7 @@ class EntityGridScreenState<T> extends State<EntityGridScreen<T>> {
   Widget _buildFilterRow() {
     final showSearch = widget.config.showSearchBar;
     final filterBar = widget.config.filterBar;
-    final showAdd = widget.config.showAddButton;
-    if (!showSearch && filterBar == null && !showAdd) {
+    if (!showSearch && filterBar == null) {
       return const SizedBox.shrink();
     }
 
@@ -276,17 +291,6 @@ class EntityGridScreenState<T> extends State<EntityGridScreen<T>> {
             // only child that should grow to fill leftover width, so any
             // space filterBar doesn't use stays with it.
             ?filterBar,
-            if (showAdd) ...[
-              const SizedBox(width: 12),
-              ConstrainedBox(
-                constraints: const BoxConstraints(minWidth: 200),
-                child: ElevatedButton.icon(
-                  onPressed: widget.config.onAdd,
-                  icon: const Icon(Icons.add),
-                  label: Text(widget.config.addLabel ?? 'Dodaj'),
-                ),
-              ),
-            ],
           ],
         ),
       ),
@@ -503,6 +507,10 @@ class _EntityGridCardState<T> extends State<_EntityGridCard<T>> {
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                             ),
+                          ],
+                          if (config.cardActions != null) ...[
+                            const SizedBox(height: 8),
+                            ...config.cardActions!(context, item),
                           ],
                         ],
                       ),
