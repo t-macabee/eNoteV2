@@ -8,6 +8,7 @@ import 'package:enote_core/enote_core.dart';
 import 'package:enote_desktop/features/admin/address/address_list_screen.dart';
 import 'package:enote_desktop/features/admin/city/city_list_screen.dart';
 import 'package:enote_desktop/features/admin/instrument_type/instrument_type_list_screen.dart';
+import 'package:enote_desktop/features/admin/reference_data/reference_data_dialog.dart';
 import 'package:enote_desktop/main.dart';
 
 String _base64UrlSegment(String input) =>
@@ -50,7 +51,7 @@ class _MockHttpClient extends http.BaseClient {
 
 void main() {
   testWidgets(
-      'Administrator sidebar includes Gradovi, Adrese, Tipovi instrumenata and routes correctly',
+      'Administrator sidebar includes Referentni podaci and routes correctly to tabbed dialog',
       (WidgetTester tester) async {
     tester.view.physicalSize = const Size(1400, 900);
     tester.view.devicePixelRatio = 1.0;
@@ -72,22 +73,29 @@ void main() {
     await tester.pumpWidget(MyApp(authState: authState, apiClient: apiClient));
     await tester.pumpAndSettle();
 
-    // Verify sidebar menu entries exist
+    // Verify sidebar menu entries: Referentni podaci is present, old separate entries are not
+    expect(find.text('Referentni podaci'), findsOneWidget);
+    expect(find.text('Gradovi'), findsNothing);
+    expect(find.text('Adrese'), findsNothing);
+    expect(find.text('Tipovi instrumenata'), findsNothing);
+
+    // Open Reference Data dialog
+    await tester.tap(find.text('Referentni podaci'));
+    await tester.pumpAndSettle();
+
+    // Verify dialog and tab labels exist
+    expect(find.byType(ReferenceDataDialog), findsOneWidget);
     expect(find.text('Gradovi'), findsOneWidget);
     expect(find.text('Adrese'), findsOneWidget);
     expect(find.text('Tipovi instrumenata'), findsOneWidget);
-
-    // Navigate to Gradovi
-    await tester.tap(find.text('Gradovi'));
-    await tester.pumpAndSettle();
     expect(find.byType(CityListScreen), findsOneWidget);
 
-    // Navigate to Adrese
+    // Navigate to Adrese tab
     await tester.tap(find.text('Adrese'));
     await tester.pumpAndSettle();
     expect(find.byType(AddressListScreen), findsOneWidget);
 
-    // Navigate to Tipovi instrumenata
+    // Navigate to Tipovi instrumenata tab
     await tester.tap(find.text('Tipovi instrumenata'));
     await tester.pumpAndSettle();
     expect(find.byType(InstrumentTypeListScreen), findsOneWidget);
@@ -116,6 +124,7 @@ void main() {
     await tester.pumpWidget(MyApp(authState: authState, apiClient: apiClient));
     await tester.pumpAndSettle();
 
+    expect(find.text('Referentni podaci'), findsNothing);
     expect(find.text('Gradovi'), findsNothing);
     expect(find.text('Adrese'), findsNothing);
     expect(find.text('Tipovi instrumenata'), findsNothing);

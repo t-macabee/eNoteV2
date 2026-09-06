@@ -8,7 +8,16 @@ import 'instrument_type_form_screen.dart';
 import 'instrument_type_provider.dart';
 
 class InstrumentTypeListScreen extends StatefulWidget {
-  const InstrumentTypeListScreen({super.key});
+  final EntityListPresentation presentation;
+  final EntityListStyle listStyle;
+  final IconData? rowIcon;
+
+  const InstrumentTypeListScreen({
+    super.key,
+    this.presentation = EntityListPresentation.page,
+    this.listStyle = EntityListStyle.tiles,
+    this.rowIcon = Icons.music_note,
+  });
 
   @override
   State<InstrumentTypeListScreen> createState() =>
@@ -35,6 +44,9 @@ class _InstrumentTypeListScreenState extends State<InstrumentTypeListScreen> {
       key: _listKey,
       config: EntityListConfig<InstrumentTypeDto>(
         title: 'Tipovi instrumenata',
+        presentation: widget.presentation,
+        listStyle: widget.listStyle,
+        rowIcon: widget.rowIcon,
         columns: [
           ColumnSpec<InstrumentTypeDto>(
             label: 'Tip',

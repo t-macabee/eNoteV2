@@ -156,10 +156,14 @@ class _UserGridScreenState extends State<UserGridScreen> {
         searchHint: 'Pretraži po imenu...',
         placeholderIcon: Icons.person_outline,
         titleOf: (item) => item.displayName,
+        // Membership date is deliberately left off the hover card — tapping
+        // the card opens `_UserDetailsDialog`, which already shows the full
+        // membership status and a "Produži članstvo" button, so repeating
+        // the date here is redundant.
         subtitleOf: (item) => switch (item.role) {
-          UserRole.student => item.membershipPaidUntil != null
-              ? 'Članarina do: ${formatDate(item.membershipPaidUntil!)}'
-              : (item.username != null ? '@${item.username}' : 'Student'),
+          UserRole.student => item.membershipPaidUntil == null
+              ? (item.username != null ? '@${item.username}' : 'Student')
+              : null,
           UserRole.storeEmployee =>
             item.storeName != null && item.storeName!.isNotEmpty
                 ? item.storeName
@@ -168,25 +172,9 @@ class _UserGridScreenState extends State<UserGridScreen> {
             item.username != null ? '@${item.username}' : null,
           _ => item.username != null ? '@${item.username}' : null,
         },
-        cardActions: (context, item) {
-          if (item.role != UserRole.student) return const [];
-          return [
-            OutlinedButton.icon(
-              style: OutlinedButton.styleFrom(
-                foregroundColor: Colors.white,
-                side: const BorderSide(color: Colors.white70),
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                visualDensity: VisualDensity.compact,
-              ),
-              onPressed: () => _renewMembership(context, item),
-              icon: const Icon(Icons.edit_calendar, size: 14),
-              label: const Text(
-                'Produži članstvo',
-                style: TextStyle(fontSize: 12),
-              ),
-            ),
-          ];
-        },
+        // No cardActions here: "Produži članstvo" already lives in
+        // `_UserDetailsDialog`, which `onTap` opens — a second copy on the
+        // hover overlay was pure duplication.
         onTap: (context, item) => _showUserDetailsDialog(context, item),
         onDelete: (context, item) async {
           final apiClient = context.read<ApiClient>();
@@ -401,7 +389,6 @@ class _UserGridScreenState extends State<UserGridScreen> {
           );
         },
         onAdd: () => _openProvisionForm(),
-        addLabel: 'Kreiraj korisnika',
       ),
     );
   }

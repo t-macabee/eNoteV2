@@ -2,12 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
-import '../features/admin/address/address_list_screen.dart';
-import '../features/admin/city/city_list_screen.dart';
 import '../features/admin/course/admin_course_list_screen.dart';
 import '../features/admin/event/event_list_screen.dart';
-import '../features/admin/instrument_type/instrument_type_list_screen.dart';
 import '../features/admin/music_store/music_store_list_screen.dart';
+import '../features/admin/reference_data/reference_data_dialog.dart';
 import '../features/admin/users/user_grid_screen.dart';
 import '../features/instructor/course/course_list_screen.dart';
 import '../features/instructor/student/instructor_student_list_screen.dart';
@@ -54,26 +52,12 @@ class _MasterScreenState extends State<MasterScreen> {
       allowedRoles: [UserRole.administrator],
     ),
     RoleMenuEntry(
-      icon: Icons.location_city,
-      label: 'Gradovi',
-      screenBuilder: _buildCityList,
+      icon: Icons.dataset_outlined,
+      label: 'Referentni podaci',
+      screenBuilder: _buildReferenceDataDialog,
       allowedRoles: [UserRole.administrator],
       isDialog: true,
       dividerBefore: true,
-    ),
-    RoleMenuEntry(
-      icon: Icons.location_on,
-      label: 'Adrese',
-      screenBuilder: _buildAddressList,
-      allowedRoles: [UserRole.administrator],
-      isDialog: true,
-    ),
-    RoleMenuEntry(
-      icon: Icons.music_note,
-      label: 'Tipovi instrumenata',
-      screenBuilder: _buildInstrumentTypeList,
-      allowedRoles: [UserRole.administrator],
-      isDialog: true,
     ),
     RoleMenuEntry(
       icon: Icons.class_,
@@ -145,16 +129,8 @@ class _MasterScreenState extends State<MasterScreen> {
     return const EventListScreen();
   }
 
-  static Widget _buildCityList(BuildContext context) {
-    return const CityListScreen();
-  }
-
-  static Widget _buildAddressList(BuildContext context) {
-    return const AddressListScreen();
-  }
-
-  static Widget _buildInstrumentTypeList(BuildContext context) {
-    return const InstrumentTypeListScreen();
+  static Widget _buildReferenceDataDialog(BuildContext context) {
+    return const ReferenceDataDialog();
   }
 
   static Widget _buildInstrumentList(BuildContext context) {
@@ -234,18 +210,7 @@ class _MasterScreenState extends State<MasterScreen> {
     if (entry.isDialog) {
       showDialog<void>(
         context: context,
-        builder: (dialogContext) => Dialog(
-          clipBehavior: Clip.antiAlias,
-          insetPadding: const EdgeInsets.symmetric(horizontal: 48, vertical: 36),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(
-              maxWidth: 960,
-              maxHeight: 720,
-            ),
-            child: entry.screenBuilder(dialogContext),
-          ),
-        ),
+        builder: (dialogContext) => entry.screenBuilder(dialogContext),
       );
       return;
     }

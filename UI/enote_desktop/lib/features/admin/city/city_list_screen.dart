@@ -8,7 +8,16 @@ import 'city_form_screen.dart';
 import 'city_provider.dart';
 
 class CityListScreen extends StatefulWidget {
-  const CityListScreen({super.key});
+  final EntityListPresentation presentation;
+  final EntityListStyle listStyle;
+  final IconData? rowIcon;
+
+  const CityListScreen({
+    super.key,
+    this.presentation = EntityListPresentation.page,
+    this.listStyle = EntityListStyle.tiles,
+    this.rowIcon = Icons.location_city,
+  });
 
   @override
   State<CityListScreen> createState() => _CityListScreenState();
@@ -34,6 +43,9 @@ class _CityListScreenState extends State<CityListScreen> {
       key: _listKey,
       config: EntityListConfig<CityDto>(
         title: 'Gradovi',
+        presentation: widget.presentation,
+        listStyle: widget.listStyle,
+        rowIcon: widget.rowIcon,
         columns: [
           ColumnSpec<CityDto>(
             label: 'Naziv',

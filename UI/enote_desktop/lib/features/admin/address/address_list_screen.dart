@@ -8,7 +8,16 @@ import 'address_form_screen.dart';
 import 'address_provider.dart';
 
 class AddressListScreen extends StatefulWidget {
-  const AddressListScreen({super.key});
+  final EntityListPresentation presentation;
+  final EntityListStyle listStyle;
+  final IconData? rowIcon;
+
+  const AddressListScreen({
+    super.key,
+    this.presentation = EntityListPresentation.page,
+    this.listStyle = EntityListStyle.tiles,
+    this.rowIcon = Icons.location_on,
+  });
 
   @override
   State<AddressListScreen> createState() => _AddressListScreenState();
@@ -34,6 +43,9 @@ class _AddressListScreenState extends State<AddressListScreen> {
       key: _listKey,
       config: EntityListConfig<AddressReferenceDto>(
         title: 'Adrese',
+        presentation: widget.presentation,
+        listStyle: widget.listStyle,
+        rowIcon: widget.rowIcon,
         columns: [
           ColumnSpec<AddressReferenceDto>(
             label: 'Grad',

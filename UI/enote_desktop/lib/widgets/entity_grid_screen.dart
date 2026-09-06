@@ -40,7 +40,8 @@ class EntityGridConfig<T> {
   /// layout, e.g. a detail screen's side panel.
   final bool embedded;
 
-  /// Rendered in the [AppBar] actions, e.g. a [PdfReportButton].
+  /// Rendered inline in the filter row, right-aligned via a spacer
+  /// alongside the add button — e.g. a [PdfReportButton].
   final Widget? trailing;
 
   /// Rendered next to the search field, in the same row. Keep it compact
@@ -210,24 +211,12 @@ class EntityGridScreenState<T> extends State<EntityGridScreen<T>> {
       return content;
     }
     return Scaffold(
-      appBar: AppBar(
-        title: widget.config.title != null ? Text(widget.config.title!) : null,
-        actions: [
-          if (widget.config.trailing != null) ...[
-            widget.config.trailing!,
-            const SizedBox(width: 12),
-          ],
-          if (widget.config.showAddButton && widget.config.onAdd != null) ...[
-            ElevatedButton.icon(
-              onPressed: widget.config.onAdd,
-              icon: const Icon(Icons.add),
-              label: Text(widget.config.addLabel ?? 'Dodaj'),
-            ),
-            const SizedBox(width: 16),
-          ] else if (widget.config.trailing != null)
-            const SizedBox(width: 4),
-        ],
-      ),
+      // Search, filters, trailing and the add button all live in the filter
+      // row now (see _buildFilterRow) so they share one height — an AppBar
+      // is only worth its own toolbar when there's a title to show.
+      appBar: widget.config.title != null
+          ? AppBar(title: Text(widget.config.title!))
+          : null,
       body: content,
     );
   }
@@ -258,7 +247,9 @@ class EntityGridScreenState<T> extends State<EntityGridScreen<T>> {
   Widget _buildFilterRow() {
     final showSearch = widget.config.showSearchBar;
     final filterBar = widget.config.filterBar;
-    if (!showSearch && filterBar == null) {
+    final showAdd = widget.config.showAddButton && widget.config.onAdd != null;
+    final trailing = widget.config.trailing;
+    if (!showSearch && filterBar == null && !showAdd && trailing == null) {
       return const SizedBox.shrink();
     }
 
@@ -268,29 +259,52 @@ class EntityGridScreenState<T> extends State<EntityGridScreen<T>> {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (showSearch)
-              Flexible(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 420),
-                  child: TextField(
-                    controller: _searchController,
-                    decoration: InputDecoration(
-                      hintText: widget.config.searchHint,
-                      prefixIcon: const Icon(Icons.search),
-                      border: const OutlineInputBorder(),
+            // Search + filterBar share one Expanded slot so they're the
+            // only thing that gives way when the row is tight (the search
+            // field shrinks below its 420 cap instead of overflowing).
+            // Keeping them out of the outer Row's flex pool — rather than
+            // giving the search field its own Flexible there — means they
+            // don't compete with trailing/the add button for space: any
+            // width they don't use here stays inside this Expanded instead
+            // of leaking past the button as unused trailing space.
+            Expanded(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (showSearch)
+                    Flexible(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 420),
+                        child: TextField(
+                          controller: _searchController,
+                          decoration: InputDecoration(
+                            hintText: widget.config.searchHint,
+                            prefixIcon: const Icon(Icons.search),
+                            border: const OutlineInputBorder(),
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
-                ),
+                  if (showSearch && filterBar != null)
+                    const SizedBox(width: 12),
+                  // Placed directly (no Expanded/Flexible): filterBar must
+                  // size itself to its own content (e.g. a Row with
+                  // MainAxisSize.min, or a fixed-width SizedBox).
+                  ?filterBar,
+                ],
               ),
-            if (showSearch && filterBar != null) const SizedBox(width: 12),
-            // Placed directly (no Expanded/Flexible): filterBar must size
-            // itself to its own content (e.g. a Row with
-            // MainAxisSize.min, or a fixed-width SizedBox). Giving it a
-            // flex share here would compete with the search field's
-            // Expanded for the row's free space — the search field is the
-            // only child that should grow to fill leftover width, so any
-            // space filterBar doesn't use stays with it.
-            ?filterBar,
+            ),
+            if (showAdd || trailing != null) const SizedBox(width: 12),
+            if (trailing != null) ...[
+              trailing,
+              const SizedBox(width: 12),
+            ],
+            if (showAdd)
+              ElevatedButton.icon(
+                onPressed: widget.config.onAdd,
+                icon: const Icon(Icons.add),
+                label: Text(widget.config.addLabel ?? 'Dodaj'),
+              ),
           ],
         ),
       ),

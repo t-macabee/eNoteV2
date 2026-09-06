@@ -26,6 +26,25 @@ typedef EntityFetcher<T> = Future<PagedResult<T>> Function(
   String search,
 );
 
+/// How an [EntityListScreen] is presented to the user.
+enum EntityListPresentation {
+  /// Full page — [Scaffold] with an [AppBar] (the default).
+  page,
+
+  /// Embedded headless presentation with no outer [Scaffold]/[AppBar],
+  /// forcing inline toolbar layout.
+  embedded,
+}
+
+/// How rows in [EntityListScreen] are rendered.
+enum EntityListStyle {
+  /// Standard [DataTable] grid (the default).
+  table,
+
+  /// Compact [ListTile]-style rows for reference data / narrow layouts.
+  tiles,
+}
+
 class EntityListConfig<T> {
   final String? title;
   final List<ColumnSpec<T>> columns;
@@ -48,6 +67,17 @@ class EntityListConfig<T> {
   /// keeps every existing consumer's stacked-rows + FAB layout unchanged.
   final bool inlineToolbar;
 
+  /// Presentation mode of the list screen. When [EntityListPresentation.embedded],
+  /// outer Scaffold/AppBar chrome is omitted and [inlineToolbar] is forced.
+  final EntityListPresentation presentation;
+
+  /// How data rows are rendered. When [EntityListStyle.tiles], items are
+  /// rendered as [ListTile] rows rather than a [DataTable].
+  final EntityListStyle listStyle;
+
+  /// Leading icon displayed on each row when [listStyle] is [EntityListStyle.tiles].
+  final IconData? rowIcon;
+
   const EntityListConfig({
     this.title,
     required this.columns,
@@ -64,6 +94,9 @@ class EntityListConfig<T> {
     this.showSearchBar = true,
     this.filterBar,
     this.inlineToolbar = false,
+    this.presentation = EntityListPresentation.page,
+    this.listStyle = EntityListStyle.table,
+    this.rowIcon,
   });
 }
 
@@ -163,6 +196,34 @@ class EntityListScreenState<T> extends State<EntityListScreen<T>> {
 
   @override
   Widget build(BuildContext context) {
+    final useInlineToolbar = widget.config.inlineToolbar ||
+        widget.config.presentation == EntityListPresentation.embedded;
+
+    final content = Column(
+      children: [
+        if (useInlineToolbar)
+          _buildInlineToolbar()
+        else ...[
+          if (widget.config.showSearchBar) _buildSearchBar(),
+          if (widget.config.filterBar != null) widget.config.filterBar!,
+        ],
+        Expanded(
+          child: _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : _items.isEmpty
+              ? const Center(child: Text('Nema podataka.'))
+              : (widget.config.listStyle == EntityListStyle.tiles
+                  ? _buildTiles()
+                  : _buildTable()),
+        ),
+        _buildPagination(),
+      ],
+    );
+
+    if (widget.config.presentation == EntityListPresentation.embedded) {
+      return content;
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: widget.config.title != null ? Text(widget.config.title!) : null,
@@ -174,46 +235,33 @@ class EntityListScreenState<T> extends State<EntityListScreen<T>> {
               )
             : null,
         actions: [
-          if (widget.config.trailing != null) ...[
-            widget.config.trailing!,
-            const SizedBox(width: 12),
+          if (!useInlineToolbar) ...[
+            if (widget.config.trailing != null) ...[
+              widget.config.trailing!,
+              const SizedBox(width: 12),
+            ],
+            if (widget.config.showAddButton && widget.config.onAdd != null) ...[
+              ElevatedButton.icon(
+                onPressed: widget.config.onAdd,
+                icon: const Icon(Icons.add),
+                label: Text(widget.config.addLabel ?? 'Dodaj'),
+              ),
+              const SizedBox(width: 16),
+            ] else if (widget.config.trailing != null)
+              const SizedBox(width: 4),
           ],
-          if (widget.config.showAddButton && widget.config.onAdd != null) ...[
-            ElevatedButton.icon(
-              onPressed: widget.config.onAdd,
-              icon: const Icon(Icons.add),
-              label: Text(widget.config.addLabel ?? 'Dodaj'),
-            ),
-            const SizedBox(width: 16),
-          ] else if (widget.config.trailing != null)
-            const SizedBox(width: 4),
         ],
       ),
-      body: Column(
-        children: [
-          if (widget.config.inlineToolbar)
-            _buildInlineToolbar()
-          else ...[
-            if (widget.config.showSearchBar) _buildSearchBar(),
-            if (widget.config.filterBar != null) widget.config.filterBar!,
-          ],
-          Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : _items.isEmpty
-                ? const Center(child: Text('Nema podataka.'))
-                : _buildTable(),
-          ),
-          _buildPagination(),
-        ],
-      ),
+      body: content,
     );
   }
 
   Widget _buildInlineToolbar() {
     final showSearch = widget.config.showSearchBar;
     final filterBar = widget.config.filterBar;
-    if (!showSearch && filterBar == null) {
+    final showAdd = widget.config.showAddButton && widget.config.onAdd != null;
+    final trailing = widget.config.trailing;
+    if (!showSearch && filterBar == null && !showAdd && trailing == null) {
       return const SizedBox.shrink();
     }
 
@@ -223,22 +271,49 @@ class EntityListScreenState<T> extends State<EntityListScreen<T>> {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (showSearch)
-              Flexible(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 420),
-                  child: TextField(
-                    controller: _searchController,
-                    decoration: InputDecoration(
-                      hintText: widget.config.searchHint,
-                      prefixIcon: const Icon(Icons.search),
-                      border: const OutlineInputBorder(),
+            // Search + filterBar share one Expanded slot so they're the
+            // only thing that gives way when the row is tight (the search
+            // field shrinks below its 420 cap instead of overflowing).
+            // Keeping them out of the outer Row's flex pool — rather than
+            // giving the search field its own Flexible there — means they
+            // don't compete with trailing/the add button for space: any
+            // width they don't use here stays inside this Expanded instead
+            // of leaking past the button as unused trailing space.
+            Expanded(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (showSearch)
+                    Flexible(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 420),
+                        child: TextField(
+                          controller: _searchController,
+                          decoration: InputDecoration(
+                            hintText: widget.config.searchHint,
+                            prefixIcon: const Icon(Icons.search),
+                            border: const OutlineInputBorder(),
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
-                ),
+                  if (showSearch && filterBar != null)
+                    const SizedBox(width: 12),
+                  ?filterBar,
+                ],
               ),
-            if (showSearch && filterBar != null) const SizedBox(width: 12),
-            ?filterBar,
+            ),
+            if (showAdd || trailing != null) const SizedBox(width: 12),
+            if (trailing != null) ...[
+              trailing,
+              const SizedBox(width: 12),
+            ],
+            if (showAdd)
+              ElevatedButton.icon(
+                onPressed: widget.config.onAdd,
+                icon: const Icon(Icons.add),
+                label: Text(widget.config.addLabel ?? 'Dodaj'),
+              ),
           ],
         ),
       ),
@@ -262,6 +337,70 @@ class EntityListScreenState<T> extends State<EntityListScreen<T>> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildTiles() {
+    final hasActions =
+        widget.config.onEdit != null ||
+        widget.config.onDelete != null ||
+        widget.config.extraActions != null;
+
+    return ListView.separated(
+      itemCount: _items.length,
+      separatorBuilder: (_, _) => const Divider(height: 1),
+      itemBuilder: (context, index) {
+        final item = _items[index];
+        final columns = widget.config.columns;
+        final title = columns.isNotEmpty
+            ? (columns.first.value(item)?.toString() ?? '-')
+            : '';
+
+        String? subtitle;
+        if (columns.length > 1) {
+          subtitle = columns.skip(1).map((col) {
+            final val = col.value(item)?.toString() ?? '-';
+            return '${col.label}: $val';
+          }).join(' · ');
+        }
+
+        return ListTile(
+          leading: widget.config.rowIcon != null
+              ? Icon(widget.config.rowIcon)
+              : null,
+          title: Text(
+            title,
+            style: columns.isNotEmpty ? columns.first.style?.call(item) : null,
+          ),
+          subtitle: subtitle != null ? Text(subtitle) : null,
+          onTap: widget.config.onEdit != null
+              ? () => widget.config.onEdit!(context, item)
+              : null,
+          trailing: hasActions
+              ? Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (widget.config.onEdit != null)
+                      IconButton(
+                        icon: const Icon(Icons.edit, size: 18),
+                        onPressed: () => widget.config.onEdit!(context, item),
+                      ),
+                    if (widget.config.onDelete != null)
+                      IconButton(
+                        icon: const Icon(
+                          Icons.delete,
+                          size: 18,
+                          color: Colors.red,
+                        ),
+                        onPressed: () => _deleteItem(item),
+                      ),
+                    if (widget.config.extraActions != null)
+                      ...widget.config.extraActions!(context, item),
+                  ],
+                )
+              : null,
+        );
+      },
     );
   }
 
@@ -333,13 +472,14 @@ class EntityListScreenState<T> extends State<EntityListScreen<T>> {
 
     return Padding(
       padding: const EdgeInsets.all(16),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
+      child: Wrap(
+        alignment: WrapAlignment.center,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        spacing: 16,
+        runSpacing: 8,
         children: [
           Text('Stranica $_currentPage od $totalPages'),
-          const SizedBox(width: 16),
           Text('Ukupno: $_totalCount'),
-          const SizedBox(width: 16),
           TextButton.icon(
             onPressed: hasPrev
                 ? () {
