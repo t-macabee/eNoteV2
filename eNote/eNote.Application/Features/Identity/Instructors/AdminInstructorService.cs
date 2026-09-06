@@ -16,7 +16,8 @@ public sealed class AdminInstructorService(IAppDbContext context, IUserIdentityS
 
         List<InstructorDto> filtered = [.. instructors
             .Select(x => Map(x, users.GetValueOrDefault(x.AppUserId)))
-            .Where(x => MatchesName(x, search.Name))];
+            .Where(x => MatchesName(x, search.Name))
+            .Where(x => !search.IsActive.HasValue || x.IsActive == search.IsActive.Value)];
 
         (var page, var pageSize) = PagingLimits.Normalize(search.Page, search.PageSize);
 
@@ -46,7 +47,8 @@ public sealed class AdminInstructorService(IAppDbContext context, IUserIdentityS
         AppUserId = entity.AppUserId,
         FirstName = user?.FirstName,
         LastName = user?.LastName,
-        Username = user?.Username
+        Username = user?.Username,
+        IsActive = user?.IsActive ?? true
     };
 
     private static bool MatchesName(InstructorDto dto, string? name)

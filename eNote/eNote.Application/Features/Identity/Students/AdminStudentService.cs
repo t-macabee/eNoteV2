@@ -53,7 +53,8 @@ public sealed class AdminStudentService(
 
         List<StudentDto> filtered = [.. students
             .Select(x => Map(x, users.GetValueOrDefault(x.AppUserId)))
-            .Where(x => MatchesName(x, search.Name))];
+            .Where(x => MatchesName(x, search.Name))
+            .Where(x => !search.IsActive.HasValue || x.IsActive == search.IsActive.Value)];
 
         (var page, var pageSize) = PagingLimits.Normalize(search.Page, search.PageSize);
 
@@ -85,7 +86,8 @@ public sealed class AdminStudentService(
         LastName = user?.LastName,
         Username = user?.Username,
         EnrollmentDate = entity.EnrollmentDate,
-        MembershipPaidUntil = entity.MembershipPaidUntil
+        MembershipPaidUntil = entity.MembershipPaidUntil,
+        IsActive = user?.IsActive ?? true
     };
 
     private static bool MatchesName(StudentDto dto, string? name)

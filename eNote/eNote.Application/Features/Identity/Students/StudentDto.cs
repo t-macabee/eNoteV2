@@ -11,4 +11,5 @@ public class StudentDto
 
     public DateTime EnrollmentDate { get; set; }
     public DateTime? MembershipPaidUntil { get; set; }
+    public bool IsActive { get; set; }
 }

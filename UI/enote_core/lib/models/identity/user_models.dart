@@ -153,6 +153,7 @@ class InstructorDto {
   final String? firstName;
   final String? lastName;
   final String? username;
+  final bool isActive;
 
   InstructorDto({
     required this.id,
@@ -160,6 +161,7 @@ class InstructorDto {
     this.firstName,
     this.lastName,
     this.username,
+    this.isActive = true,
   });
 
   factory InstructorDto.fromJson(Map<String, dynamic> json) {
@@ -169,6 +171,7 @@ class InstructorDto {
       firstName: json['firstName'] as String?,
       lastName: json['lastName'] as String?,
       username: json['username'] as String?,
+      isActive: json['isActive'] as bool? ?? true,
     );
   }
 
@@ -178,6 +181,7 @@ class InstructorDto {
     if (firstName != null) 'firstName': firstName,
     if (lastName != null) 'lastName': lastName,
     if (username != null) 'username': username,
+    'isActive': isActive,
   };
 }
 
@@ -189,6 +193,7 @@ class StudentDto {
   final String? username;
   final DateTime? enrollmentDate;
   final DateTime? membershipPaidUntil;
+  final bool isActive;
 
   StudentDto({
     required this.id,
@@ -198,6 +203,7 @@ class StudentDto {
     this.username,
     this.enrollmentDate,
     this.membershipPaidUntil,
+    this.isActive = true,
   });
 
   factory StudentDto.fromJson(Map<String, dynamic> json) {
@@ -209,6 +215,7 @@ class StudentDto {
       username: json['username'] as String?,
       enrollmentDate: parseDate(json['enrollmentDate']),
       membershipPaidUntil: parseDate(json['membershipPaidUntil']),
+      isActive: json['isActive'] as bool? ?? true,
     );
   }
 
@@ -218,6 +225,7 @@ class StudentDto {
     if (firstName != null) 'firstName': firstName,
     if (lastName != null) 'lastName': lastName,
     if (username != null) 'username': username,
+    'isActive': isActive,
     if (enrollmentDate != null)
       'enrollmentDate': enrollmentDate!.toIso8601String(),
     if (membershipPaidUntil != null)

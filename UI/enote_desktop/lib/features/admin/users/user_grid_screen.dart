@@ -57,6 +57,11 @@ class _UserGridScreenState extends State<UserGridScreen> {
   /// labeled sections. Otherwise filters to just that role.
   UserRole? _role;
 
+  /// Admin-only filter for account standing. Unlike [_role] this has no
+  /// "svi" option — it always applies, defaulting to active accounts so
+  /// deactivated users don't clutter the default view.
+  bool _showActive = true;
+
   static String _formatDisplayName(
     String? firstName,
     String? lastName,
@@ -209,35 +214,59 @@ class _UserGridScreenState extends State<UserGridScreen> {
                 _ => item.role.label,
               }
             : null,
-        filterBar: SizedBox(
-          width: 220,
-          child: DropdownButtonFormField<UserRole?>(
-            isExpanded: true,
-            initialValue: _role,
-            decoration: const InputDecoration(labelText: 'Uloga'),
-            items: const [
-              DropdownMenuItem(value: null, child: Text('Svi korisnici')),
-              DropdownMenuItem(
-                value: UserRole.instructor,
-                child: Text('Instruktor'),
+        filterBar: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              width: 220,
+              child: DropdownButtonFormField<UserRole?>(
+                isExpanded: true,
+                initialValue: _role,
+                decoration: const InputDecoration(labelText: 'Uloga'),
+                items: const [
+                  DropdownMenuItem(value: null, child: Text('Svi korisnici')),
+                  DropdownMenuItem(
+                    value: UserRole.instructor,
+                    child: Text('Instruktor'),
+                  ),
+                  DropdownMenuItem(
+                      value: UserRole.student, child: Text('Student')),
+                  DropdownMenuItem(
+                    value: UserRole.storeEmployee,
+                    child: Text('StoreEmployee'),
+                  ),
+                ],
+                onChanged: (role) {
+                  _role = role;
+                  _applyFilters();
+                },
               ),
-              DropdownMenuItem(value: UserRole.student, child: Text('Student')),
-              DropdownMenuItem(
-                value: UserRole.storeEmployee,
-                child: Text('StoreEmployee'),
+            ),
+            const SizedBox(width: 12),
+            SizedBox(
+              width: 160,
+              child: DropdownButtonFormField<bool>(
+                isExpanded: true,
+                initialValue: _showActive,
+                decoration: const InputDecoration(labelText: 'Aktivan'),
+                items: const [
+                  DropdownMenuItem(value: true, child: Text('Da')),
+                  DropdownMenuItem(value: false, child: Text('Ne')),
+                ],
+                onChanged: (showActive) {
+                  _showActive = showActive ?? true;
+                  _applyFilters();
+                },
               ),
-            ],
-            onChanged: (role) {
-              _role = role;
-              _applyFilters();
-            },
-          ),
+            ),
+          ],
         ),
         fetcher: (page, pageSize, search) async {
           final query = {
             'page': page,
             'pageSize': pageSize,
             'includeTotalCount': true,
+            'isActive': _showActive,
             if (search.isNotEmpty) 'name': search,
           };
 
@@ -258,6 +287,7 @@ class _UserGridScreenState extends State<UserGridScreen> {
                       firstName: i.firstName,
                       lastName: i.lastName,
                       role: UserRole.instructor,
+                      isActive: i.isActive,
                     ),
                   )
                   .toList(),
@@ -285,6 +315,7 @@ class _UserGridScreenState extends State<UserGridScreen> {
                       role: UserRole.student,
                       membershipPaidUntil: s.membershipPaidUntil,
                       enrollmentDate: s.enrollmentDate,
+                      isActive: s.isActive,
                     ),
                   )
                   .toList(),
@@ -350,6 +381,7 @@ class _UserGridScreenState extends State<UserGridScreen> {
               firstName: i.firstName,
               lastName: i.lastName,
               role: UserRole.instructor,
+              isActive: i.isActive,
             ),
           );
           final studentItems = studentResult.items.map(
@@ -366,6 +398,7 @@ class _UserGridScreenState extends State<UserGridScreen> {
               role: UserRole.student,
               membershipPaidUntil: s.membershipPaidUntil,
               enrollmentDate: s.enrollmentDate,
+              isActive: s.isActive,
             ),
           );
           final employeeItems = employeeResult.items.map(
@@ -450,6 +483,54 @@ class _UserDetailsDialogState extends State<_UserDetailsDialog> {
     }
   }
 
+  /// Sits directly under the role [Chip] in the header — a compact
+  /// deactivate action while the account is active, or a status label once
+  /// it isn't (no point offering to deactivate an already-deactivated user).
+  Widget _buildDeactivateControl() {
+    if (!_isActive) {
+      return const Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.block, size: 14, color: AppTheme.error),
+          SizedBox(width: 4),
+          Text(
+            'Deaktiviran',
+            style: TextStyle(
+              color: AppTheme.error,
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      );
+    }
+
+    return SizedBox(
+      height: 28,
+      child: OutlinedButton.icon(
+        onPressed:
+            _isDeactivating || _isLoadingProfile ? null : _handleDeactivate,
+        icon: _isDeactivating
+            ? const SizedBox(
+                width: 14,
+                height: 14,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: AppTheme.error,
+                ),
+              )
+            : const Icon(Icons.person_off_outlined, size: 14),
+        label: const Text('Deaktiviraj', style: TextStyle(fontSize: 12)),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AppTheme.error,
+          side: const BorderSide(color: AppTheme.error),
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          visualDensity: VisualDensity.compact,
+        ),
+      ),
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -491,6 +572,14 @@ class _UserDetailsDialogState extends State<_UserDetailsDialog> {
       });
     }
   }
+
+  /// `widget.item.isActive` (populated for every role, from the list
+  /// endpoints) is the reliable source. `admin/users/{id}` — the per-user
+  /// profile fetch below — is NOT a fallback for this: it 404s outright once
+  /// a user is deactivated (`UserProfileService.GetUserAsync` returns null
+  /// for inactive users) and never includes `isActive` in its payload even
+  /// when it does resolve, so `_profile?.isActive` is always null.
+  bool get _isActive => widget.item.isActive ?? true;
 
   @override
   Widget build(BuildContext context) {
@@ -553,19 +642,27 @@ class _UserDetailsDialogState extends State<_UserDetailsDialog> {
                       ],
                     ),
                   ),
-                  Chip(
-                    label: Text(
-                      item.role.label,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Chip(
+                        label: Text(
+                          item.role.label,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        backgroundColor:
+                            AppTheme.primary.withValues(alpha: 0.12),
+                        side: BorderSide.none,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
                       ),
-                    ),
-                    backgroundColor: AppTheme.primary.withValues(alpha: 0.12),
-                    side: BorderSide.none,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
+                      const SizedBox(height: 8),
+                      _buildDeactivateControl(),
+                    ],
                   ),
                 ],
               ),
@@ -622,26 +719,8 @@ class _UserDetailsDialogState extends State<_UserDetailsDialog> {
               ],
               const SizedBox(height: 24),
               Row(
+                mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  OutlinedButton.icon(
-                    onPressed: _isDeactivating ? null : _handleDeactivate,
-                    icon: _isDeactivating
-                        ? const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: AppTheme.error,
-                            ),
-                          )
-                        : const Icon(Icons.person_off_outlined, size: 18),
-                    label: const Text('Deaktiviraj'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppTheme.error,
-                      side: const BorderSide(color: AppTheme.error),
-                    ),
-                  ),
-                  const Spacer(),
                   TextButton(
                     onPressed: () => Navigator.of(context).pop(),
                     child: const Text('Zatvori'),

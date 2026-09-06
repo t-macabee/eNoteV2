@@ -278,28 +278,26 @@ class _MusicStoreDetailScreenState extends State<MusicStoreDetailScreen> {
               workHoursText,
             ),
             const SizedBox(height: 24),
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: _openEdit,
-                    icon: const Icon(Icons.edit_outlined, size: 18),
-                    label: const Text('Uredi'),
-                  ),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: _openEdit,
+                icon: const Icon(Icons.edit_outlined, size: 18),
+                label: const Text('Uredi'),
+              ),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: _deleteStore,
+                icon: const Icon(Icons.delete_outline, size: 18),
+                label: const Text('Obriši'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppTheme.error,
+                  side: const BorderSide(color: AppTheme.error),
                 ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: _deleteStore,
-                    icon: const Icon(Icons.delete_outline, size: 18),
-                    label: const Text('Obriši'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppTheme.error,
-                      side: const BorderSide(color: AppTheme.error),
-                    ),
-                  ),
-                ),
-              ],
+              ),
             ),
           ],
         ),
