@@ -136,6 +136,24 @@ class _AdminUsersMockHttpClient extends http.BaseClient {
           headers: {'content-type': 'application/json'},
         );
       }
+
+      if (url.contains('admin/users')) {
+        final json = jsonEncode({
+          'role': 'StoreEmployee',
+          'profile': {
+            'id': 4,
+            'firstName': 'Frederic',
+            'lastName': 'Chopin',
+            'username': 'fchopin',
+            'isActive': true,
+          },
+        });
+        return http.StreamedResponse(
+          Stream.value(utf8.encode(json)),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      }
     }
 
     if (request.method == 'DELETE') {
@@ -344,24 +362,28 @@ void main() {
       expect(find.text('Mostar Piano Center'), findsOneWidget);
       expect(find.text('Johann Bach'), findsNothing);
 
-      // Verify Chopin item properties from the rendered card
-      final dynamic gridScreen = tester.widget(find.byWidgetPredicate(
-        (w) => w.runtimeType.toString().startsWith('EntityGridScreen'),
-      ));
-      final config = gridScreen.config;
-      final screenContext = tester.element(find.byType(UserGridScreen));
+      // Open details dialog for Frederic Chopin
+      await tester.tap(find.text('Frederic Chopin'));
+      await tester.pumpAndSettle();
 
-      final dynamic cardWidget = tester.widget(find.byWidgetPredicate(
-        (w) => w.runtimeType.toString().startsWith('_EntityGridCard'),
-      ));
-      final dynamic chopinItem = cardWidget.item;
-      expect(chopinItem.appUserId, 44);
-      expect(chopinItem.storeName, 'Mostar Piano Center');
-      expect(chopinItem.role, UserRole.storeEmployee);
+      // Deaktiviraj button should be visible in dialog
+      final deactivateButton = find.text('Deaktiviraj');
+      expect(deactivateButton, findsOneWidget);
 
-      // Deactivate Chopin via config.onDelete (which calls admin/users/{appUserId})
-      final deleteResult = await config.onDelete!(screenContext, chopinItem);
-      expect(deleteResult, isTrue);
+      // Tap Deaktiviraj to open confirm dialog
+      await tester.tap(deactivateButton);
+      await tester.pumpAndSettle();
+
+      // Assert confirm dialog wording
+      expect(find.text('Potvrdite deaktivaciju'), findsOneWidget);
+      expect(
+        find.text('Da li ste sigurni da želite da deaktivirate ovog korisnika?'),
+        findsOneWidget,
+      );
+
+      // Confirm deactivation
+      await tester.tap(find.text('Potvrdi'));
+      await tester.pumpAndSettle();
 
       // Assert DELETE admin/users/44 was called
       expect(mockClient.deletedUrls, hasLength(1));

@@ -126,12 +126,37 @@ class _UserGridScreenState extends State<UserGridScreen> {
     }
   }
 
+  Future<bool> _deactivateUser(
+    BuildContext context,
+    _UserListItem item,
+  ) async {
+    try {
+      final apiClient = context.read<ApiClient>();
+      final response = await apiClient.delete(
+        'admin/users/${item.appUserId}',
+      );
+      if (response.statusCode >= 400) {
+        throw ApiException(
+          ApiErrorMapper.mapError(response.statusCode, response.body),
+        );
+      }
+      _gridKey.currentState?.refresh();
+      return true;
+    } catch (e) {
+      if (context.mounted) {
+        ErrorBanner.show(context, message: userMessage(e));
+      }
+      return false;
+    }
+  }
+
   void _showUserDetailsDialog(BuildContext context, _UserListItem item) {
     showDialog<void>(
       context: context,
       builder: (dialogContext) => _UserDetailsDialog(
         item: item,
         onRenewMembership: () => _renewMembership(context, item),
+        onDeactivate: () => _deactivateUser(context, item),
       ),
     );
   }
@@ -176,18 +201,6 @@ class _UserGridScreenState extends State<UserGridScreen> {
         // `_UserDetailsDialog`, which `onTap` opens — a second copy on the
         // hover overlay was pure duplication.
         onTap: (context, item) => _showUserDetailsDialog(context, item),
-        onDelete: (context, item) async {
-          final apiClient = context.read<ApiClient>();
-          final response = await apiClient.delete(
-            'admin/users/${item.appUserId}',
-          );
-          if (response.statusCode >= 400) {
-            throw ApiException(
-              ApiErrorMapper.mapError(response.statusCode, response.body),
-            );
-          }
-          return true;
-        },
         groupKeyOf: _role == null
             ? (item) => switch (item.role) {
                 UserRole.instructor => 'Instruktori',
@@ -397,10 +410,12 @@ class _UserGridScreenState extends State<UserGridScreen> {
 class _UserDetailsDialog extends StatefulWidget {
   final _UserListItem item;
   final Future<DateTime?> Function() onRenewMembership;
+  final Future<bool> Function() onDeactivate;
 
   const _UserDetailsDialog({
     required this.item,
     required this.onRenewMembership,
+    required this.onDeactivate,
   });
 
   @override
@@ -411,6 +426,29 @@ class _UserDetailsDialogState extends State<_UserDetailsDialog> {
   DateTime? _membershipPaidUntil;
   UserProfile? _profile;
   bool _isLoadingProfile = true;
+  bool _isDeactivating = false;
+
+  Future<void> _handleDeactivate() async {
+    final confirmed = await confirmDialog(
+      context: context,
+      title: 'Potvrdite deaktivaciju',
+      message: 'Da li ste sigurni da želite da deaktivirate ovog korisnika?',
+    );
+    if (confirmed != true) return;
+    if (!mounted) return;
+
+    setState(() => _isDeactivating = true);
+    try {
+      final success = await widget.onDeactivate();
+      if (success && mounted) {
+        Navigator.of(context).pop();
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isDeactivating = false);
+      }
+    }
+  }
 
   @override
   void initState() {
@@ -584,8 +622,26 @@ class _UserDetailsDialogState extends State<_UserDetailsDialog> {
               ],
               const SizedBox(height: 24),
               Row(
-                mainAxisAlignment: MainAxisAlignment.end,
                 children: [
+                  OutlinedButton.icon(
+                    onPressed: _isDeactivating ? null : _handleDeactivate,
+                    icon: _isDeactivating
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: AppTheme.error,
+                            ),
+                          )
+                        : const Icon(Icons.person_off_outlined, size: 18),
+                    label: const Text('Deaktiviraj'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppTheme.error,
+                      side: const BorderSide(color: AppTheme.error),
+                    ),
+                  ),
+                  const Spacer(),
                   TextButton(
                     onPressed: () => Navigator.of(context).pop(),
                     child: const Text('Zatvori'),

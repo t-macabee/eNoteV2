@@ -88,10 +88,19 @@ class _EventFormScreenState extends State<EventFormScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final existing = widget.existing;
+    final canDelete = existing != null && !existing.isScoped;
+
     return EntityFormScaffold(
       presentation: widget.presentation,
       title: widget.existing == null ? 'Dodaj događaj' : 'Uredi događaj',
       isEditMode: widget.existing != null,
+      onDelete: canDelete
+          ? () async {
+              await context.read<EventProvider>().remove(existing.id);
+              return true;
+            }
+          : null,
       fieldsBuilder: (_) => [
         TextFormField(
           controller: _titleController,

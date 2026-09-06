@@ -74,10 +74,6 @@ class _MusicStoreListScreenState extends State<MusicStoreListScreen> {
           );
           _gridKey.currentState?.refresh();
         },
-        onDelete: (context, item) async {
-          await context.read<MusicStoreProvider>().remove(item.id);
-          return true;
-        },
         filterBar: SizedBox(
           width: 220,
           child: DropdownButtonFormField<int?>(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:enote_core/enote_core.dart';
+import '../theme/app_theme.dart';
 
 /// How an [EntityFormScaffold] is presented to the user.
 enum EntityFormPresentation {
@@ -18,6 +19,10 @@ class EntityFormScaffold extends StatefulWidget {
   final bool isEditMode;
   final String saveLabel;
   final String savedMessage;
+  final Future<bool> Function()? onDelete;
+  final String deleteLabel;
+  final String deleteConfirmTitle;
+  final String deleteConfirmMessage;
   final VoidCallback? onReset;
   final bool showCloseButton;
   final EntityFormPresentation presentation;
@@ -30,6 +35,11 @@ class EntityFormScaffold extends StatefulWidget {
     this.isEditMode = false,
     this.saveLabel = 'Sačuvaj',
     this.savedMessage = 'Uspješno sačuvano.',
+    this.onDelete,
+    this.deleteLabel = 'Obriši',
+    this.deleteConfirmTitle = 'Potvrdite brisanje',
+    this.deleteConfirmMessage =
+        'Da li ste sigurni da želite da obrišete ovaj zapis?',
     this.onReset,
     this.showCloseButton = true,
     this.presentation = EntityFormPresentation.page,
@@ -49,6 +59,34 @@ class EntityFormScaffold extends StatefulWidget {
 class _EntityFormScaffoldState extends State<EntityFormScaffold> {
   final _formKey = GlobalKey<FormState>();
   bool _isSaving = false;
+  bool _isDeleting = false;
+
+  Future<void> _delete() async {
+    final confirmed = await confirmDialog(
+      context: context,
+      title: widget.deleteConfirmTitle,
+      message: widget.deleteConfirmMessage,
+    );
+    if (confirmed != true) return;
+    if (!mounted) return;
+
+    setState(() => _isDeleting = true);
+    try {
+      final success = await widget.onDelete!();
+      if (!mounted) return;
+      if (success) {
+        Navigator.of(context).pop(true);
+      }
+    } catch (e) {
+      if (mounted) {
+        ErrorBanner.show(context, message: userMessage(e));
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isDeleting = false);
+      }
+    }
+  }
 
   Future<void> _save() async {
     if (!(_formKey.currentState?.validate() ?? false)) {
@@ -91,7 +129,7 @@ class _EntityFormScaffoldState extends State<EntityFormScaffold> {
 
   Widget _buildSaveButton() {
     return FilledButton.icon(
-      onPressed: _isSaving ? null : _save,
+      onPressed: (_isSaving || _isDeleting) ? null : _save,
       icon: _isSaving
           ? const SizedBox(
               width: 16,
@@ -103,7 +141,30 @@ class _EntityFormScaffoldState extends State<EntityFormScaffold> {
     );
   }
 
+  Widget _buildDeleteButton() {
+    return OutlinedButton.icon(
+      onPressed: (_isSaving || _isDeleting) ? null : _delete,
+      style: OutlinedButton.styleFrom(
+        foregroundColor: AppTheme.error,
+        side: const BorderSide(color: AppTheme.error),
+      ),
+      icon: _isDeleting
+          ? const SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: AppTheme.error,
+              ),
+            )
+          : const Icon(Icons.delete_outline),
+      label: Text(widget.deleteLabel),
+    );
+  }
+
   Widget _buildPage(BuildContext context) {
+    final showDelete = widget.isEditMode && widget.onDelete != null;
+
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.title),
@@ -122,7 +183,16 @@ class _EntityFormScaffoldState extends State<EntityFormScaffold> {
           children: [
             ...widget.fieldsBuilder(context),
             const SizedBox(height: 24),
-            _buildSaveButton(),
+            if (showDelete)
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  _buildDeleteButton(),
+                  _buildSaveButton(),
+                ],
+              )
+            else
+              _buildSaveButton(),
           ],
         ),
       ),
@@ -131,6 +201,8 @@ class _EntityFormScaffoldState extends State<EntityFormScaffold> {
 
   Widget _buildDialog(BuildContext context) {
     final maxHeight = MediaQuery.sizeOf(context).height * 0.8;
+    final showDelete = widget.isEditMode && widget.onDelete != null;
+
     return AlertDialog(
       constraints: BoxConstraints(maxWidth: 640, maxHeight: maxHeight),
       titlePadding: const EdgeInsets.fromLTRB(24, 20, 8, 0),
@@ -167,10 +239,14 @@ class _EntityFormScaffoldState extends State<EntityFormScaffold> {
             const Divider(),
             const SizedBox(height: 12),
             Row(
-              mainAxisAlignment: MainAxisAlignment.end,
               children: [
+                if (showDelete) ...[
+                  _buildDeleteButton(),
+                  const Spacer(),
+                ],
+                if (!showDelete) const Spacer(),
                 TextButton(
-                  onPressed: _isSaving
+                  onPressed: (_isSaving || _isDeleting)
                       ? null
                       : () => Navigator.of(context).pop(false),
                   child: const Text('Otkaži'),

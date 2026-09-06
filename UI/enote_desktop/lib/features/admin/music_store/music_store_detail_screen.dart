@@ -90,6 +90,26 @@ class _MusicStoreDetailScreenState extends State<MusicStoreDetailScreen> {
     _gridKey.currentState?.refresh();
   }
 
+  Future<void> _deleteStore() async {
+    final confirmed = await confirmDialog(
+      context: context,
+      title: 'Potvrdite brisanje',
+      message: 'Da li ste sigurni da želite da obrišete ovu prodavnicu?',
+    );
+    if (confirmed != true) return;
+    if (!mounted) return;
+
+    try {
+      await context.read<MusicStoreProvider>().remove(widget.storeId);
+      if (!mounted) return;
+      Navigator.of(context).pop();
+    } catch (e) {
+      if (mounted) {
+        ErrorBanner.show(context, message: userMessage(e));
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -258,13 +278,28 @@ class _MusicStoreDetailScreenState extends State<MusicStoreDetailScreen> {
               workHoursText,
             ),
             const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: _openEdit,
-                icon: const Icon(Icons.edit_outlined, size: 18),
-                label: const Text('Uredi'),
-              ),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: _openEdit,
+                    icon: const Icon(Icons.edit_outlined, size: 18),
+                    label: const Text('Uredi'),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: _deleteStore,
+                    icon: const Icon(Icons.delete_outline, size: 18),
+                    label: const Text('Obriši'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppTheme.error,
+                      side: const BorderSide(color: AppTheme.error),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         ),

@@ -145,18 +145,6 @@ class _EventListScreenState extends State<EventListScreen> {
           }
           _openForm(item);
         },
-        onDelete: (context, item) async {
-          if (item.isScoped) {
-            ErrorBanner.show(
-              context,
-              message:
-                  'Administrator može upravljati samo događajima na nivou platforme.',
-            );
-            return false;
-          }
-          await context.read<EventProvider>().remove(item.id);
-          return true;
-        },
       ),
     );
   }
