@@ -74,6 +74,7 @@ public sealed class UserProfileServiceTests
                 Username = "admin",
                 FirstName = "Admin",
                 LastName = "User",
+                DateOfBirth = new DateTime(1990, 5, 12),
                 IsActive = true
             },
             Roles = [AppRoles.Administrator]
@@ -88,6 +89,7 @@ public sealed class UserProfileServiceTests
         var profile = Assert.IsType<AdminProfile>(result.Profile);
         Assert.Equal("Admin", profile.FirstName);
         Assert.Equal("User", profile.LastName);
+        Assert.Equal(new DateTime(1990, 5, 12), profile.DateOfBirth);
     }
 
     private static UserProfileService CreateService(StubUserIdentityService identity, int currentUserId = 1) =>

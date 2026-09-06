@@ -34,7 +34,7 @@ public sealed class UserProfileService(
             AppRoles.Student => await BuildStudentProfile(userId, user),
             AppRoles.Instructor => await BuildInstructorProfile(userId, user),
             AppRoles.StoreEmployee => await BuildMusicStoreProfile(userId, user, cancellationToken),
-            AppRoles.Administrator => new AdminProfile(user.FirstName, user.LastName),
+            AppRoles.Administrator => new AdminProfile(user.FirstName, user.LastName, user.DateOfBirth),
             _ => throw new BusinessException(Messages.UnknownRole)
         };
 

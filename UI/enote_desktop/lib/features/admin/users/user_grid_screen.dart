@@ -488,6 +488,7 @@ class _UserDetailsDialogState extends State<_UserDetailsDialog> {
   String? _email;
   bool _isLoadingProfile = true;
   bool _isStatusChanging = false;
+  late bool _isActive = widget.item.isActive ?? true;
 
   Future<void> _handleStatusChange() async {
     final nextStatus = !_isActive;
@@ -503,10 +504,12 @@ class _UserDetailsDialogState extends State<_UserDetailsDialog> {
     try {
       final success = await widget.onStatusChange(nextStatus);
       if (success && mounted) {
-        setState(() {
-          // Status promjena će biti refletovana iz roditeljskog widgeta
-          // ali možemo optimistično ažurirati
-        });
+        // Optimistically reflect the new status so the button label/action
+        // and the delete-button-adjacent state update immediately — the
+        // underlying grid may re-filter this user out of view entirely
+        // (e.g. the "Aktivni" tab), but this dialog stays open and must
+        // not keep offering the action that was just taken.
+        setState(() => _isActive = nextStatus);
       }
     } finally {
       if (mounted) {
@@ -543,58 +546,44 @@ class _UserDetailsDialogState extends State<_UserDetailsDialog> {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        SizedBox(
-          height: 28,
-          child: OutlinedButton.icon(
-            onPressed:
-                _isStatusChanging || _isLoadingProfile || _isDeleting ? null : _handleStatusChange,
-            icon: _isStatusChanging
-                ? SizedBox(
-                    width: 14,
-                    height: 14,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: _isActive ? AppTheme.error : AppTheme.success,
-                    ),
-                  )
-                : Icon(
-                    _isActive ? Icons.person_off_outlined : Icons.person_add_alt,
-                    size: 14,
+        OutlinedButton.icon(
+          onPressed:
+              _isStatusChanging || _isLoadingProfile || _isDeleting ? null : _handleStatusChange,
+          icon: _isStatusChanging
+              ? SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: _isActive ? AppTheme.error : AppTheme.success,
                   ),
-            label: Text(
-              _isActive ? 'Deaktiviraj' : 'Aktiviraj',
-              style: const TextStyle(fontSize: 12),
-            ),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: _isActive ? AppTheme.error : AppTheme.success,
-              side: BorderSide(
-                color: _isActive ? AppTheme.error : AppTheme.success,
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 10),
-              visualDensity: VisualDensity.compact,
+                )
+              : Icon(
+                  _isActive ? Icons.person_off_outlined : Icons.person_add_alt,
+                  size: 18,
+                ),
+          label: Text(_isActive ? 'Deaktiviraj' : 'Aktiviraj'),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: _isActive ? AppTheme.error : AppTheme.success,
+            side: BorderSide(
+              color: _isActive ? AppTheme.error : AppTheme.success,
             ),
           ),
         ),
         const SizedBox(width: 8),
-        SizedBox(
-          height: 28,
-          child: IconButton(
-            onPressed: _isDeleting || _isLoadingProfile || _isStatusChanging ? null : _handleDelete,
-            icon: _isDeleting
-                ? const SizedBox(
-                    width: 14,
-                    height: 14,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.delete_outline, size: 16),
-            color: AppTheme.error,
-            tooltip: 'Trajno obriši',
-            padding: EdgeInsets.zero,
-            visualDensity: VisualDensity.compact,
-            style: IconButton.styleFrom(
-              foregroundColor: AppTheme.error,
-              hoverColor: AppTheme.error.withValues(alpha: 0.1),
-            ),
+        IconButton(
+          onPressed: _isDeleting || _isLoadingProfile || _isStatusChanging ? null : _handleDelete,
+          icon: _isDeleting
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.delete_outline),
+          tooltip: 'Trajno obriši',
+          style: IconButton.styleFrom(
+            foregroundColor: AppTheme.error,
+            hoverColor: AppTheme.error.withValues(alpha: 0.1),
           ),
         ),
       ],
@@ -644,8 +633,6 @@ class _UserDetailsDialogState extends State<_UserDetailsDialog> {
     }
   }
 
-  bool get _isActive => widget.item.isActive ?? true;
-
   @override
   Widget build(BuildContext context) {
     final item = widget.item;
@@ -667,6 +654,7 @@ class _UserDetailsDialogState extends State<_UserDetailsDialog> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   CircleAvatar(
                     radius: 28,
@@ -707,27 +695,20 @@ class _UserDetailsDialogState extends State<_UserDetailsDialog> {
                       ],
                     ),
                   ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Chip(
-                        label: Text(
-                          item.role.label,
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        backgroundColor:
-                            AppTheme.primary.withValues(alpha: 0.12),
-                        side: BorderSide.none,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
-                        ),
+                  const SizedBox(width: 12),
+                  Chip(
+                    label: Text(
+                      item.role.label,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
                       ),
-                      const SizedBox(height: 8),
-                      _buildDeactivateControl(),
-                    ],
+                    ),
+                    backgroundColor: AppTheme.primary.withValues(alpha: 0.12),
+                    side: BorderSide.none,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
                   ),
                 ],
               ),
@@ -784,8 +765,9 @@ class _UserDetailsDialogState extends State<_UserDetailsDialog> {
               ],
               const SizedBox(height: 24),
               Row(
-                mainAxisAlignment: MainAxisAlignment.end,
                 children: [
+                  _buildDeactivateControl(),
+                  const Spacer(),
                   TextButton(
                     onPressed: () => Navigator.of(context).pop(),
                     child: const Text('Zatvori'),

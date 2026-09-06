@@ -24,8 +24,8 @@ class MasterScreen extends StatefulWidget {
 }
 
 class _MasterScreenState extends State<MasterScreen> {
-  // Administrator shell shape: primary tabs (Korisnici, Muzičke prodavnice,
-  // Kursevi, Događaji) followed by reference data CRUD (Gradovi, Adrese,
+  // Administrator shell shape: primary tabs (Korisnici, Trgovina muzičke
+  // opreme, Kursevi, Događaji) followed by reference data CRUD (Gradovi, Adrese,
   // Tipovi instrumenata). Instructor accounts are folded into the Users tab.
   static const _entries = <RoleMenuEntry>[
     RoleMenuEntry(
@@ -36,7 +36,7 @@ class _MasterScreenState extends State<MasterScreen> {
     ),
     RoleMenuEntry(
       icon: Icons.store,
-      label: 'Muzičke prodavnice',
+      label: 'Trgovina muzičke opreme',
       screenBuilder: _buildMusicStoreList,
       allowedRoles: [UserRole.administrator],
     ),

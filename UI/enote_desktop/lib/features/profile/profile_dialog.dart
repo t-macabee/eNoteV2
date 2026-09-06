@@ -2,8 +2,15 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:enote_core/enote_core.dart';
+import '../../theme/app_theme.dart';
 import '../../widgets/entity_form_scaffold.dart';
+import 'change_password_dialog.dart';
+import 'edit_profile_dialog.dart';
 
+/// Read-only summary of the logged-in user's account, with "Uredi" and
+/// "Promijeni lozinku" opening their own dedicated forms (each with its own
+/// Save/Cancel), the same way editing a music store opens its own form
+/// rather than editing inline.
 class ProfileDialog extends StatefulWidget {
   const ProfileDialog({super.key});
 
@@ -14,18 +21,6 @@ class ProfileDialog extends StatefulWidget {
 class _ProfileDialogState extends State<ProfileDialog> {
   UserProfileResponse? _profileResponse;
   bool _isLoading = true;
-  bool _isSaving = false;
-
-  final _emailController = TextEditingController();
-  final _firstNameController = TextEditingController();
-  final _lastNameController = TextEditingController();
-  final _dateOfBirthController = TextEditingController();
-
-  final _currentPasswordController = TextEditingController();
-  final _newPasswordController = TextEditingController();
-
-  final _formKey = GlobalKey<FormState>();
-  final _passwordFormKey = GlobalKey<FormState>();
 
   @override
   void initState() {
@@ -34,88 +29,46 @@ class _ProfileDialogState extends State<ProfileDialog> {
   }
 
   Future<void> _fetchProfile() async {
+    setState(() => _isLoading = true);
     try {
       final apiClient = context.read<ApiClient>();
       final response = await apiClient.get('users/me');
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body) as Map<String, dynamic>;
-        final profileResponse = UserProfileResponse.fromJson(data);
         if (mounted) {
           setState(() {
-            _profileResponse = profileResponse;
-            final p = profileResponse.profile;
-            _emailController.text = profileResponse.email ?? '';
-            _firstNameController.text = p.firstName ?? '';
-            _lastNameController.text = p.lastName ?? '';
-            _dateOfBirthController.text = p.dateOfBirth?.toIso8601String().split('T').first ?? '';
-            _isLoading = false;
+            _profileResponse = UserProfileResponse.fromJson(data);
           });
         }
-      } else {
-        if (mounted) setState(() => _isLoading = false);
       }
-    } catch (e) {
-      if (mounted) {
-        ErrorBanner.show(context, message: userMessage(e));
-        setState(() => _isLoading = false);
-      }
-    }
-  }
-
-  Future<bool> _updateProfile() async {
-    if (!(_formKey.currentState?.validate() ?? false)) return false;
-
-    try {
-      final apiClient = context.read<ApiClient>();
-      final response = await apiClient.put(
-        'users/me',
-        body: {
-          'email': _emailController.text,
-          'firstName': _firstNameController.text,
-          'lastName': _lastNameController.text,
-          'dateOfBirth': _dateOfBirthController.text.isNotEmpty ? _dateOfBirthController.text : null,
-        },
-      );
-      if (response.statusCode >= 400) {
-        throw ApiException(ApiErrorMapper.mapError(response.statusCode, response.body));
-      }
-      return true;
     } catch (e) {
       if (mounted) ErrorBanner.show(context, message: userMessage(e));
-      return false;
-    }
-  }
-
-  Future<bool> _changePassword() async {
-    if (!(_passwordFormKey.currentState?.validate() ?? false)) return false;
-
-    setState(() => _isSaving = true);
-    try {
-      final apiClient = context.read<ApiClient>();
-      final response = await apiClient.put(
-        'users/me/password',
-        body: {
-          'currentPassword': _currentPasswordController.text,
-          'newPassword': _newPasswordController.text,
-        },
-      );
-      if (response.statusCode >= 400) {
-        throw ApiException(ApiErrorMapper.mapError(response.statusCode, response.body));
-      }
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Lozinka uspješno promijenjena.')),
-        );
-        _currentPasswordController.clear();
-        _newPasswordController.clear();
-      }
-      return true;
-    } catch (e) {
-      if (mounted) ErrorBanner.show(context, message: userMessage(e));
-      return false;
     } finally {
-      if (mounted) setState(() => _isSaving = false);
+      if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  Future<void> _openEditDialog() async {
+    final profile = _profileResponse!;
+    await EntityFormScaffold.showAsDialog(
+      context,
+      builder: (_) => EditProfileDialog(
+        initialFirstName: profile.profile.firstName,
+        initialLastName: profile.profile.lastName,
+        initialEmail: profile.email,
+        initialDateOfBirth: profile.profile.dateOfBirth,
+      ),
+    );
+    // The edit dialog stays open on save and only clears its own fields, so
+    // this summary is refreshed once it's finally closed.
+    if (mounted) _fetchProfile();
+  }
+
+  Future<void> _openChangePasswordDialog() async {
+    await EntityFormScaffold.showAsDialog(
+      context,
+      builder: (_) => const ChangePasswordDialog(),
+    );
   }
 
   @override
@@ -138,77 +91,107 @@ class _ProfileDialogState extends State<ProfileDialog> {
       );
     }
 
-    final role = _profileResponse!.role;
+    final profile = _profileResponse!;
+    final firstName = profile.profile.firstName ?? ' - ';
+    final lastName = profile.profile.lastName ?? ' - ';
+    final email = profile.email ?? ' - ';
+    final dateOfBirthValue = profile.profile.dateOfBirth;
+    final dateOfBirth =
+        dateOfBirthValue != null ? formatDate(dateOfBirthValue) : ' - ';
+    final username = profile.username.isNotEmpty
+        ? profile.username
+        : (context.read<AuthState>().username ?? '');
 
-    return EntityFormScaffold(
-      title: 'Moj Profil',
-      presentation: EntityFormPresentation.dialog,
-      isEditMode: true,
-      onSave: _updateProfile,
-      fieldsBuilder: (context) => [
-        Form(
-          key: _formKey,
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      clipBehavior: Clip.antiAlias,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 440),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text('Korisničko ime: ${_profileResponse!.username}', style: const TextStyle(fontWeight: FontWeight.bold)),
-              Text('Uloga: $role', style: const TextStyle(fontWeight: FontWeight.bold)),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _firstNameController,
-                decoration: const InputDecoration(labelText: 'Ime'),
-                validator: (v) => v?.isEmpty ?? true ? 'Obavezno polje' : null,
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Moj Profil',
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: AppTheme.textPrimary,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    tooltip: 'Zatvori',
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                ],
               ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _lastNameController,
-                decoration: const InputDecoration(labelText: 'Prezime'),
-                validator: (v) => v?.isEmpty ?? true ? 'Obavezno polje' : null,
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _emailController,
-                decoration: const InputDecoration(labelText: 'Email'),
-                validator: (v) => v?.isEmpty ?? true ? 'Obavezno polje' : null,
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _dateOfBirthController,
-                decoration: const InputDecoration(labelText: 'Datum rođenja (YYYY-MM-DD)'),
+              const SizedBox(height: 8),
+              _buildInfoRow('Korisničko ime', username),
+              _buildInfoRow('Uloga', profile.role),
+              _buildInfoRow('Ime', firstName),
+              _buildInfoRow('Prezime', lastName),
+              _buildInfoRow('Email', email),
+              _buildInfoRow('Datum rođenja', dateOfBirth),
+              const SizedBox(height: 24),
+              Wrap(
+                alignment: WrapAlignment.end,
+                spacing: 12,
+                runSpacing: 8,
+                children: [
+                  OutlinedButton.icon(
+                    onPressed: _openEditDialog,
+                    icon: const Icon(Icons.edit_outlined),
+                    label: const Text('Uredi'),
+                  ),
+                  OutlinedButton.icon(
+                    onPressed: _openChangePasswordDialog,
+                    icon: const Icon(Icons.lock_outline),
+                    label: const Text('Promijeni lozinku'),
+                  ),
+                ],
               ),
             ],
           ),
         ),
-        const Divider(height: 48),
-        Text('Promjena lozinke', style: Theme.of(context).textTheme.titleMedium),
-        const SizedBox(height: 16),
-        Form(
-          key: _passwordFormKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              TextFormField(
-                controller: _currentPasswordController,
-                decoration: const InputDecoration(labelText: 'Trenutna lozinka'),
-                obscureText: true,
-                validator: (v) => v?.isEmpty ?? true ? 'Obavezno polje' : null,
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 120,
+            child: Text(
+              label,
+              style: const TextStyle(
+                color: AppTheme.textSecondary,
+                fontSize: 13,
               ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _newPasswordController,
-                decoration: const InputDecoration(labelText: 'Nova lozinka'),
-                obscureText: true,
-                validator: (v) => v?.isEmpty ?? true ? 'Obavezno polje' : null,
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: _isSaving ? null : _changePassword,
-                child: const Text('Promijeni lozinku'),
-              ),
-            ],
+            ),
           ),
-        ),
-      ],
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(
+                color: AppTheme.textPrimary,
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

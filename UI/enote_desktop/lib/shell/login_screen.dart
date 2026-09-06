@@ -50,7 +50,7 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('eNote V2 - Prijava'),
+        title: const Text('Prijava'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
       ),
       body: Center(
@@ -64,16 +64,22 @@ class _LoginScreenState extends State<LoginScreen> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Icon(
-                    Icons.music_note,
-                    size: 64,
-                    color: Colors.deepPurple,
-                  ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'eNote V2',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: const [
+                      Icon(
+                        Icons.library_music_rounded,
+                        size: 40,
+                        color: Colors.deepPurple,
+                      ),
+                      SizedBox(width: 12),
+                      Text(
+                        'eNote',
+                        textAlign: TextAlign.center,
+                        style:
+                            TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 32),
                   TextFormField(

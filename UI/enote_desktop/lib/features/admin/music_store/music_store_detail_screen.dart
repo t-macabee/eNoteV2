@@ -113,90 +113,102 @@ class _MusicStoreDetailScreenState extends State<MusicStoreDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(_store?.storeName.isNotEmpty == true
-            ? _store!.storeName
-            : 'Detalji prodavnice'),
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _store == null
-              ? Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Text('Greška pri učitavanju prodavnice.'),
-                      const SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: _loadStore,
-                        child: const Text('Pokušaj ponovo'),
-                      ),
-                    ],
-                  ),
-                )
-              : Row(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    SizedBox(
-                      width: 280,
-                      child: _buildLeftPanel(),
-                    ),
-                    const VerticalDivider(width: 1),
-                    Expanded(
-                      child: EntityGridScreen<InstrumentDto>(
-                        key: _gridKey,
-                        config: EntityGridConfig<InstrumentDto>(
-                          embedded: true,
-                          searchHint: 'Pretraži instrumente...',
-                          placeholderIcon: Icons.music_note,
-                          titleOf: (i) => i.model,
-                          subtitleOf: (i) => i.manufacturer,
-                          imageUrlOf: (i) => i.imagePath,
-                          showAddButton: false,
-                          filterBar: SizedBox(
-                            width: 220,
-                            child: DropdownButtonFormField<int?>(
-                              isExpanded: true,
-                              initialValue: _instrumentTypeId,
-                              decoration: const InputDecoration(labelText: 'Tip instrumenta'),
-                              items: [
-                                const DropdownMenuItem(
-                                  value: null,
-                                  child: Text('Svi instrumenti'),
-                                ),
-                                ..._instrumentTypes.map(
-                                  (type) => DropdownMenuItem(
-                                    value: type.id,
-                                    child: Text(type.type),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // No AppBar/title here — the store name is already shown right
+          // below in the left panel, so a header up top would just repeat
+          // it. Just enough to get back to the list.
+          IconButton(
+            icon: const Icon(Icons.arrow_back),
+            tooltip: 'Nazad',
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+          Expanded(
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _store == null
+                    ? Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Text('Greška pri učitavanju prodavnice.'),
+                            const SizedBox(height: 16),
+                            ElevatedButton(
+                              onPressed: _loadStore,
+                              child: const Text('Pokušaj ponovo'),
+                            ),
+                          ],
+                        ),
+                      )
+                    : Row(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          SizedBox(
+                            width: 280,
+                            child: _buildLeftPanel(),
+                          ),
+                          const VerticalDivider(width: 1),
+                          Expanded(
+                            child: EntityGridScreen<InstrumentDto>(
+                              key: _gridKey,
+                              config: EntityGridConfig<InstrumentDto>(
+                                embedded: true,
+                                searchHint: 'Pretraži instrumente...',
+                                placeholderIcon: Icons.music_note,
+                                titleOf: (i) => i.model,
+                                subtitleOf: (i) => i.manufacturer,
+                                imageUrlOf: (i) => i.imagePath,
+                                showAddButton: false,
+                                filterBar: SizedBox(
+                                  width: 220,
+                                  child: DropdownButtonFormField<int?>(
+                                    isExpanded: true,
+                                    initialValue: _instrumentTypeId,
+                                    decoration: const InputDecoration(
+                                        labelText: 'Tip instrumenta'),
+                                    items: [
+                                      const DropdownMenuItem(
+                                        value: null,
+                                        child: Text('Svi instrumenti'),
+                                      ),
+                                      ..._instrumentTypes.map(
+                                        (type) => DropdownMenuItem(
+                                          value: type.id,
+                                          child: Text(type.type),
+                                        ),
+                                      ),
+                                    ],
+                                    onChanged: (typeId) {
+                                      _instrumentTypeId = typeId;
+                                      _applyFilters();
+                                    },
                                   ),
                                 ),
-                              ],
-                              onChanged: (typeId) {
-                                _instrumentTypeId = typeId;
-                                _applyFilters();
-                              },
+                                groupKeyOf: _instrumentTypeId == null
+                                    ? (i) => i.instrumentType.isNotEmpty
+                                        ? i.instrumentType
+                                        : 'Ostalo'
+                                    : null,
+                                fetcher: (page, pageSize, search) => context
+                                    .read<StoreInstrumentProvider>()
+                                    .search({
+                                  'page': page,
+                                  'pageSize': pageSize,
+                                  'includeTotalCount': true,
+                                  'musicStoreId': widget.storeId,
+                                  if (_instrumentTypeId != null)
+                                    'instrumentTypeId': _instrumentTypeId,
+                                  if (search.isNotEmpty) 'search': search,
+                                }),
+                              ),
                             ),
                           ),
-                          groupKeyOf: _instrumentTypeId == null
-                              ? (i) => i.instrumentType.isNotEmpty
-                                  ? i.instrumentType
-                                  : 'Ostalo'
-                              : null,
-                          fetcher: (page, pageSize, search) =>
-                              context.read<StoreInstrumentProvider>().search({
-                            'page': page,
-                            'pageSize': pageSize,
-                            'includeTotalCount': true,
-                            'musicStoreId': widget.storeId,
-                            if (_instrumentTypeId != null)
-                              'instrumentTypeId': _instrumentTypeId,
-                            if (search.isNotEmpty) 'search': search,
-                          }),
-                        ),
+                        ],
                       ),
-                    ),
-                  ],
-                ),
+          ),
+        ],
+      ),
     );
   }
 
