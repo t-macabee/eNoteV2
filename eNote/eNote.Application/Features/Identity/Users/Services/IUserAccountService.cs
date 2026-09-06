@@ -11,4 +11,5 @@ public interface IUserAccountService
     Task<(bool Success, string? Error)> DeletePictureAsync(int userId, CancellationToken cancellationToken = default);
     Task<(bool Success, string? Error)> ChangePasswordAsync(int userId, string currentPassword, string newPassword, CancellationToken cancellationToken = default);
     Task<(bool Success, string? Error)> SetActiveAsync(int userId, bool isActive, CancellationToken cancellationToken = default);
+    Task<(bool Success, string? Error)> DeleteUserAsync(int userId, CancellationToken cancellationToken = default);
 }

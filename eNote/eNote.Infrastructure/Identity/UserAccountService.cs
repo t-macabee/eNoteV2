@@ -262,4 +262,28 @@ public sealed class UserAccountService(UserManager<AppUser> userManager, IFileSt
 
         return (true, null);
     }
+
+    public async Task<(bool Success, string? Error)> DeleteUserAsync(int userId, CancellationToken cancellationToken = default)
+    {
+        var user = await userManager.FindByIdAsync(userId.ToString());
+
+        if (user is null)
+        {
+            return (false, Messages.NotFound);
+        }
+
+        var result = await userManager.DeleteAsync(user);
+
+        if (!result.Succeeded)
+        {
+            return (false, string.Join("; ", result.Errors.Select(e => e.Description)));
+        }
+
+        if (!string.IsNullOrWhiteSpace(user.PicturePath))
+        {
+            fileStorage.Delete(user.PicturePath);
+        }
+
+        return (true, null);
+    }
 }

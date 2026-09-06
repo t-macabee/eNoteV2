@@ -304,6 +304,91 @@ public sealed class UserProvisioningServiceTests
         Assert.False(await service.IsStoreManagerAsync(999));
     }
 
+    [Fact]
+    public async Task SetUserActiveAsync_PassesThroughToAccountService()
+    {
+        await using var context = TestDbContextFactory.CreateContext(Now);
+        var account = new RecordingUserAccountService();
+        var service = CreateService(context, account);
+
+        await service.SetUserActiveAsync(99, true);
+        Assert.Equal((99, true), account.SetActiveCall);
+
+        await service.SetUserActiveAsync(99, false);
+        Assert.Equal((99, false), account.SetActiveCall);
+    }
+
+    [Fact]
+    public async Task SetUserActiveAsync_RejectsSelfDeactivation()
+    {
+        await using var context = TestDbContextFactory.CreateContext(Now);
+        var account = new RecordingUserAccountService();
+        var currentUser = new StubCurrentActor(userId: 42);
+        var service = CreateService(context, account, currentUser);
+
+        var (success, error) = await service.SetUserActiveAsync(42, false);
+
+        Assert.False(success);
+        Assert.Equal("Cannot deactivate your own account.", error);
+        Assert.Null(account.SetActiveCall);
+    }
+
+    [Fact]
+    public async Task DeleteUserAsync_SucceedsWithNoDependents()
+    {
+        await using var context = TestDbContextFactory.CreateContext(Now);
+        var student = new Student(appUserId: 15, enrollmentDate: Now);
+        context.Set<Student>().Add(student);
+        await context.SaveChangesAsync();
+
+        var account = new RecordingUserAccountService();
+        var service = CreateService(context, account);
+
+        var (success, error) = await service.DeleteUserAsync(15);
+
+        Assert.True(success);
+        Assert.Null(error);
+        Assert.False(await context.Set<Student>().AnyAsync(s => s.AppUserId == 15));
+    }
+
+    [Fact]
+    public async Task DeleteUserAsync_FailsWithDependents()
+    {
+        await using var context = TestDbContextFactory.CreateContext(Now);
+        var student = new Student(appUserId: 15, enrollmentDate: Now);
+        context.Set<Student>().Add(student);
+        await context.SaveChangesAsync();
+        
+        var course = new eNote.Domain.Entities.Academic.Course("Math", "Desc", 10, null, null, 1);
+        context.Set<eNote.Domain.Entities.Academic.Course>().Add(course);
+        await context.SaveChangesAsync();
+
+        context.Set<eNote.Domain.Entities.Academic.Enrollment>().Add(new eNote.Domain.Entities.Academic.Enrollment(student.Id, course.Id, eNote.Domain.Enums.EnrollmentStatus.Active));
+        await context.SaveChangesAsync();
+
+        var account = new RecordingUserAccountService();
+        var service = CreateService(context, account);
+
+        var (success, error) = await service.DeleteUserAsync(15);
+
+        Assert.False(success);
+        Assert.Equal(Messages.UserDeleteBlocked, error);
+        Assert.True(await context.Set<Student>().AnyAsync(s => s.AppUserId == 15));
+    }
+
+    [Fact]
+    public async Task DeleteUserAsync_RejectsSelfDelete()
+    {
+        await using var context = TestDbContextFactory.CreateContext(Now);
+        var currentUser = new StubCurrentActor(userId: 42);
+        var service = CreateService(context, new RecordingUserAccountService(), currentUser);
+
+        var (success, error) = await service.DeleteUserAsync(42);
+
+        Assert.False(success);
+        Assert.Equal("Cannot delete your own account.", error);
+    }
+
     private static UserProvisioningService CreateService(
         ENoteContext context,
         IUserAccountService account,
@@ -350,5 +435,8 @@ public sealed class UserProvisioningServiceTests
             SetActiveCall = (userId, isActive);
             return Task.FromResult(SetActiveResult);
         }
+
+        public Task<(bool Success, string? Error)> DeleteUserAsync(int userId, CancellationToken cancellationToken = default) =>
+            Task.FromResult((true, (string?)null));
     }
 }

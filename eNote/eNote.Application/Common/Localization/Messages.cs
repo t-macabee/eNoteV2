@@ -16,8 +16,8 @@ public static class Messages
     public const string TokenRevoked = "Token je opozvan.";
     public const string InvalidUserClaim = "Autentificirani korisnik nema važeći identifikator.";
     public const string RoleMisconfigured = "Korisnički račun nije ispravno konfigurisan (uloge). Kontaktirajte administratora.";
-
     public const string UserSingleRoleRequired = "Korisnik mora imati tačno jednu ulogu.";
+    public const string UserDeleteBlocked = "Korisnik ima evidentiranu historiju i ne može biti obrisan. Deaktivirajte ga umjesto toga.";
     public const string UnknownRole = "Nepoznata uloga.";
     public const string StoreNotFound = "Radnja nije pronađena.";
     public const string MusicStoreRequiredForEmployee = "Prodavnica je obavezna za uposlenika radnje.";

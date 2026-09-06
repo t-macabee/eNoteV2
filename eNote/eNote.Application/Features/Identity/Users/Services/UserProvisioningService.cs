@@ -208,15 +208,73 @@ public sealed class UserProvisioningService(
     public Task<(bool Success, string? Error)> DeactivateUserAsync(int userId, CancellationToken cancellationToken = default) =>
         accountService.SetActiveAsync(userId, false, cancellationToken);
 
+    public Task<(bool Success, string? Error)> SetUserActiveAsync(int userId, bool isActive, CancellationToken cancellationToken = default)
+    {
+        if (!isActive && currentUserContext != null && currentUserContext.UserId == userId)
+        {
+            return Task.FromResult<(bool, string?)>((false, "Cannot deactivate your own account."));
+        }
+        return accountService.SetActiveAsync(userId, isActive, cancellationToken);
+    }
+
     private async Task<int?> ResolveDefaultStoreIdAsync(string role, CancellationToken cancellationToken)
     {
         if (role != AppRoles.StoreEmployee)
         {
             return null;
         }
-
         return await context.Set<MusicStore>()
             .Select(x => (int?)x.Id).FirstOrDefaultAsync(cancellationToken);
+    }
+
+    public async Task<(bool Success, string? Error)> DeleteUserAsync(int userId, CancellationToken cancellationToken = default)
+    {
+        if (currentUserContext != null && currentUserContext.UserId == userId)
+        {
+            return (false, "Cannot delete your own account.");
+        }
+
+        var student = await context.Set<Student>().FirstOrDefaultAsync(s => s.AppUserId == userId, cancellationToken);
+        if (student != null)
+        {
+            bool hasDependents = await context.Set<eNote.Domain.Entities.Academic.Enrollment>().AnyAsync(e => e.StudentId == student.Id, cancellationToken) ||
+                                 await context.Set<eNote.Domain.Entities.Academic.Attendance>().AnyAsync(a => a.StudentId == student.Id, cancellationToken) ||
+                                 await context.Set<eNote.Domain.Entities.Assignments.AssignmentSubmission>().AnyAsync(s => s.StudentId == student.Id, cancellationToken) ||
+                                 await context.Set<eNote.Domain.Entities.Rentals.InstrumentRental>().AnyAsync(r => r.StudentProfileId == student.Id, cancellationToken);
+            if (hasDependents) return (false, Messages.UserDeleteBlocked);
+            
+            context.Set<Student>().Remove(student);
+        }
+
+        var instructor = await context.Set<Instructor>().FirstOrDefaultAsync(i => i.AppUserId == userId, cancellationToken);
+        if (instructor != null)
+        {
+            bool hasDependents = await context.Set<eNote.Domain.Entities.Academic.Course>().AnyAsync(c => c.InstructorId == instructor.Id, cancellationToken) ||
+                                 await context.Set<eNote.Domain.Entities.Communication.Event>().AnyAsync(e => e.InstructorId == instructor.Id, cancellationToken);
+            if (hasDependents) return (false, Messages.UserDeleteBlocked);
+
+            context.Set<Instructor>().Remove(instructor);
+        }
+
+        var storeEmployee = await context.Set<MusicStoreEmployee>().FirstOrDefaultAsync(e => e.AppUserId == userId, cancellationToken);
+        if (storeEmployee != null)
+        {
+            context.Set<MusicStoreEmployee>().Remove(storeEmployee);
+        }
+
+        using var transaction = await context.BeginTransactionAsync(cancellationToken);
+        
+        await context.SaveChangesAsync(cancellationToken);
+        
+        var (success, error) = await accountService.DeleteUserAsync(userId, cancellationToken);
+        if (!success)
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            return (false, error);
+        }
+
+        await transaction.CommitAsync(cancellationToken);
+        return (true, null);
     }
 
     private async Task EnsureRoleProfileAsync(

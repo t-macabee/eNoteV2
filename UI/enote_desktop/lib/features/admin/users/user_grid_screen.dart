@@ -131,7 +131,33 @@ class _UserGridScreenState extends State<UserGridScreen> {
     }
   }
 
-  Future<bool> _deactivateUser(
+  Future<bool> _setUserStatus(
+    BuildContext context,
+    _UserListItem item,
+    bool isActive,
+  ) async {
+    try {
+      final apiClient = context.read<ApiClient>();
+      final response = await apiClient.put(
+        'admin/users/${item.appUserId}/status',
+        body: {'isActive': isActive},
+      );
+      if (response.statusCode >= 400) {
+        throw ApiException(
+          ApiErrorMapper.mapError(response.statusCode, response.body),
+        );
+      }
+      _gridKey.currentState?.refresh();
+      return true;
+    } catch (e) {
+      if (context.mounted) {
+        ErrorBanner.show(context, message: userMessage(e));
+      }
+      return false;
+    }
+  }
+
+  Future<bool> _deleteUser(
     BuildContext context,
     _UserListItem item,
   ) async {
@@ -161,7 +187,8 @@ class _UserGridScreenState extends State<UserGridScreen> {
       builder: (dialogContext) => _UserDetailsDialog(
         item: item,
         onRenewMembership: () => _renewMembership(context, item),
-        onDeactivate: () => _deactivateUser(context, item),
+        onStatusChange: (isActive) => _setUserStatus(context, item, isActive),
+        onDelete: () => _deleteUser(context, item),
       ),
     );
   }
@@ -244,17 +271,15 @@ class _UserGridScreenState extends State<UserGridScreen> {
             ),
             const SizedBox(width: 12),
             SizedBox(
-              width: 160,
-              child: DropdownButtonFormField<bool>(
-                isExpanded: true,
-                initialValue: _showActive,
-                decoration: const InputDecoration(labelText: 'Aktivan'),
-                items: const [
-                  DropdownMenuItem(value: true, child: Text('Da')),
-                  DropdownMenuItem(value: false, child: Text('Ne')),
+              height: 48,
+              child: SegmentedButton<bool>(
+                segments: const [
+                  ButtonSegment(value: true, label: Text('Aktivni')),
+                  ButtonSegment(value: false, label: Text('Neaktivni')),
                 ],
-                onChanged: (showActive) {
-                  _showActive = showActive ?? true;
+                selected: {_showActive},
+                onSelectionChanged: (newSelection) {
+                  _showActive = newSelection.first;
                   _applyFilters();
                 },
               ),
@@ -443,12 +468,14 @@ class _UserGridScreenState extends State<UserGridScreen> {
 class _UserDetailsDialog extends StatefulWidget {
   final _UserListItem item;
   final Future<DateTime?> Function() onRenewMembership;
-  final Future<bool> Function() onDeactivate;
+  final Future<bool> Function(bool) onStatusChange;
+  final Future<bool> Function() onDelete;
 
   const _UserDetailsDialog({
     required this.item,
     required this.onRenewMembership,
-    required this.onDeactivate,
+    required this.onStatusChange,
+    required this.onDelete,
   });
 
   @override
@@ -458,76 +485,119 @@ class _UserDetailsDialog extends StatefulWidget {
 class _UserDetailsDialogState extends State<_UserDetailsDialog> {
   DateTime? _membershipPaidUntil;
   UserProfile? _profile;
+  String? _email;
   bool _isLoadingProfile = true;
-  bool _isDeactivating = false;
+  bool _isStatusChanging = false;
 
-  Future<void> _handleDeactivate() async {
+  Future<void> _handleStatusChange() async {
+    final nextStatus = !_isActive;
     final confirmed = await confirmDialog(
       context: context,
-      title: 'Potvrdite deaktivaciju',
-      message: 'Da li ste sigurni da želite da deaktivirate ovog korisnika?',
+      title: nextStatus ? 'Potvrdite aktivaciju' : 'Potvrdite deaktivaciju',
+      message: nextStatus ? 'Da li ste sigurni da želite da aktivirate ovog korisnika?' : 'Da li ste sigurni da želite da deaktivirate ovog korisnika?',
     );
     if (confirmed != true) return;
     if (!mounted) return;
 
-    setState(() => _isDeactivating = true);
+    setState(() => _isStatusChanging = true);
     try {
-      final success = await widget.onDeactivate();
+      final success = await widget.onStatusChange(nextStatus);
+      if (success && mounted) {
+        setState(() {
+          // Status promjena će biti refletovana iz roditeljskog widgeta
+          // ali možemo optimistično ažurirati
+        });
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isStatusChanging = false);
+      }
+    }
+  }
+
+  bool _isDeleting = false;
+
+  Future<void> _handleDelete() async {
+    final confirmed = await confirmDialog(
+      context: context,
+      title: 'Trajno brisanje',
+      message: 'Da li ste sigurni da želite trajno obrisati ovog korisnika? Ovo se razlikuje od deaktivacije i ne može se poništiti.',
+    );
+    if (confirmed != true) return;
+    if (!mounted) return;
+
+    setState(() => _isDeleting = true);
+    try {
+      final success = await widget.onDelete();
       if (success && mounted) {
         Navigator.of(context).pop();
       }
     } finally {
       if (mounted) {
-        setState(() => _isDeactivating = false);
+        setState(() => _isDeleting = false);
       }
     }
   }
 
-  /// Sits directly under the role [Chip] in the header — a compact
-  /// deactivate action while the account is active, or a status label once
-  /// it isn't (no point offering to deactivate an already-deactivated user).
   Widget _buildDeactivateControl() {
-    if (!_isActive) {
-      return const Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.block, size: 14, color: AppTheme.error),
-          SizedBox(width: 4),
-          Text(
-            'Deaktiviran',
-            style: TextStyle(
-              color: AppTheme.error,
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SizedBox(
+          height: 28,
+          child: OutlinedButton.icon(
+            onPressed:
+                _isStatusChanging || _isLoadingProfile || _isDeleting ? null : _handleStatusChange,
+            icon: _isStatusChanging
+                ? SizedBox(
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: _isActive ? AppTheme.error : AppTheme.success,
+                    ),
+                  )
+                : Icon(
+                    _isActive ? Icons.person_off_outlined : Icons.person_add_alt,
+                    size: 14,
+                  ),
+            label: Text(
+              _isActive ? 'Deaktiviraj' : 'Aktiviraj',
+              style: const TextStyle(fontSize: 12),
+            ),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: _isActive ? AppTheme.error : AppTheme.success,
+              side: BorderSide(
+                color: _isActive ? AppTheme.error : AppTheme.success,
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              visualDensity: VisualDensity.compact,
             ),
           ),
-        ],
-      );
-    }
-
-    return SizedBox(
-      height: 28,
-      child: OutlinedButton.icon(
-        onPressed:
-            _isDeactivating || _isLoadingProfile ? null : _handleDeactivate,
-        icon: _isDeactivating
-            ? const SizedBox(
-                width: 14,
-                height: 14,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: AppTheme.error,
-                ),
-              )
-            : const Icon(Icons.person_off_outlined, size: 14),
-        label: const Text('Deaktiviraj', style: TextStyle(fontSize: 12)),
-        style: OutlinedButton.styleFrom(
-          foregroundColor: AppTheme.error,
-          side: const BorderSide(color: AppTheme.error),
-          padding: const EdgeInsets.symmetric(horizontal: 10),
-          visualDensity: VisualDensity.compact,
         ),
-      ),
+        const SizedBox(width: 8),
+        SizedBox(
+          height: 28,
+          child: IconButton(
+            onPressed: _isDeleting || _isLoadingProfile || _isStatusChanging ? null : _handleDelete,
+            icon: _isDeleting
+                ? const SizedBox(
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.delete_outline, size: 16),
+            color: AppTheme.error,
+            tooltip: 'Trajno obriši',
+            padding: EdgeInsets.zero,
+            visualDensity: VisualDensity.compact,
+            style: IconButton.styleFrom(
+              foregroundColor: AppTheme.error,
+              hoverColor: AppTheme.error.withValues(alpha: 0.1),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -549,6 +619,7 @@ class _UserDetailsDialogState extends State<_UserDetailsDialog> {
         if (mounted) {
           setState(() {
             _profile = profileResponse.profile;
+            _email = profileResponse.email;
             if (_profile?.membershipPaidUntil != null) {
               _membershipPaidUntil = _profile!.membershipPaidUntil;
             }
@@ -573,12 +644,6 @@ class _UserDetailsDialogState extends State<_UserDetailsDialog> {
     }
   }
 
-  /// `widget.item.isActive` (populated for every role, from the list
-  /// endpoints) is the reliable source. `admin/users/{id}` — the per-user
-  /// profile fetch below — is NOT a fallback for this: it 404s outright once
-  /// a user is deactivated (`UserProfileService.GetUserAsync` returns null
-  /// for inactive users) and never includes `isActive` in its payload even
-  /// when it does resolve, so `_profile?.isActive` is always null.
   bool get _isActive => widget.item.isActive ?? true;
 
   @override
@@ -674,11 +739,11 @@ class _UserDetailsDialogState extends State<_UserDetailsDialog> {
                 label: 'Ime i prezime',
                 value: item.displayName,
               ),
-              if (_profile?.email != null && _profile!.email!.isNotEmpty)
+              if (_email != null && _email!.isNotEmpty)
                 _buildInfoRow(
                   icon: Icons.email_outlined,
                   label: 'Email',
-                  value: _profile!.email!,
+                  value: _email!,
                 ),
               if (item.role == UserRole.storeEmployee) ...[
                 if (item.storeName != null && item.storeName!.isNotEmpty)

@@ -1,13 +1,22 @@
 import '../../formatting/formatters.dart';
 class UserProfileResponse {
   final String role;
+  final String username;
+  final String? email;
   final UserProfile profile;
 
-  UserProfileResponse({required this.role, required this.profile});
+  UserProfileResponse({
+    required this.role,
+    required this.username,
+    this.email,
+    required this.profile,
+  });
 
   factory UserProfileResponse.fromJson(Map<String, dynamic> json) {
     return UserProfileResponse(
       role: json['role'] as String? ?? '',
+      username: json['username'] as String? ?? '',
+      email: json['email'] as String?,
       profile: UserProfile.fromJson(json['profile'] as Map<String, dynamic>),
     );
   }

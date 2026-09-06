@@ -44,6 +44,7 @@ public sealed class UserIdentityService(UserManager<AppUser> userManager) : IUse
     {
         Id = user.Id,
         Username = user.UserName!,
+        Email = user.Email,
         FirstName = user.FirstName,
         LastName = user.LastName,
         DateOfBirth = user.DateOfBirth,

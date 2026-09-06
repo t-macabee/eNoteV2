@@ -9,13 +9,13 @@ public sealed class UserProfileService(
     IUserProfileLookup lookup,
     ICurrentUserContext currentUserService)
 {
-    public Task<UserProfileResponse?> GetCurrentUserAsync(CancellationToken cancellationToken = default) => GetUserAsync(currentUserService.UserId, cancellationToken);
+    public Task<UserProfileResponse?> GetCurrentUserAsync(CancellationToken cancellationToken = default) => GetUserAsync(currentUserService.UserId, false, cancellationToken);
 
-    public async Task<UserProfileResponse?> GetUserAsync(int userId, CancellationToken cancellationToken = default)
+    public async Task<UserProfileResponse?> GetUserAsync(int userId, bool includeInactive = false, CancellationToken cancellationToken = default)
     {
         var user = await identity.GetUserAsync(userId, cancellationToken);
 
-        if (user == null || !user.IsActive)
+        if (user == null || (!user.IsActive && !includeInactive))
         {
             return null;
         }
@@ -38,7 +38,7 @@ public sealed class UserProfileService(
             _ => throw new BusinessException(Messages.UnknownRole)
         };
 
-        return new UserProfileResponse(role, profile);
+        return new UserProfileResponse(role, user.Username, user.Email, profile);
     }
 
     private async Task<StudentProfile> BuildStudentProfile(int userId, UserIdentityDto user)

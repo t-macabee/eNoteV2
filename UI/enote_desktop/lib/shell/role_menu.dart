@@ -29,6 +29,7 @@ class RoleMenu extends StatelessWidget {
   final List<UserRole> currentRoles;
   final RoleMenuEntry? selected;
   final ValueChanged<RoleMenuEntry> onSelect;
+  final VoidCallback? onOpenProfile;
   final VoidCallback? onLogout;
   final VoidCallback? onNotificationsTap;
 
@@ -38,6 +39,7 @@ class RoleMenu extends StatelessWidget {
     required this.currentRoles,
     required this.onSelect,
     this.selected,
+    this.onOpenProfile,
     this.onLogout,
     this.onNotificationsTap,
   });
@@ -176,11 +178,38 @@ class RoleMenu extends StatelessWidget {
                       controller: notificationController,
                       onTap: onNotificationsTap!,
                     ),
-                  if (onLogout != null)
-                    IconButton(
-                      icon: const Icon(Icons.logout, size: 18),
-                      tooltip: 'Odjava',
-                      onPressed: onLogout,
+                  if (onLogout != null || onOpenProfile != null)
+                    PopupMenuButton<int>(
+                      icon: const Icon(Icons.settings, size: 18),
+                      tooltip: 'Postavke',
+                      itemBuilder: (context) => [
+                        if (onOpenProfile != null)
+                          const PopupMenuItem(
+                            value: 1,
+                            child: Row(
+                              children: [
+                                Icon(Icons.person_outline, size: 18),
+                                SizedBox(width: 8),
+                                Text('Profil'),
+                              ],
+                            ),
+                          ),
+                        if (onLogout != null)
+                          const PopupMenuItem(
+                            value: 2,
+                            child: Row(
+                              children: [
+                                Icon(Icons.logout, size: 18),
+                                SizedBox(width: 8),
+                                Text('Odjava'),
+                              ],
+                            ),
+                          ),
+                      ],
+                      onSelected: (value) {
+                        if (value == 1) onOpenProfile?.call();
+                        if (value == 2) onLogout?.call();
+                      },
                     ),
                 ],
               ),

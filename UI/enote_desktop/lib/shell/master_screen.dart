@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
+import '../features/profile/profile_dialog.dart' as enote_desktop_profile;
 import '../features/admin/course/admin_course_list_screen.dart';
 import '../features/admin/event/event_list_screen.dart';
 import '../features/admin/music_store/music_store_list_screen.dart';
@@ -228,6 +229,13 @@ class _MasterScreenState extends State<MasterScreen> {
     );
   }
 
+  void _openProfile() {
+    showDialog<void>(
+      context: context,
+      builder: (context) => const enote_desktop_profile.ProfileDialog(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final roles = _currentRoles();
@@ -240,6 +248,7 @@ class _MasterScreenState extends State<MasterScreen> {
             currentRoles: roles,
             selected: _selectedEntry,
             onSelect: _onEntrySelected,
+            onOpenProfile: _openProfile,
             onLogout: _logout,
             onNotificationsTap: _openNotifications,
           ),
