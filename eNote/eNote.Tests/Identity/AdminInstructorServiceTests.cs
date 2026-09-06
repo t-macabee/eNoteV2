@@ -52,6 +52,31 @@ public sealed class AdminInstructorServiceTests
     }
 
     [Fact]
+    public async Task GetPagedAsync_FiltersByIsActive_ReflectsIdentityUserActiveState()
+    {
+        await using var context = TestDbContextFactory.CreateContext(Now);
+        context.Set<Instructor>().AddRange(
+            new Instructor(1),
+            new Instructor(2));
+        await context.SaveChangesAsync();
+
+        var identity = new StubUserIdentityService(new Dictionary<int, UserIdentityDto>
+        {
+            [1] = new() { Id = 1, Username = "active_inst", FirstName = "Active", LastName = "Instructor", IsActive = true },
+            [2] = new() { Id = 2, Username = "deactivated_inst", FirstName = "Inactive", LastName = "Instructor", IsActive = false }
+        });
+        var service = new AdminInstructorService(context, identity);
+
+        var activeResult = await service.GetPagedAsync(new InstructorSearchObject { IsActive = true });
+        Assert.DoesNotContain(activeResult.Items, x => x.AppUserId == 2);
+        Assert.Contains(activeResult.Items, x => x.AppUserId == 1);
+
+        var inactiveResult = await service.GetPagedAsync(new InstructorSearchObject { IsActive = false });
+        Assert.Contains(inactiveResult.Items, x => x.AppUserId == 2);
+        Assert.DoesNotContain(inactiveResult.Items, x => x.AppUserId == 1);
+    }
+
+    [Fact]
     public async Task GetByIdAsync_Throws_WhenInstructorMissing()
     {
         await using var context = TestDbContextFactory.CreateContext(Now);

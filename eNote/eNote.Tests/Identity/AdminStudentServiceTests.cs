@@ -55,6 +55,32 @@ public sealed class AdminStudentServiceTests
     }
 
     [Fact]
+    public async Task GetPagedAsync_FiltersByIsActive_ReflectsIdentityUserActiveState()
+    {
+        await using var context = TestDbContextFactory.CreateContext(Now);
+        context.Set<Student>().AddRange(
+            new Student(1, Now),
+            new Student(2, Now));
+        await context.SaveChangesAsync();
+
+        var identity = new StubUserIdentityService(new Dictionary<int, UserIdentityDto>
+        {
+            [1] = new() { Id = 1, Username = "active_stud", FirstName = "Active", LastName = "Student", IsActive = true },
+            [2] = new() { Id = 2, Username = "deactivated_stud", FirstName = "Inactive", LastName = "Student", IsActive = false }
+        });
+        var instructorAccess = new InstructorAccessService(context, new StubUserProfileLookup(instructor: new Instructor(100)));
+        var service = new AdminStudentService(context, identity, instructorAccess);
+
+        var activeResult = await service.GetPagedAsync(new StudentSearchObject { IsActive = true });
+        Assert.DoesNotContain(activeResult.Items, x => x.AppUserId == 2);
+        Assert.Contains(activeResult.Items, x => x.AppUserId == 1);
+
+        var inactiveResult = await service.GetPagedAsync(new StudentSearchObject { IsActive = false });
+        Assert.Contains(inactiveResult.Items, x => x.AppUserId == 2);
+        Assert.DoesNotContain(inactiveResult.Items, x => x.AppUserId == 1);
+    }
+
+    [Fact]
     public async Task GetByIdAsync_Throws_WhenStudentMissing()
     {
         await using var context = TestDbContextFactory.CreateContext(Now);

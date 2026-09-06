@@ -67,11 +67,6 @@ public sealed class ShopEmployeeService(
             query = query.Where(x => x.MusicStoreId == search.MusicStoreId.Value);
         }
 
-        if (search.IsActive.HasValue)
-        {
-            query = query.Where(x => x.IsActive == search.IsActive.Value);
-        }
-
         List<MusicStoreEmployee> employees = await query.ToListAsync(cancellationToken);
 
         var users = await identityService.GetUsersBulkAsync(
@@ -80,7 +75,8 @@ public sealed class ShopEmployeeService(
 
         List<ShopEmployeeDto> filtered = [.. employees
             .Select(x => Map(x, users.GetValueOrDefault(x.AppUserId)))
-            .Where(x => MatchesName(x, search.Name))];
+            .Where(x => MatchesName(x, search.Name))
+            .Where(x => !search.IsActive.HasValue || x.IsActive == search.IsActive.Value)];
 
         (var page, var pageSize) = PagingLimits.Normalize(search.Page, search.PageSize);
 

@@ -254,6 +254,37 @@ public sealed class ShopEmployeeServiceTests
     }
 
     [Fact]
+    public async Task GetPagedAsync_FiltersByIsActive_ReflectsIdentityUserActiveState()
+    {
+        await using var context = TestDbContextFactory.CreateContext(Now);
+
+        var store = new MusicStore("Store", "09-17");
+        context.Set<MusicStore>().Add(store);
+        await context.SaveChangesAsync();
+
+        var activeEmp = new MusicStoreEmployee(50, store.Id, false);
+        var deactivatedEmp = new MusicStoreEmployee(51, store.Id, false);
+        context.Set<MusicStoreEmployee>().AddRange(activeEmp, deactivatedEmp);
+        await context.SaveChangesAsync();
+
+        var identity = new StubUserIdentityService(new Dictionary<int, UserIdentityDto>
+        {
+            [50] = new() { Id = 50, Username = "active_user", FirstName = "Active", LastName = "User", IsActive = true },
+            [51] = new() { Id = 51, Username = "deactivated_user", FirstName = "Inactive", LastName = "User", IsActive = false }
+        });
+
+        var service = new ShopEmployeeService(context, identity, new StubCurrentActor());
+
+        var activeResult = await service.GetPagedAsync(new ShopEmployeeSearchObject { IsActive = true });
+        Assert.DoesNotContain(activeResult.Items, x => x.AppUserId == 51);
+        Assert.Contains(activeResult.Items, x => x.AppUserId == 50);
+
+        var inactiveResult = await service.GetPagedAsync(new ShopEmployeeSearchObject { IsActive = false });
+        Assert.Contains(inactiveResult.Items, x => x.AppUserId == 51);
+        Assert.DoesNotContain(inactiveResult.Items, x => x.AppUserId == 50);
+    }
+
+    [Fact]
     public async Task AdminEmployeeController_GetPaged_And_GetById_ReturnOk()
     {
         await using var context = TestDbContextFactory.CreateContext(Now);
