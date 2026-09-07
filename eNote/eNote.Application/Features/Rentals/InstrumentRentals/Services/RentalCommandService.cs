@@ -70,6 +70,9 @@ public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, 
 
     public Task<InstrumentRentalDto> ReturnEarlyAsync(int rentalId, RentalStatusRequest? request, CancellationToken cancellationToken = default) => ExecuteStoreTransitionAsync(rentalId, RentalTrigger.ReturnEarly, request, cancellationToken);
 
+    public Task<InstrumentRentalDto> CancelForStoreAsync(int rentalId, RentalStatusRequest? request, CancellationToken cancellationToken = default) =>
+        ExecuteStoreTransitionAsync(rentalId, RentalTrigger.Cancel, request, cancellationToken);
+
     public Task<InstrumentRentalDto> CancelAsync(int rentalId, RentalStatusRequest? request, CancellationToken cancellationToken = default) =>
         context.ExecuteInTransactionAsync(async () =>
         {

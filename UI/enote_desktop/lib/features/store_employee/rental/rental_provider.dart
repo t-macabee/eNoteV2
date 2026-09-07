@@ -22,6 +22,9 @@ class RentalProvider extends BaseProvider<InstrumentRentalDto> {
   Future<InstrumentRentalDto> returnEarly(int id, {String? note}) =>
       _transition(id, 'return-early', note);
 
+  Future<InstrumentRentalDto> cancel(int id, {String? note}) =>
+      _transition(id, 'cancel', note);
+
   Future<RentalPaymentDto> refund(int rentalId, {int? amountCents}) async {
     final response = await apiClient.post(
       '$endpoint/$rentalId/payments/refund',

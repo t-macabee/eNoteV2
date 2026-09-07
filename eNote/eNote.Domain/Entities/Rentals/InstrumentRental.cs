@@ -299,7 +299,7 @@ public sealed class InstrumentRental : AuditableEntity, ITenantScoped
         new(
             From: InstrumentRentalStatus.Approved,
             Trigger: RentalTrigger.Cancel,
-            Actors: [RentalActor.Student],
+            Actors: [RentalActor.Student, RentalActor.StoreEmployee],
             Guard: (rental, _) => GuardNotPickedUp(rental),
             Apply: (rental, context, now) =>
             {

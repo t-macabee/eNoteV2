@@ -96,7 +96,8 @@ class _RentalDetailScreenState extends State<RentalDetailScreen> {
         RentalTrigger.pickup => await p.pickup(_rental!.id, note: note),
         RentalTrigger.complete => await p.complete(_rental!.id, note: note),
         RentalTrigger.returnEarly => await p.returnEarly(_rental!.id, note: note),
-        _ => throw StateError('Student-only trigger on StoreEmployee screen'),
+        RentalTrigger.cancel => await p.cancel(_rental!.id, note: note),
+        _ => throw StateError('Unhandled trigger on StoreEmployee screen'),
       };
       if (!mounted) return;
       setState(() => _rental = updated);

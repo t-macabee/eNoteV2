@@ -86,7 +86,7 @@ public sealed class RentalNotificationDispatcher(
             RentalTrigger.Complete =>
                 ("Iznajmljivanje završeno", $"Iznajmljivanje instrumenta {rental.InstrumentModel} je uspješno završeno."),
             RentalTrigger.Cancel =>
-                ("Zahtjev otkazan", $"Vaš zahtjev za instrument {rental.InstrumentModel} je otkazan."),
+                ("Zahtjev otkazan", string.IsNullOrWhiteSpace(rental.Note) ? $"Vaš zahtjev za instrument {rental.InstrumentModel} je otkazan." : $"Vaš zahtjev za instrument {rental.InstrumentModel} je otkazan. Razlog: {rental.Note}"),
             RentalTrigger.ReturnEarly =>
                 ("Instrument vraćen prije roka", $"Instrument {rental.InstrumentModel} je vraćen prije planiranog roka."),
             _ => ("Status iznajmljivanja promijenjen", $"Status iznajmljivanja za instrument {rental.InstrumentModel} je ažuriran.")

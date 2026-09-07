@@ -90,6 +90,15 @@ public sealed class RentalController(
         return Ok(dto);
     }
 
+    [Authorize(Roles = AppRoles.StoreEmployee)]
+    [HttpPost("~/api/v{version:apiVersion}/shop/rentals/{id:int}/cancel")]
+    [ProducesResponseType(typeof(InstrumentRentalDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<InstrumentRentalDto>> CancelForStore(int id, [FromBody] RentalStatusRequest? request, CancellationToken cancellationToken)
+    {
+        var dto = await commandService.CancelForStoreAsync(id, request, cancellationToken);
+        return Ok(dto);
+    }
+
     // ── Student actions ─────────────────────────────────────────────
 
     [Authorize(Roles = AppRoles.Student)]

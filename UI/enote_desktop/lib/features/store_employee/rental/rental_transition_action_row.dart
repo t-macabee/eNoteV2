@@ -5,9 +5,8 @@ import 'package:enote_core/enote_core.dart';
 /// One button per valid transition off the current [InstrumentRentalStatus],
 /// table-driven off the same (status → trigger) pairs
 /// `InstrumentRental.Transition`'s state machine defines for the
-/// StoreEmployee actor — approve/reject/pickup/complete/return-early.
-/// `cancel` is a student-only trigger, so it has no button here. Reused by
-/// every rental detail screen instead of a bespoke button set per screen.
+/// StoreEmployee actor — approve/reject/pickup/complete/return-early/cancel.
+/// Reused by every rental detail screen instead of a bespoke button set per screen.
 class RentalTransitionActionRow extends StatefulWidget {
   final InstrumentRentalStatus status;
   final Future<void> Function(RentalTrigger trigger, {String? note}) onTransition;
@@ -68,6 +67,14 @@ const _actionsByStatus = <InstrumentRentalStatus, List<_TransitionAction>>{
       icon: Icons.inventory_2_outlined,
       confirmMessage: 'Označiti instrument kao preuzet?',
     ),
+    _TransitionAction(
+      trigger: RentalTrigger.cancel,
+      label: 'Otkaži',
+      icon: Icons.block,
+      color: Colors.red,
+      requiresNote: true,
+      confirmMessage: 'Otkazati ovaj zahtjev za iznajmljivanje?',
+    ),
   ],
   InstrumentRentalStatus.active: [
     _TransitionAction(
@@ -117,46 +124,10 @@ class _RentalTransitionActionRowState extends State<RentalTransitionActionRow> {
   }
 
   Future<String?> _promptForNote(String actionLabel) {
-    final noteController = TextEditingController();
     return showDialog<String>(
       context: context,
       barrierDismissible: false,
-      builder: (context) => StatefulBuilder(builder: (ctx, setLocal) {
-        final isEmpty = noteController.text.trim().isEmpty;
-        return AlertDialog(
-          title: Text(actionLabel),
-          content: TextField(
-            controller: noteController,
-            autofocus: true,
-            maxLines: 3,
-            decoration: InputDecoration(
-              labelText: 'Razlog *',
-              errorText: isEmpty ? 'Razlog je obavezan.' : null,
-              border: const OutlineInputBorder(),
-            ),
-            onChanged: (_) => setLocal(() {}),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                noteController.dispose();
-                Navigator.pop(context);
-              },
-              child: const Text('Otkaži'),
-            ),
-            ElevatedButton(
-              onPressed: isEmpty
-                  ? null
-                  : () {
-                      final text = noteController.text.trim();
-                      noteController.dispose();
-                      Navigator.pop(context, text);
-                    },
-              child: const Text('Potvrdi'),
-            ),
-          ],
-        );
-      }),
+      builder: (context) => _NotePromptDialog(actionLabel: actionLabel),
     );
   }
 
@@ -185,6 +156,61 @@ class _RentalTransitionActionRowState extends State<RentalTransitionActionRow> {
           label: Text(action.label),
         );
       }).toList(),
+    );
+  }
+}
+
+class _NotePromptDialog extends StatefulWidget {
+  final String actionLabel;
+  const _NotePromptDialog({required this.actionLabel});
+
+  @override
+  State<_NotePromptDialog> createState() => _NotePromptDialogState();
+}
+
+class _NotePromptDialogState extends State<_NotePromptDialog> {
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isEmpty = _controller.text.trim().isEmpty;
+    return AlertDialog(
+      title: Text(widget.actionLabel),
+      content: TextField(
+        controller: _controller,
+        autofocus: true,
+        maxLines: 3,
+        decoration: InputDecoration(
+          labelText: 'Razlog *',
+          errorText: isEmpty ? 'Razlog je obavezan.' : null,
+          border: const OutlineInputBorder(),
+        ),
+        onChanged: (_) => setState(() {}),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Otkaži'),
+        ),
+        ElevatedButton(
+          onPressed: isEmpty
+              ? null
+              : () => Navigator.of(context).pop(_controller.text.trim()),
+          child: const Text('Potvrdi'),
+        ),
+      ],
     );
   }
 }
