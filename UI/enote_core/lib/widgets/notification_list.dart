@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/communication/communication_models.dart';
 import '../notifications/notification_controller.dart';
 import 'error_banner.dart';
-
+import '../formatting/formatters.dart';
 /// Full notification screen, driven by the same [NotificationController]
 /// instance as the shell's `NotificationBadge` — marking a row read here
 /// updates the bell's count immediately, with no separate fetch.
@@ -74,13 +74,8 @@ class _NotificationListViewState extends State<NotificationListView> {
         style: TextStyle(fontWeight: item.isRead ? FontWeight.normal : FontWeight.bold),
       ),
       subtitle: Text(item.body),
-      trailing: Text(_formatTime(item.createdAt)),
+      trailing: Text(formatDayTime(item.createdAt)),
       onTap: item.isRead ? null : () => widget.controller.markRead(item.id),
     );
-  }
-
-  String _formatTime(DateTime dt) {
-    String two(int n) => n.toString().padLeft(2, '0');
-    return '${two(dt.day)}.${two(dt.month)}. ${two(dt.hour)}:${two(dt.minute)}';
   }
 }

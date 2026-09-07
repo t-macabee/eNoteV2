@@ -89,8 +89,6 @@ class _RentalListScreenState extends State<RentalListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final apiClient = context.read<ApiClient>();
-
     return EntityListScreen<InstrumentRentalDto>(
       key: _listKey,
       config: EntityListConfig<InstrumentRentalDto>(

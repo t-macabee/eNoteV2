@@ -18,16 +18,6 @@ class _InstructorStudentListScreenState
     extends State<InstructorStudentListScreen> {
   final _gridKey = GlobalKey<EntityGridScreenState<StudentDto>>();
 
-  static String _formatDisplayName(
-    String? firstName,
-    String? lastName,
-    String? username,
-  ) {
-    final name = '${firstName ?? ''} ${lastName ?? ''}'.trim();
-    if (name.isNotEmpty) return name;
-    return username ?? '-';
-  }
-
   Future<void> _openCreateForm() async {
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
@@ -50,7 +40,7 @@ class _InstructorStudentListScreenState
               : {'name': search, 'page': page, 'pageSize': pageSize},
         ),
         titleOf: (item) =>
-            _formatDisplayName(item.firstName, item.lastName, item.username),
+            formatDisplayName(item.firstName, item.lastName, item.username),
         subtitleOf: (item) => item.username != null ? '@${item.username}' : null,
         placeholderIcon: Icons.school_outlined,
         onAdd: _openCreateForm,

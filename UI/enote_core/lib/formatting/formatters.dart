@@ -17,6 +17,20 @@ String formatDateTime(DateTime date) {
   return '$day.$month.${date.year}. $hour:$minute';
 }
 
+String formatDayTime(DateTime date) {
+  final day = date.day.toString().padLeft(2, '0');
+  final month = date.month.toString().padLeft(2, '0');
+  final hour = date.hour.toString().padLeft(2, '0');
+  final minute = date.minute.toString().padLeft(2, '0');
+  return '$day.$month. $hour:$minute';
+}
+
+String formatDisplayName(String? firstName, String? lastName, String? username) {
+  final name = '${firstName ?? ''} ${lastName ?? ''}'.trim();
+  if (name.isNotEmpty) return name;
+  return username ?? '-';
+}
+
 String truncate(String text, int maxLength) {
   if (text.length <= maxLength) return text;
   return '${text.substring(0, maxLength)}…';

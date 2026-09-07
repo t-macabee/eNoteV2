@@ -62,11 +62,6 @@ class EntityListConfig<T> {
   final bool showSearchBar;
   final Widget? filterBar;
 
-  /// When true, render search + filterBar + Add button in a single row
-  /// (matching EntityGridScreen's toolbar), with Add as an inline
-  /// ElevatedButton.icon instead of a floating action button. Default false
-  /// keeps every existing consumer's stacked-rows + FAB layout unchanged.
-  final bool inlineToolbar;
 
   /// Presentation mode of the list screen. When [EntityListPresentation.embedded],
   /// outer Scaffold/AppBar chrome is omitted and [inlineToolbar] is forced.
@@ -94,7 +89,6 @@ class EntityListConfig<T> {
     this.showDeleteConfirmation = true,
     this.showSearchBar = true,
     this.filterBar,
-    this.inlineToolbar = false,
     this.presentation = EntityListPresentation.page,
     this.listStyle = EntityListStyle.table,
     this.rowIcon,
@@ -175,8 +169,7 @@ class EntityListScreenState<T> extends State<EntityListScreen<T>> {
 
   @override
   Widget build(BuildContext context) {
-    final useInlineToolbar = widget.config.inlineToolbar ||
-        widget.config.presentation == EntityListPresentation.embedded;
+    final useInlineToolbar = widget.config.presentation == EntityListPresentation.embedded;
 
     final content = Column(
       children: [

@@ -16,16 +16,6 @@ class ShopEmployeeListScreen extends StatefulWidget {
 class _ShopEmployeeListScreenState extends State<ShopEmployeeListScreen> {
   final _gridKey = GlobalKey<EntityGridScreenState<ShopEmployeeDto>>();
 
-  static String _formatDisplayName(
-    String? firstName,
-    String? lastName,
-    String? username,
-  ) {
-    final name = '${firstName ?? ''} ${lastName ?? ''}'.trim();
-    if (name.isNotEmpty) return name;
-    return username ?? '-';
-  }
-
   Future<void> _openCreateForm() async {
     await Navigator.of(context).push(
       MaterialPageRoute<void>(
@@ -49,7 +39,7 @@ class _ShopEmployeeListScreenState extends State<ShopEmployeeListScreen> {
               : {'name': search, 'page': page, 'pageSize': pageSize},
         ),
         titleOf: (item) =>
-            _formatDisplayName(item.firstName, item.lastName, item.username),
+            formatDisplayName(item.firstName, item.lastName, item.username),
         subtitleOf: (item) => item.isManager ? 'Voditelj radnje' : 'Uposlenik radnje',
         placeholderIcon: Icons.badge_outlined,
         onAdd: isManager ? _openCreateForm : null,

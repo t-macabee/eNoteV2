@@ -29,7 +29,6 @@ class _Recorder {
 
 EntityListConfig<String> _listConfig(
   _Recorder recorder, {
-  bool inlineToolbar = false,
   EntityListPresentation presentation = EntityListPresentation.page,
 }) {
   return EntityListConfig<String>(
@@ -38,7 +37,6 @@ EntityListConfig<String> _listConfig(
     fetcher: recorder.fetch,
     onAdd: () {},
     addLabel: 'Dodaj',
-    inlineToolbar: inlineToolbar,
     presentation: presentation,
   );
 }
@@ -77,8 +75,10 @@ void main() {
 
       await tester.pumpWidget(
         _wrap(
-          EntityListScreen<String>(
-            config: _listConfig(recorder, inlineToolbar: true),
+          Scaffold(
+            body: EntityListScreen<String>(
+              config: _listConfig(recorder, presentation: EntityListPresentation.embedded),
+            ),
           ),
         ),
       );

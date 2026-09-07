@@ -49,14 +49,6 @@ class EntityGridConfig<T> {
   /// given the remaining row width via [Expanded], not a fixed slot.
   final Widget? filterBar;
 
-  /// Extra content rendered above the grid (e.g. a section label +
-  /// divider), inside the same scrollable area. Useful for a config that
-  /// composites more than one logical section under one fetch.
-  final Widget? aboveGrid;
-
-  /// Extra content rendered below the grid, inside the same scrollable
-  /// area — e.g. a second, statically-rendered section.
-  final Widget? belowGrid;
 
   final double maxCrossAxisExtent;
   final double childAspectRatio;
@@ -97,8 +89,6 @@ class EntityGridConfig<T> {
     this.embedded = false,
     this.trailing,
     this.filterBar,
-    this.aboveGrid,
-    this.belowGrid,
     this.maxCrossAxisExtent = 220,
     this.childAspectRatio = 0.85,
     this.pageSize = 24,
@@ -204,9 +194,7 @@ class EntityGridScreenState<T> extends State<EntityGridScreen<T>> {
         Expanded(
           child: _controller.isLoading
               ? const Center(child: CircularProgressIndicator())
-              : _controller.items.isEmpty &&
-                      widget.config.aboveGrid == null &&
-                      widget.config.belowGrid == null
+              : _controller.items.isEmpty
                   ? Center(
                       child: Text(
                         widget.config.emptyMessage,
@@ -280,13 +268,11 @@ class EntityGridScreenState<T> extends State<EntityGridScreen<T>> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (widget.config.aboveGrid != null) widget.config.aboveGrid!,
           if (groupKeyOf == null) ...[
             _buildGridView(_controller.items),
           ] else ...[
             ..._buildGroupedChildren(groupKeyOf),
           ],
-          if (widget.config.belowGrid != null) widget.config.belowGrid!,
         ],
       ),
     );

@@ -27,7 +27,7 @@ class _UserListItem {
 
   _UserListItem.fromInstructor(InstructorDto i)
       : appUserId = i.appUserId,
-        displayName = _formatDisplayName(i.firstName, i.lastName, i.username),
+        displayName = formatDisplayName(i.firstName, i.lastName, i.username),
         username = i.username,
         firstName = i.firstName,
         lastName = i.lastName,
@@ -40,7 +40,7 @@ class _UserListItem {
 
   _UserListItem.fromStudent(StudentDto s)
       : appUserId = s.appUserId,
-        displayName = _formatDisplayName(s.firstName, s.lastName, s.username),
+        displayName = formatDisplayName(s.firstName, s.lastName, s.username),
         username = s.username,
         firstName = s.firstName,
         lastName = s.lastName,
@@ -53,7 +53,7 @@ class _UserListItem {
 
   _UserListItem.fromEmployee(ShopEmployeeDto e)
       : appUserId = e.appUserId,
-        displayName = _formatDisplayName(e.firstName, e.lastName, e.username),
+        displayName = formatDisplayName(e.firstName, e.lastName, e.username),
         username = e.username,
         firstName = e.firstName,
         lastName = e.lastName,
@@ -63,16 +63,6 @@ class _UserListItem {
         enrollmentDate = null,
         isManager = e.isManager,
         isActive = e.isActive;
-
-  static String _formatDisplayName(
-    String? firstName,
-    String? lastName,
-    String? username,
-  ) {
-    final name = '${firstName ?? ''} ${lastName ?? ''}'.trim();
-    if (name.isNotEmpty) return name;
-    return username ?? '-';
-  }
 }
 
 /// Administrator "Users" tab — card grid of Students + Instructors + StoreEmployees,
