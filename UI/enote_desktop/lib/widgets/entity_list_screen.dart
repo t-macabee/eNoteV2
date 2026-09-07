@@ -62,9 +62,8 @@ class EntityListConfig<T> {
   final bool showSearchBar;
   final Widget? filterBar;
 
-
   /// Presentation mode of the list screen. When [EntityListPresentation.embedded],
-  /// outer Scaffold/AppBar chrome is omitted and [inlineToolbar] is forced.
+  /// outer Scaffold/AppBar chrome is omitted and the inline toolbar is forced.
   final EntityListPresentation presentation;
 
   /// How data rows are rendered. When [EntityListStyle.tiles], items are

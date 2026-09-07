@@ -191,15 +191,17 @@ class _MusicStoreDetailScreenState extends State<MusicStoreDetailScreen> {
                                     : null,
                                 fetcher: (page, pageSize, search) => context
                                     .read<StoreInstrumentProvider>()
-                                    .search({
-                                  'page': page,
-                                  'pageSize': pageSize,
-                                  'includeTotalCount': true,
-                                  'musicStoreId': widget.storeId,
-                                  if (_instrumentTypeId != null)
-                                    'instrumentTypeId': _instrumentTypeId,
-                                  if (search.isNotEmpty) 'search': search,
-                                }),
+                                    .search(pagedQuery(
+                                  page,
+                                  pageSize,
+                                  search,
+                                  searchField: 'search',
+                                  filters: {
+                                    'musicStoreId': widget.storeId,
+                                    if (_instrumentTypeId != null)
+                                      'instrumentTypeId': _instrumentTypeId,
+                                  },
+                                )),
                               ),
                             ),
                           ),
