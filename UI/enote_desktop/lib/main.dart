@@ -20,7 +20,7 @@ import 'features/instructor/student/instructor_student_provider.dart';
 import 'features/admin/music_store/music_store_provider.dart';
 import 'features/admin/music_store/store_instrument_provider.dart';
 import 'features/admin/users/user_provision_service.dart';
-import 'features/store_employee/announcement/announcement_provider.dart';
+import 'features/shared/announcement/store_announcement_provider.dart';
 import 'features/store_employee/employee/shop_employee_provider.dart';
 import 'features/store_employee/instrument/instrument_provider.dart';
 import 'features/store_employee/instrument/shop_instrument_type_provider.dart';

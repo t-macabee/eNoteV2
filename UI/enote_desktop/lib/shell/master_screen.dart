@@ -10,7 +10,8 @@ import '../features/admin/reference_data/reference_data_dialog.dart';
 import '../features/admin/users/user_grid_screen.dart';
 import '../features/instructor/course/course_list_screen.dart';
 import '../features/instructor/student/instructor_student_list_screen.dart';
-import '../features/store_employee/announcement/announcement_list_screen.dart';
+import '../features/shared/announcement/announcement_list_screen.dart';
+import '../features/shared/announcement/store_announcement_provider.dart';
 import '../features/store_employee/employee/shop_employee_list_screen.dart';
 import '../features/store_employee/instrument/instrument_list_screen.dart';
 import '../features/store_employee/rental/rental_list_screen.dart';
@@ -143,7 +144,9 @@ class _MasterScreenState extends State<MasterScreen> {
   }
 
   static Widget _buildAnnouncementList(BuildContext context) {
-    return const AnnouncementListScreen();
+    return AnnouncementListScreen(
+      provider: context.read<StoreAnnouncementProvider>(),
+    );
   }
 
   @override

@@ -4,8 +4,8 @@ import 'package:provider/provider.dart';
 import 'package:enote_core/enote_core.dart';
 import '../../../widgets/entity_form_scaffold.dart';
 import '../../../widgets/entity_list_screen.dart';
-import '../announcement/announcement_list_screen.dart';
-import '../announcement/announcement_provider.dart';
+import '../../shared/announcement/announcement_list_screen.dart';
+import '../../shared/announcement/announcement_provider.dart';
 import '../lecture/lecture_list_screen.dart';
 import '../ranking/ranking_screen.dart';
 import 'course_form_screen.dart';
@@ -95,9 +95,9 @@ class _CourseListScreenState extends State<CourseListScreen> {
                       apiClient: apiClient,
                       courseId: item.id,
                     ),
-                    child: AnnouncementListScreen(
-                      courseId: item.id,
-                      courseName: item.name,
+                    builder: (context, _) => AnnouncementListScreen(
+                      provider: context.read<AnnouncementProvider>(),
+                      title: 'Objave — ${item.name}',
                     ),
                   ),
                 ),

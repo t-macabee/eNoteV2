@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:enote_core/enote_core.dart';
 import '../../../widgets/entity_form_scaffold.dart';
 import '../../../widgets/async_dropdown.dart';
+import '../../../widgets/user_credential_fields.dart';
 import '../music_store/music_store_provider.dart';
 import 'user_provision_service.dart';
 
@@ -22,34 +23,26 @@ class UserProvisionFormScreen extends StatefulWidget {
 }
 
 class _UserProvisionFormScreenState extends State<UserProvisionFormScreen> {
-  final _usernameController = TextEditingController();
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
-  final _firstNameController = TextEditingController();
-  final _lastNameController = TextEditingController();
+  final _credentialController = UserCredentialFieldsController();
 
   UserRole? _role;
   int? _musicStoreId;
 
   @override
   void dispose() {
-    _usernameController.dispose();
-    _emailController.dispose();
-    _passwordController.dispose();
-    _firstNameController.dispose();
-    _lastNameController.dispose();
+    _credentialController.dispose();
     super.dispose();
   }
 
   Future<bool> _save() async {
     final service = context.read<UserProvisionService>();
     final request = UserProvisionRequest(
-      username: _usernameController.text.trim(),
-      email: _emailController.text.trim(),
-      password: _passwordController.text,
+      username: _credentialController.usernameController.text.trim(),
+      email: _credentialController.emailController.text.trim(),
+      password: _credentialController.passwordController.text,
       role: _role!.label,
-      firstName: _firstNameController.text.trim(),
-      lastName: _lastNameController.text.trim(),
+      firstName: _credentialController.firstNameController.text.trim(),
+      lastName: _credentialController.lastNameController.text.trim(),
       musicStoreId: _role == UserRole.storeEmployee ? _musicStoreId : null,
     );
 
@@ -63,25 +56,7 @@ class _UserProvisionFormScreenState extends State<UserProvisionFormScreen> {
       title: 'Kreiraj korisnika',
       presentation: widget.presentation,
       fieldsBuilder: (context) => [
-        TextFormField(
-          controller: _usernameController,
-          decoration: const InputDecoration(labelText: 'Korisničko ime'),
-          validator: Validators.required('Korisničko ime'),
-        ),
-        const SizedBox(height: 16),
-        TextFormField(
-          controller: _emailController,
-          decoration: const InputDecoration(labelText: 'Email'),
-          keyboardType: TextInputType.emailAddress,
-          validator: Validators.email,
-        ),
-        const SizedBox(height: 16),
-        TextFormField(
-          controller: _passwordController,
-          decoration: const InputDecoration(labelText: 'Lozinka'),
-          obscureText: true,
-          validator: Validators.password,
-        ),
+        UserCredentialFields(controller: _credentialController),
         const SizedBox(height: 16),
         DropdownButtonFormField<UserRole>(
           initialValue: _role,
@@ -95,16 +70,6 @@ class _UserProvisionFormScreenState extends State<UserProvisionFormScreen> {
           onChanged: (role) => setState(() => _role = role),
           validator: (value) =>
               value == null ? 'Uloga je obavezna.' : null,
-        ),
-        const SizedBox(height: 16),
-        TextFormField(
-          controller: _firstNameController,
-          decoration: const InputDecoration(labelText: 'Ime'),
-        ),
-        const SizedBox(height: 16),
-        TextFormField(
-          controller: _lastNameController,
-          decoration: const InputDecoration(labelText: 'Prezime'),
         ),
         if (_role == UserRole.storeEmployee) ...[
           const SizedBox(height: 16),
@@ -129,11 +94,7 @@ class _UserProvisionFormScreenState extends State<UserProvisionFormScreen> {
       ],
       onSave: _save,
       onReset: () {
-        _usernameController.clear();
-        _emailController.clear();
-        _passwordController.clear();
-        _firstNameController.clear();
-        _lastNameController.clear();
+        _credentialController.clear();
         setState(() {
           _role = null;
           _musicStoreId = null;

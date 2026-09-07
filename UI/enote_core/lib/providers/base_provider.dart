@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 
 import '../api/api_client.dart';
 import '../api/api_response.dart';
+import '../models/identity/auth_models.dart';
 import '../paging/paged_result.dart';
 
 abstract class BaseProvider<T> with ChangeNotifier {
@@ -15,6 +16,11 @@ abstract class BaseProvider<T> with ChangeNotifier {
     required this.apiClient,
     required this.endpoint,
   });
+
+  Future<int> createDelegatedUser(DelegatedUserCreateRequest request) async {
+    final data = decodeOrThrow(await apiClient.post(endpoint, body: request.toJson()));
+    return data['userId'] as int? ?? 0;
+  }
 
   T fromJson(Map<String, dynamic> json);
 

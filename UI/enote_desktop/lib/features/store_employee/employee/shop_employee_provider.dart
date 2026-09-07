@@ -8,11 +8,4 @@ class ShopEmployeeProvider extends BaseProvider<ShopEmployeeDto> {
   ShopEmployeeDto fromJson(Map<String, dynamic> json) =>
       ShopEmployeeDto.fromJson(json);
 
-  Future<int> createEmployee(DelegatedUserCreateRequest request) async {
-    final data = decodeOrThrow(await apiClient.post(
-      'shop/employees',
-      body: request.toJson(),
-    ));
-    return data['userId'] as int? ?? 0;
-  }
 }

@@ -6,18 +6,15 @@ import 'package:provider/provider.dart';
 import '../../../theme/app_theme.dart';
 import '../../../widgets/entity_form_scaffold.dart';
 import '../../../widgets/image_upload_helper.dart';
-import 'announcement_provider.dart';
 
 class AnnouncementFormScreen extends StatefulWidget {
+  final BaseProvider<AnnouncementDto> provider;
   final AnnouncementDto? existing;
-
-  /// How the wrapped [EntityFormScaffold] is presented — pass
-  /// [EntityFormPresentation.dialog] when opened via
-  /// [EntityFormScaffold.showAsDialog].
   final EntityFormPresentation presentation;
 
   const AnnouncementFormScreen({
     super.key,
+    required this.provider,
     this.existing,
     this.presentation = EntityFormPresentation.page,
   });
@@ -53,9 +50,8 @@ class _AnnouncementFormScreenState extends State<AnnouncementFormScreen> {
 
   Future<String?> _uploadImage(
       Uint8List bytes, String fileName, String contentType) {
-    final provider = context.read<StoreAnnouncementProvider>();
     return uploadImageFor(
-      provider,
+      widget.provider,
       widget.existing!.id,
       bytes,
       fileName,
@@ -73,16 +69,15 @@ class _AnnouncementFormScreenState extends State<AnnouncementFormScreen> {
   }
 
   Future<bool> _save() async {
-    final provider = context.read<StoreAnnouncementProvider>();
     final request = AnnouncementRequest(
       title: _titleController.text.trim(),
       content: _contentController.text.trim(),
     );
 
     if (!_isEditMode) {
-      await provider.insert(request.toJson());
+      await widget.provider.insert(request.toJson());
     } else {
-      await provider.update(widget.existing!.id, request.toJson());
+      await widget.provider.update(widget.existing!.id, request.toJson());
     }
     return true;
   }
