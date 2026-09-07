@@ -4,7 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:enote_core/enote_core.dart';
 import 'package:enote_desktop/widgets/entity_grid_screen.dart';
 import 'package:enote_desktop/widgets/entity_list_screen.dart';
-import 'package:enote_desktop/widgets/entity_toolbar.dart';
+
 
 /// Guards the toolbar and page-size invariants that [EntityListScreen] and
 /// [EntityGridScreen] do *not* share, and which the extraction of

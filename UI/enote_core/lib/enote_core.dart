@@ -32,3 +32,5 @@ export 'widgets/notification_badge.dart';
 export 'widgets/notification_list.dart';
 export 'widgets/info_row.dart';
 export 'formatting/formatters.dart';
+export 'paging/paged_fetch_controller.dart';
+export 'widgets/entity_toolbar.dart';

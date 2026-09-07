@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:enote_core/enote_core.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:enote_desktop/widgets/paged_fetch_controller.dart';
+
 
 /// Records every (page, pageSize, search) triple the controller asks for, and
 /// lets a test hold a response open so overlapping loads can be arranged.

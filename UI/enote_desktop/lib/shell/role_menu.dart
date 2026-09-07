@@ -137,7 +137,7 @@ class RoleMenu extends StatelessWidget {
                     radius: 16,
                     backgroundColor: AppTheme.primary,
                     child: Text(
-                      _initials(username),
+                      _initialsFromEmail(username),
                       style: const TextStyle(
                         color: AppTheme.onPrimary,
                         fontSize: 12,
@@ -219,7 +219,7 @@ class RoleMenu extends StatelessWidget {
     );
   }
 
-  static String _initials(String? username) {
+  static String _initialsFromEmail(String? username) {
     if (username == null || username.isEmpty) return '?';
     final name = username.split('@').first;
     final parts = name.split(RegExp(r'[._\s-]+')).where((p) => p.isNotEmpty);

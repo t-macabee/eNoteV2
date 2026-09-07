@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:enote_core/enote_core.dart';
+import 'paged_result.dart';
 
 /// Fetches one page of [T]. Structurally identical to `EntityFetcher` and
 /// `EntityGridFetcher` — those typedefs stay where they are so the two config

@@ -3,8 +3,6 @@ import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
 import '../theme/app_theme.dart';
-import 'entity_toolbar.dart';
-import 'paged_fetch_controller.dart';
 
 typedef EntityGridFetcher<T> = Future<PagedResult<T>> Function(
   int page,

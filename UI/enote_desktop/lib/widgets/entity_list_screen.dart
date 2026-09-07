@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:enote_core/enote_core.dart';
 
-import 'entity_toolbar.dart';
-import 'paged_fetch_controller.dart';
 
 typedef ColumnValueBuilder<T> = dynamic Function(T item);
 typedef ColumnCellBuilder<T> = Widget Function(BuildContext context, T item);

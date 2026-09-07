@@ -558,7 +558,7 @@ class _UserDetailsDialogState extends State<_UserDetailsDialog> {
                     radius: 28,
                     backgroundColor: AppTheme.primary,
                     child: Text(
-                      _initials(item.displayName),
+                      _initialsFromName(item.displayName),
                       style: const TextStyle(
                         color: AppTheme.onPrimary,
                         fontSize: 20,
@@ -751,7 +751,7 @@ class _UserDetailsDialogState extends State<_UserDetailsDialog> {
 
 
 
-  static String _initials(String name) {
+  static String _initialsFromName(String name) {
     final parts = name.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty);
     if (parts.isEmpty) return '?';
     final chars = parts.take(2).map((p) => p[0].toUpperCase()).toList();
