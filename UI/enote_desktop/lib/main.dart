@@ -25,6 +25,7 @@ import 'features/store_employee/employee/shop_employee_provider.dart';
 import 'features/store_employee/instrument/instrument_provider.dart';
 import 'features/store_employee/instrument/shop_instrument_type_provider.dart';
 import 'features/store_employee/rental/rental_provider.dart';
+import 'features/store_employee/store/shop_address_provider.dart';
 import 'features/store_employee/store/shop_store_provider.dart';
 import 'shell/login_screen.dart';
 import 'shell/master_screen.dart';
@@ -103,6 +104,9 @@ class MyApp extends StatelessWidget {
         ),
         ChangeNotifierProvider<ShopInstrumentTypeProvider>(
           create: (_) => ShopInstrumentTypeProvider(apiClient: apiClient),
+        ),
+        ChangeNotifierProvider<ShopAddressProvider>(
+          create: (_) => ShopAddressProvider(apiClient: apiClient),
         ),
         ChangeNotifierProvider<RentalProvider>(
           create: (_) => RentalProvider(apiClient: apiClient),

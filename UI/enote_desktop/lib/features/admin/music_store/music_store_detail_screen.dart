@@ -294,7 +294,7 @@ class _MusicStoreDetailScreenState extends State<MusicStoreDetailScreen> {
             const SizedBox(height: 24),
             SizedBox(
               width: double.infinity,
-              child: ElevatedButton.icon(
+              child: OutlinedButton.icon(
                 onPressed: _openEdit,
                 icon: const Icon(Icons.edit_outlined, size: 18),
                 label: const Text('Uredi'),

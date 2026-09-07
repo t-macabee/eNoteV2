@@ -200,7 +200,7 @@ class _InstrumentDetailDialogState extends State<InstrumentDetailDialog> {
                   child: const Text('Zatvori'),
                 ),
                 const SizedBox(width: 12),
-                FilledButton.icon(
+                OutlinedButton.icon(
                   onPressed: _isDeleting ? null : _openEdit,
                   icon: const Icon(Icons.edit_outlined),
                   label: const Text('Uredi'),

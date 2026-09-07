@@ -7,7 +7,7 @@ import '../../../theme/app_theme.dart';
 import '../../../widgets/async_dropdown.dart';
 import '../../../widgets/entity_form_scaffold.dart';
 import '../../../widgets/image_upload_helper.dart';
-import '../../admin/address/address_provider.dart';
+import 'shop_address_provider.dart';
 import 'shop_store_provider.dart';
 
 class ShopStoreFormScreen extends StatefulWidget {
@@ -118,7 +118,7 @@ class _ShopStoreFormScreenState extends State<ShopStoreFormScreen> {
           label: 'Adresa',
           value: _selectedAddressId,
           fetcher: () async {
-            final provider = context.read<AddressProvider>();
+            final provider = context.read<ShopAddressProvider>();
             final result = await provider.search({
               'page': 1,
               'pageSize': 100,

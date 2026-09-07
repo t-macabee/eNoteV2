@@ -232,9 +232,16 @@ class _MasterScreenState extends State<MasterScreen> {
 
   void _openNotifications() {
     final controller = context.read<NotificationController>();
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => NotificationListView(controller: controller),
+    showDialog<void>(
+      context: context,
+      builder: (_) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        clipBehavior: Clip.antiAlias,
+        child: SizedBox(
+          width: 480,
+          height: MediaQuery.sizeOf(context).height * 0.7,
+          child: NotificationListView(controller: controller),
+        ),
       ),
     );
   }

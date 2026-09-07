@@ -5,6 +5,7 @@ using eNote.Application.Common.Localization;
 using eNote.Application.Features.Identity.Employees;
 using eNote.Application.Features.Identity.Users;
 using eNote.Application.Features.Identity.Users.Services;
+using eNote.Application.Features.Rentals.ReferenceData.Addresses;
 using eNote.Application.Features.Rentals.ReferenceData.MusicStores;
 using eNote.Domain.Entities.Identity;
 using eNote.Domain.Entities.Rentals;
@@ -34,7 +35,8 @@ public sealed class ShopStoreControllerTests
         var employeeService = new ShopEmployeeService(ctx, new StubUserIdentityService(), actor, null!);
         var storeService = new MusicStoreService(ctx, new StubFileStorageService());
         var storeContext = new StubStoreContext(store.Id);
-        var controller = new ShopStoreController(storeService, employeeService, storeContext);
+        var addressService = new AddressService(ctx);
+        var controller = new ShopStoreController(storeService, employeeService, addressService, storeContext);
 
         var result = await controller.GetOwnStore(CancellationToken.None);
 
@@ -60,7 +62,8 @@ public sealed class ShopStoreControllerTests
         var employeeService = new ShopEmployeeService(ctx, new StubUserIdentityService(), actor, null!);
         var storeService = new MusicStoreService(ctx, new StubFileStorageService());
         var storeContext = new StubStoreContext(store.Id);
-        var controller = new ShopStoreController(storeService, employeeService, storeContext);
+        var addressService = new AddressService(ctx);
+        var controller = new ShopStoreController(storeService, employeeService, addressService, storeContext);
 
         var request = new MusicStoreRequest
         {
@@ -93,7 +96,8 @@ public sealed class ShopStoreControllerTests
         var employeeService = new ShopEmployeeService(ctx, new StubUserIdentityService(), actor, null!);
         var storeService = new MusicStoreService(ctx, new StubFileStorageService());
         var storeContext = new StubStoreContext(store.Id);
-        var controller = new ShopStoreController(storeService, employeeService, storeContext);
+        var addressService = new AddressService(ctx);
+        var controller = new ShopStoreController(storeService, employeeService, addressService, storeContext);
 
         var request = new MusicStoreRequest
         {
@@ -123,7 +127,8 @@ public sealed class ShopStoreControllerTests
         var fileStorage = new StubFileStorageService();
         var storeService = new MusicStoreService(ctx, fileStorage);
         var storeContext = new StubStoreContext(store.Id);
-        var controller = new ShopStoreController(storeService, employeeService, storeContext);
+        var addressService = new AddressService(ctx);
+        var controller = new ShopStoreController(storeService, employeeService, addressService, storeContext);
 
         var fileBytes = new byte[] { 1, 2, 3, 4 };
         var formFile = new FormFile(new MemoryStream(fileBytes), 0, fileBytes.Length, "file", "store.png")
@@ -156,7 +161,8 @@ public sealed class ShopStoreControllerTests
         var employeeService = new ShopEmployeeService(ctx, new StubUserIdentityService(), actor, null!);
         var storeService = new MusicStoreService(ctx, new StubFileStorageService());
         var storeContext = new StubStoreContext(store.Id);
-        var controller = new ShopStoreController(storeService, employeeService, storeContext);
+        var addressService = new AddressService(ctx);
+        var controller = new ShopStoreController(storeService, employeeService, addressService, storeContext);
 
         var fileBytes = new byte[] { 1, 2, 3, 4 };
         var formFile = new FormFile(new MemoryStream(fileBytes), 0, fileBytes.Length, "file", "store.png")
@@ -186,7 +192,8 @@ public sealed class ShopStoreControllerTests
         var employeeService = new ShopEmployeeService(ctx, new StubUserIdentityService(), actor, null!);
         var storeService = new MusicStoreService(ctx, new StubFileStorageService());
         var storeContext = new StubStoreContext(store.Id);
-        var controller = new ShopStoreController(storeService, employeeService, storeContext);
+        var addressService = new AddressService(ctx);
+        var controller = new ShopStoreController(storeService, employeeService, addressService, storeContext);
 
         var result = await controller.UploadOwnStoreImage(null, CancellationToken.None);
 
