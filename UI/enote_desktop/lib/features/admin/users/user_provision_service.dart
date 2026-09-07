@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:enote_core/enote_core.dart';
 
 /// Thin wrapper around `POST admin/users`.
@@ -17,12 +15,7 @@ class UserProvisionService {
   /// Returns the new/updated user's id.
   Future<int> provision(UserProvisionRequest request) async {
     final response = await apiClient.post('admin/users', body: request.toJson());
-
-    if (response.statusCode >= 400) {
-      throw ApiException(ApiErrorMapper.mapError(response.statusCode, response.body));
-    }
-
-    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    final data = decodeOrThrow(response);
     return data['userId'] as int? ?? data['id'] as int? ?? 0;
   }
 }

@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -67,11 +66,7 @@ class _RankingScreenState extends State<RankingScreen> {
       final response = await apiClient.get(
         'instructor/courses/${widget.courseId}/ranking',
       );
-      if (response.statusCode >= 400) {
-        throw ApiException(
-          ApiErrorMapper.mapError(response.statusCode, response.body),
-        );
-      }
+      throwIfError(response);
       final list = jsonDecode(response.body) as List;
       final items = list
           .map((e) => CourseRankingEntryDto.fromJson(e as Map<String, dynamic>))
@@ -98,18 +93,7 @@ class _RankingScreenState extends State<RankingScreen> {
           PdfReportButton(
             label: 'Izvještaj',
             fileName: 'course-${widget.courseId}-ranking.pdf',
-            fetchPdf: () async {
-              final apiClient = context.read<ApiClient>();
-              final response = await apiClient.get(
-                'instructor/courses/${widget.courseId}/ranking/report',
-              );
-              if (response.statusCode >= 400) {
-                throw ApiException(
-                  ApiErrorMapper.mapError(response.statusCode, response.body),
-                );
-              }
-              return Uint8List.fromList(response.bodyBytes);
-            },
+            endpoint: 'instructor/courses/${widget.courseId}/ranking/report',
           ),
           const SizedBox(width: 8),
         ],

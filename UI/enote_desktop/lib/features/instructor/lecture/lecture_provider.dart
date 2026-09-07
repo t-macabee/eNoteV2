@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:enote_core/enote_core.dart';
 
 class LectureProvider extends BaseProvider<LectureDto> {
@@ -10,10 +8,7 @@ class LectureProvider extends BaseProvider<LectureDto> {
 
   Future<LectureDto> cancel(int id) async {
     final response = await apiClient.post('$endpoint/$id/cancel');
-    if (response.statusCode >= 400) {
-      throw ApiException(ApiErrorMapper.mapError(response.statusCode, response.body));
-    }
-    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    final data = decodeOrThrow(response);
     notifyListeners();
     return fromJson(data);
   }
@@ -26,9 +21,7 @@ class LectureProvider extends BaseProvider<LectureDto> {
       '$endpoint/$lectureId/attendance',
       queryParams: params,
     );
-    if (response.statusCode >= 400) {
-      throw ApiException(ApiErrorMapper.mapError(response.statusCode, response.body));
-    }
+    throwIfError(response);
     return parsePage<AttendanceDto>(
       response,
       (json) => AttendanceDto.fromJson(json),
@@ -44,10 +37,7 @@ class LectureProvider extends BaseProvider<LectureDto> {
       '$endpoint/$lectureId/attendance',
       body: request.toJson(),
     );
-    if (response.statusCode >= 400) {
-      throw ApiException(ApiErrorMapper.mapError(response.statusCode, response.body));
-    }
-    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    final data = decodeOrThrow(response);
     return AttendanceDto.fromJson(data);
   }
 }

@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -10,6 +8,7 @@ import '../../../widgets/entity_form_scaffold.dart';
 import '../../../widgets/entity_grid_screen.dart';
 import '../instructor/instructor_provider.dart';
 import '../student/student_provider.dart';
+import 'admin_user_provider.dart';
 import 'store_employee_provider.dart';
 import 'user_provision_form_screen.dart';
 
@@ -26,19 +25,54 @@ class _UserListItem {
   final bool? isManager;
   final bool? isActive;
 
-  const _UserListItem({
-    required this.appUserId,
-    required this.displayName,
-    this.username,
-    this.firstName,
-    this.lastName,
-    required this.role,
-    this.storeName,
-    this.membershipPaidUntil,
-    this.enrollmentDate,
-    this.isManager,
-    this.isActive,
-  });
+  _UserListItem.fromInstructor(InstructorDto i)
+      : appUserId = i.appUserId,
+        displayName = _formatDisplayName(i.firstName, i.lastName, i.username),
+        username = i.username,
+        firstName = i.firstName,
+        lastName = i.lastName,
+        role = UserRole.instructor,
+        storeName = null,
+        membershipPaidUntil = null,
+        enrollmentDate = null,
+        isManager = null,
+        isActive = i.isActive;
+
+  _UserListItem.fromStudent(StudentDto s)
+      : appUserId = s.appUserId,
+        displayName = _formatDisplayName(s.firstName, s.lastName, s.username),
+        username = s.username,
+        firstName = s.firstName,
+        lastName = s.lastName,
+        role = UserRole.student,
+        storeName = null,
+        membershipPaidUntil = s.membershipPaidUntil,
+        enrollmentDate = s.enrollmentDate,
+        isManager = null,
+        isActive = s.isActive;
+
+  _UserListItem.fromEmployee(ShopEmployeeDto e)
+      : appUserId = e.appUserId,
+        displayName = _formatDisplayName(e.firstName, e.lastName, e.username),
+        username = e.username,
+        firstName = e.firstName,
+        lastName = e.lastName,
+        role = UserRole.storeEmployee,
+        storeName = e.storeName,
+        membershipPaidUntil = null,
+        enrollmentDate = null,
+        isManager = e.isManager,
+        isActive = e.isActive;
+
+  static String _formatDisplayName(
+    String? firstName,
+    String? lastName,
+    String? username,
+  ) {
+    final name = '${firstName ?? ''} ${lastName ?? ''}'.trim();
+    if (name.isNotEmpty) return name;
+    return username ?? '-';
+  }
 }
 
 /// Administrator "Users" tab — card grid of Students + Instructors + StoreEmployees,
@@ -61,16 +95,6 @@ class _UserGridScreenState extends State<UserGridScreen> {
   /// "svi" option — it always applies, defaulting to active accounts so
   /// deactivated users don't clutter the default view.
   bool _showActive = true;
-
-  static String _formatDisplayName(
-    String? firstName,
-    String? lastName,
-    String? username,
-  ) {
-    final name = '${firstName ?? ''} ${lastName ?? ''}'.trim();
-    if (name.isNotEmpty) return name;
-    return username ?? '-';
-  }
 
   Future<void> _openProvisionForm() async {
     await EntityFormScaffold.showAsDialog(
@@ -110,19 +134,11 @@ class _UserGridScreenState extends State<UserGridScreen> {
     if (pickedDate == null || !context.mounted) return null;
 
     try {
-      final apiClient = context.read<ApiClient>();
-      final request = UpdateMembershipRequest(paidUntil: pickedDate);
-      final response = await apiClient.put(
-        'admin/users/${item.appUserId}/membership',
-        body: request.toJson(),
-      );
-      if (response.statusCode >= 400) {
-        throw ApiException(
-          ApiErrorMapper.mapError(response.statusCode, response.body),
-        );
-      }
+      final updated = await context
+          .read<AdminUserProvider>()
+          .renewMembership(item.appUserId, pickedDate);
       _gridKey.currentState?.refresh();
-      return pickedDate;
+      return updated;
     } catch (e) {
       if (context.mounted) {
         ErrorBanner.show(context, message: userMessage(e));
@@ -137,16 +153,9 @@ class _UserGridScreenState extends State<UserGridScreen> {
     bool isActive,
   ) async {
     try {
-      final apiClient = context.read<ApiClient>();
-      final response = await apiClient.put(
-        'admin/users/${item.appUserId}/status',
-        body: {'isActive': isActive},
-      );
-      if (response.statusCode >= 400) {
-        throw ApiException(
-          ApiErrorMapper.mapError(response.statusCode, response.body),
-        );
-      }
+      await context
+          .read<AdminUserProvider>()
+          .setStatus(item.appUserId, isActive);
       _gridKey.currentState?.refresh();
       return true;
     } catch (e) {
@@ -162,15 +171,7 @@ class _UserGridScreenState extends State<UserGridScreen> {
     _UserListItem item,
   ) async {
     try {
-      final apiClient = context.read<ApiClient>();
-      final response = await apiClient.delete(
-        'admin/users/${item.appUserId}',
-      );
-      if (response.statusCode >= 400) {
-        throw ApiException(
-          ApiErrorMapper.mapError(response.statusCode, response.body),
-        );
-      }
+      await context.read<AdminUserProvider>().remove(item.appUserId);
       _gridKey.currentState?.refresh();
       return true;
     } catch (e) {
@@ -198,15 +199,98 @@ class _UserGridScreenState extends State<UserGridScreen> {
     _gridKey.currentState?.refresh(resetPage: true);
   }
 
+  /// Loads one page for the current [_role] / [_showActive] filters.
+  ///
+  /// Reads `_role` and `_showActive` as fields at call time rather than
+  /// taking them as parameters: `setState` doesn't rebuild synchronously, so
+  /// `_applyFilters` calling `_gridKey.currentState?.refresh()` right after
+  /// `setState` can still run against the previous build's config. Reading
+  /// the fields here keeps the fetch correct regardless of when the config
+  /// that points at this method was created.
+  Future<PagedResult<_UserListItem>> _fetchUsers(
+    int page,
+    int pageSize,
+    String search,
+  ) async {
+    final query = {
+      'page': page,
+      'pageSize': pageSize,
+      'includeTotalCount': true,
+      'isActive': _showActive,
+      if (search.isNotEmpty) 'name': search,
+    };
+
+    if (_role == UserRole.instructor) {
+      final result = await context.read<InstructorProvider>().search(query);
+      return PagedResult<_UserListItem>(
+        items: result.items.map(_UserListItem.fromInstructor).toList(),
+        page: result.page,
+        pageSize: result.pageSize,
+        totalCount: result.totalCount,
+      );
+    }
+
+    if (_role == UserRole.student) {
+      final result = await context.read<StudentProvider>().search(query);
+      return PagedResult<_UserListItem>(
+        items: result.items.map(_UserListItem.fromStudent).toList(),
+        page: result.page,
+        pageSize: result.pageSize,
+        totalCount: result.totalCount,
+      );
+    }
+
+    if (_role == UserRole.storeEmployee) {
+      final result = await context.read<StoreEmployeeProvider>().search(query);
+      return PagedResult<_UserListItem>(
+        items: result.items.map(_UserListItem.fromEmployee).toList(),
+        page: result.page,
+        pageSize: result.pageSize,
+        totalCount: result.totalCount,
+      );
+    }
+
+    // _role == null: fetch instructors, students, and store employees concurrently
+    final instructorFuture = context.read<InstructorProvider>().search(query);
+    final studentFuture = context.read<StudentProvider>().search(query);
+    final employeeFuture = context.read<StoreEmployeeProvider>().search(query);
+    final results = await Future.wait([
+      instructorFuture,
+      studentFuture,
+      employeeFuture,
+    ]);
+    final instructorResult = results[0] as PagedResult<InstructorDto>;
+    final studentResult = results[1] as PagedResult<StudentDto>;
+    final employeeResult = results[2] as PagedResult<ShopEmployeeDto>;
+
+    final totalCount = (instructorResult.totalCount != null ||
+            studentResult.totalCount != null ||
+            employeeResult.totalCount != null)
+        ? (instructorResult.totalCount ?? 0) +
+            (studentResult.totalCount ?? 0) +
+            (employeeResult.totalCount ?? 0)
+        : null;
+
+    return PagedResult<_UserListItem>(
+      items: [
+        ...instructorResult.items.map(_UserListItem.fromInstructor),
+        ...studentResult.items.map(_UserListItem.fromStudent),
+        ...employeeResult.items.map(_UserListItem.fromEmployee),
+      ],
+      page: page,
+      pageSize: pageSize,
+      totalCount: totalCount,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Read via `_role` (a field) at call time inside the closures below,
-    // rather than snapshotting it into a local here — `setState` doesn't
-    // rebuild synchronously, so `_applyFilters` calling
+    // `_fetchUsers` reads `_role` and `_showActive` as fields at call time
+    // rather than taking them as parameters snapshotted here — `setState`
+    // doesn't rebuild synchronously, so `_applyFilters` calling
     // `_gridKey.currentState?.refresh()` right after `setState` can still
-    // be running against this build's (about-to-be-stale) config. Reading
-    // the field directly keeps every closure correct regardless of when it
-    // was created.
+    // be running against this build's (about-to-be-stale) config. See the
+    // doc comment on `_fetchUsers`.
     return EntityGridScreen<_UserListItem>(
       key: _gridKey,
       config: EntityGridConfig<_UserListItem>(
@@ -286,179 +370,7 @@ class _UserGridScreenState extends State<UserGridScreen> {
             ),
           ],
         ),
-        fetcher: (page, pageSize, search) async {
-          final query = {
-            'page': page,
-            'pageSize': pageSize,
-            'includeTotalCount': true,
-            'isActive': _showActive,
-            if (search.isNotEmpty) 'name': search,
-          };
-
-          if (_role == UserRole.instructor) {
-            final result =
-                await context.read<InstructorProvider>().search(query);
-            return PagedResult<_UserListItem>(
-              items: result.items
-                  .map(
-                    (i) => _UserListItem(
-                      appUserId: i.appUserId,
-                      displayName: _formatDisplayName(
-                        i.firstName,
-                        i.lastName,
-                        i.username,
-                      ),
-                      username: i.username,
-                      firstName: i.firstName,
-                      lastName: i.lastName,
-                      role: UserRole.instructor,
-                      isActive: i.isActive,
-                    ),
-                  )
-                  .toList(),
-              page: result.page,
-              pageSize: result.pageSize,
-              totalCount: result.totalCount,
-            );
-          }
-
-          if (_role == UserRole.student) {
-            final result = await context.read<StudentProvider>().search(query);
-            return PagedResult<_UserListItem>(
-              items: result.items
-                  .map(
-                    (s) => _UserListItem(
-                      appUserId: s.appUserId,
-                      displayName: _formatDisplayName(
-                        s.firstName,
-                        s.lastName,
-                        s.username,
-                      ),
-                      username: s.username,
-                      firstName: s.firstName,
-                      lastName: s.lastName,
-                      role: UserRole.student,
-                      membershipPaidUntil: s.membershipPaidUntil,
-                      enrollmentDate: s.enrollmentDate,
-                      isActive: s.isActive,
-                    ),
-                  )
-                  .toList(),
-              page: result.page,
-              pageSize: result.pageSize,
-              totalCount: result.totalCount,
-            );
-          }
-
-          if (_role == UserRole.storeEmployee) {
-            final result =
-                await context.read<StoreEmployeeProvider>().search(query);
-            return PagedResult<_UserListItem>(
-              items: result.items
-                  .map(
-                    (e) => _UserListItem(
-                      appUserId: e.appUserId,
-                      displayName: _formatDisplayName(
-                        e.firstName,
-                        e.lastName,
-                        e.username,
-                      ),
-                      username: e.username,
-                      firstName: e.firstName,
-                      lastName: e.lastName,
-                      role: UserRole.storeEmployee,
-                      storeName: e.storeName,
-                      isManager: e.isManager,
-                      isActive: e.isActive,
-                    ),
-                  )
-                  .toList(),
-              page: result.page,
-              pageSize: result.pageSize,
-              totalCount: result.totalCount,
-            );
-          }
-
-          // _role == null: fetch instructors, students, and store employees concurrently
-          final instructorFuture =
-              context.read<InstructorProvider>().search(query);
-          final studentFuture = context.read<StudentProvider>().search(query);
-          final employeeFuture =
-              context.read<StoreEmployeeProvider>().search(query);
-          final results = await Future.wait([
-            instructorFuture,
-            studentFuture,
-            employeeFuture,
-          ]);
-          final instructorResult = results[0] as PagedResult<InstructorDto>;
-          final studentResult = results[1] as PagedResult<StudentDto>;
-          final employeeResult = results[2] as PagedResult<ShopEmployeeDto>;
-
-          final instructorItems = instructorResult.items.map(
-            (i) => _UserListItem(
-              appUserId: i.appUserId,
-              displayName: _formatDisplayName(
-                i.firstName,
-                i.lastName,
-                i.username,
-              ),
-              username: i.username,
-              firstName: i.firstName,
-              lastName: i.lastName,
-              role: UserRole.instructor,
-              isActive: i.isActive,
-            ),
-          );
-          final studentItems = studentResult.items.map(
-            (s) => _UserListItem(
-              appUserId: s.appUserId,
-              displayName: _formatDisplayName(
-                s.firstName,
-                s.lastName,
-                s.username,
-              ),
-              username: s.username,
-              firstName: s.firstName,
-              lastName: s.lastName,
-              role: UserRole.student,
-              membershipPaidUntil: s.membershipPaidUntil,
-              enrollmentDate: s.enrollmentDate,
-              isActive: s.isActive,
-            ),
-          );
-          final employeeItems = employeeResult.items.map(
-            (e) => _UserListItem(
-              appUserId: e.appUserId,
-              displayName: _formatDisplayName(
-                e.firstName,
-                e.lastName,
-                e.username,
-              ),
-              username: e.username,
-              firstName: e.firstName,
-              lastName: e.lastName,
-              role: UserRole.storeEmployee,
-              storeName: e.storeName,
-              isManager: e.isManager,
-              isActive: e.isActive,
-            ),
-          );
-
-          final totalCount = (instructorResult.totalCount != null ||
-                  studentResult.totalCount != null ||
-                  employeeResult.totalCount != null)
-              ? (instructorResult.totalCount ?? 0) +
-                  (studentResult.totalCount ?? 0) +
-                  (employeeResult.totalCount ?? 0)
-              : null;
-
-          return PagedResult<_UserListItem>(
-            items: [...instructorItems, ...studentItems, ...employeeItems],
-            page: page,
-            pageSize: pageSize,
-            totalCount: totalCount,
-          );
-        },
+        fetcher: _fetchUsers,
         onAdd: () => _openProvisionForm(),
       ),
     );
@@ -599,21 +511,17 @@ class _UserDetailsDialogState extends State<_UserDetailsDialog> {
 
   Future<void> _fetchProfile() async {
     try {
-      final apiClient = context.read<ApiClient>();
-      final response =
-          await apiClient.get('admin/users/${widget.item.appUserId}');
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body) as Map<String, dynamic>;
-        final profileResponse = UserProfileResponse.fromJson(data);
-        if (mounted) {
-          setState(() {
-            _profile = profileResponse.profile;
-            _email = profileResponse.email;
-            if (_profile?.membershipPaidUntil != null) {
-              _membershipPaidUntil = _profile!.membershipPaidUntil;
-            }
-          });
-        }
+      final profileResponse = await context
+          .read<AdminUserProvider>()
+          .getProfile(widget.item.appUserId);
+      if (mounted) {
+        setState(() {
+          _profile = profileResponse.profile;
+          _email = profileResponse.email;
+          if (_profile?.membershipPaidUntil != null) {
+            _membershipPaidUntil = _profile!.membershipPaidUntil;
+          }
+        });
       }
     } catch (_) {
       // Ignored: fallback to basic item info

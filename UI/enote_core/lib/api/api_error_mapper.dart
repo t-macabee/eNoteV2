@@ -66,7 +66,7 @@ class ApiErrorMapper {
       401 => 'Vaša sesija je istečla. Prijavite se ponovo.',
       403 => 'Nemate pristup ovom resursu.',
       404 => 'Resurs nije pronađen.',
-      409 => 'Supert konflikt.',
+      409 => 'Sukob podataka.',
       >= 500 => 'Greška na serveru. Pokušajte ponovo kasnije.',
       _ => 'Došlo je do greške. Pokušajte ponovo.',
     };

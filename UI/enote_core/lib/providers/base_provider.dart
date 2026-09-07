@@ -4,8 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import '../api/api_client.dart';
-import '../api/api_error_mapper.dart';
-import '../api/api_exception.dart';
+import '../api/api_response.dart';
 import '../paging/paged_result.dart';
 
 abstract class BaseProvider<T> with ChangeNotifier {
@@ -21,10 +20,7 @@ abstract class BaseProvider<T> with ChangeNotifier {
 
   Future<PagedResult<T>> getPage({Map<String, dynamic>? params}) async {
     final response = await apiClient.get(endpoint, queryParams: params);
-
-    if (response.statusCode >= 400) {
-      throw ApiException(ApiErrorMapper.mapError(response.statusCode, response.body));
-    }
+    throwIfError(response);
 
     final result = parsePage<T>(response, fromJson, params: params);
     return result;
@@ -62,13 +58,7 @@ abstract class BaseProvider<T> with ChangeNotifier {
       contentType: contentType,
     );
 
-    if (response.statusCode >= 400) {
-      throw ApiException(
-        ApiErrorMapper.mapError(response.statusCode, response.body),
-      );
-    }
-
-    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    final data = decodeOrThrow(response);
     final updated = fromJson(data);
     notifyListeners();
     return updated;
@@ -76,21 +66,13 @@ abstract class BaseProvider<T> with ChangeNotifier {
 
   Future<T> getById(int id) async {
     final response = await apiClient.get('$endpoint/$id');
-
-    if (response.statusCode >= 400) {
-      throw ApiException(ApiErrorMapper.mapError(response.statusCode, response.body));
-    }
-
-    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    final data = decodeOrThrow(response);
     return fromJson(data);
   }
 
   Future<T?> insert(Map<String, dynamic> request) async {
     final response = await apiClient.post(endpoint, body: request);
-
-    if (response.statusCode >= 400) {
-      throw ApiException(ApiErrorMapper.mapError(response.statusCode, response.body));
-    }
+    throwIfError(response);
 
     if (response.statusCode == 204 || response.body.isEmpty) {
       notifyListeners();
@@ -104,23 +86,14 @@ abstract class BaseProvider<T> with ChangeNotifier {
 
   Future<T> update(int id, Map<String, dynamic> request) async {
     final response = await apiClient.put('$endpoint/$id', body: request);
-
-    if (response.statusCode >= 400) {
-      throw ApiException(ApiErrorMapper.mapError(response.statusCode, response.body));
-    }
-
-    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    final data = decodeOrThrow(response);
     notifyListeners();
     return fromJson(data);
   }
 
   Future<void> remove(int id) async {
     final response = await apiClient.delete('$endpoint/$id');
-
-    if (response.statusCode >= 400) {
-      throw ApiException(ApiErrorMapper.mapError(response.statusCode, response.body));
-    }
-
+    throwIfError(response);
     notifyListeners();
   }
 

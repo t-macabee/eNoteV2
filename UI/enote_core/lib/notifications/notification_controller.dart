@@ -5,7 +5,7 @@ import 'package:flutter/foundation.dart';
 
 import '../api/api_client.dart';
 import '../api/api_error_mapper.dart';
-import '../api/api_exception.dart';
+import '../api/api_response.dart';
 import '../models/communication/communication_models.dart';
 
 class NotificationController extends ChangeNotifier {
@@ -61,17 +61,14 @@ class NotificationController extends ChangeNotifier {
         queryParams:
             (search ?? NotificationSearchObject(pageSize: 50)).toQueryMap(),
       );
-      if (response.statusCode >= 400) {
-        throw ApiException(ApiErrorMapper.mapError(response.statusCode, response.body));
-      }
-      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      final data = decodeOrThrow(response);
       final items = (data['items'] as List<dynamic>? ?? []);
       _notifications = items
           .map((e) => NotificationDto.fromJson(Map<String, dynamic>.from(e)))
           .toList();
       _unreadCount = _notifications.where((n) => !n.isRead).length;
     } catch (e) {
-      _error = e.toString();
+      _error = userMessage(e);
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -94,9 +91,7 @@ class NotificationController extends ChangeNotifier {
 
   Future<void> markRead(int id) async {
     final response = await apiClient.patch('$endpoint/$id/read');
-    if (response.statusCode >= 400) {
-      throw ApiException(ApiErrorMapper.mapError(response.statusCode, response.body));
-    }
+    throwIfError(response);
 
     final index = _notifications.indexWhere((n) => n.id == id);
     if (index != -1 && !_notifications[index].isRead) {
@@ -108,9 +103,7 @@ class NotificationController extends ChangeNotifier {
 
   Future<void> markAllRead() async {
     final response = await apiClient.patch('$endpoint/read-all');
-    if (response.statusCode >= 400) {
-      throw ApiException(ApiErrorMapper.mapError(response.statusCode, response.body));
-    }
+    throwIfError(response);
 
     _notifications = _notifications.map(_markedRead).toList();
     _unreadCount = 0;

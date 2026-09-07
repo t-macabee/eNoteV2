@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
 import '../../widgets/entity_form_scaffold.dart';
+import 'profile_provider.dart';
 
 /// "Promijeni lozinku" form opened from [ProfileDialog] — its own
 /// [EntityFormScaffold] with its own Save/Cancel. Stays open and clears its
@@ -29,23 +30,17 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
 
   Future<bool> _save() async {
     try {
-      final apiClient = context.read<ApiClient>();
-      final response = await apiClient.put(
-        'users/me/password',
-        body: {
-          'currentPassword': _currentPasswordController.text,
-          'newPassword': _newPasswordController.text,
+      final profileProvider = context.read<ProfileProvider>();
+      await profileProvider.changePassword(
+        ChangePasswordRequest(
+          currentPassword: _currentPasswordController.text,
+          newPassword: _newPasswordController.text,
           // The backend's ChangePasswordRequest.ConfirmNewPassword is a
           // required member — omitting it fails JSON model binding before
           // validation even runs.
-          'confirmNewPassword': _confirmPasswordController.text,
-        },
+          confirmNewPassword: _confirmPasswordController.text,
+        ),
       );
-      if (response.statusCode >= 400) {
-        throw ApiException(
-          ApiErrorMapper.mapError(response.statusCode, response.body),
-        );
-      }
       return true;
     } catch (e) {
       if (mounted) ErrorBanner.show(context, message: userMessage(e));

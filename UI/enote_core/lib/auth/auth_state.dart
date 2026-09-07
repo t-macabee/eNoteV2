@@ -4,8 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:jwt_decoder/jwt_decoder.dart';
 
-import '../api/api_error_mapper.dart';
-import '../api/api_exception.dart';
+import '../api/api_response.dart';
 import '../models/identity/auth_models.dart';
 
 class AuthState extends ChangeNotifier {
@@ -114,12 +113,7 @@ class AuthState extends ChangeNotifier {
       body: body,
     );
 
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw ApiException(
-          ApiErrorMapper.mapError(response.statusCode, response.body));
-    }
-
-    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    final data = decodeOrThrow(response);
     final authResponse = AuthResponse.fromJson(data);
 
     _accessToken = authResponse.token;

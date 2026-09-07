@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:enote_core/enote_core.dart';
 
 class RentalProvider extends BaseProvider<InstrumentRentalDto> {
@@ -30,12 +28,7 @@ class RentalProvider extends BaseProvider<InstrumentRentalDto> {
       body: RefundRequest(amountCents: amountCents).toJson(),
     );
 
-    if (response.statusCode >= 400) {
-      throw ApiException(
-          ApiErrorMapper.mapError(response.statusCode, response.body));
-    }
-
-    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    final data = decodeOrThrow(response);
     notifyListeners();
     return RentalPaymentDto.fromJson(data);
   }
@@ -46,12 +39,8 @@ class RentalProvider extends BaseProvider<InstrumentRentalDto> {
     if (response.statusCode == 404) {
       return null;
     }
-    if (response.statusCode >= 400) {
-      throw ApiException(
-          ApiErrorMapper.mapError(response.statusCode, response.body));
-    }
-
-    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    
+    final data = decodeOrThrow(response);
     return RentalPaymentDto.fromJson(data);
   }
 
@@ -62,12 +51,7 @@ class RentalProvider extends BaseProvider<InstrumentRentalDto> {
             ? null
             : RentalStatusRequest(note: note).toJson());
 
-    if (response.statusCode >= 400) {
-      throw ApiException(
-          ApiErrorMapper.mapError(response.statusCode, response.body));
-    }
-
-    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    final data = decodeOrThrow(response);
     final updated = fromJson(data);
     notifyListeners();
     return updated;

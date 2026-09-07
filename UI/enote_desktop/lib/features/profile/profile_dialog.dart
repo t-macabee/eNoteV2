@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:enote_core/enote_core.dart';
@@ -6,6 +5,7 @@ import '../../theme/app_theme.dart';
 import '../../widgets/entity_form_scaffold.dart';
 import 'change_password_dialog.dart';
 import 'edit_profile_dialog.dart';
+import 'profile_provider.dart';
 
 /// Read-only summary of the logged-in user's account, with "Uredi" and
 /// "Promijeni lozinku" opening their own dedicated forms (each with its own
@@ -31,15 +31,12 @@ class _ProfileDialogState extends State<ProfileDialog> {
   Future<void> _fetchProfile() async {
     setState(() => _isLoading = true);
     try {
-      final apiClient = context.read<ApiClient>();
-      final response = await apiClient.get('users/me');
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body) as Map<String, dynamic>;
-        if (mounted) {
-          setState(() {
-            _profileResponse = UserProfileResponse.fromJson(data);
-          });
-        }
+      final profileProvider = context.read<ProfileProvider>();
+      final profile = await profileProvider.getProfile();
+      if (mounted) {
+        setState(() {
+          _profileResponse = profile;
+        });
       }
     } catch (e) {
       if (mounted) ErrorBanner.show(context, message: userMessage(e));

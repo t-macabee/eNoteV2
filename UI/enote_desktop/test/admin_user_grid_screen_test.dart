@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import 'package:enote_core/enote_core.dart';
 import 'package:enote_desktop/features/admin/instructor/instructor_provider.dart';
 import 'package:enote_desktop/features/admin/student/student_provider.dart';
+import 'package:enote_desktop/features/admin/users/admin_user_provider.dart';
 import 'package:enote_desktop/features/admin/users/store_employee_provider.dart';
 import 'package:enote_desktop/features/admin/users/user_grid_screen.dart';
 
@@ -35,6 +36,7 @@ String _fakeJwt({
 class _AdminUsersMockHttpClient extends http.BaseClient {
   final List<String> requestedUrls = [];
   final List<String> deletedUrls = [];
+  final List<String> putUrls = [];
 
   @override
   Future<http.StreamedResponse> send(http.BaseRequest request) async {
@@ -165,6 +167,15 @@ class _AdminUsersMockHttpClient extends http.BaseClient {
       );
     }
 
+    if (request.method == 'PUT') {
+      putUrls.add(url);
+      return http.StreamedResponse(
+        Stream.value(utf8.encode('')),
+        204,
+        headers: {'content-type': 'application/json'},
+      );
+    }
+
     return http.StreamedResponse(
       Stream.value(utf8.encode('{}')),
       200,
@@ -207,6 +218,9 @@ void main() {
             ),
             ChangeNotifierProvider<StoreEmployeeProvider>(
               create: (_) => StoreEmployeeProvider(apiClient: apiClient),
+            ),
+            ChangeNotifierProvider<AdminUserProvider>(
+              create: (_) => AdminUserProvider(apiClient: apiClient),
             ),
           ],
           child: const MaterialApp(home: UserGridScreen()),
@@ -270,6 +284,9 @@ void main() {
             ),
             ChangeNotifierProvider<StoreEmployeeProvider>(
               create: (_) => StoreEmployeeProvider(apiClient: apiClient),
+            ),
+            ChangeNotifierProvider<AdminUserProvider>(
+              create: (_) => AdminUserProvider(apiClient: apiClient),
             ),
           ],
           child: const MaterialApp(home: UserGridScreen()),
@@ -339,6 +356,9 @@ void main() {
             ChangeNotifierProvider<StoreEmployeeProvider>(
               create: (_) => StoreEmployeeProvider(apiClient: apiClient),
             ),
+            ChangeNotifierProvider<AdminUserProvider>(
+              create: (_) => AdminUserProvider(apiClient: apiClient),
+            ),
           ],
           child: const MaterialApp(home: UserGridScreen()),
         ),
@@ -382,6 +402,83 @@ void main() {
       );
 
       // Confirm deactivation
+      await tester.tap(find.text('Potvrdi'));
+      await tester.pumpAndSettle();
+
+      // Assert PUT admin/users/44/status was called
+      expect(mockClient.putUrls, hasLength(1));
+      expect(mockClient.putUrls[0], endsWith('admin/users/44/status'));
+    },
+  );
+
+  testWidgets(
+    'UserGridScreen deletes a user permanently',
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1400, 1000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final mockClient = _AdminUsersMockHttpClient();
+      final authState = AuthState(
+        baseUrl: 'http://localhost:5059/api/v1/',
+        httpClient: mockClient,
+        tokenReader: () => _fakeJwt(),
+      );
+      final apiClient = ApiClient(
+        baseUrl: 'http://localhost:5059/api/v1/',
+        authState: authState,
+        httpClient: mockClient,
+      );
+
+      await tester.pumpWidget(
+        MultiProvider(
+          providers: [
+            Provider<ApiClient>.value(value: apiClient),
+            ChangeNotifierProvider<AuthState>.value(value: authState),
+            ChangeNotifierProvider<InstructorProvider>(
+              create: (_) => InstructorProvider(apiClient: apiClient),
+            ),
+            ChangeNotifierProvider<StudentProvider>(
+              create: (_) => StudentProvider(apiClient: apiClient),
+            ),
+            ChangeNotifierProvider<StoreEmployeeProvider>(
+              create: (_) => StoreEmployeeProvider(apiClient: apiClient),
+            ),
+            ChangeNotifierProvider<AdminUserProvider>(
+              create: (_) => AdminUserProvider(apiClient: apiClient),
+            ),
+          ],
+          child: const MaterialApp(home: UserGridScreen()),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      // Filter to StoreEmployee
+      await tester.tap(find.byType(DropdownButtonFormField<UserRole?>));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('StoreEmployee').last);
+      await tester.pumpAndSettle();
+
+      // Search for "Chopin"
+      final searchField = find.widgetWithText(TextField, 'Pretraži po imenu...');
+      await tester.enterText(searchField, 'Chopin');
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pumpAndSettle();
+
+      // Open details dialog for Frederic Chopin
+      await tester.tap(find.text('Frederic Chopin'));
+      await tester.pumpAndSettle();
+
+      // Tap trash icon
+      await tester.tap(find.byIcon(Icons.delete_outline));
+      await tester.pumpAndSettle();
+
+      // Assert confirm dialog wording
+      expect(find.text('Trajno brisanje'), findsOneWidget);
+
+      // Confirm deletion
       await tester.tap(find.text('Potvrdi'));
       await tester.pumpAndSettle();
 

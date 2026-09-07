@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'package:enote_core/enote_core.dart';
 import 'package:enote_desktop/features/profile/profile_dialog.dart';
+import 'package:enote_desktop/features/profile/profile_provider.dart';
 
 String _base64UrlSegment(String input) =>
     base64Url.encode(utf8.encode(input)).replaceAll('=', '');
@@ -71,6 +72,9 @@ void main() {
         providers: [
           ChangeNotifierProvider<AuthState>.value(value: authState),
           Provider<ApiClient>.value(value: apiClient),
+          Provider<ProfileProvider>(
+            create: (_) => ProfileProvider(apiClient: apiClient),
+          ),
         ],
         child: const MaterialApp(
           home: Scaffold(
@@ -115,6 +119,9 @@ void main() {
         providers: [
           ChangeNotifierProvider<AuthState>.value(value: authState),
           Provider<ApiClient>.value(value: apiClient),
+          Provider<ProfileProvider>(
+            create: (_) => ProfileProvider(apiClient: apiClient),
+          ),
         ],
         child: const MaterialApp(
           home: Scaffold(

@@ -9,11 +9,10 @@ class ShopEmployeeProvider extends BaseProvider<ShopEmployeeDto> {
       ShopEmployeeDto.fromJson(json);
 
   Future<int> createEmployee(DelegatedUserCreateRequest request) async {
-    final response = await apiClient.post(
+    final data = decodeOrThrow(await apiClient.post(
       'shop/employees',
       body: request.toJson(),
-    );
-    final data = response as Map<String, dynamic>;
+    ));
     return data['userId'] as int? ?? 0;
   }
 }

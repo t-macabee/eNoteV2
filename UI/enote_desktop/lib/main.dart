@@ -10,8 +10,10 @@ import 'features/admin/course/admin_course_provider.dart';
 import 'features/admin/event/event_provider.dart';
 import 'features/admin/instructor/instructor_provider.dart';
 import 'features/admin/student/student_provider.dart';
+import 'features/admin/users/admin_user_provider.dart';
 import 'features/admin/users/store_employee_provider.dart';
 import 'features/admin/instrument_type/instrument_type_provider.dart';
+import 'features/profile/profile_provider.dart';
 import 'features/instructor/course/course_provider.dart';
 import 'features/instructor/lecture/lecture_provider.dart';
 import 'features/instructor/student/instructor_student_provider.dart';
@@ -73,6 +75,9 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider<StoreEmployeeProvider>(
           create: (_) => StoreEmployeeProvider(apiClient: apiClient),
         ),
+        ChangeNotifierProvider<AdminUserProvider>(
+          create: (_) => AdminUserProvider(apiClient: apiClient),
+        ),
         ChangeNotifierProvider<EventProvider>(
           create: (_) => EventProvider(apiClient: apiClient),
         ),
@@ -115,6 +120,9 @@ class MyApp extends StatelessWidget {
         ),
         Provider<UserProvisionService>(
           create: (_) => UserProvisionService(apiClient: apiClient),
+        ),
+        Provider<ProfileProvider>(
+          create: (_) => ProfileProvider(apiClient: apiClient),
         ),
       ],
       child: MaterialApp(

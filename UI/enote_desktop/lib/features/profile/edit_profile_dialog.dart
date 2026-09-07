@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:enote_core/enote_core.dart';
 import '../../widgets/date_field.dart';
 import '../../widgets/entity_form_scaffold.dart';
+import 'profile_provider.dart';
 
 /// "Uredi" form opened from [ProfileDialog] — same pattern as editing a
 /// music store: its own [EntityFormScaffold] with its own Save/Cancel.
@@ -57,21 +58,15 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
 
   Future<bool> _save() async {
     try {
-      final apiClient = context.read<ApiClient>();
-      final response = await apiClient.put(
-        'users/me',
-        body: {
-          'email': _emailController.text,
-          'firstName': _firstNameController.text,
-          'lastName': _lastNameController.text,
-          'dateOfBirth': _dateOfBirth?.toIso8601String().split('T').first,
-        },
+      final profileProvider = context.read<ProfileProvider>();
+      await profileProvider.updateProfile(
+        UpdateProfileRequest(
+          email: _emailController.text,
+          firstName: _firstNameController.text,
+          lastName: _lastNameController.text,
+          dateOfBirth: _dateOfBirth,
+        ),
       );
-      if (response.statusCode >= 400) {
-        throw ApiException(
-          ApiErrorMapper.mapError(response.statusCode, response.body),
-        );
-      }
       return true;
     } catch (e) {
       if (mounted) ErrorBanner.show(context, message: userMessage(e));

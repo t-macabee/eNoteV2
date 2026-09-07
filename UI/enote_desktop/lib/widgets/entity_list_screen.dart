@@ -1,7 +1,8 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:enote_core/enote_core.dart';
+
+import 'entity_toolbar.dart';
+import 'paged_fetch_controller.dart';
 
 typedef ColumnValueBuilder<T> = dynamic Function(T item);
 typedef ColumnCellBuilder<T> = Widget Function(BuildContext context, T item);
@@ -110,74 +111,52 @@ class EntityListScreen<T> extends StatefulWidget {
 }
 
 class EntityListScreenState<T> extends State<EntityListScreen<T>> {
-  late final TextEditingController _searchController;
-  List<T> _items = [];
-  int _currentPage = 1;
-  final int _pageSize = 20;
-  int? _totalCount;
-  bool _isLoading = false;
-  String _currentSearch = '';
-  Timer? _searchDebounce;
-  int _requestId = 0;
+  /// Fixed at 20 for every list screen. The grid's page size is
+  /// config-driven; this one deliberately is not.
+  static const int _pageSize = 20;
+
+  late final PagedFetchController<T> _controller;
 
   @override
   void initState() {
     super.initState();
-    _searchController = TextEditingController();
-    _searchController.addListener(_onSearchChanged);
-    _loadPage();
+    _controller = PagedFetchController<T>(
+      // Delegate rather than passing `widget.config.fetcher` directly: screens
+      // rebuild their config on every build, and some fetcher closures read
+      // filter state as fields at call time. Going through `widget.config`
+      // here keeps that behaviour.
+      fetcher: (page, pageSize, search) =>
+          widget.config.fetcher(page, pageSize, search),
+      pageSize: _pageSize,
+      onError: (e) {
+        if (mounted) {
+          ErrorBanner.show(context, message: userMessage(e));
+        }
+      },
+    );
+    _controller.addListener(_onControllerChanged);
+    _controller.load();
   }
 
   @override
   void dispose() {
-    _searchDebounce?.cancel();
-    _searchController.removeListener(_onSearchChanged);
-    _searchController.dispose();
+    _controller.removeListener(_onControllerChanged);
+    _controller.dispose();
     super.dispose();
   }
 
-  void _onSearchChanged() {
-    final value = _searchController.text;
-    _searchDebounce?.cancel();
-    _searchDebounce = Timer(const Duration(milliseconds: 300), () {
-      if (value != _currentSearch) {
-        _currentSearch = value;
-        _currentPage = 1;
-        _loadPage();
-      }
-    });
+  void _onControllerChanged() {
+    if (mounted) setState(() {});
   }
 
-  Future<void> _loadPage() async {
-    final requestId = ++_requestId;
-    setState(() => _isLoading = true);
-
-    try {
-      final result = await widget.config.fetcher(
-        _currentPage,
-        _pageSize,
-        _currentSearch,
-      );
-      if (requestId != _requestId) return;
-      setState(() {
-        _items = result.items;
-        _totalCount = result.totalCount;
-      });
-    } catch (e) {
-      if (requestId != _requestId) return;
-      if (mounted) {
-        ErrorBanner.show(context, message: userMessage(e));
-      }
-    } finally {
-      if (requestId == _requestId && mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
-  }
-
-  void refresh() {
-    _loadPage();
-  }
+  /// Re-runs the current page/search — call after add/edit/delete, or when
+  /// external filters (a [filterBar] control) change and should re-trigger
+  /// the fetch from page 1.
+  ///
+  /// [resetPage] defaults to false so the existing no-arg callers keep their
+  /// current behaviour.
+  void refresh({bool resetPage = false}) =>
+      _controller.refresh(resetPage: resetPage);
 
   Future<void> _deleteItem(T item) async {
     if (widget.config.showDeleteConfirmation) {
@@ -191,7 +170,7 @@ class EntityListScreenState<T> extends State<EntityListScreen<T>> {
 
     if (!mounted) return;
     await widget.config.onDelete?.call(context, item);
-    _loadPage();
+    _controller.load();
   }
 
   @override
@@ -202,15 +181,25 @@ class EntityListScreenState<T> extends State<EntityListScreen<T>> {
     final content = Column(
       children: [
         if (useInlineToolbar)
-          _buildInlineToolbar()
+          EntityToolbar(
+            searchController: _controller.searchController,
+            showSearch: widget.config.showSearchBar,
+            searchHint: widget.config.searchHint,
+            filterBar: widget.config.filterBar,
+            trailing: widget.config.trailing,
+            showAdd:
+                widget.config.showAddButton && widget.config.onAdd != null,
+            onAdd: widget.config.onAdd,
+            addLabel: widget.config.addLabel,
+          )
         else ...[
           if (widget.config.showSearchBar) _buildSearchBar(),
           if (widget.config.filterBar != null) widget.config.filterBar!,
         ],
         Expanded(
-          child: _isLoading
+          child: _controller.isLoading
               ? const Center(child: CircularProgressIndicator())
-              : _items.isEmpty
+              : _controller.items.isEmpty
               ? const Center(child: Text('Nema podataka.'))
               : (widget.config.listStyle == EntityListStyle.tiles
                   ? _buildTiles()
@@ -256,70 +245,9 @@ class EntityListScreenState<T> extends State<EntityListScreen<T>> {
     );
   }
 
-  Widget _buildInlineToolbar() {
-    final showSearch = widget.config.showSearchBar;
-    final filterBar = widget.config.filterBar;
-    final showAdd = widget.config.showAddButton && widget.config.onAdd != null;
-    final trailing = widget.config.trailing;
-    if (!showSearch && filterBar == null && !showAdd && trailing == null) {
-      return const SizedBox.shrink();
-    }
-
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: IntrinsicHeight(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Search + filterBar share one Expanded slot so they're the
-            // only thing that gives way when the row is tight (the search
-            // field shrinks below its 420 cap instead of overflowing).
-            // Keeping them out of the outer Row's flex pool — rather than
-            // giving the search field its own Flexible there — means they
-            // don't compete with trailing/the add button for space: any
-            // width they don't use here stays inside this Expanded instead
-            // of leaking past the button as unused trailing space.
-            Expanded(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  if (showSearch)
-                    Flexible(
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 420),
-                        child: TextField(
-                          controller: _searchController,
-                          decoration: InputDecoration(
-                            hintText: widget.config.searchHint,
-                            prefixIcon: const Icon(Icons.search),
-                            border: const OutlineInputBorder(),
-                          ),
-                        ),
-                      ),
-                    ),
-                  if (showSearch && filterBar != null)
-                    const SizedBox(width: 12),
-                  ?filterBar,
-                ],
-              ),
-            ),
-            if (showAdd || trailing != null) const SizedBox(width: 12),
-            if (trailing != null) ...[
-              trailing,
-              const SizedBox(width: 12),
-            ],
-            if (showAdd)
-              ElevatedButton.icon(
-                onPressed: widget.config.onAdd,
-                icon: const Icon(Icons.add),
-                label: Text(widget.config.addLabel ?? 'Dodaj'),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
+  /// The stacked (non-inline) search bar. List-only: the grid has no
+  /// counterpart, and this is the layout the default list screens use, with
+  /// their Add button in the AppBar actions above.
   Widget _buildSearchBar() {
     return Padding(
       padding: const EdgeInsets.all(16),
@@ -328,7 +256,7 @@ class EntityListScreenState<T> extends State<EntityListScreen<T>> {
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 420),
           child: TextField(
-            controller: _searchController,
+            controller: _controller.searchController,
             decoration: InputDecoration(
               hintText: widget.config.searchHint,
               prefixIcon: const Icon(Icons.search),
@@ -346,11 +274,13 @@ class EntityListScreenState<T> extends State<EntityListScreen<T>> {
         widget.config.onDelete != null ||
         widget.config.extraActions != null;
 
+    final items = _controller.items;
+
     return ListView.separated(
-      itemCount: _items.length,
+      itemCount: items.length,
       separatorBuilder: (_, _) => const Divider(height: 1),
       itemBuilder: (context, index) {
-        final item = _items[index];
+        final item = items[index];
         final columns = widget.config.columns;
         final title = columns.isNotEmpty
             ? (columns.first.value(item)?.toString() ?? '-')
@@ -416,7 +346,7 @@ class EntityListScreenState<T> extends State<EntityListScreen<T>> {
           ...widget.config.columns.map((c) => DataColumn(label: Text(c.label))),
           if (hasActions) const DataColumn(label: Text('Akcije')),
         ],
-        rows: _items.map((item) {
+        rows: _controller.items.map((item) {
           return DataRow(
             cells: [
               ...widget.config.columns.map(
@@ -464,11 +394,8 @@ class EntityListScreenState<T> extends State<EntityListScreen<T>> {
   }
 
   Widget _buildPagination() {
-    if (_totalCount == null) return const SizedBox.shrink();
-
-    final totalPages = (_totalCount! / _pageSize).ceil();
-    final hasPrev = _currentPage > 1;
-    final hasNext = _currentPage < totalPages;
+    final totalPages = _controller.totalPages;
+    if (totalPages == null) return const SizedBox.shrink();
 
     return Padding(
       padding: const EdgeInsets.all(16),
@@ -478,25 +405,17 @@ class EntityListScreenState<T> extends State<EntityListScreen<T>> {
         spacing: 16,
         runSpacing: 8,
         children: [
-          Text('Stranica $_currentPage od $totalPages'),
-          Text('Ukupno: $_totalCount'),
+          Text('Stranica ${_controller.currentPage} od $totalPages'),
+          Text('Ukupno: ${_controller.totalCount}'),
           TextButton.icon(
-            onPressed: hasPrev
-                ? () {
-                    setState(() => _currentPage--);
-                    _loadPage();
-                  }
+            onPressed: _controller.hasPreviousPage
+                ? _controller.previousPage
                 : null,
             icon: const Icon(Icons.chevron_left),
             label: const Text('Prethodna'),
           ),
           TextButton.icon(
-            onPressed: hasNext
-                ? () {
-                    setState(() => _currentPage++);
-                    _loadPage();
-                  }
-                : null,
+            onPressed: _controller.hasNextPage ? _controller.nextPage : null,
             icon: const Icon(Icons.chevron_right),
             label: const Text('Sledeća'),
           ),

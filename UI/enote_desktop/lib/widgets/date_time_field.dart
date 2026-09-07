@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:enote_core/enote_core.dart';
 
 /// Like `DateField`, but picks a date and a time — for fields such as
 /// `Event.StartsAt`/`EndsAt` that carry a time component `DateField` (date
@@ -18,7 +19,7 @@ class DateTimeField extends FormField<DateTime?> {
   }) : super(
          builder: (FormFieldState<DateTime?> state) {
            final value = state.value;
-           final text = value != null ? _formatDateTime(value) : '';
+           final text = value != null ? formatDateTime(value) : '';
 
            Future<void> pickDateTime() async {
              final context = state.context;
@@ -101,10 +102,3 @@ class DateTimeField extends FormField<DateTime?> {
        );
 }
 
-String _formatDateTime(DateTime date) {
-  final day = date.day.toString().padLeft(2, '0');
-  final month = date.month.toString().padLeft(2, '0');
-  final hour = date.hour.toString().padLeft(2, '0');
-  final minute = date.minute.toString().padLeft(2, '0');
-  return '$day.$month.${date.year}. $hour:$minute';
-}

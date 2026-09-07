@@ -1,5 +1,3 @@
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -155,18 +153,10 @@ class _RentalListScreenState extends State<RentalListScreen> {
         },
         showAddButton: false,
         showDeleteConfirmation: false,
-        trailing: PdfReportButton(
+        trailing: const PdfReportButton(
           label: 'Izvještaj',
           fileName: 'store-rentals.pdf',
-          fetchPdf: () async {
-            final response = await apiClient.get('shop/rentals/report');
-            if (response.statusCode >= 400) {
-              throw ApiException(
-                ApiErrorMapper.mapError(response.statusCode, response.body),
-              );
-            }
-            return Uint8List.fromList(response.bodyBytes);
-          },
+          endpoint: 'shop/rentals/report',
         ),
       ),
     );

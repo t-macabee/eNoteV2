@@ -4,17 +4,21 @@ import 'package:flutter/material.dart';
 import 'package:printing/printing.dart';
 import 'package:enote_core/enote_core.dart';
 
+import 'package:provider/provider.dart';
+
 class PdfReportButton extends StatefulWidget {
   final String label;
   final String fileName;
-  final Future<Uint8List> Function() fetchPdf;
+  final Future<Uint8List> Function()? fetchPdf;
+  final String? endpoint;
 
   const PdfReportButton({
     super.key,
     required this.label,
     required this.fileName,
-    required this.fetchPdf,
-  });
+    this.fetchPdf,
+    this.endpoint,
+  }) : assert(fetchPdf != null || endpoint != null, 'Must provide either fetchPdf or endpoint');
 
   @override
   State<PdfReportButton> createState() => _PdfReportButtonState();
@@ -26,7 +30,14 @@ class _PdfReportButtonState extends State<PdfReportButton> {
   Future<Uint8List?> _load() async {
     setState(() => _isLoading = true);
     try {
-      return await widget.fetchPdf();
+      if (widget.fetchPdf != null) {
+        return await widget.fetchPdf!();
+      } else {
+        final client = Provider.of<ApiClient>(context, listen: false);
+        final response = await client.get(widget.endpoint!);
+        throwIfError(response);
+        return response.bodyBytes;
+      }
     } catch (e) {
       if (mounted) {
         ErrorBanner.show(context, message: userMessage(e));

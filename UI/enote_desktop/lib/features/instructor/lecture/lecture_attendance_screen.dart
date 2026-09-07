@@ -1,5 +1,3 @@
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -130,18 +128,7 @@ class _LectureAttendanceScreenState extends State<LectureAttendanceScreen> {
           PdfReportButton(
             label: 'Izvještaj',
             fileName: 'lecture-${widget.lectureId}-attendance.pdf',
-            fetchPdf: () async {
-              final apiClient = context.read<ApiClient>();
-              final response = await apiClient.get(
-                'instructor/lectures/${widget.lectureId}/attendance/report',
-              );
-              if (response.statusCode >= 400) {
-                throw ApiException(
-                  ApiErrorMapper.mapError(response.statusCode, response.body),
-                );
-              }
-              return Uint8List.fromList(response.bodyBytes);
-            },
+            endpoint: 'instructor/lectures/${widget.lectureId}/attendance/report',
           ),
           const SizedBox(width: 8),
         ],
