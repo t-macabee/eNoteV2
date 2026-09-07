@@ -1,5 +1,7 @@
 using eNote.API.Controllers.Admin;
 using eNote.Application.Common.Exceptions;
+using eNote.Application.Common.Interfaces;
+using eNote.Application.Common.Localization;
 using eNote.Application.Common.Paging;
 using eNote.Application.Features.Identity.Auth;
 using eNote.Application.Features.Identity.Employees;
@@ -37,7 +39,7 @@ public sealed class ShopEmployeeServiceTests
             [102] = StubUserIdentityService.User(102, "beta_emp", "Bob", "Beta")
         });
 
-        var service = new ShopEmployeeService(context, identity, new StubCurrentActor());
+        var service = new ShopEmployeeService(context, identity, new StubCurrentActor(), null!);
 
         var result = await service.GetPagedAsync(new ShopEmployeeSearchObject { IncludeTotalCount = true });
 
@@ -87,7 +89,7 @@ public sealed class ShopEmployeeServiceTests
             [3] = StubUserIdentityService.User(3, "brown", "Bob", "Brown")
         });
 
-        var service = new ShopEmployeeService(context, identity, new StubCurrentActor());
+        var service = new ShopEmployeeService(context, identity, new StubCurrentActor(), null!);
 
         var result = await service.GetPagedAsync(new ShopEmployeeSearchObject { Name = "Smith" });
 
@@ -117,7 +119,7 @@ public sealed class ShopEmployeeServiceTests
             [2] = StubUserIdentityService.User(2, "emp2", "Emp", "Two")
         });
 
-        var service = new ShopEmployeeService(context, identity, new StubCurrentActor());
+        var service = new ShopEmployeeService(context, identity, new StubCurrentActor(), null!);
 
         var result = await service.GetPagedAsync(new ShopEmployeeSearchObject { MusicStoreId = store2.Id });
 
@@ -142,7 +144,7 @@ public sealed class ShopEmployeeServiceTests
         await context.SaveChangesAsync();
 
         var identity = new StubUserIdentityService();
-        var service = new ShopEmployeeService(context, identity, new StubCurrentActor());
+        var service = new ShopEmployeeService(context, identity, new StubCurrentActor(), null!);
 
         var result = await service.GetPagedAsync(new ShopEmployeeSearchObject { Page = 2, PageSize = 1 });
 
@@ -169,7 +171,7 @@ public sealed class ShopEmployeeServiceTests
             [42] = StubUserIdentityService.User(42, "jdoe", "Jane", "Doe")
         });
 
-        var service = new ShopEmployeeService(context, identity, new StubCurrentActor());
+        var service = new ShopEmployeeService(context, identity, new StubCurrentActor(), null!);
 
         var dto = await service.GetByIdAsync(emp.Id);
 
@@ -201,7 +203,7 @@ public sealed class ShopEmployeeServiceTests
             [99] = StubUserIdentityService.User(99, "drummer", "Dave", "Drummer")
         });
 
-        var service = new ShopEmployeeService(context, identity, new StubCurrentActor());
+        var service = new ShopEmployeeService(context, identity, new StubCurrentActor(), null!);
 
         var dto = await service.GetByIdAsync(99);
 
@@ -213,7 +215,7 @@ public sealed class ShopEmployeeServiceTests
     public async Task GetByIdAsync_Throws_WhenEmployeeMissing()
     {
         await using var context = TestDbContextFactory.CreateContext(Now);
-        var service = new ShopEmployeeService(context, new StubUserIdentityService(), new StubCurrentActor());
+        var service = new ShopEmployeeService(context, new StubUserIdentityService(), new StubCurrentActor(), null!);
 
         await Assert.ThrowsAsync<NotFoundException>(() => service.GetByIdAsync(9999));
     }
@@ -245,7 +247,7 @@ public sealed class ShopEmployeeServiceTests
             [50] = deactivatedUser
         });
 
-        var service = new ShopEmployeeService(context, identity, new StubCurrentActor());
+        var service = new ShopEmployeeService(context, identity, new StubCurrentActor(), null!);
 
         var result = await service.GetPagedAsync(new ShopEmployeeSearchObject());
 
@@ -273,7 +275,7 @@ public sealed class ShopEmployeeServiceTests
             [51] = new() { Id = 51, Username = "deactivated_user", FirstName = "Inactive", LastName = "User", IsActive = false }
         });
 
-        var service = new ShopEmployeeService(context, identity, new StubCurrentActor());
+        var service = new ShopEmployeeService(context, identity, new StubCurrentActor(), null!);
 
         var activeResult = await service.GetPagedAsync(new ShopEmployeeSearchObject { IsActive = true });
         Assert.DoesNotContain(activeResult.Items, x => x.AppUserId == 51);
@@ -302,7 +304,7 @@ public sealed class ShopEmployeeServiceTests
             [77] = StubUserIdentityService.User(77, "keyboardist", "Ken", "Keys")
         });
 
-        var service = new ShopEmployeeService(context, identity, new StubCurrentActor());
+        var service = new ShopEmployeeService(context, identity, new StubCurrentActor(), null!);
         var controller = new AdminEmployeeController(service);
 
         var pagedResult = await controller.GetPaged(new ShopEmployeeSearchObject(), CancellationToken.None);
@@ -314,5 +316,131 @@ public sealed class ShopEmployeeServiceTests
         var okItem = Assert.IsType<OkObjectResult>(itemResult.Result);
         var itemData = Assert.IsType<ShopEmployeeDto>(okItem.Value);
         Assert.Equal("Keyboard Store", itemData.StoreName);
+    }
+
+    [Fact]
+    public async Task SetEmployeeActiveByManagerAsync_Succeeds_WhenCallerIsManagerInSameStore()
+    {
+        await using var context = TestDbContextFactory.CreateContext(Now);
+
+        var store = new MusicStore("Store Alpha", "08:00-16:00");
+        context.Set<MusicStore>().Add(store);
+        await context.SaveChangesAsync();
+
+        var manager = new MusicStoreEmployee(appUserId: 10, musicStoreId: store.Id, isManager: true);
+        var employee = new MusicStoreEmployee(appUserId: 20, musicStoreId: store.Id, isManager: false);
+        context.Set<MusicStoreEmployee>().AddRange(manager, employee);
+        await context.SaveChangesAsync();
+
+        var actor = new StubCurrentActor(userId: 10);
+        var account = new StubUserAccountService();
+        var provisioning = new UserProvisioningService(context, account, new SystemClock(), actor);
+        var service = new ShopEmployeeService(context, new StubUserIdentityService(), actor, provisioning);
+
+        var (success, error) = await service.SetEmployeeActiveByManagerAsync(20, false);
+
+        Assert.True(success);
+        Assert.Null(error);
+        Assert.Equal((20, false), account.SetActiveCall);
+    }
+
+    [Fact]
+    public async Task SetEmployeeActiveByManagerAsync_ThrowsAuthorizationException_WhenCallerIsNotManager()
+    {
+        await using var context = TestDbContextFactory.CreateContext(Now);
+
+        var store = new MusicStore("Store Alpha", "08:00-16:00");
+        context.Set<MusicStore>().Add(store);
+        await context.SaveChangesAsync();
+
+        var regularEmployee = new MusicStoreEmployee(appUserId: 10, musicStoreId: store.Id, isManager: false);
+        var peerEmployee = new MusicStoreEmployee(appUserId: 20, musicStoreId: store.Id, isManager: false);
+        context.Set<MusicStoreEmployee>().AddRange(regularEmployee, peerEmployee);
+        await context.SaveChangesAsync();
+
+        var actor = new StubCurrentActor(userId: 10);
+        var account = new StubUserAccountService();
+        var provisioning = new UserProvisioningService(context, account, new SystemClock(), actor);
+        var service = new ShopEmployeeService(context, new StubUserIdentityService(), actor, provisioning);
+
+        var ex = await Assert.ThrowsAsync<AuthorizationException>(() =>
+            service.SetEmployeeActiveByManagerAsync(20, false));
+
+        Assert.Equal(Messages.ManagerRoleRequired, ex.Message);
+        Assert.Null(account.SetActiveCall);
+    }
+
+    [Fact]
+    public async Task SetEmployeeActiveByManagerAsync_ThrowsBusinessException_WhenTargetBelongsToDifferentStore()
+    {
+        await using var context = TestDbContextFactory.CreateContext(Now);
+
+        var store1 = new MusicStore("Store Alpha", "08:00-16:00");
+        var store2 = new MusicStore("Store Beta", "09:00-17:00");
+        context.Set<MusicStore>().AddRange(store1, store2);
+        await context.SaveChangesAsync();
+
+        var managerStore1 = new MusicStoreEmployee(appUserId: 10, musicStoreId: store1.Id, isManager: true);
+        var employeeStore2 = new MusicStoreEmployee(appUserId: 20, musicStoreId: store2.Id, isManager: false);
+        context.Set<MusicStoreEmployee>().AddRange(managerStore1, employeeStore2);
+        await context.SaveChangesAsync();
+
+        var actor = new StubCurrentActor(userId: 10);
+        var account = new StubUserAccountService();
+        var provisioning = new UserProvisioningService(context, account, new SystemClock(), actor);
+        var service = new ShopEmployeeService(context, new StubUserIdentityService(), actor, provisioning);
+
+        var ex = await Assert.ThrowsAsync<BusinessException>(() =>
+            service.SetEmployeeActiveByManagerAsync(20, false));
+
+        Assert.Equal(Messages.RentalAccessDenied, ex.Message);
+        Assert.Null(account.SetActiveCall);
+    }
+
+    [Fact]
+    public async Task SetEmployeeActiveByManagerAsync_ReturnsFailure_WhenAttemptingSelfDeactivation()
+    {
+        await using var context = TestDbContextFactory.CreateContext(Now);
+
+        var store = new MusicStore("Store Alpha", "08:00-16:00");
+        context.Set<MusicStore>().Add(store);
+        await context.SaveChangesAsync();
+
+        var manager = new MusicStoreEmployee(appUserId: 10, musicStoreId: store.Id, isManager: true);
+        context.Set<MusicStoreEmployee>().Add(manager);
+        await context.SaveChangesAsync();
+
+        var actor = new StubCurrentActor(userId: 10);
+        var account = new StubUserAccountService();
+        var provisioning = new UserProvisioningService(context, account, new SystemClock(), actor);
+        var service = new ShopEmployeeService(context, new StubUserIdentityService(), actor, provisioning);
+
+        var (success, error) = await service.SetEmployeeActiveByManagerAsync(10, false);
+
+        Assert.False(success);
+        Assert.Equal("Cannot deactivate your own account.", error);
+        Assert.Null(account.SetActiveCall);
+    }
+
+    private sealed class StubUserAccountService : IUserAccountService
+    {
+        public (int UserId, bool IsActive)? SetActiveCall { get; private set; }
+        public (bool Success, string? Error) SetActiveResult { get; set; } = (true, null);
+
+        public Task<(bool Success, string? Error)> SetActiveAsync(int userId, bool isActive, CancellationToken cancellationToken = default)
+        {
+            SetActiveCall = (userId, isActive);
+            return Task.FromResult(SetActiveResult);
+        }
+
+        public Task<int?> FindUserIdByUsernameAsync(string username, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<(int? UserId, string? Error)> CreateUserAsync(string username, string email, string password, string? firstName, string? lastName, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<(bool Success, string? Error)> AssignSingleRoleAsync(int userId, string role, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<(bool Success, string? Error)> UpdateExistingUserAsync(int userId, string email, string? firstName, string? lastName, DateTime? dateOfBirth = null, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<(bool Success, string? Error)> UpdatePictureAsync(int userId, Stream picture, string fileName, string contentType, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<(Stream? Data, string? ContentType)> GetPictureAsync(int userId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<(bool Success, string? Error)> DeletePictureAsync(int userId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<(bool Success, string? Error)> ChangePasswordAsync(int userId, string currentPassword, string newPassword, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<(bool Success, string? Error)> DeleteUserAsync(int userId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
     }
 }

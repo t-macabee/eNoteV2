@@ -8,4 +8,12 @@ class ShopEmployeeProvider extends BaseProvider<ShopEmployeeDto> {
   ShopEmployeeDto fromJson(Map<String, dynamic> json) =>
       ShopEmployeeDto.fromJson(json);
 
+  Future<void> setActive(int userId, bool isActive) async {
+    final response = await apiClient.put(
+      '$endpoint/$userId/status',
+      body: {'isActive': isActive},
+    );
+    throwIfError(response);
+    notifyListeners();
+  }
 }

@@ -39,8 +39,11 @@ String _fakeJwt({
 class _MockHttpClient extends http.BaseClient {
   final List<String> postUrls = [];
   final List<String> postBodies = [];
+  final List<String> putUrls = [];
+  final List<String> putBodies = [];
   final List<String> getUrls = [];
   bool simulate400 = false;
+  List<Map<String, dynamic>>? shopEmployees;
 
   @override
   Future<http.StreamedResponse> send(http.BaseRequest request) async {
@@ -68,6 +71,18 @@ class _MockHttpClient extends http.BaseClient {
       );
     }
 
+    if (request.method == 'PUT') {
+      if (request is http.Request) {
+        putUrls.add(url);
+        putBodies.add(request.body);
+      }
+      return http.StreamedResponse(
+        Stream.value(utf8.encode('')),
+        204,
+        headers: {'content-type': 'application/json'},
+      );
+    }
+
     if (request.method == 'GET' && url.contains('instructor/students')) {
       final json = jsonEncode({
         'items': [
@@ -91,22 +106,23 @@ class _MockHttpClient extends http.BaseClient {
     }
 
     if (request.method == 'GET' && url.contains('shop/employees')) {
+      final items = shopEmployees ?? [
+        {
+          'id': 1,
+          'appUserId': 20,
+          'musicStoreId': 1,
+          'firstName': 'Miralem',
+          'lastName': 'Pjanic',
+          'username': 'mpjanic',
+          'isManager': true,
+          'isActive': true,
+        }
+      ];
       final json = jsonEncode({
-        'items': [
-          {
-            'id': 1,
-            'appUserId': 20,
-            'musicStoreId': 1,
-            'firstName': 'Miralem',
-            'lastName': 'Pjanic',
-            'username': 'mpjanic',
-            'isManager': true,
-            'isActive': true,
-          }
-        ],
+        'items': items,
         'page': 1,
         'pageSize': 10,
-        'totalCount': 1,
+        'totalCount': items.length,
       });
       return http.StreamedResponse(
         Stream.value(utf8.encode(json)),
@@ -362,5 +378,120 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(mockClient.getUrls.any((url) => url.contains('includeTotalCount=true')), isTrue);
+  });
+
+  testWidgets(
+      'ShopEmployeeListScreen: toggle renders only when isManager == true and never on caller own row',
+      (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(1200, 900);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final mockClient = _MockHttpClient();
+    mockClient.shopEmployees = [
+      {
+        'id': 1,
+        'appUserId': 20,
+        'musicStoreId': 1,
+        'firstName': 'Miralem',
+        'lastName': 'Pjanic',
+        'username': 'mpjanic',
+        'isManager': true,
+        'isActive': true,
+      },
+      {
+        'id': 2,
+        'appUserId': 30,
+        'musicStoreId': 1,
+        'firstName': 'Edin',
+        'lastName': 'Visca',
+        'username': 'evisca',
+        'isManager': false,
+        'isActive': true,
+      },
+    ];
+
+    // Case 1: Caller is NOT a manager (isManager: false, subject: '20')
+    final nonManagerAuthState = AuthState(
+      baseUrl: 'http://localhost:5059/api/v1/',
+      httpClient: mockClient,
+      tokenReader: () => _fakeJwt(role: 'StoreEmployee', isManager: false, subject: '20'),
+    );
+    final nonManagerApiClient = ApiClient(
+      baseUrl: 'http://localhost:5059/api/v1/',
+      authState: nonManagerAuthState,
+      httpClient: mockClient,
+    );
+
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          Provider<ApiClient>.value(value: nonManagerApiClient),
+          ChangeNotifierProvider<AuthState>.value(value: nonManagerAuthState),
+          ChangeNotifierProvider<ShopEmployeeProvider>(
+            create: (_) => ShopEmployeeProvider(apiClient: nonManagerApiClient),
+          ),
+        ],
+        child: const MaterialApp(home: ShopEmployeeListScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Miralem Pjanic'), findsOneWidget);
+    expect(find.text('Edin Visca'), findsOneWidget);
+    // Non-manager: No toggle buttons rendered
+    expect(find.byIcon(Icons.toggle_on), findsNothing);
+    expect(find.byIcon(Icons.toggle_off), findsNothing);
+    expect(find.byTooltip('Deaktiviraj'), findsNothing);
+    expect(find.byTooltip('Aktiviraj'), findsNothing);
+
+    // Case 2: Caller IS a manager (isManager: true, subject: '20')
+    final managerAuthState = AuthState(
+      baseUrl: 'http://localhost:5059/api/v1/',
+      httpClient: mockClient,
+      tokenReader: () => _fakeJwt(role: 'StoreEmployee', isManager: true, subject: '20'),
+    );
+    final managerApiClient = ApiClient(
+      baseUrl: 'http://localhost:5059/api/v1/',
+      authState: managerAuthState,
+      httpClient: mockClient,
+    );
+
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          Provider<ApiClient>.value(value: managerApiClient),
+          ChangeNotifierProvider<AuthState>.value(value: managerAuthState),
+          ChangeNotifierProvider<ShopEmployeeProvider>(
+            create: (_) => ShopEmployeeProvider(apiClient: managerApiClient),
+          ),
+        ],
+        child: const MaterialApp(home: ShopEmployeeListScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Miralem Pjanic'), findsOneWidget);
+    expect(find.text('Edin Visca'), findsOneWidget);
+
+    // Toggle renders on Edin Visca's card (appUserId 30 != 20), but NEVER on caller's card (appUserId 20 == 20)
+    expect(find.byIcon(Icons.toggle_on), findsOneWidget);
+    expect(find.byTooltip('Deaktiviraj'), findsOneWidget);
+
+    // Tapping toggle on Edin Visca triggers confirmation dialog
+    await tester.tap(find.byTooltip('Deaktiviraj'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Potvrdite deaktivaciju'), findsOneWidget);
+    expect(
+        find.text('Da li ste sigurni da želite da deaktivirate ovog korisnika?'),
+        findsOneWidget);
+
+    await tester.tap(find.text('Potvrdi'));
+    await tester.pumpAndSettle();
+
+    expect(mockClient.putUrls.single, endsWith('shop/employees/30/status'));
+    expect(mockClient.putBodies.single, contains('"isActive":false'));
   });
 }

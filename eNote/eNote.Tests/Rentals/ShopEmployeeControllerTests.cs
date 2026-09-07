@@ -27,7 +27,7 @@ public sealed class ShopEmployeeControllerTests
         await ctx.SaveChangesAsync();
 
         var actor = new StubCurrentActor(userId: 10);
-        var employeeService = new ShopEmployeeService(ctx, new StubUserIdentityService(), actor);
+        var employeeService = new ShopEmployeeService(ctx, new StubUserIdentityService(), actor, new StubProvisioningService());
         var controller = new ShopEmployeeController(employeeService, new StubProvisioningService());
 
         var result = await controller.GetPaged(new ShopEmployeeSearchObject(), CancellationToken.None);
@@ -41,7 +41,7 @@ public sealed class ShopEmployeeControllerTests
     {
         await using var ctx = TestDbContextFactory.CreateContext(Now);
         var actor = new StubCurrentActor(userId: 10);
-        var employeeService = new ShopEmployeeService(ctx, new StubUserIdentityService(), actor);
+        var employeeService = new ShopEmployeeService(ctx, new StubUserIdentityService(), actor, new StubProvisioningService());
         var stubProvisioning = new StubProvisioningService { CreateResult = (55, null) };
         var controller = new ShopEmployeeController(employeeService, stubProvisioning);
 
@@ -61,7 +61,7 @@ public sealed class ShopEmployeeControllerTests
     {
         await using var ctx = TestDbContextFactory.CreateContext(Now);
         var actor = new StubCurrentActor(userId: 10);
-        var employeeService = new ShopEmployeeService(ctx, new StubUserIdentityService(), actor);
+        var employeeService = new ShopEmployeeService(ctx, new StubUserIdentityService(), actor, new StubProvisioningService());
         var stubProvisioning = new StubProvisioningService { CreateResult = (0, "Creation error") };
         var controller = new ShopEmployeeController(employeeService, stubProvisioning);
 
@@ -71,6 +71,53 @@ public sealed class ShopEmployeeControllerTests
             Email = "emp@example.com",
             Password = "Password1!"
         }, CancellationToken.None);
+
+        var badRequest = Assert.IsType<BadRequestObjectResult>(result);
+        Assert.NotNull(badRequest.Value);
+    }
+
+    [Fact]
+    public async Task SetStatus_ReturnsNoContent_WhenSuccessful()
+    {
+        await using var ctx = TestDbContextFactory.CreateContext(Now);
+        var store = new MusicStore("Main Shop", "09-17");
+        ctx.Set<MusicStore>().Add(store);
+        await ctx.SaveChangesAsync();
+
+        var manager = new MusicStoreEmployee(appUserId: 10, musicStoreId: store.Id, isManager: true);
+        var employee = new MusicStoreEmployee(appUserId: 20, musicStoreId: store.Id, isManager: false);
+        ctx.Set<MusicStoreEmployee>().AddRange(manager, employee);
+        await ctx.SaveChangesAsync();
+
+        var actor = new StubCurrentActor(userId: 10);
+        var stubProvisioning = new StubProvisioningService();
+        var employeeService = new ShopEmployeeService(ctx, new StubUserIdentityService(), actor, stubProvisioning);
+        var controller = new ShopEmployeeController(employeeService, stubProvisioning);
+
+        var result = await controller.SetStatus(20, new UserStatusRequest(false), CancellationToken.None);
+
+        Assert.IsType<NoContentResult>(result);
+    }
+
+    [Fact]
+    public async Task SetStatus_ReturnsBadRequest_WhenErrorOccurs()
+    {
+        await using var ctx = TestDbContextFactory.CreateContext(Now);
+        var store = new MusicStore("Main Shop", "09-17");
+        ctx.Set<MusicStore>().Add(store);
+        await ctx.SaveChangesAsync();
+
+        var manager = new MusicStoreEmployee(appUserId: 10, musicStoreId: store.Id, isManager: true);
+        var employee = new MusicStoreEmployee(appUserId: 20, musicStoreId: store.Id, isManager: false);
+        ctx.Set<MusicStoreEmployee>().AddRange(manager, employee);
+        await ctx.SaveChangesAsync();
+
+        var actor = new StubCurrentActor(userId: 10);
+        var stubProvisioning = new StubProvisioningService { SetActiveResult = (false, "Cannot deactivate user.") };
+        var employeeService = new ShopEmployeeService(ctx, new StubUserIdentityService(), actor, stubProvisioning);
+        var controller = new ShopEmployeeController(employeeService, stubProvisioning);
+
+        var result = await controller.SetStatus(20, new UserStatusRequest(false), CancellationToken.None);
 
         var badRequest = Assert.IsType<BadRequestObjectResult>(result);
         Assert.NotNull(badRequest.Value);
@@ -91,6 +138,7 @@ public sealed class ShopEmployeeControllerTests
     private sealed class StubProvisioningService : IUserProvisioningService
     {
         public (int UserId, string? Error) CreateResult { get; set; } = (1, null);
+        public (bool Success, string? Error) SetActiveResult { get; set; } = (true, null);
 
         public Task<(RegistrationResult? Registration, string? Error)> RegisterStudentAsync(RegisterRequest request, CancellationToken cancellationToken = default) =>
             Task.FromResult<(RegistrationResult?, string?)>((null, null));
@@ -100,7 +148,7 @@ public sealed class ShopEmployeeControllerTests
 
         public Task UpdateMembershipAsync(int userId, UpdateMembershipRequest request, CancellationToken cancellationToken = default) => Task.CompletedTask;
         public Task<(bool Success, string? Error)> DeactivateUserAsync(int userId, CancellationToken cancellationToken = default) => Task.FromResult((true, (string?)null));
-        public Task<(bool Success, string? Error)> SetUserActiveAsync(int userId, bool isActive, CancellationToken cancellationToken = default) => Task.FromResult((true, (string?)null));
+        public Task<(bool Success, string? Error)> SetUserActiveAsync(int userId, bool isActive, CancellationToken cancellationToken = default) => Task.FromResult(SetActiveResult);
         public Task<(bool Success, string? Error)> DeleteUserAsync(int userId, CancellationToken cancellationToken = default) => Task.FromResult((true, (string?)null));
         public Task<bool> IsStoreManagerAsync(int userId, CancellationToken cancellationToken = default) => Task.FromResult(false);
 

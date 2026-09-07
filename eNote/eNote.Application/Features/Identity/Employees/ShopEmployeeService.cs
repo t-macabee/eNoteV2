@@ -12,16 +12,20 @@ namespace eNote.Application.Features.Identity.Employees;
 public sealed class ShopEmployeeService(
     IAppDbContext context,
     IUserIdentityService identityService,
-    ICurrentUserContext currentUser)
+    ICurrentUserContext currentUser,
+    IUserProvisioningService provisioningService)
 {
+    private async Task<MusicStoreEmployee> LoadCurrentEmployeeAsync(CancellationToken cancellationToken) =>
+        await context.Set<MusicStoreEmployee>()
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(x => x.AppUserId == currentUser.UserId && x.IsActive, cancellationToken)
+            ?? throw new BusinessException(Messages.EmployeeProfileNotFound);
+
     public async Task<PagedResult<ShopEmployeeDto>> GetPagedForCurrentStoreAsync(
         ShopEmployeeSearchObject search,
         CancellationToken cancellationToken = default)
     {
-        var currentEmployee = await context.Set<MusicStoreEmployee>()
-            .IgnoreQueryFilters()
-            .FirstOrDefaultAsync(x => x.AppUserId == currentUser.UserId && x.IsActive, cancellationToken)
-            ?? throw new BusinessException(Messages.EmployeeProfileNotFound);
+        var currentEmployee = await LoadCurrentEmployeeAsync(cancellationToken);
 
         var storeId = currentEmployee.MusicStoreId;
 
@@ -108,6 +112,27 @@ public sealed class ShopEmployeeService(
         UserIdentityDto? user = await identityService.GetUserAsync(entity.AppUserId, cancellationToken);
 
         return Map(entity, user);
+    }
+
+    public async Task<(bool Success, string? Error)> SetEmployeeActiveByManagerAsync(int targetUserId, bool isActive, CancellationToken ct = default)
+    {
+        var currentEmployee = await LoadCurrentEmployeeAsync(ct);
+        if (!currentEmployee.IsManager)
+        {
+            throw new AuthorizationException(Messages.ManagerRoleRequired);
+        }
+
+        var target = await context.Set<MusicStoreEmployee>()
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(x => x.AppUserId == targetUserId, ct)
+            ?? throw new NotFoundException(Messages.EmployeeProfileNotFound);
+
+        if (target.MusicStoreId != currentEmployee.MusicStoreId)
+        {
+            throw new BusinessException(Messages.RentalAccessDenied);
+        }
+
+        return await provisioningService.SetUserActiveAsync(targetUserId, isActive, ct);
     }
 
     internal static ShopEmployeeDto Map(MusicStoreEmployee entity, UserIdentityDto? user) => new()

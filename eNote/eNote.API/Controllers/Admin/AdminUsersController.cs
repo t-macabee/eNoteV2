@@ -109,5 +109,3 @@ public sealed class AdminUsersController(
         return NoContent();
     }
 }
-
-public record UserStatusRequest(bool IsActive);

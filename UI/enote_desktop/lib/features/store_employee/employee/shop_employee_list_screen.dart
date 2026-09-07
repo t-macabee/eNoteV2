@@ -40,6 +40,33 @@ class _ShopEmployeeListScreenState extends State<ShopEmployeeListScreen> {
             formatDisplayName(item.firstName, item.lastName, item.username),
         subtitleOf: (item) => item.isManager ? 'Voditelj radnje' : 'Uposlenik radnje',
         placeholderIcon: Icons.badge_outlined,
+        cardActions: (context, item) {
+          final isManager = context.watch<AuthState>().isManager;
+          final currentUserId = context.watch<AuthState>().userId;
+          if (!isManager || item.appUserId == currentUserId) return const [];
+          return [
+            IconButton(
+              icon: Icon(item.isActive ? Icons.toggle_on : Icons.toggle_off),
+              tooltip: item.isActive ? 'Deaktiviraj' : 'Aktiviraj',
+              onPressed: () async {
+                final confirmed = await confirmDialog(
+                  context: context,
+                  title: item.isActive ? 'Potvrdite deaktivaciju' : 'Potvrdite aktivaciju',
+                  message: item.isActive
+                      ? 'Da li ste sigurni da želite da deaktivirate ovog korisnika?'
+                      : 'Da li ste sigurni da želite da aktivirate ovog korisnika?',
+                );
+                if (confirmed != true) return;
+                try {
+                  await context.read<ShopEmployeeProvider>().setActive(item.appUserId, !item.isActive);
+                  _gridKey.currentState?.refresh();
+                } catch (e) {
+                  if (context.mounted) ErrorBanner.show(context, message: userMessage(e));
+                }
+              },
+            ),
+          ];
+        },
         onAdd: isManager ? _openCreateForm : null,
         addLabel: isManager ? 'Kreiraj zaposlenika' : null,
         showAddButton: isManager,

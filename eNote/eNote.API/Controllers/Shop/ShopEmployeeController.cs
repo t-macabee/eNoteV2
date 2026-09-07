@@ -42,4 +42,18 @@ public sealed class ShopEmployeeController(
 
         return StatusCode(StatusCodes.Status201Created, new { userId });
     }
+
+    [HttpPut("{id:int}/status")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> SetStatus(int id, [FromBody] UserStatusRequest request, CancellationToken cancellationToken)
+    {
+        var (success, error) = await employeeService.SetEmployeeActiveByManagerAsync(id, request.IsActive, cancellationToken);
+        if (!success)
+        {
+            return BadRequest(new { message = error });
+        }
+        return NoContent();
+    }
 }
