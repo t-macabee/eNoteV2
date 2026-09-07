@@ -15,6 +15,7 @@ import '../features/shared/announcement/store_announcement_provider.dart';
 import '../features/store_employee/employee/shop_employee_list_screen.dart';
 import '../features/store_employee/instrument/instrument_list_screen.dart';
 import '../features/store_employee/rental/rental_list_screen.dart';
+import '../features/store_employee/store/shop_store_screen.dart';
 import 'role_menu.dart';
 
 class MasterScreen extends StatefulWidget {
@@ -95,6 +96,12 @@ class _MasterScreenState extends State<MasterScreen> {
       icon: Icons.campaign,
       label: 'Objave',
       screenBuilder: _buildAnnouncementList,
+      allowedRoles: [UserRole.storeEmployee],
+    ),
+    RoleMenuEntry(
+      icon: Icons.storefront_outlined,
+      label: 'Moja prodavnica',
+      screenBuilder: (context) => const ShopStoreScreen(),
       allowedRoles: [UserRole.storeEmployee],
     ),
   ];

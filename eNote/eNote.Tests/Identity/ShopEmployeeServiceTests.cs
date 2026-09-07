@@ -422,6 +422,49 @@ public sealed class ShopEmployeeServiceTests
         Assert.Null(account.SetActiveCall);
     }
 
+    [Fact]
+    public async Task GetCurrentManagerStoreIdAsync_ReturnsStoreId_WhenCallerIsManager()
+    {
+        await using var context = TestDbContextFactory.CreateContext(Now);
+
+        var store = new MusicStore("Store Alpha", "08:00-16:00");
+        context.Set<MusicStore>().Add(store);
+        await context.SaveChangesAsync();
+
+        var manager = new MusicStoreEmployee(appUserId: 10, musicStoreId: store.Id, isManager: true);
+        context.Set<MusicStoreEmployee>().Add(manager);
+        await context.SaveChangesAsync();
+
+        var actor = new StubCurrentActor(userId: 10);
+        var service = new ShopEmployeeService(context, new StubUserIdentityService(), actor, null!);
+
+        var storeId = await service.GetCurrentManagerStoreIdAsync();
+
+        Assert.Equal(store.Id, storeId);
+    }
+
+    [Fact]
+    public async Task GetCurrentManagerStoreIdAsync_ThrowsAuthorizationException_WhenCallerIsNotManager()
+    {
+        await using var context = TestDbContextFactory.CreateContext(Now);
+
+        var store = new MusicStore("Store Alpha", "08:00-16:00");
+        context.Set<MusicStore>().Add(store);
+        await context.SaveChangesAsync();
+
+        var regularEmployee = new MusicStoreEmployee(appUserId: 20, musicStoreId: store.Id, isManager: false);
+        context.Set<MusicStoreEmployee>().Add(regularEmployee);
+        await context.SaveChangesAsync();
+
+        var actor = new StubCurrentActor(userId: 20);
+        var service = new ShopEmployeeService(context, new StubUserIdentityService(), actor, null!);
+
+        var ex = await Assert.ThrowsAsync<AuthorizationException>(() =>
+            service.GetCurrentManagerStoreIdAsync());
+
+        Assert.Equal(Messages.ManagerRoleRequired, ex.Message);
+    }
+
     private sealed class StubUserAccountService : IUserAccountService
     {
         public (int UserId, bool IsActive)? SetActiveCall { get; private set; }

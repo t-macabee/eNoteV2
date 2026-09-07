@@ -135,6 +135,16 @@ public sealed class ShopEmployeeService(
         return await provisioningService.SetUserActiveAsync(targetUserId, isActive, ct);
     }
 
+    public async Task<int> GetCurrentManagerStoreIdAsync(CancellationToken ct = default)
+    {
+        var currentEmployee = await LoadCurrentEmployeeAsync(ct);
+        if (!currentEmployee.IsManager)
+        {
+            throw new AuthorizationException(Messages.ManagerRoleRequired);
+        }
+        return currentEmployee.MusicStoreId;
+    }
+
     internal static ShopEmployeeDto Map(MusicStoreEmployee entity, UserIdentityDto? user) => new()
     {
         Id = entity.Id,
