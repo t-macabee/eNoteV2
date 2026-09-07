@@ -31,11 +31,7 @@ class _MusicStoreListScreenState extends State<MusicStoreListScreen> {
   }
 
   Future<void> _loadCities() async {
-    final result = await context.read<CityProvider>().search({
-      'page': 1,
-      'pageSize': 100,
-      'includeTotalCount': true,
-    });
+    final result = await context.read<CityProvider>().search(pagedQuery(1, 100, ''));
     if (!mounted) return;
     setState(() => _cities = result.items);
   }
@@ -93,14 +89,9 @@ class _MusicStoreListScreenState extends State<MusicStoreListScreen> {
         // UserGridScreen's rationale: setState doesn't rebuild
         // synchronously, so this closure must see the latest value even if
         // it runs against a stale build.
-        fetcher: (page, pageSize, search) =>
-            context.read<MusicStoreProvider>().search({
-          'page': page,
-          'pageSize': pageSize,
-          'includeTotalCount': true,
-          if (search.isNotEmpty) 'storeName': search,
+        fetcher: (page, pageSize, search) => context.read<MusicStoreProvider>().search(pagedQuery(page, pageSize, search, searchField: 'storeName', filters: {
           if (_cityId != null) 'cityId': _cityId,
-        }),
+})),
         onAdd: () => _openForm(),
         // Only group by city when no specific city filter is active — when
         // one city is selected every visible row already shares it, so a

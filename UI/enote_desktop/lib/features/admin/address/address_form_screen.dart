@@ -77,11 +77,7 @@ class _AddressFormScreenState extends State<AddressFormScreen> {
           value: _selectedCityId,
           fetcher: () async {
             final provider = context.read<CityProvider>();
-            final result = await provider.search({
-              'page': 1,
-              'pageSize': 100,
-              'includeTotalCount': true,
-            });
+            final result = await provider.search(pagedQuery(1, 100, ''));
             return result.items;
           },
           itemLabel: (item) => item.name,

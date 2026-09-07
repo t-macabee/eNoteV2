@@ -40,7 +40,6 @@ class _MusicStoreDetailScreenState extends State<MusicStoreDetailScreen> {
       final result = await context.read<InstrumentTypeProvider>().search({
         'page': 1,
         'pageSize': 100,
-        'includeTotalCount': false,
       });
       if (!mounted) return;
       setState(() {

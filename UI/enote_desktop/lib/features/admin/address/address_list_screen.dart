@@ -60,13 +60,7 @@ class _AddressListScreenState extends State<AddressListScreen> {
             value: (item) => item.number,
           ),
         ],
-        fetcher: (page, pageSize, search) =>
-            context.read<AddressProvider>().search({
-          'page': page,
-          'pageSize': pageSize,
-          'includeTotalCount': true,
-          if (search.isNotEmpty) 'city': search,
-        }),
+        fetcher: (page, pageSize, search) => context.read<AddressProvider>().search(pagedQuery(page, pageSize, search, searchField: 'city')),
         onAdd: () => _openForm(),
         onEdit: (context, item) => _openForm(item),
         onDelete: (context, item) async {

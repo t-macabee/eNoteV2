@@ -84,13 +84,7 @@ class _AssignmentListScreenState extends State<AssignmentListScreen> {
             value: (item) => formatDateTime(item.dueAt),
           ),
         ],
-        fetcher: (page, pageSize, search) =>
-            context.read<AssignmentProvider>().search({
-          'page': page,
-          'pageSize': pageSize,
-          'includeTotalCount': true,
-          if (search.isNotEmpty) 'title': search,
-        }),
+        fetcher: (page, pageSize, search) => context.read<AssignmentProvider>().search(pagedQuery(page, pageSize, search, searchField: 'title')),
         onAdd: () => _openForm(),
         onEdit: (context, item) => _openForm(item),
         onDelete: (context, item) async {

@@ -133,12 +133,7 @@ class _SubmissionListScreenState extends State<SubmissionListScreen> {
                 : null,
           ),
         ],
-        fetcher: (page, pageSize, search) =>
-            context.read<SubmissionProvider>().search({
-              'page': page,
-              'pageSize': pageSize,
-              'includeTotalCount': true,
-            }),
+        fetcher: (page, pageSize, search) => context.read<SubmissionProvider>().search(pagedQuery(page, pageSize, search)),
         onEdit: (ctx, item) => _openGradeDialog(item),
         onDelete: null,
       ),

@@ -138,7 +138,6 @@ class _MusicStoreFormScreenState extends State<MusicStoreFormScreen> {
             final result = await provider.search({
               'page': 1,
               'pageSize': 100,
-              'includeTotalCount': false,
             });
             return result.items;
           },

@@ -28,7 +28,6 @@ class _RentalListScreenState extends State<RentalListScreen> {
     _instrumentsFuture = context.read<InstrumentProvider>().search({
       'page': 1,
       'pageSize': 100,
-      'includeTotalCount': false,
     }).then((result) => result.items);
   }
 
@@ -131,16 +130,12 @@ class _RentalListScreenState extends State<RentalListScreen> {
         ],
         showSearchBar: false,
         filterBar: _buildFilterBar(),
-        fetcher: (page, pageSize, search) =>
-            context.read<RentalProvider>().search({
-          'page': page,
-          'pageSize': pageSize,
-          'includeTotalCount': true,
+        fetcher: (page, pageSize, search) => context.read<RentalProvider>().search(pagedQuery(page, pageSize, search, filters: {
           if (_selectedStatus != null)
             'rentalStatus': _selectedStatus!.toJson(),
           if (_selectedInstrumentId != null)
             'instrumentId': _selectedInstrumentId,
-        }),
+})),
         onEdit: (context, item) async {
           await Navigator.of(context).push<bool>(
             MaterialPageRoute<bool>(

@@ -114,7 +114,6 @@ class _UserProvisionFormScreenState extends State<UserProvisionFormScreen> {
               final result = await context.read<MusicStoreProvider>().search({
                 'page': 1,
                 'pageSize': 100,
-                'includeTotalCount': false,
               });
               return result.items;
             },

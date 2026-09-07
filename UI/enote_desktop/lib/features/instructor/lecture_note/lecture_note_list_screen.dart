@@ -58,13 +58,7 @@ class _LectureNoteListScreenState extends State<LectureNoteListScreen> {
             value: (item) => truncate(item.content, 80),
           ),
         ],
-        fetcher: (page, pageSize, search) =>
-            context.read<LectureNoteProvider>().search({
-          'page': page,
-          'pageSize': pageSize,
-          'includeTotalCount': true,
-          if (search.isNotEmpty) 'title': search,
-        }),
+        fetcher: (page, pageSize, search) => context.read<LectureNoteProvider>().search(pagedQuery(page, pageSize, search, searchField: 'title')),
         onAdd: () => _openForm(),
         onEdit: (context, item) => _openForm(item),
         onDelete: (context, item) async {

@@ -57,12 +57,7 @@ class _AnnouncementListScreenState extends State<AnnouncementListScreen> {
             value: (item) => formatDate(item.publishedAt),
           ),
         ],
-        fetcher: (page, pageSize, search) =>
-            context.read<StoreAnnouncementProvider>().search({
-          'page': page,
-          'pageSize': pageSize,
-          'includeTotalCount': true,
-        }),
+        fetcher: (page, pageSize, search) => context.read<StoreAnnouncementProvider>().search(pagedQuery(page, pageSize, search)),
         onAdd: () => _openForm(),
         onEdit: (context, item) => _openForm(item),
         onDelete: (context, item) async {

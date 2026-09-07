@@ -61,13 +61,7 @@ class _CourseListScreenState extends State<CourseListScreen> {
             value: (item) => formatDateNullable(item.startDate),
           ),
         ],
-        fetcher: (page, pageSize, search) =>
-            context.read<CourseProvider>().search({
-          'page': page,
-          'pageSize': pageSize,
-          'includeTotalCount': true,
-          if (search.isNotEmpty) 'name': search,
-        }),
+        fetcher: (page, pageSize, search) => context.read<CourseProvider>().search(pagedQuery(page, pageSize, search, searchField: 'name')),
         showDeleteConfirmation: false,
         onAdd: () => _openForm(),
         onEdit: (context, item) => _openForm(item),

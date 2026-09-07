@@ -54,14 +54,9 @@ class _AdminCourseListScreenState extends State<AdminCourseListScreen> {
           ),
         ),
         showAddButton: false,
-        fetcher: (page, pageSize, search) =>
-            context.read<AdminCourseProvider>().search({
-              'page': page,
-              'pageSize': pageSize,
-              'includeTotalCount': true,
-              if (search.isNotEmpty) 'name': search,
+        fetcher: (page, pageSize, search) => context.read<AdminCourseProvider>().search(pagedQuery(page, pageSize, search, searchField: 'name', filters: {
               if (_isPublished != null) 'isPublished': _isPublished,
-            }),
+})),
       ),
     );
   }

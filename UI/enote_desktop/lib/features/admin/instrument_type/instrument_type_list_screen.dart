@@ -57,13 +57,7 @@ class _InstrumentTypeListScreenState extends State<InstrumentTypeListScreen> {
             value: (item) => item.monthlyFee.toStringAsFixed(2),
           ),
         ],
-        fetcher: (page, pageSize, search) =>
-            context.read<InstrumentTypeProvider>().search({
-          'page': page,
-          'pageSize': pageSize,
-          'includeTotalCount': true,
-          if (search.isNotEmpty) 'type': search,
-        }),
+        fetcher: (page, pageSize, search) => context.read<InstrumentTypeProvider>().search(pagedQuery(page, pageSize, search, searchField: 'type')),
         onAdd: () => _openForm(),
         onEdit: (context, item) => _openForm(item),
         onDelete: (context, item) async {

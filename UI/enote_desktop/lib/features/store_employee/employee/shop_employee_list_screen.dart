@@ -34,9 +34,7 @@ class _ShopEmployeeListScreenState extends State<ShopEmployeeListScreen> {
       key: _gridKey,
       config: EntityGridConfig<ShopEmployeeDto>(
         fetcher: (page, pageSize, search) => provider.search(
-          search.isEmpty
-              ? {'page': page, 'pageSize': pageSize}
-              : {'name': search, 'page': page, 'pageSize': pageSize},
+          pagedQuery(page, pageSize, search, searchField: 'name')
         ),
         titleOf: (item) =>
             formatDisplayName(item.firstName, item.lastName, item.username),

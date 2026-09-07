@@ -101,7 +101,6 @@ class _EventListScreenState extends State<EventListScreen> {
                       .search({
                     'page': 1,
                     'pageSize': 200,
-                    'includeTotalCount': false,
                   });
                   return result.items;
                 },
@@ -123,16 +122,11 @@ class _EventListScreenState extends State<EventListScreen> {
             ),
           ],
         ),
-        fetcher: (page, pageSize, search) =>
-            context.read<EventProvider>().search({
-          'page': page,
-          'pageSize': pageSize,
-          'includeTotalCount': true,
-          if (search.isNotEmpty) 'title': search,
+        fetcher: (page, pageSize, search) => context.read<EventProvider>().search(pagedQuery(page, pageSize, search, searchField: 'title', filters: {
           if (_from != null) 'from': _from,
           if (_to != null) 'to': _to,
           if (_instructorId != null) 'instructorId': _instructorId,
-        }),
+})),
         onAdd: () => _openForm(),
         onTap: (context, item) {
           if (item.isScoped) {

@@ -61,13 +61,7 @@ class _InstrumentListScreenState extends State<InstrumentListScreen> {
             value: (item) => item.isAvailable ? 'Da' : 'Ne',
           ),
         ],
-        fetcher: (page, pageSize, search) =>
-            context.read<InstrumentProvider>().search({
-          'page': page,
-          'pageSize': pageSize,
-          'includeTotalCount': true,
-          if (search.isNotEmpty) 'model': search,
-        }),
+        fetcher: (page, pageSize, search) => context.read<InstrumentProvider>().search(pagedQuery(page, pageSize, search, searchField: 'model')),
         onAdd: () => _openForm(),
         onEdit: (context, item) => _openForm(item),
         onDelete: (context, item) async {

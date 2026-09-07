@@ -50,11 +50,7 @@ class _LectureAttendanceScreenState extends State<LectureAttendanceScreen> {
       final provider = context.read<LectureProvider>();
       final result = await provider.getAttendance(
         widget.lectureId,
-        params: {
-          'page': _currentPage,
-          'pageSize': _pageSize,
-          'includeTotalCount': true,
-        },
+        params: pagedQuery(_currentPage, _pageSize, ''),
       );
       setState(() {
         _items = result.items;

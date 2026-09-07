@@ -137,11 +137,7 @@ class _InstrumentFormScreenState extends State<InstrumentFormScreen> {
           value: _selectedInstrumentTypeId,
           fetcher: () async {
             final provider = context.read<ShopInstrumentTypeProvider>();
-            final result = await provider.search({
-              'page': 1,
-              'pageSize': 100,
-              'includeTotalCount': true,
-            });
+            final result = await provider.search(pagedQuery(1, 100, ''));
             return result.items;
           },
           itemLabel: (item) => item.type,

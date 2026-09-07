@@ -14,6 +14,7 @@ export 'models/rentals/city_models.dart';
 export 'models/rentals/instrument_rental_models.dart';
 export 'models/rentals/payment_models.dart';
 export 'paging/paged_result.dart';
+export 'paging/paged_query.dart';
 export 'providers/base_provider.dart';
 export 'validators/validators.dart';
 export 'api/api_client.dart';

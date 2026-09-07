@@ -169,14 +169,9 @@ class _LectureListScreenState extends State<LectureListScreen> {
             },
           ),
         ],
-        fetcher: (page, pageSize, search) =>
-            context.read<LectureProvider>().search({
-          'page': page,
-          'pageSize': pageSize,
-          'includeTotalCount': true,
+        fetcher: (page, pageSize, search) => context.read<LectureProvider>().search(pagedQuery(page, pageSize, search, searchField: 'name', filters: {
           'courseId': widget.courseId,
-          if (search.isNotEmpty) 'name': search,
-        }),
+})),
         onAdd: () => _openForm(),
         onEdit: (context, item) => _openForm(item),
         onDelete: (context, item) async {

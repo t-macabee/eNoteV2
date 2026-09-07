@@ -202,13 +202,13 @@ class _UserGridScreenState extends State<UserGridScreen> {
     int pageSize,
     String search,
   ) async {
-    final query = {
-      'page': page,
-      'pageSize': pageSize,
-      'includeTotalCount': true,
-      'isActive': _showActive,
-      if (search.isNotEmpty) 'name': search,
-    };
+    final query = pagedQuery(
+      page,
+      pageSize,
+      search,
+      searchField: 'name',
+      filters: {'isActive': _showActive},
+    );
 
     if (_role == UserRole.instructor) {
       final result = await context.read<InstructorProvider>().search(query);

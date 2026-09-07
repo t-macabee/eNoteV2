@@ -134,7 +134,6 @@ class _EventFormScreenState extends State<EventFormScreen> {
             final result = await context.read<AddressProvider>().search({
               'page': 1,
               'pageSize': 200,
-              'includeTotalCount': false,
             });
             return result.items;
           },

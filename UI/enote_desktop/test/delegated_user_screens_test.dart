@@ -39,11 +39,15 @@ String _fakeJwt({
 class _MockHttpClient extends http.BaseClient {
   final List<String> postUrls = [];
   final List<String> postBodies = [];
+  final List<String> getUrls = [];
   bool simulate400 = false;
 
   @override
   Future<http.StreamedResponse> send(http.BaseRequest request) async {
     final url = request.url.toString();
+    if (request.method == 'GET') {
+      getUrls.add(url);
+    }
 
     if (request.method == 'POST') {
       if (request is http.Request) {
@@ -321,5 +325,42 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Neispravan zahtjev.'), findsOneWidget);
+  });
+
+  testWidgets('Fetcher query map includes includeTotalCount for pagination',
+      (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(1200, 900);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final mockClient = _MockHttpClient();
+    final authState = AuthState(
+      baseUrl: 'http://localhost:5059/api/v1/',
+      httpClient: mockClient,
+      tokenReader: () => _fakeJwt(role: 'Instructor'),
+    );
+    final apiClient = ApiClient(
+      baseUrl: 'http://localhost:5059/api/v1/',
+      authState: authState,
+      httpClient: mockClient,
+    );
+
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          Provider<ApiClient>.value(value: apiClient),
+          ChangeNotifierProvider<AuthState>.value(value: authState),
+          ChangeNotifierProvider<InstructorStudentProvider>(
+            create: (_) => InstructorStudentProvider(apiClient: apiClient),
+          ),
+        ],
+        child: const MaterialApp(home: InstructorStudentListScreen()),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(mockClient.getUrls.any((url) => url.contains('includeTotalCount=true')), isTrue);
   });
 }

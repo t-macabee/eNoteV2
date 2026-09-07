@@ -52,13 +52,7 @@ class _CityListScreenState extends State<CityListScreen> {
             value: (item) => item.name,
           ),
         ],
-        fetcher: (page, pageSize, search) =>
-            context.read<CityProvider>().search({
-          'page': page,
-          'pageSize': pageSize,
-          'includeTotalCount': true,
-          if (search.isNotEmpty) 'name': search,
-        }),
+        fetcher: (page, pageSize, search) => context.read<CityProvider>().search(pagedQuery(page, pageSize, search, searchField: 'name')),
         onAdd: () => _openForm(),
         onEdit: (context, item) => _openForm(item),
         onDelete: (context, item) async {
