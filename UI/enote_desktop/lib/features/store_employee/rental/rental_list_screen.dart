@@ -10,7 +10,12 @@ import 'rental_provider.dart';
 import 'rental_status_display.dart';
 
 class RentalListScreen extends StatefulWidget {
-  const RentalListScreen({super.key});
+  final EntityListPresentation presentation;
+
+  const RentalListScreen({
+    super.key,
+    this.presentation = EntityListPresentation.embedded,
+  });
 
   @override
   State<RentalListScreen> createState() => _RentalListScreenState();
@@ -36,8 +41,10 @@ class _RentalListScreenState extends State<RentalListScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: [
-          Expanded(
+          SizedBox(
+            width: 220,
             child: DropdownButtonFormField<InstrumentRentalStatus?>(
+              isExpanded: true,
               initialValue: _selectedStatus,
               decoration: const InputDecoration(
                 labelText: 'Status',
@@ -55,12 +62,14 @@ class _RentalListScreenState extends State<RentalListScreen> {
             ),
           ),
           const SizedBox(width: 16),
-          Expanded(
+          SizedBox(
+            width: 220,
             child: FutureBuilder<List<InstrumentDto>>(
               future: _instrumentsFuture,
               builder: (context, snapshot) {
                 final instruments = snapshot.data ?? const <InstrumentDto>[];
                 return DropdownButtonFormField<int?>(
+                  isExpanded: true,
                   initialValue: _selectedInstrumentId,
                   decoration: const InputDecoration(
                     labelText: 'Instrument',
@@ -91,6 +100,7 @@ class _RentalListScreenState extends State<RentalListScreen> {
     return EntityListScreen<InstrumentRentalDto>(
       key: _listKey,
       config: EntityListConfig<InstrumentRentalDto>(
+        presentation: widget.presentation,
         columns: [
           ColumnSpec<InstrumentRentalDto>(
             label: 'Instrument',

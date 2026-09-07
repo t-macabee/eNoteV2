@@ -5,6 +5,7 @@ import 'package:enote_core/enote_core.dart';
 import '../../../theme/app_theme.dart';
 import '../../../widgets/entity_form_scaffold.dart';
 import '../../../widgets/entity_grid_screen.dart';
+import '../../../widgets/detail_row.dart';
 import '../instrument_type/instrument_type_provider.dart';
 import 'music_store_form_screen.dart';
 import 'music_store_provider.dart';
@@ -275,20 +276,20 @@ class _MusicStoreDetailScreenState extends State<MusicStoreDetailScreen> {
             const SizedBox(height: 16),
             const Divider(),
             const SizedBox(height: 8),
-            _buildInfoRow(
-              Icons.location_on_outlined,
-              'Adresa',
-              addressText,
+            DetailRow(
+              icon: Icons.location_on_outlined,
+              label: 'Adresa',
+              value: addressText,
             ),
-            _buildInfoRow(
-              Icons.phone_outlined,
-              'Telefon',
-              phoneText,
+            DetailRow(
+              icon: Icons.phone_outlined,
+              label: 'Telefon',
+              value: phoneText,
             ),
-            _buildInfoRow(
-              Icons.access_time_outlined,
-              'Radno vrijeme',
-              workHoursText,
+            DetailRow(
+              icon: Icons.access_time_outlined,
+              label: 'Radno vrijeme',
+              value: workHoursText,
             ),
             const SizedBox(height: 24),
             SizedBox(
@@ -318,39 +319,4 @@ class _MusicStoreDetailScreenState extends State<MusicStoreDetailScreen> {
     );
   }
 
-  Widget _buildInfoRow(IconData icon, String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, size: 18, color: AppTheme.textSecondary),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: AppTheme.textTertiary,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  value,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: AppTheme.textPrimary,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }

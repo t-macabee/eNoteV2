@@ -33,7 +33,7 @@ public sealed class ShopEmployeeService(
             .IgnoreQueryFilters()
             .AsNoTracking()
             .Include(x => x.MusicStore)
-            .Where(x => x.MusicStoreId == storeId && x.IsActive)
+            .Where(x => x.MusicStoreId == storeId && x.IsActive && x.AppUserId != currentEmployee.AppUserId)
             .OrderBy(x => x.Id)
             .ToListAsync(cancellationToken);
 

@@ -1,12 +1,15 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
 import '../../../theme/app_theme.dart';
-import '../../../widgets/async_dropdown.dart';
-import '../../../widgets/image_upload_helper.dart';
-import '../../admin/address/address_provider.dart';
+import '../../../widgets/entity_form_scaffold.dart';
+import '../../../widgets/entity_grid_screen.dart';
+import '../../../widgets/detail_row.dart';
+import '../instrument/instrument_detail_dialog.dart';
+import '../instrument/instrument_form_screen.dart';
+import '../instrument/instrument_provider.dart';
+import '../instrument/shop_instrument_type_provider.dart';
 import 'shop_store_provider.dart';
 
 class ShopStoreScreen extends StatefulWidget {
@@ -22,46 +25,45 @@ class ShopStoreScreen extends StatefulWidget {
 }
 
 class _ShopStoreScreenState extends State<ShopStoreScreen> {
-  final _formKey = GlobalKey<FormState>();
-  final _storeNameController = TextEditingController();
-  final _businessHoursController = TextEditingController();
-  final _phoneNumberController = TextEditingController();
-
+  final _gridKey = GlobalKey<EntityGridScreenState<InstrumentDto>>();
   MusicStoreDto? _store;
-  int? _selectedAddressId;
-  String? _currentImagePath;
   bool _isLoading = true;
   String? _errorMessage;
-  bool _isSaving = false;
+  int? _instrumentTypeId;
+  List<InstrumentTypeDto> _instrumentTypes = [];
 
   @override
   void initState() {
     super.initState();
     if (widget.initialStore != null) {
       _store = widget.initialStore;
-      _populateFields(widget.initialStore!);
       _isLoading = false;
     } else {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _loadStore();
       });
     }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadInstrumentTypes();
+    });
   }
 
-  @override
-  void dispose() {
-    _storeNameController.dispose();
-    _businessHoursController.dispose();
-    _phoneNumberController.dispose();
-    super.dispose();
+  Future<void> _loadInstrumentTypes() async {
+    try {
+      final provider = context.read<ShopInstrumentTypeProvider>();
+      final result = await provider.search(pagedQuery(1, 100, ''));
+      if (!mounted) return;
+      setState(() {
+        _instrumentTypes = result.items;
+      });
+    } catch (_) {
+      // Non-fatal if instrument types fail to load
+    }
   }
 
-  void _populateFields(MusicStoreDto store) {
-    _storeNameController.text = store.storeName;
-    _businessHoursController.text = store.businessHours;
-    _phoneNumberController.text = store.phoneNumber ?? '';
-    _selectedAddressId = store.addressId;
-    _currentImagePath = store.imagePath;
+  void _applyFilters() {
+    setState(() {});
+    _gridKey.currentState?.refresh(resetPage: true);
   }
 
   Future<void> _loadStore() async {
@@ -75,7 +77,6 @@ class _ShopStoreScreenState extends State<ShopStoreScreen> {
       if (mounted) {
         setState(() {
           _store = store;
-          _populateFields(store);
           _isLoading = false;
         });
       }
@@ -89,80 +90,111 @@ class _ShopStoreScreenState extends State<ShopStoreScreen> {
     }
   }
 
-  Future<String?> _uploadImage(
-      Uint8List bytes, String fileName, String contentType) async {
-    final provider = context.read<ShopStoreProvider>();
-    try {
-      final updated =
-          await provider.uploadOwnStoreImage(bytes, fileName, contentType);
-      if (mounted) {
-        setState(() {
-          _currentImagePath = updated.imagePath;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Slika uspješno postavljena.')),
-        );
-      }
-      return updated.imagePath;
-    } catch (e) {
-      if (mounted) {
-        ErrorBanner.show(context, message: userMessage(e));
-      }
-      return null;
-    }
+  Future<void> _openInstrumentForm([InstrumentDto? existing]) async {
+    await EntityFormScaffold.showAsDialog(
+      context,
+      builder: (_) => InstrumentFormScreen(
+        existing: existing,
+        presentation: EntityFormPresentation.dialog,
+      ),
+    );
+    _gridKey.currentState?.refresh();
   }
 
-  Future<void> _save() async {
-    if (!(_formKey.currentState?.validate() ?? false)) {
-      return;
+  Widget _buildLeftPanel() {
+    final store = _store!;
+    final apiClient = context.read<ApiClient>();
+
+    String addressText = '-';
+    if (store.addressStreet != null && store.addressStreet!.isNotEmpty) {
+      if (store.addressCity != null && store.addressCity!.isNotEmpty) {
+        addressText = '${store.addressStreet}, ${store.addressCity}';
+      } else {
+        addressText = store.addressStreet!;
+      }
+    } else if (store.addressCity != null && store.addressCity!.isNotEmpty) {
+      addressText = store.addressCity!;
     }
 
-    setState(() => _isSaving = true);
-    try {
-      final provider = context.read<ShopStoreProvider>();
-      final phone = _phoneNumberController.text.trim();
-      final request = MusicStoreRequest(
-        storeName: _storeNameController.text.trim(),
-        businessHours: _businessHoursController.text.trim(),
-        phoneNumber: phone.isEmpty ? null : phone,
-        addressId: _selectedAddressId,
-      );
+    final phoneText =
+        (store.phoneNumber != null && store.phoneNumber!.isNotEmpty)
+            ? store.phoneNumber!
+            : '-';
 
-      final updated = await provider.updateOwnStore(request.toJson());
-      if (mounted) {
-        setState(() {
-          _store = updated;
-          _currentImagePath = updated.imagePath;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Uspješno sačuvano.')),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ErrorBanner.show(context, message: userMessage(e));
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isSaving = false);
-      }
-    }
+    final workHoursText =
+        store.businessHours.isNotEmpty ? store.businessHours : '-';
+
+    return Container(
+      color: AppTheme.surfaceContainer,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            AspectRatio(
+              aspectRatio: 1.2,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: networkImageOrPlaceholder(
+                  store.imagePath,
+                  apiClient,
+                  size: double.infinity,
+                  borderRadius: 12,
+                  placeholder: () => Container(
+                    color: AppTheme.background,
+                    child: const Center(
+                      child: Icon(
+                        Icons.storefront_outlined,
+                        size: 48,
+                        color: AppTheme.textTertiary,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              store.storeName,
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+            ),
+            const SizedBox(height: 16),
+            const Divider(),
+            const SizedBox(height: 8),
+            DetailRow(
+              icon: Icons.location_on_outlined,
+              label: 'Adresa',
+              value: addressText,
+            ),
+            DetailRow(
+              icon: Icons.phone_outlined,
+              label: 'Telefon',
+              value: phoneText,
+            ),
+            DetailRow(
+              icon: Icons.access_time_outlined,
+              label: 'Radno vrijeme',
+              value: workHoursText,
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final isManager = context.watch<AuthState>().isManager;
+    final storeProvider = context.watch<ShopStoreProvider>();
+    if (storeProvider.store != null) {
+      _store = storeProvider.store;
+    }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Moja prodavnica'),
-        automaticallyImplyLeading: false,
-      ),
-      body: _buildBody(context, isManager),
-    );
+    return _buildBody(context);
   }
 
-  Widget _buildBody(BuildContext context, bool isManager) {
+  Widget _buildBody(BuildContext context) {
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -189,93 +221,84 @@ class _ShopStoreScreenState extends State<ShopStoreScreen> {
       return const Center(child: Text('Nema podataka o prodavnici.'));
     }
 
-    return Form(
-      key: _formKey,
-      child: ListView(
-        padding: const EdgeInsets.all(24),
-        children: [
-          TextFormField(
-            controller: _storeNameController,
-            readOnly: !isManager,
-            decoration: const InputDecoration(labelText: 'Naziv'),
-            validator: isManager ? Validators.required('Naziv') : null,
-          ),
-          const SizedBox(height: 18),
-          TextFormField(
-            controller: _businessHoursController,
-            readOnly: !isManager,
-            decoration: const InputDecoration(labelText: 'Radno vrijeme'),
-            validator: isManager ? Validators.required('Radno vrijeme') : null,
-          ),
-          const SizedBox(height: 18),
-          TextFormField(
-            controller: _phoneNumberController,
-            readOnly: !isManager,
-            decoration: const InputDecoration(labelText: 'Broj telefona'),
-          ),
-          const SizedBox(height: 18),
-          AsyncDropdown<AddressReferenceDto>(
-            label: 'Adresa',
-            value: _selectedAddressId,
-            enabled: isManager,
-            fetcher: () async {
-              final provider = context.read<AddressProvider>();
-              final result = await provider.search({
-                'page': 1,
-                'pageSize': 100,
-              });
-              return result.items;
-            },
-            itemLabel: (item) => '${item.street} ${item.number}, ${item.city}',
-            itemId: (item) => item.id,
-            onChanged: (id, item) {
-              setState(() {
-                _selectedAddressId = id as int?;
-              });
-            },
-          ),
-          const SizedBox(height: 24),
-          const Text('Slika', style: TextStyle(fontWeight: FontWeight.bold)),
-          if (isManager) ...[
-            const SizedBox(height: 4),
-            const Text(
-              'Slika se automatski sprema prilikom odabira.',
-              style: TextStyle(
-                fontSize: 12,
-                color: AppTheme.textSecondary,
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SizedBox(
+          width: 280,
+          child: _buildLeftPanel(),
+        ),
+        const VerticalDivider(width: 1),
+        Expanded(
+          child: EntityGridScreen<InstrumentDto>(
+            key: _gridKey,
+            config: EntityGridConfig<InstrumentDto>(
+              embedded: true,
+              searchHint: 'Pretraži instrumente...',
+              placeholderIcon: Icons.music_note,
+              titleOf: (i) => i.model,
+              subtitleOf: (i) => i.manufacturer,
+              imageUrlOf: (i) => i.imagePath,
+              showAddButton: true,
+              addLabel: 'Dodaj instrument',
+              onAdd: () => _openInstrumentForm(),
+              onTap: (context, item) async {
+                // Deletion is handled inside InstrumentDetailDialog (it owns
+                // its own confirm/delete flow and calls InstrumentProvider
+                // directly) — EntityGridConfig.onDelete has no UI trigger
+                // here (no cardActions delete button), so it isn't set.
+                final changed =
+                    await InstrumentDetailDialog.show(context, item);
+                if (changed == true) {
+                  _gridKey.currentState?.refresh();
+                }
+              },
+              filterBar: SizedBox(
+                width: 220,
+                child: DropdownButtonFormField<int?>(
+                  isExpanded: true,
+                  initialValue: _instrumentTypeId,
+                  decoration:
+                      const InputDecoration(labelText: 'Tip instrumenta'),
+                  items: [
+                    const DropdownMenuItem(
+                      value: null,
+                      child: Text('Svi instrumenti'),
+                    ),
+                    ..._instrumentTypes.map(
+                      (type) => DropdownMenuItem(
+                        value: type.id,
+                        child: Text(type.type),
+                      ),
+                    ),
+                  ],
+                  onChanged: (typeId) {
+                    _instrumentTypeId = typeId;
+                    _applyFilters();
+                  },
+                ),
               ),
-            ),
-          ],
-          const SizedBox(height: 8),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: ImageField(
-              imageUrl: _currentImagePath,
-              imagePicker: pickImageBytes,
-              onUpload: isManager ? _uploadImage : null,
-              editable: isManager,
-              apiClient: context.read<ApiClient>(),
+              groupKeyOf: _instrumentTypeId == null
+                  ? (i) => i.instrumentType.isNotEmpty
+                      ? i.instrumentType
+                      : 'Ostalo'
+                  : null,
+              fetcher: (page, pageSize, search) => context
+                  .read<InstrumentProvider>()
+                  .search(pagedQuery(
+                    page,
+                    pageSize,
+                    search,
+                    searchField: 'model',
+                    filters: {
+                      if (_instrumentTypeId != null)
+                        'instrumentTypeId': _instrumentTypeId,
+                    },
+                  )),
             ),
           ),
-          if (isManager) ...[
-            const SizedBox(height: 24),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: FilledButton.icon(
-                onPressed: _isSaving ? null : _save,
-                icon: _isSaving
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.save),
-                label: const Text('Sačuvaj'),
-              ),
-            ),
-          ],
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

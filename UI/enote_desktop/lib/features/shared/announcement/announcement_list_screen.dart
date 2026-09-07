@@ -10,10 +10,19 @@ class AnnouncementListScreen extends StatefulWidget {
   final BaseProvider<AnnouncementDto> provider;
   final String? title;
 
+  /// Defaults to [EntityListPresentation.page] (own Scaffold/AppBar, with a
+  /// back/close button when pushed via Navigator) — required by callers
+  /// like the instructor's per-course "Objave" screen, which pushes this
+  /// widget bare via MaterialPageRoute with no Scaffold of its own. Pass
+  /// [EntityListPresentation.embedded] only when the caller already
+  /// provides that chrome (e.g. a tab body inside MasterScreen).
+  final EntityListPresentation presentation;
+
   const AnnouncementListScreen({
     super.key,
     required this.provider,
     this.title,
+    this.presentation = EntityListPresentation.page,
   });
 
   @override
@@ -41,6 +50,7 @@ class _AnnouncementListScreenState extends State<AnnouncementListScreen> {
       key: _listKey,
       config: EntityListConfig<AnnouncementDto>(
         title: widget.title ?? 'Objave',
+        presentation: widget.presentation,
         columns: [
           ColumnSpec<AnnouncementDto>(
             label: 'Naslov',

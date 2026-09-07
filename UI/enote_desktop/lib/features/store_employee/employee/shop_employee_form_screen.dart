@@ -7,7 +7,12 @@ import '../../../widgets/user_credential_fields.dart';
 import 'shop_employee_provider.dart';
 
 class ShopEmployeeFormScreen extends StatefulWidget {
-  const ShopEmployeeFormScreen({super.key});
+  final EntityFormPresentation presentation;
+
+  const ShopEmployeeFormScreen({
+    super.key,
+    this.presentation = EntityFormPresentation.page,
+  });
 
   @override
   State<ShopEmployeeFormScreen> createState() => _ShopEmployeeFormScreenState();
@@ -31,6 +36,7 @@ class _ShopEmployeeFormScreenState extends State<ShopEmployeeFormScreen> {
   @override
   Widget build(BuildContext context) {
     return EntityFormScaffold(
+      presentation: widget.presentation,
       title: 'Kreiraj zaposlenika',
       saveLabel: 'Kreiraj',
       onSave: _save,

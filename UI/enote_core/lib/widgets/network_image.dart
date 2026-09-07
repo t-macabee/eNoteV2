@@ -24,8 +24,12 @@ Widget networkImageOrPlaceholder(
   if (trimmed.startsWith('/')) {
     final client = apiClient;
     if (client == null) return placeholder();
+    final uri = Uri.tryParse(client.baseUrl);
+    final origin = (uri != null && uri.hasScheme)
+        ? uri.origin
+        : client.baseUrl.replaceAll(RegExp(r'/api/v\d+/?$'), '');
     return _networkImage(
-      '${client.baseUrl}$trimmed',
+      '$origin$trimmed',
       headers: client.authHeaders,
       size: size,
       borderRadius: borderRadius,

@@ -32,6 +32,7 @@ class RoleMenu extends StatelessWidget {
   final VoidCallback? onOpenProfile;
   final VoidCallback? onLogout;
   final VoidCallback? onNotificationsTap;
+  final VoidCallback? onEditStore;
 
   const RoleMenu({
     super.key,
@@ -42,6 +43,7 @@ class RoleMenu extends StatelessWidget {
     this.onOpenProfile,
     this.onLogout,
     this.onNotificationsTap,
+    this.onEditStore,
   });
 
   List<RoleMenuEntry> get visibleEntries => entries
@@ -178,7 +180,7 @@ class RoleMenu extends StatelessWidget {
                       controller: notificationController,
                       onTap: onNotificationsTap!,
                     ),
-                  if (onLogout != null || onOpenProfile != null)
+                  if (onLogout != null || onOpenProfile != null || onEditStore != null)
                     PopupMenuButton<int>(
                       icon: const Icon(Icons.settings, size: 18),
                       tooltip: 'Postavke',
@@ -191,6 +193,17 @@ class RoleMenu extends StatelessWidget {
                                 Icon(Icons.person_outline, size: 18),
                                 SizedBox(width: 8),
                                 Text('Profil'),
+                              ],
+                            ),
+                          ),
+                        if (onEditStore != null)
+                          const PopupMenuItem(
+                            value: 3,
+                            child: Row(
+                              children: [
+                                Icon(Icons.storefront_outlined, size: 18),
+                                SizedBox(width: 8),
+                                Text('Uredi prodavnicu'),
                               ],
                             ),
                           ),
@@ -209,6 +222,7 @@ class RoleMenu extends StatelessWidget {
                       onSelected: (value) {
                         if (value == 1) onOpenProfile?.call();
                         if (value == 2) onLogout?.call();
+                        if (value == 3) onEditStore?.call();
                       },
                     ),
                 ],

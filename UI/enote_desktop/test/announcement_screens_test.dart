@@ -8,6 +8,7 @@ import 'package:enote_core/enote_core.dart';
 import 'package:enote_desktop/features/shared/announcement/announcement_list_screen.dart';
 import 'package:enote_desktop/features/shared/announcement/announcement_provider.dart';
 import 'package:enote_desktop/features/shared/announcement/store_announcement_provider.dart';
+import 'package:enote_desktop/widgets/entity_list_screen.dart';
 
 String _base64UrlSegment(String input) =>
     base64Url.encode(utf8.encode(input)).replaceAll('=', '');
@@ -84,19 +85,23 @@ void main() {
       providers: [
         Provider<ApiClient>.value(value: apiClient),
       ],
+      // No wrapping Scaffold here — this reproduces course_list_screen.dart's
+      // bare `Navigator.push(MaterialPageRoute(builder: (_) =>
+      // AnnouncementListScreen(...)))`, which relies on the widget's own
+      // (default `page`) presentation to supply the Scaffold/AppBar, title,
+      // and back button.
       child: MaterialApp(
-        home: Scaffold(
-          body: AnnouncementListScreen(
-            provider: provider,
-            title: 'Objave — Kurs 1',
-          ),
+        home: AnnouncementListScreen(
+          provider: provider,
+          title: 'Objave — Kurs 1',
         ),
       ),
     ));
 
     await tester.pumpAndSettle();
 
-    expect(find.text('Objave — Kurs 1'), findsWidgets);
+    expect(find.text('Objave — Kurs 1'), findsOneWidget);
+    expect(find.text('Dodaj'), findsOneWidget);
     expect(find.text('Test objava'), findsOneWidget);
     expect(fetchCalled, isTrue);
   });
@@ -148,10 +153,14 @@ void main() {
       providers: [
         Provider<ApiClient>.value(value: apiClient),
       ],
+      // Wrapped in a Scaffold here to match master_screen.dart, which embeds
+      // this screen as a tab body inside its own Scaffold and opts into
+      // `embedded` presentation.
       child: MaterialApp(
         home: Scaffold(
           body: AnnouncementListScreen(
             provider: provider,
+            presentation: EntityListPresentation.embedded,
           ),
         ),
       ),
@@ -159,7 +168,8 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    expect(find.text('Objave'), findsWidgets);
+    expect(find.byType(EntityToolbar), findsOneWidget);
+    expect(find.text('Dodaj'), findsOneWidget);
     expect(find.text('Store objava'), findsOneWidget);
     expect(fetchCalled, isTrue);
   });

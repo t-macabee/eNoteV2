@@ -3,6 +3,9 @@ import 'package:enote_core/enote_core.dart';
 class ShopStoreProvider extends BaseProvider<MusicStoreDto> {
   ShopStoreProvider({required super.apiClient}) : super(endpoint: 'shop/store');
 
+  MusicStoreDto? _store;
+  MusicStoreDto? get store => _store;
+
   @override
   MusicStoreDto fromJson(Map<String, dynamic> json) =>
       MusicStoreDto.fromJson(json);
@@ -10,7 +13,9 @@ class ShopStoreProvider extends BaseProvider<MusicStoreDto> {
   Future<MusicStoreDto> getOwnStore() async {
     final response = await apiClient.get(endpoint);
     final data = decodeOrThrow(response);
-    return fromJson(data);
+    _store = fromJson(data);
+    notifyListeners();
+    return _store!;
   }
 
   Future<MusicStoreDto> getOne() => getOwnStore();
@@ -18,8 +23,9 @@ class ShopStoreProvider extends BaseProvider<MusicStoreDto> {
   Future<MusicStoreDto> updateOwnStore(Map<String, dynamic> request) async {
     final response = await apiClient.put(endpoint, body: request);
     final data = decodeOrThrow(response);
+    _store = fromJson(data);
     notifyListeners();
-    return fromJson(data);
+    return _store!;
   }
 
   Future<MusicStoreDto> uploadOwnStoreImage(
@@ -34,9 +40,9 @@ class ShopStoreProvider extends BaseProvider<MusicStoreDto> {
       contentType: contentType,
     );
     final data = decodeOrThrow(response);
-    final updated = fromJson(data);
+    _store = fromJson(data);
     notifyListeners();
-    return updated;
+    return _store!;
   }
 
   @override

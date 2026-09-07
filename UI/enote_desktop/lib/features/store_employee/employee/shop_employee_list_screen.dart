@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
+import '../../../widgets/entity_form_scaffold.dart';
 import '../../../widgets/entity_grid_screen.dart';
 import 'shop_employee_form_screen.dart';
 import 'shop_employee_provider.dart';
@@ -17,9 +18,10 @@ class _ShopEmployeeListScreenState extends State<ShopEmployeeListScreen> {
   final _gridKey = GlobalKey<EntityGridScreenState<ShopEmployeeDto>>();
 
   Future<void> _openCreateForm() async {
-    await Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => const ShopEmployeeFormScreen(),
+    await EntityFormScaffold.showAsDialog(
+      context,
+      builder: (_) => const ShopEmployeeFormScreen(
+        presentation: EntityFormPresentation.dialog,
       ),
     );
     _gridKey.currentState?.refresh();

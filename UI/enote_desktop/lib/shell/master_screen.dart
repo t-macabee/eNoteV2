@@ -13,9 +13,12 @@ import '../features/instructor/student/instructor_student_list_screen.dart';
 import '../features/shared/announcement/announcement_list_screen.dart';
 import '../features/shared/announcement/store_announcement_provider.dart';
 import '../features/store_employee/employee/shop_employee_list_screen.dart';
-import '../features/store_employee/instrument/instrument_list_screen.dart';
 import '../features/store_employee/rental/rental_list_screen.dart';
+import '../features/store_employee/store/shop_store_form_screen.dart';
+import '../features/store_employee/store/shop_store_provider.dart';
 import '../features/store_employee/store/shop_store_screen.dart';
+import '../widgets/entity_form_scaffold.dart';
+import '../widgets/entity_list_screen.dart';
 import 'role_menu.dart';
 
 class MasterScreen extends StatefulWidget {
@@ -75,9 +78,9 @@ class _MasterScreenState extends State<MasterScreen> {
       allowedRoles: [UserRole.instructor],
     ),
     RoleMenuEntry(
-      icon: Icons.piano,
-      label: 'Instrumenti',
-      screenBuilder: _buildInstrumentList,
+      icon: Icons.storefront_outlined,
+      label: 'Moja prodavnica',
+      screenBuilder: _buildShopStoreScreen,
       allowedRoles: [UserRole.storeEmployee],
     ),
     RoleMenuEntry(
@@ -96,12 +99,6 @@ class _MasterScreenState extends State<MasterScreen> {
       icon: Icons.campaign,
       label: 'Objave',
       screenBuilder: _buildAnnouncementList,
-      allowedRoles: [UserRole.storeEmployee],
-    ),
-    RoleMenuEntry(
-      icon: Icons.storefront_outlined,
-      label: 'Moja prodavnica',
-      screenBuilder: (context) => const ShopStoreScreen(),
       allowedRoles: [UserRole.storeEmployee],
     ),
   ];
@@ -142,18 +139,21 @@ class _MasterScreenState extends State<MasterScreen> {
     return const ReferenceDataDialog();
   }
 
-  static Widget _buildInstrumentList(BuildContext context) {
-    return const InstrumentListScreen();
-  }
-
   static Widget _buildRentalList(BuildContext context) {
-    return const RentalListScreen();
+    return const RentalListScreen(
+      presentation: EntityListPresentation.embedded,
+    );
   }
 
   static Widget _buildAnnouncementList(BuildContext context) {
     return AnnouncementListScreen(
       provider: context.read<StoreAnnouncementProvider>(),
+      presentation: EntityListPresentation.embedded,
     );
+  }
+
+  static Widget _buildShopStoreScreen(BuildContext context) {
+    return const ShopStoreScreen();
   }
 
   @override
@@ -246,9 +246,34 @@ class _MasterScreenState extends State<MasterScreen> {
     );
   }
 
+  Future<void> _openEditStore() async {
+    final storeProvider = context.read<ShopStoreProvider>();
+    MusicStoreDto? store = storeProvider.store;
+    if (store == null) {
+      try {
+        store = await storeProvider.getOwnStore();
+      } catch (e) {
+        if (mounted) {
+          ErrorBanner.show(context, message: userMessage(e));
+        }
+        return;
+      }
+    }
+    if (!mounted) return;
+    await EntityFormScaffold.showAsDialog(
+      context,
+      builder: (_) => ShopStoreFormScreen(
+        store: store!,
+        presentation: EntityFormPresentation.dialog,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final roles = _currentRoles();
+    final isStoreEmployee = roles.contains(UserRole.storeEmployee);
+    final isManager = context.watch<AuthState>().isManager;
 
     return Scaffold(
       body: Row(
@@ -261,6 +286,7 @@ class _MasterScreenState extends State<MasterScreen> {
             onOpenProfile: _openProfile,
             onLogout: _logout,
             onNotificationsTap: _openNotifications,
+            onEditStore: (isStoreEmployee && isManager) ? _openEditStore : null,
           ),
           Expanded(
             child: _selectedEntry?.screenBuilder(context) ??

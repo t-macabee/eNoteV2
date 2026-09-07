@@ -1,4 +1,5 @@
 using eNote.API.Controllers.Shop;
+using eNote.Application.Common.Paging;
 using eNote.Application.Features.Identity.Auth;
 using eNote.Application.Features.Identity.Employees;
 using eNote.Application.Features.Identity.Users;
@@ -22,8 +23,9 @@ public sealed class ShopEmployeeControllerTests
         ctx.Set<MusicStore>().Add(store);
         await ctx.SaveChangesAsync();
 
-        var emp = new MusicStoreEmployee(appUserId: 10, musicStoreId: store.Id, isManager: true);
-        ctx.Set<MusicStoreEmployee>().Add(emp);
+        var emp1 = new MusicStoreEmployee(appUserId: 10, musicStoreId: store.Id, isManager: true);
+        var emp2 = new MusicStoreEmployee(appUserId: 11, musicStoreId: store.Id, isManager: false);
+        ctx.Set<MusicStoreEmployee>().AddRange(emp1, emp2);
         await ctx.SaveChangesAsync();
 
         var actor = new StubCurrentActor(userId: 10);
@@ -33,7 +35,10 @@ public sealed class ShopEmployeeControllerTests
         var result = await controller.GetPaged(new ShopEmployeeSearchObject(), CancellationToken.None);
 
         var ok = Assert.IsType<OkObjectResult>(result.Result);
-        Assert.NotNull(ok.Value);
+        var paged = Assert.IsType<PagedResult<ShopEmployeeDto>>(ok.Value);
+        Assert.Single(paged.Items);
+        Assert.Equal(11, paged.Items[0].AppUserId);
+        Assert.DoesNotContain(paged.Items, x => x.AppUserId == 10);
     }
 
     [Fact]
