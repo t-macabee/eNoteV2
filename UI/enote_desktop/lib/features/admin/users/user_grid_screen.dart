@@ -613,25 +613,25 @@ class _UserDetailsDialogState extends State<_UserDetailsDialog> {
               const SizedBox(height: 20),
               const Divider(height: 1),
               const SizedBox(height: 16),
-              _buildInfoRow(
+              InfoRow(
                 icon: Icons.person_outline,
                 label: 'Ime i prezime',
                 value: item.displayName,
               ),
               if (_email != null && _email!.isNotEmpty)
-                _buildInfoRow(
+                InfoRow(
                   icon: Icons.email_outlined,
                   label: 'Email',
                   value: _email!,
                 ),
               if (item.role == UserRole.storeEmployee) ...[
                 if (item.storeName != null && item.storeName!.isNotEmpty)
-                  _buildInfoRow(
+                  InfoRow(
                     icon: Icons.store_outlined,
                     label: 'Muzička prodavnica',
                     value: item.storeName!,
                   ),
-                _buildInfoRow(
+                InfoRow(
                   icon: Icons.badge_outlined,
                   label: 'Pozicija',
                   value: item.isManager == true
@@ -642,7 +642,7 @@ class _UserDetailsDialogState extends State<_UserDetailsDialog> {
               if (item.role == UserRole.student) ...[
                 if (item.enrollmentDate != null ||
                     _profile?.enrollmentDate != null)
-                  _buildInfoRow(
+                  InfoRow(
                     icon: Icons.calendar_today_outlined,
                     label: 'Datum upisa',
                     value: formatDate(
@@ -749,42 +749,7 @@ class _UserDetailsDialogState extends State<_UserDetailsDialog> {
     );
   }
 
-  Widget _buildInfoRow({
-    required IconData icon,
-    required String label,
-    required String value,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, size: 20, color: AppTheme.textSecondary),
-          const SizedBox(width: 12),
-          SizedBox(
-            width: 140,
-            child: Text(
-              label,
-              style: const TextStyle(
-                color: AppTheme.textSecondary,
-                fontSize: 13,
-              ),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(
-                color: AppTheme.textPrimary,
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+
 
   static String _initials(String name) {
     final parts = name.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty);

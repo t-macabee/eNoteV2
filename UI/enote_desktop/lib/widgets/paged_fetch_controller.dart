@@ -161,3 +161,41 @@ class PagedFetchController<T> extends ChangeNotifier {
     super.dispose();
   }
 }
+
+class PagedPaginationBar extends StatelessWidget {
+  final PagedFetchController controller;
+
+  const PagedPaginationBar({super.key, required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    final totalPages = controller.totalPages;
+    if (totalPages == null) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Wrap(
+        alignment: WrapAlignment.center,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        spacing: 16,
+        runSpacing: 8,
+        children: [
+          Text('Stranica ${controller.currentPage} od $totalPages'),
+          Text('Ukupno: ${controller.totalCount}'),
+          TextButton.icon(
+            onPressed: controller.hasPreviousPage
+                ? controller.previousPage
+                : null,
+            icon: const Icon(Icons.chevron_left),
+            label: const Text('Prethodna'),
+          ),
+          TextButton.icon(
+            onPressed: controller.hasNextPage ? controller.nextPage : null,
+            icon: const Icon(Icons.chevron_right),
+            label: const Text('Sledeća'),
+          ),
+        ],
+      ),
+    );
+  }
+}

@@ -386,33 +386,6 @@ class EntityListScreenState<T> extends State<EntityListScreen<T>> {
   }
 
   Widget _buildPagination() {
-    final totalPages = _controller.totalPages;
-    if (totalPages == null) return const SizedBox.shrink();
-
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Wrap(
-        alignment: WrapAlignment.center,
-        crossAxisAlignment: WrapCrossAlignment.center,
-        spacing: 16,
-        runSpacing: 8,
-        children: [
-          Text('Stranica ${_controller.currentPage} od $totalPages'),
-          Text('Ukupno: ${_controller.totalCount}'),
-          TextButton.icon(
-            onPressed: _controller.hasPreviousPage
-                ? _controller.previousPage
-                : null,
-            icon: const Icon(Icons.chevron_left),
-            label: const Text('Prethodna'),
-          ),
-          TextButton.icon(
-            onPressed: _controller.hasNextPage ? _controller.nextPage : null,
-            icon: const Icon(Icons.chevron_right),
-            label: const Text('Sledeća'),
-          ),
-        ],
-      ),
-    );
+    return PagedPaginationBar(controller: _controller);
   }
 }

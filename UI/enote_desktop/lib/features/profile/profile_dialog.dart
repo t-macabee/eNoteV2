@@ -130,12 +130,12 @@ class _ProfileDialogState extends State<ProfileDialog> {
                 ],
               ),
               const SizedBox(height: 8),
-              _buildInfoRow('Korisničko ime', username),
-              _buildInfoRow('Uloga', profile.role),
-              _buildInfoRow('Ime', firstName),
-              _buildInfoRow('Prezime', lastName),
-              _buildInfoRow('Email', email),
-              _buildInfoRow('Datum rođenja', dateOfBirth),
+              InfoRow(label: 'Korisničko ime', value: username, labelWidth: 120),
+              InfoRow(label: 'Uloga', value: profile.role, labelWidth: 120),
+              InfoRow(label: 'Ime', value: firstName, labelWidth: 120),
+              InfoRow(label: 'Prezime', value: lastName, labelWidth: 120),
+              InfoRow(label: 'Email', value: email, labelWidth: 120),
+              InfoRow(label: 'Datum rođenja', value: dateOfBirth, labelWidth: 120),
               const SizedBox(height: 24),
               Wrap(
                 alignment: WrapAlignment.end,
@@ -161,34 +161,4 @@ class _ProfileDialogState extends State<ProfileDialog> {
     );
   }
 
-  Widget _buildInfoRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 120,
-            child: Text(
-              label,
-              style: const TextStyle(
-                color: AppTheme.textSecondary,
-                fontSize: 13,
-              ),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(
-                color: AppTheme.textPrimary,
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }

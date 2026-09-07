@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:enote_core/enote_core.dart';
-
+import 'date_field.dart';
 /// Like `DateField`, but picks a date and a time — for fields such as
 /// `Event.StartsAt`/`EndsAt` that carry a time component `DateField` (date
 /// only) can't represent.
@@ -18,87 +18,43 @@ class DateTimeField extends FormField<DateTime?> {
     super.autovalidateMode,
   }) : super(
          builder: (FormFieldState<DateTime?> state) {
-           final value = state.value;
-           final text = value != null ? formatDateTime(value) : '';
+           return buildSharedDateField(
+             state: state,
+             labelText: labelText,
+             hintText: hintText,
+             enabled: enabled,
+             onChanged: onChanged,
+             firstDate: firstDate,
+             lastDate: lastDate,
+             pickCallback: (context, clampedInitial, first, last) async {
+               final pickedDate = await showDatePicker(
+                 context: context,
+                 initialDate: clampedInitial,
+                 firstDate: first,
+                 lastDate: last,
+               );
+               if (pickedDate == null) return null;
+               if (!context.mounted) return null;
 
-           Future<void> pickDateTime() async {
-             final context = state.context;
-             final now = DateTime.now();
-             final initialDate = value ?? now;
-             final first = firstDate ?? DateTime(2000);
-             final last = lastDate ?? DateTime(2100);
-             final clampedInitial = initialDate.isBefore(first)
-                 ? first
-                 : initialDate.isAfter(last)
-                 ? last
-                 : initialDate;
+               final pickedTime = await showTimePicker(
+                 context: context,
+                 initialTime: TimeOfDay.fromDateTime(clampedInitial),
+               );
+               if (pickedTime == null) return null;
 
-             final pickedDate = await showDatePicker(
-               context: context,
-               initialDate: clampedInitial,
-               firstDate: first,
-               lastDate: last,
-             );
-             if (pickedDate == null) return;
-             if (!context.mounted) return;
-
-             final pickedTime = await showTimePicker(
-               context: context,
-               initialTime: TimeOfDay.fromDateTime(initialDate),
-             );
-             if (pickedTime == null) return;
-
-             final combined = DateTime(
-               pickedDate.year,
-               pickedDate.month,
-               pickedDate.day,
-               pickedTime.hour,
-               pickedTime.minute,
-             );
-             state.didChange(combined);
-             onChanged?.call(combined);
-           }
-
-           return InputDecorator(
-             isEmpty: value == null,
-             decoration: InputDecoration(
-               labelText: labelText,
-               hintText: hintText ?? 'dd.MM.yyyy. HH:mm',
-               border: const OutlineInputBorder(),
-               errorText: state.errorText,
-               suffixIcon: Row(
-                 mainAxisSize: MainAxisSize.min,
-                 children: [
-                   if (value != null && enabled)
-                     IconButton(
-                       icon: const Icon(Icons.clear, size: 18),
-                       tooltip: 'Obriši',
-                       onPressed: () {
-                         state.didChange(null);
-                         onChanged?.call(null);
-                       },
-                     ),
-                   IconButton(
-                     icon: const Icon(Icons.event, size: 18),
-                     tooltip: 'Odaberi datum i vrijeme',
-                     onPressed: enabled ? pickDateTime : null,
-                   ),
-                 ],
-               ),
-             ),
-             child: InkWell(
-               onTap: enabled ? pickDateTime : null,
-               child: Text(
-                 text.isEmpty ? '' : text,
-                 style: TextStyle(
-                   color: text.isEmpty
-                       ? Theme.of(state.context).hintColor
-                       : null,
-                 ),
-               ),
-             ),
+               return DateTime(
+                 pickedDate.year,
+                 pickedDate.month,
+                 pickedDate.day,
+                 pickedTime.hour,
+                 pickedTime.minute,
+               );
+             },
+             suffixIcon: Icons.event,
+             tooltip: 'Odaberi datum i vrijeme',
+             defaultHint: 'dd.MM.yyyy. HH:mm',
+             formatFunction: formatDateTime,
            );
          },
        );
 }
-

@@ -30,4 +30,5 @@ export 'widgets/image_thumbnail.dart';
 export 'widgets/network_image.dart';
 export 'widgets/notification_badge.dart';
 export 'widgets/notification_list.dart';
+export 'widgets/info_row.dart';
 export 'formatting/formatters.dart';
