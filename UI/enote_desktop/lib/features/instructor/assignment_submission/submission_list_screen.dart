@@ -13,11 +13,20 @@ class SubmissionListScreen extends StatefulWidget {
   final int assignmentId;
   final String assignmentTitle;
 
+  /// Defaults to [EntityListPresentation.page] (own Scaffold/AppBar, with a
+  /// back/close button when pushed via Navigator). Pass
+  /// [EntityListPresentation.embedded] only when the caller already
+  /// provides that chrome.
+  final EntityListPresentation presentation;
+  final VoidCallback? onMutation;
+
   const SubmissionListScreen({
     super.key,
     required this.lectureId,
     required this.assignmentId,
     required this.assignmentTitle,
+    this.presentation = EntityListPresentation.page,
+    this.onMutation,
   });
 
   @override
@@ -97,6 +106,7 @@ class _SubmissionListScreenState extends State<SubmissionListScreen> {
     controller.dispose();
 
     if (savedGrade != null && mounted) {
+      widget.onMutation?.call();
       ScaffoldMessenger.of(context)
           .showSnackBar(const SnackBar(content: Text('Ocjena sačuvana.')));
       _listKey.currentState?.refresh();
@@ -109,6 +119,7 @@ class _SubmissionListScreenState extends State<SubmissionListScreen> {
       key: _listKey,
       config: EntityListConfig<AssignmentSubmissionDto>(
         title: 'Predaje — ${widget.assignmentTitle}',
+        presentation: widget.presentation,
         showAddButton: false,
         searchHint: 'Pretraži...',
         columns: [

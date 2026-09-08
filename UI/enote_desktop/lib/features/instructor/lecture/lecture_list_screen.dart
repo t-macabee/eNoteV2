@@ -4,17 +4,18 @@ import 'package:provider/provider.dart';
 import 'package:enote_core/enote_core.dart';
 import '../../../widgets/entity_form_scaffold.dart';
 import '../../../widgets/entity_list_screen.dart';
-import '../assignment/assignment_list_screen.dart';
-import '../assignment/assignment_provider.dart';
-import '../lecture_note/lecture_note_list_screen.dart';
-import '../lecture_note/lecture_note_provider.dart';
-import 'lecture_attendance_screen.dart';
 import 'lecture_form_screen.dart';
 import 'lecture_provider.dart';
 import 'lecture_type_label.dart';
 
 
 
+
+enum LectureSubView {
+  attendance,
+  notes,
+  assignments,
+}
 
 String _lectureStatusLabel(LectureDto lecture) {
   if (lecture.isCancelled) return 'Otkazano';
@@ -29,10 +30,23 @@ class LectureListScreen extends StatefulWidget {
   final int courseId;
   final String courseName;
 
+  /// Defaults to [EntityListPresentation.page] (own Scaffold/AppBar, with a
+  /// back/close button when pushed via Navigator). Pass
+  /// [EntityListPresentation.embedded] only when the caller already
+  /// provides that chrome.
+  final EntityListPresentation presentation;
+  final EntityListStyle listStyle;
+  final void Function(LectureDto lecture, LectureSubView subView)? onOpenSubView;
+  final VoidCallback? onMutation;
+
   const LectureListScreen({
     super.key,
     required this.courseId,
     required this.courseName,
+    this.presentation = EntityListPresentation.page,
+    this.listStyle = EntityListStyle.tiles,
+    this.onOpenSubView,
+    this.onMutation,
   });
 
   @override
@@ -43,7 +57,7 @@ class _LectureListScreenState extends State<LectureListScreen> {
   final _listKey = GlobalKey<EntityListScreenState<LectureDto>>();
 
   Future<void> _openForm([LectureDto? existing]) async {
-    await EntityFormScaffold.showAsDialog(
+    final saved = await EntityFormScaffold.showAsDialog(
       context,
       builder: (_) => LectureFormScreen(
         courseId: widget.courseId,
@@ -51,7 +65,10 @@ class _LectureListScreenState extends State<LectureListScreen> {
         presentation: EntityFormPresentation.dialog,
       ),
     );
-    _listKey.currentState?.refresh();
+    if (saved == true) {
+      widget.onMutation?.call();
+      _listKey.currentState?.refresh();
+    }
   }
 
   Future<void> _cancelLecture(LectureDto lecture) async {
@@ -67,6 +84,7 @@ class _LectureListScreenState extends State<LectureListScreen> {
     try {
       await context.read<LectureProvider>().cancel(lecture.id);
       if (!mounted) return;
+      widget.onMutation?.call();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Predavanje otkazano.')),
       );
@@ -77,59 +95,15 @@ class _LectureListScreenState extends State<LectureListScreen> {
     }
   }
 
-  void _openAttendance(LectureDto lecture) {
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => LectureAttendanceScreen(
-          lectureId: lecture.id,
-          lectureName: lecture.name,
-        ),
-      ),
-    );
-  }
-
-  void _openNotes(LectureDto lecture) {
-    final apiClient = context.read<ApiClient>();
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => ChangeNotifierProvider<LectureNoteProvider>(
-          create: (_) => LectureNoteProvider(
-            apiClient: apiClient,
-            lectureId: lecture.id,
-          ),
-          child: LectureNoteListScreen(
-            lectureId: lecture.id,
-            lectureName: lecture.name,
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _openAssignments(LectureDto lecture) {
-    final apiClient = context.read<ApiClient>();
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => ChangeNotifierProvider<AssignmentProvider>(
-          create: (_) => AssignmentProvider(
-            apiClient: apiClient,
-            lectureId: lecture.id,
-          ),
-          child: AssignmentListScreen(
-            lectureId: lecture.id,
-            lectureName: lecture.name,
-          ),
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return EntityListScreen<LectureDto>(
       key: _listKey,
       config: EntityListConfig<LectureDto>(
         title: 'Predavanja — ${widget.courseName}',
+        presentation: widget.presentation,
+        listStyle: widget.listStyle,
+        rowIcon: Icons.event_note,
         columns: [
           ColumnSpec<LectureDto>(
             label: 'Naziv',
@@ -177,6 +151,7 @@ class _LectureListScreenState extends State<LectureListScreen> {
         onDelete: (context, item) async {
           final provider = context.read<LectureProvider>();
           await provider.remove(item.id);
+          widget.onMutation?.call();
           return true;
         },
         extraActions: (context, item) => [
@@ -192,17 +167,23 @@ class _LectureListScreenState extends State<LectureListScreen> {
           IconButton(
             icon: const Icon(Icons.how_to_reg, size: 18),
             tooltip: 'Prisustvo',
-            onPressed: () => _openAttendance(item),
+            onPressed: widget.onOpenSubView == null
+                ? null
+                : () => widget.onOpenSubView!(item, LectureSubView.attendance),
           ),
           IconButton(
             icon: const Icon(Icons.note, size: 18),
             tooltip: 'Bilješke',
-            onPressed: () => _openNotes(item),
+            onPressed: widget.onOpenSubView == null
+                ? null
+                : () => widget.onOpenSubView!(item, LectureSubView.notes),
           ),
           IconButton(
             icon: const Icon(Icons.assignment, size: 18),
             tooltip: 'Zadaci',
-            onPressed: () => _openAssignments(item),
+            onPressed: widget.onOpenSubView == null
+                ? null
+                : () => widget.onOpenSubView!(item, LectureSubView.assignments),
           ),
         ],
       ),

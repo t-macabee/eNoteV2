@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
-import '../../../widgets/pdf_report_button.dart';
 import 'lecture_provider.dart';
 
 String _attendanceLabel(AttendanceStatus status) => switch (status) {
@@ -17,21 +16,21 @@ Color _attendanceColor(AttendanceStatus status) => switch (status) {
       AttendanceStatus.absent => Colors.red,
     };
 
-class LectureAttendanceScreen extends StatefulWidget {
+class LectureAttendanceView extends StatefulWidget {
   final int lectureId;
-  final String lectureName;
+  final VoidCallback? onMutation;
 
-  const LectureAttendanceScreen({
+  const LectureAttendanceView({
     super.key,
     required this.lectureId,
-    required this.lectureName,
+    this.onMutation,
   });
 
   @override
-  State<LectureAttendanceScreen> createState() => _LectureAttendanceScreenState();
+  State<LectureAttendanceView> createState() => _LectureAttendanceViewState();
 }
 
-class _LectureAttendanceScreenState extends State<LectureAttendanceScreen> {
+class _LectureAttendanceViewState extends State<LectureAttendanceView> {
   List<AttendanceDto> _items = [];
   bool _isLoading = true;
   int _currentPage = 1;
@@ -76,6 +75,7 @@ class _LectureAttendanceScreenState extends State<LectureAttendanceScreen> {
         ),
       );
       if (!mounted) return;
+      widget.onMutation?.call();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Prisustvo ažurirano: ${_attendanceLabel(newStatus)}')),
       );
@@ -117,20 +117,8 @@ class _LectureAttendanceScreenState extends State<LectureAttendanceScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Prisustvo — ${widget.lectureName}'),
-        actions: [
-          PdfReportButton(
-            label: 'Izvještaj',
-            fileName: 'lecture-${widget.lectureId}-attendance.pdf',
-            endpoint: 'instructor/lectures/${widget.lectureId}/attendance/report',
-          ),
-          const SizedBox(width: 8),
-        ],
-      ),
-      body: Column(
-        children: [
+    return Column(
+      children: [
           Expanded(
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
@@ -178,7 +166,6 @@ class _LectureAttendanceScreenState extends State<LectureAttendanceScreen> {
           ),
           _buildPagination(),
         ],
-      ),
     );
   }
 

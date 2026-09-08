@@ -4,23 +4,20 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
-import '../../../widgets/pdf_report_button.dart';
 
-class RankingScreen extends StatefulWidget {
+class RankingView extends StatefulWidget {
   final int courseId;
-  final String courseName;
 
-  const RankingScreen({
+  const RankingView({
     super.key,
     required this.courseId,
-    required this.courseName,
   });
 
   @override
-  State<RankingScreen> createState() => _RankingScreenState();
+  State<RankingView> createState() => _RankingViewState();
 }
 
-class _RankingScreenState extends State<RankingScreen> {
+class _RankingViewState extends State<RankingView> {
   List<CourseRankingEntryDto> _allItems = [];
   List<CourseRankingEntryDto> _filteredItems = [];
   bool _isLoading = true;
@@ -86,47 +83,37 @@ class _RankingScreenState extends State<RankingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Rangiranje — ${widget.courseName}'),
-        actions: [
-          PdfReportButton(
-            label: 'Izvještaj',
-            fileName: 'course-${widget.courseId}-ranking.pdf',
-            endpoint: 'instructor/courses/${widget.courseId}/ranking/report',
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (_allItems.isEmpty) {
+      return const Center(child: Text('Nema podataka o rangiranju.'));
+    }
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(16),
+          child: TextField(
+            controller: _searchController,
+            decoration: const InputDecoration(
+              labelText: 'Pretraži po imenu studenta',
+              prefixIcon: Icon(Icons.search),
+              border: OutlineInputBorder(),
+            ),
           ),
-          const SizedBox(width: 8),
-        ],
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _allItems.isEmpty
-              ? const Center(child: Text('Nema podataka o rangiranju.'))
-              : Column(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: TextField(
-                        controller: _searchController,
-                        decoration: const InputDecoration(
-                          labelText: 'Pretraži po imenu studenta',
-                          prefixIcon: Icon(Icons.search),
-                          border: OutlineInputBorder(),
-                        ),
-                      ),
-                    ),
-                    Expanded(
-                      child: _filteredItems.isEmpty
-                          ? const Center(child: Text('Nema rezultata za pretragu.'))
-                          : SingleChildScrollView(
-                              child: DataTable(
-                                columns: const [
-                                  DataColumn(label: Text('Rang')),
-                                  DataColumn(label: Text('Student')),
-                                  DataColumn(label: Text('Prosjek')),
-                                  DataColumn(label: Text('Broj ocijenjenih predaja')),
-                                ],
-                                rows: _filteredItems.map((item) {
+        ),
+        Expanded(
+          child: _filteredItems.isEmpty
+              ? const Center(child: Text('Nema rezultata za pretragu.'))
+              : SingleChildScrollView(
+                  child: DataTable(
+                    columns: const [
+                      DataColumn(label: Text('Rang')),
+                      DataColumn(label: Text('Student')),
+                      DataColumn(label: Text('Prosjek')),
+                      DataColumn(label: Text('Broj ocijenjenih predaja')),
+                    ],
+                    rows: _filteredItems.map((item) {
                       return DataRow(
                         cells: [
                           DataCell(Text(item.rank.toString())),
@@ -142,11 +129,10 @@ class _RankingScreenState extends State<RankingScreen> {
                         ],
                       );
                     }).toList(),
-                              ),
-                            ),
-                    ),
-                  ],
+                  ),
                 ),
+        ),
+      ],
     );
   }
 }

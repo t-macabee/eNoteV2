@@ -13,10 +13,19 @@ class LectureNoteListScreen extends StatefulWidget {
   final int lectureId;
   final String lectureName;
 
+  /// Defaults to [EntityListPresentation.page] (own Scaffold/AppBar, with a
+  /// back/close button when pushed via Navigator). Pass
+  /// [EntityListPresentation.embedded] only when the caller already
+  /// provides that chrome.
+  final EntityListPresentation presentation;
+  final VoidCallback? onMutation;
+
   const LectureNoteListScreen({
     super.key,
     required this.lectureId,
     required this.lectureName,
+    this.presentation = EntityListPresentation.page,
+    this.onMutation,
   });
 
   @override
@@ -28,7 +37,7 @@ class _LectureNoteListScreenState extends State<LectureNoteListScreen> {
 
   Future<void> _openForm([LectureNoteDto? existing]) async {
     final provider = context.read<LectureNoteProvider>();
-    await EntityFormScaffold.showAsDialog(
+    final saved = await EntityFormScaffold.showAsDialog(
       context,
       builder: (_) => ChangeNotifierProvider<LectureNoteProvider>.value(
         value: provider,
@@ -39,7 +48,10 @@ class _LectureNoteListScreenState extends State<LectureNoteListScreen> {
         ),
       ),
     );
-    _listKey.currentState?.refresh();
+    if (saved == true) {
+      widget.onMutation?.call();
+      _listKey.currentState?.refresh();
+    }
   }
 
   @override
@@ -48,6 +60,7 @@ class _LectureNoteListScreenState extends State<LectureNoteListScreen> {
       key: _listKey,
       config: EntityListConfig<LectureNoteDto>(
         title: 'Bilješke — ${widget.lectureName}',
+        presentation: widget.presentation,
         columns: [
           ColumnSpec<LectureNoteDto>(
             label: 'Naslov',
@@ -64,6 +77,7 @@ class _LectureNoteListScreenState extends State<LectureNoteListScreen> {
         onDelete: (context, item) async {
           final provider = context.read<LectureNoteProvider>();
           await provider.remove(item.id);
+          widget.onMutation?.call();
           return true;
         },
       ),
