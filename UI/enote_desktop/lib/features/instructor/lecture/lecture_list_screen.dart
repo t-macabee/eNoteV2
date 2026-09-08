@@ -4,26 +4,15 @@ import 'package:provider/provider.dart';
 import 'package:enote_core/enote_core.dart';
 import '../../../widgets/entity_form_scaffold.dart';
 import '../../../widgets/entity_list_screen.dart';
+import 'lecture_detail_dialog.dart';
 import 'lecture_form_screen.dart';
 import 'lecture_provider.dart';
 import 'lecture_type_label.dart';
-
-
-
 
 enum LectureSubView {
   attendance,
   notes,
   assignments,
-}
-
-String _lectureStatusLabel(LectureDto lecture) {
-  if (lecture.isCancelled) return 'Otkazano';
-  return switch (lecture.lectureStatus) {
-    LectureStatus.scheduled => 'Zakazano',
-    LectureStatus.held => 'Održano',
-    LectureStatus.cancelled => 'Otkazano',
-  };
 }
 
 class LectureListScreen extends StatefulWidget {
@@ -104,6 +93,8 @@ class _LectureListScreenState extends State<LectureListScreen> {
         presentation: widget.presentation,
         listStyle: widget.listStyle,
         rowIcon: Icons.event_note,
+        tileSubtitleColumns: const [2, 6],
+        onRowTap: (context, item) => LectureDetailDialog.show(context, item),
         columns: [
           ColumnSpec<LectureDto>(
             label: 'Naziv',
@@ -131,7 +122,7 @@ class _LectureListScreenState extends State<LectureListScreen> {
           ),
           ColumnSpec<LectureDto>(
             label: 'Status',
-            value: (item) => _lectureStatusLabel(item),
+            value: (item) => lectureStatusLabel(item),
             style: (item) {
               if (item.isCancelled) {
                 return const TextStyle(color: Colors.red, fontWeight: FontWeight.bold);
@@ -156,15 +147,6 @@ class _LectureListScreenState extends State<LectureListScreen> {
         },
         extraActions: (context, item) => [
           IconButton(
-            icon: Icon(
-              Icons.cancel,
-              size: 18,
-              color: item.isCancelled ? Colors.grey : Colors.orange,
-            ),
-            tooltip: item.isCancelled ? 'Već otkazano' : 'Otkaži',
-            onPressed: item.isCancelled ? null : () => _cancelLecture(item),
-          ),
-          IconButton(
             icon: const Icon(Icons.how_to_reg, size: 18),
             tooltip: 'Prisustvo',
             onPressed: widget.onOpenSubView == null
@@ -184,6 +166,15 @@ class _LectureListScreenState extends State<LectureListScreen> {
             onPressed: widget.onOpenSubView == null
                 ? null
                 : () => widget.onOpenSubView!(item, LectureSubView.assignments),
+          ),
+          IconButton(
+            icon: Icon(
+              Icons.cancel,
+              size: 18,
+              color: item.isCancelled ? Colors.grey : Colors.orange,
+            ),
+            tooltip: item.isCancelled ? 'Već otkazano' : 'Otkaži',
+            onPressed: item.isCancelled ? null : () => _cancelLecture(item),
           ),
         ],
       ),

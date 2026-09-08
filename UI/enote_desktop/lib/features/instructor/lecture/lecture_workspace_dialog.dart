@@ -110,14 +110,6 @@ class _LectureWorkspaceDialogState extends State<LectureWorkspaceDialog> {
         _SubmissionsView() => 'Predaje',
       };
 
-  String _getTitle(_WorkspaceView top) => switch (top) {
-        _LecturesView() => 'Predavanja — ${widget.courseName}',
-        _AttendanceView(:final lecture) => 'Prisustvo — ${lecture.name}',
-        _NotesView(:final lecture) => 'Bilješke — ${lecture.name}',
-        _AssignmentsView(:final lecture) => 'Zadaci — ${lecture.name}',
-        _SubmissionsView(:final assignment) => 'Predaje — ${assignment.title}',
-      };
-
   Widget? _getHeaderAction(_WorkspaceView top) => switch (top) {
         _AttendanceView(:final lecture) => PdfReportButton(
             label: 'Izvještaj',
@@ -128,13 +120,10 @@ class _LectureWorkspaceDialogState extends State<LectureWorkspaceDialog> {
       };
 
   Widget _buildBreadcrumbs() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-      color: AppTheme.background.withValues(alpha: 0.5),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Row(
-          children: [
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
             for (int i = 0; i < _stack.length; i++) ...[
               if (i > 0)
                 const Padding(
@@ -187,9 +176,8 @@ class _LectureWorkspaceDialogState extends State<LectureWorkspaceDialog> {
             ],
           ],
         ),
-      ),
-    );
-  }
+      );
+    }
 
   Widget _buildCurrentView() {
     final top = _stack.last;
@@ -270,6 +258,35 @@ class _LectureWorkspaceDialogState extends State<LectureWorkspaceDialog> {
     };
   }
 
+  Widget _buildHeader(_WorkspaceView top) {
+    final headerAction = _getHeaderAction(top);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
+      child: Row(
+        children: [
+          if (_stack.length > 1)
+            IconButton(
+              icon: const Icon(Icons.arrow_back),
+              tooltip: 'Nazad',
+              onPressed: _popView,
+            )
+          else
+            const SizedBox(width: 48),
+          Expanded(child: _buildBreadcrumbs()),
+          if (headerAction != null) ...[
+            headerAction,
+            const SizedBox(width: 8),
+          ],
+          IconButton(
+            icon: const Icon(Icons.close),
+            tooltip: 'Zatvori',
+            onPressed: _close,
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final top = _stack.last;
@@ -290,25 +307,9 @@ class _LectureWorkspaceDialogState extends State<LectureWorkspaceDialog> {
         }
       },
       child: DialogShell(
-        title: _getTitle(top),
-        width: DialogShellWidth.xl,
-        leading: _stack.length > 1
-            ? IconButton(
-                icon: const Icon(Icons.arrow_back),
-                tooltip: 'Nazad',
-                onPressed: _popView,
-              )
-            : null,
-        headerAction: _getHeaderAction(top),
-        onClose: _close,
-        body: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _buildBreadcrumbs(),
-            const Divider(height: 1),
-            Expanded(child: _buildCurrentView()),
-          ],
-        ),
+        width: DialogShellWidth.lg,
+        header: _buildHeader(top),
+        body: _buildCurrentView(),
       ),
     );
   }

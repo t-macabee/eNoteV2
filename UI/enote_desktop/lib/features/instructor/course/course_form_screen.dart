@@ -133,12 +133,6 @@ class _CourseFormScreenState extends State<CourseFormScreen> {
           initialValue: _endDate,
           onChanged: (value) => _endDate = value,
         ),
-        const SizedBox(height: 8),
-        SwitchListTile(
-          title: const Text('Objavljen'),
-          value: _isPublished,
-          onChanged: (value) => setState(() => _isPublished = value),
-        ),
       ],
       onSave: _save,
       onReset: () {
@@ -148,7 +142,6 @@ class _CourseFormScreenState extends State<CourseFormScreen> {
         setState(() {
           _startDate = null;
           _endDate = null;
-          _isPublished = false;
         });
       },
     );

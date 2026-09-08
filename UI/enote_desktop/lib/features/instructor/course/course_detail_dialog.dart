@@ -153,7 +153,7 @@ class _CourseDetailDialogState extends State<CourseDetailDialog> {
     await showDialog<void>(
       context: context,
       builder: (_) => DialogShell(
-        width: DialogShellWidth.lg,
+        width: DialogShellWidth.md,
         title: 'Objave — ${_course.name}',
         body: ChangeNotifierProvider<AnnouncementProvider>(
           create: (_) => AnnouncementProvider(
@@ -176,7 +176,7 @@ class _CourseDetailDialogState extends State<CourseDetailDialog> {
     await showDialog<void>(
       context: context,
       builder: (_) => DialogShell(
-        width: DialogShellWidth.lg,
+        width: DialogShellWidth.md,
         title: 'Rangiranje — ${_course.name}',
         headerAction: PdfReportButton(
           label: 'Izvještaj',
@@ -217,10 +217,32 @@ class _CourseDetailDialogState extends State<CourseDetailDialog> {
         title: _course.name,
         width: DialogShellWidth.md,
         onClose: _close,
+        headerAction: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Objavljen',
+              style: TextStyle(color: AppTheme.textSecondary),
+            ),
+            const SizedBox(width: 8),
+            if (_isPublishing)
+              const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            else
+              Switch(
+                value: _course.isPublished,
+                onChanged: _isDeleting ? null : _togglePublish,
+              ),
+          ],
+        ),
         body: Column(
+          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Expanded(
+            Flexible(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
                 child: Column(
@@ -261,83 +283,58 @@ class _CourseDetailDialogState extends State<CourseDetailDialog> {
             const Divider(height: 1),
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 12, 24, 16),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      OutlinedButton.icon(
-                        icon: const Icon(Icons.event_note, size: 18),
-                        label: const Text('Predavanja'),
-                        onPressed: _openLectures,
-                      ),
-                      OutlinedButton.icon(
-                        icon: const Icon(Icons.campaign, size: 18),
-                        label: const Text('Objave'),
-                        onPressed: _openAnnouncements,
-                      ),
-                      OutlinedButton.icon(
-                        icon: const Icon(Icons.leaderboard, size: 18),
-                        label: const Text('Rangiranje'),
-                        onPressed: _openRanking,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      OutlinedButton.icon(
-                        onPressed:
-                            _isDeleting || _isPublishing ? null : _delete,
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: AppTheme.error,
-                          side: const BorderSide(color: AppTheme.error),
-                        ),
-                        icon: _isDeleting
-                            ? const SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: AppTheme.error,
-                                ),
-                              )
-                            : const Icon(Icons.delete_outline, size: 18),
-                        label: const Text('Obriši'),
-                      ),
-                      const Spacer(),
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Text(
-                            'Objavljen',
-                            style: TextStyle(color: AppTheme.textSecondary),
-                          ),
-                          const SizedBox(width: 8),
-                          if (_isPublishing)
-                            const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          else
-                            Switch(
-                              value: _course.isPublished,
-                              onChanged: _isDeleting ? null : _togglePublish,
+                  OutlinedButton.icon(
+                    onPressed:
+                        _isDeleting || _isPublishing ? null : _delete,
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppTheme.error,
+                      side: const BorderSide(color: AppTheme.error),
+                    ),
+                    icon: _isDeleting
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: AppTheme.error,
                             ),
-                        ],
-                      ),
-                      const SizedBox(width: 12),
-                      OutlinedButton.icon(
-                        onPressed:
-                            _isDeleting || _isPublishing ? null : _openEdit,
-                        icon: const Icon(Icons.edit_outlined, size: 18),
-                        label: const Text('Uredi'),
-                      ),
-                    ],
+                          )
+                        : const Icon(Icons.delete_outline, size: 18),
+                    label: const Text('Obriši'),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Wrap(
+                      alignment: WrapAlignment.end,
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        OutlinedButton.icon(
+                          icon: const Icon(Icons.event_note, size: 18),
+                          label: const Text('Predavanja'),
+                          onPressed: _openLectures,
+                        ),
+                        OutlinedButton.icon(
+                          icon: const Icon(Icons.campaign, size: 18),
+                          label: const Text('Objave'),
+                          onPressed: _openAnnouncements,
+                        ),
+                        OutlinedButton.icon(
+                          icon: const Icon(Icons.leaderboard, size: 18),
+                          label: const Text('Rangiranje'),
+                          onPressed: _openRanking,
+                        ),
+                        FilledButton.icon(
+                          onPressed:
+                              _isDeleting || _isPublishing ? null : _openEdit,
+                          icon: const Icon(Icons.edit_outlined, size: 18),
+                          label: const Text('Uredi'),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),

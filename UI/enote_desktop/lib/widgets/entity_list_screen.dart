@@ -71,6 +71,16 @@ class EntityListConfig<T> {
   /// Leading icon displayed on each row when [listStyle] is [EntityListStyle.tiles].
   final IconData? rowIcon;
 
+  /// Indices into [columns] rendered in the tile subtitle when [listStyle]
+  /// is [EntityListStyle.tiles]. When `null` (the default), all columns
+  /// after the first are shown, preserving the historical behavior.
+  final List<int>? tileSubtitleColumns;
+
+  /// Tap handler for the tile row when [listStyle] is [EntityListStyle.tiles].
+  /// When non-null it is used for [ListTile.onTap]; otherwise [onEdit] is
+  /// used as before.
+  final void Function(BuildContext context, T item)? onRowTap;
+
   const EntityListConfig({
     this.title,
     required this.columns,
@@ -89,6 +99,8 @@ class EntityListConfig<T> {
     this.presentation = EntityListPresentation.page,
     this.listStyle = EntityListStyle.table,
     this.rowIcon,
+    this.tileSubtitleColumns,
+    this.onRowTap,
   });
 }
 
@@ -277,13 +289,29 @@ class EntityListScreenState<T> extends State<EntityListScreen<T>> {
             : '';
 
         String? subtitle;
-        if (columns.length > 1) {
+        final subtitleIndices = widget.config.tileSubtitleColumns;
+        if (subtitleIndices != null) {
+          final parts = <String>[];
+          for (final i in subtitleIndices) {
+            if (i < 0 || i >= columns.length) continue;
+            final col = columns[i];
+            final val = col.value(item)?.toString() ?? '-';
+            parts.add('${col.label}: $val');
+          }
+          if (parts.isNotEmpty) subtitle = parts.join(' · ');
+        } else if (columns.length > 1) {
           subtitle = columns.skip(1).map((col) {
             final val = col.value(item)?.toString() ?? '-';
             return '${col.label}: $val';
           }).join(' · ');
         }
 
+        final onRowTap = widget.config.onRowTap ?? widget.config.onEdit;
+        final extraWidgets =
+            widget.config.extraActions?.call(context, item) ??
+            const <Widget>[];
+        final hasEditDelete =
+            widget.config.onEdit != null || widget.config.onDelete != null;
         return ListTile(
           leading: widget.config.rowIcon != null
               ? Icon(widget.config.rowIcon)
@@ -293,13 +321,19 @@ class EntityListScreenState<T> extends State<EntityListScreen<T>> {
             style: columns.isNotEmpty ? columns.first.style?.call(item) : null,
           ),
           subtitle: subtitle != null ? Text(subtitle) : null,
-          onTap: widget.config.onEdit != null
-              ? () => widget.config.onEdit!(context, item)
+          onTap: onRowTap != null
+              ? () => onRowTap(context, item)
               : null,
           trailing: hasActions
               ? Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
+                    ...extraWidgets,
+                    if (extraWidgets.isNotEmpty && hasEditDelete)
+                      const SizedBox(
+                        height: 20,
+                        child: VerticalDivider(width: 12),
+                      ),
                     if (widget.config.onEdit != null)
                       IconButton(
                         icon: const Icon(Icons.edit, size: 18),
@@ -314,8 +348,6 @@ class EntityListScreenState<T> extends State<EntityListScreen<T>> {
                         ),
                         onPressed: () => _deleteItem(item),
                       ),
-                    if (widget.config.extraActions != null)
-                      ...widget.config.extraActions!(context, item),
                   ],
                 )
               : null,
@@ -337,6 +369,11 @@ class EntityListScreenState<T> extends State<EntityListScreen<T>> {
           if (hasActions) const DataColumn(label: Text('Akcije')),
         ],
         rows: _controller.items.map((item) {
+          final extraWidgets =
+              widget.config.extraActions?.call(context, item) ??
+              const <Widget>[];
+          final hasEditDelete =
+              widget.config.onEdit != null || widget.config.onDelete != null;
           return DataRow(
             cells: [
               ...widget.config.columns.map(
@@ -357,6 +394,12 @@ class EntityListScreenState<T> extends State<EntityListScreen<T>> {
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
+                      ...extraWidgets,
+                      if (extraWidgets.isNotEmpty && hasEditDelete)
+                        const SizedBox(
+                          height: 20,
+                          child: VerticalDivider(width: 12),
+                        ),
                       if (widget.config.onEdit != null)
                         IconButton(
                           icon: const Icon(Icons.edit, size: 18),
@@ -371,8 +414,6 @@ class EntityListScreenState<T> extends State<EntityListScreen<T>> {
                           ),
                           onPressed: () => _deleteItem(item),
                         ),
-                      if (widget.config.extraActions != null)
-                        ...widget.config.extraActions!(context, item),
                     ],
                   ),
                 ),
