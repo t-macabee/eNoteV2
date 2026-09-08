@@ -7,7 +7,12 @@ import '../../../widgets/user_credential_fields.dart';
 import 'instructor_student_provider.dart';
 
 class InstructorStudentFormScreen extends StatefulWidget {
-  const InstructorStudentFormScreen({super.key});
+  final EntityFormPresentation presentation;
+
+  const InstructorStudentFormScreen({
+    super.key,
+    this.presentation = EntityFormPresentation.page,
+  });
 
   @override
   State<InstructorStudentFormScreen> createState() =>
@@ -35,6 +40,7 @@ class _InstructorStudentFormScreenState
     return EntityFormScaffold(
       title: 'Kreiraj studenta',
       saveLabel: 'Kreiraj',
+      presentation: widget.presentation,
       onSave: _save,
       fieldsBuilder: (context) => [
         UserCredentialFields(controller: _credentialController),

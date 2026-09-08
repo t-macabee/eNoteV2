@@ -84,10 +84,16 @@ class _RankingViewState extends State<RankingView> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return const SizedBox(
+        height: 200,
+        child: Center(child: CircularProgressIndicator()),
+      );
     }
     if (_allItems.isEmpty) {
-      return const Center(child: Text('Nema podataka o rangiranju.'));
+      return const SizedBox(
+        height: 200,
+        child: Center(child: Text('Nema podataka o rangiranju.')),
+      );
     }
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -105,8 +111,12 @@ class _RankingViewState extends State<RankingView> {
         ),
         Flexible(
           child: _filteredItems.isEmpty
-              ? const Center(child: Text('Nema rezultata za pretragu.'))
+              ? const SizedBox(
+                  height: 200,
+                  child: Center(child: Text('Nema rezultata za pretragu.')),
+                )
               : ListView.separated(
+                  shrinkWrap: true,
                   itemCount: _filteredItems.length,
                   separatorBuilder: (_, _) => const Divider(height: 1),
                   itemBuilder: (context, index) {

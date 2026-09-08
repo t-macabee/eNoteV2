@@ -262,8 +262,10 @@ class _MasterScreenState extends State<MasterScreen> {
           ),
           onClose: () => Navigator.of(dialogContext).pop(),
         ),
-        body: SizedBox(
-          height: MediaQuery.sizeOf(context).height * 0.6,
+        body: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.sizeOf(context).height * 0.6,
+          ),
           child: NotificationListView(controller: controller),
         ),
       ),

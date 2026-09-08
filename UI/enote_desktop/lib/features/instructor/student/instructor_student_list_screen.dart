@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
+import '../../../widgets/entity_form_scaffold.dart';
 import '../../../widgets/entity_grid_screen.dart';
 import 'instructor_student_details_dialog.dart';
 import 'instructor_student_form_screen.dart';
@@ -20,9 +21,10 @@ class _InstructorStudentListScreenState
   final _gridKey = GlobalKey<EntityGridScreenState<StudentDto>>();
 
   Future<void> _openCreateForm() async {
-    await Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => const InstructorStudentFormScreen(),
+    await EntityFormScaffold.showAsDialog(
+      context,
+      builder: (_) => const InstructorStudentFormScreen(
+        presentation: EntityFormPresentation.dialog,
       ),
     );
     _gridKey.currentState?.refresh();

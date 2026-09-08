@@ -31,18 +31,29 @@ class _NotificationListViewState extends State<NotificationListView> {
         final controller = widget.controller;
 
         if (controller.isLoading && controller.notifications.isEmpty) {
-          return const Center(child: CircularProgressIndicator());
+          return const SizedBox(
+            height: 160,
+            child: Center(child: CircularProgressIndicator()),
+          );
         }
         if (controller.error != null && controller.notifications.isEmpty) {
-          return Center(child: ErrorBanner(message: controller.error!));
+          return SizedBox(
+            height: 160,
+            child: Center(child: ErrorBanner(message: controller.error!)),
+          );
         }
         if (controller.notifications.isEmpty) {
-          return const Center(child: Text('Nema obavještenja.'));
+          return const SizedBox(
+            height: 160,
+            child: Center(child: Text('Nema obavještenja.')),
+          );
         }
 
         return RefreshIndicator(
           onRefresh: controller.refresh,
           child: ListView.separated(
+            shrinkWrap: true,
+            physics: const AlwaysScrollableScrollPhysics(),
             itemCount: controller.notifications.length,
             separatorBuilder: (_, _) => const Divider(height: 1),
             itemBuilder: (context, index) => _buildTile(controller.notifications[index]),

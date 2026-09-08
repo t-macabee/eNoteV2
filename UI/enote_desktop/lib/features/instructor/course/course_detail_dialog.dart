@@ -159,7 +159,7 @@ class _CourseDetailDialogState extends State<CourseDetailDialog> {
     await showDialog<void>(
       context: context,
       builder: (dialogContext) => DialogShell(
-        width: DialogShellWidth.md,
+        width: DialogShellWidth.lg,
         header: DialogShellHeader(
           label: const Text(
             'Objave',
@@ -192,7 +192,7 @@ class _CourseDetailDialogState extends State<CourseDetailDialog> {
     await showDialog<void>(
       context: context,
       builder: (dialogContext) => DialogShell(
-        width: DialogShellWidth.md,
+        width: DialogShellWidth.lg,
         header: DialogShellHeader(
           label: const Text(
             'Rangiranje',

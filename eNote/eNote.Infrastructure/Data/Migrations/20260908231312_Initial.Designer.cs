@@ -12,8 +12,8 @@ using eNote.Infrastructure.Data;
 namespace eNote.Infrastructure.Data.Migrations
 {
     [DbContext(typeof(ENoteContext))]
-    [Migration("20260908223001_RemoveAnnouncementImagePath")]
-    partial class RemoveAnnouncementImagePath
+    [Migration("20260908231312_Initial")]
+    partial class Initial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
