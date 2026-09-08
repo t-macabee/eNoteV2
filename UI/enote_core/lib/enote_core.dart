@@ -2,6 +2,7 @@ export 'models/shared/enums.dart';
 export 'models/identity/auth_models.dart';
 export 'models/identity/user_models.dart';
 export 'models/academic/course_models.dart';
+export 'models/academic/student_enrollment_dto.dart';
 export 'models/academic/lecture_models.dart';
 export 'models/academic/lecture_note_models.dart';
 export 'models/academic/assignment_models.dart';

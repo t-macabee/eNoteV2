@@ -9,6 +9,7 @@ import '../features/admin/music_store/music_store_list_screen.dart';
 import '../features/admin/reference_data/reference_data_dialog.dart';
 import '../features/admin/users/user_grid_screen.dart';
 import '../features/instructor/course/course_list_screen.dart';
+import '../features/instructor/course/course_catalog_screen.dart';
 import '../features/instructor/student/instructor_student_list_screen.dart';
 import '../features/shared/announcement/announcement_list_screen.dart';
 import '../features/shared/announcement/store_announcement_provider.dart';
@@ -72,6 +73,12 @@ class _MasterScreenState extends State<MasterScreen> {
       allowedRoles: [UserRole.instructor],
     ),
     RoleMenuEntry(
+      icon: Icons.menu_book_outlined,
+      label: 'Katalog kurseva',
+      screenBuilder: _buildCourseCatalog,
+      allowedRoles: [UserRole.instructor],
+    ),
+    RoleMenuEntry(
       icon: Icons.school_outlined,
       label: 'Studenti',
       screenBuilder: _buildInstructorStudentList,
@@ -113,6 +120,10 @@ class _MasterScreenState extends State<MasterScreen> {
 
   static Widget _buildCourseList(BuildContext context) {
     return const CourseListScreen();
+  }
+
+  static Widget _buildCourseCatalog(BuildContext context) {
+    return const CourseCatalogScreen();
   }
 
   static Widget _buildInstructorStudentList(BuildContext context) {

@@ -106,3 +106,47 @@ class CourseRankingEntryDto {
   }
 }
 
+class CourseCatalogInstructorDto {
+  final int id;
+  final String? name;
+
+  CourseCatalogInstructorDto({
+    required this.id,
+    this.name,
+  });
+
+  factory CourseCatalogInstructorDto.fromJson(Map<String, dynamic> json) {
+    return CourseCatalogInstructorDto(
+      id: json['id'] as int? ?? 0,
+      name: json['name'] as String?,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    if (name != null) 'name': name,
+  };
+}
+
+class CourseCatalogSummaryDto {
+  final int totalCourses;
+  final int totalStudents;
+
+  CourseCatalogSummaryDto({
+    required this.totalCourses,
+    required this.totalStudents,
+  });
+
+  factory CourseCatalogSummaryDto.fromJson(Map<String, dynamic> json) {
+    return CourseCatalogSummaryDto(
+      totalCourses: json['totalCourses'] as int? ?? 0,
+      totalStudents: json['totalStudents'] as int? ?? 0,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'totalCourses': totalCourses,
+    'totalStudents': totalStudents,
+  };
+}
+

@@ -8,7 +8,8 @@ import 'instructor_student_provider.dart';
 /// Read-only student info for instructors — deliberately minimal: no
 /// membership renew, activate/deactivate or delete actions (those are admin
 /// only), just the facts the instructor needs: who the student is, when they
-/// enrolled, and their membership status.
+/// enrolled, their membership status, and cross-enrollments in other courses
+/// (shown because the student is already visible to this instructor).
 class InstructorStudentDetailsDialog extends StatefulWidget {
   final StudentDto student;
 
@@ -22,6 +23,7 @@ class InstructorStudentDetailsDialog extends StatefulWidget {
 class _InstructorStudentDetailsDialogState
     extends State<InstructorStudentDetailsDialog> {
   late StudentDto _student = widget.student;
+  List<StudentEnrollmentDto>? _enrollments;
 
   @override
   void initState() {
@@ -30,15 +32,23 @@ class _InstructorStudentDetailsDialogState
   }
 
   Future<void> _refresh() async {
+    final provider = context.read<InstructorStudentProvider>();
     try {
-      final fresh = await context
-          .read<InstructorStudentProvider>()
-          .getById(widget.student.id);
+      final fresh = await provider.getById(widget.student.id);
       if (mounted && fresh.id == _student.id) {
         setState(() => _student = fresh);
       }
     } catch (_) {
       // Ignored: fall back to the details already in the grid item
+    }
+
+    try {
+      final enrollments = await provider.getEnrollments(widget.student.id);
+      if (mounted) {
+        setState(() => _enrollments = enrollments);
+      }
+    } catch (_) {
+      // Ignored: fall back silently, do not break the dialog
     }
   }
 
@@ -99,6 +109,39 @@ class _InstructorStudentDetailsDialogState
                 label: 'Status članarine',
                 value: statusValue,
               ),
+              const SizedBox(height: 16),
+              const Text(
+                'Upisani kursevi',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 8),
+              if (_enrollments == null)
+                const SizedBox.shrink()
+              else if (_enrollments!.isEmpty)
+                const Text(
+                  'Nema aktivnih upisa.',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: AppTheme.textSecondary,
+                  ),
+                )
+              else
+                ..._enrollments!.map(
+                  (e) => Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 2),
+                    child: Text(
+                      '${e.courseName} — ${e.instructorName ?? '—'}',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: AppTheme.textPrimary,
+                      ),
+                    ),
+                  ),
+                ),
               const SizedBox(height: 24),
               Row(
                 children: [
