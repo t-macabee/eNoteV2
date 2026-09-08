@@ -43,6 +43,34 @@ public sealed class AdminStudentService(
         return await BuildPagedResultAsync(query, search, cancellationToken);
     }
 
+    public async Task<StudentDto> GetByIdForInstructorAsync(
+        int instructorId,
+        int studentId,
+        CancellationToken cancellationToken = default)
+    {
+        var instructorCourses = instructorAccess.CoursesFor(instructorId);
+
+        Student entity = await context.Set<Enrollment>()
+            .AsNoTracking()
+            .Join(
+                instructorCourses,
+                e => e.CourseId,
+                c => c.Id,
+                (e, c) => e.StudentId)
+            .Distinct()
+            .Join(
+                context.Set<Student>().AsNoTracking(),
+                studentId => studentId,
+                s => s.Id,
+                (studentId, s) => s)
+            .FirstOrDefaultAsync(x => x.Id == studentId, cancellationToken)
+            ?? throw new NotFoundException(Messages.StudentProfileNotFound);
+
+        UserIdentityDto? user = await identityService.GetUserAsync(entity.AppUserId, cancellationToken);
+
+        return Map(entity, user);
+    }
+
     private async Task<PagedResult<StudentDto>> BuildPagedResultAsync(
         IQueryable<Student> query,
         StudentSearchObject search,

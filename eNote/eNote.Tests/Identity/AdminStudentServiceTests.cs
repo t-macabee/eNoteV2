@@ -170,4 +170,82 @@ public sealed class AdminStudentServiceTests
         Assert.Equal(3, adminResult.Items.Count);
         Assert.Equal(3, adminResult.TotalCount);
     }
+
+    [Fact]
+    public async Task GetByIdForInstructorAsync_ReturnsStudent_WhenEnrolledInInstructorCourse()
+    {
+        await using var context = TestDbContextFactory.CreateContext(Now);
+
+        var instructor1 = new Instructor(100);
+        var instructor2 = new Instructor(200);
+        context.Set<Instructor>().AddRange(instructor1, instructor2);
+        await context.SaveChangesAsync();
+
+        var course1 = new Course("Guitar 101", null, 100m, Now, Now.AddMonths(3), instructor1.Id) { CreatedById = instructor1.AppUserId };
+        var course2 = new Course("Violin 101", null, 150m, Now, Now.AddMonths(3), instructor2.Id) { CreatedById = instructor2.AppUserId };
+        context.Set<Course>().AddRange(course1, course2);
+        await context.SaveChangesAsync();
+
+        var student1 = new Student(10, Now);
+        var student2 = new Student(20, Now);
+        context.Set<Student>().AddRange(student1, student2);
+        await context.SaveChangesAsync();
+
+        context.Set<Enrollment>().AddRange(
+            new Enrollment(student1.Id, course1.Id, EnrollmentStatus.Active),
+            new Enrollment(student2.Id, course2.Id, EnrollmentStatus.Active));
+        await context.SaveChangesAsync();
+
+        var identity = new StubUserIdentityService(new Dictionary<int, UserIdentityDto>
+        {
+            [10] = StubUserIdentityService.User(10, "sone", "Student", "One"),
+            [20] = StubUserIdentityService.User(20, "stwo", "Student", "Two")
+        });
+
+        var instructorAccess = new InstructorAccessService(context, new StubUserProfileLookup(instructor: instructor1));
+        var service = new AdminStudentService(context, identity, instructorAccess);
+
+        var dto = await service.GetByIdForInstructorAsync(instructor1.Id, student1.Id);
+
+        Assert.Equal(student1.Id, dto.Id);
+        Assert.Equal("sone", dto.Username);
+        Assert.Equal("Student", dto.FirstName);
+    }
+
+    [Fact]
+    public async Task GetByIdForInstructorAsync_Throws_WhenStudentNotEnrolledInInstructorCourses()
+    {
+        await using var context = TestDbContextFactory.CreateContext(Now);
+
+        var instructor1 = new Instructor(100);
+        var instructor2 = new Instructor(200);
+        context.Set<Instructor>().AddRange(instructor1, instructor2);
+        await context.SaveChangesAsync();
+
+        var course1 = new Course("Guitar 101", null, 100m, Now, Now.AddMonths(3), instructor1.Id) { CreatedById = instructor1.AppUserId };
+        var course2 = new Course("Violin 101", null, 150m, Now, Now.AddMonths(3), instructor2.Id) { CreatedById = instructor2.AppUserId };
+        context.Set<Course>().AddRange(course1, course2);
+        await context.SaveChangesAsync();
+
+        var student1 = new Student(10, Now);
+        var student2 = new Student(20, Now);
+        context.Set<Student>().AddRange(student1, student2);
+        await context.SaveChangesAsync();
+
+        // student1 is enrolled in instructor2's course only
+        context.Set<Enrollment>().Add(new Enrollment(student1.Id, course2.Id, EnrollmentStatus.Active));
+        await context.SaveChangesAsync();
+
+        var identity = new StubUserIdentityService(new Dictionary<int, UserIdentityDto>
+        {
+            [10] = StubUserIdentityService.User(10, "sone", "Student", "One"),
+            [20] = StubUserIdentityService.User(20, "stwo", "Student", "Two")
+        });
+
+        var instructorAccess = new InstructorAccessService(context, new StubUserProfileLookup(instructor: instructor1));
+        var service = new AdminStudentService(context, identity, instructorAccess);
+
+        await Assert.ThrowsAsync<NotFoundException>(() => service.GetByIdForInstructorAsync(instructor1.Id, student1.Id));
+        await Assert.ThrowsAsync<NotFoundException>(() => service.GetByIdForInstructorAsync(instructor1.Id, student2.Id));
+    }
 }

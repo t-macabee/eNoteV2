@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
 import '../../../widgets/entity_grid_screen.dart';
+import 'instructor_student_details_dialog.dart';
 import 'instructor_student_form_screen.dart';
 import 'instructor_student_provider.dart';
 
@@ -41,6 +42,10 @@ class _InstructorStudentListScreenState
             formatDisplayName(item.firstName, item.lastName, item.username),
         subtitleOf: (item) => item.username != null ? '@${item.username}' : null,
         placeholderIcon: Icons.school_outlined,
+        onTap: (context, item) => showDialog<void>(
+          context: context,
+          builder: (_) => InstructorStudentDetailsDialog(student: item),
+        ),
         onAdd: _openCreateForm,
         addLabel: 'Kreiraj studenta',
         searchHint: 'Pretraži studente po imenu ili korisničkom imenu...',
