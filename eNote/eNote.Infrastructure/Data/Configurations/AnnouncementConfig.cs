@@ -10,7 +10,6 @@ public sealed class AnnouncementConfig : IEntityTypeConfiguration<Announcement>
     {
         builder.Property(x => x.Title).HasStringConfig(150, true);
         builder.Property(x => x.Content).HasStringConfig(4000, true);
-        builder.Property(x => x.ImagePath).HasMaxLength(500);
         builder.Property(x => x.IsActive).HasDefaultValue(true);
 
         builder.HasOne<AppUser>()

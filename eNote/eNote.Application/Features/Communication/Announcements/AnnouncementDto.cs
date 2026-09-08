@@ -8,7 +8,6 @@ public class AnnouncementDto
 
     public string Title { get; set; } = null!;
     public string Content { get; set; } = null!;
-    public string? ImagePath { get; set; }
     public AnnouncementScope Scope { get; set; }
     public string? CourseName { get; set; }
     public string? StoreName { get; set; }

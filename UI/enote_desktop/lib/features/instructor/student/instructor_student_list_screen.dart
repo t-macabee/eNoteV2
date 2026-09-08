@@ -42,6 +42,8 @@ class _InstructorStudentListScreenState
             formatDisplayName(item.firstName, item.lastName, item.username),
         subtitleOf: (item) => item.username != null ? '@${item.username}' : null,
         placeholderIcon: Icons.school_outlined,
+        imageUrlOf: (item) =>
+            userPictureUrl(context.read<ApiClient>(), item.appUserId),
         onTap: (context, item) => showDialog<void>(
           context: context,
           builder: (_) => InstructorStudentDetailsDialog(student: item),

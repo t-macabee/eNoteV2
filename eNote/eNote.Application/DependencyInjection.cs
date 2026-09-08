@@ -31,6 +31,7 @@ public static class DependencyInjection
         services.AddScoped<CityService>();
         services.AddScoped<EventService>();
         services.AddScoped<IFileAccessService, FileAccessService>();
+        services.AddScoped<IPictureAccessService, PictureAccessService>();
         services.AddScoped<InstrumentTypeService>();
         services.AddScoped<MusicStoreService>();
         services.AddScoped<IStudentDisplayNameService, StudentDisplayNameService>();

@@ -3,7 +3,7 @@ using MapsterMapper;
 
 namespace eNote.Application.Features.Communication.Announcements.Services;
 
-public sealed class InstructorAnnouncementService(IAppDbContext context, IClock clock, ICurrentUserContext currentUser, InstructorAccessService instructorAccess, IFileStorageService fileStorage, IMapper mapper)
+public sealed class InstructorAnnouncementService(IAppDbContext context, IClock clock, ICurrentUserContext currentUser, InstructorAccessService instructorAccess, IMapper mapper)
 {
     public async Task<AnnouncementDto> CreateForCourseAsync(int courseId, AnnouncementRequest request, CancellationToken cancellationToken = default)
     {
@@ -54,19 +54,6 @@ public sealed class InstructorAnnouncementService(IAppDbContext context, IClock 
         entity.UpdatedById = currentUser.UserId;
 
         await context.SaveChangesAsync(cancellationToken);
-    }
-
-    public async Task<AnnouncementDto> UploadImageForCourseAsync(int courseId, int announcementId, Stream stream, string fileName, string contentType, CancellationToken ct = default)
-    {
-        var entity = await (await GetCourseAnnouncementQueryAsync(courseId, track: true)).FirstOrDefaultAsync(a => a.Id == announcementId, ct) ?? throw new NotFoundException(Messages.AnnouncementNotFound);
-        var path = await fileStorage.SaveAsync(stream, fileName, contentType, "announcements", ct);
-
-        entity.SetImagePath(path);
-        entity.UpdatedById = currentUser.UserId;
-
-        await context.SaveChangesAsync(ct);
-
-        return mapper.Map<AnnouncementDto>(entity);
     }
 
     private async Task<IQueryable<Announcement>> GetCourseAnnouncementQueryAsync(int courseId, bool track = false)

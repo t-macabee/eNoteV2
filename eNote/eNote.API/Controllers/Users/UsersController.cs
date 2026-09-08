@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace eNote.API.Controllers.Users;
 
 [Route("api/v{version:apiVersion}/users")]
-public sealed class UsersController(UserProfileService profileService, UserSelfService selfService) : CoreController
+public sealed class UsersController(UserProfileService profileService, UserSelfService selfService, IPictureAccessService pictureAccess, IUserAccountService accountService) : CoreController
 {
     [HttpGet("me")]
     [ProducesResponseType(typeof(UserProfileResponse), StatusCodes.Status200OK)]
@@ -92,6 +92,33 @@ public sealed class UsersController(UserProfileService profileService, UserSelfS
         }
 
         return NoContent();
+    }
+
+    // Privacy: "no such user", "user has no picture" and "you may not see
+    // this user" all return the same bare 404 so this endpoint cannot be used
+    // as a user-id oracle. Do not "fix" this into a 403 or BusinessException.
+    [HttpGet("{id:int}/picture")]
+    [Produces("image/jpeg", "image/png", "image/webp")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetUserPicture(int id, CancellationToken cancellationToken)
+    {
+        if (!await pictureAccess.CanViewPictureAsync(id, cancellationToken))
+        {
+            return NotFound();
+        }
+
+        (var data, var contentType) = await accountService.GetPictureAsync(id, cancellationToken);
+
+        if (data is null || contentType is null)
+        {
+            return NotFound();
+        }
+
+        Response.Headers.CacheControl = "private, no-store";
+        Response.Headers.Vary = "Authorization";
+
+        return File(data, contentType);
     }
 
     [HttpPut("me/password")]

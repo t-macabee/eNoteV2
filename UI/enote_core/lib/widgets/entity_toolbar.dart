@@ -57,17 +57,27 @@ class EntityToolbar extends StatelessWidget {
                 children: [
                   if (showSearch)
                     Flexible(
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 420),
-                        child: TextField(
-                          controller: searchController,
-                          decoration: InputDecoration(
-                            hintText: searchHint,
-                            prefixIcon: const Icon(Icons.search),
-                            border: const OutlineInputBorder(),
-                          ),
-                        ),
-                      ),
+                      child: filterBar != null
+                          ? ConstrainedBox(
+                              constraints:
+                                  const BoxConstraints(maxWidth: 420),
+                              child: TextField(
+                                controller: searchController,
+                                decoration: InputDecoration(
+                                  hintText: searchHint,
+                                  prefixIcon: const Icon(Icons.search),
+                                  border: const OutlineInputBorder(),
+                                ),
+                              ),
+                            )
+                          : TextField(
+                              controller: searchController,
+                              decoration: InputDecoration(
+                                hintText: searchHint,
+                                prefixIcon: const Icon(Icons.search),
+                                border: const OutlineInputBorder(),
+                              ),
+                            ),
                     ),
                   if (showSearch && filterBar != null)
                     const SizedBox(width: 12),

@@ -40,6 +40,7 @@ class _CourseDetailDialogState extends State<CourseDetailDialog> {
   bool _isDeleting = false;
   bool _dirty = false;
   bool _canPop = false;
+  bool _popped = false;
 
   @override
   void initState() {
@@ -47,9 +48,15 @@ class _CourseDetailDialogState extends State<CourseDetailDialog> {
     _course = widget.course;
   }
 
-  void _close() {
+  void _popDialog(bool result) {
+    if (_popped) return;
+    _popped = true;
     _canPop = true;
-    Navigator.of(context).pop(_dirty);
+    Navigator.of(context).pop(result);
+  }
+
+  void _close() {
+    _popDialog(_dirty);
   }
 
   Future<void> _togglePublish(bool newValue) async {
@@ -123,8 +130,7 @@ class _CourseDetailDialogState extends State<CourseDetailDialog> {
     try {
       await context.read<CourseProvider>().remove(_course.id);
       if (mounted) {
-        _canPop = true;
-        Navigator.of(context).pop(true);
+        _popDialog(true);
       }
     } catch (e) {
       if (mounted) {
@@ -152,9 +158,19 @@ class _CourseDetailDialogState extends State<CourseDetailDialog> {
     final apiClient = context.read<ApiClient>();
     await showDialog<void>(
       context: context,
-      builder: (_) => DialogShell(
+      builder: (dialogContext) => DialogShell(
         width: DialogShellWidth.md,
-        title: 'Objave — ${_course.name}',
+        header: DialogShellHeader(
+          label: const Text(
+            'Objave',
+            style: TextStyle(
+              color: AppTheme.textPrimary,
+              fontWeight: FontWeight.w600,
+              fontSize: 16,
+            ),
+          ),
+          onClose: () => Navigator.of(dialogContext).pop(),
+        ),
         body: ChangeNotifierProvider<AnnouncementProvider>(
           create: (_) => AnnouncementProvider(
             apiClient: apiClient,
@@ -175,13 +191,23 @@ class _CourseDetailDialogState extends State<CourseDetailDialog> {
   Future<void> _openRanking() async {
     await showDialog<void>(
       context: context,
-      builder: (_) => DialogShell(
+      builder: (dialogContext) => DialogShell(
         width: DialogShellWidth.md,
-        title: 'Rangiranje — ${_course.name}',
-        headerAction: PdfReportButton(
-          label: 'Izvještaj',
-          fileName: 'course-${_course.id}-ranking.pdf',
-          endpoint: 'instructor/courses/${_course.id}/ranking/report',
+        header: DialogShellHeader(
+          label: const Text(
+            'Rangiranje',
+            style: TextStyle(
+              color: AppTheme.textPrimary,
+              fontWeight: FontWeight.w600,
+              fontSize: 16,
+            ),
+          ),
+          action: PdfReportButton(
+            label: 'Izvještaj',
+            fileName: 'course-${_course.id}-ranking.pdf',
+            endpoint: 'instructor/courses/${_course.id}/ranking/report',
+          ),
+          onClose: () => Navigator.of(dialogContext).pop(),
         ),
         body: RankingView(courseId: _course.id),
       ),
@@ -209,7 +235,7 @@ class _CourseDetailDialogState extends State<CourseDetailDialog> {
         _canPop = true;
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) {
-            Navigator.of(context).pop(_dirty);
+            _popDialog(_dirty);
           }
         });
       },

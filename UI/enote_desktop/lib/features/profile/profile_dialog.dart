@@ -21,6 +21,9 @@ class ProfileDialog extends StatefulWidget {
 class _ProfileDialogState extends State<ProfileDialog> {
   UserProfileResponse? _profileResponse;
   bool _isLoading = true;
+  // Bumped after every profile reload so `users/me/picture` reloads too —
+  // the URL is cacheable, so without `?v=` the old bytes would linger.
+  int _pictureVersion = 0;
 
   @override
   void initState() {
@@ -36,6 +39,7 @@ class _ProfileDialogState extends State<ProfileDialog> {
       if (mounted) {
         setState(() {
           _profileResponse = profile;
+          _pictureVersion++;
         });
       }
     } catch (e) {
@@ -54,6 +58,7 @@ class _ProfileDialogState extends State<ProfileDialog> {
         initialLastName: profile.profile.lastName,
         initialEmail: profile.email,
         initialDateOfBirth: profile.profile.dateOfBirth,
+        initialHasPicture: profile.hasPicture,
       ),
     );
     // The edit dialog stays open on save and only clears its own fields, so
@@ -130,6 +135,8 @@ class _ProfileDialogState extends State<ProfileDialog> {
                 ],
               ),
               const SizedBox(height: 8),
+              Center(child: _buildAvatar(context, profile)),
+              const SizedBox(height: 12),
               InfoRow(label: 'Korisničko ime', value: username, labelWidth: 120),
               InfoRow(label: 'Uloga', value: profile.role, labelWidth: 120),
               InfoRow(label: 'Ime', value: firstName, labelWidth: 120),
@@ -161,4 +168,57 @@ class _ProfileDialogState extends State<ProfileDialog> {
     );
   }
 
+  /// Display-only avatar: the user's picture when [hasPicture] is true,
+  /// otherwise a fallback circle with initials. A 404 from `me/picture`
+  /// (no picture / not visible) falls back to initials via [errorBuilder],
+  /// never an error banner.
+  Widget _buildAvatar(BuildContext context, UserProfileResponse profile) {
+    Widget initialsAvatar() {
+      return CircleAvatar(
+        radius: 40,
+        backgroundColor: AppTheme.primary,
+        child: Text(
+          _initials(
+            profile.profile.firstName,
+            profile.profile.lastName,
+            profile.username,
+          ),
+          style: const TextStyle(
+            fontSize: 28,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+          ),
+        ),
+      );
+    }
+
+    if (!profile.hasPicture) return initialsAvatar();
+
+    final provider = context.read<ProfileProvider>();
+    final apiClient = context.read<ApiClient>();
+    return networkImageOrPlaceholder(
+      provider.pictureUrl(cacheBuster: _pictureVersion),
+      apiClient,
+      size: 80,
+      borderRadius: 40,
+      placeholder: initialsAvatar,
+    );
+  }
+
+  static String _initials(
+    String? firstName,
+    String? lastName,
+    String username,
+  ) {
+    final parts = [
+      if (firstName != null && firstName.trim().isNotEmpty)
+        firstName.trim()[0].toUpperCase(),
+      if (lastName != null && lastName.trim().isNotEmpty)
+        lastName.trim()[0].toUpperCase(),
+    ];
+    if (parts.isNotEmpty) return parts.take(2).join();
+    final clean = username.trim();
+    if (clean.isEmpty) return '?';
+    return clean[0].toUpperCase();
+  }
 }

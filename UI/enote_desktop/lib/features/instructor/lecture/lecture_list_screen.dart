@@ -93,7 +93,7 @@ class _LectureListScreenState extends State<LectureListScreen> {
         presentation: widget.presentation,
         listStyle: widget.listStyle,
         rowIcon: Icons.event_note,
-        tileSubtitleColumns: const [2, 6],
+        tileSubtitleColumns: const [2, 3, 7],
         onRowTap: (context, item) => LectureDetailDialog.show(context, item),
         columns: [
           ColumnSpec<LectureDto>(
@@ -105,8 +105,12 @@ class _LectureListScreenState extends State<LectureListScreen> {
             value: (item) => lectureTypeLabel(item.lectureType),
           ),
           ColumnSpec<LectureDto>(
+            label: 'Datum',
+            value: (item) => formatDate(item.lectureTime),
+          ),
+          ColumnSpec<LectureDto>(
             label: 'Vrijeme',
-            value: (item) => formatDateTime(item.lectureTime),
+            value: (item) => formatTime(item.lectureTime),
           ),
           ColumnSpec<LectureDto>(
             label: 'Trajanje (min)',

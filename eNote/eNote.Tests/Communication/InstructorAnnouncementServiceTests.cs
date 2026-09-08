@@ -62,6 +62,5 @@ public sealed class InstructorAnnouncementServiceTests
             new FixedClock(Now),
             actor ?? new StubCurrentActor(instructor: instructor),
             instructorAccess,
-            new RecordingFileStorageService(),
             TestMapper.Create());
 }

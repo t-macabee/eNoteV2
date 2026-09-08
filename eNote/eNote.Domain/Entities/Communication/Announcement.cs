@@ -9,7 +9,6 @@ public class Announcement : AuditableEntity
 
     public string Title { get; private set; } = null!;
     public string Content { get; private set; } = null!;
-    public string? ImagePath { get; private set; }
 
     public DateTime PublishedAt { get; private set; }
     public bool IsActive { get; private set; } = true;
@@ -18,31 +17,20 @@ public class Announcement : AuditableEntity
     {
     }
 
-    public Announcement(string title, string content, int? courseId, int? musicStoreId, DateTime publishedAt, string? imagePath = null)
+    public Announcement(string title, string content, int? courseId, int? musicStoreId, DateTime publishedAt)
     {
         Title = title;
         Content = content;
-        ImagePath = imagePath;
         CourseId = courseId;
         MusicStoreId = musicStoreId;
         PublishedAt = publishedAt;
         IsActive = true;
     }
 
-    public void UpdateDetails(string title, string content, string? imagePath = null)
+    public void UpdateDetails(string title, string content)
     {
         Title = title;
         Content = content;
-
-        if (imagePath is not null)
-        {
-            ImagePath = imagePath;
-        }
-    }
-
-    public void SetImagePath(string? imagePath)
-    {
-        ImagePath = imagePath;
     }
 
     public void SoftDelete()

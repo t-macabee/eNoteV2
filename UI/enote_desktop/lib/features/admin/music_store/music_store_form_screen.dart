@@ -118,18 +118,15 @@ class _MusicStoreFormScreenState extends State<MusicStoreFormScreen> {
           decoration: const InputDecoration(labelText: 'Naziv'),
           validator: Validators.required('Naziv'),
         ),
-        const SizedBox(height: 18),
         TextFormField(
           controller: _businessHoursController,
           decoration: const InputDecoration(labelText: 'Radno vrijeme'),
           validator: Validators.required('Radno vrijeme'),
         ),
-        const SizedBox(height: 18),
         TextFormField(
           controller: _phoneNumberController,
           decoration: const InputDecoration(labelText: 'Broj telefona'),
         ),
-        const SizedBox(height: 18),
         AsyncDropdown<AddressReferenceDto>(
           label: 'Adresa',
           value: _selectedAddressId,
@@ -150,9 +147,7 @@ class _MusicStoreFormScreenState extends State<MusicStoreFormScreen> {
           },
         ),
         if (_isEditMode) ...[
-          const SizedBox(height: 24),
           const Text('Slika', style: TextStyle(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 4),
           const Text(
             'Slika se automatski sprema prilikom odabira.',
             style: TextStyle(
@@ -160,7 +155,6 @@ class _MusicStoreFormScreenState extends State<MusicStoreFormScreen> {
               color: AppTheme.textSecondary,
             ),
           ),
-          const SizedBox(height: 8),
           Align(
             alignment: Alignment.centerLeft,
             child: ImageField(

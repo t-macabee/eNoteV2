@@ -71,22 +71,6 @@ public sealed class UploadsControllerTests
     }
 
     [Fact]
-    public void GetAnnouncement_ReturnsFileStream_WhenFileExists()
-    {
-        var storage = new RecordingFileStorageService
-        {
-            OpenReadResult = (new MemoryStream([1, 2, 3]), "image/png")
-        };
-        var controller = CreateController(storage);
-
-        var result = controller.GetAnnouncement("banner.png");
-
-        var fileResult = Assert.IsType<FileStreamResult>(result);
-        Assert.Equal("image/png", fileResult.ContentType);
-        Assert.Equal(["/api/v1/uploads/announcements/banner.png"], storage.OpenReadCalls);
-    }
-
-    [Fact]
     public async Task GetAssignment_ReturnsForbid_WhenAccessDenied()
     {
         var storage = new RecordingFileStorageService

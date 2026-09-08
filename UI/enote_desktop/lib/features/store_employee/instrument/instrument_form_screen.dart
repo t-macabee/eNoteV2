@@ -118,20 +118,17 @@ class _InstrumentFormScreenState extends State<InstrumentFormScreen> {
           decoration: const InputDecoration(labelText: 'Model'),
           validator: Validators.required('Model'),
         ),
-        const SizedBox(height: 18),
         TextFormField(
           controller: _manufacturerController,
           decoration: const InputDecoration(labelText: 'Proizvođač'),
           validator: Validators.required('Proizvođač'),
         ),
-        const SizedBox(height: 18),
         TextFormField(
           controller: _descriptionController,
           decoration: const InputDecoration(labelText: 'Opis'),
           maxLines: 3,
           minLines: 1,
         ),
-        const SizedBox(height: 18),
         AsyncDropdown<InstrumentTypeDto>(
           label: 'Tip instrumenta',
           value: _selectedInstrumentTypeId,
@@ -153,9 +150,7 @@ class _InstrumentFormScreenState extends State<InstrumentFormScreen> {
           },
         ),
         if (_isEditMode) ...[
-          const SizedBox(height: 24),
           const Text('Slika', style: TextStyle(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 4),
           const Text(
             'Slika se automatski sprema prilikom odabira.',
             style: TextStyle(
@@ -163,7 +158,6 @@ class _InstrumentFormScreenState extends State<InstrumentFormScreen> {
               color: AppTheme.textSecondary,
             ),
           ),
-          const SizedBox(height: 8),
           Align(
             alignment: Alignment.centerLeft,
             child: ImageField(

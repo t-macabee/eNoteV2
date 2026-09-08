@@ -101,8 +101,29 @@ class ApiClient {
     required String fileName,
     required String contentType,
   }) async {
+    return sendMultipart('POST', path,
+        bytes: bytes, fileName: fileName, contentType: contentType);
+  }
+
+  Future<http.Response> putMultipart(
+    String path, {
+    required List<int> bytes,
+    required String fileName,
+    required String contentType,
+  }) async {
+    return sendMultipart('PUT', path,
+        bytes: bytes, fileName: fileName, contentType: contentType);
+  }
+
+  Future<http.Response> sendMultipart(
+    String method,
+    String path, {
+    required List<int> bytes,
+    required String fileName,
+    required String contentType,
+  }) async {
     final uri = _uri(path);
-    final request = http.MultipartRequest('POST', uri);
+    final request = http.MultipartRequest(method, uri);
 
     final token = authState.accessToken;
     if (token != null) {

@@ -26,13 +26,6 @@ public sealed class UploadsController(IFileStorageService fileStorage, IFileAcce
     public IActionResult GetMusicStore(string fileName) => Serve("music-stores", fileName);
 
     [Authorize]
-    [HttpGet("announcements/{fileName}")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public IActionResult GetAnnouncement(string fileName) => Serve("announcements", fileName);
-
-    [Authorize]
     [HttpGet("assignments/{fileName}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]

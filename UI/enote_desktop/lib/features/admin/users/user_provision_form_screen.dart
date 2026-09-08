@@ -57,7 +57,6 @@ class _UserProvisionFormScreenState extends State<UserProvisionFormScreen> {
       presentation: widget.presentation,
       fieldsBuilder: (context) => [
         UserCredentialFields(controller: _credentialController),
-        const SizedBox(height: 16),
         DropdownButtonFormField<UserRole>(
           initialValue: _role,
           decoration: const InputDecoration(labelText: 'Uloga'),
@@ -72,7 +71,6 @@ class _UserProvisionFormScreenState extends State<UserProvisionFormScreen> {
               value == null ? 'Uloga je obavezna.' : null,
         ),
         if (_role == UserRole.storeEmployee) ...[
-          const SizedBox(height: 16),
           AsyncDropdown<MusicStoreDto>(
             label: 'Prodavnica',
             fetcher: () async {

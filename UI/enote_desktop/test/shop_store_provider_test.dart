@@ -16,10 +16,9 @@ class _RecordedRequest {
 
 class _ShopStoreMockHttpClient extends http.BaseClient {
   final List<_RecordedRequest> requests = [];
-  final int statusCode;
   final String responseBody;
 
-  _ShopStoreMockHttpClient({this.statusCode = 200, required this.responseBody});
+  _ShopStoreMockHttpClient({required this.responseBody});
 
   @override
   Future<http.StreamedResponse> send(http.BaseRequest request) async {
@@ -30,7 +29,7 @@ class _ShopStoreMockHttpClient extends http.BaseClient {
     requests.add(_RecordedRequest(request.method, request.url.toString(), body));
     return http.StreamedResponse(
       Stream.value(utf8.encode(responseBody)),
-      statusCode,
+      200,
       headers: {'content-type': 'application/json'},
     );
   }

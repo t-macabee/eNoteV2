@@ -42,6 +42,8 @@ class _ShopEmployeeListScreenState extends State<ShopEmployeeListScreen> {
             formatDisplayName(item.firstName, item.lastName, item.username),
         subtitleOf: (item) => item.isManager ? 'Voditelj radnje' : 'Uposlenik radnje',
         placeholderIcon: Icons.badge_outlined,
+        imageUrlOf: (item) =>
+            userPictureUrl(context.read<ApiClient>(), item.appUserId),
         cardActions: (context, item) {
           final isManager = context.watch<AuthState>().isManager;
           final currentUserId = context.watch<AuthState>().userId;
@@ -59,6 +61,7 @@ class _ShopEmployeeListScreenState extends State<ShopEmployeeListScreen> {
                       : 'Da li ste sigurni da želite da aktivirate ovog korisnika?',
                 );
                 if (confirmed != true) return;
+                if (!context.mounted) return;
                 try {
                   await context.read<ShopEmployeeProvider>().setActive(item.appUserId, !item.isActive);
                   _gridKey.currentState?.refresh();

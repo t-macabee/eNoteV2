@@ -62,22 +62,6 @@ public sealed class AnnouncementController(
         return NoContent();
     }
 
-    [Authorize(Roles = AppRoles.Instructor)]
-    [HttpPost("~/api/v{version:apiVersion}/instructor/courses/{courseId:int}/announcements/{announcementId:int}/image")]
-    [ProducesResponseType(typeof(AnnouncementDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<AnnouncementDto>> UploadImageForCourse(int courseId, int announcementId, IFormFile? file, CancellationToken ct)
-    {
-        if (file is null || file.Length == 0)
-        {
-            return BadRequest(new { message = Messages.FileNotProvided });
-        }
-
-        await using Stream stream = file.OpenReadStream();
-        var result = await instructorAnnouncementService.UploadImageForCourseAsync(courseId, announcementId, stream, file.FileName, file.ContentType, ct);
-        return Ok(result);
-    }
-
     // ── Store employee actions ──────────────────────────────────────
 
     [Authorize(Roles = AppRoles.StoreEmployee)]
@@ -123,22 +107,6 @@ public sealed class AnnouncementController(
     {
         await storeAnnouncementService.DeleteForStoreAsync(announcementId, cancellationToken);
         return NoContent();
-    }
-
-    [Authorize(Roles = AppRoles.StoreEmployee)]
-    [HttpPost("~/api/v{version:apiVersion}/shop/announcements/{announcementId:int}/image")]
-    [ProducesResponseType(typeof(AnnouncementDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<AnnouncementDto>> UploadImageForStore(int announcementId, IFormFile? file, CancellationToken ct)
-    {
-        if (file is null || file.Length == 0)
-        {
-            return BadRequest(new { message = Messages.FileNotProvided });
-        }
-
-        await using Stream stream = file.OpenReadStream();
-        var result = await storeAnnouncementService.UploadImageForStoreAsync(announcementId, stream, file.FileName, file.ContentType, ct);
-        return Ok(result);
     }
 
     // ── Student actions ─────────────────────────────────────────────

@@ -179,8 +179,19 @@ class EntityListScreenState<T> extends State<EntityListScreen<T>> {
   @override
   Widget build(BuildContext context) {
     final useInlineToolbar = widget.config.presentation == EntityListPresentation.embedded;
+    final isEmbedded =
+        widget.config.presentation == EntityListPresentation.embedded;
+
+    final listBody = _controller.isLoading
+        ? const Center(child: CircularProgressIndicator())
+        : _controller.items.isEmpty
+        ? const Center(child: Text('Nema podataka.'))
+        : (widget.config.listStyle == EntityListStyle.tiles
+              ? _buildTiles()
+              : _buildTable());
 
     final content = Column(
+      mainAxisSize: isEmbedded ? MainAxisSize.min : MainAxisSize.max,
       children: [
         if (useInlineToolbar)
           EntityToolbar(
@@ -198,15 +209,7 @@ class EntityListScreenState<T> extends State<EntityListScreen<T>> {
           if (widget.config.showSearchBar) _buildSearchBar(),
           if (widget.config.filterBar != null) widget.config.filterBar!,
         ],
-        Expanded(
-          child: _controller.isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : _controller.items.isEmpty
-              ? const Center(child: Text('Nema podataka.'))
-              : (widget.config.listStyle == EntityListStyle.tiles
-                  ? _buildTiles()
-                  : _buildTable()),
-        ),
+        if (isEmbedded) Flexible(child: listBody) else Expanded(child: listBody),
         _buildPagination(),
       ],
     );
@@ -277,8 +280,11 @@ class EntityListScreenState<T> extends State<EntityListScreen<T>> {
         widget.config.extraActions != null;
 
     final items = _controller.items;
+    final isEmbedded =
+        widget.config.presentation == EntityListPresentation.embedded;
 
     return ListView.separated(
+      shrinkWrap: isEmbedded,
       itemCount: items.length,
       separatorBuilder: (_, _) => const Divider(height: 1),
       itemBuilder: (context, index) {

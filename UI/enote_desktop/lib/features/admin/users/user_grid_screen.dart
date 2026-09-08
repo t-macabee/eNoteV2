@@ -286,6 +286,10 @@ class _UserGridScreenState extends State<UserGridScreen> {
       config: EntityGridConfig<_UserListItem>(
         searchHint: 'Pretraži po imenu...',
         placeholderIcon: Icons.person_outline,
+        // Avatar image only — a 404 (no picture / not visible) falls back to
+        // the placeholder icon. Hover-card content below is untouched.
+        imageUrlOf: (item) =>
+            userPictureUrl(context.read<ApiClient>(), item.appUserId),
         titleOf: (item) => item.displayName,
         // Membership date is deliberately left off the hover card — tapping
         // the card opens `_UserDetailsDialog`, which already shows the full
@@ -554,15 +558,22 @@ class _UserDetailsDialogState extends State<_UserDetailsDialog> {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  CircleAvatar(
+                  UserAvatar(
+                    userId: item.appUserId,
+                    apiClient: context.read<ApiClient>(),
                     radius: 28,
-                    backgroundColor: AppTheme.primary,
-                    child: Text(
-                      _initialsFromName(item.displayName),
-                      style: const TextStyle(
-                        color: AppTheme.onPrimary,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
+                    // Avatar image only — a 404 falls back to the existing
+                    // initials. Nothing else in this dialog changes.
+                    placeholder: () => CircleAvatar(
+                      radius: 28,
+                      backgroundColor: AppTheme.primary,
+                      child: Text(
+                        _initialsFromName(item.displayName),
+                        style: const TextStyle(
+                          color: AppTheme.onPrimary,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ),

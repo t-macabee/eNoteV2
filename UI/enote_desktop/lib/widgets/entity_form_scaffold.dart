@@ -127,6 +127,18 @@ class _EntityFormScaffoldState extends State<EntityFormScaffold> {
     };
   }
 
+  /// Interleaves [spacing] gaps between fields for the page-mode [ListView],
+  /// which has no `spacing` property unlike [Column].
+  List<Widget> _withSpacing(List<Widget> fields, double spacing) {
+    if (fields.length <= 1) return fields;
+    final spaced = <Widget>[];
+    for (var i = 0; i < fields.length; i++) {
+      spaced.add(fields[i]);
+      if (i < fields.length - 1) spaced.add(SizedBox(height: spacing));
+    }
+    return spaced;
+  }
+
   Widget _buildSaveButton() {
     return FilledButton.icon(
       onPressed: (_isSaving || _isDeleting) ? null : _save,
@@ -181,7 +193,7 @@ class _EntityFormScaffoldState extends State<EntityFormScaffold> {
         child: ListView(
           padding: const EdgeInsets.all(24),
           children: [
-            ...widget.fieldsBuilder(context),
+            ..._withSpacing(widget.fieldsBuilder(context), 16),
             const SizedBox(height: 24),
             if (showDelete)
               Row(
@@ -225,6 +237,7 @@ class _EntityFormScaffoldState extends State<EntityFormScaffold> {
             key: _formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
+              spacing: 16,
               children: widget.fieldsBuilder(context),
             ),
           ),

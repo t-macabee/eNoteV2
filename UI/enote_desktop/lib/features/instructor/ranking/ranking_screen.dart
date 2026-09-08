@@ -90,6 +90,7 @@ class _RankingViewState extends State<RankingView> {
       return const Center(child: Text('Nema podataka o rangiranju.'));
     }
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
         Padding(
           padding: const EdgeInsets.all(16),
@@ -102,7 +103,7 @@ class _RankingViewState extends State<RankingView> {
             ),
           ),
         ),
-        Expanded(
+        Flexible(
           child: _filteredItems.isEmpty
               ? const Center(child: Text('Nema rezultata za pretragu.'))
               : SingleChildScrollView(

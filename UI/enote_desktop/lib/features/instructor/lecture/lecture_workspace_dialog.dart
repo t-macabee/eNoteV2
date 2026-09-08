@@ -260,30 +260,17 @@ class _LectureWorkspaceDialogState extends State<LectureWorkspaceDialog> {
 
   Widget _buildHeader(_WorkspaceView top) {
     final headerAction = _getHeaderAction(top);
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
-      child: Row(
-        children: [
-          if (_stack.length > 1)
-            IconButton(
+    return DialogShellHeader(
+      leading: _stack.length > 1
+          ? IconButton(
               icon: const Icon(Icons.arrow_back),
               tooltip: 'Nazad',
               onPressed: _popView,
             )
-          else
-            const SizedBox(width: 48),
-          Expanded(child: _buildBreadcrumbs()),
-          if (headerAction != null) ...[
-            headerAction,
-            const SizedBox(width: 8),
-          ],
-          IconButton(
-            icon: const Icon(Icons.close),
-            tooltip: 'Zatvori',
-            onPressed: _close,
-          ),
-        ],
-      ),
+          : null,
+      label: _buildBreadcrumbs(),
+      action: headerAction,
+      onClose: _close,
     );
   }
 

@@ -38,8 +38,13 @@ class LectureDetailDialog extends StatelessWidget {
             ),
             DetailRow(
               icon: Icons.event_outlined,
+              label: 'Datum',
+              value: formatDate(lecture.lectureTime),
+            ),
+            DetailRow(
+              icon: Icons.schedule_outlined,
               label: 'Vrijeme',
-              value: formatDateTime(lecture.lectureTime),
+              value: formatTime(lecture.lectureTime),
             ),
             DetailRow(
               icon: Icons.timer_outlined,

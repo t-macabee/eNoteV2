@@ -38,7 +38,7 @@ public sealed class UserProfileService(
             _ => throw new BusinessException(Messages.UnknownRole)
         };
 
-        return new UserProfileResponse(role, user.Username, user.Email, profile);
+        return new UserProfileResponse(role, user.Username, user.Email, profile, user.HasPicture);
     }
 
     private async Task<StudentProfile> BuildStudentProfile(int userId, UserIdentityDto user)

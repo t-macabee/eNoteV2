@@ -2,7 +2,7 @@ using MapsterMapper;
 
 namespace eNote.Application.Features.Communication.Announcements.Services;
 
-public sealed class StoreAnnouncementService(IAppDbContext context, IClock clock, ICurrentUserContext currentUser, IStoreContext stores, IFileStorageService fileStorage, IMapper mapper)
+public sealed class StoreAnnouncementService(IAppDbContext context, IClock clock, ICurrentUserContext currentUser, IStoreContext stores, IMapper mapper)
 {
     public async Task<AnnouncementDto> CreateForStoreAsync(AnnouncementRequest request, CancellationToken cancellationToken = default)
     {
@@ -65,22 +65,5 @@ public sealed class StoreAnnouncementService(IAppDbContext context, IClock clock
         entity.UpdatedById = currentUser.UserId;
 
         await context.SaveChangesAsync(cancellationToken);
-    }
-
-    public async Task<AnnouncementDto> UploadImageForStoreAsync(int announcementId, Stream stream, string fileName, string contentType, CancellationToken ct = default)
-    {
-        var storeId = await stores.GetCurrentStoreIdAsync(ct);
-
-        var entity = await context.Set<Announcement>()
-            .FirstOrDefaultAsync(a => a.Id == announcementId && a.MusicStoreId == storeId, ct) ?? throw new NotFoundException(Messages.AnnouncementNotFound);
-
-        var path = await fileStorage.SaveAsync(stream, fileName, contentType, "announcements", ct);
-
-        entity.SetImagePath(path);
-        entity.UpdatedById = currentUser.UserId;
-
-        await context.SaveChangesAsync(ct);
-
-        return mapper.Map<AnnouncementDto>(entity);
     }
 }

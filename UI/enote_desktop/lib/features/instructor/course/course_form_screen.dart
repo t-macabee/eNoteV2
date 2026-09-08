@@ -121,13 +121,11 @@ class _CourseFormScreenState extends State<CourseFormScreen> {
           ],
           validator: Validators.nonNegativeDecimal,
         ),
-        const SizedBox(height: 8),
         DateField(
           labelText: 'Datum početka',
           initialValue: _startDate,
           onChanged: (value) => _startDate = value,
         ),
-        const SizedBox(height: 8),
         DateField(
           labelText: 'Datum završetka',
           initialValue: _endDate,

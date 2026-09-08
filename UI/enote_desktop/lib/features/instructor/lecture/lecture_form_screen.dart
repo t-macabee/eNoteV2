@@ -148,7 +148,6 @@ class _LectureFormScreenState extends State<LectureFormScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 16),
         ],
         TextFormField(
           controller: _nameController,
@@ -162,7 +161,6 @@ class _LectureFormScreenState extends State<LectureFormScreen> {
           enabled: enabled,
           validator: enabled ? Validators.required('Lokacija') : null,
         ),
-        const SizedBox(height: 8),
         DropdownButtonFormField<LectureType>(
           initialValue: _lectureType,
           decoration: const InputDecoration(
@@ -184,7 +182,6 @@ class _LectureFormScreenState extends State<LectureFormScreen> {
               ? (value) => value == null ? 'Tip je obavezan.' : null
               : null,
         ),
-        const SizedBox(height: 8),
         DateTimeField(
           labelText: 'Vrijeme predavanja',
           initialValue: _lectureTime,
@@ -194,7 +191,6 @@ class _LectureFormScreenState extends State<LectureFormScreen> {
               ? (value) => value == null ? 'Vrijeme je obavezno.' : null
               : null,
         ),
-        const SizedBox(height: 8),
         TextFormField(
           controller: _durationController,
           decoration: const InputDecoration(

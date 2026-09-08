@@ -107,27 +107,23 @@ class _EventFormScreenState extends State<EventFormScreen> {
           decoration: const InputDecoration(labelText: 'Naziv'),
           validator: Validators.required('Naziv'),
         ),
-        const SizedBox(height: 16),
         TextFormField(
           controller: _descriptionController,
           decoration: const InputDecoration(labelText: 'Opis'),
           maxLines: 3,
           validator: Validators.required('Opis'),
         ),
-        const SizedBox(height: 16),
         DateTimeField(
           labelText: 'Početak',
           initialValue: _startsAt,
           onChanged: (value) => _startsAt = value,
           validator: (value) => value == null ? 'Početak je obavezan.' : null,
         ),
-        const SizedBox(height: 16),
         DateTimeField(
           labelText: 'Kraj',
           initialValue: _endsAt,
           onChanged: (value) => _endsAt = value,
         ),
-        const SizedBox(height: 16),
         AsyncDropdown<AddressReferenceDto>(
           label: 'Adresa',
           fetcher: () async {

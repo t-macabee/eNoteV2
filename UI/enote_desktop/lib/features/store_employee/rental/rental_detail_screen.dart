@@ -97,7 +97,6 @@ class _RentalDetailScreenState extends State<RentalDetailScreen> {
         RentalTrigger.complete => await p.complete(_rental!.id, note: note),
         RentalTrigger.returnEarly => await p.returnEarly(_rental!.id, note: note),
         RentalTrigger.cancel => await p.cancel(_rental!.id, note: note),
-        _ => throw StateError('Unhandled trigger on StoreEmployee screen'),
       };
       if (!mounted) return;
       setState(() => _rental = updated);
@@ -240,9 +239,27 @@ class _RentalDetailScreenState extends State<RentalDetailScreen> {
           children: [
             Text('Student', style: Theme.of(context).textTheme.titleSmall),
             const SizedBox(height: 8),
-            Text(
-              rental.studentName ?? 'Student #${rental.studentUserId}',
-              style: const TextStyle(fontWeight: FontWeight.w500),
+            Row(
+              children: [
+                // Avatar image only, keyed by StudentUserId (the AppUser id),
+                // never StudentProfileId. A 404 falls back to the icon.
+                UserAvatar(
+                  userId: rental.studentUserId,
+                  apiClient: context.read<ApiClient>(),
+                  radius: 20,
+                  placeholder: () => const CircleAvatar(
+                    radius: 20,
+                    child: Icon(Icons.person_outline, size: 20),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    rental.studentName ?? 'Student #${rental.studentUserId}',
+                    style: const TextStyle(fontWeight: FontWeight.w500),
+                  ),
+                ),
+              ],
             ),
             const Divider(height: 24),
             Text('Vremenska linija', style: Theme.of(context).textTheme.titleSmall),

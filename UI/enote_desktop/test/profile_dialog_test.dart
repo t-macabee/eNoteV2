@@ -138,4 +138,50 @@ void main() {
     expect(find.text('Uloga'), findsOneWidget);
     expect(find.text('Administrator'), findsOneWidget);
   });
+
+  testWidgets('ProfileDialog shows initials fallback when hasPicture is false',
+      (tester) async {
+    final client = _MockProfileHttpClient({
+      'role': 'Administrator',
+      'username': 'admin',
+      'email': 'admin@enote.com',
+      'hasPicture': false,
+      'profile': {
+        r'$type': 'admin',
+        'firstName': 'Ad',
+        'lastName': 'Min',
+      },
+    });
+
+    final authState = AuthState(
+      tokenReader: () => _fakeJwt(),
+      httpClient: client,
+    );
+    final apiClient = ApiClient(
+      baseUrl: 'http://test/api/v1/',
+      authState: authState,
+      httpClient: client,
+    );
+
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider<AuthState>.value(value: authState),
+          Provider<ApiClient>.value(value: apiClient),
+          Provider<ProfileProvider>(
+            create: (_) => ProfileProvider(apiClient: apiClient),
+          ),
+        ],
+        child: const MaterialApp(
+          home: Scaffold(
+            body: ProfileDialog(),
+          ),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.text('AM'), findsOneWidget);
+  });
 }

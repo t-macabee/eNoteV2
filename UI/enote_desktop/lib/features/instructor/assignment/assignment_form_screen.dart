@@ -84,7 +84,6 @@ class _AssignmentFormScreenState extends State<AssignmentFormScreen> {
           decoration: const InputDecoration(labelText: 'Naslov'),
           validator: Validators.required('Naslov'),
         ),
-        const SizedBox(height: 12),
         TextFormField(
           controller: _descriptionController,
           decoration: const InputDecoration(labelText: 'Opis'),
@@ -92,7 +91,6 @@ class _AssignmentFormScreenState extends State<AssignmentFormScreen> {
           minLines: 3,
           validator: Validators.required('Opis'),
         ),
-        const SizedBox(height: 12),
         DateTimeField(
           labelText: 'Rok',
           initialValue: _dueAt,

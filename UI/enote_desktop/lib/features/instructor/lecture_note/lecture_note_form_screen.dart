@@ -75,7 +75,6 @@ class _LectureNoteFormScreenState extends State<LectureNoteFormScreen> {
           decoration: const InputDecoration(labelText: 'Naslov'),
           validator: Validators.required('Naslov'),
         ),
-        const SizedBox(height: 12),
         TextFormField(
           controller: _contentController,
           decoration: const InputDecoration(labelText: 'Sadržaj'),

@@ -32,6 +32,5 @@ public sealed class StoreAnnouncementServiceTests
             new FixedClock(Now),
             actor ?? new StubCurrentActor(instructor: instructor, storeId: storeId),
             actor ?? new StubCurrentActor(instructor: instructor, storeId: storeId),
-            new RecordingFileStorageService(),
             TestMapper.Create());
 }
