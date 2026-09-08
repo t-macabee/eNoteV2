@@ -35,6 +35,42 @@ public sealed class CourseController(
     }
 
     [Authorize(Roles = AppRoles.Instructor)]
+    [HttpGet("~/api/v{version:apiVersion}/instructor/courses/catalog")]
+    [ProducesResponseType(typeof(PagedResult<CourseDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<PagedResult<CourseDto>>> GetCatalog([FromQuery] CourseSearchObject search, CancellationToken cancellationToken)
+    {
+        var result = await service.GetPagedCatalogForInstructorAsync(search, cancellationToken);
+        return Ok(result);
+    }
+
+    [Authorize(Roles = AppRoles.Instructor)]
+    [HttpGet("~/api/v{version:apiVersion}/instructor/courses/catalog/{id:int}")]
+    [ProducesResponseType(typeof(CourseDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<CourseDto>> GetCatalogById(int id, CancellationToken cancellationToken)
+    {
+        var dto = await service.GetCatalogByIdForInstructorAsync(id, cancellationToken);
+        return Ok(dto);
+    }
+
+    [Authorize(Roles = AppRoles.Instructor)]
+    [HttpGet("~/api/v{version:apiVersion}/instructor/courses/catalog/instructors")]
+    [ProducesResponseType(typeof(List<CourseCatalogInstructorDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<List<CourseCatalogInstructorDto>>> GetCatalogInstructors(CancellationToken cancellationToken)
+    {
+        var result = await service.GetCatalogInstructorsAsync(cancellationToken);
+        return Ok(result);
+    }
+
+    [Authorize(Roles = AppRoles.Instructor)]
+    [HttpGet("~/api/v{version:apiVersion}/instructor/courses/catalog/summary")]
+    [ProducesResponseType(typeof(CourseCatalogSummaryDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<CourseCatalogSummaryDto>> GetCatalogSummary(CancellationToken cancellationToken)
+    {
+        var result = await service.GetCatalogSummaryAsync(cancellationToken);
+        return Ok(result);
+    }
+
+    [Authorize(Roles = AppRoles.Instructor)]
     [HttpPost("~/api/v{version:apiVersion}/instructor/courses")]
     [ProducesResponseType(typeof(CourseDto), StatusCodes.Status201Created)]
     public async Task<ActionResult<CourseDto>> Create([FromBody] CourseRequest request, CancellationToken cancellationToken)

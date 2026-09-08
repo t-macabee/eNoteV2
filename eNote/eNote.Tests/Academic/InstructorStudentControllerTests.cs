@@ -124,6 +124,56 @@ public sealed class InstructorStudentControllerTests
     }
 
     [Fact]
+    public async Task GetEnrollments_ReturnsEnrollments_WhenEnrolledInInstructorCourse()
+    {
+        await using var ctx = TestDbContextFactory.CreateContext(Now);
+        var harness = await AcademicTestData.SeedAsync(ctx, Now);
+        var instructorAccess = AcademicTestData.CreateInstructorAccess(ctx, harness.Instructor);
+        var studentService = new AdminStudentService(ctx, new StubUserIdentityService(), instructorAccess);
+        var currentUser = new StubCurrentActor(instructor: harness.Instructor, userId: harness.Instructor.AppUserId);
+        var controller = new InstructorStudentController(studentService, new StubProvisioningService(), currentUser, instructorAccess);
+
+        var result = await controller.GetEnrollments(harness.Student.Id, CancellationToken.None);
+
+        var ok = Assert.IsType<OkObjectResult>(result.Result);
+        var enrollments = Assert.IsType<List<StudentEnrollmentDto>>(ok.Value);
+        var item = Assert.Single(enrollments);
+        Assert.Equal(harness.Course.Id, item.CourseId);
+    }
+
+    [Fact]
+    public async Task GetEnrollments_ThrowsNotFoundException_WhenStudentNotEnrolledInInstructorCourses()
+    {
+        await using var ctx = TestDbContextFactory.CreateContext(Now);
+        var harness = await AcademicTestData.SeedAsync(ctx, Now);
+
+        var otherInstructor = new Instructor(200);
+        ctx.Set<Instructor>().Add(otherInstructor);
+        await ctx.SaveChangesAsync();
+
+        var otherCourse = new Course("Piano 101", null, 150m, Now, Now.AddMonths(4), otherInstructor.Id)
+        {
+            CreatedById = otherInstructor.AppUserId
+        };
+        ctx.Set<Course>().Add(otherCourse);
+        await ctx.SaveChangesAsync();
+
+        var otherStudent = new Student(201, Now);
+        ctx.Set<Student>().Add(otherStudent);
+        await ctx.SaveChangesAsync();
+
+        ctx.Set<Enrollment>().Add(new Enrollment(otherStudent.Id, otherCourse.Id, EnrollmentStatus.Active));
+        await ctx.SaveChangesAsync();
+
+        var instructorAccess = AcademicTestData.CreateInstructorAccess(ctx, harness.Instructor);
+        var studentService = new AdminStudentService(ctx, new StubUserIdentityService(), instructorAccess);
+        var currentUser = new StubCurrentActor(instructor: harness.Instructor, userId: harness.Instructor.AppUserId);
+        var controller = new InstructorStudentController(studentService, new StubProvisioningService(), currentUser, instructorAccess);
+
+        await Assert.ThrowsAsync<NotFoundException>(() => controller.GetEnrollments(otherStudent.Id, CancellationToken.None));
+    }
+
+    [Fact]
     public async Task Create_ReturnsCreatedResult_WhenSuccessful()
     {
         await using var ctx = TestDbContextFactory.CreateContext(Now);

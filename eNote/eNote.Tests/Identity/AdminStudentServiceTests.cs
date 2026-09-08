@@ -248,4 +248,122 @@ public sealed class AdminStudentServiceTests
         await Assert.ThrowsAsync<NotFoundException>(() => service.GetByIdForInstructorAsync(instructor1.Id, student1.Id));
         await Assert.ThrowsAsync<NotFoundException>(() => service.GetByIdForInstructorAsync(instructor1.Id, student2.Id));
     }
+
+    [Fact]
+    public async Task GetEnrollmentsForInstructorAsync_ReturnsAllActiveEnrollments_WhenStudentIsInInstructorCourse()
+    {
+        await using var context = TestDbContextFactory.CreateContext(Now);
+
+        var instructor1 = new Instructor(100);
+        var instructor2 = new Instructor(200);
+        context.Set<Instructor>().AddRange(instructor1, instructor2);
+        await context.SaveChangesAsync();
+
+        var course1 = new Course("Guitar 101", null, 100m, Now, Now.AddMonths(3), instructor1.Id) { CreatedById = instructor1.AppUserId };
+        var course2 = new Course("Violin 101", null, 150m, Now, Now.AddMonths(3), instructor2.Id) { CreatedById = instructor2.AppUserId };
+        context.Set<Course>().AddRange(course1, course2);
+        await context.SaveChangesAsync();
+
+        var student = new Student(10, Now);
+        context.Set<Student>().Add(student);
+        await context.SaveChangesAsync();
+
+        context.Set<Enrollment>().AddRange(
+            new Enrollment(student.Id, course1.Id, EnrollmentStatus.Active),
+            new Enrollment(student.Id, course2.Id, EnrollmentStatus.Active));
+        await context.SaveChangesAsync();
+
+        var identity = new StubUserIdentityService(new Dictionary<int, UserIdentityDto>
+        {
+            [100] = StubUserIdentityService.User(100, "jdoe", "Jane", "Doe"),
+            [200] = StubUserIdentityService.User(200, "asmith", "Alice", "Smith")
+        });
+
+        var instructorAccess = new InstructorAccessService(context, new StubUserProfileLookup(instructor: instructor1));
+        var service = new AdminStudentService(context, identity, instructorAccess);
+
+        var enrollments = await service.GetEnrollmentsForInstructorAsync(instructor1.Id, student.Id);
+
+        Assert.Equal(2, enrollments.Count);
+        var c1 = enrollments.Single(e => e.CourseId == course1.Id);
+        Assert.Equal("Guitar 101", c1.CourseName);
+        Assert.Equal(instructor1.Id, c1.InstructorId);
+        Assert.Equal("Jane Doe", c1.InstructorName);
+
+        var c2 = enrollments.Single(e => e.CourseId == course2.Id);
+        Assert.Equal("Violin 101", c2.CourseName);
+        Assert.Equal(instructor2.Id, c2.InstructorId);
+        Assert.Equal("Alice Smith", c2.InstructorName);
+    }
+
+    [Fact]
+    public async Task GetEnrollmentsForInstructorAsync_ExcludesCanceledEnrollments()
+    {
+        await using var context = TestDbContextFactory.CreateContext(Now);
+
+        var instructor1 = new Instructor(100);
+        var instructor2 = new Instructor(200);
+        context.Set<Instructor>().AddRange(instructor1, instructor2);
+        await context.SaveChangesAsync();
+
+        var course1 = new Course("Guitar 101", null, 100m, Now, Now.AddMonths(3), instructor1.Id) { CreatedById = instructor1.AppUserId };
+        var course2 = new Course("Violin 101", null, 150m, Now, Now.AddMonths(3), instructor2.Id) { CreatedById = instructor2.AppUserId };
+        context.Set<Course>().AddRange(course1, course2);
+        await context.SaveChangesAsync();
+
+        var student = new Student(10, Now);
+        context.Set<Student>().Add(student);
+        await context.SaveChangesAsync();
+
+        context.Set<Enrollment>().AddRange(
+            new Enrollment(student.Id, course1.Id, EnrollmentStatus.Active),
+            new Enrollment(student.Id, course2.Id, EnrollmentStatus.Canceled));
+        await context.SaveChangesAsync();
+
+        var identity = new StubUserIdentityService(new Dictionary<int, UserIdentityDto>
+        {
+            [100] = StubUserIdentityService.User(100, "jdoe", "Jane", "Doe"),
+            [200] = StubUserIdentityService.User(200, "asmith", "Alice", "Smith")
+        });
+
+        var instructorAccess = new InstructorAccessService(context, new StubUserProfileLookup(instructor: instructor1));
+        var service = new AdminStudentService(context, identity, instructorAccess);
+
+        var enrollments = await service.GetEnrollmentsForInstructorAsync(instructor1.Id, student.Id);
+
+        var single = Assert.Single(enrollments);
+        Assert.Equal(course1.Id, single.CourseId);
+        Assert.DoesNotContain(enrollments, e => e.CourseId == course2.Id);
+    }
+
+    [Fact]
+    public async Task GetEnrollmentsForInstructorAsync_Throws_WhenStudentNotEnrolledInInstructorCourses()
+    {
+        await using var context = TestDbContextFactory.CreateContext(Now);
+
+        var instructor1 = new Instructor(100);
+        var instructor2 = new Instructor(200);
+        context.Set<Instructor>().AddRange(instructor1, instructor2);
+        await context.SaveChangesAsync();
+
+        var course1 = new Course("Guitar 101", null, 100m, Now, Now.AddMonths(3), instructor1.Id) { CreatedById = instructor1.AppUserId };
+        var course2 = new Course("Violin 101", null, 150m, Now, Now.AddMonths(3), instructor2.Id) { CreatedById = instructor2.AppUserId };
+        context.Set<Course>().AddRange(course1, course2);
+        await context.SaveChangesAsync();
+
+        var student1 = new Student(10, Now);
+        var student2 = new Student(20, Now);
+        context.Set<Student>().AddRange(student1, student2);
+        await context.SaveChangesAsync();
+
+        // student1 is enrolled in instructor2's course only
+        context.Set<Enrollment>().Add(new Enrollment(student1.Id, course2.Id, EnrollmentStatus.Active));
+        await context.SaveChangesAsync();
+
+        var instructorAccess = new InstructorAccessService(context, new StubUserProfileLookup(instructor: instructor1));
+        var service = new AdminStudentService(context, new StubUserIdentityService(), instructorAccess);
+
+        await Assert.ThrowsAsync<NotFoundException>(() => service.GetEnrollmentsForInstructorAsync(instructor1.Id, student1.Id));
+        await Assert.ThrowsAsync<NotFoundException>(() => service.GetEnrollmentsForInstructorAsync(instructor1.Id, student2.Id));
+    }
 }

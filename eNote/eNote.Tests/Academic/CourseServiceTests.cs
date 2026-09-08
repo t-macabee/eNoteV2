@@ -204,6 +204,220 @@ public sealed class CourseServiceTests
         Assert.Equal("Alice Smith", result.Items.Single(c => c.Name == "Violin").InstructorName);
     }
 
+    [Fact]
+    public async Task GetPagedCatalogForInstructorAsync_ReturnsOtherInstructorsPublishedCourse()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var otherInstructor = new Instructor(200);
+        harness.Context.Set<Instructor>().Add(otherInstructor);
+        var otherCourse = new Course("Violin", null, 90m, Now, Now.AddMonths(4), otherInstructor.Id);
+        otherCourse.SetPublishedStatus(true);
+        harness.Context.Set<Course>().Add(otherCourse);
+        await harness.Context.SaveChangesAsync();
+        var identity = new StubUserIdentityService(new Dictionary<int, UserIdentityDto>
+        {
+            [100] = StubUserIdentityService.User(100, "jdoe", "Jane", "Doe"),
+            [200] = StubUserIdentityService.User(200, "asmith", "Alice", "Smith")
+        });
+        var service = CreateService(harness.Context, harness.Instructor, identity: identity);
+
+        var result = await service.GetPagedCatalogForInstructorAsync(new CourseSearchObject());
+
+        Assert.Equal(2, result.Items.Count);
+        var otherDto = result.Items.Single(c => c.Name == "Violin");
+        Assert.Equal("Alice Smith", otherDto.InstructorName);
+        Assert.Equal(otherInstructor.Id, otherDto.InstructorId);
+    }
+
+    [Fact]
+    public async Task GetPagedCatalogForInstructorAsync_ExcludesOtherInstructorsUnpublishedCourse()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var otherInstructor = new Instructor(200);
+        harness.Context.Set<Instructor>().Add(otherInstructor);
+        var otherUnpublishedCourse = new Course("Flute", null, 80m, Now, Now.AddMonths(2), otherInstructor.Id);
+        otherUnpublishedCourse.SetPublishedStatus(false);
+        harness.Context.Set<Course>().Add(otherUnpublishedCourse);
+        await harness.Context.SaveChangesAsync();
+        var service = CreateService(harness.Context, harness.Instructor);
+
+        var result = await service.GetPagedCatalogForInstructorAsync(new CourseSearchObject());
+
+        Assert.Single(result.Items);
+        Assert.DoesNotContain(result.Items, c => c.Name == "Flute");
+    }
+
+    [Fact]
+    public async Task GetPagedCatalogForInstructorAsync_IncludesOwnUnpublishedCourse()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var ownDraft = new Course("Draft Drums", null, 120m, Now, Now.AddMonths(1), harness.Instructor.Id);
+        ownDraft.SetPublishedStatus(false);
+        harness.Context.Set<Course>().Add(ownDraft);
+        await harness.Context.SaveChangesAsync();
+        var service = CreateService(harness.Context, harness.Instructor);
+
+        var result = await service.GetPagedCatalogForInstructorAsync(new CourseSearchObject());
+
+        Assert.Equal(2, result.Items.Count);
+        Assert.Contains(result.Items, c => c.Name == "Draft Drums");
+    }
+
+    [Fact]
+    public async Task GetPagedCatalogForInstructorAsync_FiltersByInstructorId()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var otherInstructor = new Instructor(200);
+        harness.Context.Set<Instructor>().Add(otherInstructor);
+        var otherCourse = new Course("Violin", null, 90m, Now, Now.AddMonths(4), otherInstructor.Id);
+        otherCourse.SetPublishedStatus(true);
+        harness.Context.Set<Course>().Add(otherCourse);
+        await harness.Context.SaveChangesAsync();
+        var service = CreateService(harness.Context, harness.Instructor);
+
+        var result = await service.GetPagedCatalogForInstructorAsync(new CourseSearchObject { InstructorId = otherInstructor.Id });
+
+        var single = Assert.Single(result.Items);
+        Assert.Equal("Violin", single.Name);
+    }
+
+    [Fact]
+    public async Task GetCatalogByIdForInstructorAsync_ReturnsOtherInstructorsPublishedCourse()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var otherInstructor = new Instructor(200);
+        harness.Context.Set<Instructor>().Add(otherInstructor);
+        var otherCourse = new Course("Violin", null, 90m, Now, Now.AddMonths(4), otherInstructor.Id);
+        otherCourse.SetPublishedStatus(true);
+        harness.Context.Set<Course>().Add(otherCourse);
+        await harness.Context.SaveChangesAsync();
+        var identity = new StubUserIdentityService(new Dictionary<int, UserIdentityDto>
+        {
+            [200] = StubUserIdentityService.User(200, "asmith", "Alice", "Smith")
+        });
+        var service = CreateService(harness.Context, harness.Instructor, identity: identity);
+
+        var dto = await service.GetCatalogByIdForInstructorAsync(otherCourse.Id);
+
+        Assert.Equal(otherCourse.Id, dto.Id);
+        Assert.Equal("Alice Smith", dto.InstructorName);
+    }
+
+    [Fact]
+    public async Task GetCatalogByIdForInstructorAsync_Throws_WhenOtherInstructorsCourseUnpublished()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var otherInstructor = new Instructor(200);
+        harness.Context.Set<Instructor>().Add(otherInstructor);
+        var otherCourse = new Course("Violin", null, 90m, Now, Now.AddMonths(4), otherInstructor.Id);
+        otherCourse.SetPublishedStatus(false);
+        harness.Context.Set<Course>().Add(otherCourse);
+        await harness.Context.SaveChangesAsync();
+        var service = CreateService(harness.Context, harness.Instructor);
+
+        await Assert.ThrowsAsync<NotFoundException>(() => service.GetCatalogByIdForInstructorAsync(otherCourse.Id));
+    }
+
+    [Fact]
+    public async Task GetCatalogInstructorsAsync_ReturnsDistinctInstructors_SortedByName()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var otherInstructor1 = new Instructor(200);
+        var otherInstructor2 = new Instructor(300);
+        harness.Context.Set<Instructor>().AddRange(otherInstructor1, otherInstructor2);
+        var otherCourse1 = new Course("Violin", null, 90m, Now, Now.AddMonths(4), otherInstructor1.Id);
+        otherCourse1.SetPublishedStatus(true);
+        var otherCourse2Unpublished = new Course("Flute", null, 70m, Now, Now.AddMonths(2), otherInstructor2.Id);
+        otherCourse2Unpublished.SetPublishedStatus(false);
+        harness.Context.Set<Course>().AddRange(otherCourse1, otherCourse2Unpublished);
+        await harness.Context.SaveChangesAsync();
+
+        var identity = new StubUserIdentityService(new Dictionary<int, UserIdentityDto>
+        {
+            [100] = StubUserIdentityService.User(100, "jdoe", "Jane", "Doe"),
+            [200] = StubUserIdentityService.User(200, "asmith", "Alice", "Smith"),
+            [300] = StubUserIdentityService.User(300, "cbrown", "Charlie", "Brown")
+        });
+        var service = CreateService(harness.Context, harness.Instructor, identity: identity);
+
+        var result = await service.GetCatalogInstructorsAsync();
+
+        Assert.Equal(2, result.Count);
+        Assert.Equal("Alice Smith", result[0].Name);
+        Assert.Equal("Jane Doe", result[1].Name);
+        Assert.DoesNotContain(result, x => x.Name == "Charlie Brown");
+    }
+
+    [Fact]
+    public async Task GetCatalogSummaryAsync_CountsPublishedAndOwnUnpublishedCourses()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var ownDraft = new Course("Draft Drums", null, 120m, Now, Now.AddMonths(1), harness.Instructor.Id);
+        ownDraft.SetPublishedStatus(false);
+        var otherInstructor = new Instructor(200);
+        harness.Context.Set<Instructor>().Add(otherInstructor);
+        var otherPublished = new Course("Violin", null, 90m, Now, Now.AddMonths(4), otherInstructor.Id);
+        otherPublished.SetPublishedStatus(true);
+        harness.Context.Set<Course>().AddRange(ownDraft, otherPublished);
+        await harness.Context.SaveChangesAsync();
+        var service = CreateService(harness.Context, harness.Instructor);
+
+        var summary = await service.GetCatalogSummaryAsync();
+
+        Assert.Equal(3, summary.TotalCourses);
+    }
+
+    [Fact]
+    public async Task GetCatalogSummaryAsync_ExcludesOtherInstructorsUnpublishedCourses()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var otherInstructor = new Instructor(200);
+        harness.Context.Set<Instructor>().Add(otherInstructor);
+        var otherUnpublished = new Course("Secret Flute", null, 90m, Now, Now.AddMonths(4), otherInstructor.Id);
+        otherUnpublished.SetPublishedStatus(false);
+        harness.Context.Set<Course>().Add(otherUnpublished);
+        await harness.Context.SaveChangesAsync();
+        var service = CreateService(harness.Context, harness.Instructor);
+
+        var summary = await service.GetCatalogSummaryAsync();
+
+        Assert.Equal(1, summary.TotalCourses);
+    }
+
+    [Fact]
+    public async Task GetCatalogSummaryAsync_CountsAllStudents()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var student2 = new Student(51, Now);
+        var student3 = new Student(52, Now);
+        harness.Context.Set<Student>().AddRange(student2, student3);
+        await harness.Context.SaveChangesAsync();
+        var service = CreateService(harness.Context, harness.Instructor);
+
+        var summary = await service.GetCatalogSummaryAsync();
+
+        Assert.Equal(3, summary.TotalStudents);
+    }
+
+    [Fact]
+    public async Task LectureFetch_AgainstCatalogVisibleNonOwnedCourse_Throws()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var otherInstructor = new Instructor(200);
+        harness.Context.Set<Instructor>().Add(otherInstructor);
+        var otherCourse = new Course("Violin", null, 90m, Now, Now.AddMonths(4), otherInstructor.Id);
+        otherCourse.SetPublishedStatus(true);
+        harness.Context.Set<Course>().Add(otherCourse);
+        var otherLecture = new Lecture("Violin Lesson 1", "Room 3", 60, Now, LectureType.Theoretical, 10, otherCourse.Id);
+        harness.Context.Set<Lecture>().Add(otherLecture);
+        await harness.Context.SaveChangesAsync();
+
+        var access = AcademicTestData.CreateInstructorAccess(harness.Context, harness.Instructor);
+
+        await Assert.ThrowsAsync<NotFoundException>(() =>
+            access.GetOwnedLectureAsync(otherLecture.Id, harness.Instructor.Id));
+    }
+
     private static async Task CreateActiveUserAsync(UserManager<AppUser> userManager, int id, string username, string firstName, string lastName)
     {
         await userManager.CreateAsync(new AppUser

@@ -14,6 +14,11 @@ public static class CourseSearchExtensions
             query = query.Where(c => c.IsPublished == search.IsPublished.Value);
         }
 
+        if (search.InstructorId.HasValue)
+        {
+            query = query.Where(c => c.InstructorId == search.InstructorId.Value);
+        }
+
         return query;
     }
 }

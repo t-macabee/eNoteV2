@@ -39,6 +39,15 @@ public sealed class InstructorStudentController(
         return Ok(dto);
     }
 
+    [HttpGet("{id:int}/enrollments")]
+    [ProducesResponseType(typeof(List<StudentEnrollmentDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<List<StudentEnrollmentDto>>> GetEnrollments(int id, CancellationToken cancellationToken)
+    {
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId);
+        var result = await studentService.GetEnrollmentsForInstructorAsync(instructorId, id, cancellationToken);
+        return Ok(result);
+    }
+
     [HttpPost]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]

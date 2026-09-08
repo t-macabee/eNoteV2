@@ -21,6 +21,82 @@ public sealed class CourseService(IAppDbContext context, IMapper mapper, ICurren
         return mapper.Map<CourseDto>(entity);
     }
 
+    public async Task<PagedResult<CourseDto>> GetPagedCatalogForInstructorAsync(CourseSearchObject search, CancellationToken cancellationToken = default)
+    {
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId);
+
+        var query = WhereCatalogVisible(
+                context.Set<Course>()
+                    .AsNoTracking()
+                    .Include(c => c.Enrollments)
+                    .Include(c => c.Instructor),
+                instructorId)
+            .ApplySearch(search);
+
+        return await ToPagedWithInstructorNamesAsync(query, search, cancellationToken);
+    }
+
+    public async Task<CourseDto> GetCatalogByIdForInstructorAsync(int id, CancellationToken cancellationToken = default)
+    {
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId);
+
+        var entity = await WhereCatalogVisible(
+                context.Set<Course>()
+                    .AsNoTracking()
+                    .Include(c => c.Enrollments)
+                    .Include(c => c.Instructor),
+                instructorId)
+            .FirstOrDefaultAsync(c => c.Id == id, cancellationToken)
+            ?? throw new NotFoundException(Messages.CourseNotFound);
+
+        var dto = mapper.Map<CourseDto>(entity);
+        dto.InstructorName = await ResolveInstructorNameAsync(entity.Instructor.AppUserId, cancellationToken);
+        return dto;
+    }
+
+    public async Task<List<CourseCatalogInstructorDto>> GetCatalogInstructorsAsync(CancellationToken cancellationToken = default)
+    {
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId);
+
+        var instructors = await WhereCatalogVisible(context.Set<Course>().AsNoTracking().Include(c => c.Instructor), instructorId)
+            .Select(c => new { c.Instructor.Id, c.Instructor.AppUserId })
+            .Distinct()
+            .ToListAsync(cancellationToken);
+
+        var appUserIds = instructors.Select(i => i.AppUserId).Distinct();
+        var users = await identityService.GetUsersBulkAsync(appUserIds, cancellationToken);
+
+        return instructors
+            .Select(i => new CourseCatalogInstructorDto
+            {
+                Id = i.Id,
+                Name = FormatInstructorName(users.GetValueOrDefault(i.AppUserId))
+            })
+            .OrderBy(i => i.Name)
+            .ToList();
+    }
+
+    public async Task<CourseCatalogSummaryDto> GetCatalogSummaryAsync(CancellationToken cancellationToken = default)
+    {
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId);
+
+        var totalCourses = await WhereCatalogVisible(context.Set<Course>().AsNoTracking(), instructorId)
+            .CountAsync(cancellationToken);
+
+        var totalStudents = await context.Set<Student>()
+            .AsNoTracking()
+            .CountAsync(cancellationToken);
+
+        return new CourseCatalogSummaryDto
+        {
+            TotalCourses = totalCourses,
+            TotalStudents = totalStudents
+        };
+    }
+
+    private static IQueryable<Course> WhereCatalogVisible(IQueryable<Course> query, int instructorId) =>
+        query.Where(c => c.IsPublished || c.InstructorId == instructorId);
+
     public async Task<CourseDto> GetByIdForStudentAsync(int id, CancellationToken cancellationToken = default)
     {
         var studentId = await students.GetCurrentStudentIdAsync();
@@ -68,23 +144,41 @@ public sealed class CourseService(IAppDbContext context, IMapper mapper, ICurren
             .Include(c => c.Instructor)
             .ApplySearch(search);
 
+        return await ToPagedWithInstructorNamesAsync(query, search, cancellationToken);
+    }
+
+    private async Task<PagedResult<CourseDto>> ToPagedWithInstructorNamesAsync(
+        IQueryable<Course> query,
+        CourseSearchObject search,
+        CancellationToken cancellationToken)
+    {
+        int? total = null;
+        if (search.IncludeTotalCount)
+        {
+            total = await query.CountAsync(cancellationToken);
+        }
+
         (var page, var pageSize) = PagingLimits.Normalize(search.Page, search.PageSize);
 
-        var appUserIds = await query
+        var entities = await query
             .OrderByDescending(c => c.StartDate)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .Select(c => c.Instructor.AppUserId)
-            .Distinct()
             .ToListAsync(cancellationToken);
+
+        var appUserIds = entities
+            .Select(c => c.Instructor.AppUserId)
+            .Distinct();
 
         var users = await identityService.GetUsersBulkAsync(appUserIds, cancellationToken);
 
-        return await query.ToPagedResultAsync(
-            search,
-            entity => MapAdmin(entity, users),
-            q => q.OrderByDescending(x => x.StartDate),
-            cancellationToken);
+        return new PagedResult<CourseDto>
+        {
+            Items = [.. entities.Select(entity => MapAdmin(entity, users))],
+            Page = page,
+            PageSize = pageSize,
+            TotalCount = total
+        };
     }
 
     public async Task<CourseDto> GetByIdForAdminAsync(int id, CancellationToken cancellationToken = default)
