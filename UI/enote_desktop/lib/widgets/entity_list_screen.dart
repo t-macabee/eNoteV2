@@ -210,6 +210,7 @@ class EntityListScreenState<T> extends State<EntityListScreen<T>> {
           if (widget.config.filterBar != null) widget.config.filterBar!,
         ],
         if (isEmbedded) Flexible(child: listBody) else Expanded(child: listBody),
+        const SizedBox(height: 12),
         _buildPagination(),
       ],
     );
@@ -295,21 +296,44 @@ class EntityListScreenState<T> extends State<EntityListScreen<T>> {
             : '';
 
         String? subtitle;
+        Widget? subtitleWidget;
         final subtitleIndices = widget.config.tileSubtitleColumns;
+        List<ColumnSpec<T>> subtitleCols;
         if (subtitleIndices != null) {
-          final parts = <String>[];
+          subtitleCols = <ColumnSpec<T>>[];
           for (final i in subtitleIndices) {
             if (i < 0 || i >= columns.length) continue;
-            final col = columns[i];
-            final val = col.value(item)?.toString() ?? '-';
-            parts.add('${col.label}: $val');
+            subtitleCols.add(columns[i]);
           }
-          if (parts.isNotEmpty) subtitle = parts.join(' · ');
         } else if (columns.length > 1) {
-          subtitle = columns.skip(1).map((col) {
-            final val = col.value(item)?.toString() ?? '-';
-            return '${col.label}: $val';
-          }).join(' · ');
+          subtitleCols = columns.skip(1).toList();
+        } else {
+          subtitleCols = <ColumnSpec<T>>[];
+        }
+        if (subtitleCols.isNotEmpty) {
+          final hasCustom =
+              subtitleCols.any((col) => col.cellBuilder != null);
+          if (!hasCustom) {
+            final parts = <String>[];
+            for (final col in subtitleCols) {
+              final val = col.value(item)?.toString() ?? '-';
+              parts.add('${col.label}: $val');
+            }
+            if (parts.isNotEmpty) subtitle = parts.join(' · ');
+          } else {
+            subtitleWidget = Wrap(
+              spacing: 8,
+              runSpacing: 4,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                for (final col in subtitleCols)
+                  if (col.cellBuilder != null)
+                    col.cellBuilder!(context, item)
+                  else
+                    Text('${col.label}: ${col.value(item)?.toString() ?? '-'}'),
+              ],
+            );
+          }
         }
 
         final onRowTap = widget.config.onRowTap ?? widget.config.onEdit;
@@ -326,7 +350,7 @@ class EntityListScreenState<T> extends State<EntityListScreen<T>> {
             title,
             style: columns.isNotEmpty ? columns.first.style?.call(item) : null,
           ),
-          subtitle: subtitle != null ? Text(subtitle) : null,
+          subtitle: subtitleWidget ?? (subtitle != null ? Text(subtitle) : null),
           onTap: onRowTap != null
               ? () => onRowTap(context, item)
               : null,

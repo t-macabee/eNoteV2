@@ -18,6 +18,7 @@ import '../features/store_employee/rental/rental_list_screen.dart';
 import '../features/store_employee/store/shop_store_form_screen.dart';
 import '../features/store_employee/store/shop_store_provider.dart';
 import '../features/store_employee/store/shop_store_screen.dart';
+import '../widgets/dialog_shell.dart';
 import '../widgets/entity_form_scaffold.dart';
 import '../widgets/entity_list_screen.dart';
 import 'role_menu.dart';
@@ -245,12 +246,24 @@ class _MasterScreenState extends State<MasterScreen> {
     final controller = context.read<NotificationController>();
     showDialog<void>(
       context: context,
-      builder: (_) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        clipBehavior: Clip.antiAlias,
-        child: SizedBox(
-          width: 480,
-          height: MediaQuery.sizeOf(context).height * 0.7,
+      builder: (dialogContext) => DialogShell(
+        width: DialogShellWidth.sm,
+        header: DialogShellHeader(
+          label: const Text(
+            'Obavještenja',
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              fontSize: 16,
+            ),
+          ),
+          action: TextButton(
+            onPressed: controller.markAllRead,
+            child: const Text('Označi sve kao pročitano'),
+          ),
+          onClose: () => Navigator.of(dialogContext).pop(),
+        ),
+        body: SizedBox(
+          height: MediaQuery.sizeOf(context).height * 0.6,
           child: NotificationListView(controller: controller),
         ),
       ),

@@ -78,6 +78,7 @@ class _AssignmentFormScreenState extends State<AssignmentFormScreen> {
       presentation: widget.presentation,
       title: _isEditMode ? 'Uredi zadatak' : 'Dodaj zadatak',
       isEditMode: _isEditMode,
+      closeAfterAdd: true,
       fieldsBuilder: (_) => [
         TextFormField(
           controller: _titleController,

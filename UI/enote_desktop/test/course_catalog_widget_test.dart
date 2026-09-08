@@ -68,21 +68,23 @@ void main() {
     );
 
     await tester.pumpWidget(
-      MaterialApp(
-        home: ChangeNotifierProvider(
-          create: (_) => CourseCatalogProvider(apiClient: apiClient),
-          child: const CourseCatalogScreen(),
+      MultiProvider(
+        providers: [
+          Provider<ApiClient>.value(value: apiClient),
+          ChangeNotifierProvider(
+            create: (_) => CourseCatalogProvider(apiClient: apiClient),
+          ),
+        ],
+        child: const MaterialApp(
+          home: CourseCatalogScreen(),
         ),
       ),
     );
 
     await tester.pumpAndSettle();
 
-    expect(find.text('Katalog kurseva'), findsOneWidget);
     expect(find.text('Classical Piano'), findsOneWidget);
-    expect(find.text('Mozart'), findsWidgets); // dropdown item and row column
-    expect(find.text('150.00'), findsOneWidget);
-    expect(find.text('10'), findsOneWidget);
+    expect(find.text('Mozart'), findsWidgets); // dropdown item and card subtitle
     expect(find.text('42 kurseva · 128 studenata'), findsOneWidget);
     expect(find.byIcon(Icons.add), findsNothing);
   });
@@ -158,6 +160,7 @@ void main() {
     expect(find.text('Johann Bach'), findsOneWidget);
     expect(find.text('Status članarine'), findsOneWidget);
     expect(find.text('Upisani kursevi'), findsOneWidget);
-    expect(find.text('Violin 101 — Beethoven'), findsOneWidget);
+    expect(find.text('Violin 101'), findsOneWidget);
+    expect(find.text('Beethoven'), findsOneWidget);
   });
 }

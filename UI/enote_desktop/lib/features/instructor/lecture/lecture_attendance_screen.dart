@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
+import '../../../widgets/entity_list_screen.dart';
 import 'lecture_provider.dart';
 
 String _attendanceLabel(AttendanceStatus status) => switch (status) {
@@ -31,38 +32,7 @@ class LectureAttendanceView extends StatefulWidget {
 }
 
 class _LectureAttendanceViewState extends State<LectureAttendanceView> {
-  List<AttendanceDto> _items = [];
-  bool _isLoading = true;
-  int _currentPage = 1;
-  final int _pageSize = 20;
-  int? _totalCount;
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _load());
-  }
-
-  Future<void> _load() async {
-    setState(() => _isLoading = true);
-    try {
-      final provider = context.read<LectureProvider>();
-      final result = await provider.getAttendance(
-        widget.lectureId,
-        params: pagedQuery(_currentPage, _pageSize, ''),
-      );
-      setState(() {
-        _items = result.items;
-        _totalCount = result.totalCount;
-      });
-    } catch (e) {
-      if (mounted) {
-        ErrorBanner.show(context, message: userMessage(e));
-      }
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }
+  final _listKey = GlobalKey<EntityListScreenState<AttendanceDto>>();
 
   Future<void> _markAttendance(AttendanceDto item, AttendanceStatus newStatus) async {
     try {
@@ -79,7 +49,7 @@ class _LectureAttendanceViewState extends State<LectureAttendanceView> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Prisustvo ažurirano: ${_attendanceLabel(newStatus)}')),
       );
-      _load();
+      _listKey.currentState?.refresh();
     } catch (e) {
       if (!mounted) return;
       ErrorBanner.show(context, message: userMessage(e));
@@ -117,93 +87,52 @@ class _LectureAttendanceViewState extends State<LectureAttendanceView> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-          Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : _items.isEmpty
-                    ? const Center(child: Text('Nema podataka o prisustvu.'))
-                    : SingleChildScrollView(
-                        child: DataTable(
-                          columns: const [
-                            DataColumn(label: Text('Student')),
-                            DataColumn(label: Text('Status')),
-                            DataColumn(label: Text('Akcija')),
-                          ],
-                          rows: _items.map((item) {
-                            return DataRow(
-                              cells: [
-                                DataCell(Text(item.studentName)),
-                                DataCell(
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                    decoration: BoxDecoration(
-                                      color: _attendanceColor(item.attendanceStatus).withValues(alpha: 0.15),
-                                      borderRadius: BorderRadius.circular(4),
-                                    ),
-                                    child: Text(
-                                      _attendanceLabel(item.attendanceStatus),
-                                      style: TextStyle(
-                                        color: _attendanceColor(item.attendanceStatus),
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                DataCell(
-                                  IconButton(
-                                    icon: const Icon(Icons.edit, size: 18),
-                                    tooltip: 'Promijeni status',
-                                    onPressed: () => _showStatusPicker(item),
-                                  ),
-                                ),
-                              ],
-                            );
-                          }).toList(),
-                        ),
-                      ),
+    return EntityListScreen<AttendanceDto>(
+      key: _listKey,
+      config: EntityListConfig<AttendanceDto>(
+        presentation: EntityListPresentation.embedded,
+        listStyle: EntityListStyle.tiles,
+        showSearchBar: false,
+        showAddButton: false,
+        onEdit: null,
+        onDelete: null,
+        columns: [
+          ColumnSpec<AttendanceDto>(
+            label: 'Student',
+            value: (item) => item.studentName,
           ),
-          _buildPagination(),
-        ],
-    );
-  }
-
-  Widget _buildPagination() {
-    if (_totalCount == null) return const SizedBox.shrink();
-    final totalPages = (_totalCount! / _pageSize).ceil();
-    final hasPrev = _currentPage > 1;
-    final hasNext = _currentPage < totalPages;
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text('Stranica $_currentPage od $totalPages'),
-          const SizedBox(width: 16),
-          Text('Ukupno: $_totalCount'),
-          const SizedBox(width: 16),
-          TextButton.icon(
-            onPressed: hasPrev
-                ? () {
-                    setState(() => _currentPage--);
-                    _load();
-                  }
-                : null,
-            icon: const Icon(Icons.chevron_left),
-            label: const Text('Prethodna'),
-          ),
-          TextButton.icon(
-            onPressed: hasNext
-                ? () {
-                    setState(() => _currentPage++);
-                    _load();
-                  }
-                : null,
-            icon: const Icon(Icons.chevron_right),
-            label: const Text('Sledeća'),
+          ColumnSpec<AttendanceDto>(
+            label: 'Status',
+            value: (item) => _attendanceLabel(item.attendanceStatus),
+            cellBuilder: (context, item) => Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: _attendanceColor(item.attendanceStatus).withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                _attendanceLabel(item.attendanceStatus),
+                style: TextStyle(
+                  color: _attendanceColor(item.attendanceStatus),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
           ),
         ],
+        extraActions: (context, item) => [
+          IconButton(
+            icon: const Icon(Icons.edit, size: 18),
+            tooltip: 'Promijeni status',
+            onPressed: () => _showStatusPicker(item),
+          ),
+        ],
+        fetcher: (page, pageSize, search) => context
+            .read<LectureProvider>()
+            .getAttendance(
+              widget.lectureId,
+              params: pagedQuery(page, pageSize, search),
+            ),
       ),
     );
   }

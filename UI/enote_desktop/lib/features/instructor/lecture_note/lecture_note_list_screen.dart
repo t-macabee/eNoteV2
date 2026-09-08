@@ -61,6 +61,8 @@ class _LectureNoteListScreenState extends State<LectureNoteListScreen> {
       config: EntityListConfig<LectureNoteDto>(
         title: 'Bilješke — ${widget.lectureName}',
         presentation: widget.presentation,
+        listStyle: EntityListStyle.tiles,
+        tileSubtitleColumns: const [1],
         columns: [
           ColumnSpec<LectureNoteDto>(
             label: 'Naslov',

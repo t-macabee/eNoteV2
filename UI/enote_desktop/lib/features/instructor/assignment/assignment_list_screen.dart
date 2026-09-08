@@ -67,6 +67,8 @@ class _AssignmentListScreenState extends State<AssignmentListScreen> {
       config: EntityListConfig<AssignmentDto>(
         title: 'Zadaci — ${widget.lectureName}',
         presentation: widget.presentation,
+        listStyle: EntityListStyle.tiles,
+        tileSubtitleColumns: const [2],
         columns: [
           ColumnSpec<AssignmentDto>(
             label: 'Naslov',

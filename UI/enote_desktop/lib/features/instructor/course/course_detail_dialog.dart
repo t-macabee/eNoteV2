@@ -243,31 +243,34 @@ class _CourseDetailDialogState extends State<CourseDetailDialog> {
         title: _course.name,
         width: DialogShellWidth.md,
         onClose: _close,
-        headerAction: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              'Objavljen',
-              style: TextStyle(color: AppTheme.textSecondary),
-            ),
-            const SizedBox(width: 8),
-            if (_isPublishing)
-              const SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              )
-            else
-              Switch(
-                value: _course.isPublished,
-                onChanged: _isDeleting ? null : _togglePublish,
-              ),
-          ],
-        ),
         body: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  OutlinedButton.icon(
+                    icon: const Icon(Icons.event_note, size: 18),
+                    label: const Text('Predavanja'),
+                    onPressed: _openLectures,
+                  ),
+                  OutlinedButton.icon(
+                    icon: const Icon(Icons.campaign, size: 18),
+                    label: const Text('Objave'),
+                    onPressed: _openAnnouncements,
+                  ),
+                  OutlinedButton.icon(
+                    icon: const Icon(Icons.leaderboard, size: 18),
+                    label: const Text('Rangiranje'),
+                    onPressed: _openRanking,
+                  ),
+                ],
+              ),
+            ),
             Flexible(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
@@ -275,14 +278,17 @@ class _CourseDetailDialogState extends State<CourseDetailDialog> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     DetailRow(
+                      icon: Icons.description_outlined,
+                      label: 'Opis',
+                      value: (_course.description != null &&
+                              _course.description!.isNotEmpty)
+                          ? _course.description!
+                          : '-',
+                    ),
+                    DetailRow(
                       icon: Icons.payments_outlined,
                       label: 'Cijena',
                       value: _course.price.toStringAsFixed(2),
-                    ),
-                    DetailRow(
-                      icon: Icons.groups_outlined,
-                      label: 'Broj upisanih',
-                      value: _course.enrolledCount.toString(),
                     ),
                     DetailRow(
                       icon: Icons.event_outlined,
@@ -295,12 +301,9 @@ class _CourseDetailDialogState extends State<CourseDetailDialog> {
                       value: formatDateNullable(_course.endDate),
                     ),
                     DetailRow(
-                      icon: Icons.description_outlined,
-                      label: 'Opis',
-                      value: (_course.description != null &&
-                              _course.description!.isNotEmpty)
-                          ? _course.description!
-                          : '-',
+                      icon: Icons.groups_outlined,
+                      label: 'Broj upisanih',
+                      value: _course.enrolledCount.toString(),
                     ),
                   ],
                 ),
@@ -331,36 +334,29 @@ class _CourseDetailDialogState extends State<CourseDetailDialog> {
                         : const Icon(Icons.delete_outline, size: 18),
                     label: const Text('Obriši'),
                   ),
+                  const Spacer(),
+                  const Text(
+                    'Objavljen',
+                    style: TextStyle(color: AppTheme.textSecondary),
+                  ),
                   const SizedBox(width: 8),
-                  Expanded(
-                    child: Wrap(
-                      alignment: WrapAlignment.end,
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        OutlinedButton.icon(
-                          icon: const Icon(Icons.event_note, size: 18),
-                          label: const Text('Predavanja'),
-                          onPressed: _openLectures,
-                        ),
-                        OutlinedButton.icon(
-                          icon: const Icon(Icons.campaign, size: 18),
-                          label: const Text('Objave'),
-                          onPressed: _openAnnouncements,
-                        ),
-                        OutlinedButton.icon(
-                          icon: const Icon(Icons.leaderboard, size: 18),
-                          label: const Text('Rangiranje'),
-                          onPressed: _openRanking,
-                        ),
-                        FilledButton.icon(
-                          onPressed:
-                              _isDeleting || _isPublishing ? null : _openEdit,
-                          icon: const Icon(Icons.edit_outlined, size: 18),
-                          label: const Text('Uredi'),
-                        ),
-                      ],
+                  if (_isPublishing)
+                    const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  else
+                    Switch(
+                      value: _course.isPublished,
+                      onChanged: _isDeleting ? null : _togglePublish,
                     ),
+                  const SizedBox(width: 8),
+                  FilledButton.icon(
+                    onPressed:
+                        _isDeleting || _isPublishing ? null : _openEdit,
+                    icon: const Icon(Icons.edit_outlined, size: 18),
+                    label: const Text('Uredi'),
                   ),
                 ],
               ),

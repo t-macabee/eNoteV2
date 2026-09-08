@@ -119,14 +119,13 @@ class DialogShell extends StatelessWidget {
                       leading!,
                       const SizedBox(width: 8),
                     ],
-                    Flexible(
+                    Expanded(
                       child: Text(
                         title ?? '',
                         style: Theme.of(context).textTheme.titleLarge,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    const Spacer(),
                     if (headerAction != null) ...[
                       headerAction!,
                       const SizedBox(width: 8),

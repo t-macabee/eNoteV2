@@ -136,6 +136,7 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
     return EntityFormScaffold(
       title: 'Uredi profil',
       presentation: EntityFormPresentation.dialog,
+      isEditMode: true,
       onSave: _save,
       onReset: _clearFields,
       fieldsBuilder: (context) => [
@@ -175,19 +176,16 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
           decoration: const InputDecoration(labelText: 'Ime'),
           validator: (v) => v?.isEmpty ?? true ? 'Obavezno polje' : null,
         ),
-        const SizedBox(height: 16),
         TextFormField(
           controller: _lastNameController,
           decoration: const InputDecoration(labelText: 'Prezime'),
           validator: (v) => v?.isEmpty ?? true ? 'Obavezno polje' : null,
         ),
-        const SizedBox(height: 16),
         TextFormField(
           controller: _emailController,
           decoration: const InputDecoration(labelText: 'Email'),
           validator: (v) => v?.isEmpty ?? true ? 'Obavezno polje' : null,
         ),
-        const SizedBox(height: 16),
         DateField(
           key: ValueKey(_resetGeneration),
           labelText: 'Datum rođenja',

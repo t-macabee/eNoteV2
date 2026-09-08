@@ -98,6 +98,7 @@ class _CourseFormScreenState extends State<CourseFormScreen> {
       presentation: widget.presentation,
       title: widget.existing == null ? 'Dodaj kurs' : 'Uredi kurs',
       isEditMode: widget.existing != null,
+      closeAfterAdd: true,
       fieldsBuilder: (_) => [
         TextFormField(
           controller: _nameController,

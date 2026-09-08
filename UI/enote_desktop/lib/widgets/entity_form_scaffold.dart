@@ -26,6 +26,7 @@ class EntityFormScaffold extends StatefulWidget {
   final VoidCallback? onReset;
   final bool showCloseButton;
   final EntityFormPresentation presentation;
+  final bool closeAfterAdd;
 
   const EntityFormScaffold({
     super.key,
@@ -43,13 +44,18 @@ class EntityFormScaffold extends StatefulWidget {
     this.onReset,
     this.showCloseButton = true,
     this.presentation = EntityFormPresentation.page,
+    this.closeAfterAdd = false,
   });
 
   static Future<bool?> showAsDialog(
     BuildContext context, {
     required WidgetBuilder builder,
   }) {
-    return showDialog<bool>(context: context, builder: builder);
+    return showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: builder,
+    );
   }
 
   @override
@@ -60,6 +66,7 @@ class _EntityFormScaffoldState extends State<EntityFormScaffold> {
   final _formKey = GlobalKey<FormState>();
   bool _isSaving = false;
   bool _isDeleting = false;
+  bool _didSave = false;
 
   Future<void> _delete() async {
     final confirmed = await confirmDialog(
@@ -103,7 +110,10 @@ class _EntityFormScaffoldState extends State<EntityFormScaffold> {
             .showSnackBar(SnackBar(content: Text(widget.savedMessage)));
         if (widget.isEditMode) {
           Navigator.of(context).pop(true);
+        } else if (widget.closeAfterAdd) {
+          Navigator.of(context).pop(true);
         } else {
+          _didSave = true;
           _formKey.currentState?.reset();
           widget.onReset?.call();
         }
@@ -184,7 +194,7 @@ class _EntityFormScaffoldState extends State<EntityFormScaffold> {
             ? IconButton(
                 icon: const Icon(Icons.close),
                 tooltip: 'Zatvori',
-                onPressed: () => Navigator.of(context).pop(false),
+                onPressed: () => Navigator.of(context).pop(_didSave),
               )
             : null,
       ),
@@ -224,7 +234,7 @@ class _EntityFormScaffoldState extends State<EntityFormScaffold> {
           IconButton(
             icon: const Icon(Icons.close),
             tooltip: 'Zatvori',
-            onPressed: () => Navigator.of(context).pop(false),
+            onPressed: () => Navigator.of(context).pop(_didSave),
           ),
         ],
       ),
@@ -261,7 +271,7 @@ class _EntityFormScaffoldState extends State<EntityFormScaffold> {
                 TextButton(
                   onPressed: (_isSaving || _isDeleting)
                       ? null
-                      : () => Navigator.of(context).pop(false),
+                      : () => Navigator.of(context).pop(_didSave),
                   child: const Text('Otkaži'),
                 ),
                 const SizedBox(width: 12),

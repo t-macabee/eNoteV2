@@ -25,41 +25,30 @@ class _NotificationListViewState extends State<NotificationListView> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Obavještenja'),
-        actions: [
-          TextButton(
-            onPressed: widget.controller.markAllRead,
-            child: const Text('Označi sve kao pročitano'),
+    return AnimatedBuilder(
+      animation: widget.controller,
+      builder: (context, _) {
+        final controller = widget.controller;
+
+        if (controller.isLoading && controller.notifications.isEmpty) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (controller.error != null && controller.notifications.isEmpty) {
+          return Center(child: ErrorBanner(message: controller.error!));
+        }
+        if (controller.notifications.isEmpty) {
+          return const Center(child: Text('Nema obavještenja.'));
+        }
+
+        return RefreshIndicator(
+          onRefresh: controller.refresh,
+          child: ListView.separated(
+            itemCount: controller.notifications.length,
+            separatorBuilder: (_, _) => const Divider(height: 1),
+            itemBuilder: (context, index) => _buildTile(controller.notifications[index]),
           ),
-        ],
-      ),
-      body: AnimatedBuilder(
-        animation: widget.controller,
-        builder: (context, _) {
-          final controller = widget.controller;
-
-          if (controller.isLoading && controller.notifications.isEmpty) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (controller.error != null && controller.notifications.isEmpty) {
-            return Center(child: ErrorBanner(message: controller.error!));
-          }
-          if (controller.notifications.isEmpty) {
-            return const Center(child: Text('Nema obavještenja.'));
-          }
-
-          return RefreshIndicator(
-            onRefresh: controller.refresh,
-            child: ListView.separated(
-              itemCount: controller.notifications.length,
-              separatorBuilder: (_, _) => const Divider(height: 1),
-              itemBuilder: (context, index) => _buildTile(controller.notifications[index]),
-            ),
-          );
-        },
-      ),
+        );
+      },
     );
   }
 

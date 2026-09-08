@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
-import '../../../widgets/entity_list_screen.dart';
+import '../../../widgets/entity_grid_screen.dart';
+import 'course_catalog_detail_dialog.dart';
 import 'course_catalog_provider.dart';
 
 class CourseCatalogScreen extends StatefulWidget {
@@ -13,7 +14,7 @@ class CourseCatalogScreen extends StatefulWidget {
 }
 
 class _CourseCatalogScreenState extends State<CourseCatalogScreen> {
-  final _listKey = GlobalKey<EntityListScreenState<CourseDto>>();
+  final _gridKey = GlobalKey<EntityGridScreenState<CourseDto>>();
 
   int? _selectedInstructorId;
   List<CourseCatalogInstructorDto> _instructors = [];
@@ -74,7 +75,7 @@ class _CourseCatalogScreenState extends State<CourseCatalogScreen> {
               ],
               onChanged: (value) {
                 setState(() => _selectedInstructorId = value);
-                _listKey.currentState?.refresh(resetPage: true);
+                _gridKey.currentState?.refresh(resetPage: true);
               },
             ),
           ),
@@ -85,16 +86,15 @@ class _CourseCatalogScreenState extends State<CourseCatalogScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return EntityListScreen<CourseDto>(
-      key: _listKey,
-      config: EntityListConfig<CourseDto>(
-        title: 'Katalog kurseva',
+    return EntityGridScreen<CourseDto>(
+      key: _gridKey,
+      config: EntityGridConfig<CourseDto>(
+        placeholderIcon: Icons.class_,
+        titleOf: (item) => item.name,
+        subtitleOf: (item) => item.instructorName,
         searchHint: 'Pretraži po nazivu...',
         filterBar: _buildFilterBar(),
         showAddButton: false,
-        onEdit: null,
-        onDelete: null,
-        extraActions: null,
         trailing: _summary != null
             ? Center(
                 child: Padding(
@@ -106,28 +106,7 @@ class _CourseCatalogScreenState extends State<CourseCatalogScreen> {
                 ),
               )
             : null,
-        columns: [
-          ColumnSpec<CourseDto>(
-            label: 'Naziv',
-            value: (item) => item.name,
-          ),
-          ColumnSpec<CourseDto>(
-            label: 'Instruktor',
-            value: (item) => item.instructorName ?? '—',
-          ),
-          ColumnSpec<CourseDto>(
-            label: 'Cijena',
-            value: (item) => item.price.toStringAsFixed(2),
-          ),
-          ColumnSpec<CourseDto>(
-            label: 'Broj upisanih',
-            value: (item) => item.enrolledCount,
-          ),
-          ColumnSpec<CourseDto>(
-            label: 'Datum početka',
-            value: (item) => formatDateNullable(item.startDate),
-          ),
-        ],
+        onTap: (context, item) => CourseCatalogDetailDialog.show(context, item),
         fetcher: (page, pageSize, search) => context
             .read<CourseCatalogProvider>()
             .search(pagedQuery(

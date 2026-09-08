@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import 'package:enote_core/enote_core.dart';
 import 'package:enote_desktop/features/instructor/course/course_form_screen.dart';
 import 'package:enote_desktop/features/instructor/course/course_provider.dart';
+import 'package:enote_desktop/widgets/entity_form_scaffold.dart';
 
 /// Records every request body sent through it and answers each POST with a
 /// minimal valid CourseDto JSON payload, so [CourseProvider.insert] succeeds
@@ -40,8 +41,7 @@ class _RecordingHttpClient extends http.BaseClient {
 
 void main() {
   testWidgets(
-    'saving the course form twice in a row does not resend the first '
-    "save's dates on the second, untouched submission",
+    'course add form pops true after a successful add (auto-close)',
     (WidgetTester tester) async {
       final authState = AuthState(baseUrl: 'http://localhost:5059/api/v1/');
       final httpClient = _RecordingHttpClient();
@@ -52,52 +52,48 @@ void main() {
       );
       final courseProvider = CourseProvider(apiClient: apiClient);
 
+      bool? dialogResult;
+
       await tester.pumpWidget(
         ChangeNotifierProvider<CourseProvider>.value(
           value: courseProvider,
-          child: const MaterialApp(home: CourseFormScreen()),
+          child: MaterialApp(
+            home: Scaffold(
+              body: Builder(
+                builder: (context) => ElevatedButton(
+                  onPressed: () async {
+                    dialogResult = await EntityFormScaffold.showAsDialog(
+                      context,
+                      builder: (_) => const CourseFormScreen(
+                        presentation: EntityFormPresentation.dialog,
+                      ),
+                    );
+                  },
+                  child: const Text('Open'),
+                ),
+              ),
+            ),
+          ),
         ),
       );
 
-      Future<void> fillRequiredTextFields() async {
-        await tester.enterText(find.widgetWithText(TextFormField, 'Naziv'), 'Test kurs');
-        await tester.enterText(find.widgetWithText(TextFormField, 'Cijena'), '10');
-      }
+      await tester.tap(find.text('Open'));
+      await tester.pumpAndSettle();
 
-      Future<void> pickDate(int calendarIconIndex) async {
-        await tester.tap(find.byIcon(Icons.calendar_today).at(calendarIconIndex));
-        await tester.pumpAndSettle();
-        await tester.tap(find.text('OK'));
-        await tester.pumpAndSettle();
-      }
+      expect(find.text('Dodaj kurs'), findsOneWidget);
 
-      Future<void> save() async {
-        await tester.tap(find.widgetWithText(FilledButton, 'Sačuvaj'));
-        await tester.pumpAndSettle();
-      }
+      await tester.enterText(
+          find.widgetWithText(TextFormField, 'Naziv'), 'Test kurs');
+      await tester.enterText(
+          find.widgetWithText(TextFormField, 'Cijena'), '10');
 
-      // First save: fill both dates.
-      await fillRequiredTextFields();
-      await pickDate(0); // Datum početka
-      await pickDate(1); // Datum završetka
-      await save();
+      await tester.tap(find.widgetWithText(FilledButton, 'Sačuvaj'));
+      await tester.pumpAndSettle();
 
       expect(httpClient.postedBodies, hasLength(1));
-      final firstBody = jsonDecode(httpClient.postedBodies[0]!) as Map<String, dynamic>;
-      expect(firstBody['startDate'], isNotNull);
-      expect(firstBody['endDate'], isNotNull);
-
-      // Second save: only re-fill the text fields, exactly like the repro —
-      // the date fields are left untouched.
-      await fillRequiredTextFields();
-      await save();
-
-      expect(httpClient.postedBodies, hasLength(2));
-      final secondBody = jsonDecode(httpClient.postedBodies[1]!) as Map<String, dynamic>;
-      expect(secondBody.containsKey('startDate'), isFalse,
-          reason: 'startDate from the first save leaked into the second POST body');
-      expect(secondBody.containsKey('endDate'), isFalse,
-          reason: 'endDate from the first save leaked into the second POST body');
+      // The add form auto-closes on success instead of resetting in place.
+      expect(find.text('Dodaj kurs'), findsNothing);
+      expect(dialogResult, isTrue);
     },
   );
 }

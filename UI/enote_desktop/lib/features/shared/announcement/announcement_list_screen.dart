@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:enote_core/enote_core.dart';
 import '../../../widgets/entity_form_scaffold.dart';
 import '../../../widgets/entity_list_screen.dart';
+import 'announcement_detail_dialog.dart';
 import 'announcement_form_screen.dart';
 
 class AnnouncementListScreen extends StatefulWidget {
@@ -66,6 +67,7 @@ class _AnnouncementListScreenState extends State<AnnouncementListScreen> {
         ],
         fetcher: (page, pageSize, search) => widget.provider.search(pagedQuery(page, pageSize, search)),
         onAdd: () => _openForm(),
+        onRowTap: (context, item) => AnnouncementDetailDialog.show(context, item),
         onEdit: (context, item) => _openForm(item),
         onDelete: (context, item) async {
           await widget.provider.remove(item.id);

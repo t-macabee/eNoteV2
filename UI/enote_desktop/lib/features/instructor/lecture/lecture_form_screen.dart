@@ -126,6 +126,7 @@ class _LectureFormScreenState extends State<LectureFormScreen> {
       presentation: widget.presentation,
       title: _isEditMode ? 'Uredi predavanje' : 'Dodaj predavanje',
       isEditMode: _isEditMode,
+      closeAfterAdd: true,
       fieldsBuilder: (_) => [
         if (_isCancelled) ...[
           Container(

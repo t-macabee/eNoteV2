@@ -62,6 +62,7 @@ class _AnnouncementFormScreenState extends State<AnnouncementFormScreen> {
       presentation: widget.presentation,
       title: _isEditMode ? 'Uredi objavu' : 'Dodaj objavu',
       isEditMode: _isEditMode,
+      closeAfterAdd: true,
       fieldsBuilder: (_) => [
         TextFormField(
           controller: _titleController,

@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
 import '../../../theme/app_theme.dart';
+import '../../../widgets/detail_row.dart';
+import '../../../widgets/dialog_shell.dart';
 import 'instructor_student_provider.dart';
 
 /// Read-only student info for instructors — deliberately minimal: no
@@ -65,95 +67,67 @@ class _InstructorStudentDetailsDialogState
         ? 'Aktivna do ${formatDateNullable(student.membershipPaidUntil)}'
         : 'Istekla / Nema';
 
-    return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      clipBehavior: Clip.antiAlias,
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 420),
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                'Detalji studenta',
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: AppTheme.textPrimary,
-                ),
+    return DialogShell(
+      title: 'Detalji studenta',
+      width: DialogShellWidth.sm,
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            InfoRow(
+              icon: Icons.person_outline,
+              label: 'Ime i prezime',
+              value: formatDisplayName(
+                student.firstName,
+                student.lastName,
+                student.username,
               ),
-              const SizedBox(height: 16),
-              InfoRow(
-                icon: Icons.person_outline,
-                label: 'Ime i prezime',
-                value: formatDisplayName(
-                  student.firstName,
-                  student.lastName,
-                  student.username,
-                ),
+            ),
+            InfoRow(
+              icon: Icons.alternate_email,
+              label: 'Korisničko ime',
+              value: student.username != null ? '@${student.username}' : '-',
+            ),
+            InfoRow(
+              icon: Icons.calendar_today_outlined,
+              label: 'Datum upisa',
+              value: formatDateNullable(student.enrollmentDate),
+            ),
+            InfoRow(
+              icon: Icons.card_membership_outlined,
+              label: 'Status članarine',
+              value: statusValue,
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Upisani kursevi',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.textPrimary,
               ),
-              InfoRow(
-                icon: Icons.alternate_email,
-                label: 'Korisničko ime',
-                value: student.username != null ? '@${student.username}' : '-',
-              ),
-              InfoRow(
-                icon: Icons.calendar_today_outlined,
-                label: 'Datum upisa',
-                value: formatDateNullable(student.enrollmentDate),
-              ),
-              InfoRow(
-                icon: Icons.card_membership_outlined,
-                label: 'Status članarine',
-                value: statusValue,
-              ),
-              const SizedBox(height: 16),
+            ),
+            const SizedBox(height: 8),
+            if (_enrollments == null)
+              const SizedBox.shrink()
+            else if (_enrollments!.isEmpty)
               const Text(
-                'Upisani kursevi',
+                'Nema aktivnih upisa.',
                 style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: AppTheme.textPrimary,
+                  fontSize: 13,
+                  color: AppTheme.textSecondary,
+                ),
+              )
+            else
+              ..._enrollments!.map(
+                (e) => DetailRow(
+                  icon: Icons.class_outlined,
+                  label: e.courseName,
+                  value: e.instructorName ?? '—',
                 ),
               ),
-              const SizedBox(height: 8),
-              if (_enrollments == null)
-                const SizedBox.shrink()
-              else if (_enrollments!.isEmpty)
-                const Text(
-                  'Nema aktivnih upisa.',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: AppTheme.textSecondary,
-                  ),
-                )
-              else
-                ..._enrollments!.map(
-                  (e) => Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 2),
-                    child: Text(
-                      '${e.courseName} — ${e.instructorName ?? '—'}',
-                      style: const TextStyle(
-                        fontSize: 13,
-                        color: AppTheme.textPrimary,
-                      ),
-                    ),
-                  ),
-                ),
-              const SizedBox(height: 24),
-              Row(
-                children: [
-                  const Spacer(),
-                  TextButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: const Text('Zatvori'),
-                  ),
-                ],
-              ),
-            ],
-          ),
+          ],
         ),
       ),
     );

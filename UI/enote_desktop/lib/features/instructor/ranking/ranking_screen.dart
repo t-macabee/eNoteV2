@@ -106,31 +106,26 @@ class _RankingViewState extends State<RankingView> {
         Flexible(
           child: _filteredItems.isEmpty
               ? const Center(child: Text('Nema rezultata za pretragu.'))
-              : SingleChildScrollView(
-                  child: DataTable(
-                    columns: const [
-                      DataColumn(label: Text('Rang')),
-                      DataColumn(label: Text('Student')),
-                      DataColumn(label: Text('Prosjek')),
-                      DataColumn(label: Text('Broj ocijenjenih predaja')),
-                    ],
-                    rows: _filteredItems.map((item) {
-                      return DataRow(
-                        cells: [
-                          DataCell(Text(item.rank.toString())),
-                          DataCell(Text(item.studentName)),
-                          DataCell(
-                            Text(
-                              item.averageGrade != null
-                                  ? item.averageGrade!.toStringAsFixed(2)
-                                  : '-',
-                            ),
-                          ),
-                          DataCell(Text(item.gradedSubmissions.toString())),
-                        ],
-                      );
-                    }).toList(),
-                  ),
+              : ListView.separated(
+                  itemCount: _filteredItems.length,
+                  separatorBuilder: (_, _) => const Divider(height: 1),
+                  itemBuilder: (context, index) {
+                    final item = _filteredItems[index];
+                    final avg = item.averageGrade != null
+                        ? item.averageGrade!.toStringAsFixed(2)
+                        : '-';
+                    return ListTile(
+                      dense: true,
+                      leading: Text(
+                        '${item.rank}',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      title: Text(item.studentName),
+                      subtitle: Text(
+                        'Prosjek: $avg · Ocijenjeno: ${item.gradedSubmissions}',
+                      ),
+                    );
+                  },
                 ),
         ),
       ],
