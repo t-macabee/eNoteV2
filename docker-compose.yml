@@ -42,6 +42,7 @@ services:
       ASPNETCORE_URLS: http://+:8080
       ConnectionStrings__DefaultConnection: Server=sqlserver,1433;Database=150057;User Id=sa;Password=${MSSQL_SA_PASSWORD};TrustServerCertificate=True;MultipleActiveResultSets=true
       Jwt__Key: ${JWT__KEY:?Set JWT__KEY in .env (min 32 characters)}
+      Seed__DefaultPassword: ${SEED_DEFAULT_PASSWORD:-test}
       Jwt__Issuer: ENote.Api
       Jwt__Audience: ENote.Client
       Jwt__ExpirationDays: 7

@@ -71,4 +71,36 @@ void main() {
       expect(dto.instructorName, isNull);
     });
   });
+
+  group('CourseDto.isEnrolled', () {
+    test('missing key defaults to false', () {
+      final dto = CourseDto.fromJson({'id': 1, 'name': 'n'});
+      expect(dto.isEnrolled, isFalse);
+    });
+
+    test('true parses as true', () {
+      final dto =
+          CourseDto.fromJson({'id': 1, 'name': 'n', 'isEnrolled': true});
+      expect(dto.isEnrolled, isTrue);
+    });
+  });
+
+  group('LectureDto.myAttendanceStatus', () {
+    test('missing key defaults to null', () {
+      final dto = LectureDto.fromJson({'id': 1, 'name': 'n'});
+      expect(dto.myAttendanceStatus, isNull);
+    });
+
+    test('non-int value defaults to null', () {
+      final dto = LectureDto.fromJson(
+          {'id': 1, 'name': 'n', 'myAttendanceStatus': 'present'});
+      expect(dto.myAttendanceStatus, isNull);
+    });
+
+    test('int value parses', () {
+      final dto =
+          LectureDto.fromJson({'id': 1, 'name': 'n', 'myAttendanceStatus': 2});
+      expect(dto.myAttendanceStatus, AttendanceStatus.present);
+    });
+  });
 }

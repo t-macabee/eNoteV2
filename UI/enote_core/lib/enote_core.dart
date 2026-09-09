@@ -13,6 +13,8 @@ export 'models/rentals/music_store_models.dart';
 export 'models/rentals/address_models.dart';
 export 'models/rentals/city_models.dart';
 export 'models/rentals/instrument_rental_models.dart';
+export 'models/rentals/recommendation_models.dart';
+export 'models/rentals/rental_debt_dto.dart';
 export 'models/rentals/payment_models.dart';
 export 'paging/paged_result.dart';
 export 'paging/paged_query.dart';

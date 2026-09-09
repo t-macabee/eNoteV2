@@ -10,6 +10,7 @@ class CourseDto {
   final double price;
   final int enrolledCount;
   final String? instructorName;
+  final bool isEnrolled;
 
   CourseDto({
     required this.id,
@@ -22,6 +23,7 @@ class CourseDto {
     required this.price,
     required this.enrolledCount,
     this.instructorName,
+    this.isEnrolled = false,
   });
 
   factory CourseDto.fromJson(Map<String, dynamic> json) {
@@ -36,6 +38,7 @@ class CourseDto {
       price: (json['price'] as num?)?.toDouble() ?? 0.0,
       enrolledCount: json['enrolledCount'] as int? ?? 0,
       instructorName: json['instructorName'] as String?,
+      isEnrolled: json['isEnrolled'] as bool? ?? false,
     );
   }
 
@@ -50,6 +53,7 @@ class CourseDto {
     'price': price,
     'enrolledCount': enrolledCount,
     if (instructorName != null) 'instructorName': instructorName,
+    if (isEnrolled) 'isEnrolled': isEnrolled,
   };
 }
 

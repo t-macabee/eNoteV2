@@ -12,6 +12,7 @@ class LectureDto {
   final int duration;
   final int? capacity;
   final int attendeeCount;
+  final AttendanceStatus? myAttendanceStatus;
 
   LectureDto({
     required this.id,
@@ -24,11 +25,13 @@ class LectureDto {
     required this.duration,
     this.capacity,
     required this.attendeeCount,
+    this.myAttendanceStatus,
   });
 
   factory LectureDto.fromJson(Map<String, dynamic> json) {
     final typeValue = json['lectureType'];
     final statusValue = json['lectureStatus'];
+    final attendanceValue = json['myAttendanceStatus'];
     return LectureDto(
       id: json['id'] as int? ?? 0,
       name: json['name'] as String? ?? '',
@@ -44,6 +47,9 @@ class LectureDto {
       duration: json['duration'] as int? ?? 0,
       capacity: json['capacity'] as int?,
       attendeeCount: json['attendeeCount'] as int? ?? 0,
+      myAttendanceStatus: attendanceValue is int
+          ? AttendanceStatus.fromJson(attendanceValue)
+          : null,
     );
   }
 
@@ -58,6 +64,8 @@ class LectureDto {
     'duration': duration,
     if (capacity != null) 'capacity': capacity,
     'attendeeCount': attendeeCount,
+    if (myAttendanceStatus != null)
+      'myAttendanceStatus': myAttendanceStatus!.toJson(),
   };
 }
 

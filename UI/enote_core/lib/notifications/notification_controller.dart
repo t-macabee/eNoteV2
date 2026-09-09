@@ -18,6 +18,9 @@ class NotificationController extends ChangeNotifier {
   bool _isLoading = false;
   String? _error;
   Timer? _pollTimer;
+  int _page = 1;
+  int _pageSize = 50;
+  bool _hasMore = false;
 
   NotificationController({
     required this.apiClient,
@@ -29,6 +32,7 @@ class NotificationController extends ChangeNotifier {
   int get unreadCount => _unreadCount;
   bool get isLoading => _isLoading;
   String? get error => _error;
+  bool get hasMore => _hasMore;
 
   /// Starts refreshing the unread count on [pollInterval] and loads the
   /// first page immediately. Call once when the shell mounts.
@@ -56,16 +60,22 @@ class NotificationController extends ChangeNotifier {
     scheduleMicrotask(notifyListeners);
 
     try {
+      final pageSize = search?.pageSize ?? 50;
       final response = await apiClient.get(
         endpoint,
-        queryParams:
-            (search ?? NotificationSearchObject(pageSize: 50)).toQueryMap(),
+        queryParams: (search ?? NotificationSearchObject(pageSize: 50))
+            .toQueryMap()
+          ..['page'] = 1
+          ..['pageSize'] = pageSize,
       );
       final data = decodeOrThrow(response);
       final items = (data['items'] as List<dynamic>? ?? []);
       _notifications = items
           .map((e) => NotificationDto.fromJson(Map<String, dynamic>.from(e)))
           .toList();
+      _page = 1;
+      _pageSize = pageSize;
+      _hasMore = _notifications.length == pageSize;
       _unreadCount = _notifications.where((n) => !n.isRead).length;
     } catch (e) {
       _error = userMessage(e);
@@ -73,6 +83,23 @@ class NotificationController extends ChangeNotifier {
       _isLoading = false;
       notifyListeners();
     }
+  }
+
+  Future<void> loadMore() async {
+    final nextPage = _page + 1;
+    final response = await apiClient.get(
+      endpoint,
+      queryParams: {'page': nextPage, 'pageSize': _pageSize},
+    );
+    final data = decodeOrThrow(response);
+    final items = (data['items'] as List<dynamic>? ?? []);
+    final parsed = items
+        .map((e) => NotificationDto.fromJson(Map<String, dynamic>.from(e)))
+        .toList();
+    _notifications = [..._notifications, ...parsed];
+    _page = nextPage;
+    _hasMore = parsed.length == _pageSize;
+    notifyListeners();
   }
 
   /// Cheaper than [refresh] — used by the polling timer so it doesn't

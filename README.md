@@ -1,146 +1,157 @@
 # eNote
 
-ASP.NET Core backend for a music-school platform: courses, lectures, assignments, instrument rentals, and in-app notifications.
+Platforma za muzičku školu. Pokriva kurseve, predavanja, zadatke, najam
+instrumenata i notifikacije. Sastoji se od ASP.NET Core API-ja, zasebnog worker
+servisa, Flutter desktop aplikacije za administraciju i Flutter mobilne
+aplikacije za studente.
 
-## Prerequisites
+## Preduslovi
 
-- [.NET 10 SDK](https://dotnet.microsoft.com/download) (see `global.json`)
-- SQL Server (local instance or Docker — see repo-root `docker-compose.yml`)
-- RabbitMQ (local install or Docker)
+- [.NET 10 SDK](https://dotnet.microsoft.com/download), verzija je zaključana u `global.json`
+- Docker Desktop, ako aplikaciju pokrećete kroz `docker compose`
+- Flutter SDK, za desktop i mobilnu aplikaciju
+- SQL Server i RabbitMQ, samo ako sve pokrećete lokalno bez Dockera
 
-## Quick start
+## Pokretanje kroz Docker
 
-1. Copy environment variables:
+Ovo je najkraći put i pokreće bazu, RabbitMQ, API i worker odjednom.
+
+1. Napravite `.env` u korijenu repozitorija:
 
    ```bash
    cp .env.docker.example .env
    ```
 
-   Adjust `ConnectionStrings__DefaultConnection`, `Jwt__Key` (min 32 characters), `Smtp__*`, and `STRIPE_*` values for your machine.
+   Popunite `MSSQL_SA_PASSWORD`, `JWT__KEY` (najmanje 32 znaka), `SMTP_*` i
+   `STRIPE_*` vrijednosti. `docker compose` neće startati bez njih.
 
-2. Restore and apply migrations (from this `eNote/` directory):
-
-   ```bash
-   dotnet restore
-   dotnet ef database update --project eNote.Infrastructure --startup-project eNote.API
-   ```
-
-3. Run the API (applies migrations and seeds dev data automatically in Development):
+2. Pokrenite sve servise:
 
    ```bash
-   dotnet run --project eNote.API
+   docker compose up --build
    ```
 
-4. Run the Worker (processes RabbitMQ messages and retries failed rental notifications):
+API sluša na `http://localhost:5059`. Migracije i seed podaci se primjenjuju
+automatski pri prvom pokretanju u Development okruženju.
 
-   ```bash
-   dotnet run --project eNote.Worker
-   ```
+## Pokretanje bez Dockera
 
-API listens on `http://localhost:5059` (or ports in `launchSettings.json`). OpenAPI docs are available via Scalar in Development.
-
-## Flutter frontend
-
-The mobile/desktop client is in a separate repository. To point it at a running API:
+Iz foldera `eNote/`:
 
 ```bash
-flutter run --dart-define=API_BASE_URL=http://localhost:5059
+dotnet restore
+dotnet ef database update --project eNote.Infrastructure --startup-project eNote.API
+dotnet run --project eNote.API
 ```
 
-Replace `http://localhost:5059` with the actual API address (or the `API_PORT` you set in `.env`).
-
-## Docker
-
-From the repository root:
+Worker se pokreće posebno, u drugom terminalu:
 
 ```bash
-docker compose up --build
+dotnet run --project eNote.Worker
 ```
 
-See `.env.docker.example` at the repo root for required variables.
+Worker je zaseban projekat i zaseban kontejner. On preuzima poruke sa RabbitMQ-a
+i šalje notifikacije i mailove, te ponavlja neuspjele notifikacije o najmu.
 
-## Development seed users
+## Prijava
 
-On first run in Development, these accounts are created (password from `Seed__DefaultPassword`, default `Test1234!`):
+Svi seed nalozi koriste lozinku `test`. Lozinka se može promijeniti kroz
+`Seed__DefaultPassword` u `.env`.
 
-| Username        | Role           | Email                    |
-|-----------------|----------------|--------------------------|
-| admin           | Administrator  | admin@enote.com          |
-| instructor      | Instructor     | instructor@enote.com     |
-| student         | Student        | student@enote.com        |
-| storeemployee   | StoreEmployee  | storeEmployee@enote.com  |
+| Korisničko ime | Lozinka | Uloga | Gdje se koristi |
+|---|---|---|---|
+| desktop | test | Administrator | Desktop aplikacija |
+| mobile | test | Student | Mobilna aplikacija |
+| admin | test | Administrator | Desktop aplikacija |
+| instructor | test | Instructor | Desktop aplikacija |
+| student | test | Student | Mobilna aplikacija |
+| storeemployee | test | StoreEmployee | Desktop aplikacija |
 
-## Payments (Stripe)
+Registracija novih korisnika kroz aplikaciju i dalje traži jaču lozinku
+(najmanje 8 znakova, veliko slovo, malo slovo, broj i specijalni znak). Seed
+nalozi su izuzetak i postoje samo da pregled aplikacije bude brz.
 
-Instrument rentals are billed once via Stripe when a rental reaches `Complete`
-or `ReturnedEarly` (server-computed total, EUR by default). Requires
-`STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` — see `.env.docker.example`
-for the full list (`STRIPE_PUBLISHABLE_KEY`, `STRIPE_CURRENCY`,
-`STRIPE_STATEMENT_DESCRIPTOR` are optional). Point your Stripe webhook (or
-`stripe listen`) at `POST /api/v{version}/payments/stripe/webhook`.
+## Desktop aplikacija
 
-| Endpoint | Role |
-|----------|------|
-| `POST /api/v{version}/student/rentals/{rentalId}/payments/create-intent` | Student |
-| `GET /api/v{version}/student/rentals/{rentalId}/payments` | Student |
-| `POST /api/v{version}/shop/rentals/{rentalId}/payments/refund` | StoreEmployee |
-| `POST /api/v{version}/payments/stripe/webhook` | Stripe (signature-verified, anonymous) |
+Iz foldera `UI/enote_desktop`:
 
-A refund does not reset a rental's paid status — once paid, a rental stays
-paid; refunds are a store courtesy, not a reversal of the debt guard.
-Students with an unpaid completed/returned rental are blocked from
-requesting a new rental until it's paid.
+```bash
+flutter run --dart-define=API_BASE_URL=http://localhost:5059/api/v1/
+```
 
-## PDF reports
+`API_BASE_URL` je build-time vrijednost sa podrazumijevanim
+`http://localhost:5059/api/v1/`, pa se adresa API-ja mijenja bez diranja koda.
 
-| Endpoint | Role |
-|----------|------|
-| `GET /api/admin/music-stores/report` | Administrator |
-| `GET /api/instructor/courses/{courseId}/ranking/report` | Instructor |
-| `GET /api/instructor/lectures/{id}/attendance/report` | Instructor |
-| `GET /api/shop/rentals/report` | StoreEmployee |
+## Mobilna aplikacija
 
-## Reference data (checklist #4)
+Iz foldera `UI/enote_mobile`:
 
-The following reference tables have dedicated CRUD screens under the Administrator role:
+```bash
+flutter run --dart-define=API_BASE_URL=http://10.0.2.2:5059/api/v1/ --dart-define=STRIPE_PUBLISHABLE_KEY=pk_test_vas_kljuc
+```
 
-- **Cities** (`admin/cities`) — standalone FK table; `Address.CityId` references it via dropdown, never free text (§3.1).
-- **Addresses** (`admin/addresses`) — street/number + City FK.
-- **MusicStores** (`admin/music-stores`)
-- **InstrumentTypes** (`admin/instrument-types`)
+`10.0.2.2` je adresa preko koje Android emulator vidi host mašinu. Putanja mora
+sadržavati `/api/v1/`. Stripe publishable ključ se prosljeđuje na isti način jer
+ga API ne izlaže kroz endpoint.
 
-`Instructor` is intentionally read-only in `InstructorListScreen` — instructors are provisioned and fully managed through the single `AdminUsersController` / `UserProvisionFormScreen` flow (`role: "Instructor"`), which already provides add/edit and role-membership control. A second, duplicate CRUD for the same accounts would diverge rather than help.
+## Plaćanja
 
-`Country` / `Category` / `Status` tables do not exist in this domain by design: eNoteV2 has no physical product categories and no international addresses (all addresses are `City` → `Street` → `Number` within BiH). Adding empty Country/Category tables would be artificial normalization with no query, filter, or reporting use. This is the documented exception per checklist #4 — the domain's reference data is fully covered by the four tables above.
+Najam instrumenta se naplaćuje jednom, kada najam pređe u status `Complete` ili
+`ReturnedEarly`. Iznos računa server. Podrazumijevana valuta je BAM i mijenja se
+kroz `STRIPE_CURRENCY`.
 
-## Ranking search (Upute §2.2)
+Obavezne varijable su `STRIPE_SECRET_KEY` i `STRIPE_WEBHOOK_SECRET`. Webhook
+treba usmjeriti na `POST /api/v1/payments/stripe/webhook`, lokalno preko
+`stripe listen`.
 
-Ranking (`RankingScreen`) includes a debounced student-name text filter above the table, satisfying the per-list search parameter rule. The filter is client-side over the already-fetched ranking payload, so no extra API round-trip is needed.
+| Endpoint | Uloga |
+|---|---|
+| `POST /api/v1/student/rentals/{rentalId}/payments/create-intent` | Student |
+| `GET /api/v1/student/rentals/{rentalId}/payments` | Student |
+| `POST /api/v1/shop/rentals/{rentalId}/payments/refund` | StoreEmployee |
+| `POST /api/v1/payments/stripe/webhook` | Stripe, potpis se provjerava |
 
-## Validation messages (checklist #6)
+Povrat novca ne poništava status plaćenog najma. Student koji ima neplaćen
+završen najam ne može zatražiti novi dok ga ne plati.
 
-All format-constrained fields now carry specific error text (not just “required”): `City.Name`, `Address.CityId/Street/Number`, `MusicStore.StoreName/BusinessHours`, `InstrumentType.Type/MonthlyFee`, `Course.Name/Price`, etc. — see `*RequestValidator` classes for the exact `WithMessage` texts.
+## PDF izvještaji
 
-## Minor / UX notes (P7)
+| Endpoint | Uloga |
+|---|---|
+| `GET /api/v1/admin/music-stores/report` | Administrator |
+| `GET /api/v1/instructor/courses/{courseId}/ranking/report` | Instructor |
+| `GET /api/v1/instructor/lectures/{id}/attendance/report` | Instructor |
+| `GET /api/v1/shop/rentals/report` | StoreEmployee |
 
-- **Back navigation**: list screens are drawer-hosted (`MasterScreen` → `RoleMenu`), not pushed routes, so the drawer itself is the primary navigation. Form screens provide an explicit “X” close in the AppBar/dialog title per RS2 UX rule. No additional labeled “Back” is added to list screens — adding a pop-style back where there is no route to pop would be misleading.
-- **Many-to-many IDs**: the only current many-to-many is `Course↔Student` via `Enrollment`; the ranking and attendance screens always render student display names, never bare IDs.
-- **Images**: thumbnails remain at 40 px (≈5% of form width); no regression toward 50%+.
-
-## Tests
+## Testovi
 
 ```bash
 dotnet test
 ```
 
-## Solution layout
+Flutter testovi:
 
-| Project | Purpose |
-|---------|---------|
-| `eNote.Domain` | Entities and enums |
-| `eNote.Application` | Business logic and services |
+```bash
+cd UI/enote_core && flutter test
+cd UI/enote_desktop && flutter test
+```
+
+## Struktura rješenja
+
+| Projekat | Sadržaj |
+|---|---|
+| `eNote.Domain` | Entiteti i enumi |
+| `eNote.Application` | Poslovna logika i servisi |
 | `eNote.Infrastructure` | EF Core, Identity, messaging |
-| `eNote.API` | HTTP API and SignalR |
-| `eNote.Worker` | Background consumers |
-| `eNote.Contracts` | Message contracts |
-| `eNote.Tests` | Unit tests |
+| `eNote.API` | HTTP API i SignalR |
+| `eNote.Worker` | RabbitMQ konzumeri |
+| `eNote.Contracts` | Ugovori poruka |
+| `eNote.Tests` | Testovi |
+| `UI/enote_core` | Zajednički Dart paket za oba klijenta |
+| `UI/enote_desktop` | Windows desktop aplikacija |
+| `UI/enote_mobile` | Android mobilna aplikacija |
+
+## Ostala dokumentacija
+
+- [recommender-dokumentacija.md](recommender-dokumentacija.md) opisuje recommender sistem
+- [docs/rs2-compliance.md](docs/rs2-compliance.md) objašnjava odluke vezane za zahtjeve predmeta

@@ -17,18 +17,34 @@ class ApiError {
   final int status;
   final String code;
   final String message;
+  final String title;
+  final Map<String, List<String>> errors;
 
   ApiError({
     required this.status,
     required this.code,
     required this.message,
-  });
+    this.title = '',
+    Map<String, List<String>>? errors,
+  }) : errors = errors ?? const {};
 
   factory ApiError.fromJson(Map<String, dynamic> json) {
+    final rawErrors = json['errors'];
+    Map<String, List<String>> parsedErrors = const {};
+    if (rawErrors is Map) {
+      parsedErrors = {
+        for (final entry in rawErrors.entries)
+          entry.key.toString(): (entry.value is List
+              ? (entry.value as List).map((e) => e.toString()).toList()
+              : [entry.value.toString()]),
+      };
+    }
     return ApiError(
       status: json['status'] as int? ?? 0,
       code: json['code'] as String? ?? '',
       message: json['message'] as String? ?? '',
+      title: json['title'] as String? ?? '',
+      errors: parsedErrors,
     );
   }
 
@@ -57,13 +73,21 @@ class ApiErrorMapper {
       return apiError.message;
     }
 
+    if (apiError.errors.isNotEmpty) {
+      return apiError.errors.values.expand((e) => e).join('\n');
+    }
+
+    if (statusCode == 400 && apiError.title.isNotEmpty) {
+      return apiError.title;
+    }
+
     return _defaultMessage(statusCode);
   }
 
   static String _defaultMessage(int statusCode) {
     return switch (statusCode) {
       400 => 'Neispravan zahtjev.',
-      401 => 'Vaša sesija je istečla. Prijavite se ponovo.',
+      401 => 'Vaša sesija je istekla. Prijavite se ponovo.',
       403 => 'Nemate pristup ovom resursu.',
       404 => 'Resurs nije pronađen.',
       409 => 'Sukob podataka.',

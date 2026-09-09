@@ -20,8 +20,15 @@ public static class IdentitySeed
         var context = serviceProvider.GetRequiredService<ENoteContext>();
 
         var provisioningService = serviceProvider.GetRequiredService<IUserProvisioningService>();
+        var userManager = serviceProvider.GetRequiredService<UserManager<AppUser>>();
         var configuration = serviceProvider.GetRequiredService<IConfiguration>();
-        var defaultPassword = configuration["Seed:DefaultPassword"] ?? "Test1234!";
+
+        // Password handed to reviewers (RS2 Upute section 5 credentials table).
+        // It is deliberately short and deliberately NOT run through Identity's
+        // password policy: the policy in DependencyInjection stays strict for
+        // real registrations, and these seeded demo accounts get their hash
+        // applied directly in ApplyReviewPasswordAsync below.
+        var reviewPassword = configuration["Seed:DefaultPassword"] ?? "test";
 
         await RoleSeed.SeedRoles(roleManager);
 
@@ -29,6 +36,8 @@ public static class IdentitySeed
 
         (string, string, string, int?)[] testUsers = new[]
         {
+            ("desktop", "desktop@enote.com", AppRoles.Administrator, default(int?)),
+            ("mobile", "mobile@enote.com", AppRoles.Student, default(int?)),
             ("admin", "admin@enote.com", AppRoles.Administrator, default(int?)),
             ("instructor", "instructor@enote.com", AppRoles.Instructor, default(int?)),
             ("student", "student@enote.com", AppRoles.Student, default(int?)),
@@ -41,7 +50,7 @@ public static class IdentitySeed
             {
                 Username = username,
                 Email = email,
-                Password = defaultPassword,
+                Password = BootstrapPassword,
                 Role = role,
                 MusicStoreId = storeId
             });
@@ -50,6 +59,34 @@ public static class IdentitySeed
             {
                 throw new BusinessException(error);
             }
+
+            await ApplyReviewPasswordAsync(userManager, username, reviewPassword);
+        }
+    }
+
+    // Satisfies the Identity policy so ProvisionUserAsync can create the account;
+    // never used to log in, because ApplyReviewPasswordAsync overwrites the hash.
+    private const string BootstrapPassword = "Seed1234!";
+
+    private static async Task ApplyReviewPasswordAsync(UserManager<AppUser> userManager, string username, string password)
+    {
+        var user = await userManager.FindByNameAsync(username)
+            ?? throw new BusinessException(Messages.UserUpdateFailed(username, "korisnik nije pronađen nakon kreiranja."));
+
+        var verification = userManager.PasswordHasher.VerifyHashedPassword(user, user.PasswordHash ?? string.Empty, password);
+
+        if (verification != PasswordVerificationResult.Failed)
+        {
+            return;
+        }
+
+        user.PasswordHash = userManager.PasswordHasher.HashPassword(user, password);
+
+        var result = await userManager.UpdateAsync(user);
+
+        if (!result.Succeeded)
+        {
+            throw new BusinessException(Messages.UserUpdateFailed(username, string.Join("; ", result.Errors.Select(e => e.Description))));
         }
     }
 }

@@ -1,35 +1,70 @@
-# eNote — Dokumentacija recommender sistema
+# Dokumentacija recommender sistema
 
-## Pregled
+eNote preporučuje studentu instrumente za najam. Preporuke se računaju iz podataka
+koje aplikacija stvarno prikuplja: historije najma tog studenta, najmova ostalih
+studenata, evidencije pregleda kataloga i ukupnog broja najmova po instrumentu.
 
-eNote koristi hibridni recommender za preporuku instrumenata studentima. Implementacija se nalazi u sloju aplikacije i koristi stvarne podatke iz baze (historija najma, pregledi kataloga, globalna popularnost).
+## Gdje se nalazi kod
 
-## Algoritam i težine
+Servis: `eNote/eNote.Application/Features/Rentals/Recommendations/Services/RecommendationService.cs`
 
-| Signal | Težina | Opis |
-|--------|--------|------|
-| Historija najma | 40% | Preferira tipove instrumenata koje je student već najmio; uključuje kolaborativni signal (instrumenti koje biraju slični studenti) |
-| Pregledi | 30% | Instrumenti koje je student pregledao, normalizovano po max broju pregleda |
-| Sličnost | 20% | Isti proizvođač (1.0) ili isti tip (0.6) u odnosu na preferirani profil |
-| Popularnost | 10% | Broj globalnih najmova instrumenta, normalizovano |
+Kontroler: `eNote/eNote.API/Controllers/Instruments/InstrumentController.cs`
 
-Ukupni skor:
+| Endpoint | Uloga | Šta radi |
+|---|---|---|
+| `GET /api/v1/student/instruments/recommended?count=5` | Student | Vraća listu preporuka sa skorom i objašnjenjima |
+| `POST /api/v1/student/instruments/{id}/view` | Student | Evidentira pregled instrumenta u tabelu `InstrumentView` |
+
+## Kako se računa skor
+
+Ukupni skor je zbir četiri signala sa fiksnim težinama. Konstante su na vrhu
+`RecommendationService`.
+
+| Signal | Težina | Odakle dolazi |
+|---|---|---|
+| Najam | 0.40 | Vrste instrumenata koje je student već najmio, plus instrumenti koje biraju slični studenti |
+| Pregledi | 0.30 | `InstrumentView` za tog korisnika, normalizovano po najvećem broju pregleda |
+| Sličnost | 0.20 | Isti proizvođač daje 1.0, ista vrsta daje 0.6 |
+| Popularnost | 0.10 | Ukupan broj najmova instrumenta, normalizovan po najnajmljenijem |
 
 ```
-total = rental*0.40 + view*0.30 + similarity*0.20 + popularity*0.10
+total = najam * 0.40 + pregledi * 0.30 + sličnost * 0.20 + popularnost * 0.10
 ```
 
-## Glavna logika (source code)
+Signal najma se dijeli još jednom. Kada student ima i vlastitu historiju i
+poklapanje sa sličnim studentima, vlastita historija nosi 0.60 a kolaborativni
+dio 0.40 (`OwnRentalHistoryWeight`, `CollaborativeRentalWeight`). Kada postoji
+samo jedan od ta dva signala, uzima se veći od njih.
 
-- Servis: `eNote.Application/Features/Recommendations/Services/RecommendationService.cs`
-- API endpoint: `GET /api/student/instruments/recommended?count=5`
-- Evidencija pregleda: `POST /api/student/instruments/{id}/view` → tabela `InstrumentView`
+Kolaborativni dio radi u dva koraka u metodi `BuildCollaborativeInstrumentIdsAsync`.
+Prvo se nađu studenti koji su najmili bar jedan isti instrument kao trenutni
+student. Zatim se uzmu instrumenti koje su ti studenti najmili, a trenutni student
+nije. Ti instrumenti ulaze u kandidate i dobijaju puni kolaborativni skor.
+
+Ako student nije pregledao konkretan instrument, ali je taj instrument iste vrste
+koju je ranije najmio, signal pregleda dobija vrijednost 0.35
+(`TypeViewFallbackScore`) umjesto nule. Bez toga bi novi instrumenti u poznatoj
+vrsti ispadali iz preporuka.
+
+Instrumenti koje student trenutno drži u najmu (status `Approved` ili `Active`)
+izbacuju se iz rezultata.
 
 ## Objašnjive preporuke
 
-Svaka preporuka vraća `reasons[]` na bosanskom (npr. historija najma, slični studenti, popularnost). Poruke se generišu u metodi `BuildReasons`.
+Svaka preporuka nosi listu razloga na bosanskom. Razlozi se grade u metodi
+`BuildReasons` i svaki od njih je vezan za jedan signal koji je stvarno prešao svoj
+prag:
 
-## Primjer odgovora API-ja
+| Uslov | Razlog koji se prikazuje |
+|---|---|
+| Skor najma >= 0.5 i vrsta se poklapa | "Na osnovu vaše historije najma (vrsta)." |
+| Instrument je u kolaborativnom skupu | "Studenti sa sličnim izborima najma biraju ovaj instrument." |
+| Skor pregleda >= 0.5 | "Pregledali ste ovaj instrument ili slične modele." |
+| Skor sličnosti >= 0.6 | "Sličan vašim prethodnim izborima proizvođača ili vrste." |
+| Skor popularnosti >= 0.5 | "Popularan među studentima." |
+| Nijedan prag nije pređen | "Preporučeno na osnovu dostupnosti i ukupnog interesovanja." |
+
+## Primjer odgovora
 
 ```json
 {
@@ -42,14 +77,22 @@ Svaka preporuka vraća `reasons[]` na bosanskom (npr. historija najma, slični s
 }
 ```
 
-## Podaci koji se prikupljaju u aplikaciji
+## Podaci koje aplikacija prikuplja
 
 | Podatak | Tabela | Kako se puni |
-|---------|--------|--------------|
-| Historija najma | `InstrumentRental` | Tokom rental workflow-a |
-| Pregledi | `InstrumentView` | `POST .../instruments/{id}/view` |
-| Popularnost | `InstrumentRental` (agregat) | Automatski iz postojećih najmova |
+|---|---|---|
+| Historija najma | `InstrumentRental` | Kroz rental workflow |
+| Pregledi kataloga | `InstrumentView` | `POST /api/v1/student/instruments/{id}/view` |
+| Popularnost | `InstrumentRental` | Agregacija postojećih najmova, jedan `GroupBy` upit |
 
-## Napomena za odbranu
+Sva tri podatka ulaze u formulu iznad. Nema podataka koji se prikupljaju a zatim
+ne koriste.
 
-Svi signali u scoring formuli se aktivno koriste u kodu — nema prikupljanja podataka koji se zatim ignorišu.
+## Testovi
+
+`eNote/eNote.Tests/Rentals/RecommendationServiceTests.cs`
+
+## Screenshotovi
+
+TODO prije predaje: dodati screenshot koda `RecommendationService` i screenshot
+ekrana sa preporukama iz pokrenute mobilne aplikacije.
