@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
+import '../features/profile/profile_screen.dart';
 import '../session/session_controller.dart';
 import 'app_router.dart';
 
@@ -124,7 +125,9 @@ class _TabRoot extends StatelessWidget {
           ),
         ],
       ),
-      body: Center(child: Text(_RootShellState._titles[index])),
+      body: index == 3
+          ? const ProfileScreen()
+          : Center(child: Text(_RootShellState._titles[index])),
     );
   }
 }

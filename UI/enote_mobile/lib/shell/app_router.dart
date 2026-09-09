@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../features/auth/forgot_password_screen.dart';
 import '../features/auth/register_screen.dart';
 import '../features/auth/reset_password_screen.dart';
+import '../features/profile/change_password_screen.dart';
+import '../features/profile/edit_profile_screen.dart';
 
 class CourseDetailArgs {
   final int courseId;
@@ -130,9 +132,9 @@ class AppRouter {
       case notifications:
         return _route(const _PlaceholderScreen(title: 'Obavještenja'));
       case profileEdit:
-        return _route(const _PlaceholderScreen(title: 'Uredi profil'));
+        return _route(const EditProfileScreen());
       case profilePassword:
-        return _route(const _PlaceholderScreen(title: 'Promjena lozinke'));
+        return _route(const ChangePasswordScreen());
       case register:
         return _route(const RegisterScreen());
       case forgotPassword:

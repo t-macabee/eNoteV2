@@ -11,6 +11,7 @@ import '../session/session_controller.dart';
 import '../session/token_store.dart';
 import '../theme/app_theme.dart';
 import 'features/auth/auth_provider.dart';
+import 'features/profile/profile_provider.dart';
 import 'shell/app_router.dart';
 import 'shell/session_gate.dart';
 
@@ -77,6 +78,9 @@ class _EnoteMobileAppState extends State<EnoteMobileApp> {
         ),
         Provider<AuthProvider>(
           create: (_) => AuthProvider(apiClient: widget.apiClient),
+        ),
+        Provider<ProfileProvider>(
+          create: (_) => ProfileProvider(apiClient: widget.apiClient),
         ),
       ],
       child: MaterialApp(

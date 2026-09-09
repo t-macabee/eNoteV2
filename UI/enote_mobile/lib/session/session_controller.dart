@@ -16,6 +16,7 @@ class SessionController extends ChangeNotifier {
   }
 
   UserProfileResponse? _profile;
+  int _pictureVersion = 0;
 
   SessionController({
     required this.apiClient,
@@ -25,6 +26,30 @@ class SessionController extends ChangeNotifier {
   });
 
   UserProfileResponse? get profile => _profile;
+
+  /// Read path for the profile picture URL cache buster. Bumped on every
+  /// successful [reloadProfile] so the picture URL carries a fresh `?v=`
+  /// after an upload/delete and the new bytes are fetched (the URL is
+  /// cacheable, so the version is what forces a reload).
+  int get pictureVersion => _pictureVersion;
+
+  DateTime? get membershipPaidUntil => profile?.profile.membershipPaidUntil;
+
+  /// The membership is active through the end of the expiry **day**
+  /// (inclusive boundary, local time): `false` when no expiry is set;
+  /// otherwise `true` while now is before the start of the day after
+  /// [membershipPaidUntil]'s calendar day.
+  bool get isMembershipActive {
+    final until = membershipPaidUntil;
+    if (until == null) return false;
+    final local = until.toLocal();
+    final endOfDay = DateTime(
+      local.year,
+      local.month,
+      local.day,
+    ).add(const Duration(days: 1));
+    return DateTime.now().isBefore(endOfDay);
+  }
 
   bool consumeSessionExpired() {
     final value = _sessionExpired;
@@ -47,6 +72,7 @@ class SessionController extends ChangeNotifier {
   Future<void> reloadProfile() async {
     final response = await apiClient.get('users/me');
     _profile = UserProfileResponse.fromJson(decodeOrThrow(response));
+    _pictureVersion++;
     notifyListeners();
   }
 
