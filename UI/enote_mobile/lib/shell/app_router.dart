@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../features/auth/forgot_password_screen.dart';
 import '../features/auth/register_screen.dart';
 import '../features/auth/reset_password_screen.dart';
+import '../features/notifications/notification_inbox_screen.dart';
 import '../features/profile/change_password_screen.dart';
 import '../features/profile/edit_profile_screen.dart';
 
@@ -130,7 +131,7 @@ class AppRouter {
       case payment:
         return _route(const _PlaceholderScreen(title: 'Plaćanje'));
       case notifications:
-        return _route(const _PlaceholderScreen(title: 'Obavještenja'));
+        return _route(const NotificationInboxScreen());
       case profileEdit:
         return _route(const EditProfileScreen());
       case profilePassword:

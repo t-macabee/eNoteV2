@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
 import 'package:enote_mobile/features/auth/auth_provider.dart';
+import 'package:enote_mobile/realtime/notification_hub_client.dart';
 import 'package:enote_mobile/session/session_controller.dart';
 import 'package:enote_mobile/shell/session_gate.dart';
 
@@ -72,6 +73,15 @@ Widget _gate({String? token}) {
           endpoint: 'student/notifications',
         ),
         lazy: false,
+      ),
+      Provider<NotificationHubClient>(
+        create: (_) => NotificationHubClient(
+          hubUrl: NotificationHubClient.deriveHubUrl(
+            'http://10.0.2.2:5059/api/v1/',
+          ),
+          tokenProvider: () async => 'token',
+        ),
+        dispose: (_, client) => client.dispose(),
       ),
       ChangeNotifierProvider<SessionController>(
         create: (context) => SessionController(

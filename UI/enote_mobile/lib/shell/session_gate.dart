@@ -20,7 +20,7 @@ class SessionGate extends StatelessWidget {
         if (!auth.hasRole('Student')) {
           return const RoleBlockedScreen();
         }
-        return const RootShell();
+        return RootShell(key: RootShell.shellKey);
       },
     );
   }

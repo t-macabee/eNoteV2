@@ -2,18 +2,32 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
+import 'package:enote_core/enote_core.dart';
+
 import '../features/profile/profile_screen.dart';
+import '../realtime/notification_hub_client.dart';
 import '../session/session_controller.dart';
 import 'app_router.dart';
 
 class RootShell extends StatefulWidget {
+  static final GlobalKey<RootShellState> shellKey =
+      GlobalKey<RootShellState>();
+
   const RootShell({super.key});
 
+  /// Routes a notification payload to its detail screen: switches to the
+  /// matching tab, then pushes the target route on that tab's navigator so
+  /// the back stack stays sensible (02 §6.1). Called from the inbox (which
+  /// lives on the root navigator) after it pops itself.
+  static void routeNotification(NotificationDto notification) {
+    shellKey.currentState?.routeNotification(notification);
+  }
+
   @override
-  State<RootShell> createState() => _RootShellState();
+  State<RootShell> createState() => RootShellState();
 }
 
-class _RootShellState extends State<RootShell> {
+class RootShellState extends State<RootShell> with WidgetsBindingObserver {
   static const _titles = [
     'Instrumenti',
     'Učenje',
@@ -24,11 +38,13 @@ class _RootShellState extends State<RootShell> {
   int _index = 0;
   bool _booted = false;
   late final List<GlobalKey<NavigatorState>> _navKeys;
+  NotificationController? _notifications;
 
   @override
   void initState() {
     super.initState();
     _navKeys = List.generate(4, (_) => GlobalKey<NavigatorState>());
+    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!_booted) {
         _booted = true;
@@ -36,6 +52,90 @@ class _RootShellState extends State<RootShell> {
           context.read<SessionController>().bootstrap();
         }
       }
+    });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final notifications = context.read<NotificationController>();
+    // Saved for dispose(): ancestor lookup is unsafe once deactivated.
+    _notifications = notifications;
+    notifications.startPolling();
+    final hub = context.read<NotificationHubClient>();
+    hub.onRefresh = () {
+      notifications.refresh();
+    };
+    hub.onPush = _showPushSnack;
+    final auth = context.read<AuthState>();
+    if (auth.isAuthenticated && auth.hasRole('Student')) {
+      hub.start();
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _notifications?.stopPolling();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    final hub = context.read<NotificationHubClient>();
+    if (state == AppLifecycleState.paused) {
+      hub.stop();
+    } else if (state == AppLifecycleState.resumed) {
+      final auth = context.read<AuthState>();
+      if (!mounted) return;
+      if (auth.isAuthenticated && auth.hasRole('Student')) {
+        hub.start();
+      }
+    }
+  }
+
+  void _showPushSnack(NotificationPushDto push) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(push.title),
+        action: SnackBarAction(
+          label: 'Prikaži',
+          onPressed: () => Navigator.of(
+            context,
+            rootNavigator: true,
+          ).pushNamed(AppRouter.notifications),
+        ),
+      ),
+    );
+  }
+
+  /// Switches to the tab matching [notification]'s payload, then pushes the
+  /// target detail route on that tab's navigator (targets are placeholders
+  /// until T44/T59/T64). Payload-less notifications are ignored.
+  void routeNotification(NotificationDto notification) {
+    final int tab;
+    final String route;
+    final Object? args;
+    if (notification.rentalId != null) {
+      tab = 2;
+      route = AppRouter.rentalDetail;
+      args = RentalDetailArgs(notification.rentalId!);
+    } else if (notification.lectureId != null) {
+      tab = 1;
+      route = AppRouter.lectureDetail;
+      args = LectureDetailArgs(notification.lectureId!);
+    } else if (notification.submissionId != null) {
+      tab = 1;
+      route = AppRouter.assignmentHistory;
+      args = null;
+    } else {
+      return;
+    }
+    setState(() => _index = tab);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _navKeys[tab].currentState?.pushNamed(route, arguments: args);
     });
   }
 
@@ -68,9 +168,14 @@ class _RootShellState extends State<RootShell> {
             for (var i = 0; i < 4; i++)
               Navigator(
                 key: _navKeys[i],
-                onGenerateRoute: (_) => MaterialPageRoute(
-                  builder: (_) => _TabRoot(index: i),
-                ),
+                onGenerateRoute: (settings) {
+                  if (settings.name == null || settings.name == '/') {
+                    return MaterialPageRoute(
+                      builder: (_) => _TabRoot(index: i),
+                    );
+                  }
+                  return AppRouter.onGenerateRoute(settings);
+                },
               ),
           ],
         ),
@@ -114,11 +219,11 @@ class _TabRoot extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(_RootShellState._titles[index]),
+        title: Text(RootShellState._titles[index]),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_outlined),
-            onPressed: () => Navigator.of(
+          NotificationBadge(
+            controller: context.read<NotificationController>(),
+            onTap: () => Navigator.of(
               context,
               rootNavigator: true,
             ).pushNamed(AppRouter.notifications),
@@ -127,7 +232,7 @@ class _TabRoot extends StatelessWidget {
       ),
       body: index == 3
           ? const ProfileScreen()
-          : Center(child: Text(_RootShellState._titles[index])),
+          : Center(child: Text(RootShellState._titles[index])),
     );
   }
 }

@@ -10,8 +10,10 @@ import '../session/deep_link_handler.dart';
 import '../session/session_controller.dart';
 import '../session/token_store.dart';
 import '../theme/app_theme.dart';
+import 'config.dart';
 import 'features/auth/auth_provider.dart';
 import 'features/profile/profile_provider.dart';
+import 'realtime/notification_hub_client.dart';
 import 'shell/app_router.dart';
 import 'shell/session_gate.dart';
 
@@ -68,11 +70,21 @@ class _EnoteMobileAppState extends State<EnoteMobileApp> {
           ),
           lazy: false,
         ),
+        Provider<NotificationHubClient>(
+          create: (_) => NotificationHubClient(
+            hubUrl: NotificationHubClient.deriveHubUrl(kApiBaseUrl),
+            tokenProvider: () async => widget.authState.accessToken ?? '',
+          ),
+          dispose: (_, client) => client.dispose(),
+        ),
         ChangeNotifierProvider<SessionController>(
           create: (context) => SessionController(
             apiClient: widget.apiClient,
             authState: widget.authState,
             notifications: context.read<NotificationController>(),
+            onStopRealtime: () {
+              context.read<NotificationHubClient>().stop();
+            },
           ),
           lazy: false,
         ),
