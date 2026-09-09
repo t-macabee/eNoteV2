@@ -3,7 +3,6 @@ using eNote.API.Converters;
 using eNote.API.Extensions;
 using eNote.API.Hubs;
 using eNote.Infrastructure;
-using Microsoft.Extensions.FileProviders;
 using Scalar.AspNetCore;
 using Serilog;
 using System.Text.Json.Serialization;
@@ -63,11 +62,6 @@ if (!app.Environment.IsDevelopment())
     app.UseResponseCompression();
 }
 
-app.UseStaticFiles(new StaticFileOptions
-{
-    FileProvider = new PhysicalFileProvider(Path.Combine(app.Environment.WebRootPath, "instruments")),
-    RequestPath = "/instruments"
-});
 app.UseCors(CorsExtensions.PolicyName);
 app.UseErrorHandling();
 
