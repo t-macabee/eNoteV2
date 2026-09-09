@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import 'package:enote_core/enote_core.dart';
+import '../session/session_controller.dart';
 
 class RoleBlockedScreen extends StatelessWidget {
   const RoleBlockedScreen({super.key});
@@ -23,7 +23,8 @@ class RoleBlockedScreen extends StatelessWidget {
               ),
               const SizedBox(height: 24),
               FilledButton(
-                onPressed: () => context.read<AuthState>().logout(),
+                onPressed: () =>
+                    context.read<SessionController>().logoutAndRevoke(),
                 child: const Text('Odjavi se'),
               ),
             ],

@@ -22,6 +22,16 @@
               android:name="io.flutter.embedding.android.NormalTheme"
               android:resource="@style/NormalTheme"
               />
+            <!-- The app's own DeepLinkHandler (app_links + AppRouter) owns the
+                 enote:// scheme. Flutter's built-in deep-link auto-routing
+                 defaults to true since 3.27 and, left on, races it: it pushes
+                 the raw intent URI as a route name via pushRoute, which
+                 AppRouter.onGenerateRoute does not recognise, landing on the
+                 unknown-route screen instead of the intended one. -->
+            <meta-data
+              android:name="flutter_deeplinking_enabled"
+              android:value="false"
+              />
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>

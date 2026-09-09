@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../features/auth/forgot_password_screen.dart';
+import '../features/auth/register_screen.dart';
+import '../features/auth/reset_password_screen.dart';
+
 class CourseDetailArgs {
   final int courseId;
 
@@ -130,13 +134,17 @@ class AppRouter {
       case profilePassword:
         return _route(const _PlaceholderScreen(title: 'Promjena lozinke'));
       case register:
-        return _route(const _PlaceholderScreen(title: 'Registracija'));
+        return _route(const RegisterScreen());
       case forgotPassword:
-        return _route(
-          const _PlaceholderScreen(title: 'Zaboravljena lozinka'),
-        );
+        return _route(const ForgotPasswordScreen());
       case resetPassword:
-        return _route(const _PlaceholderScreen(title: 'Reset lozinke'));
+        final resetArgs = args is ResetArgs ? args : null;
+        return _route(
+          ResetPasswordScreen(
+            email: resetArgs?.email,
+            token: resetArgs?.token,
+          ),
+        );
       case eventDetail:
         return _route(const _PlaceholderScreen(title: 'Događaj'));
       default:
