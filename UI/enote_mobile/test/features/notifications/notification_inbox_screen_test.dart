@@ -6,6 +6,9 @@ import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
+import 'package:enote_mobile/features/instruments/instrument_provider.dart';
+import 'package:enote_mobile/features/payments/payment_provider.dart';
+import 'package:enote_mobile/features/rentals/rental_provider.dart';
 import 'package:enote_mobile/features/notifications/notification_inbox_screen.dart';
 import 'package:enote_mobile/realtime/notification_hub_client.dart';
 import 'package:enote_mobile/session/session_controller.dart';
@@ -149,6 +152,15 @@ class _Harness {
         ),
         Provider<NotificationHubClient>.value(value: hub),
         ChangeNotifierProvider<SessionController>.value(value: session),
+        ChangeNotifierProvider<InstrumentProvider>(
+          create: (_) => InstrumentProvider(apiClient: apiClient),
+        ),
+        ChangeNotifierProvider<RentalProvider>(
+          create: (_) => RentalProvider(apiClient: apiClient),
+        ),
+        Provider<PaymentProvider>(
+          create: (_) => PaymentProvider(apiClient: apiClient),
+        ),
       ],
       child: child,
     );

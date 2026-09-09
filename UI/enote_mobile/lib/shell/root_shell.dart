@@ -4,7 +4,9 @@ import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
 
+import '../features/instruments/instrument_catalog_screen.dart';
 import '../features/profile/profile_screen.dart';
+import '../features/rentals/rental_list_screen.dart';
 import '../realtime/notification_hub_client.dart';
 import '../session/session_controller.dart';
 import 'app_router.dart';
@@ -21,6 +23,13 @@ class RootShell extends StatefulWidget {
   /// lives on the root navigator) after it pops itself.
   static void routeNotification(NotificationDto notification) {
     shellKey.currentState?.routeNotification(notification);
+  }
+
+  /// Switches the bottom navigation to [index]. Used after an action on one
+  /// tab whose result lives on another — a sent rental request lands the
+  /// student on Iznajmljivanja (02 §5, S9).
+  static void switchTab(int index) {
+    shellKey.currentState?.selectTab(index);
   }
 
   @override
@@ -139,6 +148,12 @@ class RootShellState extends State<RootShell> with WidgetsBindingObserver {
     });
   }
 
+  /// Selects [index] on the bottom navigation.
+  void selectTab(int index) {
+    if (!mounted || index == _index) return;
+    setState(() => _index = index);
+  }
+
   Future<void> _handlePop() async {
     final navigator = _navKeys[_index].currentState;
     if (navigator != null && navigator.canPop()) {
@@ -230,9 +245,12 @@ class _TabRoot extends StatelessWidget {
           ),
         ],
       ),
-      body: index == 3
-          ? const ProfileScreen()
-          : Center(child: Text(RootShellState._titles[index])),
+      body: switch (index) {
+        0 => const InstrumentCatalogScreen(),
+        2 => const RentalListScreen(),
+        3 => const ProfileScreen(),
+        _ => Center(child: Text(RootShellState._titles[index])),
+      },
     );
   }
 }

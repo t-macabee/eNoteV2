@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import '../features/auth/forgot_password_screen.dart';
 import '../features/auth/register_screen.dart';
 import '../features/auth/reset_password_screen.dart';
+import '../features/instruments/instrument_detail_screen.dart';
 import '../features/notifications/notification_inbox_screen.dart';
+import '../features/rentals/rental_detail_screen.dart';
 import '../features/profile/change_password_screen.dart';
 import '../features/profile/edit_profile_screen.dart';
 
@@ -125,9 +127,15 @@ class AppRouter {
       case announcementDetail:
         return _route(const _PlaceholderScreen(title: 'Objava'));
       case instrumentDetail:
-        return _route(const _PlaceholderScreen(title: 'Instrument'));
+        final instrumentArgs = args is InstrumentDetailArgs ? args : null;
+        if (instrumentArgs == null) return _route(const _UnknownRouteScreen());
+        return _route(
+          InstrumentDetailScreen(instrumentId: instrumentArgs.instrumentId),
+        );
       case rentalDetail:
-        return _route(const _PlaceholderScreen(title: 'Iznajmljivanje'));
+        final rentalArgs = args is RentalDetailArgs ? args : null;
+        if (rentalArgs == null) return _route(const _UnknownRouteScreen());
+        return _route(RentalDetailScreen(rentalId: rentalArgs.rentalId));
       case payment:
         return _route(const _PlaceholderScreen(title: 'Plaćanje'));
       case notifications:

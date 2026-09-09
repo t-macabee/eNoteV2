@@ -7,6 +7,9 @@ import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
 import 'package:enote_mobile/features/auth/auth_provider.dart';
+import 'package:enote_mobile/features/instruments/instrument_provider.dart';
+import 'package:enote_mobile/features/payments/payment_provider.dart';
+import 'package:enote_mobile/features/rentals/rental_provider.dart';
 import 'package:enote_mobile/realtime/notification_hub_client.dart';
 import 'package:enote_mobile/session/session_controller.dart';
 import 'package:enote_mobile/shell/session_gate.dart';
@@ -93,6 +96,15 @@ Widget _gate({String? token}) {
       ),
       Provider<AuthProvider>(
         create: (_) => AuthProvider(apiClient: apiClient),
+      ),
+      ChangeNotifierProvider<InstrumentProvider>(
+        create: (_) => InstrumentProvider(apiClient: apiClient),
+      ),
+      ChangeNotifierProvider<RentalProvider>(
+        create: (_) => RentalProvider(apiClient: apiClient),
+      ),
+      Provider<PaymentProvider>(
+        create: (_) => PaymentProvider(apiClient: apiClient),
       ),
     ],
     child: const MaterialApp(home: SessionGate()),

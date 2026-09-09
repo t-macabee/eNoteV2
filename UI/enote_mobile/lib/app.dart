@@ -12,7 +12,10 @@ import '../session/token_store.dart';
 import '../theme/app_theme.dart';
 import 'config.dart';
 import 'features/auth/auth_provider.dart';
+import 'features/instruments/instrument_provider.dart';
+import 'features/payments/payment_provider.dart';
 import 'features/profile/profile_provider.dart';
+import 'features/rentals/rental_provider.dart';
 import 'realtime/notification_hub_client.dart';
 import 'shell/app_router.dart';
 import 'shell/session_gate.dart';
@@ -93,6 +96,15 @@ class _EnoteMobileAppState extends State<EnoteMobileApp> {
         ),
         Provider<ProfileProvider>(
           create: (_) => ProfileProvider(apiClient: widget.apiClient),
+        ),
+        ChangeNotifierProvider<InstrumentProvider>(
+          create: (_) => InstrumentProvider(apiClient: widget.apiClient),
+        ),
+        ChangeNotifierProvider<RentalProvider>(
+          create: (_) => RentalProvider(apiClient: widget.apiClient),
+        ),
+        Provider<PaymentProvider>(
+          create: (_) => PaymentProvider(apiClient: widget.apiClient),
         ),
       ],
       child: MaterialApp(

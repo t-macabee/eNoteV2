@@ -122,4 +122,22 @@ void main() {
     await tester.tap(find.text('Pokušaj ponovo'));
     expect(retried, isTrue);
   });
+
+  testWidgets('an error on top of loaded rows keeps the rows visible', (
+    tester,
+  ) async {
+    final controller = _controller((page, pageSize, search) async {
+      return PagedResult<int>(
+        items: const [1, 2],
+        page: page,
+        pageSize: pageSize,
+        totalCount: 2,
+      );
+    });
+    addTearDown(controller.dispose);
+    await _pumpList(tester, controller, error: Exception('boom'));
+
+    expect(find.text('Item 1'), findsOneWidget);
+    expect(find.text('Item 2'), findsOneWidget);
+  });
 }
