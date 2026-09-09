@@ -7,26 +7,7 @@ import 'package:enote_core/enote_core.dart';
 import 'package:enote_desktop/features/profile/profile_dialog.dart';
 import 'package:enote_desktop/features/profile/profile_provider.dart';
 
-String _base64UrlSegment(String input) =>
-    base64Url.encode(utf8.encode(input)).replaceAll('=', '');
-
-String _fakeJwt({
-  String subject = '1',
-  String username = 'admin',
-  String role = 'Administrator',
-}) {
-  final header = _base64UrlSegment(jsonEncode({'alg': 'none', 'typ': 'JWT'}));
-  final payload = _base64UrlSegment(jsonEncode({
-    'sub': subject,
-    'unique_name': username,
-    'role': role,
-    'exp': DateTime.now()
-            .add(const Duration(days: 1))
-            .millisecondsSinceEpoch ~/
-        1000,
-  }));
-  return '$header.$payload.signature';
-}
+import 'helpers.dart' as helpers;
 
 class _MockProfileHttpClient extends http.BaseClient {
   final Map<String, dynamic> responseMap;
@@ -58,7 +39,7 @@ void main() {
     });
 
     final authState = AuthState(
-      tokenReader: () => _fakeJwt(),
+      tokenReader: () => helpers.fakeJwt(),
       httpClient: client,
     );
     final apiClient = ApiClient(
@@ -105,7 +86,7 @@ void main() {
     });
 
     final authState = AuthState(
-      tokenReader: () => _fakeJwt(username: 'admin'),
+      tokenReader: () => helpers.fakeJwt(username: 'admin'),
       httpClient: client,
     );
     final apiClient = ApiClient(
@@ -154,7 +135,7 @@ void main() {
     });
 
     final authState = AuthState(
-      tokenReader: () => _fakeJwt(),
+      tokenReader: () => helpers.fakeJwt(),
       httpClient: client,
     );
     final apiClient = ApiClient(

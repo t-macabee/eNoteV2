@@ -8,7 +8,7 @@ String base64UrlSegment(String input) =>
     base64Url.encode(utf8.encode(input)).replaceAll('=', '');
 
 /// Test-only fake JWT for [AuthState]. Supports the union of all call sites
-/// (subject/username/role/isManager) so per-file copies can be deleted (T13).
+/// (subject/username/role/isManager).
 String fakeJwt({
   String subject = '1',
   String username = 'ana',
@@ -31,8 +31,7 @@ String fakeJwt({
 
 /// Records every request sent through it and answers each one with a
 /// [statusCode] and [body], so [AuthState.login] can be exercised without a
-/// real backend. Deduplicated from `auth_state_test.dart` (T13); the
-/// hand-rolled fake client itself is unchanged.
+/// real backend.
 class RecordingHttpClient extends http.BaseClient {
   final List<http.Request> requests = [];
   final int statusCode;
@@ -54,7 +53,7 @@ class RecordingHttpClient extends http.BaseClient {
 
 /// Long enough for the controller's search debounce to elapse, derived from
 /// [PagedFetchController.defaultSearchDebounce] (+100 ms buffer for real-timer
-/// unit tests) so the two cannot drift (T13).
+/// unit tests) so the two cannot drift.
 Future<void> pastDebounce() => Future<void>.delayed(
       PagedFetchController.defaultSearchDebounce +
           const Duration(milliseconds: 100),

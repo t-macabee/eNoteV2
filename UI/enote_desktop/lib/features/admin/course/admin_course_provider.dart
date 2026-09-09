@@ -4,9 +4,7 @@ import 'package:enote_core/enote_core.dart';
 ///
 /// Read-only in practice: `AdminCourseController` only exposes `GetPaged`/
 /// `GetById` for cross-system oversight. Course create/edit/delete is
-/// Instructor-owned (`CourseController`) — nothing here calls insert/update/
-/// remove. Narrowed to [ReadOnlyProvider] (T9); verified call sites use only
-/// `search` (admin_course_list_screen).
+/// Instructor-owned (`CourseController`) — nothing here calls insert/update/remove.
 class AdminCourseProvider extends ReadOnlyProvider<CourseDto> {
   AdminCourseProvider({
     required super.apiClient,

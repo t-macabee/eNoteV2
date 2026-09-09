@@ -63,7 +63,7 @@ class ProfileProvider {
   String pictureUrl({int? cacheBuster}) =>
       pictureUrlForUser(apiClient, 'me', cacheBuster: cacheBuster);
 
-  /// Cross-user read path for `GET users/{id}/picture` (Part C). [userId] is
+  /// Cross-user read path for `GET users/{id}/picture`. [userId] is
   /// the `AppUser` id. A 404 (no picture / not visible) is normal — callers
   /// must fall back to initials, never an error banner.
   static String pictureUrlForUser(

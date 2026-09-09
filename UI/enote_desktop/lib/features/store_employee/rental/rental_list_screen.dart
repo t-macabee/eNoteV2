@@ -61,8 +61,6 @@ class _RentalListScreenState extends State<RentalListScreen> {
           const SizedBox(width: 16),
           SizedBox(
             width: 220,
-            // Genuinely-async instrument filter: stays on FutureBuilder +
-            // DropdownButtonFormField (T12 explicitly excludes async filters).
             child: FutureBuilder<List<InstrumentDto>>(
               future: _instrumentsFuture,
               builder: (context, snapshot) {

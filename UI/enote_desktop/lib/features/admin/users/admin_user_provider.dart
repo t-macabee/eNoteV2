@@ -1,8 +1,7 @@
 import 'package:enote_core/enote_core.dart';
 
 /// Provider seam for the admin "Users" tab's destructive/mutating calls
-/// against `admin/users/{id}`, previously issued as raw [ApiClient] calls
-/// from [UserGridScreen]'s widget state.
+/// against `admin/users/{id}`.
 ///
 /// `remove(id)` (hard delete) is inherited from [CrudProvider] and already
 /// does the status check — do not add a fourth delete method here.

@@ -10,23 +10,7 @@ import 'package:enote_desktop/features/shared/announcement/announcement_provider
 import 'package:enote_desktop/features/shared/announcement/store_announcement_provider.dart';
 import 'package:enote_desktop/widgets/entity_list_screen.dart';
 
-String _base64UrlSegment(String input) =>
-    base64Url.encode(utf8.encode(input)).replaceAll('=', '');
-
-String _fakeJwt({
-  String subject = '1',
-  String username = 'test',
-  String role = 'Instructor',
-}) {
-  final header = _base64UrlSegment(jsonEncode({'alg': 'none', 'typ': 'JWT'}));
-  final payload = _base64UrlSegment(jsonEncode({
-    'sub': subject,
-    'unique_name': username,
-    'role': role,
-    'exp': (DateTime.now().millisecondsSinceEpoch ~/ 1000) + 3600,
-  }));
-  return '$header.$payload.signature';
-}
+import 'helpers.dart' as helpers;
 
 class FakeClient extends http.BaseClient {
   final Future<http.StreamedResponse> Function(http.BaseRequest request) handler;
@@ -72,7 +56,7 @@ void main() {
     final authState = AuthState(
       baseUrl: 'http://localhost/',
       httpClient: client,
-      tokenReader: () => _fakeJwt(),
+      tokenReader: () => helpers.fakeJwt(username: 'test', role: 'Instructor'),
     );
     final apiClient = ApiClient(
       baseUrl: 'http://localhost/',
@@ -140,7 +124,7 @@ void main() {
     final authState = AuthState(
       baseUrl: 'http://localhost/',
       httpClient: client,
-      tokenReader: () => _fakeJwt(role: 'StoreEmployee'),
+      tokenReader: () => helpers.fakeJwt(username: 'test', role: 'StoreEmployee'),
     );
     final apiClient = ApiClient(
       baseUrl: 'http://localhost/',

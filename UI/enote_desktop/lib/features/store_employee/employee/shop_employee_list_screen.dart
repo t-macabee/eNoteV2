@@ -29,10 +29,6 @@ class _ShopEmployeeListScreenState extends State<ShopEmployeeListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Read, not watch: data flows through PagedFetchController.fetcher and
-    // both mutation paths (_openCreateForm, setActive toggle) end with an
-    // explicit refresh(). AuthState watches below stay as watch — the screen
-    // genuinely rebuilds on role/user change (T11, cf. T2).
     final provider = context.read<ShopEmployeeProvider>();
     final isManager = context.watch<AuthState>().isManager;
 

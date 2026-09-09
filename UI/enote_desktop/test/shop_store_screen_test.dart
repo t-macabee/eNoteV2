@@ -378,8 +378,6 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('Dostupan'), findsOneWidget);
-    // f886c6a intentionally restyled Uredi from Filled to Outlined;
-    // the test was stale. Assert the current Outlined rendering.
     expect(find.widgetWithText(OutlinedButton, 'Uredi'), findsOneWidget);
     expect(find.widgetWithText(OutlinedButton, 'Obriši'), findsOneWidget);
 

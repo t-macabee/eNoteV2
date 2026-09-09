@@ -36,7 +36,7 @@ class _RecordingFetcher {
 }
 
 /// Shared helper from helpers.dart so the delay tracks
-/// [PagedFetchController.defaultSearchDebounce] and cannot drift (T13).
+/// [PagedFetchController.defaultSearchDebounce] and cannot drift.
 Future<void> pastDebounce() => helpers.pastDebounce();
 
 void main() {
@@ -58,9 +58,6 @@ void main() {
     });
 
     test('passes its configured pageSize through unchanged', () async {
-      // I1: the list uses 20 and the grid uses 24. A controller that
-      // substituted a default of its own would silently repaginate one of
-      // them, which no widget test would catch.
       final fetcher = _RecordingFetcher();
       final controller =
           PagedFetchController<String>(fetcher: fetcher.call, pageSize: 24);

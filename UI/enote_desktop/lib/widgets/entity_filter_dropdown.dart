@@ -2,11 +2,10 @@ import 'package:flutter/material.dart';
 
 /// Shared controlled filter dropdown for entity list/grid filter bars.
 ///
-/// Consolidates the 7 `SizedBox(220–240) + DropdownButtonFormField +
-/// _applyFilters → refresh(resetPage: true)` sites (T12). Takes [value:]
-/// (controlled), not `initialValue:` — the previous `initialValue:` usage is
-/// why a programmatic filter reset did not update the dropdown (see the
-/// value-sync workaround in `async_dropdown.dart:43-53`).
+/// Takes [value:] (controlled), not `initialValue:` — the previous
+/// `initialValue:` usage is why a programmatic filter reset did not
+/// update the dropdown (see the value-sync workaround in
+/// `async_dropdown.dart:43-53`).
 ///
 /// Does NOT own refresh: each caller keeps calling its own `_applyFilters`
 /// (or setState + refresh) in [onChanged]. The `setState`-then-`refresh`

@@ -13,28 +13,7 @@ import 'package:enote_desktop/features/store_employee/employee/shop_employee_for
 import 'package:enote_desktop/features/store_employee/employee/shop_employee_list_screen.dart';
 import 'package:enote_desktop/features/store_employee/employee/shop_employee_provider.dart';
 
-String _base64UrlSegment(String input) =>
-    base64Url.encode(utf8.encode(input)).replaceAll('=', '');
-
-String _fakeJwt({
-  String subject = '1',
-  String username = 'testuser',
-  String role = 'Instructor',
-  bool isManager = false,
-}) {
-  final header = _base64UrlSegment(jsonEncode({'alg': 'none', 'typ': 'JWT'}));
-  final payload = _base64UrlSegment(jsonEncode({
-    'sub': subject,
-    'unique_name': username,
-    'role': role,
-    if (isManager) 'is_manager': true,
-    'exp': DateTime.now()
-            .add(const Duration(days: 1))
-            .millisecondsSinceEpoch ~/
-        1000,
-  }));
-  return '$header.$payload.signature';
-}
+import 'helpers.dart' as helpers;
 
 class _MockHttpClient extends http.BaseClient {
   final List<String> postUrls = [];
@@ -151,7 +130,7 @@ void main() {
     final authState = AuthState(
       baseUrl: 'http://localhost:5059/api/v1/',
       httpClient: mockClient,
-      tokenReader: () => _fakeJwt(role: 'Instructor'),
+      tokenReader: () => helpers.fakeJwt(username: 'testuser', role: 'Instructor'),
     );
     final apiClient = ApiClient(
       baseUrl: 'http://localhost:5059/api/v1/',
@@ -210,7 +189,7 @@ void main() {
     final authState = AuthState(
       baseUrl: 'http://localhost:5059/api/v1/',
       httpClient: mockClient,
-      tokenReader: () => _fakeJwt(role: 'StoreEmployee', isManager: false),
+      tokenReader: () => helpers.fakeJwt(username: 'testuser', role: 'StoreEmployee', isManager: false),
     );
     final apiClient = ApiClient(
       baseUrl: 'http://localhost:5059/api/v1/',
@@ -249,7 +228,7 @@ void main() {
     final authState = AuthState(
       baseUrl: 'http://localhost:5059/api/v1/',
       httpClient: mockClient,
-      tokenReader: () => _fakeJwt(role: 'StoreEmployee', isManager: true),
+      tokenReader: () => helpers.fakeJwt(username: 'testuser', role: 'StoreEmployee', isManager: true),
     );
     final apiClient = ApiClient(
       baseUrl: 'http://localhost:5059/api/v1/',
@@ -310,7 +289,7 @@ void main() {
     final authState = AuthState(
       baseUrl: 'http://localhost:5059/api/v1/',
       httpClient: mockClient,
-      tokenReader: () => _fakeJwt(role: 'Instructor'),
+      tokenReader: () => helpers.fakeJwt(username: 'testuser', role: 'Instructor'),
     );
     final apiClient = ApiClient(
       baseUrl: 'http://localhost:5059/api/v1/',
@@ -354,7 +333,7 @@ void main() {
     final authState = AuthState(
       baseUrl: 'http://localhost:5059/api/v1/',
       httpClient: mockClient,
-      tokenReader: () => _fakeJwt(role: 'Instructor'),
+      tokenReader: () => helpers.fakeJwt(username: 'testuser', role: 'Instructor'),
     );
     final apiClient = ApiClient(
       baseUrl: 'http://localhost:5059/api/v1/',
@@ -416,7 +395,7 @@ void main() {
     final nonManagerAuthState = AuthState(
       baseUrl: 'http://localhost:5059/api/v1/',
       httpClient: mockClient,
-      tokenReader: () => _fakeJwt(role: 'StoreEmployee', isManager: false, subject: '20'),
+      tokenReader: () => helpers.fakeJwt(username: 'testuser', role: 'StoreEmployee', isManager: false, subject: '20'),
     );
     final nonManagerApiClient = ApiClient(
       baseUrl: 'http://localhost:5059/api/v1/',
@@ -450,7 +429,7 @@ void main() {
     final managerAuthState = AuthState(
       baseUrl: 'http://localhost:5059/api/v1/',
       httpClient: mockClient,
-      tokenReader: () => _fakeJwt(role: 'StoreEmployee', isManager: true, subject: '20'),
+      tokenReader: () => helpers.fakeJwt(username: 'testuser', role: 'StoreEmployee', isManager: true, subject: '20'),
     );
     final managerApiClient = ApiClient(
       baseUrl: 'http://localhost:5059/api/v1/',

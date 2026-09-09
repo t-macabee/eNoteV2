@@ -12,26 +12,7 @@ import 'package:enote_desktop/features/admin/event/event_list_screen.dart';
 import 'package:enote_desktop/features/admin/event/event_provider.dart';
 import 'package:enote_desktop/features/admin/instructor/instructor_provider.dart';
 
-String _base64UrlSegment(String input) =>
-    base64Url.encode(utf8.encode(input)).replaceAll('=', '');
-
-String _fakeJwt({
-  String subject = '1',
-  String username = 'admin',
-  String role = 'Administrator',
-}) {
-  final header = _base64UrlSegment(jsonEncode({'alg': 'none', 'typ': 'JWT'}));
-  final payload = _base64UrlSegment(jsonEncode({
-    'sub': subject,
-    'unique_name': username,
-    'role': role,
-    'exp': DateTime.now()
-            .add(const Duration(days: 1))
-            .millisecondsSinceEpoch ~/
-        1000,
-  }));
-  return '$header.$payload.signature';
-}
+import 'helpers.dart' as helpers;
 
 class _AdminEventMockHttpClient extends http.BaseClient {
   final List<String> requestedUrls = [];
@@ -119,7 +100,7 @@ Widget _buildTestApp(_AdminEventMockHttpClient mockClient) {
   final authState = AuthState(
     baseUrl: 'http://localhost:5059/api/v1/',
     httpClient: mockClient,
-    tokenReader: () => _fakeJwt(),
+    tokenReader: () => helpers.fakeJwt(),
   );
   final apiClient = ApiClient(
     baseUrl: 'http://localhost:5059/api/v1/',

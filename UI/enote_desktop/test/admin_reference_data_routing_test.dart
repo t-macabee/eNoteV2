@@ -11,26 +11,7 @@ import 'package:enote_desktop/features/admin/instrument_type/instrument_type_lis
 import 'package:enote_desktop/features/admin/reference_data/reference_data_dialog.dart';
 import 'package:enote_desktop/main.dart';
 
-String _base64UrlSegment(String input) =>
-    base64Url.encode(utf8.encode(input)).replaceAll('=', '');
-
-String _fakeJwt({
-  String subject = '1',
-  String username = 'admin',
-  String role = 'Administrator',
-}) {
-  final header = _base64UrlSegment(jsonEncode({'alg': 'none', 'typ': 'JWT'}));
-  final payload = _base64UrlSegment(jsonEncode({
-    'sub': subject,
-    'unique_name': username,
-    'role': role,
-    'exp': DateTime.now()
-            .add(const Duration(days: 1))
-            .millisecondsSinceEpoch ~/
-        1000,
-  }));
-  return '$header.$payload.signature';
-}
+import 'helpers.dart' as helpers;
 
 class _MockHttpClient extends http.BaseClient {
   @override
@@ -62,7 +43,7 @@ void main() {
     final authState = AuthState(
       baseUrl: 'http://localhost:5059/api/v1/',
       httpClient: mockClient,
-      tokenReader: () => _fakeJwt(role: 'Administrator'),
+      tokenReader: () => helpers.fakeJwt(role: 'Administrator'),
     );
     final apiClient = ApiClient(
       baseUrl: 'http://localhost:5059/api/v1/',
@@ -113,7 +94,7 @@ void main() {
     final authState = AuthState(
       baseUrl: 'http://localhost:5059/api/v1/',
       httpClient: mockClient,
-      tokenReader: () => _fakeJwt(role: 'Instructor'),
+      tokenReader: () => helpers.fakeJwt(role: 'Instructor'),
     );
     final apiClient = ApiClient(
       baseUrl: 'http://localhost:5059/api/v1/',

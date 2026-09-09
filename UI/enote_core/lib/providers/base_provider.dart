@@ -66,10 +66,6 @@ abstract class ReadOnlyProvider<T> with ChangeNotifier {
 /// Full CRUD surface (without delegated-user provisioning).
 ///
 /// Extends [ReadOnlyProvider] with insert/update/remove/uploadImage.
-/// Providers that also need delegated-user creation (currently
-/// InstructorStudentProvider and ShopEmployeeProvider — two callers, not one,
-/// so [BaseProvider.createDelegatedUser] stays on [BaseProvider] for now)
-/// must stay on [BaseProvider].
 abstract class CrudProvider<T> extends ReadOnlyProvider<T> {
   CrudProvider({
     required super.apiClient,
@@ -128,10 +124,7 @@ abstract class CrudProvider<T> extends ReadOnlyProvider<T> {
 
 /// Wide provider surface kept for backwards compatibility.
 ///
-/// Extends [CrudProvider] with delegated-user provisioning. Kept because two
-/// providers (InstructorStudentProvider, ShopEmployeeProvider) call
-/// [createDelegatedUser]; moving it onto a single provider would break the
-/// other (T9 step 4 precondition does not hold — two callers, not one).
+/// Extends [CrudProvider] with delegated-user provisioning.
 /// New read-only providers should extend [ReadOnlyProvider]; pure CRUD
 /// providers without delegated creation should extend [CrudProvider].
 abstract class BaseProvider<T> extends CrudProvider<T> {
