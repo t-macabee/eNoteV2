@@ -355,4 +355,64 @@ void main() {
     expect(pageTwos, hasLength(1));
     expect(find.text('Učitaj još'), findsNothing);
   });
+
+  testWidgets(
+      'push notification snackbar is floating, has persist false, and auto-dismisses',
+      (tester) async {
+    final harness = _Harness(items: []);
+    await tester.pumpWidget(harness.shellApp());
+    await _settle(tester);
+
+    harness.hub.onPush(
+      NotificationPushDto(
+        title: 'Nova obavijest',
+        body: 'Body text',
+        createdAt: DateTime(2026, 9, 10),
+      ),
+    );
+    // Complete entrance animation and start the display timer
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 750));
+
+    expect(find.text('Nova obavijest'), findsOneWidget);
+    final snackBar = tester.widget<SnackBar>(find.byType(SnackBar));
+    expect(snackBar.persist, isFalse);
+    expect(snackBar.behavior, SnackBarBehavior.floating);
+    expect(snackBar.duration, const Duration(seconds: 4));
+
+    // Fast forward past the 4-second display duration and settle exit animation
+    await tester.pump(const Duration(seconds: 4));
+    await tester.pumpAndSettle();
+    expect(find.text('Nova obavijest'), findsNothing);
+  });
+
+  testWidgets(
+      'consecutive push notifications clear previous snackbars without queuing',
+      (tester) async {
+    final harness = _Harness(items: []);
+    await tester.pumpWidget(harness.shellApp());
+    await _settle(tester);
+
+    harness.hub.onPush(
+      NotificationPushDto(
+        title: 'First push',
+        body: 'Body 1',
+        createdAt: DateTime(2026, 9, 10),
+      ),
+    );
+    await tester.pump();
+    expect(find.text('First push'), findsOneWidget);
+
+    harness.hub.onPush(
+      NotificationPushDto(
+        title: 'Second push',
+        body: 'Body 2',
+        createdAt: DateTime(2026, 9, 10),
+      ),
+    );
+    await tester.pump();
+    expect(find.text('Second push'), findsOneWidget);
+    expect(find.text('First push'), findsNothing);
+  });
 }
+

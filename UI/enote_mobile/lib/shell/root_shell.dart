@@ -48,6 +48,7 @@ class RootShellState extends State<RootShell> with WidgetsBindingObserver {
   bool _booted = false;
   late final List<GlobalKey<NavigatorState>> _navKeys;
   NotificationController? _notifications;
+  NotificationHubClient? _hub;
 
   @override
   void initState() {
@@ -72,6 +73,7 @@ class RootShellState extends State<RootShell> with WidgetsBindingObserver {
     _notifications = notifications;
     notifications.startPolling();
     final hub = context.read<NotificationHubClient>();
+    _hub = hub;
     hub.onRefresh = () {
       notifications.refresh();
     };
@@ -86,6 +88,10 @@ class RootShellState extends State<RootShell> with WidgetsBindingObserver {
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _notifications?.stopPolling();
+    if (_hub != null) {
+      _hub!.onRefresh = () {};
+      _hub!.onPush = (_) {};
+    }
     super.dispose();
   }
 
@@ -105,9 +111,14 @@ class RootShellState extends State<RootShell> with WidgetsBindingObserver {
 
   void _showPushSnack(NotificationPushDto push) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.clearSnackBars();
+    messenger.showSnackBar(
       SnackBar(
         content: Text(push.title),
+        duration: const Duration(seconds: 4),
+        persist: false,
+        behavior: SnackBarBehavior.floating,
         action: SnackBarAction(
           label: 'Prikaži',
           onPressed: () => Navigator.of(
