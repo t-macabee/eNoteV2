@@ -32,7 +32,11 @@ class _InstructorStudentListScreenState
 
   @override
   Widget build(BuildContext context) {
-    final provider = context.watch<InstructorStudentProvider>();
+    // Read, not watch: data flows through PagedFetchController.fetcher and
+    // the only mutation path (_openCreateForm) ends with an explicit
+    // refresh(). Watching here would rebuild the whole grid on every
+    // notifyListeners() without changing the fetched page (T11).
+    final provider = context.read<InstructorStudentProvider>();
 
     return EntityGridScreen<StudentDto>(
       key: _gridKey,

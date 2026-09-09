@@ -12,26 +12,7 @@ import 'package:enote_desktop/features/admin/users/admin_user_provider.dart';
 import 'package:enote_desktop/features/admin/users/store_employee_provider.dart';
 import 'package:enote_desktop/features/admin/users/user_grid_screen.dart';
 
-String _base64UrlSegment(String input) =>
-    base64Url.encode(utf8.encode(input)).replaceAll('=', '');
-
-String _fakeJwt({
-  String subject = '1',
-  String username = 'admin',
-  String role = 'Administrator',
-}) {
-  final header = _base64UrlSegment(jsonEncode({'alg': 'none', 'typ': 'JWT'}));
-  final payload = _base64UrlSegment(jsonEncode({
-    'sub': subject,
-    'unique_name': username,
-    'role': role,
-    'exp': DateTime.now()
-            .add(const Duration(days: 1))
-            .millisecondsSinceEpoch ~/
-        1000,
-  }));
-  return '$header.$payload.signature';
-}
+import 'helpers.dart' as helpers;
 
 class _AdminUsersMockHttpClient extends http.BaseClient {
   final List<String> requestedUrls = [];
@@ -197,7 +178,7 @@ void main() {
       final authState = AuthState(
         baseUrl: 'http://localhost:5059/api/v1/',
         httpClient: mockClient,
-        tokenReader: () => _fakeJwt(),
+        tokenReader: () => helpers.fakeJwt(),
       );
       final apiClient = ApiClient(
         baseUrl: 'http://localhost:5059/api/v1/',
@@ -263,7 +244,7 @@ void main() {
       final authState = AuthState(
         baseUrl: 'http://localhost:5059/api/v1/',
         httpClient: mockClient,
-        tokenReader: () => _fakeJwt(),
+        tokenReader: () => helpers.fakeJwt(),
       );
       final apiClient = ApiClient(
         baseUrl: 'http://localhost:5059/api/v1/',
@@ -334,7 +315,7 @@ void main() {
       final authState = AuthState(
         baseUrl: 'http://localhost:5059/api/v1/',
         httpClient: mockClient,
-        tokenReader: () => _fakeJwt(),
+        tokenReader: () => helpers.fakeJwt(),
       );
       final apiClient = ApiClient(
         baseUrl: 'http://localhost:5059/api/v1/',
@@ -375,7 +356,7 @@ void main() {
       // Search for "Chopin"
       final searchField = find.widgetWithText(TextField, 'Pretraži po imenu...');
       await tester.enterText(searchField, 'Chopin');
-      await tester.pump(const Duration(milliseconds: 400));
+      await helpers.pumpPastDebounce(tester);
       await tester.pumpAndSettle();
 
       expect(find.text('Frederic Chopin'), findsOneWidget);
@@ -423,7 +404,7 @@ void main() {
       final authState = AuthState(
         baseUrl: 'http://localhost:5059/api/v1/',
         httpClient: mockClient,
-        tokenReader: () => _fakeJwt(),
+        tokenReader: () => helpers.fakeJwt(),
       );
       final apiClient = ApiClient(
         baseUrl: 'http://localhost:5059/api/v1/',
@@ -464,7 +445,7 @@ void main() {
       // Search for "Chopin"
       final searchField = find.widgetWithText(TextField, 'Pretraži po imenu...');
       await tester.enterText(searchField, 'Chopin');
-      await tester.pump(const Duration(milliseconds: 400));
+      await helpers.pumpPastDebounce(tester);
       await tester.pumpAndSettle();
 
       // Open details dialog for Frederic Chopin

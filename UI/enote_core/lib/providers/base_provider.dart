@@ -6,19 +6,21 @@ import '../api/api_response.dart';
 import '../models/identity/auth_models.dart';
 import '../paging/paged_result.dart';
 
-abstract class BaseProvider<T> with ChangeNotifier {
+/// Read-only provider surface: search/getById only.
+///
+/// Used by providers whose screens demonstrably call only the narrow subset
+/// (e.g. AdminCourse, Instructor/Student/StoreEmployee lookup for the Users
+/// union view, shop address/type lookups, catalog). Providers that need
+/// insert/update/remove/uploadImage must extend [CrudProvider] (or
+/// [BaseProvider] when they also need [BaseProvider.createDelegatedUser]).
+abstract class ReadOnlyProvider<T> with ChangeNotifier {
   final ApiClient apiClient;
   final String endpoint;
 
-  BaseProvider({
+  ReadOnlyProvider({
     required this.apiClient,
     required this.endpoint,
   });
-
-  Future<int> createDelegatedUser(DelegatedUserCreateRequest request) async {
-    final data = decodeOrThrow(await apiClient.post(endpoint, body: request.toJson()));
-    return data['userId'] as int? ?? 0;
-  }
 
   T fromJson(Map<String, dynamic> json);
 
@@ -52,6 +54,28 @@ abstract class BaseProvider<T> with ChangeNotifier {
     );
   }
 
+  Future<T> getById(int id) async {
+    final response = await apiClient.get('$endpoint/$id');
+    final data = decodeOrThrow(response);
+    return fromJson(data);
+  }
+
+  Future<PagedResult<T>> search(Map<String, dynamic> params) => getPage(params: params);
+}
+
+/// Full CRUD surface (without delegated-user provisioning).
+///
+/// Extends [ReadOnlyProvider] with insert/update/remove/uploadImage.
+/// Providers that also need delegated-user creation (currently
+/// InstructorStudentProvider and ShopEmployeeProvider — two callers, not one,
+/// so [BaseProvider.createDelegatedUser] stays on [BaseProvider] for now)
+/// must stay on [BaseProvider].
+abstract class CrudProvider<T> extends ReadOnlyProvider<T> {
+  CrudProvider({
+    required super.apiClient,
+    required super.endpoint,
+  });
+
   Future<T> uploadImage(
     int id,
     List<int> bytes,
@@ -69,12 +93,6 @@ abstract class BaseProvider<T> with ChangeNotifier {
     final updated = fromJson(data);
     notifyListeners();
     return updated;
-  }
-
-  Future<T> getById(int id) async {
-    final response = await apiClient.get('$endpoint/$id');
-    final data = decodeOrThrow(response);
-    return fromJson(data);
   }
 
   Future<T?> insert(Map<String, dynamic> request) async {
@@ -106,6 +124,24 @@ abstract class BaseProvider<T> with ChangeNotifier {
     throwIfError(response);
     notifyListeners();
   }
+}
 
-  Future<PagedResult<T>> search(Map<String, dynamic> params) => getPage(params: params);
+/// Wide provider surface kept for backwards compatibility.
+///
+/// Extends [CrudProvider] with delegated-user provisioning. Kept because two
+/// providers (InstructorStudentProvider, ShopEmployeeProvider) call
+/// [createDelegatedUser]; moving it onto a single provider would break the
+/// other (T9 step 4 precondition does not hold — two callers, not one).
+/// New read-only providers should extend [ReadOnlyProvider]; pure CRUD
+/// providers without delegated creation should extend [CrudProvider].
+abstract class BaseProvider<T> extends CrudProvider<T> {
+  BaseProvider({
+    required super.apiClient,
+    required super.endpoint,
+  });
+
+  Future<int> createDelegatedUser(DelegatedUserCreateRequest request) async {
+    final data = decodeOrThrow(await apiClient.post(endpoint, body: request.toJson()));
+    return data['userId'] as int? ?? 0;
+  }
 }

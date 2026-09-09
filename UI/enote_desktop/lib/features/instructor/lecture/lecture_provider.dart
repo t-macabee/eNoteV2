@@ -1,6 +1,6 @@
 import 'package:enote_core/enote_core.dart';
 
-class LectureProvider extends BaseProvider<LectureDto> {
+class LectureProvider extends CrudProvider<LectureDto> {
   LectureProvider({required super.apiClient}) : super(endpoint: 'instructor/lectures');
 
   @override

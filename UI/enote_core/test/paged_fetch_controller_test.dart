@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:enote_core/enote_core.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-
+import 'helpers.dart' as helpers;
 
 /// Records every (page, pageSize, search) triple the controller asks for, and
 /// lets a test hold a response open so overlapping loads can be arranged.
@@ -35,9 +35,9 @@ class _RecordingFetcher {
   }
 }
 
-/// Long enough for the controller's 300 ms search debounce to elapse.
-Future<void> pastDebounce() =>
-    Future<void>.delayed(const Duration(milliseconds: 400));
+/// Shared helper from helpers.dart so the delay tracks
+/// [PagedFetchController.defaultSearchDebounce] and cannot drift (T13).
+Future<void> pastDebounce() => helpers.pastDebounce();
 
 void main() {
   group('PagedFetchController', () {

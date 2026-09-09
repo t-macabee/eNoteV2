@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
+import '../../../widgets/entity_filter_dropdown.dart';
 import '../../../widgets/entity_grid_screen.dart';
 import 'course_catalog_detail_dialog.dart';
 import 'course_catalog_provider.dart';
@@ -18,6 +19,7 @@ class _CourseCatalogScreenState extends State<CourseCatalogScreen> {
 
   int? _selectedInstructorId;
   List<CourseCatalogInstructorDto> _instructors = [];
+  CourseCatalogSummaryDto? _summary;
 
   @override
   void initState() {
@@ -37,31 +39,37 @@ class _CourseCatalogScreenState extends State<CourseCatalogScreen> {
     } catch (_) {
       // Catalog still works without instructor dropdown items.
     }
+
+    try {
+      final summary = await provider.getCatalogSummary();
+      if (mounted) {
+        setState(() {
+          _summary = summary;
+        });
+      }
+    } catch (_) {
+      // If the call fails, render nothing — never block the catalog on it.
+    }
   }
 
   Widget _buildFilterBar() {
-    return SizedBox(
+    return EntityFilterDropdown<int?>(
+      label: 'Instruktor',
       width: 240,
-      child: DropdownButtonFormField<int?>(
-        isExpanded: true,
-        initialValue: _selectedInstructorId,
-        decoration: const InputDecoration(
-          labelText: 'Instruktor',
-          border: OutlineInputBorder(),
-        ),
-        items: [
-          const DropdownMenuItem(value: null, child: Text('Svi instruktori')),
-          for (final instructor in _instructors)
-            DropdownMenuItem(
-              value: instructor.id,
-              child: Text(instructor.name ?? 'Instruktor #${instructor.id}'),
-            ),
-        ],
-        onChanged: (value) {
-          setState(() => _selectedInstructorId = value);
-          _gridKey.currentState?.refresh(resetPage: true);
-        },
-      ),
+      outlined: true,
+      value: _selectedInstructorId,
+      items: [
+        const DropdownMenuItem(value: null, child: Text('Svi instruktori')),
+        for (final instructor in _instructors)
+          DropdownMenuItem(
+            value: instructor.id,
+            child: Text(instructor.name ?? 'Instruktor #${instructor.id}'),
+          ),
+      ],
+      onChanged: (value) {
+        setState(() => _selectedInstructorId = value);
+        _gridKey.currentState?.refresh(resetPage: true);
+      },
     );
   }
 
@@ -76,6 +84,17 @@ class _CourseCatalogScreenState extends State<CourseCatalogScreen> {
         searchHint: 'Pretraži po nazivu...',
         filterBar: _buildFilterBar(),
         showAddButton: false,
+        trailing: _summary != null
+            ? Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Text(
+                    '${_summary!.totalCourses} kurseva · ${_summary!.totalStudents} studenata',
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                ),
+              )
+            : null,
         onTap: (context, item) => CourseCatalogDetailDialog.show(context, item),
         fetcher: (page, pageSize, search) => context
             .read<CourseCatalogProvider>()

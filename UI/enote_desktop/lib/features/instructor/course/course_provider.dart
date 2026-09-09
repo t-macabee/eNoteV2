@@ -1,6 +1,6 @@
 import 'package:enote_core/enote_core.dart';
 
-class CourseProvider extends BaseProvider<CourseDto> {
+class CourseProvider extends CrudProvider<CourseDto> {
   CourseProvider({
     required super.apiClient,
   }) : super(endpoint: 'instructor/courses');

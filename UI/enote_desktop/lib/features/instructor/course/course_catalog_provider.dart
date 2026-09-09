@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:enote_core/enote_core.dart';
 
-class CourseCatalogProvider extends BaseProvider<CourseDto> {
+class CourseCatalogProvider extends ReadOnlyProvider<CourseDto> {
   CourseCatalogProvider({
     required super.apiClient,
   }) : super(endpoint: 'instructor/courses/catalog');

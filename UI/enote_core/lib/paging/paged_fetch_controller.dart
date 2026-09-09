@@ -31,11 +31,16 @@ typedef PagedFetcher<T> = Future<PagedResult<T>> Function(
 /// callback fires only for a response that is still current, and the owning
 /// widget is responsible for its own `mounted` check.
 class PagedFetchController<T> extends ChangeNotifier {
+  /// Default search debounce. Exposed so tests can reference it instead of
+  /// hardcoding `400 ms` pumps (T13) — if this changes, `pastDebounce()` in
+  /// `test/helpers.dart` and widget-test pumps follow automatically.
+  static const Duration defaultSearchDebounce = Duration(milliseconds: 300);
+
   PagedFetchController({
     required this.fetcher,
     required this.pageSize,
     this.onError,
-    this.searchDebounceDuration = const Duration(milliseconds: 300),
+    this.searchDebounceDuration = defaultSearchDebounce,
   }) {
     searchController.addListener(_onSearchChanged);
   }

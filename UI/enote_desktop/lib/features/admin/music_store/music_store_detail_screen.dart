@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
+import '../../../widgets/entity_filter_dropdown.dart';
 import '../../../widgets/entity_form_scaffold.dart';
 import '../../../widgets/entity_grid_screen.dart';
 import '../../../widgets/store_profile_panel.dart';
@@ -159,30 +160,26 @@ class _MusicStoreDetailScreenState extends State<MusicStoreDetailScreen> {
                                 subtitleOf: (i) => i.manufacturer,
                                 imageUrlOf: (i) => i.imagePath,
                                 showAddButton: false,
-                                filterBar: SizedBox(
+                                filterBar: EntityFilterDropdown<int?>(
+                                  label: 'Tip instrumenta',
                                   width: 220,
-                                  child: DropdownButtonFormField<int?>(
-                                    isExpanded: true,
-                                    initialValue: _instrumentTypeId,
-                                    decoration: const InputDecoration(
-                                        labelText: 'Tip instrumenta'),
-                                    items: [
-                                      const DropdownMenuItem(
-                                        value: null,
-                                        child: Text('Svi instrumenti'),
+                                  value: _instrumentTypeId,
+                                  items: [
+                                    const DropdownMenuItem(
+                                      value: null,
+                                      child: Text('Svi instrumenti'),
+                                    ),
+                                    ..._instrumentTypes.map(
+                                      (type) => DropdownMenuItem(
+                                        value: type.id,
+                                        child: Text(type.type),
                                       ),
-                                      ..._instrumentTypes.map(
-                                        (type) => DropdownMenuItem(
-                                          value: type.id,
-                                          child: Text(type.type),
-                                        ),
-                                      ),
-                                    ],
-                                    onChanged: (typeId) {
-                                      _instrumentTypeId = typeId;
-                                      _applyFilters();
-                                    },
-                                  ),
+                                    ),
+                                  ],
+                                  onChanged: (typeId) {
+                                    _instrumentTypeId = typeId;
+                                    _applyFilters();
+                                  },
                                 ),
                                 groupKeyOf: _instrumentTypeId == null
                                     ? (i) => i.instrumentType.isNotEmpty

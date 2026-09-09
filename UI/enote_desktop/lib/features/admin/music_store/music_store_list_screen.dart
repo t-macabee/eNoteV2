@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
+import '../../../widgets/entity_filter_dropdown.dart';
 import '../../../widgets/entity_form_scaffold.dart';
 import '../../../widgets/entity_grid_screen.dart';
 import '../../../widgets/pdf_report_button.dart';
@@ -72,22 +73,21 @@ class _MusicStoreListScreenState extends State<MusicStoreListScreen> {
           );
           _gridKey.currentState?.refresh();
         },
-        filterBar: SizedBox(
+        filterBar: EntityFilterDropdown<int?>(
+          label: 'Grad',
           width: 220,
-          child: DropdownButtonFormField<int?>(
-            initialValue: _cityId,
-            decoration: const InputDecoration(labelText: 'Grad'),
-            items: [
-              const DropdownMenuItem(value: null, child: Text('Svi gradovi')),
-              ..._cities.map(
-                (city) => DropdownMenuItem(value: city.id, child: Text(city.name)),
-              ),
-            ],
-            onChanged: (cityId) {
-              _cityId = cityId;
-              _applyFilters();
-            },
-          ),
+          isExpanded: false,
+          value: _cityId,
+          items: [
+            const DropdownMenuItem(value: null, child: Text('Svi gradovi')),
+            ..._cities.map(
+              (city) => DropdownMenuItem(value: city.id, child: Text(city.name)),
+            ),
+          ],
+          onChanged: (cityId) {
+            _cityId = cityId;
+            _applyFilters();
+          },
         ),
         // Read `_cityId` at call time (a field), not a snapshot — matches
         // UserGridScreen's rationale: setState doesn't rebuild

@@ -1,6 +1,6 @@
 import 'package:enote_core/enote_core.dart';
 
-class InstructorProvider extends BaseProvider<InstructorDto> {
+class InstructorProvider extends ReadOnlyProvider<InstructorDto> {
   InstructorProvider({
     required super.apiClient,
   }) : super(endpoint: 'admin/instructors');

@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:enote_core/enote_core.dart';
 
 import '../../../theme/app_theme.dart';
+import '../../../widgets/entity_filter_dropdown.dart';
 import '../../../widgets/entity_form_scaffold.dart';
 import '../../../widgets/entity_grid_screen.dart';
 import '../instructor/instructor_provider.dart';
@@ -369,30 +370,27 @@ class _UserGridScreenState extends State<UserGridScreen> {
         filterBar: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            SizedBox(
+            EntityFilterDropdown<UserRole?>(
+              label: 'Uloga',
               width: 220,
-              child: DropdownButtonFormField<UserRole?>(
-                isExpanded: true,
-                initialValue: _role,
-                decoration: const InputDecoration(labelText: 'Uloga'),
-                items: const [
-                  DropdownMenuItem(value: null, child: Text('Svi korisnici')),
-                  DropdownMenuItem(
-                    value: UserRole.instructor,
-                    child: Text('Instruktor'),
-                  ),
-                  DropdownMenuItem(
-                      value: UserRole.student, child: Text('Student')),
-                  DropdownMenuItem(
-                    value: UserRole.storeEmployee,
-                    child: Text('StoreEmployee'),
-                  ),
-                ],
-                onChanged: (role) {
-                  _role = role;
-                  _applyFilters();
-                },
-              ),
+              value: _role,
+              items: const [
+                DropdownMenuItem(value: null, child: Text('Svi korisnici')),
+                DropdownMenuItem(
+                  value: UserRole.instructor,
+                  child: Text('Instruktor'),
+                ),
+                DropdownMenuItem(
+                    value: UserRole.student, child: Text('Student')),
+                DropdownMenuItem(
+                  value: UserRole.storeEmployee,
+                  child: Text('StoreEmployee'),
+                ),
+              ],
+              onChanged: (role) {
+                _role = role;
+                _applyFilters();
+              },
             ),
             const SizedBox(width: 12),
             SizedBox(

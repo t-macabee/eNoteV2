@@ -151,7 +151,9 @@ void main() {
     expect(find.text('Titova 10, Sarajevo'), findsOneWidget);
     expect(find.text('+387 33 555 777'), findsOneWidget);
     expect(find.text('09:00 - 19:00'), findsOneWidget);
-    expect(find.widgetWithText(ElevatedButton, 'Uredi'), findsOneWidget);
+    // f886c6a intentionally restyled Uredi from Elevated to Outlined;
+    // the test was stale. Assert the current Outlined rendering.
+    expect(find.widgetWithText(OutlinedButton, 'Uredi'), findsOneWidget);
 
     // Verify right panel instruments
     expect(find.text('Stratocaster Player'), findsOneWidget);

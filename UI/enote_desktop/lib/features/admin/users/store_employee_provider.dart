@@ -1,6 +1,6 @@
 import 'package:enote_core/enote_core.dart';
 
-class StoreEmployeeProvider extends BaseProvider<ShopEmployeeDto> {
+class StoreEmployeeProvider extends ReadOnlyProvider<ShopEmployeeDto> {
   StoreEmployeeProvider({
     required super.apiClient,
     super.endpoint = 'admin/employees',

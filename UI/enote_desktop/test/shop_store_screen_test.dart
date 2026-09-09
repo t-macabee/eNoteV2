@@ -20,28 +20,7 @@ import 'package:enote_desktop/features/store_employee/store/shop_store_screen.da
 import 'package:enote_desktop/shell/master_screen.dart';
 import 'package:enote_desktop/widgets/entity_grid_screen.dart';
 
-String _base64UrlSegment(String input) =>
-    base64Url.encode(utf8.encode(input)).replaceAll('=', '');
-
-String _fakeJwt({
-  String subject = '1',
-  String username = 'testuser',
-  String role = 'StoreEmployee',
-  bool isManager = false,
-}) {
-  final header = _base64UrlSegment(jsonEncode({'alg': 'none', 'typ': 'JWT'}));
-  final payload = _base64UrlSegment(jsonEncode({
-    'sub': subject,
-    'unique_name': username,
-    'role': role,
-    if (isManager) 'is_manager': true,
-    'exp': DateTime.now()
-            .add(const Duration(days: 1))
-            .millisecondsSinceEpoch ~/
-        1000,
-  }));
-  return '$header.$payload.signature';
-}
+import 'helpers.dart' as helpers;
 
 class _MockHttpClient extends http.BaseClient {
   final List<String> putBodies = [];
@@ -178,7 +157,7 @@ Widget _buildTestApp({
 }) {
   final authState = AuthState(
     baseUrl: 'http://localhost:5059/api/v1/',
-    tokenReader: () => _fakeJwt(role: 'StoreEmployee', isManager: isManager),
+    tokenReader: () => helpers.fakeJwt(role: 'StoreEmployee', isManager: isManager),
   );
   final apiClient = ApiClient(
     baseUrl: 'http://localhost:5059/api/v1/',
@@ -213,7 +192,7 @@ Widget _buildMasterTestApp({
 }) {
   final authState = AuthState(
     baseUrl: 'http://localhost:5059/api/v1/',
-    tokenReader: () => _fakeJwt(role: 'StoreEmployee', isManager: isManager),
+    tokenReader: () => helpers.fakeJwt(role: 'StoreEmployee', isManager: isManager),
   );
   final apiClient = ApiClient(
     baseUrl: 'http://localhost:5059/api/v1/',
@@ -399,11 +378,13 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('Dostupan'), findsOneWidget);
-    expect(find.widgetWithText(FilledButton, 'Uredi'), findsOneWidget);
+    // f886c6a intentionally restyled Uredi from Filled to Outlined;
+    // the test was stale. Assert the current Outlined rendering.
+    expect(find.widgetWithText(OutlinedButton, 'Uredi'), findsOneWidget);
     expect(find.widgetWithText(OutlinedButton, 'Obriši'), findsOneWidget);
 
     // Tap Uredi to open InstrumentFormScreen, then close it
-    await tester.tap(find.widgetWithText(FilledButton, 'Uredi'));
+    await tester.tap(find.widgetWithText(OutlinedButton, 'Uredi'));
     await tester.pumpAndSettle();
 
     expect(find.byType(InstrumentFormScreen), findsOneWidget);

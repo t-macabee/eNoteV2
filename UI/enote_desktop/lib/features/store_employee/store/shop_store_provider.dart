@@ -1,12 +1,26 @@
+import 'package:flutter/foundation.dart';
+
 import 'package:enote_core/enote_core.dart';
 
-class ShopStoreProvider extends BaseProvider<MusicStoreDto> {
-  ShopStoreProvider({required super.apiClient}) : super(endpoint: 'shop/store');
+/// Singleton store provider for `shop/store` (own store only).
+///
+/// Deliberately does NOT extend [BaseProvider]/[CrudProvider]/[ReadOnlyProvider]:
+/// `shop/store` is a single-record resource with no id-taking
+/// list/search/insert/update/remove shape. Previously it inherited those
+/// methods and overrode `update(id,…)`/`uploadImage(id,…)` to discard `id` —
+/// a Liskov violation (T9). The id-discarding overrides are deleted; callers
+/// must use [getOwnStore]/[updateOwnStore]/[uploadOwnStoreImage] directly.
+/// Verified: no screen calls search/getById/insert/remove on this provider;
+/// `shop_store_provider_test` exercises only getOwnStore/updateOwnStore.
+class ShopStoreProvider with ChangeNotifier {
+  final ApiClient apiClient;
+  final String endpoint = 'shop/store';
+
+  ShopStoreProvider({required this.apiClient});
 
   MusicStoreDto? _store;
   MusicStoreDto? get store => _store;
 
-  @override
   MusicStoreDto fromJson(Map<String, dynamic> json) =>
       MusicStoreDto.fromJson(json);
 
@@ -44,17 +58,4 @@ class ShopStoreProvider extends BaseProvider<MusicStoreDto> {
     notifyListeners();
     return _store!;
   }
-
-  @override
-  Future<MusicStoreDto> update(int id, Map<String, dynamic> request) =>
-      updateOwnStore(request);
-
-  @override
-  Future<MusicStoreDto> uploadImage(
-    int id,
-    List<int> bytes,
-    String fileName,
-    String contentType,
-  ) =>
-      uploadOwnStoreImage(bytes, fileName, contentType);
 }

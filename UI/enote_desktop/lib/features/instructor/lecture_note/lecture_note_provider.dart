@@ -1,6 +1,6 @@
 import 'package:enote_core/enote_core.dart';
 
-class LectureNoteProvider extends BaseProvider<LectureNoteDto> {
+class LectureNoteProvider extends CrudProvider<LectureNoteDto> {
   LectureNoteProvider({required super.apiClient, required int lectureId})
       : super(endpoint: 'instructor/lectures/$lectureId/notes');
 

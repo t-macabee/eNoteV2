@@ -1,6 +1,6 @@
 import 'package:enote_core/enote_core.dart';
 
-class EventProvider extends BaseProvider<EventDto> {
+class EventProvider extends CrudProvider<EventDto> {
   EventProvider({
     required super.apiClient,
   }) : super(endpoint: 'admin/events');

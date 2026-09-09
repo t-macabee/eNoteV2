@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
+import '../../../widgets/entity_filter_dropdown.dart';
 import '../../../widgets/entity_list_screen.dart';
 import '../../../widgets/pdf_report_button.dart';
 import '../instrument/instrument_provider.dart';
@@ -42,29 +43,26 @@ class _RentalListScreenState extends State<RentalListScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: [
-          SizedBox(
+          EntityFilterDropdown<InstrumentRentalStatus?>(
+            label: 'Status',
             width: 220,
-            child: DropdownButtonFormField<InstrumentRentalStatus?>(
-              isExpanded: true,
-              initialValue: _selectedStatus,
-              decoration: const InputDecoration(
-                labelText: 'Status',
-                border: OutlineInputBorder(),
-              ),
-              items: [
-                const DropdownMenuItem(value: null, child: Text('Svi statusi')),
-                for (final status in InstrumentRentalStatus.values)
-                  DropdownMenuItem(value: status, child: Text(rentalStatusLabel(status))),
-              ],
-              onChanged: (value) {
-                setState(() => _selectedStatus = value);
-                _listKey.currentState?.refresh();
-              },
-            ),
+            outlined: true,
+            value: _selectedStatus,
+            items: [
+              const DropdownMenuItem(value: null, child: Text('Svi statusi')),
+              for (final status in InstrumentRentalStatus.values)
+                DropdownMenuItem(value: status, child: Text(rentalStatusLabel(status))),
+            ],
+            onChanged: (value) {
+              setState(() => _selectedStatus = value);
+              _listKey.currentState?.refresh();
+            },
           ),
           const SizedBox(width: 16),
           SizedBox(
             width: 220,
+            // Genuinely-async instrument filter: stays on FutureBuilder +
+            // DropdownButtonFormField (T12 explicitly excludes async filters).
             child: FutureBuilder<List<InstrumentDto>>(
               future: _instrumentsFuture,
               builder: (context, snapshot) {

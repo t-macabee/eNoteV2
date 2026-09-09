@@ -4,9 +4,9 @@ import 'package:enote_core/enote_core.dart';
 /// against `admin/users/{id}`, previously issued as raw [ApiClient] calls
 /// from [UserGridScreen]'s widget state.
 ///
-/// `remove(id)` (hard delete) is inherited from [BaseProvider] and already
+/// `remove(id)` (hard delete) is inherited from [CrudProvider] and already
 /// does the status check — do not add a fourth delete method here.
-class AdminUserProvider extends BaseProvider<UserProfileResponse> {
+class AdminUserProvider extends CrudProvider<UserProfileResponse> {
   AdminUserProvider({required super.apiClient}) : super(endpoint: 'admin/users');
 
   @override

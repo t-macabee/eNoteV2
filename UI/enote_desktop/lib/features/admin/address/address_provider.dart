@@ -1,6 +1,6 @@
 import 'package:enote_core/enote_core.dart';
 
-class AddressProvider extends BaseProvider<AddressReferenceDto> {
+class AddressProvider extends CrudProvider<AddressReferenceDto> {
   AddressProvider({
     required super.apiClient,
   }) : super(endpoint: 'admin/addresses');

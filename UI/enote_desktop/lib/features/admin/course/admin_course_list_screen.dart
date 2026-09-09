@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
 
+import '../../../widgets/entity_filter_dropdown.dart';
 import '../../../widgets/entity_grid_screen.dart';
 import 'admin_course_provider.dart';
 
@@ -37,21 +38,20 @@ class _AdminCourseListScreenState extends State<AdminCourseListScreen> {
         searchHint: 'Pretraži po nazivu...',
         placeholderIcon: Icons.class_,
         titleOf: (item) => item.name,
-        filterBar: SizedBox(
+        filterBar: EntityFilterDropdown<bool?>(
+          label: 'Objavljen',
           width: 220,
-          child: DropdownButtonFormField<bool?>(
-            initialValue: _isPublished,
-            decoration: const InputDecoration(labelText: 'Objavljen'),
-            items: const [
-              DropdownMenuItem(value: null, child: Text('Svi')),
-              DropdownMenuItem(value: false, child: Text('Ne')),
-              DropdownMenuItem(value: true, child: Text('Da')),
-            ],
-            onChanged: (isPublished) {
-              _isPublished = isPublished;
-              _applyFilters();
-            },
-          ),
+          isExpanded: false,
+          value: _isPublished,
+          items: const [
+            DropdownMenuItem(value: null, child: Text('Svi')),
+            DropdownMenuItem(value: false, child: Text('Ne')),
+            DropdownMenuItem(value: true, child: Text('Da')),
+          ],
+          onChanged: (isPublished) {
+            _isPublished = isPublished;
+            _applyFilters();
+          },
         ),
         showAddButton: false,
         fetcher: (page, pageSize, search) => context.read<AdminCourseProvider>().search(pagedQuery(page, pageSize, search, searchField: 'name', filters: {
