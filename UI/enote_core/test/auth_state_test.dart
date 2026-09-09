@@ -4,16 +4,16 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:enote_core/enote_core.dart';
 
-import 'helpers.dart' as helpers;
+import 'helpers.dart';
 
 void main() {
   group('AuthState.login', () {
     test('a 200 with a valid JWT authenticates and populates roles', () async {
-      final httpClient = helpers.RecordingHttpClient(body: {
+      final httpClient = RecordingHttpClient(body: {
         'userId': 1,
         'username': 'ana',
         'roles': ['Instructor'],
-        'token': helpers.fakeJwt(role: 'Instructor'),
+        'token': fakeJwt(role: 'Instructor'),
       });
       final authState = AuthState(
         baseUrl: 'http://localhost:5059/api/v1/',
@@ -38,7 +38,7 @@ void main() {
     });
 
     test('a 401 throws ApiException with the mapped Bosnian message', () async {
-      final httpClient = helpers.RecordingHttpClient(
+      final httpClient = RecordingHttpClient(
         statusCode: 401,
         body: {
           'status': 401,
@@ -63,11 +63,11 @@ void main() {
     });
 
     test('is_manager claim is correctly decoded into authState.isManager', () async {
-      final httpClient = helpers.RecordingHttpClient(body: {
+      final httpClient = RecordingHttpClient(body: {
         'userId': 2,
         'username': 'manager_bob',
         'roles': ['StoreEmployee'],
-        'token': helpers.fakeJwt(
+        'token': fakeJwt(
           subject: '2',
           username: 'manager_bob',
           role: 'StoreEmployee',

@@ -111,6 +111,15 @@ public sealed class RentalController(
     }
 
     [Authorize(Roles = AppRoles.Student)]
+    [HttpGet("~/api/v{version:apiVersion}/student/rentals/debt")]
+    [ProducesResponseType(typeof(RentalDebtDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<RentalDebtDto>> GetDebtForStudent(CancellationToken cancellationToken)
+    {
+        var dto = await queryService.GetDebtForStudentAsync(cancellationToken);
+        return Ok(dto);
+    }
+
+    [Authorize(Roles = AppRoles.Student)]
     [HttpGet("~/api/v{version:apiVersion}/student/rentals/{id:int}")]
     [ProducesResponseType(typeof(InstrumentRentalDto), StatusCodes.Status200OK)]
     public async Task<ActionResult<InstrumentRentalDto>> GetByIdForStudent(int id, CancellationToken cancellationToken)

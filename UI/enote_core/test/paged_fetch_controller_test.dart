@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:enote_core/enote_core.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'helpers.dart' as helpers;
+import 'helpers.dart';
 
 /// Records every (page, pageSize, search) triple the controller asks for, and
 /// lets a test hold a response open so overlapping loads can be arranged.
@@ -35,10 +35,6 @@ class _RecordingFetcher {
   }
 }
 
-/// Shared helper from helpers.dart so the delay tracks
-/// [PagedFetchController.defaultSearchDebounce] and cannot drift.
-Future<void> pastDebounce() => helpers.pastDebounce();
-
 void main() {
   group('PagedFetchController', () {
     test('load() fetches page 1 and exposes items and total count', () async {
@@ -58,6 +54,9 @@ void main() {
     });
 
     test('passes its configured pageSize through unchanged', () async {
+      // I1: the list uses 20 and the grid uses 24. A controller that
+      // substituted a default of its own would silently repaginate one of
+      // them, which no widget test would catch.
       final fetcher = _RecordingFetcher();
       final controller =
           PagedFetchController<String>(fetcher: fetcher.call, pageSize: 24);

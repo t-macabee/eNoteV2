@@ -15,4 +15,6 @@ public class LectureDto
     public int? Capacity { get; set; }
 
     public int AttendeeCount { get; set; }
+
+    public AttendanceStatus? MyAttendanceStatus { get; set; }
 }

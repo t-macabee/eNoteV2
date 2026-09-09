@@ -21,6 +21,49 @@ public sealed class AssignmentSubmissionService(
         return await SubmitAsync(assignmentId, path, ct);
     }
 
+    public async Task<AssignmentSubmissionDto> GetOwnSubmissionAsync(int assignmentId, CancellationToken cancellationToken = default)
+    {
+        var student = await students.GetCurrentStudentAsync();
+
+        var submission = await context.Set<AssignmentSubmission>()
+            .AsNoTracking()
+            .Include(x => x.Student)
+            .FirstOrDefaultAsync(x => x.AssignmentId == assignmentId && x.StudentId == student.Id, cancellationToken)
+            ?? throw new NotFoundException(Messages.AssignmentSubmissionNotFound);
+
+        return MapSubmission(submission, await displayNames.GetStudentDisplayNameAsync(submission.Student));
+    }
+
+    public async Task<PagedResult<AssignmentSubmissionDto>> GetHistoryForStudentAsync(AssignmentSubmissionSearchObject search, CancellationToken cancellationToken = default)
+    {
+        var student = await students.GetCurrentStudentAsync();
+
+        var query = context.Set<AssignmentSubmission>()
+            .AsNoTracking()
+            .Include(x => x.Student)
+            .Where(x => x.StudentId == student.Id);
+
+        var (page, pageSize) = PagingLimits.Normalize(search.Page, search.PageSize);
+        var total = search.IncludeTotalCount ? await query.CountAsync(cancellationToken) : (int?)null;
+
+        var submissions = await query
+            .OrderByDescending(x => x.SubmittedAt)
+            .ThenByDescending(x => x.Id)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
+
+        var names = await displayNames.GetStudentDisplayNamesAsync(submissions.Select(x => x.Student));
+
+        return new PagedResult<AssignmentSubmissionDto>
+        {
+            Items = [.. submissions.Select(x => MapSubmission(x, names.GetValueOrDefault(x.StudentId, $"Student {x.StudentId}")))],
+            Page = page,
+            PageSize = pageSize,
+            TotalCount = total
+        };
+    }
+
     public async Task<PagedResult<AssignmentSubmissionDto>> GetSubmissionsAsync(int lectureId, int assignmentId, SubmissionSearchObject search, CancellationToken cancellationToken = default)
     {
         _ = await GetOwnedAssignmentAsync(lectureId, assignmentId, cancellationToken);

@@ -11,7 +11,7 @@ import 'package:enote_desktop/features/admin/instrument_type/instrument_type_lis
 import 'package:enote_desktop/features/admin/reference_data/reference_data_dialog.dart';
 import 'package:enote_desktop/main.dart';
 
-import 'helpers.dart' as helpers;
+import 'helpers.dart';
 
 class _MockHttpClient extends http.BaseClient {
   @override
@@ -43,7 +43,7 @@ void main() {
     final authState = AuthState(
       baseUrl: 'http://localhost:5059/api/v1/',
       httpClient: mockClient,
-      tokenReader: () => helpers.fakeJwt(role: 'Administrator'),
+      tokenReader: () => fakeJwt(role: 'Administrator'),
     );
     final apiClient = ApiClient(
       baseUrl: 'http://localhost:5059/api/v1/',
@@ -94,7 +94,7 @@ void main() {
     final authState = AuthState(
       baseUrl: 'http://localhost:5059/api/v1/',
       httpClient: mockClient,
-      tokenReader: () => helpers.fakeJwt(role: 'Instructor'),
+      tokenReader: () => fakeJwt(role: 'Instructor'),
     );
     final apiClient = ApiClient(
       baseUrl: 'http://localhost:5059/api/v1/',

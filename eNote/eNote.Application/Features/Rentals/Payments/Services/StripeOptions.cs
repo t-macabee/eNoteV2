@@ -6,8 +6,8 @@ public sealed class StripeOptions
     public string PublishableKey { get; set; } = string.Empty;
     public string WebhookSecret { get; set; } = string.Empty;
 
-    /// <summary>Stripe currency code (lowercase ISO 4217). Defaults to "eur".</summary>
-    public string Currency { get; set; } = "eur";
+    /// <summary>Stripe currency code (lowercase ISO 4217). Defaults to "bam".</summary>
+    public string Currency { get; set; } = "bam";
 
     public string StatementDescriptor { get; set; } = "ENOTE Rental";
 }

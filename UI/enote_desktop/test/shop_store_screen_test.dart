@@ -20,7 +20,7 @@ import 'package:enote_desktop/features/store_employee/store/shop_store_screen.da
 import 'package:enote_desktop/shell/master_screen.dart';
 import 'package:enote_desktop/widgets/entity_grid_screen.dart';
 
-import 'helpers.dart' as helpers;
+import 'helpers.dart';
 
 class _MockHttpClient extends http.BaseClient {
   final List<String> putBodies = [];
@@ -157,7 +157,7 @@ Widget _buildTestApp({
 }) {
   final authState = AuthState(
     baseUrl: 'http://localhost:5059/api/v1/',
-    tokenReader: () => helpers.fakeJwt(role: 'StoreEmployee', isManager: isManager),
+    tokenReader: () => fakeJwt(role: 'StoreEmployee', isManager: isManager),
   );
   final apiClient = ApiClient(
     baseUrl: 'http://localhost:5059/api/v1/',
@@ -192,7 +192,7 @@ Widget _buildMasterTestApp({
 }) {
   final authState = AuthState(
     baseUrl: 'http://localhost:5059/api/v1/',
-    tokenReader: () => helpers.fakeJwt(role: 'StoreEmployee', isManager: isManager),
+    tokenReader: () => fakeJwt(role: 'StoreEmployee', isManager: isManager),
   );
   final apiClient = ApiClient(
     baseUrl: 'http://localhost:5059/api/v1/',

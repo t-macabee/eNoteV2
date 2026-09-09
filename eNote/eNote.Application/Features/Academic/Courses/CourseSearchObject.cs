@@ -7,4 +7,5 @@ public class CourseSearchObject : BaseSearchObject
     public string? Name { get; set; }
     public bool? IsPublished { get; set; }
     public int? InstructorId { get; set; }
+    public bool? EnrolledOnly { get; set; }
 }

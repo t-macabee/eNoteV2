@@ -22,6 +22,11 @@ public sealed class StudentAnnouncementFeedService(IAppDbContext context, IStude
                     (r.RentalStatus == InstrumentRentalStatus.Approved || r.RentalStatus == InstrumentRentalStatus.Active || r.RentalStatus == InstrumentRentalStatus.Completed || r.RentalStatus == InstrumentRentalStatus.ReturnedEarly) &&
                     r.Instrument.MusicStoreId == a.MusicStoreId)));
 
+        if (!string.IsNullOrWhiteSpace(search.Title))
+        {
+            query = query.Where(a => a.Title.Contains(search.Title!));
+        }
+
         return await query.ToPagedResultAsync(search, mapper.Map<AnnouncementDto>, q => q.OrderByDescending(x => x.PublishedAt), cancellationToken);
     }
 }

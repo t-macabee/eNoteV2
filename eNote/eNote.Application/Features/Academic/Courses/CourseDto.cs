@@ -16,5 +16,7 @@ public class CourseDto
 
     public int EnrolledCount { get; set; }
 
+    public bool IsEnrolled { get; set; }
+
     public string? InstructorName { get; set; }
 }

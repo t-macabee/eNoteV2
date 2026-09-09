@@ -2,7 +2,7 @@ using eNote.Application.Common.Crud;
 
 namespace eNote.Application.Features.Communication.Events;
 
-public sealed class EventService(IAppDbContext context) : ReferenceDataCrudService<Event, EventDto, EventRequest, EventSearchObject>(context)
+public sealed class EventService(IAppDbContext context, IStudentContext? students = null) : ReferenceDataCrudService<Event, EventDto, EventRequest, EventSearchObject>(context)
 {
     protected override EventDto Map(Event entity) => new()
     {
@@ -66,6 +66,26 @@ public sealed class EventService(IAppDbContext context) : ReferenceDataCrudServi
             ?? throw new NotFoundException(NotFoundMessage);
 
         return Map(entity);
+    }
+
+    public async Task<PagedResult<EventDto>> GetPagedForStudentAsync(EventSearchObject search, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(students);
+        var studentId = await students.GetCurrentStudentIdAsync();
+
+        IQueryable<Event> query = Db.Set<Event>()
+            .AsNoTracking()
+            .Include(e => e.Address).ThenInclude(a => a!.City)
+            .Include(e => e.Course)
+            .Include(e => e.Instructor)
+            .Where(e => e.CourseId == null || Db.Set<Enrollment>().Any(en =>
+                en.StudentId == studentId &&
+                en.EnrollmentStatus == EnrollmentStatus.Active &&
+                en.CourseId == e.CourseId));
+
+        query = ApplySearch(query, search);
+        query = ApplyDefaultOrder(query);
+        return await query.ToPagedResultAsync(search, Map, ct: cancellationToken);
     }
 
     public override async Task<EventDto> CreateAsync(EventRequest request, CancellationToken cancellationToken = default)

@@ -110,7 +110,9 @@ public sealed class CourseService(IAppDbContext context, IMapper mapper, ICurren
                 cancellationToken)
             ?? throw new NotFoundException(Messages.CourseNotFound);
 
-        return mapper.Map<CourseDto>(entity);
+        var dto = mapper.Map<CourseDto>(entity);
+        dto.IsEnrolled = entity.Enrollments.Any(e => e.StudentId == studentId && e.EnrollmentStatus == EnrollmentStatus.Active);
+        return dto;
     }
 
     public async Task<PagedResult<CourseDto>> GetPagedForInstructorAsync(CourseSearchObject search, CancellationToken cancellationToken = default)
@@ -127,13 +129,25 @@ public sealed class CourseService(IAppDbContext context, IMapper mapper, ICurren
 
     public async Task<PagedResult<CourseDto>> GetPagedForStudentAsync(CourseSearchObject search, CancellationToken cancellationToken = default)
     {
+        var studentId = await students.GetCurrentStudentIdAsync();
+
         var query = context.Set<Course>()
             .AsNoTracking()
             .Include(c => c.Enrollments)
             .Where(c => c.IsPublished)
             .ApplySearch(search);
 
-        return await query.ToPagedResultAsync(search, mapper.Map<CourseDto>, q => q.OrderByDescending(x => x.StartDate), cancellationToken);
+        if (search.EnrolledOnly == true)
+        {
+            query = query.Where(c => c.Enrollments.Any(e => e.StudentId == studentId && e.EnrollmentStatus == EnrollmentStatus.Active));
+        }
+
+        return await query.ToPagedResultAsync(search, entity =>
+        {
+            var dto = mapper.Map<CourseDto>(entity);
+            dto.IsEnrolled = entity.Enrollments.Any(e => e.StudentId == studentId && e.EnrollmentStatus == EnrollmentStatus.Active);
+            return dto;
+        }, q => q.OrderByDescending(x => x.StartDate), cancellationToken);
     }
 
     public async Task<PagedResult<CourseDto>> GetPagedForAdminAsync(CourseSearchObject search, CancellationToken cancellationToken = default)

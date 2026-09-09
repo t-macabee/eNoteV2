@@ -61,7 +61,7 @@ services:
       Stripe__SecretKey: ${STRIPE_SECRET_KEY:?Set STRIPE_SECRET_KEY in .env}
       Stripe__PublishableKey: ${STRIPE_PUBLISHABLE_KEY:-}
       Stripe__WebhookSecret: ${STRIPE_WEBHOOK_SECRET:?Set STRIPE_WEBHOOK_SECRET in .env}
-      Stripe__Currency: ${STRIPE_CURRENCY:-eur}
+      Stripe__Currency: ${STRIPE_CURRENCY:-bam}
       Stripe__StatementDescriptor: ${STRIPE_STATEMENT_DESCRIPTOR:-ENOTE Rental}
     ports:
       - "${API_PORT:-5059}:8080"
@@ -96,7 +96,7 @@ services:
       Stripe__SecretKey: ${STRIPE_SECRET_KEY:?Set STRIPE_SECRET_KEY in .env}
       Stripe__PublishableKey: ${STRIPE_PUBLISHABLE_KEY:-}
       Stripe__WebhookSecret: ${STRIPE_WEBHOOK_SECRET:?Set STRIPE_WEBHOOK_SECRET in .env}
-      Stripe__Currency: ${STRIPE_CURRENCY:-eur}
+      Stripe__Currency: ${STRIPE_CURRENCY:-bam}
       Stripe__StatementDescriptor: ${STRIPE_STATEMENT_DESCRIPTOR:-ENOTE Rental}
     depends_on:
       sqlserver:

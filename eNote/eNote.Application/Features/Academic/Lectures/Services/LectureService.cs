@@ -30,7 +30,9 @@ public sealed class LectureService(
             .FirstOrDefaultAsync(x => x.Id == id, cancellationToken)
             ?? throw new NotFoundException(Messages.LectureNotFound);
 
-        return mapper.Map<LectureDto>(entity);
+        var dto = mapper.Map<LectureDto>(entity);
+        dto.MyAttendanceStatus = entity.Attendances.FirstOrDefault(a => a.StudentId == studentId)?.AttendanceStatus;
+        return dto;
     }
 
     public async Task<PagedResult<LectureDto>> GetPagedForInstructorAsync(LectureSearchObject search, CancellationToken cancellationToken = default)
@@ -55,7 +57,12 @@ public sealed class LectureService(
             .ForEnrolledStudent(studentId)
             .ApplySearch(search);
 
-        return await query.ToPagedResultAsync(search, mapper.Map<LectureDto>, q => q.OrderByDescending(x => x.LectureTime), cancellationToken);
+        return await query.ToPagedResultAsync(search, entity =>
+        {
+            var dto = mapper.Map<LectureDto>(entity);
+            dto.MyAttendanceStatus = entity.Attendances.FirstOrDefault(a => a.StudentId == studentId)?.AttendanceStatus;
+            return dto;
+        }, q => q.OrderByDescending(x => x.LectureTime), cancellationToken);
     }
 
     public async Task<LectureDto> CreateAsync(LectureCreateRequest request, CancellationToken cancellationToken = default)

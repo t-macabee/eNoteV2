@@ -12,7 +12,7 @@ import 'package:enote_desktop/features/admin/users/admin_user_provider.dart';
 import 'package:enote_desktop/features/admin/users/store_employee_provider.dart';
 import 'package:enote_desktop/features/admin/users/user_grid_screen.dart';
 
-import 'helpers.dart' as helpers;
+import 'helpers.dart';
 
 class _AdminUsersMockHttpClient extends http.BaseClient {
   final List<String> requestedUrls = [];
@@ -178,7 +178,7 @@ void main() {
       final authState = AuthState(
         baseUrl: 'http://localhost:5059/api/v1/',
         httpClient: mockClient,
-        tokenReader: () => helpers.fakeJwt(),
+        tokenReader: () => fakeJwt(),
       );
       final apiClient = ApiClient(
         baseUrl: 'http://localhost:5059/api/v1/',
@@ -244,7 +244,7 @@ void main() {
       final authState = AuthState(
         baseUrl: 'http://localhost:5059/api/v1/',
         httpClient: mockClient,
-        tokenReader: () => helpers.fakeJwt(),
+        tokenReader: () => fakeJwt(),
       );
       final apiClient = ApiClient(
         baseUrl: 'http://localhost:5059/api/v1/',
@@ -315,7 +315,7 @@ void main() {
       final authState = AuthState(
         baseUrl: 'http://localhost:5059/api/v1/',
         httpClient: mockClient,
-        tokenReader: () => helpers.fakeJwt(),
+        tokenReader: () => fakeJwt(),
       );
       final apiClient = ApiClient(
         baseUrl: 'http://localhost:5059/api/v1/',
@@ -356,7 +356,7 @@ void main() {
       // Search for "Chopin"
       final searchField = find.widgetWithText(TextField, 'Pretraži po imenu...');
       await tester.enterText(searchField, 'Chopin');
-      await helpers.pumpPastDebounce(tester);
+      await pumpPastDebounce(tester);
       await tester.pumpAndSettle();
 
       expect(find.text('Frederic Chopin'), findsOneWidget);
@@ -404,7 +404,7 @@ void main() {
       final authState = AuthState(
         baseUrl: 'http://localhost:5059/api/v1/',
         httpClient: mockClient,
-        tokenReader: () => helpers.fakeJwt(),
+        tokenReader: () => fakeJwt(),
       );
       final apiClient = ApiClient(
         baseUrl: 'http://localhost:5059/api/v1/',
@@ -445,7 +445,7 @@ void main() {
       // Search for "Chopin"
       final searchField = find.widgetWithText(TextField, 'Pretraži po imenu...');
       await tester.enterText(searchField, 'Chopin');
-      await helpers.pumpPastDebounce(tester);
+      await pumpPastDebounce(tester);
       await tester.pumpAndSettle();
 
       // Open details dialog for Frederic Chopin

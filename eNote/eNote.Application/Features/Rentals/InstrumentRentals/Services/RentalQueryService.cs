@@ -19,6 +19,25 @@ public sealed class RentalQueryService(IAppDbContext context, IMapper mapper, IC
     public Task<PagedResult<InstrumentRentalDto>> GetPagedForStudentAsync(InstrumentRentalSearchObject search, CancellationToken cancellationToken = default) => GetPagedAsync(context.Set<InstrumentRental>()
         .Where(x => x.StudentProfile.AppUserId == currentUser.UserId), search, cancellationToken);
 
+    public async Task<RentalDebtDto> GetDebtForStudentAsync(CancellationToken cancellationToken = default)
+    {
+        int? rentalId = await context.Set<InstrumentRental>()
+            .AsNoTracking()
+            .Where(x => x.StudentProfile.AppUserId == currentUser.UserId
+                && (x.RentalStatus == InstrumentRentalStatus.Completed || x.RentalStatus == InstrumentRentalStatus.ReturnedEarly)
+                && !x.IsPaid)
+            .OrderBy(x => x.RequestedAt)
+            .ThenBy(x => x.Id)
+            .Select(x => (int?)x.Id)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        return new RentalDebtDto
+        {
+            HasUnpaidDebt = rentalId.HasValue,
+            RentalId = rentalId
+        };
+    }
+
     public async Task<InstrumentRentalDto> GetByIdForStoreAsync(int rentalId, CancellationToken cancellationToken = default)
     {
         var entity = await FindRentalAsync(context.Set<InstrumentRental>().Where(x => x.Id == rentalId), cancellationToken);

@@ -10,7 +10,7 @@ import 'package:enote_desktop/features/shared/announcement/announcement_provider
 import 'package:enote_desktop/features/shared/announcement/store_announcement_provider.dart';
 import 'package:enote_desktop/widgets/entity_list_screen.dart';
 
-import 'helpers.dart' as helpers;
+import 'helpers.dart';
 
 class FakeClient extends http.BaseClient {
   final Future<http.StreamedResponse> Function(http.BaseRequest request) handler;
@@ -56,7 +56,7 @@ void main() {
     final authState = AuthState(
       baseUrl: 'http://localhost/',
       httpClient: client,
-      tokenReader: () => helpers.fakeJwt(username: 'test', role: 'Instructor'),
+      tokenReader: () => fakeJwt(username: 'test', role: 'Instructor'),
     );
     final apiClient = ApiClient(
       baseUrl: 'http://localhost/',
@@ -124,7 +124,7 @@ void main() {
     final authState = AuthState(
       baseUrl: 'http://localhost/',
       httpClient: client,
-      tokenReader: () => helpers.fakeJwt(username: 'test', role: 'StoreEmployee'),
+      tokenReader: () => fakeJwt(username: 'test', role: 'StoreEmployee'),
     );
     final apiClient = ApiClient(
       baseUrl: 'http://localhost/',

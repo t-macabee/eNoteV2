@@ -127,7 +127,7 @@ public static class DependencyInjection
             SecretKey = section["SecretKey"] ?? string.Empty,
             PublishableKey = section["PublishableKey"] ?? string.Empty,
             WebhookSecret = section["WebhookSecret"] ?? string.Empty,
-            Currency = string.IsNullOrWhiteSpace(section["Currency"]) ? "eur" : section["Currency"]!.Trim().ToLowerInvariant(),
+            Currency = string.IsNullOrWhiteSpace(section["Currency"]) ? "bam" : section["Currency"]!.Trim().ToLowerInvariant(),
             StatementDescriptor = string.IsNullOrWhiteSpace(section["StatementDescriptor"]) ? "ENOTE Rental" : section["StatementDescriptor"]!
         };
     }

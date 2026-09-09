@@ -7,7 +7,7 @@ import 'package:enote_core/enote_core.dart';
 import 'package:enote_desktop/features/profile/profile_dialog.dart';
 import 'package:enote_desktop/features/profile/profile_provider.dart';
 
-import 'helpers.dart' as helpers;
+import 'helpers.dart';
 
 class _MockProfileHttpClient extends http.BaseClient {
   final Map<String, dynamic> responseMap;
@@ -39,7 +39,7 @@ void main() {
     });
 
     final authState = AuthState(
-      tokenReader: () => helpers.fakeJwt(),
+      tokenReader: () => fakeJwt(),
       httpClient: client,
     );
     final apiClient = ApiClient(
@@ -86,7 +86,7 @@ void main() {
     });
 
     final authState = AuthState(
-      tokenReader: () => helpers.fakeJwt(username: 'admin'),
+      tokenReader: () => fakeJwt(username: 'admin'),
       httpClient: client,
     );
     final apiClient = ApiClient(
@@ -135,7 +135,7 @@ void main() {
     });
 
     final authState = AuthState(
-      tokenReader: () => helpers.fakeJwt(),
+      tokenReader: () => fakeJwt(),
       httpClient: client,
     );
     final apiClient = ApiClient(
