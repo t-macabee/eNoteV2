@@ -16,10 +16,21 @@ void throwIfError(http.Response response) {
 }
 
 /// [throwIfError], then decodes the body as a JSON object.
+///
+/// An empty, malformed, or non-object body throws an [ApiException] with a
+/// distinct Bosnian message (not the offline fallback from [userMessage]),
+/// so a parse failure is never misreported as a connectivity problem.
 Map<String, dynamic> decodeOrThrow(http.Response response) {
   throwIfError(response);
   if (response.body.trim().isEmpty) {
-    throw const FormatException('Response body is empty.');
+    throw ApiException('Neispravan odgovor servera.');
   }
-  return jsonDecode(response.body) as Map<String, dynamic>;
+  try {
+    final decoded = jsonDecode(response.body);
+    if (decoded is Map<String, dynamic>) return decoded;
+    throw ApiException('Neispravan odgovor servera.');
+  } catch (e) {
+    if (e is ApiException) rethrow;
+    throw ApiException('Neispravan odgovor servera.');
+  }
 }

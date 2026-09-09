@@ -354,11 +354,11 @@ class _RentalDetailScreenState extends State<RentalDetailScreen> {
           children: [
             Text('Naknade', style: Theme.of(context).textTheme.titleSmall),
             const SizedBox(height: 8),
-            _chargeRow('Mjesečna naknada', '${rental.fee.toStringAsFixed(2)} KM'),
+            _chargeRow('Mjesečna naknada', formatKM(rental.fee)),
             if (rental.totalFee != null) ...[
               _chargeRow(
                 rental.isProrated ? 'Ukupno (proporcionalno)' : 'Ukupno',
-                '${rental.totalFee!.toStringAsFixed(2)} KM',
+                formatKM(rental.totalFee),
               ),
               if (rental.monthsCharged != null)
                 _chargeRow('Mjeseci', '${rental.monthsCharged}'),
@@ -370,14 +370,14 @@ class _RentalDetailScreenState extends State<RentalDetailScreen> {
             _chargeRow(
               'Plaćeno',
               rental.isPaid
-                  ? 'Da (${rental.amountPaid?.toStringAsFixed(2) ?? '-'} KM${rental.paidAt != null ? ' — ${formatDate(rental.paidAt!)}' : ''})'
+                  ? 'Da (${rental.amountPaid != null ? formatKM(rental.amountPaid) : '-'}${rental.paidAt != null ? ' — ${formatDate(rental.paidAt!)}' : ''})'
                   : 'Ne',
             ),
             if (_payment != null && (_payment!.refundedCents ?? 0) > 0) ...[
               const SizedBox(height: 8),
               _chargeRow(
                 'Povrađeno',
-                '${((_payment!.refundedCents ?? 0) / 100).toStringAsFixed(2)} KM',
+                formatKM(((_payment!.refundedCents ?? 0) / 100)),
               ),
               _chargeRow(
                 'Datum povraćaja',

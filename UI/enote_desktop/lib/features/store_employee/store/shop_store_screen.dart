@@ -5,7 +5,7 @@ import 'package:enote_core/enote_core.dart';
 import '../../../theme/app_theme.dart';
 import '../../../widgets/entity_form_scaffold.dart';
 import '../../../widgets/entity_grid_screen.dart';
-import '../../../widgets/detail_row.dart';
+import '../../../widgets/store_profile_panel.dart';
 import '../instrument/instrument_detail_dialog.dart';
 import '../instrument/instrument_form_screen.dart';
 import '../instrument/instrument_provider.dart';
@@ -101,100 +101,22 @@ class _ShopStoreScreenState extends State<ShopStoreScreen> {
     _gridKey.currentState?.refresh();
   }
 
-  Widget _buildLeftPanel() {
-    final store = _store!;
-    final apiClient = context.read<ApiClient>();
-
-    String addressText = '-';
-    if (store.addressStreet != null && store.addressStreet!.isNotEmpty) {
-      if (store.addressCity != null && store.addressCity!.isNotEmpty) {
-        addressText = '${store.addressStreet}, ${store.addressCity}';
-      } else {
-        addressText = store.addressStreet!;
-      }
-    } else if (store.addressCity != null && store.addressCity!.isNotEmpty) {
-      addressText = store.addressCity!;
-    }
-
-    final phoneText =
-        (store.phoneNumber != null && store.phoneNumber!.isNotEmpty)
-            ? store.phoneNumber!
-            : '-';
-
-    final workHoursText =
-        store.businessHours.isNotEmpty ? store.businessHours : '-';
-
-    return Container(
-      color: AppTheme.surfaceContainer,
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            AspectRatio(
-              aspectRatio: 1.2,
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: networkImageOrPlaceholder(
-                  store.imagePath,
-                  apiClient,
-                  size: double.infinity,
-                  borderRadius: 12,
-                  placeholder: () => Container(
-                    color: AppTheme.background,
-                    child: const Center(
-                      child: Icon(
-                        Icons.storefront_outlined,
-                        size: 48,
-                        color: AppTheme.textTertiary,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              store.storeName,
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-            ),
-            const SizedBox(height: 16),
-            const Divider(),
-            const SizedBox(height: 8),
-            DetailRow(
-              icon: Icons.location_on_outlined,
-              label: 'Adresa',
-              value: addressText,
-            ),
-            DetailRow(
-              icon: Icons.phone_outlined,
-              label: 'Telefon',
-              value: phoneText,
-            ),
-            DetailRow(
-              icon: Icons.access_time_outlined,
-              label: 'Radno vrijeme',
-              value: workHoursText,
-            ),
-          ],
-        ),
-      ),
-    );
+  Widget _buildLeftPanel(MusicStoreDto store) {
+    return StoreProfilePanel(store: store);
   }
 
   @override
   Widget build(BuildContext context) {
     final storeProvider = context.watch<ShopStoreProvider>();
-    if (storeProvider.store != null) {
-      _store = storeProvider.store;
-    }
+    // Build-local view of the store: provider data wins when present,
+    // otherwise fall back to the last value loaded by _loadStore().
+    // Never assigns to _store here — _loadStore() remains its only writer.
+    final store = storeProvider.store ?? _store;
 
-    return _buildBody(context);
+    return _buildBody(context, store);
   }
 
-  Widget _buildBody(BuildContext context) {
+  Widget _buildBody(BuildContext context, MusicStoreDto? store) {
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -217,7 +139,7 @@ class _ShopStoreScreenState extends State<ShopStoreScreen> {
       );
     }
 
-    if (_store == null) {
+    if (store == null) {
       return const Center(child: Text('Nema podataka o prodavnici.'));
     }
 
@@ -226,7 +148,7 @@ class _ShopStoreScreenState extends State<ShopStoreScreen> {
       children: [
         SizedBox(
           width: 280,
-          child: _buildLeftPanel(),
+          child: _buildLeftPanel(store),
         ),
         const VerticalDivider(width: 1),
         Expanded(

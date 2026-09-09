@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
@@ -38,7 +36,10 @@ abstract class BaseProvider<T> with ChangeNotifier {
     R Function(Map<String, dynamic>) fromJsonT, {
     Map<String, dynamic>? params,
   }) {
-    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    // Decodes via decodeOrThrow so a 200 with an empty, HTML, or otherwise
+    // malformed body raises the distinct parse-failure ApiException instead
+    // of a raw TypeError/FormatException.
+    final data = decodeOrThrow(response);
     final items = (data['items'] as List<dynamic>? ?? []);
     final page = data['page'] as int? ?? params?['page'] as int? ?? 1;
     final pageSize = data['pageSize'] as int? ?? params?['pageSize'] as int? ?? 20;
@@ -80,12 +81,15 @@ abstract class BaseProvider<T> with ChangeNotifier {
     final response = await apiClient.post(endpoint, body: request);
     throwIfError(response);
 
+    // The single documented empty-body special case: the backend answers
+    // some creates with 204 / an empty body, meaning "created, nothing to
+    // return". Callers depend on null here.
     if (response.statusCode == 204 || response.body.isEmpty) {
       notifyListeners();
       return null;
     }
 
-    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    final data = decodeOrThrow(response);
     notifyListeners();
     return fromJson(data);
   }

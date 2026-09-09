@@ -91,12 +91,58 @@ void main() {
       );
     });
 
-    test('empty body throws FormatException', () {
+    test('empty body throws ApiException with parse-failure message', () {
       final emptyResponse = http.Response('', 200);
-      expect(() => decodeOrThrow(emptyResponse), throwsA(isA<FormatException>()));
+      expect(
+        () => decodeOrThrow(emptyResponse),
+        throwsA(
+          isA<ApiException>().having(
+            (e) => e.message,
+            'message',
+            'Neispravan odgovor servera.',
+          ),
+        ),
+      );
 
       final whitespaceResponse = http.Response('   ', 200);
-      expect(() => decodeOrThrow(whitespaceResponse), throwsA(isA<FormatException>()));
+      expect(
+        () => decodeOrThrow(whitespaceResponse),
+        throwsA(
+          isA<ApiException>().having(
+            (e) => e.message,
+            'message',
+            'Neispravan odgovor servera.',
+          ),
+        ),
+      );
+    });
+
+    test('non-JSON body throws ApiException with parse-failure message', () {
+      final response = http.Response('<html>oops</html>', 200);
+      expect(
+        () => decodeOrThrow(response),
+        throwsA(
+          isA<ApiException>().having(
+            (e) => e.message,
+            'message',
+            'Neispravan odgovor servera.',
+          ),
+        ),
+      );
+    });
+
+    test('JSON array body throws ApiException with parse-failure message', () {
+      final response = http.Response('[{"id": 1}]', 200, headers: jsonHeaders);
+      expect(
+        () => decodeOrThrow(response),
+        throwsA(
+          isA<ApiException>().having(
+            (e) => e.message,
+            'message',
+            'Neispravan odgovor servera.',
+          ),
+        ),
+      );
     });
   });
 }

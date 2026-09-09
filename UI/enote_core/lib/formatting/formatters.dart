@@ -37,6 +37,23 @@ String formatDisplayName(String? firstName, String? lastName, String? username) 
   return username ?? '-';
 }
 
+/// Formats a money amount as `X.XX KM`, or an em dash when null.
+///
+/// Use only for amounts displayed with a `KM` suffix today. Several
+/// `toStringAsFixed(2)` sites are not money (grades, form-controller text)
+/// or carry the unit in a column header already — adding ` KM` there would
+/// duplicate the unit.
+String formatKM(double? value) {
+  if (value == null) return '—';
+  return '${value.toStringAsFixed(2)} KM';
+}
+
+/// Returns [s], or an em dash when null or empty.
+String orDash(String? s) {
+  if (s == null || s.isEmpty) return '—';
+  return s;
+}
+
 String truncate(String text, int maxLength) {
   if (text.length <= maxLength) return text;
   return '${text.substring(0, maxLength)}…';

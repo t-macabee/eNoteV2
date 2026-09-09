@@ -2,10 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
-import '../../../theme/app_theme.dart';
 import '../../../widgets/entity_form_scaffold.dart';
 import '../../../widgets/entity_grid_screen.dart';
-import '../../../widgets/detail_row.dart';
+import '../../../widgets/store_profile_panel.dart';
 import '../instrument_type/instrument_type_provider.dart';
 import 'music_store_form_screen.dart';
 import 'music_store_provider.dart';
@@ -216,106 +215,11 @@ class _MusicStoreDetailScreenState extends State<MusicStoreDetailScreen> {
 
   Widget _buildLeftPanel() {
     final store = _store!;
-    final apiClient = context.read<ApiClient>();
-
-    String addressText = '-';
-    if (store.addressStreet != null && store.addressStreet!.isNotEmpty) {
-      if (store.addressCity != null && store.addressCity!.isNotEmpty) {
-        addressText = '${store.addressStreet}, ${store.addressCity}';
-      } else {
-        addressText = store.addressStreet!;
-      }
-    } else if (store.addressCity != null && store.addressCity!.isNotEmpty) {
-      addressText = store.addressCity!;
-    }
-
-    final phoneText =
-        (store.phoneNumber != null && store.phoneNumber!.isNotEmpty)
-            ? store.phoneNumber!
-            : '-';
-
-    final workHoursText =
-        store.businessHours.isNotEmpty ? store.businessHours : '-';
-
-    return Container(
-      color: AppTheme.surfaceContainer,
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            AspectRatio(
-              aspectRatio: 1.2,
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: networkImageOrPlaceholder(
-                  store.imagePath,
-                  apiClient,
-                  size: double.infinity,
-                  borderRadius: 12,
-                  placeholder: () => Container(
-                    color: AppTheme.background,
-                    child: const Center(
-                      child: Icon(
-                        Icons.storefront_outlined,
-                        size: 48,
-                        color: AppTheme.textTertiary,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              store.storeName,
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-            ),
-            const SizedBox(height: 16),
-            const Divider(),
-            const SizedBox(height: 8),
-            DetailRow(
-              icon: Icons.location_on_outlined,
-              label: 'Adresa',
-              value: addressText,
-            ),
-            DetailRow(
-              icon: Icons.phone_outlined,
-              label: 'Telefon',
-              value: phoneText,
-            ),
-            DetailRow(
-              icon: Icons.access_time_outlined,
-              label: 'Radno vrijeme',
-              value: workHoursText,
-            ),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: _openEdit,
-                icon: const Icon(Icons.edit_outlined, size: 18),
-                label: const Text('Uredi'),
-              ),
-            ),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: _deleteStore,
-                icon: const Icon(Icons.delete_outline, size: 18),
-                label: const Text('Obriši'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppTheme.error,
-                  side: const BorderSide(color: AppTheme.error),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
+    return StoreProfilePanel(
+      store: store,
+      showActions: true,
+      onEdit: _openEdit,
+      onDelete: _deleteStore,
     );
   }
 

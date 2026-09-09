@@ -31,9 +31,13 @@ class _MusicStoreListScreenState extends State<MusicStoreListScreen> {
   }
 
   Future<void> _loadCities() async {
-    final result = await context.read<CityProvider>().search(pagedQuery(1, 100, ''));
-    if (!mounted) return;
-    setState(() => _cities = result.items);
+    try {
+      final result = await context.read<CityProvider>().search(pagedQuery(1, 100, ''));
+      if (!mounted) return;
+      setState(() => _cities = result.items);
+    } catch (_) {
+      // Non-fatal if cities fail to load
+    }
   }
 
   void _applyFilters() {

@@ -30,10 +30,11 @@ class _RentalListScreenState extends State<RentalListScreen> {
   @override
   void initState() {
     super.initState();
+    // Non-fatal if instruments fail to load — the filter just offers no options.
     _instrumentsFuture = context.read<InstrumentProvider>().search({
       'page': 1,
       'pageSize': 100,
-    }).then((result) => result.items);
+    }).then((result) => result.items).catchError((_) => const <InstrumentDto>[]);
   }
 
   Widget _buildFilterBar() {
