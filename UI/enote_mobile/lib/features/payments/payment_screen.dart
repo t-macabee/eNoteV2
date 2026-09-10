@@ -43,6 +43,10 @@ class PaymentScreen extends StatefulWidget {
 }
 
 class _PaymentScreenState extends State<PaymentScreen> {
+  /// Shown when a Canceled sheet turns out to be a decline (server row is
+  /// Failed). Provisional wording: 02 §11 defines no decline string.
+  static const _declinedMessage = 'Kartica je odbijena.';
+
   InstrumentRentalDto? _rental;
   RentalPaymentDto? _payment;
   Object? _error;
@@ -129,10 +133,22 @@ class _PaymentScreenState extends State<PaymentScreen> {
       await widget.gateway.init(intent.clientSecret);
       await widget.gateway.present();
     } on PaymentSheetCancelled {
+      // flutter_stripe 14.0.0 reports a decline-then-dismiss as
+      // FailureCode.Canceled, identical to a walk-away: one server read
+      // disambiguates (the payment_failed webhook marks the row Failed).
+      var failureMessage = 'Plaćanje je otkazano.';
+      try {
+        final current = await payments.status(rentalId);
+        if (current?.status == PaymentStatus.failed) {
+          failureMessage = _declinedMessage;
+        }
+      } catch (_) {
+        // The read itself failed: keep the cancel copy.
+      }
       if (mounted) {
         setState(() {
           _view = _View.failed;
-          _failureMessage = 'Plaćanje je otkazano.';
+          _failureMessage = failureMessage;
         });
       }
       return;

@@ -288,6 +288,45 @@ void main() {
     expect(find.text('Odustani'), findsOneWidget);
   });
 
+  testWidgets('a dismissed sheet with no payment attempt stays cancelled', (
+    tester,
+  ) async {
+    final client = _PayStubClient(
+      rental: _rental(),
+      payments: [(status: 404, body: {})],
+    );
+    final gateway = FakePaymentSheetGateway()
+      ..queuePresent(PaymentSheetCancelled());
+    await _pumpPay(tester, client, gateway);
+
+    await _confirmPay(tester);
+    await tester.pump();
+
+    expect(find.text('Plaćanje nije dovršeno'), findsOneWidget);
+    expect(find.text('Plaćanje je otkazano.'), findsOneWidget);
+    expect(client.statusCalls, 1);
+  });
+
+  testWidgets('a decline-then-dismiss shows the declined copy', (
+    tester,
+  ) async {
+    final client = _PayStubClient(
+      rental: _rental(),
+      payments: [(status: 200, body: _payment('Failed'))],
+    );
+    final gateway = FakePaymentSheetGateway()
+      ..queuePresent(PaymentSheetCancelled());
+    await _pumpPay(tester, client, gateway);
+
+    await _confirmPay(tester);
+    await tester.pump();
+
+    expect(find.text('Plaćanje nije dovršeno'), findsOneWidget);
+    expect(find.text('Kartica je odbijena.'), findsOneWidget);
+    expect(find.text('Plaćanje je otkazano.'), findsNothing);
+    expect(client.statusCalls, 1);
+  });
+
   testWidgets('a failed sheet shows E with the Stripe message', (
     tester,
   ) async {
