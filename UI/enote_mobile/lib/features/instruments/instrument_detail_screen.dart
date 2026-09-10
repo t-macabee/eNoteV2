@@ -87,10 +87,16 @@ class _InstrumentDetailScreenState extends State<InstrumentDetailScreen> {
         actionLabel: 'Plati sada',
         onAction: debt.rentalId == null
             ? null
-            : () => Navigator.of(context).pushNamed(
-                AppRouter.payment,
-                arguments: PaymentArgs(debt.rentalId!),
-              ),
+            : () => Navigator.of(context)
+                  .pushNamed(
+                    AppRouter.payment,
+                    arguments: PaymentArgs(debt.rentalId!),
+                  )
+                  .then((_) {
+                    // A finished payment clears the debt; reload so the
+                    // banner disappears without a manual refresh.
+                    if (mounted) _load();
+                  }),
       );
     }
     final session = context.read<SessionController>();

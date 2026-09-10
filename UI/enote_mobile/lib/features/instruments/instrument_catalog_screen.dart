@@ -91,7 +91,11 @@ class _InstrumentCatalogScreenState extends State<InstrumentCatalogScreen> {
   void _openPayment(int rentalId) {
     Navigator.of(
       context,
-    ).pushNamed(AppRouter.payment, arguments: PaymentArgs(rentalId));
+    ).pushNamed(AppRouter.payment, arguments: PaymentArgs(rentalId)).then((_) {
+      // A finished payment clears the debt; re-check so the banner is gone
+      // on return without a manual refresh.
+      if (mounted) _loadDebt();
+    });
   }
 
   void _toggleAvailable(bool value) {

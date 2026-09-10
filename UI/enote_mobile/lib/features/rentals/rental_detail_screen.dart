@@ -251,10 +251,16 @@ class _RentalDetailScreenState extends State<RentalDetailScreen> {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: FilledButton(
-            onPressed: () => Navigator.of(context).pushNamed(
-              AppRouter.payment,
-              arguments: PaymentArgs(rental.id),
-            ),
+            onPressed: () => Navigator.of(context)
+                .pushNamed(
+                  AppRouter.payment,
+                  arguments: PaymentArgs(rental.id),
+                )
+                .then((_) {
+                  // A finished payment flips isPaid server-side; reload so
+                  // S11 shows Plaćeno without a manual refresh.
+                  if (mounted) _load();
+                }),
             child: Text('Plati ${formatKM(rental.totalFee)}'),
           ),
         ),

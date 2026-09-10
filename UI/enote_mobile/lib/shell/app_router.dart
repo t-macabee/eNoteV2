@@ -13,6 +13,7 @@ import '../features/lecture_notes/lecture_note_list_screen.dart';
 import '../features/lecture_notes/lecture_note_provider.dart';
 import '../features/lectures/lecture_detail_screen.dart';
 import '../features/notifications/notification_inbox_screen.dart';
+import '../features/payments/payment_screen.dart';
 import '../features/profile/change_password_screen.dart';
 import '../features/profile/edit_profile_screen.dart';
 import '../features/ranking/ranking_screen.dart';
@@ -172,7 +173,9 @@ class AppRouter {
         if (rentalArgs == null) return _route(const _UnknownRouteScreen());
         return _route(RentalDetailScreen(rentalId: rentalArgs.rentalId));
       case payment:
-        return _route(const _PlaceholderScreen(title: 'Plaćanje'));
+        final paymentArgs = args is PaymentArgs ? args : null;
+        if (paymentArgs == null) return _route(const _UnknownRouteScreen());
+        return _route(PaymentScreen(rentalId: paymentArgs.rentalId));
       case notifications:
         return _route(const NotificationInboxScreen());
       case profileEdit:

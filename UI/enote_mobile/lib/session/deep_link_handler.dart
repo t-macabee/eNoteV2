@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../features/payments/payment_screen.dart';
 import '../shell/app_router.dart';
 
 sealed class DeepLinkTarget {
@@ -74,6 +75,10 @@ class DeepLinkHandler {
           arguments: ResetArgs(email: email, token: token),
         );
       case StripeRedirectTarget():
+        // A redirect-based Stripe method coming back to the app: if a
+        // payment screen is on top it runs one more poll cycle, else
+        // the link is ignored (01 §5.4 step 5).
+        PaymentScreen.stripeRedirectHandler?.call();
         break;
       case UnknownTarget():
         break;
