@@ -12,9 +12,12 @@ import '../session/token_store.dart';
 import '../theme/app_theme.dart';
 import 'config.dart';
 import 'features/auth/auth_provider.dart';
+import 'features/courses/course_provider.dart';
 import 'features/instruments/instrument_provider.dart';
+import 'features/lectures/lecture_provider.dart';
 import 'features/payments/payment_provider.dart';
 import 'features/profile/profile_provider.dart';
+import 'features/ranking/ranking_provider.dart';
 import 'features/rentals/rental_provider.dart';
 import 'realtime/notification_hub_client.dart';
 import 'shell/app_router.dart';
@@ -105,6 +108,15 @@ class _EnoteMobileAppState extends State<EnoteMobileApp> {
         ),
         Provider<PaymentProvider>(
           create: (_) => PaymentProvider(apiClient: widget.apiClient),
+        ),
+        ChangeNotifierProvider<CourseProvider>(
+          create: (_) => CourseProvider(apiClient: widget.apiClient),
+        ),
+        ChangeNotifierProvider<LectureProvider>(
+          create: (_) => LectureProvider(apiClient: widget.apiClient),
+        ),
+        Provider<RankingProvider>(
+          create: (_) => RankingProvider(apiClient: widget.apiClient),
         ),
       ],
       child: MaterialApp(

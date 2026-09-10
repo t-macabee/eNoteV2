@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:enote_core/enote_core.dart';
 
 import '../features/instruments/instrument_catalog_screen.dart';
+import '../features/learning/learning_tabs_screen.dart';
 import '../features/profile/profile_screen.dart';
 import '../features/rentals/rental_list_screen.dart';
 import '../realtime/notification_hub_client.dart';
@@ -258,6 +259,7 @@ class _TabRoot extends StatelessWidget {
       ),
       body: switch (index) {
         0 => const InstrumentCatalogScreen(),
+        1 => const LearningTabsScreen(),
         2 => const RentalListScreen(),
         3 => const ProfileScreen(),
         _ => Center(child: Text(RootShellState._titles[index])),

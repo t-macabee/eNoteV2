@@ -1,13 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import 'package:enote_core/enote_core.dart';
 
 import '../features/auth/forgot_password_screen.dart';
 import '../features/auth/register_screen.dart';
 import '../features/auth/reset_password_screen.dart';
+import '../features/courses/course_detail_screen.dart';
 import '../features/instruments/instrument_detail_screen.dart';
+import '../features/lecture_notes/lecture_note_detail_screen.dart';
+import '../features/lecture_notes/lecture_note_list_screen.dart';
+import '../features/lecture_notes/lecture_note_provider.dart';
+import '../features/lectures/lecture_detail_screen.dart';
 import '../features/notifications/notification_inbox_screen.dart';
-import '../features/rentals/rental_detail_screen.dart';
 import '../features/profile/change_password_screen.dart';
 import '../features/profile/edit_profile_screen.dart';
+import '../features/ranking/ranking_screen.dart';
+import '../features/rentals/rental_detail_screen.dart';
 
 class CourseDetailArgs {
   final int courseId;
@@ -109,21 +118,47 @@ class AppRouter {
     final args = settings.arguments;
     switch (settings.name) {
       case courseDetail:
-        return _route(
-          _PlaceholderScreen(title: _courseTitle(args as CourseDetailArgs?)),
-        );
+        final courseArgs = args is CourseDetailArgs ? args : null;
+        if (courseArgs == null) return _route(const _UnknownRouteScreen());
+        return _route(CourseDetailScreen(courseId: courseArgs.courseId));
       case lectureDetail:
-        return _route(const _PlaceholderScreen(title: 'Predavanje'));
+        final lectureArgs = args is LectureDetailArgs ? args : null;
+        if (lectureArgs == null) return _route(const _UnknownRouteScreen());
+        return _route(
+          LectureDetailScreen(lectureId: lectureArgs.lectureId),
+        );
       case lectureNotes:
-        return _route(const _PlaceholderScreen(title: 'Bilješke'));
+        final notesArgs = args is LectureNotesArgs ? args : null;
+        if (notesArgs == null) return _route(const _UnknownRouteScreen());
+        return _route(
+          ChangeNotifierProvider(
+            create: (context) => LectureNoteProvider(
+              apiClient: context.read<ApiClient>(),
+              lectureId: notesArgs.lectureId,
+            ),
+            child: LectureNoteListScreen(lectureId: notesArgs.lectureId),
+          ),
+        );
       case lectureNoteDetail:
-        return _route(const _PlaceholderScreen(title: 'Bilješka'));
+        final noteArgs = args is LectureNoteDetailArgs ? args : null;
+        if (noteArgs == null) return _route(const _UnknownRouteScreen());
+        return _route(
+          ChangeNotifierProvider(
+            create: (context) => LectureNoteProvider(
+              apiClient: context.read<ApiClient>(),
+              lectureId: noteArgs.lectureId,
+            ),
+            child: LectureNoteDetailScreen(noteId: noteArgs.noteId),
+          ),
+        );
       case assignmentDetail:
         return _route(const _PlaceholderScreen(title: 'Zadatak'));
       case assignmentHistory:
         return _route(const _PlaceholderScreen(title: 'Moje predaje'));
       case ranking:
-        return _route(const _PlaceholderScreen(title: 'Rang lista'));
+        final rankingArgs = args is RankingArgs ? args : null;
+        if (rankingArgs == null) return _route(const _UnknownRouteScreen());
+        return _route(RankingScreen(courseId: rankingArgs.courseId));
       case announcementDetail:
         return _route(const _PlaceholderScreen(title: 'Objava'));
       case instrumentDetail:
@@ -162,8 +197,6 @@ class AppRouter {
         return _route(const _UnknownRouteScreen());
     }
   }
-
-  static String _courseTitle(CourseDetailArgs? args) => 'Kurs';
 
   static MaterialPageRoute<dynamic> _route(Widget child) {
     return MaterialPageRoute<dynamic>(builder: (_) => child);
