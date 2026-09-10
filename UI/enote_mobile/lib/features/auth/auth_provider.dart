@@ -31,6 +31,6 @@ class AuthProvider {
         newPassword: newPassword,
       ).toJson(),
     );
-    decodeOrThrow(response);
+    throwIfError(response);
   }
 }

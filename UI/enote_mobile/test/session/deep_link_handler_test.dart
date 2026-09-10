@@ -17,17 +17,20 @@ void main() {
     expect(reset.token, 'a+b/c=');
   });
 
-  test('reset link with a missing token is unknown', () {
-    expect(
-      DeepLinkHandler.parse(
-        Uri.parse('enote://reset-password?email=student%40enote.com'),
-      ),
-      isA<UnknownTarget>(),
+  test('reset link with a missing token routes to ResetPasswordTarget', () {
+    final withEmail = DeepLinkHandler.parse(
+      Uri.parse('enote://reset-password?email=student%40enote.com'),
     );
-    expect(
-      DeepLinkHandler.parse(Uri.parse('enote://reset-password')),
-      isA<UnknownTarget>(),
-    );
+    expect(withEmail, isA<ResetPasswordTarget>());
+    final r1 = withEmail as ResetPasswordTarget;
+    expect(r1.email, 'student@enote.com');
+    expect(r1.token, isNull);
+
+    final bare = DeepLinkHandler.parse(Uri.parse('enote://reset-password'));
+    expect(bare, isA<ResetPasswordTarget>());
+    final r2 = bare as ResetPasswordTarget;
+    expect(r2.email, isNull);
+    expect(r2.token, isNull);
   });
 
   test('stripe redirect parses to stripeRedirect', () {

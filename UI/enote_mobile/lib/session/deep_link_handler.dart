@@ -8,10 +8,10 @@ sealed class DeepLinkTarget {
 }
 
 class ResetPasswordTarget extends DeepLinkTarget {
-  final String email;
-  final String token;
+  final String? email;
+  final String? token;
 
-  const ResetPasswordTarget({required this.email, required this.token});
+  const ResetPasswordTarget({this.email, this.token});
 }
 
 class StripeRedirectTarget extends DeepLinkTarget {
@@ -32,13 +32,10 @@ class DeepLinkHandler {
     if (uri.host == 'reset-password') {
       final email = uri.queryParameters['email'];
       final token = uri.queryParameters['token'];
-      if (email == null ||
-          email.isEmpty ||
-          token == null ||
-          token.isEmpty) {
-        return const UnknownTarget();
-      }
-      return ResetPasswordTarget(email: email, token: token);
+      return ResetPasswordTarget(
+        email: (email != null && email.isNotEmpty) ? email : null,
+        token: (token != null && token.isNotEmpty) ? token : null,
+      );
     }
     if (uri.host == 'stripe-redirect') {
       return const StripeRedirectTarget();

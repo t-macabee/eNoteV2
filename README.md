@@ -2,8 +2,10 @@
 
 Platforma za muzičku školu. Pokriva kurseve, predavanja, zadatke, najam
 instrumenata i notifikacije. Sastoji se od ASP.NET Core API-ja, zasebnog worker
-servisa, Flutter desktop aplikacije za administraciju i Flutter mobilne
-aplikacije za studente.
+servisa i dva Flutter klijenta koji se nalaze u ovom repozitoriju pod `UI/`:
+`enote_desktop` (administrator, instruktor, prodavac) i `enote_mobile`
+(student). Zajednički Dart paket `UI/enote_core` oba klijenta referenciraju
+preko putanje.
 
 ## Preduslovi
 
@@ -22,8 +24,10 @@ Ovo je najkraći put i pokreće bazu, RabbitMQ, API i worker odjednom.
    cp .env.docker.example .env
    ```
 
-   Popunite `MSSQL_SA_PASSWORD`, `JWT__KEY` (najmanje 32 znaka), `SMTP_*` i
-   `STRIPE_*` vrijednosti. `docker compose` neće startati bez njih.
+   Popunite `MSSQL_SA_PASSWORD`, `JWT__KEY` (najmanje 32 znaka), `SMTP_*`
+   uključujući `SMTP_PASSWORD_RESET_URL=enote://reset-password` (da link za
+   reset lozinke otvara mobilnu aplikaciju) i `STRIPE_*` vrijednosti.
+   `docker compose` neće startati bez njih.
 
 2. Pokrenite sve servise:
 
@@ -33,6 +37,10 @@ Ovo je najkraći put i pokreće bazu, RabbitMQ, API i worker odjednom.
 
 API sluša na `http://localhost:5059`. Migracije i seed podaci se primjenjuju
 automatski pri prvom pokretanju u Development okruženju.
+
+Za fizički telefon API mora slušati na svim interfejsima
+(`dotnet run --project eNote.API --urls http://0.0.0.0:5059`) ili se mora
+koristiti Docker, koji već objavljuje port na svim interfejsima.
 
 ## Pokretanje bez Dockera
 
@@ -67,6 +75,11 @@ Svi seed nalozi koriste lozinku `test`. Lozinka se može promijeniti kroz
 | student | test | Student | Mobilna aplikacija |
 | storeemployee | test | StoreEmployee | Desktop aplikacija |
 
+Svi nalozi dijele istu seed lozinku (`Seed__DefaultPassword`). Mobilna
+aplikacija prihvata samo naloge sa ulogom Student (`student`, odnosno `mobile`);
+ostale uloge dobijaju ekran sa objašnjenjem. Seedovani `student` je već upisan
+na oba objavljena kursa i ima članarinu važeću godinu dana.
+
 Registracija novih korisnika kroz aplikaciju i dalje traži jaču lozinku
 (najmanje 8 znakova, veliko slovo, malo slovo, broj i specijalni znak). Seed
 nalozi su izuzetak i postoje samo da pregled aplikacije bude brz.
@@ -94,6 +107,28 @@ flutter run --dart-define=API_BASE_URL=http://10.0.2.2:5059/api/v1/ --dart-defin
 sadržavati `/api/v1/`. Stripe publishable ključ se prosljeđuje na isti način jer
 ga API ne izlaže kroz endpoint.
 
+### Fizički uređaj
+
+Telefon i računar moraju biti na istoj mreži. API tada mora biti dostupan sa
+mreže (vidi napomenu iznad za `--urls http://0.0.0.0:5059` ili Docker), a LAN
+adresu računara (`ipconfig`) treba dodati u
+`UI/enote_mobile/android/app/src/main/res/xml/network_security_config.xml`.
+Zatim pokrenite, uz dozvoljen dolazni TCP 5059 kroz firewall:
+
+```bash
+flutter run -d <device-id> --dart-define=API_BASE_URL=http://192.168.1.20:5059/api/v1/ --dart-define=STRIPE_PUBLISHABLE_KEY=pk_test_vas_kljuc
+```
+
+Release APK za predaju (defines su ugrađene, tuđa mašina ne treba okruženje):
+
+```bash
+flutter build apk --release --dart-define=API_BASE_URL=http://10.0.2.2:5059/api/v1/ --dart-define=STRIPE_PUBLISHABLE_KEY=pk_test_vas_kljuc
+```
+
+Master–details forma na mobilnom klijentu je detalj *Kurs*
+(`CourseDetailScreen`): zaglavlje kursa i njegova paginirana predavanja; upis
+prikazuje predavanja, ispis ih skriva.
+
 ## Plaćanja
 
 Najam instrumenta se naplaćuje jednom, kada najam pređe u status `Complete` ili
@@ -103,6 +138,11 @@ kroz `STRIPE_CURRENCY`.
 Obavezne varijable su `STRIPE_SECRET_KEY` i `STRIPE_WEBHOOK_SECRET`. Webhook
 treba usmjeriti na `POST /api/v1/payments/stripe/webhook`, lokalno preko
 `stripe listen`.
+
+Mobilna aplikacija plaća unutar aplikacije kroz Stripe PaymentSheet. Publishable
+ključ se ne izlaže kroz endpoint nego se prosljeđuje sa
+`--dart-define=STRIPE_PUBLISHABLE_KEY=pk_test_…`. Za lokalno testiranje pokrenite
+`stripe listen --forward-to localhost:5059/api/v1/payments/stripe/webhook`.
 
 | Endpoint | Uloga |
 |---|---|
@@ -132,8 +172,9 @@ dotnet test
 Flutter testovi:
 
 ```bash
-cd UI/enote_core && flutter test
+cd UI/enote_core && flutter analyze && flutter test
 cd UI/enote_desktop && flutter test
+cd UI/enote_mobile && flutter analyze && flutter test
 ```
 
 ## Struktura rješenja
