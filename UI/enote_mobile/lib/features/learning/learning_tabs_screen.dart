@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 
+import '../announcements/announcement_list_screen.dart';
+import '../assignments/assignment_list_screen.dart';
 import '../courses/course_list_screen.dart';
+import '../events/event_list_screen.dart';
 import '../lectures/lecture_list_screen.dart';
 
 /// S13 — the Učenje tab root: scrollable top `TabBar` over the academic
-/// lists (02 §5 S13). *Zadaci*, *Objave* and *Događaji* are placeholders
-/// until Phase 8.
+/// lists (02 §5 S13). Every tab body keeps its state with
+/// `AutomaticKeepAliveClientMixin`.
 class LearningTabsScreen extends StatelessWidget {
   const LearningTabsScreen({super.key});
 
@@ -33,25 +36,14 @@ class LearningTabsScreen extends StatelessWidget {
               children: [
                 CourseListScreen(),
                 LectureListScreen(),
-                _PlaceholderTab(label: 'Zadaci'),
-                _PlaceholderTab(label: 'Objave'),
-                _PlaceholderTab(label: 'Događaji'),
+                AssignmentListScreen(),
+                AnnouncementListScreen(),
+                EventListScreen(),
               ],
             ),
           ),
         ],
       ),
     );
-  }
-}
-
-class _PlaceholderTab extends StatelessWidget {
-  final String label;
-
-  const _PlaceholderTab({required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(child: Text(label));
   }
 }

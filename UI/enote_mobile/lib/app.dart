@@ -11,8 +11,11 @@ import '../session/session_controller.dart';
 import '../session/token_store.dart';
 import '../theme/app_theme.dart';
 import 'config.dart';
+import 'features/announcements/announcement_provider.dart';
+import 'features/assignments/assignment_provider.dart';
 import 'features/auth/auth_provider.dart';
 import 'features/courses/course_provider.dart';
+import 'features/events/event_provider.dart';
 import 'features/instruments/instrument_provider.dart';
 import 'features/lectures/lecture_provider.dart';
 import 'features/payments/payment_provider.dart';
@@ -114,6 +117,15 @@ class _EnoteMobileAppState extends State<EnoteMobileApp> {
         ),
         ChangeNotifierProvider<LectureProvider>(
           create: (_) => LectureProvider(apiClient: widget.apiClient),
+        ),
+        ChangeNotifierProvider<AssignmentProvider>(
+          create: (_) => AssignmentProvider(apiClient: widget.apiClient),
+        ),
+        ChangeNotifierProvider<AnnouncementProvider>(
+          create: (_) => AnnouncementProvider(apiClient: widget.apiClient),
+        ),
+        ChangeNotifierProvider<EventProvider>(
+          create: (_) => EventProvider(apiClient: widget.apiClient),
         ),
         Provider<RankingProvider>(
           create: (_) => RankingProvider(apiClient: widget.apiClient),

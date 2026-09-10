@@ -3,10 +3,14 @@ import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
 
+import '../features/announcements/announcement_detail_screen.dart';
+import '../features/assignments/assignment_detail_screen.dart';
+import '../features/assignments/submission_history_screen.dart';
 import '../features/auth/forgot_password_screen.dart';
 import '../features/auth/register_screen.dart';
 import '../features/auth/reset_password_screen.dart';
 import '../features/courses/course_detail_screen.dart';
+import '../features/events/event_detail_screen.dart';
 import '../features/instruments/instrument_detail_screen.dart';
 import '../features/lecture_notes/lecture_note_detail_screen.dart';
 import '../features/lecture_notes/lecture_note_list_screen.dart';
@@ -47,7 +51,11 @@ class LectureNoteDetailArgs {
 class AssignmentDetailArgs {
   final int assignmentId;
 
-  const AssignmentDetailArgs(this.assignmentId);
+  /// Carries the course only when S23 was reached from one (02 §12 item 5):
+  /// the `( Rang lista kursa )` shortcut renders iff this is non-null.
+  final int? courseId;
+
+  const AssignmentDetailArgs(this.assignmentId, {this.courseId});
 }
 
 class RankingArgs {
@@ -57,7 +65,7 @@ class RankingArgs {
 }
 
 class AnnouncementDetailArgs {
-  final Object announcement;
+  final AnnouncementDto announcement;
 
   const AnnouncementDetailArgs(this.announcement);
 }
@@ -88,7 +96,7 @@ class ResetArgs {
 }
 
 class EventDetailArgs {
-  final Object event;
+  final EventDto event;
 
   const EventDetailArgs(this.event);
 }
@@ -153,15 +161,30 @@ class AppRouter {
           ),
         );
       case assignmentDetail:
-        return _route(const _PlaceholderScreen(title: 'Zadatak'));
+        final assignmentArgs = args is AssignmentDetailArgs ? args : null;
+        if (assignmentArgs == null) return _route(const _UnknownRouteScreen());
+        return _route(
+          AssignmentDetailScreen(
+            assignmentId: assignmentArgs.assignmentId,
+            courseId: assignmentArgs.courseId,
+          ),
+        );
       case assignmentHistory:
-        return _route(const _PlaceholderScreen(title: 'Moje predaje'));
+        return _route(const SubmissionHistoryScreen());
       case ranking:
         final rankingArgs = args is RankingArgs ? args : null;
         if (rankingArgs == null) return _route(const _UnknownRouteScreen());
         return _route(RankingScreen(courseId: rankingArgs.courseId));
       case announcementDetail:
-        return _route(const _PlaceholderScreen(title: 'Objava'));
+        final announcementArgs = args is AnnouncementDetailArgs
+            ? args
+            : null;
+        if (announcementArgs == null) {
+          return _route(const _UnknownRouteScreen());
+        }
+        return _route(
+          AnnouncementDetailScreen(announcement: announcementArgs.announcement),
+        );
       case instrumentDetail:
         final instrumentArgs = args is InstrumentDetailArgs ? args : null;
         if (instrumentArgs == null) return _route(const _UnknownRouteScreen());
@@ -195,7 +218,9 @@ class AppRouter {
           ),
         );
       case eventDetail:
-        return _route(const _PlaceholderScreen(title: 'Događaj'));
+        final eventArgs = args is EventDetailArgs ? args : null;
+        if (eventArgs == null) return _route(const _UnknownRouteScreen());
+        return _route(EventDetailScreen(event: eventArgs.event));
       default:
         return _route(const _UnknownRouteScreen());
     }
@@ -203,20 +228,6 @@ class AppRouter {
 
   static MaterialPageRoute<dynamic> _route(Widget child) {
     return MaterialPageRoute<dynamic>(builder: (_) => child);
-  }
-}
-
-class _PlaceholderScreen extends StatelessWidget {
-  final String title;
-
-  const _PlaceholderScreen({required this.title});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(title)),
-      body: Center(child: Text(title)),
-    );
   }
 }
 

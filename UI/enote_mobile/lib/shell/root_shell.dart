@@ -132,8 +132,9 @@ class RootShellState extends State<RootShell> with WidgetsBindingObserver {
   }
 
   /// Switches to the tab matching [notification]'s payload, then pushes the
-  /// target detail route on that tab's navigator (targets are placeholders
-  /// until T44/T59/T64). Payload-less notifications are ignored.
+  /// target detail route on that tab's navigator (rentals → tab 2 S11,
+  /// lectures → tab 1 S18, submissions → tab 1 S24 — all wired since T64).
+  /// Payload-less notifications are ignored.
   void routeNotification(NotificationDto notification) {
     final int tab;
     final String route;
