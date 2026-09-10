@@ -1,6 +1,6 @@
 # IDE / editor (local-only)
 .vscode/
-.cursor/
+.agents/
 .idea/
 *.suo
 *.user
@@ -120,10 +120,5 @@ node_modules/
 package.json
 package-lock.json
 
-# JetBrains Qodana (local static analysis, not committed)
-eNote/qodana.yaml
-qodana.yaml
-.qodana/
 
-# Poolside (local agent tooling, not part of the project)
-.poolside/
+

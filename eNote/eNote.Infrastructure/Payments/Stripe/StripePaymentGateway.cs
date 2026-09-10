@@ -37,7 +37,7 @@ public sealed class StripePaymentGateway : IPaymentGateway
             Amount = amountCents,
             Currency = currency,
             Metadata = new Dictionary<string, string>(metadata),
-            StatementDescriptor = _options.StatementDescriptor,
+            StatementDescriptorSuffix = _options.StatementDescriptor,
             AutomaticPaymentMethods = new PaymentIntentAutomaticPaymentMethodsOptions { Enabled = true }
         };
 

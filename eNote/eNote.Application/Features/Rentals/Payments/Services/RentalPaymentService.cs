@@ -58,7 +58,7 @@ public sealed class RentalPaymentService(
 
             var cents = (long)Math.Round(totalFee * 100m, MidpointRounding.AwayFromZero);
             var currency = options.Currency.Trim().ToLowerInvariant();
-            var idempotencyKey = $"rental:{rental.Id}:total:{cents}:{rental.ReturnedAt:O}";
+            var idempotencyKey = $"rental:{rental.Id}:total:{cents}:{rental.ReturnedAt:O}:v2";
 
             var metadata = new Dictionary<string, string>
             {
@@ -166,7 +166,7 @@ public sealed class RentalPaymentService(
         }, cancellationToken);
     }
 
-    private static async Task<T> InvokeGatewayAsync<T>(Func<Task<T>> call, CancellationToken cancellationToken)
+    private async Task<T> InvokeGatewayAsync<T>(Func<Task<T>> call, CancellationToken cancellationToken)
     {
         try
         {
@@ -174,6 +174,7 @@ public sealed class RentalPaymentService(
         }
         catch (Exception ex) when (ex is not AppException and not OperationCanceledException)
         {
+            logger.LogError(ex, "Stripe gateway invocation failed: {Message}", ex.Message);
             throw new PaymentProviderUnavailableException(Messages.PaymentProviderUnavailable);
         }
     }
