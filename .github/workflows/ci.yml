@@ -5,10 +5,14 @@ on:
     branches: [main, master]
     paths:
       - 'eNote/**'
+      - 'UI/**'
+      - '.github/workflows/ci.yml'
   pull_request:
     branches: [main, master]
     paths:
       - 'eNote/**'
+      - 'UI/**'
+      - '.github/workflows/ci.yml'
 
 jobs:
   build-and-test:
@@ -34,3 +38,36 @@ jobs:
 
       - name: Test
         run: dotnet test eNote.sln --configuration Release --no-build --verbosity normal
+
+  flutter-test:
+    name: flutter (${{ matrix.package }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        package:
+          - enote_core
+          - enote_desktop
+          - enote_mobile
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.1'
+          channel: 'stable'
+          cache: true
+
+      - name: Install dependencies
+        working-directory: UI/${{ matrix.package }}
+        run: flutter pub get
+
+      - name: Analyze
+        working-directory: UI/${{ matrix.package }}
+        run: flutter analyze
+
+      - name: Run tests
+        working-directory: UI/${{ matrix.package }}
+        run: flutter test
