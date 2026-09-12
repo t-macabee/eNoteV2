@@ -130,10 +130,8 @@ class InstrumentRentalDto {
     if (paidAt != null) 'paidAt': paidAt!.toIso8601String(),
   };
 
-  static InstrumentRentalStatus _parseStatus(dynamic value) {
-    if (value is int) return InstrumentRentalStatus.fromJson(value);
-    return InstrumentRentalStatus.pending;
-  }
+  static InstrumentRentalStatus _parseStatus(dynamic value) =>
+      InstrumentRentalStatus.fromDynamic(value);
 }
 
 class RentalCreateRequest {

@@ -55,6 +55,19 @@ enum LectureStatus {
     3 => LectureStatus.cancelled,
     _ => LectureStatus.scheduled,
   };
+
+  static LectureStatus fromDynamic(dynamic value) {
+    if (value is int) return fromJson(value);
+    if (value is String) {
+      final lower = value.toLowerCase();
+      for (final status in values) {
+        if (status.name.toLowerCase() == lower) {
+          return status;
+        }
+      }
+    }
+    return LectureStatus.scheduled;
+  }
 }
 
 enum AttendanceStatus {
@@ -70,6 +83,19 @@ enum AttendanceStatus {
     3 => AttendanceStatus.absent,
     _ => AttendanceStatus.pending,
   };
+
+  static AttendanceStatus fromDynamic(dynamic value) {
+    if (value is int) return fromJson(value);
+    if (value is String) {
+      final lower = value.toLowerCase();
+      for (final status in values) {
+        if (status.name.toLowerCase() == lower) {
+          return status;
+        }
+      }
+    }
+    return AttendanceStatus.pending;
+  }
 }
 
 enum InstrumentRentalStatus {
@@ -93,6 +119,19 @@ enum InstrumentRentalStatus {
     7 => InstrumentRentalStatus.returnedEarly,
     _ => InstrumentRentalStatus.pending,
   };
+
+  static InstrumentRentalStatus fromDynamic(dynamic value) {
+    if (value is int) return fromJson(value);
+    if (value is String) {
+      final lower = value.toLowerCase();
+      for (final status in values) {
+        if (status.name.toLowerCase() == lower) {
+          return status;
+        }
+      }
+    }
+    return InstrumentRentalStatus.pending;
+  }
 }
 
 enum AnnouncementScope {

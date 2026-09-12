@@ -39,16 +39,14 @@ class LectureDto {
       lectureType: typeValue is String
           ? LectureType.fromJson(typeValue)
           : LectureType.theoretical,
-      lectureStatus: statusValue is int
-          ? LectureStatus.fromJson(statusValue)
-          : LectureStatus.scheduled,
+      lectureStatus: LectureStatus.fromDynamic(statusValue),
       isCancelled: json['isCancelled'] as bool? ?? false,
       lectureTime: parseDate(json['lectureTime']) ?? DateTime.now(),
       duration: json['duration'] as int? ?? 0,
       capacity: json['capacity'] as int?,
       attendeeCount: json['attendeeCount'] as int? ?? 0,
-      myAttendanceStatus: attendanceValue is int
-          ? AttendanceStatus.fromJson(attendanceValue)
+      myAttendanceStatus: attendanceValue != null
+          ? AttendanceStatus.fromDynamic(attendanceValue)
           : null,
     );
   }
@@ -142,9 +140,7 @@ class AttendanceDto {
       id: json['id'] as int? ?? 0,
       studentId: json['studentId'] as int? ?? 0,
       studentName: json['studentName'] as String? ?? '',
-      attendanceStatus: statusValue is int
-          ? AttendanceStatus.fromJson(statusValue)
-          : AttendanceStatus.pending,
+      attendanceStatus: AttendanceStatus.fromDynamic(statusValue),
     );
   }
 

@@ -91,10 +91,16 @@ void main() {
       expect(dto.myAttendanceStatus, isNull);
     });
 
-    test('non-int value defaults to null', () {
+    test('null value defaults to null', () {
+      final dto = LectureDto.fromJson(
+          {'id': 1, 'name': 'n', 'myAttendanceStatus': null});
+      expect(dto.myAttendanceStatus, isNull);
+    });
+
+    test('string value parses', () {
       final dto = LectureDto.fromJson(
           {'id': 1, 'name': 'n', 'myAttendanceStatus': 'present'});
-      expect(dto.myAttendanceStatus, isNull);
+      expect(dto.myAttendanceStatus, AttendanceStatus.present);
     });
 
     test('int value parses', () {

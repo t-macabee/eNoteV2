@@ -19,6 +19,37 @@ void main() {
     });
   });
 
+  group('LectureStatus.fromDynamic', () {
+    test('parses every PascalCase backend wire name', () {
+      expect(LectureStatus.fromDynamic('Scheduled'), LectureStatus.scheduled);
+      expect(LectureStatus.fromDynamic('Held'), LectureStatus.held);
+      expect(LectureStatus.fromDynamic('Cancelled'), LectureStatus.cancelled);
+    });
+
+    test('parses lowercase and mixed case strings', () {
+      expect(LectureStatus.fromDynamic('scheduled'), LectureStatus.scheduled);
+      expect(LectureStatus.fromDynamic('sChEdUlEd'), LectureStatus.scheduled);
+      expect(LectureStatus.fromDynamic('held'), LectureStatus.held);
+      expect(LectureStatus.fromDynamic('HELD'), LectureStatus.held);
+      expect(LectureStatus.fromDynamic('cancelled'), LectureStatus.cancelled);
+      expect(LectureStatus.fromDynamic('cAnCeLlEd'), LectureStatus.cancelled);
+    });
+
+    test('handles legacy int values', () {
+      expect(LectureStatus.fromDynamic(1), LectureStatus.scheduled);
+      expect(LectureStatus.fromDynamic(2), LectureStatus.held);
+      expect(LectureStatus.fromDynamic(3), LectureStatus.cancelled);
+    });
+
+    test('returns default on invalid values or null', () {
+      expect(LectureStatus.fromDynamic('garbage'), LectureStatus.scheduled);
+      expect(LectureStatus.fromDynamic(3.5), LectureStatus.scheduled);
+      expect(LectureStatus.fromDynamic(null), LectureStatus.scheduled);
+      expect(LectureStatus.fromDynamic(-1), LectureStatus.scheduled);
+      expect(LectureStatus.fromDynamic(99), LectureStatus.scheduled);
+    });
+  });
+
   group('AttendanceStatus wire contract', () {
     test('every value round-trips via toJson/fromJson', () {
       for (final value in AttendanceStatus.values) {
@@ -32,6 +63,37 @@ void main() {
       expect(AttendanceStatus.fromJson(1), AttendanceStatus.pending);
       expect(AttendanceStatus.fromJson(2), AttendanceStatus.present);
       expect(AttendanceStatus.fromJson(3), AttendanceStatus.absent);
+    });
+  });
+
+  group('AttendanceStatus.fromDynamic', () {
+    test('parses every PascalCase backend wire name', () {
+      expect(AttendanceStatus.fromDynamic('Pending'), AttendanceStatus.pending);
+      expect(AttendanceStatus.fromDynamic('Present'), AttendanceStatus.present);
+      expect(AttendanceStatus.fromDynamic('Absent'), AttendanceStatus.absent);
+    });
+
+    test('parses lowercase and mixed case strings', () {
+      expect(AttendanceStatus.fromDynamic('pending'), AttendanceStatus.pending);
+      expect(AttendanceStatus.fromDynamic('pEnDiNg'), AttendanceStatus.pending);
+      expect(AttendanceStatus.fromDynamic('present'), AttendanceStatus.present);
+      expect(AttendanceStatus.fromDynamic('PRESENT'), AttendanceStatus.present);
+      expect(AttendanceStatus.fromDynamic('absent'), AttendanceStatus.absent);
+      expect(AttendanceStatus.fromDynamic('aBsEnT'), AttendanceStatus.absent);
+    });
+
+    test('handles legacy int values', () {
+      expect(AttendanceStatus.fromDynamic(1), AttendanceStatus.pending);
+      expect(AttendanceStatus.fromDynamic(2), AttendanceStatus.present);
+      expect(AttendanceStatus.fromDynamic(3), AttendanceStatus.absent);
+    });
+
+    test('returns default on invalid values or null', () {
+      expect(AttendanceStatus.fromDynamic('garbage'), AttendanceStatus.pending);
+      expect(AttendanceStatus.fromDynamic(3.5), AttendanceStatus.pending);
+      expect(AttendanceStatus.fromDynamic(null), AttendanceStatus.pending);
+      expect(AttendanceStatus.fromDynamic(-1), AttendanceStatus.pending);
+      expect(AttendanceStatus.fromDynamic(99), AttendanceStatus.pending);
     });
   });
 
@@ -55,6 +117,74 @@ void main() {
       expect(InstrumentRentalStatus.fromJson(6), InstrumentRentalStatus.canceled);
       expect(
           InstrumentRentalStatus.fromJson(7), InstrumentRentalStatus.returnedEarly);
+    });
+  });
+
+  group('InstrumentRentalStatus.fromDynamic', () {
+    test('parses every PascalCase backend wire name', () {
+      expect(InstrumentRentalStatus.fromDynamic('Pending'),
+          InstrumentRentalStatus.pending);
+      expect(InstrumentRentalStatus.fromDynamic('Approved'),
+          InstrumentRentalStatus.approved);
+      expect(InstrumentRentalStatus.fromDynamic('Active'),
+          InstrumentRentalStatus.active);
+      expect(InstrumentRentalStatus.fromDynamic('Completed'),
+          InstrumentRentalStatus.completed);
+      expect(InstrumentRentalStatus.fromDynamic('Rejected'),
+          InstrumentRentalStatus.rejected);
+      expect(InstrumentRentalStatus.fromDynamic('Canceled'),
+          InstrumentRentalStatus.canceled);
+      expect(InstrumentRentalStatus.fromDynamic('ReturnedEarly'),
+          InstrumentRentalStatus.returnedEarly);
+    });
+
+    test('parses lowercase and mixed case strings', () {
+      expect(InstrumentRentalStatus.fromDynamic('pending'),
+          InstrumentRentalStatus.pending);
+      expect(InstrumentRentalStatus.fromDynamic('approved'),
+          InstrumentRentalStatus.approved);
+      expect(InstrumentRentalStatus.fromDynamic('active'),
+          InstrumentRentalStatus.active);
+      expect(InstrumentRentalStatus.fromDynamic('completed'),
+          InstrumentRentalStatus.completed);
+      expect(InstrumentRentalStatus.fromDynamic('rejected'),
+          InstrumentRentalStatus.rejected);
+      expect(InstrumentRentalStatus.fromDynamic('canceled'),
+          InstrumentRentalStatus.canceled);
+      expect(InstrumentRentalStatus.fromDynamic('returnedearly'),
+          InstrumentRentalStatus.returnedEarly);
+      expect(InstrumentRentalStatus.fromDynamic('rEtUrNeDeArLy'),
+          InstrumentRentalStatus.returnedEarly);
+    });
+
+    test('handles legacy int values', () {
+      expect(InstrumentRentalStatus.fromDynamic(1),
+          InstrumentRentalStatus.pending);
+      expect(InstrumentRentalStatus.fromDynamic(2),
+          InstrumentRentalStatus.approved);
+      expect(InstrumentRentalStatus.fromDynamic(3),
+          InstrumentRentalStatus.active);
+      expect(InstrumentRentalStatus.fromDynamic(4),
+          InstrumentRentalStatus.completed);
+      expect(InstrumentRentalStatus.fromDynamic(5),
+          InstrumentRentalStatus.rejected);
+      expect(InstrumentRentalStatus.fromDynamic(6),
+          InstrumentRentalStatus.canceled);
+      expect(InstrumentRentalStatus.fromDynamic(7),
+          InstrumentRentalStatus.returnedEarly);
+    });
+
+    test('returns default on invalid values or null', () {
+      expect(InstrumentRentalStatus.fromDynamic('garbage'),
+          InstrumentRentalStatus.pending);
+      expect(InstrumentRentalStatus.fromDynamic(3.5),
+          InstrumentRentalStatus.pending);
+      expect(InstrumentRentalStatus.fromDynamic(null),
+          InstrumentRentalStatus.pending);
+      expect(InstrumentRentalStatus.fromDynamic(-1),
+          InstrumentRentalStatus.pending);
+      expect(InstrumentRentalStatus.fromDynamic(99),
+          InstrumentRentalStatus.pending);
     });
   });
 
@@ -149,6 +279,42 @@ void main() {
       expect(PaymentStatus.fromDynamic(4), PaymentStatus.canceled);
       expect(PaymentStatus.fromDynamic(5), PaymentStatus.refunded);
       expect(PaymentStatus.fromDynamic(6), PaymentStatus.partiallyRefunded);
+    });
+  });
+
+  group('DTO tolerant enum deserialization', () {
+    test(
+        'LectureDto.fromJson parses string lectureStatus and preserves null attendance',
+        () {
+      final dto = LectureDto.fromJson({
+        'lectureStatus': 'Held',
+        'myAttendanceStatus': null,
+      });
+      expect(dto.lectureStatus, LectureStatus.held);
+      expect(dto.myAttendanceStatus, isNull);
+    });
+
+    test('LectureDto.fromJson parses string attendance status', () {
+      final dto = LectureDto.fromJson({
+        'lectureStatus': 'Scheduled',
+        'myAttendanceStatus': 'Present',
+      });
+      expect(dto.lectureStatus, LectureStatus.scheduled);
+      expect(dto.myAttendanceStatus, AttendanceStatus.present);
+    });
+
+    test('AttendanceDto.fromJson parses string attendance status', () {
+      final dto = AttendanceDto.fromJson({
+        'attendanceStatus': 'Present',
+      });
+      expect(dto.attendanceStatus, AttendanceStatus.present);
+    });
+
+    test('InstrumentRentalDto.fromJson parses string rentalStatus', () {
+      final dto = InstrumentRentalDto.fromJson({
+        'rentalStatus': 'Completed',
+      });
+      expect(dto.rentalStatus, InstrumentRentalStatus.completed);
     });
   });
 }
