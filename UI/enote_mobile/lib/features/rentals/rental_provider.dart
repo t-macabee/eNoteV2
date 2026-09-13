@@ -11,27 +11,7 @@ class RentalProvider extends ReadOnlyProvider<InstrumentRentalDto> {
 
   @override
   InstrumentRentalDto fromJson(Map<String, dynamic> json) =>
-      InstrumentRentalDto.fromJson(normalizeRentalStatus(json));
-
-  /// Rewrites a string `rentalStatus` to the int the DTO understands.
-  ///
-  /// `Observed fact` (verified against the running API 2026-09-09): the
-  /// backend serialises the enum as a name — `"rentalStatus": "Completed"` —
-  /// while core `InstrumentRentalDto._parseStatus` accepts an `int` only and
-  /// falls back to `pending` for anything else, so every rental would render
-  /// as *Na čekanju*. Core is closed to changes in this workflow, so the
-  /// provider normalises on the way in; the proper fix is an
-  /// `InstrumentRentalStatus.fromDynamic` in core, next to the one
-  /// `PaymentStatus` and `AnnouncementScope` already have.
-  static Map<String, dynamic> normalizeRentalStatus(Map<String, dynamic> json) {
-    final raw = json['rentalStatus'];
-    if (raw is! String) return json;
-    final match = InstrumentRentalStatus.values
-        .where((s) => s.name.toLowerCase() == raw.toLowerCase())
-        .firstOrNull;
-    if (match == null) return json;
-    return {...json, 'rentalStatus': match.toJson()};
-  }
+      InstrumentRentalDto.fromJson(json);
 
   /// One page of the student's rentals. The server has no text search here,
   /// so the only filters are the status dropdown and an optional instrument.

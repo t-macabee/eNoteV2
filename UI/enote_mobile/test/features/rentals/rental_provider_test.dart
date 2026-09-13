@@ -104,8 +104,6 @@ void main() {
 
   test('a string rentalStatus from the server is parsed, not defaulted',
       () async {
-    // The API serialises the enum as its name; core's DTO only understands
-    // the int, so the provider normalises before decoding.
     final client = RecordingHttpClient(
       body: {..._rental, 'rentalStatus': 'Completed'},
     );
@@ -113,25 +111,6 @@ void main() {
     final rental = await provider.getById(1);
 
     expect(rental.rentalStatus, InstrumentRentalStatus.completed);
-  });
-
-  test('every status name round-trips through the normaliser', () {
-    for (final status in InstrumentRentalStatus.values) {
-      final name = '${status.name[0].toUpperCase()}${status.name.substring(1)}';
-      final normalized = RentalProvider.normalizeRentalStatus({
-        'rentalStatus': name,
-      });
-      expect(
-        normalized['rentalStatus'],
-        status.toJson(),
-        reason: '$name must normalise to ${status.toJson()}',
-      );
-    }
-  });
-
-  test('an int rentalStatus is left untouched', () {
-    final json = {'rentalStatus': 4};
-    expect(RentalProvider.normalizeRentalStatus(json)['rentalStatus'], 4);
   });
 
   test('getById reads student/rentals/{id}', () async {
