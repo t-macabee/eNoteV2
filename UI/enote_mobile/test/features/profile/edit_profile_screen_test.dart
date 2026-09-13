@@ -22,7 +22,7 @@ Map<String, dynamic> _meJson({bool hasPicture = false}) => {
     'firstName': 'Student',
     'lastName': 'Enote',
     'dateOfBirth': '2001-05-12T00:00:00',
-    'membershipPaidUntil': '2027-09-09T00:00:00',
+    'membershipPaidUntil': DateTime.utc(2027, 9, 9).toIso8601String(),
   },
   'hasPicture': hasPicture,
 };

@@ -8,7 +8,7 @@ import 'package:provider/provider.dart';
 import 'package:enote_core/enote_core.dart';
 import 'package:enote_mobile/features/auth/auth_provider.dart';
 import 'package:enote_mobile/features/instruments/instrument_provider.dart';
-import 'package:enote_mobile/features/payments/payment_provider.dart';
+import 'package:enote_mobile/features/rentals/payments/payment_provider.dart';
 import 'package:enote_mobile/features/rentals/rental_provider.dart';
 import 'package:enote_mobile/realtime/notification_hub_client.dart';
 import 'package:enote_mobile/session/session_controller.dart';

@@ -6,13 +6,13 @@ import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
-import 'package:enote_mobile/features/payments/payment_provider.dart';
-import 'package:enote_mobile/features/payments/payment_screen.dart';
-import 'package:enote_mobile/features/payments/payment_sheet_gateway.dart';
+import 'package:enote_mobile/features/rentals/payments/payment_provider.dart';
+import 'package:enote_mobile/features/rentals/payments/payment_screen.dart';
+import 'package:enote_mobile/features/rentals/payments/payment_sheet_gateway.dart';
 import 'package:enote_mobile/features/rentals/rental_provider.dart';
 import 'package:enote_mobile/theme/app_theme.dart';
 
-import '../../helpers.dart';
+import '../../../helpers.dart';
 import 'fake_payment_sheet_gateway.dart';
 
 const _baseUrl = 'http://10.0.2.2:5059/api/v1/';
@@ -252,7 +252,7 @@ void main() {
     expect(find.text('Nazad na iznajmljivanje'), findsOneWidget);
   });
 
-  testWidgets('leaving through D refetches the rental and pops true', (
+  testWidgets('leaving through D pops true', (
     tester,
   ) async {
     final client = _PayStubClient(rental: _rental());
@@ -266,7 +266,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(harness.popped, isTrue);
-    expect(client.rentalGets, 2);
+    expect(client.rentalGets, 1);
   });
 
   testWidgets('a dismissed sheet shows E with the cancelled copy', (

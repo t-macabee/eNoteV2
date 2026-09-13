@@ -6,7 +6,7 @@ import '../../../widgets/entity_form_scaffold.dart';
 import '../../../widgets/async_dropdown.dart';
 import '../../../widgets/user_credential_fields.dart';
 import '../music_store/music_store_provider.dart';
-import 'user_provision_service.dart';
+import 'admin_user_provider.dart';
 
 /// Provisions a user via POST admin/users; UserGridScreen is the list/search/deactivate screen.
 class UserProvisionFormScreen extends StatefulWidget {
@@ -35,7 +35,7 @@ class _UserProvisionFormScreenState extends State<UserProvisionFormScreen> {
   }
 
   Future<bool> _save() async {
-    final service = context.read<UserProvisionService>();
+    final service = context.read<AdminUserProvider>();
     final firstName = _credentialController.firstNameController.text.trim();
     final lastName = _credentialController.lastNameController.text.trim();
     final request = UserProvisionRequest(

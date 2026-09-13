@@ -7,8 +7,8 @@ import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
 import 'package:enote_desktop/features/admin/music_store/music_store_provider.dart';
+import 'package:enote_desktop/features/admin/users/admin_user_provider.dart';
 import 'package:enote_desktop/features/admin/users/user_provision_form_screen.dart';
-import 'package:enote_desktop/features/admin/users/user_provision_service.dart';
 
 /// Answers GETs on the music-stores endpoint with a single store and POSTs on
 /// admin/users with a minimal userId payload, recording every POSTed body so
@@ -66,8 +66,8 @@ void main() {
       await tester.pumpWidget(
         MultiProvider(
           providers: [
-            Provider<UserProvisionService>.value(
-              value: UserProvisionService(apiClient: apiClient),
+            ChangeNotifierProvider<AdminUserProvider>.value(
+              value: AdminUserProvider(apiClient: apiClient),
             ),
             ChangeNotifierProvider<MusicStoreProvider>.value(
               value: MusicStoreProvider(apiClient: apiClient),

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../features/payments/payment_screen.dart';
+import '../features/rentals/payments/payment_screen.dart';
 import '../shell/app_router.dart';
 
 sealed class DeepLinkTarget {

@@ -3,12 +3,12 @@ import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
 
-import '../../config.dart';
-import '../../theme/app_theme.dart';
-import '../../widgets/async_state_view.dart';
-import '../../widgets/labeled_value.dart';
-import '../../widgets/status_chip.dart';
-import '../rentals/rental_provider.dart';
+import '../../../config.dart';
+import '../../../theme/app_theme.dart';
+import '../../../widgets/async_state_view.dart';
+import '../../../widgets/labeled_value.dart';
+import '../../../widgets/status_chip.dart';
+import '../rental_provider.dart';
 import 'payment_provider.dart';
 import 'payment_sheet_gateway.dart';
 import 'payment_status_view.dart';
@@ -177,6 +177,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
   }
 
   Future<void> _poll() async {
+    if (_isPolling) return;
     final payments = context.read<PaymentProvider>();
     setState(() => _isPolling = true);
     try {
@@ -201,10 +202,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
     }
   }
 
-  Future<void> _backToRental() async {
-    try {
-      await context.read<RentalProvider>().getById(widget.rentalId);
-    } catch (_) {}
+  void _backToRental() {
     if (mounted) Navigator.of(context).pop(true);
   }
 

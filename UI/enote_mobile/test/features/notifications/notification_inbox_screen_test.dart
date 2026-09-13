@@ -7,7 +7,7 @@ import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
 import 'package:enote_mobile/features/instruments/instrument_provider.dart';
-import 'package:enote_mobile/features/payments/payment_provider.dart';
+import 'package:enote_mobile/features/rentals/payments/payment_provider.dart';
 import 'package:enote_mobile/features/rentals/rental_provider.dart';
 import 'package:enote_mobile/features/notifications/notification_inbox_screen.dart';
 import 'package:enote_mobile/realtime/notification_hub_client.dart';
@@ -27,7 +27,7 @@ Map<String, dynamic> _meJson() => {
     'firstName': 'Student',
     'lastName': 'Enote',
     'dateOfBirth': '2001-05-12T00:00:00',
-    'membershipPaidUntil': '2027-09-09T00:00:00',
+    'membershipPaidUntil': DateTime.utc(2027, 9, 9).toIso8601String(),
   },
   'hasPicture': false,
 };
@@ -83,7 +83,11 @@ class _NotificationStubClient extends http.BaseClient {
     }
     if (request.method == 'GET' &&
         path == '/api/v1/student/notifications/unread-count') {
-      return {'unreadCount': 0};
+      // Server count is the badge's only source (T18); mirror the fixture.
+      final unread = allRead
+          ? 0
+          : items.where((item) => item['isRead'] == false).length;
+      return {'unreadCount': unread};
     }
     if (request.method == 'GET' && path == '/api/v1/student/notifications') {
       final page = int.tryParse(request.url.queryParameters['page'] ?? '1');

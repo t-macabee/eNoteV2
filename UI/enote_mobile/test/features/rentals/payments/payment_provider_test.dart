@@ -5,9 +5,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 
 import 'package:enote_core/enote_core.dart';
-import 'package:enote_mobile/features/payments/payment_provider.dart';
+import 'package:enote_mobile/features/rentals/payments/payment_provider.dart';
 
-import '../../helpers.dart';
+import '../../../helpers.dart';
 
 const _baseUrl = 'http://10.0.2.2:5059/api/v1/';
 

@@ -3,9 +3,8 @@ import 'package:enote_core/enote_core.dart';
 /// Wraps the logged-in user's own `users/me` endpoints for [ProfileDialog]
 /// and its two sub-forms.
 ///
-/// Not a `BaseProvider<T>`, for the same reason as `UserProvisionService`:
-/// `users/me` is a single-record resource, not the paged
-/// list/search/insert/update/remove shape `BaseProvider` assumes.
+/// Not a `BaseProvider<T>`: `users/me` is a single-record resource, not the
+/// paged list/search/insert/update/remove shape `BaseProvider` assumes.
 class ProfileProvider {
   final ApiClient apiClient;
 

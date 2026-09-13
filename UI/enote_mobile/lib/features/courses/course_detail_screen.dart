@@ -289,7 +289,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
               icon: Icons.info_outline,
               reason: paidUntil == null
                   ? 'Članarina nije aktivna.'
-                  : 'Članarina je istekla ${formatDate(paidUntil)}. '
+                  : 'Članarina je istekla ${formatDate(paidUntil)} '
                         'Obratite se školi za obnovu.',
             ),
           ],

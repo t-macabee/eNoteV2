@@ -5,7 +5,7 @@ import 'package:enote_core/enote_core.dart';
 
 import '../../../theme/app_theme.dart';
 import 'admin_user_provider.dart';
-import 'user_grid_screen.dart';
+import 'user_list_item.dart';
 
 class UserDetailsDialog extends StatefulWidget {
   final UserListItem item;

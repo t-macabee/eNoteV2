@@ -29,11 +29,11 @@ Map<String, dynamic> _courseJson({required bool enrolled}) => {
   'isEnrolled': enrolled,
 };
 
-Map<String, dynamic> _meJson({String paidUntil = '2027-09-09T00:00:00'}) => {
+Map<String, dynamic> _meJson({required DateTime paidUntil}) => {
   'role': 'Student',
   'username': 'student',
   'email': 'student@enote.com',
-  'profile': {'id': 7, 'membershipPaidUntil': paidUntil},
+  'profile': {'id': 7, 'membershipPaidUntil': paidUntil.toIso8601String()},
   'hasPicture': false,
 };
 
@@ -61,7 +61,7 @@ const _lecturesPage = {
 class _CourseDetailStubClient extends http.BaseClient {
   final List<String> calls = [];
   bool enrolled;
-  final String paidUntil;
+  final DateTime paidUntil;
 
   _CourseDetailStubClient({required this.enrolled, required this.paidUntil});
 
@@ -110,11 +110,11 @@ class _Harness {
 
   Future<void> bootstrap({
     bool enrolled = false,
-    String paidUntil = '2027-09-09T00:00:00',
+    DateTime? paidUntil,
   }) async {
     client = _CourseDetailStubClient(
       enrolled: enrolled,
-      paidUntil: paidUntil,
+      paidUntil: paidUntil ?? DateTime.utc(2027, 9, 9),
     );
     authState = AuthState(
       baseUrl: 'http://10.0.2.2:5059/api/v1/',
@@ -294,7 +294,7 @@ void main() {
     final harness = _Harness();
     await harness.bootstrap(
       enrolled: false,
-      paidUntil: '2026-09-08T00:00:00',
+      paidUntil: DateTime.utc(2026, 9, 8),
     );
     await tester.pumpWidget(harness.app());
     await tester.pumpAndSettle();

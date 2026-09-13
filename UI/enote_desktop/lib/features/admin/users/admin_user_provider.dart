@@ -17,6 +17,12 @@ class AdminUserProvider extends CrudProvider<UserProfileResponse> {
   /// basic item info) must catch at the call site, not here.
   Future<UserProfileResponse> getProfile(int id) => getById(id);
 
+  Future<int> provision(UserProvisionRequest request) async {
+    final response = await apiClient.post(endpoint, body: request.toJson());
+    final data = decodeOrThrow(response);
+    return data['userId'] as int? ?? data['id'] as int? ?? 0;
+  }
+
   /// `PUT admin/users/{id}/status`.
   Future<void> setStatus(int id, bool isActive) async {
     final response = await apiClient.put(

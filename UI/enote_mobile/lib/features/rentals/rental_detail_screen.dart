@@ -9,7 +9,7 @@ import '../../widgets/async_state_view.dart';
 import '../../widgets/labeled_value.dart';
 import '../../widgets/section_header.dart';
 import '../../widgets/status_chip.dart';
-import '../payments/payment_provider.dart';
+import 'payments/payment_provider.dart';
 import 'rental_provider.dart';
 import 'rental_timeline.dart';
 

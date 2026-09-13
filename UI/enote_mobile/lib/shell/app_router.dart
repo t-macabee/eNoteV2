@@ -17,10 +17,10 @@ import '../features/lecture_notes/lecture_note_list_screen.dart';
 import '../features/lecture_notes/lecture_note_provider.dart';
 import '../features/lectures/lecture_detail_screen.dart';
 import '../features/notifications/notification_inbox_screen.dart';
-import '../features/payments/payment_screen.dart';
 import '../features/profile/change_password_screen.dart';
 import '../features/profile/edit_profile_screen.dart';
 import '../features/ranking/ranking_screen.dart';
+import '../features/rentals/payments/payment_screen.dart';
 import '../features/rentals/rental_detail_screen.dart';
 
 class CourseDetailArgs {

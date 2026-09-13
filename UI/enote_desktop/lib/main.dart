@@ -21,7 +21,6 @@ import 'features/instructor/student/instructor_student_provider.dart';
 import 'features/instructor/ranking/ranking_provider.dart';
 import 'features/admin/music_store/music_store_provider.dart';
 import 'features/admin/music_store/store_instrument_provider.dart';
-import 'features/admin/users/user_provision_service.dart';
 import 'features/shared/announcement/store_announcement_provider.dart';
 import 'features/store_employee/employee/shop_employee_provider.dart';
 import 'features/store_employee/instrument/instrument_provider.dart';
@@ -152,9 +151,6 @@ class MyApp extends StatelessWidget {
             apiClient: apiClient,
             endpoint: 'student/notifications',
           ),
-        ),
-        Provider<UserProvisionService>(
-          create: (_) => UserProvisionService(apiClient: apiClient),
         ),
         Provider<RankingProvider>(
           create: (_) => RankingProvider(apiClient: apiClient),

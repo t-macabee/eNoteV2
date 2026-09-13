@@ -88,33 +88,28 @@ class _LectureFormScreenState extends State<LectureFormScreen> {
     }
 
     final provider = context.read<LectureProvider>();
-    try {
-      if (!_isEditMode) {
-        final request = LectureCreateRequest(
-          name: _nameController.text.trim(),
-          location: _locationController.text.trim(),
-          lectureType: _lectureType,
-          lectureTime: _lectureTime!,
-          duration: duration,
-          capacity: capacity,
-          courseId: widget.courseId,
-        );
-        await provider.insert(request.toJson());
-      } else {
-        final request = LectureUpdateRequest(
-          name: _nameController.text.trim(),
-          location: _locationController.text.trim(),
-          lectureTime: _lectureTime!,
-          duration: duration,
-          capacity: capacity,
-        );
-        await provider.update(widget.existing!.id, request.toJson());
-      }
-      return true;
-    } catch (e) {
-      // Re-throw so EntityFormScaffold's catch shows it via ErrorBanner
-      rethrow;
+    if (!_isEditMode) {
+      final request = LectureCreateRequest(
+        name: _nameController.text.trim(),
+        location: _locationController.text.trim(),
+        lectureType: _lectureType,
+        lectureTime: _lectureTime!,
+        duration: duration,
+        capacity: capacity,
+        courseId: widget.courseId,
+      );
+      await provider.insert(request.toJson());
+    } else {
+      final request = LectureUpdateRequest(
+        name: _nameController.text.trim(),
+        location: _locationController.text.trim(),
+        lectureTime: _lectureTime!,
+        duration: duration,
+        capacity: capacity,
+      );
+      await provider.update(widget.existing!.id, request.toJson());
     }
+    return true;
   }
 
   @override
