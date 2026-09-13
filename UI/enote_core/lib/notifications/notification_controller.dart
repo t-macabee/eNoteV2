@@ -61,6 +61,7 @@ class NotificationController extends ChangeNotifier {
 
     try {
       final pageSize = search?.pageSize ?? 50;
+      final unreadFuture = refreshUnreadCount();
       final response = await apiClient.get(
         endpoint,
         queryParams: (search ?? NotificationSearchObject(pageSize: 50))
@@ -76,7 +77,7 @@ class NotificationController extends ChangeNotifier {
       _page = 1;
       _pageSize = pageSize;
       _hasMore = _notifications.length == pageSize;
-      _unreadCount = _notifications.where((n) => !n.isRead).length;
+      await unreadFuture;
     } catch (e) {
       _error = userMessage(e);
     } finally {
@@ -123,7 +124,9 @@ class NotificationController extends ChangeNotifier {
     final index = _notifications.indexWhere((n) => n.id == id);
     if (index != -1 && !_notifications[index].isRead) {
       _notifications[index] = _markedRead(_notifications[index]);
-      _unreadCount = _notifications.where((n) => !n.isRead).length;
+      if (_unreadCount > 0) {
+        _unreadCount--;
+      }
       notifyListeners();
     }
   }

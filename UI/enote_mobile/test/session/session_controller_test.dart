@@ -191,4 +191,26 @@ void main() {
     await controller.reloadProfile();
     expect(controller.pictureVersion, 2);
   });
+
+  test('bootstrap stores bootstrapError on failure without rethrowing', () async {
+    final stub = _StubClient(
+      responses: {
+        ..._bootstrapResponses(),
+        'GET /api/v1/users/me': http.Response(
+          '{"message":"Server error"}',
+          500,
+          headers: {'content-type': 'application/json'},
+        ),
+      },
+    );
+    final controller = _controller(stub);
+    await controller.bootstrap();
+    expect(controller.profile, isNull);
+    expect(controller.bootstrapError, isNotNull);
+
+    stub.responses['GET /api/v1/users/me'] = _bootstrapResponses()['GET /api/v1/users/me']!;
+    await controller.reloadProfile();
+    expect(controller.bootstrapError, isNull);
+    expect(controller.profile?.username, 'student');
+  });
 }

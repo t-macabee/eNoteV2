@@ -51,9 +51,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
       builder: (context, controller, _) {
         final profile = controller.profile;
         if (profile == null) {
+          final error = _error ?? controller.bootstrapError;
           return AsyncStateView(
-            isLoading: _error == null,
-            error: _error,
+            isLoading: error == null,
+            error: error,
             onRetry: _reload,
             child: const SizedBox.shrink(),
           );

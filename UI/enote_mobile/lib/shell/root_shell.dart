@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -60,7 +61,7 @@ class RootShellState extends State<RootShell> with WidgetsBindingObserver {
       if (!_booted) {
         _booted = true;
         if (mounted) {
-          context.read<SessionController>().bootstrap();
+          unawaited(context.read<SessionController>().bootstrap());
         }
       }
     });

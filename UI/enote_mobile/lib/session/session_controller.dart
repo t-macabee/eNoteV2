@@ -17,6 +17,7 @@ class SessionController extends ChangeNotifier {
 
   UserProfileResponse? _profile;
   int _pictureVersion = 0;
+  Object? _bootstrapError;
 
   SessionController({
     required this.apiClient,
@@ -26,6 +27,7 @@ class SessionController extends ChangeNotifier {
   });
 
   UserProfileResponse? get profile => _profile;
+  Object? get bootstrapError => _bootstrapError;
 
   /// Read path for the profile picture URL cache buster. Bumped on every
   /// successful [reloadProfile] so the picture URL carries a fresh `?v=`
@@ -58,14 +60,18 @@ class SessionController extends ChangeNotifier {
   }
 
   Future<void> bootstrap() async {
-    final results = await Future.wait<dynamic>([
-      apiClient.get('users/me'),
-      notifications.refreshUnreadCount(),
-      notifications.refresh(),
-    ]);
-    _profile = UserProfileResponse.fromJson(
-      decodeOrThrow(results[0] as http.Response),
-    );
+    _bootstrapError = null;
+    try {
+      final results = await Future.wait<dynamic>([
+        apiClient.get('users/me'),
+        notifications.refresh(),
+      ]);
+      _profile = UserProfileResponse.fromJson(
+        decodeOrThrow(results[0] as http.Response),
+      );
+    } catch (e) {
+      _bootstrapError = e;
+    }
     notifyListeners();
   }
 
@@ -73,6 +79,7 @@ class SessionController extends ChangeNotifier {
     final response = await apiClient.get('users/me');
     _profile = UserProfileResponse.fromJson(decodeOrThrow(response));
     _pictureVersion++;
+    _bootstrapError = null;
     notifyListeners();
   }
 

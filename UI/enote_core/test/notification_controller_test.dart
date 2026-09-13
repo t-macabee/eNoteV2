@@ -16,12 +16,36 @@ Map<String, dynamic> _item(int id) => {
 class _PagedFakeClient extends http.BaseClient {
   final Map<int, List<Map<String, dynamic>>> pages;
   final List<Uri> urls = [];
+  int unreadCount;
+  final bool throwOnUnreadCount;
 
-  _PagedFakeClient(this.pages);
+  _PagedFakeClient(
+    this.pages, {
+    this.unreadCount = 0,
+    this.throwOnUnreadCount = false,
+  });
 
   @override
   Future<http.StreamedResponse> send(http.BaseRequest request) async {
     urls.add(request.url);
+    if (request.url.path.endsWith('/unread-count')) {
+      if (throwOnUnreadCount) {
+        throw http.ClientException('offline');
+      }
+      final body = jsonEncode({'unreadCount': unreadCount});
+      return http.StreamedResponse(
+        Stream.value(utf8.encode(body)),
+        200,
+        headers: {'content-type': 'application/json'},
+      );
+    }
+    if (request.method == 'PATCH') {
+      return http.StreamedResponse(
+        Stream.value(utf8.encode('{"message":"OK"}')),
+        200,
+        headers: {'content-type': 'application/json'},
+      );
+    }
     final page =
         int.tryParse(request.url.queryParameters['page'] ?? '1') ?? 1;
     final body = jsonEncode({'items': pages[page] ?? []});
@@ -84,5 +108,39 @@ void main() {
     await c.refresh(search: NotificationSearchObject(pageSize: 2));
     expect(c.notifications.length, 2);
     expect(client.urls.last.queryParameters['page'], '1');
+  });
+
+  test(
+      'page 1 has 2 unread, server count is 7, markRead on one becomes 6, markAllRead becomes 0',
+      () async {
+    final client = _PagedFakeClient(
+      {
+        1: [_item(1), _item(2)],
+      },
+      unreadCount: 7,
+    );
+    final c = _controller(client);
+    await c.refresh(search: NotificationSearchObject(pageSize: 2));
+    expect(c.notifications.where((n) => !n.isRead).length, 2);
+    expect(c.unreadCount, 7);
+
+    await c.markRead(1);
+    expect(c.unreadCount, 6);
+
+    await c.markAllRead();
+    expect(c.unreadCount, 0);
+  });
+
+  test('refresh succeeds even when unread-count throws', () async {
+    final client = _PagedFakeClient(
+      {
+        1: [_item(1)],
+      },
+      throwOnUnreadCount: true,
+    );
+    final c = _controller(client);
+    await c.refresh(search: NotificationSearchObject(pageSize: 2));
+    expect(c.notifications.length, 1);
+    expect(c.error, isNull);
   });
 }
