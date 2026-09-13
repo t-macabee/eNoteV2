@@ -161,8 +161,12 @@ Future<_Harness> _pumpDetail(
   return harness;
 }
 
-DateTime _future() => DateTime.now().add(const Duration(days: 365));
-DateTime _past() => DateTime(2020, 3, 4);
+DateTime _future() {
+  final now = DateTime.now().toUtc();
+  return DateTime.utc(now.year + 1, 1, 1);
+}
+
+DateTime _past() => DateTime.utc(2020, 3, 4);
 
 bool _requestButtonEnabled(WidgetTester tester) {
   final button = tester.widget<FilledButton>(

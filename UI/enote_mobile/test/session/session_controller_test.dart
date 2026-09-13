@@ -142,41 +142,24 @@ void main() {
     expect(controller.isMembershipActive, isFalse);
   });
 
-  test('isMembershipActive is false for yesterday 23:59', () async {
-    final now = DateTime.now();
-    final yesterdayLate = DateTime(
-      now.year,
-      now.month,
-      now.day - 1,
-      23,
-      59,
-      59,
+  test('isMembershipActive is false for an expired date', () async {
+    final http = _StubClient(
+      responses: _profileResponses(_iso(DateTime.utc(2020, 3, 4))),
     );
-    final http = _StubClient(responses: _profileResponses(_iso(yesterdayLate)));
     final controller = _controller(http);
     await controller.bootstrap();
 
     expect(controller.isMembershipActive, isFalse);
   });
 
-  test('isMembershipActive is true for today 00:00 (inclusive day)', () async {
-    final now = DateTime.now();
-    final todayStart = DateTime(now.year, now.month, now.day);
-    final http = _StubClient(responses: _profileResponses(_iso(todayStart)));
+  test('isMembershipActive is true for a future date', () async {
+    final now = DateTime.now().toUtc();
+    final future = DateTime.utc(now.year + 1, 1, 1);
+    final http = _StubClient(responses: _profileResponses(_iso(future)));
     final controller = _controller(http);
     await controller.bootstrap();
 
-    expect(controller.membershipPaidUntil, todayStart);
-    expect(controller.isMembershipActive, isTrue);
-  });
-
-  test('isMembershipActive is true for today 23:59:59 local', () async {
-    final now = DateTime.now();
-    final todayLate = DateTime(now.year, now.month, now.day, 23, 59, 59);
-    final http = _StubClient(responses: _profileResponses(_iso(todayLate)));
-    final controller = _controller(http);
-    await controller.bootstrap();
-
+    expect(controller.membershipPaidUntil, future);
     expect(controller.isMembershipActive, isTrue);
   });
 

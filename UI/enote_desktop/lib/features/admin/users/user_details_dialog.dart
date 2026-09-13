@@ -175,11 +175,7 @@ class _UserDetailsDialogState extends State<UserDetailsDialog> {
   @override
   Widget build(BuildContext context) {
     final item = widget.item;
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final isMembershipActive = _membershipPaidUntil != null &&
-        (_membershipPaidUntil!.isAfter(today) ||
-            _membershipPaidUntil!.isAtSameMomentAs(today));
+    final membershipActive = isMembershipActive(_membershipPaidUntil);
 
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -297,7 +293,7 @@ class _UserDetailsDialogState extends State<UserDetailsDialog> {
                       item.enrollmentDate ?? _profile!.enrollmentDate!,
                     ),
                   ),
-                _buildMembershipStatusRow(isMembershipActive),
+                _buildMembershipStatusRow(membershipActive),
               ],
               if (_isLoadingProfile) ...[
                 const SizedBox(height: 12),

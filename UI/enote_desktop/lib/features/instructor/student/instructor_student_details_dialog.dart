@@ -57,13 +57,9 @@ class _InstructorStudentDetailsDialogState
   @override
   Widget build(BuildContext context) {
     final student = _student;
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final isMembershipActive = student.membershipPaidUntil != null &&
-        (student.membershipPaidUntil!.isAfter(today) ||
-            student.membershipPaidUntil!.isAtSameMomentAs(today));
+    final membershipActive = isMembershipActive(student.membershipPaidUntil);
 
-    final statusValue = isMembershipActive
+    final statusValue = membershipActive
         ? 'Aktivna do ${formatDateNullable(student.membershipPaidUntil)}'
         : 'Istekla / Nema';
 

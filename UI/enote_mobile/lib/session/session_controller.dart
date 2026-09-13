@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import 'package:enote_core/enote_core.dart';
+import 'package:enote_core/membership/membership.dart' as membership;
 
 class SessionController extends ChangeNotifier {
   final ApiClient apiClient;
@@ -38,20 +39,11 @@ class SessionController extends ChangeNotifier {
   DateTime? get membershipPaidUntil => profile?.profile.membershipPaidUntil;
 
   /// The membership is active through the end of the expiry **day**
-  /// (inclusive boundary, local time): `false` when no expiry is set;
-  /// otherwise `true` while now is before the start of the day after
-  /// [membershipPaidUntil]'s calendar day.
-  bool get isMembershipActive {
-    final until = membershipPaidUntil;
-    if (until == null) return false;
-    final local = until.toLocal();
-    final endOfDay = DateTime(
-      local.year,
-      local.month,
-      local.day,
-    ).add(const Duration(days: 1));
-    return DateTime.now().isBefore(endOfDay);
-  }
+  /// (inclusive boundary, UTC): `false` when no expiry is set; otherwise
+  /// `true` while [membershipPaidUntil]'s UTC calendar day is not before the
+  /// current UTC calendar day.
+  bool get isMembershipActive =>
+      membership.isMembershipActive(membershipPaidUntil);
 
   bool consumeSessionExpired() {
     final value = _sessionExpired;
