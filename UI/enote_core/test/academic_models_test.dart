@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:enote_core/enote_core.dart';
 
@@ -107,6 +109,38 @@ void main() {
       final dto =
           LectureDto.fromJson({'id': 1, 'name': 'n', 'myAttendanceStatus': 2});
       expect(dto.myAttendanceStatus, AttendanceStatus.present);
+    });
+  });
+
+  group('parseCourseRanking', () {
+    test('parses a bare JSON list', () {
+      final entries = parseCourseRanking(jsonEncode([
+        {
+          'rank': 1,
+          'studentId': 7,
+          'studentName': 'Student Enote',
+          'averageGrade': 9.5,
+          'gradedSubmissions': 3,
+        },
+        {
+          'rank': 2,
+          'studentId': 9,
+          'studentName': 'Drugi Student',
+          'averageGrade': null,
+          'gradedSubmissions': 0,
+        },
+      ]));
+
+      expect(entries, hasLength(2));
+      expect(entries.first.rank, 1);
+      expect(entries.first.studentName, 'Student Enote');
+      expect(entries.first.averageGrade, 9.5);
+      expect(entries.last.averageGrade, isNull);
+    });
+
+    test('empty body returns an empty list', () {
+      expect(parseCourseRanking(''), isEmpty);
+      expect(parseCourseRanking('  '), isEmpty);
     });
   });
 }

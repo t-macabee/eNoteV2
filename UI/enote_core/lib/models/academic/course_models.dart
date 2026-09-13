@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import '../../formatting/formatters.dart';
 class CourseDto {
   final int id;
@@ -108,6 +110,18 @@ class CourseRankingEntryDto {
       gradedSubmissions: json['gradedSubmissions'] as int? ?? 0,
     );
   }
+}
+
+List<CourseRankingEntryDto> parseCourseRanking(String body) {
+  if (body.trim().isEmpty) return [];
+  final decoded = jsonDecode(body);
+  if (decoded is! List) {
+    throw const FormatException('Expected a ranking list.');
+  }
+  return [
+    for (final item in decoded)
+      CourseRankingEntryDto.fromJson(Map<String, dynamic>.from(item as Map)),
+  ];
 }
 
 class CourseCatalogInstructorDto {

@@ -1,6 +1,6 @@
 import 'package:enote_core/enote_core.dart';
 
-class StoreAnnouncementProvider extends BaseProvider<AnnouncementDto> {
+class StoreAnnouncementProvider extends CrudProvider<AnnouncementDto> {
   StoreAnnouncementProvider({required super.apiClient})
       : super(endpoint: 'shop/announcements');
 

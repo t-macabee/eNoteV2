@@ -1,6 +1,6 @@
 import 'package:enote_core/enote_core.dart';
 
-class SubmissionProvider extends BaseProvider<AssignmentSubmissionDto> {
+class SubmissionProvider extends CrudProvider<AssignmentSubmissionDto> {
   SubmissionProvider({
     required super.apiClient,
     required int lectureId,

@@ -1,6 +1,6 @@
 import 'package:enote_core/enote_core.dart';
 
-class InstrumentProvider extends BaseProvider<InstrumentDto> {
+class InstrumentProvider extends CrudProvider<InstrumentDto> {
   InstrumentProvider({required super.apiClient})
       : super(endpoint: 'shop/instruments');
 

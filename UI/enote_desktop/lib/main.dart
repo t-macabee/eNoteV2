@@ -18,6 +18,7 @@ import 'features/instructor/course/course_provider.dart';
 import 'features/instructor/course/course_catalog_provider.dart';
 import 'features/instructor/lecture/lecture_provider.dart';
 import 'features/instructor/student/instructor_student_provider.dart';
+import 'features/instructor/ranking/ranking_provider.dart';
 import 'features/admin/music_store/music_store_provider.dart';
 import 'features/admin/music_store/store_instrument_provider.dart';
 import 'features/admin/users/user_provision_service.dart';
@@ -154,6 +155,9 @@ class MyApp extends StatelessWidget {
         ),
         Provider<UserProvisionService>(
           create: (_) => UserProvisionService(apiClient: apiClient),
+        ),
+        Provider<RankingProvider>(
+          create: (_) => RankingProvider(apiClient: apiClient),
         ),
         Provider<ProfileProvider>(
           create: (_) => ProfileProvider(apiClient: apiClient),

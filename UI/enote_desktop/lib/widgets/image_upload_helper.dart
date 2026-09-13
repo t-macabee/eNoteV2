@@ -20,7 +20,7 @@ Future<Uint8List?> pickImageBytes() async {
 /// [provider] should be the already-resolved provider instance (e.g. from
 /// `context.read`), since this helper is deliberately type-agnostic.
 Future<String?> uploadImageFor<T>(
-  BaseProvider<T> provider,
+  CrudProvider<T> provider,
   int id,
   Uint8List bytes,
   String fileName,

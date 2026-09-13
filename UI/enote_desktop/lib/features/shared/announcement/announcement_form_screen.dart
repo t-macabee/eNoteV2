@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import '../../../widgets/entity_form_scaffold.dart';
 
 class AnnouncementFormScreen extends StatefulWidget {
-  final BaseProvider<AnnouncementDto> provider;
+  final CrudProvider<AnnouncementDto> provider;
   final AnnouncementDto? existing;
   final EntityFormPresentation presentation;
 

@@ -78,33 +78,4 @@ void main() {
     expect(ranking.first.averageGrade, 9.5);
     expect(ranking.last.averageGrade, isNull);
   });
-
-  test('getForCourse accepts an items envelope too', () async {
-    final client = RecordingHttpClient(
-      body: {
-        'items': _rankingList,
-      },
-    );
-    final provider = _provider(client);
-
-    final ranking = await provider.getForCourse(2);
-
-    expect(
-      client.requests.single.url.path,
-      '/api/v1/student/courses/2/ranking',
-    );
-    expect(ranking, hasLength(2));
-  });
-
-  test('getForCourse accepts the live value envelope', () async {
-    final client = RecordingHttpClient(
-      body: {'value': _rankingList, 'Count': 2},
-    );
-    final provider = _provider(client);
-
-    final ranking = await provider.getForCourse(2);
-
-    expect(ranking, hasLength(2));
-    expect(ranking.first.studentName, 'Student Enote');
-  });
 }

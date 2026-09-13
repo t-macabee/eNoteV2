@@ -7,7 +7,7 @@ import 'announcement_detail_dialog.dart';
 import 'announcement_form_screen.dart';
 
 class AnnouncementListScreen extends StatefulWidget {
-  final BaseProvider<AnnouncementDto> provider;
+  final CrudProvider<AnnouncementDto> provider;
   final String? title;
 
   /// Defaults to [EntityListPresentation.page] (own Scaffold/AppBar, with a

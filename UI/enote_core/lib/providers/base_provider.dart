@@ -14,6 +14,8 @@ import '../paging/paged_result.dart';
 /// union view, shop address/type lookups, catalog). Providers that need
 /// insert/update/remove/uploadImage must extend [CrudProvider] (or
 /// [BaseProvider] when they also need [BaseProvider.createDelegatedUser]).
+/// `notifyListeners()` is opt-in for consumers that watch; desktop lists
+/// refresh through `GlobalKey.refresh()`.
 abstract class ReadOnlyProvider<T> with ChangeNotifier {
   final ApiClient apiClient;
   final String endpoint;

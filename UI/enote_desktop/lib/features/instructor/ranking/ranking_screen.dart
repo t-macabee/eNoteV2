@@ -1,9 +1,9 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
+
+import 'ranking_provider.dart';
 
 class RankingView extends StatefulWidget {
   final int courseId;
@@ -57,17 +57,11 @@ class _RankingViewState extends State<RankingView> {
   }
 
   Future<void> _load() async {
-    setState(() => _isLoading = true);
+    if (mounted) setState(() => _isLoading = true);
     try {
-      final apiClient = context.read<ApiClient>();
-      final response = await apiClient.get(
-        'instructor/courses/${widget.courseId}/ranking',
-      );
-      throwIfError(response);
-      final list = jsonDecode(response.body) as List;
-      final items = list
-          .map((e) => CourseRankingEntryDto.fromJson(e as Map<String, dynamic>))
-          .toList();
+      final provider = context.read<RankingProvider>();
+      final items = await provider.getForCourse(widget.courseId);
+      if (!mounted) return;
       setState(() {
         _allItems = items;
         _applyFilter();

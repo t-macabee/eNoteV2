@@ -1,17 +1,13 @@
 import 'package:enote_core/enote_core.dart';
 
-/// Course ranking over `student/courses/{courseId}/ranking` (01 §4.3).
-///
-/// Plain class (no listeners): the ranking screen loads once per open.
 class RankingProvider {
   final ApiClient apiClient;
 
   RankingProvider({required this.apiClient});
 
-  /// The server returns the ranking unpaged (02 D6) — a bare JSON list.
   Future<List<CourseRankingEntryDto>> getForCourse(int courseId) async {
     final response = await apiClient.get(
-      'student/courses/$courseId/ranking',
+      'instructor/courses/$courseId/ranking',
     );
     throwIfError(response);
     return parseCourseRanking(response.body);
