@@ -18,11 +18,13 @@ class _PagedFakeClient extends http.BaseClient {
   final List<Uri> urls = [];
   int unreadCount;
   final bool throwOnUnreadCount;
+  final Set<int> failPages;
 
   _PagedFakeClient(
     this.pages, {
     this.unreadCount = 0,
     this.throwOnUnreadCount = false,
+    this.failPages = const {},
   });
 
   @override
@@ -48,6 +50,13 @@ class _PagedFakeClient extends http.BaseClient {
     }
     final page =
         int.tryParse(request.url.queryParameters['page'] ?? '1') ?? 1;
+    if (failPages.contains(page)) {
+      return http.StreamedResponse(
+        Stream.value(utf8.encode('{"message":"Server error"}')),
+        500,
+        headers: {'content-type': 'application/json'},
+      );
+    }
     final body = jsonEncode({'items': pages[page] ?? []});
     return http.StreamedResponse(
       Stream.value(utf8.encode(body)),
@@ -63,6 +72,14 @@ NotificationController _controller(_PagedFakeClient client) {
       ApiClient(baseUrl: 'http://localhost:5059/api/v1/', authState: auth, httpClient: client);
   return NotificationController(apiClient: api, endpoint: 'student/notifications');
 }
+
+int _listRequests(_PagedFakeClient client, int page) => client.urls
+    .where(
+      (u) =>
+          !u.path.endsWith('/unread-count') &&
+          u.queryParameters['page'] == '$page',
+    )
+    .length;
 
 void main() {
   test('refresh sets hasMore true iff a full page', () async {
@@ -142,5 +159,38 @@ void main() {
     await c.refresh(search: NotificationSearchObject(pageSize: 2));
     expect(c.notifications.length, 1);
     expect(c.error, isNull);
+  });
+
+  test('concurrent loadMore calls issue a single page 2 request', () async {
+    final client = _PagedFakeClient({
+      1: [_item(1), _item(2)],
+      2: [_item(3), _item(4)],
+    });
+    final c = _controller(client);
+    await c.refresh(search: NotificationSearchObject(pageSize: 2));
+
+    await Future.wait([c.loadMore(), c.loadMore()]);
+
+    expect(_listRequests(client, 2), 1);
+    expect(c.notifications.length, 4);
+  });
+
+  test('loadMore on a failing page 2 keeps the page, surfaces and clears flag',
+      () async {
+    final client = _PagedFakeClient(
+      {
+        1: [_item(1), _item(2)],
+        2: [_item(3), _item(4)],
+      },
+      failPages: {2},
+    );
+    final c = _controller(client);
+    await c.refresh(search: NotificationSearchObject(pageSize: 2));
+
+    await expectLater(c.loadMore(), throwsA(isA<ApiException>()));
+    expect(c.notifications.length, 2);
+
+    await expectLater(c.loadMore(), throwsA(isA<ApiException>()));
+    expect(_listRequests(client, 2), 2);
   });
 }

@@ -40,6 +40,14 @@ class _NotificationInboxScreenState extends State<NotificationInboxScreen> {
     }
   }
 
+  Future<void> _loadMore(NotificationController controller) async {
+    try {
+      await controller.loadMore();
+    } catch (e) {
+      if (mounted) ErrorBanner.show(context, message: userMessage(e));
+    }
+  }
+
   Future<void> _onTap(
     BuildContext context,
     NotificationController controller,
@@ -134,7 +142,7 @@ class _NotificationInboxScreenState extends State<NotificationInboxScreen> {
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     child: Center(
                       child: OutlinedButton(
-                        onPressed: controller.loadMore,
+                        onPressed: () => _loadMore(controller),
                         child: const Text('Učitaj još'),
                       ),
                     ),

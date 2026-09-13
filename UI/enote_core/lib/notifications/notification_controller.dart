@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 
@@ -21,6 +20,7 @@ class NotificationController extends ChangeNotifier {
   int _page = 1;
   int _pageSize = 50;
   bool _hasMore = false;
+  bool _isLoadingMore = false;
 
   NotificationController({
     required this.apiClient,
@@ -87,20 +87,26 @@ class NotificationController extends ChangeNotifier {
   }
 
   Future<void> loadMore() async {
-    final nextPage = _page + 1;
-    final response = await apiClient.get(
-      endpoint,
-      queryParams: {'page': nextPage, 'pageSize': _pageSize},
-    );
-    final data = decodeOrThrow(response);
-    final items = (data['items'] as List<dynamic>? ?? []);
-    final parsed = items
-        .map((e) => NotificationDto.fromJson(Map<String, dynamic>.from(e)))
-        .toList();
-    _notifications = [..._notifications, ...parsed];
-    _page = nextPage;
-    _hasMore = parsed.length == _pageSize;
-    notifyListeners();
+    if (_isLoadingMore) return;
+    _isLoadingMore = true;
+    try {
+      final nextPage = _page + 1;
+      final response = await apiClient.get(
+        endpoint,
+        queryParams: {'page': nextPage, 'pageSize': _pageSize},
+      );
+      final data = decodeOrThrow(response);
+      final items = (data['items'] as List<dynamic>? ?? []);
+      final parsed = items
+          .map((e) => NotificationDto.fromJson(Map<String, dynamic>.from(e)))
+          .toList();
+      _notifications = [..._notifications, ...parsed];
+      _page = nextPage;
+      _hasMore = parsed.length == _pageSize;
+      notifyListeners();
+    } finally {
+      _isLoadingMore = false;
+    }
   }
 
   /// Cheaper than [refresh] — used by the polling timer so it doesn't
@@ -109,7 +115,7 @@ class NotificationController extends ChangeNotifier {
     try {
       final response = await apiClient.get('$endpoint/unread-count');
       if (response.statusCode >= 400) return;
-      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      final data = decodeOrThrow(response);
       _unreadCount = NotificationUnreadCountDto.fromJson(data).unreadCount;
       notifyListeners();
     } catch (_) {
