@@ -154,9 +154,20 @@ class EntityGridScreenState<T> extends State<EntityGridScreen<T>> {
     if (confirmed != true) return;
 
     if (!mounted) return;
-    await widget.config.onDelete?.call(context, item);
-    _controller.load();
+    try {
+      await widget.config.onDelete?.call(context, item);
+    } catch (e) {
+      if (mounted) {
+        ErrorBanner.show(context, message: userMessage(e));
+      }
+    }
+    if (mounted) {
+      _controller.load();
+    }
   }
+
+  @visibleForTesting
+  Future<void> deleteItem(T item) => _deleteItem(item);
 
   @override
   Widget build(BuildContext context) {

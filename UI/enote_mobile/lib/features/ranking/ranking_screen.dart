@@ -22,7 +22,7 @@ class RankingScreen extends StatefulWidget {
 }
 
 class _RankingScreenState extends State<RankingScreen> {
-  late final Future<List<CourseRankingEntryDto>> _rankingFuture;
+  late Future<List<CourseRankingEntryDto>> _rankingFuture;
 
   @override
   void initState() {

@@ -20,7 +20,7 @@ class LectureNoteDetailScreen extends StatefulWidget {
 }
 
 class _LectureNoteDetailScreenState extends State<LectureNoteDetailScreen> {
-  late final Future<LectureNoteDto> _noteFuture;
+  late Future<LectureNoteDto> _noteFuture;
 
   @override
   void initState() {

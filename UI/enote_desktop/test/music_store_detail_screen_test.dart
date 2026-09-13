@@ -164,37 +164,49 @@ void main() {
     expect(find.widgetWithText(EntitySectionLabel, 'Električna gitara'), findsOneWidget);
     expect(find.widgetWithText(EntitySectionLabel, 'Klavir'), findsOneWidget);
 
-    // Verify instrument fetch sent musicStoreId param
     expect(
-      httpClient.requestedUrls.any((url) => url.contains('instruments/public') && url.contains('musicStoreId=1')),
+      httpClient.requestedUrls.any(
+        (url) =>
+            url.contains('instruments/public') &&
+            url.contains('search.musicStoreId=1') &&
+            url.contains('search.page=1') &&
+            url.contains('search.pageSize=24') &&
+            url.contains('search.includeTotalCount=true'),
+      ),
       isTrue,
-      reason: 'public instruments endpoint must be filtered by musicStoreId=1',
+      reason: 'public instruments endpoint must use search. prefixed keys',
     );
 
-    // Switch instrument type filter to "Klavir"
     await tester.tap(find.byType(DropdownButtonFormField<int?>));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Klavir').last);
     await tester.pumpAndSettle();
 
-    // When a specific type is selected, groupKeyOf is null -> no section labels
     expect(find.byType(EntitySectionLabel), findsNothing);
 
-    // Verify instrument fetch sent instrumentTypeId param
     expect(
-      httpClient.requestedUrls.any((url) => url.contains('instruments/public') && url.contains('instrumentTypeId=2')),
+      httpClient.requestedUrls.any(
+        (url) =>
+            url.contains('instruments/public') &&
+            url.contains('search.musicStoreId=1') &&
+            url.contains('search.instrumentTypeId=2'),
+      ),
       isTrue,
-      reason: 'selecting Klavir must pass instrumentTypeId=2 to the fetcher',
+      reason: 'selecting Klavir must pass search.instrumentTypeId=2',
     );
 
-    // Type in search bar
     await tester.enterText(find.byType(TextField), 'Yamaha');
     await tester.pumpAndSettle(const Duration(milliseconds: 400));
 
     expect(
-      httpClient.requestedUrls.any((url) => url.contains('instruments/public') && url.contains('search=Yamaha')),
+      httpClient.requestedUrls.any(
+        (url) =>
+            url.contains('instruments/public') &&
+            url.contains('search.musicStoreId=1') &&
+            url.contains('search.search=Yamaha'),
+      ),
       isTrue,
-      reason: 'typing in search bar must send search parameter',
+      reason: 'search request must preserve search.musicStoreId=1 alongside search.search=Yamaha',
     );
   });
 }

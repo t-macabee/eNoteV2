@@ -188,17 +188,13 @@ class _MusicStoreDetailScreenState extends State<MusicStoreDetailScreen> {
                                     : null,
                                 fetcher: (page, pageSize, search) => context
                                     .read<StoreInstrumentProvider>()
-                                    .search(pagedQuery(
-                                  page,
-                                  pageSize,
-                                  search,
-                                  searchField: 'search',
-                                  filters: {
-                                    'musicStoreId': widget.storeId,
-                                    if (_instrumentTypeId != null)
-                                      'instrumentTypeId': _instrumentTypeId,
-                                  },
-                                )),
+                                    .fetchPage(
+                                      page,
+                                      pageSize,
+                                      search,
+                                      musicStoreId: widget.storeId,
+                                      instrumentTypeId: _instrumentTypeId,
+                                    ),
                               ),
                             ),
                           ),
