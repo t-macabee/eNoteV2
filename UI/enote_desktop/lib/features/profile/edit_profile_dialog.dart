@@ -70,11 +70,13 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
   Future<bool> _save() async {
     try {
       final profileProvider = context.read<ProfileProvider>();
+      final firstName = _firstNameController.text.trim();
+      final lastName = _lastNameController.text.trim();
       await profileProvider.updateProfile(
         UpdateProfileRequest(
-          email: _emailController.text,
-          firstName: _firstNameController.text,
-          lastName: _lastNameController.text,
+          email: _emailController.text.trim(),
+          firstName: firstName.isEmpty ? null : firstName,
+          lastName: lastName.isEmpty ? null : lastName,
           dateOfBirth: _dateOfBirth,
         ),
       );
@@ -174,12 +176,10 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
         TextFormField(
           controller: _firstNameController,
           decoration: const InputDecoration(labelText: 'Ime'),
-          validator: (v) => v?.isEmpty ?? true ? 'Obavezno polje' : null,
         ),
         TextFormField(
           controller: _lastNameController,
           decoration: const InputDecoration(labelText: 'Prezime'),
-          validator: (v) => v?.isEmpty ?? true ? 'Obavezno polje' : null,
         ),
         TextFormField(
           controller: _emailController,

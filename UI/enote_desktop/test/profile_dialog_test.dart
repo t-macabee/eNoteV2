@@ -11,10 +11,14 @@ import 'helpers.dart';
 
 class _MockProfileHttpClient extends http.BaseClient {
   final Map<String, dynamic> responseMap;
+  final List<String?> putBodies = [];
   _MockProfileHttpClient(this.responseMap);
 
   @override
   Future<http.StreamedResponse> send(http.BaseRequest request) async {
+    if (request.method == 'PUT' && request is http.Request) {
+      putBodies.add(request.body);
+    }
     final bytes = utf8.encode(jsonEncode(responseMap));
     return http.StreamedResponse(
       Stream.value(bytes),
@@ -164,5 +168,61 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('AM'), findsOneWidget);
+  });
+
+  testWidgets(
+      'save the profile dialog with a blanked first name -> request body has no firstName key',
+      (tester) async {
+    final client = _MockProfileHttpClient({
+      'role': 'Administrator',
+      'username': 'admin',
+      'email': 'admin@enote.com',
+      'profile': {
+        r'$type': 'admin',
+        'firstName': 'Ad',
+        'lastName': 'Min',
+      },
+    });
+
+    final authState = AuthState(
+      tokenReader: () => fakeJwt(),
+      httpClient: client,
+    );
+    final apiClient = ApiClient(
+      baseUrl: 'http://test/api/v1/',
+      authState: authState,
+      httpClient: client,
+    );
+
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider<AuthState>.value(value: authState),
+          Provider<ApiClient>.value(value: apiClient),
+          Provider<ProfileProvider>(
+            create: (_) => ProfileProvider(apiClient: apiClient),
+          ),
+        ],
+        child: const MaterialApp(
+          home: Scaffold(
+            body: ProfileDialog(),
+          ),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Uredi'));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.widgetWithText(TextFormField, 'Ime'), '');
+    await tester.tap(find.widgetWithText(FilledButton, 'Sačuvaj'));
+    await tester.pumpAndSettle();
+
+    expect(client.putBodies, isNotEmpty);
+    final putBody = jsonDecode(client.putBodies.last!) as Map<String, dynamic>;
+    expect(putBody.containsKey('firstName'), isFalse);
+    expect(putBody['email'], 'admin@enote.com');
   });
 }

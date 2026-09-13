@@ -36,13 +36,15 @@ class _UserProvisionFormScreenState extends State<UserProvisionFormScreen> {
 
   Future<bool> _save() async {
     final service = context.read<UserProvisionService>();
+    final firstName = _credentialController.firstNameController.text.trim();
+    final lastName = _credentialController.lastNameController.text.trim();
     final request = UserProvisionRequest(
       username: _credentialController.usernameController.text.trim(),
       email: _credentialController.emailController.text.trim(),
       password: _credentialController.passwordController.text,
       role: _role!.label,
-      firstName: _credentialController.firstNameController.text.trim(),
-      lastName: _credentialController.lastNameController.text.trim(),
+      firstName: firstName.isEmpty ? null : firstName,
+      lastName: lastName.isEmpty ? null : lastName,
       musicStoreId: _role == UserRole.storeEmployee ? _musicStoreId : null,
     );
 

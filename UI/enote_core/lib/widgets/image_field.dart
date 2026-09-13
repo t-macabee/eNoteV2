@@ -112,8 +112,13 @@ class _ImageFieldState extends State<ImageField> {
 
     if (widget.onUpload != null) {
       setState(() => _isUploading = true);
-      await widget.onUpload!(bytes, _localFileName!, _localContentType!);
-      setState(() => _isUploading = false);
+      try {
+        await widget.onUpload!(bytes, _localFileName!, _localContentType!);
+      } finally {
+        if (mounted) {
+          setState(() => _isUploading = false);
+        }
+      }
     }
   }
 }
