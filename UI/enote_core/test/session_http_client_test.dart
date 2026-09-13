@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 
-import 'package:enote_mobile/session/session_http_client.dart';
+import 'package:enote_core/enote_core.dart';
 
 class _StatusClient extends http.BaseClient {
   final int status;

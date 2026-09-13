@@ -6,7 +6,6 @@ import 'package:enote_core/enote_core.dart';
 import 'app.dart';
 import 'config.dart';
 import 'session/session_controller.dart';
-import 'session/session_http_client.dart';
 import 'session/token_store.dart';
 
 Future<void> main() async {

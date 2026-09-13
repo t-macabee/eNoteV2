@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:jwt_decoder/jwt_decoder.dart';
 
+import '../api/api_exception.dart';
 import '../api/api_response.dart';
 import '../models/identity/auth_models.dart';
 
@@ -26,7 +27,9 @@ class AuthState extends ChangeNotifier {
     http.Client? httpClient,
   }) : _httpClient = httpClient ?? http.Client() {
     _accessToken = _tokenReader?.call();
-    _decodeToken(_accessToken);
+    if (_accessToken != null && !_decodeToken(_accessToken)) {
+      _tokenWriter?.call(null);
+    }
   }
 
   String? get accessToken => _accessToken;
@@ -57,13 +60,13 @@ class AuthState extends ChangeNotifier {
     return _roles.isNotEmpty ? _roles.first : null;
   }
 
-  void _decodeToken(String? token) {
+  bool _decodeToken(String? token) {
     if (token == null) {
       _userId = null;
       _username = null;
       _roles = [];
       _isManager = false;
-      return;
+      return false;
     }
     try {
       final decoded = JwtDecoder.decode(token);
@@ -86,12 +89,14 @@ class AuthState extends ChangeNotifier {
           _roles = [uriClaim];
         }
       }
+      return true;
     } catch (_) {
       _accessToken = null;
       _userId = null;
       _username = null;
       _roles = [];
       _isManager = false;
+      return false;
     }
   }
 
@@ -116,9 +121,12 @@ class AuthState extends ChangeNotifier {
     final data = decodeOrThrow(response);
     final authResponse = AuthResponse.fromJson(data);
 
+    if (!_decodeToken(authResponse.token)) {
+      throw ApiException('Neispravan odgovor servera.');
+    }
+
     _accessToken = authResponse.token;
     _tokenWriter?.call(_accessToken);
-    _decodeToken(_accessToken);
     notifyListeners();
   }
 

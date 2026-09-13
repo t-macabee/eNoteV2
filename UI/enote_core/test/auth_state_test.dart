@@ -9,15 +9,22 @@ import 'helpers.dart';
 void main() {
   group('AuthState.login', () {
     test('a 200 with a valid JWT authenticates and populates roles', () async {
+      var writerCalls = 0;
+      var writerObservedAuthenticated = false;
       final httpClient = RecordingHttpClient(body: {
         'userId': 1,
         'username': 'ana',
         'roles': ['Instructor'],
         'token': fakeJwt(role: 'Instructor'),
       });
-      final authState = AuthState(
+      late final AuthState authState;
+      authState = AuthState(
         baseUrl: 'http://localhost:5059/api/v1/',
         httpClient: httpClient,
+        tokenWriter: (token) {
+          writerCalls++;
+          writerObservedAuthenticated = authState.isAuthenticated;
+        },
       );
 
       await authState.login('ana', 'password');
@@ -26,6 +33,8 @@ void main() {
       expect(authState.userId, 1);
       expect(authState.username, 'ana');
       expect(authState.roles, ['Instructor']);
+      expect(writerCalls, 1);
+      expect(writerObservedAuthenticated, isTrue);
 
       final request = httpClient.requests.single;
       expect(
@@ -35,6 +44,45 @@ void main() {
       expect(request.headers['Content-Type'], 'application/json');
       final sentBody = jsonDecode(request.body) as Map<String, dynamic>;
       expect(sentBody, {'username': 'ana', 'password': 'password'});
+    });
+
+    test('a 200 with a non-JWT token throws ApiException without writing storage', () async {
+      var writerCalls = 0;
+      final httpClient = RecordingHttpClient(body: {
+        'userId': 1,
+        'username': 'ana',
+        'roles': ['Instructor'],
+        'token': 'not-a-jwt',
+      });
+      final authState = AuthState(
+        baseUrl: 'http://localhost:5059/api/v1/',
+        httpClient: httpClient,
+        tokenWriter: (_) => writerCalls++,
+      );
+
+      await expectLater(
+        authState.login('ana', 'password'),
+        throwsA(isA<ApiException>().having(
+          (e) => e.message,
+          'message',
+          'Neispravan odgovor servera.',
+        )),
+      );
+
+      expect(writerCalls, 0);
+      expect(authState.isAuthenticated, isFalse);
+    });
+
+    test('reader returning garbage at construction calls tokenWriter with null', () {
+      final written = <String?>[];
+      final authState = AuthState(
+        baseUrl: 'http://localhost:5059/api/v1/',
+        tokenReader: () => 'garbage-not-jwt',
+        tokenWriter: (token) => written.add(token),
+      );
+
+      expect(written, [null]);
+      expect(authState.isAuthenticated, isFalse);
     });
 
     test('a 401 throws ApiException with the mapped Bosnian message', () async {

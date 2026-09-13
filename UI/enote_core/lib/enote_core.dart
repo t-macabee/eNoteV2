@@ -24,6 +24,7 @@ export 'api/api_client.dart';
 export 'api/api_error_mapper.dart';
 export 'api/api_exception.dart';
 export 'api/api_response.dart';
+export 'api/session_http_client.dart';
 export 'auth/auth_state.dart';
 export 'notifications/notification_controller.dart';
 export 'widgets/confirm_dialog.dart';

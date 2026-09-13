@@ -32,20 +32,42 @@ import 'shell/login_screen.dart';
 import 'shell/master_screen.dart';
 
 void main() {
-  final authState = AuthState(baseUrl: kApiBaseUrl);
-  final apiClient = ApiClient(baseUrl: kApiBaseUrl, authState: authState);
+  final navigatorKey = GlobalKey<NavigatorState>();
+  late AuthState authState;
+  final sessionHttp = SessionHttpClient(
+    timeout: const Duration(seconds: 20),
+    onUnauthorized: () {
+      navigatorKey.currentState?.popUntil((route) => route.isFirst);
+      authState.logout();
+    },
+  );
+  authState = AuthState(
+    baseUrl: kApiBaseUrl,
+    httpClient: sessionHttp,
+  );
+  final apiClient = ApiClient(
+    baseUrl: kApiBaseUrl,
+    authState: authState,
+    httpClient: sessionHttp,
+  );
 
-  runApp(MyApp(authState: authState, apiClient: apiClient));
+  runApp(MyApp(
+    authState: authState,
+    apiClient: apiClient,
+    navigatorKey: navigatorKey,
+  ));
 }
 
 class MyApp extends StatelessWidget {
   final AuthState authState;
   final ApiClient apiClient;
+  final GlobalKey<NavigatorState>? navigatorKey;
 
   const MyApp({
     super.key,
     required this.authState,
     required this.apiClient,
+    this.navigatorKey,
   });
 
   @override
@@ -138,6 +160,7 @@ class MyApp extends StatelessWidget {
         ),
       ],
       child: MaterialApp(
+        navigatorKey: navigatorKey,
         title: 'eNote V2',
         theme: AppTheme.dark,
         home: Consumer<AuthState>(
