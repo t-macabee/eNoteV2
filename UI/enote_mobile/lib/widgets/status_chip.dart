@@ -11,36 +11,18 @@ class StatusChip extends StatelessWidget {
   const StatusChip({super.key, required this.label, required this.color});
 
   factory StatusChip.rental(InstrumentRentalStatus status) {
-    return switch (status) {
-      InstrumentRentalStatus.pending => const StatusChip(
-        label: 'Na čekanju',
-        color: AppTheme.warning,
-      ),
-      InstrumentRentalStatus.approved => const StatusChip(
-        label: 'Odobreno',
-        color: AppTheme.primary,
-      ),
-      InstrumentRentalStatus.active => const StatusChip(
-        label: 'Aktivno',
-        color: AppTheme.success,
-      ),
-      InstrumentRentalStatus.completed => const StatusChip(
-        label: 'Završeno',
-        color: AppTheme.textSecondary,
-      ),
-      InstrumentRentalStatus.rejected => const StatusChip(
-        label: 'Odbijeno',
-        color: AppTheme.error,
-      ),
-      InstrumentRentalStatus.canceled => const StatusChip(
-        label: 'Otkazano',
-        color: AppTheme.error,
-      ),
-      InstrumentRentalStatus.returnedEarly => const StatusChip(
-        label: 'Prijevremeni povrat',
-        color: AppTheme.textSecondary,
-      ),
-    };
+    return StatusChip(
+      label: rentalStatusLabel(status),
+      color: switch (status) {
+        InstrumentRentalStatus.pending => AppTheme.warning,
+        InstrumentRentalStatus.approved => AppTheme.primary,
+        InstrumentRentalStatus.active => AppTheme.success,
+        InstrumentRentalStatus.completed => AppTheme.textSecondary,
+        InstrumentRentalStatus.rejected => AppTheme.error,
+        InstrumentRentalStatus.canceled => AppTheme.error,
+        InstrumentRentalStatus.returnedEarly => AppTheme.textSecondary,
+      },
+    );
   }
 
   factory StatusChip.payment(PaymentStatus status) {
@@ -73,37 +55,25 @@ class StatusChip extends StatelessWidget {
   }
 
   factory StatusChip.lectureStatus(LectureStatus status) {
-    return switch (status) {
-      LectureStatus.scheduled => const StatusChip(
-        label: 'Zakazano',
-        color: AppTheme.primary,
-      ),
-      LectureStatus.held => const StatusChip(
-        label: 'Održano',
-        color: AppTheme.textSecondary,
-      ),
-      LectureStatus.cancelled => const StatusChip(
-        label: 'Otkazano',
-        color: AppTheme.error,
-      ),
-    };
+    return StatusChip(
+      label: lectureStatusLabel(status),
+      color: switch (status) {
+        LectureStatus.scheduled => AppTheme.primary,
+        LectureStatus.held => AppTheme.textSecondary,
+        LectureStatus.cancelled => AppTheme.error,
+      },
+    );
   }
 
   factory StatusChip.lectureType(LectureType type) {
-    return switch (type) {
-      LectureType.theoretical => const StatusChip(
-        label: 'Teorijsko',
-        color: AppTheme.textSecondary,
-      ),
-      LectureType.practical => const StatusChip(
-        label: 'Praktično',
-        color: AppTheme.textSecondary,
-      ),
-      LectureType.combined => const StatusChip(
-        label: 'Kombinovano',
-        color: AppTheme.textSecondary,
-      ),
-    };
+    return StatusChip(
+      label: lectureTypeLabel(type),
+      color: switch (type) {
+        LectureType.theoretical => AppTheme.textSecondary,
+        LectureType.practical => AppTheme.textSecondary,
+        LectureType.combined => AppTheme.textSecondary,
+      },
+    );
   }
 
   factory StatusChip.attendance(AttendanceStatus? status) {

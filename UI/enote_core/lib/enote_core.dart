@@ -1,4 +1,5 @@
 export 'models/shared/enums.dart';
+export 'models/shared/enum_labels.dart';
 export 'models/identity/auth_models.dart';
 export 'models/identity/user_models.dart';
 export 'models/academic/course_models.dart';

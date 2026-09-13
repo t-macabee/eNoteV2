@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import 'package:enote_core/enote_core.dart';
+import 'package:enote_core/enote_core.dart' hide lectureStatusLabel;
 import '../../../widgets/entity_form_scaffold.dart';
 import '../../../widgets/entity_list_screen.dart';
 import 'lecture_detail_dialog.dart';

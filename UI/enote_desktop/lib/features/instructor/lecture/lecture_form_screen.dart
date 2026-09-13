@@ -6,7 +6,6 @@ import 'package:enote_core/enote_core.dart';
 import '../../../widgets/date_time_field.dart';
 import '../../../widgets/entity_form_scaffold.dart';
 import 'lecture_provider.dart';
-import 'lecture_type_label.dart';
 
 class LectureFormScreen extends StatefulWidget {
   final int courseId;
