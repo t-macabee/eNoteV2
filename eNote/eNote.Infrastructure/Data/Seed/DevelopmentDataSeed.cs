@@ -12,7 +12,7 @@ public static class DevelopmentDataSeed
         await CourseSeed.SeedCourses(context);
         await LectureSeed.SeedLectures(context);
         await InstrumentSeed.SeedInstruments(context);
-        await EnrollmentSeed.SeedEnrollments(context);
+        await EnrollmentSeed.SeedEnrollments(context, clock);
         await StudentMembershipSeed.SeedMemberships(context, clock);
     }
 }
@@ -217,7 +217,7 @@ internal static class AccessoriesInstruments
 
 internal static class EnrollmentSeed
 {
-    public static async Task SeedEnrollments(ENoteContext context)
+    public static async Task SeedEnrollments(ENoteContext context, IClock clock)
     {
         if (await context.Set<Enrollment>().AnyAsync())
         {
@@ -239,7 +239,12 @@ internal static class EnrollmentSeed
             .Select(c => c.Id)
             .ToListAsync();
 
-        List<Enrollment> enrollments = [.. courseIds.Select(courseId => new Enrollment(studentId, courseId, EnrollmentStatus.Active))];
+        List<Enrollment> enrollments = [.. courseIds.Select(courseId =>
+        {
+            var enrollment = new Enrollment(studentId, courseId, EnrollmentStatus.Active);
+            enrollment.ExtendPaidUntil(clock.UtcNow, 30);
+            return enrollment;
+        })];
 
         context.Set<Enrollment>().AddRange(enrollments);
         await context.SaveChangesAsync();

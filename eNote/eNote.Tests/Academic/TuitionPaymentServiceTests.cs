@@ -1,14 +1,11 @@
 using eNote.Application.Common.Localization;
 using eNote.Application.Constants;
 using eNote.Application.Features.Academic.Tuition;
-using eNote.Application.Features.Identity.Instructors;
 using eNote.Application.Features.Rentals.Payments.Services;
 using eNote.Domain.Entities.Academic;
 using eNote.Domain.Enums;
 using eNote.Infrastructure.Data;
 using eNote.Tests.TestUtils;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace eNote.Tests.Academic;
@@ -183,31 +180,8 @@ public sealed class TuitionPaymentServiceTests
         Assert.Equal(Messages.PaymentProviderUnavailable, ex.Message);
     }
 
-    private static async Task<(ENoteContext Context, Student Student, Course Course, Enrollment Enrollment)> SetupScenarioAsync(decimal price)
-    {
-        var options = new DbContextOptionsBuilder<ENoteContext>()
-            .UseInMemoryDatabase(Guid.NewGuid().ToString())
-            .ConfigureWarnings(warnings => warnings.Ignore(InMemoryEventId.TransactionIgnoredWarning))
-            .Options;
-
-        var student = new Student(50, Now);
-        var instructor = new Instructor(100);
-        var context = new ENoteContext(options, new FixedClock(Now), new StubCurrentActor(student: student)) { ExplicitStoreId = 1 };
-        context.Set<Student>().Add(student);
-        context.Set<Instructor>().Add(instructor);
-        await context.SaveChangesAsync();
-
-        var course = new Course("Guitar", null, price, Now, Now.AddMonths(6), instructor.Id);
-        course.SetPublishedStatus(true);
-        context.Set<Course>().Add(course);
-        await context.SaveChangesAsync();
-
-        var enrollment = new Enrollment(student.Id, course.Id, EnrollmentStatus.Active);
-        context.Set<Enrollment>().Add(enrollment);
-        await context.SaveChangesAsync();
-
-        return (context, student, course, enrollment);
-    }
+    private static Task<(ENoteContext Context, Student Student, Course Course, Enrollment Enrollment)> SetupScenarioAsync(decimal price) =>
+        TuitionTestData.SetupScenarioAsync(Now, price);
 
     private static TuitionPaymentService CreateService(
         ENoteContext context,
