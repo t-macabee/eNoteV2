@@ -383,6 +383,7 @@ namespace eNote.Infrastructure.Data.Migrations
                     StudentId = table.Column<int>(type: "int", nullable: false),
                     CourseId = table.Column<int>(type: "int", nullable: false),
                     EnrollmentStatus = table.Column<int>(type: "int", nullable: false),
+                    PaidUntil = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedById = table.Column<int>(type: "int", nullable: true),
@@ -591,6 +592,38 @@ namespace eNote.Infrastructure.Data.Migrations
                         principalTable: "MusicStore",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "CoursePayment",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    EnrollmentId = table.Column<int>(type: "int", nullable: false),
+                    StripePaymentIntentId = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: false),
+                    StripeChargeId = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: true),
+                    StripeEventId = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: true),
+                    AmountChargedCents = table.Column<long>(type: "bigint", nullable: false),
+                    Currency = table.Column<string>(type: "nvarchar(3)", maxLength: 3, nullable: false),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    PaidAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    PeriodStart = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    PeriodEnd = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedById = table.Column<int>(type: "int", nullable: true),
+                    UpdatedById = table.Column<int>(type: "int", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_CoursePayment", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_CoursePayment_Enrollment_EnrollmentId",
+                        column: x => x.EnrollmentId,
+                        principalTable: "Enrollment",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -1002,6 +1035,24 @@ namespace eNote.Infrastructure.Data.Migrations
                 column: "InstructorId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_CoursePayment_EnrollmentId_Status",
+                table: "CoursePayment",
+                columns: new[] { "EnrollmentId", "Status" });
+
+            migrationBuilder.CreateIndex(
+                name: "UX_CoursePayment_PaymentIntentId",
+                table: "CoursePayment",
+                column: "StripePaymentIntentId",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "UX_CoursePayment_StripeEventId",
+                table: "CoursePayment",
+                column: "StripeEventId",
+                unique: true,
+                filter: "\"StripeEventId\" IS NOT NULL");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Enrollment_CourseId",
                 table: "Enrollment",
                 column: "CourseId");
@@ -1226,7 +1277,7 @@ namespace eNote.Infrastructure.Data.Migrations
                 name: "Attendance");
 
             migrationBuilder.DropTable(
-                name: "Enrollment");
+                name: "CoursePayment");
 
             migrationBuilder.DropTable(
                 name: "Event");
@@ -1257,6 +1308,9 @@ namespace eNote.Infrastructure.Data.Migrations
 
             migrationBuilder.DropTable(
                 name: "AspNetRoles");
+
+            migrationBuilder.DropTable(
+                name: "Enrollment");
 
             migrationBuilder.DropTable(
                 name: "AssignmentSubmission");

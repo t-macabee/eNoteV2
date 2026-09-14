@@ -221,6 +221,78 @@ namespace eNote.Infrastructure.Data.Migrations
                     b.ToTable("Course");
                 });
 
+            modelBuilder.Entity("eNote.Domain.Entities.Academic.CoursePayment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<long>("AmountChargedCents")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("CreatedById")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("nvarchar(3)");
+
+                    b.Property<int>("EnrollmentId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("PaidAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("PeriodEnd")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("PeriodStart")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<string>("StripeChargeId")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<string>("StripeEventId")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<string>("StripePaymentIntentId")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("UpdatedById")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("StripeEventId")
+                        .IsUnique()
+                        .HasDatabaseName("UX_CoursePayment_StripeEventId")
+                        .HasFilter("\"StripeEventId\" IS NOT NULL");
+
+                    b.HasIndex("StripePaymentIntentId")
+                        .IsUnique()
+                        .HasDatabaseName("UX_CoursePayment_PaymentIntentId");
+
+                    b.HasIndex("EnrollmentId", "Status");
+
+                    b.ToTable("CoursePayment");
+                });
+
             modelBuilder.Entity("eNote.Domain.Entities.Academic.Enrollment", b =>
                 {
                     b.Property<int>("Id")
@@ -240,6 +312,9 @@ namespace eNote.Infrastructure.Data.Migrations
 
                     b.Property<int>("EnrollmentStatus")
                         .HasColumnType("int");
+
+                    b.Property<DateTime?>("PaidUntil")
+                        .HasColumnType("datetime2");
 
                     b.Property<int>("StudentId")
                         .HasColumnType("int");
@@ -1567,6 +1642,17 @@ namespace eNote.Infrastructure.Data.Migrations
                     b.Navigation("Instructor");
                 });
 
+            modelBuilder.Entity("eNote.Domain.Entities.Academic.CoursePayment", b =>
+                {
+                    b.HasOne("eNote.Domain.Entities.Academic.Enrollment", "Enrollment")
+                        .WithMany("Payments")
+                        .HasForeignKey("EnrollmentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Enrollment");
+                });
+
             modelBuilder.Entity("eNote.Domain.Entities.Academic.Enrollment", b =>
                 {
                     b.HasOne("eNote.Domain.Entities.Academic.Course", "Course")
@@ -1838,6 +1924,11 @@ namespace eNote.Infrastructure.Data.Migrations
                     b.Navigation("Enrollments");
 
                     b.Navigation("Lectures");
+                });
+
+            modelBuilder.Entity("eNote.Domain.Entities.Academic.Enrollment", b =>
+                {
+                    b.Navigation("Payments");
                 });
 
             modelBuilder.Entity("eNote.Domain.Entities.Academic.Lecture", b =>
