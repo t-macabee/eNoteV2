@@ -6,14 +6,14 @@ import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
+import 'package:enote_mobile/features/payments/payment_sheet_gateway.dart';
 import 'package:enote_mobile/features/rentals/payments/payment_provider.dart';
 import 'package:enote_mobile/features/rentals/payments/payment_screen.dart';
-import 'package:enote_mobile/features/rentals/payments/payment_sheet_gateway.dart';
 import 'package:enote_mobile/features/rentals/rental_provider.dart';
 import 'package:enote_mobile/theme/app_theme.dart';
 
 import '../../../helpers.dart';
-import 'fake_payment_sheet_gateway.dart';
+import '../../payments/fake_payment_sheet_gateway.dart';
 
 const _baseUrl = 'http://10.0.2.2:5059/api/v1/';
 const _rentalId = 2;

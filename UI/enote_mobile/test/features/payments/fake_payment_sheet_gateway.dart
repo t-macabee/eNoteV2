@@ -1,6 +1,6 @@
 import 'dart:collection';
 
-import 'package:enote_mobile/features/rentals/payments/payment_sheet_gateway.dart';
+import 'package:enote_mobile/features/payments/payment_sheet_gateway.dart';
 
 /// Scripted [PaymentSheetGateway] for widget tests: each [present] consumes
 /// the next queued outcome (`null` resolves, an [Exception] is thrown) and

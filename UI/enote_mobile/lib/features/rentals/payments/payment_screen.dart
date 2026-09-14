@@ -9,9 +9,9 @@ import '../../../widgets/async_state_view.dart';
 import '../../../widgets/labeled_value.dart';
 import '../../../widgets/status_chip.dart';
 import '../rental_provider.dart';
+import '../../payments/payment_sheet_gateway.dart';
+import '../../payments/payment_status_view.dart';
 import 'payment_provider.dart';
-import 'payment_sheet_gateway.dart';
-import 'payment_status_view.dart';
 
 enum _View { review, processing, succeeded, failed, pending }
 
