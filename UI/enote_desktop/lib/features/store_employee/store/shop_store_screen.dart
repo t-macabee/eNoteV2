@@ -166,10 +166,7 @@ class _ShopStoreScreenState extends State<ShopStoreScreen> {
               addLabel: 'Dodaj instrument',
               onAdd: () => _openInstrumentForm(),
               onTap: (context, item) async {
-                // Deletion is handled inside InstrumentDetailDialog (it owns
-                // its own confirm/delete flow and calls InstrumentProvider
-                // directly) — EntityGridConfig.onDelete has no UI trigger
-                // here (no cardActions delete button), so it isn't set.
+                // Deletion is handled inside InstrumentDetailDialog.
                 final changed =
                     await InstrumentDetailDialog.show(context, item);
                 if (changed == true) {

@@ -25,7 +25,9 @@ class EntityGridConfig<T> {
   final IconData placeholderIcon;
   final String? Function(T item)? badgeOf;
   final void Function(BuildContext context, T item)? onTap;
-  final Future<bool?> Function(BuildContext context, T item)? onDelete;
+
+  /// The only hook for card-level actions. Destructive actions belong in
+  /// detail dialogs / [EntityFormScaffold], not here.
   final List<Widget> Function(BuildContext context, T item)? cardActions;
   final VoidCallback? onAdd;
   final String? addLabel;
@@ -77,7 +79,6 @@ class EntityGridConfig<T> {
     this.placeholderIcon = Icons.image_outlined,
     this.badgeOf,
     this.onTap,
-    this.onDelete,
     this.cardActions,
     this.onAdd,
     this.addLabel = 'Dodaj',
@@ -145,30 +146,6 @@ class EntityGridScreenState<T> extends State<EntityGridScreen<T>> {
   void refresh({bool resetPage = false}) =>
       _controller.refresh(resetPage: resetPage);
 
-  Future<void> _deleteItem(T item) async {
-    final confirmed = await confirmDialog(
-      context: context,
-      title: 'Potvrdite brisanje',
-      message: 'Da li ste sigurni da želite da obrišete ovaj zapis?',
-    );
-    if (confirmed != true) return;
-
-    if (!mounted) return;
-    try {
-      await widget.config.onDelete?.call(context, item);
-    } catch (e) {
-      if (mounted) {
-        ErrorBanner.show(context, message: userMessage(e));
-      }
-    }
-    if (mounted) {
-      _controller.load();
-    }
-  }
-
-  @visibleForTesting
-  Future<void> deleteItem(T item) => _deleteItem(item);
-
   @override
   Widget build(BuildContext context) {
     final content = _buildContent();
@@ -233,9 +210,6 @@ class EntityGridScreenState<T> extends State<EntityGridScreen<T>> {
         return _EntityGridCard<T>(
           item: item,
           config: widget.config,
-          onDelete: widget.config.onDelete != null
-              ? () => _deleteItem(item)
-              : null,
         );
       },
     );
@@ -295,12 +269,10 @@ class EntityGridScreenState<T> extends State<EntityGridScreen<T>> {
 class _EntityGridCard<T> extends StatefulWidget {
   final T item;
   final EntityGridConfig<T> config;
-  final VoidCallback? onDelete;
 
   const _EntityGridCard({
     required this.item,
     required this.config,
-    this.onDelete,
   });
 
   @override
