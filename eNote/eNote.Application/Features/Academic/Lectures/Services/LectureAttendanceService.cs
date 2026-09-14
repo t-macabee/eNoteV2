@@ -4,7 +4,14 @@ using Microsoft.Extensions.Logging;
 
 namespace eNote.Application.Features.Academic.Lectures.Services;
 
-public sealed class LectureAttendanceService(IAppDbContext context, ICurrentUserContext currentUser, IStudentContext students, IStudentDisplayNameService displayNames, InstructorAccessService instructorAccess, ILogger<LectureAttendanceService> logger)
+public sealed class LectureAttendanceService(
+    IAppDbContext context,
+    ICurrentUserContext currentUser,
+    IStudentContext students,
+    IStudentDisplayNameService displayNames,
+    InstructorAccessService instructorAccess,
+    ILogger<LectureAttendanceService> logger,
+    IClock clock)
 {
     public async Task<RsvpResponse> RsvpAsync(int lectureId, RsvpRequest request, CancellationToken cancellationToken = default)
     {
@@ -15,7 +22,7 @@ public sealed class LectureAttendanceService(IAppDbContext context, ICurrentUser
 
         var studentId = await students.GetCurrentStudentIdAsync();
 
-        if (!await context.IsEnrolledInCourseAsync(studentId, lecture.CourseId, cancellationToken))
+        if (!await context.IsEnrolledAndPaidAsync(studentId, lecture.CourseId, clock.UtcNow, cancellationToken))
         {
             throw new BusinessException(Messages.StudentNotEnrolled);
         }

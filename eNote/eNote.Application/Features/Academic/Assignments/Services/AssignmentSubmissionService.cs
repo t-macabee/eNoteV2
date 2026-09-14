@@ -1,4 +1,5 @@
 using eNote.Application.Constants;
+using eNote.Application.Features.Academic;
 using eNote.Application.Features.Identity.Instructors;
 using eNote.Application.Features.Identity.Users.Services;
 using MapsterMapper;
@@ -25,6 +26,14 @@ public sealed class AssignmentSubmissionService(
     {
         var student = await students.GetCurrentStudentAsync();
 
+        var assignmentExists = await context.Set<Assignment>()
+            .ForEnrolledStudentById(student.Id, assignmentId, clock.UtcNow)
+            .AnyAsync(cancellationToken);
+        if (!assignmentExists)
+        {
+            throw new NotFoundException(Messages.AssignmentNotFound);
+        }
+
         var submission = await context.Set<AssignmentSubmission>()
             .AsNoTracking()
             .Include(x => x.Student)
@@ -38,10 +47,13 @@ public sealed class AssignmentSubmissionService(
     {
         var student = await students.GetCurrentStudentAsync();
 
+        var accessibleAssignments = context.Set<Assignment>()
+            .ForEnrolledStudent(student.Id, clock.UtcNow);
+
         var query = context.Set<AssignmentSubmission>()
             .AsNoTracking()
             .Include(x => x.Student)
-            .Where(x => x.StudentId == student.Id);
+            .Where(x => x.StudentId == student.Id && accessibleAssignments.Any(a => a.Id == x.AssignmentId));
 
         var (page, pageSize) = PagingLimits.Normalize(search.Page, search.PageSize);
         var total = search.IncludeTotalCount ? await query.CountAsync(cancellationToken) : (int?)null;
@@ -117,7 +129,7 @@ public sealed class AssignmentSubmissionService(
         var student = await students.GetCurrentStudentAsync();
 
         var assignment = await context.Set<Assignment>()
-            .ForEnrolledStudentById(student.Id, assignmentId)
+            .ForEnrolledStudentById(student.Id, assignmentId, clock.UtcNow)
             .Include(x => x.AssignmentSubmissions)
             .FirstOrDefaultAsync(cancellationToken)
             ?? throw new NotFoundException(Messages.AssignmentNotFound);

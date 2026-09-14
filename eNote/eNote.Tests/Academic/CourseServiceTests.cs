@@ -418,6 +418,49 @@ public sealed class CourseServiceTests
             access.GetOwnedLectureAsync(otherLecture.Id, harness.Instructor.Id));
     }
 
+    [Fact]
+    public async Task GetByIdForStudentAsync_MapsEnrollmentId_PaidUntil_AndIsFree()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var actor = new StubCurrentActor(student: harness.Student);
+        var service = CreateService(harness.Context, harness.Instructor, actor);
+
+        var dto = await service.GetByIdForStudentAsync(harness.Course.Id);
+
+        Assert.True(dto.IsEnrolled);
+        var enrollment = await harness.Context.Set<Enrollment>().SingleAsync(e => e.StudentId == harness.Student.Id && e.CourseId == harness.Course.Id);
+        Assert.Equal(enrollment.Id, dto.EnrollmentId);
+        Assert.Equal(Now.AddDays(30), dto.PaidUntil);
+        Assert.False(dto.IsFree);
+    }
+
+    [Fact]
+    public async Task GetPagedForStudentAsync_MapsEnrollmentId_PaidUntil_AndIsFree()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var freeCourse = new Course("Free Intro", null, 0m, Now, Now.AddMonths(1), harness.Instructor.Id);
+        freeCourse.SetPublishedStatus(true);
+        harness.Context.Set<Course>().Add(freeCourse);
+        await harness.Context.SaveChangesAsync();
+
+        var actor = new StubCurrentActor(student: harness.Student);
+        var service = CreateService(harness.Context, harness.Instructor, actor);
+
+        var result = await service.GetPagedForStudentAsync(new CourseSearchObject());
+
+        var paidDto = result.Items.Single(c => c.Id == harness.Course.Id);
+        Assert.True(paidDto.IsEnrolled);
+        Assert.NotNull(paidDto.EnrollmentId);
+        Assert.Equal(Now.AddDays(30), paidDto.PaidUntil);
+        Assert.False(paidDto.IsFree);
+
+        var freeDto = result.Items.Single(c => c.Id == freeCourse.Id);
+        Assert.False(freeDto.IsEnrolled);
+        Assert.Null(freeDto.EnrollmentId);
+        Assert.Null(freeDto.PaidUntil);
+        Assert.True(freeDto.IsFree);
+    }
+
     private static async Task CreateActiveUserAsync(UserManager<AppUser> userManager, int id, string username, string firstName, string lastName)
     {
         await userManager.CreateAsync(new AppUser

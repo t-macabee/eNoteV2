@@ -27,6 +27,6 @@ public static class AssignmentSearchExtensions
         return query;
     }
 
-    public static IQueryable<Assignment> ForEnrolledStudentById(this IQueryable<Assignment> query, int studentId, int assignmentId) =>
-        query.ForEnrolledStudent(studentId).Where(x => x.Id == assignmentId);
+    public static IQueryable<Assignment> ForEnrolledStudentById(this IQueryable<Assignment> query, int studentId, int assignmentId, DateTime utcNow) =>
+        query.ForEnrolledStudent(studentId, utcNow).Where(x => x.Id == assignmentId);
 }

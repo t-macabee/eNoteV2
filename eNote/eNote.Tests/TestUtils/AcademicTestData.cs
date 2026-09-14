@@ -29,7 +29,9 @@ public static class AcademicTestData
         context.Set<Student>().Add(student);
         await context.SaveChangesAsync();
 
-        context.Set<Enrollment>().Add(new Enrollment(student.Id, course.Id, EnrollmentStatus.Active));
+        var enrollment = new Enrollment(student.Id, course.Id, EnrollmentStatus.Active);
+        enrollment.ExtendPaidUntil(now, 30);
+        context.Set<Enrollment>().Add(enrollment);
         await context.SaveChangesAsync();
 
         return new AcademicHarness(context, instructor, course, lecture, student);
@@ -39,17 +41,22 @@ public static class AcademicTestData
         new(context, new StubUserProfileLookup(instructor: instructor));
 
     public static T CreateService<T>(
-        ENoteContext context, Instructor instructor, StubCurrentActor? actor = null)
+        ENoteContext context, Instructor instructor, StubCurrentActor? actor = null, DateTime? now = null)
         where T : class
     {
         var currentUser = actor ?? new StubCurrentActor(instructor: instructor);
+        var effectiveNow = now
+            ?? context.Set<Course>().Local.FirstOrDefault()?.StartDate
+            ?? context.Set<Course>().Select(c => (DateTime?)c.StartDate).FirstOrDefault()
+            ?? new DateTime(2026, 7, 1, 12, 0, 0, DateTimeKind.Utc);
         return (T)Activator.CreateInstance(
             typeof(T),
             context,
             currentUser,
             currentUser,
             CreateInstructorAccess(context, instructor),
-            TestMapper.Create())!;
+            TestMapper.Create(),
+            new FixedClock(effectiveNow))!;
     }
 }
 

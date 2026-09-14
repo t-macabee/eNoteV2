@@ -2,6 +2,7 @@ using eNote.Application.Features.Academic.Assignments.Services;
 using eNote.Application.Features.Academic.Courses.Services;
 using eNote.Application.Features.Academic.LectureNotes.Services;
 using eNote.Application.Features.Academic.Lectures.Services;
+using eNote.Application.Features.Academic.Tuition;
 using eNote.Application.Features.Communication.Announcements.Services;
 using eNote.Application.Features.Communication.Events;
 using eNote.Application.Features.Communication.Notifications.Services;
@@ -57,6 +58,7 @@ public static class DependencyInjection
         services.AddScoped<RentalCommandService>();
         services.AddScoped<RentalQueryService>();
         services.AddScoped<IRentalPaymentService, RentalPaymentService>();
+        services.AddScoped<ITuitionPaymentService, TuitionPaymentService>();
         services.AddScoped<RecommendationService>();
         services.AddScoped<UserProfileService>();
         services.AddScoped<UserSelfService>();

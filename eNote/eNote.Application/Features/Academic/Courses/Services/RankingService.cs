@@ -3,7 +3,13 @@ using eNote.Application.Features.Identity.Users.Services;
 
 namespace eNote.Application.Features.Academic.Courses.Services;
 
-public sealed class RankingService(IAppDbContext context, ICurrentUserContext currentUser, IStudentContext students, IStudentDisplayNameService displayNames, InstructorAccessService instructorAccess)
+public sealed class RankingService(
+    IAppDbContext context,
+    ICurrentUserContext currentUser,
+    IStudentContext students,
+    IStudentDisplayNameService displayNames,
+    InstructorAccessService instructorAccess,
+    IClock clock)
 {
     public async Task<IReadOnlyList<CourseRankingEntryDto>> GetForInstructorAsync(int courseId, CancellationToken cancellationToken = default)
     {
@@ -21,7 +27,7 @@ public sealed class RankingService(IAppDbContext context, ICurrentUserContext cu
     {
         var studentId = await students.GetCurrentStudentIdAsync();
 
-        if (!await context.IsEnrolledInCourseAsync(studentId, courseId, cancellationToken))
+        if (!await context.IsEnrolledAndPaidAsync(studentId, courseId, clock.UtcNow, cancellationToken))
         {
             throw new AuthorizationException(Messages.StudentNotEnrolled);
         }

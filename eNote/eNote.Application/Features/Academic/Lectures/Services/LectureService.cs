@@ -10,7 +10,8 @@ public sealed class LectureService(
     InstructorAccessService instructorAccess,
     ILectureNotificationDispatcher notificationDispatcher,
     ILogger<LectureService> logger,
-    IMapper mapper)
+    IMapper mapper,
+    IClock clock)
 {
     public async Task<LectureDto> GetByIdForInstructorAsync(int id, CancellationToken cancellationToken = default)
     {
@@ -26,7 +27,7 @@ public sealed class LectureService(
         var entity = await context.Set<Lecture>()
             .Include(x => x.Attendances)
             .AsNoTracking()
-            .ForEnrolledStudent(studentId)
+            .ForEnrolledStudent(studentId, clock.UtcNow)
             .FirstOrDefaultAsync(x => x.Id == id, cancellationToken)
             ?? throw new NotFoundException(Messages.LectureNotFound);
 
@@ -54,7 +55,7 @@ public sealed class LectureService(
         var query = context.Set<Lecture>()
             .AsNoTracking()
             .Include(x => x.Attendances)
-            .ForEnrolledStudent(studentId)
+            .ForEnrolledStudent(studentId, clock.UtcNow)
             .ApplySearch(search);
 
         return await query.ToPagedResultAsync(search, entity =>

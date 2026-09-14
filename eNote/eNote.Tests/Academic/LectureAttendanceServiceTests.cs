@@ -35,7 +35,9 @@ public sealed class LectureAttendanceServiceTests
         var otherStudent = new Student(88, Now);
         harness.Context.Set<Student>().Add(otherStudent);
         await harness.Context.SaveChangesAsync();
-        harness.Context.Set<Enrollment>().Add(new Enrollment(otherStudent.Id, harness.Course.Id, EnrollmentStatus.Active));
+        var otherEnrollment = new Enrollment(otherStudent.Id, harness.Course.Id, EnrollmentStatus.Active);
+        otherEnrollment.ExtendPaidUntil(Now, 30);
+        harness.Context.Set<Enrollment>().Add(otherEnrollment);
         await harness.Context.SaveChangesAsync();
         var service = CreateService(harness.Context, harness.Instructor, otherStudent);
 
@@ -168,7 +170,8 @@ public sealed class LectureAttendanceServiceTests
             currentUser,
             new StubDisplayNameService(),
             AcademicTestData.CreateInstructorAccess(context, instructor),
-            NullLogger<LectureAttendanceService>.Instance);
+            NullLogger<LectureAttendanceService>.Instance,
+            new FixedClock(Now));
     }
 
     private sealed class StubDisplayNameService : IStudentDisplayNameService

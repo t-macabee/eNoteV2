@@ -40,6 +40,28 @@ public sealed class CourseEnrollmentServiceTests
     }
 
     [Fact]
+    public async Task EnrollAsync_Reenroll_PreservesPaidUntil()
+    {
+        await using var context = CreateContext();
+        var (student, course) = await SeedStudentAndCourseAsync(context, hasActiveMembership: true);
+        var enrollment = new Enrollment(student.Id, course.Id, EnrollmentStatus.Active);
+        enrollment.ExtendPaidUntil(Now, 30);
+        context.Set<Enrollment>().Add(enrollment);
+        await context.SaveChangesAsync();
+        var service = CreateService(context, student);
+
+        await service.UnenrollAsync(course.Id);
+        var canceled = await context.Set<Enrollment>().SingleAsync(x => x.StudentId == student.Id && x.CourseId == course.Id);
+        Assert.Equal(EnrollmentStatus.Canceled, canceled.EnrollmentStatus);
+        Assert.Equal(Now.AddDays(30), canceled.PaidUntil);
+
+        await service.EnrollAsync(course.Id);
+        var reactivated = await context.Set<Enrollment>().SingleAsync(x => x.StudentId == student.Id && x.CourseId == course.Id);
+        Assert.Equal(EnrollmentStatus.Active, reactivated.EnrollmentStatus);
+        Assert.Equal(Now.AddDays(30), reactivated.PaidUntil);
+    }
+
+    [Fact]
     public async Task UnenrollAsync_CancelsActiveEnrollment()
     {
         await using var context = CreateContext();

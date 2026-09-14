@@ -287,6 +287,7 @@ public sealed class LectureServiceTests
             AcademicTestData.CreateInstructorAccess(context, instructor),
             notificationDispatcher ?? new NoOpLectureNotificationDispatcher(),
             NullLogger<LectureService>.Instance,
-            TestMapper.Create());
+            TestMapper.Create(),
+            new FixedClock(Now));
     }
 }

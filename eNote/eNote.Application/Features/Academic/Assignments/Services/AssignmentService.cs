@@ -7,7 +7,8 @@ public sealed class AssignmentService(
     IAppDbContext context,
     ICurrentUserContext currentUser, IStudentContext students,
     InstructorAccessService instructorAccess,
-    IMapper mapper)
+    IMapper mapper,
+    IClock clock)
 {
     public async Task<PagedResult<AssignmentDto>> GetForLectureAsync(int lectureId, AssignmentSearchObject search, CancellationToken cancellationToken = default)
     {
@@ -67,7 +68,7 @@ public sealed class AssignmentService(
 
         var query = context.Set<Assignment>()
             .AsNoTracking()
-            .ForEnrolledStudent(studentId)
+            .ForEnrolledStudent(studentId, clock.UtcNow)
             .ApplySearch(search);
 
         return await query.ToPagedResultAsync(search, mapper.Map<AssignmentDto>, q => q.OrderBy(x => x.DueAt), cancellationToken);
@@ -78,7 +79,7 @@ public sealed class AssignmentService(
         var studentId = await students.GetCurrentStudentIdAsync();
 
         var entity = await context.Set<Assignment>()
-            .ForEnrolledStudentById(studentId, assignmentId)
+            .ForEnrolledStudentById(studentId, assignmentId, clock.UtcNow)
             .AsNoTracking()
             .FirstOrDefaultAsync(cancellationToken)
             ?? throw new NotFoundException(Messages.AssignmentNotFound);

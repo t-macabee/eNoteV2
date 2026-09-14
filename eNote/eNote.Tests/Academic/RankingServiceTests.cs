@@ -95,7 +95,8 @@ public sealed class RankingServiceTests
             currentUser,
             currentUser,
             new StubDisplayNameService(),
-            AcademicTestData.CreateInstructorAccess(context, instructor));
+            AcademicTestData.CreateInstructorAccess(context, instructor),
+            new FixedClock(Now));
     }
 
     private sealed class StubDisplayNameService : IStudentDisplayNameService

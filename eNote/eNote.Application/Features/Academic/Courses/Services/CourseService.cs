@@ -111,7 +111,11 @@ public sealed class CourseService(IAppDbContext context, IMapper mapper, ICurren
             ?? throw new NotFoundException(Messages.CourseNotFound);
 
         var dto = mapper.Map<CourseDto>(entity);
-        dto.IsEnrolled = entity.Enrollments.Any(e => e.StudentId == studentId && e.EnrollmentStatus == EnrollmentStatus.Active);
+        var enrollment = entity.Enrollments.FirstOrDefault(e => e.StudentId == studentId && e.EnrollmentStatus == EnrollmentStatus.Active);
+        dto.IsEnrolled = enrollment != null;
+        dto.EnrollmentId = enrollment?.Id;
+        dto.PaidUntil = enrollment?.PaidUntil;
+        dto.IsFree = entity.Price == 0;
         return dto;
     }
 
@@ -145,7 +149,11 @@ public sealed class CourseService(IAppDbContext context, IMapper mapper, ICurren
         return await query.ToPagedResultAsync(search, entity =>
         {
             var dto = mapper.Map<CourseDto>(entity);
-            dto.IsEnrolled = entity.Enrollments.Any(e => e.StudentId == studentId && e.EnrollmentStatus == EnrollmentStatus.Active);
+            var enrollment = entity.Enrollments.FirstOrDefault(e => e.StudentId == studentId && e.EnrollmentStatus == EnrollmentStatus.Active);
+            dto.IsEnrolled = enrollment != null;
+            dto.EnrollmentId = enrollment?.Id;
+            dto.PaidUntil = enrollment?.PaidUntil;
+            dto.IsFree = entity.Price == 0;
             return dto;
         }, q => q.OrderByDescending(x => x.StartDate), cancellationToken);
     }

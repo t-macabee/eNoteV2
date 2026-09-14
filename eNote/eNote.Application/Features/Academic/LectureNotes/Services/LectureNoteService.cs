@@ -7,7 +7,8 @@ public sealed class LectureNoteService(
     IAppDbContext context,
     ICurrentUserContext currentUser, IStudentContext students,
     InstructorAccessService instructorAccess,
-    IMapper mapper)
+    IMapper mapper,
+    IClock clock)
 {
     public async Task<PagedResult<LectureNoteDto>> GetForLectureAsync(int lectureId, LectureNoteSearchObject search, CancellationToken cancellationToken = default)
     {
@@ -67,7 +68,7 @@ public sealed class LectureNoteService(
 
         var query = context.Set<LectureNote>()
             .AsNoTracking()
-            .ForEnrolledStudent(studentId)
+            .ForEnrolledStudent(studentId, clock.UtcNow)
             .Where(x => x.LectureId == lectureId)
             .ApplySearch(search);
 
@@ -80,7 +81,7 @@ public sealed class LectureNoteService(
 
         var entity = await context.Set<LectureNote>()
             .AsNoTracking()
-            .ForEnrolledStudent(studentId)
+            .ForEnrolledStudent(studentId, clock.UtcNow)
             .FirstOrDefaultAsync(x => x.Id == noteId && x.LectureId == lectureId, cancellationToken)
             ?? throw new NotFoundException(Messages.LectureNoteNotFound);
 

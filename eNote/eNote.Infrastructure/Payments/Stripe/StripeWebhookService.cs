@@ -3,7 +3,9 @@ using eNote.Application.Common.Localization;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Common.Time;
 using eNote.Application.Constants;
+using eNote.Application.Features.Academic.Tuition;
 using eNote.Application.Features.Rentals.Payments.Services;
+using eNote.Domain.Entities.Academic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Stripe;
@@ -56,6 +58,11 @@ public sealed class StripeWebhookService(
             return;
         }
 
+        if (await context.Set<CoursePayment>().AnyAsync(p => p.StripeEventId == stripeEvent.Id, cancellationToken))
+        {
+            return;
+        }
+
         switch (stripeEvent.Type)
         {
             case PaymentIntentSucceeded when stripeEvent.Data.Object is PaymentIntent paymentIntent:
@@ -80,29 +87,48 @@ public sealed class StripeWebhookService(
     {
         await context.ExecuteInTransactionAsync(async () =>
         {
-            var payment = await context.Set<RentalPayment>()
-                .Include(p => p.InstrumentRental)
-                .FirstOrDefaultAsync(p => p.StripePaymentIntentId == paymentIntentId, cancellationToken);
-
-            if (payment is null)
-            {
-                logger.LogWarning("PaymentIntent {PaymentIntentId} not found for succeeded webhook", paymentIntentId);
-                return;
-            }
-
             if (await context.Set<StripeWebhookEvent>().AnyAsync(e => e.StripeEventId == eventId, cancellationToken))
             {
                 return;
             }
 
-            if (payment.Status != PaymentStatus.Succeeded)
+            var rentalPayment = await context.Set<RentalPayment>()
+                .Include(p => p.InstrumentRental)
+                .FirstOrDefaultAsync(p => p.StripePaymentIntentId == paymentIntentId, cancellationToken);
+
+            if (rentalPayment is not null)
             {
-                payment.MarkSucceeded(chargeId ?? payment.StripeChargeId!, eventId, clock.UtcNow);
-                payment.InstrumentRental.MarkPaid(payment.AmountChargedCents, clock.UtcNow);
+                if (rentalPayment.Status != PaymentStatus.Succeeded)
+                {
+                    rentalPayment.MarkSucceeded(chargeId ?? rentalPayment.StripeChargeId!, eventId, clock.UtcNow);
+                    rentalPayment.InstrumentRental.MarkPaid(rentalPayment.AmountChargedCents, clock.UtcNow);
+                }
+
+                await RecordEventAsync(eventId, PaymentIntentSucceeded, rawJson, cancellationToken);
+                return;
             }
 
-            context.Set<StripeWebhookEvent>().Add(new StripeWebhookEvent(eventId, PaymentIntentSucceeded, rawJson, clock.UtcNow));
-            await SaveAsync(eventId, cancellationToken);
+            var coursePayment = await context.Set<CoursePayment>()
+                .Include(p => p.Enrollment)
+                .FirstOrDefaultAsync(p => p.StripePaymentIntentId == paymentIntentId, cancellationToken);
+
+            if (coursePayment is not null)
+            {
+                if (coursePayment.Status != PaymentStatus.Succeeded)
+                {
+                    var now = clock.UtcNow;
+                    var periodStart = coursePayment.Enrollment.ExtendPaidUntil(now, TuitionOptions.PeriodDays);
+                    var periodEnd = coursePayment.Enrollment.PaidUntil!.Value;
+
+                    var effectiveChargeId = chargeId ?? coursePayment.StripeChargeId ?? $"ch_{eventId}";
+                    coursePayment.MarkSucceeded(effectiveChargeId, eventId, now, periodStart, periodEnd);
+                }
+
+                await RecordEventAsync(eventId, PaymentIntentSucceeded, rawJson, cancellationToken);
+                return;
+            }
+
+            logger.LogWarning("PaymentIntent {PaymentIntentId} not found for succeeded webhook", paymentIntentId);
         }, cancellationToken);
     }
 
@@ -110,27 +136,40 @@ public sealed class StripeWebhookService(
     {
         await context.ExecuteInTransactionAsync(async () =>
         {
-            var payment = await context.Set<RentalPayment>()
-                .FirstOrDefaultAsync(p => p.StripePaymentIntentId == paymentIntentId, cancellationToken);
-
-            if (payment is null)
-            {
-                logger.LogWarning("PaymentIntent {PaymentIntentId} not found for failed webhook", paymentIntentId);
-                return;
-            }
-
             if (await context.Set<StripeWebhookEvent>().AnyAsync(e => e.StripeEventId == eventId, cancellationToken))
             {
                 return;
             }
 
-            if (payment.Status is not (PaymentStatus.Succeeded or PaymentStatus.Refunded or PaymentStatus.PartiallyRefunded))
+            var rentalPayment = await context.Set<RentalPayment>()
+                .FirstOrDefaultAsync(p => p.StripePaymentIntentId == paymentIntentId, cancellationToken);
+
+            if (rentalPayment is not null)
             {
-                payment.MarkFailed(eventId);
+                if (rentalPayment.Status is not (PaymentStatus.Succeeded or PaymentStatus.Refunded or PaymentStatus.PartiallyRefunded))
+                {
+                    rentalPayment.MarkFailed(eventId);
+                }
+
+                await RecordEventAsync(eventId, PaymentIntentPaymentFailed, rawJson, cancellationToken);
+                return;
             }
 
-            context.Set<StripeWebhookEvent>().Add(new StripeWebhookEvent(eventId, PaymentIntentPaymentFailed, rawJson, clock.UtcNow));
-            await SaveAsync(eventId, cancellationToken);
+            var coursePayment = await context.Set<CoursePayment>()
+                .FirstOrDefaultAsync(p => p.StripePaymentIntentId == paymentIntentId, cancellationToken);
+
+            if (coursePayment is not null)
+            {
+                if (coursePayment.Status != PaymentStatus.Succeeded)
+                {
+                    coursePayment.MarkFailed(eventId);
+                }
+
+                await RecordEventAsync(eventId, PaymentIntentPaymentFailed, rawJson, cancellationToken);
+                return;
+            }
+
+            logger.LogWarning("PaymentIntent {PaymentIntentId} not found for failed webhook", paymentIntentId);
         }, cancellationToken);
     }
 
@@ -144,35 +183,50 @@ public sealed class StripeWebhookService(
                 return;
             }
 
-            var payment = await context.Set<RentalPayment>()
-                .Include(p => p.InstrumentRental)
-                .FirstOrDefaultAsync(p => p.StripePaymentIntentId == charge.PaymentIntentId, cancellationToken);
-
-            if (payment is null)
-            {
-                logger.LogWarning("PaymentIntent {PaymentIntentId} not found for refunded webhook", charge.PaymentIntentId);
-                return;
-            }
-
             if (await context.Set<StripeWebhookEvent>().AnyAsync(e => e.StripeEventId == eventId, cancellationToken))
             {
                 return;
             }
 
-            if (payment.Status == PaymentStatus.Succeeded && charge.AmountRefunded > 0)
-            {
-                var refundId = charge.Refunds?.Data?.FirstOrDefault()?.Id ?? payment.StripeRefundId ?? $"re_{eventId}";
-                var alreadyRefunded = payment.RefundedCents ?? 0;
+            var rentalPayment = await context.Set<RentalPayment>()
+                .Include(p => p.InstrumentRental)
+                .FirstOrDefaultAsync(p => p.StripePaymentIntentId == charge.PaymentIntentId, cancellationToken);
 
-                if (charge.AmountRefunded > alreadyRefunded)
+            if (rentalPayment is not null)
+            {
+                if (rentalPayment.Status == PaymentStatus.Succeeded && charge.AmountRefunded > 0)
                 {
-                    payment.ApplyRefund(charge.AmountRefunded - alreadyRefunded, refundId, clock.UtcNow);
+                    var refundId = charge.Refunds?.Data?.FirstOrDefault()?.Id ?? rentalPayment.StripeRefundId ?? $"re_{eventId}";
+                    var alreadyRefunded = rentalPayment.RefundedCents ?? 0;
+
+                    if (charge.AmountRefunded > alreadyRefunded)
+                    {
+                        rentalPayment.ApplyRefund(charge.AmountRefunded - alreadyRefunded, refundId, clock.UtcNow);
+                    }
                 }
+
+                await RecordEventAsync(eventId, ChargeRefunded, rawJson, cancellationToken);
+                return;
             }
 
-            context.Set<StripeWebhookEvent>().Add(new StripeWebhookEvent(eventId, ChargeRefunded, rawJson, clock.UtcNow));
-            await SaveAsync(eventId, cancellationToken);
+            var coursePayment = await context.Set<CoursePayment>()
+                .FirstOrDefaultAsync(p => p.StripePaymentIntentId == charge.PaymentIntentId, cancellationToken);
+
+            if (coursePayment is not null)
+            {
+                logger.LogInformation("Charge {ChargeId} refunded for course payment {CoursePaymentId}; leaving payment as-is", charge.Id, coursePayment.Id);
+                await RecordEventAsync(eventId, ChargeRefunded, rawJson, cancellationToken);
+                return;
+            }
+
+            logger.LogWarning("PaymentIntent {PaymentIntentId} not found for refunded webhook", charge.PaymentIntentId);
         }, cancellationToken);
+    }
+
+    private async Task RecordEventAsync(string eventId, string eventType, string rawJson, CancellationToken cancellationToken)
+    {
+        context.Set<StripeWebhookEvent>().Add(new StripeWebhookEvent(eventId, eventType, rawJson, clock.UtcNow));
+        await SaveAsync(eventId, cancellationToken);
     }
 
     private async Task SaveAsync(string eventId, CancellationToken cancellationToken)
@@ -183,11 +237,11 @@ public sealed class StripeWebhookService(
         }
         catch (DbUpdateException ex) when (
             ex.InnerException?.Message?.Contains(DbConstraintNames.StripeWebhookEventStripeEventIdUniqueIndex) == true
-            || ex.InnerException?.Message?.Contains(DbConstraintNames.RentalPaymentStripeEventIdUniqueIndex) == true)
+            || ex.InnerException?.Message?.Contains(DbConstraintNames.RentalPaymentStripeEventIdUniqueIndex) == true
+            || ex.InnerException?.Message?.Contains(DbConstraintNames.CoursePaymentStripeEventIdUniqueIndex) == true
+            || ex.InnerException?.Message?.Contains(DbConstraintNames.CoursePaymentPaymentIntentIdUniqueIndex) == true)
         {
-            // A concurrent delivery of the same event won the race; treat this one as handled.
             logger.LogInformation("Duplicate Stripe webhook event {EventId} ignored", eventId);
         }
     }
-
 }
