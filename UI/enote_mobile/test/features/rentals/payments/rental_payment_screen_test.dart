@@ -201,7 +201,55 @@ Future<void> _confirmPay(WidgetTester tester) async {
   await tester.pump();
 }
 
+Future<_PayStubClient> _pushSecondScreen(
+  WidgetTester tester,
+  FakePaymentSheetGateway gatewayB, {
+  List<({int status, Map<String, dynamic> body})>? payments,
+}) async {
+  final clientB = _PayStubClient(
+    rental: _rental(),
+    payments: payments,
+  );
+  final authStateB = AuthState(
+    baseUrl: _baseUrl,
+    tokenReader: () => fakeJwt(),
+    httpClient: clientB,
+  );
+  final apiClientB = ApiClient(
+    baseUrl: _baseUrl,
+    authState: authStateB,
+    httpClient: clientB,
+  );
+  final context = tester.element(find.text('Provjeri ponovo'));
+  Navigator.of(context).push(
+    MaterialPageRoute(
+      builder: (_) => MultiProvider(
+        providers: [
+          ChangeNotifierProvider<AuthState>.value(value: authStateB),
+          Provider<ApiClient>.value(value: apiClientB),
+          ChangeNotifierProvider<RentalProvider>(
+            create: (_) => RentalProvider(apiClient: apiClientB),
+          ),
+          Provider<RentalPaymentProvider>(
+            create: (_) => RentalPaymentProvider(apiClient: apiClientB),
+          ),
+        ],
+        child: RentalPaymentScreen(
+          rentalId: _rentalId,
+          gateway: gatewayB,
+          stripePublishableKey: 'pk_test_123',
+        ),
+      ),
+    ),
+  );
+  await tester.pumpAndSettle();
+  return clientB;
+}
+
 void main() {
+  tearDown(() {
+    RentalPaymentScreen.stripeRedirectHandler = null;
+  });
   testWidgets('review shows the header, amount, charge and Stripe note', (
     tester,
   ) async {
@@ -415,6 +463,100 @@ void main() {
     await tester.pump(const Duration(seconds: 11));
     await tester.pumpAndSettle();
     expect(client.statusCalls, 15);
+  });
+
+  testWidgets('popping a single screen clears the redirect handler', (
+    tester,
+  ) async {
+    await _pumpPay(
+      tester,
+      _PayStubClient(rental: _rental()),
+      FakePaymentSheetGateway(),
+    );
+
+    expect(RentalPaymentScreen.stripeRedirectHandler, isNotNull);
+
+    Navigator.of(tester.element(find.text('Stratocaster'))).pop();
+    await tester.pumpAndSettle();
+
+    expect(RentalPaymentScreen.stripeRedirectHandler, isNull);
+  });
+
+  testWidgets('popping the top screen restores the underlying handler', (
+    tester,
+  ) async {
+    final clientA = _PayStubClient(
+      rental: _rental(),
+      payments: List.generate(
+        15,
+        (_) => (status: 200, body: _payment('RequiresAction')),
+      ),
+    );
+    await _pumpPay(tester, clientA, FakePaymentSheetGateway());
+
+    await _confirmPay(tester);
+    await tester.pump(const Duration(seconds: 11));
+    await tester.pumpAndSettle();
+    expect(clientA.statusCalls, 5);
+
+    final clientB = await _pushSecondScreen(
+      tester,
+      FakePaymentSheetGateway(),
+    );
+    expect(find.text('Plati 8.00 KM'), findsOneWidget);
+    expect(RentalPaymentScreen.stripeRedirectHandler, isNotNull);
+
+    Navigator.of(tester.element(find.text('Plati 8.00 KM'))).pop();
+    await tester.pumpAndSettle();
+
+    expect(find.text('Provjeri ponovo'), findsOneWidget);
+    expect(RentalPaymentScreen.stripeRedirectHandler, isNotNull);
+
+    RentalPaymentScreen.stripeRedirectHandler?.call();
+    await tester.pump(const Duration(seconds: 11));
+    await tester.pumpAndSettle();
+    expect(clientA.statusCalls, 10);
+    expect(clientB.statusCalls, 0);
+  });
+
+  testWidgets('with two screens mounted the handler polls the top screen', (
+    tester,
+  ) async {
+    final clientA = _PayStubClient(
+      rental: _rental(),
+      payments: List.generate(
+        10,
+        (_) => (status: 200, body: _payment('RequiresAction')),
+      ),
+    );
+    await _pumpPay(tester, clientA, FakePaymentSheetGateway());
+
+    await _confirmPay(tester);
+    await tester.pump(const Duration(seconds: 11));
+    await tester.pumpAndSettle();
+    expect(clientA.statusCalls, 5);
+
+    final clientB = await _pushSecondScreen(
+      tester,
+      FakePaymentSheetGateway(),
+      payments: List.generate(
+        15,
+        (_) => (status: 200, body: _payment('RequiresAction')),
+      ),
+    );
+
+    await _confirmPay(tester);
+    await tester.pump(const Duration(seconds: 11));
+    await tester.pumpAndSettle();
+    expect(clientB.statusCalls, 5);
+    expect(clientA.statusCalls, 5);
+
+    RentalPaymentScreen.stripeRedirectHandler?.call();
+    await tester.pump(const Duration(seconds: 11));
+    await tester.pumpAndSettle();
+
+    expect(clientB.statusCalls, 10);
+    expect(clientA.statusCalls, 5);
   });
 
   testWidgets('a paid rental is refused with the already-paid copy', (

@@ -55,10 +55,12 @@ class _RentalPaymentScreenState extends State<RentalPaymentScreen> {
   bool _isPolling = false;
   _View _view = _View.review;
   String? _failureMessage;
+  VoidCallback? _previousRedirectHandler;
 
   @override
   void initState() {
     super.initState();
+    _previousRedirectHandler = RentalPaymentScreen.stripeRedirectHandler;
     RentalPaymentScreen.stripeRedirectHandler = recheck;
     _load();
   }
@@ -66,7 +68,7 @@ class _RentalPaymentScreenState extends State<RentalPaymentScreen> {
   @override
   void dispose() {
     if (RentalPaymentScreen.stripeRedirectHandler == recheck) {
-      RentalPaymentScreen.stripeRedirectHandler = null;
+      RentalPaymentScreen.stripeRedirectHandler = _previousRedirectHandler;
     }
     super.dispose();
   }

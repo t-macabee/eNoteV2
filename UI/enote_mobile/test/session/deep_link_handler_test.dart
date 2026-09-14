@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:enote_mobile/features/rentals/payments/rental_payment_screen.dart';
 import 'package:enote_mobile/session/deep_link_handler.dart';
 import 'package:enote_mobile/shell/app_router.dart';
 
 void main() {
+  tearDown(() {
+    RentalPaymentScreen.stripeRedirectHandler = null;
+  });
   test('reset link with encoded + and / in the token parses', () {
     final target = DeepLinkHandler.parse(
       Uri.parse(
@@ -83,5 +87,41 @@ void main() {
     handler.flush(navigatorKey);
     await tester.pumpAndSettle();
     expect(builds, 1);
+  });
+
+  testWidgets('stripe redirect with no handler pushes nothing', (tester) async {
+    RentalPaymentScreen.stripeRedirectHandler = null;
+    final navigatorKey = GlobalKey<NavigatorState>();
+    await tester.pumpWidget(
+      MaterialApp(navigatorKey: navigatorKey, home: const Text('home')),
+    );
+
+    expect(
+      () => DeepLinkHandler.dispatch(
+        navigatorKey,
+        const StripeRedirectTarget(),
+      ),
+      returnsNormally,
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('home'), findsOneWidget);
+  });
+
+  testWidgets('stripe redirect invokes the handler once', (tester) async {
+    var calls = 0;
+    RentalPaymentScreen.stripeRedirectHandler = () {
+      calls++;
+    };
+    final navigatorKey = GlobalKey<NavigatorState>();
+    await tester.pumpWidget(
+      MaterialApp(navigatorKey: navigatorKey, home: const Text('home')),
+    );
+
+    DeepLinkHandler.dispatch(navigatorKey, const StripeRedirectTarget());
+    await tester.pumpAndSettle();
+
+    expect(calls, 1);
+    expect(find.text('home'), findsOneWidget);
   });
 }
