@@ -135,6 +135,12 @@ Najam instrumenta se naplaćuje jednom, kada najam pređe u status `Complete` il
 `ReturnedEarly`. Iznos računa server. Podrazumijevana valuta je BAM i mijenja se
 kroz `STRIPE_CURRENCY`.
 
+Školarina se naplaćuje po kursu, mjesečno. `Course.Price` je mjesečna cijena
+kursa; student je plaća unaprijed i time dobija 30 dana pristupa sadržaju tog
+kursa. Obnova je ručna, a ponovna uplata prije isteka ne gubi dane
+(`PaidUntil = max(trenutno, PaidUntil) + 30 dana`). Kurs sa cijenom 0 je
+besplatan. Iznos i ovdje računa server.
+
 Obavezne varijable su `STRIPE_SECRET_KEY` i `STRIPE_WEBHOOK_SECRET`. Webhook
 treba usmjeriti na `POST /api/v1/payments/stripe/webhook`, lokalno preko
 `stripe listen`.
@@ -142,13 +148,17 @@ treba usmjeriti na `POST /api/v1/payments/stripe/webhook`, lokalno preko
 Mobilna aplikacija plaća unutar aplikacije kroz Stripe PaymentSheet. Publishable
 ključ se ne izlaže kroz endpoint nego se prosljeđuje sa
 `--dart-define=STRIPE_PUBLISHABLE_KEY=pk_test_…`. Za lokalno testiranje pokrenite
-`stripe listen --forward-to localhost:5059/api/v1/payments/stripe/webhook`.
+`stripe listen --forward-to localhost:5059/api/v1/payments/stripe/webhook`; isti
+webhook pokriva i najam i školarinu.
 
 | Endpoint | Uloga |
 |---|---|
 | `POST /api/v1/student/rentals/{rentalId}/payments/create-intent` | Student |
 | `GET /api/v1/student/rentals/{rentalId}/payments` | Student |
 | `POST /api/v1/shop/rentals/{rentalId}/payments/refund` | StoreEmployee |
+| `POST /api/v1/student/enrollments/{enrollmentId}/tuition/create-intent` | Student |
+| `GET /api/v1/student/enrollments/{enrollmentId}/tuition` | Student |
+| `GET /api/v1/student/enrollments/{enrollmentId}/tuition/history` | Student |
 | `POST /api/v1/payments/stripe/webhook` | Stripe, potpis se provjerava |
 
 Povrat novca ne poništava status plaćenog najma. Student koji ima neplaćen

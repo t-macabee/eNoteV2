@@ -85,7 +85,7 @@ void main() {
       await tester.enterText(
           find.widgetWithText(TextFormField, 'Naziv'), 'Test kurs');
       await tester.enterText(
-          find.widgetWithText(TextFormField, 'Cijena'), '10');
+          find.widgetWithText(TextFormField, 'Mjesečna cijena'), '10');
 
       await tester.tap(find.widgetWithText(FilledButton, 'Sačuvaj'));
       await tester.pumpAndSettle();

@@ -287,7 +287,7 @@ class _CourseDetailDialogState extends State<CourseDetailDialog> {
                     ),
                     DetailRow(
                       icon: Icons.payments_outlined,
-                      label: 'Cijena',
+                      label: 'Mjesečna cijena',
                       value: _course.price.toStringAsFixed(2),
                     ),
                     DetailRow(

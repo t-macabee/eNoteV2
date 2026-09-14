@@ -54,6 +54,18 @@ vratilo, pa bi obećavalo ponašanje koje ne postoji.
 Jedina veza više prema više je između kursa i studenta, kroz `Enrollment`. Ekrani
 rangiranja i prisustva prikazuju imena studenata, nikad ID vrijednosti.
 
+## Cijena kursa i pristup sadržaju
+
+`Course.Price` je mjesečna cijena kursa; cijena 0 označava besplatan kurs.
+Student je plaća unaprijed i time dobija 30 dana pristupa sadržaju tog kursa, a
+obnova je ručna.
+
+Pristup se provjerava dvama nezavisnim uslovima: članstvo
+(`Student.MembershipPaidUntil`) je datumsko, na dan, i odlučuje samo da li se
+student smije upisati, dok je školarina (`Enrollment.PaidUntil`) tačan UTC
+trenutak i odlučuje samo da li student vidi sadržaj upisanog kursa. Razlika u
+granularnosti je namjerna.
+
 ## Slike na formama
 
 Sličice su 40 piksela, što je oko 5 posto širine forme.

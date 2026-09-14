@@ -113,7 +113,7 @@ class _CourseFormScreenState extends State<CourseFormScreen> {
         TextFormField(
           controller: _priceController,
           decoration: const InputDecoration(
-            labelText: 'Cijena',
+            labelText: 'Mjesečna cijena',
             hintText: 'npr. 25.00',
           ),
           keyboardType: const TextInputType.numberWithOptions(decimal: true),

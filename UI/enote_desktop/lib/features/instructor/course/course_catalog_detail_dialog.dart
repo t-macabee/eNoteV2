@@ -42,7 +42,7 @@ class CourseCatalogDetailDialog extends StatelessWidget {
             ),
             DetailRow(
               icon: Icons.payments_outlined,
-              label: 'Cijena',
+              label: 'Mjesečna cijena',
               value: course.price.toStringAsFixed(2),
             ),
             DetailRow(
