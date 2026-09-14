@@ -7,8 +7,8 @@ import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
 import 'package:enote_mobile/features/payments/payment_sheet_gateway.dart';
-import 'package:enote_mobile/features/rentals/payments/payment_provider.dart';
-import 'package:enote_mobile/features/rentals/payments/payment_screen.dart';
+import 'package:enote_mobile/features/rentals/payments/rental_payment_provider.dart';
+import 'package:enote_mobile/features/rentals/payments/rental_payment_screen.dart';
 import 'package:enote_mobile/features/rentals/rental_provider.dart';
 import 'package:enote_mobile/theme/app_theme.dart';
 
@@ -135,8 +135,8 @@ class _Harness {
         ChangeNotifierProvider<RentalProvider>(
           create: (_) => RentalProvider(apiClient: apiClient),
         ),
-        Provider<PaymentProvider>(
-          create: (_) => PaymentProvider(apiClient: apiClient),
+        Provider<RentalPaymentProvider>(
+          create: (_) => RentalPaymentProvider(apiClient: apiClient),
         ),
       ],
       child: MaterialApp(
@@ -148,7 +148,7 @@ class _Harness {
                 onPressed: () => Navigator.of(context)
                     .push(
                       MaterialPageRoute(
-                        builder: (_) => PaymentScreen(
+                        builder: (_) => RentalPaymentScreen(
                           rentalId: _rentalId,
                           gateway: gateway,
                           stripePublishableKey:
@@ -406,7 +406,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(client.statusCalls, 5);
 
-    PaymentScreen.stripeRedirectHandler?.call();
+    RentalPaymentScreen.stripeRedirectHandler?.call();
     await tester.pump(const Duration(seconds: 11));
     await tester.pumpAndSettle();
     expect(client.statusCalls, 10);

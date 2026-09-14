@@ -6,7 +6,7 @@ import '../../theme/app_theme.dart';
 enum PaymentFlowState { processing, succeeded, failed, pending }
 
 /// States C–F of the payment flow: the review screen (state A) is built by
-/// `PaymentScreen` itself.
+/// `RentalPaymentScreen` itself.
 class PaymentStatusView extends StatelessWidget {
   final PaymentFlowState state;
 

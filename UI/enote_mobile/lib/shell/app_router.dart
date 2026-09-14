@@ -20,7 +20,7 @@ import '../features/notifications/notification_inbox_screen.dart';
 import '../features/profile/change_password_screen.dart';
 import '../features/profile/edit_profile_screen.dart';
 import '../features/ranking/ranking_screen.dart';
-import '../features/rentals/payments/payment_screen.dart';
+import '../features/rentals/payments/rental_payment_screen.dart';
 import '../features/rentals/rental_detail_screen.dart';
 
 class CourseDetailArgs {
@@ -198,7 +198,7 @@ class AppRouter {
       case payment:
         final paymentArgs = args is PaymentArgs ? args : null;
         if (paymentArgs == null) return _route(const _UnknownRouteScreen());
-        return _route(PaymentScreen(rentalId: paymentArgs.rentalId));
+        return _route(RentalPaymentScreen(rentalId: paymentArgs.rentalId));
       case notifications:
         return _route(const NotificationInboxScreen());
       case profileEdit:

@@ -11,7 +11,7 @@ import '../../../widgets/status_chip.dart';
 import '../rental_provider.dart';
 import '../../payments/payment_sheet_gateway.dart';
 import '../../payments/payment_status_view.dart';
-import 'payment_provider.dart';
+import 'rental_payment_provider.dart';
 
 enum _View { review, processing, succeeded, failed, pending }
 
@@ -20,7 +20,7 @@ enum _View { review, processing, succeeded, failed, pending }
 ///
 /// The screen never caches a `clientSecret` (02 §10.4) and never renders
 /// `paymentIntentId` (02 §10.5).
-class PaymentScreen extends StatefulWidget {
+class RentalPaymentScreen extends StatefulWidget {
   final int rentalId;
   final PaymentSheetGateway gateway;
   final String stripePublishableKey;
@@ -29,7 +29,7 @@ class PaymentScreen extends StatefulWidget {
   /// screen is mounted (01 §5.4 step 5): re-runs one poll cycle.
   static VoidCallback? stripeRedirectHandler;
 
-  PaymentScreen({
+  RentalPaymentScreen({
     super.key,
     required this.rentalId,
     PaymentSheetGateway? gateway,
@@ -39,10 +39,10 @@ class PaymentScreen extends StatefulWidget {
            stripePublishableKey ?? kStripePublishableKey;
 
   @override
-  State<PaymentScreen> createState() => _PaymentScreenState();
+  State<RentalPaymentScreen> createState() => _RentalPaymentScreenState();
 }
 
-class _PaymentScreenState extends State<PaymentScreen> {
+class _RentalPaymentScreenState extends State<RentalPaymentScreen> {
   /// Shown when a Canceled sheet turns out to be a decline (server row is
   /// Failed). Provisional wording: 02 §11 defines no decline string.
   static const _declinedMessage = 'Kartica je odbijena.';
@@ -59,14 +59,14 @@ class _PaymentScreenState extends State<PaymentScreen> {
   @override
   void initState() {
     super.initState();
-    PaymentScreen.stripeRedirectHandler = recheck;
+    RentalPaymentScreen.stripeRedirectHandler = recheck;
     _load();
   }
 
   @override
   void dispose() {
-    if (PaymentScreen.stripeRedirectHandler == recheck) {
-      PaymentScreen.stripeRedirectHandler = null;
+    if (RentalPaymentScreen.stripeRedirectHandler == recheck) {
+      RentalPaymentScreen.stripeRedirectHandler = null;
     }
     super.dispose();
   }
@@ -115,7 +115,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
   /// One payment attempt: create-intent → init → present → poll (02 §10.2).
   Future<void> _attempt() async {
-    final payments = context.read<PaymentProvider>();
+    final payments = context.read<RentalPaymentProvider>();
     final rentalId = widget.rentalId;
     setState(() => _isBusy = true);
     try {
@@ -178,7 +178,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
   Future<void> _poll() async {
     if (_isPolling) return;
-    final payments = context.read<PaymentProvider>();
+    final payments = context.read<RentalPaymentProvider>();
     setState(() => _isPolling = true);
     try {
       final result = await payments.pollUntilSucceeded(widget.rentalId);

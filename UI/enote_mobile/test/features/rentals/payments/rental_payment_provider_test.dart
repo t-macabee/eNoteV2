@@ -5,7 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 
 import 'package:enote_core/enote_core.dart';
-import 'package:enote_mobile/features/rentals/payments/payment_provider.dart';
+import 'package:enote_mobile/features/rentals/payments/rental_payment_provider.dart';
 
 import '../../../helpers.dart';
 
@@ -55,13 +55,13 @@ class _ScriptedClient extends http.BaseClient {
   }
 }
 
-PaymentProvider _provider(http.Client client) {
+RentalPaymentProvider _provider(http.Client client) {
   final authState = AuthState(
     baseUrl: _baseUrl,
     tokenReader: () => fakeJwt(),
     httpClient: client,
   );
-  return PaymentProvider(
+  return RentalPaymentProvider(
     apiClient: ApiClient(
       baseUrl: _baseUrl,
       authState: authState,

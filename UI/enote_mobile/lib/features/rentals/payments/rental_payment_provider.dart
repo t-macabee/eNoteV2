@@ -5,10 +5,10 @@ import 'package:enote_core/enote_core.dart';
 /// Phase 5 needs the read side only: S11 shows what has been paid or
 /// refunded. `createIntent` and the status poll arrive with the payment
 /// screen (T48).
-class PaymentProvider {
+class RentalPaymentProvider {
   final ApiClient apiClient;
 
-  PaymentProvider({required this.apiClient});
+  RentalPaymentProvider({required this.apiClient});
 
   /// `GET student/rentals/{rentalId}/payments`.
   ///

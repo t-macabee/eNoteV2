@@ -7,7 +7,7 @@ import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
 import 'package:enote_mobile/features/instruments/instrument_provider.dart';
-import 'package:enote_mobile/features/rentals/payments/payment_provider.dart';
+import 'package:enote_mobile/features/rentals/payments/rental_payment_provider.dart';
 import 'package:enote_mobile/features/rentals/rental_provider.dart';
 import 'package:enote_mobile/features/notifications/notification_inbox_screen.dart';
 import 'package:enote_mobile/realtime/notification_hub_client.dart';
@@ -162,8 +162,8 @@ class _Harness {
         ChangeNotifierProvider<RentalProvider>(
           create: (_) => RentalProvider(apiClient: apiClient),
         ),
-        Provider<PaymentProvider>(
-          create: (_) => PaymentProvider(apiClient: apiClient),
+        Provider<RentalPaymentProvider>(
+          create: (_) => RentalPaymentProvider(apiClient: apiClient),
         ),
       ],
       child: child,
