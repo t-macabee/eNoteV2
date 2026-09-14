@@ -22,6 +22,7 @@ import '../features/profile/edit_profile_screen.dart';
 import '../features/ranking/ranking_screen.dart';
 import '../features/rentals/payments/rental_payment_screen.dart';
 import '../features/rentals/rental_detail_screen.dart';
+import '../features/tuition/tuition_payment_screen.dart';
 
 class CourseDetailArgs {
   final int courseId;
@@ -88,6 +89,18 @@ class PaymentArgs {
   const PaymentArgs(this.rentalId);
 }
 
+class TuitionArgs {
+  final int enrollmentId;
+  final String courseName;
+  final double price;
+
+  const TuitionArgs(
+    this.enrollmentId, {
+    required this.courseName,
+    required this.price,
+  });
+}
+
 class ResetArgs {
   final String? email;
   final String? token;
@@ -115,6 +128,7 @@ class AppRouter {
   static const String instrumentDetail = '/instruments/detail';
   static const String rentalDetail = '/rentals/detail';
   static const String payment = '/rentals/pay';
+  static const String tuitionPayment = '/tuition/pay';
   static const String notifications = '/notifications';
   static const String profileEdit = '/profile/edit';
   static const String profilePassword = '/profile/password';
@@ -199,6 +213,16 @@ class AppRouter {
         final paymentArgs = args is PaymentArgs ? args : null;
         if (paymentArgs == null) return _route(const _UnknownRouteScreen());
         return _route(RentalPaymentScreen(rentalId: paymentArgs.rentalId));
+      case tuitionPayment:
+        final tuitionArgs = args is TuitionArgs ? args : null;
+        if (tuitionArgs == null) return _route(const _UnknownRouteScreen());
+        return _route(
+          TuitionPaymentScreen(
+            enrollmentId: tuitionArgs.enrollmentId,
+            courseName: tuitionArgs.courseName,
+            price: tuitionArgs.price,
+          ),
+        );
       case notifications:
         return _route(const NotificationInboxScreen());
       case profileEdit:

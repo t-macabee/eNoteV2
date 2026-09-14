@@ -17,6 +17,7 @@ export 'models/rentals/instrument_rental_models.dart';
 export 'models/rentals/recommendation_models.dart';
 export 'models/rentals/rental_debt_dto.dart';
 export 'models/rentals/payment_models.dart';
+export 'models/payments/tuition_models.dart';
 export 'paging/paged_result.dart';
 export 'paging/paged_query.dart';
 export 'providers/base_provider.dart';

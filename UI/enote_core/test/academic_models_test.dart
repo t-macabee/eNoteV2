@@ -87,6 +87,34 @@ void main() {
     });
   });
 
+  group('CourseDto tuition fields', () {
+    test('missing keys default to null/false', () {
+      final dto = CourseDto.fromJson({'id': 1, 'name': 'n'});
+      expect(dto.enrollmentId, isNull);
+      expect(dto.paidUntil, isNull);
+      expect(dto.isFree, isFalse);
+    });
+
+    test('paid course parses enrollment id, paidUntil and isFree', () {
+      final dto = CourseDto.fromJson({
+        'id': 1,
+        'name': 'n',
+        'enrollmentId': 4,
+        'paidUntil': '2026-10-09T12:41:00',
+        'isFree': false,
+      });
+      expect(dto.enrollmentId, 4);
+      expect(dto.paidUntil, DateTime.parse('2026-10-09T12:41:00'));
+      expect(dto.isFree, isFalse);
+    });
+
+    test('free course parses isFree true', () {
+      final dto =
+          CourseDto.fromJson({'id': 1, 'name': 'n', 'isFree': true});
+      expect(dto.isFree, isTrue);
+    });
+  });
+
   group('LectureDto.myAttendanceStatus', () {
     test('missing key defaults to null', () {
       final dto = LectureDto.fromJson({'id': 1, 'name': 'n'});

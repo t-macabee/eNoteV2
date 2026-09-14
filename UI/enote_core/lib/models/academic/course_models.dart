@@ -13,6 +13,9 @@ class CourseDto {
   final int enrolledCount;
   final String? instructorName;
   final bool isEnrolled;
+  final int? enrollmentId;
+  final DateTime? paidUntil;
+  final bool isFree;
 
   CourseDto({
     required this.id,
@@ -26,6 +29,9 @@ class CourseDto {
     required this.enrolledCount,
     this.instructorName,
     this.isEnrolled = false,
+    this.enrollmentId,
+    this.paidUntil,
+    this.isFree = false,
   });
 
   factory CourseDto.fromJson(Map<String, dynamic> json) {
@@ -41,6 +47,9 @@ class CourseDto {
       enrolledCount: json['enrolledCount'] as int? ?? 0,
       instructorName: json['instructorName'] as String?,
       isEnrolled: json['isEnrolled'] as bool? ?? false,
+      enrollmentId: json['enrollmentId'] as int?,
+      paidUntil: parseDate(json['paidUntil']),
+      isFree: json['isFree'] as bool? ?? false,
     );
   }
 
@@ -56,6 +65,9 @@ class CourseDto {
     'enrolledCount': enrolledCount,
     if (instructorName != null) 'instructorName': instructorName,
     if (isEnrolled) 'isEnrolled': isEnrolled,
+    if (enrollmentId != null) 'enrollmentId': enrollmentId,
+    if (paidUntil != null) 'paidUntil': paidUntil!.toIso8601String(),
+    if (isFree) 'isFree': isFree,
   };
 }
 

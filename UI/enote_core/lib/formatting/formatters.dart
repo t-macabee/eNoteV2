@@ -59,6 +59,15 @@ String truncate(String text, int maxLength) {
   return '${text.substring(0, maxLength)}…';
 }
 
+/// Formats a succeeded payment's amount and, when known, its paid date,
+/// joined with ` · ` — the shared D-state detail line for `PaymentStatusView`
+/// across the rental and tuition payment screens.
+String formatPaymentDetail(int amountCents, DateTime? paidAt) {
+  final parts = <String>[formatKM(amountCents / 100)];
+  if (paidAt != null) parts.add(formatDateTime(paidAt));
+  return parts.join(' · ');
+}
+
 DateTime? parseDate(dynamic value) {
   if (value == null) return null;
   if (value is DateTime) return value;

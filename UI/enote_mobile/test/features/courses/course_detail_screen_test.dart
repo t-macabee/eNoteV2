@@ -9,13 +9,19 @@ import 'package:enote_core/enote_core.dart';
 import 'package:enote_mobile/features/courses/course_detail_screen.dart';
 import 'package:enote_mobile/features/courses/course_provider.dart';
 import 'package:enote_mobile/features/lectures/lecture_provider.dart';
+import 'package:enote_mobile/features/tuition/tuition_payment_provider.dart';
 import 'package:enote_mobile/session/session_controller.dart';
 import 'package:enote_mobile/shell/app_router.dart';
 import 'package:enote_mobile/theme/app_theme.dart';
 
 import '../../helpers.dart';
 
-Map<String, dynamic> _courseJson({required bool enrolled}) => {
+Map<String, dynamic> _courseJson({
+  required bool enrolled,
+  int? enrollmentId,
+  String? paidUntil,
+  bool isFree = false,
+}) => {
   'id': 2,
   'instructorId': 3,
   'name': 'Osnove teorije muzike',
@@ -27,6 +33,9 @@ Map<String, dynamic> _courseJson({required bool enrolled}) => {
   'enrolledCount': 14,
   'instructorName': 'Amir Hadzic',
   'isEnrolled': enrolled,
+  'enrollmentId': ?enrollmentId,
+  'paidUntil': ?paidUntil,
+  'isFree': isFree,
 };
 
 Map<String, dynamic> _meJson({required DateTime paidUntil}) => {
@@ -62,8 +71,17 @@ class _CourseDetailStubClient extends http.BaseClient {
   final List<String> calls = [];
   bool enrolled;
   final DateTime paidUntil;
+  final int? enrollmentId;
+  final bool isFree;
+  final String? coursePaidUntil;
 
-  _CourseDetailStubClient({required this.enrolled, required this.paidUntil});
+  _CourseDetailStubClient({
+    required this.enrolled,
+    required this.paidUntil,
+    this.enrollmentId,
+    this.isFree = false,
+    this.coursePaidUntil,
+  });
 
   int count(String marker) => calls
       .where((c) => c == marker || c.startsWith('$marker?'))
@@ -82,7 +100,12 @@ class _CourseDetailStubClient extends http.BaseClient {
       case 'GET /api/v1/student/notifications':
         body = {'items': []};
       case 'GET /api/v1/student/courses/2':
-        body = _courseJson(enrolled: enrolled);
+        body = _courseJson(
+          enrolled: enrolled,
+          enrollmentId: enrolled ? enrollmentId : null,
+          paidUntil: coursePaidUntil,
+          isFree: isFree,
+        );
       case 'GET /api/v1/student/lectures':
         body = _lecturesPage;
       case 'POST /api/v1/student/courses/2/enroll':
@@ -111,10 +134,16 @@ class _Harness {
   Future<void> bootstrap({
     bool enrolled = false,
     DateTime? paidUntil,
+    int? enrollmentId,
+    bool isFree = false,
+    String? coursePaidUntil,
   }) async {
     client = _CourseDetailStubClient(
       enrolled: enrolled,
       paidUntil: paidUntil ?? DateTime.utc(2027, 9, 9),
+      enrollmentId: enrollmentId,
+      isFree: isFree,
+      coursePaidUntil: coursePaidUntil,
     );
     authState = AuthState(
       baseUrl: 'http://10.0.2.2:5059/api/v1/',
@@ -148,6 +177,9 @@ class _Harness {
         ),
         ChangeNotifierProvider<LectureProvider>(
           create: (_) => LectureProvider(apiClient: apiClient),
+        ),
+        Provider<TuitionPaymentProvider>(
+          create: (_) => TuitionPaymentProvider(apiClient: apiClient),
         ),
       ],
       child: MaterialApp(
@@ -278,6 +310,8 @@ void main() {
     await tester.pumpAndSettle();
     expect(harness.client.count('GET /api/v1/student/lectures'), 1);
 
+    await tester.ensureVisible(find.textContaining('Akordi I'));
+    await tester.pumpAndSettle();
     await tester.tap(find.textContaining('Akordi I'));
     await tester.pumpAndSettle();
     // The router case pushes the real S18 through the scoped providers.
@@ -308,5 +342,84 @@ void main() {
       find.widgetWithText(FilledButton, 'Upiši se'),
     );
     expect(button.onPressed, isNull);
+  });
+
+  testWidgets('enrolled with no paidUntil shows the unpaid banner and Plati', (
+    tester,
+  ) async {
+    final harness = _Harness();
+    await harness.bootstrap(enrolled: true, enrollmentId: 5);
+    await tester.pumpWidget(harness.app());
+    await tester.pumpAndSettle();
+
+    expect(find.text('Školarina nije plaćena.'), findsOneWidget);
+    expect(find.widgetWithText(TextButton, 'Plati'), findsOneWidget);
+    expect(find.textContaining('Školarina je istekla'), findsNothing);
+  });
+
+  testWidgets('enrolled with a past paidUntil shows the expired banner', (
+    tester,
+  ) async {
+    final harness = _Harness();
+    await harness.bootstrap(
+      enrolled: true,
+      enrollmentId: 5,
+      coursePaidUntil: '2020-01-01T00:00:00Z',
+    );
+    await tester.pumpWidget(harness.app());
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('Školarina je istekla 01.01.2020.'),
+      findsOneWidget,
+    );
+    expect(find.widgetWithText(TextButton, 'Obnovi'), findsOneWidget);
+  });
+
+  testWidgets('enrolled with a future paidUntil shows Plaćeno do', (
+    tester,
+  ) async {
+    final harness = _Harness();
+    await harness.bootstrap(
+      enrolled: true,
+      enrollmentId: 5,
+      coursePaidUntil: '2027-01-01T00:00:00Z',
+    );
+    await tester.pumpWidget(harness.app());
+    await tester.pumpAndSettle();
+
+    expect(find.text('Plaćeno do'), findsOneWidget);
+    expect(find.text('01.01.2027.'), findsOneWidget);
+    expect(find.text('Školarina nije plaćena.'), findsNothing);
+  });
+
+  testWidgets('a free enrolled course shows no tuition banner', (
+    tester,
+  ) async {
+    final harness = _Harness();
+    await harness.bootstrap(enrolled: true, enrollmentId: 5, isFree: true);
+    await tester.pumpWidget(harness.app());
+    await tester.pumpAndSettle();
+
+    expect(find.text('Školarina nije plaćena.'), findsNothing);
+    expect(find.textContaining('Školarina je istekla'), findsNothing);
+    expect(find.text('Plaćeno do'), findsNothing);
+  });
+
+  testWidgets('enrolling a paid course pushes the tuition screen', (
+    tester,
+  ) async {
+    final harness = _Harness();
+    await harness.bootstrap(enrolled: false, enrollmentId: 5);
+    await tester.pumpWidget(harness.app());
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.widgetWithText(FilledButton, 'Upiši se'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Potvrdi'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Plaćanje školarine'), findsOneWidget);
+    expect(find.text('Plati 800.00 KM'), findsOneWidget);
   });
 }

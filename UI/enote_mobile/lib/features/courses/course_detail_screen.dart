@@ -121,6 +121,16 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
           ),
         );
       }
+      // An enrollment starts unpaid: send the student straight to tuition
+      // unless the course is free (decision 7). Reload on return so the
+      // banner flips to `Plaćeno do`.
+      final enrolledCourse = _course;
+      if (mounted &&
+          enrolledCourse != null &&
+          !enrolledCourse.isFree &&
+          enrolledCourse.enrollmentId != null) {
+        await _openTuition(enrolledCourse);
+      }
     } catch (e) {
       if (mounted) ErrorBanner.show(context, message: userMessage(e));
     } finally {
@@ -152,6 +162,21 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
     Navigator.of(
       context,
     ).pushNamed(AppRouter.ranking, arguments: RankingArgs(course.id));
+  }
+
+  Future<void> _openTuition(CourseDto course) async {
+    final enrollmentId = course.enrollmentId;
+    if (enrollmentId == null) return;
+    final paid = await Navigator.of(context).pushNamed(
+      AppRouter.tuitionPayment,
+      arguments: TuitionArgs(
+        enrollmentId,
+        courseName: course.name,
+        price: course.price,
+      ),
+    );
+    if (!mounted) return;
+    if (paid == true) await _loadCourse();
   }
 
   @override
@@ -237,6 +262,32 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
     );
   }
 
+  /// Enrolled only: an unpaid/expired period gets a banner with the renewal
+  /// action, a paid one gets a plain reminder row, a free course gets nothing.
+  Widget _tuitionBanner(CourseDto course) {
+    final paidUntil = course.paidUntil;
+    if (paidUntil == null) {
+      return BlockedReasonBanner(
+        icon: Icons.info_outline,
+        reason: 'Školarina nije plaćena.',
+        actionLabel: 'Plati',
+        onAction: () => _openTuition(course),
+      );
+    }
+    if (paidUntil.isBefore(DateTime.now())) {
+      return BlockedReasonBanner(
+        icon: Icons.warning_amber_outlined,
+        reason: 'Školarina je istekla ${formatDate(paidUntil)}',
+        actionLabel: 'Obnovi',
+        onAction: () => _openTuition(course),
+      );
+    }
+    return LabeledValue(
+      label: 'Plaćeno do',
+      value: formatDate(paidUntil),
+    );
+  }
+
   Widget _masterCard(
     SessionController session,
     CourseDto course,
@@ -271,7 +322,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                 '${formatDateNullable(course.startDate)} – '
                 '${formatDateNullable(course.endDate)}',
           ),
-          LabeledValue(label: 'Cijena', value: formatKM(course.price)),
+          LabeledValue(label: 'Mjesečna cijena', value: formatKM(course.price)),
           LabeledValue(
             label: 'Polaznika',
             value: course.enrolledCount.toString(),
@@ -283,7 +334,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
               style: Theme.of(context).textTheme.bodyMedium,
             ),
           ],
-          if (membershipBlocked) ...[
+          if (membershipBlocked && !enrolled) ...[
             const SizedBox(height: 8),
             BlockedReasonBanner(
               icon: Icons.info_outline,
@@ -292,6 +343,10 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
                   : 'Članarina je istekla ${formatDate(paidUntil)} '
                         'Obratite se školi za obnovu.',
             ),
+          ],
+          if (enrolled && !course.isFree) ...[
+            const SizedBox(height: 8),
+            _tuitionBanner(course),
           ],
           const SizedBox(height: 12),
           Row(

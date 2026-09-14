@@ -305,10 +305,7 @@ class _RentalPaymentScreenState extends State<RentalPaymentScreen> {
   String? _successDetail() {
     final payment = _payment;
     if (payment == null) return null;
-    final parts = <String>[formatKM(payment.amountCents / 100)];
-    final paidAt = payment.paidAt;
-    if (paidAt != null) parts.add(formatDateTime(paidAt));
-    return parts.join(' · ');
+    return formatPaymentDetail(payment.amountCents, payment.paidAt);
   }
 
   Widget _review(InstrumentRentalDto rental) {

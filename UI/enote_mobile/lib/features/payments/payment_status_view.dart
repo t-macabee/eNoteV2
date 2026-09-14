@@ -23,6 +23,9 @@ class PaymentStatusView extends StatelessWidget {
   final String cancelLabel;
   final VoidCallback? onCancel;
 
+  /// Optional D-state note; rentals keep their existing copy.
+  final String? successNote;
+
   const PaymentStatusView({
     super.key,
     required this.state,
@@ -32,6 +35,7 @@ class PaymentStatusView extends StatelessWidget {
     this.isBusy = false,
     required this.cancelLabel,
     required this.onCancel,
+    this.successNote,
   });
 
   @override
@@ -109,7 +113,8 @@ class PaymentStatusView extends StatelessWidget {
   };
 
   String? get _note => switch (state) {
-    PaymentFlowState.succeeded => 'Iznajmljivanje je izmireno.',
+    PaymentFlowState.succeeded =>
+      successNote ?? 'Iznajmljivanje je izmireno.',
     PaymentFlowState.pending =>
       'Provjerite ponovo za nekoliko sekundi.',
     _ => null,

@@ -22,6 +22,7 @@ import 'features/profile/profile_provider.dart';
 import 'features/ranking/ranking_provider.dart';
 import 'features/rentals/payments/rental_payment_provider.dart';
 import 'features/rentals/rental_provider.dart';
+import 'features/tuition/tuition_payment_provider.dart';
 import 'realtime/notification_hub_client.dart';
 import 'shell/app_router.dart';
 import 'shell/session_gate.dart';
@@ -111,6 +112,9 @@ class _EnoteMobileAppState extends State<EnoteMobileApp> {
         ),
         Provider<RentalPaymentProvider>(
           create: (_) => RentalPaymentProvider(apiClient: widget.apiClient),
+        ),
+        Provider<TuitionPaymentProvider>(
+          create: (_) => TuitionPaymentProvider(apiClient: widget.apiClient),
         ),
         ChangeNotifierProvider<CourseProvider>(
           create: (_) => CourseProvider(apiClient: widget.apiClient),
