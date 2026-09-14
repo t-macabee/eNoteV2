@@ -96,13 +96,12 @@ CLAUDE.md
 .semantic/
 .lurp/
 .mcp.json
-HANDOFF.md
-IMPLEMENTATION_STATUS.md
 docs/mobile/
 investigation-*.md
 .repograph/
 index.db
 opencode.json
+PROGRESS.md
 
 # Generated / local agent artifacts
 graphify*/

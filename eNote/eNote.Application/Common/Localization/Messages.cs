@@ -80,6 +80,10 @@ public static class Messages
     public const string AssignmentInvalidGrade = "Ocjena mora biti između 0 i 100.";
     public const string LectureNoteNotFound = "Bilješka predavanja nije pronađena.";
     public const string StudentNotEnrolled = "Student nije upisan na kurs.";
+    public const string CourseIsFree = "Kurs je besplatan.";
+    public const string EnrollmentNotFound = "Upis nije pronađen.";
+    public const string TuitionPaymentNotFound = "Plaćanje školarine nije pronađeno.";
+    public const string TuitionNotPaid = "Školarina za ovaj kurs nije plaćena.";
     public const string MembershipInactive = "Članarina nije aktivna. Kontaktirajte administratora.";
     public const string AssignmentPastDue = "Rok za predaju zadatka je istekao.";
 

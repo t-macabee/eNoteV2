@@ -68,7 +68,7 @@ public sealed class RentalPaymentService(
             };
 
             var intent = await InvokeGatewayAsync(
-                () => paymentGateway.CreatePaymentIntentAsync(cents, currency, metadata, idempotencyKey, cancellationToken),
+                () => paymentGateway.CreatePaymentIntentAsync(cents, currency, metadata, idempotencyKey, options.StatementDescriptor, cancellationToken),
                 cancellationToken);
             var payment = new RentalPayment(
                 rental.Id,

@@ -9,6 +9,9 @@ public class Enrollment : AuditableEntity
     public Course Course { get; private set; } = null!;
 
     public EnrollmentStatus EnrollmentStatus { get; private set; }
+    public DateTime? PaidUntil { get; private set; }
+
+    public ICollection<CoursePayment> Payments { get; private set; } = [];
 
     protected Enrollment()
     {
@@ -25,4 +28,18 @@ public class Enrollment : AuditableEntity
     {
         EnrollmentStatus = status;
     }
+
+    public void ExtendPaidUntil(DateTime utcNow, int days)
+    {
+        if (days <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(days), "Extension days must be positive.");
+        }
+
+        var baseDate = PaidUntil.HasValue && PaidUntil.Value > utcNow ? PaidUntil.Value : utcNow;
+        PaidUntil = baseDate.AddDays(days);
+    }
+
+    // Exact-timestamp check by design, unlike Student.HasActiveMembership's .Date truncation.
+    public bool HasPaidAccess(DateTime utcNow) => PaidUntil.HasValue && PaidUntil.Value >= utcNow;
 }

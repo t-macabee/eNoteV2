@@ -30,6 +30,7 @@ public sealed class StripePaymentGateway : IPaymentGateway
         string currency,
         IReadOnlyDictionary<string, string> metadata,
         string idempotencyKey,
+        string statementDescriptorSuffix,
         CancellationToken cancellationToken = default)
     {
         var options = new PaymentIntentCreateOptions
@@ -37,7 +38,7 @@ public sealed class StripePaymentGateway : IPaymentGateway
             Amount = amountCents,
             Currency = currency,
             Metadata = new Dictionary<string, string>(metadata),
-            StatementDescriptorSuffix = _options.StatementDescriptor,
+            StatementDescriptorSuffix = statementDescriptorSuffix,
             AutomaticPaymentMethods = new PaymentIntentAutomaticPaymentMethodsOptions { Enabled = true }
         };
 

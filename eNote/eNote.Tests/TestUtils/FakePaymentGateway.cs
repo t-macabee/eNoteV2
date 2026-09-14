@@ -23,12 +23,13 @@ public sealed class FakePaymentGateway : IPaymentGateway
         string currency,
         IReadOnlyDictionary<string, string> metadata,
         string idempotencyKey,
+        string statementDescriptorSuffix,
         CancellationToken cancellationToken = default)
     {
         var id = $"pi_test_{_nextIntentNumber++}";
         var intent = new PaymentIntentData(id, $"{id}_secret", "requires_payment_method", amountCents, currency);
         _intents[id] = intent;
-        CreateCalls.Add(new FakeGatewayCreateCall(id, amountCents, currency, metadata, idempotencyKey));
+        CreateCalls.Add(new FakeGatewayCreateCall(id, amountCents, currency, metadata, idempotencyKey, statementDescriptorSuffix));
         return Task.FromResult(intent);
     }
 
@@ -63,7 +64,8 @@ public sealed record FakeGatewayCreateCall(
     long AmountCents,
     string Currency,
     IReadOnlyDictionary<string, string> Metadata,
-    string IdempotencyKey);
+    string IdempotencyKey,
+    string StatementDescriptorSuffix = "");
 
 public sealed record FakeGatewayRetrieveCall(string PaymentIntentId);
 
@@ -83,6 +85,7 @@ public sealed class ThrowingPaymentGateway : IPaymentGateway
         string currency,
         IReadOnlyDictionary<string, string> metadata,
         string idempotencyKey,
+        string statementDescriptorSuffix,
         CancellationToken cancellationToken = default)
         => throw ExceptionToThrow;
 

@@ -24,6 +24,7 @@ public interface IPaymentGateway
         string currency,
         IReadOnlyDictionary<string, string> metadata,
         string idempotencyKey,
+        string statementDescriptorSuffix,
         CancellationToken cancellationToken = default);
 
     Task<PaymentIntentData> RetrievePaymentIntentAsync(
