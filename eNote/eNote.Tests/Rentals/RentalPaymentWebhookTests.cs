@@ -71,6 +71,38 @@ public sealed class RentalPaymentWebhookTests
     }
 
     [Fact]
+    public async Task HandleWebhook_SucceededWithoutChargeId_MarksPaidWithNullChargeId()
+    {
+        var (context, rental, _) = await SeedRequiresActionPaymentAsync();
+        var service = CreateWebhookService(context);
+        var evt = CreatePaymentIntentEvent("evt_test_succeeded_nocharge", "payment_intent.succeeded", "pi_test_1", "succeeded", null);
+
+        await service.HandleAsync(evt, "{}");
+
+        var payment = await context.Set<RentalPayment>().SingleAsync();
+        var reloadedRental = await context.Set<InstrumentRental>().SingleAsync(x => x.Id == rental.Id);
+        Assert.Equal(PaymentStatus.Succeeded, payment.Status);
+        Assert.Null(payment.StripeChargeId);
+        Assert.True(reloadedRental.IsPaid);
+    }
+
+    [Fact]
+    public async Task HandleWebhook_ChargeRefundedWithoutRefundList_RefundsWithNullRefundId()
+    {
+        var (context, rental, _) = await SeedSucceededPaymentAsync();
+        var service = CreateWebhookService(context);
+        var evt = CreateChargeRefundedEvent("evt_test_refunded_norefundid", "pi_test_1", "ch_test_1", 5000, includeRefunds: false);
+
+        await service.HandleAsync(evt, "{}");
+
+        var payment = await context.Set<RentalPayment>().SingleAsync();
+        var reloadedRental = await context.Set<InstrumentRental>().SingleAsync(x => x.Id == rental.Id);
+        Assert.Equal(PaymentStatus.Refunded, payment.Status);
+        Assert.Null(payment.StripeRefundId);
+        Assert.True(reloadedRental.IsPaid);
+    }
+
+    [Fact]
     public async Task HandleWebhook_UnknownPaymentIntent_IsNoOp()
     {
         var (context, _, _) = await SeedRequiresActionPaymentAsync();
@@ -165,12 +197,13 @@ public sealed class RentalPaymentWebhookTests
         };
     }
 
-    private static Event CreateChargeRefundedEvent(string eventId, string paymentIntentId, string chargeId, long amountRefunded)
+    private static Event CreateChargeRefundedEvent(string eventId, string paymentIntentId, string chargeId, long amountRefunded, bool includeRefunds = true)
     {
-        var refunds = new StripeList<Refund>
+        var refunds = new StripeList<Refund>();
+        if (includeRefunds)
         {
-            Data = [new Refund { Id = "re_test_1", Amount = amountRefunded }]
-        };
+            refunds.Data = [new Refund { Id = "re_test_1", Amount = amountRefunded }];
+        }
 
         var charge = new Charge
         {

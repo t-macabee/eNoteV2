@@ -40,7 +40,7 @@ public sealed class RentalPayment : AuditableEntity, ITenantScoped
         Status = status;
     }
 
-    public void MarkSucceeded(string stripeChargeId, string stripeEventId, DateTime paidAt)
+    public void MarkSucceeded(string? stripeChargeId, string stripeEventId, DateTime paidAt)
     {
         StripeChargeId = stripeChargeId;
         StripeEventId = stripeEventId;
@@ -60,7 +60,7 @@ public sealed class RentalPayment : AuditableEntity, ITenantScoped
         Status = PaymentStatus.Canceled;
     }
 
-    public void ApplyRefund(long refundedCents, string stripeRefundId, DateTime refundedAt)
+    public void ApplyRefund(long refundedCents, string? stripeRefundId, DateTime refundedAt)
     {
         RefundedCents = (RefundedCents ?? 0) + refundedCents;
         StripeRefundId = stripeRefundId;

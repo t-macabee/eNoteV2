@@ -2,6 +2,8 @@ import 'dart:convert';
 
 import 'package:enote_core/enote_core.dart';
 
+import '../payments/payment_polling.dart' as polling;
+
 /// Tuition payment state (`student/enrollments/{enrollmentId}/tuition`).
 ///
 /// One intent per enrollment: the server reuses a `RequiresAction` intent for
@@ -49,18 +51,7 @@ class TuitionPaymentProvider {
         .toList();
   }
 
-  /// Polls [status] up to 5 × 2 s until it reports `succeeded`.
-  ///
-  /// Returns the succeeded payment, or the last observation (still pending or
-  /// `null` when no payment row exists yet) so the caller can show state F
-  /// instead of a false success.
-  Future<CoursePaymentDto?> pollUntilSucceeded(int enrollmentId) async {
-    CoursePaymentDto? last;
-    for (var i = 0; i < 5; i++) {
-      await Future.delayed(const Duration(seconds: 2));
-      last = await status(enrollmentId);
-      if (last?.status == PaymentStatus.succeeded) return last;
-    }
-    return last;
-  }
+  /// Delegates to [polling.pollUntilSucceeded].
+  Future<CoursePaymentDto?> pollUntilSucceeded(int enrollmentId) =>
+      polling.pollUntilSucceeded(() => status(enrollmentId), (p) => p.status);
 }

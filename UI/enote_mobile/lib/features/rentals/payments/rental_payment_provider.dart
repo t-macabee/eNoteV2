@@ -1,5 +1,7 @@
 import 'package:enote_core/enote_core.dart';
 
+import '../../payments/payment_polling.dart' as polling;
+
 /// Rental payment state (`student/rentals/{rentalId}/payments`).
 ///
 /// Phase 5 needs the read side only: S11 shows what has been paid or
@@ -32,18 +34,7 @@ class RentalPaymentProvider {
     return CreatePaymentIntentResponse.fromJson(decodeOrThrow(response));
   }
 
-  /// Polls [status] up to 5 × 2 s until it reports `succeeded` (01 §6.4).
-  ///
-  /// Returns the succeeded payment, or the last observation (still pending
-  /// or `null` when no payment row exists yet) so the caller can show
-  /// state F instead of a false success.
-  Future<RentalPaymentDto?> pollUntilSucceeded(int rentalId) async {
-    RentalPaymentDto? last;
-    for (var i = 0; i < 5; i++) {
-      await Future.delayed(const Duration(seconds: 2));
-      last = await status(rentalId);
-      if (last?.status == PaymentStatus.succeeded) return last;
-    }
-    return last;
-  }
+  /// Delegates to [polling.pollUntilSucceeded].
+  Future<RentalPaymentDto?> pollUntilSucceeded(int rentalId) =>
+      polling.pollUntilSucceeded(() => status(rentalId), (p) => p.status);
 }

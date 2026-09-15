@@ -53,16 +53,6 @@ public sealed class StripeWebhookService(
             return;
         }
 
-        if (await context.Set<RentalPayment>().AnyAsync(p => p.StripeEventId == stripeEvent.Id, cancellationToken))
-        {
-            return;
-        }
-
-        if (await context.Set<CoursePayment>().AnyAsync(p => p.StripeEventId == stripeEvent.Id, cancellationToken))
-        {
-            return;
-        }
-
         switch (stripeEvent.Type)
         {
             case PaymentIntentSucceeded when stripeEvent.Data.Object is PaymentIntent paymentIntent:
@@ -100,7 +90,8 @@ public sealed class StripeWebhookService(
             {
                 if (rentalPayment.Status != PaymentStatus.Succeeded)
                 {
-                    rentalPayment.MarkSucceeded(chargeId ?? rentalPayment.StripeChargeId!, eventId, clock.UtcNow);
+                    LogMissingChargeId(chargeId, paymentIntentId);
+                    rentalPayment.MarkSucceeded(chargeId, eventId, clock.UtcNow);
                     rentalPayment.InstrumentRental.MarkPaid(rentalPayment.AmountChargedCents, clock.UtcNow);
                 }
 
@@ -118,10 +109,7 @@ public sealed class StripeWebhookService(
                 {
                     var now = clock.UtcNow;
                     var (periodStart, periodEnd) = coursePayment.Enrollment.ExtendPaidUntil(now, TuitionOptions.PeriodDays);
-                    if (chargeId is null)
-                    {
-                        logger.LogWarning("PaymentIntent {PaymentIntentId} succeeded without a charge id", paymentIntentId);
-                    }
+                    LogMissingChargeId(chargeId, paymentIntentId);
                     coursePayment.MarkSucceeded(chargeId, eventId, now, periodStart, periodEnd);
                 }
 
@@ -197,7 +185,12 @@ public sealed class StripeWebhookService(
             {
                 if (rentalPayment.Status == PaymentStatus.Succeeded && charge.AmountRefunded > 0)
                 {
-                    var refundId = charge.Refunds?.Data?.FirstOrDefault()?.Id ?? rentalPayment.StripeRefundId ?? $"re_{eventId}";
+                    var refundId = charge.Refunds?.Data?.FirstOrDefault()?.Id ?? rentalPayment.StripeRefundId;
+                    if (refundId is null)
+                    {
+                        logger.LogWarning("Charge {ChargeId} refunded without a refund id", charge.Id);
+                    }
+
                     var alreadyRefunded = rentalPayment.RefundedCents ?? 0;
 
                     if (charge.AmountRefunded > alreadyRefunded)
@@ -222,6 +215,14 @@ public sealed class StripeWebhookService(
 
             logger.LogWarning("PaymentIntent {PaymentIntentId} not found for refunded webhook", charge.PaymentIntentId);
         }, cancellationToken);
+    }
+
+    private void LogMissingChargeId(string? chargeId, string paymentIntentId)
+    {
+        if (chargeId is null)
+        {
+            logger.LogWarning("PaymentIntent {PaymentIntentId} succeeded without a charge id", paymentIntentId);
+        }
     }
 
     private async Task RecordEventAsync(string eventId, string eventType, string rawJson, CancellationToken cancellationToken)
