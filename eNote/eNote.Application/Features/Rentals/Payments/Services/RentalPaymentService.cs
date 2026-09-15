@@ -16,8 +16,6 @@ public sealed class RentalPaymentService(
     StripeOptions options,
     ILogger<RentalPaymentService> logger) : IRentalPaymentService
 {
-    private static readonly TimeSpan RequiresActionReuseWindow = TimeSpan.FromMinutes(30);
-
     public async Task<CreatePaymentIntentResponse> CreatePaymentIntentAsync(int rentalId, CancellationToken cancellationToken = default)
     {
         return await context.ExecuteInTransactionAsync(async () =>
@@ -29,7 +27,7 @@ public sealed class RentalPaymentService(
             var existing = await context.Set<RentalPayment>()
                 .Where(p => p.InstrumentRentalId == rental.Id
                     && p.Status == PaymentStatus.RequiresAction
-                    && p.CreatedAt >= clock.UtcNow - RequiresActionReuseWindow)
+                    && p.CreatedAt >= clock.UtcNow - PaymentGatewayHelpers.RequiresActionReuseWindow)
                 .OrderByDescending(p => p.CreatedAt)
                 .FirstOrDefaultAsync(cancellationToken);
 
@@ -37,16 +35,16 @@ public sealed class RentalPaymentService(
             {
                 logger.LogInformation("Reusing requires-action PaymentIntent {PaymentIntentId} for rental {RentalId}", existing.StripePaymentIntentId, rental.Id);
 
-                var current = await InvokeGatewayAsync(
-                    () => paymentGateway.RetrievePaymentIntentAsync(existing.StripePaymentIntentId, cancellationToken),
-                    cancellationToken);
+                var current = await PaymentGatewayHelpers.InvokeGatewayAsync(
+                    logger,
+                    () => paymentGateway.RetrievePaymentIntentAsync(existing.StripePaymentIntentId, cancellationToken));
                 return new CreatePaymentIntentResponse(
                     rental.Id,
                     current.Id,
                     current.ClientSecret,
                     current.AmountCents,
                     current.Currency,
-                    MapStatus(current.Status));
+                    PaymentGatewayHelpers.MapStatus(current.Status));
             }
 
             var charges = rental.CalculateCharges(rental.ReturnedAt ?? clock.UtcNow);
@@ -56,8 +54,8 @@ public sealed class RentalPaymentService(
                 throw new BusinessException(Messages.PaymentNotPayableInStatus);
             }
 
-            var cents = (long)Math.Round(totalFee * 100m, MidpointRounding.AwayFromZero);
-            var currency = options.Currency.Trim().ToLowerInvariant();
+            var cents = PaymentGatewayHelpers.ToCents(totalFee);
+            var currency = PaymentGatewayHelpers.NormalizeCurrency(options.Currency);
             var idempotencyKey = $"rental:{rental.Id}:total:{cents}:{rental.ReturnedAt:O}:v2";
 
             var metadata = new Dictionary<string, string>
@@ -67,16 +65,16 @@ public sealed class RentalPaymentService(
                 ["studentId"] = rental.StudentProfile.AppUserId.ToString()
             };
 
-            var intent = await InvokeGatewayAsync(
-                () => paymentGateway.CreatePaymentIntentAsync(cents, currency, metadata, idempotencyKey, options.StatementDescriptor, cancellationToken),
-                cancellationToken);
+            var intent = await PaymentGatewayHelpers.InvokeGatewayAsync(
+                logger,
+                () => paymentGateway.CreatePaymentIntentAsync(cents, currency, metadata, idempotencyKey, options.StatementDescriptor, cancellationToken));
             var payment = new RentalPayment(
                 rental.Id,
                 rental.MusicStoreId,
                 intent.Id,
                 intent.AmountCents,
                 intent.Currency,
-                MapStatus(intent.Status));
+                PaymentGatewayHelpers.MapStatus(intent.Status));
 
             context.Set<RentalPayment>().Add(payment);
             await context.SaveChangesAsync(cancellationToken);
@@ -166,19 +164,6 @@ public sealed class RentalPaymentService(
         }, cancellationToken);
     }
 
-    private async Task<T> InvokeGatewayAsync<T>(Func<Task<T>> call, CancellationToken cancellationToken)
-    {
-        try
-        {
-            return await call();
-        }
-        catch (Exception ex) when (ex is not AppException and not OperationCanceledException)
-        {
-            logger.LogError(ex, "Stripe gateway invocation failed: {Message}", ex.Message);
-            throw new PaymentProviderUnavailableException(Messages.PaymentProviderUnavailable);
-        }
-    }
-
     private async Task<InstrumentRental> LoadForStudentAsync(int rentalId, CancellationToken cancellationToken)
     {
         var rental = await context.Set<InstrumentRental>()
@@ -225,13 +210,5 @@ public sealed class RentalPaymentService(
         payment.PaidAt,
         payment.RefundedAt,
         payment.RefundedCents);
-
-    private static PaymentStatus MapStatus(string? stripeStatus) => stripeStatus switch
-    {
-        "succeeded" => PaymentStatus.Succeeded,
-        "canceled" => PaymentStatus.Canceled,
-        "requires_payment_method" or "requires_action" or "requires_confirmation" or "requires_capture" or "processing" => PaymentStatus.RequiresAction,
-        _ => PaymentStatus.Failed
-    };
 
 }

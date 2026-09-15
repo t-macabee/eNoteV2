@@ -37,8 +37,7 @@ class TuitionPaymentScreen extends StatefulWidget {
     PaymentSheetGateway? gateway,
     String? stripePublishableKey,
   }) : gateway = gateway ?? StripePaymentSheetGateway(),
-       stripePublishableKey =
-           stripePublishableKey ?? kStripePublishableKey;
+       stripePublishableKey = stripePublishableKey ?? kStripePublishableKey;
 
   @override
   State<TuitionPaymentScreen> createState() => _TuitionPaymentScreenState();
@@ -177,7 +176,7 @@ class _TuitionPaymentScreenState extends State<TuitionPaymentScreen> {
   }
 
   void _backToCourse() {
-    if (mounted) Navigator.of(context).pop(true);
+    if (mounted) Navigator.of(context).pop();
   }
 
   @override
@@ -244,10 +243,7 @@ class _TuitionPaymentScreenState extends State<TuitionPaymentScreen> {
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.all(16),
       children: [
-        Text(
-          widget.courseName,
-          style: Theme.of(context).textTheme.titleLarge,
-        ),
+        Text(widget.courseName, style: Theme.of(context).textTheme.titleLarge),
         const SizedBox(height: 16),
         LabeledValue(label: 'Iznos', value: formatKM(widget.price)),
         const LabeledValue(label: 'Trajanje pristupa', value: '30 dana'),

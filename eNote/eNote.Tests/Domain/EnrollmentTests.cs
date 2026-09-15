@@ -9,9 +9,10 @@ public sealed class EnrollmentTests
     {
         var enrollment = new Enrollment(1, 1, EnrollmentStatus.Active);
 
-        enrollment.ExtendPaidUntil(Now, 30);
+        var (_, end) = enrollment.ExtendPaidUntil(Now, 30);
 
         Assert.Equal(Now.AddDays(30), enrollment.PaidUntil);
+        Assert.Equal(enrollment.PaidUntil, end);
     }
 
     [Fact]

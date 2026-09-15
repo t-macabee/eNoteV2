@@ -167,7 +167,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
   Future<void> _openTuition(CourseDto course) async {
     final enrollmentId = course.enrollmentId;
     if (enrollmentId == null) return;
-    final paid = await Navigator.of(context).pushNamed(
+    await Navigator.of(context).pushNamed(
       AppRouter.tuitionPayment,
       arguments: TuitionArgs(
         enrollmentId,
@@ -175,8 +175,11 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
         price: course.price,
       ),
     );
+    // Always reload: Android back pops a null result from the succeeded view
+    // (the close icon is hidden but `PopScope.canPop` is true), so keying the
+    // reload on `pop(true)` would leave the banner stuck on "nije plaćena".
     if (!mounted) return;
-    if (paid == true) await _loadCourse();
+    await _loadCourse();
   }
 
   @override

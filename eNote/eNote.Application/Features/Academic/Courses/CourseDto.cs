@@ -19,7 +19,7 @@ public class CourseDto
     public bool IsEnrolled { get; set; }
     public int? EnrollmentId { get; set; }
     public DateTime? PaidUntil { get; set; }
-    public bool IsFree { get; set; }
+    public bool IsFree => Price == 0;
 
     public string? InstructorName { get; set; }
 }

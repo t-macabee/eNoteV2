@@ -90,8 +90,6 @@ class _Harness {
   final FakePaymentSheetGateway gateway;
   late final AuthState authState;
   late final ApiClient apiClient;
-  Object? popped;
-
   _Harness({required this.client, required this.gateway}) {
     authState = AuthState(
       baseUrl: _baseUrl,
@@ -120,20 +118,17 @@ class _Harness {
           builder: (context) => Scaffold(
             body: Center(
               child: FilledButton(
-                onPressed: () => Navigator.of(context)
-                    .push(
-                      MaterialPageRoute(
-                        builder: (_) => TuitionPaymentScreen(
-                          enrollmentId: _enrollmentId,
-                          courseName: 'Osnove teorije muzike',
-                          price: 800.0,
-                          gateway: gateway,
-                          stripePublishableKey:
-                              publishableKey ?? 'pk_test_123',
-                        ),
-                      ),
-                    )
-                    .then((value) => popped = value),
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => TuitionPaymentScreen(
+                      enrollmentId: _enrollmentId,
+                      courseName: 'Osnove teorije muzike',
+                      price: 800.0,
+                      gateway: gateway,
+                      stripePublishableKey: publishableKey ?? 'pk_test_123',
+                    ),
+                  ),
+                ),
                 child: const Text('Open pay'),
               ),
             ),
@@ -156,9 +151,7 @@ Future<_Harness> _pumpPay(
   addTearDown(tester.view.resetPhysicalSize);
 
   final harness = _Harness(client: client, gateway: gateway);
-  await tester.pumpWidget(
-    harness.app(publishableKey: publishableKey),
-  );
+  await tester.pumpWidget(harness.app(publishableKey: publishableKey));
   await tester.tap(find.text('Open pay'));
   await tester.pumpAndSettle();
   return harness;
@@ -182,11 +175,7 @@ void main() {
   testWidgets('review shows the course, amount, period and Stripe note', (
     tester,
   ) async {
-    await _pumpPay(
-      tester,
-      _TuitionStubClient(),
-      FakePaymentSheetGateway(),
-    );
+    await _pumpPay(tester, _TuitionStubClient(), FakePaymentSheetGateway());
 
     expect(find.text('Osnove teorije muzike'), findsOneWidget);
     expect(find.text('800.00 KM'), findsWidgets);
@@ -223,9 +212,9 @@ void main() {
     expect(find.text('Nazad na kurs'), findsOneWidget);
   });
 
-  testWidgets('leaving through D pops true', (tester) async {
+  testWidgets('leaving through D pops back to the caller', (tester) async {
     final client = _TuitionStubClient();
-    final harness = await _pumpPay(tester, client, FakePaymentSheetGateway());
+    await _pumpPay(tester, client, FakePaymentSheetGateway());
 
     await _confirmPay(tester);
     await tester.pump(const Duration(seconds: 3));
@@ -234,7 +223,8 @@ void main() {
     await tester.tap(find.text('Nazad na kurs'));
     await tester.pumpAndSettle();
 
-    expect(harness.popped, isTrue);
+    expect(find.text('Plaćanje školarine'), findsNothing);
+    expect(find.text('Open pay'), findsOneWidget);
     expect(client.createCalls, 1);
   });
 
@@ -317,9 +307,7 @@ void main() {
     expect(client.statusCalls, 10);
   });
 
-  testWidgets('popping the screen clears the redirect handler', (
-    tester,
-  ) async {
+  testWidgets('popping the screen clears the redirect handler', (tester) async {
     await _pumpPay(tester, _TuitionStubClient(), FakePaymentSheetGateway());
 
     expect(TuitionPaymentScreen.stripeRedirectHandler, isNotNull);
@@ -353,12 +341,7 @@ void main() {
     tester,
   ) async {
     final gateway = FakePaymentSheetGateway();
-    await _pumpPay(
-      tester,
-      _TuitionStubClient(),
-      gateway,
-      publishableKey: '',
-    );
+    await _pumpPay(tester, _TuitionStubClient(), gateway, publishableKey: '');
 
     await _confirmPay(tester);
 

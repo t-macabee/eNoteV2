@@ -6,7 +6,7 @@ import '../../theme/app_theme.dart';
 enum PaymentFlowState { processing, succeeded, failed, pending }
 
 /// States C–F of the payment flow: the review screen (state A) is built by
-/// `RentalPaymentScreen` itself.
+/// the calling payment screen itself.
 class PaymentStatusView extends StatelessWidget {
   final PaymentFlowState state;
 
@@ -19,7 +19,7 @@ class PaymentStatusView extends StatelessWidget {
   final bool isBusy;
 
   /// Cancel/back button label (`Odustani` on E, `Nazad` on F,
-  /// `Nazad na iznajmljivanje` on D).
+  /// `Nazad na …` on D, screen-specific).
   final String cancelLabel;
   final VoidCallback? onCancel;
 

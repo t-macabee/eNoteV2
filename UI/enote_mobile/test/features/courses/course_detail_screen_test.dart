@@ -422,4 +422,23 @@ void main() {
     expect(find.text('Plaćanje školarine'), findsOneWidget);
     expect(find.text('Plati 800.00 KM'), findsOneWidget);
   });
+
+  testWidgets('returning from tuition with a null result reloads the course', (
+    tester,
+  ) async {
+    final harness = _Harness();
+    await harness.bootstrap(enrolled: true, enrollmentId: 5);
+    await tester.pumpWidget(harness.app());
+    await tester.pumpAndSettle();
+    expect(harness.client.count('GET /api/v1/student/courses/2'), 1);
+
+    await tester.tap(find.widgetWithText(TextButton, 'Plati'));
+    await tester.pumpAndSettle();
+    expect(find.text('Plaćanje školarine'), findsOneWidget);
+
+    // The route pops without a result (close icon or Android back).
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    expect(harness.client.count('GET /api/v1/student/courses/2'), 2);
+  });
 }

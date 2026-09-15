@@ -29,8 +29,8 @@ public class Enrollment : AuditableEntity
         EnrollmentStatus = status;
     }
 
-    /// <returns>The period start (the later of the previous <see cref="PaidUntil"/> or <paramref name="utcNow"/>), so callers don't have to re-derive it.</returns>
-    public DateTime ExtendPaidUntil(DateTime utcNow, int days)
+    /// <returns>The period start (the later of the previous <see cref="PaidUntil"/> or <paramref name="utcNow"/>) and the new <see cref="PaidUntil"/>, so callers don't have to re-derive them.</returns>
+    public (DateTime Start, DateTime End) ExtendPaidUntil(DateTime utcNow, int days)
     {
         if (days <= 0)
         {
@@ -39,7 +39,7 @@ public class Enrollment : AuditableEntity
 
         var periodStart = PaidUntil.HasValue && PaidUntil.Value > utcNow ? PaidUntil.Value : utcNow;
         PaidUntil = periodStart.AddDays(days);
-        return periodStart;
+        return (periodStart, PaidUntil.Value);
     }
 
     // Exact-timestamp check by design, unlike Student.HasActiveMembership's .Date truncation.

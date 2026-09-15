@@ -110,12 +110,10 @@ public sealed class CourseService(IAppDbContext context, IMapper mapper, ICurren
                 cancellationToken)
             ?? throw new NotFoundException(Messages.CourseNotFound);
 
+        // The catalog/detail path is deliberately not gated on PaidUntil: an enrolled
+        // student must still find the course in order to pay for the next period.
         var dto = mapper.Map<CourseDto>(entity);
-        var enrollment = entity.Enrollments.FirstOrDefault(e => e.StudentId == studentId && e.EnrollmentStatus == EnrollmentStatus.Active);
-        dto.IsEnrolled = enrollment != null;
-        dto.EnrollmentId = enrollment?.Id;
-        dto.PaidUntil = enrollment?.PaidUntil;
-        dto.IsFree = entity.Price == 0;
+        ApplyEnrollment(dto, entity, studentId);
         return dto;
     }
 
@@ -148,14 +146,20 @@ public sealed class CourseService(IAppDbContext context, IMapper mapper, ICurren
 
         return await query.ToPagedResultAsync(search, entity =>
         {
+            // The my-courses feed is deliberately not gated on PaidUntil: an enrolled
+            // student must still find the course in order to pay for the next period.
             var dto = mapper.Map<CourseDto>(entity);
-            var enrollment = entity.Enrollments.FirstOrDefault(e => e.StudentId == studentId && e.EnrollmentStatus == EnrollmentStatus.Active);
-            dto.IsEnrolled = enrollment != null;
-            dto.EnrollmentId = enrollment?.Id;
-            dto.PaidUntil = enrollment?.PaidUntil;
-            dto.IsFree = entity.Price == 0;
+            ApplyEnrollment(dto, entity, studentId);
             return dto;
         }, q => q.OrderByDescending(x => x.StartDate), cancellationToken);
+    }
+
+    private static void ApplyEnrollment(CourseDto dto, Course entity, int studentId)
+    {
+        var enrollment = entity.Enrollments.FirstOrDefault(e => e.StudentId == studentId && e.EnrollmentStatus == EnrollmentStatus.Active);
+        dto.IsEnrolled = enrollment != null;
+        dto.EnrollmentId = enrollment?.Id;
+        dto.PaidUntil = enrollment?.PaidUntil;
     }
 
     public async Task<PagedResult<CourseDto>> GetPagedForAdminAsync(CourseSearchObject search, CancellationToken cancellationToken = default)

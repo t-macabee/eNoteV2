@@ -15,8 +15,6 @@ public sealed class TuitionPaymentService(
     StripeOptions options,
     ILogger<TuitionPaymentService> logger) : ITuitionPaymentService
 {
-    private static readonly TimeSpan RequiresActionReuseWindow = TimeSpan.FromMinutes(30);
-
     public async Task<CreateTuitionIntentResponse> CreateIntentAsync(int enrollmentId, CancellationToken cancellationToken = default)
     {
         return await context.ExecuteInTransactionAsync(async () =>
@@ -28,6 +26,8 @@ public sealed class TuitionPaymentService(
                 throw new BusinessException(Messages.StudentNotEnrolled);
             }
 
+            // Deliberately no "already paid" refusal: a paid enrollment may buy the next period early, and
+            // ExtendPaidUntil stacks the new period on top of the existing PaidUntil.
             if (enrollment.Course.Price == 0)
             {
                 throw new BusinessException(Messages.CourseIsFree);
@@ -36,7 +36,7 @@ public sealed class TuitionPaymentService(
             var existing = await context.Set<CoursePayment>()
                 .Where(p => p.EnrollmentId == enrollment.Id
                     && p.Status == PaymentStatus.RequiresAction
-                    && p.CreatedAt >= clock.UtcNow - RequiresActionReuseWindow)
+                    && p.CreatedAt >= clock.UtcNow - PaymentGatewayHelpers.RequiresActionReuseWindow)
                 .OrderByDescending(p => p.CreatedAt)
                 .FirstOrDefaultAsync(cancellationToken);
 
@@ -44,9 +44,9 @@ public sealed class TuitionPaymentService(
             {
                 logger.LogInformation("Reusing requires-action PaymentIntent {PaymentIntentId} for enrollment {EnrollmentId}", existing.StripePaymentIntentId, enrollment.Id);
 
-                var current = await InvokeGatewayAsync(
-                    () => paymentGateway.RetrievePaymentIntentAsync(existing.StripePaymentIntentId, cancellationToken),
-                    cancellationToken);
+                var current = await PaymentGatewayHelpers.InvokeGatewayAsync(
+                    logger,
+                    () => paymentGateway.RetrievePaymentIntentAsync(existing.StripePaymentIntentId, cancellationToken));
 
                 return new CreateTuitionIntentResponse(
                     enrollment.Id,
@@ -54,11 +54,11 @@ public sealed class TuitionPaymentService(
                     current.ClientSecret,
                     current.AmountCents,
                     current.Currency,
-                    MapStatus(current.Status));
+                    PaymentGatewayHelpers.MapStatus(current.Status));
             }
 
-            var amountCents = (long)Math.Round(enrollment.Course.Price * 100m, MidpointRounding.AwayFromZero);
-            var currency = options.Currency.Trim().ToLowerInvariant();
+            var amountCents = PaymentGatewayHelpers.ToCents(enrollment.Course.Price);
+            var currency = PaymentGatewayHelpers.NormalizeCurrency(options.Currency);
             var paidUntilKey = enrollment.PaidUntil.HasValue ? enrollment.PaidUntil.Value.ToString("O") : "none";
             var idempotencyKey = $"tuition:{enrollment.Id}:{paidUntilKey}:v1";
 
@@ -69,22 +69,22 @@ public sealed class TuitionPaymentService(
                 ["studentId"] = enrollment.StudentId.ToString()
             };
 
-            var intent = await InvokeGatewayAsync(
+            var intent = await PaymentGatewayHelpers.InvokeGatewayAsync(
+                logger,
                 () => paymentGateway.CreatePaymentIntentAsync(
                     amountCents,
                     currency,
                     metadata,
                     idempotencyKey,
                     TuitionOptions.StatementDescriptorSuffix,
-                    cancellationToken),
-                cancellationToken);
+                    cancellationToken));
 
             var payment = new CoursePayment(
                 enrollment.Id,
                 intent.Id,
                 intent.AmountCents,
                 intent.Currency,
-                MapStatus(intent.Status));
+                PaymentGatewayHelpers.MapStatus(intent.Status));
 
             context.Set<CoursePayment>().Add(payment);
             await context.SaveChangesAsync(cancellationToken);
@@ -141,27 +141,6 @@ public sealed class TuitionPaymentService(
 
         return enrollment;
     }
-
-    private async Task<T> InvokeGatewayAsync<T>(Func<Task<T>> call, CancellationToken cancellationToken)
-    {
-        try
-        {
-            return await call();
-        }
-        catch (Exception ex) when (ex is not AppException and not OperationCanceledException)
-        {
-            logger.LogError(ex, "Stripe gateway invocation failed: {Message}", ex.Message);
-            throw new PaymentProviderUnavailableException(Messages.PaymentProviderUnavailable);
-        }
-    }
-
-    private static PaymentStatus MapStatus(string? stripeStatus) => stripeStatus switch
-    {
-        "succeeded" => PaymentStatus.Succeeded,
-        "canceled" => PaymentStatus.Canceled,
-        "requires_payment_method" or "requires_action" or "requires_confirmation" or "requires_capture" or "processing" => PaymentStatus.RequiresAction,
-        _ => PaymentStatus.Failed
-    };
 
     private static CoursePaymentDto MapPayment(CoursePayment payment) => new(
         payment.Id,

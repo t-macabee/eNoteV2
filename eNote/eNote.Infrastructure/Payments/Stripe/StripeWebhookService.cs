@@ -117,11 +117,12 @@ public sealed class StripeWebhookService(
                 if (coursePayment.Status != PaymentStatus.Succeeded)
                 {
                     var now = clock.UtcNow;
-                    var periodStart = coursePayment.Enrollment.ExtendPaidUntil(now, TuitionOptions.PeriodDays);
-                    var periodEnd = coursePayment.Enrollment.PaidUntil!.Value;
-
-                    var effectiveChargeId = chargeId ?? coursePayment.StripeChargeId ?? $"ch_{eventId}";
-                    coursePayment.MarkSucceeded(effectiveChargeId, eventId, now, periodStart, periodEnd);
+                    var (periodStart, periodEnd) = coursePayment.Enrollment.ExtendPaidUntil(now, TuitionOptions.PeriodDays);
+                    if (chargeId is null)
+                    {
+                        logger.LogWarning("PaymentIntent {PaymentIntentId} succeeded without a charge id", paymentIntentId);
+                    }
+                    coursePayment.MarkSucceeded(chargeId, eventId, now, periodStart, periodEnd);
                 }
 
                 await RecordEventAsync(eventId, PaymentIntentSucceeded, rawJson, cancellationToken);

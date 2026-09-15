@@ -60,6 +60,23 @@ public sealed class TuitionPaymentWebhookTests
     }
 
     [Fact]
+    public async Task HandleWebhook_Succeeded_NullChargeId_StillExtendsPaidUntil_LeavesChargeNull()
+    {
+        var (context, enrollment, payment) = await SeedRequiresActionTuitionPaymentAsync();
+        var service = CreateWebhookService(context);
+        var evt = CreatePaymentIntentEvent("evt_tuition_succeeded_null_charge", "payment_intent.succeeded", payment.StripePaymentIntentId, "succeeded", chargeId: null);
+
+        await service.HandleAsync(evt, "{}");
+
+        var reloadedPayment = await context.Set<CoursePayment>().SingleAsync(p => p.Id == payment.Id);
+        var reloadedEnrollment = await context.Set<Enrollment>().SingleAsync(e => e.Id == enrollment.Id);
+
+        Assert.Equal(Now.AddDays(30), reloadedEnrollment.PaidUntil);
+        Assert.Equal(PaymentStatus.Succeeded, reloadedPayment.Status);
+        Assert.Null(reloadedPayment.StripeChargeId);
+    }
+
+    [Fact]
     public async Task HandleWebhook_Failed_MarksFailed_DoesNotExtendPaidUntil()
     {
         var (context, enrollment, payment) = await SeedRequiresActionTuitionPaymentAsync();

@@ -36,7 +36,7 @@ public sealed class CoursePayment : AuditableEntity
     }
 
     public void MarkSucceeded(
-        string stripeChargeId,
+        string? stripeChargeId,
         string stripeEventId,
         DateTime paidAt,
         DateTime periodStart,
