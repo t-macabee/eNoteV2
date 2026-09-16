@@ -123,6 +123,9 @@ public sealed class UserSelfServiceTests
             return Task.FromResult((true, (string?)null));
         }
 
+        public Task<bool> IsUserActiveAsync(int userId, CancellationToken cancellationToken = default) =>
+            Task.FromResult(true);
+
         public Task<(bool Success, string? Error)> SetActiveAsync(int userId, bool isActive, CancellationToken cancellationToken = default) =>
             Task.FromResult((true, (string?)null));
 

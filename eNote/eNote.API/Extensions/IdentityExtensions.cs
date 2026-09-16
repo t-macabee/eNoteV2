@@ -1,6 +1,8 @@
 ﻿using eNote.Application.Common.Localization;
 using eNote.Application.Features.Identity.Auth.Services;
+using eNote.Infrastructure.Identity;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -45,25 +47,45 @@ public static class IdentityExtensions
 
                         return Task.CompletedTask;
                     },
-                    OnTokenValidated = async context =>
-                    {
-                        var jti = context.Principal?.FindFirstValue(JwtRegisteredClaimNames.Jti);
-
-                        if (string.IsNullOrWhiteSpace(jti))
-                        {
-                            return;
-                        }
-
-                        var revocation = context.HttpContext.RequestServices.GetRequiredService<ITokenRevocationService>();
-
-                        if (await revocation.IsRevokedAsync(jti, context.HttpContext.RequestAborted))
-                        {
-                            context.Fail(Messages.TokenRevoked);
-                        }
-                    }
+                    OnTokenValidated = OnTokenValidated
                 };
             });
 
         return services;
+    }
+
+    public static async Task OnTokenValidated(TokenValidatedContext context)
+    {
+        var jti = context.Principal?.FindFirstValue(JwtRegisteredClaimNames.Jti);
+
+        var revocation = context.HttpContext.RequestServices.GetRequiredService<ITokenRevocationService>();
+
+        if (!string.IsNullOrWhiteSpace(jti) && await revocation.IsRevokedAsync(jti, context.HttpContext.RequestAborted))
+        {
+            context.Fail(Messages.TokenRevoked);
+            return;
+        }
+
+        if (!int.TryParse(context.Principal?.FindFirstValue(JwtRegisteredClaimNames.Sub), out var userId))
+        {
+            context.Fail(Messages.TokenInvalid);
+            return;
+        }
+
+        var userManager = context.HttpContext.RequestServices.GetRequiredService<UserManager<AppUser>>();
+        AppUser? user = await userManager.FindByIdAsync(userId.ToString());
+
+        if (user is null || !user.IsActive)
+        {
+            context.Fail(Messages.TokenInvalid);
+            return;
+        }
+
+        var stamp = context.Principal!.FindFirstValue(TokenService.SecurityStampClaimType);
+
+        if (string.IsNullOrWhiteSpace(stamp) || stamp != user.SecurityStamp)
+        {
+            context.Fail(Messages.TokenInvalid);
+        }
     }
 }

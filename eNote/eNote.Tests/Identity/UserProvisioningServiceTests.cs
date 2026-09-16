@@ -110,6 +110,28 @@ public sealed class UserProvisioningServiceTests
         Assert.Null(error);
         Assert.Equal(42, userId);
         Assert.True(account.UpdatedExisting);
+        Assert.Equal((42, true), account.SetActiveCall);
+    }
+
+    [Fact]
+    public async Task ProvisionUserAsync_DoesNotReactivate_WhenExistingUserAlreadyActive()
+    {
+        await using var context = TestDbContextFactory.CreateContext(Now);
+        var account = new RecordingUserAccountService { ExistingUserId = 42, IsActive = true };
+        var service = CreateService(context, account);
+
+        var (userId, error) = await service.ProvisionUserAsync(new UserProvisionRequest
+        {
+            Username = "existing",
+            Email = "existing@example.com",
+            Password = "Password1!",
+            Role = AppRoles.Student
+        });
+
+        Assert.Null(error);
+        Assert.Equal(42, userId);
+        Assert.True(account.UpdatedExisting);
+        Assert.Null(account.SetActiveCall);
     }
 
     [Fact]
@@ -399,6 +421,7 @@ public sealed class UserProvisioningServiceTests
     {
         public int? CreateUserId { get; set; } = 7;
         public int? ExistingUserId { get; set; }
+        public bool IsActive { get; set; }
         public bool UpdatedExisting { get; private set; }
         public (int UserId, bool IsActive)? SetActiveCall { get; private set; }
         public (bool Success, string? Error) SetActiveResult { get; set; } = (true, null);
@@ -429,6 +452,9 @@ public sealed class UserProvisioningServiceTests
 
         public Task<(bool Success, string? Error)> ChangePasswordAsync(int userId, string currentPassword, string newPassword, CancellationToken cancellationToken = default) =>
             Task.FromResult((true, (string?)null));
+
+        public Task<bool> IsUserActiveAsync(int userId, CancellationToken cancellationToken = default) =>
+            Task.FromResult(IsActive);
 
         public Task<(bool Success, string? Error)> SetActiveAsync(int userId, bool isActive, CancellationToken cancellationToken = default)
         {

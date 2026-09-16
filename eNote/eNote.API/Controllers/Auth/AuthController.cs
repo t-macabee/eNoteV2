@@ -12,11 +12,11 @@ namespace eNote.API.Controllers.Auth;
 [ApiController]
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/auth")]
-[EnableRateLimiting(RateLimitingExtensions.AuthPolicy)]
 public sealed class AuthController(IAuthService authService) : CoreController
 {
     [AllowAnonymous]
     [HttpPost("login")]
+    [EnableRateLimiting(RateLimitingExtensions.AuthPolicy)]
     [ProducesResponseType(typeof(AuthResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(object), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<AuthResponse>> Login([FromBody] LoginRequest model, CancellationToken cancellationToken)
@@ -27,6 +27,7 @@ public sealed class AuthController(IAuthService authService) : CoreController
 
     [AllowAnonymous]
     [HttpPost("register")]
+    [EnableRateLimiting(RateLimitingExtensions.AuthPolicy)]
     [ProducesResponseType(typeof(AuthResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<AuthResponse>> Register([FromBody] RegisterRequest model, CancellationToken cancellationToken)
@@ -37,6 +38,7 @@ public sealed class AuthController(IAuthService authService) : CoreController
 
     [AllowAnonymous]
     [HttpPost("forgot-password")]
+    [EnableRateLimiting(RateLimitingExtensions.AuthPolicy)]
     [ProducesResponseType(typeof(ForgotPasswordResponse), StatusCodes.Status200OK)]
     public async Task<ActionResult<ForgotPasswordResponse>> ForgotPassword([FromBody] ForgotPasswordRequest request, CancellationToken cancellationToken)
     {
@@ -46,6 +48,7 @@ public sealed class AuthController(IAuthService authService) : CoreController
 
     [AllowAnonymous]
     [HttpPost("reset-password")]
+    [EnableRateLimiting(RateLimitingExtensions.AuthPolicy)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request, CancellationToken cancellationToken)

@@ -124,6 +124,7 @@ public sealed class AuthServiceTests
         var harness = await CreateHarnessAsync(withRole: "Student");
         var auth = harness.CreateAuthService();
         var token = await harness.UserManager.GeneratePasswordResetTokenAsync(harness.User);
+        var stampBefore = harness.User.SecurityStamp;
 
         await auth.ResetPasswordAsync(new ResetPasswordRequest
         {
@@ -133,6 +134,7 @@ public sealed class AuthServiceTests
         });
 
         Assert.True(await harness.UserManager.CheckPasswordAsync(harness.User, "Newpassword1!"));
+        Assert.NotEqual(stampBefore, harness.User.SecurityStamp);
     }
 
     [Fact]
@@ -200,7 +202,7 @@ public sealed class AuthServiceTests
 
     private sealed class StubTokenService : ITokenService
     {
-        public string GenerateToken(int userId, string username, IList<string> roles, bool isManager = false) => "generated-token";
+        public string GenerateToken(int userId, string username, IList<string> roles, bool isManager = false, string? securityStamp = null) => "generated-token";
     }
 
     private sealed class RecordingTokenRevocationService(List<(string Jti, DateTime ExpiresAt)> calls) : ITokenRevocationService

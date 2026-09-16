@@ -14,6 +14,7 @@ public static class Messages
     public const string UsernameTaken = "Korisničko ime je već zauzeto.";
     public const string EmailTaken = "Email adresa je već registrovana.";
     public const string TokenRevoked = "Token je opozvan.";
+    public const string TokenInvalid = "Token više nije važeći.";
     public const string InvalidUserClaim = "Autentificirani korisnik nema važeći identifikator.";
     public const string RoleMisconfigured = "Korisnički račun nije ispravno konfigurisan (uloge). Kontaktirajte administratora.";
     public const string UserSingleRoleRequired = "Korisnik mora imati tačno jednu ulogu.";

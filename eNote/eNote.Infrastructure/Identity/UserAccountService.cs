@@ -109,6 +109,13 @@ public sealed class UserAccountService(UserManager<AppUser> userManager, IFileSt
         return (true, null);
     }
 
+    public async Task<bool> IsUserActiveAsync(int userId, CancellationToken cancellationToken = default)
+    {
+        var user = await userManager.FindByIdAsync(userId.ToString());
+
+        return user?.IsActive ?? false;
+    }
+
     public async Task<(bool Success, string? Error)> SetActiveAsync(int userId, bool isActive, CancellationToken cancellationToken = default)
     {
         var user = await userManager.FindByIdAsync(userId.ToString());
@@ -120,7 +127,7 @@ public sealed class UserAccountService(UserManager<AppUser> userManager, IFileSt
 
         user.IsActive = isActive;
 
-        var result = await userManager.UpdateAsync(user);
+        var result = await userManager.UpdateSecurityStampAsync(user);
 
         if (!result.Succeeded)
         {
@@ -152,16 +159,6 @@ public sealed class UserAccountService(UserManager<AppUser> userManager, IFileSt
 
             user.Email = normalizedEmail;
             user.NormalizedEmail = userManager.NormalizeEmail(normalizedEmail);
-        }
-
-        if (!user.EmailConfirmed)
-        {
-            user.EmailConfirmed = true;
-        }
-
-        if (!user.IsActive)
-        {
-            user.IsActive = true;
         }
 
         user.FirstName = firstName?.Trim() ?? user.FirstName;
@@ -271,6 +268,8 @@ public sealed class UserAccountService(UserManager<AppUser> userManager, IFileSt
         {
             return (false, Messages.NotFound);
         }
+
+        await userManager.UpdateSecurityStampAsync(user);
 
         var result = await userManager.DeleteAsync(user);
 

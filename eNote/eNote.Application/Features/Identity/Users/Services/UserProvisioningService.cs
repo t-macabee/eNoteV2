@@ -67,6 +67,16 @@ public sealed class UserProvisioningService(
             {
                 return (userId, updateResult.Error);
             }
+
+            if (!await accountService.IsUserActiveAsync(userId, cancellationToken))
+            {
+                (bool activeSet, string? activeError) = await accountService.SetActiveAsync(userId, true, cancellationToken);
+
+                if (!activeSet)
+                {
+                    return (userId, activeError);
+                }
+            }
         }
         else
         {

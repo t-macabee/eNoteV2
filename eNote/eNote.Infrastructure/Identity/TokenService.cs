@@ -10,12 +10,14 @@ namespace eNote.Infrastructure.Identity;
 
 public sealed class TokenService(IConfiguration configuration, IClock clock) : ITokenService
 {
+    public const string SecurityStampClaimType = "AspNet.Identity.SecurityStamp";
+
     private readonly string _jwtKey = configuration["Jwt:Key"]!;
     private readonly string? _jwtIssuer = configuration["Jwt:Issuer"];
     private readonly string? _jwtAudience = configuration["Jwt:Audience"];
     private readonly int _jwtExpirationDays = configuration.GetValue("Jwt:ExpirationDays", 7);
 
-    public string GenerateToken(int userId, string username, IList<string> roles, bool isManager = false)
+    public string GenerateToken(int userId, string username, IList<string> roles, bool isManager = false, string? securityStamp = null)
     {
         var claims = new List<Claim>
         {
@@ -27,6 +29,11 @@ public sealed class TokenService(IConfiguration configuration, IClock clock) : I
         if (isManager)
         {
             claims.Add(new Claim("is_manager", "true"));
+        }
+
+        if (!string.IsNullOrWhiteSpace(securityStamp))
+        {
+            claims.Add(new Claim(SecurityStampClaimType, securityStamp));
         }
 
         foreach (var role in roles)

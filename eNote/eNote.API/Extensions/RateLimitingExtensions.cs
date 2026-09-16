@@ -11,17 +11,22 @@ public static class RateLimitingExtensions
     {
         services.AddRateLimiter(options =>
         {
-            options.AddFixedWindowLimiter(AuthPolicy, opt =>
-            {
-                opt.PermitLimit = 10;
-                opt.Window = TimeSpan.FromMinutes(1);
-                opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-                opt.QueueLimit = 0;
-            });
+            options.AddPolicy(AuthPolicy, AuthPartition);
 
             options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
         });
 
         return services;
     }
+
+    public static RateLimitPartition<string> AuthPartition(HttpContext context) =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            context.Connection.RemoteIpAddress?.ToString() ?? "anon",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 10,
+                Window = TimeSpan.FromMinutes(1),
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                QueueLimit = 0
+            });
 }

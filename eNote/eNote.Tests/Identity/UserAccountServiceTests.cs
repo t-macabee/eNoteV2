@@ -85,6 +85,9 @@ public sealed class UserAccountServiceTests
         var service = harness.Service;
         await service.CreateUserAsync("jdoe", "jdoe@example.com", "Password1!", "Jane", "Doe");
         var userId = (await harness.UserManager.FindByNameAsync("jdoe"))!.Id;
+        var existing = (await harness.UserManager.FindByIdAsync(userId.ToString()))!;
+        existing.IsActive = false;
+        await harness.UserManager.UpdateAsync(existing);
 
         var result = await service.UpdateExistingUserAsync(userId, "new@example.com", "Janet", "Smith");
 
@@ -93,6 +96,7 @@ public sealed class UserAccountServiceTests
         Assert.Equal("new@example.com", user.Email);
         Assert.Equal("Janet", user.FirstName);
         Assert.Equal("Smith", user.LastName);
+        Assert.False(user.IsActive);
     }
 
     [Fact]
@@ -158,11 +162,14 @@ public sealed class UserAccountServiceTests
         await service.CreateUserAsync("jdoe", "jdoe@example.com", "Password1!", null, null);
         var userId = (await harness.UserManager.FindByNameAsync("jdoe"))!.Id;
 
+        var stampBefore = (await harness.UserManager.FindByIdAsync(userId.ToString()))!.SecurityStamp;
+
         var result = await service.ChangePasswordAsync(userId, "Password1!", "Newpassword1!");
 
         Assert.True(result.Success);
         var user = (await harness.UserManager.FindByIdAsync(userId.ToString()))!;
         Assert.True(await harness.UserManager.CheckPasswordAsync(user, "Newpassword1!"));
+        Assert.NotEqual(stampBefore, user.SecurityStamp);
     }
 
     [Fact]
@@ -173,12 +180,15 @@ public sealed class UserAccountServiceTests
         await service.CreateUserAsync("jdoe", "jdoe@example.com", "Password1!", null, null);
         var userId = (await harness.UserManager.FindByNameAsync("jdoe"))!.Id;
 
+        var stampBefore = (await harness.UserManager.FindByIdAsync(userId.ToString()))!.SecurityStamp;
+
         var result = await service.SetActiveAsync(userId, false);
 
         Assert.True(result.Success);
         Assert.Null(result.Error);
         var user = (await harness.UserManager.FindByIdAsync(userId.ToString()))!;
         Assert.False(user.IsActive);
+        Assert.NotEqual(stampBefore, user.SecurityStamp);
     }
 
     [Fact]

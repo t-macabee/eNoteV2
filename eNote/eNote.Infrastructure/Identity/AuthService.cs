@@ -49,7 +49,8 @@ internal sealed class AuthService(UserManager<AppUser> userManager, SignInManage
             isManager = await userProvisioning.IsStoreManagerAsync(user.Id, cancellationToken);
         }
 
-        var token = tokenService.GenerateToken(user.Id, user.UserName!, roles, isManager);
+        var stamp = await userManager.GetSecurityStampAsync(user);
+        var token = tokenService.GenerateToken(user.Id, user.UserName!, roles, isManager, stamp);
 
         return new AuthResponse
         {
@@ -75,7 +76,9 @@ internal sealed class AuthService(UserManager<AppUser> userManager, SignInManage
         }
 
         var registeredUser = registration ?? throw new BusinessException(Messages.InternalError);
-        var token = tokenService.GenerateToken(registeredUser.UserId, registeredUser.Username, registeredUser.Roles.ToList());
+        AppUser? registered = await userManager.FindByIdAsync(registeredUser.UserId.ToString());
+        var stamp = registered is null ? null : await userManager.GetSecurityStampAsync(registered);
+        var token = tokenService.GenerateToken(registeredUser.UserId, registeredUser.Username, registeredUser.Roles.ToList(), securityStamp: stamp);
 
         return new AuthResponse
         {

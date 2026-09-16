@@ -121,3 +121,6 @@ package-lock.json
 
 
 
+
+# Local repo map (generated, not committed)
+docs/repo-map.md
