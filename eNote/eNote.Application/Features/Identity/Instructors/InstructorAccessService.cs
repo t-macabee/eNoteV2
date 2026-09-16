@@ -1,11 +1,11 @@
 using eNote.Application.Features.Identity.Users.Services;
+using System.Linq.Expressions;
 
 namespace eNote.Application.Features.Identity.Instructors;
 
 public sealed class InstructorAccessService(IAppDbContext context, IUserProfileLookup lookup)
 {
-    public Task<Instructor> GetInstructorAsync(int userId) => lookup.GetInstructorAsync(userId);
-    public async Task<int> GetCurrentInstructorIdAsync(int appUserId) => (await GetInstructorAsync(appUserId)).Id;
+    public async Task<int> GetCurrentInstructorIdAsync(int appUserId) => (await lookup.GetInstructorAsync(appUserId)).Id;
 
     public Task<bool> OwnsCourseAsync(int courseId, int instructorId, CancellationToken cancellationToken = default) =>
         context.Set<Course>().AnyAsync(c => c.Id == courseId && c.InstructorId == instructorId, cancellationToken);
@@ -42,26 +42,25 @@ public sealed class InstructorAccessService(IAppDbContext context, IUserProfileL
             ?? throw new NotFoundException(Messages.LectureNotFound);
     }
 
-    public async Task<Assignment> GetOwnedAssignmentAsync(int lectureId, int assignmentId, int instructorId, bool track = false, CancellationToken cancellationToken = default)
+    public Task<Assignment> GetOwnedAssignmentAsync(int lectureId, int assignmentId, int instructorId, bool track = false, CancellationToken cancellationToken = default) =>
+        GetOwnedLectureChildAsync<Assignment>(
+            x => x.Id == assignmentId && x.LectureId == lectureId && x.Lecture.Course.InstructorId == instructorId,
+            Messages.AssignmentNotFound, track, cancellationToken);
+
+    public Task<LectureNote> GetOwnedLectureNoteAsync(int lectureId, int noteId, int instructorId, bool track = false, CancellationToken cancellationToken = default) =>
+        GetOwnedLectureChildAsync<LectureNote>(
+            x => x.Id == noteId && x.LectureId == lectureId && x.Lecture.Course.InstructorId == instructorId,
+            Messages.LectureNoteNotFound, track, cancellationToken);
+
+    private async Task<T> GetOwnedLectureChildAsync<T>(Expression<Func<T, bool>> predicate, string notFoundMessage, bool track, CancellationToken cancellationToken)
+        where T : class
     {
-        var query = context.Set<Assignment>()
-            .Where(x => x.Id == assignmentId && x.LectureId == lectureId && x.Lecture.Course.InstructorId == instructorId);
+        var query = context.Set<T>().Where(predicate);
 
         query = track ? query : query.AsNoTracking();
 
         return await query.FirstOrDefaultAsync(cancellationToken)
-            ?? throw new NotFoundException(Messages.AssignmentNotFound);
-    }
-
-    public async Task<LectureNote> GetOwnedLectureNoteAsync(int lectureId, int noteId, int instructorId, bool track = false, CancellationToken cancellationToken = default)
-    {
-        var query = context.Set<LectureNote>()
-            .Where(x => x.Id == noteId && x.LectureId == lectureId && x.Lecture.Course.InstructorId == instructorId);
-
-        query = track ? query : query.AsNoTracking();
-
-        return await query.FirstOrDefaultAsync(cancellationToken)
-            ?? throw new NotFoundException(Messages.LectureNoteNotFound);
+            ?? throw new NotFoundException(notFoundMessage);
     }
 
     public IQueryable<Course> CoursesFor(int instructorId) =>

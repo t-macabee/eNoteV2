@@ -84,7 +84,7 @@ public sealed class AdminStudentService(
                 CourseId = e.CourseId,
                 CourseName = e.Course.Name,
                 InstructorId = e.Course.InstructorId,
-                InstructorName = FormatInstructorName(users.GetValueOrDefault(e.Course.Instructor.AppUserId))
+                InstructorName = UserNameHelper.FormatName(users.GetValueOrDefault(e.Course.Instructor.AppUserId))
             })
             .OrderBy(e => e.CourseName)
             .ToList();
@@ -124,7 +124,7 @@ public sealed class AdminStudentService(
 
         List<StudentDto> filtered = [.. students
             .Select(x => Map(x, users.GetValueOrDefault(x.AppUserId)))
-            .Where(x => MatchesName(x, search.Name))
+            .Where(x => UserNameHelper.MatchesName(x.FirstName, x.LastName, x.Username, search.Name))
             .Where(x => !search.IsActive.HasValue || x.IsActive == search.IsActive.Value)];
 
         (var page, var pageSize) = PagingLimits.Normalize(search.Page, search.PageSize);
@@ -160,32 +160,4 @@ public sealed class AdminStudentService(
         MembershipPaidUntil = entity.MembershipPaidUntil,
         IsActive = user?.IsActive ?? true
     };
-
-    private static bool MatchesName(StudentDto dto, string? name)
-    {
-        if (string.IsNullOrWhiteSpace(name))
-        {
-            return true;
-        }
-
-        var fullName = $"{dto.FirstName} {dto.LastName}".Trim();
-
-        return Contains(dto.FirstName, name)
-            || Contains(dto.LastName, name)
-            || Contains(dto.Username, name)
-            || Contains(fullName, name);
-    }
-
-    private static bool Contains(string? value, string name) => value?.Contains(name, StringComparison.OrdinalIgnoreCase) == true;
-
-    private static string? FormatInstructorName(UserIdentityDto? user)
-    {
-        if (user is null)
-        {
-            return null;
-        }
-
-        var fullName = $"{user.FirstName} {user.LastName}".Trim();
-        return string.IsNullOrWhiteSpace(fullName) ? user.Username : fullName;
-    }
 }

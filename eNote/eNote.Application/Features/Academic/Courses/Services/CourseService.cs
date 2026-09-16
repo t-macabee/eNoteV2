@@ -70,7 +70,7 @@ public sealed class CourseService(IAppDbContext context, IMapper mapper, ICurren
             .Select(i => new CourseCatalogInstructorDto
             {
                 Id = i.Id,
-                Name = FormatInstructorName(users.GetValueOrDefault(i.AppUserId))
+                Name = UserNameHelper.FormatName(users.GetValueOrDefault(i.AppUserId))
             })
             .OrderBy(i => i.Name)
             .ToList();
@@ -229,26 +229,16 @@ public sealed class CourseService(IAppDbContext context, IMapper mapper, ICurren
     private CourseDto MapAdmin(Course course, IReadOnlyDictionary<int, UserIdentityDto> users)
     {
         var dto = mapper.Map<CourseDto>(course);
-        dto.InstructorName = FormatInstructorName(users.GetValueOrDefault(course.Instructor.AppUserId));
+        dto.InstructorName = UserNameHelper.FormatName(users.GetValueOrDefault(course.Instructor.AppUserId));
         return dto;
     }
 
     private async Task<string?> ResolveInstructorNameAsync(int appUserId, CancellationToken cancellationToken)
     {
         var user = await identityService.GetUserAsync(appUserId, cancellationToken);
-        return FormatInstructorName(user);
+        return UserNameHelper.FormatName(user);
     }
 
-    private static string? FormatInstructorName(UserIdentityDto? user)
-    {
-        if (user is null)
-        {
-            return null;
-        }
-
-        var fullName = $"{user.FirstName} {user.LastName}".Trim();
-        return string.IsNullOrWhiteSpace(fullName) ? user.Username : fullName;
-    }
 
     public async Task<CourseDto> CreateAsync(CourseRequest request, CancellationToken cancellationToken = default)
     {

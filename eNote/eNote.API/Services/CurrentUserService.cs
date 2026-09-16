@@ -14,7 +14,7 @@ public sealed class CurrentUserService(IHttpContextAccessor httpContextAccessor)
         {
             var user = httpContextAccessor.HttpContext?.User;
 
-            var id = user?.FindFirstValue(JwtRegisteredClaimNames.Sub) ?? user?.FindFirstValue(ClaimTypes.NameIdentifier);
+            var id = user?.FindFirstValue(JwtRegisteredClaimNames.Sub);
 
             if (!int.TryParse(id, out var userId))
             {

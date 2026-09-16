@@ -416,7 +416,7 @@ public sealed class ShopEmployeeServiceTests
         var (success, error) = await service.SetEmployeeActiveByManagerAsync(10, false);
 
         Assert.False(success);
-        Assert.Equal("Cannot deactivate your own account.", error);
+        Assert.Equal(Messages.CannotModifyOwnAccount, error);
         Assert.Null(account.SetActiveCall);
     }
 

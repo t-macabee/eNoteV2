@@ -15,7 +15,9 @@ public sealed class TokenService(IConfiguration configuration, IClock clock) : I
     private readonly string _jwtKey = configuration["Jwt:Key"]!;
     private readonly string? _jwtIssuer = configuration["Jwt:Issuer"];
     private readonly string? _jwtAudience = configuration["Jwt:Audience"];
-    private readonly int _jwtExpirationDays = configuration.GetValue("Jwt:ExpirationDays", 7);
+    private readonly int _jwtExpirationDays = int.Parse(
+        configuration["Jwt:ExpirationDays"]
+            ?? throw new InvalidOperationException("Jwt:ExpirationDays is required."));
 
     public string GenerateToken(int userId, string username, IList<string> roles, bool isManager = false, string? securityStamp = null)
     {

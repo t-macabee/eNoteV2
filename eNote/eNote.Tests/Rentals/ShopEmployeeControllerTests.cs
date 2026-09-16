@@ -107,6 +107,29 @@ public sealed class ShopEmployeeControllerTests
     }
 
     [Fact]
+    public async Task SetStatus_ReturnsConflict_WhenModifyingOwnAccount()
+    {
+        await using var ctx = TestDbContextFactory.CreateContext(Now);
+        var store = new MusicStore("Main Shop", "09-17");
+        ctx.Set<MusicStore>().Add(store);
+        await ctx.SaveChangesAsync();
+
+        var manager = new MusicStoreEmployee(appUserId: 10, musicStoreId: store.Id, isManager: true);
+        ctx.Set<MusicStoreEmployee>().Add(manager);
+        await ctx.SaveChangesAsync();
+
+        var actor = new StubCurrentActor(userId: 10);
+        var stubProvisioning = new StubProvisioningService { SetActiveResult = (false, Messages.CannotModifyOwnAccount) };
+        var employeeService = new ShopEmployeeService(ctx, new StubUserIdentityService(), actor, stubProvisioning);
+        var controller = new ShopEmployeeController(employeeService, stubProvisioning);
+
+        var result = await controller.SetStatus(10, new UserStatusRequest(false), CancellationToken.None);
+
+        var conflict = Assert.IsType<ConflictObjectResult>(result);
+        Assert.Equal(Messages.CannotModifyOwnAccount, conflict.Value!.GetType().GetProperty("message")!.GetValue(conflict.Value));
+    }
+
+    [Fact]
     public async Task SetStatus_ReturnsBadRequest_WhenErrorOccurs()
     {
         await using var ctx = TestDbContextFactory.CreateContext(Now);
@@ -202,7 +225,6 @@ public sealed class ShopEmployeeControllerTests
             Task.FromResult((1, (string?)null));
 
         public Task UpdateMembershipAsync(int userId, UpdateMembershipRequest request, CancellationToken cancellationToken = default) => Task.CompletedTask;
-        public Task<(bool Success, string? Error)> DeactivateUserAsync(int userId, CancellationToken cancellationToken = default) => Task.FromResult((true, (string?)null));
         public Task<(bool Success, string? Error)> SetUserActiveAsync(int userId, bool isActive, CancellationToken cancellationToken = default) => Task.FromResult(SetActiveResult);
         public Task<(bool Success, string? Error)> DeleteUserAsync(int userId, CancellationToken cancellationToken = default) => Task.FromResult((true, (string?)null));
         public Task<bool> IsStoreManagerAsync(int userId, CancellationToken cancellationToken = default) => Task.FromResult(false);

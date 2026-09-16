@@ -13,8 +13,7 @@ namespace eNote.API.Controllers.Admin;
 [Route("api/v{version:apiVersion}/admin/users")]
 public sealed class AdminUsersController(
     UserProfileService profileService,
-    IUserProvisioningService provisioningService,
-    eNote.Application.Common.Interfaces.ICurrentUserContext currentUser) : CoreController
+    IUserProvisioningService provisioningService) : CoreController
 {
     [HttpGet("{id:int}")]
     [ProducesResponseType(typeof(UserProfileResponse), StatusCodes.Status200OK)]
@@ -76,11 +75,6 @@ public sealed class AdminUsersController(
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> SetUserStatus(int id, [FromBody] UserStatusRequest request, CancellationToken cancellationToken)
     {
-        if (id == currentUser.UserId)
-        {
-            return Conflict(new { message = "Cannot modify your own account status." });
-        }
-
         (var success, var error) = await provisioningService.SetUserActiveAsync(id, request.IsActive, cancellationToken);
 
         if (!success)
@@ -88,6 +82,11 @@ public sealed class AdminUsersController(
             if (error == Messages.NotFound)
             {
                 return NotFound(new { message = error });
+            }
+
+            if (error == Messages.CannotModifyOwnAccount)
+            {
+                return Conflict(new { message = error });
             }
 
             return BadRequest(new { message = error });
@@ -102,11 +101,6 @@ public sealed class AdminUsersController(
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> DeleteUser(int id, CancellationToken cancellationToken)
     {
-        if (id == currentUser.UserId)
-        {
-            return Conflict(new { message = "Cannot delete your own account." });
-        }
-
         (var success, var error) = await provisioningService.DeleteUserAsync(id, cancellationToken);
 
         if (!success)
@@ -115,6 +109,12 @@ public sealed class AdminUsersController(
             {
                 return Conflict(new { message = error });
             }
+
+            if (error == Messages.CannotModifyOwnAccount)
+            {
+                return Conflict(new { message = error });
+            }
+
             return NotFound(new { message = error });
         }
 

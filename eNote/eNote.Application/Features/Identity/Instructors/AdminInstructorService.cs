@@ -16,7 +16,7 @@ public sealed class AdminInstructorService(IAppDbContext context, IUserIdentityS
 
         List<InstructorDto> filtered = [.. instructors
             .Select(x => Map(x, users.GetValueOrDefault(x.AppUserId)))
-            .Where(x => MatchesName(x, search.Name))
+            .Where(x => UserNameHelper.MatchesName(x.FirstName, x.LastName, x.Username, search.Name))
             .Where(x => !search.IsActive.HasValue || x.IsActive == search.IsActive.Value)];
 
         (var page, var pageSize) = PagingLimits.Normalize(search.Page, search.PageSize);
@@ -50,21 +50,4 @@ public sealed class AdminInstructorService(IAppDbContext context, IUserIdentityS
         Username = user?.Username,
         IsActive = user?.IsActive ?? true
     };
-
-    private static bool MatchesName(InstructorDto dto, string? name)
-    {
-        if (string.IsNullOrWhiteSpace(name))
-        {
-            return true;
-        }
-
-        var fullName = $"{dto.FirstName} {dto.LastName}".Trim();
-
-        return Contains(dto.FirstName, name)
-            || Contains(dto.LastName, name)
-            || Contains(dto.Username, name)
-            || Contains(fullName, name);
-    }
-
-    private static bool Contains(string? value, string name) => value?.Contains(name, StringComparison.OrdinalIgnoreCase) == true;
 }

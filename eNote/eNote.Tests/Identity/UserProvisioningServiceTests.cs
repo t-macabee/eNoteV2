@@ -68,28 +68,23 @@ public sealed class UserProvisioningServiceTests
     }
 
     [Fact]
-    public async Task ProvisionUserAsync_CreatesStoreEmployee_WithDefaultStore()
+    public async Task ProvisionUserAsync_ReturnsError_WhenStoreEmployeeHasNoStore()
     {
         await using var context = TestDbContextFactory.CreateContext(Now);
-        var store = new MusicStore("Music Shop", "09-17");
-        context.Set<MusicStore>().Add(store);
-        await context.SaveChangesAsync();
         var account = new RecordingUserAccountService();
         var service = CreateService(context, account);
 
         var (userId, error) = await service.ProvisionUserAsync(new UserProvisionRequest
         {
-            Username = "employee",
+            Username = "emp",
             Email = "emp@example.com",
             Password = "Password1!",
             Role = AppRoles.StoreEmployee
         });
 
-        Assert.Null(error);
-        Assert.Equal(7, userId);
-        var employee = await context.Set<MusicStoreEmployee>().SingleAsync(e => e.AppUserId == 7);
-        Assert.Equal(store.Id, employee.MusicStoreId);
-        Assert.True(employee.IsActive);
+        Assert.Equal(Messages.MusicStoreRequiredForEmployee, error);
+        Assert.Equal(0, userId);
+        Assert.Null(account.AssignRoleCall);
     }
 
     [Fact]
@@ -203,33 +198,6 @@ public sealed class UserProvisioningServiceTests
 
         await Assert.ThrowsAsync<NotFoundException>(() =>
             service.UpdateMembershipAsync(999, new UpdateMembershipRequest { PaidUntil = Now.AddMonths(1) }));
-    }
-
-    [Fact]
-    public async Task DeactivateUserAsync_DelegatesToSetActiveWithFalse()
-    {
-        await using var context = TestDbContextFactory.CreateContext(Now);
-        var account = new RecordingUserAccountService();
-        var service = CreateService(context, account);
-
-        var (success, error) = await service.DeactivateUserAsync(42);
-
-        Assert.True(success);
-        Assert.Null(error);
-        Assert.Equal((42, false), account.SetActiveCall);
-    }
-
-    [Fact]
-    public async Task DeactivateUserAsync_ReturnsError_WhenAccountServiceFails()
-    {
-        await using var context = TestDbContextFactory.CreateContext(Now);
-        var account = new RecordingUserAccountService { SetActiveResult = (false, Messages.NotFound) };
-        var service = CreateService(context, account);
-
-        var (success, error) = await service.DeactivateUserAsync(999);
-
-        Assert.False(success);
-        Assert.Equal(Messages.NotFound, error);
     }
 
     [Fact]
@@ -397,7 +365,7 @@ public sealed class UserProvisioningServiceTests
         var (success, error) = await service.SetUserActiveAsync(42, false);
 
         Assert.False(success);
-        Assert.Equal("Cannot deactivate your own account.", error);
+        Assert.Equal(Messages.CannotModifyOwnAccount, error);
         Assert.Null(account.SetActiveCall);
     }
 
@@ -556,7 +524,7 @@ public sealed class UserProvisioningServiceTests
         var (success, error) = await service.DeleteUserAsync(42);
 
         Assert.False(success);
-        Assert.Equal("Cannot delete your own account.", error);
+        Assert.Equal(Messages.CannotModifyOwnAccount, error);
     }
 
     private static UserProvisioningService CreateService(

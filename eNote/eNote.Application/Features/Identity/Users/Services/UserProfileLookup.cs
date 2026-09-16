@@ -12,7 +12,30 @@ public sealed class UserProfileLookup(IAppDbContext context) : IUserProfileLooku
         await Context.Set<Instructor>().AsNoTracking().FirstOrDefaultAsync(x => x.AppUserId == userId)
         ?? throw new BusinessException(Messages.InstructorProfileNotFound);
 
-    public async Task<MusicStoreEmployee> GetActiveEmployeeAsync(int userId) =>
-        await Context.Set<MusicStoreEmployee>().AsNoTracking().FirstOrDefaultAsync(x => x.AppUserId == userId && x.IsActive)
+    public Task<MusicStoreEmployee> GetActiveEmployeeAsync(int userId) => GetActiveEmployeeAsync(Context, userId);
+
+    public static async Task<MusicStoreEmployee> GetActiveEmployeeAsync(
+        IAppDbContext context,
+        int userId,
+        CancellationToken cancellationToken = default) =>
+        await context.Set<MusicStoreEmployee>()
+            .IgnoreQueryFilters()
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.AppUserId == userId && x.IsActive, cancellationToken)
         ?? throw new BusinessException(Messages.EmployeeProfileNotFound);
+
+    public static async Task<MusicStoreEmployee> EnsureManagerAsync(
+        IAppDbContext context,
+        int userId,
+        CancellationToken cancellationToken = default)
+    {
+        var employee = await GetActiveEmployeeAsync(context, userId, cancellationToken);
+
+        if (!employee.IsManager)
+        {
+            throw new AuthorizationException(Messages.ManagerRoleRequired);
+        }
+
+        return employee;
+    }
 }

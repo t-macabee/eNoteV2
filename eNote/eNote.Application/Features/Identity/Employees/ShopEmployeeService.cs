@@ -15,17 +15,11 @@ public sealed class ShopEmployeeService(
     ICurrentUserContext currentUser,
     IUserProvisioningService provisioningService)
 {
-    private async Task<MusicStoreEmployee> LoadCurrentEmployeeAsync(CancellationToken cancellationToken) =>
-        await context.Set<MusicStoreEmployee>()
-            .IgnoreQueryFilters()
-            .FirstOrDefaultAsync(x => x.AppUserId == currentUser.UserId && x.IsActive, cancellationToken)
-            ?? throw new BusinessException(Messages.EmployeeProfileNotFound);
-
     public async Task<PagedResult<ShopEmployeeDto>> GetPagedForCurrentStoreAsync(
         ShopEmployeeSearchObject search,
         CancellationToken cancellationToken = default)
     {
-        var currentEmployee = await LoadCurrentEmployeeAsync(cancellationToken);
+        var currentEmployee = await UserProfileLookup.GetActiveEmployeeAsync(context, currentUser.UserId, cancellationToken);
 
         var storeId = currentEmployee.MusicStoreId;
 
@@ -43,7 +37,7 @@ public sealed class ShopEmployeeService(
 
         List<ShopEmployeeDto> filtered = [.. employees
             .Select(x => Map(x, users.GetValueOrDefault(x.AppUserId)))
-            .Where(x => MatchesName(x, search.Name))];
+            .Where(x => UserNameHelper.MatchesName(x.FirstName, x.LastName, x.Username, search.Name))];
 
         (var page, var pageSize) = PagingLimits.Normalize(search.Page, search.PageSize);
 
@@ -79,7 +73,7 @@ public sealed class ShopEmployeeService(
 
         List<ShopEmployeeDto> filtered = [.. employees
             .Select(x => Map(x, users.GetValueOrDefault(x.AppUserId)))
-            .Where(x => MatchesName(x, search.Name))
+            .Where(x => UserNameHelper.MatchesName(x.FirstName, x.LastName, x.Username, search.Name))
             .Where(x => !search.IsActive.HasValue || x.IsActive == search.IsActive.Value)];
 
         (var page, var pageSize) = PagingLimits.Normalize(search.Page, search.PageSize);
@@ -111,11 +105,7 @@ public sealed class ShopEmployeeService(
 
     public async Task<(bool Success, string? Error)> SetEmployeeActiveByManagerAsync(int targetUserId, bool isActive, CancellationToken ct = default)
     {
-        var currentEmployee = await LoadCurrentEmployeeAsync(ct);
-        if (!currentEmployee.IsManager)
-        {
-            throw new AuthorizationException(Messages.ManagerRoleRequired);
-        }
+        var currentEmployee = await UserProfileLookup.EnsureManagerAsync(context, currentUser.UserId, ct);
 
         var target = await context.Set<MusicStoreEmployee>()
             .IgnoreQueryFilters()
@@ -132,11 +122,7 @@ public sealed class ShopEmployeeService(
 
     public async Task<int> GetCurrentManagerStoreIdAsync(CancellationToken ct = default)
     {
-        var currentEmployee = await LoadCurrentEmployeeAsync(ct);
-        if (!currentEmployee.IsManager)
-        {
-            throw new AuthorizationException(Messages.ManagerRoleRequired);
-        }
+        var currentEmployee = await UserProfileLookup.EnsureManagerAsync(context, currentUser.UserId, ct);
         return currentEmployee.MusicStoreId;
     }
 
@@ -152,22 +138,4 @@ public sealed class ShopEmployeeService(
         IsManager = entity.IsManager,
         IsActive = entity.IsActive && (user?.IsActive ?? true)
     };
-
-    internal static bool MatchesName(ShopEmployeeDto dto, string? name)
-    {
-        if (string.IsNullOrWhiteSpace(name))
-        {
-            return true;
-        }
-
-        var fullName = $"{dto.FirstName} {dto.LastName}".Trim();
-
-        return Contains(dto.FirstName, name)
-            || Contains(dto.LastName, name)
-            || Contains(dto.Username, name)
-            || Contains(fullName, name);
-    }
-
-    private static bool Contains(string? value, string name) =>
-        value?.Contains(name, StringComparison.OrdinalIgnoreCase) == true;
 }

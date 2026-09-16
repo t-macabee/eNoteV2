@@ -48,6 +48,7 @@ public sealed class ShopEmployeeController(
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> SetStatus(int id, [FromBody] UserStatusRequest request, CancellationToken cancellationToken)
     {
         var (success, error) = await employeeService.SetEmployeeActiveByManagerAsync(id, request.IsActive, cancellationToken);
@@ -56,6 +57,11 @@ public sealed class ShopEmployeeController(
             if (error == Messages.NotFound)
             {
                 return NotFound(new { message = error });
+            }
+
+            if (error == Messages.CannotModifyOwnAccount)
+            {
+                return Conflict(new { message = error });
             }
 
             return BadRequest(new { message = error });

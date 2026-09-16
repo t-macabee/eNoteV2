@@ -62,6 +62,11 @@ public sealed class UserProvisioningService(
         {
             return await context.ExecuteInTransactionAsync(async () =>
             {
+                if (request.Role == AppRoles.StoreEmployee && request.MusicStoreId is null)
+                {
+                    return (0, Messages.MusicStoreRequiredForEmployee);
+                }
+
                 var username = request.Username.Trim();
                 var existingUserId = await accountService.FindUserIdByUsernameAsync(username, cancellationToken);
 
@@ -92,9 +97,7 @@ public sealed class UserProvisioningService(
                     throw new BusinessException(Error);
                 }
 
-                var storeId = request.MusicStoreId ?? await ResolveDefaultStoreIdAsync(request.Role, cancellationToken);
-
-                await EnsureRoleProfileAsync(userId, request.Role, storeId, cancellationToken, request.IsManager);
+                await EnsureRoleProfileAsync(userId, request.Role, request.MusicStoreId, cancellationToken, request.IsManager);
 
                 await context.SaveChangesAsync(cancellationToken);
 
@@ -160,15 +163,7 @@ public sealed class UserProvisioningService(
             throw new AuthorizationException(Messages.Unauthorized);
         }
 
-        var currentEmployee = await context.Set<MusicStoreEmployee>()
-            .IgnoreQueryFilters()
-            .FirstOrDefaultAsync(x => x.AppUserId == currentUserContext.UserId && x.IsActive, cancellationToken)
-            ?? throw new BusinessException(Messages.EmployeeProfileNotFound);
-
-        if (!currentEmployee.IsManager)
-        {
-            throw new AuthorizationException(Messages.ManagerRoleRequired);
-        }
+        var currentEmployee = await UserProfileLookup.EnsureManagerAsync(context, currentUserContext.UserId, cancellationToken);
 
         var storeId = currentEmployee.MusicStoreId;
 
@@ -231,33 +226,20 @@ public sealed class UserProvisioningService(
         await context.SaveChangesAsync(cancellationToken);
     }
 
-    public Task<(bool Success, string? Error)> DeactivateUserAsync(int userId, CancellationToken cancellationToken = default) =>
-        accountService.SetActiveAsync(userId, false, cancellationToken);
-
     public Task<(bool Success, string? Error)> SetUserActiveAsync(int userId, bool isActive, CancellationToken cancellationToken = default)
     {
         if (!isActive && currentUserContext != null && currentUserContext.UserId == userId)
         {
-            return Task.FromResult<(bool, string?)>((false, "Cannot deactivate your own account."));
+            return Task.FromResult<(bool, string?)>((false, Messages.CannotModifyOwnAccount));
         }
         return accountService.SetActiveAsync(userId, isActive, cancellationToken);
-    }
-
-    private async Task<int?> ResolveDefaultStoreIdAsync(string role, CancellationToken cancellationToken)
-    {
-        if (role != AppRoles.StoreEmployee)
-        {
-            return null;
-        }
-        return await context.Set<MusicStore>()
-            .Select(x => (int?)x.Id).FirstOrDefaultAsync(cancellationToken);
     }
 
     public async Task<(bool Success, string? Error)> DeleteUserAsync(int userId, CancellationToken cancellationToken = default)
     {
         if (currentUserContext != null && currentUserContext.UserId == userId)
         {
-            return (false, "Cannot delete your own account.");
+            return (false, Messages.CannotModifyOwnAccount);
         }
 
         bool hasAuthoredHistory = await context.Set<eNote.Domain.Entities.Communication.Announcement>().IgnoreQueryFilters().AnyAsync(a => a.CreatedById == userId, cancellationToken) ||

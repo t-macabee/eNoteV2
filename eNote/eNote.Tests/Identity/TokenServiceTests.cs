@@ -53,6 +53,21 @@ public sealed class TokenServiceTests
         Assert.Contains(jwt.Audiences, a => a == "Audience");
     }
 
+    [Fact]
+    public void Constructor_Throws_WhenExpirationDaysMissing()
+    {
+        var configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
+        {
+            ["Jwt:Key"] = "test-signing-key-that-is-32-characters-long!!",
+            ["Jwt:Issuer"] = "Issuer",
+            ["Jwt:Audience"] = "Audience"
+        }).Build();
+
+        var ex = Assert.Throws<InvalidOperationException>(() => new TokenService(configuration, new FixedClock(Now)));
+
+        Assert.Contains("Jwt:ExpirationDays", ex.Message);
+    }
+
     private static TokenService CreateService(int expirationDays, string? key = null) =>
         new(BuildConfiguration(expirationDays, key), new FixedClock(Now));
 
