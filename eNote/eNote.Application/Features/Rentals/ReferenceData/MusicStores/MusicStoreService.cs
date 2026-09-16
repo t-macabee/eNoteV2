@@ -97,7 +97,7 @@ public sealed class MusicStoreService(IAppDbContext context, IFileStorageService
 
     protected override async Task EnsureDeletableAsync(MusicStore entity, CancellationToken ct)
     {
-        var inUse = await Db.Set<Instrument>().AnyAsync(x => x.MusicStoreId == entity.Id, ct)
+        var inUse = await Db.Set<Instrument>().IgnoreQueryFilters().AnyAsync(x => x.MusicStoreId == entity.Id, ct)
             || await Db.Set<MusicStoreEmployee>().AnyAsync(x => x.MusicStoreId == entity.Id, ct);
 
         if (inUse)

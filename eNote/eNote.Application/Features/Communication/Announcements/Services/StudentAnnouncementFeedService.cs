@@ -17,10 +17,10 @@ public sealed class StudentAnnouncementFeedService(IAppDbContext context, IStude
                     e.StudentId == studentId &&
                     e.EnrollmentStatus == EnrollmentStatus.Active &&
                     e.CourseId == a.CourseId)) ||
-                (a.MusicStoreId != null && context.Set<InstrumentRental>().Any(r =>
+                (a.MusicStoreId != null && context.Set<InstrumentRental>().IgnoreQueryFilters().Any(r =>
                     r.StudentProfileId == studentId &&
                     (r.RentalStatus == InstrumentRentalStatus.Approved || r.RentalStatus == InstrumentRentalStatus.Active || r.RentalStatus == InstrumentRentalStatus.Completed || r.RentalStatus == InstrumentRentalStatus.ReturnedEarly) &&
-                    r.Instrument.MusicStoreId == a.MusicStoreId)));
+                    r.MusicStoreId == a.MusicStoreId)));
 
         if (!string.IsNullOrWhiteSpace(search.Title))
         {

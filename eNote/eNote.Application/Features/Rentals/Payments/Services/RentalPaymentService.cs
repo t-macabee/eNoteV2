@@ -132,7 +132,7 @@ public sealed class RentalPaymentService(
             }
 
             var payment = await context.Set<RentalPayment>()
-                .SingleOrDefaultAsync(p => p.InstrumentRentalId == rental.Id && p.Status == PaymentStatus.Succeeded, cancellationToken)
+                .SingleOrDefaultAsync(p => p.InstrumentRentalId == rental.Id && (p.Status == PaymentStatus.Succeeded || p.Status == PaymentStatus.PartiallyRefunded), cancellationToken)
                 ?? throw new NotFoundException(Messages.PaymentNotFound);
 
             var centsToRefund = amountCents ?? payment.AmountChargedCents;

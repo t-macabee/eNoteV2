@@ -115,6 +115,40 @@ public sealed class RentalPaymentWebhookTests
         Assert.Equal(PaymentStatus.RequiresAction, (await context.Set<RentalPayment>().SingleAsync()).Status);
     }
 
+    [Fact]
+    public async Task HandleWebhook_Succeeded_AppliesPayment_WhenInstrumentDeactivated()
+    {
+        var (context, rental, _) = await SeedRequiresActionPaymentAsync();
+        var instrument = await context.Set<Instrument>().SingleAsync(x => x.Id == rental.InstrumentId);
+        instrument.SoftDelete();
+        await context.SaveChangesAsync();
+        var service = CreateWebhookService(context);
+        var evt = CreatePaymentIntentEvent("evt_test_succeeded_deactivated", "payment_intent.succeeded", "pi_test_1", "succeeded", "ch_test_1");
+
+        await service.HandleAsync(evt, "{}");
+
+        var payment = await context.Set<RentalPayment>().IgnoreQueryFilters().SingleAsync();
+        Assert.Equal(PaymentStatus.Succeeded, payment.Status);
+        var reloadedRental = await context.Set<InstrumentRental>().IgnoreQueryFilters().SingleAsync(x => x.Id == rental.Id);
+        Assert.True(reloadedRental.IsPaid);
+        Assert.Single(await context.Set<StripeWebhookEvent>().ToListAsync());
+    }
+
+    [Fact]
+    public async Task HandleWebhook_ChargeRefunded_SecondRefund_Accumulates()
+    {
+        var (context, rental, _) = await SeedSucceededPaymentAsync();
+        var service = CreateWebhookService(context);
+
+        await service.HandleAsync(CreateChargeRefundedEvent("evt_test_refunded_first", "pi_test_1", "ch_test_1", 2000), "{}");
+        await service.HandleAsync(CreateChargeRefundedEvent("evt_test_refunded_second", "pi_test_1", "ch_test_1", 3500), "{}");
+
+        var payment = await context.Set<RentalPayment>().SingleAsync();
+        Assert.Equal(PaymentStatus.PartiallyRefunded, payment.Status);
+        Assert.Equal(3500, payment.RefundedCents);
+        Assert.Equal(2, await context.Set<StripeWebhookEvent>().CountAsync());
+    }
+
     // ---- Helpers ----------------------------------------------------------
 
     private static async Task<(ENoteContext Context, InstrumentRental Rental, RentalPayment Payment)> SeedRequiresActionPaymentAsync()

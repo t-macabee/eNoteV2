@@ -83,6 +83,7 @@ public sealed class StripeWebhookService(
             }
 
             var rentalPayment = await context.Set<RentalPayment>()
+                .IgnoreQueryFilters()
                 .Include(p => p.InstrumentRental)
                 .FirstOrDefaultAsync(p => p.StripePaymentIntentId == paymentIntentId, cancellationToken);
 
@@ -100,6 +101,7 @@ public sealed class StripeWebhookService(
             }
 
             var coursePayment = await context.Set<CoursePayment>()
+                .IgnoreQueryFilters()
                 .Include(p => p.Enrollment)
                 .FirstOrDefaultAsync(p => p.StripePaymentIntentId == paymentIntentId, cancellationToken);
 
@@ -108,7 +110,15 @@ public sealed class StripeWebhookService(
                 if (coursePayment.Status != PaymentStatus.Succeeded)
                 {
                     var now = clock.UtcNow;
-                    var (periodStart, periodEnd) = coursePayment.Enrollment.ExtendPaidUntil(now, TuitionOptions.PeriodDays);
+                    var isActive = coursePayment.Enrollment.EnrollmentStatus == EnrollmentStatus.Active;
+                    if (!isActive)
+                    {
+                        // Money was taken but the enrollment is not active: record the payment, grant no access.
+                        logger.LogWarning("Skipping PaidUntil extension for non-active enrollment {EnrollmentId} on payment intent {PaymentIntentId}", coursePayment.EnrollmentId, paymentIntentId);
+                    }
+                    var (periodStart, periodEnd) = isActive
+                        ? coursePayment.Enrollment.ExtendPaidUntil(now, TuitionOptions.PeriodDays)
+                        : (now, now.AddDays(TuitionOptions.PeriodDays));
                     LogMissingChargeId(chargeId, paymentIntentId);
                     coursePayment.MarkSucceeded(chargeId, eventId, now, periodStart, periodEnd);
                 }
@@ -131,6 +141,7 @@ public sealed class StripeWebhookService(
             }
 
             var rentalPayment = await context.Set<RentalPayment>()
+                .IgnoreQueryFilters()
                 .FirstOrDefaultAsync(p => p.StripePaymentIntentId == paymentIntentId, cancellationToken);
 
             if (rentalPayment is not null)
@@ -145,6 +156,7 @@ public sealed class StripeWebhookService(
             }
 
             var coursePayment = await context.Set<CoursePayment>()
+                .IgnoreQueryFilters()
                 .FirstOrDefaultAsync(p => p.StripePaymentIntentId == paymentIntentId, cancellationToken);
 
             if (coursePayment is not null)
@@ -178,12 +190,13 @@ public sealed class StripeWebhookService(
             }
 
             var rentalPayment = await context.Set<RentalPayment>()
+                .IgnoreQueryFilters()
                 .Include(p => p.InstrumentRental)
                 .FirstOrDefaultAsync(p => p.StripePaymentIntentId == charge.PaymentIntentId, cancellationToken);
 
             if (rentalPayment is not null)
             {
-                if (rentalPayment.Status == PaymentStatus.Succeeded && charge.AmountRefunded > 0)
+                if (rentalPayment.Status is PaymentStatus.Succeeded or PaymentStatus.PartiallyRefunded && charge.AmountRefunded > 0)
                 {
                     var refundId = charge.Refunds?.Data?.FirstOrDefault()?.Id ?? rentalPayment.StripeRefundId;
                     if (refundId is null)
@@ -204,6 +217,7 @@ public sealed class StripeWebhookService(
             }
 
             var coursePayment = await context.Set<CoursePayment>()
+                .IgnoreQueryFilters()
                 .FirstOrDefaultAsync(p => p.StripePaymentIntentId == charge.PaymentIntentId, cancellationToken);
 
             if (coursePayment is not null)

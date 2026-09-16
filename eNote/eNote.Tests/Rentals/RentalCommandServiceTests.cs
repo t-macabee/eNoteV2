@@ -104,6 +104,30 @@ public sealed class RentalCommandServiceTests
     }
 
     [Fact]
+    public async Task CreateRequestAsync_BlockedByUnpaidDebt_WhenInstrumentSoftDeleted()
+    {
+        await using var context = CreateContext();
+        var student = await SeedStudentAsync(context, hasActiveMembership: true);
+        var instrument = await RentalTestData.SeedInstrumentAsync(context);
+        var unpaid = new InstrumentRental(instrument.Id, student.Id, instrument.MusicStoreId, Now.AddDays(-20), null);
+        unpaid.Approve(50m, null, Now.AddDays(-19), 1);
+        unpaid.Pickup(Now.AddDays(-19));
+        unpaid.Complete(Now.AddDays(-5), null);
+        context.Set<InstrumentRental>().Add(unpaid);
+        await context.SaveChangesAsync();
+
+        instrument.SoftDelete();
+        await context.SaveChangesAsync();
+
+        var newInstrument = await SeedExtraInstrumentAsync(context, instrument);
+        var service = CreateService(context, student);
+
+        var ex = await Assert.ThrowsAsync<BusinessException>(() => service.CreateRequestAsync(new RentalCreateRequest { InstrumentId = newInstrument.Id }));
+
+        Assert.Equal(Messages.RentalUnpaidDebt, ex.Message);
+    }
+
+    [Fact]
     public async Task CreateRequestAsync_AllowedWhenAllPastRentalsPaid()
     {
         await using var context = CreateContext();

@@ -1,3 +1,4 @@
+using eNote.Application.Common.Localization;
 using eNote.Application.Features.Rentals.ReferenceData.MusicStores;
 using eNote.Domain.Entities.Shared;
 using eNote.Tests.TestUtils;
@@ -270,6 +271,27 @@ public sealed class MusicStoreServiceTests
         var filtered = await service.GetPagedAsync(new MusicStoreSearchObject { StoreName = "Music Shop", CityId = citySarajevo.Id });
         Assert.Single(filtered.Items);
         Assert.Equal("Music Shop Sarajevo", filtered.Items[0].StoreName);
+    }
+
+    [Fact]
+    public async Task DeleteAsync_Blocked_WhenInstrumentSoftDeleted()
+    {
+        var ctx = TestDbContextFactory.CreateContext(Now);
+        var service = CreateService(ctx);
+        var created = await service.CreateAsync(new MusicStoreRequest { StoreName = "Shop", BusinessHours = "09-17" });
+        var type = new InstrumentType { Type = "Guitar", MonthlyFee = 50m };
+        ctx.Set<InstrumentType>().Add(type);
+        await ctx.SaveChangesAsync();
+        var instrument = new Instrument("Strat", "Fender", null, null, type.Id, created.Id);
+        ctx.Set<Instrument>().Add(instrument);
+        await ctx.SaveChangesAsync();
+
+        instrument.SoftDelete();
+        await ctx.SaveChangesAsync();
+
+        var ex = await Assert.ThrowsAsync<BusinessException>(() => service.DeleteAsync(created.Id));
+
+        Assert.Equal(Messages.MusicStoreDeleteBlocked, ex.Message);
     }
 
     private static MusicStoreService CreateService(ENoteContext ctx, IFileStorageService? fileStorage = null) =>

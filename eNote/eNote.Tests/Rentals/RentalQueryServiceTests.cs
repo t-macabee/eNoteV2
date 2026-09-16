@@ -79,6 +79,29 @@ public sealed class RentalQueryServiceTests
         Assert.True(dto.MonthsCharged >= 1);
     }
 
+    [Fact]
+    public async Task GetDebtForStudentAsync_ReturnsDebt_WhenInstrumentSoftDeleted()
+    {
+        await using var context = RentalTestData.CreateContext(Now);
+        var student = await SeedStudentAsync(context, appUserId: 100);
+        var instrument = await RentalTestData.SeedInstrumentAsync(context);
+        var unpaid = new InstrumentRental(instrument.Id, student.Id, instrument.MusicStoreId, Now.AddDays(-20), null);
+        unpaid.Approve(50m, null, Now.AddDays(-19), 1);
+        unpaid.Pickup(Now.AddDays(-19));
+        unpaid.Complete(Now.AddDays(-5), null);
+        context.Set<InstrumentRental>().Add(unpaid);
+        await context.SaveChangesAsync();
+
+        instrument.SoftDelete();
+        await context.SaveChangesAsync();
+        var service = CreateService(context, student);
+
+        var debt = await service.GetDebtForStudentAsync();
+
+        Assert.True(debt.HasUnpaidDebt);
+        Assert.Equal(unpaid.Id, debt.RentalId);
+    }
+
     private static async Task<Student> SeedStudentAsync(ENoteContext context, int appUserId)
     {
         var student = new Student(appUserId, Now.AddMonths(-1));

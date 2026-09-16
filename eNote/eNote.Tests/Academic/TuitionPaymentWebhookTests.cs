@@ -129,6 +129,43 @@ public sealed class TuitionPaymentWebhookTests
     }
 
     [Fact]
+    public async Task HandleWebhook_Succeeded_AppliesPayment_WhenCourseDeactivated()
+    {
+        var (context, enrollment, payment) = await SeedRequiresActionTuitionPaymentAsync();
+        var course = await context.Set<Course>().SingleAsync(c => c.Id == enrollment.CourseId);
+        course.SoftDelete();
+        await context.SaveChangesAsync();
+        var service = CreateWebhookService(context);
+        var evt = CreatePaymentIntentEvent("evt_tuition_succeeded_deactivated", "payment_intent.succeeded", payment.StripePaymentIntentId, "succeeded", "ch_tuition_deactivated");
+
+        await service.HandleAsync(evt, "{}");
+
+        var reloadedPayment = await context.Set<CoursePayment>().IgnoreQueryFilters().SingleAsync(p => p.Id == payment.Id);
+        var reloadedEnrollment = await context.Set<Enrollment>().IgnoreQueryFilters().SingleAsync(e => e.Id == enrollment.Id);
+        Assert.Equal(PaymentStatus.Succeeded, reloadedPayment.Status);
+        Assert.Equal(Now.AddDays(30), reloadedEnrollment.PaidUntil);
+        Assert.Single(await context.Set<StripeWebhookEvent>().Where(e => e.StripeEventId == "evt_tuition_succeeded_deactivated").ToListAsync());
+    }
+
+    [Fact]
+    public async Task HandleWebhook_Succeeded_CanceledEnrollment_DoesNotExtendPaidUntil()
+    {
+        var (context, enrollment, payment) = await SeedRequiresActionTuitionPaymentAsync();
+        enrollment.UpdateStatus(EnrollmentStatus.Canceled);
+        await context.SaveChangesAsync();
+        var service = CreateWebhookService(context);
+        var evt = CreatePaymentIntentEvent("evt_tuition_succeeded_canceled", "payment_intent.succeeded", payment.StripePaymentIntentId, "succeeded", "ch_tuition_canceled");
+
+        await service.HandleAsync(evt, "{}");
+
+        var reloadedPayment = await context.Set<CoursePayment>().SingleAsync(p => p.Id == payment.Id);
+        var reloadedEnrollment = await context.Set<Enrollment>().SingleAsync(e => e.Id == enrollment.Id);
+        Assert.Equal(PaymentStatus.Succeeded, reloadedPayment.Status);
+        Assert.Null(reloadedEnrollment.PaidUntil);
+        Assert.Single(await context.Set<StripeWebhookEvent>().Where(e => e.StripeEventId == "evt_tuition_succeeded_canceled").ToListAsync());
+    }
+
+    [Fact]
     public async Task HandleWebhook_RentalIntent_StillRoutesToRentalPayment()
     {
         var (context, enrollment, _) = await SeedRequiresActionTuitionPaymentAsync();

@@ -42,4 +42,38 @@ public sealed class StudentAnnouncementFeedServiceTests
         Assert.Contains(result.Items, a => a.Title == "Course note");
         Assert.Contains(result.Items, a => a.Title == "Store note");
     }
+
+    [Fact]
+    public async Task GetFeedForStudentAsync_IncludesStoreAnnouncements_WhenInstrumentSoftDeleted()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var store = new MusicStore("Music Shop", "09-17");
+        harness.Context.Set<MusicStore>().Add(store);
+        await harness.Context.SaveChangesAsync();
+        var type = new InstrumentType { Type = "Guitar", MonthlyFee = 50m };
+        harness.Context.Set<InstrumentType>().Add(type);
+        await harness.Context.SaveChangesAsync();
+        var instrument = new Instrument("Strat", "Fender", null, null, type.Id, store.Id);
+        harness.Context.Set<Instrument>().Add(instrument);
+        await harness.Context.SaveChangesAsync();
+        var rental = new InstrumentRental(instrument.Id, harness.Student.Id, store.Id, Now, null);
+        rental.Approve(50m, null, Now, 1);
+        rental.Pickup(Now);
+        rental.Complete(Now, null);
+        harness.Context.Set<InstrumentRental>().Add(rental);
+        await harness.Context.SaveChangesAsync();
+
+        instrument.SoftDelete();
+        await harness.Context.SaveChangesAsync();
+
+        harness.Context.Set<Announcement>().Add(new Announcement("Store note", "For the store", null, store.Id, Now));
+        await harness.Context.SaveChangesAsync();
+
+        var actor = new StubCurrentActor(student: harness.Student);
+        var service = new StudentAnnouncementFeedService(harness.Context, actor, TestMapper.Create());
+
+        var result = await service.GetFeedForStudentAsync(new AnnouncementSearchObject { Page = 1, PageSize = 10 });
+
+        Assert.Contains(result.Items, a => a.Title == "Store note");
+    }
 }

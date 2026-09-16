@@ -239,6 +239,11 @@ public sealed class RentalPaymentServiceTests
         Assert.Equal(PaymentStatus.PartiallyRefunded, dto.Status);
         Assert.Equal(2000, dto.RefundedCents);
         Assert.NotNull(dto.RefundedAt);
+
+        var second = await service.RefundAsync(rental.Id, 1500);
+
+        Assert.Equal(PaymentStatus.PartiallyRefunded, second.Status);
+        Assert.Equal(3500, second.RefundedCents);
     }
 
     [Fact]

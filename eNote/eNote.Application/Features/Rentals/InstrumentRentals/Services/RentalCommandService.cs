@@ -33,6 +33,7 @@ public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, 
             }
 
             var hasUnpaidDebt = await context.Set<InstrumentRental>()
+                .IgnoreQueryFilters()
                 .AnyAsync(x => x.StudentProfileId == studentProfileId
                     && (x.RentalStatus == InstrumentRentalStatus.Completed || x.RentalStatus == InstrumentRentalStatus.ReturnedEarly)
                     && !x.IsPaid, cancellationToken);

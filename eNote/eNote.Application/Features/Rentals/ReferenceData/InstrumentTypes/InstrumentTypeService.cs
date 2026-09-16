@@ -37,7 +37,7 @@ public sealed class InstrumentTypeService(IAppDbContext context) : ReferenceData
 
     protected override async Task EnsureDeletableAsync(InstrumentType entity, CancellationToken ct)
     {
-        if (await Db.Set<Instrument>().AnyAsync(x => x.InstrumentTypeId == entity.Id, ct))
+        if (await Db.Set<Instrument>().IgnoreQueryFilters().AnyAsync(x => x.InstrumentTypeId == entity.Id, ct))
         {
             throw new BusinessException(Messages.InstrumentTypeDeleteBlocked);
         }
