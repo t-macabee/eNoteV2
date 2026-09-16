@@ -65,7 +65,7 @@ class _AnnouncementListScreenState extends State<AnnouncementListScreen> {
             value: (item) => formatDate(item.publishedAt),
           ),
         ],
-        fetcher: (page, pageSize, search) => widget.provider.search(pagedQuery(page, pageSize, search)),
+        fetcher: (page, pageSize, search) => widget.provider.search(pagedQuery(page, pageSize, search, searchField: 'title')),
         onAdd: () => _openForm(),
         onRowTap: (context, item) => AnnouncementDetailDialog.show(context, item),
         onEdit: (context, item) => _openForm(item),

@@ -381,7 +381,7 @@ class _RentalDetailScreenState extends State<RentalDetailScreen> {
               ),
               _chargeRow(
                 'Datum povraćaja',
-                formatDate(_payment!.refundedAt!),
+                formatDateNullable(_payment!.refundedAt),
               ),
               _chargeRow(
                 'Status',

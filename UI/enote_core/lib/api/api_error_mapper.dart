@@ -59,6 +59,9 @@ class ApiError {
         return ApiError.fromJson(decoded);
       }
     } catch (_) {}
+    if (trimmed.startsWith('<')) {
+      return ApiError(status: 0, code: '', message: '');
+    }
     return ApiError(status: 0, code: '', message: trimmed);
   }
 }

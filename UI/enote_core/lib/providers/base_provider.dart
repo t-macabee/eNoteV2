@@ -20,6 +20,8 @@ abstract class ReadOnlyProvider<T> with ChangeNotifier {
   final ApiClient apiClient;
   final String endpoint;
 
+  bool _disposed = false;
+
   ReadOnlyProvider({
     required this.apiClient,
     required this.endpoint,
@@ -69,6 +71,19 @@ abstract class ReadOnlyProvider<T> with ChangeNotifier {
   }
 
   Future<PagedResult<T>> search(Map<String, dynamic> params) => getPage(params: params);
+
+  /// Mutations notify after an await; dialog-scoped providers can be disposed
+  /// before that completes, so a late notify is dropped instead of throwing.
+  @override
+  void notifyListeners() {
+    if (!_disposed) super.notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _disposed = true;
+    super.dispose();
+  }
 }
 
 /// Full CRUD surface (without delegated-user provisioning).

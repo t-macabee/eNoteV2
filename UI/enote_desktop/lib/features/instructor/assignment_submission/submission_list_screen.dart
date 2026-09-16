@@ -121,7 +121,7 @@ class _SubmissionListScreenState extends State<SubmissionListScreen> {
         title: 'Predaje — ${widget.assignmentTitle}',
         presentation: widget.presentation,
         showAddButton: false,
-        searchHint: 'Pretraži...',
+        showSearchBar: false,
         columns: [
           ColumnSpec<AssignmentSubmissionDto>(
             label: 'Student',

@@ -157,4 +157,49 @@ void main() {
     expect(find.text('Store objava'), findsOneWidget);
     expect(fetchCalled, isTrue);
   });
+
+  testWidgets('AnnouncementListScreen search filters on title', (tester) async {
+    tester.view.physicalSize = const Size(1400, 1000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final queries = <Map<String, String>>[];
+
+    final client = FakeClient((request) async {
+      queries.add(request.url.queryParameters);
+      return http.StreamedResponse(
+        Stream.value(utf8.encode(jsonEncode({
+          'items': [],
+          'page': 1,
+          'pageSize': 20,
+          'totalCount': 0,
+        }))),
+        200,
+      );
+    });
+
+    final authState = AuthState(
+      baseUrl: 'http://localhost/',
+      httpClient: client,
+      tokenReader: () => fakeJwt(username: 'test', role: 'Instructor'),
+    );
+    final apiClient = ApiClient(
+      baseUrl: 'http://localhost/',
+      authState: authState,
+      httpClient: client,
+    );
+    final provider = AnnouncementProvider(apiClient: apiClient, courseId: 1);
+
+    await tester.pumpWidget(MaterialApp(
+      home: AnnouncementListScreen(provider: provider, title: 'Objave'),
+    ));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField), 'ispit');
+    await pumpPastDebounce(tester);
+    await tester.pumpAndSettle();
+
+    expect(queries.any((q) => q['title'] == 'ispit'), isTrue);
+  });
 }

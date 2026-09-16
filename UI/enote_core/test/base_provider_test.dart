@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -17,6 +18,22 @@ class _TestProvider extends ReadOnlyProvider<Map<String, dynamic>> {
   }) {
     return parsePage(response, fromJson, params: params);
   }
+}
+
+class _TestCrudProvider extends CrudProvider<Map<String, dynamic>> {
+  _TestCrudProvider({required super.apiClient, required super.endpoint});
+
+  @override
+  Map<String, dynamic> fromJson(Map<String, dynamic> json) => json;
+}
+
+class _DeferredClient extends http.BaseClient {
+  final Completer<http.StreamedResponse> completer =
+      Completer<http.StreamedResponse>();
+
+  @override
+  Future<http.StreamedResponse> send(http.BaseRequest request) =>
+      completer.future;
 }
 
 void main() {
@@ -103,6 +120,30 @@ void main() {
       expect(result.page, 3);
       expect(result.pageSize, 15);
       expect(result.totalCount, isNull);
+    });
+  });
+
+  group('CrudProvider dispose guard', () {
+    test('insert does not notify after dispose', () async {
+      final client = _DeferredClient();
+      final apiClient = ApiClient(
+        baseUrl: 'http://localhost/',
+        authState: AuthState(),
+        httpClient: client,
+      );
+      final provider =
+          _TestCrudProvider(apiClient: apiClient, endpoint: 'test');
+
+      final pending = provider.insert({'name': 'x'});
+      provider.dispose();
+
+      client.completer.complete(http.StreamedResponse(
+        Stream.value(utf8.encode(jsonEncode({'id': 1}))),
+        200,
+        headers: jsonHeaders,
+      ));
+
+      await expectLater(pending, completes);
     });
   });
 }

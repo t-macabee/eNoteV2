@@ -67,4 +67,20 @@ void main() {
       });
     });
   });
+
+  group('ApiErrorMapper non-JSON body', () {
+    test('HTML body falls back to the default message', () {
+      expect(
+        ApiErrorMapper.mapError(502, '<html><body>Bad Gateway</body></html>'),
+        'Greška na serveru. Pokušajte ponovo kasnije.',
+      );
+    });
+
+    test('plain-text body is returned verbatim', () {
+      expect(
+        ApiErrorMapper.mapError(400, 'Neispravan zahtjev.'),
+        'Neispravan zahtjev.',
+      );
+    });
+  });
 }
