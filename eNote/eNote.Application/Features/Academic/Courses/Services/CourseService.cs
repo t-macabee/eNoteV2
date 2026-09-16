@@ -309,10 +309,15 @@ public sealed class CourseService(IAppDbContext context, IMapper mapper, ICurren
         entity.SoftDelete();
         entity.UpdatedById = currentUser.UserId;
 
-        await context.Set<Lecture>()
+        var lectures = await context.Set<Lecture>()
             .Where(l => l.CourseId == entity.Id)
-            .ExecuteUpdateAsync(s => s.SetProperty(l => l.IsActive, false)
-            .SetProperty(l => l.UpdatedById, currentUser.UserId), cancellationToken);
+            .ToListAsync(cancellationToken);
+
+        foreach (var lecture in lectures)
+        {
+            lecture.SoftDelete();
+            lecture.UpdatedById = currentUser.UserId;
+        }
 
         await context.SaveChangesAsync(cancellationToken);
     }

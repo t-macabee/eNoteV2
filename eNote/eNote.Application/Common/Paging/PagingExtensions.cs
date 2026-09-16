@@ -1,10 +1,11 @@
 ﻿using eNote.Application.Common.Search;
+using eNote.Domain.Entities.Shared.Base;
 
 namespace eNote.Application.Common.Paging;
 
 public static class PagingExtensions
 {
-    public static async Task<PagedResult<TModel>> ToPagedResultAsync<TEntity, TSearch, TModel>(this IQueryable<TEntity> query, TSearch search, Func<TEntity, TModel> map, Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>>? orderBy = null, CancellationToken ct = default) where TSearch : BaseSearchObject
+    public static async Task<PagedResult<TModel>> ToPagedResultAsync<TEntity, TSearch, TModel>(this IQueryable<TEntity> query, TSearch search, Func<TEntity, TModel> map, Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>>? orderBy = null, CancellationToken ct = default) where TSearch : BaseSearchObject where TEntity : IEntity
     {
         var (page, pageSize, total, entities) = await FetchPageAsync(query, search, orderBy, ct);
 
@@ -17,7 +18,7 @@ public static class PagingExtensions
         };
     }
 
-    public static async Task<PagedResult<TModel>> ToPagedResultAsync<TEntity, TSearch, TModel>(this IQueryable<TEntity> query, TSearch search, Func<TEntity, Task<TModel>> mapAsync, Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>>? orderBy = null, CancellationToken ct = default) where TSearch : BaseSearchObject
+    public static async Task<PagedResult<TModel>> ToPagedResultAsync<TEntity, TSearch, TModel>(this IQueryable<TEntity> query, TSearch search, Func<TEntity, Task<TModel>> mapAsync, Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>>? orderBy = null, CancellationToken ct = default) where TSearch : BaseSearchObject where TEntity : IEntity
     {
         var (page, pageSize, total, entities) = await FetchPageAsync(query, search, orderBy, ct);
 
@@ -32,7 +33,7 @@ public static class PagingExtensions
         };
     }
 
-    private static async Task<(int Page, int PageSize, int? TotalCount, List<TEntity> Entities)> FetchPageAsync<TEntity, TSearch>(IQueryable<TEntity> query, TSearch search, Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>>? orderBy, CancellationToken ct) where TSearch : BaseSearchObject
+    private static async Task<(int Page, int PageSize, int? TotalCount, List<TEntity> Entities)> FetchPageAsync<TEntity, TSearch>(IQueryable<TEntity> query, TSearch search, Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>>? orderBy, CancellationToken ct) where TSearch : BaseSearchObject where TEntity : IEntity
     {
         int? total = null;
 
@@ -45,7 +46,11 @@ public static class PagingExtensions
 
         if (orderBy is not null)
         {
-            query = orderBy(query);
+            query = orderBy(query).ThenBy(x => x.Id);
+        }
+        else
+        {
+            query = query.OrderBy(x => x.Id);
         }
 
         var entities = await query

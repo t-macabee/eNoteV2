@@ -31,8 +31,7 @@ public sealed class AddressService(IAppDbContext context) : ReferenceDataCrudSer
     {
         IQueryable<Address> query = Db.Set<Address>().AsNoTracking().Include(a => a.City);
         query = ApplySearch(query, search);
-        query = ApplyDefaultOrder(query);
-        return await query.ToPagedResultAsync(search, Map, ct: cancellationToken);
+        return await query.ToPagedResultAsync(search, Map, ApplyDefaultOrder, ct: cancellationToken);
     }
 
     public override async Task<AddressReferenceDto> GetByIdAsync(int id, CancellationToken cancellationToken = default)

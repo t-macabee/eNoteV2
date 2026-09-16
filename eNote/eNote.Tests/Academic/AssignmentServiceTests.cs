@@ -114,4 +114,29 @@ public sealed class AssignmentServiceTests
         Assert.Equal("Homework", dto.Title);
     }
 
+    [Fact]
+    public async Task GetForStudentAsync_PagesTiedDueAt_WithoutDuplicateOrGap()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var dueAt = Now.AddDays(7);
+        var third = new Assignment("Homework 3", "Do it", dueAt, harness.Lecture.Id) { Id = 3 };
+        var first = new Assignment("Homework 1", "Do it", dueAt, harness.Lecture.Id) { Id = 1 };
+        var second = new Assignment("Homework 2", "Do it", dueAt, harness.Lecture.Id) { Id = 2 };
+        harness.Context.Set<Assignment>().Add(third);
+        await harness.Context.SaveChangesAsync();
+        harness.Context.Set<Assignment>().Add(first);
+        await harness.Context.SaveChangesAsync();
+        harness.Context.Set<Assignment>().Add(second);
+        await harness.Context.SaveChangesAsync();
+        var actor = new StubCurrentActor(student: harness.Student);
+        var service = AcademicTestData.CreateService<AssignmentService>(harness.Context, harness.Instructor, actor);
+
+        var page1 = await service.GetForStudentAsync(new AssignmentSearchObject { Page = 1, PageSize = 2 });
+        var page2 = await service.GetForStudentAsync(new AssignmentSearchObject { Page = 2, PageSize = 2 });
+
+        var ids = page1.Items.Select(a => a.Id).Concat(page2.Items.Select(a => a.Id)).ToList();
+        Assert.Equal(new[] { 1, 2, 3 }, ids);
+        Assert.Equal(ids.Distinct().Count(), ids.Count);
+    }
+
 }

@@ -12,11 +12,6 @@ namespace eNote.Tests.Academic;
 
 public sealed class CourseServiceTests
 {
-    // NOTE: DeleteAsync's happy path deactivates the course's Lectures via ExecuteUpdateAsync,
-    // which the EF Core InMemory test provider cannot translate. Same reason
-    // NotificationService.MarkAllReadAsync has no unit test here. Only the 404 branch (which
-    // runs before ExecuteUpdate) is unit-testable under the current harness.
-
     private static readonly DateTime Now = new(2026, 7, 1, 12, 0, 0, DateTimeKind.Utc);
 
     [Fact]
@@ -487,6 +482,45 @@ public sealed class CourseServiceTests
         var result = await service.GetPagedForStudentAsync(new CourseSearchObject());
 
         Assert.DoesNotContain(result.Items, c => c.Id == harness.Course.Id);
+    }
+
+    [Fact]
+    public async Task DeleteAsync_SoftDeletesCourse_AndDeactivatesEveryLecture_WithAuditStamp()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var secondLecture = new Lecture("Second lesson", "Room 2", 45, Now.AddDays(1), LectureType.Practical, 20, harness.Course.Id);
+        harness.Context.Set<Lecture>().Add(secondLecture);
+        await harness.Context.SaveChangesAsync();
+        var actor = new StubCurrentActor(instructor: harness.Instructor, userId: 7);
+        var service = CreateService(harness.Context, harness.Instructor, actor);
+
+        await service.DeleteAsync(harness.Course.Id);
+
+        var course = await harness.Context.Set<Course>().AsNoTracking().IgnoreQueryFilters().SingleAsync(c => c.Id == harness.Course.Id);
+        Assert.False(course.IsActive);
+        Assert.False(course.IsPublished);
+        Assert.Equal(Now, course.UpdatedAt);
+        Assert.Equal(7, course.UpdatedById);
+        var lectures = await harness.Context.Set<Lecture>().AsNoTracking().IgnoreQueryFilters().Where(l => l.CourseId == harness.Course.Id).ToListAsync();
+        Assert.Equal(2, lectures.Count);
+        Assert.All(lectures, lecture =>
+        {
+            Assert.False(lecture.IsActive);
+            Assert.Equal(Now, lecture.UpdatedAt);
+            Assert.Equal(7, lecture.UpdatedById);
+        });
+    }
+
+    [Fact]
+    public async Task DeleteAsync_Throws_WhenCourseBelongsToAnotherInstructor()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var otherInstructor = new Instructor(200);
+        harness.Context.Set<Instructor>().Add(otherInstructor);
+        await harness.Context.SaveChangesAsync();
+        var service = CreateService(harness.Context, otherInstructor);
+
+        await Assert.ThrowsAsync<NotFoundException>(() => service.DeleteAsync(harness.Course.Id));
     }
 
     private static async Task CreateActiveUserAsync(UserManager<AppUser> userManager, int id, string username, string firstName, string lastName)

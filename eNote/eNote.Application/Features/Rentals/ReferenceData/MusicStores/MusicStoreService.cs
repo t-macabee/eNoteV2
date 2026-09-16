@@ -35,8 +35,7 @@ public sealed class MusicStoreService(IAppDbContext context, IFileStorageService
     {
         IQueryable<MusicStore> query = Db.Set<MusicStore>().AsNoTracking().Include(x => x.Address).ThenInclude(a => a!.City);
         query = ApplySearch(query, search);
-        query = ApplyDefaultOrder(query);
-        return await query.ToPagedResultAsync(search, Map, ct: cancellationToken);
+        return await query.ToPagedResultAsync(search, Map, ApplyDefaultOrder, ct: cancellationToken);
     }
 
     public override async Task<MusicStoreDto> GetByIdAsync(int id, CancellationToken cancellationToken = default)

@@ -40,13 +40,18 @@ public sealed class AssignmentSubmissionServiceTests
         var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
         var assignment = new Assignment("Homework", "Do it", Now.AddDays(7), harness.Lecture.Id);
         harness.Context.Set<Assignment>().Add(assignment);
+        var submission = new AssignmentSubmission(assignment.Id, harness.Student.Id);
+        submission.Submit("/hw.pdf", Now);
+        harness.Context.Set<AssignmentSubmission>().Add(submission);
         await harness.Context.SaveChangesAsync();
-        var service = CreateService(harness.Context, harness.Instructor, new RecordingFileStorageService(), harness.Student);
+        var fileStorage = new RecordingFileStorageService();
+        var service = CreateService(harness.Context, harness.Instructor, fileStorage, harness.Student);
         using var stream = new MemoryStream([1, 2, 3]);
-        await service.SubmitWithFileAsync(assignment.Id, stream, "hw.pdf", "application/pdf");
 
         await Assert.ThrowsAsync<ConflictException>(() =>
             service.SubmitWithFileAsync(assignment.Id, stream, "hw2.pdf", "application/pdf"));
+
+        Assert.Empty(fileStorage.SavedFiles);
     }
 
     [Fact]
@@ -56,11 +61,14 @@ public sealed class AssignmentSubmissionServiceTests
         var assignment = new Assignment("Homework", "Do it", Now.AddDays(-1), harness.Lecture.Id);
         harness.Context.Set<Assignment>().Add(assignment);
         await harness.Context.SaveChangesAsync();
-        var service = CreateService(harness.Context, harness.Instructor, new RecordingFileStorageService(), harness.Student);
+        var fileStorage = new RecordingFileStorageService();
+        var service = CreateService(harness.Context, harness.Instructor, fileStorage, harness.Student);
         using var stream = new MemoryStream([1, 2, 3]);
 
         await Assert.ThrowsAsync<BusinessException>(() =>
             service.SubmitWithFileAsync(assignment.Id, stream, "hw.pdf", "application/pdf"));
+
+        Assert.Empty(fileStorage.SavedFiles);
     }
 
     [Fact]
@@ -135,13 +143,16 @@ public sealed class AssignmentSubmissionServiceTests
         await harness.Context.SaveChangesAsync();
         var inner = new Exception($"duplicate key value violates unique constraint \"{DbConstraintNames.AssignmentSubmissionAssignmentIdStudentIdUniqueIndex}\"");
         var context = new ThrowingSaveDbContext(harness.Context, new DbUpdateException("Unique constraint violated.", inner));
-        var service = CreateService(context, harness.Context, harness.Instructor, new RecordingFileStorageService(), harness.Student);
+        var fileStorage = new RecordingFileStorageService();
+        var service = CreateService(context, harness.Context, harness.Instructor, fileStorage, harness.Student);
         using var stream = new MemoryStream([1, 2, 3]);
 
         var ex = await Assert.ThrowsAsync<ConflictException>(() =>
             service.SubmitWithFileAsync(assignment.Id, stream, "hw.pdf", "application/pdf"));
 
         Assert.Equal(Messages.AssignmentAlreadySubmitted, ex.Message);
+        Assert.Single(fileStorage.SavedFiles);
+        Assert.Single(fileStorage.DeletedPaths);
     }
 
     // Unique-violation coverage uses ThrowingSaveDbContext (see SubmitWithFileAsync_TranslatesUniqueIndexViolation_ToConflict); the InMemory provider enforces no unique index.

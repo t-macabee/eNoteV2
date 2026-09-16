@@ -18,8 +18,33 @@ public sealed class AssignmentSubmissionService(
 {
     public async Task<AssignmentSubmissionDto> SubmitWithFileAsync(int assignmentId, Stream stream, string fileName, string contentType, CancellationToken ct = default)
     {
+        var (student, assignment, existing) = await ValidateSubmissionAsync(assignmentId, ct);
+
         var path = await fileStorage.SaveAssignmentAsync(stream, fileName, contentType, ct);
-        return await SubmitAsync(assignmentId, path, ct);
+
+        try
+        {
+            if (existing is null)
+            {
+                existing = new AssignmentSubmission(assignment.Id, student.Id)
+                {
+                    CreatedById = currentUser.UserId
+                };
+                assignment.AssignmentSubmissions.Add(existing);
+            }
+
+            existing.Submit(path?.Trim(), clock.UtcNow);
+            existing.UpdatedById = currentUser.UserId;
+
+            await SaveWithSubmissionConflictMessageAsync(ct);
+        }
+        catch
+        {
+            fileStorage.Delete(path);
+            throw;
+        }
+
+        return MapSubmission(existing, await displayNames.GetStudentDisplayNameAsync(student));
     }
 
     public async Task<AssignmentSubmissionDto> GetOwnSubmissionAsync(int assignmentId, CancellationToken cancellationToken = default)
@@ -124,7 +149,7 @@ public sealed class AssignmentSubmissionService(
         return MapSubmission(submission, await displayNames.GetStudentDisplayNameAsync(submission.Student));
     }
 
-    private async Task<AssignmentSubmissionDto> SubmitAsync(int assignmentId, string filePath, CancellationToken cancellationToken)
+    private async Task<(Student Student, Assignment Assignment, AssignmentSubmission? Existing)> ValidateSubmissionAsync(int assignmentId, CancellationToken cancellationToken)
     {
         var student = await students.GetCurrentStudentAsync();
 
@@ -146,21 +171,7 @@ public sealed class AssignmentSubmissionService(
             throw new BusinessException(Messages.AssignmentPastDue);
         }
 
-        if (existing is null)
-        {
-            existing = new AssignmentSubmission(assignment.Id, student.Id)
-            {
-                CreatedById = currentUser.UserId
-            };
-            assignment.AssignmentSubmissions.Add(existing);
-        }
-
-        existing.Submit(filePath?.Trim(), clock.UtcNow);
-        existing.UpdatedById = currentUser.UserId;
-
-        await SaveWithSubmissionConflictMessageAsync(cancellationToken);
-
-        return MapSubmission(existing, await displayNames.GetStudentDisplayNameAsync(student));
+        return (student, assignment, existing);
     }
 
     private async Task SaveWithSubmissionConflictMessageAsync(CancellationToken cancellationToken)

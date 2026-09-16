@@ -55,8 +55,7 @@ public sealed class EventService(IAppDbContext context, ICurrentUserContext curr
             .Include(e => e.Instructor);
 
         query = ApplySearch(query, search);
-        query = ApplyDefaultOrder(query);
-        return await query.ToPagedResultAsync(search, Map, ct: cancellationToken);
+        return await query.ToPagedResultAsync(search, Map, ApplyDefaultOrder, ct: cancellationToken);
     }
 
     public override async Task<EventDto> GetByIdAsync(int id, CancellationToken cancellationToken = default)
@@ -88,8 +87,7 @@ public sealed class EventService(IAppDbContext context, ICurrentUserContext curr
                 en.CourseId == e.CourseId));
 
         query = ApplySearch(query, search);
-        query = ApplyDefaultOrder(query);
-        return await query.ToPagedResultAsync(search, Map, ct: cancellationToken);
+        return await query.ToPagedResultAsync(search, Map, ApplyDefaultOrder, ct: cancellationToken);
     }
 
     public override async Task<EventDto> CreateAsync(EventRequest request, CancellationToken cancellationToken = default)

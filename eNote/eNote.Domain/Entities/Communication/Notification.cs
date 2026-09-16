@@ -1,8 +1,9 @@
+using eNote.Domain.Entities.Shared.Base;
+
 namespace eNote.Domain.Entities.Communication;
 
-public sealed class Notification
+public sealed class Notification : BaseEntity
 {
-    public int Id { get; private set; }
     public int UserId { get; private set; }
     public int? RentalId { get; private set; }
     public int? LectureId { get; private set; }

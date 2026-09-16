@@ -18,9 +18,8 @@ public abstract class ReferenceDataCrudService<TEntity, TDto, TRequest, TSearch>
     {
         var query = Db.Set<TEntity>().AsNoTracking();
         query = ApplySearch(query, search);
-        query = ApplyDefaultOrder(query);
 
-        return await query.ToPagedResultAsync(search, Map, ct: cancellationToken);
+        return await query.ToPagedResultAsync(search, Map, ApplyDefaultOrder, ct: cancellationToken);
     }
 
     public virtual async Task<TDto> GetByIdAsync(int id, CancellationToken cancellationToken = default)
