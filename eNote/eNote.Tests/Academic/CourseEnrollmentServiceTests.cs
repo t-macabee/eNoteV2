@@ -80,6 +80,46 @@ public sealed class CourseEnrollmentServiceTests
     }
 
     [Fact]
+    public async Task UnenrollAsync_Throws_WhenOpenIntentInsideReuseWindow()
+    {
+        await using var context = CreateContext();
+        var (student, course) = await SeedStudentAndCourseAsync(context, hasActiveMembership: true);
+        var enrollment = new Enrollment(student.Id, course.Id, EnrollmentStatus.Active);
+        context.Set<Enrollment>().Add(enrollment);
+        await context.SaveChangesAsync();
+        context.Set<CoursePayment>().Add(new CoursePayment(enrollment.Id, "pi_open", 10000, "bam", PaymentStatus.RequiresAction));
+        await context.SaveChangesAsync();
+        var service = CreateService(context, student);
+
+        var ex = await Assert.ThrowsAsync<BusinessException>(() => service.UnenrollAsync(course.Id));
+
+        Assert.Equal(Messages.UnenrollBlockedByPendingPayment, ex.Message);
+        var stored = await context.Set<Enrollment>().SingleAsync(x => x.StudentId == student.Id && x.CourseId == course.Id);
+        Assert.Equal(EnrollmentStatus.Active, stored.EnrollmentStatus);
+    }
+
+    [Fact]
+    public async Task UnenrollAsync_Succeeds_WhenIntentOlderThanReuseWindow()
+    {
+        await using var context = CreateContext();
+        var (student, course) = await SeedStudentAndCourseAsync(context, hasActiveMembership: true);
+        var enrollment = new Enrollment(student.Id, course.Id, EnrollmentStatus.Active);
+        context.Set<Enrollment>().Add(enrollment);
+        await context.SaveChangesAsync();
+        var payment = new CoursePayment(enrollment.Id, "pi_old", 10000, "bam", PaymentStatus.RequiresAction);
+        context.Set<CoursePayment>().Add(payment);
+        await context.SaveChangesAsync();
+        payment.CreatedAt = Now.AddHours(-1);
+        await context.SaveChangesAsync();
+        var service = CreateService(context, student);
+
+        await service.UnenrollAsync(course.Id);
+
+        var stored = await context.Set<Enrollment>().SingleAsync(x => x.StudentId == student.Id && x.CourseId == course.Id);
+        Assert.Equal(EnrollmentStatus.Canceled, stored.EnrollmentStatus);
+    }
+
+    [Fact]
     public async Task UnenrollAsync_Succeeds_WhenMembershipIsInactive()
     {
 

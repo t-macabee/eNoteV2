@@ -20,6 +20,22 @@ void main() {
     test('regular amount', () {
       expect(formatKM(50), '50.00 KM');
     });
+
+    test('bam currency renders as KM', () {
+      expect(formatKM(50, currency: 'bam'), '50.00 KM');
+    });
+
+    test('empty currency falls back to KM', () {
+      expect(formatKM(50, currency: ''), '50.00 KM');
+    });
+
+    test('other currency is upper-cased', () {
+      expect(formatKM(50, currency: 'eur'), '50.00 EUR');
+    });
+
+    test('default currency stays KM', () {
+      expect(formatKM(50), '50.00 KM');
+    });
   });
 
   group('orDash', () {

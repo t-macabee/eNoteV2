@@ -305,7 +305,7 @@ class _RentalPaymentScreenState extends State<RentalPaymentScreen> {
   String? _successDetail() {
     final payment = _payment;
     if (payment == null) return null;
-    return formatPaymentDetail(payment.amountCents, payment.paidAt);
+    return formatPaymentDetail(payment.amountCents, payment.paidAt, currency: payment.currency);
   }
 
   Widget _review(InstrumentRentalDto rental) {

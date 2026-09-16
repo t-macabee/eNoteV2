@@ -5,6 +5,7 @@ public record RentalRefunded(
     int StudentUserId,
     int? ActorUserId,
     long RefundedCents,
+    string Currency,
     string InstrumentModel,
     string Title,
     string Body,

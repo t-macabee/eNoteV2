@@ -52,7 +52,11 @@ public sealed class DiResolutionTests
         services.AddSingleton<IConfiguration>(configuration);
         services.AddSingleton<IHostEnvironment>(new FakeHostEnvironment());
 
-        services.AddInfrastructure(configuration, bus => bus.AddConsumer<RentalStatusChangedPushConsumer>())
+        services.AddInfrastructure(configuration, bus =>
+        {
+            bus.AddConsumer<RentalStatusChangedPushConsumer>();
+            bus.AddConsumer<RentalRefundedPushConsumer>();
+        })
             .AddJwtAuthentication(configuration)
             .AddAuthorization()
             .AddApplicationServices(configuration)
@@ -71,7 +75,11 @@ public sealed class DiResolutionTests
         services.AddSingleton<IHostEnvironment>(new FakeHostEnvironment());
 
         services.AddScoped<ICurrentUserContext, WorkerActor>();
-        services.AddInfrastructure(configuration, bus => bus.AddConsumer<RentalStatusChangedConsumer>());
+        services.AddInfrastructure(configuration, bus =>
+        {
+            bus.AddConsumer<RentalStatusChangedConsumer>();
+            bus.AddConsumer<RentalRefundedConsumer>();
+        });
 
         await AssertAllENoteInterfacesResolvable(services);
     }

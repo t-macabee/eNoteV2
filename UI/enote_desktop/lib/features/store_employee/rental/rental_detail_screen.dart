@@ -377,7 +377,7 @@ class _RentalDetailScreenState extends State<RentalDetailScreen> {
               const SizedBox(height: 8),
               _chargeRow(
                 'Povrađeno',
-                formatKM(((_payment!.refundedCents ?? 0) / 100)),
+                formatKM(((_payment!.refundedCents ?? 0) / 100), currency: _payment!.currency),
               ),
               _chargeRow(
                 'Datum povraćaja',

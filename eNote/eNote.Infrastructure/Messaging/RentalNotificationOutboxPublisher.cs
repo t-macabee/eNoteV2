@@ -13,10 +13,12 @@ using System.Text.Json;
 
 namespace eNote.Infrastructure.Messaging;
 
-public sealed class RentalNotificationOutboxPublisher(IServiceProvider services, ILogger<RentalNotificationOutboxPublisher> logger) : BackgroundService
+public sealed class RentalNotificationOutboxPublisher(IServiceProvider services, ILogger<RentalNotificationOutboxPublisher> logger, TimeSpan? interval = null) : BackgroundService
 {
     private static readonly TimeSpan Interval = TimeSpan.FromSeconds(5);
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+
+    private readonly TimeSpan _interval = interval ?? Interval;
 
     private const int MaxAttempts = 5;
     private const int BatchSize = 50;
@@ -24,11 +26,20 @@ public sealed class RentalNotificationOutboxPublisher(IServiceProvider services,
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        using var timer = new PeriodicTimer(Interval);
+        using var timer = new PeriodicTimer(_interval);
         try
         {
             while (await timer.WaitForNextTickAsync(stoppingToken))
-                await ProcessBatchAsync(stoppingToken);
+            {
+                try
+                {
+                    await ProcessBatchAsync(stoppingToken);
+                }
+                catch (Exception ex) when (ex is not OperationCanceledException)
+                {
+                    logger.LogError(ex, "Outbox poll failed; retrying next tick");
+                }
+            }
         }
         catch (OperationCanceledException) { }
     }

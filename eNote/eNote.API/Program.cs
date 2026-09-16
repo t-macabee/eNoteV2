@@ -31,6 +31,7 @@ builder.Services
     .AddInfrastructure(builder.Configuration, bus =>
     {
         bus.AddConsumer<RentalStatusChangedPushConsumer>();
+        bus.AddConsumer<RentalRefundedPushConsumer>();
         bus.AddConsumer<LectureCancelledPushConsumer>();
         bus.AddConsumer<SubmissionGradedPushConsumer>();
     }, registerNotificationOutboxPublisher: false)

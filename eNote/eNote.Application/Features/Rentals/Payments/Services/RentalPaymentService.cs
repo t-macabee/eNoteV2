@@ -187,7 +187,7 @@ public sealed class RentalPaymentService(
 
             var dto = mapper.Map<InstrumentRentalDto>(rental);
             dto.ApplyCharges(rental, rental.CalculateCharges(clock.UtcNow));
-            await notificationDispatcher.DispatchPaymentRefundedAsync(dto, refund.AmountCents, currentUser.UserId);
+            await notificationDispatcher.DispatchPaymentRefundedAsync(dto, refund.AmountCents, payment.Currency, currentUser.UserId);
             await context.SaveChangesAsync(cancellationToken);
 
             logger.LogInformation("Refunded {AmountCents} {Currency} on PaymentIntent {PaymentIntentId} for rental {RentalId}", refund.AmountCents, payment.Currency, payment.StripePaymentIntentId, rental.Id);

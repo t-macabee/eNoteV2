@@ -37,15 +37,21 @@ String formatDisplayName(String? firstName, String? lastName, String? username) 
   return username ?? '-';
 }
 
-/// Formats a money amount as `X.XX KM`, or an em dash when null.
+/// Formats a money amount as `X.XX <currency>` (default `KM`), or an em dash
+/// when null.
 ///
-/// Use only for amounts displayed with a `KM` suffix today. Several
+/// Use only for money amounts. Several
 /// `toStringAsFixed(2)` sites are not money (grades, form-controller text)
 /// or carry the unit in a column header already — adding ` KM` there would
 /// duplicate the unit.
-String formatKM(double? value) {
+String formatKM(double? value, {String currency = 'KM'}) {
   if (value == null) return '—';
-  return '${value.toStringAsFixed(2)} KM';
+  return '${value.toStringAsFixed(2)} ${_currencyLabel(currency)}';
+}
+
+String _currencyLabel(String currency) {
+  if (currency.isEmpty || currency.toLowerCase() == 'bam') return 'KM';
+  return currency.toUpperCase();
 }
 
 /// Returns [s], or an em dash when null or empty.
@@ -62,8 +68,8 @@ String truncate(String text, int maxLength) {
 /// Formats a succeeded payment's amount and, when known, its paid date,
 /// joined with ` · ` — the shared D-state detail line for `PaymentStatusView`
 /// across the rental and tuition payment screens.
-String formatPaymentDetail(int amountCents, DateTime? paidAt) {
-  final parts = <String>[formatKM(amountCents / 100)];
+String formatPaymentDetail(int amountCents, DateTime? paidAt, {String currency = 'KM'}) {
+  final parts = <String>[formatKM(amountCents / 100, currency: currency)];
   if (paidAt != null) parts.add(formatDateTime(paidAt));
   return parts.join(' · ');
 }

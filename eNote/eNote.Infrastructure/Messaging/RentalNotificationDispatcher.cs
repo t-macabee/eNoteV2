@@ -45,22 +45,28 @@ public sealed class RentalNotificationDispatcher(
         return Task.CompletedTask;
     }
 
-    public Task DispatchPaymentRefundedAsync(InstrumentRentalDto rental, long refundedCents, int actorUserId)
+    public Task DispatchPaymentRefundedAsync(InstrumentRentalDto rental, long refundedCents, string currency, int actorUserId)
     {
         var amount = refundedCents / 100m;
+        var body = $"Za iznajmljivanje instrumenta {rental.InstrumentModel} vraćeno je {amount:F2} {FormatCurrency(currency)}.";
         var message = new RentalRefunded(
             rental.Id,
             rental.StudentUserId,
             actorUserId,
             refundedCents,
+            currency,
             rental.InstrumentModel,
             "Uplata vraćena",
-            $"Za iznajmljivanje instrumenta {rental.InstrumentModel} vraćeno je {amount:F2} EUR.",
+            body,
             clock.UtcNow);
 
         EnqueueRefundOutbox(message);
         return Task.CompletedTask;
     }
+
+    private static string FormatCurrency(string currency) =>
+        currency.Equals("bam", StringComparison.OrdinalIgnoreCase) ? "KM"
+        : currency.ToUpperInvariant();
 
     private static (string Title, string Body) BuildCreatedContent(InstrumentRentalDto rental) =>
         ("Zahtjev za iznajmljivanje poslan", $"Vaš zahtjev za instrument {rental.InstrumentModel} je poslan prodavnici {rental.StoreName} i čeka odobrenje.");

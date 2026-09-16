@@ -219,7 +219,7 @@ class _RentalDetailScreenState extends State<RentalDetailScreen> {
 
   String _refund(RentalPaymentDto payment) {
     final parts = <String>[
-      formatKM((payment.refundedCents ?? 0) / 100),
+      formatKM((payment.refundedCents ?? 0) / 100, currency: payment.currency),
       if (payment.refundedAt != null) formatDate(payment.refundedAt!),
       if (payment.status == PaymentStatus.refunded ||
           payment.status == PaymentStatus.partiallyRefunded)

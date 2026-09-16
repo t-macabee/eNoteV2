@@ -1,4 +1,5 @@
 using eNote.Application.Constants;
+using eNote.Application.Features.Rentals.Payments.Services;
 using Microsoft.Extensions.Logging;
 
 namespace eNote.Application.Features.Academic.Courses.Services;
@@ -67,6 +68,17 @@ public sealed class CourseEnrollmentService(
                 e.EnrollmentStatus == EnrollmentStatus.Active,
                 cancellationToken)
             ?? throw new BusinessException(Messages.StudentNotEnrolled);
+
+        var hasOpenPayment = await context.Set<CoursePayment>()
+            .AnyAsync(p => p.EnrollmentId == enrollment.Id
+                && p.Status == PaymentStatus.RequiresAction
+                && p.CreatedAt >= clock.UtcNow - PaymentGatewayHelpers.RequiresActionReuseWindow,
+                cancellationToken);
+
+        if (hasOpenPayment)
+        {
+            throw new BusinessException(Messages.UnenrollBlockedByPendingPayment);
+        }
 
         enrollment.UpdateStatus(EnrollmentStatus.Canceled);
         await context.SaveChangesAsync(cancellationToken);

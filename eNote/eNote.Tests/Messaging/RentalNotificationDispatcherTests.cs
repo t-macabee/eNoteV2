@@ -58,6 +58,25 @@ public sealed class RentalNotificationDispatcherTests
         Assert.Contains("Not in stock", row.PayloadJson);
     }
 
+    [Theory]
+    [InlineData("bam", "KM")]
+    [InlineData("eur", "EUR")]
+    public async Task DispatchPaymentRefundedAsync_FormatsCurrency(string currency, string expected)
+    {
+        await using var context = TestDbContextFactory.CreateContext(Now);
+        var dispatcher = new RentalNotificationDispatcher(context, new FixedClock(Now));
+
+        await dispatcher.DispatchPaymentRefundedAsync(CreateRentalDto(), refundedCents: 5000, currency: currency, actorUserId: 9);
+        await context.SaveChangesAsync();
+
+        var row = await context.Set<RentalNotificationOutbox>().SingleAsync();
+        var payload = JsonSerializer.Deserialize<RentalRefunded>(row.PayloadJson, new JsonSerializerOptions(JsonSerializerDefaults.Web));
+        Assert.NotNull(payload);
+        Assert.Contains("50", payload.Body);
+        Assert.EndsWith($"{expected}.", payload.Body);
+        Assert.Equal(currency, payload.Currency);
+    }
+
     private static InstrumentRentalDto CreateRentalDto() => new()
     {
         Id = 1,

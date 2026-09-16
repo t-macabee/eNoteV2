@@ -273,6 +273,7 @@ public sealed class RentalPaymentServiceTests
         Assert.Equal(5000, gateway.RefundCalls[0].AmountCents);
         Assert.Single(dispatcher.RefundCalls);
         Assert.Equal(5000, dispatcher.RefundCalls[0].RefundedCents);
+        Assert.Equal("eur", dispatcher.RefundCalls[0].Currency);
         Assert.Equal(storeActor.UserId, dispatcher.RefundCalls[0].ActorUserId);
     }
 

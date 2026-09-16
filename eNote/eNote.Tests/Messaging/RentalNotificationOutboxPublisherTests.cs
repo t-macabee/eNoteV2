@@ -5,7 +5,9 @@ using eNote.Infrastructure.Messaging;
 using eNote.Tests.TestUtils;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging.Abstractions;
 using System.Reflection;
 using System.Text.Json;
@@ -146,6 +148,24 @@ public sealed class RentalNotificationOutboxPublisherTests
         Assert.Null(updated.PublishedAt);
     }
 
+    [Fact]
+    public async Task ExecuteAsync_ContinuesAfterPollFailure()
+    {
+        var throwingContext = new ThrowingSetDbContext();
+        var provider = new StubServiceProvider(throwingContext, new StubPublishEndpoint(), new FixedClock(Now));
+        var publisher = new RentalNotificationOutboxPublisher(provider, NullLogger<RentalNotificationOutboxPublisher>.Instance, TimeSpan.FromMilliseconds(10));
+
+        await publisher.StartAsync(CancellationToken.None);
+        await Task.Delay(80);
+        await publisher.StopAsync(CancellationToken.None);
+
+        var executeTask = (Task)typeof(BackgroundService)
+            .GetProperty("ExecuteTask", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)!
+            .GetValue(publisher)!;
+        Assert.True(executeTask.IsCompletedSuccessfully, "ExecuteAsync faulted on a poll failure instead of retrying next tick");
+        Assert.True(throwingContext.SetCalls > 1, "the poll was not retried after the first failure");
+    }
+
     private static RentalNotificationOutboxPublisher CreatePublisher(ENoteContext context, StubPublishEndpoint? endpoint = null)
     {
         endpoint ??= new StubPublishEndpoint();
@@ -161,7 +181,7 @@ public sealed class RentalNotificationOutboxPublisherTests
         return (Task)method.Invoke(publisher, [CancellationToken.None])!;
     }
 
-    private sealed class StubServiceProvider(ENoteContext context, StubPublishEndpoint endpoint, IClock clock) : IServiceProvider
+    private sealed class StubServiceProvider(IAppDbContext context, StubPublishEndpoint endpoint, IClock clock) : IServiceProvider
     {
         public object? GetService(Type serviceType)
         {
@@ -187,6 +207,22 @@ public sealed class RentalNotificationOutboxPublisherTests
 
             return null;
         }
+    }
+
+    private sealed class ThrowingSetDbContext : IAppDbContext
+    {
+        public int SetCalls { get; private set; }
+
+        public DbSet<TEntity> Set<TEntity>() where TEntity : class
+        {
+            SetCalls++;
+            throw new InvalidOperationException("outbox poll failed");
+        }
+
+        public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default) => Task.FromResult(0);
+
+        public Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default) =>
+            throw new NotSupportedException();
     }
 
     private sealed class StubScopeFactory(IServiceProvider provider) : IServiceScopeFactory

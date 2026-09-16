@@ -235,7 +235,7 @@ class _TuitionPaymentScreenState extends State<TuitionPaymentScreen> {
   String? _successDetail() {
     final payment = _payment;
     if (payment == null) return null;
-    return formatPaymentDetail(payment.amountCents, payment.paidAt);
+    return formatPaymentDetail(payment.amountCents, payment.paidAt, currency: payment.currency);
   }
 
   Widget _review() {
