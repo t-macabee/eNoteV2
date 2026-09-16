@@ -260,13 +260,13 @@ public sealed class UserAccountService(UserManager<AppUser> userManager, IFileSt
         return (true, null);
     }
 
-    public async Task<(bool Success, string? Error)> DeleteUserAsync(int userId, CancellationToken cancellationToken = default)
+    public async Task<(bool Success, string? Error, string? PicturePath)> DeleteUserAsync(int userId, CancellationToken cancellationToken = default)
     {
         var user = await userManager.FindByIdAsync(userId.ToString());
 
         if (user is null)
         {
-            return (false, Messages.NotFound);
+            return (false, Messages.NotFound, null);
         }
 
         await userManager.UpdateSecurityStampAsync(user);
@@ -275,14 +275,9 @@ public sealed class UserAccountService(UserManager<AppUser> userManager, IFileSt
 
         if (!result.Succeeded)
         {
-            return (false, string.Join("; ", result.Errors.Select(e => e.Description)));
+            return (false, string.Join("; ", result.Errors.Select(e => e.Description)), null);
         }
 
-        if (!string.IsNullOrWhiteSpace(user.PicturePath))
-        {
-            fileStorage.Delete(user.PicturePath);
-        }
-
-        return (true, null);
+        return (true, null, user.PicturePath);
     }
 }

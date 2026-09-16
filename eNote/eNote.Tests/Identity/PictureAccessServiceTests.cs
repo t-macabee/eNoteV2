@@ -306,7 +306,7 @@ public sealed class PictureAccessServiceTests
             throw new NotSupportedException();
         public Task<(bool Success, string? Error)> SetActiveAsync(int userId, bool isActive, CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();
-        public Task<(bool Success, string? Error)> DeleteUserAsync(int userId, CancellationToken cancellationToken = default) =>
+        public Task<(bool Success, string? Error, string? PicturePath)> DeleteUserAsync(int userId, CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();
     }
 

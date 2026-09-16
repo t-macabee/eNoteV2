@@ -13,6 +13,7 @@ public sealed class UserProvisioningService(
     IAppDbContext context,
     IUserAccountService accountService,
     IClock clock,
+    IFileStorageService fileStorage,
     ICurrentUserContext? currentUserContext = null) : IUserProvisioningService
 {
     public async Task<(RegistrationResult? Registration, string? Error)> RegisterStudentAsync(RegisterRequest request, CancellationToken cancellationToken = default)
@@ -244,13 +245,18 @@ public sealed class UserProvisioningService(
             return (false, "Cannot delete your own account.");
         }
 
+        bool hasAuthoredHistory = await context.Set<eNote.Domain.Entities.Communication.Announcement>().IgnoreQueryFilters().AnyAsync(a => a.CreatedById == userId, cancellationToken) ||
+                                  await context.Set<eNote.Domain.Entities.Communication.Event>().IgnoreQueryFilters().AnyAsync(e => e.CreatedById == userId, cancellationToken) ||
+                                  await context.Set<eNote.Domain.Entities.Rentals.InstrumentRental>().IgnoreQueryFilters().AnyAsync(r => r.ApprovedById == userId || r.RejectedById == userId, cancellationToken);
+        if (hasAuthoredHistory) return (false, Messages.UserDeleteBlocked);
+
         var student = await context.Set<Student>().FirstOrDefaultAsync(s => s.AppUserId == userId, cancellationToken);
         if (student != null)
         {
-            bool hasDependents = await context.Set<eNote.Domain.Entities.Academic.Enrollment>().AnyAsync(e => e.StudentId == student.Id, cancellationToken) ||
-                                 await context.Set<eNote.Domain.Entities.Academic.Attendance>().AnyAsync(a => a.StudentId == student.Id, cancellationToken) ||
-                                 await context.Set<eNote.Domain.Entities.Assignments.AssignmentSubmission>().AnyAsync(s => s.StudentId == student.Id, cancellationToken) ||
-                                 await context.Set<eNote.Domain.Entities.Rentals.InstrumentRental>().AnyAsync(r => r.StudentProfileId == student.Id, cancellationToken);
+            bool hasDependents = await context.Set<eNote.Domain.Entities.Academic.Enrollment>().IgnoreQueryFilters().AnyAsync(e => e.StudentId == student.Id, cancellationToken) ||
+                                 await context.Set<eNote.Domain.Entities.Academic.Attendance>().IgnoreQueryFilters().AnyAsync(a => a.StudentId == student.Id, cancellationToken) ||
+                                 await context.Set<eNote.Domain.Entities.Assignments.AssignmentSubmission>().IgnoreQueryFilters().AnyAsync(s => s.StudentId == student.Id, cancellationToken) ||
+                                 await context.Set<eNote.Domain.Entities.Rentals.InstrumentRental>().IgnoreQueryFilters().AnyAsync(r => r.StudentProfileId == student.Id, cancellationToken);
             if (hasDependents) return (false, Messages.UserDeleteBlocked);
             
             context.Set<Student>().Remove(student);
@@ -259,8 +265,8 @@ public sealed class UserProvisioningService(
         var instructor = await context.Set<Instructor>().FirstOrDefaultAsync(i => i.AppUserId == userId, cancellationToken);
         if (instructor != null)
         {
-            bool hasDependents = await context.Set<eNote.Domain.Entities.Academic.Course>().AnyAsync(c => c.InstructorId == instructor.Id, cancellationToken) ||
-                                 await context.Set<eNote.Domain.Entities.Communication.Event>().AnyAsync(e => e.InstructorId == instructor.Id, cancellationToken);
+            bool hasDependents = await context.Set<eNote.Domain.Entities.Academic.Course>().IgnoreQueryFilters().AnyAsync(c => c.InstructorId == instructor.Id, cancellationToken) ||
+                                 await context.Set<eNote.Domain.Entities.Communication.Event>().IgnoreQueryFilters().AnyAsync(e => e.InstructorId == instructor.Id, cancellationToken);
             if (hasDependents) return (false, Messages.UserDeleteBlocked);
 
             context.Set<Instructor>().Remove(instructor);
@@ -276,7 +282,7 @@ public sealed class UserProvisioningService(
         
         await context.SaveChangesAsync(cancellationToken);
         
-        var (success, error) = await accountService.DeleteUserAsync(userId, cancellationToken);
+        var (success, error, picturePath) = await accountService.DeleteUserAsync(userId, cancellationToken);
         if (!success)
         {
             await transaction.RollbackAsync(cancellationToken);
@@ -284,6 +290,12 @@ public sealed class UserProvisioningService(
         }
 
         await transaction.CommitAsync(cancellationToken);
+
+        if (!string.IsNullOrWhiteSpace(picturePath))
+        {
+            fileStorage.Delete(picturePath);
+        }
+
         return (true, null);
     }
 

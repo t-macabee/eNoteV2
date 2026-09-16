@@ -129,7 +129,7 @@ public sealed class UserSelfServiceTests
         public Task<(bool Success, string? Error)> SetActiveAsync(int userId, bool isActive, CancellationToken cancellationToken = default) =>
             Task.FromResult((true, (string?)null));
 
-        public Task<(bool Success, string? Error)> DeleteUserAsync(int userId, CancellationToken cancellationToken = default) =>
-            Task.FromResult((true, (string?)null));
+        public Task<(bool Success, string? Error, string? PicturePath)> DeleteUserAsync(int userId, CancellationToken cancellationToken = default) =>
+            Task.FromResult((true, (string?)null, (string?)null));
     }
 }

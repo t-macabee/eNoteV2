@@ -399,6 +399,108 @@ public sealed class UserProvisioningServiceTests
     }
 
     [Fact]
+    public async Task DeleteUserAsync_FailsWithDependents_WhenCourseSoftDeleted()
+    {
+        await using var context = TestDbContextFactory.CreateContext(Now);
+        var student = new Student(appUserId: 15, enrollmentDate: Now);
+        context.Set<Student>().Add(student);
+        await context.SaveChangesAsync();
+
+        var course = new eNote.Domain.Entities.Academic.Course("Math", "Desc", 10, null, null, 1);
+        context.Set<eNote.Domain.Entities.Academic.Course>().Add(course);
+        await context.SaveChangesAsync();
+
+        context.Set<eNote.Domain.Entities.Academic.Enrollment>().Add(new eNote.Domain.Entities.Academic.Enrollment(student.Id, course.Id, eNote.Domain.Enums.EnrollmentStatus.Active));
+        await context.SaveChangesAsync();
+
+        course.SoftDelete();
+        await context.SaveChangesAsync();
+
+        var account = new RecordingUserAccountService();
+        var service = CreateService(context, account);
+
+        var (success, error) = await service.DeleteUserAsync(15);
+
+        Assert.False(success);
+        Assert.Equal(Messages.UserDeleteBlocked, error);
+    }
+
+    [Fact]
+    public async Task DeleteUserAsync_Fails_WhenUserAuthoredAnnouncement()
+    {
+        await using var context = TestDbContextFactory.CreateContext(Now);
+        context.Set<eNote.Domain.Entities.Communication.Announcement>().Add(new eNote.Domain.Entities.Communication.Announcement("Notice", "Body", null, 1, Now)
+        {
+            CreatedById = 55
+        });
+        await context.SaveChangesAsync();
+
+        var account = new RecordingUserAccountService();
+        var service = CreateService(context, account);
+
+        var (success, error) = await service.DeleteUserAsync(55);
+
+        Assert.False(success);
+        Assert.Equal(Messages.UserDeleteBlocked, error);
+    }
+
+    [Fact]
+    public async Task DeleteUserAsync_Fails_WhenUserIsRentalApprover()
+    {
+        await using var context = TestDbContextFactory.CreateContext(Now);
+        var rental = new InstrumentRental(instrumentId: 1, studentProfileId: 999, musicStoreId: 1, requestedAt: Now, note: null);
+        rental.Approve(100m, null, Now, approvedById: 55);
+        context.Set<InstrumentRental>().Add(rental);
+        await context.SaveChangesAsync();
+
+        var account = new RecordingUserAccountService();
+        var service = CreateService(context, account);
+
+        var (success, error) = await service.DeleteUserAsync(55);
+
+        Assert.False(success);
+        Assert.Equal(Messages.UserDeleteBlocked, error);
+    }
+
+    [Fact]
+    public async Task DeleteUserAsync_DeletesPictureAfterSuccessfulAccountDelete()
+    {
+        await using var context = TestDbContextFactory.CreateContext(Now);
+        var student = new Student(appUserId: 15, enrollmentDate: Now);
+        context.Set<Student>().Add(student);
+        await context.SaveChangesAsync();
+
+        var account = new RecordingUserAccountService { DeleteUserResult = (true, null, "/api/uploads/profile-pictures/pic.png") };
+        var fileStorage = new RecordingFileStorageService();
+        var service = CreateService(context, account, fileStorage: fileStorage);
+
+        var (success, error) = await service.DeleteUserAsync(15);
+
+        Assert.True(success);
+        Assert.Null(error);
+        Assert.Contains("/api/uploads/profile-pictures/pic.png", fileStorage.DeletedPaths);
+    }
+
+    [Fact]
+    public async Task DeleteUserAsync_KeepsPictureWhenAccountDeleteFails()
+    {
+        await using var context = TestDbContextFactory.CreateContext(Now);
+        var student = new Student(appUserId: 15, enrollmentDate: Now);
+        context.Set<Student>().Add(student);
+        await context.SaveChangesAsync();
+
+        var account = new RecordingUserAccountService { DeleteUserResult = (false, Messages.NotFound, "/api/uploads/profile-pictures/pic.png") };
+        var fileStorage = new RecordingFileStorageService();
+        var service = CreateService(context, account, fileStorage: fileStorage);
+
+        var (success, error) = await service.DeleteUserAsync(15);
+
+        Assert.False(success);
+        Assert.Equal(Messages.NotFound, error);
+        Assert.Empty(fileStorage.DeletedPaths);
+    }
+
+    [Fact]
     public async Task DeleteUserAsync_RejectsSelfDelete()
     {
         await using var context = TestDbContextFactory.CreateContext(Now);
@@ -414,8 +516,9 @@ public sealed class UserProvisioningServiceTests
     private static UserProvisioningService CreateService(
         ENoteContext context,
         IUserAccountService account,
-        ICurrentUserContext? currentUser = null) =>
-        new(context, account, new FixedClock(Now), currentUser ?? new StubCurrentActor());
+        ICurrentUserContext? currentUser = null,
+        IFileStorageService? fileStorage = null) =>
+        new(context, account, new FixedClock(Now), fileStorage ?? new StubFileStorageService(), currentUser ?? new StubCurrentActor());
 
     private sealed class RecordingUserAccountService : IUserAccountService
     {
@@ -462,7 +565,9 @@ public sealed class UserProvisioningServiceTests
             return Task.FromResult(SetActiveResult);
         }
 
-        public Task<(bool Success, string? Error)> DeleteUserAsync(int userId, CancellationToken cancellationToken = default) =>
-            Task.FromResult((true, (string?)null));
+        public (bool Success, string? Error, string? PicturePath) DeleteUserResult { get; set; } = (true, null, null);
+
+        public Task<(bool Success, string? Error, string? PicturePath)> DeleteUserAsync(int userId, CancellationToken cancellationToken = default) =>
+            Task.FromResult(DeleteUserResult);
     }
 }

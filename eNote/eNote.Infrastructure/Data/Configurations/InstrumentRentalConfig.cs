@@ -1,4 +1,5 @@
 using eNote.Application.Constants;
+using eNote.Infrastructure.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -16,6 +17,16 @@ public sealed class InstrumentRentalConfig : IEntityTypeConfiguration<Instrument
         builder.HasOne(x => x.Instrument)
                .WithMany(x => x.InstrumentRentals)
                .HasForeignKey(x => x.InstrumentId)
+               .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne<AppUser>()
+               .WithMany()
+               .HasForeignKey(x => x.ApprovedById)
+               .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne<AppUser>()
+               .WithMany()
+               .HasForeignKey(x => x.RejectedById)
                .OnDelete(DeleteBehavior.Restrict);
 
         builder.Property(x => x.MusicStoreId).IsRequired();

@@ -334,7 +334,7 @@ public sealed class ShopEmployeeServiceTests
 
         var actor = new StubCurrentActor(userId: 10);
         var account = new StubUserAccountService();
-        var provisioning = new UserProvisioningService(context, account, new SystemClock(), actor);
+        var provisioning = new UserProvisioningService(context, account, new SystemClock(), new StubFileStorageService(), actor);
         var service = new ShopEmployeeService(context, new StubUserIdentityService(), actor, provisioning);
 
         var (success, error) = await service.SetEmployeeActiveByManagerAsync(20, false);
@@ -360,7 +360,7 @@ public sealed class ShopEmployeeServiceTests
 
         var actor = new StubCurrentActor(userId: 10);
         var account = new StubUserAccountService();
-        var provisioning = new UserProvisioningService(context, account, new SystemClock(), actor);
+        var provisioning = new UserProvisioningService(context, account, new SystemClock(), new StubFileStorageService(), actor);
         var service = new ShopEmployeeService(context, new StubUserIdentityService(), actor, provisioning);
 
         var ex = await Assert.ThrowsAsync<AuthorizationException>(() =>
@@ -387,7 +387,7 @@ public sealed class ShopEmployeeServiceTests
 
         var actor = new StubCurrentActor(userId: 10);
         var account = new StubUserAccountService();
-        var provisioning = new UserProvisioningService(context, account, new SystemClock(), actor);
+        var provisioning = new UserProvisioningService(context, account, new SystemClock(), new StubFileStorageService(), actor);
         var service = new ShopEmployeeService(context, new StubUserIdentityService(), actor, provisioning);
 
         var ex = await Assert.ThrowsAsync<BusinessException>(() =>
@@ -412,7 +412,7 @@ public sealed class ShopEmployeeServiceTests
 
         var actor = new StubCurrentActor(userId: 10);
         var account = new StubUserAccountService();
-        var provisioning = new UserProvisioningService(context, account, new SystemClock(), actor);
+        var provisioning = new UserProvisioningService(context, account, new SystemClock(), new StubFileStorageService(), actor);
         var service = new ShopEmployeeService(context, new StubUserIdentityService(), actor, provisioning);
 
         var (success, error) = await service.SetEmployeeActiveByManagerAsync(10, false);
@@ -485,6 +485,6 @@ public sealed class ShopEmployeeServiceTests
         public Task<(Stream? Data, string? ContentType)> GetPictureAsync(int userId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<(bool Success, string? Error)> DeletePictureAsync(int userId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<(bool Success, string? Error)> ChangePasswordAsync(int userId, string currentPassword, string newPassword, CancellationToken cancellationToken = default) => throw new NotImplementedException();
-        public Task<(bool Success, string? Error)> DeleteUserAsync(int userId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<(bool Success, string? Error, string? PicturePath)> DeleteUserAsync(int userId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
     }
 }

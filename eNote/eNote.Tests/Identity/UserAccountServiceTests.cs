@@ -155,6 +155,25 @@ public sealed class UserAccountServiceTests
     }
 
     [Fact]
+    public async Task DeleteUserAsync_RemovesUser_AndReturnsPicturePathWithoutDeletingFile()
+    {
+        var harness = await CreateHarnessAsync();
+        var service = harness.Service;
+        await service.CreateUserAsync("jdoe", "jdoe@example.com", "Password1!", null, null);
+        var user = (await harness.UserManager.FindByNameAsync("jdoe"))!;
+        user.PicturePath = "/api/uploads/profile-pictures/pic.png";
+        await harness.UserManager.UpdateAsync(user);
+
+        var result = await service.DeleteUserAsync(user.Id);
+
+        Assert.True(result.Success);
+        Assert.Null(result.Error);
+        Assert.Equal("/api/uploads/profile-pictures/pic.png", result.PicturePath);
+        Assert.Null(await harness.UserManager.FindByIdAsync(user.Id.ToString()));
+        Assert.Empty(harness.FileStorage.DeletedPaths);
+    }
+
+    [Fact]
     public async Task ChangePasswordAsync_ChangesPassword()
     {
         var harness = await CreateHarnessAsync();
