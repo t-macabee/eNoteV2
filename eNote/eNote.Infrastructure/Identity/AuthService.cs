@@ -26,7 +26,7 @@ internal sealed class AuthService(UserManager<AppUser> userManager, SignInManage
 
         SignInResult result = await signInManager.CheckPasswordSignInAsync(user, model.Password, lockoutOnFailure: true);
 
-        if (result.IsLockedOut || await userManager.IsLockedOutAsync(user))
+        if (result.IsLockedOut)
         {
             throw new AuthenticationException(Messages.AccountLocked);
         }

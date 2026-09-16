@@ -42,7 +42,7 @@ builder.Services.AddInfrastructure(builder.Configuration, bus =>
     bus.AddConsumer<RentalRefundedConsumer>();
     bus.AddConsumer<LectureCancelledConsumer>();
     bus.AddConsumer<SubmissionGradedConsumer>();
-});
+}, validateJwtOptions: false);
 builder.Services.AddInfrastructureHealthChecks();
 builder.Services.AddHostedService<DatabaseHeartbeatService>();
 

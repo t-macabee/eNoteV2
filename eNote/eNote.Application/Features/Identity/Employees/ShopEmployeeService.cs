@@ -27,7 +27,7 @@ public sealed class ShopEmployeeService(
             .IgnoreQueryFilters()
             .AsNoTracking()
             .Include(x => x.MusicStore)
-            .Where(x => x.MusicStoreId == storeId && x.IsActive && x.AppUserId != currentEmployee.AppUserId)
+            .Where(x => x.MusicStoreId == storeId && x.AppUserId != currentEmployee.AppUserId)
             .OrderBy(x => x.Id)
             .ToListAsync(cancellationToken);
 
@@ -37,7 +37,8 @@ public sealed class ShopEmployeeService(
 
         List<ShopEmployeeDto> filtered = [.. employees
             .Select(x => Map(x, users.GetValueOrDefault(x.AppUserId)))
-            .Where(x => UserNameHelper.MatchesName(x.FirstName, x.LastName, x.Username, search.Name))];
+            .Where(x => UserNameHelper.MatchesName(x.FirstName, x.LastName, x.Username, search.Name))
+            .Where(x => !search.IsActive.HasValue || x.IsActive == search.IsActive.Value)];
 
         (var page, var pageSize) = PagingLimits.Normalize(search.Page, search.PageSize);
 

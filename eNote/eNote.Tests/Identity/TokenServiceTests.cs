@@ -1,6 +1,8 @@
 using eNote.Infrastructure.Identity;
 using eNote.Tests.TestUtils;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 
@@ -54,34 +56,39 @@ public sealed class TokenServiceTests
     }
 
     [Fact]
-    public void Constructor_Throws_WhenExpirationDaysMissing()
+    public void GenerateToken_Throws_WhenJwtKeyMissing()
     {
         var configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
         {
-            ["Jwt:Key"] = "test-signing-key-that-is-32-characters-long!!",
             ["Jwt:Issuer"] = "Issuer",
-            ["Jwt:Audience"] = "Audience"
+            ["Jwt:Audience"] = "Audience",
+            ["Jwt:ExpirationDays"] = "7"
         }).Build();
 
-        var ex = Assert.Throws<InvalidOperationException>(() => new TokenService(configuration, new FixedClock(Now)));
+        var services = new ServiceCollection();
+        services.AddOptions<JwtOptions>()
+            .Bind(configuration.GetSection(JwtOptions.SectionName))
+            .ValidateDataAnnotations();
+        var options = services.BuildServiceProvider().GetRequiredService<IOptions<JwtOptions>>();
 
-        Assert.Contains("Jwt:ExpirationDays", ex.Message);
+        var service = new TokenService(options, new FixedClock(Now));
+
+        var ex = Assert.Throws<OptionsValidationException>(() =>
+            service.GenerateToken(1, "jdoe", ["Student"]));
+
+        Assert.Contains("Key", ex.Message);
     }
 
     private static TokenService CreateService(int expirationDays, string? key = null) =>
-        new(BuildConfiguration(expirationDays, key), new FixedClock(Now));
+        new(Options.Create(BuildOptions(expirationDays, key)), new FixedClock(Now));
 
-    private static IConfiguration BuildConfiguration(int expirationDays, string? key)
+    private static JwtOptions BuildOptions(int expirationDays, string? key) => new()
     {
-        var values = new Dictionary<string, string?>
-        {
-            ["Jwt:Key"] = key ?? "test-signing-key-that-is-32-characters-long!!",
-            ["Jwt:Issuer"] = "Issuer",
-            ["Jwt:Audience"] = "Audience",
-            ["Jwt:ExpirationDays"] = expirationDays.ToString()
-        };
-        return new ConfigurationBuilder().AddInMemoryCollection(values).Build();
-    }
+        Key = key ?? "test-signing-key-that-is-32-characters-long!!",
+        Issuer = "Issuer",
+        Audience = "Audience",
+        ExpirationDays = expirationDays
+    };
 
     private static List<Claim> ReadClaims(string token) =>
         new JwtSecurityTokenHandler().ReadJwtToken(token).Claims.ToList();

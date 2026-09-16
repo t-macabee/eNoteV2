@@ -276,7 +276,7 @@ class ShopEmployeeDto {
       id: json['id'] as int? ?? 0,
       appUserId: json['appUserId'] as int? ?? 0,
       musicStoreId: json['musicStoreId'] as int? ?? 0,
-      storeName: json['storeName'] as String? ?? json['musicStoreName'] as String?,
+      storeName: json['storeName'] as String?,
       firstName: json['firstName'] as String?,
       lastName: json['lastName'] as String?,
       username: json['username'] as String?,

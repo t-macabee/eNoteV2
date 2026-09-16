@@ -1,4 +1,3 @@
-using Asp.Versioning;
 using eNote.API.Controllers.Base;
 using eNote.API.Extensions;
 using eNote.Application.Features.Identity.Auth;
@@ -9,8 +8,6 @@ using Microsoft.AspNetCore.RateLimiting;
 
 namespace eNote.API.Controllers.Auth;
 
-[ApiController]
-[ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/auth")]
 public sealed class AuthController(IAuthService authService) : CoreController
 {
@@ -57,7 +54,6 @@ public sealed class AuthController(IAuthService authService) : CoreController
         return NoContent();
     }
 
-    [Authorize]
     [HttpPost("logout")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> Logout()

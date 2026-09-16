@@ -1,3 +1,4 @@
+using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Localization;
 using eNote.Application.Constants;
 using eNote.Application.Features.Identity.Auth;
@@ -188,6 +189,21 @@ public sealed class UserProvisioningServiceTests
 
         var updated = await context.Set<Student>().SingleAsync(s => s.AppUserId == 5);
         Assert.True(updated.HasActiveMembership(Now));
+    }
+
+    [Fact]
+    public async Task UpdateMembershipAsync_Throws_WhenPaidUntilInPast()
+    {
+        await using var context = TestDbContextFactory.CreateContext(Now);
+        var student = new Student(5, Now);
+        context.Set<Student>().Add(student);
+        await context.SaveChangesAsync();
+        var service = CreateService(context, new RecordingUserAccountService());
+
+        var ex = await Assert.ThrowsAsync<BusinessException>(() =>
+            service.UpdateMembershipAsync(5, new UpdateMembershipRequest { PaidUntil = Now.AddDays(-1) }));
+
+        Assert.Equal(Messages.MembershipPaidUntilFuture, ex.Message);
     }
 
     [Fact]

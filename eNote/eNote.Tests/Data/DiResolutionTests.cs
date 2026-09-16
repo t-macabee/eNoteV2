@@ -8,7 +8,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.FileProviders;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
 
 namespace eNote.Tests.Data;
 
@@ -57,12 +59,18 @@ public sealed class DiResolutionTests
             bus.AddConsumer<RentalStatusChangedPushConsumer>();
             bus.AddConsumer<RentalRefundedPushConsumer>();
         })
-            .AddJwtAuthentication(configuration)
+            .AddJwtAuthentication()
             .AddAuthorization()
             .AddApplicationServices(configuration)
             .AddMapsterMappings();
 
         await AssertAllENoteInterfacesResolvable(services);
+
+        await using var provider = services.BuildServiceProvider();
+        var bearer = provider.GetRequiredService<IOptionsMonitor<JwtBearerOptions>>().Get(JwtBearerDefaults.AuthenticationScheme);
+        Assert.Equal("https://localhost", bearer.TokenValidationParameters.ValidIssuer);
+        Assert.Equal("https://localhost", bearer.TokenValidationParameters.ValidAudience);
+        Assert.NotNull(bearer.TokenValidationParameters.IssuerSigningKey);
     }
 
     [Fact]

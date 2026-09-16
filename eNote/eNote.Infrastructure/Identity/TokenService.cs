@@ -1,6 +1,6 @@
 using eNote.Application.Common.Time;
 using eNote.Application.Features.Identity.Auth.Services;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -8,19 +8,13 @@ using System.Text;
 
 namespace eNote.Infrastructure.Identity;
 
-public sealed class TokenService(IConfiguration configuration, IClock clock) : ITokenService
+public sealed class TokenService(IOptions<JwtOptions> jwtOptions, IClock clock) : ITokenService
 {
     public const string SecurityStampClaimType = "AspNet.Identity.SecurityStamp";
 
-    private readonly string _jwtKey = configuration["Jwt:Key"]!;
-    private readonly string? _jwtIssuer = configuration["Jwt:Issuer"];
-    private readonly string? _jwtAudience = configuration["Jwt:Audience"];
-    private readonly int _jwtExpirationDays = int.Parse(
-        configuration["Jwt:ExpirationDays"]
-            ?? throw new InvalidOperationException("Jwt:ExpirationDays is required."));
-
     public string GenerateToken(int userId, string username, IList<string> roles, bool isManager = false, string? securityStamp = null)
     {
+        var options = jwtOptions.Value;
         var claims = new List<Claim>
         {
             new(JwtRegisteredClaimNames.Sub, userId.ToString()),
@@ -43,14 +37,14 @@ public sealed class TokenService(IConfiguration configuration, IClock clock) : I
             claims.Add(new Claim(ClaimTypes.Role, role));
         }
 
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtKey));
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(options.Key));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
         var token = new JwtSecurityToken(
-            issuer: _jwtIssuer,
-            audience: _jwtAudience,
+            issuer: options.Issuer,
+            audience: options.Audience,
             claims: claims,
-            expires: clock.UtcNow.AddDays(_jwtExpirationDays),
+            expires: clock.UtcNow.AddDays(options.ExpirationDays),
             signingCredentials: creds
         );
 

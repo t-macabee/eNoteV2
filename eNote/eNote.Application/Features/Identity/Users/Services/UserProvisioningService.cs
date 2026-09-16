@@ -221,6 +221,11 @@ public sealed class UserProvisioningService(
             .FirstOrDefaultAsync(s => s.AppUserId == userId, cancellationToken)
             ?? throw new NotFoundException(Messages.StudentProfileNotFound);
 
+        if (request.PaidUntil.HasValue && request.PaidUntil.Value <= clock.UtcNow)
+        {
+            throw new BusinessException(Messages.MembershipPaidUntilFuture);
+        }
+
         student.UpdateMembership(request.PaidUntil);
 
         await context.SaveChangesAsync(cancellationToken);

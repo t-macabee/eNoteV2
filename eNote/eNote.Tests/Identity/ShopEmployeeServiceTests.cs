@@ -19,6 +19,35 @@ public sealed class ShopEmployeeServiceTests
     private static readonly DateTime Now = new(2026, 7, 1, 12, 0, 0, DateTimeKind.Utc);
 
     [Fact]
+    public async Task GetPagedForCurrentStoreAsync_ReturnsDeactivatedEmployee_WhenFilteredByInactive()
+    {
+        await using var context = TestDbContextFactory.CreateContext(Now);
+
+        var store = new MusicStore("Store", "09-17");
+        context.Set<MusicStore>().Add(store);
+        await context.SaveChangesAsync();
+
+        var manager = new MusicStoreEmployee(appUserId: 10, musicStoreId: store.Id, isManager: true);
+        var deactivated = new MusicStoreEmployee(appUserId: 20, musicStoreId: store.Id, isManager: false) { IsActive = false };
+        context.Set<MusicStoreEmployee>().AddRange(manager, deactivated);
+        await context.SaveChangesAsync();
+
+        var identity = new StubUserIdentityService(new Dictionary<int, UserIdentityDto>
+        {
+            [10] = StubUserIdentityService.User(10, "manager", "Mia", "Manager"),
+            [20] = StubUserIdentityService.User(20, "former", "Fred", "Former")
+        });
+
+        var service = new ShopEmployeeService(context, identity, new StubCurrentActor(userId: 10), null!);
+
+        var result = await service.GetPagedForCurrentStoreAsync(new ShopEmployeeSearchObject { IsActive = false });
+
+        var dto = Assert.Single(result.Items);
+        Assert.Equal(20, dto.AppUserId);
+        Assert.False(dto.IsActive);
+    }
+
+    [Fact]
     public async Task GetPagedAsync_ReturnsEmployeesAcrossAllStores_WithStoreInfo()
     {
         await using var context = TestDbContextFactory.CreateContext(Now);
@@ -51,7 +80,6 @@ public sealed class ShopEmployeeServiceTests
         Assert.Equal("Alpha", alice.LastName);
         Assert.Equal("alpha_emp", alice.Username);
         Assert.Equal("Store Alpha", alice.StoreName);
-        Assert.Equal("Store Alpha", alice.MusicStoreName);
         Assert.Equal(store1.Id, alice.MusicStoreId);
         Assert.True(alice.IsManager);
         Assert.True(alice.IsActive);
@@ -61,7 +89,6 @@ public sealed class ShopEmployeeServiceTests
         Assert.Equal("Beta", bob.LastName);
         Assert.Equal("beta_emp", bob.Username);
         Assert.Equal("Store Beta", bob.StoreName);
-        Assert.Equal("Store Beta", bob.MusicStoreName);
         Assert.Equal(store2.Id, bob.MusicStoreId);
         Assert.False(bob.IsManager);
         Assert.True(bob.IsActive);
@@ -180,7 +207,6 @@ public sealed class ShopEmployeeServiceTests
         Assert.Equal("Jane", dto.FirstName);
         Assert.Equal("jdoe", dto.Username);
         Assert.Equal("Guitar Shop", dto.StoreName);
-        Assert.Equal("Guitar Shop", dto.MusicStoreName);
         Assert.Equal(store.Id, dto.MusicStoreId);
         Assert.True(dto.IsManager);
     }

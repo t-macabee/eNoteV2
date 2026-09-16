@@ -35,7 +35,7 @@ builder.Services
         bus.AddConsumer<LectureCancelledPushConsumer>();
         bus.AddConsumer<SubmissionGradedPushConsumer>();
     }, registerNotificationOutboxPublisher: false)
-    .AddJwtAuthentication(builder.Configuration)
+    .AddJwtAuthentication()
     .AddAuthorization()
     .AddApplicationServices(builder.Configuration)
     .AddApplicationCors(builder.Configuration, builder.Environment)

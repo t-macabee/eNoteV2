@@ -33,7 +33,7 @@ void main() {
       expect(serialized, equals(json));
     });
 
-    test('fromJson falls back to musicStoreName if storeName is not present', () {
+    test('fromJson ignores the removed musicStoreName alias', () {
       final json = {
         'id': 11,
         'appUserId': 102,
@@ -45,8 +45,8 @@ void main() {
 
       final dto = ShopEmployeeDto.fromJson(json);
 
-      expect(dto.storeName, 'Mostar Piano Store');
-      expect(dto.musicStoreName, 'Mostar Piano Store');
+      expect(dto.storeName, isNull);
+      expect(dto.musicStoreName, isNull);
     });
   });
 }

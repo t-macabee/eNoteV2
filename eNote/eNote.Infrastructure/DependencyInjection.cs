@@ -31,10 +31,20 @@ public static class DependencyInjection
         this IServiceCollection services,
         IConfiguration configuration,
         Action<IBusRegistrationConfigurator>? configureBus = null,
-        bool registerNotificationOutboxPublisher = true)
+        bool registerNotificationOutboxPublisher = true,
+        bool validateJwtOptions = true)
     {
         var connectionString = configuration.GetConnectionString("DefaultConnection")
             ?? throw new InvalidOperationException("ConnectionStrings__DefaultConnection is required.");
+
+        var jwtOptions = services.AddOptions<JwtOptions>()
+            .Bind(configuration.GetSection(JwtOptions.SectionName))
+            .ValidateDataAnnotations();
+
+        if (validateJwtOptions)
+        {
+            jwtOptions.ValidateOnStart();
+        }
 
         services.AddSingleton<IClock, SystemClock>();
         services.AddMemoryCache();

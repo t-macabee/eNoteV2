@@ -25,6 +25,7 @@ public static class Messages
     public const string MusicStoreRequiredForEmployee = "Prodavnica je obavezna za uposlenika radnje.";
 
     public const string StudentProfileNotFound = "Student profil nije pronađen.";
+    public const string MembershipPaidUntilFuture = "PaidUntil mora biti u budućnosti.";
     public const string InstructorProfileNotFound = "Instruktor profil nije pronađen.";
     public const string EmployeeProfileNotFound = "Profil uposlenika radnje nije pronađen.";
     public const string ActiveEmployeeStoreNotFound = "Profil uposlenika radnje nije pronađen ili nije aktivan.";
