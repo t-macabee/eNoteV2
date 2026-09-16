@@ -36,6 +36,7 @@ public sealed class StoreAnnouncementService(IAppDbContext context, IClock clock
             .AsNoTracking()
             .Include(a => a.MusicStore)
             .Where(a => a.MusicStoreId == storeId)
+            .ApplySearch(search)
             .ToPagedResultAsync(search, mapper.Map<AnnouncementDto>, q => q.OrderByDescending(x => x.PublishedAt), cancellationToken);
     }
 

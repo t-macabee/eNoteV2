@@ -20,12 +20,8 @@ public sealed class StudentAnnouncementFeedService(IAppDbContext context, IStude
                 (a.MusicStoreId != null && context.Set<InstrumentRental>().IgnoreQueryFilters().Any(r =>
                     r.StudentProfileId == studentId &&
                     (r.RentalStatus == InstrumentRentalStatus.Approved || r.RentalStatus == InstrumentRentalStatus.Active || r.RentalStatus == InstrumentRentalStatus.Completed || r.RentalStatus == InstrumentRentalStatus.ReturnedEarly) &&
-                    r.MusicStoreId == a.MusicStoreId)));
-
-        if (!string.IsNullOrWhiteSpace(search.Title))
-        {
-            query = query.Where(a => a.Title.Contains(search.Title!));
-        }
+                    r.MusicStoreId == a.MusicStoreId)))
+            .ApplySearch(search);
 
         return await query.ToPagedResultAsync(search, mapper.Map<AnnouncementDto>, q => q.OrderByDescending(x => x.PublishedAt), cancellationToken);
     }

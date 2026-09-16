@@ -53,6 +53,21 @@ public sealed class InstructorAnnouncementServiceTests
         Assert.False(row.IsActive);
     }
 
+    [Fact]
+    public async Task GetForCourseAsync_FiltersByTitle()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        harness.Context.Set<Announcement>().AddRange(
+            new Announcement("Exam schedule", "Hello", harness.Course.Id, null, Now),
+            new Announcement("Welcome", "Hello", harness.Course.Id, null, Now));
+        await harness.Context.SaveChangesAsync();
+        var service = CreateService(harness.Context, harness.Instructor, AcademicTestData.CreateInstructorAccess(harness.Context, harness.Instructor));
+
+        var result = await service.GetForCourseAsync(harness.Course.Id, new AnnouncementSearchObject { Title = "Exam", Page = 1, PageSize = 10 });
+
+        Assert.Equal("Exam schedule", Assert.Single(result.Items).Title);
+    }
+
     private static InstructorAnnouncementService CreateService(
         ENoteContext context,
         Instructor instructor,
