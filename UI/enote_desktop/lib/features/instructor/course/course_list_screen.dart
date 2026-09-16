@@ -44,7 +44,7 @@ class _CourseListScreenState extends State<CourseListScreen> {
       config: EntityGridConfig<CourseDto>(
         placeholderIcon: Icons.class_,
         titleOf: (item) => item.name,
-        subtitleOf: (item) => item.isPublished ? 'Aktivan' : 'Neaktivan',
+        subtitleOf: (item) => item.isPublished ? 'Aktivan' : 'Neobjavljen',
         searchHint: 'Pretraži po nazivu...',
         onAdd: _openForm,
         onTap: (context, item) => _openDetail(item),

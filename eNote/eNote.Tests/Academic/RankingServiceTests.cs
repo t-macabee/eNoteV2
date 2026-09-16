@@ -76,6 +76,25 @@ public sealed class RankingServiceTests
         Assert.Empty(ranking);
     }
 
+    [Fact]
+    public async Task GetForStudentAsync_ReturnsRanking_AfterCourseUnpublished_WhenEnrolledAndPaid()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var assignment = new Assignment("Homework", "Do it", Now.AddDays(7), harness.Lecture.Id);
+        harness.Context.Set<Assignment>().Add(assignment);
+        await harness.Context.SaveChangesAsync();
+        harness.Context.Set<AssignmentSubmission>().Add(CreateSubmission(assignment.Id, harness.Student.Id, grade: 90));
+        harness.Context.Set<Course>().Single(c => c.Id == harness.Course.Id).SetPublishedStatus(false);
+        await harness.Context.SaveChangesAsync();
+        var service = CreateService(harness.Context, harness.Instructor, harness.Student);
+
+        var ranking = await service.GetForStudentAsync(harness.Course.Id);
+
+        var entry = Assert.Single(ranking);
+        Assert.Equal(harness.Student.Id, entry.StudentId);
+        Assert.Equal(90, entry.AverageGrade);
+    }
+
     private static AssignmentSubmission CreateSubmission(int assignmentId, int studentId, int? grade)
     {
         var submission = new AssignmentSubmission(assignmentId, studentId);

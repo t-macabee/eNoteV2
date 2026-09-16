@@ -60,6 +60,15 @@ class _CourseDetailDialogState extends State<CourseDetailDialog> {
   }
 
   Future<void> _togglePublish(bool newValue) async {
+    if (_course.isPublished && !newValue) {
+      final confirmed = await confirmDialog(
+        context: context,
+        title: 'Potvrdite povlačenje kursa',
+        message:
+            'Da li ste sigurni da želite da povučete ovaj kurs? Kurs nestaje iz kataloga i novi studenti ga ne mogu upisati. Postojeći studenti zadržavaju pristup.',
+      );
+      if (confirmed != true || !mounted) return;
+    }
     setState(() => _isPublishing = true);
     try {
       final request = CourseRequest(

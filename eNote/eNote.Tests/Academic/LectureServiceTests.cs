@@ -145,6 +145,19 @@ public sealed class LectureServiceTests
     }
 
     [Fact]
+    public async Task GetByIdForStudentAsync_ReturnsLecture_AfterCourseUnpublished_WhenEnrolledAndPaid()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        harness.Context.Set<Course>().Single(c => c.Id == harness.Course.Id).SetPublishedStatus(false);
+        await harness.Context.SaveChangesAsync();
+        var service = CreateService(harness.Context, harness.Instructor, new StubCurrentActor(student: harness.Student));
+
+        var dto = await service.GetByIdForStudentAsync(harness.Lecture.Id);
+
+        Assert.Equal(harness.Lecture.Id, dto.Id);
+    }
+
+    [Fact]
     public async Task CreateAsync_Throws_WhenLocationOverlaps_IgnoringCase()
     {
         var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);

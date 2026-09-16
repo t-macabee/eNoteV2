@@ -102,6 +102,19 @@ public sealed class CourseEnrollmentServiceTests
         await Assert.ThrowsAsync<BusinessException>(() => service.EnrollAsync(course.Id));
     }
 
+    [Fact]
+    public async Task EnrollAsync_Throws_WhenCourseUnpublished()
+    {
+        await using var context = CreateContext();
+        var (student, course) = await SeedStudentAndCourseAsync(context, hasActiveMembership: true);
+        course.SetPublishedStatus(false);
+        await context.SaveChangesAsync();
+        var service = CreateService(context, student);
+
+        await Assert.ThrowsAsync<NotFoundException>(() => service.EnrollAsync(course.Id));
+        Assert.Empty(context.Set<Enrollment>());
+    }
+
     private static ENoteContext CreateContext()
     {
         var options = new DbContextOptionsBuilder<ENoteContext>()

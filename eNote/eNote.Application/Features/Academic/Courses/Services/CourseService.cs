@@ -136,12 +136,17 @@ public sealed class CourseService(IAppDbContext context, IMapper mapper, ICurren
         var query = context.Set<Course>()
             .AsNoTracking()
             .Include(c => c.Enrollments)
-            .Where(c => c.IsPublished)
             .ApplySearch(search);
 
+        // Unpublishing never revokes an enrolled student's access (only catalog
+        // visibility), so the IsPublished hard-filter applies to the catalog only.
         if (search.EnrolledOnly == true)
         {
             query = query.Where(c => c.Enrollments.Any(e => e.StudentId == studentId && e.EnrollmentStatus == EnrollmentStatus.Active));
+        }
+        else
+        {
+            query = query.Where(c => c.IsPublished);
         }
 
         return await query.ToPagedResultAsync(search, entity =>

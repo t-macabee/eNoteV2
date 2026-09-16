@@ -64,6 +64,7 @@ if (!app.Environment.IsDevelopment())
 
 app.UseCors(CorsExtensions.PolicyName);
 app.UseErrorHandling();
+app.UseMiddleware<eNote.API.Middleware.AuthRateLimitIdentityMiddleware>();
 
 if (app.Environment.IsDevelopment())
 {

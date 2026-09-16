@@ -2,6 +2,8 @@ using eNote.API.Middleware;
 using eNote.Application.Common.Exceptions;
 using eNote.Application.Constants;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc.Controllers;
+using Microsoft.AspNetCore.Routing;
 using System.Security.Claims;
 
 namespace eNote.Tests.Middleware;
@@ -49,6 +51,39 @@ public sealed class TenantInitializationMiddlewareTests
 
         Assert.False(nextCalled);
     }
+
+    [Fact]
+    public async Task InvokeAsync_AllowsRequest_WhenStoreNotResolved_ForStoreEmployee_OnAuthController()
+    {
+        var storeContext = new ThrowingStoreContext();
+        var nextCalled = false;
+        var middleware = new TenantInitializationMiddleware(_ => { nextCalled = true; return Task.CompletedTask; });
+        var context = ContextFor(AppRoles.StoreEmployee);
+        context.SetEndpoint(ControllerEndpoint("Auth"));
+
+        await middleware.InvokeAsync(context, storeContext);
+
+        Assert.True(nextCalled);
+        Assert.True(storeContext.Called);
+    }
+
+    [Fact]
+    public async Task InvokeAsync_ThrowsForbidden_WhenStoreNotResolved_ForStoreEmployee_OnOtherController()
+    {
+        var storeContext = new ThrowingStoreContext();
+        var nextCalled = false;
+        var middleware = new TenantInitializationMiddleware(_ => { nextCalled = true; return Task.CompletedTask; });
+        var context = ContextFor(AppRoles.StoreEmployee);
+        context.SetEndpoint(ControllerEndpoint("Courses"));
+
+        await Assert.ThrowsAsync<AuthorizationException>(() =>
+            middleware.InvokeAsync(context, storeContext));
+
+        Assert.False(nextCalled);
+    }
+
+    private static Endpoint ControllerEndpoint(string controllerName) =>
+        new(null, new EndpointMetadataCollection(new ControllerActionDescriptor { ControllerName = controllerName }), null);
 
     private static DefaultHttpContext ContextFor(string role)
     {

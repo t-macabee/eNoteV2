@@ -461,6 +461,34 @@ public sealed class CourseServiceTests
         Assert.True(freeDto.IsFree);
     }
 
+    [Fact]
+    public async Task GetPagedForStudentAsync_EnrolledOnly_IncludesUnpublishedCourse()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        harness.Context.Set<Course>().Single(c => c.Id == harness.Course.Id).SetPublishedStatus(false);
+        await harness.Context.SaveChangesAsync();
+        var actor = new StubCurrentActor(student: harness.Student);
+        var service = CreateService(harness.Context, harness.Instructor, actor);
+
+        var result = await service.GetPagedForStudentAsync(new CourseSearchObject { EnrolledOnly = true });
+
+        Assert.Contains(result.Items, c => c.Id == harness.Course.Id);
+    }
+
+    [Fact]
+    public async Task GetPagedForStudentAsync_WithoutEnrolledOnly_ExcludesUnpublishedCourse()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        harness.Context.Set<Course>().Single(c => c.Id == harness.Course.Id).SetPublishedStatus(false);
+        await harness.Context.SaveChangesAsync();
+        var actor = new StubCurrentActor(student: harness.Student);
+        var service = CreateService(harness.Context, harness.Instructor, actor);
+
+        var result = await service.GetPagedForStudentAsync(new CourseSearchObject());
+
+        Assert.DoesNotContain(result.Items, c => c.Id == harness.Course.Id);
+    }
+
     private static async Task CreateActiveUserAsync(UserManager<AppUser> userManager, int id, string username, string firstName, string lastName)
     {
         await userManager.CreateAsync(new AppUser

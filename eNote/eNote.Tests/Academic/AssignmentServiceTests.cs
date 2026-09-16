@@ -97,4 +97,21 @@ public sealed class AssignmentServiceTests
         Assert.Equal("Homework", dto.Title);
     }
 
+    [Fact]
+    public async Task GetForStudentAsync_ReturnsAssignments_AfterCourseUnpublished_WhenEnrolledAndPaid()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var assignment = new Assignment("Homework", "Do it", Now.AddDays(7), harness.Lecture.Id);
+        harness.Context.Set<Assignment>().Add(assignment);
+        harness.Context.Set<Course>().Single(c => c.Id == harness.Course.Id).SetPublishedStatus(false);
+        await harness.Context.SaveChangesAsync();
+        var actor = new StubCurrentActor(student: harness.Student);
+        var service = AcademicTestData.CreateService<AssignmentService>(harness.Context, harness.Instructor, actor);
+
+        var result = await service.GetForStudentAsync(new AssignmentSearchObject { Page = 1, PageSize = 10 });
+
+        var dto = Assert.Single(result.Items);
+        Assert.Equal("Homework", dto.Title);
+    }
+
 }

@@ -79,4 +79,19 @@ public sealed class LectureNoteServiceTests
         Assert.Equal("Visible", dto.Title);
     }
 
+    [Fact]
+    public async Task GetForStudentAsync_ReturnsNotes_AfterCourseUnpublished_WhenEnrolledAndPaid()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        harness.Context.Set<LectureNote>().Add(new LectureNote("Visible", "Content", harness.Lecture.Id));
+        harness.Context.Set<Course>().Single(c => c.Id == harness.Course.Id).SetPublishedStatus(false);
+        await harness.Context.SaveChangesAsync();
+        var service = AcademicTestData.CreateService<LectureNoteService>(harness.Context, harness.Instructor, new StubCurrentActor(student: harness.Student));
+
+        var result = await service.GetForStudentAsync(harness.Lecture.Id, new LectureNoteSearchObject { Page = 1, PageSize = 10 });
+
+        var dto = Assert.Single(result.Items);
+        Assert.Equal("Visible", dto.Title);
+    }
+
 }
