@@ -11,6 +11,7 @@ import '../../../widgets/status_chip.dart';
 import '../rental_provider.dart';
 import '../../payments/payment_sheet_gateway.dart';
 import '../../payments/payment_status_view.dart';
+import '../../payments/stripe_redirect.dart';
 import 'rental_payment_provider.dart';
 
 enum _View { review, processing, succeeded, failed, pending }
@@ -24,10 +25,6 @@ class RentalPaymentScreen extends StatefulWidget {
   final int rentalId;
   final PaymentSheetGateway gateway;
   final String stripePublishableKey;
-
-  /// Called by `DeepLinkHandler` on `enote://stripe-redirect` while this
-  /// screen is mounted (01 §5.4 step 5): re-runs one poll cycle.
-  static VoidCallback? stripeRedirectHandler;
 
   RentalPaymentScreen({
     super.key,
@@ -60,15 +57,15 @@ class _RentalPaymentScreenState extends State<RentalPaymentScreen> {
   @override
   void initState() {
     super.initState();
-    _previousRedirectHandler = RentalPaymentScreen.stripeRedirectHandler;
-    RentalPaymentScreen.stripeRedirectHandler = recheck;
+    _previousRedirectHandler = StripeRedirect.handler;
+    StripeRedirect.handler = recheck;
     _load();
   }
 
   @override
   void dispose() {
-    if (RentalPaymentScreen.stripeRedirectHandler == recheck) {
-      RentalPaymentScreen.stripeRedirectHandler = _previousRedirectHandler;
+    if (StripeRedirect.handler == recheck) {
+      StripeRedirect.handler = _previousRedirectHandler;
     }
     super.dispose();
   }

@@ -52,7 +52,11 @@ class _EventListScreenState extends State<EventListScreen>
         'pageSize': pageSize,
         'includeTotalCount': true,
         if (_from != null) 'from': _from!.toIso8601String(),
-        if (_to != null) 'to': _to!.toIso8601String(),
+        // `_to` is date-only (midnight); the server filters `StartsAt <= To`,
+        // so send the end of the day to include its events.
+        if (_to != null)
+          'to': DateTime(_to!.year, _to!.month, _to!.day, 23, 59, 59)
+              .toIso8601String(),
       },
     );
     if (mounted) setState(() => _error = null);

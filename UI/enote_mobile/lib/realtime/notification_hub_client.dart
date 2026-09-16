@@ -23,12 +23,19 @@ class NotificationHubClient {
 
   HubConnection? _connection;
   bool _starting = false;
+  String? _tokenUsed;
+
+  /// Test seam: builds the [HubConnection] used by [start]. Defaults to the
+  /// real SignalR builder; tests inject a fake to count rebuilds without
+  /// touching the network.
+  final HubConnection Function()? connectionFactory;
 
   NotificationHubClient({
     required this.hubUrl,
     required this.tokenProvider,
     this.onRefresh = _noop,
     this.onPush = _noopPush,
+    this.connectionFactory,
   });
 
   static void _noop() {}
@@ -49,25 +56,31 @@ class NotificationHubClient {
       _connection?.state == HubConnectionState.Connected;
 
   Future<void> start() async {
+    final token = await tokenProvider();
     if (_connection != null &&
         _connection!.state != HubConnectionState.Disconnected) {
-      return;
+      if (token == _tokenUsed) return;
+      await stop();
     }
     if (_starting) return;
     _starting = true;
     try {
-      final connection = HubConnectionBuilder()
-          .withUrl(
-            hubUrl,
-            options: HttpConnectionOptions(
-              accessTokenFactory: () => tokenProvider(),
-            ),
-          )
-          .withAutomaticReconnect()
-          .build();
+      final factory = connectionFactory;
+      final connection = factory != null
+          ? factory()
+          : HubConnectionBuilder()
+                .withUrl(
+                  hubUrl,
+                  options: HttpConnectionOptions(
+                    accessTokenFactory: () => tokenProvider(),
+                  ),
+                )
+                .withAutomaticReconnect()
+                .build();
       connection.on('ReceiveNotification', _handlePush);
       _connection = connection;
       await connection.start();
+      _tokenUsed = token;
       debugPrint('SignalR hub started: $hubUrl');
     } catch (e) {
       debugPrint('SignalR hub start failed (polling fallback active): $e');
@@ -80,6 +93,7 @@ class NotificationHubClient {
   Future<void> stop() async {
     final connection = _connection;
     _connection = null;
+    _tokenUsed = null;
     if (connection == null) return;
     try {
       await connection.stop();

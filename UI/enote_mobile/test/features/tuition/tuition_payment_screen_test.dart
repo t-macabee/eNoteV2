@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
 import 'package:enote_mobile/features/payments/payment_sheet_gateway.dart';
+import 'package:enote_mobile/features/payments/stripe_redirect.dart';
 import 'package:enote_mobile/features/tuition/tuition_payment_provider.dart';
 import 'package:enote_mobile/features/tuition/tuition_payment_screen.dart';
 import 'package:enote_mobile/theme/app_theme.dart';
@@ -169,7 +170,7 @@ Future<void> _confirmPay(WidgetTester tester) async {
 
 void main() {
   tearDown(() {
-    TuitionPaymentScreen.stripeRedirectHandler = null;
+    StripeRedirect.handler = null;
   });
 
   testWidgets('review shows the course, amount, period and Stripe note', (
@@ -301,7 +302,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(client.statusCalls, 5);
 
-    TuitionPaymentScreen.stripeRedirectHandler?.call();
+    StripeRedirect.handler?.call();
     await tester.pump(const Duration(seconds: 11));
     await tester.pumpAndSettle();
     expect(client.statusCalls, 10);
@@ -310,12 +311,12 @@ void main() {
   testWidgets('popping the screen clears the redirect handler', (tester) async {
     await _pumpPay(tester, _TuitionStubClient(), FakePaymentSheetGateway());
 
-    expect(TuitionPaymentScreen.stripeRedirectHandler, isNotNull);
+    expect(StripeRedirect.handler, isNotNull);
 
     Navigator.of(tester.element(find.text('Osnove teorije muzike'))).pop();
     await tester.pumpAndSettle();
 
-    expect(TuitionPaymentScreen.stripeRedirectHandler, isNull);
+    expect(StripeRedirect.handler, isNull);
   });
 
   testWidgets('a server refusal renders verbatim in E', (tester) async {

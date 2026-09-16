@@ -79,6 +79,7 @@ class _RentalRequestSheetState extends State<RentalRequestSheet> {
           note: note.isEmpty ? null : note,
         ),
       );
+      if (!mounted) return;
       navigator.pop();
       RootShell.switchTab(2);
       messenger.showSnackBar(

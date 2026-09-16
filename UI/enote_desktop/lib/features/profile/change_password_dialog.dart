@@ -6,8 +6,9 @@ import '../../widgets/entity_form_scaffold.dart';
 import 'profile_provider.dart';
 
 /// "Promijeni lozinku" form opened from [ProfileDialog] — its own
-/// [EntityFormScaffold] with its own Save/Cancel. Stays open and clears its
-/// fields on success rather than closing.
+/// [EntityFormScaffold] with its own Save/Cancel. The backend rotates the
+/// security stamp on a password change, so the current JWT is rejected from
+/// then on: a success logs out back to the login screen.
 class ChangePasswordDialog extends StatefulWidget {
   const ChangePasswordDialog({super.key});
 
@@ -29,6 +30,9 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
   }
 
   Future<bool> _save() async {
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+    final authState = context.read<AuthState>();
     try {
       final profileProvider = context.read<ProfileProvider>();
       await profileProvider.changePassword(
@@ -41,7 +45,20 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
           confirmNewPassword: _confirmPasswordController.text,
         ),
       );
-      return true;
+      if (!mounted) return false;
+      // The old token is dead from this point on: pop back to the login
+      // route and clear the local session directly instead of POSTing
+      // `auth/logout` with the revoked token. Returning false keeps the
+      // scaffold from popping or snackbar-ing a second time. The master
+      // screen stops polling on the auth change.
+      navigator.popUntil((route) => route.isFirst);
+      authState.logout();
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('Lozinka je promijenjena. Prijavite se ponovo.'),
+        ),
+      );
+      return false;
     } catch (e) {
       if (mounted) ErrorBanner.show(context, message: userMessage(e));
       return false;
@@ -59,7 +76,6 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
     return EntityFormScaffold(
       title: 'Promijeni lozinku',
       presentation: EntityFormPresentation.dialog,
-      savedMessage: 'Lozinka uspješno promijenjena.',
       onSave: _save,
       onReset: _clearFields,
       fieldsBuilder: (context) => [

@@ -93,6 +93,7 @@ class RootShellState extends State<RootShell> with WidgetsBindingObserver {
     if (_hub != null) {
       _hub!.onRefresh = () {};
       _hub!.onPush = (_) {};
+      unawaited(_hub!.stop());
     }
     super.dispose();
   }

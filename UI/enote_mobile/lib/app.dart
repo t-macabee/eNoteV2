@@ -88,14 +88,19 @@ class _EnoteMobileAppState extends State<EnoteMobileApp> {
           dispose: (_, client) => client.dispose(),
         ),
         ChangeNotifierProvider<SessionController>(
-          create: (context) => SessionController(
-            apiClient: widget.apiClient,
-            authState: widget.authState,
-            notifications: context.read<NotificationController>(),
-            onStopRealtime: () {
-              context.read<NotificationHubClient>().stop();
-            },
-          ),
+          create: (context) {
+            final hub = context.read<NotificationHubClient>();
+            final controller = SessionController(
+              apiClient: widget.apiClient,
+              authState: widget.authState,
+              notifications: context.read<NotificationController>(),
+              onStopRealtime: () {
+                hub.stop();
+              },
+            );
+            SessionController.stopRealtime = controller.onStopRealtime;
+            return controller;
+          },
           lazy: false,
         ),
         Provider<AuthProvider>(

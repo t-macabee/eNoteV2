@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
 import 'package:enote_mobile/features/payments/payment_sheet_gateway.dart';
+import 'package:enote_mobile/features/payments/stripe_redirect.dart';
 import 'package:enote_mobile/features/rentals/payments/rental_payment_provider.dart';
 import 'package:enote_mobile/features/rentals/payments/rental_payment_screen.dart';
 import 'package:enote_mobile/features/rentals/rental_provider.dart';
@@ -248,7 +249,7 @@ Future<_PayStubClient> _pushSecondScreen(
 
 void main() {
   tearDown(() {
-    RentalPaymentScreen.stripeRedirectHandler = null;
+    StripeRedirect.handler = null;
   });
   testWidgets('review shows the header, amount, charge and Stripe note', (
     tester,
@@ -454,7 +455,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(client.statusCalls, 5);
 
-    RentalPaymentScreen.stripeRedirectHandler?.call();
+    StripeRedirect.handler?.call();
     await tester.pump(const Duration(seconds: 11));
     await tester.pumpAndSettle();
     expect(client.statusCalls, 10);
@@ -474,12 +475,12 @@ void main() {
       FakePaymentSheetGateway(),
     );
 
-    expect(RentalPaymentScreen.stripeRedirectHandler, isNotNull);
+    expect(StripeRedirect.handler, isNotNull);
 
     Navigator.of(tester.element(find.text('Stratocaster'))).pop();
     await tester.pumpAndSettle();
 
-    expect(RentalPaymentScreen.stripeRedirectHandler, isNull);
+    expect(StripeRedirect.handler, isNull);
   });
 
   testWidgets('popping the top screen restores the underlying handler', (
@@ -504,15 +505,15 @@ void main() {
       FakePaymentSheetGateway(),
     );
     expect(find.text('Plati 8.00 KM'), findsOneWidget);
-    expect(RentalPaymentScreen.stripeRedirectHandler, isNotNull);
+    expect(StripeRedirect.handler, isNotNull);
 
     Navigator.of(tester.element(find.text('Plati 8.00 KM'))).pop();
     await tester.pumpAndSettle();
 
     expect(find.text('Provjeri ponovo'), findsOneWidget);
-    expect(RentalPaymentScreen.stripeRedirectHandler, isNotNull);
+    expect(StripeRedirect.handler, isNotNull);
 
-    RentalPaymentScreen.stripeRedirectHandler?.call();
+    StripeRedirect.handler?.call();
     await tester.pump(const Duration(seconds: 11));
     await tester.pumpAndSettle();
     expect(clientA.statusCalls, 10);
@@ -551,7 +552,7 @@ void main() {
     expect(clientB.statusCalls, 5);
     expect(clientA.statusCalls, 5);
 
-    RentalPaymentScreen.stripeRedirectHandler?.call();
+    StripeRedirect.handler?.call();
     await tester.pump(const Duration(seconds: 11));
     await tester.pumpAndSettle();
 

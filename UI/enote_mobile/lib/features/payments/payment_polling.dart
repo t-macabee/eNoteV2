@@ -13,10 +13,23 @@ Future<T?> pollUntilSucceeded<T>(
   Duration interval = const Duration(seconds: 2),
 }) async {
   T? last;
+  Object? lastError;
+  StackTrace? lastStack;
+  var sawResult = false;
   for (var i = 0; i < attempts; i++) {
     await Future.delayed(interval);
-    last = await fetch();
+    try {
+      last = await fetch();
+      sawResult = true;
+    } catch (e, st) {
+      lastError = e;
+      lastStack = st;
+      continue;
+    }
     if (last != null && statusOf(last) == PaymentStatus.succeeded) return last;
+  }
+  if (!sawResult && lastError != null) {
+    Error.throwWithStackTrace(lastError, lastStack!);
   }
   return last;
 }

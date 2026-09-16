@@ -65,6 +65,7 @@ class _LectureDetailScreenState extends State<LectureDetailScreen> {
         lectureId: widget.lectureId,
         confirm: confirm,
         onSuccess: () {
+          if (!mounted) return;
           Navigator.of(sheetContext).pop();
           _load();
           ScaffoldMessenger.of(context).showSnackBar(

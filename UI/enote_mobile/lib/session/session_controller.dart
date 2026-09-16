@@ -16,6 +16,12 @@ class SessionController extends ChangeNotifier {
     _sessionExpired = true;
   }
 
+  /// Stops realtime delivery when the 401 path in `main.dart` fires. Wired by
+  /// the app-level provider to the same closure passed as [onStopRealtime]
+  /// (which [logoutAndRevoke] uses), because `main.dart` has no instance and
+  /// must not build a second hub client.
+  static VoidCallback? stopRealtime;
+
   UserProfileResponse? _profile;
   int _pictureVersion = 0;
   Object? _bootstrapError;
@@ -82,5 +88,11 @@ class SessionController extends ChangeNotifier {
     await authState.logout();
     notifications.stopPolling();
     onStopRealtime?.call();
+  }
+
+  @override
+  void dispose() {
+    if (identical(stopRealtime, onStopRealtime)) stopRealtime = null;
+    super.dispose();
   }
 }

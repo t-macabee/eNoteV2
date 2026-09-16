@@ -16,7 +16,9 @@ Future<void> main() async {
   final sessionHttp = SessionHttpClient(
     onUnauthorized: () {
       SessionController.markSessionExpired();
+      appNavigatorKey.currentState?.popUntil((route) => route.isFirst);
       authState.logout();
+      SessionController.stopRealtime?.call();
     },
   );
   authState = AuthState(

@@ -7,8 +7,9 @@ import '../../widgets/mobile_form_scaffold.dart';
 import 'profile_provider.dart';
 
 /// S32 — the old-password gate, reached only from the explicit
-/// *Promijeni lozinku* action on S30. The session continues after a change
-/// (no token revocation).
+/// *Promijeni lozinku* action on S30. The backend rotates the security stamp
+/// on a password change, so the current JWT is rejected from then on: the
+/// screen logs out and returns to the login screen.
 class ChangePasswordScreen extends StatefulWidget {
   const ChangePasswordScreen({super.key});
 
@@ -44,6 +45,8 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
 
   Future<void> _submit() async {
     final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+    final authState = context.read<AuthState>();
     final provider = context.read<ProfileProvider>();
     setState(() {
       _busy = true;
@@ -59,10 +62,16 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
         ),
       );
       if (!mounted) return;
+      // The old token is dead from this point on, so `logoutAndRevoke` must
+      // not POST `auth/logout` with it: clear the local session directly.
+      // The shell dispose stops polling and the hub once login shows again.
+      navigator.popUntil((route) => route.isFirst);
+      authState.logout();
       messenger.showSnackBar(
-        const SnackBar(content: Text('Lozinka je uspješno promijenjena.')),
+        const SnackBar(
+          content: Text('Lozinka je promijenjena. Prijavite se ponovo.'),
+        ),
       );
-      Navigator.of(context).pop();
     } catch (e) {
       if (mounted) {
         setState(() => _errorMessage = userMessage(e));

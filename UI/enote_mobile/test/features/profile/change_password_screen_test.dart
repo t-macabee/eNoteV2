@@ -38,13 +38,14 @@ class _PasswordStubClient extends http.BaseClient {
 
 class _Harness {
   final _PasswordStubClient client;
+  late final AuthState authState;
   late final ApiClient apiClient;
 
   _Harness({bool failWithWrongPassword = false})
     : client = _PasswordStubClient(
         failWithWrongPassword: failWithWrongPassword,
       ) {
-    final authState = AuthState(
+    authState = AuthState(
       baseUrl: 'http://10.0.2.2:5059/api/v1/',
       tokenReader: () => fakeJwt(),
       tokenWriter: (_) {},
@@ -60,6 +61,7 @@ class _Harness {
   Widget app(Widget home) {
     return MultiProvider(
       providers: [
+        ChangeNotifierProvider<AuthState>.value(value: authState),
         Provider<ApiClient>.value(value: apiClient),
         Provider<ProfileProvider>(
           create: (_) => ProfileProvider(apiClient: apiClient),
@@ -189,7 +191,7 @@ void main() {
       'newPassword': 'Test1234!',
       'confirmNewPassword': 'Test1234!',
     });
-    expect(find.text('Lozinka je uspješno promijenjena.'), findsOneWidget);
+    expect(find.text('Lozinka je promijenjena. Prijavite se ponovo.'), findsOneWidget);
 
     await tester.pump(const Duration(seconds: 5));
     await tester.pumpAndSettle();
@@ -212,5 +214,28 @@ void main() {
 
     expect(find.text('Pogrešna trenutna lozinka.'), findsOneWidget);
     expect(find.text('Promjena lozinke'), findsOneWidget);
+  });
+
+  testWidgets('a successful change logs out with the re-login snack',
+      (tester) async {
+    final harness = _Harness();
+    await tester.pumpWidget(harness.app(_host()));
+    await _openScreen(tester);
+
+    await _fill(
+      tester,
+      current: 'Stara1!',
+      next: 'Test1234!',
+      confirm: 'Test1234!',
+    );
+    await tester.tap(find.text('Promijeni lozinku'));
+    await tester.pumpAndSettle();
+
+    expect(harness.authState.isAuthenticated, isFalse);
+    expect(
+      find.text('Lozinka je promijenjena. Prijavite se ponovo.'),
+      findsOneWidget,
+    );
+    expect(find.text('otvori'), findsOneWidget);
   });
 }

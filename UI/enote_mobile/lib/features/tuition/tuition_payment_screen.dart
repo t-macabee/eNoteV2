@@ -8,6 +8,7 @@ import '../../theme/app_theme.dart';
 import '../../widgets/labeled_value.dart';
 import '../payments/payment_sheet_gateway.dart';
 import '../payments/payment_status_view.dart';
+import '../payments/stripe_redirect.dart';
 import 'tuition_payment_provider.dart';
 
 enum _View { review, processing, succeeded, failed, pending }
@@ -24,10 +25,6 @@ class TuitionPaymentScreen extends StatefulWidget {
   final double price;
   final PaymentSheetGateway gateway;
   final String stripePublishableKey;
-
-  /// Called by `DeepLinkHandler` on `enote://stripe-redirect` while this
-  /// screen is mounted: re-runs one poll cycle.
-  static VoidCallback? stripeRedirectHandler;
 
   TuitionPaymentScreen({
     super.key,
@@ -58,14 +55,14 @@ class _TuitionPaymentScreenState extends State<TuitionPaymentScreen> {
   @override
   void initState() {
     super.initState();
-    _previousRedirectHandler = TuitionPaymentScreen.stripeRedirectHandler;
-    TuitionPaymentScreen.stripeRedirectHandler = recheck;
+    _previousRedirectHandler = StripeRedirect.handler;
+    StripeRedirect.handler = recheck;
   }
 
   @override
   void dispose() {
-    if (TuitionPaymentScreen.stripeRedirectHandler == recheck) {
-      TuitionPaymentScreen.stripeRedirectHandler = _previousRedirectHandler;
+    if (StripeRedirect.handler == recheck) {
+      StripeRedirect.handler = _previousRedirectHandler;
     }
     super.dispose();
   }

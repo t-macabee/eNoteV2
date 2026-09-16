@@ -104,7 +104,12 @@ class _FilePickerFieldState extends State<FilePickerField> {
       if (result == null || result.files.isEmpty || !mounted) return;
       final file = result.files.single;
       final bytes = file.bytes;
-      if (bytes == null) return;
+      if (bytes == null) {
+        setState(
+          () => _error = 'Datoteku nije moguće pročitati. Pokušajte ponovo.',
+        );
+        return;
+      }
       candidate = PickedAssignmentFile(
         bytes: bytes,
         fileName: file.name,
