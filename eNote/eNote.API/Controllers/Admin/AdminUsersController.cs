@@ -1,4 +1,6 @@
 using eNote.API.Controllers.Base;
+using eNote.Application.Common.Exceptions;
+using eNote.Application.Common.Localization;
 using eNote.Application.Constants;
 using eNote.Application.Features.Identity.Users;
 using eNote.Application.Features.Identity.Users.Services;
@@ -38,6 +40,11 @@ public sealed class AdminUsersController(
 
         if (error is not null)
         {
+            if (error == Messages.UsernameTaken)
+            {
+                throw new ConflictException(Messages.UsernameTaken);
+            }
+
             return BadRequest(new
             {
                 message = error

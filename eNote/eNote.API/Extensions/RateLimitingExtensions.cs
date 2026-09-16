@@ -15,6 +15,17 @@ public static class RateLimitingExtensions
         {
             options.AddPolicy<string, AuthRateLimiterPolicy>(AuthPolicy);
 
+            options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
+            {
+                if (!AuthRateLimitIdentity.IsAuthAction(httpContext))
+                {
+                    return RateLimitPartition.GetNoLimiter("none");
+                }
+
+                var ip = httpContext.Connection.RemoteIpAddress?.ToString() ?? "anon";
+                return RateLimitingExtensions.AuthIpPartition(ip);
+            });
+
             options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
         });
 
@@ -27,6 +38,17 @@ public static class RateLimitingExtensions
             _ => new FixedWindowRateLimiterOptions
             {
                 PermitLimit = 10,
+                Window = TimeSpan.FromMinutes(1),
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                QueueLimit = 0
+            });
+
+    public static RateLimitPartition<string> AuthIpPartition(string key) =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            key,
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 60,
                 Window = TimeSpan.FromMinutes(1),
                 QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
                 QueueLimit = 0
@@ -65,6 +87,11 @@ public static class AuthRateLimitIdentity
     public static bool IsIdentityAction(HttpContext httpContext) =>
         httpContext.GetEndpoint()?.Metadata.GetMetadata<ControllerActionDescriptor>() is
         { ControllerName: "Auth", ActionName: "Login" or "ForgotPassword" or "ResetPassword" };
+
+    public static bool IsAuthAction(HttpContext httpContext) =>
+        IsIdentityAction(httpContext) ||
+        httpContext.GetEndpoint()?.Metadata.GetMetadata<ControllerActionDescriptor>() is
+        { ControllerName: "Auth", ActionName: "Register" };
 
     public static async Task<string?> ReadIdentityAsync(HttpRequest request)
     {

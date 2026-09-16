@@ -33,7 +33,7 @@ public sealed class UserProfileService(
         {
             AppRoles.Student => await BuildStudentProfile(userId, user),
             AppRoles.Instructor => await BuildInstructorProfile(userId, user),
-            AppRoles.StoreEmployee => await BuildMusicStoreProfile(userId, user, cancellationToken),
+            AppRoles.StoreEmployee => await BuildMusicStoreProfile(userId, user, includeInactive, cancellationToken),
             AppRoles.Administrator => new AdminProfile(user.FirstName, user.LastName, user.DateOfBirth),
             _ => throw new BusinessException(Messages.UnknownRole)
         };
@@ -55,9 +55,15 @@ public sealed class UserProfileService(
         return new InstructorProfile(instructor.Id, user.FirstName, user.LastName);
     }
 
-    private async Task<MusicStoreProfile> BuildMusicStoreProfile(int userId, UserIdentityDto user, CancellationToken cancellationToken)
+    private async Task<MusicStoreProfile> BuildMusicStoreProfile(int userId, UserIdentityDto user, bool includeInactive, CancellationToken cancellationToken)
     {
-        var employee = await lookup.GetActiveEmployeeAsync(userId);
+        var employee = includeInactive
+            ? await context.Set<MusicStoreEmployee>()
+                .IgnoreQueryFilters()
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.AppUserId == userId, cancellationToken)
+                ?? throw new BusinessException(Messages.EmployeeProfileNotFound)
+            : await lookup.GetActiveEmployeeAsync(userId);
 
         var shop = await context.Set<MusicStore>()
             .AsNoTracking()

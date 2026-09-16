@@ -1,3 +1,4 @@
+using eNote.Application.Constants;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -19,7 +20,7 @@ public sealed class AttendanceConfig : IEntityTypeConfiguration<Attendance>
                .HasForeignKey(p => p.LectureId)
                .OnDelete(DeleteBehavior.Cascade);
 
-        builder.HasIndex(p => new { p.StudentId, p.LectureId }).IsUnique();
+        builder.HasIndex(p => new { p.StudentId, p.LectureId }).IsUnique().HasDatabaseName(DbConstraintNames.AttendanceStudentIdLectureIdUniqueIndex);
         builder.Property(p => p.AttendanceStatus).HasConversion<int>();
     }
 }

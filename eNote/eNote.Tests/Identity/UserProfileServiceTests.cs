@@ -1,8 +1,10 @@
+using eNote.Application.Common.Localization;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Constants;
 using eNote.Application.Features.Identity.Users;
 using eNote.Application.Features.Identity.Users.Profiles;
 using eNote.Application.Features.Identity.Users.Services;
+using eNote.Tests.TestUtils;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 
@@ -10,6 +12,8 @@ namespace eNote.Tests.Identity;
 
 public sealed class UserProfileServiceTests
 {
+    private static readonly DateTime Now = new(2026, 7, 1, 12, 0, 0, DateTimeKind.Utc);
+
     [Fact]
     public async Task GetCurrentUserAsync_UsesCurrentUserId()
     {
@@ -90,6 +94,58 @@ public sealed class UserProfileServiceTests
         Assert.Equal("Admin", profile.FirstName);
         Assert.Equal("User", profile.LastName);
         Assert.Equal(new DateTime(1990, 5, 12), profile.DateOfBirth);
+    }
+
+    [Fact]
+    public async Task GetUserAsync_IncludeInactive_ReturnsEmployeeProfile_WhenEmployeeInactive()
+    {
+        await using var context = TestDbContextFactory.CreateContext(Now);
+        var store = new MusicStore("Music Shop", "09-17");
+        context.Set<MusicStore>().Add(store);
+        await context.SaveChangesAsync();
+
+        var employee = new MusicStoreEmployee(appUserId: 7, musicStoreId: store.Id, isManager: false) { IsActive = false };
+        context.Set<MusicStoreEmployee>().Add(employee);
+        await context.SaveChangesAsync();
+
+        var identity = new StubUserIdentityService
+        {
+            User = ActiveUser(7),
+            Roles = [AppRoles.StoreEmployee]
+        };
+
+        var service = new UserProfileService(context, identity, new UserProfileLookup(context), new TestCurrentUserService(7));
+
+        var result = await service.GetUserAsync(7, includeInactive: true);
+
+        Assert.NotNull(result);
+        var profile = Assert.IsType<MusicStoreProfile>(result.Profile);
+        Assert.Equal(store.Id, profile.Id);
+        Assert.False(profile.IsManager);
+    }
+
+    [Fact]
+    public async Task GetUserAsync_ExcludeInactive_ThrowsEmployeeProfileNotFound_WhenEmployeeInactive()
+    {
+        await using var context = TestDbContextFactory.CreateContext(Now);
+        var store = new MusicStore("Music Shop", "09-17");
+        context.Set<MusicStore>().Add(store);
+        await context.SaveChangesAsync();
+
+        var employee = new MusicStoreEmployee(appUserId: 7, musicStoreId: store.Id, isManager: false) { IsActive = false };
+        context.Set<MusicStoreEmployee>().Add(employee);
+        await context.SaveChangesAsync();
+
+        var identity = new StubUserIdentityService
+        {
+            User = ActiveUser(7),
+            Roles = [AppRoles.StoreEmployee]
+        };
+
+        var service = new UserProfileService(context, identity, new UserProfileLookup(context), new TestCurrentUserService(7));
+
+        var ex = await Assert.ThrowsAsync<BusinessException>(() => service.GetUserAsync(7, includeInactive: false));
+        Assert.Equal(Messages.EmployeeProfileNotFound, ex.Message);
     }
 
     private static UserProfileService CreateService(StubUserIdentityService identity, int currentUserId = 1) =>

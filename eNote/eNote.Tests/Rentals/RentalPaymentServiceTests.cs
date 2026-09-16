@@ -1,5 +1,7 @@
 using eNote.API.Controllers.InstrumentRentals;
 using eNote.Application.Common.Localization;
+using eNote.Application.Common.Persistence;
+using eNote.Application.Constants;
 using eNote.Application.Features.Rentals.InstrumentRentals.Services;
 using eNote.Application.Features.Rentals.Payments.Services;
 using eNote.Tests.TestUtils;
@@ -147,6 +149,54 @@ public sealed class RentalPaymentServiceTests
     }
 
     [Fact]
+    public async Task CreatePaymentIntent_CreatesNewIntent_After30Minutes()
+    {
+        var (context, student, currentUser) = await CreateStudentContextAsync();
+        var instrument = await RentalTestData.SeedInstrumentAsync(context);
+        var rental = RentalTestData.CreateCompletedRental(instrument, student.Id, Now);
+        context.Set<InstrumentRental>().Add(rental);
+        await context.SaveChangesAsync();
+        var gateway = new FakePaymentGateway();
+        var clock = new MutableClock(Now);
+        var service = CreateService(context, currentUser, gateway, clock: clock);
+
+        var first = await service.CreatePaymentIntentAsync(rental.Id);
+        clock.UtcNow = Now.AddMinutes(31);
+        var second = await service.CreatePaymentIntentAsync(rental.Id);
+
+        Assert.NotEqual(first.PaymentIntentId, second.PaymentIntentId);
+        Assert.Equal(2, gateway.CreateCalls.Count);
+        Assert.NotEqual(gateway.CreateCalls[0].IdempotencyKey, gateway.CreateCalls[1].IdempotencyKey);
+        Assert.Empty(gateway.RetrieveCalls);
+    }
+
+    [Fact]
+    public async Task CreatePaymentIntent_ConcurrentDuplicate_ReturnsExistingIntent()
+    {
+        var (context, student, currentUser) = await CreateStudentContextAsync();
+        var instrument = await RentalTestData.SeedInstrumentAsync(context);
+        var rental = RentalTestData.CreateCompletedRental(instrument, student.Id, Now);
+        context.Set<InstrumentRental>().Add(rental);
+        await context.SaveChangesAsync();
+        var winner = new RentalPayment(rental.Id, rental.MusicStoreId, "pi_test_1", 5000, "eur", PaymentStatus.RequiresAction);
+        context.Set<RentalPayment>().Add(winner);
+        await context.SaveChangesAsync();
+        winner.CreatedAt = Now.AddHours(-1);
+        await context.SaveChangesAsync();
+        var gateway = new FakePaymentGateway();
+        var inner = new Exception($"duplicate key value violates unique constraint \"{DbConstraintNames.RentalPaymentStripePaymentIntentIdUniqueIndex}\"");
+        var throwing = new ThrowingSaveDbContext(context, new DbUpdateException("Unique constraint violated.", inner));
+        var service = CreateService(throwing, currentUser, gateway);
+
+        var result = await service.CreatePaymentIntentAsync(rental.Id);
+
+        Assert.Equal("pi_test_1", result.PaymentIntentId);
+        Assert.Equal(rental.Id, result.RentalId);
+        Assert.Equal(5000, result.AmountCents);
+        Assert.Equal("eur", result.Currency);
+    }
+
+    [Fact]
     public async Task CreatePaymentIntent_AlreadyPaid_Throws_PaymentAlreadyCompleted()
     {
         var (context, student, currentUser) = await CreateStudentContextAsync();
@@ -232,7 +282,8 @@ public sealed class RentalPaymentServiceTests
         var (context, student, _) = await CreateStudentContextAsync();
         var instrument = await RentalTestData.SeedInstrumentAsync(context);
         var rental = await SeedPaidRentalAsync(context, instrument, student);
-        var service = CreateService(context, CreateStoreActor());
+        var gateway = new FakePaymentGateway();
+        var service = CreateService(context, CreateStoreActor(), gateway);
 
         var dto = await service.RefundAsync(rental.Id, 2000);
 
@@ -244,6 +295,77 @@ public sealed class RentalPaymentServiceTests
 
         Assert.Equal(PaymentStatus.PartiallyRefunded, second.Status);
         Assert.Equal(3500, second.RefundedCents);
+        Assert.Equal(2, gateway.RefundCalls.Count);
+        Assert.NotEqual(gateway.RefundCalls[0].IdempotencyKey, gateway.RefundCalls[1].IdempotencyKey);
+    }
+
+    [Fact]
+    public async Task Refund_RetryAfterLostResponse_ReusesIdempotencyKey()
+    {
+        var (context, student, _) = await CreateStudentContextAsync();
+        var instrument = await RentalTestData.SeedInstrumentAsync(context);
+        var rental = await SeedPaidRentalAsync(context, instrument, student);
+        var gateway = new FakePaymentGateway { RefundException = new InvalidOperationException("lost response") };
+        var service = CreateService(context, CreateStoreActor(), gateway);
+
+        await Assert.ThrowsAnyAsync<Exception>(() => service.RefundAsync(rental.Id, 2000));
+        await Assert.ThrowsAnyAsync<Exception>(() => service.RefundAsync(rental.Id, 2000));
+
+        Assert.Equal(2, gateway.RefundCalls.Count);
+        Assert.Equal(gateway.RefundCalls[0].IdempotencyKey, gateway.RefundCalls[1].IdempotencyKey);
+    }
+
+    [Fact]
+    public async Task Refund_WhenGatewayThrows_Throws_PaymentProviderUnavailable()
+    {
+        var (context, student, _) = await CreateStudentContextAsync();
+        var instrument = await RentalTestData.SeedInstrumentAsync(context);
+        var rental = await SeedPaidRentalAsync(context, instrument, student);
+        var service = CreateService(context, CreateStoreActor(), new ThrowingPaymentGateway());
+
+        var ex = await Assert.ThrowsAsync<PaymentProviderUnavailableException>(() => service.RefundAsync(rental.Id, 2000));
+
+        Assert.Equal(400, ex.StatusCode);
+        Assert.Equal("error.payment_provider_unavailable", ex.ErrorCode);
+        Assert.Equal(Messages.PaymentProviderUnavailable, ex.Message);
+    }
+
+    [Fact]
+    public async Task Refund_Pending_LeavesPaymentUnchanged_AndDoesNotNotify()
+    {
+        var (context, student, _) = await CreateStudentContextAsync();
+        var instrument = await RentalTestData.SeedInstrumentAsync(context);
+        var rental = await SeedPaidRentalAsync(context, instrument, student);
+        var gateway = new FakePaymentGateway { RefundStatus = "pending" };
+        var dispatcher = new RecordingNotificationDispatcher();
+        var service = CreateService(context, CreateStoreActor(), gateway, dispatcher);
+
+        var dto = await service.RefundAsync(rental.Id, 2000);
+
+        Assert.Equal(PaymentStatus.Succeeded, dto.Status);
+        Assert.Null(dto.RefundedCents);
+        var payment = await context.Set<RentalPayment>().SingleAsync(x => x.StripePaymentIntentId == "pi_test_1");
+        Assert.Equal(PaymentStatus.Succeeded, payment.Status);
+        Assert.Null(payment.RefundedCents);
+        Assert.Single(gateway.RefundCalls);
+        Assert.Empty(dispatcher.RefundCalls);
+    }
+
+    [Fact]
+    public async Task Refund_Failed_Throws_RefundFailed()
+    {
+        var (context, student, _) = await CreateStudentContextAsync();
+        var instrument = await RentalTestData.SeedInstrumentAsync(context);
+        var rental = await SeedPaidRentalAsync(context, instrument, student);
+        var gateway = new FakePaymentGateway { RefundStatus = "failed" };
+        var service = CreateService(context, CreateStoreActor(), gateway);
+
+        var ex = await Assert.ThrowsAsync<BusinessException>(() => service.RefundAsync(rental.Id, 2000));
+
+        Assert.Equal(Messages.RefundFailed, ex.Message);
+        var payment = await context.Set<RentalPayment>().SingleAsync(x => x.StripePaymentIntentId == "pi_test_1");
+        Assert.Equal(PaymentStatus.Succeeded, payment.Status);
+        Assert.Null(payment.RefundedCents);
     }
 
     [Fact]
@@ -499,20 +621,26 @@ public sealed class RentalPaymentServiceTests
     private static StubCurrentActor CreateStoreActor() => new(storeId: 1);
 
     private static RentalPaymentService CreateService(
-        ENoteContext context,
+        IAppDbContext context,
         StubCurrentActor currentUser,
         IPaymentGateway? gateway = null,
-        IRentalNotificationDispatcher? dispatcher = null)
+        IRentalNotificationDispatcher? dispatcher = null,
+        IClock? clock = null)
     {
         return new(
             context,
             TestMapper.Create(),
-            new FixedClock(Now),
+            clock ?? new FixedClock(Now),
             currentUser,
             currentUser,
             gateway ?? new FakePaymentGateway(),
             dispatcher ?? new NoOpNotificationDispatcher(),
             new StripeOptions { Currency = "eur" },
             NullLogger<RentalPaymentService>.Instance);
+    }
+
+    private sealed class MutableClock(DateTime initial) : IClock
+    {
+        public DateTime UtcNow { get; set; } = initial;
     }
 }

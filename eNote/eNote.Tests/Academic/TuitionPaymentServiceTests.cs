@@ -1,4 +1,5 @@
 using eNote.Application.Common.Localization;
+using eNote.Application.Common.Persistence;
 using eNote.Application.Constants;
 using eNote.Application.Features.Academic.Tuition;
 using eNote.Application.Features.Rentals.Payments.Services;
@@ -6,6 +7,7 @@ using eNote.Domain.Entities.Academic;
 using eNote.Domain.Enums;
 using eNote.Infrastructure.Data;
 using eNote.Tests.TestUtils;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace eNote.Tests.Academic;
@@ -107,7 +109,52 @@ public sealed class TuitionPaymentServiceTests
 
         Assert.NotEqual(first.PaymentIntentId, second.PaymentIntentId);
         Assert.Equal(2, gateway.CreateCalls.Count);
+        Assert.NotEqual(gateway.CreateCalls[0].IdempotencyKey, gateway.CreateCalls[1].IdempotencyKey);
         Assert.Empty(gateway.RetrieveCalls);
+    }
+
+    [Fact]
+    public async Task CreateIntentAsync_AfterFailedPayment_CreatesNewIntentWithNewKey()
+    {
+        var (context, student, _, enrollment) = await SetupScenarioAsync(price: 100m);
+        var gateway = new FakePaymentGateway();
+        var clock = new MutableClock(Now);
+        var service = CreateService(context, student, gateway, clock);
+
+        await service.CreateIntentAsync(enrollment.Id);
+        var payment = context.Set<CoursePayment>().Single();
+        payment.MarkFailed("evt_test_failed");
+        await context.SaveChangesAsync();
+
+        clock.UtcNow = Now.AddMinutes(5);
+        var second = await service.CreateIntentAsync(enrollment.Id);
+
+        Assert.NotEqual("pi_test_1", second.PaymentIntentId);
+        Assert.Equal(2, gateway.CreateCalls.Count);
+        Assert.NotEqual(gateway.CreateCalls[0].IdempotencyKey, gateway.CreateCalls[1].IdempotencyKey);
+        Assert.Empty(gateway.RetrieveCalls);
+    }
+
+    [Fact]
+    public async Task CreateIntentAsync_ConcurrentDuplicate_ReturnsExistingIntent()
+    {
+        var (context, student, _, enrollment) = await SetupScenarioAsync(price: 100m);
+        var winner = new CoursePayment(enrollment.Id, "pi_test_1", 10000, "bam", PaymentStatus.RequiresAction);
+        context.Set<CoursePayment>().Add(winner);
+        await context.SaveChangesAsync();
+        winner.CreatedAt = Now.AddHours(-1);
+        await context.SaveChangesAsync();
+        var gateway = new FakePaymentGateway();
+        var inner = new Exception($"duplicate key value violates unique constraint \"{DbConstraintNames.CoursePaymentPaymentIntentIdUniqueIndex}\"");
+        var throwing = new ThrowingSaveDbContext(context, new DbUpdateException("Unique constraint violated.", inner));
+        var service = CreateService(throwing, student, gateway);
+
+        var result = await service.CreateIntentAsync(enrollment.Id);
+
+        Assert.Equal("pi_test_1", result.PaymentIntentId);
+        Assert.Equal(enrollment.Id, result.EnrollmentId);
+        Assert.Equal(10000, result.AmountCents);
+        Assert.Equal("bam", result.Currency);
     }
 
     [Fact]
@@ -120,7 +167,7 @@ public sealed class TuitionPaymentServiceTests
 
         await service.CreateIntentAsync(enrollment.Id);
         var key1 = gateway.CreateCalls[0].IdempotencyKey;
-        Assert.Equal($"tuition:{enrollment.Id}:none:v1", key1);
+        Assert.Equal($"tuition:{enrollment.Id}:none:0:v2", key1);
 
         enrollment.ExtendPaidUntil(Now, 30);
         await context.SaveChangesAsync();
@@ -129,7 +176,7 @@ public sealed class TuitionPaymentServiceTests
         await service.CreateIntentAsync(enrollment.Id);
 
         var key2 = gateway.CreateCalls[1].IdempotencyKey;
-        Assert.Equal($"tuition:{enrollment.Id}:{enrollment.PaidUntil:O}:v1", key2);
+        Assert.Equal($"tuition:{enrollment.Id}:{enrollment.PaidUntil:O}:1:v2", key2);
         Assert.NotEqual(key1, key2);
     }
 
@@ -184,7 +231,7 @@ public sealed class TuitionPaymentServiceTests
         TuitionTestData.SetupScenarioAsync(Now, price);
 
     private static TuitionPaymentService CreateService(
-        ENoteContext context,
+        IAppDbContext context,
         Student student,
         IPaymentGateway? gateway = null,
         IClock? clock = null)

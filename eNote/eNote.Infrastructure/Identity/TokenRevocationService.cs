@@ -1,5 +1,6 @@
 using eNote.Application.Common.Persistence;
 using eNote.Application.Common.Time;
+using eNote.Application.Constants;
 using eNote.Application.Features.Identity.Auth.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
@@ -39,7 +40,14 @@ public sealed class TokenRevocationService(IAppDbContext context, IClock clock, 
             RevokedAt = clock.UtcNow
         });
 
-        await context.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await context.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException ex) when (ex.InnerException?.Message?.Contains(DbConstraintNames.RevokedTokenJtiUniqueIndex) == true)
+        {
+            return;
+        }
     }
 
     public async Task<bool> IsRevokedAsync(string jti, CancellationToken cancellationToken = default)

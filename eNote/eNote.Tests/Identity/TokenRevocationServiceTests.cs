@@ -1,3 +1,5 @@
+using eNote.Application.Common.Persistence;
+using eNote.Application.Constants;
 using eNote.Infrastructure.Identity;
 using eNote.Tests.TestUtils;
 using Microsoft.EntityFrameworkCore;
@@ -67,6 +69,26 @@ public sealed class TokenRevocationServiceTests
         Assert.Equal(1, await context.Set<RevokedToken>().CountAsync());
     }
 
-    private static TokenRevocationService CreateService(ENoteContext context) =>
+    [Fact]
+    public async Task RevokeAsync_TreatsDuplicateJtiViolation_AsSuccess()
+    {
+        await using var context = TestDbContextFactory.CreateContext(Now);
+        var inner = new Exception($"duplicate key value violates unique constraint \"{DbConstraintNames.RevokedTokenJtiUniqueIndex}\"");
+        var service = CreateService(new ThrowingSaveDbContext(context, new DbUpdateException("Unique constraint violated.", inner)));
+
+        await service.RevokeAsync("jti-1", Now.AddHours(1));
+    }
+
+    [Fact]
+    public async Task RevokeAsync_PropagatesUnrelatedDbUpdateException()
+    {
+        await using var context = TestDbContextFactory.CreateContext(Now);
+        var inner = new Exception("some other constraint");
+        var service = CreateService(new ThrowingSaveDbContext(context, new DbUpdateException("Unique constraint violated.", inner)));
+
+        await Assert.ThrowsAsync<DbUpdateException>(() => service.RevokeAsync("jti-1", Now.AddHours(1)));
+    }
+
+    private static TokenRevocationService CreateService(IAppDbContext context) =>
         new(context, new FixedClock(Now), new MemoryCache(new MemoryCacheOptions()));
 }

@@ -144,6 +144,7 @@ public sealed class AssignmentSubmissionServiceTests
         Assert.Equal(Messages.AssignmentAlreadySubmitted, ex.Message);
     }
 
+    // Unique-violation coverage uses ThrowingSaveDbContext (see SubmitWithFileAsync_TranslatesUniqueIndexViolation_ToConflict); the InMemory provider enforces no unique index.
     [Fact]
     public async Task InMemoryProvider_AcceptsDuplicateSubmissions_Characterization()
     {

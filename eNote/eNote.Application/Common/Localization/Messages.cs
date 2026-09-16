@@ -37,6 +37,7 @@ public static class Messages
     public const string LectureCancelled = "Predavanje je otkazano.";
     public const string LectureFull = "Predavanje je popunjeno.";
     public const string LectureRsvpConflict = "Sukob pri rezervaciji predavanja. Pokušajte ponovo.";
+    public const string AttendanceAlreadyMarked = "Prisustvo za ovog studenta je već evidentirano.";
     public const string LectureTimeConflict = "Termin predavanja se preklapa s postojećim predavanjem.";
     public const string LectureCapacityBelowConfirmed = "Kapacitet ne može biti manji od broja već potvrđenih prisustava.";
 
@@ -65,6 +66,7 @@ public static class Messages
     public const string PaymentAlreadyCompleted = "Stavka je već plaćena.";
     public const string PaymentNotPayableInStatus = "Iznajmljivanje nije u stanju koje dozvoljava plaćanje.";
     public const string RefundExceedsCharged = "Iznos povrata premašuje naplaćeni iznos.";
+    public const string RefundFailed = "Povrat sredstava nije uspio.";
     public const string PaymentNotFound = "Plaćanje nije pronađeno.";
     public const string PaymentProviderUnavailable = "Plaćanje trenutno nije dostupno. Pokušajte ponovo kasnije.";
     public const string RentalUnpaidDebt = "Imate neizmireno dugovanje od prethodnog iznajmljivanja. Izmirite ga prije novog zahtjeva.";
@@ -81,6 +83,7 @@ public static class Messages
     public const string AssignmentInvalidGrade = "Ocjena mora biti između 0 i 100.";
     public const string LectureNoteNotFound = "Bilješka predavanja nije pronađena.";
     public const string StudentNotEnrolled = "Student nije upisan na kurs.";
+    public const string AlreadyEnrolled = "Student je već upisan na kurs.";
     public const string CourseIsFree = "Kurs je besplatan.";
     public const string EnrollmentNotFound = "Upis nije pronađen.";
     public const string TuitionPaymentNotFound = "Plaćanje školarine nije pronađeno.";

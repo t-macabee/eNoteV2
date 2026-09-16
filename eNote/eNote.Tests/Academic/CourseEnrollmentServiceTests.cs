@@ -1,3 +1,6 @@
+using eNote.Application.Common.Localization;
+using eNote.Application.Common.Persistence;
+using eNote.Application.Constants;
 using eNote.Application.Features.Academic.Courses.Services;
 using eNote.Tests.TestUtils;
 using Microsoft.EntityFrameworkCore;
@@ -142,7 +145,20 @@ public sealed class CourseEnrollmentServiceTests
         return (student, course);
     }
 
-    private static CourseEnrollmentService CreateService(ENoteContext context, Student student)
+    [Fact]
+    public async Task EnrollAsync_TreatsDuplicateEnrollmentViolation_AsConflict()
+    {
+        await using var context = CreateContext();
+        var (student, course) = await SeedStudentAndCourseAsync(context, hasActiveMembership: true);
+        var inner = new Exception($"duplicate key value violates unique constraint \"{DbConstraintNames.EnrollmentStudentIdCourseIdUniqueIndex}\"");
+        var service = CreateService(new ThrowingSaveDbContext(context, new DbUpdateException("Unique constraint violated.", inner)), student);
+
+        var ex = await Assert.ThrowsAsync<ConflictException>(() => service.EnrollAsync(course.Id));
+
+        Assert.Equal(Messages.AlreadyEnrolled, ex.Message);
+    }
+
+    private static CourseEnrollmentService CreateService(IAppDbContext context, Student student)
     {
         var currentUser = new StubCurrentActor(student: student);
         return new(

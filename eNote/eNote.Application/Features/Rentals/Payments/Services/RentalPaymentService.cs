@@ -1,3 +1,4 @@
+using eNote.Application.Constants;
 using eNote.Application.Features.Rentals.InstrumentRentals;
 using eNote.Application.Features.Rentals.InstrumentRentals.Services;
 using MapsterMapper;
@@ -56,7 +57,8 @@ public sealed class RentalPaymentService(
 
             var cents = PaymentGatewayHelpers.ToCents(totalFee);
             var currency = PaymentGatewayHelpers.NormalizeCurrency(options.Currency);
-            var idempotencyKey = $"rental:{rental.Id}:total:{cents}:{rental.ReturnedAt:O}:v2";
+            var attempt = await context.Set<RentalPayment>().CountAsync(p => p.InstrumentRentalId == rental.Id, cancellationToken);
+            var idempotencyKey = $"rental:{rental.Id}:total:{cents}:{rental.ReturnedAt:O}:{attempt}:v3";
 
             var metadata = new Dictionary<string, string>
             {
@@ -77,7 +79,24 @@ public sealed class RentalPaymentService(
                 PaymentGatewayHelpers.MapStatus(intent.Status));
 
             context.Set<RentalPayment>().Add(payment);
-            await context.SaveChangesAsync(cancellationToken);
+
+            try
+            {
+                await context.SaveChangesAsync(cancellationToken);
+            }
+            catch (DbUpdateException ex) when (ex.InnerException?.Message?.Contains(DbConstraintNames.RentalPaymentStripePaymentIntentIdUniqueIndex) == true)
+            {
+                var winner = await context.Set<RentalPayment>()
+                    .FirstAsync(p => p.StripePaymentIntentId == intent.Id, cancellationToken);
+
+                return new CreatePaymentIntentResponse(
+                    winner.InstrumentRentalId,
+                    winner.StripePaymentIntentId,
+                    intent.ClientSecret,
+                    winner.AmountChargedCents,
+                    winner.Currency,
+                    winner.Status);
+            }
 
             logger.LogInformation("Created PaymentIntent {PaymentIntentId} for rental {RentalId} ({AmountCents} {Currency})", intent.Id, rental.Id, intent.AmountCents, intent.Currency);
 
@@ -143,12 +162,25 @@ public sealed class RentalPaymentService(
                 throw new BusinessException(Messages.RefundExceedsCharged);
             }
 
-            var refund = await paymentGateway.CreateRefundAsync(
-                payment.StripePaymentIntentId,
-                centsToRefund,
-                "requested_by_customer",
-                $"refund:{payment.Id}:{Guid.NewGuid()}",
-                cancellationToken);
+            var refund = await PaymentGatewayHelpers.InvokeGatewayAsync(
+                logger,
+                () => paymentGateway.CreateRefundAsync(
+                    payment.StripePaymentIntentId,
+                    centsToRefund,
+                    "requested_by_customer",
+                    $"refund:{payment.Id}:{payment.RefundedCents ?? 0}:{centsToRefund}",
+                    cancellationToken));
+
+            if (refund.Status == "pending")
+            {
+                logger.LogInformation("Refund {RefundId} for payment {PaymentId} is pending; leaving payment unchanged", refund.Id, payment.Id);
+                return Map(payment);
+            }
+
+            if (refund.Status != "succeeded")
+            {
+                throw new BusinessException(Messages.RefundFailed);
+            }
 
             payment.ApplyRefund(refund.AmountCents, refund.Id, clock.UtcNow);
             await context.SaveChangesAsync(cancellationToken);

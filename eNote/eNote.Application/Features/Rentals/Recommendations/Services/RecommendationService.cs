@@ -1,9 +1,11 @@
+using eNote.Application.Constants;
 using eNote.Application.Features.Rentals.Instruments;
 using MapsterMapper;
+using Microsoft.Extensions.Logging;
 
 namespace eNote.Application.Features.Rentals.Recommendations.Services;
 
-public sealed class RecommendationService(IAppDbContext context, IMapper mapper, ICurrentUserContext currentUser, IStudentContext students, IClock clock)
+public sealed class RecommendationService(IAppDbContext context, IMapper mapper, ICurrentUserContext currentUser, IStudentContext students, IClock clock, ILogger<RecommendationService> logger)
 {
     private const double RentalWeight = 0.40;
     private const double ViewWeight = 0.30;
@@ -136,7 +138,14 @@ public sealed class RecommendationService(IAppDbContext context, IMapper mapper,
             view.RecordView(now);
         }
 
-        await context.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await context.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException ex) when (ex.InnerException?.Message?.Contains(DbConstraintNames.InstrumentViewUserIdInstrumentIdUniqueIndex) == true)
+        {
+            logger.LogInformation(ex, "Duplicate view for user {UserId} and instrument {InstrumentId} ignored", userId, instrumentId);
+        }
     }
 
     private async Task<List<Instrument>> LoadCandidateInstrumentsAsync(IReadOnlyList<int> preferredTypeIds, HashSet<int> collaborativeInstrumentIds, int count, Dictionary<int, int> globalRentalCounts, CancellationToken cancellationToken)

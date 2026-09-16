@@ -1,3 +1,6 @@
+using eNote.Application.Common.Localization;
+using eNote.Application.Common.Persistence;
+using eNote.Application.Constants;
 using eNote.Application.Features.Academic.Lectures;
 using eNote.Application.Features.Academic.Lectures.Services;
 using eNote.Application.Features.Identity.Users.Services;
@@ -162,14 +165,65 @@ public sealed class LectureAttendanceServiceTests
             service.GetAttendanceAsync(harness.Lecture.Id, new AttendanceSearchObject { Page = 1, PageSize = 10 }));
     }
 
-    private static LectureAttendanceService CreateService(ENoteContext context, Instructor instructor, Student student)
+    [Fact]
+    public async Task RsvpAsync_TreatsDuplicateAttendanceViolation_AsConflict()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var inner = new Exception($"duplicate key value violates unique constraint \"{DbConstraintNames.AttendanceStudentIdLectureIdUniqueIndex}\"");
+        var context = new ThrowingSaveDbContext(harness.Context, new DbUpdateException("Unique constraint violated.", inner));
+        var service = CreateService(context, harness.Context, harness.Instructor, harness.Student);
+
+        var ex = await Assert.ThrowsAsync<ConflictException>(() =>
+            service.RsvpAsync(harness.Lecture.Id, new RsvpRequest { Confirm = true }));
+
+        Assert.Equal(Messages.LectureRsvpConflict, ex.Message);
+    }
+
+    [Fact]
+    public async Task MarkAttendanceAsync_TreatsDuplicateAttendanceViolation_AsConflict()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var inner = new Exception($"duplicate key value violates unique constraint \"{DbConstraintNames.AttendanceStudentIdLectureIdUniqueIndex}\"");
+        var context = new ThrowingSaveDbContext(harness.Context, new DbUpdateException("Unique constraint violated.", inner));
+        var service = CreateService(context, harness.Context, harness.Instructor, harness.Student);
+
+        var ex = await Assert.ThrowsAsync<ConflictException>(() =>
+            service.MarkAttendanceAsync(harness.Lecture.Id, new MarkAttendanceRequest
+            {
+                StudentId = harness.Student.Id,
+                AttendanceStatus = AttendanceStatus.Present
+            }));
+
+        Assert.Equal(Messages.AttendanceAlreadyMarked, ex.Message);
+    }
+
+    [Fact]
+    public async Task MarkAttendanceAsync_PropagatesUnrelatedDbUpdateException()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var inner = new Exception("some other constraint");
+        var context = new ThrowingSaveDbContext(harness.Context, new DbUpdateException("Unique constraint violated.", inner));
+        var service = CreateService(context, harness.Context, harness.Instructor, harness.Student);
+
+        await Assert.ThrowsAsync<DbUpdateException>(() =>
+            service.MarkAttendanceAsync(harness.Lecture.Id, new MarkAttendanceRequest
+            {
+                StudentId = harness.Student.Id,
+                AttendanceStatus = AttendanceStatus.Present
+            }));
+    }
+
+    private static LectureAttendanceService CreateService(ENoteContext context, Instructor instructor, Student student) =>
+        CreateService(context, context, instructor, student);
+
+    private static LectureAttendanceService CreateService(IAppDbContext context, ENoteContext accessContext, Instructor instructor, Student student)
     {
         var currentUser = new StubCurrentActor(student: student);
         return new(context,
             currentUser,
             currentUser,
             new StubDisplayNameService(),
-            AcademicTestData.CreateInstructorAccess(context, instructor),
+            AcademicTestData.CreateInstructorAccess(accessContext, instructor),
             NullLogger<LectureAttendanceService>.Instance,
             new FixedClock(Now));
     }

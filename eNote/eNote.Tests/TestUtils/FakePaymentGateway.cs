@@ -10,10 +10,14 @@ namespace eNote.Tests.TestUtils;
 public sealed class FakePaymentGateway : IPaymentGateway
 {
     private readonly Dictionary<string, PaymentIntentData> _intents = new();
+    private readonly Dictionary<string, PaymentIntentData> _intentsByIdempotencyKey = new();
 
     public List<FakeGatewayCreateCall> CreateCalls { get; } = [];
     public List<FakeGatewayRetrieveCall> RetrieveCalls { get; } = [];
     public List<FakeGatewayRefundCall> RefundCalls { get; } = [];
+
+    public string RefundStatus { get; set; } = "succeeded";
+    public Exception? RefundException { get; set; }
 
     private int _nextIntentNumber = 1;
     private int _nextRefundNumber = 1;
@@ -26,10 +30,15 @@ public sealed class FakePaymentGateway : IPaymentGateway
         string statementDescriptorSuffix,
         CancellationToken cancellationToken = default)
     {
-        var id = $"pi_test_{_nextIntentNumber++}";
-        var intent = new PaymentIntentData(id, $"{id}_secret", "requires_payment_method", amountCents, currency);
-        _intents[id] = intent;
-        CreateCalls.Add(new FakeGatewayCreateCall(id, amountCents, currency, metadata, idempotencyKey, statementDescriptorSuffix));
+        if (!_intentsByIdempotencyKey.TryGetValue(idempotencyKey, out var intent))
+        {
+            var id = $"pi_test_{_nextIntentNumber++}";
+            intent = new PaymentIntentData(id, $"{id}_secret", "requires_payment_method", amountCents, currency);
+            _intentsByIdempotencyKey[idempotencyKey] = intent;
+            _intents[id] = intent;
+        }
+
+        CreateCalls.Add(new FakeGatewayCreateCall(intent.Id, amountCents, currency, metadata, idempotencyKey, statementDescriptorSuffix));
         return Task.FromResult(intent);
     }
 
@@ -55,7 +64,12 @@ public sealed class FakePaymentGateway : IPaymentGateway
     {
         var id = $"re_test_{_nextRefundNumber++}";
         RefundCalls.Add(new FakeGatewayRefundCall(id, paymentIntentId, amountCents, reason, idempotencyKey));
-        return Task.FromResult(new RefundData(id, amountCents ?? 0, "succeeded"));
+        if (RefundException is not null)
+        {
+            throw RefundException;
+        }
+
+        return Task.FromResult(new RefundData(id, amountCents ?? 0, RefundStatus));
     }
 }
 

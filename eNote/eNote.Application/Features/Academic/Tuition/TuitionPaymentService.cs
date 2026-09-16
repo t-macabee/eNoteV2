@@ -1,4 +1,5 @@
 using eNote.Application.Common.Localization;
+using eNote.Application.Constants;
 using eNote.Application.Features.Rentals.Payments.Services;
 using eNote.Domain.Entities.Academic;
 using eNote.Domain.Enums;
@@ -60,7 +61,8 @@ public sealed class TuitionPaymentService(
             var amountCents = PaymentGatewayHelpers.ToCents(enrollment.Course.Price);
             var currency = PaymentGatewayHelpers.NormalizeCurrency(options.Currency);
             var paidUntilKey = enrollment.PaidUntil.HasValue ? enrollment.PaidUntil.Value.ToString("O") : "none";
-            var idempotencyKey = $"tuition:{enrollment.Id}:{paidUntilKey}:v1";
+            var attempt = await context.Set<CoursePayment>().CountAsync(p => p.EnrollmentId == enrollment.Id, cancellationToken);
+            var idempotencyKey = $"tuition:{enrollment.Id}:{paidUntilKey}:{attempt}:v2";
 
             var metadata = new Dictionary<string, string>
             {
@@ -87,7 +89,24 @@ public sealed class TuitionPaymentService(
                 PaymentGatewayHelpers.MapStatus(intent.Status));
 
             context.Set<CoursePayment>().Add(payment);
-            await context.SaveChangesAsync(cancellationToken);
+
+            try
+            {
+                await context.SaveChangesAsync(cancellationToken);
+            }
+            catch (DbUpdateException ex) when (ex.InnerException?.Message?.Contains(DbConstraintNames.CoursePaymentPaymentIntentIdUniqueIndex) == true)
+            {
+                var winner = await context.Set<CoursePayment>()
+                    .FirstAsync(p => p.StripePaymentIntentId == intent.Id, cancellationToken);
+
+                return new CreateTuitionIntentResponse(
+                    winner.EnrollmentId,
+                    winner.StripePaymentIntentId,
+                    intent.ClientSecret,
+                    winner.AmountChargedCents,
+                    winner.Currency,
+                    winner.Status);
+            }
 
             logger.LogInformation("Created PaymentIntent {PaymentIntentId} for enrollment {EnrollmentId} ({AmountCents} {Currency})", intent.Id, enrollment.Id, intent.AmountCents, intent.Currency);
 

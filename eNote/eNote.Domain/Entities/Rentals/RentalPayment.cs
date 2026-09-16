@@ -69,4 +69,20 @@ public sealed class RentalPayment : AuditableEntity, ITenantScoped
             ? PaymentStatus.Refunded
             : PaymentStatus.PartiallyRefunded;
     }
+
+    public void ReverseRefund(long refundedCents)
+    {
+        var remaining = Math.Max(0, (RefundedCents ?? 0) - refundedCents);
+        if (remaining == 0)
+        {
+            RefundedCents = null;
+            StripeRefundId = null;
+            RefundedAt = null;
+            Status = PaymentStatus.Succeeded;
+            return;
+        }
+
+        RefundedCents = remaining;
+        Status = PaymentStatus.PartiallyRefunded;
+    }
 }

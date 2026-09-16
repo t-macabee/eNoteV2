@@ -22,4 +22,12 @@ public static class DbConstraintNames
     public const string CoursePaymentStripeEventIdUniqueIndex = "UX_CoursePayment_StripeEventId";
 
     public const string StripeWebhookEventStripeEventIdUniqueIndex = "UX_StripeWebhookEvent_StripeEventId";
+
+    public const string RevokedTokenJtiUniqueIndex = "IX_RevokedToken_Jti";
+
+    public const string InstrumentViewUserIdInstrumentIdUniqueIndex = "IX_InstrumentView_UserId_InstrumentId";
+
+    public const string EnrollmentStudentIdCourseIdUniqueIndex = "IX_Enrollment_StudentId_CourseId";
+
+    public const string AttendanceStudentIdLectureIdUniqueIndex = "IX_Attendance_StudentId_LectureId";
 }

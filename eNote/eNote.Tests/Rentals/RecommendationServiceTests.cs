@@ -1,5 +1,9 @@
+using eNote.Application.Common.Persistence;
+using eNote.Application.Constants;
 using eNote.Application.Features.Rentals.Recommendations.Services;
 using eNote.Tests.TestUtils;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace eNote.Tests.Rentals;
 
@@ -112,9 +116,21 @@ public sealed class RecommendationServiceTests
         return store;
     }
 
-    private static RecommendationService CreateService(ENoteContext context, Student student)
+    [Fact]
+    public async Task RecordViewAsync_TreatsDuplicateViewViolation_AsSuccess()
+    {
+        await using var context = RentalTestData.CreateContext(Now);
+        var student = await SeedStudentAsync(context);
+        var instrument = await RentalTestData.SeedInstrumentAsync(context);
+        var inner = new Exception($"duplicate key value violates unique constraint \"{DbConstraintNames.InstrumentViewUserIdInstrumentIdUniqueIndex}\"");
+        var service = CreateService(new ThrowingSaveDbContext(context, new DbUpdateException("Unique constraint violated.", inner)), student);
+
+        await service.RecordInstrumentViewAsync(instrument.Id);
+    }
+
+    private static RecommendationService CreateService(IAppDbContext context, Student student)
     {
         var currentUser = new StubCurrentActor(student: student, storeId: 1);
-        return new(context, TestMapper.Create(), currentUser, currentUser, new FixedClock(Now));
+        return new(context, TestMapper.Create(), currentUser, currentUser, new FixedClock(Now), NullLogger<RecommendationService>.Instance);
     }
 }

@@ -2,7 +2,10 @@ using eNote.API.Extensions;
 using eNote.API.Middleware;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Controllers;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using System.Net;
 using System.Text;
 using System.Threading.RateLimiting;
@@ -163,6 +166,39 @@ public sealed class RateLimitingTests
     }
 
     [Fact]
+    public async Task GlobalLimiter_KeysAuthRequestsOnIp_AndAllowsSixtyPerMinute()
+    {
+        var globalLimiter = CreateGlobalLimiter();
+        var first = AuthContext("10.0.0.5", "Login", body: null);
+        var second = AuthContext("10.0.0.6", "Login", body: null);
+
+        for (var i = 0; i < 60; i++)
+        {
+            using var lease = await globalLimiter.AcquireAsync(first);
+            Assert.True(lease.IsAcquired);
+        }
+
+        using var rejected = await globalLimiter.AcquireAsync(first);
+        Assert.False(rejected.IsAcquired);
+
+        using var otherIp = await globalLimiter.AcquireAsync(second);
+        Assert.True(otherIp.IsAcquired);
+    }
+
+    [Fact]
+    public async Task GlobalLimiter_LeavesNonAuthEndpointsUnlimited()
+    {
+        var globalLimiter = CreateGlobalLimiter();
+        var context = AuthContext("10.0.0.5", "GetPaged", body: null, controllerName: "Courses");
+
+        for (var i = 0; i < 100; i++)
+        {
+            using var lease = await globalLimiter.AcquireAsync(context);
+            Assert.True(lease.IsAcquired);
+        }
+    }
+
+    [Fact]
     public void AuthPartition_KeepsTenPermitLimit()
     {
         var partition = RateLimitingExtensions.AuthPartition("10.0.0.5");
@@ -184,7 +220,15 @@ public sealed class RateLimitingTests
         await middleware.InvokeAsync(context);
     }
 
-    private static DefaultHttpContext AuthContext(string? ip, string actionName, string? body)
+    private static PartitionedRateLimiter<HttpContext> CreateGlobalLimiter()
+    {
+        var services = new ServiceCollection();
+        services.AddApplicationRateLimiting();
+        var provider = services.BuildServiceProvider();
+        return provider.GetRequiredService<IOptions<RateLimiterOptions>>().Value.GlobalLimiter!;
+    }
+
+    private static DefaultHttpContext AuthContext(string? ip, string actionName, string? body, string controllerName = "Auth")
     {
         var context = new DefaultHttpContext();
 
@@ -197,7 +241,7 @@ public sealed class RateLimitingTests
             null,
             new EndpointMetadataCollection(new ControllerActionDescriptor
             {
-                ControllerName = "Auth",
+                ControllerName = controllerName,
                 ActionName = actionName
             }),
             null));

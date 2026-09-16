@@ -1,3 +1,4 @@
+using eNote.Application.Constants;
 using eNote.Application.Features.Identity.Instructors;
 using eNote.Application.Features.Identity.Users.Services;
 using Microsoft.Extensions.Logging;
@@ -60,6 +61,11 @@ public sealed class LectureAttendanceService(
         catch (DbUpdateConcurrencyException ex)
         {
             logger.LogWarning(ex, "Concurrency conflict while RSVPing for lecture {LectureId} by student user {StudentUserId}", lectureId, currentUser.UserId);
+            throw new ConflictException(Messages.LectureRsvpConflict);
+        }
+        catch (DbUpdateException ex) when (ex.InnerException?.Message?.Contains(DbConstraintNames.AttendanceStudentIdLectureIdUniqueIndex) == true)
+        {
+            logger.LogWarning(ex, "Duplicate RSVP for lecture {LectureId} by student user {StudentUserId}", lectureId, currentUser.UserId);
             throw new ConflictException(Messages.LectureRsvpConflict);
         }
 
@@ -143,7 +149,15 @@ public sealed class LectureAttendanceService(
             attendance.UpdatedById = currentUser.UserId;
         }
 
-        await context.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await context.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException ex) when (ex.InnerException?.Message?.Contains(DbConstraintNames.AttendanceStudentIdLectureIdUniqueIndex) == true)
+        {
+            logger.LogWarning(ex, "Duplicate attendance for lecture {LectureId} and student {StudentId}", lectureId, request.StudentId);
+            throw new ConflictException(Messages.AttendanceAlreadyMarked);
+        }
 
         var student = attendance.Student ?? await context.Set<Student>()
             .AsNoTracking()

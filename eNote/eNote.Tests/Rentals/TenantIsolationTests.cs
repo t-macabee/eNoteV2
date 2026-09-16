@@ -10,6 +10,7 @@ using eNote.Domain.Entities.Communication;
 using eNote.Tests.TestUtils;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace eNote.Tests.Rentals;
 
@@ -121,7 +122,7 @@ public sealed class TenantIsolationTests
         var store2 = await SeedStoreAsync(context, "Store B");
         var instr2 = await SeedInstrumentAsync(context, store2.Id);
 
-        var service = new RecommendationService(context, TestMapper.Create(), new StubCurrentActor(storeId: store1.Id), new StubCurrentActor(storeId: store1.Id), new FixedClock(Now));
+        var service = new RecommendationService(context, TestMapper.Create(), new StubCurrentActor(storeId: store1.Id), new StubCurrentActor(storeId: store1.Id), new FixedClock(Now), NullLogger<RecommendationService>.Instance);
         await Assert.ThrowsAsync<NotFoundException>(() => service.RecordInstrumentViewAsync(instr2.Id));
     }
 

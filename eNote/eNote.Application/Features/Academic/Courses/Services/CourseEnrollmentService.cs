@@ -1,3 +1,4 @@
+using eNote.Application.Constants;
 using Microsoft.Extensions.Logging;
 
 namespace eNote.Application.Features.Academic.Courses.Services;
@@ -43,7 +44,14 @@ public sealed class CourseEnrollmentService(
             });
         }
 
-        await context.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await context.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException ex) when (ex.InnerException?.Message?.Contains(DbConstraintNames.EnrollmentStudentIdCourseIdUniqueIndex) == true)
+        {
+            throw new ConflictException(Messages.AlreadyEnrolled);
+        }
 
         logger.LogInformation("Student {StudentUserId} enrolled in course {CourseId}", currentUser.UserId, courseId);
     }

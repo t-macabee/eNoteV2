@@ -93,7 +93,7 @@ public sealed class UserProvisioningServiceTests
     }
 
     [Fact]
-    public async Task ProvisionUserAsync_UpdatesExistingUser_WhenUsernameExists()
+    public async Task ProvisionUserAsync_ReturnsUsernameTaken_WhenUsernameExists()
     {
         await using var context = TestDbContextFactory.CreateContext(Now);
         var account = new RecordingUserAccountService { ExistingUserId = 42 };
@@ -107,14 +107,36 @@ public sealed class UserProvisioningServiceTests
             Role = AppRoles.Student
         });
 
-        Assert.Null(error);
-        Assert.Equal(42, userId);
-        Assert.True(account.UpdatedExisting);
-        Assert.Equal((42, true), account.SetActiveCall);
+        Assert.Equal(0, userId);
+        Assert.Equal(Messages.UsernameTaken, error);
+        Assert.False(account.UpdatedExisting);
+        Assert.Null(account.SetActiveCall);
+        Assert.Null(account.AssignRoleCall);
+        Assert.False(await context.Set<Student>().AnyAsync(s => s.AppUserId == 42));
     }
 
     [Fact]
-    public async Task ProvisionUserAsync_DoesNotReactivate_WhenExistingUserAlreadyActive()
+    public async Task ProvisionUserAsync_RejectsExistingUsername_WithoutUpdating()
+    {
+        await using var context = TestDbContextFactory.CreateContext(Now);
+        var account = new RecordingUserAccountService { ExistingUserId = 42 };
+        var service = CreateService(context, account);
+
+        var (userId, error) = await service.ProvisionUserAsync(new UserProvisionRequest
+        {
+            Username = "existing",
+            Email = "existing@example.com",
+            Password = "Password1!",
+            Role = AppRoles.Student
+        });
+
+        Assert.Equal(0, userId);
+        Assert.Equal(Messages.UsernameTaken, error);
+        Assert.False(account.UpdatedExisting);
+    }
+
+    [Fact]
+    public async Task ProvisionUserAsync_RejectsExistingUsername_WithoutReactivating()
     {
         await using var context = TestDbContextFactory.CreateContext(Now);
         var account = new RecordingUserAccountService { ExistingUserId = 42, IsActive = true };
@@ -128,10 +150,34 @@ public sealed class UserProvisioningServiceTests
             Role = AppRoles.Student
         });
 
-        Assert.Null(error);
-        Assert.Equal(42, userId);
-        Assert.True(account.UpdatedExisting);
+        Assert.Equal(0, userId);
+        Assert.Equal(Messages.UsernameTaken, error);
         Assert.Null(account.SetActiveCall);
+    }
+
+    [Fact]
+    public async Task ProvisionUserAsync_ReturnsError_WhenRoleAssignmentFails()
+    {
+        await using var context = TestDbContextFactory.CreateContext(Now);
+        var account = new RecordingUserAccountService
+        {
+            CreateUserId = 7,
+            AssignRoleResult = (false, "role assignment failed")
+        };
+        var service = CreateService(context, account);
+
+        var (userId, error) = await service.ProvisionUserAsync(new UserProvisionRequest
+        {
+            Username = "newuser",
+            Email = "new@example.com",
+            Password = "Password1!",
+            Role = AppRoles.Instructor
+        });
+
+        Assert.Equal(0, userId);
+        Assert.Equal("role assignment failed", error);
+        Assert.Equal((7, AppRoles.Instructor), account.AssignRoleCall);
+        Assert.False(await context.Set<Instructor>().AnyAsync(i => i.AppUserId == 7));
     }
 
     [Fact]
@@ -528,6 +574,8 @@ public sealed class UserProvisioningServiceTests
         public bool UpdatedExisting { get; private set; }
         public (int UserId, bool IsActive)? SetActiveCall { get; private set; }
         public (bool Success, string? Error) SetActiveResult { get; set; } = (true, null);
+        public (bool Success, string? Error) AssignRoleResult { get; set; } = (true, null);
+        public (int UserId, string Role)? AssignRoleCall { get; private set; }
 
         public Task<int?> FindUserIdByUsernameAsync(string username, CancellationToken cancellationToken = default) =>
             Task.FromResult(ExistingUserId);
@@ -535,8 +583,11 @@ public sealed class UserProvisioningServiceTests
         public Task<(int? UserId, string? Error)> CreateUserAsync(string username, string email, string password, string? firstName, string? lastName, CancellationToken cancellationToken = default) =>
             Task.FromResult((CreateUserId, CreateUserId is null ? "creation failed" : null));
 
-        public Task<(bool Success, string? Error)> AssignSingleRoleAsync(int userId, string role, CancellationToken cancellationToken = default) =>
-            Task.FromResult<(bool Success, string? Error)>((true, null));
+        public Task<(bool Success, string? Error)> AssignSingleRoleAsync(int userId, string role, CancellationToken cancellationToken = default)
+        {
+            AssignRoleCall = (userId, role);
+            return Task.FromResult(AssignRoleResult);
+        }
 
         public Task<(bool Success, string? Error)> UpdateExistingUserAsync(int userId, string email, string? firstName, string? lastName, DateTime? dateOfBirth = null, CancellationToken cancellationToken = default)
         {

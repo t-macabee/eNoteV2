@@ -27,6 +27,7 @@ public sealed class StripeWebhookService(
     private const string PaymentIntentSucceeded = "payment_intent.succeeded";
     private const string PaymentIntentPaymentFailed = "payment_intent.payment_failed";
     private const string ChargeRefunded = "charge.refunded";
+    private const string ChargeRefundUpdated = "charge.refund.updated";
 
     public async Task HandleAsync(string rawJson, string signatureHeader, CancellationToken cancellationToken = default)
     {
@@ -65,6 +66,10 @@ public sealed class StripeWebhookService(
 
             case ChargeRefunded when stripeEvent.Data.Object is Charge charge:
                 await HandleChargeRefundedAsync(charge, stripeEvent.Id, rawJson, cancellationToken);
+                break;
+
+            case ChargeRefundUpdated when stripeEvent.Data.Object is Refund refund:
+                await HandleChargeRefundUpdatedAsync(refund, stripeEvent.Id, rawJson, cancellationToken);
                 break;
 
             default:
@@ -228,6 +233,82 @@ public sealed class StripeWebhookService(
             }
 
             logger.LogWarning("PaymentIntent {PaymentIntentId} not found for refunded webhook", charge.PaymentIntentId);
+        }, cancellationToken);
+    }
+
+    private async Task HandleChargeRefundUpdatedAsync(Refund refund, string eventId, string rawJson, CancellationToken cancellationToken)
+    {
+        await context.ExecuteInTransactionAsync(async () =>
+        {
+            if (string.IsNullOrWhiteSpace(refund.PaymentIntentId))
+            {
+                logger.LogWarning("Refund {RefundId} has no PaymentIntentId; ignoring refund.updated webhook", refund.Id);
+                return;
+            }
+
+            if (await context.Set<StripeWebhookEvent>().AnyAsync(e => e.StripeEventId == eventId, cancellationToken))
+            {
+                return;
+            }
+
+            var rentalPayment = await context.Set<RentalPayment>()
+                .IgnoreQueryFilters()
+                .Include(p => p.InstrumentRental)
+                .FirstOrDefaultAsync(p => p.StripePaymentIntentId == refund.PaymentIntentId, cancellationToken);
+
+            if (rentalPayment is null)
+            {
+                var coursePayment = await context.Set<CoursePayment>()
+                    .IgnoreQueryFilters()
+                    .FirstOrDefaultAsync(p => p.StripePaymentIntentId == refund.PaymentIntentId, cancellationToken);
+
+                if (coursePayment is not null)
+                {
+                    logger.LogInformation("Refund {RefundId} updated for course payment {CoursePaymentId}; leaving payment as-is", refund.Id, coursePayment.Id);
+                    await RecordEventAsync(eventId, ChargeRefundUpdated, rawJson, cancellationToken);
+                    return;
+                }
+
+                logger.LogWarning("PaymentIntent {PaymentIntentId} not found for refund.updated webhook", refund.PaymentIntentId);
+                return;
+            }
+
+            if (rentalPayment.Status is PaymentStatus.Succeeded or PaymentStatus.PartiallyRefunded or PaymentStatus.Refunded)
+            {
+                // The charge.refunded fallback records a null refund id when the payload carries no refund list.
+                var counted = rentalPayment.StripeRefundId == refund.Id
+                    || (rentalPayment.StripeRefundId is null && (rentalPayment.RefundedCents ?? 0) >= refund.Amount);
+
+                if (refund.Status == "succeeded")
+                {
+                    if (counted)
+                    {
+                        logger.LogInformation("Refund {RefundId} already applied to payment {PaymentId}; skipping", refund.Id, rentalPayment.Id);
+                    }
+                    else
+                    {
+                        rentalPayment.ApplyRefund(refund.Amount, refund.Id, clock.UtcNow);
+                    }
+                }
+                else if (refund.Status == "failed")
+                {
+                    if (counted)
+                    {
+                        rentalPayment.ReverseRefund(refund.Amount);
+                        logger.LogWarning("Refund {RefundId} failed for payment {PaymentId}; the counted refund was reversed", refund.Id, rentalPayment.Id);
+                    }
+                    else
+                    {
+                        logger.LogWarning("Refund {RefundId} failed for payment {PaymentId}; no refund was applied", refund.Id, rentalPayment.Id);
+                    }
+                }
+            }
+            else
+            {
+                logger.LogInformation("Refund {RefundId} update for payment {PaymentId} in status {PaymentStatus}; ignoring", refund.Id, rentalPayment.Id, rentalPayment.Status);
+            }
+
+            await RecordEventAsync(eventId, ChargeRefundUpdated, rawJson, cancellationToken);
         }, cancellationToken);
     }
 

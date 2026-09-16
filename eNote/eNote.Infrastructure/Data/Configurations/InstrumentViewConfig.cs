@@ -1,3 +1,4 @@
+using eNote.Application.Constants;
 using eNote.Infrastructure.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -18,7 +19,7 @@ public sealed class InstrumentViewConfig : IEntityTypeConfiguration<InstrumentVi
                .HasForeignKey(x => x.InstrumentId)
                .OnDelete(DeleteBehavior.Cascade);
 
-        builder.HasIndex(x => new { x.UserId, x.InstrumentId }).IsUnique();
+        builder.HasIndex(x => new { x.UserId, x.InstrumentId }).IsUnique().HasDatabaseName(DbConstraintNames.InstrumentViewUserIdInstrumentIdUniqueIndex);
         builder.HasIndex(x => x.LastViewedAt);
     }
 }

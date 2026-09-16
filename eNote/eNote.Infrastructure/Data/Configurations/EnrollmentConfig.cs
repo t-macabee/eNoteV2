@@ -1,3 +1,4 @@
+using eNote.Application.Constants;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -19,7 +20,7 @@ public sealed class EnrollmentConfig : IEntityTypeConfiguration<Enrollment>
                .HasForeignKey(x => x.CourseId)
                .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasIndex(e => new { e.StudentId, e.CourseId }).IsUnique();
+        builder.HasIndex(e => new { e.StudentId, e.CourseId }).IsUnique().HasDatabaseName(DbConstraintNames.EnrollmentStudentIdCourseIdUniqueIndex);
         builder.Property(e => e.EnrollmentStatus).HasConversion<int>();
         builder.Property(e => e.PaidUntil);
     }
