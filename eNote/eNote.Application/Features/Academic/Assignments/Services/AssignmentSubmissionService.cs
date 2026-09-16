@@ -139,6 +139,11 @@ public sealed class AssignmentSubmissionService(
             .FirstOrDefaultAsync(x => x.Id == submissionId && x.AssignmentId == assignmentId, cancellationToken)
             ?? throw new NotFoundException(Messages.AssignmentSubmissionNotFound);
 
+        if (submission.SubmittedAt is null)
+        {
+            throw new BusinessException(Messages.AssignmentNotSubmitted);
+        }
+
         submission.SetGrade(request.Grade);
         submission.UpdatedById = currentUser.UserId;
 

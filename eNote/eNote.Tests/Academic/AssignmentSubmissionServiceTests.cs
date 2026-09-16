@@ -115,6 +115,27 @@ public sealed class AssignmentSubmissionServiceTests
     }
 
     [Fact]
+    public async Task GradeAsync_Throws_WhenSubmissionNotSubmitted()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var assignment = new Assignment("Homework", "Do it", Now.AddDays(7), harness.Lecture.Id);
+        harness.Context.Set<Assignment>().Add(assignment);
+        await harness.Context.SaveChangesAsync();
+        var submission = new AssignmentSubmission(assignment.Id, harness.Student.Id);
+        harness.Context.Set<AssignmentSubmission>().Add(submission);
+        await harness.Context.SaveChangesAsync();
+        var dispatcher = new RecordingSubmissionNotificationDispatcher();
+        var service = CreateService(harness.Context, harness.Instructor, new RecordingFileStorageService(), harness.Student, dispatcher);
+
+        var ex = await Assert.ThrowsAsync<BusinessException>(() =>
+            service.GradeAsync(harness.Lecture.Id, assignment.Id, submission.Id, new GradeAssignmentRequest { Grade = 85 }));
+
+        Assert.Equal(Messages.AssignmentNotSubmitted, ex.Message);
+        Assert.Null(submission.Grade);
+        Assert.Empty(dispatcher.GradedCalls);
+    }
+
+    [Fact]
     public async Task GradeAsync_Throws_WhenInstructorDoesNotOwnAssignment()
     {
         var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);

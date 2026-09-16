@@ -7,6 +7,6 @@ public sealed class GradeAssignmentRequestValidator : AbstractValidator<GradeAss
 {
     public GradeAssignmentRequestValidator()
     {
-        RuleFor(x => x.Grade).InclusiveBetween(0, 100);
+        RuleFor(x => x.Grade).InclusiveBetween(0, 100).WithMessage(Messages.AssignmentInvalidGrade);
     }
 }

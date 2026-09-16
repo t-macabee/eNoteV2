@@ -81,6 +81,7 @@ public static class Messages
 
     public const string AssignmentNotFound = "Zadatak nije pronađen.";
     public const string AssignmentAlreadySubmitted = "Zadatak je već predan.";
+    public const string AssignmentNotSubmitted = "Zadatak nije predan.";
     public const string AssignmentSubmissionNotFound = "Predaja zadatka nije pronađena.";
     public const string AssignmentInvalidGrade = "Ocjena mora biti između 0 i 100.";
     public const string LectureNoteNotFound = "Bilješka predavanja nije pronađena.";
@@ -109,6 +110,27 @@ public static class Messages
     public const string EventNotFound = "Događaj nije pronađen.";
     public const string EventEndsBeforeStarts = "Vrijeme završetka mora biti nakon vremena početka.";
     public const string AdminEventPlatformWideOnly = "Administrator može upravljati samo događajima na nivou platforme.";
+
+    // Reports
+    public const string ReportRankingTitle = "Rang lista";
+    public const string ReportRentalSummaryTitle = "Pregled iznajmljivanja";
+    public const string ReportAttendanceTitle = "Prisustvo";
+    public const string ReportStoreReportTitle = "Izvještaj — Muzičke prodavnice";
+    public const string ReportGeneratedLabel = "Generisano";
+    public const string ReportColumnRank = "Rang";
+    public const string ReportColumnStudent = "Student";
+    public const string ReportColumnAverage = "Prosjek";
+    public const string ReportColumnGraded = "Ocijenjeno";
+    public const string ReportColumnId = "ID";
+    public const string ReportColumnInstrument = "Instrument";
+    public const string ReportColumnStatus = "Status";
+    public const string ReportColumnFee = "Naknada";
+    public const string ReportColumnTotal = "Ukupno";
+    public const string ReportColumnName = "Naziv";
+    public const string ReportColumnBusinessHours = "Radno vrijeme";
+    public const string ReportCourseFallback = "Kurs";
+    public const string ReportStoreFallback = "Prodavnica";
+    public const string ReportStudentFallback = "Student";
 
     public static string RoleCreateFailed(string role, string errors) =>
         $"Greška pri kreiranju uloge {role}: {errors}";

@@ -29,6 +29,11 @@ public class AssignmentSubmission : AuditableEntity
 
     public void SetGrade(int grade)
     {
+        if (grade < 0 || grade > 100)
+        {
+            throw new ArgumentOutOfRangeException(nameof(grade), "Grade must be between 0 and 100.");
+        }
+
         Grade = grade;
     }
 }

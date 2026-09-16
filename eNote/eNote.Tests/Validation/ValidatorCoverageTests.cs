@@ -1,3 +1,4 @@
+using eNote.Application.Common.Localization;
 using eNote.Application.Features.Academic.Assignments;
 using eNote.Application.Features.Academic.Courses;
 using eNote.Application.Features.Academic.LectureNotes;
@@ -200,6 +201,14 @@ public sealed class ValidatorCoverageTests
         AssertInvalid(UpdateProfile().Validate(new UpdateProfileRequest { Email = "student@example.com", FirstName = tooLong }), nameof(UpdateProfileRequest.FirstName));
         AssertInvalid(UpdateProfile().Validate(new UpdateProfileRequest { Email = "student@example.com", LastName = tooLong }), nameof(UpdateProfileRequest.LastName));
         AssertInvalid(UpdateProfile().Validate(new UpdateProfileRequest { Email = "student@example.com", DateOfBirth = Clock.UtcNow.AddDays(1) }), nameof(UpdateProfileRequest.DateOfBirth));
+    }
+
+    [Fact]
+    public void GradeValidator_UsesBosnianGradeMessage()
+    {
+        var result = new GradeAssignmentRequestValidator().Validate(new GradeAssignmentRequest { Grade = 101 });
+
+        Assert.Contains(result.Errors, e => e.ErrorMessage == Messages.AssignmentInvalidGrade);
     }
 
     private static readonly FixedClock Clock = new(new DateTime(2026, 7, 1, 12, 0, 0, DateTimeKind.Utc));
