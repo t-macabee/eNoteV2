@@ -102,11 +102,6 @@ public sealed class ShopEmployeeService(
             .AsNoTracking()
             .Include(x => x.MusicStore)
             .FirstOrDefaultAsync(x => x.Id == id, cancellationToken)
-            ?? await context.Set<MusicStoreEmployee>()
-                .IgnoreQueryFilters()
-                .AsNoTracking()
-                .Include(x => x.MusicStore)
-                .FirstOrDefaultAsync(x => x.AppUserId == id, cancellationToken)
             ?? throw new NotFoundException(Messages.EmployeeProfileNotFound);
 
         UserIdentityDto? user = await identityService.GetUserAsync(entity.AppUserId, cancellationToken);
@@ -129,7 +124,7 @@ public sealed class ShopEmployeeService(
 
         if (target.MusicStoreId != currentEmployee.MusicStoreId)
         {
-            throw new BusinessException(Messages.RentalAccessDenied);
+            throw new NotFoundException(Messages.NotFound);
         }
 
         return await provisioningService.SetUserActiveAsync(targetUserId, isActive, ct);

@@ -69,7 +69,7 @@ internal sealed class AuthService(UserManager<AppUser> userManager, SignInManage
         {
             if (error == Messages.UsernameTaken || error == Messages.EmailTaken)
             {
-                throw new ConflictException(Messages.UsernameTaken);
+                throw new ConflictException(error);
             }
 
             throw new BusinessException(error);
@@ -104,7 +104,14 @@ internal sealed class AuthService(UserManager<AppUser> userManager, SignInManage
 
         var token = await userManager.GeneratePasswordResetTokenAsync(user);
 
-        await emailService.SendPasswordResetAsync(user.Email!, token, cancellationToken);
+        try
+        {
+            await emailService.SendPasswordResetAsync(user.Email!, token, cancellationToken);
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            logger.LogError(exception, "Failed to send password reset email for {Email}", email);
+        }
 
         if (environment.IsDevelopment())
         {

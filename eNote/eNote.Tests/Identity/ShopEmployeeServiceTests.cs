@@ -186,7 +186,7 @@ public sealed class ShopEmployeeServiceTests
     }
 
     [Fact]
-    public async Task GetByIdAsync_CanLookupByAppUserId()
+    public async Task GetByIdAsync_Throws_WhenOnlyAppUserIdMatches()
     {
         await using var context = TestDbContextFactory.CreateContext(Now);
 
@@ -205,10 +205,8 @@ public sealed class ShopEmployeeServiceTests
 
         var service = new ShopEmployeeService(context, identity, new StubCurrentActor(), null!);
 
-        var dto = await service.GetByIdAsync(99);
-
-        Assert.Equal(99, dto.AppUserId);
-        Assert.Equal("Drum Shop", dto.StoreName);
+        await Assert.ThrowsAsync<NotFoundException>(() => service.GetByIdAsync(99));
+        Assert.NotEqual(99, emp.Id);
     }
 
     [Fact]
@@ -371,7 +369,7 @@ public sealed class ShopEmployeeServiceTests
     }
 
     [Fact]
-    public async Task SetEmployeeActiveByManagerAsync_ThrowsBusinessException_WhenTargetBelongsToDifferentStore()
+    public async Task SetEmployeeActiveByManagerAsync_ThrowsNotFoundException_WhenTargetBelongsToDifferentStore()
     {
         await using var context = TestDbContextFactory.CreateContext(Now);
 
@@ -390,10 +388,10 @@ public sealed class ShopEmployeeServiceTests
         var provisioning = new UserProvisioningService(context, account, new SystemClock(), new StubFileStorageService(), actor);
         var service = new ShopEmployeeService(context, new StubUserIdentityService(), actor, provisioning);
 
-        var ex = await Assert.ThrowsAsync<BusinessException>(() =>
+        var ex = await Assert.ThrowsAsync<NotFoundException>(() =>
             service.SetEmployeeActiveByManagerAsync(20, false));
 
-        Assert.Equal(Messages.RentalAccessDenied, ex.Message);
+        Assert.Equal(Messages.NotFound, ex.Message);
         Assert.Null(account.SetActiveCall);
     }
 

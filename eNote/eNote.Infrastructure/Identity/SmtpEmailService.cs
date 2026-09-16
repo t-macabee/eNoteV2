@@ -41,7 +41,7 @@ public sealed class SmtpEmailService : IEmailService
         }.ToMessageBody();
 
         using var client = new SmtpClient();
-        var socketOptions = _enableSsl ? SecureSocketOptions.StartTlsWhenAvailable : SecureSocketOptions.None;
+        var socketOptions = ResolveSocketOptions(_enableSsl, _port);
         await client.ConnectAsync(_host, _port, socketOptions, cancellationToken);
 
         if (!string.IsNullOrWhiteSpace(_username))
@@ -57,5 +57,15 @@ public sealed class SmtpEmailService : IEmailService
     {
         var separator = _passwordResetUrl.Contains('?', StringComparison.Ordinal) ? "&" : "?";
         return $"{_passwordResetUrl.TrimEnd('/')}{separator}email={Uri.EscapeDataString(email)}&token={Uri.EscapeDataString(token)}";
+    }
+
+    internal static SecureSocketOptions ResolveSocketOptions(bool enableSsl, int port)
+    {
+        if (!enableSsl)
+        {
+            return SecureSocketOptions.None;
+        }
+
+        return port == 465 ? SecureSocketOptions.SslOnConnect : SecureSocketOptions.StartTls;
     }
 }

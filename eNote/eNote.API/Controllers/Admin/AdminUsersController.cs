@@ -85,7 +85,12 @@ public sealed class AdminUsersController(
 
         if (!success)
         {
-            return NotFound(new { message = error });
+            if (error == Messages.NotFound)
+            {
+                return NotFound(new { message = error });
+            }
+
+            return BadRequest(new { message = error });
         }
 
         return NoContent();

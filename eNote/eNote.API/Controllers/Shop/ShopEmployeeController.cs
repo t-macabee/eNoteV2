@@ -1,4 +1,5 @@
 using eNote.API.Controllers.Base;
+using eNote.Application.Common.Localization;
 using eNote.Application.Common.Paging;
 using eNote.Application.Constants;
 using eNote.Application.Features.Identity.Employees;
@@ -52,6 +53,11 @@ public sealed class ShopEmployeeController(
         var (success, error) = await employeeService.SetEmployeeActiveByManagerAsync(id, request.IsActive, cancellationToken);
         if (!success)
         {
+            if (error == Messages.NotFound)
+            {
+                return NotFound(new { message = error });
+            }
+
             return BadRequest(new { message = error });
         }
         return NoContent();

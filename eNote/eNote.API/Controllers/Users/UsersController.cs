@@ -1,4 +1,5 @@
 using eNote.API.Controllers.Base;
+using eNote.Application.Common.Localization;
 using eNote.Application.Features.Identity.Users;
 using eNote.Application.Features.Identity.Users.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -45,11 +46,11 @@ public sealed class UsersController(UserProfileService profileService, UserSelfS
     [RequestSizeLimit(5 * 1024 * 1024)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> UploadPicture(IFormFile file)
+    public async Task<IActionResult> UploadPicture(IFormFile? file)
     {
-        if (file.Length == 0)
+        if (file is null || file.Length == 0)
         {
-            return BadRequest(new { message = "No file uploaded." });
+            return BadRequest(new { message = Messages.FileNotProvided });
         }
 
         await using var stream = file.OpenReadStream();

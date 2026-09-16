@@ -1,4 +1,6 @@
 using eNote.API.Controllers.Shop;
+using eNote.Application.Common.Exceptions;
+using eNote.Application.Common.Localization;
 using eNote.Application.Common.Paging;
 using eNote.Application.Features.Identity.Auth;
 using eNote.Application.Features.Identity.Employees;
@@ -126,6 +128,54 @@ public sealed class ShopEmployeeControllerTests
 
         var badRequest = Assert.IsType<BadRequestObjectResult>(result);
         Assert.NotNull(badRequest.Value);
+    }
+
+    [Fact]
+    public async Task SetStatus_ReturnsNotFound_WhenUserMissing()
+    {
+        await using var ctx = TestDbContextFactory.CreateContext(Now);
+        var store = new MusicStore("Main Shop", "09-17");
+        ctx.Set<MusicStore>().Add(store);
+        await ctx.SaveChangesAsync();
+
+        var manager = new MusicStoreEmployee(appUserId: 10, musicStoreId: store.Id, isManager: true);
+        var employee = new MusicStoreEmployee(appUserId: 30, musicStoreId: store.Id, isManager: false);
+        ctx.Set<MusicStoreEmployee>().AddRange(manager, employee);
+        await ctx.SaveChangesAsync();
+
+        var actor = new StubCurrentActor(userId: 10);
+        var stubProvisioning = new StubProvisioningService { SetActiveResult = (false, Messages.NotFound) };
+        var employeeService = new ShopEmployeeService(ctx, new StubUserIdentityService(), actor, stubProvisioning);
+        var controller = new ShopEmployeeController(employeeService, stubProvisioning);
+
+        var result = await controller.SetStatus(30, new UserStatusRequest(false), CancellationToken.None);
+
+        Assert.IsType<NotFoundObjectResult>(result);
+    }
+
+    [Fact]
+    public async Task SetStatus_ThrowsNotFound_WhenTargetBelongsToDifferentStore()
+    {
+        await using var ctx = TestDbContextFactory.CreateContext(Now);
+        var store1 = new MusicStore("Main Shop", "09-17");
+        var store2 = new MusicStore("Other Shop", "09-17");
+        ctx.Set<MusicStore>().AddRange(store1, store2);
+        await ctx.SaveChangesAsync();
+
+        var manager = new MusicStoreEmployee(appUserId: 10, musicStoreId: store1.Id, isManager: true);
+        var foreignEmployee = new MusicStoreEmployee(appUserId: 20, musicStoreId: store2.Id, isManager: false);
+        ctx.Set<MusicStoreEmployee>().AddRange(manager, foreignEmployee);
+        await ctx.SaveChangesAsync();
+
+        var actor = new StubCurrentActor(userId: 10);
+        var stubProvisioning = new StubProvisioningService();
+        var employeeService = new ShopEmployeeService(ctx, new StubUserIdentityService(), actor, stubProvisioning);
+        var controller = new ShopEmployeeController(employeeService, stubProvisioning);
+
+        var ex = await Assert.ThrowsAsync<NotFoundException>(() =>
+            controller.SetStatus(20, new UserStatusRequest(false), CancellationToken.None));
+
+        Assert.Equal(Messages.NotFound, ex.Message);
     }
 
     private sealed class StubUserIdentityService : IUserIdentityService

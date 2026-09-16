@@ -14,6 +14,7 @@ using eNote.Application.Validation.Academic;
 using eNote.Application.Validation.Communication;
 using eNote.Application.Validation.Identity;
 using eNote.Application.Validation.Rentals;
+using eNote.Tests.TestUtils;
 using FluentValidation.Results;
 
 namespace eNote.Tests.Validation;
@@ -28,7 +29,7 @@ public sealed class ValidatorCoverageTests
         Assert.True(new ForgotPasswordRequestValidator().Validate(new ForgotPasswordRequest { Email = "student@example.com" }).IsValid);
         Assert.True(new ResetPasswordRequestValidator().Validate(new ResetPasswordRequest { Email = "student@example.com", Token = "token", NewPassword = "password1" }).IsValid);
         Assert.True(new ChangePasswordRequestValidator().Validate(new ChangePasswordRequest { CurrentPassword = "oldpassword", NewPassword = "password1", ConfirmNewPassword = "password1" }).IsValid);
-        Assert.True(new UpdateProfileRequestValidator().Validate(new UpdateProfileRequest { Email = "student@example.com" }).IsValid);
+        Assert.True(UpdateProfile().Validate(new UpdateProfileRequest { Email = "student@example.com" }).IsValid);
         Assert.True(new UserProvisionRequestValidator().Validate(ValidUserProvision()).IsValid);
         Assert.True(new DelegatedUserCreateRequestValidator().Validate(new DelegatedUserCreateRequest { Username = "student", Email = "student@example.com", Password = "password1" }).IsValid);
         Assert.True(new UpdateMembershipRequestValidator().Validate(new UpdateMembershipRequest { PaidUntil = DateTime.UtcNow.AddDays(1) }).IsValid);
@@ -68,8 +69,8 @@ public sealed class ValidatorCoverageTests
         AssertInvalid(new ChangePasswordRequestValidator().Validate(new ChangePasswordRequest { CurrentPassword = "", NewPassword = "password1", ConfirmNewPassword = "password1" }), nameof(ChangePasswordRequest.CurrentPassword));
         AssertInvalid(new ChangePasswordRequestValidator().Validate(new ChangePasswordRequest { CurrentPassword = "oldpassword", NewPassword = "short", ConfirmNewPassword = "short" }), nameof(ChangePasswordRequest.NewPassword));
         AssertInvalid(new ChangePasswordRequestValidator().Validate(new ChangePasswordRequest { CurrentPassword = "oldpassword", NewPassword = "password1", ConfirmNewPassword = "different" }), nameof(ChangePasswordRequest.ConfirmNewPassword));
-        AssertInvalid(new UpdateProfileRequestValidator().Validate(new UpdateProfileRequest { Email = "" }), nameof(UpdateProfileRequest.Email));
-        AssertInvalid(new UpdateProfileRequestValidator().Validate(new UpdateProfileRequest { Email = "bad" }), nameof(UpdateProfileRequest.Email));
+        AssertInvalid(UpdateProfile().Validate(new UpdateProfileRequest { Email = "" }), nameof(UpdateProfileRequest.Email));
+        AssertInvalid(UpdateProfile().Validate(new UpdateProfileRequest { Email = "bad" }), nameof(UpdateProfileRequest.Email));
         AssertInvalid(new DelegatedUserCreateRequestValidator().Validate(new DelegatedUserCreateRequest { Username = "", Email = "student@example.com", Password = "password1" }), nameof(DelegatedUserCreateRequest.Username));
         AssertInvalid(new UserProvisionRequestValidator().Validate(new UserProvisionRequest { Username = "emp", Email = "emp@example.com", Password = "password1", Role = "StoreEmployee", MusicStoreId = null }), nameof(UserProvisionRequest.MusicStoreId));
         AssertInvalid(new UserProvisionRequestValidator().Validate(new UserProvisionRequest { Username = "emp", Email = "emp@example.com", Password = "password1", Role = "StoreEmployee", MusicStoreId = 0 }), nameof(UserProvisionRequest.MusicStoreId));
@@ -148,6 +149,37 @@ public sealed class ValidatorCoverageTests
         AssertInvalid(new AnnouncementRequestValidator().Validate(new AnnouncementRequest("Title", "")), nameof(AnnouncementRequest.Content));
     }
 
+    [Fact]
+    public void IdentityValidators_RejectOverlongFieldsAndFutureBirthDate()
+    {
+        var tooLong = new string('x', 257);
+
+        AssertInvalid(new RegisterRequestValidator().Validate(new RegisterRequest { Username = tooLong, Email = "student@example.com", Password = "password1" }), nameof(RegisterRequest.Username));
+        AssertInvalid(new RegisterRequestValidator().Validate(new RegisterRequest { Username = "student", Email = $"{tooLong}@example.com", Password = "password1" }), nameof(RegisterRequest.Email));
+        AssertInvalid(new RegisterRequestValidator().Validate(new RegisterRequest { Username = "student", Email = "student@example.com", Password = "password1", FirstName = tooLong }), nameof(RegisterRequest.FirstName));
+        AssertInvalid(new RegisterRequestValidator().Validate(new RegisterRequest { Username = "student", Email = "student@example.com", Password = "password1", LastName = tooLong }), nameof(RegisterRequest.LastName));
+
+        AssertInvalid(new DelegatedUserCreateRequestValidator().Validate(new DelegatedUserCreateRequest { Username = tooLong, Email = "student@example.com", Password = "password1" }), nameof(DelegatedUserCreateRequest.Username));
+        AssertInvalid(new DelegatedUserCreateRequestValidator().Validate(new DelegatedUserCreateRequest { Username = "student", Email = $"{tooLong}@example.com", Password = "password1" }), nameof(DelegatedUserCreateRequest.Email));
+        AssertInvalid(new DelegatedUserCreateRequestValidator().Validate(new DelegatedUserCreateRequest { Username = "student", Email = "student@example.com", Password = "password1", FirstName = tooLong }), nameof(DelegatedUserCreateRequest.FirstName));
+        AssertInvalid(new DelegatedUserCreateRequestValidator().Validate(new DelegatedUserCreateRequest { Username = "student", Email = "student@example.com", Password = "password1", LastName = tooLong }), nameof(DelegatedUserCreateRequest.LastName));
+
+        AssertInvalid(new UserProvisionRequestValidator().Validate(new UserProvisionRequest { Email = "student@example.com", Password = "Password1!", Role = "Student", MusicStoreId = 1, Username = tooLong }), nameof(UserProvisionRequest.Username));
+        AssertInvalid(new UserProvisionRequestValidator().Validate(new UserProvisionRequest { Username = "user", Password = "Password1!", Role = "Student", MusicStoreId = 1, Email = $"{tooLong}@example.com" }), nameof(UserProvisionRequest.Email));
+        AssertInvalid(new UserProvisionRequestValidator().Validate(new UserProvisionRequest { Username = "user", Email = "student@example.com", Password = "Password1!", Role = "Student", MusicStoreId = 1, FirstName = tooLong }), nameof(UserProvisionRequest.FirstName));
+        AssertInvalid(new UserProvisionRequestValidator().Validate(new UserProvisionRequest { Username = "user", Email = "student@example.com", Password = "Password1!", Role = "Student", MusicStoreId = 1, LastName = tooLong }), nameof(UserProvisionRequest.LastName));
+
+        Assert.Contains(new DelegatedUserCreateRequestValidator().Validate(new DelegatedUserCreateRequest { Username = "", Email = "student@example.com", Password = "password1" }).Errors, e => e.ErrorMessage == "Korisničko ime je obavezno.");
+        Assert.Contains(new DelegatedUserCreateRequestValidator().Validate(new DelegatedUserCreateRequest { Username = "student", Email = "bad", Password = "password1" }).Errors, e => e.ErrorMessage == "Ispravna email adresa je obavezna.");
+
+        AssertInvalid(UpdateProfile().Validate(new UpdateProfileRequest { Email = $"{tooLong}@example.com" }), nameof(UpdateProfileRequest.Email));
+        AssertInvalid(UpdateProfile().Validate(new UpdateProfileRequest { Email = "student@example.com", FirstName = tooLong }), nameof(UpdateProfileRequest.FirstName));
+        AssertInvalid(UpdateProfile().Validate(new UpdateProfileRequest { Email = "student@example.com", LastName = tooLong }), nameof(UpdateProfileRequest.LastName));
+        AssertInvalid(UpdateProfile().Validate(new UpdateProfileRequest { Email = "student@example.com", DateOfBirth = Clock.UtcNow.AddDays(1) }), nameof(UpdateProfileRequest.DateOfBirth));
+    }
+
+    private static readonly FixedClock Clock = new(new DateTime(2026, 7, 1, 12, 0, 0, DateTimeKind.Utc));
+    private static UpdateProfileRequestValidator UpdateProfile() => new(Clock);
     private static LectureCreateRequest ValidLectureCreate() => new() { CourseId = 1, Name = "Name", Location = "Room", LectureTime = DateTime.UtcNow, Duration = 60 };
     private static LectureUpdateRequest ValidLectureUpdate() => new() { Name = "Name", Location = "Room", LectureTime = DateTime.UtcNow, Duration = 60 };
     private static UserProvisionRequest ValidUserProvision() => new()

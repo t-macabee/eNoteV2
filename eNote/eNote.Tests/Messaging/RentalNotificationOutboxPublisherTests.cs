@@ -156,7 +156,11 @@ public sealed class RentalNotificationOutboxPublisherTests
         var publisher = new RentalNotificationOutboxPublisher(provider, NullLogger<RentalNotificationOutboxPublisher>.Instance, TimeSpan.FromMilliseconds(10));
 
         await publisher.StartAsync(CancellationToken.None);
-        await Task.Delay(80);
+        var deadline = DateTime.UtcNow.AddSeconds(5);
+        while (throwingContext.SetCalls < 2 && DateTime.UtcNow < deadline)
+        {
+            await Task.Delay(10);
+        }
         await publisher.StopAsync(CancellationToken.None);
 
         var executeTask = (Task)typeof(BackgroundService)

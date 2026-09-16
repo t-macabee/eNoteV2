@@ -1,3 +1,5 @@
+using eNote.Application.Common.Exceptions;
+using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Localization;
 using eNote.Application.Features.Identity.Auth;
 using eNote.Application.Features.Identity.Auth.Services;
@@ -164,6 +166,31 @@ public sealed class AuthServiceTests
         Assert.Equal(("jti-1", expiresAt), harness.Revocations.Single());
     }
 
+    [Fact]
+    public async Task RegisterAsync_ThrowsConflictWithEmailMessage_WhenEmailTaken()
+    {
+        var harness = await CreateHarnessAsync(withRole: "Student");
+        var provisioning = new StubUserProvisioningService { RegisterError = Messages.EmailTaken };
+        var auth = harness.CreateAuthService(provisioning: provisioning);
+
+        var exception = await Assert.ThrowsAsync<ConflictException>(() =>
+            auth.RegisterAsync(new RegisterRequest { Username = "newstudent", Email = "taken@example.com", Password = "Password1!" }));
+
+        Assert.Equal(Messages.EmailTaken, exception.Message);
+        Assert.NotEqual(Messages.UsernameTaken, exception.Message);
+    }
+
+    [Fact]
+    public async Task ForgotPasswordAsync_ReturnsSuccess_WhenEmailSendFails()
+    {
+        var harness = await CreateHarnessAsync(withRole: "Student");
+        var auth = harness.CreateAuthService(email: new ThrowingEmailService());
+
+        var response = await auth.ForgotPasswordAsync(new ForgotPasswordRequest { Email = "jdoe@example.com" });
+
+        Assert.Equal(Messages.PasswordResetEmailSent, response.Message);
+    }
+
     private static async Task<Harness> CreateHarnessAsync(string withRole)
     {
         var context = TestDbContextFactory.CreateContext(Now);
@@ -189,15 +216,21 @@ public sealed class AuthServiceTests
         public RecordingEmailService Email { get; } = new();
         public List<(string Jti, DateTime ExpiresAt)> Revocations { get; } = [];
 
-        public AuthService CreateAuthService(IUserProvisioningService? provisioning = null) =>
+        public AuthService CreateAuthService(IUserProvisioningService? provisioning = null, IEmailService? email = null) =>
             new(UserManager,
                 signInManager,
                 new StubTokenService(),
                 provisioning ?? new StubUserProvisioningService(),
                 new RecordingTokenRevocationService(Revocations),
-                Email,
+                email ?? Email,
                 new StubHostEnvironment(),
                 NullLogger<AuthService>.Instance);
+    }
+
+    private sealed class ThrowingEmailService : IEmailService
+    {
+        public Task SendPasswordResetAsync(string email, string token, CancellationToken cancellationToken = default) =>
+            throw new InvalidOperationException("SMTP unavailable");
     }
 
     private sealed class StubTokenService : ITokenService
@@ -219,11 +252,14 @@ public sealed class AuthServiceTests
     private sealed class StubUserProvisioningService : IUserProvisioningService
     {
         public RegisterRequest? LastRegisterRequest { get; private set; }
+        public string? RegisterError { get; init; }
 
         public Task<(RegistrationResult? Registration, string? Error)> RegisterStudentAsync(RegisterRequest request, CancellationToken cancellationToken = default)
         {
             LastRegisterRequest = request;
-            return Task.FromResult<(RegistrationResult?, string?)>((new RegistrationResult(7, request.Username.Trim(), ["Student"]), null));
+            return Task.FromResult<(RegistrationResult?, string?)>(RegisterError is null
+                ? (new RegistrationResult(7, request.Username.Trim(), ["Student"]), null)
+                : (null, RegisterError));
         }
 
         public Task<(int UserId, string? Error)> ProvisionUserAsync(UserProvisionRequest request, CancellationToken cancellationToken = default) =>
