@@ -41,7 +41,4 @@ public class Enrollment : AuditableEntity
         PaidUntil = periodStart.AddDays(days);
         return (periodStart, PaidUntil.Value);
     }
-
-    // Exact-timestamp check by design, unlike Student.HasActiveMembership's .Date truncation.
-    public bool HasPaidAccess(DateTime utcNow) => PaidUntil.HasValue && PaidUntil.Value >= utcNow;
 }

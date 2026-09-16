@@ -40,14 +40,10 @@ public sealed class CourseService(IAppDbContext context, IMapper mapper, ICurren
     {
         var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId);
 
-        var entity = await WhereCatalogVisible(
-                context.Set<Course>()
-                    .AsNoTracking()
-                    .Include(c => c.Enrollments)
-                    .Include(c => c.Instructor),
-                instructorId)
-            .FirstOrDefaultAsync(c => c.Id == id, cancellationToken)
-            ?? throw new NotFoundException(Messages.CourseNotFound);
+        var entity = await LoadCourseDetailAsync(
+            WhereCatalogVisible(context.Set<Course>(), instructorId),
+            id,
+            cancellationToken);
 
         var dto = mapper.Map<CourseDto>(entity);
         dto.InstructorName = await ResolveInstructorNameAsync(entity.Instructor.AppUserId, cancellationToken);
@@ -214,16 +210,21 @@ public sealed class CourseService(IAppDbContext context, IMapper mapper, ICurren
 
     public async Task<CourseDto> GetByIdForAdminAsync(int id, CancellationToken cancellationToken = default)
     {
-        var entity = await context.Set<Course>()
+        var entity = await LoadCourseDetailAsync(context.Set<Course>(), id, cancellationToken);
+
+        var dto = mapper.Map<CourseDto>(entity);
+        dto.InstructorName = await ResolveInstructorNameAsync(entity.Instructor.AppUserId, cancellationToken);
+        return dto;
+    }
+
+    private static async Task<Course> LoadCourseDetailAsync(IQueryable<Course> query, int id, CancellationToken cancellationToken)
+    {
+        return await query
             .AsNoTracking()
             .Include(c => c.Enrollments)
             .Include(c => c.Instructor)
             .FirstOrDefaultAsync(c => c.Id == id, cancellationToken)
             ?? throw new NotFoundException(Messages.CourseNotFound);
-
-        var dto = mapper.Map<CourseDto>(entity);
-        dto.InstructorName = await ResolveInstructorNameAsync(entity.Instructor.AppUserId, cancellationToken);
-        return dto;
     }
 
     private CourseDto MapAdmin(Course course, IReadOnlyDictionary<int, UserIdentityDto> users)

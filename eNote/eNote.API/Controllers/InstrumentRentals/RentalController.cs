@@ -9,8 +9,6 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace eNote.API.Controllers.InstrumentRentals;
 
-[Route("api/v{version:apiVersion}/shop/rentals")]
-[Route("api/v{version:apiVersion}/student/rentals")]
 public sealed class RentalController(
     RentalQueryService queryService,
     RentalCommandService commandService,

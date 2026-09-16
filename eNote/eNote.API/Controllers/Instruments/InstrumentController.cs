@@ -12,7 +12,6 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace eNote.API.Controllers.Instruments;
 
-[Route("api/v{version:apiVersion}/instruments")]
 public sealed class InstrumentController(
     InstrumentService instrumentService,
     RecommendationService recommendationService,

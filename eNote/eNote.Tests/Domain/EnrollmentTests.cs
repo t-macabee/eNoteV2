@@ -47,39 +47,4 @@ public sealed class EnrollmentTests
 
         Assert.Throws<ArgumentOutOfRangeException>(() => enrollment.ExtendPaidUntil(Now, days));
     }
-
-    [Fact]
-    public void HasPaidAccess_ReturnsFalse_WhenPaidUntilIsNull()
-    {
-        var enrollment = new Enrollment(1, 1, EnrollmentStatus.Active);
-
-        Assert.False(enrollment.HasPaidAccess(Now));
-    }
-
-    [Fact]
-    public void HasPaidAccess_ReturnsTrue_WhenPaidUntilIsInFuture()
-    {
-        var enrollment = new Enrollment(1, 1, EnrollmentStatus.Active);
-        enrollment.ExtendPaidUntil(Now, 30);
-
-        Assert.True(enrollment.HasPaidAccess(Now.AddDays(15)));
-    }
-
-    [Fact]
-    public void HasPaidAccess_ReturnsTrue_OnExactBoundary()
-    {
-        var enrollment = new Enrollment(1, 1, EnrollmentStatus.Active);
-        enrollment.ExtendPaidUntil(Now, 30);
-
-        Assert.True(enrollment.HasPaidAccess(Now.AddDays(30)));
-    }
-
-    [Fact]
-    public void HasPaidAccess_ReturnsFalse_WhenPastTimestamp()
-    {
-        var enrollment = new Enrollment(1, 1, EnrollmentStatus.Active);
-        enrollment.ExtendPaidUntil(Now, 30);
-
-        Assert.False(enrollment.HasPaidAccess(Now.AddDays(30).AddSeconds(1)));
-    }
 }

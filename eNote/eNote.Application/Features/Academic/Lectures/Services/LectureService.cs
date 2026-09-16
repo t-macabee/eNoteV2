@@ -100,7 +100,7 @@ public sealed class LectureService(
     public async Task<LectureDto> UpdateAsync(int id, LectureUpdateRequest request, CancellationToken cancellationToken = default)
     {
         var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId);
-        var entity = await instructorAccess.GetOwnedLectureAsync(id, instructorId, track: true, cancellationToken: cancellationToken);
+        var entity = await instructorAccess.GetOwnedLectureAsync(id, instructorId, track: true, includeAttendances: true, cancellationToken: cancellationToken);
 
         if (entity.IsCancelled)
         {
@@ -155,7 +155,7 @@ public sealed class LectureService(
     public async Task<LectureDto> CancelAsync(int id, CancellationToken cancellationToken = default)
     {
         var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId);
-        var entity = await instructorAccess.GetOwnedLectureAsync(id, instructorId, track: true, cancellationToken: cancellationToken);
+        var entity = await instructorAccess.GetOwnedLectureAsync(id, instructorId, track: true, includeAttendances: true, cancellationToken: cancellationToken);
 
         if (entity.IsCancelled)
         {

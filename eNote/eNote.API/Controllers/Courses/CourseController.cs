@@ -8,8 +8,6 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace eNote.API.Controllers.Courses;
 
-[Route("api/v{version:apiVersion}/instructor/courses")]
-[Route("api/v{version:apiVersion}/student/courses")]
 public sealed class CourseController(
     CourseService service,
     CourseEnrollmentService enrollmentService) : CoreController

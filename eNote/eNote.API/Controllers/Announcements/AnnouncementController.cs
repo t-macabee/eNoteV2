@@ -9,7 +9,6 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace eNote.API.Controllers.Announcements;
 
-[Route("api/v{version:apiVersion}/announcements")]
 public sealed class AnnouncementController(
     InstructorAnnouncementService instructorAnnouncementService,
     StoreAnnouncementService storeAnnouncementService,

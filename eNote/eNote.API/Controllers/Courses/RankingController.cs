@@ -8,8 +8,6 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace eNote.API.Controllers.Courses;
 
-[Route("api/v{version:apiVersion}/instructor/courses/{courseId:int}/ranking")]
-[Route("api/v{version:apiVersion}/student/courses/{courseId:int}/ranking")]
 public sealed class RankingController(RankingService rankingService, IReportService reportService) : CoreController
 {
     // ── Instructor actions ──────────────────────────────────────────

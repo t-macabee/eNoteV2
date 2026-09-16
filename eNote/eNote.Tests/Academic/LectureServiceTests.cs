@@ -71,6 +71,26 @@ public sealed class LectureServiceTests
     }
 
     [Fact]
+    public async Task UpdateAsync_ReturnsAttendeeCount()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        harness.Context.Set<Attendance>().Add(new Attendance(harness.Student.Id, harness.Lecture.Id, AttendanceStatus.Present));
+        await harness.Context.SaveChangesAsync();
+        harness.Context.ChangeTracker.Clear();
+        var service = CreateService(harness.Context, harness.Instructor);
+
+        var dto = await service.UpdateAsync(harness.Lecture.Id, new LectureUpdateRequest
+        {
+            Name = "First lesson",
+            Location = "Room 1",
+            Duration = 60,
+            LectureTime = Now
+        });
+
+        Assert.Equal(1, dto.AttendeeCount);
+    }
+
+    [Fact]
     public async Task UpdateAsync_Throws_WhenLectureCancelled()
     {
         var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
@@ -97,6 +117,20 @@ public sealed class LectureServiceTests
         var dto = await service.CancelAsync(harness.Lecture.Id);
 
         Assert.True(dto.IsCancelled);
+    }
+
+    [Fact]
+    public async Task CancelAsync_ReturnsAttendeeCount()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        harness.Context.Set<Attendance>().Add(new Attendance(harness.Student.Id, harness.Lecture.Id, AttendanceStatus.Present));
+        await harness.Context.SaveChangesAsync();
+        harness.Context.ChangeTracker.Clear();
+        var service = CreateService(harness.Context, harness.Instructor);
+
+        var dto = await service.CancelAsync(harness.Lecture.Id);
+
+        Assert.Equal(1, dto.AttendeeCount);
     }
 
     [Fact]

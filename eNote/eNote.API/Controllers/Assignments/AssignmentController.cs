@@ -8,8 +8,6 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace eNote.API.Controllers.Assignments;
 
-[Route("api/v{version:apiVersion}/instructor/lectures/{lectureId:int}/assignments")]
-[Route("api/v{version:apiVersion}/student/assignments")]
 public sealed class AssignmentController(AssignmentService service) : CoreController
 {
     // ── Instructor actions ──────────────────────────────────────────

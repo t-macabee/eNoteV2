@@ -14,5 +14,8 @@ public sealed class CourseRequestValidator : AbstractValidator<CourseRequest>
         RuleFor(x => x.Price)
             .LessThan(10000)
             .WithMessage("Cijena ne smije biti veća od 10000.");
+        RuleFor(x => x.EndDate)
+            .Must((request, endDate) => !endDate.HasValue || !request.StartDate.HasValue || endDate >= request.StartDate)
+            .WithMessage("Datum završetka ne smije biti prije datuma početka.");
     }
 }

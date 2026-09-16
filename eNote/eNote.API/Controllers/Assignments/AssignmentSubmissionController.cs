@@ -9,7 +9,6 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace eNote.API.Controllers.Assignments;
 
-[Route("api/v{version:apiVersion}/assignments/submissions")]
 public sealed class AssignmentSubmissionController(AssignmentSubmissionService submissionService) : CoreController
 {
     // ── Instructor actions ──────────────────────────────────────────

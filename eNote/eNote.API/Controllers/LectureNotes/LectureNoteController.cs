@@ -8,8 +8,6 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace eNote.API.Controllers.LectureNotes;
 
-[Route("api/v{version:apiVersion}/instructor/lectures/{lectureId:int}/notes")]
-[Route("api/v{version:apiVersion}/student/lectures/{lectureId:int}/notes")]
 public sealed class LectureNoteController(LectureNoteService service) : CoreController
 {
     // Instructor

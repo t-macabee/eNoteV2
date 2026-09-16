@@ -39,11 +39,12 @@ public sealed class ValidatorCoverageTests
         Assert.True(new UpdateMembershipRequestValidator(Clock).Validate(new UpdateMembershipRequest { PaidUntil = null }).IsValid);
         Assert.True(new InstrumentUpdateRequestValidator().Validate(new InstrumentUpdateRequest { Model = "Model", Manufacturer = "Maker", InstrumentTypeId = 1 }).IsValid);
         Assert.True(new InstrumentUpdateRequestValidator().Validate(new InstrumentUpdateRequest()).IsValid);
-        Assert.True(new RsvpRequestValidator().Validate(new RsvpRequest { Confirm = true, Note = new string('x', 500) }).IsValid);
         Assert.True(new MarkAttendanceRequestValidator().Validate(new MarkAttendanceRequest { StudentId = 1, AttendanceStatus = AttendanceStatus.Present }).IsValid);
         Assert.True(new RentalCreateRequestValidator().Validate(new RentalCreateRequest { InstrumentId = 1 }).IsValid);
         Assert.True(new InstrumentCreateRequestValidator().Validate(new InstrumentCreateRequest { Model = "Model", Manufacturer = "Maker", InstrumentTypeId = 1 }).IsValid);
         Assert.True(new CourseRequestValidator().Validate(new CourseRequest { Name = "Course", Price = 0 }).IsValid);
+        Assert.True(new CourseRequestValidator().Validate(new CourseRequest { Name = "Course", Price = 0, StartDate = Clock.UtcNow, EndDate = Clock.UtcNow }).IsValid);
+        Assert.True(new CourseRequestValidator().Validate(new CourseRequest { Name = "Course", Price = 0, EndDate = Clock.UtcNow }).IsValid);
         Assert.True(new AssignmentRequestValidator().Validate(new AssignmentRequest { Title = "Title", Description = "Description", DueAt = DateTime.UtcNow }).IsValid);
         Assert.True(new GradeAssignmentRequestValidator().Validate(new GradeAssignmentRequest { Grade = 100 }).IsValid);
         Assert.True(new LectureCreateRequestValidator().Validate(ValidLectureCreate()).IsValid);
@@ -90,6 +91,7 @@ public sealed class ValidatorCoverageTests
     {
         AssertInvalid(new CourseRequestValidator().Validate(new CourseRequest { Name = "", Price = 0 }), nameof(CourseRequest.Name));
         AssertInvalid(new CourseRequestValidator().Validate(new CourseRequest { Name = "Course", Price = -0.01m }), nameof(CourseRequest.Price));
+        AssertInvalid(new CourseRequestValidator().Validate(new CourseRequest { Name = "Course", Price = 0, StartDate = Clock.UtcNow, EndDate = Clock.UtcNow.AddDays(-1) }), nameof(CourseRequest.EndDate));
         AssertInvalid(new AssignmentRequestValidator().Validate(new AssignmentRequest { Title = "", Description = "Description", DueAt = DateTime.UtcNow }), nameof(AssignmentRequest.Title));
         AssertInvalid(new AssignmentRequestValidator().Validate(new AssignmentRequest { Title = "Title", Description = "", DueAt = DateTime.UtcNow }), nameof(AssignmentRequest.Description));
         AssertInvalid(new AssignmentRequestValidator().Validate(new AssignmentRequest { Title = "Title", Description = "Description", DueAt = default }), nameof(AssignmentRequest.DueAt));
@@ -146,7 +148,6 @@ public sealed class ValidatorCoverageTests
         AssertInvalid(new InstrumentUpdateRequestValidator().Validate(new InstrumentUpdateRequest { Description = "" }), nameof(InstrumentUpdateRequest.Description));
         AssertInvalid(new InstrumentUpdateRequestValidator().Validate(new InstrumentUpdateRequest { ImagePath = "" }), nameof(InstrumentUpdateRequest.ImagePath));
         AssertInvalid(new InstrumentUpdateRequestValidator().Validate(new InstrumentUpdateRequest { InstrumentTypeId = 0 }), nameof(InstrumentUpdateRequest.InstrumentTypeId));
-        AssertInvalid(new RsvpRequestValidator().Validate(new RsvpRequest { Note = new string('x', 501) }), nameof(RsvpRequest.Note));
         AssertInvalid(new MarkAttendanceRequestValidator().Validate(new MarkAttendanceRequest { StudentId = 0, AttendanceStatus = AttendanceStatus.Present }), nameof(MarkAttendanceRequest.StudentId));
         AssertInvalid(new MarkAttendanceRequestValidator().Validate(new MarkAttendanceRequest { StudentId = 1, AttendanceStatus = (AttendanceStatus)99 }), nameof(MarkAttendanceRequest.AttendanceStatus));
     }

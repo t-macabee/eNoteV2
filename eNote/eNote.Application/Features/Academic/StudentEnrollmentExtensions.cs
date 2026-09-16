@@ -1,8 +1,8 @@
 namespace eNote.Application.Features.Academic;
 
 // The paid predicate (e.PaidUntil >= utcNow || Course.Price == 0) is inlined four times below because EF
-// cannot translate Enrollment.HasPaidAccess. Keep the four in sync with it; the comparison is on the exact
-// timestamp by design (see Enrollment.cs:45).
+// cannot translate it as a method call. Keep the four copies in sync; the comparison is on the exact
+// timestamp by design, unlike Student.HasActiveMembership's .Date truncation.
 public static class StudentEnrollmentExtensions
 {
     public static Task<bool> IsEnrolledInCourseAsync(this IAppDbContext context, int studentId, int courseId, CancellationToken cancellationToken = default) =>

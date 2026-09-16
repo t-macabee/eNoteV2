@@ -77,6 +77,7 @@ public sealed class CourseEnrollmentServiceTests
 
         var enrollment = await context.Set<Enrollment>().SingleAsync(x => x.StudentId == student.Id && x.CourseId == course.Id);
         Assert.Equal(EnrollmentStatus.Canceled, enrollment.EnrollmentStatus);
+        Assert.Equal(student.AppUserId, enrollment.UpdatedById);
     }
 
     [Fact]

@@ -81,6 +81,7 @@ public sealed class CourseEnrollmentService(
         }
 
         enrollment.UpdateStatus(EnrollmentStatus.Canceled);
+        enrollment.UpdatedById = currentUser.UserId;
         await context.SaveChangesAsync(cancellationToken);
 
         logger.LogInformation("Student {StudentUserId} unenrolled from course {CourseId}", currentUser.UserId, courseId);

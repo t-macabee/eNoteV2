@@ -30,6 +30,11 @@ public sealed class LectureAttendanceService(
 
         var existing = lecture.Attendances.FirstOrDefault(x => x.StudentId == studentId);
 
+        if (!request.Confirm && existing is null)
+        {
+            return new RsvpResponse { LectureId = lecture.Id, StudentId = studentId, Confirmed = false };
+        }
+
         if (request.Confirm)
         {
             var confirmedCount = lecture.Attendances.Count(a => a.AttendanceStatus == AttendanceStatus.Present);
@@ -41,16 +46,21 @@ public sealed class LectureAttendanceService(
 
             if (existing is null)
             {
-                lecture.Attendances.Add(new Attendance(studentId, lecture.Id, AttendanceStatus.Present));
+                lecture.Attendances.Add(new Attendance(studentId, lecture.Id, AttendanceStatus.Present)
+                {
+                    CreatedById = currentUser.UserId
+                });
             }
             else
             {
                 existing.UpdateStatus(AttendanceStatus.Present);
+                existing.UpdatedById = currentUser.UserId;
             }
         }
         else
         {
-            existing?.UpdateStatus(AttendanceStatus.Absent);
+            existing!.UpdateStatus(AttendanceStatus.Absent);
+            existing.UpdatedById = currentUser.UserId;
         }
 
         try

@@ -25,6 +25,7 @@ public sealed class LectureAttendanceServiceTests
         Assert.True(response.Confirmed);
         var attendance = await harness.Context.Set<Attendance>().SingleAsync();
         Assert.Equal(AttendanceStatus.Present, attendance.AttendanceStatus);
+        Assert.Equal(harness.Student.AppUserId, attendance.CreatedById);
     }
 
     [Fact]
@@ -61,6 +62,22 @@ public sealed class LectureAttendanceServiceTests
         Assert.False(response.Confirmed);
         var attendance = await harness.Context.Set<Attendance>().SingleAsync();
         Assert.Equal(AttendanceStatus.Absent, attendance.AttendanceStatus);
+    }
+
+    [Fact]
+    public async Task RsvpAsync_Decline_WithoutExistingAttendance_DoesNotTouchLecture()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var service = CreateService(harness.Context, harness.Instructor, harness.Student);
+        var before = await harness.Context.Set<Lecture>().AsNoTracking().SingleAsync(l => l.Id == harness.Lecture.Id);
+
+        var response = await service.RsvpAsync(harness.Lecture.Id, new RsvpRequest { Confirm = false });
+
+        Assert.False(response.Confirmed);
+        Assert.Empty(await harness.Context.Set<Attendance>().ToListAsync());
+        var after = await harness.Context.Set<Lecture>().AsNoTracking().SingleAsync(l => l.Id == harness.Lecture.Id);
+        Assert.Equal(before.UpdatedAt, after.UpdatedAt);
+        Assert.Equal(before.Version, after.Version);
     }
 
     [Fact]
