@@ -36,7 +36,9 @@ public sealed class NotificationConfig : IEntityTypeConfiguration<Notification>
         builder.HasIndex(x => new { x.UserId, x.IsRead });
         builder.HasIndex(x => x.CreatedAt);
         builder.HasIndex(x => new { x.UserId, x.RentalId, x.Title });
-        builder.HasIndex(x => new { x.UserId, x.RentalId, x.CreatedAt }).IsUnique();
+        builder.HasIndex(x => new { x.UserId, x.RentalId, x.CreatedAt })
+            .HasDatabaseName(DbConstraintNames.NotificationUserRentalCreatedAtUniqueIndex)
+            .IsUnique();
 
         builder.HasIndex(x => new { x.UserId, x.LectureId, x.CreatedAt })
             .HasDatabaseName(DbConstraintNames.NotificationUserLectureCreatedAtUniqueIndex)

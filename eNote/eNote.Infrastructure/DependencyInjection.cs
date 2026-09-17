@@ -124,6 +124,7 @@ public static class DependencyInjection
         services.AddHealthChecks()
             .AddCheck<DatabaseHealthCheck>("database")
             .AddCheck<RabbitMqHealthCheck>("rabbitmq")
+            .AddCheck<OutboxHealthCheck>("outbox")
             .Services;
 
     public static void LoadEnvironment() => Configuration.DotEnvConfiguration.Load();

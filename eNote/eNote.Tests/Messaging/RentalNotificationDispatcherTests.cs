@@ -1,6 +1,7 @@
 using eNote.Application.Features.Rentals.InstrumentRentals;
 using eNote.Contracts.Rentals;
 using eNote.Domain.Entities.Communication;
+using eNote.Infrastructure.Identity;
 using eNote.Infrastructure.Messaging;
 using eNote.Tests.TestUtils;
 using Microsoft.EntityFrameworkCore;
@@ -56,6 +57,37 @@ public sealed class RentalNotificationDispatcherTests
 
         var row = await context.Set<RentalNotificationOutbox>().SingleAsync();
         Assert.Contains("Not in stock", row.PayloadJson);
+    }
+
+    [Fact]
+    public async Task DispatchCreatedAsync_SkipsEmployee_WhenAppUserIsNotActive()
+    {
+        await using var context = TestDbContextFactory.CreateContext(Now);
+
+        var store = new MusicStore("Store", "09-17");
+        context.Set<MusicStore>().Add(store);
+        await context.SaveChangesAsync();
+
+        context.Set<AppUser>().AddRange(
+            new AppUser { Id = 10, UserName = "former", Email = "former@example.com", IsActive = false },
+            new AppUser { Id = 11, UserName = "current", Email = "current@example.com", IsActive = true });
+        context.Set<MusicStoreEmployee>().AddRange(
+            new MusicStoreEmployee(appUserId: 10, musicStoreId: store.Id, isManager: false),
+            new MusicStoreEmployee(appUserId: 11, musicStoreId: store.Id, isManager: false));
+        await context.SaveChangesAsync();
+
+        var dispatcher = new RentalNotificationDispatcher(context, new FixedClock(Now));
+        var dto = CreateRentalDto();
+        dto.MusicStoreId = store.Id;
+
+        await dispatcher.DispatchCreatedAsync(dto, studentUserId: 5);
+        await context.SaveChangesAsync();
+
+        var recipients = (await context.Set<RentalNotificationOutbox>().ToListAsync())
+            .Select(row => JsonSerializer.Deserialize<RentalStatusChanged>(row.PayloadJson, new JsonSerializerOptions(JsonSerializerDefaults.Web))!.StudentUserId)
+            .Order()
+            .ToList();
+        Assert.Equal([5, 11], recipients);
     }
 
     [Theory]

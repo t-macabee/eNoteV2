@@ -20,7 +20,7 @@ public sealed class RentalNotificationOutboxPublisher(IServiceProvider services,
 
     private readonly TimeSpan _interval = interval ?? Interval;
 
-    private const int MaxAttempts = 5;
+    internal const int MaxAttempts = 5;
     private const int BatchSize = 50;
     private const int MaxStoredErrorLength = 2000;
 

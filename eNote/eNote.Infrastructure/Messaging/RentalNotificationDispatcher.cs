@@ -4,6 +4,7 @@ using eNote.Application.Features.Rentals.InstrumentRentals;
 using eNote.Application.Features.Rentals.InstrumentRentals.Services;
 using eNote.Contracts.Communication;
 using eNote.Contracts.Rentals;
+using eNote.Infrastructure.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Infrastructure.Messaging;
@@ -25,7 +26,10 @@ public sealed class RentalNotificationDispatcher(
             .AsNoTracking()
             .IgnoreQueryFilters()
             .Where(x => x.MusicStoreId == rental.MusicStoreId && x.IsActive)
-            .Select(x => x.AppUserId)
+            .Join(context.Set<AppUser>().Where(user => user.IsActive),
+                employee => employee.AppUserId,
+                user => user.Id,
+                (employee, _) => employee.AppUserId)
             .ToListAsync();
 
         foreach (var employeeUserId in employeeUserIds)

@@ -118,7 +118,7 @@ services:
         condition: service_healthy
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pgrep -f 'dotnet.*eNote.Worker' || exit 1"]
+      test: ["CMD-SHELL", "test -f /tmp/enote-worker-healthy || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
