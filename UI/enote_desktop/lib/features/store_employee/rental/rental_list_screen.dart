@@ -32,10 +32,11 @@ class _RentalListScreenState extends State<RentalListScreen> {
   void initState() {
     super.initState();
     // Non-fatal if instruments fail to load — the filter just offers no options.
-    _instrumentsFuture = context.read<InstrumentProvider>().search({
-      'page': 1,
-      'pageSize': 100,
-    }).then((result) => result.items).catchError((_) => const <InstrumentDto>[]);
+    _instrumentsFuture = context
+        .read<InstrumentProvider>()
+        .search(pagedQuery(1, 100, ''))
+        .then((result) => result.items)
+        .catchError((_) => const <InstrumentDto>[]);
   }
 
   Widget _buildFilterBar() {
@@ -132,7 +133,7 @@ class _RentalListScreenState extends State<RentalListScreen> {
           ColumnSpec<InstrumentRentalDto>(
             label: 'Naknada / Ukupno',
             value: (item) =>
-                '${item.fee.toStringAsFixed(2)} / ${item.totalFee?.toStringAsFixed(2) ?? '-'}',
+                '${formatKM(item.fee)} / ${formatKM(item.totalFee)}',
           ),
         ],
         showSearchBar: false,

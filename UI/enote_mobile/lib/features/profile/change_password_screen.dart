@@ -144,9 +144,8 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                 obscureText: _confirmObscured,
                 textInputAction: TextInputAction.done,
                 onChanged: (_) => _revalidate(),
-                validator: (value) => Validators.confirmPassword(
-                  _newController.text,
-                )(value),
+                validator:
+                    Validators.confirmPassword(() => _newController.text),
               ),
             ],
           ),

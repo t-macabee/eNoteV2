@@ -41,13 +41,13 @@ class Validators {
   }
 
   static String? Function(String?) confirmPassword(
-    String? password,
+    String? Function() password,
   ) =>
       (String? value) {
         if (value == null || value.isEmpty) {
           return 'Potvrdite lozinku.';
         }
-        if (value != password) {
+        if (value != password()) {
           return 'Lozinka i potvrda se ne poklapaju.';
         }
         return null;

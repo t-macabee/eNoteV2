@@ -140,9 +140,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 obscureText: _confirmObscured,
                 textInputAction: TextInputAction.next,
-                validator: (value) => Validators.confirmPassword(
-                  _passwordController.text,
-                )(value),
+                validator:
+                    Validators.confirmPassword(() => _passwordController.text),
               ),
               const SizedBox(height: 16),
               TextFormField(

@@ -60,15 +60,5 @@ class ProfileProvider {
   /// Returns e.g. `/api/v1/users/me/picture` (plus `?v=` cache-buster when
   /// [cacheBuster] is given) so the image reloads after upload/delete.
   String pictureUrl({int? cacheBuster}) =>
-      pictureUrlForUser(apiClient, 'me', cacheBuster: cacheBuster);
-
-  /// Cross-user read path for `GET users/{id}/picture`. [userId] is
-  /// the `AppUser` id. A 404 (no picture / not visible) is normal — callers
-  /// must fall back to initials, never an error banner.
-  static String pictureUrlForUser(
-    ApiClient client,
-    Object userId, {
-    int? cacheBuster,
-  }) =>
-      userPictureUrl(client, userId, cacheBuster: cacheBuster);
+      userPictureUrl(apiClient, 'me', cacheBuster: cacheBuster);
 }

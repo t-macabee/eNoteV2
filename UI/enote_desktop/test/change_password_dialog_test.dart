@@ -80,10 +80,6 @@ void main() {
     await tester.enterText(fields.at(0), 'Stara1!');
     await tester.pump();
     await tester.enterText(fields.at(1), 'Test1234!');
-    // The confirm validator snapshots the new-password text at build time
-    // (F4-09 family, out of scope): force one rebuild so it sees the text
-    // above before the confirmation is entered.
-    tester.view.physicalSize = const Size(1400, 901);
     await tester.pump();
     await tester.enterText(fields.at(2), 'Test1234!');
     await tester.pump();

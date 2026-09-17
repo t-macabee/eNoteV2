@@ -164,9 +164,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                 obscureText: _confirmObscured,
                 textInputAction: TextInputAction.done,
                 onFieldSubmitted: (_) => _submit(),
-                validator: (value) => Validators.confirmPassword(
-                  _passwordController.text,
-                )(value),
+                validator:
+                    Validators.confirmPassword(() => _passwordController.text),
               ),
             ],
           ),

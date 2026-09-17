@@ -10,9 +10,8 @@ import '../../widgets/image_upload_helper.dart';
 import 'profile_provider.dart';
 
 /// "Uredi" form opened from [ProfileDialog] — same pattern as editing a
-/// music store: its own [EntityFormScaffold] with its own Save/Cancel.
-/// Unlike an entity edit (which closes on save), this one stays open and
-/// clears its fields on success, matching the change-password dialog.
+/// music store: its own [EntityFormScaffold] with its own Save/Cancel, which
+/// pops on save since the scaffold runs in edit mode.
 class EditProfileDialog extends StatefulWidget {
   final String? initialFirstName;
   final String? initialLastName;
@@ -43,11 +42,6 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
   // the URL is cacheable, so `?v=` (plus ImageField's new imageUrl) is what
   // makes the new bytes appear without reopening the dialog.
   int _pictureVersion = 0;
-
-  // Bumped on every clear so the DateField below gets a fresh key — a
-  // FormField ignores a changed initialValue on rebuild once mounted, so
-  // recreating it is the only way to make it pick up the cleared value.
-  int _resetGeneration = 0;
 
   @override
   void initState() {
@@ -88,24 +82,21 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
   }
 
   Future<String?> _uploadImage(
-      Uint8List bytes, String fileName, String contentType) async {
-    try {
-      final provider = context.read<ProfileProvider>();
-      await provider.uploadPicture(bytes, fileName, contentType);
-      if (mounted) {
-        setState(() {
-          _hasPicture = true;
-          _pictureVersion++;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Slika uspješno postavljena.')),
-        );
-      }
-      return provider.pictureUrl(cacheBuster: _pictureVersion);
-    } catch (e) {
-      if (mounted) ErrorBanner.show(context, message: userMessage(e));
-      return null;
-    }
+      Uint8List bytes, String fileName, String contentType) {
+    final provider = context.read<ProfileProvider>();
+    return uploadImageWith(
+      () async {
+        await provider.uploadPicture(bytes, fileName, contentType);
+        if (mounted) {
+          setState(() {
+            _hasPicture = true;
+            _pictureVersion++;
+          });
+        }
+        return provider.pictureUrl(cacheBuster: _pictureVersion);
+      },
+      context: context,
+    );
   }
 
   Future<void> _removePicture() async {
@@ -125,14 +116,6 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
     }
   }
 
-  void _clearFields() {
-    _firstNameController.clear();
-    _lastNameController.clear();
-    _emailController.clear();
-    _dateOfBirth = null;
-    _resetGeneration++;
-  }
-
   @override
   Widget build(BuildContext context) {
     return EntityFormScaffold(
@@ -140,7 +123,6 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
       presentation: EntityFormPresentation.dialog,
       isEditMode: true,
       onSave: _save,
-      onReset: _clearFields,
       fieldsBuilder: (context) => [
         const Text('Slika', style: TextStyle(fontWeight: FontWeight.bold)),
         const Text(
@@ -184,13 +166,16 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
         TextFormField(
           controller: _emailController,
           decoration: const InputDecoration(labelText: 'Email'),
-          validator: (v) => v?.isEmpty ?? true ? 'Obavezno polje' : null,
+          validator: Validators.email,
         ),
         DateField(
-          key: ValueKey(_resetGeneration),
           labelText: 'Datum rođenja',
           initialValue: _dateOfBirth,
           firstDate: DateTime(1900),
+          lastDate: DateTime.now(),
+          validator: (v) => v != null && v.isAfter(DateTime.now())
+              ? 'Datum rođenja ne može biti u budućnosti.'
+              : null,
           onChanged: (v) => _dateOfBirth = v,
         ),
       ],

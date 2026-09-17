@@ -27,8 +27,6 @@ class ShopStoreProvider with ChangeNotifier {
     return _store!;
   }
 
-  Future<MusicStoreDto> getOne() => getOwnStore();
-
   Future<MusicStoreDto> updateOwnStore(Map<String, dynamic> request) async {
     final response = await apiClient.put(endpoint, body: request);
     final data = decodeOrThrow(response);

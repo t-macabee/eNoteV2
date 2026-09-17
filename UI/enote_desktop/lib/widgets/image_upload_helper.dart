@@ -13,6 +13,33 @@ Future<Uint8List?> pickImageBytes() async {
   return result.files.first.bytes;
 }
 
+/// Runs [upload] and applies the form's shared success side effects
+/// (snackbar) or error banner.
+///
+/// Returns whatever [upload] resolves to, or null on failure. [upload] is
+/// deliberately id-agnostic so single-record providers (`ShopStoreProvider`,
+/// `ProfileProvider`) can share this flow without an id-taking
+/// `CrudProvider`.
+Future<String?> uploadImageWith(
+  Future<String?> Function() upload, {
+  required BuildContext context,
+}) async {
+  try {
+    final imagePath = await upload();
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Slika uspješno postavljena.')),
+      );
+    }
+    return imagePath;
+  } catch (e) {
+    if (context.mounted) {
+      ErrorBanner.show(context, message: userMessage(e));
+    }
+    return null;
+  }
+}
+
 /// Uploads an image for the entity of type [T] held by [provider] and applies
 /// the form's success side effects ([onSuccess], snackbar) or error banner.
 ///
@@ -27,20 +54,10 @@ Future<String?> uploadImageFor<T>(
   String contentType, {
   required BuildContext context,
   required String? Function(T updated) onSuccess,
-}) async {
-  try {
-    final updated = await provider.uploadImage(id, bytes, fileName, contentType);
-    final imagePath = onSuccess(updated);
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Slika uspješno postavljena.')),
-      );
-    }
-    return imagePath;
-  } catch (e) {
-    if (context.mounted) {
-      ErrorBanner.show(context, message: userMessage(e));
-    }
-    return null;
-  }
-}
+}) =>
+    uploadImageWith(
+      () => provider
+          .uploadImage(id, bytes, fileName, contentType)
+          .then(onSuccess),
+      context: context,
+    );

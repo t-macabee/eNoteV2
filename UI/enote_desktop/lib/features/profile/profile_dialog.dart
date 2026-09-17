@@ -61,8 +61,8 @@ class _ProfileDialogState extends State<ProfileDialog> {
         initialHasPicture: profile.hasPicture,
       ),
     );
-    // The edit dialog stays open on save and only clears its own fields, so
-    // this summary is refreshed once it's finally closed.
+    // The edit dialog pops on save (edit mode), so this summary is
+    // refreshed once it's closed.
     if (mounted) _fetchProfile();
   }
 

@@ -65,19 +65,12 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
     }
   }
 
-  void _clearFields() {
-    _currentPasswordController.clear();
-    _newPasswordController.clear();
-    _confirmPasswordController.clear();
-  }
-
   @override
   Widget build(BuildContext context) {
     return EntityFormScaffold(
       title: 'Promijeni lozinku',
       presentation: EntityFormPresentation.dialog,
       onSave: _save,
-      onReset: _clearFields,
       fieldsBuilder: (context) => [
         TextFormField(
           controller: _currentPasswordController,
@@ -90,14 +83,15 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
           controller: _newPasswordController,
           decoration: const InputDecoration(labelText: 'Nova lozinka'),
           obscureText: true,
-          validator: (v) => v?.isEmpty ?? true ? 'Obavezno polje' : null,
+          validator: Validators.password,
         ),
         const SizedBox(height: 16),
         TextFormField(
           controller: _confirmPasswordController,
           decoration: const InputDecoration(labelText: 'Potvrdi novu lozinku'),
           obscureText: true,
-          validator: Validators.confirmPassword(_newPasswordController.text),
+          validator:
+              Validators.confirmPassword(() => _newPasswordController.text),
         ),
       ],
     );

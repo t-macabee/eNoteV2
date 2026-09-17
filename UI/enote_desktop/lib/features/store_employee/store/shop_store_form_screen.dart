@@ -54,26 +54,21 @@ class _ShopStoreFormScreenState extends State<ShopStoreFormScreen> {
     Uint8List bytes,
     String fileName,
     String contentType,
-  ) async {
+  ) {
     final provider = context.read<ShopStoreProvider>();
-    try {
-      final updated =
-          await provider.uploadOwnStoreImage(bytes, fileName, contentType);
-      if (mounted) {
-        setState(() {
-          _currentImagePath = updated.imagePath;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Slika uspješno postavljena.')),
-        );
-      }
-      return updated.imagePath;
-    } catch (e) {
-      if (mounted) {
-        ErrorBanner.show(context, message: userMessage(e));
-      }
-      return null;
-    }
+    return uploadImageWith(
+      () => provider
+          .uploadOwnStoreImage(bytes, fileName, contentType)
+          .then((updated) {
+        if (mounted) {
+          setState(() {
+            _currentImagePath = updated.imagePath;
+          });
+        }
+        return updated.imagePath;
+      }),
+      context: context,
+    );
   }
 
   Future<bool> _save() async {
@@ -110,16 +105,18 @@ class _ShopStoreFormScreenState extends State<ShopStoreFormScreen> {
         TextFormField(
           controller: _phoneNumberController,
           decoration: const InputDecoration(labelText: 'Broj telefona'),
+          validator: (v) => v == null || v.trim().isEmpty
+              ? null
+              // The backend only length-checks the number, so stored values
+              // may carry spacing — strip it before the format check.
+              : Validators.phone(v.replaceAll(' ', '')),
         ),
         AsyncDropdown<AddressReferenceDto>(
           label: 'Adresa',
           value: _selectedAddressId,
           fetcher: () async {
             final provider = context.read<ShopAddressProvider>();
-            final result = await provider.search({
-              'page': 1,
-              'pageSize': 100,
-            });
+            final result = await provider.search(pagedQuery(1, 100, ''));
             return result.items;
           },
           itemLabel: (item) => '${item.street} ${item.number}, ${item.city}',
