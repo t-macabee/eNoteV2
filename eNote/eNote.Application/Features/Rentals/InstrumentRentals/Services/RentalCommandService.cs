@@ -101,7 +101,7 @@ public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, 
     {
         var hasConflict = false;
 
-        if (trigger is RentalTrigger.Approve or RentalTrigger.Pickup)
+        if (trigger is RentalTrigger.Approve)
         {
             hasConflict = await context.Set<InstrumentRental>()
                 .Where(x => x.InstrumentId == rental.InstrumentId && x.Id != rental.Id)
@@ -115,7 +115,6 @@ public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, 
             Actor = rentalActor,
             HasInstrumentLockConflict = hasConflict,
             MonthlyFee = rental.Instrument.InstrumentType.MonthlyFee,
-            IsInstrumentActive = rental.Instrument.IsActive,
             ResponseNote = request?.Note
         };
 

@@ -44,7 +44,7 @@ public sealed class RentalNotificationOutboxPublisher(IServiceProvider services,
         catch (OperationCanceledException) { }
     }
 
-    private async Task ProcessBatchAsync(CancellationToken ct)
+    internal async Task ProcessBatchAsync(CancellationToken ct)
     {
         await using var scope = services.CreateAsyncScope();
 

@@ -4,6 +4,7 @@ using eNote.Application.Common.Persistence;
 using eNote.Infrastructure;
 using eNote.Worker;
 using eNote.Worker.Consumers;
+using eNote.Tests.TestUtils;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -112,12 +113,12 @@ public sealed class DiResolutionTests
 
     private static async Task AssertAllENoteInterfacesResolvable(ServiceCollection services)
     {
-        var provider = services.BuildServiceProvider();
+        var provider = services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true });
         using var scope = provider.CreateScope();
 
         foreach (var descriptor in services.Where(d => d.ServiceType.IsInterface))
         {
-            if (descriptor.ServiceType.ContainsGenericParameters || descriptor.ImplementationType?.Namespace?.StartsWith("eNote.", StringComparison.Ordinal) != true)
+            if (descriptor.ServiceType.ContainsGenericParameters || descriptor.ServiceType.Namespace?.StartsWith("eNote.", StringComparison.Ordinal) != true)
                 continue;
 
             var serviceType = descriptor.ServiceType;
@@ -148,11 +149,5 @@ public sealed class DiResolutionTests
         public string ApplicationName { get; set; } = "eNote.Tests";
         public string ContentRootPath { get; set; } = AppContext.BaseDirectory;
         public IFileProvider ContentRootFileProvider { get; set; } = new NullFileProvider();
-    }
-
-    private sealed class StubCurrentActor : ICurrentUserContext
-    {
-        public int UserId => 1;
-        public bool IsAuthenticated => true;
     }
 }

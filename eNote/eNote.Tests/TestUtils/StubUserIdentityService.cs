@@ -14,8 +14,13 @@ public sealed class StubUserIdentityService : IUserIdentityService
         _roles = roles ?? [];
     }
 
-    public Task<UserIdentityDto?> GetUserAsync(int userId, CancellationToken cancellationToken = default) =>
-        Task.FromResult(_users.GetValueOrDefault(userId));
+    public Task<UserIdentityDto?> GetUserAsync(int userId, CancellationToken cancellationToken = default)
+    {
+        LastRequestedUserId = userId;
+        return Task.FromResult(_users.GetValueOrDefault(userId));
+    }
+
+    public int? LastRequestedUserId { get; private set; }
 
     public Task<IReadOnlyDictionary<int, UserIdentityDto>> GetUsersBulkAsync(IEnumerable<int> userIds, CancellationToken cancellationToken = default) =>
         Task.FromResult<IReadOnlyDictionary<int, UserIdentityDto>>(

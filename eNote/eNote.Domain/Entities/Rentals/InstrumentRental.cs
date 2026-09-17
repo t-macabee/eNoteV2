@@ -128,10 +128,9 @@ public sealed class InstrumentRental : AuditableEntity, ITenantScoped
         RentalStatus = InstrumentRentalStatus.Rejected;
     }
 
-    public void Cancel(DateTime returnedAt, string? note)
+    public void Cancel(string? note)
     {
         Note = note;
-        ReturnedAt = returnedAt;
         RentalStatus = InstrumentRentalStatus.Canceled;
     }
 
@@ -197,6 +196,7 @@ public sealed class InstrumentRental : AuditableEntity, ITenantScoped
         }
 
         transition.Apply(this, context, now);
+        UpdatedById = context.UserId;
         return Result<RentalTransitionResult>.Success(new RentalTransitionResult(transition.UsesInstrumentLock));
     }
 
@@ -227,20 +227,8 @@ public sealed class InstrumentRental : AuditableEntity, ITenantScoped
     private static string? GuardNoInstrumentLockConflict(RentalTransitionContext context) =>
         context.HasInstrumentLockConflict ? InstrumentReservedOrRentedMessage : null;
 
-    private static string? GuardInstrumentActive(RentalTransitionContext context) =>
-        !context.IsInstrumentActive ? InstrumentInactiveMessage : null;
-
-    private static string? GuardNotPickedUp(InstrumentRental rental) =>
-        rental.PickedUpAt.HasValue ? RentalCancelBlockedAfterPickupMessage : null;
-
-    private static string? GuardNotReturned(InstrumentRental rental) =>
-        rental.ReturnedAt.HasValue ? RentalAlreadyCompletedMessage : null;
-
-    private static string? GuardPickedUp(InstrumentRental rental) =>
-        !rental.PickedUpAt.HasValue ? RentalNotPickedUpMessage : null;
-
-    private static void ApplyAuditFields(InstrumentRental rental, RentalTransitionContext context) =>
-        rental.UpdatedById = context.UserId;
+    private static string? ResolveNote(InstrumentRental rental, RentalTransitionContext context) =>
+        !string.IsNullOrWhiteSpace(context.ResponseNote) ? context.ResponseNote : rental.Note;
 
     private static IReadOnlyList<TransitionDefinition> CreateTransitions() =>
     [
@@ -248,12 +236,8 @@ public sealed class InstrumentRental : AuditableEntity, ITenantScoped
             From: InstrumentRentalStatus.Pending,
             Trigger: RentalTrigger.Approve,
             Actors: [RentalActor.StoreEmployee],
-            Guard: (_, context) => GuardInstrumentActive(context) ?? GuardNoInstrumentLockConflict(context),
-            Apply: (rental, context, now) =>
-            {
-                rental.Approve(context.MonthlyFee, context.ResponseNote, now, context.UserId);
-                ApplyAuditFields(rental, context);
-            },
+            Guard: (_, context) => GuardNoInstrumentLockConflict(context),
+            Apply: (rental, context, now) => rental.Approve(context.MonthlyFee, context.ResponseNote, now, context.UserId),
             UsesInstrumentLock: true),
 
         new(
@@ -261,78 +245,47 @@ public sealed class InstrumentRental : AuditableEntity, ITenantScoped
             Trigger: RentalTrigger.Reject,
             Actors: [RentalActor.StoreEmployee],
             Guard: null,
-            Apply: (rental, context, now) =>
-            {
-                rental.Reject(now, context.ResponseNote, context.UserId);
-                ApplyAuditFields(rental, context);
-            },
+            Apply: (rental, context, now) => rental.Reject(now, context.ResponseNote, context.UserId),
             UsesInstrumentLock: false),
 
         new(
             From: InstrumentRentalStatus.Pending,
             Trigger: RentalTrigger.Cancel,
             Actors: [RentalActor.Student],
-            Guard: (rental, _) => GuardNotPickedUp(rental),
-            Apply: (rental, context, now) =>
-            {
-                var note = !string.IsNullOrWhiteSpace(context.ResponseNote) ? context.ResponseNote : rental.Note;
-                rental.Cancel(now, note);
-                ApplyAuditFields(rental, context);
-            },
+            Guard: null,
+            Apply: (rental, context, now) => rental.Cancel(ResolveNote(rental, context)),
             UsesInstrumentLock: false),
 
         new(
             From: InstrumentRentalStatus.Approved,
             Trigger: RentalTrigger.Pickup,
             Actors: [RentalActor.StoreEmployee],
-            Guard: (rental, context) => GuardInstrumentActive(context)
-                ?? (rental.PickedUpAt.HasValue ? RentalAlreadyPickedUpMessage : null)
-                ?? GuardNoInstrumentLockConflict(context),
-            Apply: (rental, context, now) =>
-            {
-                var note = !string.IsNullOrWhiteSpace(context.ResponseNote) ? context.ResponseNote : rental.Note;
-                rental.Pickup(now, note);
-                ApplyAuditFields(rental, context);
-            },
+            Guard: null,
+            Apply: (rental, context, now) => rental.Pickup(now, ResolveNote(rental, context)),
             UsesInstrumentLock: true),
 
         new(
             From: InstrumentRentalStatus.Approved,
             Trigger: RentalTrigger.Cancel,
             Actors: [RentalActor.Student, RentalActor.StoreEmployee],
-            Guard: (rental, _) => GuardNotPickedUp(rental),
-            Apply: (rental, context, now) =>
-            {
-                var note = !string.IsNullOrWhiteSpace(context.ResponseNote) ? context.ResponseNote : rental.Note;
-                rental.Cancel(now, note);
-                ApplyAuditFields(rental, context);
-            },
+            Guard: null,
+            Apply: (rental, context, now) => rental.Cancel(ResolveNote(rental, context)),
             UsesInstrumentLock: false),
 
         new(
             From: InstrumentRentalStatus.Active,
             Trigger: RentalTrigger.Complete,
             Actors: [RentalActor.StoreEmployee],
-            Guard: (rental, _) => GuardNotReturned(rental),
-            Apply: (rental, context, now) =>
-            {
-                var note = !string.IsNullOrWhiteSpace(context.ResponseNote) ? context.ResponseNote : rental.Note;
-                rental.Complete(now, note);
-                ApplyAuditFields(rental, context);
-            },
+            Guard: null,
+            Apply: (rental, context, now) => rental.Complete(now, ResolveNote(rental, context)),
             UsesInstrumentLock: false),
 
         new(
             From: InstrumentRentalStatus.Active,
             Trigger: RentalTrigger.ReturnEarly,
             Actors: [RentalActor.StoreEmployee],
-            Guard: (rental, _) => GuardNotReturned(rental) ?? GuardPickedUp(rental),
-            Apply: (rental, context, now) =>
-            {
-                var note = !string.IsNullOrWhiteSpace(context.ResponseNote) ? context.ResponseNote : rental.Note;
-                rental.ReturnEarly(now, note);
-                ApplyAuditFields(rental, context);
-            },
+            Guard: null,
+            Apply: (rental, context, now) => rental.ReturnEarly(now, ResolveNote(rental, context)),
             UsesInstrumentLock: false),
     ];
 
@@ -351,11 +304,6 @@ public sealed class InstrumentRental : AuditableEntity, ITenantScoped
     private const string RentalEarlyReturnActiveOnlyMessage = "Samo aktivno iznajmljivanje se može prijevremeno završiti.";
     private const string BadRequestMessage = "Neispravan zahtjev.";
     private const string InstrumentReservedOrRentedMessage = "Instrument je rezervisan ili već iznajmljen.";
-    private const string InstrumentInactiveMessage = "Instrument nije aktivan.";
-    private const string RentalCancelBlockedAfterPickupMessage = "Instrument je već preuzet, otkazivanje nije moguće.";
-    private const string RentalAlreadyCompletedMessage = "Iznajmljivanje je već završeno.";
-    private const string RentalNotPickedUpMessage = "Instrument nije preuzet.";
-    private const string RentalAlreadyPickedUpMessage = "Instrument je već preuzet.";
 
     private sealed record TransitionDefinition(
         InstrumentRentalStatus From,

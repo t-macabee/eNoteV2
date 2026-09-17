@@ -1,4 +1,5 @@
 using eNote.Application.Features.Identity.Users.Services;
+using eNote.Tests.TestUtils;
 
 namespace eNote.Tests.Identity;
 
@@ -8,19 +9,13 @@ public sealed class CurrentActorTests
     public async Task GetStudentAsync_ResolvesStudentOnlyOnce()
     {
         var lookup = new CountingProfileLookup(new Student(appUserId: 42, enrollmentDate: DateTime.UtcNow));
-        var actor = new CurrentActor(new TestCurrentUserContext(42), lookup);
+        var actor = new CurrentActor(new StubCurrentActor(userId: 42), lookup);
 
         var first = await actor.GetCurrentStudentAsync();
         var second = await actor.GetCurrentStudentAsync();
 
         Assert.Same(first, second);
         Assert.Equal(1, lookup.StudentLookupCount);
-    }
-
-    private sealed class TestCurrentUserContext(int userId) : ICurrentUserContext
-    {
-        public int UserId => userId;
-        public bool IsAuthenticated => true;
     }
 
     private sealed class CountingProfileLookup(Student student) : IUserProfileLookup

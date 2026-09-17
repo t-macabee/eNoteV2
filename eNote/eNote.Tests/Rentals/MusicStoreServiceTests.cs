@@ -1,4 +1,5 @@
 using eNote.Application.Common.Localization;
+using eNote.Application.Common.Persistence;
 using eNote.Application.Features.Rentals.ReferenceData.MusicStores;
 using eNote.Domain.Entities.Shared;
 using eNote.Tests.TestUtils;
@@ -169,6 +170,39 @@ public sealed class MusicStoreServiceTests
     }
 
     [Fact]
+    public async Task CreateAsync_Throws_WhenAddressMissing()
+    {
+        var ctx = TestDbContextFactory.CreateContext(Now);
+        var service = CreateService(ctx);
+
+        var ex = await Assert.ThrowsAsync<BusinessException>(() => service.CreateAsync(new MusicStoreRequest
+        {
+            StoreName = "Ghost Shop",
+            BusinessHours = "09-17",
+            AddressId = 999
+        }));
+
+        Assert.Equal(Messages.AddressNotFound, ex.Message);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_Throws_WhenAddressMissing()
+    {
+        var ctx = TestDbContextFactory.CreateContext(Now);
+        var service = CreateService(ctx);
+        var created = await service.CreateAsync(new MusicStoreRequest { StoreName = "Shop", BusinessHours = "09-17" });
+
+        var ex = await Assert.ThrowsAsync<BusinessException>(() => service.UpdateAsync(created.Id, new MusicStoreRequest
+        {
+            StoreName = "Shop",
+            BusinessHours = "09-17",
+            AddressId = 999
+        }));
+
+        Assert.Equal(Messages.AddressNotFound, ex.Message);
+    }
+
+    [Fact]
     public async Task UploadImageAsync_SavesFile_AndUpdatesMusicStoreImagePath()
     {
         var ctx = TestDbContextFactory.CreateContext(Now);
@@ -188,6 +222,40 @@ public sealed class MusicStoreServiceTests
 
         var fetched = await service.GetByIdAsync(created.Id);
         Assert.Equal(updated.ImagePath, fetched.ImagePath);
+    }
+
+    [Fact]
+    public async Task UploadImageAsync_DeletesNewFile_WhenSaveFails()
+    {
+        var ctx = TestDbContextFactory.CreateContext(Now);
+        var store = new MusicStore("Image Store", "09-17");
+        ctx.Set<MusicStore>().Add(store);
+        await ctx.SaveChangesAsync();
+        var storage = new RecordingFileStorageService();
+        var service = CreateService(new ThrowingSaveDbContext(ctx, new InvalidOperationException("save failed")), storage);
+
+        using var stream = new MemoryStream([1, 2, 3]);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => service.UploadImageAsync(store.Id, stream, "store.png", "image/png"));
+
+        Assert.Equal(storage.SavedPaths, storage.DeletedPaths);
+    }
+
+    [Fact]
+    public async Task UploadImageAsync_DeletesPreviousImage_AfterReplacement()
+    {
+        var ctx = TestDbContextFactory.CreateContext(Now);
+        var store = new MusicStore("Image Store", "09-17");
+        store.UpdateImagePath("/old/store.png");
+        ctx.Set<MusicStore>().Add(store);
+        await ctx.SaveChangesAsync();
+        var storage = new RecordingFileStorageService();
+        var service = CreateService(ctx, storage);
+
+        using var stream = new MemoryStream([1, 2, 3]);
+        var updated = await service.UploadImageAsync(store.Id, stream, "store.png", "image/png");
+
+        Assert.Equal(storage.SavedPaths.Single(), updated.ImagePath);
+        Assert.Equal(["/old/store.png"], storage.DeletedPaths);
     }
 
     // contract: GetPagedAsync filters by CityId correctly
@@ -294,7 +362,7 @@ public sealed class MusicStoreServiceTests
         Assert.Equal(Messages.MusicStoreDeleteBlocked, ex.Message);
     }
 
-    private static MusicStoreService CreateService(ENoteContext ctx, IFileStorageService? fileStorage = null) =>
+    private static MusicStoreService CreateService(IAppDbContext ctx, IFileStorageService? fileStorage = null) =>
         new(ctx, fileStorage ?? new StubFileStorageService());
 
     private static async Task<City> SeedCityAsync(ENoteContext ctx, string name)

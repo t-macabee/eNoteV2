@@ -27,6 +27,26 @@ public sealed class AddressService(IAppDbContext context) : ReferenceDataCrudSer
         entity.Number = request.Number.Trim();
     }
 
+    public override async Task<AddressReferenceDto> CreateAsync(AddressRequest request, CancellationToken cancellationToken = default)
+    {
+        await EnsureCityExistsAsync(request.CityId, cancellationToken);
+        return await base.CreateAsync(request, cancellationToken);
+    }
+
+    public override async Task<AddressReferenceDto> UpdateAsync(int id, AddressRequest request, CancellationToken cancellationToken = default)
+    {
+        await EnsureCityExistsAsync(request.CityId, cancellationToken);
+        return await base.UpdateAsync(id, request, cancellationToken);
+    }
+
+    private async Task EnsureCityExistsAsync(int cityId, CancellationToken cancellationToken)
+    {
+        if (!await Db.Set<City>().AnyAsync(x => x.Id == cityId, cancellationToken))
+        {
+            throw new BusinessException(Messages.CityNotFound);
+        }
+    }
+
     public override async Task<PagedResult<AddressReferenceDto>> GetPagedAsync(AddressSearchObject search, CancellationToken cancellationToken = default)
     {
         IQueryable<Address> query = Db.Set<Address>().AsNoTracking().Include(a => a.City);

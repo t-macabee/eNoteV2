@@ -93,10 +93,11 @@ public sealed class InstrumentService(
             .FirstOrDefaultAsync(x => x.Id == id, ct)
             ?? throw new NotFoundException(Messages.InstrumentNotFound);
 
+        var previousPath = entity.ImagePath;
         var path = await fileStorage.SaveAsync(stream, fileName, contentType, "instruments", ct);
         entity.UpdateDetails(entity.Model, entity.Manufacturer, entity.Description, path, entity.InstrumentTypeId);
 
-        await context.SaveChangesAsync(ct);
+        await context.SaveChangesReplacingFileAsync(fileStorage, path, previousPath, ct);
 
         return mapper.Map<InstrumentDto>(await ReloadAsync(entity.Id, ct));
     }

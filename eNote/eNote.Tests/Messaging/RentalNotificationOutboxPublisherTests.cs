@@ -178,12 +178,8 @@ public sealed class RentalNotificationOutboxPublisherTests
         return new RentalNotificationOutboxPublisher(provider, NullLogger<RentalNotificationOutboxPublisher>.Instance);
     }
 
-    private static Task InvokeProcessBatchAsync(RentalNotificationOutboxPublisher publisher)
-    {
-        var method = typeof(RentalNotificationOutboxPublisher)
-            .GetMethod("ProcessBatchAsync", BindingFlags.NonPublic | BindingFlags.Instance)!;
-        return (Task)method.Invoke(publisher, [CancellationToken.None])!;
-    }
+    private static Task InvokeProcessBatchAsync(RentalNotificationOutboxPublisher publisher) =>
+        publisher.ProcessBatchAsync(CancellationToken.None);
 
     private sealed class StubServiceProvider(IAppDbContext context, StubPublishEndpoint endpoint, IClock clock) : IServiceProvider
     {

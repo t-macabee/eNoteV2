@@ -47,6 +47,7 @@ public sealed class MusicStoreService(IAppDbContext context, IFileStorageService
 
     public override async Task<MusicStoreDto> CreateAsync(MusicStoreRequest request, CancellationToken cancellationToken = default)
     {
+        await EnsureAddressExistsAsync(request.AddressId, cancellationToken);
         var entity = CreateEntity(request);
         Db.Set<MusicStore>().Add(entity);
         await Db.SaveChangesAsync(cancellationToken);
@@ -57,6 +58,7 @@ public sealed class MusicStoreService(IAppDbContext context, IFileStorageService
 
     public override async Task<MusicStoreDto> UpdateAsync(int id, MusicStoreRequest request, CancellationToken cancellationToken = default)
     {
+        await EnsureAddressExistsAsync(request.AddressId, cancellationToken);
         var entity = await Db.Set<MusicStore>().FirstOrDefaultAsync(x => x.Id == id, cancellationToken)
             ?? throw new NotFoundException(NotFoundMessage);
         UpdateEntity(entity, request);
@@ -71,10 +73,11 @@ public sealed class MusicStoreService(IAppDbContext context, IFileStorageService
         var entity = await Db.Set<MusicStore>().FirstOrDefaultAsync(x => x.Id == id, ct)
             ?? throw new NotFoundException(NotFoundMessage);
 
+        var previousPath = entity.ImagePath;
         var path = await fileStorage.SaveAsync(stream, fileName, contentType, "music-stores", ct);
         entity.UpdateImagePath(path);
 
-        await Db.SaveChangesAsync(ct);
+        await Db.SaveChangesReplacingFileAsync(fileStorage, path, previousPath, ct);
 
         var reloaded = await Db.Set<MusicStore>().AsNoTracking().Include(x => x.Address).ThenInclude(a => a!.City).FirstOrDefaultAsync(x => x.Id == id, ct)
             ?? throw new NotFoundException(NotFoundMessage);
@@ -93,6 +96,14 @@ public sealed class MusicStoreService(IAppDbContext context, IFileStorageService
     }
 
     protected override string NotFoundMessage => Messages.StoreNotFound;
+
+    private async Task EnsureAddressExistsAsync(int? addressId, CancellationToken cancellationToken)
+    {
+        if (addressId is { } id && !await Db.Set<Address>().AnyAsync(x => x.Id == id, cancellationToken))
+        {
+            throw new BusinessException(Messages.AddressNotFound);
+        }
+    }
 
     protected override async Task EnsureDeletableAsync(MusicStore entity, CancellationToken ct)
     {

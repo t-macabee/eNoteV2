@@ -45,24 +45,13 @@ public static class Messages
 
     public const string InstrumentTypeNotFound = "Vrsta instrumenta ne postoji.";
     public const string InstrumentNotFound = "Instrument nije pronađen.";
-    public const string InstrumentInactive = "Instrument nije aktivan.";
     public const string InstrumentReservedOrRented = "Instrument je rezervisan ili već iznajmljen.";
     public const string InstrumentDeleteBlocked = "Instrument se ne može obrisati jer je trenutno rezervisan ili iznajmljen.";
 
     public const string RentalNotFound = "Zahtjev nije pronađen.";
     public const string RentalNotFoundAfterUpdate = "Zahtjev nije pronađen nakon ažuriranja.";
     public const string RentalPendingRequired = "Već imate zahtjev na čekanju za ovaj instrument.";
-    public const string RentalApprovePendingOnly = "Samo zahtjev na čekanju može biti odobren.";
-    public const string RentalRejectPendingOnly = "Samo zahtjev na čekanju se može odbiti.";
-    public const string RentalPickupApprovedOnly = "Samo odobreno iznajmljivanje se može preuzeti.";
-    public const string RentalAlreadyPickedUp = "Instrument je već preuzet.";
-    public const string RentalCompleteActiveOnly = "Samo aktivno iznajmljivanje se može završiti.";
-    public const string RentalAlreadyCompleted = "Iznajmljivanje je već završeno.";
     public const string RentalCancelPendingOrApprovedOnly = "Samo zahtjev na čekanju ili odobren zahtjev se može otkazati.";
-    public const string RentalCancelBlockedAfterPickup = "Instrument je već preuzet, otkazivanje nije moguće.";
-    public const string RentalEarlyReturnActiveOnly = "Samo aktivno iznajmljivanje se može prijevremeno završiti.";
-    public const string RentalNotPickedUp = "Instrument nije preuzet.";
-    public const string RentalInstrumentMissing = "Instrument nije pronađen za ovaj zahtjev.";
     public const string RentalAccessDenied = "Nemate pravo nad ovim zahtjevom.";
 
     public const string PaymentAlreadyCompleted = "Stavka je već plaćena.";
@@ -97,6 +86,7 @@ public static class Messages
     public const string AssignmentPastDue = "Rok za predaju zadatka je istekao.";
 
     public const string AddressNotFound = "Adresa nije pronađena.";
+    public const string CityNotFound = "Grad nije pronađen.";
     public const string AddressDeleteBlocked = "Adresa se ne može obrisati jer je povezana s korisnikom.";
     public const string InstrumentTypeDeleteBlocked = "Vrsta instrumenta se ne može obrisati jer je u upotrebi.";
     public const string MusicStoreDeleteBlocked = "Radnja se ne može obrisati jer sadrži instrumente ili zaposlenike.";

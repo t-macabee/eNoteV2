@@ -17,11 +17,7 @@ public sealed class UserProfileServiceTests
     [Fact]
     public async Task GetCurrentUserAsync_UsesCurrentUserId()
     {
-        var identity = new StubUserIdentityService
-        {
-            User = ActiveUser(15),
-            Roles = [AppRoles.Administrator]
-        };
+        var identity = Identity(ActiveUser(15), AppRoles.Administrator);
 
         var service = CreateService(identity, currentUserId: 15);
 
@@ -35,16 +31,12 @@ public sealed class UserProfileServiceTests
     [Fact]
     public async Task GetUserAsync_ReturnsNull_WhenUserIsInactive()
     {
-        var identity = new StubUserIdentityService
+        var identity = Identity(new UserIdentityDto
         {
-            User = new UserIdentityDto
-            {
-                Id = 1,
-                Username = "inactive",
-                IsActive = false
-            },
-            Roles = [AppRoles.Administrator]
-        };
+            Id = 1,
+            Username = "inactive",
+            IsActive = false
+        }, AppRoles.Administrator);
 
         var service = CreateService(identity);
 
@@ -56,11 +48,7 @@ public sealed class UserProfileServiceTests
     [Fact]
     public async Task GetUserAsync_Throws_WhenUserHasMultipleRoles()
     {
-        var identity = new StubUserIdentityService
-        {
-            User = ActiveUser(1),
-            Roles = [AppRoles.Student, AppRoles.Instructor]
-        };
+        var identity = Identity(ActiveUser(1), AppRoles.Student, AppRoles.Instructor);
 
         var service = CreateService(identity);
 
@@ -70,19 +58,15 @@ public sealed class UserProfileServiceTests
     [Fact]
     public async Task GetUserAsync_BuildsAdminProfile()
     {
-        var identity = new StubUserIdentityService
+        var identity = Identity(new UserIdentityDto
         {
-            User = new UserIdentityDto
-            {
-                Id = 3,
-                Username = "admin",
-                FirstName = "Admin",
-                LastName = "User",
-                DateOfBirth = new DateTime(1990, 5, 12),
-                IsActive = true
-            },
-            Roles = [AppRoles.Administrator]
-        };
+            Id = 3,
+            Username = "admin",
+            FirstName = "Admin",
+            LastName = "User",
+            DateOfBirth = new DateTime(1990, 5, 12),
+            IsActive = true
+        }, AppRoles.Administrator);
 
         var service = CreateService(identity);
 
@@ -97,6 +81,87 @@ public sealed class UserProfileServiceTests
     }
 
     [Fact]
+    public async Task GetUserAsync_BuildsStudentProfile()
+    {
+        await using var context = TestDbContextFactory.CreateContext(Now);
+        var student = new Student(appUserId: 4, enrollmentDate: new DateTime(2026, 1, 10));
+        student.UpdateMembership(new DateTime(2026, 12, 31));
+        context.Set<Student>().Add(student);
+        await context.SaveChangesAsync();
+
+        var identity = Identity(new UserIdentityDto { Id = 4, Username = "student", FirstName = "Stu", LastName = "Dent", IsActive = true }, AppRoles.Student);
+
+        var service = new UserProfileService(context, identity, new StubUserProfileLookup(student: student), new StubCurrentActor(userId: 4));
+
+        var result = await service.GetUserAsync(4);
+
+        Assert.NotNull(result);
+        var profile = Assert.IsType<StudentProfile>(result.Profile);
+        Assert.Equal(student.Id, profile.Id);
+        Assert.Equal(student.EnrollmentDate, profile.EnrollmentDate);
+        Assert.Equal(student.MembershipPaidUntil, profile.MembershipPaidUntil);
+        Assert.Equal("Stu", profile.FirstName);
+    }
+
+    [Fact]
+    public async Task GetUserAsync_BuildsInstructorProfile()
+    {
+        await using var context = TestDbContextFactory.CreateContext(Now);
+        var instructor = new Instructor(appUserId: 5);
+        context.Set<Instructor>().Add(instructor);
+        await context.SaveChangesAsync();
+
+        var identity = Identity(new UserIdentityDto { Id = 5, Username = "instructor", FirstName = "Pro", LastName = "Fessor", IsActive = true }, AppRoles.Instructor);
+
+        var service = new UserProfileService(context, identity, new StubUserProfileLookup(instructor: instructor), new StubCurrentActor(userId: 5));
+
+        var result = await service.GetUserAsync(5);
+
+        Assert.NotNull(result);
+        var profile = Assert.IsType<InstructorProfile>(result.Profile);
+        Assert.Equal(instructor.Id, profile.Id);
+        Assert.Equal("Pro", profile.FirstName);
+        Assert.Equal("Fessor", profile.LastName);
+    }
+
+    [Fact]
+    public async Task GetUserAsync_BuildsStoreEmployeeProfile()
+    {
+        await using var context = TestDbContextFactory.CreateContext(Now);
+        var store = new MusicStore("Music Shop", "09-17");
+        context.Set<MusicStore>().Add(store);
+        await context.SaveChangesAsync();
+        var employee = new MusicStoreEmployee(appUserId: 7, musicStoreId: store.Id, isManager: true);
+        context.Set<MusicStoreEmployee>().Add(employee);
+        await context.SaveChangesAsync();
+
+        var identity = Identity(ActiveUser(7), AppRoles.StoreEmployee);
+
+        var service = new UserProfileService(context, identity, new UserProfileLookup(context), new StubCurrentActor(userId: 7));
+
+        var result = await service.GetUserAsync(7, includeInactive: false);
+
+        Assert.NotNull(result);
+        var profile = Assert.IsType<MusicStoreProfile>(result.Profile);
+        Assert.Equal(store.Id, profile.Id);
+        Assert.Equal("Music Shop", profile.StoreName);
+        Assert.True(profile.IsManager);
+    }
+
+    [Fact]
+    public async Task GetUserAsync_ThrowsStoreNotFound_WhenEmployeeStoreIsMissing()
+    {
+        await using var context = TestDbContextFactory.CreateContext(Now);
+        var employee = new MusicStoreEmployee(appUserId: 7, musicStoreId: 999, isManager: false);
+        var identity = Identity(ActiveUser(7), AppRoles.StoreEmployee);
+
+        var service = new UserProfileService(context, identity, new StubUserProfileLookup(employee: employee), new StubCurrentActor(userId: 7));
+
+        var ex = await Assert.ThrowsAsync<BusinessException>(() => service.GetUserAsync(7, includeInactive: false));
+        Assert.Equal(Messages.StoreNotFound, ex.Message);
+    }
+
+    [Fact]
     public async Task GetUserAsync_IncludeInactive_ReturnsEmployeeProfile_WhenEmployeeInactive()
     {
         await using var context = TestDbContextFactory.CreateContext(Now);
@@ -108,13 +173,9 @@ public sealed class UserProfileServiceTests
         context.Set<MusicStoreEmployee>().Add(employee);
         await context.SaveChangesAsync();
 
-        var identity = new StubUserIdentityService
-        {
-            User = ActiveUser(7),
-            Roles = [AppRoles.StoreEmployee]
-        };
+        var identity = Identity(ActiveUser(7), AppRoles.StoreEmployee);
 
-        var service = new UserProfileService(context, identity, new UserProfileLookup(context), new TestCurrentUserService(7));
+        var service = new UserProfileService(context, identity, new UserProfileLookup(context), new StubCurrentActor(userId: 7));
 
         var result = await service.GetUserAsync(7, includeInactive: true);
 
@@ -136,20 +197,21 @@ public sealed class UserProfileServiceTests
         context.Set<MusicStoreEmployee>().Add(employee);
         await context.SaveChangesAsync();
 
-        var identity = new StubUserIdentityService
-        {
-            User = ActiveUser(7),
-            Roles = [AppRoles.StoreEmployee]
-        };
+        var identity = Identity(ActiveUser(7), AppRoles.StoreEmployee);
 
-        var service = new UserProfileService(context, identity, new UserProfileLookup(context), new TestCurrentUserService(7));
+        var service = new UserProfileService(context, identity, new UserProfileLookup(context), new StubCurrentActor(userId: 7));
 
         var ex = await Assert.ThrowsAsync<BusinessException>(() => service.GetUserAsync(7, includeInactive: false));
         Assert.Equal(Messages.EmployeeProfileNotFound, ex.Message);
     }
 
     private static UserProfileService CreateService(StubUserIdentityService identity, int currentUserId = 1) =>
-        new(new ThrowingDbContext(), identity, new ThrowingUserProfileLookup(), new TestCurrentUserService(currentUserId));
+        new(new ThrowingDbContext(), identity, new ThrowingUserProfileLookup(), new StubCurrentActor(userId: currentUserId));
+
+    private static StubUserIdentityService Identity(UserIdentityDto user, params string[] roles) =>
+        new(
+            users: new Dictionary<int, UserIdentityDto> { [user.Id] = user },
+            roles: new Dictionary<int, IReadOnlyList<string>> { [user.Id] = roles });
 
     private static UserIdentityDto ActiveUser(int id) => new()
     {
@@ -157,30 +219,6 @@ public sealed class UserProfileServiceTests
         Username = $"user{id}",
         IsActive = true
     };
-
-    private sealed class TestCurrentUserService(int userId) : ICurrentUserContext
-    {
-        public int UserId => userId;
-        public bool IsAuthenticated => true;
-    }
-
-    private sealed class StubUserIdentityService : IUserIdentityService
-    {
-        public UserIdentityDto? User { get; init; }
-        public IReadOnlyList<string> Roles { get; init; } = [];
-        public int? LastRequestedUserId { get; private set; }
-
-        public Task<UserIdentityDto?> GetUserAsync(int userId, CancellationToken cancellationToken = default)
-        {
-            LastRequestedUserId = userId;
-            return Task.FromResult(User);
-        }
-
-        public Task<IReadOnlyDictionary<int, UserIdentityDto>> GetUsersBulkAsync(IEnumerable<int> userIds, CancellationToken cancellationToken = default) =>
-            Task.FromResult<IReadOnlyDictionary<int, UserIdentityDto>>(new Dictionary<int, UserIdentityDto>());
-
-        public Task<IReadOnlyList<string>> GetRolesAsync(int userId) => Task.FromResult(Roles);
-    }
 
     private sealed class ThrowingUserProfileLookup : IUserProfileLookup
     {

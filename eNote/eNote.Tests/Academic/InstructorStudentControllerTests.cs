@@ -217,18 +217,6 @@ public sealed class InstructorStudentControllerTests
         Assert.NotNull(badRequest.Value);
     }
 
-    private sealed class StubUserIdentityService : IUserIdentityService
-    {
-        public Task<UserIdentityDto?> GetUserAsync(int userId, CancellationToken cancellationToken = default) =>
-            Task.FromResult<UserIdentityDto?>(new UserIdentityDto { Id = userId, Username = "test", FirstName = "First", LastName = "Last" });
-
-        public Task<IReadOnlyDictionary<int, UserIdentityDto>> GetUsersBulkAsync(IEnumerable<int> userIds, CancellationToken cancellationToken = default) =>
-            Task.FromResult<IReadOnlyDictionary<int, UserIdentityDto>>(userIds.ToDictionary(id => id, id => new UserIdentityDto { Id = id, Username = $"user{id}" }));
-
-        public Task<IReadOnlyList<string>> GetRolesAsync(int userId) =>
-            Task.FromResult<IReadOnlyList<string>>(["Student"]);
-    }
-
     private sealed class StubProvisioningService : IUserProvisioningService
     {
         public (int UserId, string? Error) CreateResult { get; set; } = (1, null);

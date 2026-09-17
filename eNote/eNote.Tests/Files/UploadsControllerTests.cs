@@ -133,13 +133,7 @@ public sealed class UploadsControllerTests
     private static UploadsController CreateController(
         RecordingFileStorageService storage,
         IFileAccessService accessService) =>
-        new(storage, accessService, new TestCurrentUserService(userId: 1));
-
-    private sealed class TestCurrentUserService(int userId) : ICurrentUserContext
-    {
-        public int UserId => userId;
-        public bool IsAuthenticated => true;
-    }
+        new(storage, accessService, new StubCurrentActor(userId: 1));
 
     private sealed class StubFileAccessService(bool canAccess) : IFileAccessService
     {

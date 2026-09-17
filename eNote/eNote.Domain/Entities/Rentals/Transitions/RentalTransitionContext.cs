@@ -6,7 +6,6 @@ public sealed record RentalTransitionContext
     public required RentalActor Actor { get; init; }
     public required bool HasInstrumentLockConflict { get; init; }
     public required decimal MonthlyFee { get; init; }
-    public required bool IsInstrumentActive { get; init; }
 
     /// <summary>
     /// The note text from the caller's <c>RentalStatusRequest</c> (an Application-layer DTO not

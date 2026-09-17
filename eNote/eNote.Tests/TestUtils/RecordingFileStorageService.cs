@@ -4,13 +4,16 @@ public sealed class RecordingFileStorageService : IFileStorageService
 {
     public List<string> DeletedPaths { get; } = [];
     public List<(string FileName, string ContentType, string Subfolder)> SavedFiles { get; } = [];
+    public List<string> SavedPaths { get; } = [];
     public List<string> OpenReadCalls { get; } = [];
     public (Stream? Data, string? ContentType) OpenReadResult { get; set; } = (null, null);
 
     public Task<string> SaveAsync(Stream stream, string fileName, string contentType, string subfolder, CancellationToken ct = default)
     {
         SavedFiles.Add((fileName, contentType, subfolder));
-        return Task.FromResult($"/api/v1/uploads/{subfolder}/{Guid.NewGuid()}");
+        var path = $"/api/v1/uploads/{subfolder}/{Guid.NewGuid()}";
+        SavedPaths.Add(path);
+        return Task.FromResult(path);
     }
 
     public Task<string> SaveAssignmentAsync(Stream stream, string fileName, string contentType, CancellationToken ct = default)

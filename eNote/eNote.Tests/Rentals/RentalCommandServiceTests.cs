@@ -266,14 +266,14 @@ public sealed class RentalCommandServiceTests
         var student = await SeedStudentAsync(context, hasActiveMembership: true);
         var instrument = await RentalTestData.SeedInstrumentAsync(context);
         var rental = new InstrumentRental(instrument.Id, student.Id, instrument.MusicStoreId, Now, null);
-        rental.Pickup(Now);
         rental.Approve(50m, null, Now, 1);
+        rental.Pickup(Now);
         context.Set<InstrumentRental>().Add(rental);
         await context.SaveChangesAsync();
         var service = CreateStoreService(context, instrument.MusicStoreId);
 
         var ex = await Assert.ThrowsAsync<BusinessException>(() => service.CancelForStoreAsync(rental.Id, new RentalStatusRequest()));
-        Assert.Equal(Messages.RentalCancelBlockedAfterPickup, ex.Message);
+        Assert.Equal(Messages.RentalCancelPendingOrApprovedOnly, ex.Message);
     }
 
     [Fact]
@@ -307,12 +307,5 @@ public sealed class RentalCommandServiceTests
         var currentUser = new StubCurrentActor(storeId: storeId);
         return new(context, TestMapper.Create(), new FixedClock(Now), currentUser, currentUser, currentUser,
             dispatcher ?? new NoOpNotificationDispatcher(), new StubDisplayNameService());
-    }
-
-    private sealed class StubDisplayNameService : IStudentDisplayNameService
-    {
-        public Task<string> GetStudentDisplayNameAsync(Student student) => Task.FromResult($"Student {student.Id}");
-        public Task<IReadOnlyDictionary<int, string>> GetStudentDisplayNamesAsync(IEnumerable<Student> students) =>
-            Task.FromResult<IReadOnlyDictionary<int, string>>(students.ToDictionary(s => s.Id, s => $"Student {s.Id}"));
     }
 }

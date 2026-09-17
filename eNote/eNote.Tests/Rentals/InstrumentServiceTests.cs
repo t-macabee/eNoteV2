@@ -1,3 +1,4 @@
+using eNote.Application.Common.Persistence;
 using eNote.Application.Features.Rentals.Instruments;
 using eNote.Application.Features.Rentals.Instruments.Services;
 using eNote.Tests.TestUtils;
@@ -94,6 +95,41 @@ public sealed class InstrumentServiceTests
     }
 
 
+    [Fact]
+    public async Task UploadImageAsync_DeletesNewFile_WhenSaveFails()
+    {
+        var ctx = CreateContext();
+        var type = await SeedInstrumentTypeAsync(ctx, "Guitar");
+        var store = await SeedStoreAsync(ctx, "Music Shop Sarajevo");
+        var instrument = await SeedInstrumentAsync(ctx, store.Id, type.Id, "Stratocaster", "Fender");
+        var storage = new RecordingFileStorageService();
+        var service = CreateStoreInstrumentService(new ThrowingSaveDbContext(ctx, new InvalidOperationException("save failed")), store.Id, storage);
+
+        using var stream = new MemoryStream([1, 2, 3]);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => service.UploadImageAsync(instrument.Id, stream, "guitar.png", "image/png"));
+
+        Assert.Equal(storage.SavedPaths, storage.DeletedPaths);
+    }
+
+    [Fact]
+    public async Task UploadImageAsync_DeletesPreviousImage_AfterReplacement()
+    {
+        var ctx = CreateContext();
+        var type = await SeedInstrumentTypeAsync(ctx, "Guitar");
+        var store = await SeedStoreAsync(ctx, "Music Shop Sarajevo");
+        var instrument = new Instrument("Stratocaster", "Fender", null, "/old/instrument.png", type.Id, store.Id);
+        ctx.Set<Instrument>().Add(instrument);
+        await ctx.SaveChangesAsync();
+        var storage = new RecordingFileStorageService();
+        var service = CreateStoreInstrumentService(ctx, store.Id, storage);
+
+        using var stream = new MemoryStream([1, 2, 3]);
+        var updated = await service.UploadImageAsync(instrument.Id, stream, "guitar.png", "image/png");
+
+        Assert.Equal(storage.SavedPaths.Single(), updated.ImagePath);
+        Assert.Equal(["/old/instrument.png"], storage.DeletedPaths);
+    }
+
     private static ENoteContext CreateContext()
     {
         var options = new DbContextOptionsBuilder<ENoteContext>()
@@ -106,6 +142,9 @@ public sealed class InstrumentServiceTests
 
     private static InstrumentService CreateInstrumentService(ENoteContext context) =>
         new(context, TestMapper.Create(), new StubCurrentActor(), new StubFileStorageService());
+
+    private static InstrumentService CreateStoreInstrumentService(IAppDbContext context, int storeId, IFileStorageService storage) =>
+        new(context, TestMapper.Create(), new StubCurrentActor(storeId: storeId, employee: new MusicStoreEmployee(appUserId: 1, musicStoreId: storeId, isManager: true)), storage);
 
     private static async Task<MusicStore> SeedStoreAsync(ENoteContext ctx, string name)
     {

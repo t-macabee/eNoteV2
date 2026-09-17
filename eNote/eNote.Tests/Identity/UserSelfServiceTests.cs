@@ -1,5 +1,6 @@
 using eNote.Application.Features.Identity.Users;
 using eNote.Application.Features.Identity.Users.Services;
+using eNote.Tests.TestUtils;
 
 namespace eNote.Tests.Identity;
 
@@ -9,7 +10,7 @@ public sealed class UserSelfServiceTests
     public async Task UpdateProfileAsync_UsesCurrentUserId()
     {
         var account = new RecordingUserAccountService();
-        var service = new UserSelfService(account, new TestCurrentUserService(42));
+        var service = new UserSelfService(account, new StubCurrentActor(userId: 42));
         var request = new UpdateProfileRequest
         {
             Email = "new@example.com",
@@ -29,7 +30,7 @@ public sealed class UserSelfServiceTests
     public async Task ChangePasswordAsync_UsesCurrentUserIdAndPasswordValues()
     {
         var account = new RecordingUserAccountService();
-        var service = new UserSelfService(account, new TestCurrentUserService(7));
+        var service = new UserSelfService(account, new StubCurrentActor(userId: 7));
         var request = new ChangePasswordRequest
         {
             CurrentPassword = "old",
@@ -48,7 +49,7 @@ public sealed class UserSelfServiceTests
     public async Task PictureMethods_UseCurrentUserId()
     {
         var account = new RecordingUserAccountService();
-        var service = new UserSelfService(account, new TestCurrentUserService(11));
+        var service = new UserSelfService(account, new StubCurrentActor(userId: 11));
         await using var picture = new MemoryStream([1, 2, 3]);
 
         await service.UpdatePictureAsync(picture, "picture.png", "image/png");
@@ -59,12 +60,6 @@ public sealed class UserSelfServiceTests
         Assert.Same(picture, account.Picture);
         Assert.Equal(11, account.PictureGetUserId);
         Assert.Equal(11, account.PictureDeleteUserId);
-    }
-
-    private sealed class TestCurrentUserService(int userId) : ICurrentUserContext
-    {
-        public int UserId => userId;
-        public bool IsAuthenticated => true;
     }
 
     private sealed class RecordingUserAccountService : IUserAccountService
