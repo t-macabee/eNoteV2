@@ -18,13 +18,13 @@ const _lectureJson = {
   'name': 'Akordi I',
   'location': 'Sala 2',
   'lectureType': 'Theoretical',
-  'lectureStatus': 1,
+  'lectureStatus': 'Scheduled',
   'isCancelled': false,
   'lectureTime': '2026-09-14T18:00:00',
   'duration': 60,
   'capacity': 20,
   'attendeeCount': 5,
-  'myAttendanceStatus': 1,
+  'myAttendanceStatus': 'Pending',
 };
 
 class _LectureStubClient extends http.BaseClient {

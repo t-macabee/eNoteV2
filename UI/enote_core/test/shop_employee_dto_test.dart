@@ -22,7 +22,6 @@ void main() {
       expect(dto.appUserId, 101);
       expect(dto.musicStoreId, 3);
       expect(dto.storeName, 'Sarajevo Guitar Shop');
-      expect(dto.musicStoreName, 'Sarajevo Guitar Shop');
       expect(dto.firstName, 'Edin');
       expect(dto.lastName, 'Dzeko');
       expect(dto.username, 'edzeko');
@@ -46,7 +45,6 @@ void main() {
       final dto = ShopEmployeeDto.fromJson(json);
 
       expect(dto.storeName, isNull);
-      expect(dto.musicStoreName, isNull);
     });
   });
 }

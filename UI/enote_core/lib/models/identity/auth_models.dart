@@ -74,18 +74,6 @@ class ForgotPasswordRequest {
   Map<String, dynamic> toJson() => {'email': email};
 }
 
-class ForgotPasswordResponse {
-  final String message;
-
-  ForgotPasswordResponse({required this.message});
-
-  factory ForgotPasswordResponse.fromJson(Map<String, dynamic> json) {
-    return ForgotPasswordResponse(message: json['message'] as String? ?? '');
-  }
-
-  Map<String, dynamic> toJson() => {'message': message};
-}
-
 class ResetPasswordRequest {
   final String email;
   final String token;
@@ -180,29 +168,5 @@ class UpdateMembershipRequest {
 
   Map<String, dynamic> toJson() => {
     if (paidUntil != null) 'paidUntil': paidUntil!.toIso8601String(),
-  };
-}
-
-class DelegatedUserCreateRequest {
-  final String username;
-  final String email;
-  final String password;
-  final String? firstName;
-  final String? lastName;
-
-  DelegatedUserCreateRequest({
-    required this.username,
-    required this.email,
-    required this.password,
-    this.firstName,
-    this.lastName,
-  });
-
-  Map<String, dynamic> toJson() => {
-    'username': username,
-    'email': email,
-    'password': password,
-    if (firstName != null) 'firstName': firstName,
-    if (lastName != null) 'lastName': lastName,
   };
 }

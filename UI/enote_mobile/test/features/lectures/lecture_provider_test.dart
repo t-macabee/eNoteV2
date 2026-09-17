@@ -12,13 +12,13 @@ const _lectureJson = {
   'name': 'Akordi I',
   'location': 'Sala 2',
   'lectureType': 'Theoretical',
-  'lectureStatus': 1,
+  'lectureStatus': 'Scheduled',
   'isCancelled': false,
   'lectureTime': '2026-09-14T18:00:00',
   'duration': 60,
   'capacity': 20,
   'attendeeCount': 5,
-  'myAttendanceStatus': 1,
+  'myAttendanceStatus': 'Pending',
 };
 
 const _pageBody = {
@@ -112,7 +112,7 @@ void main() {
     expect(lecture.myAttendanceStatus, isNull);
   });
 
-  test('rsvp POSTs {confirm, note} and decodes the response', () async {
+  test('rsvp POSTs {confirm} and decodes the response', () async {
     final client = RecordingHttpClient(
       body: {'lectureId': 11, 'studentId': 7, 'confirmed': true},
     );
@@ -120,7 +120,7 @@ void main() {
 
     final result = await provider.rsvp(
       11,
-      RsvpRequest(confirm: true, note: 'Dolazim'),
+      RsvpRequest(confirm: true),
     );
 
     expect(client.requests, hasLength(1));
@@ -128,12 +128,12 @@ void main() {
     expect(sent.method, 'POST');
     expect(sent.url.path, '/api/v1/student/lectures/11/rsvp');
     final body = jsonDecode(sent.body) as Map<String, dynamic>;
-    expect(body, {'confirm': true, 'note': 'Dolazim'});
+    expect(body, {'confirm': true});
     expect(result.confirmed, isTrue);
     expect(result.lectureId, 11);
   });
 
-  test('rsvp omits a null note from the body', () async {
+  test('rsvp sends only the confirm flag', () async {
     final client = RecordingHttpClient(
       body: {'lectureId': 11, 'studentId': 7, 'confirmed': false},
     );

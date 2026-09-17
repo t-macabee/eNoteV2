@@ -25,7 +25,7 @@ class CreateTuitionIntentResponse {
       clientSecret: json['clientSecret'] as String? ?? '',
       amountCents: (json['amountCents'] as num?)?.toInt() ?? 0,
       currency: json['currency'] as String? ?? 'bam',
-      status: PaymentStatus.fromJson(json['status'] as String? ?? 'RequiresAction'),
+      status: PaymentStatus.fromJson(json['status'] as String?),
     );
   }
 }
@@ -60,7 +60,7 @@ class CoursePaymentDto {
       paymentIntentId: json['paymentIntentId'] as String? ?? '',
       amountCents: (json['amountCents'] as num?)?.toInt() ?? 0,
       currency: json['currency'] as String? ?? 'bam',
-      status: PaymentStatus.fromJson(json['status'] as String? ?? 'RequiresAction'),
+      status: PaymentStatus.fromJson(json['status'] as String?),
       paidAt: parseDate(json['paidAt']),
       periodStart: parseDate(json['periodStart']),
       periodEnd: parseDate(json['periodEnd']),

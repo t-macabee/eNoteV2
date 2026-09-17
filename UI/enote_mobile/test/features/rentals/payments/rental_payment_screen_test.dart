@@ -24,7 +24,7 @@ Map<String, dynamic> _rental({bool isPaid = false}) => {
   'instrumentModel': 'Stratocaster',
   'instrumentType': 'Električna gitara',
   'storeName': 'Muzika d.o.o.',
-  'rentalStatus': 4,
+  'rentalStatus': 'Completed',
   'requestedAt': '2026-09-01T10:12:00',
   'pickedUpAt': '2026-09-03T16:30:00',
   'fee': 40.0,

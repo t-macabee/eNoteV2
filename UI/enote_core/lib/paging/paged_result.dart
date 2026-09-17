@@ -11,10 +11,6 @@ class PagedResult<T> {
     this.totalCount,
   });
 
-  int? get totalPages =>
-      totalCount != null && pageSize > 0
-          ? (totalCount! / pageSize).ceil()
-          : null;
   bool get hasNext =>
       totalCount != null ? (page * pageSize) < totalCount! : items.length == pageSize;
   bool get hasPrevious => page > 1;

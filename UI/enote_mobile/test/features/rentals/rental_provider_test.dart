@@ -19,7 +19,7 @@ const _rental = {
   'instrumentModel': 'Stratocaster',
   'instrumentType': 'Električna gitara',
   'storeName': 'Muzika d.o.o.',
-  'rentalStatus': 1,
+  'rentalStatus': 'Pending',
   'requestedAt': '2026-09-01T10:12:00',
   'fee': 40.0,
   'isProrated': false,
@@ -60,7 +60,7 @@ void main() {
     expect(result.items.single.rentalStatus, InstrumentRentalStatus.pending);
   });
 
-  test('fetchPage sends rentalStatus as the server int and the instrument id',
+  test('fetchPage sends rentalStatus as the server name and the instrument id',
       () async {
     final client = RecordingHttpClient(body: const {'items': []});
     final provider = _provider(client);
@@ -75,20 +75,20 @@ void main() {
       'page': '3',
       'pageSize': '20',
       'includeTotalCount': 'true',
-      'rentalStatus': '4',
+      'rentalStatus': 'Completed',
       'instrumentId': '3',
     });
   });
 
-  test('every status maps to its 1..7 server value', () async {
+  test('every status maps to its server name', () async {
     const expected = {
-      InstrumentRentalStatus.pending: '1',
-      InstrumentRentalStatus.approved: '2',
-      InstrumentRentalStatus.active: '3',
-      InstrumentRentalStatus.completed: '4',
-      InstrumentRentalStatus.rejected: '5',
-      InstrumentRentalStatus.canceled: '6',
-      InstrumentRentalStatus.returnedEarly: '7',
+      InstrumentRentalStatus.pending: 'Pending',
+      InstrumentRentalStatus.approved: 'Approved',
+      InstrumentRentalStatus.active: 'Active',
+      InstrumentRentalStatus.completed: 'Completed',
+      InstrumentRentalStatus.rejected: 'Rejected',
+      InstrumentRentalStatus.canceled: 'Canceled',
+      InstrumentRentalStatus.returnedEarly: 'ReturnedEarly',
     };
     for (final entry in expected.entries) {
       final client = RecordingHttpClient(body: const {'items': []});

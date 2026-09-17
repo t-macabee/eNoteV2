@@ -30,7 +30,7 @@ const _rental = {
   'instrumentModel': 'Stratocaster',
   'instrumentType': 'Električna gitara',
   'storeName': 'Muzika d.o.o.',
-  'rentalStatus': 1,
+  'rentalStatus': 'Pending',
   'requestedAt': '2026-09-01T10:12:00',
   'fee': 40.0,
   'isProrated': false,

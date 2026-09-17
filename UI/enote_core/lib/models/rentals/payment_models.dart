@@ -31,7 +31,7 @@ class RentalPaymentDto {
       paymentIntentId: json['paymentIntentId'] as String? ?? '',
       amountCents: (json['amountCents'] as num?)?.toInt() ?? 0,
       currency: json['currency'] as String? ?? '',
-      status: PaymentStatus.fromDynamic(json['status']),
+      status: PaymentStatus.fromJson(json['status'] as String?),
       paidAt: parseDate(json['paidAt']),
       refundedAt: parseDate(json['refundedAt']),
       refundedCents: (json['refundedCents'] as num?)?.toInt(),
@@ -64,7 +64,7 @@ class CreatePaymentIntentResponse {
       clientSecret: json['clientSecret'] as String? ?? '',
       amountCents: (json['amountCents'] as num?)?.toInt() ?? 0,
       currency: json['currency'] as String? ?? 'eur',
-      status: PaymentStatus.fromJson(json['status'] as String? ?? 'RequiresAction'),
+      status: PaymentStatus.fromJson(json['status'] as String?),
     );
   }
 }

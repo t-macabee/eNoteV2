@@ -76,7 +76,8 @@ class InstrumentRentalDto {
       instrumentType: json['instrumentType'] as String? ?? '',
       storeName: json['storeName'] as String? ?? '',
       instrumentImagePath: json['instrumentImagePath'] as String?,
-      rentalStatus: _parseStatus(json['rentalStatus']),
+      rentalStatus:
+          InstrumentRentalStatus.fromJson(json['rentalStatus'] as String?),
       requestNote: json['requestNote'] as String?,
       note: json['note'] as String?,
       requestedAt: parseDate(json['requestedAt']) ?? DateTime.now(),
@@ -129,9 +130,6 @@ class InstrumentRentalDto {
     if (amountPaid != null) 'amountPaid': amountPaid,
     if (paidAt != null) 'paidAt': paidAt!.toIso8601String(),
   };
-
-  static InstrumentRentalStatus _parseStatus(dynamic value) =>
-      InstrumentRentalStatus.fromDynamic(value);
 }
 
 class RentalCreateRequest {

@@ -5,9 +5,8 @@ import 'package:enote_core/enote_core.dart';
 
 import 'lecture_provider.dart';
 
-/// S19 — RSVP sheet over S18 (02 §5 S19): optional `Napomena` (max 500 with
-/// counter), no confirm dialog (RSVP is reversible). Server refusals render
-/// in the `ErrorBanner` under the button.
+/// S19 — RSVP sheet over S18 (02 §5 S19): no confirm dialog (RSVP is
+/// reversible). Server refusals render in the `ErrorBanner` under the button.
 class RsvpSheet extends StatefulWidget {
   final int lectureId;
   final bool confirm;
@@ -25,20 +24,11 @@ class RsvpSheet extends StatefulWidget {
 }
 
 class _RsvpSheetState extends State<RsvpSheet> {
-  final _noteController = TextEditingController();
   String? _error;
   bool _sending = false;
 
-  @override
-  void dispose() {
-    _noteController.dispose();
-    super.dispose();
-  }
-
-  bool get _tooLong => _noteController.text.characters.length > 500;
-
   Future<void> _send() async {
-    if (_tooLong || _sending) return;
+    if (_sending) return;
     setState(() {
       _sending = true;
       _error = null;
@@ -46,12 +36,7 @@ class _RsvpSheetState extends State<RsvpSheet> {
     try {
       await context.read<LectureProvider>().rsvp(
         widget.lectureId,
-        RsvpRequest(
-          confirm: widget.confirm,
-          note: _noteController.text.isEmpty
-              ? null
-              : _noteController.text,
-        ),
+        RsvpRequest(confirm: widget.confirm),
       );
       if (mounted) widget.onSuccess();
     } catch (e) {
@@ -91,23 +76,8 @@ class _RsvpSheetState extends State<RsvpSheet> {
           const SizedBox(height: 12),
           Text(label, style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 12),
-          TextField(
-            controller: _noteController,
-            maxLines: 3,
-            onChanged: (_) => setState(() {}),
-            decoration: InputDecoration(
-              labelText: 'Napomena',
-              hintText: 'Napomena',
-              counterText:
-                  '${_noteController.text.characters.length}/500',
-              errorText: _tooLong
-                  ? 'Napomena može imati najviše 500 znakova.'
-                  : null,
-            ),
-          ),
-          const SizedBox(height: 12),
           FilledButton(
-            onPressed: (_tooLong || _sending) ? null : _send,
+            onPressed: _sending ? null : _send,
             child: _sending
                 ? const SizedBox(
                     width: 20,

@@ -21,11 +21,14 @@ class AuthState extends ChangeNotifier {
   bool _isManager = false;
 
   AuthState({
-    this._baseUrl = '',
+    String baseUrl = '',
     this._tokenReader,
     this._tokenWriter,
     http.Client? httpClient,
-  }) : _httpClient = httpClient ?? http.Client() {
+  })  : _baseUrl = baseUrl.isEmpty || baseUrl.endsWith('/')
+            ? baseUrl
+            : '$baseUrl/',
+        _httpClient = httpClient ?? http.Client() {
     _accessToken = _tokenReader?.call();
     if (_accessToken != null && !_decodeToken(_accessToken)) {
       _tokenWriter?.call(null);

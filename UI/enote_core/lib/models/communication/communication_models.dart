@@ -31,7 +31,7 @@ class AnnouncementDto {
       musicStoreId: json['musicStoreId'] as int?,
       title: json['title'] as String? ?? '',
       content: json['content'] as String? ?? '',
-      scope: AnnouncementScope.fromDynamic(json['scope']),
+      scope: AnnouncementScope.fromJson(json['scope'] as String?),
       courseName: json['courseName'] as String?,
       storeName: json['storeName'] as String?,
       publishedAt: parseDate(json['publishedAt']) ?? DateTime.now(),

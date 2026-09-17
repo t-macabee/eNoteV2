@@ -29,25 +29,20 @@ class LectureDto {
   });
 
   factory LectureDto.fromJson(Map<String, dynamic> json) {
-    final typeValue = json['lectureType'];
-    final statusValue = json['lectureStatus'];
-    final attendanceValue = json['myAttendanceStatus'];
     return LectureDto(
       id: json['id'] as int? ?? 0,
       name: json['name'] as String? ?? '',
       location: json['location'] as String? ?? '',
-      lectureType: typeValue is String
-          ? LectureType.fromJson(typeValue)
-          : LectureType.theoretical,
-      lectureStatus: LectureStatus.fromDynamic(statusValue),
+      lectureType: LectureType.fromJson(json['lectureType'] as String?),
+      lectureStatus: LectureStatus.fromJson(json['lectureStatus'] as String?),
       isCancelled: json['isCancelled'] as bool? ?? false,
       lectureTime: parseDate(json['lectureTime']) ?? DateTime.now(),
       duration: json['duration'] as int? ?? 0,
       capacity: json['capacity'] as int?,
       attendeeCount: json['attendeeCount'] as int? ?? 0,
-      myAttendanceStatus: attendanceValue != null
-          ? AttendanceStatus.fromDynamic(attendanceValue)
-          : null,
+      myAttendanceStatus: json['myAttendanceStatus'] == null
+          ? null
+          : AttendanceStatus.fromJson(json['myAttendanceStatus'] as String?),
     );
   }
 
@@ -135,12 +130,12 @@ class AttendanceDto {
   });
 
   factory AttendanceDto.fromJson(Map<String, dynamic> json) {
-    final statusValue = json['attendanceStatus'];
     return AttendanceDto(
       id: json['id'] as int? ?? 0,
       studentId: json['studentId'] as int? ?? 0,
       studentName: json['studentName'] as String? ?? '',
-      attendanceStatus: AttendanceStatus.fromDynamic(statusValue),
+      attendanceStatus:
+          AttendanceStatus.fromJson(json['attendanceStatus'] as String?),
     );
   }
 
@@ -169,13 +164,11 @@ class MarkAttendanceRequest {
 
 class RsvpRequest {
   final bool confirm;
-  final String? note;
 
-  RsvpRequest({required this.confirm, this.note});
+  RsvpRequest({required this.confirm});
 
   Map<String, dynamic> toJson() => {
     'confirm': confirm,
-    if (note != null) 'note': note,
   };
 }
 

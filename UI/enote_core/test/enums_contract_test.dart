@@ -10,43 +10,16 @@ void main() {
       }
     });
 
-    // Contract: eNote.Domain/Enums/LectureStatus.cs — Scheduled=1, Held=2,
-    // Cancelled=3.
+    // Contract: eNote.Domain/Enums/LectureStatus.cs — Scheduled, Held,
+    // Cancelled (JsonStringEnumConverter, Program.cs:50).
     test('fromJson maps every backend wire value', () {
-      expect(LectureStatus.fromJson(1), LectureStatus.scheduled);
-      expect(LectureStatus.fromJson(2), LectureStatus.held);
-      expect(LectureStatus.fromJson(3), LectureStatus.cancelled);
-    });
-  });
-
-  group('LectureStatus.fromDynamic', () {
-    test('parses every PascalCase backend wire name', () {
-      expect(LectureStatus.fromDynamic('Scheduled'), LectureStatus.scheduled);
-      expect(LectureStatus.fromDynamic('Held'), LectureStatus.held);
-      expect(LectureStatus.fromDynamic('Cancelled'), LectureStatus.cancelled);
+      expect(LectureStatus.fromJson('Scheduled'), LectureStatus.scheduled);
+      expect(LectureStatus.fromJson('Held'), LectureStatus.held);
+      expect(LectureStatus.fromJson('Cancelled'), LectureStatus.cancelled);
     });
 
-    test('parses lowercase and mixed case strings', () {
-      expect(LectureStatus.fromDynamic('scheduled'), LectureStatus.scheduled);
-      expect(LectureStatus.fromDynamic('sChEdUlEd'), LectureStatus.scheduled);
-      expect(LectureStatus.fromDynamic('held'), LectureStatus.held);
-      expect(LectureStatus.fromDynamic('HELD'), LectureStatus.held);
-      expect(LectureStatus.fromDynamic('cancelled'), LectureStatus.cancelled);
-      expect(LectureStatus.fromDynamic('cAnCeLlEd'), LectureStatus.cancelled);
-    });
-
-    test('handles legacy int values', () {
-      expect(LectureStatus.fromDynamic(1), LectureStatus.scheduled);
-      expect(LectureStatus.fromDynamic(2), LectureStatus.held);
-      expect(LectureStatus.fromDynamic(3), LectureStatus.cancelled);
-    });
-
-    test('returns default on invalid values or null', () {
-      expect(LectureStatus.fromDynamic('garbage'), LectureStatus.scheduled);
-      expect(LectureStatus.fromDynamic(3.5), LectureStatus.scheduled);
-      expect(LectureStatus.fromDynamic(null), LectureStatus.scheduled);
-      expect(LectureStatus.fromDynamic(-1), LectureStatus.scheduled);
-      expect(LectureStatus.fromDynamic(99), LectureStatus.scheduled);
+    test('unknown names fall back to scheduled', () {
+      expect(LectureStatus.fromJson('garbage'), LectureStatus.scheduled);
     });
   });
 
@@ -57,43 +30,16 @@ void main() {
       }
     });
 
-    // Contract: eNote.Domain/Enums/AttendanceStatus.cs — Pending=1,
-    // Present=2, Absent=3.
+    // Contract: eNote.Domain/Enums/AttendanceStatus.cs — Pending, Present,
+    // Absent.
     test('fromJson maps every backend wire value', () {
-      expect(AttendanceStatus.fromJson(1), AttendanceStatus.pending);
-      expect(AttendanceStatus.fromJson(2), AttendanceStatus.present);
-      expect(AttendanceStatus.fromJson(3), AttendanceStatus.absent);
-    });
-  });
-
-  group('AttendanceStatus.fromDynamic', () {
-    test('parses every PascalCase backend wire name', () {
-      expect(AttendanceStatus.fromDynamic('Pending'), AttendanceStatus.pending);
-      expect(AttendanceStatus.fromDynamic('Present'), AttendanceStatus.present);
-      expect(AttendanceStatus.fromDynamic('Absent'), AttendanceStatus.absent);
+      expect(AttendanceStatus.fromJson('Pending'), AttendanceStatus.pending);
+      expect(AttendanceStatus.fromJson('Present'), AttendanceStatus.present);
+      expect(AttendanceStatus.fromJson('Absent'), AttendanceStatus.absent);
     });
 
-    test('parses lowercase and mixed case strings', () {
-      expect(AttendanceStatus.fromDynamic('pending'), AttendanceStatus.pending);
-      expect(AttendanceStatus.fromDynamic('pEnDiNg'), AttendanceStatus.pending);
-      expect(AttendanceStatus.fromDynamic('present'), AttendanceStatus.present);
-      expect(AttendanceStatus.fromDynamic('PRESENT'), AttendanceStatus.present);
-      expect(AttendanceStatus.fromDynamic('absent'), AttendanceStatus.absent);
-      expect(AttendanceStatus.fromDynamic('aBsEnT'), AttendanceStatus.absent);
-    });
-
-    test('handles legacy int values', () {
-      expect(AttendanceStatus.fromDynamic(1), AttendanceStatus.pending);
-      expect(AttendanceStatus.fromDynamic(2), AttendanceStatus.present);
-      expect(AttendanceStatus.fromDynamic(3), AttendanceStatus.absent);
-    });
-
-    test('returns default on invalid values or null', () {
-      expect(AttendanceStatus.fromDynamic('garbage'), AttendanceStatus.pending);
-      expect(AttendanceStatus.fromDynamic(3.5), AttendanceStatus.pending);
-      expect(AttendanceStatus.fromDynamic(null), AttendanceStatus.pending);
-      expect(AttendanceStatus.fromDynamic(-1), AttendanceStatus.pending);
-      expect(AttendanceStatus.fromDynamic(99), AttendanceStatus.pending);
+    test('unknown names fall back to pending', () {
+      expect(AttendanceStatus.fromJson('garbage'), AttendanceStatus.pending);
     });
   });
 
@@ -104,86 +50,27 @@ void main() {
       }
     });
 
-    // Contract: eNote.Domain/Enums/InstrumentRentalStatus.cs — Pending=1,
-    // Approved=2, Active=3, Completed=4, Rejected=5, Canceled=6,
-    // ReturnedEarly=7.
+    // Contract: eNote.Domain/Enums/InstrumentRentalStatus.cs — Pending,
+    // Approved, Active, Completed, Rejected, Canceled, ReturnedEarly.
     test('fromJson maps every backend wire value', () {
-      expect(InstrumentRentalStatus.fromJson(1), InstrumentRentalStatus.pending);
-      expect(InstrumentRentalStatus.fromJson(2), InstrumentRentalStatus.approved);
-      expect(InstrumentRentalStatus.fromJson(3), InstrumentRentalStatus.active);
       expect(
-          InstrumentRentalStatus.fromJson(4), InstrumentRentalStatus.completed);
-      expect(InstrumentRentalStatus.fromJson(5), InstrumentRentalStatus.rejected);
-      expect(InstrumentRentalStatus.fromJson(6), InstrumentRentalStatus.canceled);
+          InstrumentRentalStatus.fromJson('Pending'), InstrumentRentalStatus.pending);
+      expect(InstrumentRentalStatus.fromJson('Approved'),
+          InstrumentRentalStatus.approved);
       expect(
-          InstrumentRentalStatus.fromJson(7), InstrumentRentalStatus.returnedEarly);
-    });
-  });
-
-  group('InstrumentRentalStatus.fromDynamic', () {
-    test('parses every PascalCase backend wire name', () {
-      expect(InstrumentRentalStatus.fromDynamic('Pending'),
-          InstrumentRentalStatus.pending);
-      expect(InstrumentRentalStatus.fromDynamic('Approved'),
-          InstrumentRentalStatus.approved);
-      expect(InstrumentRentalStatus.fromDynamic('Active'),
-          InstrumentRentalStatus.active);
-      expect(InstrumentRentalStatus.fromDynamic('Completed'),
+          InstrumentRentalStatus.fromJson('Active'), InstrumentRentalStatus.active);
+      expect(InstrumentRentalStatus.fromJson('Completed'),
           InstrumentRentalStatus.completed);
-      expect(InstrumentRentalStatus.fromDynamic('Rejected'),
+      expect(InstrumentRentalStatus.fromJson('Rejected'),
           InstrumentRentalStatus.rejected);
-      expect(InstrumentRentalStatus.fromDynamic('Canceled'),
+      expect(InstrumentRentalStatus.fromJson('Canceled'),
           InstrumentRentalStatus.canceled);
-      expect(InstrumentRentalStatus.fromDynamic('ReturnedEarly'),
+      expect(InstrumentRentalStatus.fromJson('ReturnedEarly'),
           InstrumentRentalStatus.returnedEarly);
     });
 
-    test('parses lowercase and mixed case strings', () {
-      expect(InstrumentRentalStatus.fromDynamic('pending'),
-          InstrumentRentalStatus.pending);
-      expect(InstrumentRentalStatus.fromDynamic('approved'),
-          InstrumentRentalStatus.approved);
-      expect(InstrumentRentalStatus.fromDynamic('active'),
-          InstrumentRentalStatus.active);
-      expect(InstrumentRentalStatus.fromDynamic('completed'),
-          InstrumentRentalStatus.completed);
-      expect(InstrumentRentalStatus.fromDynamic('rejected'),
-          InstrumentRentalStatus.rejected);
-      expect(InstrumentRentalStatus.fromDynamic('canceled'),
-          InstrumentRentalStatus.canceled);
-      expect(InstrumentRentalStatus.fromDynamic('returnedearly'),
-          InstrumentRentalStatus.returnedEarly);
-      expect(InstrumentRentalStatus.fromDynamic('rEtUrNeDeArLy'),
-          InstrumentRentalStatus.returnedEarly);
-    });
-
-    test('handles legacy int values', () {
-      expect(InstrumentRentalStatus.fromDynamic(1),
-          InstrumentRentalStatus.pending);
-      expect(InstrumentRentalStatus.fromDynamic(2),
-          InstrumentRentalStatus.approved);
-      expect(InstrumentRentalStatus.fromDynamic(3),
-          InstrumentRentalStatus.active);
-      expect(InstrumentRentalStatus.fromDynamic(4),
-          InstrumentRentalStatus.completed);
-      expect(InstrumentRentalStatus.fromDynamic(5),
-          InstrumentRentalStatus.rejected);
-      expect(InstrumentRentalStatus.fromDynamic(6),
-          InstrumentRentalStatus.canceled);
-      expect(InstrumentRentalStatus.fromDynamic(7),
-          InstrumentRentalStatus.returnedEarly);
-    });
-
-    test('returns default on invalid values or null', () {
-      expect(InstrumentRentalStatus.fromDynamic('garbage'),
-          InstrumentRentalStatus.pending);
-      expect(InstrumentRentalStatus.fromDynamic(3.5),
-          InstrumentRentalStatus.pending);
-      expect(InstrumentRentalStatus.fromDynamic(null),
-          InstrumentRentalStatus.pending);
-      expect(InstrumentRentalStatus.fromDynamic(-1),
-          InstrumentRentalStatus.pending);
-      expect(InstrumentRentalStatus.fromDynamic(99),
+    test('unknown names fall back to pending', () {
+      expect(InstrumentRentalStatus.fromJson('garbage'),
           InstrumentRentalStatus.pending);
     });
   });
@@ -214,26 +101,16 @@ void main() {
       }
     });
 
-    // Contract: eNote.Domain/Enums/AnnouncementScope.cs — Course=1,
-    // MusicStore=2, serialized as a string via JsonStringEnumConverter.
+    // Contract: eNote.Domain/Enums/AnnouncementScope.cs — Course,
+    // MusicStore, serialized as a string via JsonStringEnumConverter.
     test('fromJson maps every backend wire value', () {
       expect(AnnouncementScope.fromJson('Course'), AnnouncementScope.course);
       expect(
           AnnouncementScope.fromJson('MusicStore'), AnnouncementScope.musicStore);
     });
-  });
 
-  group('AnnouncementScope.fromDynamic', () {
-    test('handles the string wire form', () {
-      expect(AnnouncementScope.fromDynamic('Course'), AnnouncementScope.course);
-      expect(AnnouncementScope.fromDynamic('MusicStore'),
-          AnnouncementScope.musicStore);
-    });
-
-    // Legacy int form, still emitted by older payloads.
-    test('handles the legacy int form', () {
-      expect(AnnouncementScope.fromDynamic(1), AnnouncementScope.course);
-      expect(AnnouncementScope.fromDynamic(2), AnnouncementScope.musicStore);
+    test('unknown names fall back to course', () {
+      expect(AnnouncementScope.fromJson('garbage'), AnnouncementScope.course);
     });
   });
 
@@ -244,8 +121,8 @@ void main() {
       }
     });
 
-    // Contract: eNote.Domain/Enums/PaymentStatus.cs — RequiresAction=1,
-    // Succeeded=2, Failed=3, Canceled=4, Refunded=5, PartiallyRefunded=6,
+    // Contract: eNote.Domain/Enums/PaymentStatus.cs — RequiresAction,
+    // Succeeded, Failed, Canceled, Refunded, PartiallyRefunded,
     // serialized as a string via JsonStringEnumConverter.
     test('fromJson maps every backend wire value', () {
       expect(
@@ -257,28 +134,9 @@ void main() {
       expect(PaymentStatus.fromJson('PartiallyRefunded'),
           PaymentStatus.partiallyRefunded);
     });
-  });
 
-  group('PaymentStatus.fromDynamic', () {
-    test('handles the string wire form', () {
-      expect(PaymentStatus.fromDynamic('RequiresAction'),
-          PaymentStatus.requiresAction);
-      expect(PaymentStatus.fromDynamic('Succeeded'), PaymentStatus.succeeded);
-      expect(PaymentStatus.fromDynamic('Failed'), PaymentStatus.failed);
-      expect(PaymentStatus.fromDynamic('Canceled'), PaymentStatus.canceled);
-      expect(PaymentStatus.fromDynamic('Refunded'), PaymentStatus.refunded);
-      expect(PaymentStatus.fromDynamic('PartiallyRefunded'),
-          PaymentStatus.partiallyRefunded);
-    });
-
-    // Legacy int form, still emitted by older payloads.
-    test('handles the legacy int form', () {
-      expect(PaymentStatus.fromDynamic(1), PaymentStatus.requiresAction);
-      expect(PaymentStatus.fromDynamic(2), PaymentStatus.succeeded);
-      expect(PaymentStatus.fromDynamic(3), PaymentStatus.failed);
-      expect(PaymentStatus.fromDynamic(4), PaymentStatus.canceled);
-      expect(PaymentStatus.fromDynamic(5), PaymentStatus.refunded);
-      expect(PaymentStatus.fromDynamic(6), PaymentStatus.partiallyRefunded);
+    test('unknown names fall back to requiresAction', () {
+      expect(PaymentStatus.fromJson('garbage'), PaymentStatus.requiresAction);
     });
   });
 

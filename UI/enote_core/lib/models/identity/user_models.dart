@@ -56,42 +56,23 @@ class UserProfile {
   });
 
   factory UserProfile.fromJson(Map<String, dynamic> json) {
-    final profile = json['profile'] as Map<String, dynamic>?;
-    if (profile != null) {
-      return UserProfile(
-        id: profile['id'] as int?,
-        firstName: profile['firstName'] as String?,
-        lastName: profile['lastName'] as String?,
-        username: profile['username'] as String?,
-        email: profile['email'] as String?,
-        dateOfBirth: parseDate(profile['dateOfBirth']),
-        address: profile['address'] != null
-            ? UserAddressDto.fromJson(
-                Map<String, dynamic>.from(profile['address']))
-            : null,
-        isActive: profile['isActive'] as bool?,
-        enrollmentDate: parseDate(profile['enrollmentDate']),
-        membershipPaidUntil: parseDate(profile['membershipPaidUntil']),
-        storeName: profile['storeName'] as String?,
-        businessHours: profile['businessHours'] as String?,
-      );
-    }
+    final data = json['profile'] as Map<String, dynamic>? ?? json;
     return UserProfile(
-      id: json['id'] as int?,
-      firstName: json['firstName'] as String?,
-      lastName: json['lastName'] as String?,
-      username: json['username'] as String?,
-      email: json['email'] as String?,
-      dateOfBirth: parseDate(json['dateOfBirth']),
-      address: json['address'] != null
+      id: data['id'] as int?,
+      firstName: data['firstName'] as String?,
+      lastName: data['lastName'] as String?,
+      username: data['username'] as String?,
+      email: data['email'] as String?,
+      dateOfBirth: parseDate(data['dateOfBirth']),
+      address: data['address'] != null
           ? UserAddressDto.fromJson(
-              Map<String, dynamic>.from(json['address']))
+              Map<String, dynamic>.from(data['address']))
           : null,
-      isActive: json['isActive'] as bool?,
-      enrollmentDate: parseDate(json['enrollmentDate']),
-      membershipPaidUntil: parseDate(json['membershipPaidUntil']),
-      storeName: json['storeName'] as String?,
-      businessHours: json['businessHours'] as String?,
+      isActive: data['isActive'] as bool?,
+      enrollmentDate: parseDate(data['enrollmentDate']),
+      membershipPaidUntil: parseDate(data['membershipPaidUntil']),
+      storeName: data['storeName'] as String?,
+      businessHours: data['businessHours'] as String?,
     );
   }
 }
@@ -120,44 +101,6 @@ class UserAddressDto {
     'street': street,
     'number': number,
   };
-}
-
-class UserIdentityDto {
-  final int? id;
-  final String? username;
-  final String? firstName;
-  final String? lastName;
-  final UserAddressDto? address;
-  final DateTime? dateOfBirth;
-  final bool hasPicture;
-  final bool isActive;
-
-  UserIdentityDto({
-    this.id,
-    this.username,
-    this.firstName,
-    this.lastName,
-    this.address,
-    this.dateOfBirth,
-    this.hasPicture = false,
-    this.isActive = false,
-  });
-
-  factory UserIdentityDto.fromJson(Map<String, dynamic> json) {
-    return UserIdentityDto(
-      id: json['id'] as int?,
-      username: json['username'] as String?,
-      firstName: json['firstName'] as String?,
-      lastName: json['lastName'] as String?,
-      address: json['address'] != null
-          ? UserAddressDto.fromJson(
-              Map<String, dynamic>.from(json['address']))
-          : null,
-      dateOfBirth: parseDate(json['dateOfBirth']),
-      hasPicture: json['hasPicture'] as bool? ?? false,
-      isActive: json['isActive'] as bool? ?? false,
-    );
-  }
 }
 
 class InstructorDto {
@@ -268,8 +211,6 @@ class ShopEmployeeDto {
     required this.isManager,
     required this.isActive,
   });
-
-  String? get musicStoreName => storeName;
 
   factory ShopEmployeeDto.fromJson(Map<String, dynamic> json) {
     return ShopEmployeeDto(

@@ -8,8 +8,8 @@ class UserCredentialFieldsController {
   final firstNameController = TextEditingController();
   final lastNameController = TextEditingController();
 
-  DelegatedUserCreateRequest buildRequest() {
-    return DelegatedUserCreateRequest(
+  RegisterRequest buildRequest() {
+    return RegisterRequest(
       username: usernameController.text.trim(),
       email: emailController.text.trim(),
       password: passwordController.text,

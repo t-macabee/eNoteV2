@@ -11,10 +11,11 @@ class ApiClient {
   final http.Client _httpClient;
 
   ApiClient({
-    required this.baseUrl,
+    required String baseUrl,
     required this.authState,
     http.Client? httpClient,
-  }) : _httpClient = httpClient ?? http.Client();
+  })  : baseUrl = baseUrl.endsWith('/') ? baseUrl : '$baseUrl/',
+        _httpClient = httpClient ?? http.Client();
 
   Map<String, String> get _headers {
     final token = authState.accessToken;

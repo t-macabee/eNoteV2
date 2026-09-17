@@ -46,14 +46,13 @@ void main() {
   });
 
   group('PagedResult', () {
-    test('computes totalPages and hasNext', () {
+    test('computes hasNext/hasPrevious', () {
       final result = PagedResult<int>(
         items: [1, 2, 3],
         page: 1,
         pageSize: 3,
         totalCount: 10,
       );
-      expect(result.totalPages, 4);
       expect(result.hasNext, isTrue);
       expect(result.hasPrevious, isFalse);
     });

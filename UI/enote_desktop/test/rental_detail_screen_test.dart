@@ -55,7 +55,7 @@ void main() {
           'instrumentModel': 'Fender',
           'instrumentType': 'Gitara',
           'storeName': 'Shop',
-          'rentalStatus': 'active',
+          'rentalStatus': 'Active',
           'requestedAt': DateTime.now().toIso8601String(),
           'fee': 10.0,
           'isProrated': false,

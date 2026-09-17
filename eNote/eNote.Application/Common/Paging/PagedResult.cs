@@ -8,5 +8,4 @@ public class PagedResult<T>
     public int? TotalCount { get; init; }
 
     public int Count => Items.Count;
-    public int? TotalPages => TotalCount.HasValue && PageSize > 0 ? (int)Math.Ceiling((double)TotalCount / PageSize) : null;
 }

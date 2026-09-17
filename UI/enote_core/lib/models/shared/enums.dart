@@ -1,3 +1,12 @@
+/// The API serialises every enum as its PascalCase member name
+/// (`JsonStringEnumConverter`, no naming policy). Dart member names are the
+/// same words in camelCase, so the wire form is derived, not tabulated.
+String _wireName(Enum value) =>
+    value.name[0].toUpperCase() + value.name.substring(1);
+
+T _fromWireName<T extends Enum>(List<T> values, String? json, T fallback) =>
+    values.firstWhere((value) => _wireName(value) == json, orElse: () => fallback);
+
 enum UserRole {
   administrator,
   instructor,
@@ -28,18 +37,10 @@ enum LectureType {
   practical,
   combined;
 
-  String toJson() => switch (this) {
-    LectureType.theoretical => 'Theoretical',
-    LectureType.practical => 'Practical',
-    LectureType.combined => 'Combined',
-  };
+  String toJson() => _wireName(this);
 
-  static LectureType fromJson(String json) => switch (json) {
-    'Theoretical' => LectureType.theoretical,
-    'Practical' => LectureType.practical,
-    'Combined' => LectureType.combined,
-    _ => LectureType.theoretical,
-  };
+  static LectureType fromJson(String? json) =>
+      _fromWireName(values, json, LectureType.theoretical);
 }
 
 enum LectureStatus {
@@ -47,27 +48,10 @@ enum LectureStatus {
   held,
   cancelled;
 
-  int toJson() => index + 1;
+  String toJson() => _wireName(this);
 
-  static LectureStatus fromJson(int json) => switch (json) {
-    1 => LectureStatus.scheduled,
-    2 => LectureStatus.held,
-    3 => LectureStatus.cancelled,
-    _ => LectureStatus.scheduled,
-  };
-
-  static LectureStatus fromDynamic(dynamic value) {
-    if (value is int) return fromJson(value);
-    if (value is String) {
-      final lower = value.toLowerCase();
-      for (final status in values) {
-        if (status.name.toLowerCase() == lower) {
-          return status;
-        }
-      }
-    }
-    return LectureStatus.scheduled;
-  }
+  static LectureStatus fromJson(String? json) =>
+      _fromWireName(values, json, LectureStatus.scheduled);
 }
 
 enum AttendanceStatus {
@@ -75,27 +59,10 @@ enum AttendanceStatus {
   present,
   absent;
 
-  int toJson() => index + 1;
+  String toJson() => _wireName(this);
 
-  static AttendanceStatus fromJson(int json) => switch (json) {
-    1 => AttendanceStatus.pending,
-    2 => AttendanceStatus.present,
-    3 => AttendanceStatus.absent,
-    _ => AttendanceStatus.pending,
-  };
-
-  static AttendanceStatus fromDynamic(dynamic value) {
-    if (value is int) return fromJson(value);
-    if (value is String) {
-      final lower = value.toLowerCase();
-      for (final status in values) {
-        if (status.name.toLowerCase() == lower) {
-          return status;
-        }
-      }
-    }
-    return AttendanceStatus.pending;
-  }
+  static AttendanceStatus fromJson(String? json) =>
+      _fromWireName(values, json, AttendanceStatus.pending);
 }
 
 enum InstrumentRentalStatus {
@@ -107,55 +74,20 @@ enum InstrumentRentalStatus {
   canceled,
   returnedEarly;
 
-  int toJson() => index + 1;
+  String toJson() => _wireName(this);
 
-  static InstrumentRentalStatus fromJson(int json) => switch (json) {
-    1 => InstrumentRentalStatus.pending,
-    2 => InstrumentRentalStatus.approved,
-    3 => InstrumentRentalStatus.active,
-    4 => InstrumentRentalStatus.completed,
-    5 => InstrumentRentalStatus.rejected,
-    6 => InstrumentRentalStatus.canceled,
-    7 => InstrumentRentalStatus.returnedEarly,
-    _ => InstrumentRentalStatus.pending,
-  };
-
-  static InstrumentRentalStatus fromDynamic(dynamic value) {
-    if (value is int) return fromJson(value);
-    if (value is String) {
-      final lower = value.toLowerCase();
-      for (final status in values) {
-        if (status.name.toLowerCase() == lower) {
-          return status;
-        }
-      }
-    }
-    return InstrumentRentalStatus.pending;
-  }
+  static InstrumentRentalStatus fromJson(String? json) =>
+      _fromWireName(values, json, InstrumentRentalStatus.pending);
 }
 
 enum AnnouncementScope {
   course,
   musicStore;
 
-  String toJson() => switch (this) {
-    AnnouncementScope.course => 'Course',
-    AnnouncementScope.musicStore => 'MusicStore',
-  };
+  String toJson() => _wireName(this);
 
-  static AnnouncementScope fromJson(String json) => switch (json) {
-    'Course' => AnnouncementScope.course,
-    'MusicStore' => AnnouncementScope.musicStore,
-    _ => AnnouncementScope.course,
-  };
-
-  static AnnouncementScope fromDynamic(dynamic value) {
-    if (value is String) return AnnouncementScope.fromJson(value);
-    if (value is int) {
-      return value == 1 ? AnnouncementScope.course : AnnouncementScope.musicStore;
-    }
-    return AnnouncementScope.course;
-  }
+  static AnnouncementScope fromJson(String? json) =>
+      _fromWireName(values, json, AnnouncementScope.course);
 }
 
 enum PaymentStatus {
@@ -166,40 +98,10 @@ enum PaymentStatus {
   refunded,
   partiallyRefunded;
 
-  String toJson() => switch (this) {
-    PaymentStatus.requiresAction => 'RequiresAction',
-    PaymentStatus.succeeded => 'Succeeded',
-    PaymentStatus.failed => 'Failed',
-    PaymentStatus.canceled => 'Canceled',
-    PaymentStatus.refunded => 'Refunded',
-    PaymentStatus.partiallyRefunded => 'PartiallyRefunded',
-  };
+  String toJson() => _wireName(this);
 
-  static PaymentStatus fromJson(String json) => switch (json) {
-    'RequiresAction' => PaymentStatus.requiresAction,
-    'Succeeded' => PaymentStatus.succeeded,
-    'Failed' => PaymentStatus.failed,
-    'Canceled' => PaymentStatus.canceled,
-    'Refunded' => PaymentStatus.refunded,
-    'PartiallyRefunded' => PaymentStatus.partiallyRefunded,
-    _ => PaymentStatus.requiresAction,
-  };
-
-  static PaymentStatus fromDynamic(dynamic value) {
-    if (value is String) return PaymentStatus.fromJson(value);
-    if (value is int) {
-      return switch (value) {
-        1 => PaymentStatus.requiresAction,
-        2 => PaymentStatus.succeeded,
-        3 => PaymentStatus.failed,
-        4 => PaymentStatus.canceled,
-        5 => PaymentStatus.refunded,
-        6 => PaymentStatus.partiallyRefunded,
-        _ => PaymentStatus.requiresAction,
-      };
-    }
-    return PaymentStatus.requiresAction;
-  }
+  static PaymentStatus fromJson(String? json) =>
+      _fromWireName(values, json, PaymentStatus.requiresAction);
 }
 
 enum RentalTrigger {

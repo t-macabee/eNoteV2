@@ -156,7 +156,7 @@ abstract class BaseProvider<T> extends CrudProvider<T> {
     required super.endpoint,
   });
 
-  Future<int> createDelegatedUser(DelegatedUserCreateRequest request) async {
+  Future<int> createDelegatedUser(RegisterRequest request) async {
     final data = decodeOrThrow(await apiClient.post(endpoint, body: request.toJson()));
     return data['userId'] as int? ?? 0;
   }

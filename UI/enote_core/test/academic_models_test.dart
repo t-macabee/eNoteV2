@@ -129,13 +129,7 @@ void main() {
 
     test('string value parses', () {
       final dto = LectureDto.fromJson(
-          {'id': 1, 'name': 'n', 'myAttendanceStatus': 'present'});
-      expect(dto.myAttendanceStatus, AttendanceStatus.present);
-    });
-
-    test('int value parses', () {
-      final dto =
-          LectureDto.fromJson({'id': 1, 'name': 'n', 'myAttendanceStatus': 2});
+          {'id': 1, 'name': 'n', 'myAttendanceStatus': 'Present'});
       expect(dto.myAttendanceStatus, AttendanceStatus.present);
     });
   });
@@ -169,6 +163,13 @@ void main() {
     test('empty body returns an empty list', () {
       expect(parseCourseRanking(''), isEmpty);
       expect(parseCourseRanking('  '), isEmpty);
+    });
+  });
+
+  group('RsvpRequest', () {
+    test('toJson carries only the confirm flag (no note field)', () {
+      expect(RsvpRequest(confirm: true).toJson(), {'confirm': true});
+      expect(RsvpRequest(confirm: false).toJson(), {'confirm': false});
     });
   });
 }
