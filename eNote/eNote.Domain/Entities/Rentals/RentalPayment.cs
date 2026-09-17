@@ -3,7 +3,7 @@ using eNote.Domain.Enums;
 namespace eNote.Domain.Entities.Rentals;
 
 
-public sealed class RentalPayment : AuditableEntity, ITenantScoped
+public sealed class RentalPayment : AuditableEntity, ITenantScoped, IStripePaymentRow
 {
     public int InstrumentRentalId { get; private set; }
     public InstrumentRental InstrumentRental { get; private set; } = null!;

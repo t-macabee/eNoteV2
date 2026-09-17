@@ -2,7 +2,7 @@ using eNote.Domain.Enums;
 
 namespace eNote.Domain.Entities.Academic;
 
-public sealed class CoursePayment : AuditableEntity
+public sealed class CoursePayment : AuditableEntity, IStripePaymentRow
 {
     public int EnrollmentId { get; private set; }
     public Enrollment Enrollment { get; private set; } = null!;

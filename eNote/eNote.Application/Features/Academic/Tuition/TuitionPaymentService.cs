@@ -51,11 +51,8 @@ public sealed class TuitionPaymentService(
                 logger,
                 context,
                 paymentGateway,
-                enrollment.Id,
-                "enrollment",
+                $"enrollment {enrollment.Id}",
                 existingRows,
-                p => p.StripePaymentIntentId,
-                p => (p.AmountChargedCents, p.Currency, p.Status),
                 async () =>
                 {
                     var amountCents = PaymentGatewayHelpers.ToCents(enrollment.Course.Price);
@@ -79,7 +76,6 @@ public sealed class TuitionPaymentService(
                     intent.Currency,
                     PaymentGatewayHelpers.MapStatus(intent.Status)),
                 DbConstraintNames.CoursePaymentPaymentIntentIdUniqueIndex,
-                intentId => context.Set<CoursePayment>().FirstAsync(p => p.StripePaymentIntentId == intentId, cancellationToken),
                 cancellationToken);
 
             return new CreateTuitionIntentResponse(

@@ -35,11 +35,8 @@ public sealed class RentalPaymentService(
                 logger,
                 context,
                 paymentGateway,
-                rental.Id,
-                "rental",
+                $"rental {rental.Id}",
                 existingRows,
-                p => p.StripePaymentIntentId,
-                p => (p.AmountChargedCents, p.Currency, p.Status),
                 async () =>
                 {
                     var charges = rental.CalculateCharges(rental.ReturnedAt ?? clock.UtcNow);
@@ -70,7 +67,6 @@ public sealed class RentalPaymentService(
                     intent.Currency,
                     PaymentGatewayHelpers.MapStatus(intent.Status)),
                 DbConstraintNames.RentalPaymentStripePaymentIntentIdUniqueIndex,
-                intentId => context.Set<RentalPayment>().FirstAsync(p => p.StripePaymentIntentId == intentId, cancellationToken),
                 cancellationToken);
 
             return new CreatePaymentIntentResponse(rental.Id, result.PaymentIntentId, result.ClientSecret, result.AmountCents, result.Currency, result.Status);

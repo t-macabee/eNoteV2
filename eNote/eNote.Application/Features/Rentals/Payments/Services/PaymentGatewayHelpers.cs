@@ -27,28 +27,23 @@ public static class PaymentGatewayHelpers
         ILogger logger,
         IAppDbContext context,
         IPaymentGateway paymentGateway,
-        int ownerId,
-        string ownerKind,
+        string ownerLabel,
         IQueryable<TPayment> existingRows,
-        Func<TPayment, string> intentIdSelector,
-        Func<TPayment, (long AmountCents, string Currency, PaymentStatus Status)> rowStateSelector,
         Func<Task<PaymentIntentCreation>> creationFactory,
         Func<PaymentIntentData, TPayment> rowFactory,
         string uniqueConstraintName,
-        Func<string, Task<TPayment>> winnerLookup,
         CancellationToken cancellationToken)
-        where TPayment : class
+        where TPayment : class, IStripePaymentRow
     {
         var existing = await existingRows.FirstOrDefaultAsync(cancellationToken);
 
         if (existing is not null)
         {
-            var existingIntentId = intentIdSelector(existing);
-            logger.LogInformation("Reusing requires-action PaymentIntent {PaymentIntentId} for {OwnerKind} {OwnerId}", existingIntentId, ownerKind, ownerId);
+            logger.LogInformation("Reusing requires-action PaymentIntent {PaymentIntentId} for {Owner}", existing.StripePaymentIntentId, ownerLabel);
 
             var current = await InvokeGatewayAsync(
                 logger,
-                () => paymentGateway.RetrievePaymentIntentAsync(existingIntentId, cancellationToken));
+                () => paymentGateway.RetrievePaymentIntentAsync(existing.StripePaymentIntentId, cancellationToken));
 
             return (current.Id, current.ClientSecret, current.AmountCents, current.Currency, MapStatus(current.Status));
         }
@@ -74,14 +69,13 @@ public static class PaymentGatewayHelpers
         }
         catch (DbUpdateException ex) when (ex.InnerException?.Message?.Contains(uniqueConstraintName) == true)
         {
-            var winner = await winnerLookup(intent.Id);
-            var (winnerAmountCents, winnerCurrency, winnerStatus) = rowStateSelector(winner);
-            return (intentIdSelector(winner), intent.ClientSecret, winnerAmountCents, winnerCurrency, winnerStatus);
+            var winner = await context.Set<TPayment>().FirstAsync(p => p.StripePaymentIntentId == intent.Id, cancellationToken);
+            return (winner.StripePaymentIntentId, intent.ClientSecret, winner.AmountChargedCents, winner.Currency, winner.Status);
         }
 
-        logger.LogInformation("Created PaymentIntent {PaymentIntentId} for {OwnerKind} {OwnerId} ({AmountCents} {Currency})", intent.Id, ownerKind, ownerId, intent.AmountCents, intent.Currency);
+        logger.LogInformation("Created PaymentIntent {PaymentIntentId} for {Owner} ({AmountCents} {Currency})", intent.Id, ownerLabel, intent.AmountCents, intent.Currency);
 
-        return (intent.Id, intent.ClientSecret, intent.AmountCents, intent.Currency, rowStateSelector(payment).Status);
+        return (intent.Id, intent.ClientSecret, intent.AmountCents, intent.Currency, payment.Status);
     }
 
     public static async Task<T> InvokeGatewayAsync<T>(ILogger logger, Func<Task<T>> call)
