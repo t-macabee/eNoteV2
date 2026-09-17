@@ -1,4 +1,5 @@
 using eNote.Application.Common.Time;
+using eNote.Application.Features.Academic.Tuition;
 using eNote.Infrastructure.Storage;
 using Microsoft.EntityFrameworkCore;
 
@@ -242,7 +243,7 @@ internal static class EnrollmentSeed
         List<Enrollment> enrollments = [.. courseIds.Select(courseId =>
         {
             var enrollment = new Enrollment(studentId, courseId, EnrollmentStatus.Active);
-            enrollment.ExtendPaidUntil(clock.UtcNow, 30);
+            enrollment.ExtendPaidUntil(clock.UtcNow, TuitionOptions.PeriodDays);
             return enrollment;
         })];
 

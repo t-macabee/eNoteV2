@@ -28,42 +28,14 @@ public sealed class LocalFileStorageService : IFileStorageService
 
     public async Task<string> SaveAsync(Stream stream, string fileName, string contentType, string subfolder, CancellationToken ct = default)
     {
-        if (!stream.CanSeek)
-        {
-            throw new BusinessException(Messages.FileTooLarge);
-        }
-        if (stream.Length > MaxFileSizeBytes)
-        {
-            throw new BusinessException(Messages.FileTooLarge);
-        }
-
-        await ValidateMagicBytesAsync(stream, AllowedImageContentTypes, ct);
-
-        if (!AllowedImageContentTypes.Contains(contentType.ToLowerInvariant()))
-        {
-            throw new BusinessException(Messages.InvalidFileFormat);
-        }
+        await ValidateAsync(stream, contentType, AllowedImageContentTypes, Messages.InvalidFileFormat, ct);
 
         return await SaveToDiskAsync(stream, subfolder, ct);
     }
 
     public async Task<string> SaveAssignmentAsync(Stream stream, string fileName, string contentType, CancellationToken ct = default)
     {
-        if (!stream.CanSeek)
-        {
-            throw new BusinessException(Messages.FileTooLarge);
-        }
-        if (stream.Length > MaxFileSizeBytes)
-        {
-            throw new BusinessException(Messages.FileTooLarge);
-        }
-
-        await ValidateMagicBytesAsync(stream, AllowedAssignmentContentTypes, ct);
-
-        if (!AllowedAssignmentContentTypes.Contains(contentType.ToLowerInvariant()))
-        {
-            throw new BusinessException(Messages.InvalidFileFormat);
-        }
+        await ValidateAsync(stream, contentType, AllowedAssignmentContentTypes, Messages.AssignmentFileTypeNotAllowed, ct);
 
         return await SaveToDiskAsync(stream, "assignments", ct);
     }
@@ -130,16 +102,21 @@ public sealed class LocalFileStorageService : IFileStorageService
         return $"{UploadsRoutePrefix}/{subfolder}/{uniqueName}";
     }
 
-    private static async Task ValidateMagicBytesAsync(Stream stream, string[] allowedContentTypes, CancellationToken ct)
+    private static async Task ValidateAsync(Stream stream, string contentType, string[] allowedContentTypes, string invalidFormatMessage, CancellationToken ct)
     {
+        if (!stream.CanSeek || stream.Length > MaxFileSizeBytes)
+        {
+            throw new BusinessException(Messages.FileTooLarge);
+        }
+
         var header = new byte[12];
         var read = await stream.ReadAsync(header.AsMemory(0, header.Length), ct);
 
         stream.Position = 0;
 
-        if (!FileSignatureDetector.IsAllowed(header.AsSpan(0, read), allowedContentTypes))
+        if (!FileSignatureDetector.IsAllowed(header.AsSpan(0, read), allowedContentTypes) || !allowedContentTypes.Contains(contentType.ToLowerInvariant()))
         {
-            throw new BusinessException(Messages.InvalidFileFormat);
+            throw new BusinessException(invalidFormatMessage);
         }
     }
 

@@ -1,3 +1,4 @@
+using eNote.Application.Common.Localization;
 using eNote.Infrastructure.Storage;
 using Microsoft.Extensions.Configuration;
 
@@ -104,6 +105,18 @@ public sealed class LocalFileStorageServiceTests : IDisposable
         Assert.EndsWith(".pdf", path);
     }
 
+    [Fact]
+    public async Task SaveAssignmentAsync_RejectsWebp_WithAssignmentMessage()
+    {
+        var service = CreateService();
+        using var stream = WebpStream();
+
+        var exception = await Assert.ThrowsAsync<BusinessException>(() =>
+            service.SaveAssignmentAsync(stream, "image.webp", "image/webp"));
+
+        Assert.Equal(Messages.AssignmentFileTypeNotAllowed, exception.Message);
+    }
+
     private LocalFileStorageService CreateService()
     {
         var configuration = new ConfigurationBuilder()
@@ -120,4 +133,7 @@ public sealed class LocalFileStorageServiceTests : IDisposable
 
     private static MemoryStream PdfStream() =>
         new([0x25, 0x50, 0x44, 0x46, 0x2D, 0x31, 0x2E, 0x34, 0x0A, 0x25, 0xE2, 0xE3, 0xCF, 0xD3, 0x0A, 0x0A]);
+
+    private static MemoryStream WebpStream() =>
+        new([0x52, 0x49, 0x46, 0x46, 0x00, 0x00, 0x00, 0x00, 0x57, 0x45, 0x42, 0x50]);
 }

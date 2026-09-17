@@ -30,13 +30,13 @@ public sealed class CityService(IAppDbContext context) : ReferenceDataCrudServic
         return query.OrderBy(x => x.Name);
     }
 
-    protected override string NotFoundMessage => "Grad nije pronađen.";
+    protected override string NotFoundMessage => Messages.CityNotFound;
 
     protected override async Task EnsureDeletableAsync(City entity, CancellationToken ct)
     {
         if (await Db.Set<Address>().AnyAsync(x => x.CityId == entity.Id, ct))
         {
-            throw new BusinessException("Grad se ne može obrisati jer je u upotrebi.");
+            throw new BusinessException(Messages.CityDeleteBlocked);
         }
     }
 }

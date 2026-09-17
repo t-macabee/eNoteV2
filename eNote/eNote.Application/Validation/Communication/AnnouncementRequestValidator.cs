@@ -7,7 +7,7 @@ public sealed class AnnouncementRequestValidator : AbstractValidator<Announcemen
 {
     public AnnouncementRequestValidator()
     {
-        RuleFor(x => x.Title).NotEmpty();
-        RuleFor(x => x.Content).NotEmpty();
+        RuleFor(x => x.Title).NotEmpty().MaximumLength(150);
+        RuleFor(x => x.Content).NotEmpty().MaximumLength(4000);
     }
 }

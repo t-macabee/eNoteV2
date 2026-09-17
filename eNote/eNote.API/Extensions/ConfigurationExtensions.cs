@@ -1,4 +1,4 @@
-using eNote.Infrastructure.Messaging;
+﻿using eNote.Infrastructure.Messaging;
 
 namespace eNote.API.Extensions;
 
@@ -59,6 +59,14 @@ public static class ConfigurationExtensions
         if (rabbitMqError is not null)
         {
             errors.Add(rabbitMqError);
+        }
+
+        foreach (var smtpKey in new[] { "Smtp:Host", "Smtp:From", "Smtp:PasswordResetUrl" })
+        {
+            if (string.IsNullOrWhiteSpace(configuration[smtpKey]))
+            {
+                errors.Add(smtpKey.Replace(":", "__"));
+            }
         }
 
         if (errors.Count > 0)

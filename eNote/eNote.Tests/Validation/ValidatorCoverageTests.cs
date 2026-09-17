@@ -211,9 +211,29 @@ public sealed class ValidatorCoverageTests
         Assert.Contains(result.Errors, e => e.ErrorMessage == Messages.AssignmentInvalidGrade);
     }
 
+    [Fact]
+    public void Validators_RejectValuesOverDbBounds()
+    {
+        var overlong = new string('x', 4001);
+        var lectureType = (LectureType)99;
+
+        AssertInvalid(new LectureUpdateRequestValidator().Validate(new LectureUpdateRequest { Name = overlong[..201], Location = "Room", LectureTime = DateTime.UtcNow, Duration = 60 }), nameof(LectureUpdateRequest.Name));
+        AssertInvalid(new LectureUpdateRequestValidator().Validate(new LectureUpdateRequest { Name = "Name", Location = overlong[..201], LectureTime = DateTime.UtcNow, Duration = 60 }), nameof(LectureUpdateRequest.Location));
+        AssertInvalid(new LectureCreateRequestValidator().Validate(new LectureCreateRequest { CourseId = 1, Name = "Name", Location = "Room", LectureTime = DateTime.UtcNow, Duration = 60, LectureType = lectureType }), nameof(LectureCreateRequest.LectureType));
+        AssertInvalid(new AssignmentRequestValidator().Validate(new AssignmentRequest { Title = overlong[..201], Description = "Description", DueAt = DateTime.UtcNow }), nameof(AssignmentRequest.Title));
+        AssertInvalid(new AnnouncementRequestValidator().Validate(new AnnouncementRequest(overlong[..151], "Content")), nameof(AnnouncementRequest.Title));
+        AssertInvalid(new AnnouncementRequestValidator().Validate(new AnnouncementRequest("Title", overlong)), nameof(AnnouncementRequest.Content));
+        AssertInvalid(new InstrumentCreateRequestValidator().Validate(new InstrumentCreateRequest { Model = overlong[..101], Manufacturer = "Maker", InstrumentTypeId = 1 }), nameof(InstrumentCreateRequest.Model));
+        AssertInvalid(new InstrumentCreateRequestValidator().Validate(new InstrumentCreateRequest { Model = "Model", Manufacturer = overlong[..101], InstrumentTypeId = 1 }), nameof(InstrumentCreateRequest.Manufacturer));
+        AssertInvalid(new InstrumentCreateRequestValidator().Validate(new InstrumentCreateRequest { Model = "Model", Manufacturer = "Maker", Description = overlong[..1001], InstrumentTypeId = 1 }), nameof(InstrumentCreateRequest.Description));
+        AssertInvalid(new InstrumentUpdateRequestValidator().Validate(new InstrumentUpdateRequest { Model = overlong[..101] }), nameof(InstrumentUpdateRequest.Model));
+        AssertInvalid(new InstrumentUpdateRequestValidator().Validate(new InstrumentUpdateRequest { Manufacturer = overlong[..101] }), nameof(InstrumentUpdateRequest.Manufacturer));
+        AssertInvalid(new InstrumentUpdateRequestValidator().Validate(new InstrumentUpdateRequest { Description = overlong[..1001] }), nameof(InstrumentUpdateRequest.Description));
+    }
+
     private static readonly FixedClock Clock = new(new DateTime(2026, 7, 1, 12, 0, 0, DateTimeKind.Utc));
     private static UpdateProfileRequestValidator UpdateProfile() => new(Clock);
-    private static LectureCreateRequest ValidLectureCreate() => new() { CourseId = 1, Name = "Name", Location = "Room", LectureTime = DateTime.UtcNow, Duration = 60 };
+    private static LectureCreateRequest ValidLectureCreate() => new() { CourseId = 1, Name = "Name", Location = "Room", LectureTime = DateTime.UtcNow, Duration = 60, LectureType = LectureType.Theoretical };
     private static LectureUpdateRequest ValidLectureUpdate() => new() { Name = "Name", Location = "Room", LectureTime = DateTime.UtcNow, Duration = 60 };
     private static UserProvisionRequest ValidUserProvision() => new()
     {

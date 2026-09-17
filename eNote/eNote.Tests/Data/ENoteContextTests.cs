@@ -44,6 +44,20 @@ public sealed class ENoteContextTests
     }
 
     [Fact]
+    public void Model_MusicStoreEmployee_HasNoSoftDeleteQueryFilter()
+    {
+        using var context = CreateContext(Baseline);
+
+        var filter = context.Model.FindEntityType(typeof(MusicStoreEmployee))?
+            .GetDeclaredQueryFilters()
+            .Select(queryFilter => queryFilter.Expression)
+            .SingleOrDefault();
+
+        Assert.NotNull(filter);
+        Assert.DoesNotContain("IsActive", filter.ToString());
+    }
+
+    [Fact]
     public async Task SaveChangesAsync_SetsCreatedAt_WhenEntityAdded()
     {
         await using var context = CreateContext(Baseline);

@@ -7,7 +7,7 @@ public sealed class AssignmentRequestValidator : AbstractValidator<AssignmentReq
 {
     public AssignmentRequestValidator()
     {
-        RuleFor(x => x.Title).NotEmpty();
+        RuleFor(x => x.Title).NotEmpty().MaximumLength(200);
         RuleFor(x => x.Description).NotEmpty();
         RuleFor(x => x.DueAt).NotEmpty();
     }

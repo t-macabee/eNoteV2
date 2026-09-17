@@ -134,15 +134,4 @@ public sealed class UploadsControllerTests
         RecordingFileStorageService storage,
         IFileAccessService accessService) =>
         new(storage, accessService, new StubCurrentActor(userId: 1));
-
-    private sealed class StubFileAccessService(bool canAccess) : IFileAccessService
-    {
-        public int CallCount { get; private set; }
-
-        public Task<bool> CanAccessAssignmentFileAsync(int userId, string fileName, CancellationToken cancellationToken = default)
-        {
-            CallCount++;
-            return Task.FromResult(canAccess);
-        }
-    }
 }

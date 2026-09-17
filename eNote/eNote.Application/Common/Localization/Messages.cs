@@ -16,7 +16,6 @@ public static class Messages
     public const string TokenRevoked = "Token je opozvan.";
     public const string TokenInvalid = "Token više nije važeći.";
     public const string InvalidUserClaim = "Autentificirani korisnik nema važeći identifikator.";
-    public const string RoleMisconfigured = "Korisnički račun nije ispravno konfigurisan (uloge). Kontaktirajte administratora.";
     public const string UserSingleRoleRequired = "Korisnik mora imati tačno jednu ulogu.";
     public const string UserDeleteBlocked = "Korisnik ima evidentiranu historiju i ne može biti obrisan. Deaktivirajte ga umjesto toga.";
     public const string CannotModifyOwnAccount = "Ne možete mijenjati vlastiti nalog.";
@@ -34,6 +33,8 @@ public static class Messages
     public const string CourseNotFound = "Kurs nije pronađen.";
     public const string CourseIdRequired = "Kurs je obavezan.";
     public const string CourseNotOwned = "Niste vlasnik navedenog kursa.";
+    public const string CoursePriceMustBeNonNegative = "Cijena mora biti nenegativan decimalni broj (npr. 25.00).";
+    public const string CoursePriceExceedsMaximum = "Cijena ne smije biti veća od 10000.";
 
     public const string LectureNotFound = "Predavanje nije pronađeno.";
     public const string LectureCancelled = "Predavanje je otkazano.";
@@ -81,22 +82,24 @@ public static class Messages
     public const string UnenrollBlockedByPendingPayment = "Nije moguće odjaviti kurs dok je plaćanje u toku. Završite ili otkažite plaćanje pa pokušajte ponovo.";
     public const string EnrollmentNotFound = "Upis nije pronađen.";
     public const string TuitionPaymentNotFound = "Plaćanje školarine nije pronađeno.";
-    public const string TuitionNotPaid = "Školarina za ovaj kurs nije plaćena.";
     public const string MembershipInactive = "Članarina nije aktivna. Kontaktirajte administratora.";
     public const string AssignmentPastDue = "Rok za predaju zadatka je istekao.";
 
     public const string AddressNotFound = "Adresa nije pronađena.";
     public const string CityNotFound = "Grad nije pronađen.";
     public const string AddressDeleteBlocked = "Adresa se ne može obrisati jer je povezana s korisnikom.";
+    public const string CityDeleteBlocked = "Grad se ne može obrisati jer je u upotrebi.";
     public const string InstrumentTypeDeleteBlocked = "Vrsta instrumenta se ne može obrisati jer je u upotrebi.";
     public const string MusicStoreDeleteBlocked = "Radnja se ne može obrisati jer sadrži instrumente ili zaposlenike.";
 
     public const string PasswordResetEmailSent = "Ako nalog postoji, poslat je token za reset lozinke.";
     public const string PasswordResetFailed = "Reset lozinke nije uspio. Provjerite token i pokušajte ponovo.";
+    public const string PasswordsDoNotMatch = "Lozinke se ne podudaraju.";
 
     public const string FileNotProvided = "Fajl nije priložen.";
     public const string FileTooLarge = "Veličina fajla prelazi maksimalno dozvoljenih 5 MB.";
     public const string InvalidFileFormat = "Dozvoljeni formati su JPEG, PNG i WebP.";
+    public const string AssignmentFileTypeNotAllowed = "Dozvoljeni formati za zadatak su JPEG, PNG i PDF.";
 
     public const string EventNotFound = "Događaj nije pronađen.";
     public const string EventEndsBeforeStarts = "Vrijeme završetka mora biti nakon vremena početka.";

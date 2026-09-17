@@ -10,5 +10,6 @@ public sealed class LectureCreateRequestValidator : AbstractValidator<LectureCre
         Include(new LectureUpdateRequestValidator());
 
         RuleFor(x => x.CourseId).GreaterThan(0).WithMessage(Messages.CourseIdRequired);
+        RuleFor(x => x.LectureType).IsInEnum();
     }
 }
