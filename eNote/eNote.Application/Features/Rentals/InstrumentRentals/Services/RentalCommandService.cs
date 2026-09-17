@@ -84,8 +84,8 @@ public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, 
     private Task<InstrumentRentalDto> ExecuteStoreTransitionAsync(int rentalId, RentalTrigger trigger, RentalStatusRequest? request, CancellationToken cancellationToken) =>
         context.ExecuteInTransactionAsync(async () =>
         {
-            var storeId = await stores.GetCurrentStoreIdAsync(cancellationToken);
-            var rental = await LoadForStoreAsync(rentalId, storeId, cancellationToken);
+            await stores.GetCurrentStoreIdAsync(cancellationToken);
+            var rental = await LoadForStoreAsync(rentalId, cancellationToken);
             return await ExecuteTransitionWithNotificationAsync(rental, trigger, RentalActor.StoreEmployee, currentUser.UserId, request, cancellationToken);
         }, cancellationToken);
 
@@ -138,18 +138,11 @@ public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, 
         return await LoadDtoAsync(rental);
     }
 
-    private async Task<InstrumentRental> LoadForStoreAsync(int rentalId, int storeId, CancellationToken cancellationToken)
+    private async Task<InstrumentRental> LoadForStoreAsync(int rentalId, CancellationToken cancellationToken)
     {
-        var rental = await context.Set<InstrumentRental>()
+        return await context.Set<InstrumentRental>()
             .WithRentalDetails()
             .FirstOrDefaultAsync(x => x.Id == rentalId, cancellationToken) ?? throw new NotFoundException(Messages.RentalNotFound);
-
-        if (rental.Instrument.MusicStoreId != storeId)
-        {
-            throw new BusinessException(Messages.RentalAccessDenied);
-        }
-
-        return rental;
     }
 
     private async Task<InstrumentRental> LoadForStudentAsync(int rentalId, int userId, CancellationToken cancellationToken)

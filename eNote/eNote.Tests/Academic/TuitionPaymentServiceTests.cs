@@ -52,6 +52,32 @@ public sealed class TuitionPaymentServiceTests
     }
 
     [Fact]
+    public async Task CreateIntentAsync_UnpublishedCourse_Throws_CourseNotPayable()
+    {
+        var (context, student, course, enrollment) = await SetupScenarioAsync(price: 100m);
+        course.SetPublishedStatus(false);
+        await context.SaveChangesAsync();
+        var service = CreateService(context, student);
+
+        var ex = await Assert.ThrowsAsync<BusinessException>(() => service.CreateIntentAsync(enrollment.Id));
+
+        Assert.Equal(Messages.CourseNotPayable, ex.Message);
+    }
+
+    [Fact]
+    public async Task CreateIntentAsync_EndedCourse_Throws_CourseNotPayable()
+    {
+        var (context, student, course, enrollment) = await SetupScenarioAsync(price: 100m);
+        course.UpdateDetails(course.Name, course.Description, course.Price, course.StartDate, Now.AddDays(-1));
+        await context.SaveChangesAsync();
+        var service = CreateService(context, student);
+
+        var ex = await Assert.ThrowsAsync<BusinessException>(() => service.CreateIntentAsync(enrollment.Id));
+
+        Assert.Equal(Messages.CourseNotPayable, ex.Message);
+    }
+
+    [Fact]
     public async Task CreateIntentAsync_WrongStudent_Throws_NotFound()
     {
         var (context, _, _, enrollment) = await SetupScenarioAsync(price: 100m);
@@ -239,6 +265,7 @@ public sealed class TuitionPaymentServiceTests
         var actor = new StubCurrentActor(student: student);
         return new(
             context,
+            TestMapper.Create(),
             clock ?? new FixedClock(Now),
             actor,
             gateway ?? new FakePaymentGateway(),

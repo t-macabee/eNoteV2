@@ -17,10 +17,8 @@ public sealed class StripeWebhookController(StripeWebhookService webhookService)
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<IActionResult> Handle(CancellationToken cancellationToken)
     {
-        Request.EnableBuffering();
-
         string json;
-        using (var reader = new StreamReader(Request.Body, Encoding.UTF8, leaveOpen: true))
+        using (var reader = new StreamReader(Request.Body, Encoding.UTF8))
         {
             json = await reader.ReadToEndAsync(cancellationToken);
         }

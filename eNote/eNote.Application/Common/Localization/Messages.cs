@@ -88,6 +88,7 @@ public static class Messages
     public const string StudentNotEnrolled = "Student nije upisan na kurs.";
     public const string AlreadyEnrolled = "Student je već upisan na kurs.";
     public const string CourseIsFree = "Kurs je besplatan.";
+    public const string CourseNotPayable = "Kurs nije objavljen ili je završen.";
     public const string UnenrollBlockedByPendingPayment = "Nije moguće odjaviti kurs dok je plaćanje u toku. Završite ili otkažite plaćanje pa pokušajte ponovo.";
     public const string EnrollmentNotFound = "Upis nije pronađen.";
     public const string TuitionPaymentNotFound = "Plaćanje školarine nije pronađeno.";

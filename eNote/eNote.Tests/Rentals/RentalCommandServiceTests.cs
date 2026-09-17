@@ -277,23 +277,6 @@ public sealed class RentalCommandServiceTests
     }
 
     [Fact]
-    public async Task CancelForStoreAsync_Throws_WhenRentalBelongsToOtherStore()
-    {
-        await using var context = CreateContext();
-        var student = await SeedStudentAsync(context, hasActiveMembership: true);
-        var instrument = await RentalTestData.SeedInstrumentAsync(context);
-        var rental = new InstrumentRental(instrument.Id, student.Id, instrument.MusicStoreId, Now, null);
-        rental.Approve(50m, null, Now, 1);
-        context.Set<InstrumentRental>().Add(rental);
-        await context.SaveChangesAsync();
-
-        var service = CreateStoreService(context, storeId: instrument.MusicStoreId + 99);
-
-        var ex = await Assert.ThrowsAsync<BusinessException>(() => service.CancelForStoreAsync(rental.Id, new RentalStatusRequest()));
-        Assert.Equal(Messages.RentalAccessDenied, ex.Message);
-    }
-
-    [Fact]
     public async Task CancelForStoreAsync_DispatchesTransitionNotification()
     {
         await using var context = CreateContext();

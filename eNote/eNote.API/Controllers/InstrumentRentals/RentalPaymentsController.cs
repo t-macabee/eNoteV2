@@ -13,7 +13,7 @@ namespace eNote.API.Controllers.InstrumentRentals;
 /// /student/rentals, the store refund route is an absolute /shop/rentals route.
 /// </summary>
 [Route("api/v{version:apiVersion}/student/rentals/{rentalId:int}/payments")]
-public sealed class RentalPaymentsController(IRentalPaymentService payments) : CoreController
+public sealed class RentalPaymentsController(RentalPaymentService payments) : CoreController
 {
     [Authorize(Roles = AppRoles.Student)]
     [HttpPost("create-intent")]

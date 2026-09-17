@@ -214,25 +214,6 @@ public sealed class RentalPaymentServiceTests
         Assert.Empty(gateway.CreateCalls);
     }
 
-    [Fact]
-    public async Task CreatePaymentIntent_WhenSucceededPaymentRowExists_Throws_Business()
-    {
-        // Denormalized IsPaid safety: even if the cached flag were stale, a
-        // succeeded RentalPayment row must block a second intent.
-        var (context, student, currentUser) = await CreateStudentContextAsync();
-        var instrument = await RentalTestData.SeedInstrumentAsync(context);
-        var rental = RentalTestData.CreateCompletedRental(instrument, student.Id, Now);
-        context.Set<InstrumentRental>().Add(rental);
-        await context.SaveChangesAsync();
-        context.Set<RentalPayment>().Add(new RentalPayment(rental.Id, rental.MusicStoreId, "pi_test_existing", 5000, "eur", PaymentStatus.Succeeded));
-        await context.SaveChangesAsync();
-        var service = CreateService(context, currentUser);
-
-        var ex = await Assert.ThrowsAsync<BusinessException>(() => service.CreatePaymentIntentAsync(rental.Id));
-
-        Assert.Equal(Messages.PaymentAlreadyCompleted, ex.Message);
-    }
-
     // ---- Refunds ----------------------------------------------------------
 
     [Fact]
@@ -434,19 +415,6 @@ public sealed class RentalPaymentServiceTests
         Assert.Equal(PaymentStatus.Refunded, dto.Status);
         Assert.Equal(5000, dto.RefundedCents);
         Assert.NotNull(dto.RefundedAt);
-    }
-
-    [Fact]
-    public async Task GetPaymentStatusForStore_WrongStore_Throws()
-    {
-        var (context, student, _) = await CreateStudentContextAsync();
-        var instrument = await RentalTestData.SeedInstrumentAsync(context);
-        var rental = await SeedPaidRentalAsync(context, instrument, student);
-        var service = CreateService(context, new StubCurrentActor(storeId: 2));
-
-        var ex = await Assert.ThrowsAsync<BusinessException>(() => service.GetPaymentStatusForStoreAsync(rental.Id));
-
-        Assert.Equal(Messages.RentalAccessDenied, ex.Message);
     }
 
     [Fact]

@@ -8,7 +8,7 @@ namespace eNote.API.Controllers.Tuition;
 
 [Authorize(Roles = AppRoles.Student)]
 [Route("api/v{version:apiVersion}/student/enrollments/{enrollmentId:int}/tuition")]
-public sealed class TuitionPaymentsController(ITuitionPaymentService tuitionService) : CoreController
+public sealed class TuitionPaymentsController(TuitionPaymentService tuitionService) : CoreController
 {
     [HttpPost("create-intent")]
     [ProducesResponseType(typeof(CreateTuitionIntentResponse), StatusCodes.Status200OK)]

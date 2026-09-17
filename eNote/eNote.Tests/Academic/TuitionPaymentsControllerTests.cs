@@ -116,6 +116,7 @@ public sealed class TuitionPaymentsControllerTests
     private static TuitionPaymentService CreateService(ENoteContext context, Student student) =>
         new(
             context,
+            TestMapper.Create(),
             new FixedClock(Now),
             new StubCurrentActor(student: student),
             new FakePaymentGateway(),

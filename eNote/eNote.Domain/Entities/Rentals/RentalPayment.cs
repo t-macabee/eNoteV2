@@ -12,7 +12,7 @@ public sealed class RentalPayment : AuditableEntity, ITenantScoped
     public string StripePaymentIntentId { get; private set; } = null!;
     public string? StripeChargeId { get; private set; }
     public long AmountChargedCents { get; private set; }
-    public string Currency { get; private set; } = "eur";
+    public string Currency { get; private set; } = null!;
     public PaymentStatus Status { get; private set; }
     public string? StripeEventId { get; private set; }
     public DateTime? PaidAt { get; private set; }
@@ -52,12 +52,6 @@ public sealed class RentalPayment : AuditableEntity, ITenantScoped
     {
         StripeEventId = stripeEventId;
         Status = PaymentStatus.Failed;
-    }
-
-    public void MarkCanceled(string stripeEventId)
-    {
-        StripeEventId = stripeEventId;
-        Status = PaymentStatus.Canceled;
     }
 
     public void ApplyRefund(long refundedCents, string? stripeRefundId, DateTime refundedAt)

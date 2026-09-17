@@ -3,6 +3,7 @@ using eNote.Application.Constants;
 using eNote.Application.Features.Rentals.Payments.Services;
 using eNote.Domain.Entities.Academic;
 using eNote.Domain.Enums;
+using MapsterMapper;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -10,11 +11,12 @@ namespace eNote.Application.Features.Academic.Tuition;
 
 public sealed class TuitionPaymentService(
     IAppDbContext context,
+    IMapper mapper,
     IClock clock,
     IStudentContext students,
     IPaymentGateway paymentGateway,
     StripeOptions options,
-    ILogger<TuitionPaymentService> logger) : ITuitionPaymentService
+    ILogger<TuitionPaymentService> logger)
 {
     public async Task<CreateTuitionIntentResponse> CreateIntentAsync(int enrollmentId, CancellationToken cancellationToken = default)
     {
@@ -34,89 +36,59 @@ public sealed class TuitionPaymentService(
                 throw new BusinessException(Messages.CourseIsFree);
             }
 
-            var existing = await context.Set<CoursePayment>()
+            if (!enrollment.Course.IsPublished || enrollment.Course.EndDate < clock.UtcNow)
+            {
+                throw new BusinessException(Messages.CourseNotPayable);
+            }
+
+            var existingRows = context.Set<CoursePayment>()
                 .Where(p => p.EnrollmentId == enrollment.Id
                     && p.Status == PaymentStatus.RequiresAction
                     && p.CreatedAt >= clock.UtcNow - PaymentGatewayHelpers.RequiresActionReuseWindow)
-                .OrderByDescending(p => p.CreatedAt)
-                .FirstOrDefaultAsync(cancellationToken);
+                .OrderByDescending(p => p.CreatedAt);
 
-            if (existing is not null)
-            {
-                logger.LogInformation("Reusing requires-action PaymentIntent {PaymentIntentId} for enrollment {EnrollmentId}", existing.StripePaymentIntentId, enrollment.Id);
-
-                var current = await PaymentGatewayHelpers.InvokeGatewayAsync(
-                    logger,
-                    () => paymentGateway.RetrievePaymentIntentAsync(existing.StripePaymentIntentId, cancellationToken));
-
-                return new CreateTuitionIntentResponse(
-                    enrollment.Id,
-                    current.Id,
-                    current.ClientSecret,
-                    current.AmountCents,
-                    current.Currency,
-                    PaymentGatewayHelpers.MapStatus(current.Status));
-            }
-
-            var amountCents = PaymentGatewayHelpers.ToCents(enrollment.Course.Price);
-            var currency = PaymentGatewayHelpers.NormalizeCurrency(options.Currency);
-            var paidUntilKey = enrollment.PaidUntil.HasValue ? enrollment.PaidUntil.Value.ToString("O") : "none";
-            var attempt = await context.Set<CoursePayment>().CountAsync(p => p.EnrollmentId == enrollment.Id, cancellationToken);
-            var idempotencyKey = $"tuition:{enrollment.Id}:{paidUntilKey}:{attempt}:v2";
-
-            var metadata = new Dictionary<string, string>
-            {
-                ["enrollmentId"] = enrollment.Id.ToString(),
-                ["courseId"] = enrollment.CourseId.ToString(),
-                ["studentId"] = enrollment.StudentId.ToString()
-            };
-
-            var intent = await PaymentGatewayHelpers.InvokeGatewayAsync(
+            var result = await PaymentGatewayHelpers.ReuseOrCreatePaymentIntentAsync(
                 logger,
-                () => paymentGateway.CreatePaymentIntentAsync(
-                    amountCents,
-                    currency,
-                    metadata,
-                    idempotencyKey,
-                    TuitionOptions.StatementDescriptorSuffix,
-                    cancellationToken));
-
-            var payment = new CoursePayment(
+                context,
+                paymentGateway,
                 enrollment.Id,
-                intent.Id,
-                intent.AmountCents,
-                intent.Currency,
-                PaymentGatewayHelpers.MapStatus(intent.Status));
+                "enrollment",
+                existingRows,
+                p => p.StripePaymentIntentId,
+                p => (p.AmountChargedCents, p.Currency, p.Status),
+                async () =>
+                {
+                    var amountCents = PaymentGatewayHelpers.ToCents(enrollment.Course.Price);
+                    var paidUntilKey = enrollment.PaidUntil.HasValue ? enrollment.PaidUntil.Value.ToString("O") : "none";
+                    var attempt = await context.Set<CoursePayment>().CountAsync(p => p.EnrollmentId == enrollment.Id, cancellationToken);
+                    var idempotencyKey = $"tuition:{enrollment.Id}:{paidUntilKey}:{attempt}:v2";
 
-            context.Set<CoursePayment>().Add(payment);
+                    var metadata = new Dictionary<string, string>
+                    {
+                        ["enrollmentId"] = enrollment.Id.ToString(),
+                        ["courseId"] = enrollment.CourseId.ToString(),
+                        ["studentId"] = enrollment.StudentId.ToString()
+                    };
 
-            try
-            {
-                await context.SaveChangesAsync(cancellationToken);
-            }
-            catch (DbUpdateException ex) when (ex.InnerException?.Message?.Contains(DbConstraintNames.CoursePaymentPaymentIntentIdUniqueIndex) == true)
-            {
-                var winner = await context.Set<CoursePayment>()
-                    .FirstAsync(p => p.StripePaymentIntentId == intent.Id, cancellationToken);
-
-                return new CreateTuitionIntentResponse(
-                    winner.EnrollmentId,
-                    winner.StripePaymentIntentId,
-                    intent.ClientSecret,
-                    winner.AmountChargedCents,
-                    winner.Currency,
-                    winner.Status);
-            }
-
-            logger.LogInformation("Created PaymentIntent {PaymentIntentId} for enrollment {EnrollmentId} ({AmountCents} {Currency})", intent.Id, enrollment.Id, intent.AmountCents, intent.Currency);
+                    return new PaymentIntentCreation(amountCents, options.Currency, metadata, idempotencyKey, TuitionOptions.StatementDescriptorSuffix);
+                },
+                intent => new CoursePayment(
+                    enrollment.Id,
+                    intent.Id,
+                    intent.AmountCents,
+                    intent.Currency,
+                    PaymentGatewayHelpers.MapStatus(intent.Status)),
+                DbConstraintNames.CoursePaymentPaymentIntentIdUniqueIndex,
+                intentId => context.Set<CoursePayment>().FirstAsync(p => p.StripePaymentIntentId == intentId, cancellationToken),
+                cancellationToken);
 
             return new CreateTuitionIntentResponse(
                 enrollment.Id,
-                intent.Id,
-                intent.ClientSecret,
-                intent.AmountCents,
-                intent.Currency,
-                payment.Status);
+                result.PaymentIntentId,
+                result.ClientSecret,
+                result.AmountCents,
+                result.Currency,
+                result.Status);
         }, cancellationToken);
     }
 
@@ -130,7 +102,7 @@ public sealed class TuitionPaymentService(
             .FirstOrDefaultAsync(cancellationToken)
             ?? throw new NotFoundException(Messages.TuitionPaymentNotFound);
 
-        return MapPayment(payment);
+        return mapper.Map<CoursePaymentDto>(payment);
     }
 
     public async Task<IReadOnlyList<CoursePaymentDto>> GetHistoryAsync(int enrollmentId, CancellationToken cancellationToken = default)
@@ -142,7 +114,7 @@ public sealed class TuitionPaymentService(
             .OrderByDescending(p => p.CreatedAt)
             .ToListAsync(cancellationToken);
 
-        return payments.Select(MapPayment).ToList();
+        return mapper.Map<List<CoursePaymentDto>>(payments);
     }
 
     private async Task<Enrollment> LoadForStudentAsync(int enrollmentId, CancellationToken cancellationToken)
@@ -160,15 +132,4 @@ public sealed class TuitionPaymentService(
 
         return enrollment;
     }
-
-    private static CoursePaymentDto MapPayment(CoursePayment payment) => new(
-        payment.Id,
-        payment.EnrollmentId,
-        payment.StripePaymentIntentId,
-        payment.AmountChargedCents,
-        payment.Currency,
-        payment.Status,
-        payment.PaidAt,
-        payment.PeriodStart,
-        payment.PeriodEnd);
 }

@@ -57,8 +57,8 @@ public static class DependencyInjection
         services.AddScoped<RankingService>();
         services.AddScoped<RentalCommandService>();
         services.AddScoped<RentalQueryService>();
-        services.AddScoped<IRentalPaymentService, RentalPaymentService>();
-        services.AddScoped<ITuitionPaymentService, TuitionPaymentService>();
+        services.AddScoped<RentalPaymentService>();
+        services.AddScoped<TuitionPaymentService>();
         services.AddScoped<RecommendationService>();
         services.AddScoped<UserProfileService>();
         services.AddScoped<UserSelfService>();
