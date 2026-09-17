@@ -27,6 +27,7 @@ class EntityFormScaffold extends StatefulWidget {
   final bool showCloseButton;
   final EntityFormPresentation presentation;
   final bool closeAfterAdd;
+  final bool saveEnabled;
 
   const EntityFormScaffold({
     super.key,
@@ -45,6 +46,7 @@ class EntityFormScaffold extends StatefulWidget {
     this.showCloseButton = true,
     this.presentation = EntityFormPresentation.page,
     this.closeAfterAdd = false,
+    this.saveEnabled = true,
   });
 
   static Future<bool?> showAsDialog(
@@ -151,7 +153,8 @@ class _EntityFormScaffoldState extends State<EntityFormScaffold> {
 
   Widget _buildSaveButton() {
     return FilledButton.icon(
-      onPressed: (_isSaving || _isDeleting) ? null : _save,
+      onPressed:
+          (_isSaving || _isDeleting || !widget.saveEnabled) ? null : _save,
       icon: _isSaving
           ? const SizedBox(
               width: 16,

@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:enote_core/enote_core.dart';
 
 class CourseCatalogProvider extends ReadOnlyProvider<CourseDto> {
@@ -12,8 +10,7 @@ class CourseCatalogProvider extends ReadOnlyProvider<CourseDto> {
 
   Future<List<CourseCatalogInstructorDto>> getCatalogInstructors() async {
     final response = await apiClient.get('$endpoint/instructors');
-    throwIfError(response);
-    final list = jsonDecode(response.body) as List<dynamic>;
+    final list = decodeListOrThrow(response);
     return list
         .map((e) => CourseCatalogInstructorDto.fromJson(Map<String, dynamic>.from(e)))
         .toList();

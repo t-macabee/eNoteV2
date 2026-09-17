@@ -145,4 +145,52 @@ void main() {
       );
     });
   });
+
+  group('decodeListOrThrow', () {
+    test('200 decodes a JSON array into List<dynamic>', () {
+      final response = http.Response(
+        '[{"id": 1}, {"id": 2}]',
+        200,
+        headers: jsonHeaders,
+      );
+      expect(decodeListOrThrow(response), [
+        {'id': 1},
+        {'id': 2},
+      ]);
+    });
+
+    test('malformed or empty body throws ApiException, not FormatException',
+        () {
+      expect(
+        () => decodeListOrThrow(http.Response('not-json{{{', 200)),
+        throwsA(
+          isA<ApiException>().having(
+            (e) => e.message,
+            'message',
+            'Neispravan odgovor servera.',
+          ),
+        ),
+      );
+      expect(
+        () => decodeListOrThrow(http.Response('', 200)),
+        throwsA(isA<ApiException>()),
+      );
+    });
+
+    test('JSON object body throws ApiException with parse-failure message',
+        () {
+      final response =
+          http.Response('{"id": 1}', 200, headers: jsonHeaders);
+      expect(
+        () => decodeListOrThrow(response),
+        throwsA(
+          isA<ApiException>().having(
+            (e) => e.message,
+            'message',
+            'Neispravan odgovor servera.',
+          ),
+        ),
+      );
+    });
+  });
 }

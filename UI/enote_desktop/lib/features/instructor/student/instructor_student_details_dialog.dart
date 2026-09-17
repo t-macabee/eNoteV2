@@ -26,6 +26,7 @@ class _InstructorStudentDetailsDialogState
     extends State<InstructorStudentDetailsDialog> {
   late StudentDto _student = widget.student;
   List<StudentEnrollmentDto>? _enrollments;
+  bool _enrollmentsError = false;
 
   @override
   void initState() {
@@ -47,10 +48,15 @@ class _InstructorStudentDetailsDialogState
     try {
       final enrollments = await provider.getEnrollments(widget.student.id);
       if (mounted) {
-        setState(() => _enrollments = enrollments);
+        setState(() {
+          _enrollments = enrollments;
+          _enrollmentsError = false;
+        });
       }
     } catch (_) {
-      // Ignored: fall back silently, do not break the dialog
+      if (mounted) {
+        setState(() => _enrollmentsError = true);
+      }
     }
   }
 
@@ -105,8 +111,25 @@ class _InstructorStudentDetailsDialogState
               ),
             ),
             const SizedBox(height: 8),
-            if (_enrollments == null)
-              const SizedBox.shrink()
+            if (_enrollmentsError)
+              const Text(
+                'Greška pri učitavanju upisa.',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: AppTheme.error,
+                ),
+              )
+            else if (_enrollments == null)
+              const SizedBox(
+                height: 24,
+                child: Center(
+                  child: SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                ),
+              )
             else if (_enrollments!.isEmpty)
               const Text(
                 'Nema aktivnih upisa.',

@@ -21,13 +21,15 @@ class _InstructorStudentListScreenState
   final _gridKey = GlobalKey<EntityGridScreenState<StudentDto>>();
 
   Future<void> _openCreateForm() async {
-    await EntityFormScaffold.showAsDialog(
+    final saved = await EntityFormScaffold.showAsDialog(
       context,
       builder: (_) => const InstructorStudentFormScreen(
         presentation: EntityFormPresentation.dialog,
       ),
     );
-    _gridKey.currentState?.refresh();
+    if (saved == true) {
+      _gridKey.currentState?.refresh();
+    }
   }
 
   @override

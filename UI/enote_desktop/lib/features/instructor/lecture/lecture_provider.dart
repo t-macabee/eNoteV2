@@ -40,4 +40,7 @@ class LectureProvider extends CrudProvider<LectureDto> {
     final data = decodeOrThrow(response);
     return AttendanceDto.fromJson(data);
   }
+
+  String attendanceReportEndpoint(int lectureId) =>
+      '$endpoint/$lectureId/attendance/report';
 }

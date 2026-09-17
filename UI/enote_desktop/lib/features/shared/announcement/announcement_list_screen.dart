@@ -33,7 +33,7 @@ class _AnnouncementListScreenState extends State<AnnouncementListScreen> {
   final _listKey = GlobalKey<EntityListScreenState<AnnouncementDto>>();
 
   Future<void> _openForm([AnnouncementDto? existing]) async {
-    await EntityFormScaffold.showAsDialog(
+    final saved = await EntityFormScaffold.showAsDialog(
       context,
       builder: (_) => AnnouncementFormScreen(
         provider: widget.provider,
@@ -41,7 +41,9 @@ class _AnnouncementListScreenState extends State<AnnouncementListScreen> {
         presentation: EntityFormPresentation.dialog,
       ),
     );
-    _listKey.currentState?.refresh();
+    if (saved == true) {
+      _listKey.currentState?.refresh();
+    }
   }
 
   @override

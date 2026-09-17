@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:enote_core/enote_core.dart';
 
 class InstructorStudentProvider extends BaseProvider<StudentDto> {
@@ -11,8 +9,7 @@ class InstructorStudentProvider extends BaseProvider<StudentDto> {
 
   Future<List<StudentEnrollmentDto>> getEnrollments(int studentId) async {
     final response = await apiClient.get('$endpoint/$studentId/enrollments');
-    throwIfError(response);
-    final list = jsonDecode(response.body) as List<dynamic>;
+    final list = decodeListOrThrow(response);
     return list
         .map((e) => StudentEnrollmentDto.fromJson(Map<String, dynamic>.from(e)))
         .toList();

@@ -11,6 +11,7 @@ import '../../../widgets/pdf_report_button.dart';
 import '../../shared/announcement/announcement_list_screen.dart';
 import '../../shared/announcement/announcement_provider.dart';
 import '../lecture/lecture_workspace_dialog.dart';
+import '../ranking/ranking_provider.dart';
 import '../ranking/ranking_screen.dart';
 import 'course_form_screen.dart';
 import 'course_provider.dart';
@@ -214,7 +215,7 @@ class _CourseDetailDialogState extends State<CourseDetailDialog> {
           action: PdfReportButton(
             label: 'Izvještaj',
             fileName: 'course-${_course.id}-ranking.pdf',
-            endpoint: 'instructor/courses/${_course.id}/ranking/report',
+            endpoint: context.read<RankingProvider>().reportEndpoint(_course.id),
           ),
           onClose: () => Navigator.of(dialogContext).pop(),
         ),

@@ -63,8 +63,6 @@ class _LectureFormScreenState extends State<LectureFormScreen> {
   }
 
   Future<bool> _save() async {
-    if (_isCancelled) return false;
-
     if (_lectureTime == null) {
       ErrorBanner.show(context, message: 'Vrijeme predavanja je obavezno.');
       return false;
@@ -121,6 +119,7 @@ class _LectureFormScreenState extends State<LectureFormScreen> {
       title: _isEditMode ? 'Uredi predavanje' : 'Dodaj predavanje',
       isEditMode: _isEditMode,
       closeAfterAdd: true,
+      saveEnabled: enabled,
       fieldsBuilder: (_) => [
         if (_isCancelled) ...[
           Container(

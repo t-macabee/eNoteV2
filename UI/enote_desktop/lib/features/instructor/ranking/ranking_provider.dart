@@ -12,4 +12,7 @@ class RankingProvider {
     throwIfError(response);
     return parseCourseRanking(response.body);
   }
+
+  String reportEndpoint(int courseId) =>
+      'instructor/courses/$courseId/ranking/report';
 }

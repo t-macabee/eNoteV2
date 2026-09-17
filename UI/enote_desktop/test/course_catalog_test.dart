@@ -54,8 +54,7 @@ void main() {
       expect(instructors[1].name, 'Maestro Guitar');
     });
 
-    test('getCatalogSummary fetches from instructor/courses/catalog/summary', () async {
-      final mockClient = _MockHttpClient((req) async {
+    test('getCatalogSummary fetches from instructor/courses/catalog/summary', () async {      final mockClient = _MockHttpClient((req) async {
         expect(req.url.path, '/api/v1/instructor/courses/catalog/summary');
         expect(req.method, 'GET');
         return http.Response(
@@ -78,6 +77,25 @@ void main() {
 
       expect(summary.totalCourses, 15);
       expect(summary.totalStudents, 120);
+    });
+
+    test('F3-05: malformed 200 maps to ApiException, not FormatException',
+        () async {
+      final mockClient = _MockHttpClient((req) async {
+        return http.Response('not-json{{{', 200);
+      });
+
+      final apiClient = ApiClient(
+        baseUrl: 'http://localhost:5059/api/v1/',
+        authState: AuthState(),
+        httpClient: mockClient,
+      );
+      final provider = CourseCatalogProvider(apiClient: apiClient);
+
+      expect(
+        () => provider.getCatalogInstructors(),
+        throwsA(isA<ApiException>()),
+      );
     });
   });
 

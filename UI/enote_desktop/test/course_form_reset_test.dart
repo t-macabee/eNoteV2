@@ -91,6 +91,10 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(httpClient.postedBodies, hasLength(1));
+      // F3-07: create payload carries isPublished false (publishing lives in
+      // the detail dialog behind its confirm).
+      final posted = jsonDecode(httpClient.postedBodies.single!) as Map<String, dynamic>;
+      expect(posted['isPublished'], isFalse);
       // The add form auto-closes on success instead of resetting in place.
       expect(find.text('Dodaj kurs'), findsNothing);
       expect(dialogResult, isTrue);

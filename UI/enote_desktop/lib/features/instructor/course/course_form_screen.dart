@@ -32,7 +32,6 @@ class _CourseFormScreenState extends State<CourseFormScreen> {
 
   DateTime? _startDate;
   DateTime? _endDate;
-  bool _isPublished = false;
 
   @override
   void initState() {
@@ -44,7 +43,6 @@ class _CourseFormScreenState extends State<CourseFormScreen> {
       _priceController.text = existing.price.toStringAsFixed(2);
       _startDate = existing.startDate;
       _endDate = existing.endDate;
-      _isPublished = existing.isPublished;
     }
   }
 
@@ -74,13 +72,15 @@ class _CourseFormScreenState extends State<CourseFormScreen> {
     }
 
     final descriptionText = _descriptionController.text.trim();
+    // Publishing stays in the detail dialog behind its confirm; the form
+    // round-trips the loaded value on edit and sends false on create.
     final request = CourseRequest(
       name: _nameController.text.trim(),
       description: descriptionText.isEmpty ? null : descriptionText,
       price: price,
       startDate: _startDate,
       endDate: _endDate,
-      isPublished: _isPublished,
+      isPublished: widget.existing?.isPublished ?? false,
     );
 
     final provider = context.read<CourseProvider>();

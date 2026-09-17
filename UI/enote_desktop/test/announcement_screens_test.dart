@@ -202,4 +202,54 @@ void main() {
 
     expect(queries.any((q) => q['title'] == 'ispit'), isTrue);
   });
+
+  testWidgets('F3-10: cancelling the announcement form does not refresh',
+      (tester) async {
+    tester.view.physicalSize = const Size(1400, 1000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    var fetches = 0;
+
+    final client = FakeClient((request) async {
+      fetches++;
+      return http.StreamedResponse(
+        Stream.value(utf8.encode(jsonEncode({
+          'items': [],
+          'page': 1,
+          'pageSize': 20,
+          'totalCount': 0,
+        }))),
+        200,
+      );
+    });
+
+    final authState = AuthState(
+      baseUrl: 'http://localhost/',
+      httpClient: client,
+      tokenReader: () => fakeJwt(username: 'test', role: 'Instructor'),
+    );
+    final apiClient = ApiClient(
+      baseUrl: 'http://localhost/',
+      authState: authState,
+      httpClient: client,
+    );
+    final provider = AnnouncementProvider(apiClient: apiClient, courseId: 1);
+
+    await tester.pumpWidget(MaterialApp(
+      home: AnnouncementListScreen(provider: provider, title: 'Objave'),
+    ));
+    await tester.pumpAndSettle();
+    expect(fetches, 1);
+
+    await tester.tap(find.text('Dodaj'));
+    await tester.pumpAndSettle();
+    expect(find.text('Otkaži'), findsOneWidget);
+
+    await tester.tap(find.text('Otkaži'));
+    await tester.pumpAndSettle();
+
+    expect(fetches, 1);
+  });
 }

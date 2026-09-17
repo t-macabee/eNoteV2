@@ -14,6 +14,7 @@ import '../lecture_note/lecture_note_list_screen.dart';
 import '../lecture_note/lecture_note_provider.dart';
 import 'lecture_attendance_screen.dart';
 import 'lecture_list_screen.dart';
+import 'lecture_provider.dart';
 
 sealed class _WorkspaceView {
   const _WorkspaceView();
@@ -114,7 +115,9 @@ class _LectureWorkspaceDialogState extends State<LectureWorkspaceDialog> {
         _AttendanceView(:final lecture) => PdfReportButton(
             label: 'Izvještaj',
             fileName: 'lecture-${lecture.id}-attendance.pdf',
-            endpoint: 'instructor/lectures/${lecture.id}/attendance/report',
+            endpoint: context
+                .read<LectureProvider>()
+                .attendanceReportEndpoint(lecture.id),
           ),
         _ => null,
       };
