@@ -42,12 +42,7 @@ class _AnnouncementListScreenState extends State<AnnouncementListScreen>
     String search,
   ) async {
     final result = await context.read<AnnouncementProvider>().getPage(
-      params: {
-        'page': page,
-        'pageSize': pageSize,
-        'includeTotalCount': true,
-        if (search.isNotEmpty) 'title': search,
-      },
+      params: pagedQuery(page, pageSize, search, searchField: 'title'),
     );
     if (mounted) setState(() => _error = null);
     return result;

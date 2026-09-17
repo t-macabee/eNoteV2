@@ -43,11 +43,7 @@ class AssignmentProvider extends ReadOnlyProvider<AssignmentDto> {
     int page = 1,
     int pageSize = 20,
   }) async {
-    final params = {
-      'page': page,
-      'pageSize': pageSize,
-      'includeTotalCount': true,
-    };
+    final params = pagedQuery(page, pageSize, '');
     final response = await apiClient.get(
       'student/submissions',
       queryParams: params,

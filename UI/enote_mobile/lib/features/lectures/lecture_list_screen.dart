@@ -44,13 +44,15 @@ class _LectureListScreenState extends State<LectureListScreen>
     String search,
   ) async {
     final result = await context.read<LectureProvider>().getPage(
-      params: {
-        'page': page,
-        'pageSize': pageSize,
-        'includeTotalCount': true,
-        if (search.isNotEmpty) 'name': search,
-        if (_upcomingOnly) 'from': DateTime.now().toIso8601String(),
-      },
+      params: pagedQuery(
+        page,
+        pageSize,
+        search,
+        searchField: 'name',
+        filters: {
+          if (_upcomingOnly) 'from': DateTime.now().toIso8601String(),
+        },
+      ),
     );
     if (mounted) setState(() => _error = null);
     return result;

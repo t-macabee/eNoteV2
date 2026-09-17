@@ -119,13 +119,9 @@ class _AssignmentDetailScreenState extends State<AssignmentDetailScreen> {
     }
   }
 
-  /// Last segment of the stored `uploads/assignments/…` path (02 §4.7).
-  static String submissionFileName(String? filePath) =>
-      assignmentFileName(filePath);
-
   static bool _isImage(String? filePath) {
     if (filePath == null) return false;
-    final name = submissionFileName(filePath).toLowerCase();
+    final name = assignmentFileName(filePath).toLowerCase();
     return name.endsWith('.jpg') ||
         name.endsWith('.jpeg') ||
         name.endsWith('.png');
@@ -333,7 +329,7 @@ class _AssignmentDetailScreenState extends State<AssignmentDetailScreen> {
   }
 
   Widget _fileRow(AssignmentSubmissionDto submission) {
-    final name = submissionFileName(submission.filePath);
+    final name = assignmentFileName(submission.filePath);
     if (_isImage(submission.filePath)) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,

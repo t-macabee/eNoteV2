@@ -43,13 +43,13 @@ class _CourseListScreenState extends State<CourseListScreen>
     String search,
   ) async {
     final result = await context.read<CourseProvider>().getPage(
-      params: {
-        'page': page,
-        'pageSize': pageSize,
-        'includeTotalCount': true,
-        if (search.isNotEmpty) 'name': search,
-        if (_enrolledOnly) 'enrolledOnly': true,
-      },
+      params: pagedQuery(
+        page,
+        pageSize,
+        search,
+        searchField: 'name',
+        filters: {if (_enrolledOnly) 'enrolledOnly': true},
+      ),
     );
     if (mounted) setState(() => _error = null);
     return result;

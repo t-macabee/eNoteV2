@@ -52,7 +52,7 @@ class _LectureNoteDetailScreenState extends State<LectureNoteDetailScreen> {
           final note = snapshot.data;
           if (note == null) {
             return const Center(
-              child: Text('Nema rezultata za pretragu.'),
+              child: Text('Bilješka nije pronađena.'),
             );
           }
           return ListView(

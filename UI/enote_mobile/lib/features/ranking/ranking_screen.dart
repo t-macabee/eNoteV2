@@ -61,7 +61,7 @@ class _RankingScreenState extends State<RankingScreen> {
           final ranking = snapshot.data ?? [];
           if (ranking.isEmpty) {
             return const Center(
-              child: Text('Nema rezultata za pretragu.'),
+              child: Text('Još nema rangiranih studenata.'),
             );
           }
           return ListView.separated(

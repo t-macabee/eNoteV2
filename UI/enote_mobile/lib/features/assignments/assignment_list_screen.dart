@@ -46,13 +46,15 @@ class _AssignmentListScreenState extends State<AssignmentListScreen>
     String search,
   ) async {
     final result = await context.read<AssignmentProvider>().getPage(
-      params: {
-        'page': page,
-        'pageSize': pageSize,
-        'includeTotalCount': true,
-        if (search.isNotEmpty) 'title': search,
-        if (_pastDueOnly) 'dueBefore': DateTime.now().toIso8601String(),
-      },
+      params: pagedQuery(
+        page,
+        pageSize,
+        search,
+        searchField: 'title',
+        filters: {
+          if (_pastDueOnly) 'dueBefore': DateTime.now().toIso8601String(),
+        },
+      ),
     );
     if (mounted) setState(() => _error = null);
     return result;

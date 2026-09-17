@@ -47,17 +47,19 @@ class _EventListScreenState extends State<EventListScreen>
     String search,
   ) async {
     final result = await context.read<EventProvider>().getPage(
-      params: {
-        'page': page,
-        'pageSize': pageSize,
-        'includeTotalCount': true,
-        if (_from != null) 'from': _from!.toIso8601String(),
-        // `_to` is date-only (midnight); the server filters `StartsAt <= To`,
-        // so send the end of the day to include its events.
-        if (_to != null)
-          'to': DateTime(_to!.year, _to!.month, _to!.day, 23, 59, 59)
-              .toIso8601String(),
-      },
+      params: pagedQuery(
+        page,
+        pageSize,
+        search,
+        filters: {
+          if (_from != null) 'from': _from!.toIso8601String(),
+          // `_to` is date-only (midnight); the server filters `StartsAt <= To`,
+          // so send the end of the day to include its events.
+          if (_to != null)
+            'to': DateTime(_to!.year, _to!.month, _to!.day, 23, 59, 59)
+                .toIso8601String(),
+        },
+      ),
     );
     if (mounted) setState(() => _error = null);
     return result;

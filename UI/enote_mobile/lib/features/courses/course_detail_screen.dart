@@ -54,13 +54,13 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
     String search,
   ) {
     return context.read<LectureProvider>().getPage(
-      params: {
-        'courseId': widget.courseId,
-        'page': page,
-        'pageSize': pageSize,
-        'includeTotalCount': true,
-        if (search.isNotEmpty) 'name': search,
-      },
+      params: pagedQuery(
+        page,
+        pageSize,
+        search,
+        searchField: 'name',
+        filters: {'courseId': widget.courseId},
+      ),
     );
   }
 
@@ -453,7 +453,14 @@ class _LecturesHeaderDelegate extends SliverPersistentHeaderDelegate {
 
   @override
   bool shouldRebuild(_LecturesHeaderDelegate oldDelegate) =>
-      title != oldDelegate.title || showSearch != oldDelegate.showSearch;
+      title != oldDelegate.title ||
+      showSearch != oldDelegate.showSearch ||
+      backgroundColor != oldDelegate.backgroundColor ||
+      textStyle != oldDelegate.textStyle ||
+      // `onToggleSearch` is deliberately not compared: it is an inline
+      // closure with a fresh identity on every parent build, so comparing it
+      // would make the delegate rebuild unconditionally.
+      searchController != oldDelegate.searchController;
 }
 
 class _LectureRow extends StatelessWidget {

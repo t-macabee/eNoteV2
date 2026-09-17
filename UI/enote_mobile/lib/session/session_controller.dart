@@ -57,8 +57,17 @@ class SessionController extends ChangeNotifier {
     return value;
   }
 
-  Future<void> bootstrap() async {
+  /// Drops the cached user so nothing from a previous session is readable —
+  /// on logout, and on every fresh [bootstrap] (the 401 path in `main.dart`
+  /// has no instance; the next `RootShell` mount bootstraps and clears here).
+  void _clearProfile() {
+    _profile = null;
     _bootstrapError = null;
+    _pictureVersion = 0;
+  }
+
+  Future<void> bootstrap() async {
+    _clearProfile();
     try {
       final results = await Future.wait<dynamic>([
         apiClient.get('users/me'),
@@ -82,6 +91,7 @@ class SessionController extends ChangeNotifier {
   }
 
   Future<void> logoutAndRevoke() async {
+    _clearProfile();
     try {
       await apiClient.post('auth/logout');
     } catch (_) {}

@@ -320,6 +320,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               AppDatePickerField(
                 label: 'Datum rođenja',
                 value: _dateOfBirth,
+                lastDate: DateTime.now(),
                 onChanged: (value) => setState(() => _dateOfBirth = value),
               ),
             ],

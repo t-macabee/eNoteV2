@@ -15,6 +15,17 @@ import 'user_details_dialog.dart';
 import 'user_list_item.dart';
 import 'user_provision_form_screen.dart';
 
+/// One month after [from], clamped to the target month's last day.
+///
+/// `DateTime` normalises overflow, so Jan 31 + 1 month would land on Mar 2/3.
+/// Clamping keeps the "Produži članstvo" default inside the intended month.
+DateTime nextMonthClamped(DateTime from) {
+  // Day 0 of the month after next is the last day of the target month;
+  // DateTime normalises month 13/14 into the next year.
+  final lastDay = DateTime(from.year, from.month + 2, 0).day;
+  return DateTime(from.year, from.month + 1, from.day.clamp(1, lastDay));
+}
+
 /// Administrator "Users" tab — card grid of Students + Instructors + StoreEmployees,
 /// filterable by name and role.
 class UserGridScreen extends StatefulWidget {
@@ -69,14 +80,10 @@ class _UserGridScreenState extends State<UserGridScreen> {
   ) async {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    final initialDate = (item.membershipPaidUntil != null &&
-            item.membershipPaidUntil!.isAfter(today))
-        ? DateTime(
-            item.membershipPaidUntil!.year,
-            item.membershipPaidUntil!.month + 1,
-            item.membershipPaidUntil!.day,
-          )
-        : DateTime(now.year, now.month + 1, now.day);
+    final paidUntil = item.membershipPaidUntil;
+    final initialDate = nextMonthClamped(
+      paidUntil != null && paidUntil.isAfter(today) ? paidUntil : now,
+    );
 
     final pickedDate = await showDatePicker(
       context: context,

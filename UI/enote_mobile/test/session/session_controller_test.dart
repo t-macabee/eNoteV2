@@ -196,4 +196,32 @@ void main() {
     expect(controller.bootstrapError, isNull);
     expect(controller.profile?.username, 'student');
   });
+
+  test('F5-03: logoutAndRevoke clears the cached profile state', () async {
+    final http = _StubClient(responses: _bootstrapResponses());
+    final controller = _controller(http);
+    await controller.bootstrap();
+    expect(controller.profile, isNotNull);
+    await controller.reloadProfile();
+    expect(controller.pictureVersion, 1);
+
+    await controller.logoutAndRevoke();
+
+    expect(controller.profile, isNull);
+    expect(controller.bootstrapError, isNull);
+    expect(controller.pictureVersion, 0);
+  });
+
+  test('a failing bootstrap does not keep the previous profile', () async {
+    final http = _StubClient(responses: _bootstrapResponses());
+    final controller = _controller(http);
+    await controller.bootstrap();
+    expect(controller.profile, isNotNull);
+
+    http.responses.remove('GET /api/v1/users/me');
+    await controller.bootstrap();
+
+    expect(controller.profile, isNull);
+    expect(controller.bootstrapError, isNotNull);
+  });
 }
