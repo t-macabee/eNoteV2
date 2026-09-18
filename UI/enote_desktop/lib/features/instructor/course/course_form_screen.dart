@@ -120,7 +120,7 @@ class _CourseFormScreenState extends State<CourseFormScreen> {
           inputFormatters: [
             FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
           ],
-          validator: Validators.nonNegativeDecimal,
+          validator: (value) => Validators.nonNegativeDecimal(value, max: 10000),
         ),
         DateField(
           labelText: 'Datum početka',

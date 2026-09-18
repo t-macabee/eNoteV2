@@ -1,7 +1,5 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
@@ -10,15 +8,6 @@ import 'package:enote_desktop/features/instructor/assignment_submission/submissi
 
 import 'helpers.dart';
 
-class FakeClient extends http.BaseClient {
-  final Future<http.StreamedResponse> Function(http.BaseRequest request) handler;
-
-  FakeClient(this.handler);
-
-  @override
-  Future<http.StreamedResponse> send(http.BaseRequest request) => handler(request);
-}
-
 void main() {
   testWidgets('SubmissionListScreen shows no search bar', (tester) async {
     tester.view.physicalSize = const Size(1400, 1000);
@@ -26,16 +15,13 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    final client = FakeClient((request) async {
-      return http.StreamedResponse(
-        Stream.value(utf8.encode(jsonEncode({
+    final client = ScriptedClient((request) {
+      return jsonResponse({
           'items': [],
           'page': 1,
           'pageSize': 20,
           'totalCount': 0,
-        }))),
-        200,
-      );
+        }, 200);
     });
 
     final authState = AuthState(

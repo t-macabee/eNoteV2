@@ -164,6 +164,27 @@ void main() {
       expect(parseCourseRanking(''), isEmpty);
       expect(parseCourseRanking('  '), isEmpty);
     });
+
+    test('preserves non-ASCII student names', () {
+      final entries = parseCourseRanking(jsonEncode([
+        {
+          'rank': 1,
+          'studentId': 3,
+          'studentName': 'Čedomir Šešić',
+          'averageGrade': 8.0,
+          'gradedSubmissions': 1,
+        },
+      ]));
+
+      expect(entries.single.studentName, 'Čedomir Šešić');
+    });
+
+    test('malformed body throws ApiException, not FormatException', () {
+      expect(
+        () => parseCourseRanking('{"not":"a list"}'),
+        throwsA(isA<ApiException>()),
+      );
+    });
   });
 
   group('RsvpRequest', () {

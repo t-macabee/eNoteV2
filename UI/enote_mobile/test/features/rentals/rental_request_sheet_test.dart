@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
@@ -49,18 +48,11 @@ class _GatedRentalProvider extends RentalProvider {
   }
 }
 
-class _NoopClient extends http.BaseClient {
-  @override
-  Future<http.StreamedResponse> send(http.BaseRequest request) {
-    throw UnimplementedError();
-  }
-}
-
 void main() {
   testWidgets(
       'completing the request after the sheet is dismissed pops nothing',
       (tester) async {
-    final noop = _NoopClient();
+    final noop = ScriptedClient((_) => throw UnimplementedError());
     final authState = AuthState(
       baseUrl: 'http://10.0.2.2:5059/api/v1/',
       tokenReader: () => fakeJwt(),

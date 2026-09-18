@@ -1,38 +1,12 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
 import 'package:enote_desktop/features/instructor/student/instructor_student_details_dialog.dart';
 import 'package:enote_desktop/features/instructor/student/instructor_student_provider.dart';
 
-class _FailingEnrollmentsClient extends http.BaseClient {
-  @override
-  Future<http.StreamedResponse> send(http.BaseRequest request) async {
-    if (request.url.path.endsWith('/enrollments')) {
-      return http.StreamedResponse(
-        Stream.value(utf8.encode('{"message":"boom"}')),
-        500,
-        headers: {'content-type': 'application/json'},
-      );
-    }
-    return http.StreamedResponse(
-      Stream.value(utf8.encode(jsonEncode({
-        'id': 5,
-        'appUserId': 50,
-        'firstName': 'Johann',
-        'lastName': 'Bach',
-        'username': 'jbach',
-        'membershipPaidUntil': '2027-01-01T00:00:00Z',
-      }))),
-      200,
-      headers: {'content-type': 'application/json'},
-    );
-  }
-}
+import 'helpers.dart';
 
 void main() {
   testWidgets('F3-11: failed enrollments fetch shows an inline error',
@@ -40,7 +14,19 @@ void main() {
     final apiClient = ApiClient(
       baseUrl: 'http://localhost:5059/api/v1/',
       authState: AuthState(),
-      httpClient: _FailingEnrollmentsClient(),
+      httpClient: ScriptedClient((request) {
+        if (request.url.path.endsWith('/enrollments')) {
+          return jsonResponse({'message': 'boom'}, 500);
+        }
+        return jsonResponse({
+          'id': 5,
+          'appUserId': 50,
+          'firstName': 'Johann',
+          'lastName': 'Bach',
+          'username': 'jbach',
+          'membershipPaidUntil': '2027-01-01T00:00:00Z',
+        }, 200);
+      }),
     );
 
     final student = StudentDto(

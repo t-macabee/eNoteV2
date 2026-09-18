@@ -2,7 +2,6 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
@@ -10,51 +9,7 @@ import 'package:enote_desktop/features/admin/address/address_provider.dart';
 import 'package:enote_desktop/features/admin/address/address_form_screen.dart';
 import 'package:enote_desktop/features/admin/city/city_provider.dart';
 
-/// Records every request body sent through it and answers each POST with a
-/// minimal valid AddressReferenceDto JSON payload, so [AddressProvider.insert]
-/// succeeds without a real backend.
-class _AddressRecordingHttpClient extends http.BaseClient {
-  final List<String?> postedBodies = [];
-  int _nextId = 1;
-
-  @override
-  Future<http.StreamedResponse> send(http.BaseRequest request) async {
-    if (request.method == 'GET') {
-      final responseJson = jsonEncode({
-        'items': [
-          {'id': 1, 'name': 'Sarajevo'},
-          {'id': 2, 'name': 'Mostar'},
-        ],
-        'page': 1,
-        'pageSize': 100,
-        'totalCount': 2,
-      });
-      final bytes = utf8.encode(responseJson);
-      return http.StreamedResponse(
-        Stream.value(bytes),
-        200,
-        headers: {'content-type': 'application/json'},
-      );
-    }
-
-    final body = request is http.Request ? request.body : null;
-    postedBodies.add(body);
-
-    final responseJson = jsonEncode({
-      'id': _nextId++,
-      'cityId': 1,
-      'city': 'Sarajevo',
-      'street': 'Test ulica',
-      'number': '1',
-    });
-    final bytes = utf8.encode(responseJson);
-    return http.StreamedResponse(
-      Stream.value(bytes),
-      200,
-      headers: {'content-type': 'application/json'},
-    );
-  }
-}
+import 'helpers.dart';
 
 void main() {
   testWidgets(
@@ -62,7 +17,29 @@ void main() {
     'required field validator blocks submission without a stale value',
     (WidgetTester tester) async {
       final authState = AuthState(baseUrl: 'http://localhost:5059/api/v1/');
-      final httpClient = _AddressRecordingHttpClient();
+      final postedBodies = <String?>[];
+      var nextId = 1;
+      final httpClient = ScriptedClient((request) {
+        if (request.method == 'GET') {
+          return jsonResponse(const {
+            'items': [
+              {'id': 1, 'name': 'Sarajevo'},
+              {'id': 2, 'name': 'Mostar'},
+            ],
+            'page': 1,
+            'pageSize': 100,
+            'totalCount': 2,
+          }, 200);
+        }
+        postedBodies.add(request.body);
+        return jsonResponse({
+          'id': nextId++,
+          'cityId': 1,
+          'city': 'Sarajevo',
+          'street': 'Test ulica',
+          'number': '1',
+        }, 200);
+      });
       final apiClient = ApiClient(
         baseUrl: 'http://localhost:5059/api/v1/',
         authState: authState,
@@ -103,8 +80,8 @@ void main() {
       await pickCity('Sarajevo');
       await save();
 
-      expect(httpClient.postedBodies, hasLength(1));
-      final firstBody = jsonDecode(httpClient.postedBodies[0]!) as Map<String, dynamic>;
+      expect(postedBodies, hasLength(1));
+      final firstBody = jsonDecode(postedBodies[0]!) as Map<String, dynamic>;
       expect(firstBody['cityId'], equals(1));
       expect(firstBody['street'], equals('Ulica A'));
       expect(firstBody['number'], equals('10'));
@@ -120,7 +97,7 @@ void main() {
         findsOneWidget,
         reason: 'the city dropdown must show validator error when untouched after reset',
       );
-      expect(httpClient.postedBodies, hasLength(1),
+      expect(postedBodies, hasLength(1),
           reason: 'no stale cityId may reach a second POST');
     },
   );

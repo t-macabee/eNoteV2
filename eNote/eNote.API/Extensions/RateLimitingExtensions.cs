@@ -23,7 +23,7 @@ public static class RateLimitingExtensions
                 }
 
                 var ip = httpContext.Connection.RemoteIpAddress?.ToString() ?? "anon";
-                return RateLimitingExtensions.AuthIpPartition(ip);
+                return RateLimitingExtensions.Window(ip, 60);
             });
 
             options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
@@ -32,23 +32,12 @@ public static class RateLimitingExtensions
         return services;
     }
 
-    public static RateLimitPartition<string> AuthPartition(string key) =>
+    public static RateLimitPartition<string> Window(string key, int permitLimit) =>
         RateLimitPartition.GetFixedWindowLimiter(
             key,
             _ => new FixedWindowRateLimiterOptions
             {
-                PermitLimit = 10,
-                Window = TimeSpan.FromMinutes(1),
-                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
-                QueueLimit = 0
-            });
-
-    public static RateLimitPartition<string> AuthIpPartition(string key) =>
-        RateLimitPartition.GetFixedWindowLimiter(
-            key,
-            _ => new FixedWindowRateLimiterOptions
-            {
-                PermitLimit = 60,
+                PermitLimit = permitLimit,
                 Window = TimeSpan.FromMinutes(1),
                 QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
                 QueueLimit = 0
@@ -71,7 +60,7 @@ public sealed class AuthRateLimiterPolicy : IRateLimiterPolicy<string>
             key = $"user:{identity.Trim().ToLowerInvariant()}";
         }
 
-        return RateLimitingExtensions.AuthPartition(key);
+        return RateLimitingExtensions.Window(key, 10);
     }
 }
 

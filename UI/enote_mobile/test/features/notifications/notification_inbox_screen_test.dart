@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -17,20 +15,6 @@ import 'package:enote_mobile/shell/root_shell.dart';
 import 'package:enote_mobile/theme/app_theme.dart';
 
 import '../../helpers.dart';
-
-Map<String, dynamic> _meJson() => {
-  'role': 'Student',
-  'username': 'student',
-  'email': 'student@enote.com',
-  'profile': {
-    'id': 7,
-    'firstName': 'Student',
-    'lastName': 'Enote',
-    'dateOfBirth': '2001-05-12T00:00:00',
-    'membershipPaidUntil': DateTime.utc(2027, 9, 9).toIso8601String(),
-  },
-  'hasPicture': false,
-};
 
 Map<String, dynamic> _item({
   required int id,
@@ -53,33 +37,16 @@ Map<String, dynamic> _item({
   return map;
 }
 
-class _NotificationStubClient extends http.BaseClient {
-  final List<http.Request> requests = [];
-  final List<Map<String, dynamic>> items;
-  bool allRead = false;
-
-  _NotificationStubClient({required this.items});
-
-  @override
-  Future<http.StreamedResponse> send(http.BaseRequest request) async {
-    if (request is http.Request) {
-      requests.add(request);
-      if (request.method == 'PATCH' &&
-          request.url.path == '/api/v1/student/notifications/read-all') {
-        allRead = true;
-      }
-    }
-    return http.StreamedResponse(
-      Stream.value(utf8.encode(jsonEncode(_bodyFor(request)))),
-      200,
-      headers: {'content-type': 'application/json'},
-    );
-  }
-
-  Map<String, dynamic> _bodyFor(http.BaseRequest request) {
+ScriptedClient _client({required List<Map<String, dynamic>> items}) {
+  var allRead = false;
+  return ScriptedClient((request) {
     final path = request.url.path;
+    if (request.method == 'PATCH' &&
+        path == '/api/v1/student/notifications/read-all') {
+      allRead = true;
+    }
     if (request.method == 'GET' && path == '/api/v1/users/me') {
-      return _meJson();
+      return jsonResponse(meJson(), 200);
     }
     if (request.method == 'GET' &&
         path == '/api/v1/student/notifications/unread-count') {
@@ -87,28 +54,30 @@ class _NotificationStubClient extends http.BaseClient {
       final unread = allRead
           ? 0
           : items.where((item) => item['isRead'] == false).length;
-      return {'unreadCount': unread};
+      return jsonResponse({'unreadCount': unread}, 200);
     }
     if (request.method == 'GET' && path == '/api/v1/student/notifications') {
       final page = int.tryParse(request.url.queryParameters['page'] ?? '1');
       if (page != null && page > 1) {
-        return {'items': [], 'totalCount': items.length};
+        return jsonResponse({'items': [], 'totalCount': items.length}, 200);
       }
       final rendered = allRead
           ? [for (final item in items) {...item, 'isRead': true}]
           : items;
-      return {'items': rendered, 'totalCount': items.length};
+      return jsonResponse({'items': rendered, 'totalCount': items.length}, 200);
     }
-    return {'message': 'OK'};
-  }
+    return jsonResponse({'message': 'OK'}, 200);
+  });
+}
 
+extension on ScriptedClient {
   List<http.Request> where(String method, String path) => requests
       .where((r) => r.method == method && r.url.path == path)
       .toList();
 }
 
 class _Harness {
-  late final _NotificationStubClient client;
+  late final ScriptedClient client;
   late final AuthState authState;
   late final ApiClient apiClient;
   late final NotificationController notifications;
@@ -117,7 +86,7 @@ class _Harness {
   final navigatorKey = GlobalKey<NavigatorState>();
 
   _Harness({required List<Map<String, dynamic>> items}) {
-    client = _NotificationStubClient(items: items);
+    client = _client(items: items);
     authState = AuthState(
       baseUrl: 'http://10.0.2.2:5059/api/v1/',
       tokenReader: () => fakeJwt(),

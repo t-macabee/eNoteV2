@@ -2,7 +2,6 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
@@ -11,54 +10,6 @@ import 'package:enote_mobile/session/session_controller.dart';
 import 'package:enote_mobile/widgets/async_state_view.dart';
 
 import '../../helpers.dart';
-
-class _ProfileTestClient extends http.BaseClient {
-  int statusCode;
-  final Map<String, dynamic> successBody;
-
-  _ProfileTestClient({
-    required this.statusCode,
-    required this.successBody,
-  });
-
-  @override
-  Future<http.StreamedResponse> send(http.BaseRequest request) async {
-    final path = request.url.path;
-    if (path.endsWith('users/me')) {
-      if (statusCode >= 400) {
-        return http.StreamedResponse(
-          Stream.value(utf8.encode('{"message":"Greška"}')),
-          statusCode,
-          headers: {'content-type': 'application/json'},
-        );
-      }
-      return http.StreamedResponse(
-        Stream.value(utf8.encode(jsonEncode(successBody))),
-        200,
-        headers: {'content-type': 'application/json'},
-      );
-    }
-    if (path.endsWith('notifications/unread-count')) {
-      return http.StreamedResponse(
-        Stream.value(utf8.encode('{"unreadCount":0}')),
-        200,
-        headers: {'content-type': 'application/json'},
-      );
-    }
-    if (path.endsWith('notifications')) {
-      return http.StreamedResponse(
-        Stream.value(utf8.encode('{"items":[],"totalCount":0}')),
-        200,
-        headers: {'content-type': 'application/json'},
-      );
-    }
-    return http.StreamedResponse(
-      Stream.value(utf8.encode('{}')),
-      200,
-      headers: {'content-type': 'application/json'},
-    );
-  }
-}
 
 void main() {
   testWidgets(
@@ -76,10 +27,23 @@ void main() {
         'hasPicture': false,
       };
 
-      final client = _ProfileTestClient(
-        statusCode: 500,
-        successBody: successBody,
-      );
+      var statusCode = 500;
+      final client = ScriptedClient((request) {
+        final path = request.url.path;
+        if (path.endsWith('users/me')) {
+          if (statusCode >= 400) {
+            return jsonResponse('{"message":"Greška"}', statusCode);
+          }
+          return jsonResponse(jsonEncode(successBody), 200);
+        }
+        if (path.endsWith('notifications/unread-count')) {
+          return jsonResponse('{"unreadCount":0}', 200);
+        }
+        if (path.endsWith('notifications')) {
+          return jsonResponse('{"items":[],"totalCount":0}', 200);
+        }
+        return jsonResponse('{}', 200);
+      });
 
       final authState = AuthState(
         baseUrl: 'http://10.0.2.2:5059/api/v1/',
@@ -116,7 +80,7 @@ void main() {
       expect(find.text('Pokušaj ponovo'), findsOneWidget);
       expect(find.text('Student Enote'), findsNothing);
 
-      client.statusCode = 200;
+      statusCode = 200;
       await tester.tap(find.text('Pokušaj ponovo'));
       await tester.pumpAndSettle();
 

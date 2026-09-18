@@ -93,34 +93,11 @@ ios/Runner/GeneratedPluginRegistrant.*
 .claude/
 CLAUDE.md
 .tokensave/
-.semantic/
-.lurp/
 .mcp.json
-docs/mobile/
-investigation-*.md
-.repograph/
 index.db
-opencode.json
-PROGRESS.md
-
-# Generated / local agent artifacts
-graphify*/
-**/scripts/
-
-# Added by code-review-graph
-.code-review-graph/
-/.clinerules/workflow
-/eNote/Phase1_ComponentInventory.md
-/eNote/Phase2_ContractAdherenceAudit.md
-/eNote/docs/audit/Phase3_CorrectnessSecurityReview.md
 
 # Node / headroom MCP (dev tooling, not part of the project)
 node_modules/
 package.json
 package-lock.json
 
-
-
-
-# Local repo map (generated, not committed)
-docs/repo-map.md

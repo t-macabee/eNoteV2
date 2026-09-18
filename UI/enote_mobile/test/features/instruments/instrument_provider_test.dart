@@ -20,28 +20,6 @@ const _instrument = {
   'isAvailable': true,
 };
 
-/// Returns a raw body (a JSON array or a failure) rather than the object
-/// [RecordingHttpClient] serialises.
-class _RawBodyClient extends http.BaseClient {
-  final List<http.Request> requests = [];
-  final int statusCode;
-  final String body;
-  final Object? throwOnSend;
-
-  _RawBodyClient({this.statusCode = 200, this.body = '[]', this.throwOnSend});
-
-  @override
-  Future<http.StreamedResponse> send(http.BaseRequest request) async {
-    requests.add(request as http.Request);
-    if (throwOnSend != null) throw throwOnSend!;
-    return http.StreamedResponse(
-      Stream.value(utf8.encode(body)),
-      statusCode,
-      headers: {'content-type': 'application/json'},
-    );
-  }
-}
-
 InstrumentProvider _provider(http.Client client) {
   final authState = AuthState(
     baseUrl: _baseUrl,
@@ -122,14 +100,17 @@ void main() {
 
   test('recommended reads student/instruments/recommended with the count',
       () async {
-    final client = _RawBodyClient(
-      body: jsonEncode([
-        {
-          'instrument': _instrument,
-          'score': 0.82,
-          'reasons': ['Pregledali ste slične instrumente', 'Popularno'],
-        },
-      ]),
+    final client = ScriptedClient(
+      (_) => jsonResponse(
+        jsonEncode([
+          {
+            'instrument': _instrument,
+            'score': 0.82,
+            'reasons': ['Pregledali ste slične instrumente', 'Popularno'],
+          },
+        ]),
+        200,
+      ),
     );
     final provider = _provider(client);
     final recommendations = await provider.recommended();
@@ -146,11 +127,24 @@ void main() {
   });
 
   test('recommended sends the requested count', () async {
-    final client = _RawBodyClient();
+    final client = ScriptedClient((_) => jsonResponse('[]', 200));
     final provider = _provider(client);
     await provider.recommended(count: 3);
 
     expect(client.requests.single.url.queryParameters, {'count': '3'});
+  });
+
+  test('recommended rejects a non-list body through decodeListOrThrow',
+      () async {
+    final client = ScriptedClient(
+      (_) => jsonResponse('{"message":"not a list"}', 200),
+    );
+    final provider = _provider(client);
+
+    await expectLater(
+      provider.recommended(),
+      throwsA(isA<ApiException>()),
+    );
   });
 
   test('recordView posts to student/instruments/{id}/view', () async {
@@ -163,14 +157,16 @@ void main() {
   });
 
   test('recordView swallows a transport failure', () async {
-    final client = _RawBodyClient(throwOnSend: const SocketFailure());
+    final client = ScriptedClient((_) => throw const SocketFailure());
     final provider = _provider(client);
 
     await expectLater(provider.recordView(7), completes);
   });
 
   test('recordView swallows an error status', () async {
-    final client = _RawBodyClient(statusCode: 500, body: '{"message":"Greška"}');
+    final client = ScriptedClient(
+      (_) => jsonResponse('{"message":"Greška"}', 500),
+    );
     final provider = _provider(client);
 
     await expectLater(provider.recordView(7), completes);

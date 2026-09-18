@@ -3,7 +3,6 @@ using eNote.Application.Constants;
 using eNote.Contracts.Assignments;
 using eNote.Domain.Entities.Communication;
 using MassTransit;
-using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Worker.Consumers;
@@ -22,10 +21,7 @@ public sealed class SubmissionGradedConsumer(IAppDbContext dbContext, ILogger<Su
         {
             await dbContext.SaveChangesAsync(context.CancellationToken);
         }
-        catch (DbUpdateException ex) when (ex.InnerException is SqlException
-        {
-            Number: 2601 or 2627
-        } sqlEx && sqlEx.Message.Contains(DbConstraintNames.NotificationUserSubmissionCreatedAtUniqueIndex))
+        catch (DbUpdateException ex) when (DbErrors.IsUniqueViolation(ex, DbConstraintNames.NotificationUserSubmissionCreatedAtUniqueIndex))
         {
             logger.LogWarning("Skipping duplicate submission-graded notification for submission {SubmissionId} and user {UserId}.", message.SubmissionId, message.StudentUserId);
             return;

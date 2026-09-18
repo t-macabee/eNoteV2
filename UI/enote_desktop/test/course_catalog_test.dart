@@ -7,26 +7,12 @@ import 'package:enote_core/enote_core.dart';
 import 'package:enote_desktop/features/instructor/course/course_catalog_provider.dart';
 import 'package:enote_desktop/features/instructor/student/instructor_student_provider.dart';
 
-class _MockHttpClient extends http.BaseClient {
-  final Future<http.Response> Function(http.BaseRequest request) _handler;
-
-  _MockHttpClient(this._handler);
-
-  @override
-  Future<http.StreamedResponse> send(http.BaseRequest request) async {
-    final response = await _handler(request);
-    return http.StreamedResponse(
-      Stream.value(utf8.encode(response.body)),
-      response.statusCode,
-      headers: {'content-type': 'application/json'},
-    );
-  }
-}
+import 'helpers.dart';
 
 void main() {
   group('CourseCatalogProvider', () {
     test('getCatalogInstructors fetches from instructor/courses/catalog/instructors', () async {
-      final mockClient = _MockHttpClient((req) async {
+      final mockClient = ScriptedClient((req) async {
         expect(req.url.path, '/api/v1/instructor/courses/catalog/instructors');
         expect(req.method, 'GET');
         return http.Response(
@@ -54,7 +40,7 @@ void main() {
       expect(instructors[1].name, 'Maestro Guitar');
     });
 
-    test('getCatalogSummary fetches from instructor/courses/catalog/summary', () async {      final mockClient = _MockHttpClient((req) async {
+    test('getCatalogSummary fetches from instructor/courses/catalog/summary', () async {      final mockClient = ScriptedClient((req) async {
         expect(req.url.path, '/api/v1/instructor/courses/catalog/summary');
         expect(req.method, 'GET');
         return http.Response(
@@ -81,7 +67,7 @@ void main() {
 
     test('F3-05: malformed 200 maps to ApiException, not FormatException',
         () async {
-      final mockClient = _MockHttpClient((req) async {
+      final mockClient = ScriptedClient((req) async {
         return http.Response('not-json{{{', 200);
       });
 
@@ -101,7 +87,7 @@ void main() {
 
   group('InstructorStudentProvider.getEnrollments', () {
     test('getEnrollments fetches from instructor/students/{id}/enrollments', () async {
-      final mockClient = _MockHttpClient((req) async {
+      final mockClient = ScriptedClient((req) async {
         expect(req.url.path, '/api/v1/instructor/students/42/enrollments');
         expect(req.method, 'GET');
         return http.Response(

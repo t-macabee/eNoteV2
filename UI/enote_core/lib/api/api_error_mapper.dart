@@ -94,6 +94,7 @@ class ApiErrorMapper {
       403 => 'Nemate pristup ovom resursu.',
       404 => 'Resurs nije pronađen.',
       409 => 'Sukob podataka.',
+      429 => 'Previše pokušaja. Pokušajte ponovo za minut.',
       >= 500 => 'Greška na serveru. Pokušajte ponovo kasnije.',
       _ => 'Došlo je do greške. Pokušajte ponovo.',
     };

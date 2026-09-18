@@ -53,12 +53,11 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
       _errorMessage = null;
     });
     try {
-      final newPassword = _newController.text;
       await provider.changePassword(
         ChangePasswordRequest(
           currentPassword: _currentController.text,
-          newPassword: newPassword,
-          confirmNewPassword: newPassword,
+          newPassword: _newController.text,
+          confirmNewPassword: _confirmController.text,
         ),
       );
       if (!mounted) return;

@@ -1,5 +1,4 @@
 using eNote.API.Controllers.Base;
-using eNote.Application.Common.Localization;
 using eNote.Application.Common.Paging;
 using eNote.Application.Constants;
 using eNote.Application.Features.Identity.Employees;
@@ -30,7 +29,7 @@ public sealed class ShopEmployeeController(
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    public async Task<ActionResult> Create(
+    public async Task<IActionResult> Create(
         [FromBody] DelegatedUserCreateRequest request,
         CancellationToken cancellationToken)
     {
@@ -38,7 +37,7 @@ public sealed class ShopEmployeeController(
 
         if (error is not null)
         {
-            return BadRequest(new { message = error });
+            return MapError(error);
         }
 
         return StatusCode(StatusCodes.Status201Created, new { userId });
@@ -54,17 +53,7 @@ public sealed class ShopEmployeeController(
         var (success, error) = await employeeService.SetEmployeeActiveByManagerAsync(id, request.IsActive, cancellationToken);
         if (!success)
         {
-            if (error == Messages.NotFound)
-            {
-                return NotFound(new { message = error });
-            }
-
-            if (error == Messages.CannotModifyOwnAccount)
-            {
-                return Conflict(new { message = error });
-            }
-
-            return BadRequest(new { message = error });
+            return MapError(error);
         }
         return NoContent();
     }

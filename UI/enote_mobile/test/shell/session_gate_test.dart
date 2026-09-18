@@ -16,45 +16,32 @@ import 'package:enote_mobile/shell/session_gate.dart';
 
 import '../helpers.dart';
 
-class _GateStubClient extends http.BaseClient {
-  final List<String> sent = [];
-
-  @override
-  Future<http.StreamedResponse> send(http.BaseRequest request) async {
-    sent.add('${request.method} ${request.url.path}');
-    final body = _bodyFor(request);
-    return http.StreamedResponse(
-      Stream.value(utf8.encode(jsonEncode(body))),
-      200,
-      headers: {'content-type': 'application/json'},
-    );
-  }
-
-  Map<String, dynamic> _bodyFor(http.BaseRequest request) {
-    switch (request.url.path) {
-      case '/api/v1/users/me':
-        return {
-          'role': 'Student',
-          'username': 'student',
-          'email': 'student@enote.com',
-          'profile': {'id': 7},
-          'hasPicture': false,
-        };
-      case '/api/v1/student/notifications/unread-count':
-        return {'unreadCount': 0};
-      case '/api/v1/student/notifications':
-        return {
-          'items': [],
-          'totalCount': 0,
-        };
-      default:
-        return {'message': 'OK'};
-    }
+Map<String, dynamic> _gateBody(http.Request request) {
+  switch (request.url.path) {
+    case '/api/v1/users/me':
+      return {
+        'role': 'Student',
+        'username': 'student',
+        'email': 'student@enote.com',
+        'profile': {'id': 7},
+        'hasPicture': false,
+      };
+    case '/api/v1/student/notifications/unread-count':
+      return {'unreadCount': 0};
+    case '/api/v1/student/notifications':
+      return {
+        'items': [],
+        'totalCount': 0,
+      };
+    default:
+      return {'message': 'OK'};
   }
 }
 
 Widget _gate({String? token}) {
-  final stub = _GateStubClient();
+  final stub = ScriptedClient(
+    (request) => jsonResponse(jsonEncode(_gateBody(request)), 200),
+  );
   final authState = AuthState(
     baseUrl: 'http://10.0.2.2:5059/api/v1/',
     tokenReader: () => token,

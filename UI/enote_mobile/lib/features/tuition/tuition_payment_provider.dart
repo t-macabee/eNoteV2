@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:enote_core/enote_core.dart';
 
 import '../payments/payment_polling.dart' as polling;
@@ -39,16 +37,7 @@ class TuitionPaymentProvider {
     final response = await apiClient.get(
       'student/enrollments/$enrollmentId/tuition/history',
     );
-    throwIfError(response);
-    final decoded = jsonDecode(response.body);
-    if (decoded is! List) return const [];
-    return decoded
-        .map(
-          (item) => CoursePaymentDto.fromJson(
-            Map<String, dynamic>.from(item as Map),
-          ),
-        )
-        .toList();
+    return decodeList(response, CoursePaymentDto.fromJson);
   }
 
   /// Delegates to [polling.pollUntilSucceeded].

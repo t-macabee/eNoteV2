@@ -232,7 +232,7 @@ class _LectureFormScreenState extends State<LectureFormScreen> {
   String? _validateCapacity(String? value) {
     if (value == null || value.trim().isEmpty) return null;
     final parsed = int.tryParse(value.trim());
-    if (parsed == null || parsed < 0) return 'Unesite nenegativan broj.';
+    if (parsed == null || parsed <= 0) return 'Unesite pozitivan broj.';
     return null;
   }
 }

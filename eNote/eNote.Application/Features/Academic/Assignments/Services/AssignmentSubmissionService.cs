@@ -185,7 +185,7 @@ public sealed class AssignmentSubmissionService(
         {
             await context.SaveChangesAsync(cancellationToken);
         }
-        catch (DbUpdateException ex) when (ex.InnerException?.Message?.Contains(DbConstraintNames.AssignmentSubmissionAssignmentIdStudentIdUniqueIndex) == true)
+        catch (DbUpdateException ex) when (DbErrors.IsUniqueViolation(ex, DbConstraintNames.AssignmentSubmissionAssignmentIdStudentIdUniqueIndex))
         {
             throw new ConflictException(Messages.AssignmentAlreadySubmitted);
         }

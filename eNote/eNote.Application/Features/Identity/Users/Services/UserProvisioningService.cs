@@ -18,141 +18,57 @@ public sealed class UserProvisioningService(
 {
     public async Task<(RegistrationResult? Registration, string? Error)> RegisterStudentAsync(RegisterRequest request, CancellationToken cancellationToken = default)
     {
-        try
+        (var userId, var error) = await ProvisionCoreAsync(
+            request.Username,
+            request.Email,
+            request.Password,
+            request.FirstName,
+            request.LastName,
+            AppRoles.Student,
+            musicStoreId: null,
+            isManager: null,
+            cancellationToken);
+
+        if (error is not null)
         {
-            return await context.ExecuteInTransactionAsync(async () =>
-            {
-                (int? UserId, string? Error) createResult = await accountService.CreateUserAsync(
-                    request.Username,
-                    request.Email,
-                    request.Password,
-                    request.FirstName,
-                    request.LastName,
-                    cancellationToken);
-
-                if (createResult.UserId is null)
-                {
-                    return ((RegistrationResult?)null, createResult.Error);
-                }
-
-                var userId = createResult.UserId.Value;
-
-                (var Success, var Error) = await accountService.AssignSingleRoleAsync(userId, AppRoles.Student, cancellationToken);
-
-                if (!Success)
-                {
-                    throw new BusinessException(Error);
-                }
-
-                await EnsureRoleProfileAsync(userId, AppRoles.Student, null, cancellationToken);
-                await context.SaveChangesAsync(cancellationToken);
-
-                return (new RegistrationResult(userId, request.Username.Trim(), [AppRoles.Student]), (string?)null);
-            }, cancellationToken);
+            return (null, error);
         }
-        catch (BusinessException exception)
-        {
-            return (null, exception.Message);
-        }
+
+        return (new RegistrationResult(userId, request.Username.Trim(), [AppRoles.Student]), null);
     }
 
     public async Task<(int UserId, string? Error)> ProvisionUserAsync(UserProvisionRequest request, CancellationToken cancellationToken = default)
     {
-        try
+        if (request.Role == AppRoles.StoreEmployee && request.MusicStoreId is null)
         {
-            return await context.ExecuteInTransactionAsync(async () =>
-            {
-                if (request.Role == AppRoles.StoreEmployee && request.MusicStoreId is null)
-                {
-                    return (0, Messages.MusicStoreRequiredForEmployee);
-                }
-
-                var username = request.Username.Trim();
-                var existingUserId = await accountService.FindUserIdByUsernameAsync(username, cancellationToken);
-
-                if (existingUserId.HasValue)
-                {
-                    return (0, Messages.UsernameTaken);
-                }
-
-                (int? UserId, string? Error) createResult = await accountService.CreateUserAsync(
-                    username,
-                    request.Email,
-                    request.Password,
-                    request.FirstName,
-                    request.LastName,
-                    cancellationToken);
-
-                if (createResult.UserId is null)
-                {
-                    return (0, createResult.Error);
-                }
-
-                var userId = createResult.UserId.Value;
-
-                (var Success, var Error) = await accountService.AssignSingleRoleAsync(userId, request.Role, cancellationToken);
-
-                if (!Success)
-                {
-                    throw new BusinessException(Error);
-                }
-
-                await EnsureRoleProfileAsync(userId, request.Role, request.MusicStoreId, cancellationToken, request.IsManager);
-
-                await context.SaveChangesAsync(cancellationToken);
-
-                return (userId, (string?)null);
-            }, cancellationToken);
+            return (0, Messages.MusicStoreRequiredForEmployee);
         }
-        catch (BusinessException exception)
-        {
-            return (0, exception.Message);
-        }
+
+        return await ProvisionCoreAsync(
+            request.Username,
+            request.Email,
+            request.Password,
+            request.FirstName,
+            request.LastName,
+            request.Role,
+            request.MusicStoreId,
+            request.IsManager,
+            cancellationToken);
     }
 
-    public async Task<(int UserId, string? Error)> ProvisionStudentByInstructorAsync(
+    public Task<(int UserId, string? Error)> ProvisionStudentByInstructorAsync(
         DelegatedUserCreateRequest request,
-        CancellationToken cancellationToken = default)
-    {
-        try
-        {
-            return await context.ExecuteInTransactionAsync(async () =>
-            {
-                var username = request.Username.Trim();
-                (int? userId, string? error) = await accountService.CreateUserAsync(
-                    username,
-                    request.Email.Trim(),
-                    request.Password,
-                    request.FirstName?.Trim(),
-                    request.LastName?.Trim(),
-                    cancellationToken);
-
-                if (userId is null)
-                {
-                    return (0, error);
-                }
-
-                (var success, var roleError) = await accountService.AssignSingleRoleAsync(
-                    userId.Value,
-                    AppRoles.Student,
-                    cancellationToken);
-
-                if (!success)
-                {
-                    throw new BusinessException(roleError);
-                }
-
-                await EnsureRoleProfileAsync(userId.Value, AppRoles.Student, null, cancellationToken);
-                await context.SaveChangesAsync(cancellationToken);
-
-                return (userId.Value, (string?)null);
-            }, cancellationToken);
-        }
-        catch (BusinessException exception)
-        {
-            return (0, exception.Message);
-        }
-    }
+        CancellationToken cancellationToken = default) =>
+        ProvisionCoreAsync(
+            request.Username,
+            request.Email,
+            request.Password,
+            request.FirstName,
+            request.LastName,
+            AppRoles.Student,
+            musicStoreId: null,
+            isManager: null,
+            cancellationToken);
 
     public async Task<(int UserId, string? Error)> ProvisionEmployeeByManagerAsync(
         DelegatedUserCreateRequest request,
@@ -165,41 +81,67 @@ public sealed class UserProvisioningService(
 
         var currentEmployee = await UserProfileLookup.EnsureManagerAsync(context, currentUserContext.UserId, cancellationToken);
 
-        var storeId = currentEmployee.MusicStoreId;
+        return await ProvisionCoreAsync(
+            request.Username,
+            request.Email,
+            request.Password,
+            request.FirstName,
+            request.LastName,
+            AppRoles.StoreEmployee,
+            currentEmployee.MusicStoreId,
+            isManager: false,
+            cancellationToken);
+    }
 
+    private async Task<(int UserId, string? Error)> ProvisionCoreAsync(
+        string username,
+        string email,
+        string password,
+        string? firstName,
+        string? lastName,
+        string role,
+        int? musicStoreId,
+        bool? isManager,
+        CancellationToken cancellationToken)
+    {
         try
         {
             return await context.ExecuteInTransactionAsync(async () =>
             {
-                var username = request.Username.Trim();
+                var normalizedUsername = username.Trim();
+                var existingUserId = await accountService.FindUserIdByUsernameAsync(normalizedUsername, cancellationToken);
 
-                (int? userId, string? error) = await accountService.CreateUserAsync(
-                    username,
-                    request.Email.Trim(),
-                    request.Password,
-                    request.FirstName?.Trim(),
-                    request.LastName?.Trim(),
-                    cancellationToken);
-
-                if (userId is null)
+                if (existingUserId.HasValue)
                 {
-                    return (0, error);
+                    return (0, Messages.UsernameTaken);
                 }
 
-                (var success, var roleError) = await accountService.AssignSingleRoleAsync(
-                    userId.Value,
-                    AppRoles.StoreEmployee,
+                (int? UserId, string? Error) createResult = await accountService.CreateUserAsync(
+                    normalizedUsername,
+                    email.Trim(),
+                    password,
+                    firstName?.Trim(),
+                    lastName?.Trim(),
                     cancellationToken);
+
+                if (createResult.UserId is null)
+                {
+                    return (0, createResult.Error);
+                }
+
+                var userId = createResult.UserId.Value;
+
+                (var success, var roleError) = await accountService.AssignSingleRoleAsync(userId, role, cancellationToken);
 
                 if (!success)
                 {
                     throw new BusinessException(roleError);
                 }
 
-                await EnsureRoleProfileAsync(userId.Value, AppRoles.StoreEmployee, storeId, cancellationToken, isManager: false);
+                await EnsureRoleProfileAsync(userId, role, musicStoreId, cancellationToken, isManager);
                 await context.SaveChangesAsync(cancellationToken);
 
-                return (userId.Value, (string?)null);
+                return (userId, (string?)null);
             }, cancellationToken);
         }
         catch (BusinessException exception)

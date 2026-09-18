@@ -55,6 +55,13 @@ void main() {
       expect(ApiErrorMapper.mapError(401, ''), contains('istekla'));
     });
 
+    test('429 default spells the rate-limit wording', () {
+      expect(
+        ApiErrorMapper.mapError(429, ''),
+        'Previše pokušaja. Pokušajte ponovo za minut.',
+      );
+    });
+
     test('ApiError.fromJson parses errors map', () {
       final error = ApiError.fromJson({
         'status': 400,

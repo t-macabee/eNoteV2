@@ -11,8 +11,9 @@ class Validators {
     if (value == null || value.trim().isEmpty) {
       return 'Email adresa je obavezna.';
     }
-    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,}$');
-    if (!emailRegex.hasMatch(value.trim())) {
+    final trimmed = value.trim();
+    final atIndex = trimmed.indexOf('@');
+    if (atIndex <= 0 || !trimmed.substring(atIndex + 1).contains('.')) {
       return 'Unesite važeću email adresu.';
     }
     return null;
@@ -23,19 +24,19 @@ class Validators {
       return 'Lozinka je obavezna.';
     }
     if (value.length < 8) {
-      return 'Lozinka mora imati najmanje 8 karaktera.';
+      return 'Lozinka mora imati najmanje 8 znakova.';
     }
-    if (!RegExp(r'[A-Z]').hasMatch(value)) {
-      return 'Lozinka mora sadržati najmanje jedno veliko slovo.';
+    if (!RegExp(r'\p{Lu}', unicode: true).hasMatch(value)) {
+      return 'Lozinka mora sadržavati najmanje jedno veliko slovo.';
     }
-    if (!RegExp(r'[a-z]').hasMatch(value)) {
-      return 'Lozinka mora sadržati najmanje jedno malo slovo.';
+    if (!RegExp(r'\p{Ll}', unicode: true).hasMatch(value)) {
+      return 'Lozinka mora sadržavati najmanje jedno malo slovo.';
     }
-    if (!RegExp(r'[0-9]').hasMatch(value)) {
-      return 'Lozinka mora sadržati najmanje jednu cifru.';
+    if (!RegExp(r'\d').hasMatch(value)) {
+      return 'Lozinka mora sadržavati najmanje jednu cifru.';
     }
-    if (!RegExp(r'[!@#$%^&*(),.?":{}|<>]').hasMatch(value)) {
-      return 'Lozinka mora sadržati najmanje jedan specijalni karakter.';
+    if (!RegExp(r'[^\p{L}\p{Nd}]', unicode: true).hasMatch(value)) {
+      return 'Lozinka mora sadržavati najmanje jedan specijalni znak.';
     }
     return null;
   }
@@ -48,7 +49,7 @@ class Validators {
           return 'Potvrdite lozinku.';
         }
         if (value != password()) {
-          return 'Lozinka i potvrda se ne poklapaju.';
+          return 'Lozinke se ne podudaraju.';
         }
         return null;
       };
@@ -64,16 +65,19 @@ class Validators {
     return null;
   }
 
-  static String? nonNegativeDecimal(String? value) {
+  static String? nonNegativeDecimal(String? value, {double? max}) {
     if (value == null || value.trim().isEmpty) {
-      return 'Vrednost je obavezna.';
+      return 'Vrijednost je obavezna.';
     }
     final parsed = double.tryParse(value.trim().replaceAll(',', '.'));
     if (parsed == null) {
       return 'Unesite važeći broj.';
     }
     if (parsed < 0) {
-      return 'Vrednost ne sme biti negativna.';
+      return 'Vrijednost ne smije biti negativna.';
+    }
+    if (max != null && parsed > max) {
+      return 'Vrijednost ne smije biti veća od ${max.toStringAsFixed(0)}.';
     }
     return null;
   }

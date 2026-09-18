@@ -44,7 +44,7 @@ public sealed class TokenRevocationService(IAppDbContext context, IClock clock, 
         {
             await context.SaveChangesAsync(cancellationToken);
         }
-        catch (DbUpdateException ex) when (ex.InnerException?.Message?.Contains(DbConstraintNames.RevokedTokenJtiUniqueIndex) == true)
+        catch (DbUpdateException ex) when (DbErrors.IsUniqueViolation(ex, DbConstraintNames.RevokedTokenJtiUniqueIndex))
         {
             return;
         }

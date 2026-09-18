@@ -1,8 +1,5 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
@@ -11,27 +8,13 @@ import 'package:enote_desktop/features/profile/profile_provider.dart';
 
 import 'helpers.dart';
 
-class _RecordingPasswordClient extends http.BaseClient {
-  int putCount = 0;
-
-  @override
-  Future<http.StreamedResponse> send(http.BaseRequest request) async {
-    if (request.method == 'PUT') putCount++;
-    return http.StreamedResponse(
-      Stream.value(utf8.encode(jsonEncode({'message': 'OK'}))),
-      200,
-      headers: {'content-type': 'application/json'},
-    );
-  }
-}
-
-Future<_RecordingPasswordClient> _pumpDialog(WidgetTester tester) async {
+Future<ScriptedClient> _pumpDialog(WidgetTester tester) async {
   tester.view.physicalSize = const Size(1400, 900);
   tester.view.devicePixelRatio = 1.0;
   addTearDown(tester.view.resetPhysicalSize);
   addTearDown(tester.view.resetDevicePixelRatio);
 
-  final client = _RecordingPasswordClient();
+  final client = ScriptedClient((_) => jsonResponse({'message': 'OK'}, 200));
   final authState = AuthState(
     baseUrl: 'http://localhost:5059/api/v1/',
     tokenReader: () => fakeJwt(),
@@ -91,10 +74,10 @@ void main() {
     await _save(tester);
 
     expect(
-      find.text('Lozinka mora imati najmanje 8 karaktera.'),
+      find.text('Lozinka mora imati najmanje 8 znakova.'),
       findsOneWidget,
     );
-    expect(client.putCount, equals(0));
+    expect(client.requests.where((r) => r.method == 'PUT'), isEmpty);
   });
 
   testWidgets(
@@ -115,9 +98,9 @@ void main() {
     await _save(tester);
 
     expect(
-      find.text('Lozinka i potvrda se ne poklapaju.'),
+      find.text('Lozinke se ne podudaraju.'),
       findsOneWidget,
     );
-    expect(client.putCount, equals(0));
+    expect(client.requests.where((r) => r.method == 'PUT'), isEmpty);
   });
 }

@@ -1,7 +1,5 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
@@ -9,15 +7,6 @@ import 'package:enote_desktop/features/store_employee/rental/rental_detail_scree
 import 'package:enote_desktop/features/store_employee/rental/rental_provider.dart';
 
 import 'helpers.dart';
-
-class FakeClient extends http.BaseClient {
-  final Future<http.StreamedResponse> Function(http.BaseRequest request) handler;
-
-  FakeClient(this.handler);
-
-  @override
-  Future<http.StreamedResponse> send(http.BaseRequest request) => handler(request);
-}
 
 void main() {
   testWidgets(
@@ -28,11 +17,10 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    final client = FakeClient((request) async {
+    final client = ScriptedClient((request) {
       final path = request.url.path;
       if (path.endsWith('/payments')) {
-        return http.StreamedResponse(
-          Stream.value(utf8.encode(jsonEncode({
+        return jsonResponse({
             'id': 9,
             'rentalId': 5,
             'paymentIntentId': 'pi_1',
@@ -41,12 +29,9 @@ void main() {
             'status': 'PartiallyRefunded',
             'refundedCents': 100,
             'refundedAt': null,
-          }))),
-          200,
-        );
+          }, 200);
       }
-      return http.StreamedResponse(
-        Stream.value(utf8.encode(jsonEncode({
+      return jsonResponse({
           'id': 5,
           'instrumentId': 1,
           'musicStoreId': 1,
@@ -62,9 +47,7 @@ void main() {
           'isPaid': true,
           'amountPaid': 10.0,
           'paidAt': DateTime.now().toIso8601String(),
-        }))),
-        200,
-      );
+        }, 200);
     });
 
     final authState = AuthState(

@@ -2,7 +2,6 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
@@ -13,52 +12,26 @@ import 'package:enote_mobile/theme/app_theme.dart';
 
 import '../../helpers.dart';
 
-Map<String, dynamic> _meJson({bool hasPicture = false}) => {
-  'role': 'Student',
-  'username': 'student',
-  'email': 'student@enote.com',
-  'profile': {
-    'id': 7,
-    'firstName': 'Student',
-    'lastName': 'Enote',
-    'dateOfBirth': '2001-05-12T00:00:00',
-    'membershipPaidUntil': DateTime.utc(2027, 9, 9).toIso8601String(),
-  },
-  'hasPicture': hasPicture,
-};
-
-class _ProfileStubClient extends http.BaseClient {
-  final List<http.Request> jsonRequests = [];
-
-  @override
-  Future<http.StreamedResponse> send(http.BaseRequest request) async {
-    if (request is http.Request) {
-      jsonRequests.add(request);
-    }
-    final body = _bodyFor(request.method, request.url.path);
-    return http.StreamedResponse(
-      Stream.value(utf8.encode(jsonEncode(body))),
-      200,
-      headers: {'content-type': 'application/json'},
-    );
-  }
-
-  Map<String, dynamic> _bodyFor(String method, String path) {
-    switch ('$method $path') {
-      case 'GET /api/v1/users/me':
-        return _meJson();
-      case 'GET /api/v1/student/notifications/unread-count':
-        return {'unreadCount': 0};
-      case 'GET /api/v1/student/notifications':
-        return {'items': [], 'totalCount': 0};
-      default:
-        return {'message': 'OK'};
-    }
+Map<String, dynamic> _bodyFor(String method, String path) {
+  switch ('$method $path') {
+    case 'GET /api/v1/users/me':
+      return meJson();
+    case 'GET /api/v1/student/notifications/unread-count':
+      return {'unreadCount': 0};
+    case 'GET /api/v1/student/notifications':
+      return {'items': [], 'totalCount': 0};
+    default:
+      return {'message': 'OK'};
   }
 }
 
 class _Harness {
-  final _ProfileStubClient client = _ProfileStubClient();
+  final ScriptedClient client = ScriptedClient(
+    (request) => jsonResponse(
+      _bodyFor(request.method, request.url.path),
+      200,
+    ),
+  );
   late final AuthState authState;
   late final ApiClient apiClient;
   late final SessionController session;
@@ -148,7 +121,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Unesite važeću email adresu.'), findsOneWidget);
-    final puts = harness.client.jsonRequests
+    final puts = harness.client.requests
         .where((r) => r.method == 'PUT' && r.url.path == '/api/v1/users/me');
     expect(puts, isEmpty);
   });
@@ -167,7 +140,7 @@ void main() {
     await tester.tap(find.text('Sačuvaj promjene'));
     await tester.pumpAndSettle();
 
-    final puts = harness.client.jsonRequests
+    final puts = harness.client.requests
         .where((r) => r.method == 'PUT' && r.url.path == '/api/v1/users/me')
         .toList();
     expect(puts, hasLength(1));

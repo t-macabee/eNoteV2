@@ -101,16 +101,6 @@ public sealed class InstrumentRental : AuditableEntity, ITenantScoped
         RentalStatus = InstrumentRentalStatus.Pending;
     }
 
-    public static InstrumentRental CreateWithInstrument(int instrumentId, int studentProfileId, int musicStoreId, DateTime requestedAt, string? note, Instrument instrument)
-    {
-        var rental = new InstrumentRental(instrumentId, studentProfileId, musicStoreId, requestedAt, note)
-        {
-            Instrument = instrument
-        };
-
-        return rental;
-    }
-
     public void Approve(decimal fee, string? note, DateTime approvedAt, int approvedById)
     {
         Fee = fee;

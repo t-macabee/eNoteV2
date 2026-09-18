@@ -9,9 +9,6 @@ class InstructorStudentProvider extends BaseProvider<StudentDto> {
 
   Future<List<StudentEnrollmentDto>> getEnrollments(int studentId) async {
     final response = await apiClient.get('$endpoint/$studentId/enrollments');
-    final list = decodeListOrThrow(response);
-    return list
-        .map((e) => StudentEnrollmentDto.fromJson(Map<String, dynamic>.from(e)))
-        .toList();
+    return decodeList(response, StudentEnrollmentDto.fromJson);
   }
 }

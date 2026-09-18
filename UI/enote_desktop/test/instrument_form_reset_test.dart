@@ -2,7 +2,6 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
@@ -10,54 +9,7 @@ import 'package:enote_desktop/features/store_employee/instrument/instrument_prov
 import 'package:enote_desktop/features/store_employee/instrument/shop_instrument_type_provider.dart';
 import 'package:enote_desktop/features/store_employee/instrument/instrument_form_screen.dart';
 
-/// Records every request body sent through it and answers each POST with a
-/// minimal valid InstrumentDto JSON payload, so [InstrumentProvider.insert]
-/// succeeds without a real backend.
-class _InstrumentRecordingHttpClient extends http.BaseClient {
-  final List<String?> postedBodies = [];
-  int _nextId = 1;
-
-  @override
-  Future<http.StreamedResponse> send(http.BaseRequest request) async {
-    if (request.method == 'GET') {
-      final responseJson = jsonEncode({
-        'items': [
-          {'id': 1, 'type': 'Gitara'},
-          {'id': 2, 'type': 'Klavir'},
-        ],
-        'page': 1,
-        'pageSize': 100,
-        'totalCount': 2,
-      });
-      final bytes = utf8.encode(responseJson);
-      return http.StreamedResponse(
-        Stream.value(bytes),
-        200,
-        headers: {'content-type': 'application/json'},
-      );
-    }
-
-    final body = request is http.Request ? request.body : null;
-    postedBodies.add(body);
-
-    final responseJson = jsonEncode({
-      'id': _nextId++,
-      'model': 'Test model',
-      'manufacturer': 'Test proizvođač',
-      'description': 'Test opis',
-      'instrumentTypeId': 1,
-      'instrumentType': 'Gitara',
-      'musicStore': 'Trgovina A',
-      'isAvailable': true,
-    });
-    final bytes = utf8.encode(responseJson);
-    return http.StreamedResponse(
-      Stream.value(bytes),
-      200,
-      headers: {'content-type': 'application/json'},
-    );
-  }
-}
+import 'helpers.dart';
 
 void main() {
   testWidgets(
@@ -65,7 +17,32 @@ void main() {
     'required field validator blocks submission without a stale value',
     (WidgetTester tester) async {
       final authState = AuthState(baseUrl: 'http://localhost:5059/api/v1/');
-      final httpClient = _InstrumentRecordingHttpClient();
+      final postedBodies = <String?>[];
+      var nextId = 1;
+      final httpClient = ScriptedClient((request) {
+        if (request.method == 'GET') {
+          return jsonResponse(const {
+            'items': [
+              {'id': 1, 'type': 'Gitara'},
+              {'id': 2, 'type': 'Klavir'},
+            ],
+            'page': 1,
+            'pageSize': 100,
+            'totalCount': 2,
+          }, 200);
+        }
+        postedBodies.add(request.body);
+        return jsonResponse({
+          'id': nextId++,
+          'model': 'Test model',
+          'manufacturer': 'Test proizvođač',
+          'description': 'Test opis',
+          'instrumentTypeId': 1,
+          'instrumentType': 'Gitara',
+          'musicStore': 'Trgovina A',
+          'isAvailable': true,
+        }, 200);
+      });
       final apiClient = ApiClient(
         baseUrl: 'http://localhost:5059/api/v1/',
         authState: authState,
@@ -108,9 +85,9 @@ void main() {
       await pickInstrumentType('Gitara');
       await save();
 
-      expect(httpClient.postedBodies, hasLength(1));
+      expect(postedBodies, hasLength(1));
       final firstBody =
-          jsonDecode(httpClient.postedBodies[0]!) as Map<String, dynamic>;
+          jsonDecode(postedBodies[0]!) as Map<String, dynamic>;
       expect(firstBody['instrumentTypeId'], equals(1));
       expect(firstBody['model'], equals('Test model'));
       expect(firstBody['manufacturer'], equals('Test proizvođač'));
@@ -126,7 +103,7 @@ void main() {
         findsOneWidget,
         reason: 'the instrument type dropdown must show validator error when untouched after reset',
       );
-      expect(httpClient.postedBodies, hasLength(1),
+      expect(postedBodies, hasLength(1),
           reason: 'no stale instrumentTypeId may reach a second POST');
     },
   );

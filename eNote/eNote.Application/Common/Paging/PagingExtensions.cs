@@ -1,4 +1,6 @@
 ﻿using eNote.Application.Common.Search;
+using eNote.Application.Features.Identity;
+using eNote.Application.Features.Identity.Users;
 using eNote.Domain.Entities.Shared.Base;
 
 namespace eNote.Application.Common.Paging;
@@ -30,6 +32,27 @@ public static class PagingExtensions
             Page = page,
             PageSize = pageSize,
             TotalCount = total
+        };
+    }
+
+    public static PagedResult<TDto> FilterAndPage<TDto>(
+        this IEnumerable<TDto> items,
+        BaseSearchObject search,
+        string? name,
+        bool? isActive) where TDto : IUserProfileDto
+    {
+        List<TDto> filtered = [.. items
+            .Where(x => UserNameHelper.MatchesName(x.FirstName, x.LastName, x.Username, name))
+            .Where(x => !isActive.HasValue || x.IsActive == isActive.Value)];
+
+        (int page, int pageSize) = PagingLimits.Normalize(search.Page, search.PageSize);
+
+        return new PagedResult<TDto>
+        {
+            Items = [.. filtered.Skip((page - 1) * pageSize).Take(pageSize)],
+            Page = page,
+            PageSize = pageSize,
+            TotalCount = search.IncludeTotalCount ? filtered.Count : null
         };
     }
 

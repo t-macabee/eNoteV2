@@ -1,4 +1,3 @@
-import 'dart:convert';
 
 import 'package:fake_async/fake_async.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -29,30 +28,18 @@ Map<String, dynamic> _payment(String status) => {
   'status': status,
 };
 
-/// Serves one queued response per request so poll sequences can be scripted.
-class _ScriptedClient extends http.BaseClient {
-  final List<http.BaseRequest> requests = [];
-  final List<({int statusCode, Map<String, dynamic> body})> script;
-  final ({int statusCode, Map<String, dynamic> body}) fallback;
-
-  _ScriptedClient(this.script, {Map<String, dynamic>? fallbackBody})
-    : fallback = (
-        statusCode: 200,
-        body: fallbackBody ?? {'status': 'RequiresAction'},
-      );
-
-  @override
-  Future<http.StreamedResponse> send(http.BaseRequest request) async {
-    requests.add(request);
-    final next = script.isNotEmpty
-        ? script.removeAt(0)
-        : (statusCode: fallback.statusCode, body: fallback.body);
-    return http.StreamedResponse(
-      Stream.value(utf8.encode(jsonEncode(next.body))),
-      next.statusCode,
-      headers: {'content-type': 'application/json'},
-    );
-  }
+ScriptedClient _scriptedClient(
+  List<({int statusCode, Map<String, dynamic> body})> script, {
+  Map<String, dynamic>? fallbackBody,
+}) {
+  final fallback = (
+    statusCode: 200,
+    body: fallbackBody ?? {'status': 'RequiresAction'},
+  );
+  return ScriptedClient((_) {
+    final next = script.isNotEmpty ? script.removeAt(0) : fallback;
+    return jsonResponse(next.body, next.statusCode);
+  });
 }
 
 RentalPaymentProvider _provider(http.Client client) {
@@ -70,21 +57,21 @@ RentalPaymentProvider _provider(http.Client client) {
   );
 }
 
-int _statusCalls(_ScriptedClient client) => client.requests
+int _statusCalls(ScriptedClient client) => client.requests
     .where(
       (r) =>
           r.method == 'GET' &&
-          (r as http.Request).url.path.endsWith('/student/rentals/2/payments'),
+          (r).url.path.endsWith('/student/rentals/2/payments'),
     )
     .length;
 
 void main() {
   test('createIntent posts to create-intent and decodes the response', () async {
-    final client = _ScriptedClient([(statusCode: 200, body: _intent)]);
+    final client = _scriptedClient([(statusCode: 200, body: _intent)]);
     final provider = _provider(client);
     final intent = await provider.createIntent(2);
 
-    final sent = client.requests.single as http.Request;
+    final sent = client.requests.single;
     expect(sent.method, 'POST');
     expect(
       sent.url.path,
@@ -98,19 +85,19 @@ void main() {
   });
 
   test('status returns the payment and 404 means not started', () async {
-    final client = _ScriptedClient([(statusCode: 200, body: _payment('Succeeded'))]);
+    final client = _scriptedClient([(statusCode: 200, body: _payment('Succeeded'))]);
     expect(
       (await _provider(client).status(2))?.status,
       PaymentStatus.succeeded,
     );
 
-    final missing = _ScriptedClient([(statusCode: 404, body: {})]);
+    final missing = _scriptedClient([(statusCode: 404, body: {})]);
     expect(await _provider(missing).status(2), isNull);
   });
 
   test('poll succeeds on poll 3 after exactly 3 status calls', () {
     fakeAsync((async) {
-      final client = _ScriptedClient([
+      final client = _scriptedClient([
         (statusCode: 200, body: _payment('RequiresAction')),
         (statusCode: 200, body: _payment('RequiresAction')),
         (statusCode: 200, body: _payment('Succeeded')),
@@ -128,7 +115,7 @@ void main() {
 
   test('poll still pending after 5 requiresAction observations', () {
     fakeAsync((async) {
-      final client = _ScriptedClient([]);
+      final client = _scriptedClient([]);
       final provider = _provider(client);
 
       RentalPaymentDto? result;
@@ -148,7 +135,7 @@ void main() {
   });
 
   test('a retry calls create-intent again, never reusing a secret', () async {
-    final client = _ScriptedClient([
+    final client = _scriptedClient([
       (statusCode: 200, body: _intent),
       (statusCode: 200, body: _intent),
     ]);
@@ -160,7 +147,7 @@ void main() {
     final creates = client.requests.where(
       (r) =>
           r.method == 'POST' &&
-          (r as http.Request).url.path.endsWith('/payments/create-intent'),
+          (r).url.path.endsWith('/payments/create-intent'),
     );
     expect(creates, hasLength(2));
   });

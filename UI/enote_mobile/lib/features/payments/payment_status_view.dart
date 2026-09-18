@@ -77,7 +77,10 @@ class PaymentStatusView extends StatelessWidget {
                 : Text(retryLabel!),
           ),
         if (retryLabel != null) const SizedBox(height: 8),
-        OutlinedButton(onPressed: isBusy ? null : onCancel, child: Text(cancelLabel)),
+        OutlinedButton(
+          onPressed: isBusy ? null : onCancel,
+          child: Text(cancelLabel),
+        ),
       ],
     );
   }
@@ -113,10 +116,8 @@ class PaymentStatusView extends StatelessWidget {
   };
 
   String? get _note => switch (state) {
-    PaymentFlowState.succeeded =>
-      successNote ?? 'Iznajmljivanje je izmireno.',
-    PaymentFlowState.pending =>
-      'Provjerite ponovo za nekoliko sekundi.',
+    PaymentFlowState.succeeded => successNote ?? 'Iznajmljivanje je izmireno.',
+    PaymentFlowState.pending => 'Provjerite ponovo za nekoliko sekundi.',
     _ => null,
   };
 }

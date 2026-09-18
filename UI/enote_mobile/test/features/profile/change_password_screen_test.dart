@@ -2,7 +2,6 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
@@ -12,39 +11,24 @@ import 'package:enote_mobile/theme/app_theme.dart';
 
 import '../../helpers.dart';
 
-class _PasswordStubClient extends http.BaseClient {
-  final List<http.Request> requests = [];
-  final bool failWithWrongPassword;
-
-  _PasswordStubClient({this.failWithWrongPassword = false});
-
-  @override
-  Future<http.StreamedResponse> send(http.BaseRequest request) async {
-    if (request is http.Request) {
-      requests.add(request);
-    }
-    final isPasswordPut = request.method == 'PUT' &&
-        request.url.path == '/api/v1/users/me/password';
-    final body = isPasswordPut && failWithWrongPassword
-        ? {'message': 'Pogrešna trenutna lozinka.'}
-        : <String, dynamic>{'message': 'OK'};
-    return http.StreamedResponse(
-      Stream.value(utf8.encode(jsonEncode(body))),
-      isPasswordPut && failWithWrongPassword ? 400 : 200,
-      headers: {'content-type': 'application/json'},
-    );
-  }
-}
-
 class _Harness {
-  final _PasswordStubClient client;
+  final ScriptedClient client;
   late final AuthState authState;
   late final ApiClient apiClient;
 
   _Harness({bool failWithWrongPassword = false})
-    : client = _PasswordStubClient(
-        failWithWrongPassword: failWithWrongPassword,
-      ) {
+    : client = ScriptedClient((request) {
+        final failed =
+            request.method == 'PUT' &&
+            request.url.path == '/api/v1/users/me/password' &&
+            failWithWrongPassword;
+        return jsonResponse(
+          failed
+              ? {'message': 'Pogrešna trenutna lozinka.'}
+              : {'message': 'OK'},
+          failed ? 400 : 200,
+        );
+      }) {
     authState = AuthState(
       baseUrl: 'http://10.0.2.2:5059/api/v1/',
       tokenReader: () => fakeJwt(),
@@ -120,7 +104,7 @@ void main() {
     );
 
     expect(find.text('Trenutna lozinka je obavezan.'), findsOneWidget);
-    expect(find.text('Lozinka i potvrda se ne poklapaju.'), findsNothing);
+    expect(find.text('Lozinke se ne podudaraju.'), findsNothing);
   });
 
   testWidgets('a weak new password shows its own message only', (tester) async {
@@ -131,11 +115,11 @@ void main() {
     await _fill(tester, current: 'Stara1!', next: 'abc', confirm: 'abc');
 
     expect(
-      find.text('Lozinka mora imati najmanje 8 karaktera.'),
+      find.text('Lozinka mora imati najmanje 8 znakova.'),
       findsOneWidget,
     );
     expect(find.text('Trenutna lozinka je obavezan.'), findsNothing);
-    expect(find.text('Lozinka i potvrda se ne poklapaju.'), findsNothing);
+    expect(find.text('Lozinke se ne podudaraju.'), findsNothing);
   });
 
   testWidgets('a mismatched confirmation shows its own message only',
@@ -152,7 +136,7 @@ void main() {
     );
 
     expect(
-      find.text('Lozinka i potvrda se ne poklapaju.'),
+      find.text('Lozinke se ne podudaraju.'),
       findsOneWidget,
     );
     expect(find.text('Trenutna lozinka je obavezna.'), findsNothing);

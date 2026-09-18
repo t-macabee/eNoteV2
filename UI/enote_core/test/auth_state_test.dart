@@ -15,7 +15,7 @@ void main() {
         'userId': 1,
         'username': 'ana',
         'roles': ['Instructor'],
-        'token': fakeJwt(role: 'Instructor'),
+        'token': fakeJwt(username: 'ana', role: 'Instructor'),
       });
       late final AuthState authState;
       authState = AuthState(

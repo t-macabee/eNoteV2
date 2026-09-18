@@ -37,6 +37,19 @@ void main() {
     });
   });
 
+  group('CreatePaymentIntentResponse', () {
+    test('missing currency falls back to an empty string', () {
+      final dto = CreatePaymentIntentResponse.fromJson({
+        'rentalId': 1,
+        'paymentIntentId': 'pi_1',
+        'clientSecret': 'pi_1_secret',
+        'amountCents': 100,
+        'status': 'RequiresAction',
+      });
+      expect(dto.currency, '');
+    });
+  });
+
   group('RentalDebtDto', () {
     test('fromJson with rentalId present and absent', () {
       final withId = RentalDebtDto.fromJson(

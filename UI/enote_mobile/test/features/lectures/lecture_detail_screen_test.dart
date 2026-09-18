@@ -3,7 +3,6 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
@@ -27,17 +26,6 @@ const _lectureJson = {
   'myAttendanceStatus': 'Pending',
 };
 
-class _LectureStubClient extends http.BaseClient {
-  @override
-  Future<http.StreamedResponse> send(http.BaseRequest request) async {
-    return http.StreamedResponse(
-      Stream.value(utf8.encode(jsonEncode(_lectureJson))),
-      200,
-      headers: {'content-type': 'application/json'},
-    );
-  }
-}
-
 class _GatedLectureProvider extends LectureProvider {
   Completer<RsvpResponse>? rsvpGate;
 
@@ -54,7 +42,9 @@ void main() {
   testWidgets(
       'completing the RSVP after the detail screen is gone throws nothing',
       (tester) async {
-    final client = _LectureStubClient();
+    final client = ScriptedClient(
+      (_) => jsonResponse(jsonEncode(_lectureJson), 200),
+    );
     final authState = AuthState(
       baseUrl: 'http://10.0.2.2:5059/api/v1/',
       tokenReader: () => fakeJwt(),

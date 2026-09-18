@@ -109,13 +109,6 @@ public sealed class UserAccountService(UserManager<AppUser> userManager, IFileSt
         return (true, null);
     }
 
-    public async Task<bool> IsUserActiveAsync(int userId, CancellationToken cancellationToken = default)
-    {
-        var user = await userManager.FindByIdAsync(userId.ToString());
-
-        return user?.IsActive ?? false;
-    }
-
     public async Task<(bool Success, string? Error)> SetActiveAsync(int userId, bool isActive, CancellationToken cancellationToken = default)
     {
         var user = await userManager.FindByIdAsync(userId.ToString());

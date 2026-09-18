@@ -46,6 +46,7 @@ public sealed class ValidatorCoverageTests
         Assert.True(new CourseRequestValidator().Validate(new CourseRequest { Name = "Course", Price = 0 }).IsValid);
         Assert.True(new CourseRequestValidator().Validate(new CourseRequest { Name = "Course", Price = 0, StartDate = Clock.UtcNow, EndDate = Clock.UtcNow }).IsValid);
         Assert.True(new CourseRequestValidator().Validate(new CourseRequest { Name = "Course", Price = 0, EndDate = Clock.UtcNow }).IsValid);
+        Assert.True(new CourseRequestValidator().Validate(new CourseRequest { Name = "Course", Price = 10000m }).IsValid);
         Assert.True(new AssignmentRequestValidator().Validate(new AssignmentRequest { Title = "Title", Description = "Description", DueAt = DateTime.UtcNow }).IsValid);
         Assert.True(new GradeAssignmentRequestValidator().Validate(new GradeAssignmentRequest { Grade = 100 }).IsValid);
         Assert.True(new LectureCreateRequestValidator().Validate(ValidLectureCreate()).IsValid);
@@ -92,6 +93,7 @@ public sealed class ValidatorCoverageTests
     {
         AssertInvalid(new CourseRequestValidator().Validate(new CourseRequest { Name = "", Price = 0 }), nameof(CourseRequest.Name));
         AssertInvalid(new CourseRequestValidator().Validate(new CourseRequest { Name = "Course", Price = -0.01m }), nameof(CourseRequest.Price));
+        AssertInvalid(new CourseRequestValidator().Validate(new CourseRequest { Name = "Course", Price = 10000.01m }), nameof(CourseRequest.Price));
         AssertInvalid(new CourseRequestValidator().Validate(new CourseRequest { Name = "Course", Price = 0, StartDate = Clock.UtcNow, EndDate = Clock.UtcNow.AddDays(-1) }), nameof(CourseRequest.EndDate));
         AssertInvalid(new AssignmentRequestValidator().Validate(new AssignmentRequest { Title = "", Description = "Description", DueAt = DateTime.UtcNow }), nameof(AssignmentRequest.Title));
         AssertInvalid(new AssignmentRequestValidator().Validate(new AssignmentRequest { Title = "Title", Description = "", DueAt = DateTime.UtcNow }), nameof(AssignmentRequest.Description));

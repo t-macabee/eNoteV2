@@ -67,7 +67,7 @@ internal sealed class AuthService(UserManager<AppUser> userManager, SignInManage
 
         if (error is not null)
         {
-            if (error == Messages.UsernameTaken || error == Messages.EmailTaken)
+            if (ErrorMapping.IsConflict(error))
             {
                 throw new ConflictException(error);
             }

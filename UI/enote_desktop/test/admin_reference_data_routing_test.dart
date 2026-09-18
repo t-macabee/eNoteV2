@@ -1,8 +1,5 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:http/http.dart' as http;
 
 import 'package:enote_core/enote_core.dart';
 import 'package:enote_desktop/features/admin/address/address_list_screen.dart';
@@ -13,22 +10,14 @@ import 'package:enote_desktop/main.dart';
 
 import 'helpers.dart';
 
-class _MockHttpClient extends http.BaseClient {
-  @override
-  Future<http.StreamedResponse> send(http.BaseRequest request) async {
-    final body = jsonEncode({
-      'items': [],
-      'page': 1,
-      'pageSize': 10,
-      'totalCount': 0,
-    });
-    return http.StreamedResponse(
-      Stream.value(utf8.encode(body)),
-      200,
-      headers: {'content-type': 'application/json'},
-    );
-  }
-}
+ScriptedClient _mockClient() => ScriptedClient(
+  (_) => jsonResponse(const {
+    'items': [],
+    'page': 1,
+    'pageSize': 10,
+    'totalCount': 0,
+  }, 200),
+);
 
 void main() {
   testWidgets(
@@ -39,7 +28,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    final mockClient = _MockHttpClient();
+    final mockClient = _mockClient();
     final authState = AuthState(
       baseUrl: 'http://localhost:5059/api/v1/',
       httpClient: mockClient,
@@ -90,7 +79,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    final mockClient = _MockHttpClient();
+    final mockClient = _mockClient();
     final authState = AuthState(
       baseUrl: 'http://localhost:5059/api/v1/',
       httpClient: mockClient,

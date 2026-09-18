@@ -23,22 +23,7 @@ public sealed class AdminStudentService(
         StudentSearchObject search,
         CancellationToken cancellationToken = default)
     {
-        var instructorCourses = instructorAccess.CoursesFor(instructorId);
-
-        IQueryable<Student> query = context.Set<Enrollment>()
-            .AsNoTracking()
-            .Join(
-                instructorCourses,
-                e => e.CourseId,
-                c => c.Id,
-                (e, c) => e.StudentId)
-            .Distinct()
-            .Join(
-                context.Set<Student>().AsNoTracking(),
-                studentId => studentId,
-                s => s.Id,
-                (studentId, s) => s)
-            .OrderBy(x => x.Id);
+        IQueryable<Student> query = StudentsVisibleTo(instructorId).OrderBy(x => x.Id);
 
         return await BuildPagedResultAsync(query, search, cancellationToken);
     }
@@ -95,9 +80,16 @@ public sealed class AdminStudentService(
         int studentId,
         CancellationToken cancellationToken)
     {
+        return await StudentsVisibleTo(instructorId)
+            .FirstOrDefaultAsync(x => x.Id == studentId, cancellationToken)
+            ?? throw new NotFoundException(Messages.StudentProfileNotFound);
+    }
+
+    private IQueryable<Student> StudentsVisibleTo(int instructorId)
+    {
         var instructorCourses = instructorAccess.CoursesFor(instructorId);
 
-        return await context.Set<Enrollment>()
+        return context.Set<Enrollment>()
             .AsNoTracking()
             .Join(
                 instructorCourses,
@@ -107,11 +99,9 @@ public sealed class AdminStudentService(
             .Distinct()
             .Join(
                 context.Set<Student>().AsNoTracking(),
-                sid => sid,
+                studentId => studentId,
                 s => s.Id,
-                (sid, s) => s)
-            .FirstOrDefaultAsync(x => x.Id == studentId, cancellationToken)
-            ?? throw new NotFoundException(Messages.StudentProfileNotFound);
+                (studentId, s) => s);
     }
 
     private async Task<PagedResult<StudentDto>> BuildPagedResultAsync(
@@ -122,20 +112,9 @@ public sealed class AdminStudentService(
         List<Student> students = await query.ToListAsync(cancellationToken);
         IReadOnlyDictionary<int, UserIdentityDto> users = await identityService.GetUsersBulkAsync(students.Select(x => x.AppUserId), cancellationToken);
 
-        List<StudentDto> filtered = [.. students
-            .Select(x => Map(x, users.GetValueOrDefault(x.AppUserId)))
-            .Where(x => UserNameHelper.MatchesName(x.FirstName, x.LastName, x.Username, search.Name))
-            .Where(x => !search.IsActive.HasValue || x.IsActive == search.IsActive.Value)];
+        List<StudentDto> mapped = [.. students.Select(x => Map(x, users.GetValueOrDefault(x.AppUserId)))];
 
-        (var page, var pageSize) = PagingLimits.Normalize(search.Page, search.PageSize);
-
-        return new PagedResult<StudentDto>
-        {
-            Items = [.. filtered.Skip((page - 1) * pageSize).Take(pageSize)],
-            Page = page,
-            PageSize = pageSize,
-            TotalCount = search.IncludeTotalCount ? filtered.Count : null
-        };
+        return mapped.FilterAndPage(search, search.Name, search.IsActive);
     }
 
     public async Task<StudentDto> GetByIdAsync(int id, CancellationToken cancellationToken = default)

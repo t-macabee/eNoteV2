@@ -501,7 +501,6 @@ public sealed class ShopEmployeeServiceTests
         }
 
         public Task<int?> FindUserIdByUsernameAsync(string username, CancellationToken cancellationToken = default) => throw new NotImplementedException();
-        public Task<bool> IsUserActiveAsync(int userId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<(int? UserId, string? Error)> CreateUserAsync(string username, string email, string password, string? firstName, string? lastName, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<(bool Success, string? Error)> AssignSingleRoleAsync(int userId, string role, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<(bool Success, string? Error)> UpdateExistingUserAsync(int userId, string email, string? firstName, string? lastName, DateTime? dateOfBirth = null, CancellationToken cancellationToken = default) => throw new NotImplementedException();

@@ -332,8 +332,7 @@ public sealed class StripeWebhookService(
         {
             await context.SaveChangesAsync(cancellationToken);
         }
-        catch (DbUpdateException ex) when (
-            ex.InnerException?.Message?.Contains(DbConstraintNames.StripeWebhookEventStripeEventIdUniqueIndex) == true)
+        catch (DbUpdateException ex) when (DbErrors.IsUniqueViolation(ex, DbConstraintNames.StripeWebhookEventStripeEventIdUniqueIndex))
         {
             logger.LogInformation("Duplicate Stripe webhook event {EventId} ignored", eventId);
         }

@@ -1,8 +1,5 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
@@ -14,89 +11,60 @@ import 'package:enote_desktop/features/admin/instructor/instructor_provider.dart
 
 import 'helpers.dart';
 
-class _AdminEventMockHttpClient extends http.BaseClient {
-  final List<String> requestedUrls = [];
-
-  @override
-  Future<http.StreamedResponse> send(http.BaseRequest request) async {
-    final url = request.url.toString();
-    requestedUrls.add(url);
-
-    if (request.method == 'GET') {
-      if (url.contains('admin/instructors')) {
-        final json = jsonEncode({
-          'items': [],
-          'page': 1,
-          'pageSize': 200,
-          'totalCount': 0,
-        });
-        return http.StreamedResponse(
-          Stream.value(utf8.encode(json)),
-          200,
-          headers: {'content-type': 'application/json'},
-        );
-      }
-
-      if (url.contains('admin/addresses')) {
-        final json = jsonEncode({
-          'items': [],
-          'page': 1,
-          'pageSize': 200,
-          'totalCount': 0,
-        });
-        return http.StreamedResponse(
-          Stream.value(utf8.encode(json)),
-          200,
-          headers: {'content-type': 'application/json'},
-        );
-      }
-
-      if (url.contains('admin/events')) {
-        final json = jsonEncode({
-          'items': [
-            {
-              'id': 1,
-              'title': 'Platform Gala',
-              'description': 'Gala concert across all departments',
-              'startsAt': '2026-09-10T18:00:00Z',
-              'endsAt': '2026-09-10T20:00:00Z',
-              'addressId': null,
-              'courseId': null,
-              'instructorId': null,
-            },
-            {
-              'id': 2,
-              'title': 'Guitar Masterclass',
-              'description': 'Masterclass scoped to course and instructor',
-              'startsAt': '2026-09-12T14:00:00Z',
-              'endsAt': '2026-09-12T16:00:00Z',
-              'addressId': null,
-              'courseId': 10,
-              'courseName': 'Classical Guitar I',
-              'instructorId': 5,
-            },
-          ],
-          'page': 1,
-          'pageSize': 24,
-          'totalCount': 2,
-        });
-        return http.StreamedResponse(
-          Stream.value(utf8.encode(json)),
-          200,
-          headers: {'content-type': 'application/json'},
-        );
-      }
+ScriptedClient _client() => ScriptedClient((request) {
+  final url = request.url.toString();
+  if (request.method == 'GET') {
+    if (url.contains('admin/instructors')) {
+      return jsonResponse(const {
+        'items': [],
+        'page': 1,
+        'pageSize': 200,
+        'totalCount': 0,
+      }, 200);
     }
-
-    return http.StreamedResponse(
-      Stream.value(utf8.encode('{}')),
-      200,
-      headers: {'content-type': 'application/json'},
-    );
+    if (url.contains('admin/addresses')) {
+      return jsonResponse(const {
+        'items': [],
+        'page': 1,
+        'pageSize': 200,
+        'totalCount': 0,
+      }, 200);
+    }
+    if (url.contains('admin/events')) {
+      return jsonResponse({
+        'items': [
+          {
+            'id': 1,
+            'title': 'Platform Gala',
+            'description': 'Gala concert across all departments',
+            'startsAt': '2026-09-10T18:00:00Z',
+            'endsAt': '2026-09-10T20:00:00Z',
+            'addressId': null,
+            'courseId': null,
+            'instructorId': null,
+          },
+          {
+            'id': 2,
+            'title': 'Guitar Masterclass',
+            'description': 'Masterclass scoped to course and instructor',
+            'startsAt': '2026-09-12T14:00:00Z',
+            'endsAt': '2026-09-12T16:00:00Z',
+            'addressId': null,
+            'courseId': 10,
+            'courseName': 'Classical Guitar I',
+            'instructorId': 5,
+          },
+        ],
+        'page': 1,
+        'pageSize': 24,
+        'totalCount': 2,
+      }, 200);
+    }
   }
-}
+  return jsonResponse(const {}, 200);
+});
 
-Widget _buildTestApp(_AdminEventMockHttpClient mockClient) {
+Widget _buildTestApp(ScriptedClient mockClient) {
   final authState = AuthState(
     baseUrl: 'http://localhost:5059/api/v1/',
     httpClient: mockClient,
@@ -135,7 +103,7 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
 
-      final mockClient = _AdminEventMockHttpClient();
+      final mockClient = _client();
       await tester.pumpWidget(_buildTestApp(mockClient));
       await tester.pumpAndSettle();
 
@@ -156,7 +124,7 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
 
-      final mockClient = _AdminEventMockHttpClient();
+      final mockClient = _client();
       await tester.pumpWidget(_buildTestApp(mockClient));
       await tester.pumpAndSettle();
 
@@ -185,7 +153,7 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
 
-      final mockClient = _AdminEventMockHttpClient();
+      final mockClient = _client();
       await tester.pumpWidget(_buildTestApp(mockClient));
       await tester.pumpAndSettle();
 

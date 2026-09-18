@@ -74,8 +74,7 @@ public sealed class InstrumentRentalTransitionTests
     [Fact]
     public void Approve_Fails_WhenLockConflict()
     {
-        var instrument = new Instrument("M", "MFR", null, null, 1, 1);
-        var rental = InstrumentRental.CreateWithInstrument(1, 1, 1, Now, null, instrument);
+        var rental = new InstrumentRental(1, 1, 1, Now, null);
         var ctx = new RentalTransitionContext { UserId = 10, Actor = RentalActor.StoreEmployee, HasInstrumentLockConflict = true, MonthlyFee = 50m };
 
         var result = rental.Transition(RentalTrigger.Approve, ctx, Now);
@@ -86,8 +85,7 @@ public sealed class InstrumentRentalTransitionTests
     [Fact]
     public void Approve_Succeeds_SetsApprovedStatus()
     {
-        var instrument = new Instrument("M", "MFR", null, null, 1, 1);
-        var rental = InstrumentRental.CreateWithInstrument(1, 1, 1, Now, null, instrument);
+        var rental = new InstrumentRental(1, 1, 1, Now, null);
         var ctx = new RentalTransitionContext { UserId = 10, Actor = RentalActor.StoreEmployee, HasInstrumentLockConflict = false, MonthlyFee = 50m };
 
         var result = rental.Transition(RentalTrigger.Approve, ctx, Now);
@@ -100,8 +98,7 @@ public sealed class InstrumentRentalTransitionTests
     [Fact]
     public void Pickup_Succeeds_SetsActiveStatus()
     {
-        var instrument = new Instrument("M", "MFR", null, null, 1, 1);
-        var rental = InstrumentRental.CreateWithInstrument(1, 1, 1, Now, null, instrument);
+        var rental = new InstrumentRental(1, 1, 1, Now, null);
         rental.Approve(50m, null, Now, 10);
         var ctx = new RentalTransitionContext { UserId = 10, Actor = RentalActor.StoreEmployee, HasInstrumentLockConflict = false, MonthlyFee = 50m };
 

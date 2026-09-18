@@ -1,8 +1,5 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
@@ -14,156 +11,109 @@ import 'package:enote_desktop/features/admin/users/user_grid_screen.dart';
 
 import 'helpers.dart';
 
-class _AdminUsersMockHttpClient extends http.BaseClient {
-  final List<String> requestedUrls = [];
-  final List<String> deletedUrls = [];
-  final List<String> putUrls = [];
+ScriptedClient _client() => ScriptedClient((request) {
+  final url = request.url.toString();
 
-  @override
-  Future<http.StreamedResponse> send(http.BaseRequest request) async {
-    final url = request.url.toString();
-
-    if (request.method == 'GET') {
-      requestedUrls.add(url);
-
-      if (url.contains('admin/instructors')) {
-        final json = jsonEncode({
-          'items': [
-            {
-              'id': 1,
-              'appUserId': 11,
-              'firstName': 'Wolfgang',
-              'lastName': 'Mozart',
-              'username': 'wmozart',
-            }
-          ],
-          'page': 1,
-          'pageSize': 20,
-          'totalCount': 1,
-        });
-        return http.StreamedResponse(
-          Stream.value(utf8.encode(json)),
-          200,
-          headers: {'content-type': 'application/json'},
-        );
-      }
-
-      if (url.contains('admin/students')) {
-        final json = jsonEncode({
-          'items': [
-            {
-              'id': 2,
-              'appUserId': 22,
-              'firstName': 'Ludwig',
-              'lastName': 'Beethoven',
-              'username': 'lbeethoven',
-            }
-          ],
-          'page': 1,
-          'pageSize': 20,
-          'totalCount': 1,
-        });
-        return http.StreamedResponse(
-          Stream.value(utf8.encode(json)),
-          200,
-          headers: {'content-type': 'application/json'},
-        );
-      }
-
-      if (url.contains('admin/employees')) {
-        final queryName = request.url.queryParameters['name'];
-        final allEmployees = [
+  if (request.method == 'GET') {
+    if (url.contains('admin/instructors')) {
+      return jsonResponse({
+        'items': [
           {
-            'id': 3,
-            'appUserId': 33,
-            'musicStoreId': 5,
-            'storeName': 'Sarajevo Guitar House',
-            'firstName': 'Johann',
-            'lastName': 'Bach',
-            'username': 'jbach',
-            'isManager': true,
-            'isActive': true,
-          },
+            'id': 1,
+            'appUserId': 11,
+            'firstName': 'Wolfgang',
+            'lastName': 'Mozart',
+            'username': 'wmozart',
+          }
+        ],
+        'page': 1,
+        'pageSize': 20,
+        'totalCount': 1,
+      }, 200);
+    }
+
+    if (url.contains('admin/students')) {
+      return jsonResponse({
+        'items': [
           {
-            'id': 4,
-            'appUserId': 44,
-            'musicStoreId': 6,
-            'storeName': 'Mostar Piano Center',
-            'firstName': 'Frederic',
-            'lastName': 'Chopin',
-            'username': 'fchopin',
-            'isManager': false,
-            'isActive': true,
-          },
-        ];
-
-        final filtered = queryName == null || queryName.isEmpty
-            ? allEmployees
-            : allEmployees.where((e) {
-                final fn = (e['firstName'] as String).toLowerCase();
-                final ln = (e['lastName'] as String).toLowerCase();
-                final un = (e['username'] as String).toLowerCase();
-                final q = queryName.toLowerCase();
-                return fn.contains(q) || ln.contains(q) || un.contains(q);
-              }).toList();
-
-        final json = jsonEncode({
-          'items': filtered,
-          'page': 1,
-          'pageSize': 20,
-          'totalCount': filtered.length,
-        });
-        return http.StreamedResponse(
-          Stream.value(utf8.encode(json)),
-          200,
-          headers: {'content-type': 'application/json'},
-        );
-      }
-
-      if (url.contains('admin/users')) {
-        final json = jsonEncode({
-          'role': 'StoreEmployee',
-          'profile': {
-            'id': 4,
-            'firstName': 'Frederic',
-            'lastName': 'Chopin',
-            'username': 'fchopin',
-            'isActive': true,
-          },
-        });
-        return http.StreamedResponse(
-          Stream.value(utf8.encode(json)),
-          200,
-          headers: {'content-type': 'application/json'},
-        );
-      }
+            'id': 2,
+            'appUserId': 22,
+            'firstName': 'Ludwig',
+            'lastName': 'Beethoven',
+            'username': 'lbeethoven',
+          }
+        ],
+        'page': 1,
+        'pageSize': 20,
+        'totalCount': 1,
+      }, 200);
     }
 
-    if (request.method == 'DELETE') {
-      deletedUrls.add(url);
-      return http.StreamedResponse(
-        Stream.value(utf8.encode('')),
-        204,
-        headers: {'content-type': 'application/json'},
-      );
+    if (url.contains('admin/employees')) {
+      final queryName = request.url.queryParameters['name'];
+      final allEmployees = [
+        {
+          'id': 3,
+          'appUserId': 33,
+          'musicStoreId': 5,
+          'storeName': 'Sarajevo Guitar House',
+          'firstName': 'Johann',
+          'lastName': 'Bach',
+          'username': 'jbach',
+          'isManager': true,
+          'isActive': true,
+        },
+        {
+          'id': 4,
+          'appUserId': 44,
+          'musicStoreId': 6,
+          'storeName': 'Mostar Piano Center',
+          'firstName': 'Frederic',
+          'lastName': 'Chopin',
+          'username': 'fchopin',
+          'isManager': false,
+          'isActive': true,
+        },
+      ];
+
+      final filtered = queryName == null || queryName.isEmpty
+          ? allEmployees
+          : allEmployees.where((e) {
+              final fn = (e['firstName'] as String).toLowerCase();
+              final ln = (e['lastName'] as String).toLowerCase();
+              final un = (e['username'] as String).toLowerCase();
+              final q = queryName.toLowerCase();
+              return fn.contains(q) || ln.contains(q) || un.contains(q);
+            }).toList();
+
+      return jsonResponse({
+        'items': filtered,
+        'page': 1,
+        'pageSize': 20,
+        'totalCount': filtered.length,
+      }, 200);
     }
 
-    if (request.method == 'PUT') {
-      putUrls.add(url);
-      return http.StreamedResponse(
-        Stream.value(utf8.encode('')),
-        204,
-        headers: {'content-type': 'application/json'},
-      );
+    if (url.contains('admin/users')) {
+      return jsonResponse({
+        'role': 'StoreEmployee',
+        'profile': {
+          'id': 4,
+          'firstName': 'Frederic',
+          'lastName': 'Chopin',
+          'username': 'fchopin',
+          'isActive': true,
+        },
+      }, 200);
     }
-
-    return http.StreamedResponse(
-      Stream.value(utf8.encode('{}')),
-      200,
-      headers: {'content-type': 'application/json'},
-    );
   }
-}
+
+  if (request.method == 'DELETE' || request.method == 'PUT') {
+    return jsonResponse('', 204);
+  }
+
+  return jsonResponse(const {}, 200);
+});
 
 void main() {
   testWidgets(
@@ -174,7 +124,7 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
 
-      final mockClient = _AdminUsersMockHttpClient();
+      final mockClient = _client();
       final authState = AuthState(
         baseUrl: 'http://localhost:5059/api/v1/',
         httpClient: mockClient,
@@ -240,7 +190,7 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
 
-      final mockClient = _AdminUsersMockHttpClient();
+      final mockClient = _client();
       final authState = AuthState(
         baseUrl: 'http://localhost:5059/api/v1/',
         httpClient: mockClient,
@@ -276,7 +226,7 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      mockClient.requestedUrls.clear();
+      mockClient.requests.clear();
 
       // Open role dropdown
       await tester.tap(find.byType(DropdownButtonFormField<UserRole?>));
@@ -311,7 +261,7 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
 
-      final mockClient = _AdminUsersMockHttpClient();
+      final mockClient = _client();
       final authState = AuthState(
         baseUrl: 'http://localhost:5059/api/v1/',
         httpClient: mockClient,
@@ -400,7 +350,7 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
 
-      final mockClient = _AdminUsersMockHttpClient();
+      final mockClient = _client();
       final authState = AuthState(
         baseUrl: 'http://localhost:5059/api/v1/',
         httpClient: mockClient,

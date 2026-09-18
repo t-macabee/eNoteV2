@@ -2,7 +2,6 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
@@ -11,26 +10,14 @@ import 'package:enote_mobile/features/events/event_provider.dart';
 
 import '../../helpers.dart';
 
-class _EventStubClient extends http.BaseClient {
-  final List<http.Request> requests = [];
-
-  @override
-  Future<http.StreamedResponse> send(http.BaseRequest request) async {
-    if (request is http.Request) {
-      requests.add(request);
-    }
-    const body = {'items': [], 'page': 1, 'pageSize': 20, 'totalCount': 0};
-    return http.StreamedResponse(
-      Stream.value(utf8.encode(jsonEncode(body))),
-      200,
-      headers: {'content-type': 'application/json'},
-    );
-  }
-}
-
 void main() {
   testWidgets('the to filter is sent as end-of-day', (tester) async {
-    final client = _EventStubClient();
+    final client = ScriptedClient(
+      (_) => jsonResponse(
+        jsonEncode(const {'items': [], 'page': 1, 'pageSize': 20, 'totalCount': 0}),
+        200,
+      ),
+    );
     final authState = AuthState(
       baseUrl: 'http://10.0.2.2:5059/api/v1/',
       tokenReader: () => fakeJwt(),

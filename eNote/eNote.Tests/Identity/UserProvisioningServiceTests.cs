@@ -14,6 +14,41 @@ public sealed class UserProvisioningServiceTests
     private static readonly DateTime Now = new(2026, 7, 1, 12, 0, 0, DateTimeKind.Utc);
 
     [Fact]
+    public async Task RegisterStudentAsync_TrimsEmail()
+    {
+        await using var context = TestDbContextFactory.CreateContext(Now);
+        var account = new RecordingUserAccountService();
+        var service = CreateService(context, account);
+
+        await service.RegisterStudentAsync(new RegisterRequest
+        {
+            Username = "newstudent",
+            Email = "  new@example.com  ",
+            Password = "Password1!"
+        });
+
+        Assert.Equal("new@example.com", account.LastEmail);
+    }
+
+    [Fact]
+    public async Task ProvisionUserAsync_TrimsEmail()
+    {
+        await using var context = TestDbContextFactory.CreateContext(Now);
+        var account = new RecordingUserAccountService();
+        var service = CreateService(context, account);
+
+        await service.ProvisionUserAsync(new UserProvisionRequest
+        {
+            Username = "newinstructor",
+            Email = "  inst@example.com  ",
+            Password = "Password1!",
+            Role = AppRoles.Instructor
+        });
+
+        Assert.Equal("inst@example.com", account.LastEmail);
+    }
+
+    [Fact]
     public async Task RegisterStudentAsync_CreatesStudentProfile()
     {
         await using var context = TestDbContextFactory.CreateContext(Now);
@@ -560,12 +595,19 @@ public sealed class UserProvisioningServiceTests
         public (bool Success, string? Error) SetActiveResult { get; set; } = (true, null);
         public (bool Success, string? Error) AssignRoleResult { get; set; } = (true, null);
         public (int UserId, string Role)? AssignRoleCall { get; private set; }
+        public string? LastEmail { get; private set; }
 
         public Task<int?> FindUserIdByUsernameAsync(string username, CancellationToken cancellationToken = default) =>
             Task.FromResult(ExistingUserId);
 
         public Task<(int? UserId, string? Error)> CreateUserAsync(string username, string email, string password, string? firstName, string? lastName, CancellationToken cancellationToken = default) =>
-            Task.FromResult((CreateUserId, CreateUserId is null ? "creation failed" : null));
+            Task.FromResult(LogCreate(email));
+
+        private (int? UserId, string? Error) LogCreate(string email)
+        {
+            LastEmail = email;
+            return (CreateUserId, CreateUserId is null ? "creation failed" : null);
+        }
 
         public Task<(bool Success, string? Error)> AssignSingleRoleAsync(int userId, string role, CancellationToken cancellationToken = default)
         {
@@ -590,9 +632,6 @@ public sealed class UserProvisioningServiceTests
 
         public Task<(bool Success, string? Error)> ChangePasswordAsync(int userId, string currentPassword, string newPassword, CancellationToken cancellationToken = default) =>
             Task.FromResult((true, (string?)null));
-
-        public Task<bool> IsUserActiveAsync(int userId, CancellationToken cancellationToken = default) =>
-            Task.FromResult(IsActive);
 
         public Task<(bool Success, string? Error)> SetActiveAsync(int userId, bool isActive, CancellationToken cancellationToken = default)
         {

@@ -2,7 +2,6 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
@@ -10,41 +9,26 @@ import 'package:enote_desktop/features/instructor/course/course_form_screen.dart
 import 'package:enote_desktop/features/instructor/course/course_provider.dart';
 import 'package:enote_desktop/widgets/entity_form_scaffold.dart';
 
-/// Records every request body sent through it and answers each POST with a
-/// minimal valid CourseDto JSON payload, so [CourseProvider.insert] succeeds
-/// without a real backend.
-class _RecordingHttpClient extends http.BaseClient {
-  final List<String?> postedBodies = [];
-  int _nextId = 1;
-
-  @override
-  Future<http.StreamedResponse> send(http.BaseRequest request) async {
-    final body = request is http.Request ? request.body : null;
-    postedBodies.add(body);
-
-    final responseJson = jsonEncode({
-      'id': _nextId++,
-      'instructorId': 1,
-      'name': 'Kurs',
-      'isPublished': false,
-      'price': 10.0,
-      'enrolledCount': 0,
-    });
-    final bytes = utf8.encode(responseJson);
-    return http.StreamedResponse(
-      Stream.value(bytes),
-      200,
-      headers: {'content-type': 'application/json'},
-    );
-  }
-}
+import 'helpers.dart';
 
 void main() {
   testWidgets(
     'course add form pops true after a successful add (auto-close)',
     (WidgetTester tester) async {
       final authState = AuthState(baseUrl: 'http://localhost:5059/api/v1/');
-      final httpClient = _RecordingHttpClient();
+      final postedBodies = <String?>[];
+      var nextId = 1;
+      final httpClient = ScriptedClient((request) {
+        postedBodies.add(request.body);
+        return jsonResponse({
+          'id': nextId++,
+          'instructorId': 1,
+          'name': 'Kurs',
+          'isPublished': false,
+          'price': 10.0,
+          'enrolledCount': 0,
+        }, 200);
+      });
       final apiClient = ApiClient(
         baseUrl: 'http://localhost:5059/api/v1/',
         authState: authState,
@@ -90,10 +74,10 @@ void main() {
       await tester.tap(find.widgetWithText(FilledButton, 'Sačuvaj'));
       await tester.pumpAndSettle();
 
-      expect(httpClient.postedBodies, hasLength(1));
+      expect(postedBodies, hasLength(1));
       // F3-07: create payload carries isPublished false (publishing lives in
       // the detail dialog behind its confirm).
-      final posted = jsonDecode(httpClient.postedBodies.single!) as Map<String, dynamic>;
+      final posted = jsonDecode(postedBodies.single!) as Map<String, dynamic>;
       expect(posted['isPublished'], isFalse);
       // The add form auto-closes on success instead of resetting in place.
       expect(find.text('Dodaj kurs'), findsNothing);

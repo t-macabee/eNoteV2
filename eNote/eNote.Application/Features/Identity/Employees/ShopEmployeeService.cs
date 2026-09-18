@@ -35,20 +35,9 @@ public sealed class ShopEmployeeService(
             employees.Select(x => x.AppUserId),
             cancellationToken);
 
-        List<ShopEmployeeDto> filtered = [.. employees
-            .Select(x => Map(x, users.GetValueOrDefault(x.AppUserId)))
-            .Where(x => UserNameHelper.MatchesName(x.FirstName, x.LastName, x.Username, search.Name))
-            .Where(x => !search.IsActive.HasValue || x.IsActive == search.IsActive.Value)];
+        List<ShopEmployeeDto> mapped = [.. employees.Select(x => Map(x, users.GetValueOrDefault(x.AppUserId)))];
 
-        (var page, var pageSize) = PagingLimits.Normalize(search.Page, search.PageSize);
-
-        return new PagedResult<ShopEmployeeDto>
-        {
-            Items = [.. filtered.Skip((page - 1) * pageSize).Take(pageSize)],
-            Page = page,
-            PageSize = pageSize,
-            TotalCount = search.IncludeTotalCount ? filtered.Count : null
-        };
+        return mapped.FilterAndPage(search, search.Name, search.IsActive);
     }
 
     public async Task<PagedResult<ShopEmployeeDto>> GetPagedAsync(
@@ -72,20 +61,9 @@ public sealed class ShopEmployeeService(
             employees.Select(x => x.AppUserId),
             cancellationToken);
 
-        List<ShopEmployeeDto> filtered = [.. employees
-            .Select(x => Map(x, users.GetValueOrDefault(x.AppUserId)))
-            .Where(x => UserNameHelper.MatchesName(x.FirstName, x.LastName, x.Username, search.Name))
-            .Where(x => !search.IsActive.HasValue || x.IsActive == search.IsActive.Value)];
+        List<ShopEmployeeDto> mapped = [.. employees.Select(x => Map(x, users.GetValueOrDefault(x.AppUserId)))];
 
-        (var page, var pageSize) = PagingLimits.Normalize(search.Page, search.PageSize);
-
-        return new PagedResult<ShopEmployeeDto>
-        {
-            Items = [.. filtered.Skip((page - 1) * pageSize).Take(pageSize)],
-            Page = page,
-            PageSize = pageSize,
-            TotalCount = search.IncludeTotalCount ? filtered.Count : null
-        };
+        return mapped.FilterAndPage(search, search.Name, search.IsActive);
     }
 
     public async Task<ShopEmployeeDto> GetByIdAsync(

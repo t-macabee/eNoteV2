@@ -2,51 +2,37 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
 import 'package:enote_desktop/features/instructor/course/course_detail_dialog.dart';
 import 'package:enote_desktop/features/instructor/course/course_provider.dart';
 
-class _RecordingHttpClient extends http.BaseClient {
-  final List<http.BaseRequest> requests = [];
+import 'helpers.dart';
 
-  Iterable<http.BaseRequest> get puts => requests.where((r) => r.method == 'PUT');
-
-  @override
-  Future<http.StreamedResponse> send(http.BaseRequest request) async {
-    requests.add(request);
-
-    if (request.method == 'PUT' &&
-        request.url.path.endsWith('instructor/courses/1')) {
-      final body =
-          jsonDecode((request as http.Request).body) as Map<String, dynamic>;
-      final json = {
-        'id': 1,
-        'instructorId': 10,
-        'name': body['name'] ?? 'Gitara',
-        'price': 100.0,
-        'enrolledCount': 3,
-        'isPublished': body['isPublished'] ?? true,
-        'startDate': body['startDate'],
-        'endDate': body['endDate'],
-      };
-      return http.StreamedResponse(
-        Stream.value(utf8.encode(jsonEncode(json))),
-        200,
-        headers: {'content-type': 'application/json'},
-      );
-    }
-
-    return http.StreamedResponse(
-      Stream.value(utf8
-          .encode(jsonEncode({'items': [], 'page': 1, 'pageSize': 20, 'totalCount': 0}))),
-      200,
-      headers: {'content-type': 'application/json'},
-    );
+ScriptedClient _client() => ScriptedClient((request) {
+  if (request.method == 'PUT' &&
+      request.url.path.endsWith('instructor/courses/1')) {
+    final body = jsonDecode(request.body) as Map<String, dynamic>;
+    return jsonResponse({
+      'id': 1,
+      'instructorId': 10,
+      'name': body['name'] ?? 'Gitara',
+      'price': 100.0,
+      'enrolledCount': 3,
+      'isPublished': body['isPublished'] ?? true,
+      'startDate': body['startDate'],
+      'endDate': body['endDate'],
+    }, 200);
   }
-}
+
+  return jsonResponse(const {
+    'items': [],
+    'page': 1,
+    'pageSize': 20,
+    'totalCount': 0,
+  }, 200);
+});
 
 void main() {
   CourseDto course({bool published = true}) => CourseDto(
@@ -62,7 +48,7 @@ void main() {
 
   Future<void> pumpDialog(
     WidgetTester tester,
-    _RecordingHttpClient httpClient,
+    ScriptedClient httpClient,
     CourseDto dto,
   ) async {
     tester.view.physicalSize = const Size(1280, 800);
@@ -97,7 +83,7 @@ void main() {
   testWidgets(
       'unpublishing shows confirm dialog and does not PUT until confirmed',
       (tester) async {
-    final httpClient = _RecordingHttpClient();
+    final httpClient = _client();
     await pumpDialog(tester, httpClient, course(published: true));
 
     await tester.tap(find.byType(Switch));
@@ -106,22 +92,22 @@ void main() {
     expect(find.byType(AlertDialog), findsOneWidget);
     expect(find.text('Potvrdite povlačenje kursa'), findsOneWidget);
     expect(find.text('Potvrdi'), findsOneWidget);
-    expect(httpClient.puts, isEmpty,
+    expect(httpClient.putUrls, isEmpty,
         reason: 'no request may leave before the dialog is confirmed');
 
     await tester.tap(find.widgetWithText(ElevatedButton, 'Potvrdi'));
     await tester.pumpAndSettle();
 
-    expect(httpClient.puts.length, 1);
+    expect(httpClient.putUrls.length, 1);
     final body =
-        jsonDecode((httpClient.puts.single as http.Request).body)
+        jsonDecode(httpClient.putBodies.single)
             as Map<String, dynamic>;
     expect(body['isPublished'], isFalse);
   });
 
   testWidgets('cancelling the unpublish confirm dialog does not PUT',
       (tester) async {
-    final httpClient = _RecordingHttpClient();
+    final httpClient = _client();
     await pumpDialog(tester, httpClient, course(published: true));
 
     await tester.tap(find.byType(Switch));
@@ -131,21 +117,21 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(AlertDialog), findsNothing);
-    expect(httpClient.puts, isEmpty);
+    expect(httpClient.putUrls, isEmpty);
   });
 
   testWidgets('publishing an unpublished course PUTs without confirmation',
       (tester) async {
-    final httpClient = _RecordingHttpClient();
+    final httpClient = _client();
     await pumpDialog(tester, httpClient, course(published: false));
 
     await tester.tap(find.byType(Switch));
     await tester.pumpAndSettle();
 
     expect(find.byType(AlertDialog), findsNothing);
-    expect(httpClient.puts.length, 1);
+    expect(httpClient.putUrls.length, 1);
     final body =
-        jsonDecode((httpClient.puts.single as http.Request).body)
+        jsonDecode(httpClient.putBodies.single)
             as Map<String, dynamic>;
     expect(body['isPublished'], isTrue);
   });

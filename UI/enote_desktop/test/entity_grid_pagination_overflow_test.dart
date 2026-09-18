@@ -1,20 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
 import 'package:enote_desktop/widgets/entity_grid_screen.dart';
 
-class _NoopHttpClient extends http.BaseClient {
-  @override
-  Future<http.StreamedResponse> send(http.BaseRequest request) async {
-    return http.StreamedResponse(
-      const Stream.empty(),
-      200,
-    );
-  }
-}
+import 'helpers.dart';
 
 void main() {
   testWidgets(
@@ -29,7 +20,7 @@ void main() {
     final apiClient = ApiClient(
       baseUrl: 'http://localhost:5059/api/v1/',
       authState: authState,
-      httpClient: _NoopHttpClient(),
+      httpClient: ScriptedClient((_) => jsonResponse('', 200)),
     );
 
     await tester.pumpWidget(
@@ -65,7 +56,7 @@ void main() {
     final apiClient = ApiClient(
       baseUrl: 'http://localhost:5059/api/v1/',
       authState: authState,
-      httpClient: _NoopHttpClient(),
+      httpClient: ScriptedClient((_) => jsonResponse('', 200)),
     );
 
     await tester.pumpWidget(

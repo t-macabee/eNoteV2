@@ -1,4 +1,5 @@
 import 'package:enote_core/models/shared/enums.dart';
+import 'package:enote_core/models/shared/payment_record.dart';
 import '../../formatting/formatters.dart';
 
 class CreateTuitionIntentResponse {
@@ -30,13 +31,17 @@ class CreateTuitionIntentResponse {
   }
 }
 
-class CoursePaymentDto {
+class CoursePaymentDto implements PaymentRecord {
   final int id;
   final int enrollmentId;
   final String paymentIntentId;
+  @override
   final int amountCents;
+  @override
   final String currency;
+  @override
   final PaymentStatus status;
+  @override
   final DateTime? paidAt;
   final DateTime? periodStart;
   final DateTime? periodEnd;

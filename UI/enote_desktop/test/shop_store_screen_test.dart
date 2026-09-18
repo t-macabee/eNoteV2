@@ -2,7 +2,6 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
@@ -22,138 +21,99 @@ import 'package:enote_desktop/widgets/entity_grid_screen.dart';
 
 import 'helpers.dart';
 
-class _MockHttpClient extends http.BaseClient {
-  final List<String> putBodies = [];
-  final List<String> getUrls = [];
-  final List<String> putUrls = [];
-  final List<String> deletedUrls = [];
+ScriptedClient _client() => ScriptedClient((request) {
+  final url = request.url.toString();
+  if (request.method == 'DELETE') {
+    return jsonResponse('', 204);
+  }
 
-  @override
-  Future<http.StreamedResponse> send(http.BaseRequest request) async {
-    final url = request.url.toString();
-    if (request.method == 'DELETE') {
-      deletedUrls.add(url);
-      return http.StreamedResponse(
-        Stream.value(utf8.encode('')),
-        204,
-        headers: {'content-type': 'application/json'},
-      );
-    }
-
-    if (request.method == 'GET') {
-      getUrls.add(url);
-      if (url.contains('shop/store')) {
-        final json = jsonEncode({
-          'id': 10,
-          'storeName': 'Muzička Prodavnica',
-          'businessHours': '08:00 - 16:00',
-          'phoneNumber': '+387 61 111 222',
-          'addressId': 2,
-          'addressStreet': 'Ferhadija 15',
-          'addressCity': 'Sarajevo',
-          'imagePath': '/images/store.jpg',
-        });
-        return http.StreamedResponse(
-          Stream.value(utf8.encode(json)),
-          200,
-          headers: {'content-type': 'application/json'},
-        );
-      }
-      if (url.contains('shop/instruments')) {
-        final json = jsonEncode({
-          'items': [
-            {
-              'id': 1,
-              'model': 'Stratocaster',
-              'manufacturer': 'Fender',
-              'instrumentTypeId': 1,
-              'instrumentType': 'Gitara',
-              'musicStore': 'Muzička Prodavnica',
-              'isAvailable': true,
-            }
-          ],
-          'page': 1,
-          'pageSize': 20,
-          'totalCount': 1,
-        });
-        return http.StreamedResponse(
-          Stream.value(utf8.encode(json)),
-          200,
-          headers: {'content-type': 'application/json'},
-        );
-      }
-      if (url.contains('shop/instrument-types')) {
-        final json = jsonEncode({
-          'items': [
-            {'id': 1, 'type': 'Gitara', 'monthlyFee': 50.0},
-          ],
-          'page': 1,
-          'pageSize': 100,
-          'totalCount': 1,
-        });
-        return http.StreamedResponse(
-          Stream.value(utf8.encode(json)),
-          200,
-          headers: {'content-type': 'application/json'},
-        );
-      }
-      if (url.contains('admin/addresses')) {
-        final json = jsonEncode({
-          'items': [
-            {'id': 1, 'cityId': 1, 'city': 'Sarajevo', 'street': 'Maršala Tita', 'number': '1'},
-            {'id': 2, 'cityId': 1, 'city': 'Sarajevo', 'street': 'Ferhadija', 'number': '15'},
-          ],
-          'page': 1,
-          'pageSize': 100,
-          'totalCount': 2,
-        });
-        return http.StreamedResponse(
-          Stream.value(utf8.encode(json)),
-          200,
-          headers: {'content-type': 'application/json'},
-        );
-      }
-      if (url.contains('notifications')) {
-        return http.StreamedResponse(
-          Stream.value(utf8.encode(jsonEncode({'items': [], 'unreadCount': 0}))),
-          200,
-          headers: {'content-type': 'application/json'},
-        );
-      }
-    }
-
-    if (request.method == 'PUT' && url.contains('shop/store')) {
-      putUrls.add(url);
-      if (request is http.Request) {
-        putBodies.add(request.body);
-      }
-      final json = jsonEncode({
+  if (request.method == 'GET') {
+    if (url.contains('shop/store')) {
+      return jsonResponse(const {
         'id': 10,
-        'storeName': 'Ažurirana Prodavnica',
-        'businessHours': '09:00 - 17:00',
-        'phoneNumber': '+387 61 999 888',
+        'storeName': 'Muzička Prodavnica',
+        'businessHours': '08:00 - 16:00',
+        'phoneNumber': '+387 61 111 222',
         'addressId': 2,
         'addressStreet': 'Ferhadija 15',
         'addressCity': 'Sarajevo',
-      });
-      return http.StreamedResponse(
-        Stream.value(utf8.encode(json)),
-        200,
-        headers: {'content-type': 'application/json'},
-      );
+        'imagePath': '/images/store.jpg',
+      }, 200);
     }
-
-    return http.StreamedResponse(
-      Stream.value(utf8.encode('{}')),
-      200,
-      headers: {'content-type': 'application/json'},
-    );
+    if (url.contains('shop/instruments')) {
+      return jsonResponse(const {
+        'items': [
+          {
+            'id': 1,
+            'model': 'Stratocaster',
+            'manufacturer': 'Fender',
+            'instrumentTypeId': 1,
+            'instrumentType': 'Gitara',
+            'musicStore': 'Muzička Prodavnica',
+            'isAvailable': true,
+          }
+        ],
+        'page': 1,
+        'pageSize': 20,
+        'totalCount': 1,
+      }, 200);
+    }
+    if (url.contains('shop/instrument-types')) {
+      return jsonResponse(const {
+        'items': [
+          {'id': 1, 'type': 'Gitara', 'monthlyFee': 50.0},
+        ],
+        'page': 1,
+        'pageSize': 100,
+        'totalCount': 1,
+      }, 200);
+    }
+    if (url.contains('admin/addresses')) {
+      return jsonResponse(const {
+        'items': [
+          {
+            'id': 1,
+            'cityId': 1,
+            'city': 'Sarajevo',
+            'street': 'Maršala Tita',
+            'number': '1'
+          },
+          {
+            'id': 2,
+            'cityId': 1,
+            'city': 'Sarajevo',
+            'street': 'Ferhadija',
+            'number': '15'
+          },
+        ],
+        'page': 1,
+        'pageSize': 100,
+        'totalCount': 2,
+      }, 200);
+    }
+    if (url.contains('notifications')) {
+      return jsonResponse(const {'items': [], 'unreadCount': 0}, 200);
+    }
   }
-}
+
+  if (request.method == 'PUT' && url.contains('shop/store')) {
+    return jsonResponse(const {
+      'id': 10,
+      'storeName': 'Ažurirana Prodavnica',
+      'businessHours': '09:00 - 17:00',
+      'phoneNumber': '+387 61 999 888',
+      'addressId': 2,
+      'addressStreet': 'Ferhadija 15',
+      'addressCity': 'Sarajevo',
+    }, 200);
+  }
+
+  return jsonResponse(const {}, 200);
+});
 
 Widget _buildTestApp({
   required bool isManager,
-  required _MockHttpClient httpClient,
+  required ScriptedClient httpClient,
 }) {
   final authState = AuthState(
     baseUrl: 'http://localhost:5059/api/v1/',
@@ -188,7 +148,7 @@ Widget _buildTestApp({
 
 Widget _buildMasterTestApp({
   required bool isManager,
-  required _MockHttpClient httpClient,
+  required ScriptedClient httpClient,
 }) {
   final authState = AuthState(
     baseUrl: 'http://localhost:5059/api/v1/',
@@ -240,7 +200,7 @@ void main() {
       tester.view.resetDevicePixelRatio();
     });
 
-    final httpClient = _MockHttpClient();
+    final httpClient = _client();
     await tester.pumpWidget(_buildTestApp(isManager: false, httpClient: httpClient));
     await tester.pumpAndSettle();
 
@@ -269,7 +229,7 @@ void main() {
       tester.view.resetDevicePixelRatio();
     });
 
-    final httpClient = _MockHttpClient();
+    final httpClient = _client();
     await tester.pumpWidget(_buildTestApp(isManager: true, httpClient: httpClient));
     await tester.pumpAndSettle();
 
@@ -290,7 +250,7 @@ void main() {
       tester.view.resetDevicePixelRatio();
     });
 
-    final httpClient = _MockHttpClient();
+    final httpClient = _client();
     await tester.pumpWidget(_buildMasterTestApp(isManager: true, httpClient: httpClient));
     await tester.pumpAndSettle();
 
@@ -335,7 +295,7 @@ void main() {
       tester.view.resetDevicePixelRatio();
     });
 
-    final httpClient = _MockHttpClient();
+    final httpClient = _client();
     await tester.pumpWidget(_buildMasterTestApp(isManager: false, httpClient: httpClient));
     await tester.pumpAndSettle();
 
@@ -358,7 +318,7 @@ void main() {
       tester.view.resetDevicePixelRatio();
     });
 
-    final httpClient = _MockHttpClient();
+    final httpClient = _client();
     await tester.pumpWidget(_buildTestApp(isManager: true, httpClient: httpClient));
     await tester.pumpAndSettle();
 

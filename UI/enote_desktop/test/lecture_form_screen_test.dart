@@ -1,8 +1,5 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
@@ -10,23 +7,14 @@ import 'package:enote_desktop/features/instructor/lecture/lecture_form_screen.da
 import 'package:enote_desktop/features/instructor/lecture/lecture_provider.dart';
 import 'package:enote_desktop/widgets/entity_form_scaffold.dart';
 
-class _StubClient extends http.BaseClient {
-  @override
-  Future<http.StreamedResponse> send(http.BaseRequest request) async {
-    return http.StreamedResponse(
-      Stream.value(utf8.encode('{}')),
-      200,
-      headers: {'content-type': 'application/json'},
-    );
-  }
-}
+import 'helpers.dart';
 
 void main() {
   testWidgets('F3-08: cancelled lecture disables Save', (tester) async {
     final apiClient = ApiClient(
       baseUrl: 'http://localhost:5059/api/v1/',
       authState: AuthState(baseUrl: 'http://localhost:5059/api/v1/'),
-      httpClient: _StubClient(),
+      httpClient: ScriptedClient((_) => jsonResponse(const {}, 200)),
     );
     final lectureProvider = LectureProvider(apiClient: apiClient);
 

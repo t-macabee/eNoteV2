@@ -10,21 +10,7 @@ import 'package:enote_desktop/features/instructor/course/course_catalog_screen.d
 import 'package:enote_desktop/features/instructor/student/instructor_student_details_dialog.dart';
 import 'package:enote_desktop/features/instructor/student/instructor_student_provider.dart';
 
-class _MockHttpClient extends http.BaseClient {
-  final Future<http.Response> Function(http.BaseRequest request) _handler;
-
-  _MockHttpClient(this._handler);
-
-  @override
-  Future<http.StreamedResponse> send(http.BaseRequest request) async {
-    final response = await _handler(request);
-    return http.StreamedResponse(
-      Stream.value(utf8.encode(response.body)),
-      response.statusCode,
-      headers: {'content-type': 'application/json'},
-    );
-  }
-}
+import 'helpers.dart';
 
 void main() {
   testWidgets('CourseCatalogScreen renders catalog columns, no add button, and summary counts', (tester) async {
@@ -32,7 +18,7 @@ void main() {
     tester.view.devicePixelRatio = 1.0;
     addTearDown(() => tester.view.resetPhysicalSize());
 
-    final mockClient = _MockHttpClient((req) async {
+    final mockClient = ScriptedClient((req) async {
       if (req.url.path.endsWith('/instructors')) {
         return http.Response(jsonEncode([{'id': 1, 'name': 'Mozart'}]), 200);
       }
@@ -90,7 +76,7 @@ void main() {
   });
 
   testWidgets('InstructorStudentDetailsDialog renders student info and cross-enrollments', (tester) async {
-    final mockClient = _MockHttpClient((req) async {
+    final mockClient = ScriptedClient((req) async {
       if (req.url.path.endsWith('/enrollments')) {
         return http.Response(
           jsonEncode([

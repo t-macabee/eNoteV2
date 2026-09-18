@@ -1,7 +1,5 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
@@ -12,15 +10,6 @@ import 'package:enote_desktop/widgets/entity_list_screen.dart';
 
 import 'helpers.dart';
 
-class FakeClient extends http.BaseClient {
-  final Future<http.StreamedResponse> Function(http.BaseRequest request) handler;
-
-  FakeClient(this.handler);
-
-  @override
-  Future<http.StreamedResponse> send(http.BaseRequest request) => handler(request);
-}
-
 void main() {
   testWidgets('AnnouncementListScreen renders for course provider', (tester) async {
     tester.view.physicalSize = const Size(1400, 1000);
@@ -30,11 +19,10 @@ void main() {
 
     bool fetchCalled = false;
 
-    final client = FakeClient((request) async {
+    final client = ScriptedClient((request) {
       if (request.url.toString().contains('instructor/courses/1/announcements')) {
         fetchCalled = true;
-        return http.StreamedResponse(
-          Stream.value(utf8.encode(jsonEncode({
+        return jsonResponse({
             'items': [
               {
                 'id': 1,
@@ -46,11 +34,9 @@ void main() {
             'page': 1,
             'pageSize': 20,
             'totalCount': 1,
-          }))),
-          200,
-        );
+          }, 200);
       }
-      return http.StreamedResponse(Stream.value(utf8.encode('{}')), 404);
+      return jsonResponse('{}', 404);
     });
 
     final authState = AuthState(
@@ -98,11 +84,10 @@ void main() {
     
     bool fetchCalled = false;
 
-    final client = FakeClient((request) async {
+    final client = ScriptedClient((request) {
       if (request.url.toString().contains('shop/announcements')) {
         fetchCalled = true;
-        return http.StreamedResponse(
-          Stream.value(utf8.encode(jsonEncode({
+        return jsonResponse({
             'items': [
               {
                 'id': 2,
@@ -114,11 +99,9 @@ void main() {
             'page': 1,
             'pageSize': 20,
             'totalCount': 1,
-          }))),
-          200,
-        );
+          }, 200);
       }
-      return http.StreamedResponse(Stream.value(utf8.encode('{}')), 404);
+      return jsonResponse('{}', 404);
     });
 
     final authState = AuthState(
@@ -166,17 +149,14 @@ void main() {
 
     final queries = <Map<String, String>>[];
 
-    final client = FakeClient((request) async {
+    final client = ScriptedClient((request) {
       queries.add(request.url.queryParameters);
-      return http.StreamedResponse(
-        Stream.value(utf8.encode(jsonEncode({
+      return jsonResponse({
           'items': [],
           'page': 1,
           'pageSize': 20,
           'totalCount': 0,
-        }))),
-        200,
-      );
+        }, 200);
     });
 
     final authState = AuthState(
@@ -212,17 +192,14 @@ void main() {
 
     var fetches = 0;
 
-    final client = FakeClient((request) async {
+    final client = ScriptedClient((request) {
       fetches++;
-      return http.StreamedResponse(
-        Stream.value(utf8.encode(jsonEncode({
+      return jsonResponse({
           'items': [],
           'page': 1,
           'pageSize': 20,
           'totalCount': 0,
-        }))),
-        200,
-      );
+        }, 200);
     });
 
     final authState = AuthState(

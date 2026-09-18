@@ -1,8 +1,5 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
@@ -16,50 +13,6 @@ import 'package:enote_mobile/shell/root_shell.dart';
 import 'package:enote_mobile/theme/app_theme.dart';
 
 import '../helpers.dart';
-
-Map<String, dynamic> _meJson() => {
-  'role': 'Student',
-  'username': 'student',
-  'email': 'student@enote.com',
-  'profile': {
-    'id': 7,
-    'firstName': 'Student',
-    'lastName': 'Enote',
-    'dateOfBirth': '2001-05-12T00:00:00',
-    'membershipPaidUntil': DateTime.utc(2027, 9, 9).toIso8601String(),
-  },
-  'hasPicture': false,
-};
-
-class _ShellStubClient extends http.BaseClient {
-  @override
-  Future<http.StreamedResponse> send(http.BaseRequest request) async {
-    final path = request.url.path;
-    late Object body;
-    if (request.method == 'GET' && path == '/api/v1/users/me') {
-      body = _meJson();
-    } else if (request.method == 'GET' &&
-        path == '/api/v1/student/notifications/unread-count') {
-      body = {'unreadCount': 0};
-    } else if (request.method == 'GET' &&
-        path == '/api/v1/student/notifications') {
-      body = {'items': [], 'totalCount': 0};
-    } else if (request.method == 'GET' &&
-        path == '/api/v1/student/instruments') {
-      body = {'items': [], 'totalCount': 0};
-    } else if (request.method == 'GET' &&
-        path == '/api/v1/student/rentals') {
-      body = {'items': [], 'totalCount': 0};
-    } else {
-      body = {'message': 'OK'};
-    }
-    return http.StreamedResponse(
-      Stream.value(utf8.encode(jsonEncode(body))),
-      200,
-      headers: {'content-type': 'application/json'},
-    );
-  }
-}
 
 class _FakeHub extends NotificationHubClient {
   int startCalls = 0;
@@ -83,7 +36,7 @@ class _FakeHub extends NotificationHubClient {
 }
 
 class _Harness {
-  late final _ShellStubClient client;
+  late final ScriptedClient client;
   late final AuthState authState;
   late final ApiClient apiClient;
   late final NotificationController notifications;
@@ -91,7 +44,28 @@ class _Harness {
   late final _FakeHub hub;
 
   _Harness() {
-    client = _ShellStubClient();
+    client = ScriptedClient((request) {
+      final path = request.url.path;
+      late Object body;
+      if (request.method == 'GET' && path == '/api/v1/users/me') {
+        body = meJson();
+      } else if (request.method == 'GET' &&
+          path == '/api/v1/student/notifications/unread-count') {
+        body = {'unreadCount': 0};
+      } else if (request.method == 'GET' &&
+          path == '/api/v1/student/notifications') {
+        body = {'items': [], 'totalCount': 0};
+      } else if (request.method == 'GET' &&
+          path == '/api/v1/student/instruments') {
+        body = {'items': [], 'totalCount': 0};
+      } else if (request.method == 'GET' &&
+          path == '/api/v1/student/rentals') {
+        body = {'items': [], 'totalCount': 0};
+      } else {
+        body = {'message': 'OK'};
+      }
+      return jsonResponse(body, 200);
+    });
     authState = AuthState(
       baseUrl: 'http://10.0.2.2:5059/api/v1/',
       tokenReader: () => fakeJwt(),

@@ -1,8 +1,5 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
@@ -10,33 +7,22 @@ import 'package:enote_desktop/features/admin/city/city_list_screen.dart';
 import 'package:enote_desktop/features/admin/city/city_provider.dart';
 import 'package:enote_desktop/widgets/entity_list_screen.dart';
 
-class _CityHttpClient extends http.BaseClient {
-  final List<Map<String, dynamic>> items;
-  final int totalCount;
+import 'helpers.dart';
 
-  _CityHttpClient({
-    this.items = const [
-      {'id': 1, 'name': 'Sarajevo'},
-      {'id': 2, 'name': 'Mostar'},
-    ],
-    this.totalCount = 2,
-  });
-
-  @override
-  Future<http.StreamedResponse> send(http.BaseRequest request) async {
-    final body = jsonEncode({
-      'items': items,
-      'page': 1,
-      'pageSize': 10,
-      'totalCount': totalCount,
-    });
-    return http.StreamedResponse(
-      Stream.value(utf8.encode(body)),
-      200,
-      headers: {'content-type': 'application/json'},
-    );
-  }
-}
+ScriptedClient _cityClient({
+  List<Map<String, dynamic>> items = const [
+    {'id': 1, 'name': 'Sarajevo'},
+    {'id': 2, 'name': 'Mostar'},
+  ],
+  int totalCount = 2,
+}) => ScriptedClient(
+  (_) => jsonResponse({
+    'items': items,
+    'page': 1,
+    'pageSize': 10,
+    'totalCount': totalCount,
+  }, 200),
+);
 
 void main() {
   testWidgets(
@@ -47,7 +33,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    final httpClient = _CityHttpClient();
+    final httpClient = _cityClient();
     final authState = AuthState(baseUrl: 'http://localhost:5059/api/v1/');
     final apiClient = ApiClient(
       baseUrl: 'http://localhost:5059/api/v1/',
@@ -77,7 +63,7 @@ void main() {
   testWidgets(
       'CityListScreen renders Stranica 1 od 1 on empty result set',
       (WidgetTester tester) async {
-    final httpClient = _CityHttpClient(items: [], totalCount: 0);
+    final httpClient = _cityClient(items: [], totalCount: 0);
     final authState = AuthState(baseUrl: 'http://localhost:5059/api/v1/');
     final apiClient = ApiClient(
       baseUrl: 'http://localhost:5059/api/v1/',

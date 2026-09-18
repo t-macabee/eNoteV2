@@ -1,6 +1,6 @@
 namespace eNote.Application.Features.Identity.Students;
 
-public class StudentDto
+public class StudentDto : IUserProfileDto
 {
     public int Id { get; set; }
     public int AppUserId { get; set; }

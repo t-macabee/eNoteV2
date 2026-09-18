@@ -55,6 +55,11 @@ public static class IdentitySeed
                 MusicStoreId = storeId
             });
 
+            if (error == Messages.UsernameTaken)
+            {
+                continue;
+            }
+
             if (error is not null)
             {
                 throw new BusinessException(error);

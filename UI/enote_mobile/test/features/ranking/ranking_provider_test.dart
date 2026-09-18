@@ -8,25 +8,6 @@ import 'package:enote_mobile/features/ranking/ranking_provider.dart';
 
 import '../../helpers.dart';
 
-/// Serves a bare JSON list (the ranking endpoint is unpaged, 02 D6),
-/// which [RecordingHttpClient] cannot express (map body only).
-class _ListStubClient extends http.BaseClient {
-  final List<http.Request> requests = [];
-  final Object body;
-
-  _ListStubClient(this.body);
-
-  @override
-  Future<http.StreamedResponse> send(http.BaseRequest request) async {
-    requests.add(request as http.Request);
-    return http.StreamedResponse(
-      Stream.value(utf8.encode(jsonEncode(body))),
-      200,
-      headers: {'content-type': 'application/json'},
-    );
-  }
-}
-
 const _rankingList = [
   {
     'rank': 1,
@@ -61,7 +42,9 @@ RankingProvider _provider(http.Client client) {
 
 void main() {
   test('getForCourse issues GET student/courses/{id}/ranking', () async {
-    final client = _ListStubClient(_rankingList);
+    final client = ScriptedClient(
+      (_) => jsonResponse(jsonEncode(_rankingList), 200),
+    );
     final provider = _provider(client);
 
     final ranking = await provider.getForCourse(2);

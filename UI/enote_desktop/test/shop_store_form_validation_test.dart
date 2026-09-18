@@ -1,8 +1,6 @@
-import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
@@ -12,48 +10,34 @@ import 'package:enote_desktop/features/store_employee/store/shop_store_provider.
 
 import 'helpers.dart';
 
-class _RecordingStoreClient extends http.BaseClient {
-  int putCount = 0;
-
-  @override
-  Future<http.StreamedResponse> send(http.BaseRequest request) async {
-    final url = request.url.toString();
-    if (request.method == 'PUT' && url.contains('shop/store')) {
-      putCount++;
-      return http.StreamedResponse(
-        Stream.value(utf8.encode(jsonEncode({
-          'id': 10,
-          'storeName': 'Shop',
-          'businessHours': '08-16',
-          'phoneNumber': '+38761111222',
-          'addressId': 2,
-          'addressStreet': 'Ferhadija 15',
-          'addressCity': 'Sarajevo',
-        }))),
-        200,
-        headers: {'content-type': 'application/json'},
-      );
-    }
-    return http.StreamedResponse(
-      Stream.value(utf8.encode(jsonEncode({
-        'items': [],
-        'page': 1,
-        'pageSize': 100,
-        'totalCount': 0,
-      }))),
-      200,
-      headers: {'content-type': 'application/json'},
-    );
+ScriptedClient _client() => ScriptedClient((request) {
+  final url = request.url.toString();
+  if (request.method == 'PUT' && url.contains('shop/store')) {
+    return jsonResponse(const {
+      'id': 10,
+      'storeName': 'Shop',
+      'businessHours': '08-16',
+      'phoneNumber': '+38761111222',
+      'addressId': 2,
+      'addressStreet': 'Ferhadija 15',
+      'addressCity': 'Sarajevo',
+    }, 200);
   }
-}
+  return jsonResponse(const {
+    'items': [],
+    'page': 1,
+    'pageSize': 100,
+    'totalCount': 0,
+  }, 200);
+});
 
-Future<_RecordingStoreClient> _pumpForm(WidgetTester tester) async {
+Future<ScriptedClient> _pumpForm(WidgetTester tester) async {
   tester.view.physicalSize = const Size(1400, 1000);
   tester.view.devicePixelRatio = 1.0;
   addTearDown(tester.view.resetPhysicalSize);
   addTearDown(tester.view.resetDevicePixelRatio);
 
-  final client = _RecordingStoreClient();
+  final client = _client();
   final authState = AuthState(
     baseUrl: 'http://localhost:5059/api/v1/',
     tokenReader: () => fakeJwt(role: 'StoreEmployee', isManager: true),
@@ -112,7 +96,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Unesite važeći broj telefona.'), findsOneWidget);
-    expect(client.putCount, equals(0));
+    expect(client.putUrls.length, equals(0));
   });
 
   testWidgets('F4-13: empty phone stays optional', (tester) async {
@@ -127,6 +111,6 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Unesite važeći broj telefona.'), findsNothing);
-    expect(client.putCount, equals(1));
+    expect(client.putUrls.length, equals(1));
   });
 }

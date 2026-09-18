@@ -1,8 +1,6 @@
-import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
@@ -13,93 +11,75 @@ import 'package:enote_desktop/features/admin/music_store/music_store_provider.da
 import 'package:enote_desktop/features/admin/music_store/store_instrument_provider.dart';
 import 'package:enote_desktop/widgets/entity_grid_screen.dart';
 
-class _StoreRecordingHttpClient extends http.BaseClient {
-  final List<String> requestedUrls = [];
+import 'helpers.dart';
 
-  @override
-  Future<http.StreamedResponse> send(http.BaseRequest request) async {
-    final url = request.url.toString();
-    requestedUrls.add(url);
+ScriptedClient _client() => ScriptedClient((request) {
+  final url = request.url.toString();
 
-    if (url.contains('admin/music-stores/1')) {
-      final json = {
-        'id': 1,
-        'storeName': 'Muzička Kuća Sarajevo',
-        'businessHours': '09:00 - 19:00',
-        'phoneNumber': '+387 33 555 777',
-        'imagePath': '/uploads/stores/store1.jpg',
-        'addressId': 2,
-        'addressStreet': 'Titova 10',
-        'addressCity': 'Sarajevo',
-      };
-      return http.StreamedResponse(
-        Stream.value(utf8.encode(jsonEncode(json))),
-        200,
-        headers: {'content-type': 'application/json'},
-      );
-    }
-
-    if (url.contains('admin/instrument-types')) {
-      final json = {
-        'items': [
-          {'id': 1, 'type': 'Električna gitara', 'monthlyFee': 30.0},
-          {'id': 2, 'type': 'Klavir', 'monthlyFee': 50.0},
-        ],
-        'page': 1,
-        'pageSize': 100,
-        'totalCount': 2,
-      };
-      return http.StreamedResponse(
-        Stream.value(utf8.encode(jsonEncode(json))),
-        200,
-        headers: {'content-type': 'application/json'},
-      );
-    }
-
-    if (url.contains('instruments/public')) {
-      final json = {
-        'items': [
-          {
-            'id': 101,
-            'model': 'Stratocaster Player',
-            'manufacturer': 'Fender',
-            'description': 'Solid body electric guitar',
-            'imagePath': null,
-            'instrumentTypeId': 1,
-            'instrumentType': 'Električna gitara',
-            'musicStore': 'Muzička Kuća Sarajevo',
-            'isAvailable': true,
-          },
-          {
-            'id': 102,
-            'model': 'U1 Upright Piano',
-            'manufacturer': 'Yamaha',
-            'description': 'Acoustic piano',
-            'imagePath': null,
-            'instrumentTypeId': 2,
-            'instrumentType': 'Klavir',
-            'musicStore': 'Muzička Kuća Sarajevo',
-            'isAvailable': false,
-          }
-        ],
-        'page': 1,
-        'pageSize': 24,
-        'totalCount': 2,
-      };
-      return http.StreamedResponse(
-        Stream.value(utf8.encode(jsonEncode(json))),
-        200,
-        headers: {'content-type': 'application/json'},
-      );
-    }
-
-    return http.StreamedResponse(
-      Stream.value(utf8.encode(jsonEncode({'items': [], 'page': 1, 'pageSize': 20, 'totalCount': 0}))),
-      200,
-      headers: {'content-type': 'application/json'},
-    );
+  if (url.contains('admin/music-stores/1')) {
+    return jsonResponse(const {
+      'id': 1,
+      'storeName': 'Muzička Kuća Sarajevo',
+      'businessHours': '09:00 - 19:00',
+      'phoneNumber': '+387 33 555 777',
+      'imagePath': '/uploads/stores/store1.jpg',
+      'addressId': 2,
+      'addressStreet': 'Titova 10',
+      'addressCity': 'Sarajevo',
+    }, 200);
   }
-}
+
+  if (url.contains('admin/instrument-types')) {
+    return jsonResponse(const {
+      'items': [
+        {'id': 1, 'type': 'Električna gitara', 'monthlyFee': 30.0},
+        {'id': 2, 'type': 'Klavir', 'monthlyFee': 50.0},
+      ],
+      'page': 1,
+      'pageSize': 100,
+      'totalCount': 2,
+    }, 200);
+  }
+
+  if (url.contains('instruments/public')) {
+    return jsonResponse(const {
+      'items': [
+        {
+          'id': 101,
+          'model': 'Stratocaster Player',
+          'manufacturer': 'Fender',
+          'description': 'Solid body electric guitar',
+          'imagePath': null,
+          'instrumentTypeId': 1,
+          'instrumentType': 'Električna gitara',
+          'musicStore': 'Muzička Kuća Sarajevo',
+          'isAvailable': true,
+        },
+        {
+          'id': 102,
+          'model': 'U1 Upright Piano',
+          'manufacturer': 'Yamaha',
+          'description': 'Acoustic piano',
+          'imagePath': null,
+          'instrumentTypeId': 2,
+          'instrumentType': 'Klavir',
+          'musicStore': 'Muzička Kuća Sarajevo',
+          'isAvailable': false,
+        }
+      ],
+      'page': 1,
+      'pageSize': 24,
+      'totalCount': 2,
+    }, 200);
+  }
+
+  return jsonResponse(const {
+    'items': [],
+    'page': 1,
+    'pageSize': 20,
+    'totalCount': 0,
+  }, 200);
+});
 
 void main() {
   testWidgets('MusicStoreDetailScreen loads store details on left and instruments grid on right with dual-purpose grouping',
@@ -112,7 +92,7 @@ void main() {
     });
 
     final authState = AuthState(baseUrl: 'http://localhost:5059/api/v1/');
-    final httpClient = _StoreRecordingHttpClient();
+    final httpClient = _client();
     final apiClient = ApiClient(
       baseUrl: 'http://localhost:5059/api/v1/',
       authState: authState,

@@ -193,4 +193,58 @@ void main() {
       );
     });
   });
+
+  group('decodeListOrThrowBody', () {
+    test('decodes a bare JSON array', () {
+      expect(decodeListOrThrowBody('[{"id": 1}]'), [
+        {'id': 1},
+      ]);
+    });
+
+    test('malformed or non-array body throws ApiException', () {
+      expect(
+        () => decodeListOrThrowBody('not-json{{{'),
+        throwsA(
+          isA<ApiException>().having(
+            (e) => e.message,
+            'message',
+            'Neispravan odgovor servera.',
+          ),
+        ),
+      );
+      expect(
+        () => decodeListOrThrowBody('{"id": 1}'),
+        throwsA(isA<ApiException>()),
+      );
+    });
+  });
+
+  group('decodeList', () {
+    test('200 maps each array element through fromJson', () {
+      final response = http.Response(
+        '[{"id": 1}, {"id": 2}]',
+        200,
+        headers: jsonHeaders,
+      );
+      expect(
+        decodeList(response, (json) => json['id'] as int),
+        [1, 2],
+      );
+    });
+
+    test('non-list body throws ApiException with parse-failure message', () {
+      final response =
+          http.Response('{"id": 1}', 200, headers: jsonHeaders);
+      expect(
+        () => decodeList(response, (json) => json['id'] as int),
+        throwsA(
+          isA<ApiException>().having(
+            (e) => e.message,
+            'message',
+            'Neispravan odgovor servera.',
+          ),
+        ),
+      );
+    });
+  });
 }

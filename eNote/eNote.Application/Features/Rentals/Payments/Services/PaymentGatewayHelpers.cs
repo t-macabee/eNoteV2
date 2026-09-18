@@ -67,7 +67,7 @@ public static class PaymentGatewayHelpers
         {
             await context.SaveChangesAsync(cancellationToken);
         }
-        catch (DbUpdateException ex) when (ex.InnerException?.Message?.Contains(uniqueConstraintName) == true)
+        catch (DbUpdateException ex) when (DbErrors.IsUniqueViolation(ex, uniqueConstraintName))
         {
             var winner = await context.Set<TPayment>().FirstAsync(p => p.StripePaymentIntentId == intent.Id, cancellationToken);
             return (winner.StripePaymentIntentId, intent.ClientSecret, winner.AmountChargedCents, winner.Currency, winner.Status);

@@ -201,7 +201,7 @@ public sealed class RateLimitingTests
     [Fact]
     public void AuthPartition_KeepsTenPermitLimit()
     {
-        var partition = RateLimitingExtensions.AuthPartition("10.0.0.5");
+        var partition = RateLimitingExtensions.Window("10.0.0.5", 10);
         using var limiter = partition.Factory(partition.PartitionKey);
 
         for (var i = 0; i < 10; i++)

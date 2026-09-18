@@ -1,8 +1,5 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
@@ -38,14 +35,6 @@ Map<String, dynamic> _courseJson({
   'isFree': isFree,
 };
 
-Map<String, dynamic> _meJson({required DateTime paidUntil}) => {
-  'role': 'Student',
-  'username': 'student',
-  'email': 'student@enote.com',
-  'profile': {'id': 7, 'membershipPaidUntil': paidUntil.toIso8601String()},
-  'hasPicture': false,
-};
-
 const _lectureJson = {
   'id': 11,
   'name': 'Akordi I',
@@ -67,66 +56,48 @@ const _lecturesPage = {
   'totalCount': 1,
 };
 
-class _CourseDetailStubClient extends http.BaseClient {
-  final List<String> calls = [];
-  bool enrolled;
-  final DateTime paidUntil;
-  final int? enrollmentId;
-  final bool isFree;
-  final String? coursePaidUntil;
-
-  _CourseDetailStubClient({
-    required this.enrolled,
-    required this.paidUntil,
-    this.enrollmentId,
-    this.isFree = false,
-    this.coursePaidUntil,
-  });
-
-  int count(String marker) => calls
-      .where((c) => c == marker || c.startsWith('$marker?'))
-      .length;
-
-  @override
-  Future<http.StreamedResponse> send(http.BaseRequest request) async {
+ScriptedClient _client({
+  required bool enrolled,
+  required DateTime paidUntil,
+  int? enrollmentId,
+  bool isFree = false,
+  String? coursePaidUntil,
+}) {
+  var isEnrolled = enrolled;
+  return ScriptedClient((request) {
     final path = request.url.path;
-    calls.add('${request.method} $path?${request.url.query}');
     Object body;
     switch ('${request.method} $path') {
       case 'GET /api/v1/users/me':
-        body = _meJson(paidUntil: paidUntil);
+        body = meJson(paidUntil: paidUntil);
       case 'GET /api/v1/student/notifications/unread-count':
         body = {'unreadCount': 0};
       case 'GET /api/v1/student/notifications':
         body = {'items': []};
       case 'GET /api/v1/student/courses/2':
         body = _courseJson(
-          enrolled: enrolled,
-          enrollmentId: enrolled ? enrollmentId : null,
+          enrolled: isEnrolled,
+          enrollmentId: isEnrolled ? enrollmentId : null,
           paidUntil: coursePaidUntil,
           isFree: isFree,
         );
       case 'GET /api/v1/student/lectures':
         body = _lecturesPage;
       case 'POST /api/v1/student/courses/2/enroll':
-        enrolled = true;
+        isEnrolled = true;
         body = {'message': 'OK'};
       case 'POST /api/v1/student/courses/2/unenroll':
-        enrolled = false;
+        isEnrolled = false;
         body = {'message': 'OK'};
       default:
         body = {'message': 'OK'};
     }
-    return http.StreamedResponse(
-      Stream.value(utf8.encode(jsonEncode(body))),
-      200,
-      headers: {'content-type': 'application/json'},
-    );
-  }
+    return jsonResponse(body, 200);
+  });
 }
 
 class _Harness {
-  late final _CourseDetailStubClient client;
+  late final ScriptedClient client;
   late final AuthState authState;
   late final ApiClient apiClient;
   late final SessionController session;
@@ -138,7 +109,7 @@ class _Harness {
     bool isFree = false,
     String? coursePaidUntil,
   }) async {
-    client = _CourseDetailStubClient(
+    client = _client(
       enrolled: enrolled,
       paidUntil: paidUntil ?? DateTime.utc(2027, 9, 9),
       enrollmentId: enrollmentId,
@@ -206,10 +177,10 @@ void main() {
       );
       expect(find.textContaining('Akordi I'), findsNothing);
       // The initial load (02 D7) fires exactly one lectures request.
-      expect(harness.client.count('GET /api/v1/student/lectures'), 1);
+      expect(countRequests(harness.client, 'GET /api/v1/student/lectures'), 1);
 
       await tester.pump(const Duration(seconds: 1));
-      expect(harness.client.count('GET /api/v1/student/lectures'), 1);
+      expect(countRequests(harness.client, 'GET /api/v1/student/lectures'), 1);
     },
   );
 
@@ -252,11 +223,11 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(
-      harness.client.count('POST /api/v1/student/courses/2/enroll'),
+      countRequests(harness.client, 'POST /api/v1/student/courses/2/enroll'),
       1,
     );
-    expect(harness.client.count('GET /api/v1/student/courses/2'), 2);
-    expect(harness.client.count('GET /api/v1/student/lectures'), 2);
+    expect(countRequests(harness.client, 'GET /api/v1/student/courses/2'), 2);
+    expect(countRequests(harness.client, 'GET /api/v1/student/lectures'), 2);
     expect(
       find.text('Uspješno ste upisani na kurs Osnove teorije muzike.'),
       findsOneWidget,
@@ -285,12 +256,12 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(
-      harness.client.count('POST /api/v1/student/courses/2/unenroll'),
+      countRequests(harness.client, 'POST /api/v1/student/courses/2/unenroll'),
       1,
     );
-    expect(harness.client.count('GET /api/v1/student/courses/2'), 2);
+    expect(countRequests(harness.client, 'GET /api/v1/student/courses/2'), 2);
     // No further lectures request after the initial load (03 §5.3 step 3).
-    expect(harness.client.count('GET /api/v1/student/lectures'), 1);
+    expect(countRequests(harness.client, 'GET /api/v1/student/lectures'), 1);
     expect(
       find.text('Upišite se da vidite predavanja ovog kursa.'),
       findsOneWidget,
@@ -308,7 +279,7 @@ void main() {
     await harness.bootstrap(enrolled: true);
     await tester.pumpWidget(harness.app());
     await tester.pumpAndSettle();
-    expect(harness.client.count('GET /api/v1/student/lectures'), 1);
+    expect(countRequests(harness.client, 'GET /api/v1/student/lectures'), 1);
 
     await tester.ensureVisible(find.textContaining('Akordi I'));
     await tester.pumpAndSettle();
@@ -319,7 +290,7 @@ void main() {
 
     await tester.pageBack();
     await tester.pumpAndSettle();
-    expect(harness.client.count('GET /api/v1/student/lectures'), 2);
+    expect(countRequests(harness.client, 'GET /api/v1/student/lectures'), 2);
   });
 
   testWidgets('inactive membership disables the button under the banner', (
@@ -430,7 +401,7 @@ void main() {
     await harness.bootstrap(enrolled: true, enrollmentId: 5);
     await tester.pumpWidget(harness.app());
     await tester.pumpAndSettle();
-    expect(harness.client.count('GET /api/v1/student/courses/2'), 1);
+    expect(countRequests(harness.client, 'GET /api/v1/student/courses/2'), 1);
 
     await tester.tap(find.widgetWithText(TextButton, 'Plati'));
     await tester.pumpAndSettle();
@@ -439,6 +410,6 @@ void main() {
     // The route pops without a result (close icon or Android back).
     await tester.pageBack();
     await tester.pumpAndSettle();
-    expect(harness.client.count('GET /api/v1/student/courses/2'), 2);
+    expect(countRequests(harness.client, 'GET /api/v1/student/courses/2'), 2);
   });
 }

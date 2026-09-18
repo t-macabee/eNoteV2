@@ -1,9 +1,7 @@
-import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
@@ -32,21 +30,13 @@ Map<String, dynamic> _submissionJson({int? grade}) => {
   'grade': grade,
 };
 
-class _AssignmentDetailStubClient extends http.BaseClient {
-  final List<String> calls = [];
-  final String dueAt;
-  final Map<String, dynamic>? submission;
-  bool submitted = false;
-
-  _AssignmentDetailStubClient({required this.dueAt, this.submission});
-
-  int count(String marker) =>
-      calls.where((c) => c == marker || c.startsWith('$marker?')).length;
-
-  @override
-  Future<http.StreamedResponse> send(http.BaseRequest request) async {
+ScriptedClient _client({
+  required String dueAt,
+  Map<String, dynamic>? submission,
+}) {
+  var submitted = false;
+  return ScriptedClient((request) {
     final path = request.url.path;
-    calls.add('${request.method} $path?${request.url.query}');
     Object body;
     int status = 200;
     switch ('${request.method} $path') {
@@ -56,7 +46,7 @@ class _AssignmentDetailStubClient extends http.BaseClient {
         if (submitted && submission == null) {
           body = _submissionJson();
         } else if (submission != null) {
-          body = submission!;
+          body = submission;
         } else {
           status = 404;
           body = {'message': 'Predaja zadatka nije pronađena.'};
@@ -67,20 +57,16 @@ class _AssignmentDetailStubClient extends http.BaseClient {
       default:
         body = {'message': 'OK'};
     }
-    return http.StreamedResponse(
-      Stream.value(utf8.encode(jsonEncode(body))),
-      status,
-      headers: {'content-type': 'application/json'},
-    );
-  }
+    return jsonResponse(body, status);
+  });
 }
 
 class _Harness {
-  late final _AssignmentDetailStubClient client;
+  late final ScriptedClient client;
   late final ApiClient apiClient;
 
   _Harness({required String dueAt, Map<String, dynamic>? submission}) {
-    client = _AssignmentDetailStubClient(dueAt: dueAt, submission: submission);
+    client = _client(dueAt: dueAt, submission: submission);
     final authState = AuthState(
       baseUrl: 'http://10.0.2.2:5059/api/v1/',
       tokenReader: () => fakeJwt(),
@@ -246,7 +232,7 @@ void main() {
     );
     expect(button.onPressed, isNull);
     expect(
-      harness.client.count('POST /api/v1/student/assignments/5/submit'),
+      countRequests(harness.client, 'POST /api/v1/student/assignments/5/submit'),
       0,
     );
   });
@@ -301,7 +287,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(
-      harness.client.count('POST /api/v1/student/assignments/5/submit'),
+      countRequests(harness.client, 'POST /api/v1/student/assignments/5/submit'),
       1,
     );
     expect(find.text('Zadatak je predan.'), findsOneWidget);

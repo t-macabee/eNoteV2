@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:enote_core/enote_core.dart';
 
 /// Catalogue provider for the Instrumenti tab (S7, S8).
@@ -55,16 +53,7 @@ class InstrumentProvider extends ReadOnlyProvider<InstrumentDto> {
       'student/instruments/recommended',
       queryParams: {'count': count},
     );
-    throwIfError(response);
-    final decoded = jsonDecode(response.body);
-    if (decoded is! List) return const [];
-    return decoded
-        .map(
-          (e) => InstrumentRecommendationDto.fromJson(
-            Map<String, dynamic>.from(e as Map),
-          ),
-        )
-        .toList();
+    return decodeList(response, InstrumentRecommendationDto.fromJson);
   }
 
   /// `POST student/instruments/{id}/view`.

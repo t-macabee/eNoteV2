@@ -92,24 +92,14 @@ public sealed class EventService(IAppDbContext context, ICurrentUserContext curr
 
     public override async Task<EventDto> CreateAsync(EventRequest request, CancellationToken cancellationToken = default)
     {
-        await ValidateForeignKeysAsync(request, cancellationToken);
-
-        if (request.EndsAt.HasValue && request.EndsAt.Value <= request.StartsAt)
-        {
-            throw new BusinessException(Messages.EventEndsBeforeStarts);
-        }
+        await ValidateRequestAsync(request, cancellationToken);
 
         return await base.CreateAsync(request, cancellationToken);
     }
 
     public override async Task<EventDto> UpdateAsync(int id, EventRequest request, CancellationToken cancellationToken = default)
     {
-        await ValidateForeignKeysAsync(request, cancellationToken);
-
-        if (request.EndsAt.HasValue && request.EndsAt.Value <= request.StartsAt)
-        {
-            throw new BusinessException(Messages.EventEndsBeforeStarts);
-        }
+        await ValidateRequestAsync(request, cancellationToken);
 
         var dto = await base.UpdateAsync(id, request, cancellationToken);
 
@@ -128,6 +118,16 @@ public sealed class EventService(IAppDbContext context, ICurrentUserContext curr
     }
 
     protected override string NotFoundMessage => Messages.EventNotFound;
+
+    private async Task ValidateRequestAsync(EventRequest request, CancellationToken cancellationToken)
+    {
+        await ValidateForeignKeysAsync(request, cancellationToken);
+
+        if (request.EndsAt.HasValue && request.EndsAt.Value <= request.StartsAt)
+        {
+            throw new BusinessException(Messages.EventEndsBeforeStarts);
+        }
+    }
 
     private async Task ValidateForeignKeysAsync(EventRequest request, CancellationToken ct)
     {

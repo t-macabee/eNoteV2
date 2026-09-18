@@ -302,8 +302,6 @@ public sealed class PictureAccessServiceTests
             throw new NotSupportedException();
         public Task<(bool Success, string? Error)> ChangePasswordAsync(int userId, string currentPassword, string newPassword, CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();
-        public Task<bool> IsUserActiveAsync(int userId, CancellationToken cancellationToken = default) =>
-            throw new NotSupportedException();
         public Task<(bool Success, string? Error)> SetActiveAsync(int userId, bool isActive, CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();
         public Task<(bool Success, string? Error, string? PicturePath)> DeleteUserAsync(int userId, CancellationToken cancellationToken = default) =>

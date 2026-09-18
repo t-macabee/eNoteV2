@@ -1,30 +1,12 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
 import 'package:enote_desktop/features/instructor/ranking/ranking_provider.dart';
 import 'package:enote_desktop/features/instructor/ranking/ranking_screen.dart';
 
-class _BareListClient extends http.BaseClient {
-  final List<http.Request> requests = [];
-  final List<dynamic> body;
-
-  _BareListClient(this.body);
-
-  @override
-  Future<http.StreamedResponse> send(http.BaseRequest request) async {
-    requests.add(request as http.Request);
-    return http.StreamedResponse(
-      Stream.value(utf8.encode(jsonEncode(body))),
-      200,
-      headers: {'content-type': 'application/json'},
-    );
-  }
-}
+import 'helpers.dart';
 
 void main() {
   testWidgets('RankingView renders the bare unpaged ranking list',
@@ -34,22 +16,24 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    final client = _BareListClient([
-      {
-        'rank': 1,
-        'studentId': 7,
-        'studentName': 'Student Enote',
-        'averageGrade': 9.5,
-        'gradedSubmissions': 3,
-      },
-      {
-        'rank': 2,
-        'studentId': 9,
-        'studentName': 'Drugi Student',
-        'averageGrade': null,
-        'gradedSubmissions': 0,
-      },
-    ]);
+    final client = ScriptedClient(
+      (_) => jsonResponse([
+        {
+          'rank': 1,
+          'studentId': 7,
+          'studentName': 'Student Enote',
+          'averageGrade': 9.5,
+          'gradedSubmissions': 3,
+        },
+        {
+          'rank': 2,
+          'studentId': 9,
+          'studentName': 'Drugi Student',
+          'averageGrade': null,
+          'gradedSubmissions': 0,
+        },
+      ], 200),
+    );
     final apiClient = ApiClient(
       baseUrl: 'http://localhost:5059/api/v1/',
       authState: AuthState(),

@@ -76,7 +76,7 @@ void main() {
 
     expect(find.text('Stranica 1 od 3'), findsOneWidget);
     expect(find.text('Item 1'), findsOneWidget);
-    await tester.tap(find.text('Sledeća'));
+    await tester.tap(find.text('Sljedeća'));
     await tester.pump();
     await tester.pump();
     expect(find.text('Stranica 2 od 3'), findsOneWidget);

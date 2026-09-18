@@ -37,10 +37,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     super.dispose();
   }
 
-  String _text(TextEditingController controller) {
-    final value = controller.text.trim();
-    return value.isEmpty ? '' : value;
-  }
+  String _text(TextEditingController controller) => controller.text.trim();
 
   Future<void> _submit() async {
     if (!(_formKey.currentState?.validate() ?? false)) {

@@ -1,8 +1,5 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:http/http.dart' as http;
 
 import 'package:enote_core/enote_core.dart';
 import 'package:enote_desktop/features/admin/reference_data/reference_data_dialog.dart';
@@ -11,32 +8,6 @@ import 'package:enote_desktop/shell/login_screen.dart';
 import 'package:enote_desktop/shell/master_screen.dart';
 
 import 'helpers.dart';
-
-class _ExpiryHttpClient extends http.BaseClient {
-  bool return401 = false;
-
-  @override
-  Future<http.StreamedResponse> send(http.BaseRequest request) async {
-    if (return401 && !request.url.path.contains('/auth/')) {
-      return http.StreamedResponse(
-        Stream.value(utf8.encode(jsonEncode({'message': 'Unauthorized'}))),
-        401,
-        headers: {'content-type': 'application/json'},
-      );
-    }
-    final body = jsonEncode({
-      'items': [],
-      'page': 1,
-      'pageSize': 10,
-      'totalCount': 0,
-    });
-    return http.StreamedResponse(
-      Stream.value(utf8.encode(body)),
-      200,
-      headers: {'content-type': 'application/json'},
-    );
-  }
-}
 
 void main() {
   testWidgets(
@@ -47,7 +18,18 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
 
-      final mockHttp = _ExpiryHttpClient();
+      var return401 = false;
+      final mockHttp = ScriptedClient((request) {
+        if (return401 && !request.url.path.contains('/auth/')) {
+          return jsonResponse({'message': 'Unauthorized'}, 401);
+        }
+        return jsonResponse(const {
+          'items': [],
+          'page': 1,
+          'pageSize': 10,
+          'totalCount': 0,
+        }, 200);
+      });
       final navigatorKey = GlobalKey<NavigatorState>();
       late AuthState authState;
       final sessionHttp = SessionHttpClient(
@@ -84,7 +66,7 @@ void main() {
 
       expect(find.byType(ReferenceDataDialog), findsOneWidget);
 
-      mockHttp.return401 = true;
+      return401 = true;
 
       try {
         await apiClient.get('courses');

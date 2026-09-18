@@ -73,7 +73,7 @@ public sealed class LectureAttendanceService(
             logger.LogWarning(ex, "Concurrency conflict while RSVPing for lecture {LectureId} by student user {StudentUserId}", lectureId, currentUser.UserId);
             throw new ConflictException(Messages.LectureRsvpConflict);
         }
-        catch (DbUpdateException ex) when (ex.InnerException?.Message?.Contains(DbConstraintNames.AttendanceStudentIdLectureIdUniqueIndex) == true)
+        catch (DbUpdateException ex) when (DbErrors.IsUniqueViolation(ex, DbConstraintNames.AttendanceStudentIdLectureIdUniqueIndex))
         {
             logger.LogWarning(ex, "Duplicate RSVP for lecture {LectureId} by student user {StudentUserId}", lectureId, currentUser.UserId);
             throw new ConflictException(Messages.LectureRsvpConflict);
@@ -163,7 +163,7 @@ public sealed class LectureAttendanceService(
         {
             await context.SaveChangesAsync(cancellationToken);
         }
-        catch (DbUpdateException ex) when (ex.InnerException?.Message?.Contains(DbConstraintNames.AttendanceStudentIdLectureIdUniqueIndex) == true)
+        catch (DbUpdateException ex) when (DbErrors.IsUniqueViolation(ex, DbConstraintNames.AttendanceStudentIdLectureIdUniqueIndex))
         {
             logger.LogWarning(ex, "Duplicate attendance for lecture {LectureId} and student {StudentId}", lectureId, request.StudentId);
             throw new ConflictException(Messages.AttendanceAlreadyMarked);

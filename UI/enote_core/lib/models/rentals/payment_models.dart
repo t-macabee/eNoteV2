@@ -1,13 +1,18 @@
 import 'package:enote_core/models/shared/enums.dart';
+import 'package:enote_core/models/shared/payment_record.dart';
 import '../../formatting/formatters.dart';
 
-class RentalPaymentDto {
+class RentalPaymentDto implements PaymentRecord {
   final int id;
   final int rentalId;
   final String paymentIntentId;
+  @override
   final int amountCents;
+  @override
   final String currency;
+  @override
   final PaymentStatus status;
+  @override
   final DateTime? paidAt;
   final DateTime? refundedAt;
   final int? refundedCents;
@@ -63,7 +68,7 @@ class CreatePaymentIntentResponse {
       paymentIntentId: json['paymentIntentId'] as String? ?? '',
       clientSecret: json['clientSecret'] as String? ?? '',
       amountCents: (json['amountCents'] as num?)?.toInt() ?? 0,
-      currency: json['currency'] as String? ?? 'eur',
+      currency: json['currency'] as String? ?? '',
       status: PaymentStatus.fromJson(json['status'] as String?),
     );
   }

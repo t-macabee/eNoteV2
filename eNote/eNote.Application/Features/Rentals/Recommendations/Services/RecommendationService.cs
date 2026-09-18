@@ -142,7 +142,7 @@ public sealed class RecommendationService(IAppDbContext context, IMapper mapper,
         {
             await context.SaveChangesAsync(cancellationToken);
         }
-        catch (DbUpdateException ex) when (ex.InnerException?.Message?.Contains(DbConstraintNames.InstrumentViewUserIdInstrumentIdUniqueIndex) == true)
+        catch (DbUpdateException ex) when (DbErrors.IsUniqueViolation(ex, DbConstraintNames.InstrumentViewUserIdInstrumentIdUniqueIndex))
         {
             logger.LogInformation(ex, "Duplicate view for user {UserId} and instrument {InstrumentId} ignored", userId, instrumentId);
         }

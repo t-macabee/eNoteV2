@@ -39,9 +39,9 @@ public sealed class AdminUsersController(
 
         if (error is not null)
         {
-            if (error == Messages.UsernameTaken)
+            if (ErrorMapping.IsConflict(error))
             {
-                throw new ConflictException(Messages.UsernameTaken);
+                throw new ConflictException(error);
             }
 
             return BadRequest(new
@@ -79,17 +79,7 @@ public sealed class AdminUsersController(
 
         if (!success)
         {
-            if (error == Messages.NotFound)
-            {
-                return NotFound(new { message = error });
-            }
-
-            if (error == Messages.CannotModifyOwnAccount)
-            {
-                return Conflict(new { message = error });
-            }
-
-            return BadRequest(new { message = error });
+            return MapError(error);
         }
 
         return NoContent();
@@ -105,17 +95,7 @@ public sealed class AdminUsersController(
 
         if (!success)
         {
-            if (error == eNote.Application.Common.Localization.Messages.UserDeleteBlocked)
-            {
-                return Conflict(new { message = error });
-            }
-
-            if (error == Messages.CannotModifyOwnAccount)
-            {
-                return Conflict(new { message = error });
-            }
-
-            return NotFound(new { message = error });
+            return MapError(error, StatusCodes.Status404NotFound);
         }
 
         return NoContent();

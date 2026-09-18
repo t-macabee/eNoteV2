@@ -3,7 +3,6 @@ using eNote.Application.Constants;
 using eNote.Contracts.Rentals;
 using eNote.Domain.Entities.Communication;
 using MassTransit;
-using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Worker.Consumers;
@@ -22,10 +21,7 @@ public sealed class RentalRefundedConsumer(IAppDbContext dbContext, ILogger<Rent
         {
             await dbContext.SaveChangesAsync(context.CancellationToken);
         }
-        catch (DbUpdateException ex) when (ex.InnerException is SqlException
-        {
-            Number: 2601 or 2627
-        } sqlEx && sqlEx.Message.Contains(DbConstraintNames.NotificationUserRentalCreatedAtUniqueIndex))
+        catch (DbUpdateException ex) when (DbErrors.IsUniqueViolation(ex, DbConstraintNames.NotificationUserRentalCreatedAtUniqueIndex))
         {
             logger.LogWarning("Skipping duplicate rental notification for rental {RentalId} and user {UserId}.", message.RentalId, message.StudentUserId);
             return;

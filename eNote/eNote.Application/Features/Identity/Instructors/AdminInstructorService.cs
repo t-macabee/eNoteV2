@@ -14,20 +14,9 @@ public sealed class AdminInstructorService(IAppDbContext context, IUserIdentityS
         List<Instructor> instructors = await query.ToListAsync(cancellationToken);
         IReadOnlyDictionary<int, UserIdentityDto> users = await identityService.GetUsersBulkAsync(instructors.Select(x => x.AppUserId), cancellationToken);
 
-        List<InstructorDto> filtered = [.. instructors
-            .Select(x => Map(x, users.GetValueOrDefault(x.AppUserId)))
-            .Where(x => UserNameHelper.MatchesName(x.FirstName, x.LastName, x.Username, search.Name))
-            .Where(x => !search.IsActive.HasValue || x.IsActive == search.IsActive.Value)];
+        List<InstructorDto> mapped = [.. instructors.Select(x => Map(x, users.GetValueOrDefault(x.AppUserId)))];
 
-        (var page, var pageSize) = PagingLimits.Normalize(search.Page, search.PageSize);
-
-        return new PagedResult<InstructorDto>
-        {
-            Items = [.. filtered.Skip((page - 1) * pageSize).Take(pageSize)],
-            Page = page,
-            PageSize = pageSize,
-            TotalCount = search.IncludeTotalCount ? filtered.Count : null
-        };
+        return mapped.FilterAndPage(search, search.Name, search.IsActive);
     }
 
     public async Task<InstructorDto> GetByIdAsync(int id, CancellationToken cancellationToken = default)

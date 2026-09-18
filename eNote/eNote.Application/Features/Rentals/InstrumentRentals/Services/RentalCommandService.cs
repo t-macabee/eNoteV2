@@ -185,7 +185,7 @@ public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, 
         {
             await context.SaveChangesAsync(cancellationToken);
         }
-        catch (DbUpdateException ex) when (ex.InnerException?.Message?.Contains(DbConstraintNames.InstrumentRentalActiveOrApprovedUniqueIndex) == true)
+        catch (DbUpdateException ex) when (DbErrors.IsUniqueViolation(ex, DbConstraintNames.InstrumentRentalActiveOrApprovedUniqueIndex))
         {
             throw new BusinessException(message);
         }

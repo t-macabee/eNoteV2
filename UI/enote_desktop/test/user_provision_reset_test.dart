@@ -2,7 +2,6 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
@@ -10,40 +9,7 @@ import 'package:enote_desktop/features/admin/music_store/music_store_provider.da
 import 'package:enote_desktop/features/admin/users/admin_user_provider.dart';
 import 'package:enote_desktop/features/admin/users/user_provision_form_screen.dart';
 
-/// Answers GETs on the music-stores endpoint with a single store and POSTs on
-/// admin/users with a minimal userId payload, recording every POSTed body so
-/// the form's requests can be asserted without a real backend.
-class _ProvisioningHttpClient extends http.BaseClient {
-  final List<String?> postedBodies = [];
-  int _nextUserId = 1;
-
-  static const _storesJson =
-      '{"items":[{"id":1,"storeName":"Trgovina A","businessHours":"09-20"}],'
-      '"page":1,"pageSize":100,"totalCount":1}';
-
-  @override
-  Future<http.StreamedResponse> send(http.BaseRequest request) async {
-    if (request.method == 'GET') {
-      final bytes = utf8.encode(_storesJson);
-      return http.StreamedResponse(
-        Stream.value(bytes),
-        200,
-        headers: {'content-type': 'application/json'},
-      );
-    }
-
-    final body = request is http.Request ? request.body : null;
-    postedBodies.add(body);
-
-    final responseJson = jsonEncode({'userId': _nextUserId++});
-    final bytes = utf8.encode(responseJson);
-    return http.StreamedResponse(
-      Stream.value(bytes),
-      200,
-      headers: {'content-type': 'application/json'},
-    );
-  }
-}
+import 'helpers.dart';
 
 void main() {
   testWidgets(
@@ -56,7 +22,18 @@ void main() {
       addTearDown(tester.view.resetDevicePixelRatio);
 
       final authState = AuthState(baseUrl: 'http://localhost:5059/api/v1/');
-      final httpClient = _ProvisioningHttpClient();
+      final postedBodies = <String?>[];
+      var nextUserId = 1;
+      const storesJson =
+          '{"items":[{"id":1,"storeName":"Trgovina A","businessHours":"09-20"}],'
+          '"page":1,"pageSize":100,"totalCount":1}';
+      final httpClient = ScriptedClient((request) {
+        if (request.method == 'GET') {
+          return jsonResponse(storesJson, 200);
+        }
+        postedBodies.add(request.body);
+        return jsonResponse({'userId': nextUserId++}, 200);
+      });
       final apiClient = ApiClient(
         baseUrl: 'http://localhost:5059/api/v1/',
         authState: authState,
@@ -117,9 +94,9 @@ void main() {
       await pickStore('Trgovina A');
       await save();
 
-      expect(httpClient.postedBodies, hasLength(1));
+      expect(postedBodies, hasLength(1));
       final firstBody =
-          jsonDecode(httpClient.postedBodies[0]!) as Map<String, dynamic>;
+          jsonDecode(postedBodies[0]!) as Map<String, dynamic>;
       expect(firstBody['role'], 'StoreEmployee');
       expect(firstBody['musicStoreId'], 1,
           reason: 'the first provision must send the selected store');
@@ -136,7 +113,7 @@ void main() {
         findsOneWidget,
         reason: 'the reset store dropdown must block the second submit',
       );
-      expect(httpClient.postedBodies, hasLength(1),
+      expect(postedBodies, hasLength(1),
           reason: 'no stale musicStoreId may reach a second POST');
     },
   );

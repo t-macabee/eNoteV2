@@ -1,8 +1,5 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
@@ -10,22 +7,6 @@ import 'package:enote_desktop/features/profile/change_password_dialog.dart';
 import 'package:enote_desktop/features/profile/profile_provider.dart';
 
 import 'helpers.dart';
-
-class _PasswordStubClient extends http.BaseClient {
-  final List<http.Request> requests = [];
-
-  @override
-  Future<http.StreamedResponse> send(http.BaseRequest request) async {
-    if (request is http.Request) {
-      requests.add(request);
-    }
-    return http.StreamedResponse(
-      Stream.value(utf8.encode(jsonEncode({'message': 'OK'}))),
-      200,
-      headers: {'content-type': 'application/json'},
-    );
-  }
-}
 
 void main() {
   testWidgets('a successful change logs out with the re-login snack',
@@ -35,7 +16,9 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    final client = _PasswordStubClient();
+    final client = ScriptedClient(
+      (_) => jsonResponse({'message': 'OK'}, 200),
+    );
     final authState = AuthState(
       baseUrl: 'http://localhost:5059/api/v1/',
       tokenReader: () => fakeJwt(),

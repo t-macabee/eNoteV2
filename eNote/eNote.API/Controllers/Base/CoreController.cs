@@ -29,4 +29,21 @@ public abstract class CoreController : ControllerBase
             return DateTimeOffset.FromUnixTimeSeconds(unixSeconds).UtcDateTime;
         }
     }
+
+    protected static IActionResult MapError(string? error, int defaultStatus = StatusCodes.Status400BadRequest)
+    {
+        if (ErrorMapping.IsNotFound(error))
+        {
+            return new NotFoundObjectResult(new { message = error });
+        }
+
+        if (ErrorMapping.IsConflict(error))
+        {
+            return new ConflictObjectResult(new { message = error });
+        }
+
+        return defaultStatus == StatusCodes.Status404NotFound
+            ? new NotFoundObjectResult(new { message = error })
+            : new BadRequestObjectResult(new { message = error });
+    }
 }

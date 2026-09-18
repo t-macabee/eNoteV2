@@ -49,7 +49,7 @@ public sealed class CourseEnrollmentService(
         {
             await context.SaveChangesAsync(cancellationToken);
         }
-        catch (DbUpdateException ex) when (ex.InnerException?.Message?.Contains(DbConstraintNames.EnrollmentStudentIdCourseIdUniqueIndex) == true)
+        catch (DbUpdateException ex) when (DbErrors.IsUniqueViolation(ex, DbConstraintNames.EnrollmentStudentIdCourseIdUniqueIndex))
         {
             throw new ConflictException(Messages.AlreadyEnrolled);
         }

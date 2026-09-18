@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'package:enote_core/enote_core.dart';
 import 'package:enote_desktop/features/profile/profile_dialog.dart';
@@ -9,29 +8,13 @@ import 'package:enote_desktop/features/profile/profile_provider.dart';
 
 import 'helpers.dart';
 
-class _MockProfileHttpClient extends http.BaseClient {
-  final Map<String, dynamic> responseMap;
-  final List<String?> putBodies = [];
-  _MockProfileHttpClient(this.responseMap);
-
-  @override
-  Future<http.StreamedResponse> send(http.BaseRequest request) async {
-    if (request.method == 'PUT' && request is http.Request) {
-      putBodies.add(request.body);
-    }
-    final bytes = utf8.encode(jsonEncode(responseMap));
-    return http.StreamedResponse(
-      Stream.value(bytes),
-      200,
-      headers: {'content-type': 'application/json'},
-    );
-  }
-}
+ScriptedClient _client(Map<String, dynamic> responseMap) =>
+    ScriptedClient((_) => jsonResponse(responseMap, 200));
 
 void main() {
   testWidgets('ProfileDialog renders username from UserProfileResponse',
       (tester) async {
-    final client = _MockProfileHttpClient({
+    final client = _client({
       'role': 'Administrator',
       'username': 'admin',
       'email': 'admin@enote.com',
@@ -80,7 +63,7 @@ void main() {
   testWidgets(
       'ProfileDialog falls back to AuthState.username if response username is empty',
       (tester) async {
-    final client = _MockProfileHttpClient({
+    final client = _client({
       'role': 'Administrator',
       'profile': {
         r'$type': 'admin',
@@ -126,7 +109,7 @@ void main() {
 
   testWidgets('ProfileDialog shows initials fallback when hasPicture is false',
       (tester) async {
-    final client = _MockProfileHttpClient({
+    final client = _client({
       'role': 'Administrator',
       'username': 'admin',
       'email': 'admin@enote.com',
@@ -173,7 +156,7 @@ void main() {
   testWidgets(
       'save the profile dialog with a blanked first name -> request body has no firstName key',
       (tester) async {
-    final client = _MockProfileHttpClient({
+    final client = _client({
       'role': 'Administrator',
       'username': 'admin',
       'email': 'admin@enote.com',
@@ -221,7 +204,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(client.putBodies, isNotEmpty);
-    final putBody = jsonDecode(client.putBodies.last!) as Map<String, dynamic>;
+    final putBody = jsonDecode(client.putBodies.last) as Map<String, dynamic>;
     expect(putBody.containsKey('firstName'), isFalse);
     expect(putBody['email'], 'admin@enote.com');
   });

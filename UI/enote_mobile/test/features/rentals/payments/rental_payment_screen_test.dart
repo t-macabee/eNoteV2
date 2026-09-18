@@ -15,6 +15,7 @@ import 'package:enote_mobile/theme/app_theme.dart';
 
 import '../../../helpers.dart';
 import '../../payments/fake_payment_sheet_gateway.dart';
+import '../../payments/payment_flow_test_helper.dart';
 
 const _baseUrl = 'http://10.0.2.2:5059/api/v1/';
 const _rentalId = 2;
@@ -111,24 +112,15 @@ class _PayStubClient extends http.BaseClient {
 class _Harness {
   final _PayStubClient client;
   final FakePaymentSheetGateway gateway;
-  late final AuthState authState;
-  late final ApiClient apiClient;
   Object? popped;
 
-  _Harness({required this.client, required this.gateway}) {
-    authState = AuthState(
-      baseUrl: _baseUrl,
-      tokenReader: () => fakeJwt(),
-      httpClient: client,
-    );
-    apiClient = ApiClient(
-      baseUrl: _baseUrl,
-      authState: authState,
-      httpClient: client,
-    );
-  }
+  _Harness({required this.client, required this.gateway});
 
-  Widget app({String? publishableKey}) {
+  Widget app(
+    AuthState authState,
+    ApiClient apiClient,
+    String publishableKey,
+  ) {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider<AuthState>.value(value: authState),
@@ -152,8 +144,7 @@ class _Harness {
                         builder: (_) => RentalPaymentScreen(
                           rentalId: _rentalId,
                           gateway: gateway,
-                          stripePublishableKey:
-                              publishableKey ?? 'pk_test_123',
+                          stripePublishableKey: publishableKey,
                         ),
                       ),
                     )
@@ -174,17 +165,14 @@ Future<_Harness> _pumpPay(
   FakePaymentSheetGateway gateway, {
   String? publishableKey,
 }) async {
-  tester.view.physicalSize = const Size(400, 1600);
-  tester.view.devicePixelRatio = 1.0;
-  addTearDown(tester.view.resetDevicePixelRatio);
-  addTearDown(tester.view.resetPhysicalSize);
-
   final harness = _Harness(client: client, gateway: gateway);
-  await tester.pumpWidget(
-    harness.app(publishableKey: publishableKey),
+  await pumpPaymentScreen(
+    tester,
+    client: client,
+    gateway: gateway,
+    publishableKey: publishableKey,
+    builder: harness.app,
   );
-  await tester.tap(find.text('Open pay'));
-  await tester.pumpAndSettle();
   return harness;
 }
 

@@ -27,10 +27,28 @@ Map<String, dynamic> decodeOrThrow(http.Response response) =>
 List<dynamic> decodeListOrThrow(http.Response response) =>
     _decodeOrThrow<List<dynamic>>(response);
 
+/// Decodes a bare JSON-array body, mirroring [decodeListOrThrow]'s
+/// parse-failure contract for callers that already hold the raw body text.
+List<dynamic> decodeListOrThrowBody(String body) =>
+    _decodeBodyOrThrow<List<dynamic>>(body);
+
+/// [decodeListOrThrow], then maps each element through [fromJson].
+List<T> decodeList<T>(
+  http.Response response,
+  T Function(Map<String, dynamic>) fromJson,
+) => [
+  for (final e in decodeListOrThrow(response))
+    fromJson(Map<String, dynamic>.from(e as Map)),
+];
+
 T _decodeOrThrow<T>(http.Response response) {
   throwIfError(response);
+  return _decodeBodyOrThrow<T>(response.body);
+}
+
+T _decodeBodyOrThrow<T>(String body) {
   try {
-    final decoded = jsonDecode(response.body);
+    final decoded = jsonDecode(body);
     if (decoded is T) return decoded;
   } on FormatException {
     // fall through

@@ -2,7 +2,6 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
@@ -22,34 +21,20 @@ const _debtCopy =
     'Imate neizmireno dugovanje od prethodnog iznajmljivanja. '
     'Izmirite ga prije novog zahtjeva.';
 
-/// Routes by path so one client can serve the screen's whole first load.
-class _DetailStubClient extends http.BaseClient {
-  final bool isAvailable;
-  final bool hasDebt;
-  final int? debtRentalId;
-  final DateTime? membershipPaidUntil;
-  final int createStatus;
-  final String createBody;
-
-  final List<http.BaseRequest> sent = [];
-
-  _DetailStubClient({
-    this.isAvailable = true,
-    this.hasDebt = false,
-    this.debtRentalId,
-    this.membershipPaidUntil,
-    this.createStatus = 201,
-    this.createBody = '{}',
-  });
-
-  @override
-  Future<http.StreamedResponse> send(http.BaseRequest request) async {
-    sent.add(request);
+ScriptedClient _client({
+  bool isAvailable = true,
+  bool hasDebt = false,
+  int? debtRentalId,
+  DateTime? membershipPaidUntil,
+  int createStatus = 201,
+  String createBody = '{}',
+}) {
+  return ScriptedClient((request) {
     final path = request.url.path;
-    String body;
+    Object body;
     int status = 200;
     if (path.endsWith('/instruments/public/$_instrumentId')) {
-      body = jsonEncode({
+      body = {
         'id': _instrumentId,
         'model': 'C40',
         'manufacturer': 'Yamaha',
@@ -58,14 +43,14 @@ class _DetailStubClient extends http.BaseClient {
         'instrumentType': 'Klasična gitara',
         'musicStore': 'Muzika d.o.o.',
         'isAvailable': isAvailable,
-      });
+      };
     } else if (path.endsWith('/student/rentals/debt')) {
-      body = jsonEncode({
+      body = {
         'hasUnpaidDebt': hasDebt,
-        if (debtRentalId != null) 'rentalId': debtRentalId,
-      });
+        'rentalId': ?debtRentalId,
+      };
     } else if (path.endsWith('/users/me')) {
-      body = jsonEncode({
+      body = {
         'role': 'Student',
         'username': 'student',
         'email': 'student@enote.com',
@@ -74,7 +59,7 @@ class _DetailStubClient extends http.BaseClient {
           'membershipPaidUntil': membershipPaidUntil?.toIso8601String(),
         },
         'hasPicture': false,
-      });
+      };
     } else if (path.endsWith('/student/rentals')) {
       status = createStatus;
       body = createBody;
@@ -82,16 +67,12 @@ class _DetailStubClient extends http.BaseClient {
       status = 204;
       body = '';
     }
-    return http.StreamedResponse(
-      Stream.value(utf8.encode(body)),
-      status,
-      headers: {'content-type': 'application/json'},
-    );
-  }
+    return jsonResponse(body, status);
+  });
 }
 
 class _Harness {
-  final _DetailStubClient client;
+  final ScriptedClient client;
   late final AuthState authState;
   late final ApiClient apiClient;
   late final SessionController session;
@@ -145,7 +126,7 @@ class _Harness {
 
 Future<_Harness> _pumpDetail(
   WidgetTester tester,
-  _DetailStubClient client,
+  ScriptedClient client,
 ) async {
   // Tall surface: the 16:9 hero pushes the request button past the default
   // 800x600 test viewport, and every assertion here is about that button.
@@ -181,7 +162,7 @@ void main() {
   ) async {
     await _pumpDetail(
       tester,
-      _DetailStubClient(membershipPaidUntil: _future()),
+      _client(membershipPaidUntil: _future()),
     );
 
     expect(find.text('Yamaha C40'), findsOneWidget);
@@ -198,7 +179,7 @@ void main() {
     // All three client-side reasons apply at once.
     await _pumpDetail(
       tester,
-      _DetailStubClient(
+      _client(
         isAvailable: false,
         hasDebt: true,
         debtRentalId: 9,
@@ -218,7 +199,7 @@ void main() {
   ) async {
     await _pumpDetail(
       tester,
-      _DetailStubClient(isAvailable: false, membershipPaidUntil: _past()),
+      _client(isAvailable: false, membershipPaidUntil: _past()),
     );
 
     expect(
@@ -234,7 +215,7 @@ void main() {
   });
 
   testWidgets('reason 2 with no membership date at all', (tester) async {
-    await _pumpDetail(tester, _DetailStubClient());
+    await _pumpDetail(tester, _client());
 
     expect(find.text('Članarina nije aktivna.'), findsOneWidget);
     expect(_requestButtonEnabled(tester), isFalse);
@@ -245,7 +226,7 @@ void main() {
   ) async {
     await _pumpDetail(
       tester,
-      _DetailStubClient(isAvailable: false, membershipPaidUntil: _future()),
+      _client(isAvailable: false, membershipPaidUntil: _future()),
     );
 
     expect(find.text('Instrument trenutno nije dostupan.'), findsOneWidget);
@@ -258,7 +239,7 @@ void main() {
   ) async {
     final harness = await _pumpDetail(
       tester,
-      _DetailStubClient(
+      _client(
         hasDebt: true,
         debtRentalId: 9,
         membershipPaidUntil: _future(),
@@ -278,7 +259,7 @@ void main() {
   ) async {
     await _pumpDetail(
       tester,
-      _DetailStubClient(
+      _client(
         membershipPaidUntil: _future(),
         createStatus: 400,
         createBody: jsonEncode({
@@ -308,10 +289,10 @@ void main() {
   testWidgets('opening the screen records a view without blocking it', (
     tester,
   ) async {
-    final client = _DetailStubClient(membershipPaidUntil: _future());
+    final client = _client(membershipPaidUntil: _future());
     await _pumpDetail(tester, client);
 
-    final view = client.sent.where(
+    final view = client.requests.where(
       (r) =>
           r.method == 'POST' &&
           r.url.path.endsWith('/student/instruments/$_instrumentId/view'),

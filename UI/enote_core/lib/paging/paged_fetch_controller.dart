@@ -197,7 +197,7 @@ class PagedPaginationBar extends StatelessWidget {
           TextButton.icon(
             onPressed: controller.hasNextPage ? controller.nextPage : null,
             icon: const Icon(Icons.chevron_right),
-            label: const Text('Sledeća'),
+            label: const Text('Sljedeća'),
           ),
         ],
       ),
