@@ -11,8 +11,9 @@ mixin FormSubmitState<T extends StatefulWidget> on State<T> {
 
   Future<void> submitWith(
     void Function(bool busy) setBusy,
-    Future<void> Function() action,
-  ) async {
+    Future<void> Function() action, {
+    bool showBanner = false,
+  }) async {
     setState(() {
       setBusy(true);
       submitError = null;
@@ -20,7 +21,14 @@ mixin FormSubmitState<T extends StatefulWidget> on State<T> {
     try {
       await action();
     } catch (e) {
-      if (mounted) setState(() => submitError = userMessage(e));
+      if (mounted) {
+        final message = userMessage(e);
+        if (showBanner) {
+          ErrorBanner.show(context, message: message);
+        } else {
+          setState(() => submitError = message);
+        }
+      }
     } finally {
       if (mounted) setState(() => setBusy(false));
     }

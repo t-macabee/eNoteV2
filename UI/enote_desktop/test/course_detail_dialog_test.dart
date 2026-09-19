@@ -10,7 +10,11 @@ import 'package:enote_desktop/features/instructor/course/course_provider.dart';
 
 import 'helpers.dart';
 
-ScriptedClient _client() => ScriptedClient((request) {
+ScriptedClient _client({String? failMessage}) => ScriptedClient((request) {
+  if (failMessage != null &&
+      (request.method == 'PUT' || request.method == 'DELETE')) {
+    return jsonResponse({'message': failMessage}, 400);
+  }
   if (request.method == 'PUT' &&
       request.url.path.endsWith('instructor/courses/1')) {
     final body = jsonDecode(request.body) as Map<String, dynamic>;
@@ -134,5 +138,42 @@ void main() {
         jsonDecode(httpClient.putBodies.single)
             as Map<String, dynamic>;
     expect(body['isPublished'], isTrue);
+  });
+
+  testWidgets('a failed publish shows the banner and re-enables the switch',
+      (tester) async {
+    final httpClient = _client(failMessage: 'Izmjena kursa nije uspjela.');
+    await pumpDialog(tester, httpClient, course(published: false));
+
+    await tester.tap(find.byType(Switch));
+    await tester.pumpAndSettle();
+
+    expect(httpClient.putUrls.length, 1);
+    expect(find.text('Izmjena kursa nije uspjela.'), findsOneWidget);
+    final switchWidget = tester.widget<Switch>(find.byType(Switch));
+    expect(switchWidget.onChanged, isNotNull);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('a failed delete shows the banner and keeps the dialog open',
+      (tester) async {
+    final httpClient = _client(failMessage: 'Brisanje kursa nije uspjelo.');
+    await pumpDialog(tester, httpClient, course());
+
+    await tester.tap(find.widgetWithText(OutlinedButton, 'Obriši'));
+    await tester.pumpAndSettle();
+    expect(find.text('Potvrdite brisanje'), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Potvrdi'));
+    await tester.pumpAndSettle();
+
+    expect(httpClient.deletedUrls.length, 1);
+    expect(find.text('Brisanje kursa nije uspjelo.'), findsOneWidget);
+    expect(find.byType(CourseDetailDialog), findsOneWidget);
+    final deleteButton = tester.widget<OutlinedButton>(
+      find.widgetWithText(OutlinedButton, 'Obriši'),
+    );
+    expect(deleteButton.onPressed, isNotNull);
+    expect(tester.takeException(), isNull);
   });
 }

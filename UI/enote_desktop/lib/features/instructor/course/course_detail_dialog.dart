@@ -7,6 +7,7 @@ import '../../../widgets/detail_row.dart';
 import '../../../widgets/dialog_shell.dart';
 import '../../../widgets/entity_form_scaffold.dart';
 import '../../../widgets/entity_list_screen.dart';
+import '../../../widgets/form_submit_state.dart';
 import '../../../widgets/pdf_report_button.dart';
 import '../../shared/announcement/announcement_list_screen.dart';
 import '../../shared/announcement/announcement_provider.dart';
@@ -35,7 +36,8 @@ class CourseDetailDialog extends StatefulWidget {
   State<CourseDetailDialog> createState() => _CourseDetailDialogState();
 }
 
-class _CourseDetailDialogState extends State<CourseDetailDialog> {
+class _CourseDetailDialogState extends State<CourseDetailDialog>
+    with FormSubmitState<CourseDetailDialog> {
   late CourseDto _course;
   bool _isPublishing = false;
   bool _isDeleting = false;
@@ -70,8 +72,7 @@ class _CourseDetailDialogState extends State<CourseDetailDialog> {
       );
       if (confirmed != true || !mounted) return;
     }
-    setState(() => _isPublishing = true);
-    try {
+    await submitWith((busy) => _isPublishing = busy, () async {
       final request = CourseRequest(
         name: _course.name,
         description: _course.description,
@@ -90,16 +91,7 @@ class _CourseDetailDialogState extends State<CourseDetailDialog> {
           _dirty = true;
         });
       }
-    } catch (e) {
-      if (mounted) {
-        ErrorBanner.show(context, message: userMessage(e));
-        setState(() {});
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isPublishing = false);
-      }
-    }
+    });
   }
 
   Future<void> _openEdit() async {
@@ -136,21 +128,12 @@ class _CourseDetailDialogState extends State<CourseDetailDialog> {
     );
     if (confirmed != true || !mounted) return;
 
-    setState(() => _isDeleting = true);
-    try {
+    await submitWith((busy) => _isDeleting = busy, () async {
       await context.read<CourseProvider>().remove(_course.id);
       if (mounted) {
         _popDialog(true);
       }
-    } catch (e) {
-      if (mounted) {
-        ErrorBanner.show(context, message: userMessage(e));
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isDeleting = false);
-      }
-    }
+    });
   }
 
   Future<void> _openLectures() async {

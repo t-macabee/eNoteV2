@@ -7,6 +7,7 @@ import '../../session/session_controller.dart';
 import '../../shell/app_router.dart';
 import '../../widgets/async_state_view.dart';
 import '../../widgets/blocked_reason_banner.dart';
+import '../../widgets/form_submit_state.dart';
 import '../../widgets/labeled_value.dart';
 import '../lectures/lecture_labels.dart';
 import '../lectures/lecture_provider.dart';
@@ -25,7 +26,8 @@ class CourseDetailScreen extends StatefulWidget {
   State<CourseDetailScreen> createState() => _CourseDetailScreenState();
 }
 
-class _CourseDetailScreenState extends State<CourseDetailScreen> {
+class _CourseDetailScreenState extends State<CourseDetailScreen>
+    with FormSubmitState<CourseDetailScreen> {
   late final PagedFetchController<LectureDto> _lecturesController;
   CourseDto? _course;
   Object? _courseError;
@@ -107,35 +109,34 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
       message: 'Želite li se upisati na kurs "${course.name}"?',
     );
     if (confirmed != true || !mounted) return;
-    setState(() => _acting = true);
-    try {
-      await context.read<CourseProvider>().enroll(course.id);
-      await _loadCourse();
-      _lecturesController.refresh(resetPage: true);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Uspješno ste upisani na kurs ${course.name}.',
+    await submitWith(
+      (busy) => _acting = busy,
+      () async {
+        await context.read<CourseProvider>().enroll(course.id);
+        await _loadCourse();
+        _lecturesController.refresh(resetPage: true);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Uspješno ste upisani na kurs ${course.name}.',
+              ),
             ),
-          ),
-        );
-      }
-      // An enrollment starts unpaid: send the student straight to tuition
-      // unless the course is free (decision 7). Reload on return so the
-      // banner flips to `Plaćeno do`.
-      final enrolledCourse = _course;
-      if (mounted &&
-          enrolledCourse != null &&
-          !enrolledCourse.isFree &&
-          enrolledCourse.enrollmentId != null) {
-        await _openTuition(enrolledCourse);
-      }
-    } catch (e) {
-      if (mounted) ErrorBanner.show(context, message: userMessage(e));
-    } finally {
-      if (mounted) setState(() => _acting = false);
-    }
+          );
+        }
+        // An enrollment starts unpaid: send the student straight to tuition
+        // unless the course is free (decision 7). Reload on return so the
+        // banner flips to `Plaćeno do`.
+        final enrolledCourse = _course;
+        if (mounted &&
+            enrolledCourse != null &&
+            !enrolledCourse.isFree &&
+            enrolledCourse.enrollmentId != null) {
+          await _openTuition(enrolledCourse);
+        }
+      },
+      showBanner: true,
+    );
   }
 
   Future<void> _unenroll(CourseDto course) async {
@@ -145,17 +146,16 @@ class _CourseDetailScreenState extends State<CourseDetailScreen> {
       message: 'Želite li se ispisati sa kursa "${course.name}"?',
     );
     if (confirmed != true || !mounted) return;
-    setState(() => _acting = true);
-    try {
-      await context.read<CourseProvider>().unenroll(course.id);
-      // Refetch the master half only: the details half flips to the
-      // explained empty state without another lectures request (03 §5.3).
-      await _loadCourse();
-    } catch (e) {
-      if (mounted) ErrorBanner.show(context, message: userMessage(e));
-    } finally {
-      if (mounted) setState(() => _acting = false);
-    }
+    await submitWith(
+      (busy) => _acting = busy,
+      () async {
+        await context.read<CourseProvider>().unenroll(course.id);
+        // Refetch the master half only: the details half flips to the
+        // explained empty state without another lectures request (03 §5.3).
+        await _loadCourse();
+      },
+      showBanner: true,
+    );
   }
 
   void _openRanking(CourseDto course) {

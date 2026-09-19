@@ -9,8 +9,13 @@ import 'package:enote_mobile/widgets/form_submit_state.dart';
 class _Probe extends StatefulWidget {
   final Future<void> Function() action;
   final Future<void> Function() withAction;
+  final Future<void> Function()? bannerAction;
 
-  const _Probe({required this.action, required this.withAction});
+  const _Probe({
+    required this.action,
+    required this.withAction,
+    this.bannerAction,
+  });
 
   @override
   State<_Probe> createState() => _ProbeState();
@@ -38,6 +43,15 @@ class _ProbeState extends State<_Probe> with FormSubmitState<_Probe> {
                 submitWith((busy) => altBusy = busy, widget.withAction),
             child: const Text('run-alt'),
           ),
+          if (widget.bannerAction != null)
+            TextButton(
+              onPressed: () => submitWith(
+                (busy) => altBusy = busy,
+                widget.bannerAction!,
+                showBanner: true,
+              ),
+              child: const Text('run-banner'),
+            ),
         ],
       ),
     );
@@ -113,6 +127,28 @@ void main() {
 
     completer.complete();
     await tester.pumpAndSettle();
+    expect(find.text('alt-idle'), findsOneWidget);
+  });
+
+  testWidgets('showBanner routes the error to a SnackBar, not submitError',
+      (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: _Probe(
+            action: () async {},
+            withAction: () async {},
+            bannerAction: () async => throw ApiException('Greška.'),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('run-banner'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Greška.'), findsOneWidget);
+    expect(find.text('no-error'), findsOneWidget);
     expect(find.text('alt-idle'), findsOneWidget);
   });
 }
