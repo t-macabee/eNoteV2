@@ -6,11 +6,9 @@ import 'package:provider/provider.dart';
 import 'package:enote_core/enote_core.dart';
 
 import '../../session/session_controller.dart';
-import '../../theme/app_theme.dart';
-import '../../widgets/app_date_picker_field.dart';
-import '../../widgets/app_text_field.dart';
 import '../../widgets/form_submit_state.dart';
 import '../../widgets/mobile_form_scaffold.dart';
+import 'edit_profile_form.dart';
 import 'profile_provider.dart';
 
 const _allowedPictureExtensions = ['jpg', 'jpeg', 'png', 'webp'];
@@ -219,74 +217,26 @@ class _EditProfileScreenState extends State<EditProfileScreen>
       isBusy: isSubmitting || _pictureBusy,
       errorMessage: submitError,
       children: [
-        Center(
-          child: ImageField(
-            imageUrl: pictureUrl,
-            apiClient: context.read<ApiClient>(),
-            size: 96,
-            borderRadius: 48,
-            imagePicker: _imagePickerBytes,
-            onUpload: _imageFieldUpload,
-          ),
+        EditProfilePictureSection(
+          pictureUrl: pictureUrl,
+          apiClient: context.read<ApiClient>(),
+          hasPicture: hasPicture,
+          pictureError: _pictureError,
+          imagePicker: _imagePickerBytes,
+          onUpload: _imageFieldUpload,
+          onChangePicture: _pictureBusy ? null : _changePicture,
+          onRemovePicture:
+              (!hasPicture || _pictureBusy) ? null : _removePicture,
         ),
-        const SizedBox(height: 16),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            OutlinedButton.icon(
-              onPressed: _pictureBusy ? null : _changePicture,
-              icon: const Icon(Icons.upload_outlined),
-              label: const Text('Promijeni sliku'),
-            ),
-            const SizedBox(width: 12),
-            OutlinedButton.icon(
-              onPressed: (!hasPicture || _pictureBusy) ? null : _removePicture,
-              icon: const Icon(Icons.delete_outline),
-              label: const Text('Ukloni sliku'),
-            ),
-          ],
-        ),
-        if (!hasPicture) ...[
-          const SizedBox(height: 4),
-          const Text(
-            'Nema profilne slike',
-            textAlign: TextAlign.center,
-            style: TextStyle(color: AppTheme.textTertiary, fontSize: 12),
-          ),
-        ],
-        if (_pictureError != null) ...[
-          const SizedBox(height: 8),
-          Text(
-            _pictureError!,
-            textAlign: TextAlign.center,
-            style: const TextStyle(color: AppTheme.error, fontSize: 13),
-          ),
-        ],
         const SizedBox(height: 20),
-        Form(
-          key: _formKey,
-          autovalidateMode: AutovalidateMode.onUserInteraction,
-          child: Column(
-            children: [
-              AppTextField(controller: _firstNameController, label: 'Ime'),
-              const SizedBox(height: 16),
-              AppTextField(controller: _lastNameController, label: 'Prezime'),
-              const SizedBox(height: 16),
-              AppTextField(
-                controller: _emailController,
-                label: 'Email *',
-                keyboardType: TextInputType.emailAddress,
-                validator: Validators.email,
-              ),
-              const SizedBox(height: 16),
-              AppDatePickerField(
-                label: 'Datum rođenja',
-                value: _dateOfBirth,
-                lastDate: DateTime.now(),
-                onChanged: (value) => setState(() => _dateOfBirth = value),
-              ),
-            ],
-          ),
+        EditProfileFields(
+          formKey: _formKey,
+          firstNameController: _firstNameController,
+          lastNameController: _lastNameController,
+          emailController: _emailController,
+          dateOfBirth: _dateOfBirth,
+          onDateOfBirthChanged: (value) =>
+              setState(() => _dateOfBirth = value),
         ),
       ],
     );
