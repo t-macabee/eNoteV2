@@ -734,7 +734,7 @@ namespace eNote.Infrastructure.Data.Migrations
                     b.ToTable("Notification");
                 });
 
-            modelBuilder.Entity("eNote.Domain.Entities.Communication.RentalNotificationOutbox", b =>
+            modelBuilder.Entity("eNote.Domain.Entities.Communication.NotificationOutbox", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()

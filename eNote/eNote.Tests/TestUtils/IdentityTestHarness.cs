@@ -12,15 +12,12 @@ public sealed record IdentityServices(
 
 public static class IdentityTestHarness
 {
-
-    public static IdentityServices Create(ENoteContext context)
+    public static IServiceCollection AddIdentityServices(IServiceCollection services)
     {
-        var services = new ServiceCollection();
         services.AddLogging();
         services.AddOptions();
         services.AddDataProtection();
         services.AddHttpContextAccessor();
-        services.AddScoped<ENoteContext>(_ => context);
         services.AddScoped<IAuthenticationSchemeProvider>(_ => new StubAuthenticationSchemeProvider());
         services.AddScoped<IUserConfirmation<AppUser>>(_ => new ConfirmedUserConfirmation());
 
@@ -29,6 +26,15 @@ public static class IdentityTestHarness
             .AddEntityFrameworkStores<ENoteContext>()
             .AddSignInManager<SignInManager<AppUser>>()
             .AddDefaultTokenProviders();
+
+        return services;
+    }
+
+    public static IdentityServices Create(ENoteContext context)
+    {
+        var services = new ServiceCollection();
+        services.AddScoped<ENoteContext>(_ => context);
+        AddIdentityServices(services);
 
         var provider = services.BuildServiceProvider();
 

@@ -22,7 +22,7 @@ public sealed class RentalNotificationDispatcherTests
         await dispatcher.DispatchCreatedAsync(CreateRentalDto(), studentUserId: 5);
         await context.SaveChangesAsync();
 
-        var row = await context.Set<RentalNotificationOutbox>().SingleAsync();
+        var row = await context.Set<NotificationOutbox>().SingleAsync();
         Assert.NotNull(row.PayloadJson);
         Assert.Contains("Zahtjev za iznajmljivanje poslan", row.PayloadJson);
     }
@@ -36,7 +36,7 @@ public sealed class RentalNotificationDispatcherTests
         await dispatcher.DispatchTransitionAsync(CreateRentalDto(), RentalTrigger.Approve, actorUserId: 9);
         await context.SaveChangesAsync();
 
-        var row = await context.Set<RentalNotificationOutbox>().SingleAsync();
+        var row = await context.Set<NotificationOutbox>().SingleAsync();
         var payload = JsonSerializer.Deserialize<RentalStatusChanged>(row.PayloadJson, new JsonSerializerOptions(JsonSerializerDefaults.Web));
         Assert.NotNull(payload);
         Assert.Equal(5, payload.StudentUserId);
@@ -55,7 +55,7 @@ public sealed class RentalNotificationDispatcherTests
         await dispatcher.DispatchTransitionAsync(dto, RentalTrigger.Reject, actorUserId: 9);
         await context.SaveChangesAsync();
 
-        var row = await context.Set<RentalNotificationOutbox>().SingleAsync();
+        var row = await context.Set<NotificationOutbox>().SingleAsync();
         Assert.Contains("Not in stock", row.PayloadJson);
     }
 
@@ -83,7 +83,7 @@ public sealed class RentalNotificationDispatcherTests
         await dispatcher.DispatchCreatedAsync(dto, studentUserId: 5);
         await context.SaveChangesAsync();
 
-        var recipients = (await context.Set<RentalNotificationOutbox>().ToListAsync())
+        var recipients = (await context.Set<NotificationOutbox>().ToListAsync())
             .Select(row => JsonSerializer.Deserialize<RentalStatusChanged>(row.PayloadJson, new JsonSerializerOptions(JsonSerializerDefaults.Web))!.StudentUserId)
             .Order()
             .ToList();
@@ -92,6 +92,7 @@ public sealed class RentalNotificationDispatcherTests
 
     [Theory]
     [InlineData("bam", "KM")]
+    [InlineData("", "KM")]
     [InlineData("eur", "EUR")]
     public async Task DispatchPaymentRefundedAsync_FormatsCurrency(string currency, string expected)
     {
@@ -101,7 +102,7 @@ public sealed class RentalNotificationDispatcherTests
         await dispatcher.DispatchPaymentRefundedAsync(CreateRentalDto(), refundedCents: 5000, currency: currency, actorUserId: 9);
         await context.SaveChangesAsync();
 
-        var row = await context.Set<RentalNotificationOutbox>().SingleAsync();
+        var row = await context.Set<NotificationOutbox>().SingleAsync();
         var payload = JsonSerializer.Deserialize<RentalRefunded>(row.PayloadJson, new JsonSerializerOptions(JsonSerializerDefaults.Web));
         Assert.NotNull(payload);
         Assert.Contains("50", payload.Body);

@@ -52,7 +52,7 @@ public sealed class RentalNotificationOutboxPublisher(IServiceProvider services,
         var publisher = scope.ServiceProvider.GetRequiredService<IPublishEndpoint>();
         var clock = scope.ServiceProvider.GetRequiredService<IClock>();
 
-        var messages = await db.Set<RentalNotificationOutbox>()
+        var messages = await db.Set<NotificationOutbox>()
             .Where(x => x.PublishedAt == null && x.Attempts < MaxAttempts)
             .OrderBy(x => x.CreatedAt)
             .Take(BatchSize)

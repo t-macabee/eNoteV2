@@ -18,7 +18,7 @@ public sealed class WorkerActorTests
         await using var context = new ENoteContext(options, new FixedClock(now), new ThrowingUserContext());
 
         context.Set<Notification>().Add(new Notification(5, "Title", "Body", now, rentalId: 1));
-        context.Set<RentalNotificationOutbox>().Add(new RentalNotificationOutbox { PayloadJson = "{}" });
+        context.Set<NotificationOutbox>().Add(new NotificationOutbox { PayloadJson = "{}" });
 
         var exception = await Record.ExceptionAsync(() => context.SaveChangesAsync());
 

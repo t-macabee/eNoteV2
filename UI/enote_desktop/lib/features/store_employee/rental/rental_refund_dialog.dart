@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'package:enote_core/enote_core.dart';
+
 /// Returns the confirmed refund amount in KM, or `null` when cancelled.
 /// An empty input confirms a full refund, reported as `0`.
 ///
@@ -50,7 +52,7 @@ class _RefundAmountDialogState extends State<_RefundAmountDialog> {
     final errorText = !invalid
         ? null
         : overLimit
-            ? 'Preostali iznos za povrat je ${(maxAmountCents / 100).toStringAsFixed(2)} KM.'
+            ? 'Preostali iznos za povrat je ${formatKM(maxAmountCents / 100)}.'
             : 'Unesite važeći iznos.';
     return AlertDialog(
       title: const Text('Refundiraj'),

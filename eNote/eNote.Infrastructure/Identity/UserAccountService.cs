@@ -63,28 +63,19 @@ public sealed class UserAccountService(UserManager<AppUser> userManager, IFileSt
         }
 
         var currentRoles = await userManager.GetRolesAsync(user);
-        string[] toRemove = [.. currentRoles.Where(r => r != role)];
 
-        if (toRemove.Length > 0)
+        var removeError = await RemoveOtherRolesAsync(user, currentRoles, role);
+
+        if (removeError is not null)
         {
-            var removeResult = await userManager.RemoveFromRolesAsync(user, toRemove);
-
-            if (!removeResult.Succeeded)
-            {
-                var errors = string.Join("; ", removeResult.Errors.Select(e => e.Description));
-                return (false, Messages.UserRoleRemoveFailed(user.UserName!, errors));
-            }
+            return (false, removeError);
         }
 
-        if (!currentRoles.Contains(role))
-        {
-            var addResult = await userManager.AddToRoleAsync(user, role);
+        var addError = await AddRoleIfMissingAsync(user, currentRoles, role);
 
-            if (!addResult.Succeeded)
-            {
-                var errors = string.Join("; ", addResult.Errors.Select(e => e.Description));
-                return (false, Messages.UserRoleAssignFailed(role, user.UserName!, errors));
-            }
+        if (addError is not null)
+        {
+            return (false, addError);
         }
 
         return (true, null);
@@ -141,26 +132,14 @@ public sealed class UserAccountService(UserManager<AppUser> userManager, IFileSt
 
         var normalizedEmail = email.Trim();
 
-        if (!string.Equals(user.Email, normalizedEmail, StringComparison.OrdinalIgnoreCase))
+        var emailError = await ApplyEmailChangeAsync(user, normalizedEmail, userId);
+
+        if (emailError is not null)
         {
-            var existingWithEmail = await userManager.FindByEmailAsync(normalizedEmail);
-
-            if (existingWithEmail is not null && existingWithEmail.Id != userId)
-            {
-                return (false, Messages.EmailTaken);
-            }
-
-            user.Email = normalizedEmail;
-            user.NormalizedEmail = userManager.NormalizeEmail(normalizedEmail);
+            return (false, emailError);
         }
 
-        user.FirstName = firstName?.Trim() ?? user.FirstName;
-        user.LastName = lastName?.Trim() ?? user.LastName;
-
-        if (dateOfBirth.HasValue)
-        {
-            user.DateOfBirth = dateOfBirth.Value.Date;
-        }
+        ApplyProfileFields(user, firstName, lastName, dateOfBirth);
 
         var updateResult = await userManager.UpdateAsync(user);
 
@@ -196,18 +175,11 @@ public sealed class UserAccountService(UserManager<AppUser> userManager, IFileSt
         var previousPicturePath = user.PicturePath;
         user.PicturePath = picturePath;
 
-        var updateResult = await userManager.UpdateAsync(user);
+        var updateError = await PersistPictureChangeAsync(user, previousPicturePath, picturePath);
 
-        if (!updateResult.Succeeded)
+        if (updateError is not null)
         {
-            fileStorage.Delete(picturePath);
-            var errors = string.Join("; ", updateResult.Errors.Select(e => e.Description));
-            return (false, Messages.UserUpdateFailed(user.UserName!, errors));
-        }
-
-        if (!string.IsNullOrWhiteSpace(previousPicturePath))
-        {
-            fileStorage.Delete(previousPicturePath);
+            return (false, updateError);
         }
 
         return (true, null);
@@ -237,17 +209,11 @@ public sealed class UserAccountService(UserManager<AppUser> userManager, IFileSt
         var previousPicturePath = user.PicturePath;
         user.PicturePath = null;
 
-        var updateResult = await userManager.UpdateAsync(user);
+        var updateError = await PersistPictureChangeAsync(user, previousPicturePath);
 
-        if (!updateResult.Succeeded)
+        if (updateError is not null)
         {
-            var errors = string.Join("; ", updateResult.Errors.Select(e => e.Description));
-            return (false, Messages.UserUpdateFailed(user.UserName!, errors));
-        }
-
-        if (!string.IsNullOrWhiteSpace(previousPicturePath))
-        {
-            fileStorage.Delete(previousPicturePath);
+            return (false, updateError);
         }
 
         return (true, null);
@@ -272,5 +238,97 @@ public sealed class UserAccountService(UserManager<AppUser> userManager, IFileSt
         }
 
         return (true, null, user.PicturePath);
+    }
+
+    private async Task<string?> RemoveOtherRolesAsync(AppUser user, IList<string> currentRoles, string role)
+    {
+        string[] toRemove = [.. currentRoles.Where(r => r != role)];
+
+        if (toRemove.Length == 0)
+        {
+            return null;
+        }
+
+        var removeResult = await userManager.RemoveFromRolesAsync(user, toRemove);
+
+        if (removeResult.Succeeded)
+        {
+            return null;
+        }
+
+        var errors = string.Join("; ", removeResult.Errors.Select(e => e.Description));
+        return Messages.UserRoleRemoveFailed(user.UserName!, errors);
+    }
+
+    private async Task<string?> AddRoleIfMissingAsync(AppUser user, IList<string> currentRoles, string role)
+    {
+        if (currentRoles.Contains(role))
+        {
+            return null;
+        }
+
+        var addResult = await userManager.AddToRoleAsync(user, role);
+
+        if (addResult.Succeeded)
+        {
+            return null;
+        }
+
+        var errors = string.Join("; ", addResult.Errors.Select(e => e.Description));
+        return Messages.UserRoleAssignFailed(role, user.UserName!, errors);
+    }
+
+    private async Task<string?> ApplyEmailChangeAsync(AppUser user, string normalizedEmail, int userId)
+    {
+        if (string.Equals(user.Email, normalizedEmail, StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+
+        var existingWithEmail = await userManager.FindByEmailAsync(normalizedEmail);
+
+        if (existingWithEmail is not null && existingWithEmail.Id != userId)
+        {
+            return Messages.EmailTaken;
+        }
+
+        user.Email = normalizedEmail;
+        user.NormalizedEmail = userManager.NormalizeEmail(normalizedEmail);
+
+        return null;
+    }
+
+    private static void ApplyProfileFields(AppUser user, string? firstName, string? lastName, DateTime? dateOfBirth)
+    {
+        user.FirstName = firstName?.Trim() ?? user.FirstName;
+        user.LastName = lastName?.Trim() ?? user.LastName;
+
+        if (dateOfBirth.HasValue)
+        {
+            user.DateOfBirth = dateOfBirth.Value.Date;
+        }
+    }
+
+    private async Task<string?> PersistPictureChangeAsync(AppUser user, string? previousPicturePath, string? rollbackPath = null)
+    {
+        var updateResult = await userManager.UpdateAsync(user);
+
+        if (!updateResult.Succeeded)
+        {
+            if (rollbackPath is not null)
+            {
+                fileStorage.Delete(rollbackPath);
+            }
+
+            var errors = string.Join("; ", updateResult.Errors.Select(e => e.Description));
+            return Messages.UserUpdateFailed(user.UserName!, errors);
+        }
+
+        if (!string.IsNullOrWhiteSpace(previousPicturePath))
+        {
+            fileStorage.Delete(previousPicturePath);
+        }
+
+        return null;
     }
 }

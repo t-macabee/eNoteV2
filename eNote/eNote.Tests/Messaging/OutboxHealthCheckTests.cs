@@ -24,7 +24,7 @@ public sealed class OutboxHealthCheckTests
     public async Task CheckHealthAsync_ReturnsHealthy_WhenOnlyPendingMessages()
     {
         await using var context = TestDbContextFactory.CreateContext(DateTime.UtcNow);
-        context.Set<RentalNotificationOutbox>().Add(new RentalNotificationOutbox { PayloadJson = "{}" });
+        context.Set<NotificationOutbox>().Add(new NotificationOutbox { PayloadJson = "{}" });
         await context.SaveChangesAsync();
         var check = new OutboxHealthCheck(context);
 
@@ -37,7 +37,7 @@ public sealed class OutboxHealthCheckTests
     public async Task CheckHealthAsync_ReturnsDegraded_WhenAbandonedMessagesExist()
     {
         await using var context = TestDbContextFactory.CreateContext(DateTime.UtcNow);
-        context.Set<RentalNotificationOutbox>().Add(new RentalNotificationOutbox
+        context.Set<NotificationOutbox>().Add(new NotificationOutbox
         {
             PayloadJson = "{}",
             Attempts = RentalNotificationOutboxPublisher.MaxAttempts

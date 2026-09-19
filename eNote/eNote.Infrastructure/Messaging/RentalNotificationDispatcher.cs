@@ -68,8 +68,15 @@ public sealed class RentalNotificationDispatcher(
         return Task.CompletedTask;
     }
 
+    // Currency display contract, mirrored in
+    // UI/enote_core/lib/formatting/formatters.dart (_currencyLabel):
+    // an empty code or the BAM code is displayed as KM; every other code
+    // is upper-cased.
+    private const string LocalCurrencyCode = "bam";
+    private const string LocalCurrencyLabel = "KM";
+
     private static string FormatCurrency(string currency) =>
-        currency.Equals("bam", StringComparison.OrdinalIgnoreCase) ? "KM"
+        string.IsNullOrEmpty(currency) || currency.Equals(LocalCurrencyCode, StringComparison.OrdinalIgnoreCase) ? LocalCurrencyLabel
         : currency.ToUpperInvariant();
 
     private static (string Title, string Body) BuildCreatedContent(InstrumentRentalDto rental) =>

@@ -9,12 +9,12 @@ internal static class NotificationOutboxWriter
 
     public static void Enqueue<TMessage>(IAppDbContext context, string messageType, TMessage message)
     {
-        var entry = new RentalNotificationOutbox
+        var entry = new NotificationOutbox
         {
             MessageType = messageType,
             PayloadJson = JsonSerializer.Serialize(message, JsonOptions)
         };
 
-        context.Set<RentalNotificationOutbox>().Add(entry);
+        context.Set<NotificationOutbox>().Add(entry);
     }
 }

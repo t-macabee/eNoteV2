@@ -4,9 +4,9 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace eNote.Infrastructure.Data.Configurations;
 
-public sealed class RentalNotificationOutboxConfig : IEntityTypeConfiguration<RentalNotificationOutbox>
+public sealed class RentalNotificationOutboxConfig : IEntityTypeConfiguration<NotificationOutbox>
 {
-    public void Configure(EntityTypeBuilder<RentalNotificationOutbox> builder)
+    public void Configure(EntityTypeBuilder<NotificationOutbox> builder)
     {
         builder.ToTable("RentalNotificationOutbox");
 

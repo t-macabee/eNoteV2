@@ -1,6 +1,6 @@
 namespace eNote.Domain.Entities.Communication;
 
-public class RentalNotificationOutbox : AuditableEntity
+public class NotificationOutbox : AuditableEntity
 {
 
     public string MessageType { get; set; } = "RentalStatusChanged";

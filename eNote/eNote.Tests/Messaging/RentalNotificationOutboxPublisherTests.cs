@@ -23,14 +23,14 @@ public sealed class RentalNotificationOutboxPublisherTests
     public async Task ProcessBatch_PublishesPendingMessages_AndMarksPublishedAt()
     {
         await using var context = TestDbContextFactory.CreateContext(Now);
-        var outbox = new RentalNotificationOutbox { PayloadJson = "{}" };
-        context.Set<RentalNotificationOutbox>().Add(outbox);
+        var outbox = new NotificationOutbox { PayloadJson = "{}" };
+        context.Set<NotificationOutbox>().Add(outbox);
         await context.SaveChangesAsync();
         var publisher = CreatePublisher(context);
 
         await InvokeProcessBatchAsync(publisher);
 
-        var updated = await context.Set<RentalNotificationOutbox>().SingleAsync();
+        var updated = await context.Set<NotificationOutbox>().SingleAsync();
         Assert.Equal(Now, updated.PublishedAt);
         Assert.Equal(0, updated.Attempts);
     }
@@ -40,7 +40,7 @@ public sealed class RentalNotificationOutboxPublisherTests
     {
         await using var context = TestDbContextFactory.CreateContext(Now);
         var message = new RentalStatusChanged(1, 5, 9, "Pending", "Stratocaster", "Title", "Body", Now);
-        context.Set<RentalNotificationOutbox>().Add(new RentalNotificationOutbox
+        context.Set<NotificationOutbox>().Add(new NotificationOutbox
         {
             PayloadJson = JsonSerializer.Serialize(message, JsonOptions)
         });
@@ -61,7 +61,7 @@ public sealed class RentalNotificationOutboxPublisherTests
     {
         await using var context = TestDbContextFactory.CreateContext(Now);
         var message = new LectureCancelled(1, 50, "Guitar 101", "Predavanje otkazano", "Predavanje je otkazano.", Now);
-        context.Set<RentalNotificationOutbox>().Add(new RentalNotificationOutbox
+        context.Set<NotificationOutbox>().Add(new NotificationOutbox
         {
             MessageType = NotificationMessageTypes.LectureCancelled,
             PayloadJson = JsonSerializer.Serialize(message, JsonOptions)
@@ -83,7 +83,7 @@ public sealed class RentalNotificationOutboxPublisherTests
     {
         await using var context = TestDbContextFactory.CreateContext(Now);
         var message = new SubmissionGraded(1, 50, "Homework", 85, "Zadaća ocijenjena", "Ocjena: 85.", Now);
-        context.Set<RentalNotificationOutbox>().Add(new RentalNotificationOutbox
+        context.Set<NotificationOutbox>().Add(new NotificationOutbox
         {
             MessageType = NotificationMessageTypes.SubmissionGraded,
             PayloadJson = JsonSerializer.Serialize(message, JsonOptions)
@@ -104,13 +104,13 @@ public sealed class RentalNotificationOutboxPublisherTests
     public async Task ProcessBatch_IncrementsAttempts_ForUnknownMessageType()
     {
         await using var context = TestDbContextFactory.CreateContext(Now);
-        context.Set<RentalNotificationOutbox>().Add(new RentalNotificationOutbox { MessageType = "SomethingUnrecognized", PayloadJson = "{}" });
+        context.Set<NotificationOutbox>().Add(new NotificationOutbox { MessageType = "SomethingUnrecognized", PayloadJson = "{}" });
         await context.SaveChangesAsync();
         var publisher = CreatePublisher(context);
 
         await InvokeProcessBatchAsync(publisher);
 
-        var updated = await context.Set<RentalNotificationOutbox>().SingleAsync();
+        var updated = await context.Set<NotificationOutbox>().SingleAsync();
         Assert.Equal(1, updated.Attempts);
         Assert.Null(updated.PublishedAt);
         Assert.Contains("SomethingUnrecognized", updated.LastError);
@@ -120,13 +120,13 @@ public sealed class RentalNotificationOutboxPublisherTests
     public async Task ProcessBatch_IncrementsAttempts_WhenPublishFails()
     {
         await using var context = TestDbContextFactory.CreateContext(Now);
-        context.Set<RentalNotificationOutbox>().Add(new RentalNotificationOutbox { PayloadJson = "not-json" });
+        context.Set<NotificationOutbox>().Add(new NotificationOutbox { PayloadJson = "not-json" });
         await context.SaveChangesAsync();
         var publisher = CreatePublisher(context);
 
         await InvokeProcessBatchAsync(publisher);
 
-        var updated = await context.Set<RentalNotificationOutbox>().SingleAsync();
+        var updated = await context.Set<NotificationOutbox>().SingleAsync();
         Assert.Equal(1, updated.Attempts);
         Assert.Null(updated.PublishedAt);
         Assert.NotNull(updated.LastError);
@@ -136,7 +136,7 @@ public sealed class RentalNotificationOutboxPublisherTests
     public async Task ProcessBatch_SkipsMessages_AtMaxAttempts()
     {
         await using var context = TestDbContextFactory.CreateContext(Now);
-        context.Set<RentalNotificationOutbox>().Add(new RentalNotificationOutbox { PayloadJson = "{}", Attempts = 5 });
+        context.Set<NotificationOutbox>().Add(new NotificationOutbox { PayloadJson = "{}", Attempts = 5 });
         await context.SaveChangesAsync();
         var endpoint = new StubPublishEndpoint();
         var publisher = CreatePublisher(context, endpoint);
@@ -144,7 +144,7 @@ public sealed class RentalNotificationOutboxPublisherTests
         await InvokeProcessBatchAsync(publisher);
 
         Assert.Empty(endpoint.Published);
-        var updated = await context.Set<RentalNotificationOutbox>().SingleAsync();
+        var updated = await context.Set<NotificationOutbox>().SingleAsync();
         Assert.Null(updated.PublishedAt);
     }
 

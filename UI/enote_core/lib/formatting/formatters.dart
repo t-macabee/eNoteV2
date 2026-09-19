@@ -49,8 +49,17 @@ String formatKM(double? value, {String currency = 'KM'}) {
   return '${value.toStringAsFixed(2)} ${_currencyLabel(currency)}';
 }
 
+// Currency display contract, mirrored in
+// eNote/eNote.Infrastructure/Messaging/RentalNotificationDispatcher.cs
+// (FormatCurrency): an empty code or the BAM code is displayed as KM;
+// every other code is upper-cased.
+const _localCurrencyCode = 'bam';
+const _localCurrencyLabel = 'KM';
+
 String _currencyLabel(String currency) {
-  if (currency.isEmpty || currency.toLowerCase() == 'bam') return 'KM';
+  if (currency.isEmpty || currency.toLowerCase() == _localCurrencyCode) {
+    return _localCurrencyLabel;
+  }
   return currency.toUpperCase();
 }
 
