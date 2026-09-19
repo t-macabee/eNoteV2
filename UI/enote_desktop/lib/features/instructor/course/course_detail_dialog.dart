@@ -2,20 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
-import '../../../theme/app_theme.dart';
-import '../../../widgets/detail_row.dart';
 import '../../../widgets/dialog_shell.dart';
 import '../../../widgets/entity_form_scaffold.dart';
-import '../../../widgets/entity_list_screen.dart';
 import '../../../widgets/form_submit_state.dart';
-import '../../../widgets/pdf_report_button.dart';
-import '../../shared/announcement/announcement_list_screen.dart';
-import '../../shared/announcement/announcement_provider.dart';
 import '../lecture/lecture_workspace_dialog.dart';
 import '../ranking/ranking_provider.dart';
-import '../ranking/ranking_screen.dart';
+import 'course_announcements_dialog.dart';
+import 'course_detail_sections.dart';
 import 'course_form_screen.dart';
 import 'course_provider.dart';
+import 'course_ranking_dialog.dart';
 
 class CourseDetailDialog extends StatefulWidget {
   final CourseDto course;
@@ -148,33 +144,10 @@ class _CourseDetailDialogState extends State<CourseDetailDialog>
   }
 
   Future<void> _openAnnouncements() async {
-    final apiClient = context.read<ApiClient>();
-    await showDialog<void>(
-      context: context,
-      builder: (dialogContext) => DialogShell(
-        width: DialogShellWidth.lg,
-        header: DialogShellHeader(
-          label: const Text(
-            'Objave',
-            style: TextStyle(
-              color: AppTheme.textPrimary,
-              fontWeight: FontWeight.w600,
-              fontSize: 16,
-            ),
-          ),
-          onClose: () => Navigator.of(dialogContext).pop(),
-        ),
-        body: ChangeNotifierProvider<AnnouncementProvider>(
-          create: (_) => AnnouncementProvider(
-            apiClient: apiClient,
-            courseId: _course.id,
-          ),
-          builder: (ctx, _) => AnnouncementListScreen(
-            provider: ctx.read<AnnouncementProvider>(),
-            presentation: EntityListPresentation.embedded,
-          ),
-        ),
-      ),
+    await CourseAnnouncementsDialog.show(
+      context,
+      courseId: _course.id,
+      apiClient: context.read<ApiClient>(),
     );
     if (mounted) {
       _refreshCourse();
@@ -182,28 +155,11 @@ class _CourseDetailDialogState extends State<CourseDetailDialog>
   }
 
   Future<void> _openRanking() async {
-    await showDialog<void>(
-      context: context,
-      builder: (dialogContext) => DialogShell(
-        width: DialogShellWidth.lg,
-        header: DialogShellHeader(
-          label: const Text(
-            'Rangiranje',
-            style: TextStyle(
-              color: AppTheme.textPrimary,
-              fontWeight: FontWeight.w600,
-              fontSize: 16,
-            ),
-          ),
-          action: PdfReportButton(
-            label: 'Izvještaj',
-            fileName: 'course-${_course.id}-ranking.pdf',
-            endpoint: context.read<RankingProvider>().reportEndpoint(_course.id),
-          ),
-          onClose: () => Navigator.of(dialogContext).pop(),
-        ),
-        body: RankingView(courseId: _course.id),
-      ),
+    await CourseRankingDialog.show(
+      context,
+      courseId: _course.id,
+      reportEndpoint:
+          context.read<RankingProvider>().reportEndpoint(_course.id),
     );
   }
 
@@ -240,119 +196,25 @@ class _CourseDetailDialogState extends State<CourseDetailDialog>
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
-              child: Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  OutlinedButton.icon(
-                    icon: const Icon(Icons.event_note, size: 18),
-                    label: const Text('Predavanja'),
-                    onPressed: _openLectures,
-                  ),
-                  OutlinedButton.icon(
-                    icon: const Icon(Icons.campaign, size: 18),
-                    label: const Text('Objave'),
-                    onPressed: _openAnnouncements,
-                  ),
-                  OutlinedButton.icon(
-                    icon: const Icon(Icons.leaderboard, size: 18),
-                    label: const Text('Rangiranje'),
-                    onPressed: _openRanking,
-                  ),
-                ],
-              ),
+            CourseDetailActionBar(
+              onLectures: _openLectures,
+              onAnnouncements: _openAnnouncements,
+              onRanking: _openRanking,
             ),
             Flexible(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    DetailRow(
-                      icon: Icons.description_outlined,
-                      label: 'Opis',
-                      value: (_course.description != null &&
-                              _course.description!.isNotEmpty)
-                          ? _course.description!
-                          : '-',
-                    ),
-                    DetailRow(
-                      icon: Icons.payments_outlined,
-                      label: 'Mjesečna cijena',
-                      value: _course.price.toStringAsFixed(2),
-                    ),
-                    DetailRow(
-                      icon: Icons.event_outlined,
-                      label: 'Datum početka',
-                      value: formatDateNullable(_course.startDate),
-                    ),
-                    DetailRow(
-                      icon: Icons.event_available_outlined,
-                      label: 'Datum završetka',
-                      value: formatDateNullable(_course.endDate),
-                    ),
-                    DetailRow(
-                      icon: Icons.groups_outlined,
-                      label: 'Broj upisanih',
-                      value: _course.enrolledCount.toString(),
-                    ),
-                  ],
-                ),
+                child: CourseDetailRows(course: _course),
               ),
             ),
             const Divider(height: 1),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(24, 12, 24, 16),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  OutlinedButton.icon(
-                    onPressed:
-                        _isDeleting || _isPublishing ? null : _delete,
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppTheme.error,
-                      side: const BorderSide(color: AppTheme.error),
-                    ),
-                    icon: _isDeleting
-                        ? const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: AppTheme.error,
-                            ),
-                          )
-                        : const Icon(Icons.delete_outline, size: 18),
-                    label: const Text('Obriši'),
-                  ),
-                  const Spacer(),
-                  const Text(
-                    'Objavljen',
-                    style: TextStyle(color: AppTheme.textSecondary),
-                  ),
-                  const SizedBox(width: 8),
-                  if (_isPublishing)
-                    const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  else
-                    Switch(
-                      value: _course.isPublished,
-                      onChanged: _isDeleting ? null : _togglePublish,
-                    ),
-                  const SizedBox(width: 8),
-                  FilledButton.icon(
-                    onPressed:
-                        _isDeleting || _isPublishing ? null : _openEdit,
-                    icon: const Icon(Icons.edit_outlined, size: 18),
-                    label: const Text('Uredi'),
-                  ),
-                ],
-              ),
+            CourseDetailFooter(
+              isPublished: _course.isPublished,
+              isDeleting: _isDeleting,
+              isPublishing: _isPublishing,
+              onDelete: _delete,
+              onPublishChanged: _togglePublish,
+              onEdit: _openEdit,
             ),
           ],
         ),
