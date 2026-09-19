@@ -1,11 +1,14 @@
+# Academic / RS2 local reference documents
+docs/rs2-checklist.md
+docs/rs2-prijava-teme.md
+docs/rs2-upute.md
+
 # IDE / editor (local-only)
 .vscode/
 .agents/
 .idea/
 *.suo
 *.user
-*.userosscache
-*.sln.docstates
 *.DotSettings.user
 
 # Visual Studio
@@ -27,15 +30,10 @@ secrets.json
 [Bb]in/
 [Oo]bj/
 [Dd]ebug/
-[Dd]ebugPublic/
 [Rr]elease/
 [Rr]eleases/
 x64/
 x86/
-[Ww][Ii][Nn]32/
-[Aa][Rr][Mm]/
-[Aa][Rr][Mm]64/
-bld/
 [Ll]og/
 [Ll]ogs/
 *.log
@@ -49,8 +47,6 @@ debug-*.log
 *.tmp
 *.nupkg
 *.snupkg
-project.lock.json
-project.fragment.lock.json
 artifacts/
 
 # Test / coverage
@@ -58,7 +54,6 @@ artifacts/
 [Bb]uild[Ll]og.*
 *.trx
 *.coverage
-*.coveragexml
 coverage/
 
 # OS
@@ -66,7 +61,7 @@ coverage/
 Thumbs.db
 Desktop.ini
 
-# Flutter (planned client)
+# Flutter
 .dart_tool/
 .flutter-plugins
 .flutter-plugins-dependencies
@@ -74,30 +69,15 @@ Desktop.ini
 .pub-cache/
 .pub/
 build/
-android/app/debug
-android/app/profile
-android/app/release
-ios/Flutter/Generated.xcconfig
-ios/Flutter/flutter_export_environment.sh
-ios/Runner/GeneratedPluginRegistrant.*
 
 # Misc
 *.swp
 *~
 *.zip
 *.apk
-/task.txt
-.aider*
 
-# Claude Code / agent artifacts (keep local, do not commit)
+# Agent artifacts
 .claude/
-CLAUDE.md
 .tokensave/
 .mcp.json
 index.db
-
-# Node / headroom MCP (dev tooling, not part of the project)
-node_modules/
-package.json
-package-lock.json
-

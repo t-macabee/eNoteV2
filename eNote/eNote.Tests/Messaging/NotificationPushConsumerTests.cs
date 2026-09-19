@@ -1,4 +1,4 @@
-using eNote.API.Consumers;
+using eNote.API.Realtime.Consumers;
 using eNote.API.Hubs;
 using eNote.Application.Features.Communication.Notifications;
 using eNote.Contracts.Assignments;

@@ -4,12 +4,12 @@ using eNote.Contracts.Rentals;
 using MassTransit;
 using Microsoft.AspNetCore.SignalR;
 
-namespace eNote.API.Consumers;
+namespace eNote.API.Realtime.Consumers;
 
-public sealed class RentalRefundedPushConsumer(IHubContext<NotificationHub> hubContext, ILogger<RentalRefundedPushConsumer> logger)
-    : NotificationPushConsumer<RentalRefunded>(hubContext, logger)
+public sealed class RentalStatusChangedPushConsumer(IHubContext<NotificationHub> hubContext, ILogger<RentalStatusChangedPushConsumer> logger)
+    : NotificationPushConsumer<RentalStatusChanged>(hubContext, logger)
 {
-    protected override NotificationPush Map(RentalRefunded message) => new(
+    protected override NotificationPush Map(RentalStatusChanged message) => new(
         message.StudentUserId,
         new NotificationPushDto
         {

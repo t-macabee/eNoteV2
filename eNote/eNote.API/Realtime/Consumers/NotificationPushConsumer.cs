@@ -3,7 +3,7 @@ using eNote.Application.Features.Communication.Notifications;
 using MassTransit;
 using Microsoft.AspNetCore.SignalR;
 
-namespace eNote.API.Consumers;
+namespace eNote.API.Realtime.Consumers;
 
 /// A mapped notification: the target user, the SignalR payload, and the two
 /// log fields (notification kind and the entity reference).

@@ -1,4 +1,4 @@
-using eNote.API.Consumers;
+using eNote.API.Realtime.Consumers;
 using eNote.API.Converters;
 using eNote.API.Extensions;
 using eNote.API.Hubs;

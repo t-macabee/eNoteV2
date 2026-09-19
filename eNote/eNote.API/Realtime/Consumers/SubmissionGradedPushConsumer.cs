@@ -4,7 +4,7 @@ using eNote.Contracts.Assignments;
 using MassTransit;
 using Microsoft.AspNetCore.SignalR;
 
-namespace eNote.API.Consumers;
+namespace eNote.API.Realtime.Consumers;
 
 public sealed class SubmissionGradedPushConsumer(IHubContext<NotificationHub> hubContext, ILogger<SubmissionGradedPushConsumer> logger)
     : NotificationPushConsumer<SubmissionGraded>(hubContext, logger)

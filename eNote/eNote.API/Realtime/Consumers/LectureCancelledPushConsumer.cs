@@ -4,7 +4,7 @@ using eNote.Contracts.Lectures;
 using MassTransit;
 using Microsoft.AspNetCore.SignalR;
 
-namespace eNote.API.Consumers;
+namespace eNote.API.Realtime.Consumers;
 
 public sealed class LectureCancelledPushConsumer(IHubContext<NotificationHub> hubContext, ILogger<LectureCancelledPushConsumer> logger)
     : NotificationPushConsumer<LectureCancelled>(hubContext, logger)
