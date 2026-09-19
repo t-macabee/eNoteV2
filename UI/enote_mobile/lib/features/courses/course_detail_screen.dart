@@ -6,11 +6,9 @@ import 'package:enote_core/enote_core.dart';
 import '../../session/session_controller.dart';
 import '../../shell/app_router.dart';
 import '../../widgets/async_state_view.dart';
-import '../../widgets/blocked_reason_banner.dart';
 import '../../widgets/form_submit_state.dart';
-import '../../widgets/labeled_value.dart';
-import '../lectures/lecture_labels.dart';
 import '../lectures/lecture_provider.dart';
+import 'course_detail_sections.dart';
 import 'course_provider.dart';
 
 /// S15 — the master–details form: course master card + its lectures
@@ -208,7 +206,19 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
     final totalCount = _lecturesController.totalCount;
     return CustomScrollView(
       slivers: [
-        SliverToBoxAdapter(child: _masterCard(session, course, enrolled)),
+        SliverToBoxAdapter(
+          child: CourseMasterCard(
+            course: course,
+            enrolled: enrolled,
+            membershipBlocked: !session.isMembershipActive,
+            membershipPaidUntil: session.membershipPaidUntil,
+            isActing: _acting,
+            onEnroll: () => _enroll(course),
+            onUnenroll: () => _unenroll(course),
+            onRanking: () => _openRanking(course),
+            onTuition: () => _openTuition(course),
+          ),
+        ),
         if (!enrolled)
           const SliverToBoxAdapter(
             child: Padding(
@@ -222,7 +232,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
         else ...[
           SliverPersistentHeader(
             pinned: true,
-            delegate: _LecturesHeaderDelegate(
+            delegate: CourseLecturesHeader(
               title: 'Predavanja · ${totalCount ?? lectures.length}',
               showSearch: _showSearch,
               onToggleSearch: () =>
@@ -236,7 +246,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
             delegate: SliverChildBuilderDelegate(
               (context, index) {
                 final lecture = lectures[index];
-                return _LectureRow(
+                return CourseLectureRow(
                   lecture: lecture,
                   onTap: () async {
                     await Navigator.of(context).pushNamed(
@@ -262,246 +272,6 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
           ),
         ],
       ],
-    );
-  }
-
-  /// Enrolled only: an unpaid/expired period gets a banner with the renewal
-  /// action, a paid one gets a plain reminder row, a free course gets nothing.
-  Widget _tuitionBanner(CourseDto course) {
-    final paidUntil = course.paidUntil;
-    if (paidUntil == null) {
-      return BlockedReasonBanner(
-        icon: Icons.info_outline,
-        reason: 'Školarina nije plaćena.',
-        actionLabel: 'Plati',
-        onAction: () => _openTuition(course),
-      );
-    }
-    if (paidUntil.isBefore(DateTime.now())) {
-      return BlockedReasonBanner(
-        icon: Icons.warning_amber_outlined,
-        reason: 'Školarina je istekla ${formatDate(paidUntil)}',
-        actionLabel: 'Obnovi',
-        onAction: () => _openTuition(course),
-      );
-    }
-    return LabeledValue(
-      label: 'Plaćeno do',
-      value: formatDate(paidUntil),
-    );
-  }
-
-  Widget _masterCard(
-    SessionController session,
-    CourseDto course,
-    bool enrolled,
-  ) {
-    final paidUntil = session.membershipPaidUntil;
-    final membershipBlocked = !session.isMembershipActive;
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  course.name,
-                  style: Theme.of(context).textTheme.headlineSmall,
-                ),
-              ),
-              if (enrolled) const Chip(label: Text('Upisan')),
-            ],
-          ),
-          const SizedBox(height: 12),
-          LabeledValue(
-            label: 'Instruktor',
-            value: orDash(course.instructorName),
-          ),
-          LabeledValue(
-            label: 'Trajanje',
-            value:
-                '${formatDateNullable(course.startDate)} – '
-                '${formatDateNullable(course.endDate)}',
-          ),
-          LabeledValue(label: 'Mjesečna cijena', value: formatKM(course.price)),
-          LabeledValue(
-            label: 'Polaznika',
-            value: course.enrolledCount.toString(),
-          ),
-          if (course.description != null) ...[
-            const SizedBox(height: 8),
-            Text(
-              course.description!,
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-          ],
-          if (membershipBlocked && !enrolled) ...[
-            const SizedBox(height: 8),
-            BlockedReasonBanner(
-              icon: Icons.info_outline,
-              reason: paidUntil == null
-                  ? 'Članarina nije aktivna.'
-                  : 'Članarina je istekla ${formatDate(paidUntil)} '
-                        'Obratite se školi za obnovu.',
-            ),
-          ],
-          if (enrolled && !course.isFree) ...[
-            const SizedBox(height: 8),
-            _tuitionBanner(course),
-          ],
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              if (enrolled)
-                OutlinedButton(
-                  onPressed: _acting ? null : () => _unenroll(course),
-                  child: const Text('Ispiši se'),
-                )
-              else
-                FilledButton(
-                  onPressed: (membershipBlocked || _acting)
-                      ? null
-                      : () => _enroll(course),
-                  child: const Text('Upiši se'),
-                ),
-              const SizedBox(width: 8),
-              TextButton(
-                onPressed: () => _openRanking(course),
-                child: const Text('Rang lista'),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Pinned lectures section header: `SectionHeader` copy with a 🔍 action
-/// that reveals the lectures `name` search field below it.
-class _LecturesHeaderDelegate extends SliverPersistentHeaderDelegate {
-  final String title;
-  final bool showSearch;
-  final VoidCallback onToggleSearch;
-  final TextEditingController searchController;
-  final Color backgroundColor;
-  final TextStyle? textStyle;
-
-  const _LecturesHeaderDelegate({
-    required this.title,
-    required this.showSearch,
-    required this.onToggleSearch,
-    required this.searchController,
-    required this.backgroundColor,
-    required this.textStyle,
-  });
-
-  @override
-  double get minExtent => showSearch ? 112 : 48;
-
-  @override
-  double get maxExtent => showSearch ? 112 : 48;
-
-  @override
-  Widget build(
-    BuildContext context,
-    double shrinkOffset,
-    bool overlapsContent,
-  ) {
-    // Fixed-height equivalent of SectionHeader (uppercase labelSmall +
-    // trailing action): SectionHeader's own vertical padding does not fit a
-    // 48 px pinned extent, so the row is laid out to exactly 48 px here.
-    return Container(
-      color: backgroundColor,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          SizedBox(
-            height: 48,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(title.toUpperCase(), style: textStyle),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.search_outlined),
-                    onPressed: onToggleSearch,
-                  ),
-                ],
-              ),
-            ),
-          ),
-          if (showSearch)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-              child: TextField(
-                controller: searchController,
-                decoration: const InputDecoration(
-                  hintText: 'Pretraži…',
-                  prefixIcon: Icon(Icons.search_outlined),
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
-  @override
-  bool shouldRebuild(_LecturesHeaderDelegate oldDelegate) =>
-      title != oldDelegate.title ||
-      showSearch != oldDelegate.showSearch ||
-      backgroundColor != oldDelegate.backgroundColor ||
-      textStyle != oldDelegate.textStyle ||
-      // `onToggleSearch` is deliberately not compared: it is an inline
-      // closure with a fresh identity on every parent build, so comparing it
-      // would make the delegate rebuild unconditionally.
-      searchController != oldDelegate.searchController;
-}
-
-class _LectureRow extends StatelessWidget {
-  final LectureDto lecture;
-  final Future<void> Function() onTap;
-
-  const _LectureRow({required this.lecture, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      child: ListTile(
-        title: Row(
-          children: [
-            Expanded(
-              child: Text(
-                formatDateTime(lecture.lectureTime),
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-            ),
-            Text(
-              lectureStatusLabel(lecture.lectureStatus),
-              style: TextStyle(
-                color: lecture.lectureStatus == LectureStatus.cancelled
-                    ? Theme.of(context).colorScheme.error
-                    : Theme.of(context).textTheme.bodyMedium?.color,
-              ),
-            ),
-          ],
-        ),
-        subtitle: Text(
-          '${lecture.name} · '
-          '${lectureTypeLabel(lecture.lectureType)} · '
-          '${lecture.location}\n'
-          '${rsvpStateLabel(lecture.myAttendanceStatus)}',
-        ),
-        isThreeLine: true,
-        trailing: const Icon(Icons.chevron_right),
-        onTap: () => onTap(),
-      ),
     );
   }
 }
