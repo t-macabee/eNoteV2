@@ -49,7 +49,7 @@ public sealed class StripeWebhookService(
     public async Task HandleAsync(StripeEvent stripeEvent, string rawJson, CancellationToken cancellationToken = default)
     {
         // Fast-path replay guard; the transactional handlers below repeat it to close races.
-        if (await context.Set<StripeWebhookEvent>().AnyAsync(e => e.StripeEventId == stripeEvent.Id, cancellationToken))
+        if (await IsEventProcessedAsync(stripeEvent.Id, cancellationToken))
         {
             return;
         }
@@ -82,7 +82,7 @@ public sealed class StripeWebhookService(
     {
         await context.ExecuteInTransactionAsync(async () =>
         {
-            if (await context.Set<StripeWebhookEvent>().AnyAsync(e => e.StripeEventId == eventId, cancellationToken))
+            if (await IsEventProcessedAsync(eventId, cancellationToken))
             {
                 return;
             }
@@ -140,7 +140,7 @@ public sealed class StripeWebhookService(
     {
         await context.ExecuteInTransactionAsync(async () =>
         {
-            if (await context.Set<StripeWebhookEvent>().AnyAsync(e => e.StripeEventId == eventId, cancellationToken))
+            if (await IsEventProcessedAsync(eventId, cancellationToken))
             {
                 return;
             }
@@ -189,14 +189,13 @@ public sealed class StripeWebhookService(
                 return;
             }
 
-            if (await context.Set<StripeWebhookEvent>().AnyAsync(e => e.StripeEventId == eventId, cancellationToken))
+            if (await IsEventProcessedAsync(eventId, cancellationToken))
             {
                 return;
             }
 
             var rentalPayment = await context.Set<RentalPayment>()
                 .IgnoreQueryFilters()
-                .Include(p => p.InstrumentRental)
                 .FirstOrDefaultAsync(p => p.StripePaymentIntentId == charge.PaymentIntentId, cancellationToken);
 
             if (rentalPayment is not null)
@@ -246,7 +245,7 @@ public sealed class StripeWebhookService(
                 return;
             }
 
-            if (await context.Set<StripeWebhookEvent>().AnyAsync(e => e.StripeEventId == eventId, cancellationToken))
+            if (await IsEventProcessedAsync(eventId, cancellationToken))
             {
                 return;
             }
@@ -319,6 +318,9 @@ public sealed class StripeWebhookService(
             logger.LogWarning("PaymentIntent {PaymentIntentId} succeeded without a charge id", paymentIntentId);
         }
     }
+
+    private Task<bool> IsEventProcessedAsync(string eventId, CancellationToken cancellationToken) =>
+        context.Set<StripeWebhookEvent>().AnyAsync(e => e.StripeEventId == eventId, cancellationToken);
 
     private async Task RecordEventAsync(string eventId, string eventType, string rawJson, CancellationToken cancellationToken)
     {
