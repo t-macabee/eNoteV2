@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:enote_core/enote_core.dart';
 
+import 'entity_list_sections.dart';
 
 typedef ColumnValueBuilder<T> = dynamic Function(T item);
 typedef ColumnCellBuilder<T> = Widget Function(BuildContext context, T item);
@@ -184,9 +185,6 @@ class EntityListScreenState<T> extends State<EntityListScreen<T>> {
     }
   }
 
-  @visibleForTesting
-  Future<void> deleteItem(T item) => _deleteItem(item);
-
   @override
   Widget build(BuildContext context) {
     final useInlineToolbar = widget.config.presentation == EntityListPresentation.embedded;
@@ -198,8 +196,16 @@ class EntityListScreenState<T> extends State<EntityListScreen<T>> {
         : _controller.items.isEmpty
         ? const Center(child: Text('Nema podataka.'))
         : (widget.config.listStyle == EntityListStyle.tiles
-              ? _buildTiles()
-              : _buildTable());
+              ? EntityListTiles<T>(
+                  config: widget.config,
+                  items: _controller.items,
+                  onDelete: _deleteItem,
+                )
+              : EntityListTable<T>(
+                  config: widget.config,
+                  items: _controller.items,
+                  onDelete: _deleteItem,
+                ));
 
     final content = Column(
       mainAxisSize: isEmbedded ? MainAxisSize.min : MainAxisSize.max,
@@ -217,7 +223,11 @@ class EntityListScreenState<T> extends State<EntityListScreen<T>> {
             addLabel: widget.config.addLabel,
           )
         else ...[
-          if (widget.config.showSearchBar) _buildSearchBar(),
+          if (widget.config.showSearchBar)
+            EntityListSearchBar(
+              controller: _controller.searchController,
+              hint: widget.config.searchHint,
+            ),
           if (widget.config.filterBar != null) widget.config.filterBar!,
         ],
         if (isEmbedded) Flexible(child: listBody) else Expanded(child: listBody),
@@ -262,210 +272,8 @@ class EntityListScreenState<T> extends State<EntityListScreen<T>> {
     );
   }
 
-  /// The stacked (non-inline) search bar. List-only: the grid has no
-  /// counterpart, and this is the layout the default list screens use, with
-  /// their Add button in the AppBar actions above.
-  Widget _buildSearchBar() {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Align(
-        alignment: Alignment.centerLeft,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 420),
-          child: TextField(
-            controller: _controller.searchController,
-            decoration: InputDecoration(
-              hintText: widget.config.searchHint,
-              prefixIcon: const Icon(Icons.search),
-              border: const OutlineInputBorder(),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTiles() {
-    final hasActions =
-        widget.config.onEdit != null ||
-        widget.config.onDelete != null ||
-        widget.config.extraActions != null;
-
-    final items = _controller.items;
-    final isEmbedded =
-        widget.config.presentation == EntityListPresentation.embedded;
-
-    return ListView.separated(
-      shrinkWrap: isEmbedded,
-      itemCount: items.length,
-      separatorBuilder: (_, _) => const Divider(height: 1),
-      itemBuilder: (context, index) {
-        final item = items[index];
-        final columns = widget.config.columns;
-        final title = columns.isNotEmpty
-            ? (columns.first.value(item)?.toString() ?? '-')
-            : '';
-
-        String? subtitle;
-        Widget? subtitleWidget;
-        final subtitleIndices = widget.config.tileSubtitleColumns;
-        List<ColumnSpec<T>> subtitleCols;
-        if (subtitleIndices != null) {
-          subtitleCols = <ColumnSpec<T>>[];
-          for (final i in subtitleIndices) {
-            if (i < 0 || i >= columns.length) continue;
-            subtitleCols.add(columns[i]);
-          }
-        } else if (columns.length > 1) {
-          subtitleCols = columns.skip(1).toList();
-        } else {
-          subtitleCols = <ColumnSpec<T>>[];
-        }
-        if (subtitleCols.isNotEmpty) {
-          final hasCustom =
-              subtitleCols.any((col) => col.cellBuilder != null);
-          if (!hasCustom) {
-            final parts = <String>[];
-            for (final col in subtitleCols) {
-              final val = col.value(item)?.toString() ?? '-';
-              parts.add('${col.label}: $val');
-            }
-            if (parts.isNotEmpty) subtitle = parts.join(' · ');
-          } else {
-            subtitleWidget = Wrap(
-              spacing: 8,
-              runSpacing: 4,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              children: [
-                for (final col in subtitleCols)
-                  if (col.cellBuilder != null)
-                    col.cellBuilder!(context, item)
-                  else
-                    Text('${col.label}: ${col.value(item)?.toString() ?? '-'}'),
-              ],
-            );
-          }
-        }
-
-        final onRowTap = widget.config.onRowTap ?? widget.config.onEdit;
-        final extraWidgets =
-            widget.config.extraActions?.call(context, item) ??
-            const <Widget>[];
-        final hasEditDelete =
-            widget.config.onEdit != null || widget.config.onDelete != null;
-        return ListTile(
-          leading: widget.config.rowIcon != null
-              ? Icon(widget.config.rowIcon)
-              : null,
-          title: Text(
-            title,
-            style: columns.isNotEmpty ? columns.first.style?.call(item) : null,
-          ),
-          subtitle: subtitleWidget ?? (subtitle != null ? Text(subtitle) : null),
-          onTap: onRowTap != null
-              ? () => onRowTap(context, item)
-              : null,
-          trailing: hasActions
-              ? Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    ...extraWidgets,
-                    if (extraWidgets.isNotEmpty && hasEditDelete)
-                      const SizedBox(
-                        height: 20,
-                        child: VerticalDivider(width: 12),
-                      ),
-                    if (widget.config.onEdit != null)
-                      IconButton(
-                        icon: const Icon(Icons.edit, size: 18),
-                        onPressed: () => widget.config.onEdit!(context, item),
-                      ),
-                    if (widget.config.onDelete != null)
-                      IconButton(
-                        icon: const Icon(
-                          Icons.delete,
-                          size: 18,
-                          color: Colors.red,
-                        ),
-                        onPressed: () => _deleteItem(item),
-                      ),
-                  ],
-                )
-              : null,
-        );
-      },
-    );
-  }
-
-  Widget _buildTable() {
-    final hasActions =
-        widget.config.onEdit != null ||
-        widget.config.onDelete != null ||
-        widget.config.extraActions != null;
-
-    return SingleChildScrollView(
-      child: DataTable(
-        columns: [
-          ...widget.config.columns.map((c) => DataColumn(label: Text(c.label))),
-          if (hasActions) const DataColumn(label: Text('Akcije')),
-        ],
-        rows: _controller.items.map((item) {
-          final extraWidgets =
-              widget.config.extraActions?.call(context, item) ??
-              const <Widget>[];
-          final hasEditDelete =
-              widget.config.onEdit != null || widget.config.onDelete != null;
-          return DataRow(
-            cells: [
-              ...widget.config.columns.map(
-                (col) => DataCell(
-                  col.cellBuilder != null
-                      ? col.cellBuilder!(context, item)
-                      : Text(
-                          col.value(item)?.toString() ?? '-',
-                          style: col.style?.call(item),
-                        ),
-                  onTap: widget.config.onEdit != null
-                      ? () => widget.config.onEdit!(context, item)
-                      : null,
-                ),
-              ),
-              if (hasActions)
-                DataCell(
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      ...extraWidgets,
-                      if (extraWidgets.isNotEmpty && hasEditDelete)
-                        const SizedBox(
-                          height: 20,
-                          child: VerticalDivider(width: 12),
-                        ),
-                      if (widget.config.onEdit != null)
-                        IconButton(
-                          icon: const Icon(Icons.edit, size: 18),
-                          onPressed: () => widget.config.onEdit!(context, item),
-                        ),
-                      if (widget.config.onDelete != null)
-                        IconButton(
-                          icon: const Icon(
-                            Icons.delete,
-                            size: 18,
-                            color: Colors.red,
-                          ),
-                          onPressed: () => _deleteItem(item),
-                        ),
-                    ],
-                  ),
-                ),
-            ],
-          );
-        }).toList(),
-      ),
-    );
-  }
-
   Widget _buildPagination() {
     return PagedPaginationBar(controller: _controller);
   }
 }
+

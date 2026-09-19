@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:enote_core/enote_core.dart';
-import '../theme/app_theme.dart';
+import 'entity_form_sections.dart';
+import 'form_submit_state.dart';
 
 /// How an [EntityFormScaffold] is presented to the user.
 enum EntityFormPresentation {
@@ -64,7 +65,8 @@ class EntityFormScaffold extends StatefulWidget {
   State<EntityFormScaffold> createState() => _EntityFormScaffoldState();
 }
 
-class _EntityFormScaffoldState extends State<EntityFormScaffold> {
+class _EntityFormScaffoldState extends State<EntityFormScaffold>
+    with FormSubmitState<EntityFormScaffold> {
   final _formKey = GlobalKey<FormState>();
   bool _isSaving = false;
   bool _isDeleting = false;
@@ -79,22 +81,13 @@ class _EntityFormScaffoldState extends State<EntityFormScaffold> {
     if (confirmed != true) return;
     if (!mounted) return;
 
-    setState(() => _isDeleting = true);
-    try {
+    await submitWith((busy) => _isDeleting = busy, () async {
       final success = await widget.onDelete!();
       if (!mounted) return;
       if (success) {
         Navigator.of(context).pop(true);
       }
-    } catch (e) {
-      if (mounted) {
-        ErrorBanner.show(context, message: userMessage(e));
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isDeleting = false);
-      }
-    }
+    });
   }
 
   Future<void> _save() async {
@@ -102,8 +95,7 @@ class _EntityFormScaffoldState extends State<EntityFormScaffold> {
       return;
     }
 
-    setState(() => _isSaving = true);
-    try {
+    await submitWith((busy) => _isSaving = busy, () async {
       final success = await widget.onSave();
       if (!mounted) return;
 
@@ -120,15 +112,7 @@ class _EntityFormScaffoldState extends State<EntityFormScaffold> {
           widget.onReset?.call();
         }
       }
-    } catch (e) {
-      if (mounted) {
-        ErrorBanner.show(context, message: userMessage(e));
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isSaving = false);
-      }
-    }
+    });
   }
 
   @override
@@ -149,42 +133,6 @@ class _EntityFormScaffoldState extends State<EntityFormScaffold> {
       if (i < fields.length - 1) spaced.add(SizedBox(height: spacing));
     }
     return spaced;
-  }
-
-  Widget _buildSaveButton() {
-    return FilledButton.icon(
-      onPressed:
-          (_isSaving || _isDeleting || !widget.saveEnabled) ? null : _save,
-      icon: _isSaving
-          ? const SizedBox(
-              width: 16,
-              height: 16,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            )
-          : const Icon(Icons.save),
-      label: Text(widget.saveLabel),
-    );
-  }
-
-  Widget _buildDeleteButton() {
-    return OutlinedButton.icon(
-      onPressed: (_isSaving || _isDeleting) ? null : _delete,
-      style: OutlinedButton.styleFrom(
-        foregroundColor: AppTheme.error,
-        side: const BorderSide(color: AppTheme.error),
-      ),
-      icon: _isDeleting
-          ? const SizedBox(
-              width: 16,
-              height: 16,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                color: AppTheme.error,
-              ),
-            )
-          : const Icon(Icons.delete_outline),
-      label: Text(widget.deleteLabel),
-    );
   }
 
   Widget _buildPage(BuildContext context) {
@@ -212,12 +160,29 @@ class _EntityFormScaffoldState extends State<EntityFormScaffold> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  _buildDeleteButton(),
-                  _buildSaveButton(),
+                  EntityDeleteButton(
+                    isSaving: _isSaving,
+                    isDeleting: _isDeleting,
+                    onPressed: _delete,
+                    label: widget.deleteLabel,
+                  ),
+                  EntitySaveButton(
+                    isSaving: _isSaving,
+                    isDeleting: _isDeleting,
+                    enabled: widget.saveEnabled,
+                    onPressed: _save,
+                    label: widget.saveLabel,
+                  ),
                 ],
               )
             else
-              _buildSaveButton(),
+              EntitySaveButton(
+                isSaving: _isSaving,
+                isDeleting: _isDeleting,
+                enabled: widget.saveEnabled,
+                onPressed: _save,
+                label: widget.saveLabel,
+              ),
           ],
         ),
       ),
@@ -267,7 +232,12 @@ class _EntityFormScaffoldState extends State<EntityFormScaffold> {
             Row(
               children: [
                 if (showDelete) ...[
-                  _buildDeleteButton(),
+                  EntityDeleteButton(
+                    isSaving: _isSaving,
+                    isDeleting: _isDeleting,
+                    onPressed: _delete,
+                    label: widget.deleteLabel,
+                  ),
                   const Spacer(),
                 ],
                 if (!showDelete) const Spacer(),
@@ -278,7 +248,13 @@ class _EntityFormScaffoldState extends State<EntityFormScaffold> {
                   child: const Text('Otkaži'),
                 ),
                 const SizedBox(width: 12),
-                _buildSaveButton(),
+                EntitySaveButton(
+                  isSaving: _isSaving,
+                  isDeleting: _isDeleting,
+                  enabled: widget.saveEnabled,
+                  onPressed: _save,
+                  label: widget.saveLabel,
+                ),
               ],
             ),
           ],
