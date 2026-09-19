@@ -12,8 +12,6 @@ class PagedListView<T> extends StatefulWidget {
   final Widget? filterRow;
   final String emptyMessage;
   final Widget? emptyAction;
-  final Object? error;
-  final VoidCallback? onRetry;
 
   const PagedListView({
     super.key,
@@ -24,8 +22,6 @@ class PagedListView<T> extends StatefulWidget {
     this.filterRow,
     this.emptyMessage = 'Nema rezultata za pretragu.',
     this.emptyAction,
-    this.error,
-    this.onRetry,
   });
 
   @override
@@ -83,12 +79,11 @@ class _PagedListViewState<T> extends State<PagedListView<T>> {
                     children: [
                       AsyncStateView(
                         isLoading: isLoading,
-                        error: widget.error,
+                        error: widget.controller.error,
                         isEmpty: items.isEmpty,
                         emptyMessage: widget.emptyMessage,
                         emptyAction: widget.emptyAction,
-                        onRetry:
-                            widget.onRetry ?? () => widget.controller.load(),
+                        onRetry: () => widget.controller.load(),
                         child: const SizedBox.shrink(),
                       ),
                     ],

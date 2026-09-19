@@ -20,7 +20,6 @@ class LectureNoteListScreen extends StatefulWidget {
 
 class _LectureNoteListScreenState extends State<LectureNoteListScreen> {
   late final PagedFetchController<LectureNoteDto> _controller;
-  Object? _error;
 
   @override
   void initState() {
@@ -28,9 +27,6 @@ class _LectureNoteListScreenState extends State<LectureNoteListScreen> {
     _controller = PagedFetchController<LectureNoteDto>(
       fetcher: _fetch,
       pageSize: 20,
-      onError: (e) {
-        if (mounted) setState(() => _error = e);
-      },
     );
   }
 
@@ -39,11 +35,9 @@ class _LectureNoteListScreenState extends State<LectureNoteListScreen> {
     int pageSize,
     String search,
   ) async {
-    final result = await context.read<LectureNoteProvider>().getPage(
+    return context.read<LectureNoteProvider>().getPage(
       params: pagedQuery(page, pageSize, search, searchField: 'title'),
     );
-    if (mounted) setState(() => _error = null);
-    return result;
   }
 
   @override
@@ -58,11 +52,6 @@ class _LectureNoteListScreenState extends State<LectureNoteListScreen> {
       appBar: AppBar(title: const Text('Bilješke')),
       body: PagedListView<LectureNoteDto>(
         controller: _controller,
-        error: _error,
-        onRetry: () {
-          setState(() => _error = null);
-          _controller.refresh();
-        },
         itemBuilder: (context, note) => ListTile(
           leading: const Icon(Icons.notes_outlined),
           title: Text(note.title),

@@ -5,6 +5,8 @@ import 'package:provider/provider.dart';
 import 'package:enote_core/enote_core.dart';
 import '../../../widgets/date_field.dart';
 import '../../../widgets/entity_form_scaffold.dart';
+import '../../../widgets/entity_text_field.dart';
+import '../../../widgets/form_controller_lifecycle.dart';
 import 'course_provider.dart';
 
 class CourseFormScreen extends StatefulWidget {
@@ -25,10 +27,11 @@ class CourseFormScreen extends StatefulWidget {
   State<CourseFormScreen> createState() => _CourseFormScreenState();
 }
 
-class _CourseFormScreenState extends State<CourseFormScreen> {
-  final _nameController = TextEditingController();
-  final _descriptionController = TextEditingController();
-  final _priceController = TextEditingController();
+class _CourseFormScreenState extends State<CourseFormScreen>
+    with FormControllerLifecycle {
+  late final _nameController = textController();
+  late final _descriptionController = textController();
+  late final _priceController = textController();
 
   DateTime? _startDate;
   DateTime? _endDate;
@@ -44,14 +47,6 @@ class _CourseFormScreenState extends State<CourseFormScreen> {
       _startDate = existing.startDate;
       _endDate = existing.endDate;
     }
-  }
-
-  @override
-  void dispose() {
-    _nameController.dispose();
-    _descriptionController.dispose();
-    _priceController.dispose();
-    super.dispose();
   }
 
   Future<bool> _save() async {
@@ -84,11 +79,7 @@ class _CourseFormScreenState extends State<CourseFormScreen> {
     );
 
     final provider = context.read<CourseProvider>();
-    if (widget.existing == null) {
-      await provider.insert(request.toJson());
-    } else {
-      await provider.update(widget.existing!.id, request.toJson());
-    }
+    await provider.save(id: widget.existing?.id, request: request.toJson());
     return true;
   }
 
@@ -100,27 +91,23 @@ class _CourseFormScreenState extends State<CourseFormScreen> {
       isEditMode: widget.existing != null,
       closeAfterAdd: true,
       fieldsBuilder: (_) => [
-        TextFormField(
-          controller: _nameController,
-          decoration: const InputDecoration(labelText: 'Naziv'),
-          validator: Validators.required('Naziv'),
-        ),
-        TextFormField(
+        EntityTextField(controller: _nameController, label: 'Naziv'),
+        EntityTextField(
           controller: _descriptionController,
-          decoration: const InputDecoration(labelText: 'Opis'),
+          label: 'Opis',
+          required: false,
           maxLines: 3,
         ),
-        TextFormField(
+        EntityTextField(
           controller: _priceController,
-          decoration: const InputDecoration(
-            labelText: 'Mjesečna cijena',
-            hintText: 'npr. 25.00',
-          ),
+          label: 'Mjesečna cijena',
+          hintText: 'npr. 25.00',
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
           inputFormatters: [
             FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
           ],
-          validator: (value) => Validators.nonNegativeDecimal(value, max: 10000),
+          validator: (value) =>
+              Validators.nonNegativeDecimal(value, max: 10000),
         ),
         DateField(
           labelText: 'Datum početka',
@@ -135,9 +122,7 @@ class _CourseFormScreenState extends State<CourseFormScreen> {
       ],
       onSave: _save,
       onReset: () {
-        _nameController.clear();
-        _descriptionController.clear();
-        _priceController.clear();
+        clearTextControllers();
         setState(() {
           _startDate = null;
           _endDate = null;

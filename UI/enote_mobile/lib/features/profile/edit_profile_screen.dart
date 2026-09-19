@@ -8,6 +8,8 @@ import 'package:enote_core/enote_core.dart';
 import '../../session/session_controller.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/app_date_picker_field.dart';
+import '../../widgets/app_text_field.dart';
+import '../../widgets/form_submit_state.dart';
 import '../../widgets/mobile_form_scaffold.dart';
 import 'profile_provider.dart';
 
@@ -37,15 +39,14 @@ class EditProfileScreen extends StatefulWidget {
   State<EditProfileScreen> createState() => _EditProfileScreenState();
 }
 
-class _EditProfileScreenState extends State<EditProfileScreen> {
+class _EditProfileScreenState extends State<EditProfileScreen>
+    with FormSubmitState<EditProfileScreen> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _firstNameController;
   late final TextEditingController _lastNameController;
   late final TextEditingController _emailController;
   DateTime? _dateOfBirth;
-  bool _busy = false;
   bool _pictureBusy = false;
-  String? _errorMessage;
   String? _pictureError;
 
   @override
@@ -75,11 +76,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     final messenger = ScaffoldMessenger.of(context);
     final provider = context.read<ProfileProvider>();
     final session = context.read<SessionController>();
-    setState(() {
-      _busy = true;
-      _errorMessage = null;
-    });
-    try {
+    await submit(() async {
       final firstName = _firstNameController.text.trim();
       final lastName = _lastNameController.text.trim();
       await provider.updateMe(
@@ -96,15 +93,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         const SnackBar(content: Text('Profil je uspješno ažuriran.')),
       );
       Navigator.of(context).pop();
-    } catch (e) {
-      if (mounted) {
-        setState(() => _errorMessage = userMessage(e));
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _busy = false);
-      }
-    }
+    });
   }
 
   Future<_PickedImage?> _pickImage() async {
@@ -147,26 +136,17 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   Future<void> _uploadPicked(_PickedImage picked) async {
     final provider = context.read<ProfileProvider>();
     final session = context.read<SessionController>();
-    setState(() {
-      _pictureBusy = true;
-      _errorMessage = null;
-    });
-    try {
-      await provider.uploadPicture(
-        picked.bytes,
-        picked.fileName,
-        picked.contentType,
-      );
-      await session.reloadProfile();
-    } catch (e) {
-      if (mounted) {
-        setState(() => _errorMessage = userMessage(e));
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _pictureBusy = false);
-      }
-    }
+    await submitWith(
+      (busy) => _pictureBusy = busy,
+      () async {
+        await provider.uploadPicture(
+          picked.bytes,
+          picked.fileName,
+          picked.contentType,
+        );
+        await session.reloadProfile();
+      },
+    );
   }
 
   Future<void> _changePicture() async {
@@ -207,22 +187,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     if (confirmed != true || !mounted) return;
     final provider = context.read<ProfileProvider>();
     final session = context.read<SessionController>();
-    setState(() {
-      _pictureBusy = true;
-      _errorMessage = null;
-    });
-    try {
-      await provider.deletePicture();
-      await session.reloadProfile();
-    } catch (e) {
-      if (mounted) {
-        setState(() => _errorMessage = userMessage(e));
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _pictureBusy = false);
-      }
-    }
+    await submitWith(
+      (busy) => _pictureBusy = busy,
+      () async {
+        await provider.deletePicture();
+        await session.reloadProfile();
+      },
+    );
   }
 
   @override
@@ -245,8 +216,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       title: 'Uredi profil',
       submitLabel: 'Sačuvaj promjene',
       onSubmit: _save,
-      isBusy: _busy || _pictureBusy,
-      errorMessage: _errorMessage,
+      isBusy: isSubmitting || _pictureBusy,
+      errorMessage: submitError,
       children: [
         Center(
           child: ImageField(
@@ -297,23 +268,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           autovalidateMode: AutovalidateMode.onUserInteraction,
           child: Column(
             children: [
-              TextFormField(
-                controller: _firstNameController,
-                decoration: const InputDecoration(labelText: 'Ime'),
-                textInputAction: TextInputAction.next,
-              ),
+              AppTextField(controller: _firstNameController, label: 'Ime'),
               const SizedBox(height: 16),
-              TextFormField(
-                controller: _lastNameController,
-                decoration: const InputDecoration(labelText: 'Prezime'),
-                textInputAction: TextInputAction.next,
-              ),
+              AppTextField(controller: _lastNameController, label: 'Prezime'),
               const SizedBox(height: 16),
-              TextFormField(
+              AppTextField(
                 controller: _emailController,
-                decoration: const InputDecoration(labelText: 'Email *'),
+                label: 'Email *',
                 keyboardType: TextInputType.emailAddress,
-                textInputAction: TextInputAction.next,
                 validator: Validators.email,
               ),
               const SizedBox(height: 16),

@@ -8,13 +8,17 @@ import 'package:enote_desktop/features/profile/profile_provider.dart';
 
 import 'helpers.dart';
 
-Future<ScriptedClient> _pumpDialog(WidgetTester tester) async {
+Future<ScriptedClient> _pumpDialog(
+  WidgetTester tester, {
+  int status = 200,
+  Map<String, dynamic> body = const {'message': 'OK'},
+}) async {
   tester.view.physicalSize = const Size(1400, 900);
   tester.view.devicePixelRatio = 1.0;
   addTearDown(tester.view.resetPhysicalSize);
   addTearDown(tester.view.resetDevicePixelRatio);
 
-  final client = ScriptedClient((_) => jsonResponse({'message': 'OK'}, 200));
+  final client = ScriptedClient((_) => jsonResponse(body, status));
   final authState = AuthState(
     baseUrl: 'http://localhost:5059/api/v1/',
     tokenReader: () => fakeJwt(),
@@ -102,5 +106,24 @@ void main() {
       findsOneWidget,
     );
     expect(client.requests.where((r) => r.method == 'PUT'), isEmpty);
+  });
+
+  testWidgets('a failed change shows the banner and keeps the dialog open',
+      (tester) async {
+    await _pumpDialog(
+      tester,
+      status: 400,
+      body: const {'message': 'Pogrešna trenutna lozinka.'},
+    );
+
+    final fields = find.byType(TextFormField);
+    await tester.enterText(fields.at(0), 'Kriva1!');
+    await tester.enterText(fields.at(1), 'Test1234!');
+    await tester.enterText(fields.at(2), 'Test1234!');
+    await tester.pump();
+    await _save(tester);
+
+    expect(find.text('Pogrešna trenutna lozinka.'), findsOneWidget);
+    expect(find.text('Promijeni lozinku'), findsWidgets);
   });
 }

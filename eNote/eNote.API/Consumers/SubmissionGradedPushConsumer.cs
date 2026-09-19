@@ -6,22 +6,18 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace eNote.API.Consumers;
 
-public sealed class SubmissionGradedPushConsumer(IHubContext<NotificationHub> hubContext, ILogger<SubmissionGradedPushConsumer> logger) : IConsumer<SubmissionGraded>
+public sealed class SubmissionGradedPushConsumer(IHubContext<NotificationHub> hubContext, ILogger<SubmissionGradedPushConsumer> logger)
+    : NotificationPushConsumer<SubmissionGraded>(hubContext, logger)
 {
-    public async Task Consume(ConsumeContext<SubmissionGraded> context)
-    {
-        var message = context.Message;
-
-        var payload = new NotificationPushDto()
+    protected override NotificationPush Map(SubmissionGraded message) => new(
+        message.StudentUserId,
+        new NotificationPushDto
         {
             SubmissionId = message.SubmissionId,
             Title = message.Title,
             Body = message.Body,
             CreatedAt = message.OccurredAtUtc
-        };
-
-        await hubContext.Clients.Group(NotificationHub.UserGroup(message.StudentUserId)).SendAsync(NotificationHub.ReceiveMethod, payload, context.CancellationToken);
-
-        logger.LogInformation("Pushed submission-graded notification to SignalR group for user {UserId}, submission {SubmissionId}.", message.StudentUserId, message.SubmissionId);
-    }
+        },
+        "submission-graded",
+        $"submission {message.SubmissionId}");
 }

@@ -5,6 +5,7 @@ import 'package:enote_core/enote_core.dart';
 
 import '../../shell/root_shell.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/form_submit_state.dart';
 import 'rental_provider.dart';
 
 /// S9 — the rental request sheet.
@@ -41,10 +42,9 @@ class RentalRequestSheet extends StatefulWidget {
   State<RentalRequestSheet> createState() => _RentalRequestSheetState();
 }
 
-class _RentalRequestSheetState extends State<RentalRequestSheet> {
+class _RentalRequestSheetState extends State<RentalRequestSheet>
+    with FormSubmitState<RentalRequestSheet> {
   final TextEditingController _note = TextEditingController();
-  bool _isBusy = false;
-  String? _errorMessage;
 
   @override
   void dispose() {
@@ -67,11 +67,7 @@ class _RentalRequestSheetState extends State<RentalRequestSheet> {
     );
     if (confirmed != true) return;
 
-    setState(() {
-      _isBusy = true;
-      _errorMessage = null;
-    });
-    try {
+    await submit(() async {
       final note = _note.text.trim();
       await rentals.createRequest(
         RentalCreateRequest(
@@ -85,18 +81,12 @@ class _RentalRequestSheetState extends State<RentalRequestSheet> {
       messenger.showSnackBar(
         const SnackBar(content: Text('Zahtjev za iznajmljivanje je poslan.')),
       );
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _isBusy = false;
-        _errorMessage = userMessage(e);
-      });
-    }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    final error = _errorMessage;
+    final error = submitError;
     return Padding(
       padding: EdgeInsets.only(
         bottom: MediaQuery.viewInsetsOf(context).bottom,
@@ -127,8 +117,8 @@ class _RentalRequestSheetState extends State<RentalRequestSheet> {
               ),
               const SizedBox(height: 8),
               FilledButton(
-                onPressed: _isBusy ? null : _submit,
-                child: _isBusy
+                onPressed: isSubmitting ? null : _submit,
+                child: isSubmitting
                     ? const SizedBox(
                         width: 20,
                         height: 20,

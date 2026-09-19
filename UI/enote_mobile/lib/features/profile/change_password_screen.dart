@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
 
+import '../../widgets/form_submit_state.dart';
 import '../../widgets/mobile_form_scaffold.dart';
 import 'profile_provider.dart';
 
@@ -17,7 +18,8 @@ class ChangePasswordScreen extends StatefulWidget {
   State<ChangePasswordScreen> createState() => _ChangePasswordScreenState();
 }
 
-class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
+class _ChangePasswordScreenState extends State<ChangePasswordScreen>
+    with FormSubmitState<ChangePasswordScreen> {
   final _formKey = GlobalKey<FormState>();
   final _currentController = TextEditingController();
   final _newController = TextEditingController();
@@ -25,9 +27,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   bool _currentObscured = true;
   bool _newObscured = true;
   bool _confirmObscured = true;
-  bool _busy = false;
   bool _canSubmit = false;
-  String? _errorMessage;
 
   @override
   void dispose() {
@@ -48,11 +48,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     final navigator = Navigator.of(context);
     final authState = context.read<AuthState>();
     final provider = context.read<ProfileProvider>();
-    setState(() {
-      _busy = true;
-      _errorMessage = null;
-    });
-    try {
+    await submit(() async {
       await provider.changePassword(
         ChangePasswordRequest(
           currentPassword: _currentController.text,
@@ -71,15 +67,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
           content: Text('Lozinka je promijenjena. Prijavite se ponovo.'),
         ),
       );
-    } catch (e) {
-      if (mounted) {
-        setState(() => _errorMessage = userMessage(e));
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _busy = false);
-      }
-    }
+    });
   }
 
   InputDecoration _decoration(String label, bool obscured, VoidCallback toggle) {
@@ -98,8 +86,8 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
       title: 'Promjena lozinke',
       submitLabel: 'Promijeni lozinku',
       onSubmit: _canSubmit ? _submit : null,
-      isBusy: _busy,
-      errorMessage: _errorMessage,
+      isBusy: isSubmitting,
+      errorMessage: submitError,
       children: [
         Form(
           key: _formKey,

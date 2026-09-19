@@ -6,6 +6,8 @@ import 'package:provider/provider.dart';
 import '../../../theme/app_theme.dart';
 import '../../../widgets/async_dropdown.dart';
 import '../../../widgets/entity_form_scaffold.dart';
+import '../../../widgets/entity_text_field.dart';
+import '../../../widgets/form_controller_lifecycle.dart';
 import '../../../widgets/image_upload_helper.dart';
 import 'instrument_provider.dart';
 import 'shop_instrument_type_provider.dart';
@@ -28,10 +30,11 @@ class InstrumentFormScreen extends StatefulWidget {
   State<InstrumentFormScreen> createState() => _InstrumentFormScreenState();
 }
 
-class _InstrumentFormScreenState extends State<InstrumentFormScreen> {
-  final _modelController = TextEditingController();
-  final _manufacturerController = TextEditingController();
-  final _descriptionController = TextEditingController();
+class _InstrumentFormScreenState extends State<InstrumentFormScreen>
+    with FormControllerLifecycle {
+  late final _modelController = textController();
+  late final _manufacturerController = textController();
+  late final _descriptionController = textController();
 
   int? _selectedInstrumentTypeId;
   String? _currentImagePath;
@@ -49,14 +52,6 @@ class _InstrumentFormScreenState extends State<InstrumentFormScreen> {
       _selectedInstrumentTypeId = existing.instrumentTypeId;
       _currentImagePath = existing.imagePath;
     }
-  }
-
-  @override
-  void dispose() {
-    _modelController.dispose();
-    _manufacturerController.dispose();
-    _descriptionController.dispose();
-    super.dispose();
   }
 
   Future<String?> _uploadImage(
@@ -113,19 +108,15 @@ class _InstrumentFormScreenState extends State<InstrumentFormScreen> {
       title: _isEditMode ? 'Uredi instrument' : 'Dodaj instrument',
       isEditMode: _isEditMode,
       fieldsBuilder: (_) => [
-        TextFormField(
-          controller: _modelController,
-          decoration: const InputDecoration(labelText: 'Model'),
-          validator: Validators.required('Model'),
-        ),
-        TextFormField(
+        EntityTextField(controller: _modelController, label: 'Model'),
+        EntityTextField(
           controller: _manufacturerController,
-          decoration: const InputDecoration(labelText: 'Proizvođač'),
-          validator: Validators.required('Proizvođač'),
+          label: 'Proizvođač',
         ),
-        TextFormField(
+        EntityTextField(
           controller: _descriptionController,
-          decoration: const InputDecoration(labelText: 'Opis'),
+          label: 'Opis',
+          required: false,
           maxLines: 3,
           minLines: 1,
         ),
@@ -171,9 +162,7 @@ class _InstrumentFormScreenState extends State<InstrumentFormScreen> {
       ],
       onSave: _save,
       onReset: () {
-        _modelController.clear();
-        _manufacturerController.clear();
-        _descriptionController.clear();
+        clearTextControllers();
         setState(() {
           _selectedInstrumentTypeId = null;
           _currentImagePath = null;

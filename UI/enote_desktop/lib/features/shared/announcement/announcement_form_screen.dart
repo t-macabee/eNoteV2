@@ -2,6 +2,8 @@ import 'package:enote_core/enote_core.dart';
 import 'package:flutter/material.dart';
 
 import '../../../widgets/entity_form_scaffold.dart';
+import '../../../widgets/entity_text_field.dart';
+import '../../../widgets/form_controller_lifecycle.dart';
 
 class AnnouncementFormScreen extends StatefulWidget {
   final CrudProvider<AnnouncementDto> provider;
@@ -19,9 +21,10 @@ class AnnouncementFormScreen extends StatefulWidget {
   State<AnnouncementFormScreen> createState() => _AnnouncementFormScreenState();
 }
 
-class _AnnouncementFormScreenState extends State<AnnouncementFormScreen> {
-  final _titleController = TextEditingController();
-  final _contentController = TextEditingController();
+class _AnnouncementFormScreenState extends State<AnnouncementFormScreen>
+    with FormControllerLifecycle {
+  late final _titleController = textController();
+  late final _contentController = textController();
 
   bool get _isEditMode => widget.existing != null;
 
@@ -35,24 +38,16 @@ class _AnnouncementFormScreenState extends State<AnnouncementFormScreen> {
     }
   }
 
-  @override
-  void dispose() {
-    _titleController.dispose();
-    _contentController.dispose();
-    super.dispose();
-  }
-
   Future<bool> _save() async {
     final request = AnnouncementRequest(
       title: _titleController.text.trim(),
       content: _contentController.text.trim(),
     );
 
-    if (!_isEditMode) {
-      await widget.provider.insert(request.toJson());
-    } else {
-      await widget.provider.update(widget.existing!.id, request.toJson());
-    }
+    await widget.provider.save(
+      id: widget.existing?.id,
+      request: request.toJson(),
+    );
     return true;
   }
 
@@ -64,24 +59,16 @@ class _AnnouncementFormScreenState extends State<AnnouncementFormScreen> {
       isEditMode: _isEditMode,
       closeAfterAdd: true,
       fieldsBuilder: (_) => [
-        TextFormField(
-          controller: _titleController,
-          decoration: const InputDecoration(labelText: 'Naslov'),
-          validator: Validators.required('Naslov'),
-        ),
-        TextFormField(
+        EntityTextField(controller: _titleController, label: 'Naslov'),
+        EntityTextField(
           controller: _contentController,
-          decoration: const InputDecoration(labelText: 'Sadržaj'),
+          label: 'Sadržaj',
           maxLines: 8,
           minLines: 4,
-          validator: Validators.required('Sadržaj'),
         ),
       ],
       onSave: _save,
-      onReset: () {
-        _titleController.clear();
-        _contentController.clear();
-      },
+      onReset: clearTextControllers,
     );
   }
 }

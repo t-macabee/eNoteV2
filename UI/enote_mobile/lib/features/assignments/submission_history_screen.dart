@@ -20,7 +20,6 @@ class SubmissionHistoryScreen extends StatefulWidget {
 
 class _SubmissionHistoryScreenState extends State<SubmissionHistoryScreen> {
   late final PagedFetchController<AssignmentSubmissionDto> _controller;
-  Object? _error;
 
   @override
   void initState() {
@@ -28,9 +27,6 @@ class _SubmissionHistoryScreenState extends State<SubmissionHistoryScreen> {
     _controller = PagedFetchController<AssignmentSubmissionDto>(
       fetcher: _fetch,
       pageSize: 20,
-      onError: (e) {
-        if (mounted) setState(() => _error = e);
-      },
     );
   }
 
@@ -39,11 +35,9 @@ class _SubmissionHistoryScreenState extends State<SubmissionHistoryScreen> {
     int pageSize,
     String search,
   ) async {
-    final result = await context
+    return context
         .read<AssignmentProvider>()
         .myHistory(page: page, pageSize: pageSize);
-    if (mounted) setState(() => _error = null);
-    return result;
   }
 
   @override
@@ -59,11 +53,6 @@ class _SubmissionHistoryScreenState extends State<SubmissionHistoryScreen> {
       body: PagedListView<AssignmentSubmissionDto>(
         controller: _controller,
         showSearch: false,
-        error: _error,
-        onRetry: () {
-          setState(() => _error = null);
-          _controller.refresh();
-        },
         itemBuilder: (context, submission) =>
             _SubmissionRow(submission: submission),
       ),

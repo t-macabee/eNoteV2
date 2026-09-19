@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
 import '../../../widgets/entity_form_scaffold.dart';
+import '../../../widgets/entity_text_field.dart';
+import '../../../widgets/form_controller_lifecycle.dart';
 import 'instrument_type_provider.dart';
 
 class InstrumentTypeFormScreen extends StatefulWidget {
@@ -25,9 +27,10 @@ class InstrumentTypeFormScreen extends StatefulWidget {
       _InstrumentTypeFormScreenState();
 }
 
-class _InstrumentTypeFormScreenState extends State<InstrumentTypeFormScreen> {
-  final _typeController = TextEditingController();
-  final _monthlyFeeController = TextEditingController();
+class _InstrumentTypeFormScreenState extends State<InstrumentTypeFormScreen>
+    with FormControllerLifecycle {
+  late final _typeController = textController();
+  late final _monthlyFeeController = textController();
 
   @override
   void initState() {
@@ -39,13 +42,6 @@ class _InstrumentTypeFormScreenState extends State<InstrumentTypeFormScreen> {
     }
   }
 
-  @override
-  void dispose() {
-    _typeController.dispose();
-    _monthlyFeeController.dispose();
-    super.dispose();
-  }
-
   Future<bool> _save() async {
     final provider = context.read<InstrumentTypeProvider>();
     final rawFee = _monthlyFeeController.text.trim().replaceAll(',', '.');
@@ -55,11 +51,7 @@ class _InstrumentTypeFormScreenState extends State<InstrumentTypeFormScreen> {
       monthlyFee: monthlyFee,
     );
 
-    if (widget.existing == null) {
-      await provider.insert(request.toJson());
-    } else {
-      await provider.update(widget.existing!.id, request.toJson());
-    }
+    await provider.save(id: widget.existing?.id, request: request.toJson());
     return true;
   }
 
@@ -71,22 +63,13 @@ class _InstrumentTypeFormScreenState extends State<InstrumentTypeFormScreen> {
           ? 'Dodaj tip instrumenta'
           : 'Uredi tip instrumenta',
       isEditMode: widget.existing != null,
-      onReset: () {
-        _typeController.clear();
-        _monthlyFeeController.clear();
-      },
+      onReset: clearTextControllers,
       fieldsBuilder: (_) => [
-        TextFormField(
-          controller: _typeController,
-          decoration: const InputDecoration(labelText: 'Tip'),
-          validator: Validators.required('Tip'),
-        ),
-        TextFormField(
+        EntityTextField(controller: _typeController, label: 'Tip'),
+        EntityTextField(
           controller: _monthlyFeeController,
-          decoration: const InputDecoration(
-            labelText: 'Mjesečna naknada',
-            hintText: 'npr. 25.00',
-          ),
+          label: 'Mjesečna naknada',
+          hintText: 'npr. 25.00',
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
           inputFormatters: [
             FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),

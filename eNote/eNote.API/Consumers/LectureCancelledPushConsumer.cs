@@ -6,22 +6,18 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace eNote.API.Consumers;
 
-public sealed class LectureCancelledPushConsumer(IHubContext<NotificationHub> hubContext, ILogger<LectureCancelledPushConsumer> logger) : IConsumer<LectureCancelled>
+public sealed class LectureCancelledPushConsumer(IHubContext<NotificationHub> hubContext, ILogger<LectureCancelledPushConsumer> logger)
+    : NotificationPushConsumer<LectureCancelled>(hubContext, logger)
 {
-    public async Task Consume(ConsumeContext<LectureCancelled> context)
-    {
-        var message = context.Message;
-
-        var payload = new NotificationPushDto()
+    protected override NotificationPush Map(LectureCancelled message) => new(
+        message.StudentUserId,
+        new NotificationPushDto
         {
             LectureId = message.LectureId,
             Title = message.Title,
             Body = message.Body,
             CreatedAt = message.OccurredAtUtc
-        };
-
-        await hubContext.Clients.Group(NotificationHub.UserGroup(message.StudentUserId)).SendAsync(NotificationHub.ReceiveMethod, payload, context.CancellationToken);
-
-        logger.LogInformation("Pushed lecture-cancelled notification to SignalR group for user {UserId}, lecture {LectureId}.", message.StudentUserId, message.LectureId);
-    }
+        },
+        "lecture-cancelled",
+        $"lecture {message.LectureId}");
 }

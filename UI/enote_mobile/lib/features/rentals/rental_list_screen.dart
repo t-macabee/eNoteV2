@@ -25,7 +25,6 @@ class _RentalListScreenState extends State<RentalListScreen> {
   late final PagedFetchController<InstrumentRentalDto> _controller;
   RentalProvider? _rentals;
   InstrumentRentalStatus? _status;
-  Object? _error;
 
   @override
   void initState() {
@@ -35,9 +34,6 @@ class _RentalListScreenState extends State<RentalListScreen> {
       pageSize: RentalProvider.pageSize,
       fetcher: (page, pageSize, _) =>
           rentals.fetchPage(page, pageSize, rentalStatus: _status),
-      onError: (error) {
-        if (mounted) setState(() => _error = error);
-      },
     );
   }
 
@@ -62,7 +58,6 @@ class _RentalListScreenState extends State<RentalListScreen> {
   /// rental shows on top (server order is `RequestedAt` desc).
   void _onRentalsChanged() {
     if (!mounted) return;
-    setState(() => _error = null);
     _controller.refresh(resetPage: true);
   }
 
@@ -77,11 +72,6 @@ class _RentalListScreenState extends State<RentalListScreen> {
       controller: _controller,
       showSearch: false,
       emptyMessage: 'Još nemate iznajmljivanja.',
-      error: _error,
-      onRetry: () {
-        setState(() => _error = null);
-        _controller.load();
-      },
       filterRow: Padding(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
         child: DropdownButtonFormField<InstrumentRentalStatus?>(

@@ -7,6 +7,7 @@ import '../../shell/app_router.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/async_state_view.dart';
 import '../../widgets/blocked_reason_banner.dart';
+import '../../widgets/form_submit_state.dart';
 import '../../widgets/labeled_value.dart';
 import '../../widgets/section_header.dart';
 import 'assignment_provider.dart';
@@ -37,14 +38,13 @@ class AssignmentDetailScreen extends StatefulWidget {
   State<AssignmentDetailScreen> createState() => _AssignmentDetailScreenState();
 }
 
-class _AssignmentDetailScreenState extends State<AssignmentDetailScreen> {
+class _AssignmentDetailScreenState extends State<AssignmentDetailScreen>
+    with FormSubmitState<AssignmentDetailScreen> {
   AssignmentDto? _assignment;
   AssignmentSubmissionDto? _submission;
   Object? _error;
   bool _loading = true;
   PickedAssignmentFile? _picked;
-  bool _submitting = false;
-  String? _submitError;
 
   @override
   void initState() {
@@ -80,7 +80,7 @@ class _AssignmentDetailScreenState extends State<AssignmentDetailScreen> {
 
   Future<void> _submit() async {
     final picked = _picked;
-    if (picked == null || _submitting) return;
+    if (picked == null || isSubmitting) return;
     final confirmed = await confirmDialog(
       context: context,
       title: 'Predaja zadatka',
@@ -90,11 +90,7 @@ class _AssignmentDetailScreenState extends State<AssignmentDetailScreen> {
     if (confirmed != true || !mounted) return;
     final provider = context.read<AssignmentProvider>();
     final messenger = ScaffoldMessenger.of(context);
-    setState(() {
-      _submitting = true;
-      _submitError = null;
-    });
-    try {
+    await submit(() async {
       await provider.submit(
         widget.assignmentId,
         picked.bytes,
@@ -110,13 +106,7 @@ class _AssignmentDetailScreenState extends State<AssignmentDetailScreen> {
       messenger.showSnackBar(
         const SnackBar(content: Text('Zadatak je predan.')),
       );
-    } catch (e) {
-      if (mounted) {
-        setState(() => _submitError = userMessage(e));
-      }
-    } finally {
-      if (mounted) setState(() => _submitting = false);
-    }
+    });
   }
 
   static bool _isImage(String? filePath) {
@@ -215,17 +205,17 @@ class _AssignmentDetailScreenState extends State<AssignmentDetailScreen> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         FilePickerField(
-          enabled: !_submitting,
+          enabled: !isSubmitting,
           pickOverride: widget.pickFiles,
           onChanged: (file) => setState(() {
             _picked = file;
-            _submitError = null;
+            submitError = null;
           }),
         ),
         const SizedBox(height: 12),
         FilledButton(
-          onPressed: (_picked == null || _submitting) ? null : _submit,
-          child: _submitting
+          onPressed: (_picked == null || isSubmitting) ? null : _submit,
+          child: isSubmitting
               ? const SizedBox(
                   width: 20,
                   height: 20,
@@ -233,9 +223,9 @@ class _AssignmentDetailScreenState extends State<AssignmentDetailScreen> {
                 )
               : const Text('Predaj zadatak'),
         ),
-        if (_submitError != null) ...[
+        if (submitError != null) ...[
           const SizedBox(height: 8),
-          ErrorBanner(message: _submitError!),
+          ErrorBanner(message: submitError!),
         ],
       ],
     );

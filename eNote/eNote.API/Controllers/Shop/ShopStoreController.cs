@@ -43,17 +43,12 @@ public sealed class ShopStoreController(
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<MusicStoreDto>> UploadOwnStoreImage(IFormFile? file, CancellationToken ct)
-    {
-        if (file is null || file.Length == 0)
+    public async Task<ActionResult<MusicStoreDto>> UploadOwnStoreImage(IFormFile? file, CancellationToken ct) =>
+        await UploadAsync(file, async (stream, fileName, contentType, token) =>
         {
-            return BadRequest(new { message = Messages.FileNotProvided });
-        }
-        var storeId = await employeeService.GetCurrentManagerStoreIdAsync(ct);
-        await using Stream stream = file.OpenReadStream();
-        var result = await storeService.UploadImageAsync(storeId, stream, file.FileName, file.ContentType, ct);
-        return Ok(result);
-    }
+            var storeId = await employeeService.GetCurrentManagerStoreIdAsync(token);
+            return await storeService.UploadImageAsync(storeId, stream, fileName, contentType, token);
+        }, ct);
 
     // Read-only address lookup for the "Uredi prodavnicu" address dropdown —
     // AdminAddressController owns address CRUD, this mirrors the same

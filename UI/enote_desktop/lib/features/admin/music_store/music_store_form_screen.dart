@@ -6,6 +6,8 @@ import 'package:enote_core/enote_core.dart';
 import '../../../theme/app_theme.dart';
 import '../../../widgets/async_dropdown.dart';
 import '../../../widgets/entity_form_scaffold.dart';
+import '../../../widgets/entity_text_field.dart';
+import '../../../widgets/form_controller_lifecycle.dart';
 import '../../../widgets/image_upload_helper.dart';
 import '../address/address_provider.dart';
 import 'music_store_provider.dart';
@@ -28,10 +30,11 @@ class MusicStoreFormScreen extends StatefulWidget {
   State<MusicStoreFormScreen> createState() => _MusicStoreFormScreenState();
 }
 
-class _MusicStoreFormScreenState extends State<MusicStoreFormScreen> {
-  final _storeNameController = TextEditingController();
-  final _businessHoursController = TextEditingController();
-  final _phoneNumberController = TextEditingController();
+class _MusicStoreFormScreenState extends State<MusicStoreFormScreen>
+    with FormControllerLifecycle {
+  late final _storeNameController = textController();
+  late final _businessHoursController = textController();
+  late final _phoneNumberController = textController();
   int? _selectedAddressId;
   String? _currentImagePath;
 
@@ -48,14 +51,6 @@ class _MusicStoreFormScreenState extends State<MusicStoreFormScreen> {
       _selectedAddressId = existing.addressId;
       _currentImagePath = existing.imagePath;
     }
-  }
-
-  @override
-  void dispose() {
-    _storeNameController.dispose();
-    _businessHoursController.dispose();
-    _phoneNumberController.dispose();
-    super.dispose();
   }
 
   Future<String?> _uploadImage(
@@ -89,11 +84,7 @@ class _MusicStoreFormScreenState extends State<MusicStoreFormScreen> {
       addressId: _selectedAddressId,
     );
 
-    if (widget.existing == null) {
-      await provider.insert(request.toJson());
-    } else {
-      await provider.update(widget.existing!.id, request.toJson());
-    }
+    await provider.save(id: widget.existing?.id, request: request.toJson());
     return true;
   }
 
@@ -104,28 +95,22 @@ class _MusicStoreFormScreenState extends State<MusicStoreFormScreen> {
       title: _isEditMode ? 'Uredi prodavnicu' : 'Dodaj prodavnicu',
       isEditMode: _isEditMode,
       onReset: () {
-        _storeNameController.clear();
-        _businessHoursController.clear();
-        _phoneNumberController.clear();
+        clearTextControllers();
         setState(() {
           _selectedAddressId = null;
           _currentImagePath = null;
         });
       },
       fieldsBuilder: (_) => [
-        TextFormField(
-          controller: _storeNameController,
-          decoration: const InputDecoration(labelText: 'Naziv'),
-          validator: Validators.required('Naziv'),
-        ),
-        TextFormField(
+        EntityTextField(controller: _storeNameController, label: 'Naziv'),
+        EntityTextField(
           controller: _businessHoursController,
-          decoration: const InputDecoration(labelText: 'Radno vrijeme'),
-          validator: Validators.required('Radno vrijeme'),
+          label: 'Radno vrijeme',
         ),
-        TextFormField(
+        EntityTextField(
           controller: _phoneNumberController,
-          decoration: const InputDecoration(labelText: 'Broj telefona'),
+          label: 'Broj telefona',
+          required: false,
         ),
         AsyncDropdown<AddressReferenceDto>(
           label: 'Adresa',

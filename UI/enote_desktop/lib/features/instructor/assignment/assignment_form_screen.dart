@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import 'package:enote_core/enote_core.dart';
 import '../../../widgets/date_time_field.dart';
 import '../../../widgets/entity_form_scaffold.dart';
+import '../../../widgets/entity_text_field.dart';
+import '../../../widgets/form_controller_lifecycle.dart';
 import 'assignment_provider.dart';
 
 class AssignmentFormScreen extends StatefulWidget {
@@ -26,9 +28,10 @@ class AssignmentFormScreen extends StatefulWidget {
   State<AssignmentFormScreen> createState() => _AssignmentFormScreenState();
 }
 
-class _AssignmentFormScreenState extends State<AssignmentFormScreen> {
-  final _titleController = TextEditingController();
-  final _descriptionController = TextEditingController();
+class _AssignmentFormScreenState extends State<AssignmentFormScreen>
+    with FormControllerLifecycle {
+  late final _titleController = textController();
+  late final _descriptionController = textController();
   DateTime? _dueAt;
 
   bool get _isEditMode => widget.existing != null;
@@ -44,13 +47,6 @@ class _AssignmentFormScreenState extends State<AssignmentFormScreen> {
     }
   }
 
-  @override
-  void dispose() {
-    _titleController.dispose();
-    _descriptionController.dispose();
-    super.dispose();
-  }
-
   Future<bool> _save() async {
     if (_dueAt == null) {
       ErrorBanner.show(context, message: 'Rok je obavezan.');
@@ -64,11 +60,7 @@ class _AssignmentFormScreenState extends State<AssignmentFormScreen> {
       dueAt: _dueAt!,
     );
 
-    if (!_isEditMode) {
-      await provider.insert(request.toJson());
-    } else {
-      await provider.update(widget.existing!.id, request.toJson());
-    }
+    await provider.save(id: widget.existing?.id, request: request.toJson());
     return true;
   }
 
@@ -80,17 +72,12 @@ class _AssignmentFormScreenState extends State<AssignmentFormScreen> {
       isEditMode: _isEditMode,
       closeAfterAdd: true,
       fieldsBuilder: (_) => [
-        TextFormField(
-          controller: _titleController,
-          decoration: const InputDecoration(labelText: 'Naslov'),
-          validator: Validators.required('Naslov'),
-        ),
-        TextFormField(
+        EntityTextField(controller: _titleController, label: 'Naslov'),
+        EntityTextField(
           controller: _descriptionController,
-          decoration: const InputDecoration(labelText: 'Opis'),
+          label: 'Opis',
           maxLines: 6,
           minLines: 3,
-          validator: Validators.required('Opis'),
         ),
         DateTimeField(
           labelText: 'Rok',
@@ -101,8 +88,7 @@ class _AssignmentFormScreenState extends State<AssignmentFormScreen> {
       ],
       onSave: _save,
       onReset: () {
-        _titleController.clear();
-        _descriptionController.clear();
+        clearTextControllers();
         setState(() => _dueAt = null);
       },
     );

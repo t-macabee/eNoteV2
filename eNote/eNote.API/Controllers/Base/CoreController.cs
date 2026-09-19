@@ -30,6 +30,21 @@ public abstract class CoreController : ControllerBase
         }
     }
 
+    protected async Task<ActionResult<TDto>> UploadAsync<TDto>(
+        IFormFile? file,
+        Func<Stream, string, string, CancellationToken, Task<TDto>> upload,
+        CancellationToken cancellationToken)
+    {
+        if (file is null || file.Length == 0)
+        {
+            return new BadRequestObjectResult(new { message = Messages.FileNotProvided });
+        }
+
+        await using Stream stream = file.OpenReadStream();
+        var result = await upload(stream, file.FileName, file.ContentType, cancellationToken);
+        return new OkObjectResult(result);
+    }
+
     protected static IActionResult MapError(string? error, int defaultStatus = StatusCodes.Status400BadRequest)
     {
         if (ErrorMapping.IsNotFound(error))

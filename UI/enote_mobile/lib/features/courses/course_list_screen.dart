@@ -20,7 +20,6 @@ class _CourseListScreenState extends State<CourseListScreen>
     with AutomaticKeepAliveClientMixin {
   late final PagedFetchController<CourseDto> _controller;
   bool _enrolledOnly = false;
-  Object? _error;
 
   @override
   bool get wantKeepAlive => true;
@@ -31,9 +30,6 @@ class _CourseListScreenState extends State<CourseListScreen>
     _controller = PagedFetchController<CourseDto>(
       fetcher: _fetch,
       pageSize: 20,
-      onError: (e) {
-        if (mounted) setState(() => _error = e);
-      },
     );
   }
 
@@ -42,7 +38,7 @@ class _CourseListScreenState extends State<CourseListScreen>
     int pageSize,
     String search,
   ) async {
-    final result = await context.read<CourseProvider>().getPage(
+    return context.read<CourseProvider>().getPage(
       params: pagedQuery(
         page,
         pageSize,
@@ -51,8 +47,6 @@ class _CourseListScreenState extends State<CourseListScreen>
         filters: {if (_enrolledOnly) 'enrolledOnly': true},
       ),
     );
-    if (mounted) setState(() => _error = null);
-    return result;
   }
 
   @override
@@ -66,11 +60,6 @@ class _CourseListScreenState extends State<CourseListScreen>
     super.build(context);
     return PagedListView<CourseDto>(
       controller: _controller,
-      error: _error,
-      onRetry: () {
-        setState(() => _error = null);
-        _controller.refresh();
-      },
       filterRow: SwitchListTile(
         title: const Text('Moji kursevi'),
         value: _enrolledOnly,

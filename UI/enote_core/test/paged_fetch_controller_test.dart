@@ -164,7 +164,24 @@ void main() {
       await controller.load();
 
       expect(errors.single, isA<ApiException>());
+      expect(controller.error, isA<ApiException>());
       expect(controller.isLoading, isFalse);
+    });
+
+    test('an error is cleared by the next successful load', () async {
+      final fetcher = _RecordingFetcher()..throwsWith = ApiException('pao');
+      final controller =
+          PagedFetchController<String>(fetcher: fetcher.call, pageSize: 20);
+      addTearDown(controller.dispose);
+
+      await controller.load();
+      expect(controller.error, isA<ApiException>());
+
+      fetcher.throwsWith = null;
+      fetcher.responder = (page) => PagedResult<String>(items: const ['ok']);
+      await controller.load();
+
+      expect(controller.error, isNull);
     });
 
     test('clamps totalPages to at least 1 on an empty result set', () async {

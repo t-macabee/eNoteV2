@@ -23,7 +23,6 @@ class _AssignmentListScreenState extends State<AssignmentListScreen>
     with AutomaticKeepAliveClientMixin {
   late final PagedFetchController<AssignmentDto> _controller;
   bool _pastDueOnly = false;
-  Object? _error;
 
   @override
   bool get wantKeepAlive => true;
@@ -34,9 +33,6 @@ class _AssignmentListScreenState extends State<AssignmentListScreen>
     _controller = PagedFetchController<AssignmentDto>(
       fetcher: _fetch,
       pageSize: 20,
-      onError: (e) {
-        if (mounted) setState(() => _error = e);
-      },
     );
   }
 
@@ -45,7 +41,7 @@ class _AssignmentListScreenState extends State<AssignmentListScreen>
     int pageSize,
     String search,
   ) async {
-    final result = await context.read<AssignmentProvider>().getPage(
+    return context.read<AssignmentProvider>().getPage(
       params: pagedQuery(
         page,
         pageSize,
@@ -56,8 +52,6 @@ class _AssignmentListScreenState extends State<AssignmentListScreen>
         },
       ),
     );
-    if (mounted) setState(() => _error = null);
-    return result;
   }
 
   @override
@@ -82,11 +76,6 @@ class _AssignmentListScreenState extends State<AssignmentListScreen>
         Expanded(
           child: PagedListView<AssignmentDto>(
             controller: _controller,
-            error: _error,
-            onRetry: () {
-              setState(() => _error = null);
-              _controller.refresh();
-            },
             filterRow: SwitchListTile(
               title: const Text('Rok istekao'),
               value: _pastDueOnly,

@@ -287,3 +287,8 @@ class _EntityFormScaffoldState extends State<EntityFormScaffold> {
     );
   }
 }
+
+extension CrudProviderSave<T> on CrudProvider<T> {
+  Future<T?> save({int? id, required Map<String, dynamic> request}) =>
+      id == null ? insert(request) : update(id, request);
+}

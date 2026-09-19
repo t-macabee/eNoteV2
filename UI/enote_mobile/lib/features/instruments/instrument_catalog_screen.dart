@@ -31,7 +31,6 @@ class _InstrumentCatalogScreenState extends State<InstrumentCatalogScreen> {
   late final PagedFetchController<InstrumentDto> _controller;
   List<InstrumentRecommendationDto> _recommendations = const [];
   RentalDebtDto? _debt;
-  Object? _error;
   bool _onlyAvailable = true;
 
   @override
@@ -46,9 +45,6 @@ class _InstrumentCatalogScreenState extends State<InstrumentCatalogScreen> {
         search,
         onlyAvailable: _onlyAvailable,
       ),
-      onError: (error) {
-        if (mounted) setState(() => _error = error);
-      },
     );
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadRecommendations();
@@ -126,11 +122,6 @@ class _InstrumentCatalogScreenState extends State<InstrumentCatalogScreen> {
         Expanded(
           child: PagedListView<InstrumentDto>(
             controller: _controller,
-            error: _error,
-            onRetry: () {
-              setState(() => _error = null);
-              _controller.load();
-            },
             filterRow: Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
               child: Row(

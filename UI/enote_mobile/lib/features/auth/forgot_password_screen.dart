@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
 
+import '../../widgets/form_submit_state.dart';
 import '../../widgets/mobile_form_scaffold.dart';
 import 'auth_provider.dart';
 
@@ -13,12 +14,11 @@ class ForgotPasswordScreen extends StatefulWidget {
   State<ForgotPasswordScreen> createState() => _ForgotPasswordScreenState();
 }
 
-class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
+class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
+    with FormSubmitState<ForgotPasswordScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
-  bool _busy = false;
   bool _sent = false;
-  String? _errorMessage;
 
   @override
   void dispose() {
@@ -30,26 +30,14 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     if (!(_formKey.currentState?.validate() ?? false)) {
       return;
     }
-    setState(() {
-      _busy = true;
-      _errorMessage = null;
-    });
-    try {
+    await submit(() async {
       await context.read<AuthProvider>().forgotPassword(
         _emailController.text.trim(),
       );
       if (mounted) {
         setState(() => _sent = true);
       }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _errorMessage = userMessage(e));
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _busy = false);
-      }
-    }
+    });
   }
 
   @override
@@ -84,8 +72,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       title: 'Zaboravljena lozinka',
       submitLabel: 'Pošalji link',
       onSubmit: _submit,
-      isBusy: _busy,
-      errorMessage: _errorMessage,
+      isBusy: isSubmitting,
+      errorMessage: submitError,
       children: [
         Form(
           key: _formKey,

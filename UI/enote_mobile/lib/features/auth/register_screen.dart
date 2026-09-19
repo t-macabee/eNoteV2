@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
 
+import '../../widgets/app_text_field.dart';
+import '../../widgets/form_submit_state.dart';
 import '../../widgets/mobile_form_scaffold.dart';
 import 'auth_provider.dart';
 
@@ -13,7 +15,8 @@ class RegisterScreen extends StatefulWidget {
   State<RegisterScreen> createState() => _RegisterScreenState();
 }
 
-class _RegisterScreenState extends State<RegisterScreen> {
+class _RegisterScreenState extends State<RegisterScreen>
+    with FormSubmitState<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
   final _usernameController = TextEditingController();
   final _emailController = TextEditingController();
@@ -21,10 +24,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _confirmController = TextEditingController();
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
-  bool _busy = false;
-  bool _obscured = true;
-  bool _confirmObscured = true;
-  String? _errorMessage;
 
   @override
   void dispose() {
@@ -43,11 +42,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (!(_formKey.currentState?.validate() ?? false)) {
       return;
     }
-    setState(() {
-      _busy = true;
-      _errorMessage = null;
-    });
-    try {
+    await submit(() async {
       final username = _usernameController.text.trim();
       final password = _passwordController.text;
       final firstName = _text(_firstNameController);
@@ -63,15 +58,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       );
       if (!mounted) return;
       await context.read<AuthState>().login(username, password);
-    } catch (e) {
-      if (mounted) {
-        setState(() => _errorMessage = userMessage(e));
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _busy = false);
-      }
-    }
+    });
   }
 
   @override
@@ -80,76 +67,46 @@ class _RegisterScreenState extends State<RegisterScreen> {
       title: 'Registracija',
       submitLabel: 'Registruj se',
       onSubmit: _submit,
-      isBusy: _busy,
-      errorMessage: _errorMessage,
+      isBusy: isSubmitting,
+      errorMessage: submitError,
       children: [
         Form(
           key: _formKey,
           child: Column(
             children: [
-              TextFormField(
+              AppTextField(
                 controller: _usernameController,
-                decoration: const InputDecoration(
-                  labelText: 'Korisničko ime *',
-                ),
-                textInputAction: TextInputAction.next,
+                label: 'Korisničko ime *',
                 validator: Validators.required('Korisničko ime'),
               ),
               const SizedBox(height: 16),
-              TextFormField(
+              AppTextField(
                 controller: _emailController,
-                decoration: const InputDecoration(labelText: 'Email *'),
+                label: 'Email *',
                 keyboardType: TextInputType.emailAddress,
-                textInputAction: TextInputAction.next,
                 validator: Validators.email,
               ),
               const SizedBox(height: 16),
-              TextFormField(
+              AppTextField(
                 controller: _passwordController,
-                decoration: InputDecoration(
-                  labelText: 'Lozinka *',
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscured ? Icons.visibility : Icons.visibility_off,
-                    ),
-                    onPressed: () => setState(() => _obscured = !_obscured),
-                  ),
-                ),
-                obscureText: _obscured,
-                textInputAction: TextInputAction.next,
+                label: 'Lozinka *',
+                obscure: true,
                 validator: Validators.password,
               ),
               const SizedBox(height: 16),
-              TextFormField(
+              AppTextField(
                 controller: _confirmController,
-                decoration: InputDecoration(
-                  labelText: 'Potvrda lozinke *',
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _confirmObscured
-                          ? Icons.visibility
-                          : Icons.visibility_off,
-                    ),
-                    onPressed: () => setState(
-                      () => _confirmObscured = !_confirmObscured,
-                    ),
-                  ),
-                ),
-                obscureText: _confirmObscured,
-                textInputAction: TextInputAction.next,
+                label: 'Potvrda lozinke *',
+                obscure: true,
                 validator:
                     Validators.confirmPassword(() => _passwordController.text),
               ),
               const SizedBox(height: 16),
-              TextFormField(
-                controller: _firstNameController,
-                decoration: const InputDecoration(labelText: 'Ime'),
-                textInputAction: TextInputAction.next,
-              ),
+              AppTextField(controller: _firstNameController, label: 'Ime'),
               const SizedBox(height: 16),
-              TextFormField(
+              AppTextField(
                 controller: _lastNameController,
-                decoration: const InputDecoration(labelText: 'Prezime'),
+                label: 'Prezime',
                 textInputAction: TextInputAction.done,
                 onFieldSubmitted: (_) => _submit(),
               ),

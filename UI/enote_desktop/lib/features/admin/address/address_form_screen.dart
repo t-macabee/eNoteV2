@@ -4,6 +4,8 @@ import 'package:enote_core/enote_core.dart';
 
 import '../../../widgets/async_dropdown.dart';
 import '../../../widgets/entity_form_scaffold.dart';
+import '../../../widgets/entity_text_field.dart';
+import '../../../widgets/form_controller_lifecycle.dart';
 import '../city/city_provider.dart';
 import 'address_provider.dart';
 
@@ -21,9 +23,10 @@ class AddressFormScreen extends StatefulWidget {
   State<AddressFormScreen> createState() => _AddressFormScreenState();
 }
 
-class _AddressFormScreenState extends State<AddressFormScreen> {
-  final _streetController = TextEditingController();
-  final _numberController = TextEditingController();
+class _AddressFormScreenState extends State<AddressFormScreen>
+    with FormControllerLifecycle {
+  late final _streetController = textController();
+  late final _numberController = textController();
   int? _selectedCityId;
 
   @override
@@ -37,13 +40,6 @@ class _AddressFormScreenState extends State<AddressFormScreen> {
     }
   }
 
-  @override
-  void dispose() {
-    _streetController.dispose();
-    _numberController.dispose();
-    super.dispose();
-  }
-
   Future<bool> _save() async {
     final provider = context.read<AddressProvider>();
     final request = AddressRequest(
@@ -52,11 +48,7 @@ class _AddressFormScreenState extends State<AddressFormScreen> {
       number: _numberController.text.trim(),
     );
 
-    if (widget.existing == null) {
-      await provider.insert(request.toJson());
-    } else {
-      await provider.update(widget.existing!.id, request.toJson());
-    }
+    await provider.save(id: widget.existing?.id, request: request.toJson());
     return true;
   }
 
@@ -67,8 +59,7 @@ class _AddressFormScreenState extends State<AddressFormScreen> {
       title: widget.existing == null ? 'Dodaj adresu' : 'Uredi adresu',
       isEditMode: widget.existing != null,
       onReset: () {
-        _streetController.clear();
-        _numberController.clear();
+        clearTextControllers();
         setState(() => _selectedCityId = null);
       },
       fieldsBuilder: (_) => [
@@ -92,16 +83,8 @@ class _AddressFormScreenState extends State<AddressFormScreen> {
             return null;
           },
         ),
-        TextFormField(
-          controller: _streetController,
-          decoration: const InputDecoration(labelText: 'Ulica'),
-          validator: Validators.required('Ulica'),
-        ),
-        TextFormField(
-          controller: _numberController,
-          decoration: const InputDecoration(labelText: 'Broj'),
-          validator: Validators.required('Broj'),
-        ),
+        EntityTextField(controller: _streetController, label: 'Ulica'),
+        EntityTextField(controller: _numberController, label: 'Broj'),
       ],
       onSave: _save,
     );

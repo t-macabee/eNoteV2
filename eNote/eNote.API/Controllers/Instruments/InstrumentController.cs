@@ -79,17 +79,8 @@ public sealed class InstrumentController(
     [HttpPost("~/api/v{version:apiVersion}/shop/instruments/{id:int}/image")]
     [ProducesResponseType(typeof(InstrumentDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<InstrumentDto>> UploadImage(int id, IFormFile? file, CancellationToken ct)
-    {
-        if (file is null || file.Length == 0)
-        {
-            return BadRequest(new { message = Messages.FileNotProvided });
-        }
-
-        await using Stream stream = file.OpenReadStream();
-        var result = await instrumentService.UploadImageAsync(id, stream, file.FileName, file.ContentType, ct);
-        return Ok(result);
-    }
+    public async Task<ActionResult<InstrumentDto>> UploadImage(int id, IFormFile? file, CancellationToken ct) =>
+        await UploadAsync(file, (stream, fileName, contentType, token) => instrumentService.UploadImageAsync(id, stream, fileName, contentType, token), ct);
 
     [Authorize(Roles = AppRoles.StoreEmployee)]
     [HttpDelete("~/api/v{version:apiVersion}/shop/instruments/{id:int}")]

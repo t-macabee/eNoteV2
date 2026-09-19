@@ -6,22 +6,18 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace eNote.API.Consumers;
 
-public sealed class RentalRefundedPushConsumer(IHubContext<NotificationHub> hubContext, ILogger<RentalRefundedPushConsumer> logger) : IConsumer<RentalRefunded>
+public sealed class RentalRefundedPushConsumer(IHubContext<NotificationHub> hubContext, ILogger<RentalRefundedPushConsumer> logger)
+    : NotificationPushConsumer<RentalRefunded>(hubContext, logger)
 {
-    public async Task Consume(ConsumeContext<RentalRefunded> context)
-    {
-        var message = context.Message;
-
-        var payload = new NotificationPushDto()
+    protected override NotificationPush Map(RentalRefunded message) => new(
+        message.StudentUserId,
+        new NotificationPushDto
         {
             RentalId = message.RentalId,
             Title = message.Title,
             Body = message.Body,
             CreatedAt = message.OccurredAtUtc
-        };
-
-        await hubContext.Clients.Group(NotificationHub.UserGroup(message.StudentUserId)).SendAsync(NotificationHub.ReceiveMethod, payload, context.CancellationToken);
-
-        logger.LogInformation("Pushed rental notification to SignalR group for user {UserId}, rental {RentalId}.", message.StudentUserId, message.RentalId);
-    }
+        },
+        "rental",
+        $"rental {message.RentalId}");
 }

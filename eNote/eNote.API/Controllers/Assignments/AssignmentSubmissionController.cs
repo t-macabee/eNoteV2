@@ -57,15 +57,6 @@ public sealed class AssignmentSubmissionController(AssignmentSubmissionService s
     [RequestSizeLimit(5 * 1024 * 1024)]
     [ProducesResponseType(typeof(AssignmentSubmissionDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<AssignmentSubmissionDto>> Submit(int id, IFormFile? file, CancellationToken ct)
-    {
-        if (file is null || file.Length == 0)
-        {
-            return BadRequest(new { message = Messages.FileNotProvided });
-        }
-
-        await using Stream stream = file.OpenReadStream();
-        var dto = await submissionService.SubmitWithFileAsync(id, stream, file.FileName, file.ContentType, ct);
-        return Ok(dto);
-    }
+    public async Task<ActionResult<AssignmentSubmissionDto>> Submit(int id, IFormFile? file, CancellationToken ct) =>
+        await UploadAsync(file, (stream, fileName, contentType, token) => submissionService.SubmitWithFileAsync(id, stream, fileName, contentType, token), ct);
 }

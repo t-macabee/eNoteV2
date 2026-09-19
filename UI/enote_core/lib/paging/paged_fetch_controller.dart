@@ -26,10 +26,12 @@ typedef PagedFetcher<T> = Future<PagedResult<T>> Function(
 /// on purpose (a `DataTable` and a `GridView` are not the same thing), so those
 /// stay in each widget's `build`.
 ///
-/// Errors are surfaced through [onError] rather than shown here: an
-/// `ErrorBanner` needs a [BuildContext] and a [ChangeNotifier] has none. The
-/// callback fires only for a response that is still current, and the owning
-/// widget is responsible for its own `mounted` check.
+/// A failed load is stored in [error] and cleared by the next successful one,
+/// so every paged list can render it without keeping its own copy. [onError]
+/// stays for callers that need a side effect (an `ErrorBanner` needs a
+/// [BuildContext] and a [ChangeNotifier] has none); it fires only for a
+/// response that is still current, and the owning widget is responsible for
+/// its own `mounted` check.
 class PagedFetchController<T> extends ChangeNotifier {
   /// Default search debounce. Exposed so tests can reference it instead of
   /// hardcoding `400 ms` pumps — if this changes, `pastDebounce()` in
@@ -69,6 +71,7 @@ class PagedFetchController<T> extends ChangeNotifier {
   int _currentPage = 1;
   int? _totalCount;
   bool _isLoading = false;
+  Object? _error;
   String _currentSearch = '';
   Timer? _searchDebounce;
   int _requestId = 0;
@@ -78,6 +81,10 @@ class PagedFetchController<T> extends ChangeNotifier {
   int get currentPage => _currentPage;
   int? get totalCount => _totalCount;
   bool get isLoading => _isLoading;
+
+  /// The most recent failure from a still-current load; null after a success.
+  Object? get error => _error;
+
   String get search => _currentSearch;
 
   /// Null until the first load resolves — callers hide pagination while it is.
@@ -119,9 +126,11 @@ class PagedFetchController<T> extends ChangeNotifier {
       if (requestId != _requestId) return;
       _items = result.items;
       _totalCount = result.totalCount;
+      _error = null;
       _notify();
     } catch (e) {
       if (requestId != _requestId) return;
+      _error = e;
       onError?.call(e);
     } finally {
       if (requestId == _requestId && !_disposed) {

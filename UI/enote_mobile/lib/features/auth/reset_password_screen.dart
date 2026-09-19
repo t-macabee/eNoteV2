@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import 'package:enote_core/enote_core.dart';
 
 import '../../shell/app_router.dart';
+import '../../widgets/app_text_field.dart';
+import '../../widgets/form_submit_state.dart';
 import '../../widgets/mobile_form_scaffold.dart';
 import 'auth_provider.dart';
 
@@ -17,15 +19,12 @@ class ResetPasswordScreen extends StatefulWidget {
   State<ResetPasswordScreen> createState() => _ResetPasswordScreenState();
 }
 
-class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
+class _ResetPasswordScreenState extends State<ResetPasswordScreen>
+    with FormSubmitState<ResetPasswordScreen> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _emailController;
   final _passwordController = TextEditingController();
   final _confirmController = TextEditingController();
-  bool _busy = false;
-  bool _obscured = true;
-  bool _confirmObscured = true;
-  String? _errorMessage;
 
   bool get _hasParams =>
       widget.email != null &&
@@ -51,11 +50,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     if (!(_formKey.currentState?.validate() ?? false)) {
       return;
     }
-    setState(() {
-      _busy = true;
-      _errorMessage = null;
-    });
-    try {
+    await submit(() async {
       await context.read<AuthProvider>().resetPassword(
         email: widget.email!,
         token: widget.token!,
@@ -72,15 +67,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
           ),
         ),
       );
-    } catch (e) {
-      if (mounted) {
-        setState(() => _errorMessage = userMessage(e));
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _busy = false);
-      }
-    }
+    });
   }
 
   @override
@@ -117,51 +104,30 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       title: 'Reset lozinke',
       submitLabel: 'Promijeni lozinku',
       onSubmit: _submit,
-      isBusy: _busy,
-      errorMessage: _errorMessage,
+      isBusy: isSubmitting,
+      errorMessage: submitError,
       children: [
         Form(
           key: _formKey,
           child: Column(
             children: [
-              TextFormField(
+              AppTextField(
                 controller: _emailController,
-                decoration: const InputDecoration(labelText: 'Email'),
+                label: 'Email',
                 readOnly: true,
               ),
               const SizedBox(height: 16),
-              TextFormField(
+              AppTextField(
                 controller: _passwordController,
-                decoration: InputDecoration(
-                  labelText: 'Nova lozinka *',
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscured ? Icons.visibility : Icons.visibility_off,
-                    ),
-                    onPressed: () => setState(() => _obscured = !_obscured),
-                  ),
-                ),
-                obscureText: _obscured,
-                textInputAction: TextInputAction.next,
+                label: 'Nova lozinka *',
+                obscure: true,
                 validator: Validators.password,
               ),
               const SizedBox(height: 16),
-              TextFormField(
+              AppTextField(
                 controller: _confirmController,
-                decoration: InputDecoration(
-                  labelText: 'Potvrda nove lozinke *',
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _confirmObscured
-                          ? Icons.visibility
-                          : Icons.visibility_off,
-                    ),
-                    onPressed: () => setState(
-                      () => _confirmObscured = !_confirmObscured,
-                    ),
-                  ),
-                ),
-                obscureText: _confirmObscured,
+                label: 'Potvrda nove lozinke *',
+                obscure: true,
                 textInputAction: TextInputAction.done,
                 onFieldSubmitted: (_) => _submit(),
                 validator:

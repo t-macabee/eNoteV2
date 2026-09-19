@@ -6,6 +6,8 @@ import 'package:enote_core/enote_core.dart';
 import '../../../theme/app_theme.dart';
 import '../../../widgets/async_dropdown.dart';
 import '../../../widgets/entity_form_scaffold.dart';
+import '../../../widgets/entity_text_field.dart';
+import '../../../widgets/form_controller_lifecycle.dart';
 import '../../../widgets/image_upload_helper.dart';
 import 'shop_address_provider.dart';
 import 'shop_store_provider.dart';
@@ -24,10 +26,11 @@ class ShopStoreFormScreen extends StatefulWidget {
   State<ShopStoreFormScreen> createState() => _ShopStoreFormScreenState();
 }
 
-class _ShopStoreFormScreenState extends State<ShopStoreFormScreen> {
-  final _storeNameController = TextEditingController();
-  final _businessHoursController = TextEditingController();
-  final _phoneNumberController = TextEditingController();
+class _ShopStoreFormScreenState extends State<ShopStoreFormScreen>
+    with FormControllerLifecycle {
+  late final _storeNameController = textController();
+  late final _businessHoursController = textController();
+  late final _phoneNumberController = textController();
   int? _selectedAddressId;
   String? _currentImagePath;
 
@@ -40,14 +43,6 @@ class _ShopStoreFormScreenState extends State<ShopStoreFormScreen> {
     _phoneNumberController.text = s.phoneNumber ?? '';
     _selectedAddressId = s.addressId;
     _currentImagePath = s.imagePath;
-  }
-
-  @override
-  void dispose() {
-    _storeNameController.dispose();
-    _businessHoursController.dispose();
-    _phoneNumberController.dispose();
-    super.dispose();
   }
 
   Future<String?> _uploadImage(
@@ -92,19 +87,15 @@ class _ShopStoreFormScreenState extends State<ShopStoreFormScreen> {
       title: 'Uredi prodavnicu',
       isEditMode: true,
       fieldsBuilder: (_) => [
-        TextFormField(
-          controller: _storeNameController,
-          decoration: const InputDecoration(labelText: 'Naziv'),
-          validator: Validators.required('Naziv'),
-        ),
-        TextFormField(
+        EntityTextField(controller: _storeNameController, label: 'Naziv'),
+        EntityTextField(
           controller: _businessHoursController,
-          decoration: const InputDecoration(labelText: 'Radno vrijeme'),
-          validator: Validators.required('Radno vrijeme'),
+          label: 'Radno vrijeme',
         ),
-        TextFormField(
+        EntityTextField(
           controller: _phoneNumberController,
-          decoration: const InputDecoration(labelText: 'Broj telefona'),
+          label: 'Broj telefona',
+          required: false,
           validator: (v) => v == null || v.trim().isEmpty
               ? null
               // The backend only length-checks the number, so stored values

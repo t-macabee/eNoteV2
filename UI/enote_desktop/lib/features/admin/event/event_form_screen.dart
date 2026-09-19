@@ -5,6 +5,8 @@ import 'package:enote_core/enote_core.dart';
 import '../../../widgets/async_dropdown.dart';
 import '../../../widgets/date_time_field.dart';
 import '../../../widgets/entity_form_scaffold.dart';
+import '../../../widgets/entity_text_field.dart';
+import '../../../widgets/form_controller_lifecycle.dart';
 import '../address/address_provider.dart';
 import 'event_provider.dart';
 
@@ -28,9 +30,10 @@ class EventFormScreen extends StatefulWidget {
   State<EventFormScreen> createState() => _EventFormScreenState();
 }
 
-class _EventFormScreenState extends State<EventFormScreen> {
-  final _titleController = TextEditingController();
-  final _descriptionController = TextEditingController();
+class _EventFormScreenState extends State<EventFormScreen>
+    with FormControllerLifecycle {
+  late final _titleController = textController();
+  late final _descriptionController = textController();
 
   DateTime? _startsAt;
   DateTime? _endsAt;
@@ -47,13 +50,6 @@ class _EventFormScreenState extends State<EventFormScreen> {
       _endsAt = existing.endsAt;
       _addressId = existing.addressId;
     }
-  }
-
-  @override
-  void dispose() {
-    _titleController.dispose();
-    _descriptionController.dispose();
-    super.dispose();
   }
 
   Future<bool> _save() async {
@@ -78,11 +74,7 @@ class _EventFormScreenState extends State<EventFormScreen> {
     );
 
     final provider = context.read<EventProvider>();
-    if (widget.existing == null) {
-      await provider.insert(request.toJson());
-    } else {
-      await provider.update(widget.existing!.id, request.toJson());
-    }
+    await provider.save(id: widget.existing?.id, request: request.toJson());
     return true;
   }
 
@@ -102,16 +94,11 @@ class _EventFormScreenState extends State<EventFormScreen> {
             }
           : null,
       fieldsBuilder: (_) => [
-        TextFormField(
-          controller: _titleController,
-          decoration: const InputDecoration(labelText: 'Naziv'),
-          validator: Validators.required('Naziv'),
-        ),
-        TextFormField(
+        EntityTextField(controller: _titleController, label: 'Naziv'),
+        EntityTextField(
           controller: _descriptionController,
-          decoration: const InputDecoration(labelText: 'Opis'),
+          label: 'Opis',
           maxLines: 3,
-          validator: Validators.required('Opis'),
         ),
         DateTimeField(
           labelText: 'Početak',
@@ -142,8 +129,7 @@ class _EventFormScreenState extends State<EventFormScreen> {
       ],
       onSave: _save,
       onReset: () {
-        _titleController.clear();
-        _descriptionController.clear();
+        clearTextControllers();
         setState(() {
           _startsAt = null;
           _endsAt = null;

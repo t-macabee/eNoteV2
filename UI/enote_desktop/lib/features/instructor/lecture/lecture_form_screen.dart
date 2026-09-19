@@ -5,6 +5,8 @@ import 'package:provider/provider.dart';
 import 'package:enote_core/enote_core.dart';
 import '../../../widgets/date_time_field.dart';
 import '../../../widgets/entity_form_scaffold.dart';
+import '../../../widgets/entity_text_field.dart';
+import '../../../widgets/form_controller_lifecycle.dart';
 import 'lecture_provider.dart';
 
 class LectureFormScreen extends StatefulWidget {
@@ -27,11 +29,12 @@ class LectureFormScreen extends StatefulWidget {
   State<LectureFormScreen> createState() => _LectureFormScreenState();
 }
 
-class _LectureFormScreenState extends State<LectureFormScreen> {
-  final _nameController = TextEditingController();
-  final _locationController = TextEditingController();
-  final _durationController = TextEditingController();
-  final _capacityController = TextEditingController();
+class _LectureFormScreenState extends State<LectureFormScreen>
+    with FormControllerLifecycle {
+  late final _nameController = textController();
+  late final _locationController = textController();
+  late final _durationController = textController();
+  late final _capacityController = textController();
 
   LectureType _lectureType = LectureType.theoretical;
   DateTime? _lectureTime;
@@ -51,15 +54,6 @@ class _LectureFormScreenState extends State<LectureFormScreen> {
       _durationController.text = existing.duration.toString();
       _capacityController.text = existing.capacity?.toString() ?? '';
     }
-  }
-
-  @override
-  void dispose() {
-    _nameController.dispose();
-    _locationController.dispose();
-    _durationController.dispose();
-    _capacityController.dispose();
-    super.dispose();
   }
 
   Future<bool> _save() async {
@@ -143,17 +137,17 @@ class _LectureFormScreenState extends State<LectureFormScreen> {
             ),
           ),
         ],
-        TextFormField(
+        EntityTextField(
           controller: _nameController,
-          decoration: const InputDecoration(labelText: 'Naziv'),
+          label: 'Naziv',
           enabled: enabled,
-          validator: enabled ? Validators.required('Naziv') : null,
+          required: enabled,
         ),
-        TextFormField(
+        EntityTextField(
           controller: _locationController,
-          decoration: const InputDecoration(labelText: 'Lokacija'),
+          label: 'Lokacija',
           enabled: enabled,
-          validator: enabled ? Validators.required('Lokacija') : null,
+          required: enabled,
         ),
         DropdownButtonFormField<LectureType>(
           initialValue: _lectureType,
@@ -185,23 +179,19 @@ class _LectureFormScreenState extends State<LectureFormScreen> {
               ? (value) => value == null ? 'Vrijeme je obavezno.' : null
               : null,
         ),
-        TextFormField(
+        EntityTextField(
           controller: _durationController,
-          decoration: const InputDecoration(
-            labelText: 'Trajanje (minute)',
-            hintText: 'npr. 90',
-          ),
+          label: 'Trajanje (minute)',
+          hintText: 'npr. 90',
           enabled: enabled,
           keyboardType: TextInputType.number,
           inputFormatters: [FilteringTextInputFormatter.digitsOnly],
           validator: enabled ? _validateDuration : null,
         ),
-        TextFormField(
+        EntityTextField(
           controller: _capacityController,
-          decoration: const InputDecoration(
-            labelText: 'Kapacitet (opcionalno)',
-            hintText: 'ostavite prazno za neograničeno',
-          ),
+          label: 'Kapacitet (opcionalno)',
+          hintText: 'ostavite prazno za neograničeno',
           enabled: enabled,
           keyboardType: TextInputType.number,
           inputFormatters: [FilteringTextInputFormatter.digitsOnly],
@@ -210,10 +200,7 @@ class _LectureFormScreenState extends State<LectureFormScreen> {
       ],
       onSave: _save,
       onReset: () {
-        _nameController.clear();
-        _locationController.clear();
-        _durationController.clear();
-        _capacityController.clear();
+        clearTextControllers();
         setState(() {
           _lectureTime = null;
           _lectureType = LectureType.theoretical;

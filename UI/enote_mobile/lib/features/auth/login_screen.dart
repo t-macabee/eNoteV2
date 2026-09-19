@@ -5,6 +5,8 @@ import 'package:enote_core/enote_core.dart';
 
 import '../../session/session_controller.dart';
 import '../../shell/app_router.dart';
+import '../../widgets/app_text_field.dart';
+import '../../widgets/form_submit_state.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -13,14 +15,12 @@ class LoginScreen extends StatefulWidget {
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _LoginScreenState extends State<LoginScreen>
+    with FormSubmitState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
-  bool _busy = false;
-  bool _obscured = true;
   bool _sessionExpired = false;
-  String? _errorMessage;
 
   @override
   void initState() {
@@ -39,24 +39,12 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!(_formKey.currentState?.validate() ?? false)) {
       return;
     }
-    setState(() {
-      _busy = true;
-      _errorMessage = null;
-    });
-    try {
-      await context.read<AuthState>().login(
-        _usernameController.text.trim(),
-        _passwordController.text,
-      );
-    } catch (e) {
-      if (mounted) {
-        setState(() => _errorMessage = userMessage(e));
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _busy = false);
-      }
-    }
+    await submit(
+      () => context.read<AuthState>().login(
+            _usernameController.text.trim(),
+            _passwordController.text,
+          ),
+    );
   }
 
   @override
@@ -74,33 +62,24 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 16),
             ],
-            TextFormField(
+            AppTextField(
               controller: _usernameController,
-              decoration: const InputDecoration(labelText: 'Korisničko ime'),
-              textInputAction: TextInputAction.next,
+              label: 'Korisničko ime',
               validator: Validators.required('Korisničko ime'),
             ),
             const SizedBox(height: 16),
-            TextFormField(
+            AppTextField(
               controller: _passwordController,
-              decoration: InputDecoration(
-                labelText: 'Lozinka',
-                suffixIcon: IconButton(
-                  icon: Icon(
-                    _obscured ? Icons.visibility : Icons.visibility_off,
-                  ),
-                  onPressed: () => setState(() => _obscured = !_obscured),
-                ),
-              ),
-              obscureText: _obscured,
+              label: 'Lozinka',
+              obscure: true,
               textInputAction: TextInputAction.done,
               onFieldSubmitted: (_) => _submit(),
               validator: Validators.required('Lozinka'),
             ),
             const SizedBox(height: 24),
             FilledButton(
-              onPressed: _busy ? null : _submit,
-              child: _busy
+              onPressed: isSubmitting ? null : _submit,
+              child: isSubmitting
                   ? const SizedBox(
                       width: 20,
                       height: 20,
@@ -108,9 +87,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     )
                   : const Text('Prijava'),
             ),
-            if (_errorMessage != null) ...[
+            if (submitError != null) ...[
               const SizedBox(height: 12),
-              ErrorBanner(message: _errorMessage!),
+              ErrorBanner(message: submitError!),
             ],
             const SizedBox(height: 8),
             TextButton(

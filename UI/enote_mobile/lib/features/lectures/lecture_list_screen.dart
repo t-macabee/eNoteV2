@@ -21,7 +21,6 @@ class _LectureListScreenState extends State<LectureListScreen>
     with AutomaticKeepAliveClientMixin {
   late final PagedFetchController<LectureDto> _controller;
   bool _upcomingOnly = false;
-  Object? _error;
 
   @override
   bool get wantKeepAlive => true;
@@ -32,9 +31,6 @@ class _LectureListScreenState extends State<LectureListScreen>
     _controller = PagedFetchController<LectureDto>(
       fetcher: _fetch,
       pageSize: 20,
-      onError: (e) {
-        if (mounted) setState(() => _error = e);
-      },
     );
   }
 
@@ -43,7 +39,7 @@ class _LectureListScreenState extends State<LectureListScreen>
     int pageSize,
     String search,
   ) async {
-    final result = await context.read<LectureProvider>().getPage(
+    return context.read<LectureProvider>().getPage(
       params: pagedQuery(
         page,
         pageSize,
@@ -54,8 +50,6 @@ class _LectureListScreenState extends State<LectureListScreen>
         },
       ),
     );
-    if (mounted) setState(() => _error = null);
-    return result;
   }
 
   @override
@@ -69,11 +63,6 @@ class _LectureListScreenState extends State<LectureListScreen>
     super.build(context);
     return PagedListView<LectureDto>(
       controller: _controller,
-      error: _error,
-      onRetry: () {
-        setState(() => _error = null);
-        _controller.refresh();
-      },
       filterRow: SwitchListTile(
         title: const Text('Predstojeća'),
         value: _upcomingOnly,

@@ -27,15 +27,7 @@ class ProfileProvider {
     List<int> bytes,
     String fileName,
     String contentType,
-  ) async {
-    final response = await apiClient.putMultipart(
-      'users/me/picture',
-      bytes: bytes,
-      fileName: fileName,
-      contentType: contentType,
-    );
-    throwIfError(response);
-  }
+  ) => uploadUserPicture(apiClient, bytes, fileName, contentType);
 
   /// `DELETE users/me/picture`.
   Future<void> deletePicture() async {

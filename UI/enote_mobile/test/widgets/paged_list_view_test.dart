@@ -16,18 +16,14 @@ PagedFetchController<int> _controller(
 
 Future<void> _pumpList(
   WidgetTester tester,
-  PagedFetchController<int> controller, {
-  Object? error,
-  VoidCallback? onRetry,
-}) async {
+  PagedFetchController<int> controller,
+) async {
   await tester.pumpWidget(
     MaterialApp(
       home: Scaffold(
         body: PagedListView<int>(
           controller: controller,
           itemBuilder: (context, item) => ListTile(title: Text('Item $item')),
-          error: error,
-          onRetry: onRetry,
         ),
       ),
     ),
@@ -101,32 +97,30 @@ void main() {
     expect(find.text('Nema rezultata za pretragu.'), findsOneWidget);
   });
 
-  testWidgets('error state shows retry and fires it', (tester) async {
+  testWidgets('a failed load shows retry and the retry refetches', (
+    tester,
+  ) async {
+    var calls = 0;
     final controller = _controller((page, pageSize, search) async {
-      return PagedResult<int>(
-        items: const [],
-        page: page,
-        pageSize: pageSize,
-        totalCount: 0,
-      );
+      calls++;
+      throw Exception('boom');
     });
     addTearDown(controller.dispose);
-    var retried = false;
-    await _pumpList(
-      tester,
-      controller,
-      error: Exception('boom'),
-      onRetry: () => retried = true,
-    );
+    await _pumpList(tester, controller);
     expect(find.text('Pokušaj ponovo'), findsOneWidget);
+
     await tester.tap(find.text('Pokušaj ponovo'));
-    expect(retried, isTrue);
+    await tester.pump();
+    await tester.pump();
+    expect(calls, 2);
   });
 
   testWidgets('an error on top of loaded rows keeps the rows visible', (
     tester,
   ) async {
+    var fail = false;
     final controller = _controller((page, pageSize, search) async {
+      if (fail) throw Exception('boom');
       return PagedResult<int>(
         items: const [1, 2],
         page: page,
@@ -135,9 +129,15 @@ void main() {
       );
     });
     addTearDown(controller.dispose);
-    await _pumpList(tester, controller, error: Exception('boom'));
+    await _pumpList(tester, controller);
+
+    fail = true;
+    controller.load();
+    await tester.pump();
+    await tester.pump();
 
     expect(find.text('Item 1'), findsOneWidget);
     expect(find.text('Item 2'), findsOneWidget);
+    expect(find.text('Pokušaj ponovo'), findsNothing);
   });
 }

@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
 
+import '../widgets/form_submit_state.dart';
+
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -10,11 +12,11 @@ class LoginScreen extends StatefulWidget {
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _LoginScreenState extends State<LoginScreen>
+    with FormSubmitState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
-  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -28,22 +30,12 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
-    setState(() => _isLoading = true);
-    try {
-      final authState = context.read<AuthState>();
-      await authState.login(
-        _usernameController.text.trim(),
-        _passwordController.text,
-      );
-    } catch (e) {
-      if (mounted) {
-        ErrorBanner.show(context, message: userMessage(e));
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
+    await submit(
+      () => context.read<AuthState>().login(
+            _usernameController.text.trim(),
+            _passwordController.text,
+          ),
+    );
   }
 
   @override
@@ -107,8 +99,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   SizedBox(
                     height: 48,
                     child: ElevatedButton(
-                      onPressed: _isLoading ? null : _submit,
-                      child: _isLoading
+                      onPressed: isSubmitting ? null : _submit,
+                      child: isSubmitting
                           ? const SizedBox(
                               height: 20,
                               width: 20,

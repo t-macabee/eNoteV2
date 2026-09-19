@@ -103,7 +103,7 @@ class UserAddressDto {
   };
 }
 
-class InstructorDto {
+class UserSummaryDto {
   final int id;
   final int appUserId;
   final String? firstName;
@@ -111,7 +111,7 @@ class InstructorDto {
   final String? username;
   final bool isActive;
 
-  InstructorDto({
+  UserSummaryDto({
     required this.id,
     required this.appUserId,
     this.firstName,
@@ -120,16 +120,13 @@ class InstructorDto {
     this.isActive = true,
   });
 
-  factory InstructorDto.fromJson(Map<String, dynamic> json) {
-    return InstructorDto(
-      id: json['id'] as int? ?? 0,
-      appUserId: json['appUserId'] as int? ?? 0,
-      firstName: json['firstName'] as String?,
-      lastName: json['lastName'] as String?,
-      username: json['username'] as String?,
-      isActive: json['isActive'] as bool? ?? true,
-    );
-  }
+  UserSummaryDto.fromJson(Map<String, dynamic> json)
+    : id = json['id'] as int? ?? 0,
+      appUserId = json['appUserId'] as int? ?? 0,
+      firstName = json['firstName'] as String?,
+      lastName = json['lastName'] as String?,
+      username = json['username'] as String?,
+      isActive = json['isActive'] as bool? ?? true;
 
   Map<String, dynamic> toJson() => {
     'id': id,
@@ -141,47 +138,42 @@ class InstructorDto {
   };
 }
 
-class StudentDto {
-  final int id;
-  final int appUserId;
-  final String? firstName;
-  final String? lastName;
-  final String? username;
-  final DateTime? enrollmentDate;
-  final DateTime? membershipPaidUntil;
-  final bool isActive;
-
-  StudentDto({
-    required this.id,
-    required this.appUserId,
-    this.firstName,
-    this.lastName,
-    this.username,
-    this.enrollmentDate,
-    this.membershipPaidUntil,
-    this.isActive = true,
+class InstructorDto extends UserSummaryDto {
+  InstructorDto({
+    required super.id,
+    required super.appUserId,
+    super.firstName,
+    super.lastName,
+    super.username,
+    super.isActive = true,
   });
 
-  factory StudentDto.fromJson(Map<String, dynamic> json) {
-    return StudentDto(
-      id: json['id'] as int? ?? 0,
-      appUserId: json['appUserId'] as int? ?? 0,
-      firstName: json['firstName'] as String?,
-      lastName: json['lastName'] as String?,
-      username: json['username'] as String?,
-      enrollmentDate: parseDate(json['enrollmentDate']),
-      membershipPaidUntil: parseDate(json['membershipPaidUntil']),
-      isActive: json['isActive'] as bool? ?? true,
-    );
-  }
+  InstructorDto.fromJson(super.json) : super.fromJson();
+}
 
+class StudentDto extends UserSummaryDto {
+  final DateTime? enrollmentDate;
+  final DateTime? membershipPaidUntil;
+
+  StudentDto({
+    required super.id,
+    required super.appUserId,
+    super.firstName,
+    super.lastName,
+    super.username,
+    this.enrollmentDate,
+    this.membershipPaidUntil,
+    super.isActive = true,
+  });
+
+  StudentDto.fromJson(super.json)
+    : enrollmentDate = parseDate(json['enrollmentDate']),
+      membershipPaidUntil = parseDate(json['membershipPaidUntil']),
+      super.fromJson();
+
+  @override
   Map<String, dynamic> toJson() => {
-    'id': id,
-    'appUserId': appUserId,
-    if (firstName != null) 'firstName': firstName,
-    if (lastName != null) 'lastName': lastName,
-    if (username != null) 'username': username,
-    'isActive': isActive,
+    ...super.toJson(),
     if (enrollmentDate != null)
       'enrollmentDate': enrollmentDate!.toIso8601String(),
     if (membershipPaidUntil != null)

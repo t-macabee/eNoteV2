@@ -9,13 +9,17 @@ import 'package:enote_desktop/widgets/date_field.dart';
 
 import 'helpers.dart';
 
-Future<ScriptedClient> _pumpDialog(WidgetTester tester) async {
+Future<ScriptedClient> _pumpDialog(
+  WidgetTester tester, {
+  int status = 200,
+  Map<String, dynamic> body = const {'message': 'OK'},
+}) async {
   tester.view.physicalSize = const Size(1400, 1000);
   tester.view.devicePixelRatio = 1.0;
   addTearDown(tester.view.resetPhysicalSize);
   addTearDown(tester.view.resetDevicePixelRatio);
 
-  final client = ScriptedClient((_) => jsonResponse({'message': 'OK'}, 200));
+  final client = ScriptedClient((_) => jsonResponse(body, status));
   final authState = AuthState(
     baseUrl: 'http://localhost:5059/api/v1/',
     tokenReader: () => fakeJwt(),
@@ -82,5 +86,19 @@ void main() {
       findsOneWidget,
     );
     expect(client.requests.where((r) => r.method == 'PUT'), isEmpty);
+  });
+
+  testWidgets('a failed save shows the banner and keeps the dialog open',
+      (tester) async {
+    await _pumpDialog(
+      tester,
+      status: 500,
+      body: const {'message': 'Greška na serveru.'},
+    );
+
+    await _save(tester);
+
+    expect(find.text('Greška na serveru.'), findsOneWidget);
+    expect(find.text('Uredi profil'), findsOneWidget);
   });
 }

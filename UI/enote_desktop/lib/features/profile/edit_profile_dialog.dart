@@ -62,23 +62,18 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
   }
 
   Future<bool> _save() async {
-    try {
-      final profileProvider = context.read<ProfileProvider>();
-      final firstName = _firstNameController.text.trim();
-      final lastName = _lastNameController.text.trim();
-      await profileProvider.updateProfile(
-        UpdateProfileRequest(
-          email: _emailController.text.trim(),
-          firstName: firstName.isEmpty ? null : firstName,
-          lastName: lastName.isEmpty ? null : lastName,
-          dateOfBirth: _dateOfBirth,
-        ),
-      );
-      return true;
-    } catch (e) {
-      if (mounted) ErrorBanner.show(context, message: userMessage(e));
-      return false;
-    }
+    final profileProvider = context.read<ProfileProvider>();
+    final firstName = _firstNameController.text.trim();
+    final lastName = _lastNameController.text.trim();
+    await profileProvider.updateProfile(
+      UpdateProfileRequest(
+        email: _emailController.text.trim(),
+        firstName: firstName.isEmpty ? null : firstName,
+        lastName: lastName.isEmpty ? null : lastName,
+        dateOfBirth: _dateOfBirth,
+      ),
+    );
+    return true;
   }
 
   Future<String?> _uploadImage(

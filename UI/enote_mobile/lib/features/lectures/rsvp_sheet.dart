@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
 
+import '../../widgets/form_submit_state.dart';
 import 'lecture_provider.dart';
 
 /// S19 — RSVP sheet over S18 (02 §5 S19): no confirm dialog (RSVP is
@@ -23,30 +24,17 @@ class RsvpSheet extends StatefulWidget {
   State<RsvpSheet> createState() => _RsvpSheetState();
 }
 
-class _RsvpSheetState extends State<RsvpSheet> {
-  String? _error;
-  bool _sending = false;
-
+class _RsvpSheetState extends State<RsvpSheet>
+    with FormSubmitState<RsvpSheet> {
   Future<void> _send() async {
-    if (_sending) return;
-    setState(() {
-      _sending = true;
-      _error = null;
-    });
-    try {
+    if (isSubmitting) return;
+    await submit(() async {
       await context.read<LectureProvider>().rsvp(
         widget.lectureId,
         RsvpRequest(confirm: widget.confirm),
       );
       if (mounted) widget.onSuccess();
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _error = userMessage(e);
-          _sending = false;
-        });
-      }
-    }
+    });
   }
 
   @override
@@ -77,8 +65,8 @@ class _RsvpSheetState extends State<RsvpSheet> {
           Text(label, style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 12),
           FilledButton(
-            onPressed: _sending ? null : _send,
-            child: _sending
+            onPressed: isSubmitting ? null : _send,
+            child: isSubmitting
                 ? const SizedBox(
                     width: 20,
                     height: 20,
@@ -86,9 +74,9 @@ class _RsvpSheetState extends State<RsvpSheet> {
                   )
                 : Text(label),
           ),
-          if (_error != null) ...[
+          if (submitError != null) ...[
             const SizedBox(height: 8),
-            ErrorBanner(message: _error!),
+            ErrorBanner(message: submitError!),
           ],
         ],
       ),

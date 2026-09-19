@@ -4,10 +4,10 @@ import 'package:provider/provider.dart';
 import 'package:enote_core/enote_core.dart';
 
 import '../../config.dart';
-import '../../theme/app_theme.dart';
 import '../../widgets/labeled_value.dart';
 import '../payments/payment_flow_body.dart';
 import '../payments/payment_flow_controller.dart';
+import '../payments/payment_review.dart';
 import '../payments/payment_sheet_gateway.dart';
 import 'tuition_payment_provider.dart';
 
@@ -99,40 +99,15 @@ class _TuitionPaymentScreenState extends State<TuitionPaymentScreen> {
   }
 
   Widget _review() {
-    return ListView(
-      physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.all(16),
+    return PaymentReview(
+      amount: widget.price,
+      onPay: _pay,
+      isBusy: _flow.isBusy,
       children: [
         Text(widget.courseName, style: Theme.of(context).textTheme.titleLarge),
         const SizedBox(height: 16),
         LabeledValue(label: 'Iznos', value: formatKM(widget.price)),
         const LabeledValue(label: 'Trajanje pristupa', value: '30 dana'),
-        const SizedBox(height: 16),
-        const Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(Icons.info_outline, color: AppTheme.textSecondary),
-            SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                'Plaćanje se obavlja putem Stripe-a. '
-                'Podaci o kartici se ne pohranjuju u aplikaciji.',
-                style: TextStyle(color: AppTheme.textSecondary),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 24),
-        FilledButton(
-          onPressed: _flow.isBusy ? null : _pay,
-          child: _flow.isBusy
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : Text('Plati ${formatKM(widget.price)}'),
-        ),
       ],
     );
   }

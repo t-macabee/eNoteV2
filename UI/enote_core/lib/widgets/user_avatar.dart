@@ -1,7 +1,24 @@
 import 'package:flutter/material.dart';
 
 import '../api/api_client.dart';
+import '../api/api_response.dart';
 import 'network_image.dart';
+
+/// `PUT users/me/picture` (multipart part `file`, 5 MB limit server-side).
+Future<void> uploadUserPicture(
+  ApiClient client,
+  List<int> bytes,
+  String fileName,
+  String contentType,
+) async {
+  final response = await client.putMultipart(
+    'users/me/picture',
+    bytes: bytes,
+    fileName: fileName,
+    contentType: contentType,
+  );
+  throwIfError(response);
+}
 
 /// Origin-relative URL for `GET users/{userId}/picture` (self-service
 /// `users/me/picture` when [userId] is `'me'`).

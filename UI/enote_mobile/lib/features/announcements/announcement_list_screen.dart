@@ -19,7 +19,6 @@ class AnnouncementListScreen extends StatefulWidget {
 class _AnnouncementListScreenState extends State<AnnouncementListScreen>
     with AutomaticKeepAliveClientMixin {
   late final PagedFetchController<AnnouncementDto> _controller;
-  Object? _error;
 
   @override
   bool get wantKeepAlive => true;
@@ -30,9 +29,6 @@ class _AnnouncementListScreenState extends State<AnnouncementListScreen>
     _controller = PagedFetchController<AnnouncementDto>(
       fetcher: _fetch,
       pageSize: 20,
-      onError: (e) {
-        if (mounted) setState(() => _error = e);
-      },
     );
   }
 
@@ -41,11 +37,9 @@ class _AnnouncementListScreenState extends State<AnnouncementListScreen>
     int pageSize,
     String search,
   ) async {
-    final result = await context.read<AnnouncementProvider>().getPage(
+    return context.read<AnnouncementProvider>().getPage(
       params: pagedQuery(page, pageSize, search, searchField: 'title'),
     );
-    if (mounted) setState(() => _error = null);
-    return result;
   }
 
   @override
@@ -59,11 +53,6 @@ class _AnnouncementListScreenState extends State<AnnouncementListScreen>
     super.build(context);
     return PagedListView<AnnouncementDto>(
       controller: _controller,
-      error: _error,
-      onRetry: () {
-        setState(() => _error = null);
-        _controller.refresh();
-      },
       itemBuilder: (context, announcement) =>
           _AnnouncementRow(announcement: announcement),
     );

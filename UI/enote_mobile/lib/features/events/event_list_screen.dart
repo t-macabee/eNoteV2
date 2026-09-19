@@ -24,7 +24,6 @@ class _EventListScreenState extends State<EventListScreen>
   late final PagedFetchController<EventDto> _controller;
   DateTime? _from;
   DateTime? _to;
-  Object? _error;
 
   @override
   bool get wantKeepAlive => true;
@@ -35,9 +34,6 @@ class _EventListScreenState extends State<EventListScreen>
     _controller = PagedFetchController<EventDto>(
       fetcher: _fetch,
       pageSize: 20,
-      onError: (e) {
-        if (mounted) setState(() => _error = e);
-      },
     );
   }
 
@@ -46,7 +42,7 @@ class _EventListScreenState extends State<EventListScreen>
     int pageSize,
     String search,
   ) async {
-    final result = await context.read<EventProvider>().getPage(
+    return context.read<EventProvider>().getPage(
       params: pagedQuery(
         page,
         pageSize,
@@ -61,8 +57,6 @@ class _EventListScreenState extends State<EventListScreen>
         },
       ),
     );
-    if (mounted) setState(() => _error = null);
-    return result;
   }
 
   @override
@@ -108,11 +102,6 @@ class _EventListScreenState extends State<EventListScreen>
           child: PagedListView<EventDto>(
             controller: _controller,
             showSearch: false,
-            error: _error,
-            onRetry: () {
-              setState(() => _error = null);
-              _controller.refresh();
-            },
             itemBuilder: (context, event) => _EventRow(event: event),
           ),
         ),
