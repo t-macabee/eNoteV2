@@ -46,6 +46,42 @@ void main() {
     });
   });
 
+  group('email', () {
+    test('accepts a plain valid address', () {
+      expect(Validators.email('student@example.com'), isNull);
+    });
+
+    test('accepts subdomains and plus addressing', () {
+      expect(Validators.email('a.b+c@example.co.uk'), isNull);
+    });
+
+    test('rejects an address without a domain dot', () {
+      expect(
+        Validators.email('student@example'),
+        equals('Unesite važeću email adresu.'),
+      );
+    });
+
+    test('rejects an empty top-level domain', () {
+      expect(
+        Validators.email('a@b.'),
+        equals('Unesite važeću email adresu.'),
+      );
+    });
+
+    test('rejects whitespace inside the address', () {
+      expect(
+        Validators.email('a b@c.d'),
+        equals('Unesite važeću email adresu.'),
+      );
+    });
+
+    test('rejects empty input as required', () {
+      expect(Validators.email(''), equals('Email adresa je obavezna.'));
+      expect(Validators.email(null), equals('Email adresa je obavezna.'));
+    });
+  });
+
   group('nonNegativeDecimal', () {
     test('empty value says Vrijednost je obavezna.', () {
       expect(

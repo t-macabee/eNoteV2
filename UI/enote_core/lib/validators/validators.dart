@@ -7,13 +7,18 @@ class Validators {
         return null;
       };
 
+  static final RegExp _emailRegex = RegExp(
+    r"^[A-Za-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[A-Za-z0-9!#$%&'*+/=?^_`{|}~-]+)*@"
+    r"[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?"
+    r"(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?)*"
+    r"\.[A-Za-z](?:[A-Za-z0-9-]*[A-Za-z0-9])?$",
+  );
+
   static String? email(String? value) {
     if (value == null || value.trim().isEmpty) {
       return 'Email adresa je obavezna.';
     }
-    final trimmed = value.trim();
-    final atIndex = trimmed.indexOf('@');
-    if (atIndex <= 0 || !trimmed.substring(atIndex + 1).contains('.')) {
+    if (!_emailRegex.hasMatch(value.trim())) {
       return 'Unesite važeću email adresu.';
     }
     return null;
