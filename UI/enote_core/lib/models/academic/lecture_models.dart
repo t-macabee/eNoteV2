@@ -53,7 +53,7 @@ class LectureDto {
     'lectureType': lectureType.toJson(),
     'lectureStatus': lectureStatus.toJson(),
     'isCancelled': isCancelled,
-    'lectureTime': lectureTime.toIso8601String(),
+    'lectureTime': toUtcIso(lectureTime),
     'duration': duration,
     if (capacity != null) 'capacity': capacity,
     'attendeeCount': attendeeCount,
@@ -85,7 +85,7 @@ class LectureCreateRequest {
     'name': name,
     'location': location,
     'lectureType': lectureType.toJson(),
-    'lectureTime': lectureTime.toIso8601String(),
+    'lectureTime': toUtcIso(lectureTime),
     'duration': duration,
     if (capacity != null) 'capacity': capacity,
     'courseId': courseId,
@@ -110,7 +110,7 @@ class LectureUpdateRequest {
   Map<String, dynamic> toJson() => {
     'name': name,
     'location': location,
-    'lectureTime': lectureTime.toIso8601String(),
+    'lectureTime': toUtcIso(lectureTime),
     'duration': duration,
     if (capacity != null) 'capacity': capacity,
   };

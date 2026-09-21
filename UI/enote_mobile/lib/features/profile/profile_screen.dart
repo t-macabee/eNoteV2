@@ -173,18 +173,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
           label: 'Upisan od',
           value: _dateOrDash(p.enrollmentDate),
         ),
-        LabeledValue(label: 'Adresa', value: _addressOrDash(p.address)),
       ],
     );
   }
 
   String _dateOrDash(DateTime? value) =>
       value == null ? '—' : formatDate(value);
-
-  String _addressOrDash(UserAddressDto? address) {
-    if (address == null) return '—';
-    return '${address.street} ${address.number}, ${address.city}';
-  }
 
   static String _initials(String? firstName, String? lastName) {
     final parts = [

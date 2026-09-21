@@ -29,7 +29,7 @@ class AssignmentDto {
     'lectureId': lectureId,
     'title': title,
     'description': description,
-    'dueAt': dueAt.toIso8601String(),
+    'dueAt': toUtcIso(dueAt),
   };
 }
 
@@ -47,7 +47,7 @@ class AssignmentRequest {
   Map<String, dynamic> toJson() => {
     'title': title,
     'description': description,
-    'dueAt': dueAt.toIso8601String(),
+    'dueAt': toUtcIso(dueAt),
   };
 }
 

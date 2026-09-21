@@ -154,6 +154,8 @@ class EventDto {
   final int? courseId;
   final String? courseName;
   final int? instructorId;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
 
   EventDto({
     required this.id,
@@ -167,6 +169,8 @@ class EventDto {
     this.courseId,
     this.courseName,
     this.instructorId,
+    this.createdAt,
+    this.updatedAt,
   });
 
   bool get isPlatformWide => courseId == null && instructorId == null;
@@ -185,6 +189,8 @@ class EventDto {
       courseId: json['courseId'] as int?,
       courseName: json['courseName'] as String?,
       instructorId: json['instructorId'] as int?,
+      createdAt: parseDate(json['createdAt']),
+      updatedAt: parseDate(json['updatedAt']),
     );
   }
 
@@ -192,14 +198,16 @@ class EventDto {
     'id': id,
     'title': title,
     'description': description,
-    'startsAt': startsAt.toIso8601String(),
-    if (endsAt != null) 'endsAt': endsAt!.toIso8601String(),
+    'startsAt': toUtcIso(startsAt),
+    if (endsAt != null) 'endsAt': toUtcIso(endsAt!),
     if (addressId != null) 'addressId': addressId,
     if (addressStreet != null) 'addressStreet': addressStreet,
     if (addressCity != null) 'addressCity': addressCity,
     if (courseId != null) 'courseId': courseId,
     if (courseName != null) 'courseName': courseName,
     if (instructorId != null) 'instructorId': instructorId,
+    if (createdAt != null) 'createdAt': toUtcIso(createdAt!),
+    if (updatedAt != null) 'updatedAt': toUtcIso(updatedAt!),
   };
 }
 
@@ -225,8 +233,8 @@ class EventRequest {
   Map<String, dynamic> toJson() => {
     'title': title,
     'description': description,
-    'startsAt': startsAt.toIso8601String(),
-    if (endsAt != null) 'endsAt': endsAt!.toIso8601String(),
+    'startsAt': toUtcIso(startsAt),
+    if (endsAt != null) 'endsAt': toUtcIso(endsAt!),
     if (addressId != null) 'addressId': addressId,
     if (courseId != null) 'courseId': courseId,
     if (instructorId != null) 'instructorId': instructorId,

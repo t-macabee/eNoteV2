@@ -48,4 +48,43 @@ void main() {
       expect(orDash('Sarajevo'), 'Sarajevo');
     });
   });
+
+  group('toUtcIso and parseDate', () {
+    test('toUtcIso emits ISO-8601 string in UTC', () {
+      final local = DateTime(2026, 9, 21, 14, 30);
+      final wire = toUtcIso(local);
+      expect(wire, endsWith('Z'));
+      expect(DateTime.parse(wire).isUtc, isTrue);
+    });
+
+    test('parseDate normalizes UTC ISO string to local DateTime', () {
+      const utcIso = '2026-09-21T12:00:00Z';
+      final parsed = parseDate(utcIso);
+      expect(parsed, isNotNull);
+      expect(parsed!.isUtc, isFalse);
+      expect(parsed, DateTime.parse(utcIso).toLocal());
+    });
+
+    test('parseDate normalizes UTC DateTime object to local DateTime', () {
+      final utcDate = DateTime.utc(2026, 9, 21, 12, 0);
+      final parsed = parseDate(utcDate);
+      expect(parsed, isNotNull);
+      expect(parsed!.isUtc, isFalse);
+      expect(parsed, utcDate.toLocal());
+    });
+
+    test('parseDate round-trips instant with toUtcIso', () {
+      final originalLocal = DateTime(2026, 9, 21, 19, 30);
+      final wire = toUtcIso(originalLocal);
+      final restored = parseDate(wire);
+      expect(restored, isNotNull);
+      expect(restored!.isAtSameMomentAs(originalLocal), isTrue);
+    });
+
+    test('parseDate returns null on invalid or null input', () {
+      expect(parseDate(null), isNull);
+      expect(parseDate('not-a-date'), isNull);
+      expect(parseDate(12345), isNull);
+    });
+  });
 }

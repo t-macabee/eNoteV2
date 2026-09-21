@@ -58,8 +58,8 @@ class CourseDto {
     'name': name,
     if (description != null) 'description': description,
     'isPublished': isPublished,
-    if (startDate != null) 'startDate': startDate!.toIso8601String(),
-    if (endDate != null) 'endDate': endDate!.toIso8601String(),
+    if (startDate != null) 'startDate': toUtcIso(startDate!),
+    if (endDate != null) 'endDate': toUtcIso(endDate!),
     'price': price,
     'enrolledCount': enrolledCount,
     if (instructorName != null) 'instructorName': instructorName,
@@ -91,8 +91,8 @@ class CourseRequest {
     'name': name,
     if (description != null) 'description': description,
     'price': price,
-    if (startDate != null) 'startDate': startDate!.toIso8601String(),
-    if (endDate != null) 'endDate': endDate!.toIso8601String(),
+    if (startDate != null) 'startDate': toUtcIso(startDate!),
+    if (endDate != null) 'endDate': toUtcIso(endDate!),
     'isPublished': isPublished,
   };
 }

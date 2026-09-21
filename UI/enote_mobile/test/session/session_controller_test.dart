@@ -143,7 +143,7 @@ void main() {
     final controller = _controller(http);
     await controller.bootstrap();
 
-    expect(controller.membershipPaidUntil, future);
+    expect(controller.membershipPaidUntil, future.toLocal());
     expect(controller.isMembershipActive, isTrue);
   });
 

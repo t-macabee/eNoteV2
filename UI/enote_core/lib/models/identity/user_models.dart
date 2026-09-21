@@ -33,12 +33,12 @@ class UserProfile {
   final String? username;
   final String? email;
   final DateTime? dateOfBirth;
-  final UserAddressDto? address;
   final bool? isActive;
   final DateTime? enrollmentDate;
   final DateTime? membershipPaidUntil;
   final String? storeName;
   final String? businessHours;
+  final bool? isManager;
 
   UserProfile({
     this.id,
@@ -47,12 +47,12 @@ class UserProfile {
     this.username,
     this.email,
     this.dateOfBirth,
-    this.address,
     this.isActive,
     this.enrollmentDate,
     this.membershipPaidUntil,
     this.storeName,
     this.businessHours,
+    this.isManager,
   });
 
   factory UserProfile.fromJson(Map<String, dynamic> json) {
@@ -64,43 +64,14 @@ class UserProfile {
       username: data['username'] as String?,
       email: data['email'] as String?,
       dateOfBirth: parseDate(data['dateOfBirth']),
-      address: data['address'] != null
-          ? UserAddressDto.fromJson(
-              Map<String, dynamic>.from(data['address']))
-          : null,
       isActive: data['isActive'] as bool?,
       enrollmentDate: parseDate(data['enrollmentDate']),
       membershipPaidUntil: parseDate(data['membershipPaidUntil']),
       storeName: data['storeName'] as String?,
       businessHours: data['businessHours'] as String?,
+      isManager: data['isManager'] as bool?,
     );
   }
-}
-
-class UserAddressDto {
-  final String city;
-  final String street;
-  final String number;
-
-  UserAddressDto({
-    required this.city,
-    required this.street,
-    required this.number,
-  });
-
-  factory UserAddressDto.fromJson(Map<String, dynamic> json) {
-    return UserAddressDto(
-      city: json['city'] as String? ?? '',
-      street: json['street'] as String? ?? '',
-      number: json['number'] as String? ?? '',
-    );
-  }
-
-  Map<String, dynamic> toJson() => {
-    'city': city,
-    'street': street,
-    'number': number,
-  };
 }
 
 class UserSummaryDto {

@@ -27,6 +27,7 @@ class _UserProvisionFormScreenState extends State<UserProvisionFormScreen> {
 
   UserRole? _role;
   int? _musicStoreId;
+  bool _isManager = false;
 
   @override
   void dispose() {
@@ -46,6 +47,7 @@ class _UserProvisionFormScreenState extends State<UserProvisionFormScreen> {
       firstName: firstName.isEmpty ? null : firstName,
       lastName: lastName.isEmpty ? null : lastName,
       musicStoreId: _role == UserRole.storeEmployee ? _musicStoreId : null,
+      isManager: _role == UserRole.storeEmployee ? _isManager : null,
     );
 
     await service.provision(request);
@@ -68,7 +70,13 @@ class _UserProvisionFormScreenState extends State<UserProvisionFormScreen> {
                     child: Text(role.label),
                   ))
               .toList(),
-          onChanged: (role) => setState(() => _role = role),
+          onChanged: (role) => setState(() {
+            _role = role;
+            if (role != UserRole.storeEmployee) {
+              _musicStoreId = null;
+              _isManager = false;
+            }
+          }),
           validator: (value) =>
               value == null ? 'Uloga je obavezna.' : null,
         ),
@@ -90,6 +98,13 @@ class _UserProvisionFormScreenState extends State<UserProvisionFormScreen> {
                 ? 'Prodavnica je obavezna za StoreEmployee.'
                 : null,
           ),
+          CheckboxListTile(
+            title: const Text('Menadžer'),
+            value: _isManager,
+            onChanged: (value) => setState(() => _isManager = value ?? false),
+            controlAffinity: ListTileControlAffinity.leading,
+            contentPadding: EdgeInsets.zero,
+          ),
         ],
       ],
       onSave: _save,
@@ -98,6 +113,7 @@ class _UserProvisionFormScreenState extends State<UserProvisionFormScreen> {
         setState(() {
           _role = null;
           _musicStoreId = null;
+          _isManager = false;
         });
       },
       showCloseButton: false,

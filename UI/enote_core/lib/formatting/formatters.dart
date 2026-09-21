@@ -83,12 +83,18 @@ String formatPaymentDetail(int amountCents, DateTime? paidAt, {String currency =
   return parts.join(' · ');
 }
 
+/// Converts a local (client-entered) DateTime to the absolute-instant wire
+/// format the server expects. Pair with parseDate()'s .toLocal() on the way
+/// back in — the round trip must preserve the same instant, not the same
+/// local clock reading.
+String toUtcIso(DateTime date) => date.toUtc().toIso8601String();
+
 DateTime? parseDate(dynamic value) {
   if (value == null) return null;
-  if (value is DateTime) return value;
+  if (value is DateTime) return value.toLocal();
   if (value is String) {
     try {
-      return DateTime.parse(value);
+      return DateTime.parse(value).toLocal();
     } catch (_) {
       return null;
     }

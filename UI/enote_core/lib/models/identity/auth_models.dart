@@ -139,6 +139,7 @@ class UserProvisionRequest {
   final String? firstName;
   final String? lastName;
   final int? musicStoreId;
+  final bool? isManager;
 
   UserProvisionRequest({
     required this.username,
@@ -148,6 +149,7 @@ class UserProvisionRequest {
     this.firstName,
     this.lastName,
     this.musicStoreId,
+    this.isManager,
   });
 
   Map<String, dynamic> toJson() => {
@@ -158,6 +160,7 @@ class UserProvisionRequest {
     if (firstName != null) 'firstName': firstName,
     if (lastName != null) 'lastName': lastName,
     if (musicStoreId != null) 'musicStoreId': musicStoreId,
+    if (isManager != null) 'isManager': isManager,
   };
 }
 

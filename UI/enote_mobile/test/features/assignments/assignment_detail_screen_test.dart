@@ -12,6 +12,13 @@ import 'package:enote_mobile/theme/app_theme.dart';
 
 import '../../helpers.dart';
 
+/// Relative to the real wall clock instead of a hardcoded date, so these
+/// fixtures don't drift into the wrong past/future state as calendar time
+/// passes (`DateTime.now().isAfter(dueAt)` in assignment_detail_screen.dart
+/// uses the real clock, not a mocked one).
+final _futureDueAt = DateTime.now().add(const Duration(days: 365)).toIso8601String();
+final _pastDueAt = DateTime.now().subtract(const Duration(days: 1)).toIso8601String();
+
 Map<String, dynamic> _assignmentJson({required String dueAt}) => {
   'id': 5,
   'lectureId': 11,
@@ -129,7 +136,7 @@ void main() {
   testWidgets('state A renders the picker with the submit disabled', (
     tester,
   ) async {
-    final harness = _Harness(dueAt: '2026-09-20T23:59:00');
+    final harness = _Harness(dueAt: _futureDueAt);
     await tester.pumpWidget(harness.app());
     await tester.pumpAndSettle();
 
@@ -148,7 +155,7 @@ void main() {
   testWidgets('state A-prime shows the past-due banner and no picker', (
     tester,
   ) async {
-    final harness = _Harness(dueAt: '2026-09-01T00:00:00');
+    final harness = _Harness(dueAt: _pastDueAt);
     await tester.pumpWidget(harness.app());
     await tester.pumpAndSettle();
 
@@ -168,7 +175,7 @@ void main() {
     tester,
   ) async {
     final harness = _Harness(
-      dueAt: '2026-09-20T23:59:00',
+      dueAt: _futureDueAt,
       submission: _submissionJson(),
     );
     await tester.pumpWidget(harness.app());
@@ -191,7 +198,7 @@ void main() {
     tester,
   ) async {
     final harness = _Harness(
-      dueAt: '2026-09-20T23:59:00',
+      dueAt: _futureDueAt,
       submission: _submissionJson(grade: 87),
     );
     await tester.pumpWidget(harness.app());
@@ -206,7 +213,7 @@ void main() {
     tester,
   ) async {
     final harness = _Harness(
-      dueAt: '2026-09-20T23:59:00',
+      dueAt: _futureDueAt,
       submission: _submissionJson(grade: 87),
     );
     await tester.pumpWidget(harness.appWithoutCourse());
@@ -217,7 +224,7 @@ void main() {
   });
 
   testWidgets('an oversize file is rejected below the picker', (tester) async {
-    final harness = _Harness(dueAt: '2026-09-20T23:59:00');
+    final harness = _Harness(dueAt: _futureDueAt);
     await tester.pumpWidget(
       harness.app(pickFiles: () => _pdfOf(6 * 1024 * 1024, 'velika.pdf')),
     );
@@ -238,7 +245,7 @@ void main() {
   });
 
   testWidgets('a wrong-type file is rejected below the picker', (tester) async {
-    final harness = _Harness(dueAt: '2026-09-20T23:59:00');
+    final harness = _Harness(dueAt: _futureDueAt);
     await tester.pumpWidget(
       harness.app(pickFiles: () => _pdfOf(1024, 'vjezba1.docx')),
     );
@@ -260,7 +267,7 @@ void main() {
   testWidgets('a valid file enables submit and confirms before sending', (
     tester,
   ) async {
-    final harness = _Harness(dueAt: '2026-09-20T23:59:00');
+    final harness = _Harness(dueAt: _futureDueAt);
     await tester.pumpWidget(
       harness.app(pickFiles: () => _pdfOf(1024)),
     );
@@ -300,7 +307,7 @@ void main() {
   testWidgets('the lecture row navigates without rendering the id', (
     tester,
   ) async {
-    final harness = _Harness(dueAt: '2026-09-20T23:59:00');
+    final harness = _Harness(dueAt: _futureDueAt);
     await tester.pumpWidget(harness.app());
     await tester.pumpAndSettle();
 
