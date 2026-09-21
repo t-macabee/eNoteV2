@@ -11,16 +11,16 @@ public sealed class StubCurrentActor(
     public int UserId => userId ?? student?.AppUserId ?? 1;
     public bool IsAuthenticated => isAuthenticated;
 
-    public Task<Student> GetCurrentStudentAsync() =>
+    public Task<Student> GetCurrentStudentAsync(CancellationToken cancellationToken = default) =>
         Task.FromResult(student ?? throw new NotSupportedException());
 
-    public Task<int> GetCurrentStudentIdAsync() =>
+    public Task<int> GetCurrentStudentIdAsync(CancellationToken cancellationToken = default) =>
         Task.FromResult((student ?? throw new NotSupportedException()).Id);
 
     public Task<Instructor> GetCurrentInstructorAsync() =>
         Task.FromResult(instructor ?? throw new NotSupportedException());
 
-    public Task<MusicStoreEmployee> GetCurrentEmployeeAsync() =>
+    public Task<MusicStoreEmployee> GetCurrentEmployeeAsync(CancellationToken cancellationToken = default) =>
         Task.FromResult(employee ?? throw new NotSupportedException());
 
     public Task<int> GetCurrentStoreIdAsync(CancellationToken cancellationToken = default) =>

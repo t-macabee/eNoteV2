@@ -15,12 +15,12 @@ public sealed class StubUserProfileLookup : IUserProfileLookup
         _employee = employee;
     }
 
-    public Task<Student> GetStudentAsync(int userId) =>
+    public Task<Student> GetStudentAsync(int userId, CancellationToken cancellationToken = default) =>
         Task.FromResult(_student ?? throw new NotFoundException("Student profile not found."));
 
-    public Task<Instructor> GetInstructorAsync(int userId) =>
+    public Task<Instructor> GetInstructorAsync(int userId, CancellationToken cancellationToken = default) =>
         Task.FromResult(_instructor ?? throw new NotFoundException("Instructor profile not found."));
 
-    public Task<MusicStoreEmployee> GetActiveEmployeeAsync(int userId) =>
+    public Task<MusicStoreEmployee> GetActiveEmployeeAsync(int userId, CancellationToken cancellationToken = default) =>
         Task.FromResult(_employee ?? throw new NotFoundException("Employee profile not found."));
 }

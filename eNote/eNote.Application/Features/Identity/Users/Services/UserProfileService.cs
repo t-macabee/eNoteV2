@@ -20,7 +20,7 @@ public sealed class UserProfileService(
             return null;
         }
 
-        var roles = await identity.GetRolesAsync(userId);
+        var roles = await identity.GetRolesAsync(userId, cancellationToken);
 
         if (roles.Count != 1)
         {
@@ -31,8 +31,8 @@ public sealed class UserProfileService(
 
         IUserProfile profile = role switch
         {
-            AppRoles.Student => await BuildStudentProfile(userId, user),
-            AppRoles.Instructor => await BuildInstructorProfile(userId, user),
+            AppRoles.Student => await BuildStudentProfile(userId, user, cancellationToken),
+            AppRoles.Instructor => await BuildInstructorProfile(userId, user, cancellationToken),
             AppRoles.StoreEmployee => await BuildMusicStoreProfile(userId, user, includeInactive, cancellationToken),
             AppRoles.Administrator => new AdminProfile(user.FirstName, user.LastName, user.DateOfBirth),
             _ => throw new BusinessException(Messages.UnknownRole)
@@ -41,16 +41,16 @@ public sealed class UserProfileService(
         return new UserProfileResponse(role, user.Username, user.Email, profile, user.HasPicture);
     }
 
-    private async Task<StudentProfile> BuildStudentProfile(int userId, UserIdentityDto user)
+    private async Task<StudentProfile> BuildStudentProfile(int userId, UserIdentityDto user, CancellationToken cancellationToken = default)
     {
-        var student = await lookup.GetStudentAsync(userId);
+        var student = await lookup.GetStudentAsync(userId, cancellationToken);
 
         return new StudentProfile(student.Id, student.EnrollmentDate, user.FirstName, user.LastName, user.DateOfBirth, student.MembershipPaidUntil);
     }
 
-    private async Task<InstructorProfile> BuildInstructorProfile(int userId, UserIdentityDto user)
+    private async Task<InstructorProfile> BuildInstructorProfile(int userId, UserIdentityDto user, CancellationToken cancellationToken = default)
     {
-        var instructor = await lookup.GetInstructorAsync(userId);
+        var instructor = await lookup.GetInstructorAsync(userId, cancellationToken);
 
         return new InstructorProfile(instructor.Id, user.FirstName, user.LastName);
     }
@@ -63,7 +63,7 @@ public sealed class UserProfileService(
                 .AsNoTracking()
                 .FirstOrDefaultAsync(x => x.AppUserId == userId, cancellationToken)
                 ?? throw new BusinessException(Messages.EmployeeProfileNotFound)
-            : await lookup.GetActiveEmployeeAsync(userId);
+            : await lookup.GetActiveEmployeeAsync(userId, cancellationToken);
 
         var shop = await context.Set<MusicStore>()
             .AsNoTracking()

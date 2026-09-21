@@ -627,7 +627,7 @@ public sealed class CourseServiceTests
                 users.Where(u => userIds.Contains(u.Key)).ToDictionary(u => u.Key, u => u.Value));
         }
 
-        public Task<IReadOnlyList<string>> GetRolesAsync(int userId) =>
+        public Task<IReadOnlyList<string>> GetRolesAsync(int userId, CancellationToken cancellationToken = default) =>
             Task.FromResult<IReadOnlyList<string>>([]);
 
         public Task<IReadOnlyList<int>> FindUserIdsAsync(string? name, bool? isActive, CancellationToken cancellationToken = default) =>

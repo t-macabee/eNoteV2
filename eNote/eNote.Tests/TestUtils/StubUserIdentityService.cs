@@ -26,7 +26,7 @@ public sealed class StubUserIdentityService : IUserIdentityService
         Task.FromResult<IReadOnlyDictionary<int, UserIdentityDto>>(
             userIds.Where(_users.ContainsKey).ToDictionary(id => id, id => _users[id]));
 
-    public Task<IReadOnlyList<string>> GetRolesAsync(int userId) =>
+    public Task<IReadOnlyList<string>> GetRolesAsync(int userId, CancellationToken cancellationToken = default) =>
         Task.FromResult(_roles.GetValueOrDefault(userId) ?? []);
 
     public Task<IReadOnlyList<int>> FindUserIdsAsync(string? name, bool? isActive, CancellationToken cancellationToken = default)

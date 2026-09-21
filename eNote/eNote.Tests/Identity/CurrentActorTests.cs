@@ -22,13 +22,13 @@ public sealed class CurrentActorTests
     {
         public int StudentLookupCount { get; private set; }
 
-        public Task<Student> GetStudentAsync(int userId)
+        public Task<Student> GetStudentAsync(int userId, CancellationToken cancellationToken = default)
         {
             StudentLookupCount++;
             return Task.FromResult(student);
         }
 
-        public Task<Instructor> GetInstructorAsync(int userId) => throw new NotSupportedException();
-        public Task<MusicStoreEmployee> GetActiveEmployeeAsync(int userId) => throw new NotSupportedException();
+        public Task<Instructor> GetInstructorAsync(int userId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+        public Task<MusicStoreEmployee> GetActiveEmployeeAsync(int userId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
     }
 }

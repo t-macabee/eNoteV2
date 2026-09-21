@@ -35,7 +35,7 @@ public sealed class FileAccessService(
             return false;
         }
 
-        var roles = await identity.GetRolesAsync(userId);
+        var roles = await identity.GetRolesAsync(userId, cancellationToken);
 
         if (roles.Contains(AppRoles.Administrator))
         {
@@ -44,7 +44,7 @@ public sealed class FileAccessService(
 
         if (roles.Contains(AppRoles.Student))
         {
-            var student = await lookup.GetStudentAsync(userId);
+            var student = await lookup.GetStudentAsync(userId, cancellationToken);
             return authData.StudentId == student.Id;
         }
 

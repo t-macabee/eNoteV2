@@ -33,8 +33,9 @@ public sealed class UserIdentityService(UserManager<AppUser> userManager) : IUse
         return users.ToDictionary(u => u.Id, Map);
     }
 
-    public async Task<IReadOnlyList<string>> GetRolesAsync(int userId)
+    public async Task<IReadOnlyList<string>> GetRolesAsync(int userId, CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
         var user = await userManager.FindByIdAsync(userId.ToString());
 
         return user is null ? [] : [.. await userManager.GetRolesAsync(user)];

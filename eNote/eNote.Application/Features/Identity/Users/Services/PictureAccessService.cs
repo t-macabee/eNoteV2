@@ -27,7 +27,7 @@ public sealed class PictureAccessService(
             return true;
         }
 
-        var roles = await identity.GetRolesAsync(currentUser.UserId);
+        var roles = await identity.GetRolesAsync(currentUser.UserId, cancellationToken);
 
         if (roles.Contains(AppRoles.Administrator))
         {
