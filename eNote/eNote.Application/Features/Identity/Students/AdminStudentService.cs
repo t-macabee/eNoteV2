@@ -52,15 +52,20 @@ public sealed class AdminStudentService(
         // 2. Return that student's enrollments for this instructor, filtered to EnrollmentStatus.Active.
         var enrollments = await context.Set<Enrollment>()
             .AsNoTracking()
-            .Include(e => e.Course)
-                .ThenInclude(c => c.Instructor)
             .Where(e => e.StudentId == studentId
                      && e.Course.InstructorId == instructorId
                      && e.EnrollmentStatus == EnrollmentStatus.Active)
+            .Select(e => new
+            {
+                e.CourseId,
+                CourseName = e.Course.Name,
+                e.Course.InstructorId,
+                InstructorAppUserId = e.Course.Instructor.AppUserId
+            })
             .ToListAsync(cancellationToken);
 
         var appUserIds = enrollments
-            .Select(e => e.Course.Instructor.AppUserId)
+            .Select(e => e.InstructorAppUserId)
             .Distinct();
 
         var users = await identityService.GetUsersBulkAsync(appUserIds, cancellationToken);
@@ -69,9 +74,9 @@ public sealed class AdminStudentService(
             .Select(e => new StudentEnrollmentDto
             {
                 CourseId = e.CourseId,
-                CourseName = e.Course.Name,
-                InstructorId = e.Course.InstructorId,
-                InstructorName = UserNameHelper.FormatName(users.GetValueOrDefault(e.Course.Instructor.AppUserId))
+                CourseName = e.CourseName,
+                InstructorId = e.InstructorId,
+                InstructorName = UserNameHelper.FormatName(users.GetValueOrDefault(e.InstructorAppUserId))
             })
             .OrderBy(e => e.CourseName)
             .ToList();

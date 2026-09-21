@@ -325,6 +325,66 @@ public sealed class LectureServiceTests
             }));
     }
 
+    [Fact]
+    public async Task GetByIdForInstructorAsync_ReturnsAttendeeCount()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        harness.Context.Set<Attendance>().Add(new Attendance(harness.Student.Id, harness.Lecture.Id, AttendanceStatus.Present));
+        await harness.Context.SaveChangesAsync();
+        harness.Context.ChangeTracker.Clear();
+        var service = CreateService(harness.Context, harness.Instructor);
+
+        var dto = await service.GetByIdForInstructorAsync(harness.Lecture.Id);
+
+        Assert.Equal(1, dto.AttendeeCount);
+    }
+
+    [Fact]
+    public async Task GetByIdForStudentAsync_ReturnsAttendeeCount_AndMyAttendanceStatus()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        harness.Context.Set<Attendance>().Add(new Attendance(harness.Student.Id, harness.Lecture.Id, AttendanceStatus.Present));
+        await harness.Context.SaveChangesAsync();
+        harness.Context.ChangeTracker.Clear();
+        var service = CreateService(harness.Context, harness.Instructor, new StubCurrentActor(student: harness.Student));
+
+        var dto = await service.GetByIdForStudentAsync(harness.Lecture.Id);
+
+        Assert.Equal(1, dto.AttendeeCount);
+        Assert.Equal(AttendanceStatus.Present, dto.MyAttendanceStatus);
+    }
+
+    [Fact]
+    public async Task GetPagedForInstructorAsync_ReturnsAttendeeCount()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        harness.Context.Set<Attendance>().Add(new Attendance(harness.Student.Id, harness.Lecture.Id, AttendanceStatus.Present));
+        await harness.Context.SaveChangesAsync();
+        harness.Context.ChangeTracker.Clear();
+        var service = CreateService(harness.Context, harness.Instructor);
+
+        var result = await service.GetPagedForInstructorAsync(new LectureSearchObject());
+
+        var dto = Assert.Single(result.Items);
+        Assert.Equal(1, dto.AttendeeCount);
+    }
+
+    [Fact]
+    public async Task GetPagedForStudentAsync_ReturnsAttendeeCount_AndMyAttendanceStatus()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        harness.Context.Set<Attendance>().Add(new Attendance(harness.Student.Id, harness.Lecture.Id, AttendanceStatus.Present));
+        await harness.Context.SaveChangesAsync();
+        harness.Context.ChangeTracker.Clear();
+        var service = CreateService(harness.Context, harness.Instructor, new StubCurrentActor(student: harness.Student));
+
+        var result = await service.GetPagedForStudentAsync(new LectureSearchObject());
+
+        var dto = Assert.Single(result.Items);
+        Assert.Equal(1, dto.AttendeeCount);
+        Assert.Equal(AttendanceStatus.Present, dto.MyAttendanceStatus);
+    }
+
     private static LectureService CreateService(ENoteContext context, Instructor instructor, StubCurrentActor? actor = null, ILectureNotificationDispatcher? notificationDispatcher = null)
     {
         var currentUser = actor ?? new StubCurrentActor(instructor: instructor);

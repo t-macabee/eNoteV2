@@ -45,4 +45,23 @@ public sealed class RentalBillingTests
         Assert.Equal(1m, charges.DailyFee);
         Assert.Equal(3m, charges.TotalFee);
     }
+
+    [Fact]
+    public void RentalChargeCalculator_Calculate_DirectInvocationMatchesCalculations()
+    {
+        var pickedUp = Now.AddDays(-45);
+        var activeCharges = RentalChargeCalculator.Calculate(pickedUp, null, InstrumentRentalStatus.Active, 50m, Now);
+        Assert.Equal(2, activeCharges.MonthsCharged);
+        Assert.Equal(100m, activeCharges.TotalFee);
+        Assert.False(activeCharges.IsProrated);
+
+        var earlyCharges = RentalChargeCalculator.Calculate(Now.AddDays(-10), Now.AddDays(-5), InstrumentRentalStatus.ReturnedEarly, 30m, Now);
+        Assert.True(earlyCharges.IsProrated);
+        Assert.Equal(5, earlyCharges.DaysCharged);
+        Assert.Equal(1m, earlyCharges.DailyFee);
+        Assert.Equal(5m, earlyCharges.TotalFee);
+
+        var ineligibleCharges = RentalChargeCalculator.Calculate(null, null, InstrumentRentalStatus.Pending, 30m, Now);
+        Assert.Null(ineligibleCharges.TotalFee);
+    }
 }

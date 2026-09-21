@@ -87,10 +87,11 @@ public sealed class TuitionPaymentService(
 
     public async Task<CoursePaymentDto> GetLatestAsync(int enrollmentId, CancellationToken cancellationToken = default)
     {
-        var enrollment = await LoadForStudentAsync(enrollmentId, cancellationToken);
+        await EnsureStudentOwnsEnrollmentAsync(enrollmentId, cancellationToken);
 
         var payment = await context.Set<CoursePayment>()
-            .Where(p => p.EnrollmentId == enrollment.Id)
+            .AsNoTracking()
+            .Where(p => p.EnrollmentId == enrollmentId)
             .OrderByDescending(p => p.CreatedAt)
             .FirstOrDefaultAsync(cancellationToken)
             ?? throw new NotFoundException(Messages.TuitionPaymentNotFound);
@@ -100,14 +101,29 @@ public sealed class TuitionPaymentService(
 
     public async Task<IReadOnlyList<CoursePaymentDto>> GetHistoryAsync(int enrollmentId, CancellationToken cancellationToken = default)
     {
-        var enrollment = await LoadForStudentAsync(enrollmentId, cancellationToken);
+        await EnsureStudentOwnsEnrollmentAsync(enrollmentId, cancellationToken);
 
         var payments = await context.Set<CoursePayment>()
-            .Where(p => p.EnrollmentId == enrollment.Id)
+            .AsNoTracking()
+            .Where(p => p.EnrollmentId == enrollmentId)
             .OrderByDescending(p => p.CreatedAt)
+            .Take(50)
             .ToListAsync(cancellationToken);
 
         return mapper.Map<List<CoursePaymentDto>>(payments);
+    }
+
+    private async Task EnsureStudentOwnsEnrollmentAsync(int enrollmentId, CancellationToken cancellationToken)
+    {
+        var studentId = await students.GetCurrentStudentIdAsync();
+        var exists = await context.Set<Enrollment>()
+            .AsNoTracking()
+            .AnyAsync(e => e.Id == enrollmentId && e.StudentId == studentId, cancellationToken);
+
+        if (!exists)
+        {
+            throw new NotFoundException(Messages.EnrollmentNotFound);
+        }
     }
 
     private async Task<Enrollment> LoadForStudentAsync(int enrollmentId, CancellationToken cancellationToken)

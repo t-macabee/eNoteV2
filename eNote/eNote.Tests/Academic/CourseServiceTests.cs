@@ -544,6 +544,50 @@ public sealed class CourseServiceTests
         await Assert.ThrowsAsync<NotFoundException>(() => service.DeleteAsync(harness.Course.Id));
     }
 
+    [Fact]
+    public async Task GetByIdForInstructorAsync_ReturnsEnrolledCount()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        harness.Context.ChangeTracker.Clear();
+        var service = CreateService(harness.Context, harness.Instructor);
+
+        var dto = await service.GetByIdForInstructorAsync(harness.Course.Id);
+
+        Assert.Equal(1, dto.EnrolledCount);
+    }
+
+    [Fact]
+    public async Task GetPagedForInstructorAsync_ReturnsEnrolledCount()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        harness.Context.ChangeTracker.Clear();
+        var service = CreateService(harness.Context, harness.Instructor);
+
+        var result = await service.GetPagedForInstructorAsync(new CourseSearchObject());
+
+        var dto = Assert.Single(result.Items);
+        Assert.Equal(1, dto.EnrolledCount);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_ReturnsEnrolledCount()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        harness.Context.ChangeTracker.Clear();
+        var service = CreateService(harness.Context, harness.Instructor);
+
+        var dto = await service.UpdateAsync(harness.Course.Id, new CourseRequest
+        {
+            Name = "Renamed",
+            Price = 200m,
+            StartDate = Now,
+            EndDate = Now.AddMonths(2),
+            IsPublished = true
+        });
+
+        Assert.Equal(1, dto.EnrolledCount);
+    }
+
     private static async Task CreateActiveUserAsync(UserManager<AppUser> userManager, int id, string username, string firstName, string lastName)
     {
         await userManager.CreateAsync(new AppUser

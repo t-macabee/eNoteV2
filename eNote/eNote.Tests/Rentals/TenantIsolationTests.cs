@@ -206,5 +206,5 @@ public sealed class TenantIsolationTests
     private static RentalQueryService CreateRentalQueryService(ENoteContext context, int storeId) => new(context, TestMapper.Create(), new StubCurrentActor(storeId: storeId), new FixedClock(Now), new StubDisplayNameService());
 
     private static InstrumentService CreateInstrumentService(ENoteContext context, int storeId) =>
-        new(context, TestMapper.Create(), new StubCurrentActor(storeId: storeId, employee: new MusicStoreEmployee(appUserId: 1, musicStoreId: storeId, isManager: false)), new StubFileStorageService());
+        new(context, new StubCurrentActor(storeId: storeId, employee: new MusicStoreEmployee(appUserId: 1, musicStoreId: storeId, isManager: false)), new StubFileStorageService());
 }

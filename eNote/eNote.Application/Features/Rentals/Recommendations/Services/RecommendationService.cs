@@ -37,9 +37,12 @@ public sealed class RecommendationService(IAppDbContext context, IMapper mapper,
             .Where(x => x.UserId == userId)
             .ToDictionaryAsync(x => x.InstrumentId, x => new InstrumentViewSnapshot(x.ViewCount), cancellationToken);
 
+        var popularityCutoff = clock.UtcNow.AddMonths(-6);
+
         Dictionary<int, int> globalRentalCounts = await context.Set<InstrumentRental>()
             .AsNoTracking()
-            .Where(x => (x.RentalStatus == InstrumentRentalStatus.Approved || x.RentalStatus == InstrumentRentalStatus.Active || x.RentalStatus == InstrumentRentalStatus.Completed || x.RentalStatus == InstrumentRentalStatus.ReturnedEarly))
+            .Where(x => x.RequestedAt >= popularityCutoff &&
+                (x.RentalStatus == InstrumentRentalStatus.Approved || x.RentalStatus == InstrumentRentalStatus.Active || x.RentalStatus == InstrumentRentalStatus.Completed || x.RentalStatus == InstrumentRentalStatus.ReturnedEarly))
             .GroupBy(x => x.InstrumentId)
             .Select(g => new { g.Key, Count = g.Count() })
             .ToDictionaryAsync(x => x.Key, x => x.Count, cancellationToken);
@@ -66,6 +69,8 @@ public sealed class RecommendationService(IAppDbContext context, IMapper mapper,
 
         var collaborativeInstrumentIds = await BuildCollaborativeInstrumentIdsAsync(studentId, rentedInstrumentIds, cancellationToken);
 
+        HashSet<int> collaborativeSet = [.. collaborativeInstrumentIds];
+
         var preferredTypeIds = userTypeCounts.Keys.ToList();
 
         HashSet<int> activelyRentedIds = [.. userRentals
@@ -76,7 +81,7 @@ public sealed class RecommendationService(IAppDbContext context, IMapper mapper,
             preferredTypeIds, collaborativeInstrumentIds, count, globalRentalCounts, cancellationToken);
 
         if (activelyRentedIds.Count > 0)
-            candidates = candidates.Where(x => !activelyRentedIds.Contains(x.Id)).ToList();
+            candidates = candidates.Where(x => !activelyRentedIds.Contains(x.Instrument.Id)).ToList();
 
         if (candidates.Count == 0)
         {
@@ -85,30 +90,36 @@ public sealed class RecommendationService(IAppDbContext context, IMapper mapper,
 
         List<ScoredRecommendation> scored = [];
 
-        foreach (Instrument instrument in candidates)
+        foreach (var candidate in candidates)
         {
-            var rentalScore = ComputeRentalScore(instrument, userTypeCounts, collaborativeInstrumentIds);
+            var instrument = candidate.Instrument;
+            var rentalScore = ComputeRentalScore(instrument, userTypeCounts, collaborativeSet);
             var viewScore = ComputeViewScore(instrument, viewMap, maxUserViews, userTypeCounts);
 
             var similarityScore = ComputeSimilarityScore(instrument, preferredTypeId, preferredManufacturer);
             var popularityScore = maxGlobalRentals == 0 ? 0 : (double)globalRentalCounts.GetValueOrDefault(instrument.Id) / maxGlobalRentals;
             var totalScore = rentalScore * RentalWeight + viewScore * ViewWeight + similarityScore * SimilarityWeight + popularityScore * PopularityWeight;
 
-            var reasons = BuildReasons(rentalScore, viewScore, similarityScore, popularityScore, instrument, preferredTypeId, collaborativeInstrumentIds);
+            var reasons = BuildReasons(rentalScore, viewScore, similarityScore, popularityScore, instrument, preferredTypeId, collaborativeSet);
 
-            scored.Add(new ScoredRecommendation(instrument, totalScore, reasons));
+            scored.Add(new ScoredRecommendation(instrument, candidate.IsAvailable, totalScore, reasons));
         }
 
         return [.. scored
             .OrderByDescending(x => x.Score)
-            .ThenByDescending(x => x.Instrument.IsAvailable)
+            .ThenByDescending(x => x.IsAvailable)
             .ThenBy(x => x.Instrument.Id)
             .Take(count)
-            .Select(x => new InstrumentRecommendationDto
+            .Select(x =>
             {
-                Instrument = mapper.Map<InstrumentDto>(x.Instrument),
-                Score = Math.Round(x.Score, 4),
-                Reasons = x.Reasons
+                var dto = mapper.Map<InstrumentDto>(x.Instrument);
+                dto.IsAvailable = x.IsAvailable;
+                return new InstrumentRecommendationDto
+                {
+                    Instrument = dto,
+                    Score = Math.Round(x.Score, 4),
+                    Reasons = x.Reasons
+                };
             })];
     }
 
@@ -148,12 +159,13 @@ public sealed class RecommendationService(IAppDbContext context, IMapper mapper,
         }
     }
 
-    private async Task<List<Instrument>> LoadCandidateInstrumentsAsync(IReadOnlyList<int> preferredTypeIds, HashSet<int> collaborativeInstrumentIds, int count, Dictionary<int, int> globalRentalCounts, CancellationToken cancellationToken)
+    private async Task<List<CandidateInstrument>> LoadCandidateInstrumentsAsync(IReadOnlyList<int> preferredTypeIds, IReadOnlyList<int> collaborativeInstrumentIds, int count, Dictionary<int, int> globalRentalCounts, CancellationToken cancellationToken)
     {
         var poolSize = Math.Max(count * 12, CandidatePoolSize);
 
         var popularIds = globalRentalCounts
             .OrderByDescending(x => x.Value)
+            .ThenBy(x => x.Key)
             .Select(x => x.Key)
             .Take(poolSize / 2)
             .ToList();
@@ -186,14 +198,34 @@ public sealed class RecommendationService(IAppDbContext context, IMapper mapper,
             candidateIds.AddRange(fillerIds);
         }
 
-        return await context.Set<Instrument>()
+        var instruments = await context.Set<Instrument>()
             .AsNoTracking()
             .WithInstrumentDetails()
             .Where(x => candidateIds.Contains(x.Id) && x.IsActive)
             .ToListAsync(cancellationToken);
+
+        if (instruments.Count == 0)
+        {
+            return [];
+        }
+
+        var instrumentIds = instruments.Select(x => x.Id).ToList();
+
+        var blockedInstrumentIds = await context.Set<InstrumentRental>()
+            .AsNoTracking()
+            .Where(r => instrumentIds.Contains(r.InstrumentId) &&
+                (r.RentalStatus == InstrumentRentalStatus.Approved ||
+                 r.RentalStatus == InstrumentRentalStatus.Active))
+            .Select(r => r.InstrumentId)
+            .Distinct()
+            .ToHashSetAsync(cancellationToken);
+
+        return instruments
+            .Select(x => new CandidateInstrument(x, !blockedInstrumentIds.Contains(x.Id)))
+            .ToList();
     }
 
-    private async Task<HashSet<int>> BuildCollaborativeInstrumentIdsAsync(int studentId, HashSet<int> rentedInstrumentIds, CancellationToken cancellationToken)
+    private async Task<List<int>> BuildCollaborativeInstrumentIdsAsync(int studentId, HashSet<int> rentedInstrumentIds, CancellationToken cancellationToken)
     {
         if (rentedInstrumentIds.Count == 0)
         {
@@ -217,11 +249,14 @@ public sealed class RecommendationService(IAppDbContext context, IMapper mapper,
         var collaborativeIds = await context.Set<InstrumentRental>()
             .AsNoTracking()
             .Where(x => similarStudentIds.Contains(x.StudentProfileId) && (x.RentalStatus == InstrumentRentalStatus.Approved || x.RentalStatus == InstrumentRentalStatus.Active || x.RentalStatus == InstrumentRentalStatus.Completed || x.RentalStatus == InstrumentRentalStatus.ReturnedEarly) && !rentedInstrumentIds.Contains(x.InstrumentId))
+            .GroupBy(x => x.InstrumentId)
+            .Select(g => new { InstrumentId = g.Key, Count = g.Count() })
+            .OrderByDescending(x => x.Count)
+            .ThenBy(x => x.InstrumentId)
             .Select(x => x.InstrumentId)
-            .Distinct()
             .ToListAsync(cancellationToken);
 
-        return [.. collaborativeIds];
+        return collaborativeIds;
     }
 
     private static double ComputeRentalScore(Instrument instrument, Dictionary<int, int> userTypeCounts, HashSet<int> collaborativeInstrumentIds)
@@ -323,5 +358,7 @@ public sealed class RecommendationService(IAppDbContext context, IMapper mapper,
 
     private sealed record InstrumentViewSnapshot(int ViewCount);
 
-    private sealed record ScoredRecommendation(Instrument Instrument, double Score, List<string> Reasons);
+    private sealed record CandidateInstrument(Instrument Instrument, bool IsAvailable);
+
+    private sealed record ScoredRecommendation(Instrument Instrument, bool IsAvailable, double Score, List<string> Reasons);
 }

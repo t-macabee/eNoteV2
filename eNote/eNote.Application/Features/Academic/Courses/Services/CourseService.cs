@@ -12,25 +12,30 @@ public sealed class CourseService(IAppDbContext context, IMapper mapper, ICurren
     {
         var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId);
 
-        var entity = await instructorAccess.CoursesFor(instructorId)
+        return await instructorAccess.CoursesFor(instructorId)
             .AsNoTracking()
-            .Include(c => c.Enrollments)
-            .FirstOrDefaultAsync(c => c.Id == id, cancellationToken)
+            .Where(c => c.Id == id)
+            .Select(c => new CourseDto
+            {
+                Id = c.Id,
+                InstructorId = c.InstructorId,
+                Name = c.Name,
+                Description = c.Description,
+                IsPublished = c.IsPublished,
+                StartDate = c.StartDate,
+                EndDate = c.EndDate,
+                Price = c.Price,
+                EnrolledCount = c.Enrollments.Count(e => e.EnrollmentStatus == EnrollmentStatus.Active)
+            })
+            .FirstOrDefaultAsync(cancellationToken)
             ?? throw new NotFoundException(Messages.CourseNotFound);
-
-        return mapper.Map<CourseDto>(entity);
     }
 
     public async Task<PagedResult<CourseDto>> GetPagedCatalogForInstructorAsync(CourseSearchObject search, CancellationToken cancellationToken = default)
     {
         var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId);
 
-        var query = WhereCatalogVisible(
-                context.Set<Course>()
-                    .AsNoTracking()
-                    .Include(c => c.Enrollments)
-                    .Include(c => c.Instructor),
-                instructorId)
+        var query = WhereCatalogVisible(context.Set<Course>().AsNoTracking(), instructorId)
             .ApplySearch(search);
 
         return await ToPagedWithInstructorNamesAsync(query, search, cancellationToken);
@@ -40,14 +45,10 @@ public sealed class CourseService(IAppDbContext context, IMapper mapper, ICurren
     {
         var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId);
 
-        var entity = await LoadCourseDetailAsync(
+        return await LoadCourseDetailDtoAsync(
             WhereCatalogVisible(context.Set<Course>(), instructorId),
             id,
             cancellationToken);
-
-        var dto = mapper.Map<CourseDto>(entity);
-        dto.InstructorName = await ResolveInstructorNameAsync(entity.Instructor.AppUserId, cancellationToken);
-        return dto;
     }
 
     public async Task<List<CourseCatalogInstructorDto>> GetCatalogInstructorsAsync(CancellationToken cancellationToken = default)
@@ -101,20 +102,33 @@ public sealed class CourseService(IAppDbContext context, IMapper mapper, ICurren
     {
         var studentId = await students.GetCurrentStudentIdAsync();
 
-        var entity = await context.Set<Course>()
-            .Include(c => c.Enrollments)
+        return await context.Set<Course>()
             .AsNoTracking()
-            .FirstOrDefaultAsync(c =>
-                c.Id == id &&
-                (c.IsPublished || c.Enrollments.Any(e => e.StudentId == studentId && e.EnrollmentStatus == EnrollmentStatus.Active)),
-                cancellationToken)
+            .Where(c => c.Id == id &&
+                (c.IsPublished || c.Enrollments.Any(e => e.StudentId == studentId && e.EnrollmentStatus == EnrollmentStatus.Active)))
+            .Select(c => new CourseDto
+            {
+                Id = c.Id,
+                InstructorId = c.InstructorId,
+                Name = c.Name,
+                Description = c.Description,
+                IsPublished = c.IsPublished,
+                StartDate = c.StartDate,
+                EndDate = c.EndDate,
+                Price = c.Price,
+                EnrolledCount = c.Enrollments.Count(e => e.EnrollmentStatus == EnrollmentStatus.Active),
+                IsEnrolled = c.Enrollments.Any(e => e.StudentId == studentId && e.EnrollmentStatus == EnrollmentStatus.Active),
+                EnrollmentId = c.Enrollments
+                    .Where(e => e.StudentId == studentId && e.EnrollmentStatus == EnrollmentStatus.Active)
+                    .Select(e => (int?)e.Id)
+                    .FirstOrDefault(),
+                PaidUntil = c.Enrollments
+                    .Where(e => e.StudentId == studentId && e.EnrollmentStatus == EnrollmentStatus.Active)
+                    .Select(e => e.PaidUntil)
+                    .FirstOrDefault()
+            })
+            .FirstOrDefaultAsync(cancellationToken)
             ?? throw new NotFoundException(Messages.CourseNotFound);
-
-        // The catalog/detail path is deliberately not gated on PaidUntil: an enrolled
-        // student must still find the course in order to pay for the next period.
-        var dto = mapper.Map<CourseDto>(entity);
-        ApplyEnrollment(dto, entity, studentId);
-        return dto;
     }
 
     public async Task<PagedResult<CourseDto>> GetPagedForInstructorAsync(CourseSearchObject search, CancellationToken cancellationToken = default)
@@ -123,10 +137,42 @@ public sealed class CourseService(IAppDbContext context, IMapper mapper, ICurren
 
         var query = instructorAccess.CoursesFor(instructorId)
             .AsNoTracking()
-            .Include(c => c.Enrollments)
             .ApplySearch(search);
 
-        return await query.ToPagedResultAsync(search, mapper.Map<CourseDto>, q => q.OrderByDescending(x => x.StartDate), cancellationToken);
+        int? total = null;
+        if (search.IncludeTotalCount)
+        {
+            total = await query.CountAsync(cancellationToken);
+        }
+
+        var (page, pageSize) = PagingLimits.Normalize(search.Page, search.PageSize);
+
+        var items = await query
+            .OrderByDescending(x => x.StartDate)
+            .ThenBy(x => x.Id)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(c => new CourseDto
+            {
+                Id = c.Id,
+                InstructorId = c.InstructorId,
+                Name = c.Name,
+                Description = c.Description,
+                IsPublished = c.IsPublished,
+                StartDate = c.StartDate,
+                EndDate = c.EndDate,
+                Price = c.Price,
+                EnrolledCount = c.Enrollments.Count(e => e.EnrollmentStatus == EnrollmentStatus.Active)
+            })
+            .ToListAsync(cancellationToken);
+
+        return new PagedResult<CourseDto>
+        {
+            Items = items,
+            Page = page,
+            PageSize = pageSize,
+            TotalCount = total
+        };
     }
 
     public async Task<PagedResult<CourseDto>> GetPagedForStudentAsync(CourseSearchObject search, CancellationToken cancellationToken = default)
@@ -135,7 +181,6 @@ public sealed class CourseService(IAppDbContext context, IMapper mapper, ICurren
 
         var query = context.Set<Course>()
             .AsNoTracking()
-            .Include(c => c.Enrollments)
             .ApplySearch(search);
 
         // Unpublishing never revokes an enrolled student's access (only catalog
@@ -149,30 +194,55 @@ public sealed class CourseService(IAppDbContext context, IMapper mapper, ICurren
             query = query.Where(c => c.IsPublished);
         }
 
-        return await query.ToPagedResultAsync(search, entity =>
+        int? total = null;
+        if (search.IncludeTotalCount)
         {
-            // The my-courses feed is deliberately not gated on PaidUntil: an enrolled
-            // student must still find the course in order to pay for the next period.
-            var dto = mapper.Map<CourseDto>(entity);
-            ApplyEnrollment(dto, entity, studentId);
-            return dto;
-        }, q => q.OrderByDescending(x => x.StartDate), cancellationToken);
-    }
+            total = await query.CountAsync(cancellationToken);
+        }
 
-    private static void ApplyEnrollment(CourseDto dto, Course entity, int studentId)
-    {
-        var enrollment = entity.Enrollments.FirstOrDefault(e => e.StudentId == studentId && e.EnrollmentStatus == EnrollmentStatus.Active);
-        dto.IsEnrolled = enrollment != null;
-        dto.EnrollmentId = enrollment?.Id;
-        dto.PaidUntil = enrollment?.PaidUntil;
+        var (page, pageSize) = PagingLimits.Normalize(search.Page, search.PageSize);
+
+        var items = await query
+            .OrderByDescending(x => x.StartDate)
+            .ThenBy(x => x.Id)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(c => new CourseDto
+            {
+                Id = c.Id,
+                InstructorId = c.InstructorId,
+                Name = c.Name,
+                Description = c.Description,
+                IsPublished = c.IsPublished,
+                StartDate = c.StartDate,
+                EndDate = c.EndDate,
+                Price = c.Price,
+                EnrolledCount = c.Enrollments.Count(e => e.EnrollmentStatus == EnrollmentStatus.Active),
+                IsEnrolled = c.Enrollments.Any(e => e.StudentId == studentId && e.EnrollmentStatus == EnrollmentStatus.Active),
+                EnrollmentId = c.Enrollments
+                    .Where(e => e.StudentId == studentId && e.EnrollmentStatus == EnrollmentStatus.Active)
+                    .Select(e => (int?)e.Id)
+                    .FirstOrDefault(),
+                PaidUntil = c.Enrollments
+                    .Where(e => e.StudentId == studentId && e.EnrollmentStatus == EnrollmentStatus.Active)
+                    .Select(e => e.PaidUntil)
+                    .FirstOrDefault()
+            })
+            .ToListAsync(cancellationToken);
+
+        return new PagedResult<CourseDto>
+        {
+            Items = items,
+            Page = page,
+            PageSize = pageSize,
+            TotalCount = total
+        };
     }
 
     public async Task<PagedResult<CourseDto>> GetPagedForAdminAsync(CourseSearchObject search, CancellationToken cancellationToken = default)
     {
         var query = context.Set<Course>()
             .AsNoTracking()
-            .Include(c => c.Enrollments)
-            .Include(c => c.Instructor)
             .ApplySearch(search);
 
         return await ToPagedWithInstructorNamesAsync(query, search, cancellationToken);
@@ -189,23 +259,45 @@ public sealed class CourseService(IAppDbContext context, IMapper mapper, ICurren
             total = await query.CountAsync(cancellationToken);
         }
 
-        (var page, var pageSize) = PagingLimits.Normalize(search.Page, search.PageSize);
+        var (page, pageSize) = PagingLimits.Normalize(search.Page, search.PageSize);
 
-        var entities = await query
+        var items = await query
             .OrderByDescending(c => c.StartDate)
+            .ThenBy(c => c.Id)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
+            .Select(c => new
+            {
+                Dto = new CourseDto
+                {
+                    Id = c.Id,
+                    InstructorId = c.InstructorId,
+                    Name = c.Name,
+                    Description = c.Description,
+                    IsPublished = c.IsPublished,
+                    StartDate = c.StartDate,
+                    EndDate = c.EndDate,
+                    Price = c.Price,
+                    EnrolledCount = c.Enrollments.Count(e => e.EnrollmentStatus == EnrollmentStatus.Active)
+                },
+                InstructorAppUserId = c.Instructor.AppUserId
+            })
             .ToListAsync(cancellationToken);
 
-        var appUserIds = entities
-            .Select(c => c.Instructor.AppUserId)
+        var appUserIds = items
+            .Select(x => x.InstructorAppUserId)
             .Distinct();
 
         var users = await identityService.GetUsersBulkAsync(appUserIds, cancellationToken);
 
+        foreach (var item in items)
+        {
+            item.Dto.InstructorName = UserNameHelper.FormatName(users.GetValueOrDefault(item.InstructorAppUserId));
+        }
+
         return new PagedResult<CourseDto>
         {
-            Items = [.. entities.Select(entity => MapAdmin(entity, users))],
+            Items = items.Select(x => x.Dto).ToList(),
             Page = page,
             PageSize = pageSize,
             TotalCount = total
@@ -214,28 +306,35 @@ public sealed class CourseService(IAppDbContext context, IMapper mapper, ICurren
 
     public async Task<CourseDto> GetByIdForAdminAsync(int id, CancellationToken cancellationToken = default)
     {
-        var entity = await LoadCourseDetailAsync(context.Set<Course>(), id, cancellationToken);
-
-        var dto = mapper.Map<CourseDto>(entity);
-        dto.InstructorName = await ResolveInstructorNameAsync(entity.Instructor.AppUserId, cancellationToken);
-        return dto;
+        return await LoadCourseDetailDtoAsync(context.Set<Course>(), id, cancellationToken);
     }
 
-    private static async Task<Course> LoadCourseDetailAsync(IQueryable<Course> query, int id, CancellationToken cancellationToken)
+    private async Task<CourseDto> LoadCourseDetailDtoAsync(IQueryable<Course> query, int id, CancellationToken cancellationToken)
     {
-        return await query
+        var result = await query
             .AsNoTracking()
-            .Include(c => c.Enrollments)
-            .Include(c => c.Instructor)
-            .FirstOrDefaultAsync(c => c.Id == id, cancellationToken)
+            .Where(c => c.Id == id)
+            .Select(c => new
+            {
+                Dto = new CourseDto
+                {
+                    Id = c.Id,
+                    InstructorId = c.InstructorId,
+                    Name = c.Name,
+                    Description = c.Description,
+                    IsPublished = c.IsPublished,
+                    StartDate = c.StartDate,
+                    EndDate = c.EndDate,
+                    Price = c.Price,
+                    EnrolledCount = c.Enrollments.Count(e => e.EnrollmentStatus == EnrollmentStatus.Active)
+                },
+                InstructorAppUserId = c.Instructor.AppUserId
+            })
+            .FirstOrDefaultAsync(cancellationToken)
             ?? throw new NotFoundException(Messages.CourseNotFound);
-    }
 
-    private CourseDto MapAdmin(Course course, IReadOnlyDictionary<int, UserIdentityDto> users)
-    {
-        var dto = mapper.Map<CourseDto>(course);
-        dto.InstructorName = UserNameHelper.FormatName(users.GetValueOrDefault(course.Instructor.AppUserId));
-        return dto;
+        result.Dto.InstructorName = await ResolveInstructorNameAsync(result.InstructorAppUserId, cancellationToken);
+        return result.Dto;
     }
 
     private async Task<string?> ResolveInstructorNameAsync(int appUserId, CancellationToken cancellationToken)
@@ -276,7 +375,6 @@ public sealed class CourseService(IAppDbContext context, IMapper mapper, ICurren
         var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId);
 
         var entity = await instructorAccess.CoursesFor(instructorId)
-            .Include(c => c.Enrollments)
             .FirstOrDefaultAsync(c => c.Id == id, cancellationToken) ?? throw new NotFoundException(Messages.CourseNotFound);
 
         entity.UpdateDetails(request.Name.Trim(), request.Description?.Trim(), request.Price, request.StartDate, request.EndDate);
@@ -285,7 +383,10 @@ public sealed class CourseService(IAppDbContext context, IMapper mapper, ICurren
 
         await context.SaveChangesAsync(cancellationToken);
 
-        return mapper.Map<CourseDto>(entity);
+        var dto = mapper.Map<CourseDto>(entity);
+        dto.EnrolledCount = await context.Set<Enrollment>()
+            .CountAsync(e => e.CourseId == id && e.EnrollmentStatus == EnrollmentStatus.Active, cancellationToken);
+        return dto;
     }
 
     public async Task DeleteAsync(int id, CancellationToken cancellationToken = default)

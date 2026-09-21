@@ -16,23 +16,57 @@ public sealed class LectureService(
     public async Task<LectureDto> GetByIdForInstructorAsync(int id, CancellationToken cancellationToken = default)
     {
         var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId);
-        var entity = await instructorAccess.GetOwnedLectureAsync(id, instructorId, includeAttendances: true, cancellationToken: cancellationToken);
-        return mapper.Map<LectureDto>(entity);
+
+        var dto = await context.Set<Lecture>()
+            .AsNoTracking()
+            .Where(x => x.Id == id && x.Course.InstructorId == instructorId)
+            .Select(x => new LectureDto
+            {
+                Id = x.Id,
+                Name = x.Name,
+                Location = x.Location,
+                LectureType = x.LectureType,
+                LectureStatus = x.LectureStatus,
+                IsCancelled = x.LectureStatus == LectureStatus.Cancelled,
+                LectureTime = x.LectureTime,
+                Duration = x.Duration,
+                Capacity = x.Capacity,
+                AttendeeCount = x.Attendances.Count(a => a.AttendanceStatus == AttendanceStatus.Present)
+            })
+            .FirstOrDefaultAsync(cancellationToken)
+            ?? throw new NotFoundException(Messages.LectureNotFound);
+
+        return dto;
     }
 
     public async Task<LectureDto> GetByIdForStudentAsync(int id, CancellationToken cancellationToken = default)
     {
         var studentId = await students.GetCurrentStudentIdAsync();
 
-        var entity = await context.Set<Lecture>()
-            .Include(x => x.Attendances)
+        var dto = await context.Set<Lecture>()
             .AsNoTracking()
             .ForEnrolledStudent(studentId, clock.UtcNow)
-            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken)
+            .Where(x => x.Id == id)
+            .Select(x => new LectureDto
+            {
+                Id = x.Id,
+                Name = x.Name,
+                Location = x.Location,
+                LectureType = x.LectureType,
+                LectureStatus = x.LectureStatus,
+                IsCancelled = x.LectureStatus == LectureStatus.Cancelled,
+                LectureTime = x.LectureTime,
+                Duration = x.Duration,
+                Capacity = x.Capacity,
+                AttendeeCount = x.Attendances.Count(a => a.AttendanceStatus == AttendanceStatus.Present),
+                MyAttendanceStatus = x.Attendances
+                    .Where(a => a.StudentId == studentId)
+                    .Select(a => (AttendanceStatus?)a.AttendanceStatus)
+                    .FirstOrDefault()
+            })
+            .FirstOrDefaultAsync(cancellationToken)
             ?? throw new NotFoundException(Messages.LectureNotFound);
 
-        var dto = mapper.Map<LectureDto>(entity);
-        dto.MyAttendanceStatus = entity.Attendances.FirstOrDefault(a => a.StudentId == studentId)?.AttendanceStatus;
         return dto;
     }
 
@@ -42,10 +76,43 @@ public sealed class LectureService(
 
         var query = instructorAccess.LecturesFor(instructorId)
             .AsNoTracking()
-            .Include(x => x.Attendances)
             .ApplySearch(search);
 
-        return await query.ToPagedResultAsync(search, mapper.Map<LectureDto>, q => q.OrderByDescending(x => x.LectureTime), cancellationToken);
+        int? total = null;
+        if (search.IncludeTotalCount)
+        {
+            total = await query.CountAsync(cancellationToken);
+        }
+
+        var (page, pageSize) = PagingLimits.Normalize(search.Page, search.PageSize);
+
+        var items = await query
+            .OrderByDescending(x => x.LectureTime)
+            .ThenBy(x => x.Id)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(x => new LectureDto
+            {
+                Id = x.Id,
+                Name = x.Name,
+                Location = x.Location,
+                LectureType = x.LectureType,
+                LectureStatus = x.LectureStatus,
+                IsCancelled = x.LectureStatus == LectureStatus.Cancelled,
+                LectureTime = x.LectureTime,
+                Duration = x.Duration,
+                Capacity = x.Capacity,
+                AttendeeCount = x.Attendances.Count(a => a.AttendanceStatus == AttendanceStatus.Present)
+            })
+            .ToListAsync(cancellationToken);
+
+        return new PagedResult<LectureDto>
+        {
+            Items = items,
+            Page = page,
+            PageSize = pageSize,
+            TotalCount = total
+        };
     }
 
     public async Task<PagedResult<LectureDto>> GetPagedForStudentAsync(LectureSearchObject search, CancellationToken cancellationToken = default)
@@ -54,16 +121,48 @@ public sealed class LectureService(
 
         var query = context.Set<Lecture>()
             .AsNoTracking()
-            .Include(x => x.Attendances)
             .ForEnrolledStudent(studentId, clock.UtcNow)
             .ApplySearch(search);
 
-        return await query.ToPagedResultAsync(search, entity =>
+        int? total = null;
+        if (search.IncludeTotalCount)
         {
-            var dto = mapper.Map<LectureDto>(entity);
-            dto.MyAttendanceStatus = entity.Attendances.FirstOrDefault(a => a.StudentId == studentId)?.AttendanceStatus;
-            return dto;
-        }, q => q.OrderByDescending(x => x.LectureTime), cancellationToken);
+            total = await query.CountAsync(cancellationToken);
+        }
+
+        var (page, pageSize) = PagingLimits.Normalize(search.Page, search.PageSize);
+
+        var items = await query
+            .OrderByDescending(x => x.LectureTime)
+            .ThenBy(x => x.Id)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(x => new LectureDto
+            {
+                Id = x.Id,
+                Name = x.Name,
+                Location = x.Location,
+                LectureType = x.LectureType,
+                LectureStatus = x.LectureStatus,
+                IsCancelled = x.LectureStatus == LectureStatus.Cancelled,
+                LectureTime = x.LectureTime,
+                Duration = x.Duration,
+                Capacity = x.Capacity,
+                AttendeeCount = x.Attendances.Count(a => a.AttendanceStatus == AttendanceStatus.Present),
+                MyAttendanceStatus = x.Attendances
+                    .Where(a => a.StudentId == studentId)
+                    .Select(a => (AttendanceStatus?)a.AttendanceStatus)
+                    .FirstOrDefault()
+            })
+            .ToListAsync(cancellationToken);
+
+        return new PagedResult<LectureDto>
+        {
+            Items = items,
+            Page = page,
+            PageSize = pageSize,
+            TotalCount = total
+        };
     }
 
     public async Task<LectureDto> CreateAsync(LectureCreateRequest request, CancellationToken cancellationToken = default)
@@ -100,7 +199,7 @@ public sealed class LectureService(
     public async Task<LectureDto> UpdateAsync(int id, LectureUpdateRequest request, CancellationToken cancellationToken = default)
     {
         var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId);
-        var entity = await instructorAccess.GetOwnedLectureAsync(id, instructorId, track: true, includeAttendances: true, cancellationToken: cancellationToken);
+        var entity = await instructorAccess.GetOwnedLectureAsync(id, instructorId, track: true, cancellationToken: cancellationToken);
 
         if (entity.IsCancelled)
         {
@@ -136,7 +235,10 @@ public sealed class LectureService(
 
         await context.SaveChangesAsync(cancellationToken);
 
-        return mapper.Map<LectureDto>(entity);
+        var dto = mapper.Map<LectureDto>(entity);
+        dto.AttendeeCount = await context.Set<Attendance>()
+            .CountAsync(a => a.LectureId == id && a.AttendanceStatus == AttendanceStatus.Present, cancellationToken);
+        return dto;
     }
 
     public async Task DeleteAsync(int id, CancellationToken cancellationToken = default)
@@ -155,7 +257,7 @@ public sealed class LectureService(
     public async Task<LectureDto> CancelAsync(int id, CancellationToken cancellationToken = default)
     {
         var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId);
-        var entity = await instructorAccess.GetOwnedLectureAsync(id, instructorId, track: true, includeAttendances: true, cancellationToken: cancellationToken);
+        var entity = await instructorAccess.GetOwnedLectureAsync(id, instructorId, track: true, cancellationToken: cancellationToken);
 
         if (entity.IsCancelled)
         {
@@ -174,6 +276,9 @@ public sealed class LectureService(
 
         await context.SaveChangesAsync(cancellationToken);
 
-        return mapper.Map<LectureDto>(entity);
+        var dto = mapper.Map<LectureDto>(entity);
+        dto.AttendeeCount = await context.Set<Attendance>()
+            .CountAsync(a => a.LectureId == id && a.AttendanceStatus == AttendanceStatus.Present, cancellationToken);
+        return dto;
     }
 }

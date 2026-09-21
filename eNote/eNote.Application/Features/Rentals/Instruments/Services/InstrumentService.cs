@@ -1,44 +1,73 @@
-using MapsterMapper;
+using System.Linq.Expressions;
 
 namespace eNote.Application.Features.Rentals.Instruments.Services;
 
 public sealed class InstrumentService(
     IAppDbContext context,
-    IMapper mapper,
     IStudentContext students,
     IFileStorageService fileStorage)
 {
+    private static readonly Expression<Func<Instrument, InstrumentDto>> ProjectToDto = x => new InstrumentDto
+    {
+        Id = x.Id,
+        Model = x.Model,
+        Manufacturer = x.Manufacturer,
+        Description = x.Description,
+        ImagePath = x.ImagePath,
+        InstrumentTypeId = x.InstrumentTypeId,
+        InstrumentType = x.InstrumentType.Type,
+        MusicStore = x.MusicStore.StoreName,
+        IsAvailable = x.IsActive && !x.InstrumentRentals.Any(r =>
+            r.RentalStatus == InstrumentRentalStatus.Approved ||
+            r.RentalStatus == InstrumentRentalStatus.Active)
+    };
+
     public async Task<InstrumentDto> GetByIdAsync(int id, bool publicView = false, CancellationToken cancellationToken = default)
     {
         var query = context.Set<Instrument>()
-            .AsNoTracking()
-            .WithInstrumentDetails();
+            .AsNoTracking();
 
         if (publicView)
         {
             query = query.IgnoreQueryFilters().Where(x => x.IsActive);
         }
 
-        var entity = await query
-            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken)
+        return await query
+            .Where(x => x.Id == id)
+            .Select(ProjectToDto)
+            .FirstOrDefaultAsync(cancellationToken)
             ?? throw new NotFoundException(Messages.NotFound);
-
-        return mapper.Map<InstrumentDto>(entity);
     }
 
     public async Task<PagedResult<InstrumentDto>> GetPagedAsync(InstrumentSearchObject search, bool publicView = false, CancellationToken cancellationToken = default)
     {
         var query = context.Set<Instrument>()
-            .AsNoTracking()
-            .WithInstrumentDetails()
-            .ApplySearch(search);
+            .AsNoTracking();
 
         if (publicView)
         {
             query = query.IgnoreQueryFilters().Where(x => x.IsActive);
         }
 
-        return await query.ToPagedResultAsync(search, mapper.Map<InstrumentDto>, ct: cancellationToken);
+        query = query.ApplySearch(search);
+
+        var (page, pageSize) = PagingLimits.Normalize(search.Page, search.PageSize);
+        var total = search.IncludeTotalCount ? await query.CountAsync(cancellationToken) : (int?)null;
+
+        var items = await query
+            .OrderBy(x => x.Id)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(ProjectToDto)
+            .ToListAsync(cancellationToken);
+
+        return new PagedResult<InstrumentDto>
+        {
+            Items = items,
+            Page = page,
+            PageSize = pageSize,
+            TotalCount = total
+        };
     }
 
     public async Task<InstrumentDto> CreateAsync(InstrumentCreateRequest request, CancellationToken cancellationToken = default)
@@ -57,7 +86,7 @@ public sealed class InstrumentService(
         context.Set<Instrument>().Add(entity);
         await context.SaveChangesAsync(cancellationToken);
 
-        return mapper.Map<InstrumentDto>(await ReloadAsync(entity.Id, cancellationToken));
+        return await ReloadAsync(entity.Id, cancellationToken);
     }
 
     public async Task<InstrumentDto> UpdateAsync(int id, InstrumentUpdateRequest request, CancellationToken cancellationToken = default)
@@ -82,7 +111,7 @@ public sealed class InstrumentService(
 
         await context.SaveChangesAsync(cancellationToken);
 
-        return mapper.Map<InstrumentDto>(await ReloadAsync(entity.Id, cancellationToken));
+        return await ReloadAsync(entity.Id, cancellationToken);
     }
 
     public async Task<InstrumentDto> UploadImageAsync(int id, Stream stream, string fileName, string contentType, CancellationToken ct = default)
@@ -99,7 +128,7 @@ public sealed class InstrumentService(
 
         await context.SaveChangesReplacingFileAsync(fileStorage, path, previousPath, ct);
 
-        return mapper.Map<InstrumentDto>(await ReloadAsync(entity.Id, ct));
+        return await ReloadAsync(entity.Id, ct);
     }
 
     public async Task DeleteAsync(int id, CancellationToken cancellationToken = default)
@@ -130,6 +159,6 @@ public sealed class InstrumentService(
         }
     }
 
-    private Task<Instrument> ReloadAsync(int id, CancellationToken cancellationToken) =>
-        context.Set<Instrument>().AsNoTracking().WithInstrumentDetails().FirstAsync(x => x.Id == id, cancellationToken);
+    private Task<InstrumentDto> ReloadAsync(int id, CancellationToken cancellationToken) =>
+        context.Set<Instrument>().AsNoTracking().Where(x => x.Id == id).Select(ProjectToDto).FirstAsync(cancellationToken);
 }

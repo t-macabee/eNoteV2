@@ -5,6 +5,5 @@ public static class InstrumentQueryableExtensions
     public static IQueryable<Instrument> WithInstrumentDetails(this IQueryable<Instrument> query) =>
         query
             .Include(x => x.MusicStore)
-            .Include(x => x.InstrumentType)
-            .Include(x => x.InstrumentRentals);
+            .Include(x => x.InstrumentType);
 }

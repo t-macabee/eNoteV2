@@ -20,15 +20,17 @@ public sealed class FileAccessService(
         var legacyPath = AssignmentLegacyPath + fileName;
         var legacyPathV0 = AssignmentLegacyPathV0 + fileName;
 
-        var submission = await context.Set<AssignmentSubmission>()
+        var authData = await context.Set<AssignmentSubmission>()
             .AsNoTracking()
-            .Include(x => x.Assignment)
-                .ThenInclude(x => x.Lecture)
-                .ThenInclude(x => x.Course)
-            .Include(x => x.Student)
-            .FirstOrDefaultAsync(x => x.FilePath == apiPath || x.FilePath == legacyPath || x.FilePath == legacyPathV0, cancellationToken);
+            .Where(x => x.FilePath == apiPath || x.FilePath == legacyPath || x.FilePath == legacyPathV0)
+            .Select(x => new
+            {
+                x.StudentId,
+                InstructorId = x.Assignment.Lecture.Course.InstructorId
+            })
+            .FirstOrDefaultAsync(cancellationToken);
 
-        if (submission is null)
+        if (authData is null)
         {
             return false;
         }
@@ -43,13 +45,13 @@ public sealed class FileAccessService(
         if (roles.Contains(AppRoles.Student))
         {
             var student = await lookup.GetStudentAsync(userId);
-            return submission.StudentId == student.Id;
+            return authData.StudentId == student.Id;
         }
 
         if (roles.Contains(AppRoles.Instructor))
         {
             var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(userId);
-            return submission.Assignment.Lecture.Course.InstructorId == instructorId;
+            return authData.InstructorId == instructorId;
         }
 
         return false;

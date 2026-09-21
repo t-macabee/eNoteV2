@@ -130,6 +130,78 @@ public sealed class InstrumentServiceTests
         Assert.Equal(["/old/instrument.png"], storage.DeletedPaths);
     }
 
+    [Fact]
+    public async Task GetPagedAsync_ProjectsIsAvailable_FalseWhenApprovedOrActiveRentalExists()
+    {
+        var ctx = CreateContext();
+        var type = await SeedInstrumentTypeAsync(ctx, "Guitar");
+        var store = await SeedStoreAsync(ctx, "Music Shop Sarajevo");
+        var instrumentAvailable = await SeedInstrumentAsync(ctx, store.Id, type.Id, "Pacifica", "Yamaha");
+        var instrumentRented = await SeedInstrumentAsync(ctx, store.Id, type.Id, "Stratocaster", "Fender");
+
+        var blockingRental = new InstrumentRental(instrumentRented.Id, 100, store.Id, Now, null);
+        blockingRental.Approve(50m, null, Now, 1);
+        ctx.Set<InstrumentRental>().Add(blockingRental);
+        await ctx.SaveChangesAsync();
+
+        var service = CreateInstrumentService(ctx);
+
+        var paged = await service.GetPagedAsync(new InstrumentSearchObject(), publicView: true);
+
+        Assert.Equal(2, paged.Items.Count);
+        var availDto = paged.Items.Single(x => x.Id == instrumentAvailable.Id);
+        var rentedDto = paged.Items.Single(x => x.Id == instrumentRented.Id);
+
+        Assert.True(availDto.IsAvailable);
+        Assert.False(rentedDto.IsAvailable);
+    }
+
+    [Fact]
+    public async Task GetByIdAsync_ProjectsIsAvailable_AccuratelyInSql()
+    {
+        var ctx = CreateContext();
+        var type = await SeedInstrumentTypeAsync(ctx, "Guitar");
+        var store = await SeedStoreAsync(ctx, "Music Shop Sarajevo");
+        var instrument = await SeedInstrumentAsync(ctx, store.Id, type.Id, "Stratocaster", "Fender");
+
+        var rental = new InstrumentRental(instrument.Id, 100, store.Id, Now, null);
+        rental.Approve(50m, null, Now, 1);
+        ctx.Set<InstrumentRental>().Add(rental);
+        await ctx.SaveChangesAsync();
+
+        var service = CreateInstrumentService(ctx);
+
+        var dto = await service.GetByIdAsync(instrument.Id, publicView: true);
+
+        Assert.False(dto.IsAvailable);
+        Assert.Equal("Stratocaster", dto.Model);
+        Assert.Equal("Music Shop Sarajevo", dto.MusicStore);
+        Assert.Equal("Guitar", dto.InstrumentType);
+    }
+
+    [Fact]
+    public async Task WithInstrumentDetails_DoesNotEagerlyLoadInstrumentRentals()
+    {
+        var ctx = CreateContext();
+        var type = await SeedInstrumentTypeAsync(ctx, "Guitar");
+        var store = await SeedStoreAsync(ctx, "Music Shop Sarajevo");
+        var instrument = await SeedInstrumentAsync(ctx, store.Id, type.Id, "Stratocaster", "Fender");
+
+        var rental = new InstrumentRental(instrument.Id, 100, store.Id, Now, null);
+        rental.Approve(50m, null, Now, 1);
+        ctx.Set<InstrumentRental>().Add(rental);
+        await ctx.SaveChangesAsync();
+
+        var loaded = await ctx.Set<Instrument>()
+            .AsNoTracking()
+            .WithInstrumentDetails()
+            .FirstAsync(x => x.Id == instrument.Id);
+
+        Assert.NotNull(loaded.InstrumentType);
+        Assert.NotNull(loaded.MusicStore);
+        Assert.Empty(loaded.InstrumentRentals);
+    }
+
     private static ENoteContext CreateContext()
     {
         var options = new DbContextOptionsBuilder<ENoteContext>()
@@ -141,10 +213,10 @@ public sealed class InstrumentServiceTests
     }
 
     private static InstrumentService CreateInstrumentService(ENoteContext context) =>
-        new(context, TestMapper.Create(), new StubCurrentActor(), new StubFileStorageService());
+        new(context, new StubCurrentActor(), new StubFileStorageService());
 
     private static InstrumentService CreateStoreInstrumentService(IAppDbContext context, int storeId, IFileStorageService storage) =>
-        new(context, TestMapper.Create(), new StubCurrentActor(storeId: storeId, employee: new MusicStoreEmployee(appUserId: 1, musicStoreId: storeId, isManager: true)), storage);
+        new(context, new StubCurrentActor(storeId: storeId, employee: new MusicStoreEmployee(appUserId: 1, musicStoreId: storeId, isManager: true)), storage);
 
     private static async Task<MusicStore> SeedStoreAsync(ENoteContext ctx, string name)
     {

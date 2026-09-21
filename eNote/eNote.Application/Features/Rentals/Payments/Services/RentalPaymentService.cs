@@ -72,10 +72,11 @@ public sealed class RentalPaymentService(
 
     public async Task<RentalPaymentDto> GetPaymentStatusAsync(int rentalId, CancellationToken cancellationToken = default)
     {
-        var rental = await LoadForStudentAsync(rentalId, cancellationToken);
+        await EnsureStudentOwnsRentalAsync(rentalId, cancellationToken);
 
         var payment = await context.Set<RentalPayment>()
-            .Where(p => p.InstrumentRentalId == rental.Id)
+            .AsNoTracking()
+            .Where(p => p.InstrumentRentalId == rentalId)
             .OrderByDescending(p => p.CreatedAt)
             .FirstOrDefaultAsync(cancellationToken) ?? throw new NotFoundException(Messages.PaymentNotFound);
 
@@ -84,10 +85,11 @@ public sealed class RentalPaymentService(
 
     public async Task<RentalPaymentDto> GetPaymentStatusForStoreAsync(int rentalId, CancellationToken cancellationToken = default)
     {
-        var rental = await LoadForStoreAsync(rentalId, cancellationToken);
+        await EnsureStoreCanAccessRentalAsync(rentalId, cancellationToken);
 
         var payment = await context.Set<RentalPayment>()
-            .Where(p => p.InstrumentRentalId == rental.Id)
+            .AsNoTracking()
+            .Where(p => p.InstrumentRentalId == rentalId)
             .OrderByDescending(p => p.CreatedAt)
             .FirstOrDefaultAsync(cancellationToken) ?? throw new NotFoundException(Messages.PaymentNotFound);
 
@@ -153,6 +155,34 @@ public sealed class RentalPaymentService(
         logger.LogInformation("Refunded {AmountCents} {Currency} on PaymentIntent {PaymentIntentId} for rental {RentalId}", refund.AmountCents, payment.Currency, payment.StripePaymentIntentId, rental.Id);
 
         return mapper.Map<RentalPaymentDto>(payment);
+    }
+
+    private async Task EnsureStudentOwnsRentalAsync(int rentalId, CancellationToken cancellationToken)
+    {
+        var rental = await context.Set<InstrumentRental>()
+            .AsNoTracking()
+            .Where(x => x.Id == rentalId)
+            .Select(x => new { x.Id, StudentAppUserId = x.StudentProfile.AppUserId })
+            .FirstOrDefaultAsync(cancellationToken) ?? throw new NotFoundException(Messages.RentalNotFound);
+
+        if (rental.StudentAppUserId != currentUser.UserId)
+        {
+            throw new BusinessException(Messages.RentalAccessDenied);
+        }
+    }
+
+    private async Task EnsureStoreCanAccessRentalAsync(int rentalId, CancellationToken cancellationToken)
+    {
+        await stores.GetCurrentStoreIdAsync(cancellationToken);
+
+        var exists = await context.Set<InstrumentRental>()
+            .AsNoTracking()
+            .AnyAsync(x => x.Id == rentalId, cancellationToken);
+
+        if (!exists)
+        {
+            throw new NotFoundException(Messages.RentalNotFound);
+        }
     }
 
     private async Task<InstrumentRental> LoadForStoreAsync(int rentalId, CancellationToken cancellationToken)
