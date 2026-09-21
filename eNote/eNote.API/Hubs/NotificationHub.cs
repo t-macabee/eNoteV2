@@ -25,7 +25,7 @@ public sealed class NotificationHub : Hub
 
         if (int.TryParse(userIdValue, out var userId))
         {
-            await Groups.AddToGroupAsync(Context.ConnectionId, UserGroup(userId));
+            await Groups.AddToGroupAsync(Context.ConnectionId, UserGroup(userId), Context.ConnectionAborted);
         }
         else
         {

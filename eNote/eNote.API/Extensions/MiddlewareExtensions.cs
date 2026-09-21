@@ -39,7 +39,7 @@ public static class MiddlewareExtensions
                     Message = message
                 };
 
-                await context.Response.WriteAsync(JsonSerializer.Serialize(response, ErrorJsonOptions));
+                await context.Response.WriteAsync(JsonSerializer.Serialize(response, ErrorJsonOptions), context.RequestAborted);
             });
         });
 

@@ -44,7 +44,7 @@ public sealed class AssignmentSubmissionService(
             throw;
         }
 
-        return MapSubmission(existing, await displayNames.GetStudentDisplayNameAsync(student));
+        return MapSubmission(existing, await displayNames.GetStudentDisplayNameAsync(student, ct));
     }
 
     public async Task<AssignmentSubmissionDto> GetOwnSubmissionAsync(int assignmentId, CancellationToken cancellationToken = default)
@@ -65,7 +65,7 @@ public sealed class AssignmentSubmissionService(
             .FirstOrDefaultAsync(x => x.AssignmentId == assignmentId && x.StudentId == student.Id, cancellationToken)
             ?? throw new NotFoundException(Messages.AssignmentSubmissionNotFound);
 
-        return MapSubmission(submission, await displayNames.GetStudentDisplayNameAsync(submission.Student));
+        return MapSubmission(submission, await displayNames.GetStudentDisplayNameAsync(submission.Student, cancellationToken));
     }
 
     public async Task<PagedResult<AssignmentSubmissionDto>> GetHistoryForStudentAsync(AssignmentSubmissionSearchObject search, CancellationToken cancellationToken = default)
@@ -90,7 +90,7 @@ public sealed class AssignmentSubmissionService(
             .Take(pageSize)
             .ToListAsync(cancellationToken);
 
-        var names = await displayNames.GetStudentDisplayNamesAsync(submissions.Select(x => x.Student));
+        var names = await displayNames.GetStudentDisplayNamesAsync(submissions.Select(x => x.Student), cancellationToken);
 
         return new PagedResult<AssignmentSubmissionDto>
         {
@@ -119,7 +119,7 @@ public sealed class AssignmentSubmissionService(
             .Take(pageSize)
             .ToListAsync(cancellationToken);
 
-        var names = await displayNames.GetStudentDisplayNamesAsync(submissions.Select(x => x.Student));
+        var names = await displayNames.GetStudentDisplayNamesAsync(submissions.Select(x => x.Student), cancellationToken);
 
         return new PagedResult<AssignmentSubmissionDto>
         {
@@ -151,7 +151,7 @@ public sealed class AssignmentSubmissionService(
 
         await context.SaveChangesAsync(cancellationToken);
 
-        return MapSubmission(submission, await displayNames.GetStudentDisplayNameAsync(submission.Student));
+        return MapSubmission(submission, await displayNames.GetStudentDisplayNameAsync(submission.Student, cancellationToken));
     }
 
     private async Task<(Student Student, Assignment Assignment, AssignmentSubmission? Existing)> ValidateSubmissionAsync(int assignmentId, CancellationToken cancellationToken)
@@ -193,7 +193,7 @@ public sealed class AssignmentSubmissionService(
 
     private async Task<Assignment> GetOwnedAssignmentAsync(int lectureId, int assignmentId, CancellationToken cancellationToken = default)
     {
-        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId);
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId, cancellationToken);
         return await instructorAccess.GetOwnedAssignmentAsync(lectureId, assignmentId, instructorId, cancellationToken: cancellationToken);
     }
 

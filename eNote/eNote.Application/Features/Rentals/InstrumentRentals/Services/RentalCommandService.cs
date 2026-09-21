@@ -170,7 +170,7 @@ public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, 
 
         var result = mapper.Map<InstrumentRentalDto>(entity);
         result.ApplyCharges(entity, entity.CalculateCharges(clock.UtcNow));
-        result.StudentName = await displayNames.GetStudentDisplayNameAsync(entity.StudentProfile);
+        result.StudentName = await displayNames.GetStudentDisplayNameAsync(entity.StudentProfile, cancellationToken);
         return result;
     }
 

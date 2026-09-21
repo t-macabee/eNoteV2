@@ -61,7 +61,7 @@ public sealed class RankingService(
                     g.Count()))
                 .ToDictionaryAsync(x => x.StudentId, cancellationToken);
 
-        IReadOnlyDictionary<int, string> nameMap = await displayNames.GetStudentDisplayNamesAsync(enrolledStudents);
+        IReadOnlyDictionary<int, string> nameMap = await displayNames.GetStudentDisplayNamesAsync(enrolledStudents, cancellationToken);
 
         List<CourseRankingEntryDto> ranked = [.. enrolledStudents
             .Where(s => gradeData.ContainsKey(s.Id))

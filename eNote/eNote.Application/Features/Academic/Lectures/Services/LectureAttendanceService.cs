@@ -101,7 +101,7 @@ public sealed class LectureAttendanceService(
             .Take(pageSize)
             .ToListAsync(cancellationToken);
 
-        var names = await displayNames.GetStudentDisplayNamesAsync(attendances.Select(a => a.Student!));
+        var names = await displayNames.GetStudentDisplayNamesAsync(attendances.Select(a => a.Student!), cancellationToken);
 
         return new PagedResult<AttendanceDto>
         {
@@ -183,7 +183,7 @@ public sealed class LectureAttendanceService(
         {
             Id = attendance.Id,
             StudentId = attendance.StudentId,
-            StudentName = await displayNames.GetStudentDisplayNameAsync(student),
+            StudentName = await displayNames.GetStudentDisplayNameAsync(student, cancellationToken),
             AttendanceStatus = attendance.AttendanceStatus
         };
     }

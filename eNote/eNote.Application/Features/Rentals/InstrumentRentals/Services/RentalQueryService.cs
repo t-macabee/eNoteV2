@@ -46,7 +46,7 @@ public sealed class RentalQueryService(IAppDbContext context, IMapper mapper, IC
         var dto = mapper.Map<InstrumentRentalDto>(entity);
 
         dto.ApplyCharges(entity, entity.CalculateCharges(clock.UtcNow));
-        dto.StudentName = await displayNames.GetStudentDisplayNameAsync(entity.StudentProfile);
+        dto.StudentName = await displayNames.GetStudentDisplayNameAsync(entity.StudentProfile, cancellationToken);
 
         return dto;
     }
@@ -69,7 +69,7 @@ public sealed class RentalQueryService(IAppDbContext context, IMapper mapper, IC
             .OrderByDescending(x => x.RequestedAt)
             .Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(cancellationToken);
 
-        var names = await displayNames.GetStudentDisplayNamesAsync(entities.Select(e => e.StudentProfile));
+        var names = await displayNames.GetStudentDisplayNamesAsync(entities.Select(e => e.StudentProfile), cancellationToken);
 
         return new PagedResult<InstrumentRentalDto>
         {
