@@ -72,6 +72,7 @@ class _RentalDetailScreenState extends State<RentalDetailScreen> {
 
     final amountCents = amount > 0 ? (amount * 100).round() : null;
 
+    if (!mounted) return;
     setState(() => _isRefunding = true);
     try {
       final result = await provider.refund(

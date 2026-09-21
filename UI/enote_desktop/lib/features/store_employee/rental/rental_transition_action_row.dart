@@ -109,6 +109,7 @@ class _RentalTransitionActionRowState extends State<RentalTransitionActionRow> {
       if (confirmed != true) return;
     }
 
+    if (!mounted) return;
     setState(() => _busyTrigger = action.trigger);
     try {
       await widget.onTransition(action.trigger, note: note);

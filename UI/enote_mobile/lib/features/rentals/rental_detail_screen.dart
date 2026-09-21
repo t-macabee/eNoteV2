@@ -71,7 +71,7 @@ class _RentalDetailScreenState extends State<RentalDetailScreen> {
       title: 'Otkazivanje zahtjeva',
       message: 'Želite li otkazati zahtjev za ${rental.instrumentModel}?',
     );
-    if (confirmed != true) return;
+    if (!mounted || confirmed != true) return;
 
     setState(() => _isCancelling = true);
     try {
