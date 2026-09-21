@@ -247,6 +247,19 @@ public sealed class LectureAttendanceServiceTests
         Assert.Equal(Messages.LectureRsvpConflict, ex.Message);
     }
 
+    [Fact]
+    public async Task RsvpAsync_TreatsConcurrencyViolation_AsConflict()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var context = new ThrowingSaveDbContext(harness.Context, new DbUpdateConcurrencyException("Concurrency conflict."));
+        var service = CreateService(context, harness.Context, harness.Instructor, harness.Student);
+
+        var ex = await Assert.ThrowsAsync<ConflictException>(() =>
+            service.RsvpAsync(harness.Lecture.Id, new RsvpRequest { Confirm = true }));
+
+        Assert.Equal(Messages.LectureRsvpConflict, ex.Message);
+    }
+
     private static LectureAttendanceService CreateService(ENoteContext context, Instructor instructor, Student student) =>
         CreateService(context, context, instructor, student);
 

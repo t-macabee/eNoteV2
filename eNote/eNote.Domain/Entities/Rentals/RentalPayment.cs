@@ -79,7 +79,7 @@ public sealed class RentalPayment : AuditableEntity, ITenantScoped, IStripePayme
         }
 
         RefundedCents = _refunds.Count > 0
-            ? Math.Max(_refunds.Sum(r => r.AmountCents), (RefundedCents ?? 0) + (string.IsNullOrWhiteSpace(stripeRefundId) ? refundedCents : 0))
+            ? _refunds.Sum(r => r.AmountCents)
             : (RefundedCents ?? 0) + refundedCents;
 
         StripeRefundId = stripeRefundId ?? StripeRefundId;

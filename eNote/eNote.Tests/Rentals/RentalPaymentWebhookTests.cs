@@ -1,3 +1,5 @@
+using eNote.Application.Common.Persistence;
+using eNote.Application.Constants;
 using eNote.Application.Features.Rentals.Payments.Services;
 using eNote.Infrastructure.Payments.Stripe;
 using eNote.Tests.TestUtils;
@@ -331,6 +333,29 @@ public sealed class RentalPaymentWebhookTests
         Assert.Equal(2, payment.Refunds.Count);
     }
 
+    [Fact]
+    public async Task HandleWebhook_DuplicateEvent_DbUniqueViolation_IsIgnoredGracefully()
+    {
+        var (context, _, _) = await SeedRequiresActionPaymentAsync();
+        var inner = new Exception($"duplicate key value violates unique constraint \"{DbConstraintNames.StripeWebhookEventStripeEventIdUniqueIndex}\"");
+        var throwingContext = new ThrowingSaveDbContext(context, new DbUpdateException("Unique constraint violated.", inner));
+        var service = CreateWebhookService(throwingContext);
+        var evt = CreatePaymentIntentEvent("evt_test_race_1", "payment_intent.succeeded", "pi_test_1", "succeeded", "ch_test_1");
+
+        await service.HandleAsync(evt, "{}");
+    }
+
+    [Fact]
+    public async Task HandleWebhook_ConcurrencyConflict_Rethrows()
+    {
+        var (context, _, _) = await SeedRequiresActionPaymentAsync();
+        var throwingContext = new ThrowingSaveDbContext(context, new DbUpdateConcurrencyException("Concurrency conflict."));
+        var service = CreateWebhookService(throwingContext);
+        var evt = CreatePaymentIntentEvent("evt_test_concurrency_1", "payment_intent.succeeded", "pi_test_1", "succeeded", "ch_test_1");
+
+        await Assert.ThrowsAsync<DbUpdateConcurrencyException>(() => service.HandleAsync(evt, "{}"));
+    }
+
     // ---- Helpers ----------------------------------------------------------
 
     private static async Task<(ENoteContext Context, InstrumentRental Rental, RentalPayment Payment)> SeedRequiresActionPaymentAsync()
@@ -390,7 +415,7 @@ public sealed class RentalPaymentWebhookTests
         return (context, student, instrument);
     }
 
-    private static StripeWebhookService CreateWebhookService(ENoteContext context) =>
+    private static StripeWebhookService CreateWebhookService(IAppDbContext context) =>
         new(context, new FixedClock(Now), new StripeOptions { Currency = "eur" }, NullLogger<StripeWebhookService>.Instance);
 
     private static Event CreatePaymentIntentEvent(string eventId, string type, string paymentIntentId, string status, string? chargeId)

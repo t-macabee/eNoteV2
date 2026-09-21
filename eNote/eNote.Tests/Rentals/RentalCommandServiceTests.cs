@@ -1,4 +1,6 @@
 using eNote.Application.Common.Localization;
+using eNote.Application.Common.Persistence;
+using eNote.Application.Constants;
 using eNote.Application.Features.Identity.Users.Services;
 using eNote.Application.Features.Rentals.InstrumentRentals;
 using eNote.Application.Features.Rentals.InstrumentRentals.Services;
@@ -310,14 +312,80 @@ public sealed class RentalCommandServiceTests
         Assert.Equal(Messages.RentalPendingRequired, ex.Message);
     }
 
-    private static RentalCommandService CreateService(ENoteContext context, Student student, IRentalNotificationDispatcher? dispatcher = null)
+    [Fact]
+    public async Task CreateRequestAsync_TreatsPendingUniqueIndexViolation_AsBusinessException()
+    {
+        await using var context = CreateContext();
+        var student = await SeedStudentAsync(context, hasActiveMembership: true);
+        var instrument = await RentalTestData.SeedInstrumentAsync(context);
+        var inner = new Exception($"duplicate key value violates unique constraint \"{DbConstraintNames.InstrumentRentalPendingUniqueIndex}\"");
+        var throwingContext = new ThrowingSaveDbContext(context, new DbUpdateException("Unique constraint violated.", inner));
+        var service = CreateService(throwingContext, student);
+
+        var ex = await Assert.ThrowsAsync<BusinessException>(() =>
+            service.CreateRequestAsync(new RentalCreateRequest { InstrumentId = instrument.Id }));
+        Assert.Equal(Messages.RentalPendingRequired, ex.Message);
+    }
+
+    [Fact]
+    public async Task ApproveAsync_TreatsActiveOrApprovedUniqueIndexViolation_AsBusinessException()
+    {
+        await using var context = CreateContext();
+        var student = await SeedStudentAsync(context, hasActiveMembership: true);
+        var instrument = await RentalTestData.SeedInstrumentAsync(context);
+        var pendingRental = new InstrumentRental(instrument.Id, student.Id, instrument.MusicStoreId, Now, null);
+        context.Set<InstrumentRental>().Add(pendingRental);
+        await context.SaveChangesAsync();
+
+        var inner = new Exception($"duplicate key value violates unique constraint \"{DbConstraintNames.InstrumentRentalActiveOrApprovedUniqueIndex}\"");
+        var throwingContext = new ThrowingSaveDbContext(context, new DbUpdateException("Unique constraint violated.", inner));
+        var service = CreateStoreService(throwingContext, instrument.MusicStoreId);
+
+        var ex = await Assert.ThrowsAsync<BusinessException>(() =>
+            service.ApproveAsync(pendingRental.Id, null));
+        Assert.Equal(Messages.InstrumentReservedOrRented, ex.Message);
+    }
+
+    [Fact]
+    public async Task ApproveAsync_TreatsConcurrencyViolation_AsConflict()
+    {
+        await using var context = CreateContext();
+        var student = await SeedStudentAsync(context, hasActiveMembership: true);
+        var instrument = await RentalTestData.SeedInstrumentAsync(context);
+        var pendingRental = new InstrumentRental(instrument.Id, student.Id, instrument.MusicStoreId, Now, null);
+        context.Set<InstrumentRental>().Add(pendingRental);
+        await context.SaveChangesAsync();
+
+        var throwingContext = new ThrowingSaveDbContext(context, new DbUpdateConcurrencyException("Concurrency conflict."));
+        var service = CreateStoreService(throwingContext, instrument.MusicStoreId);
+
+        var ex = await Assert.ThrowsAsync<ConflictException>(() =>
+            service.ApproveAsync(pendingRental.Id, null));
+        Assert.Equal(Messages.ConcurrencyConflict, ex.Message);
+    }
+
+    [Fact]
+    public async Task CreateRequestAsync_PropagatesUnrelatedDbUpdateException()
+    {
+        await using var context = CreateContext();
+        var student = await SeedStudentAsync(context, hasActiveMembership: true);
+        var instrument = await RentalTestData.SeedInstrumentAsync(context);
+        var inner = new Exception("unrelated constraint");
+        var throwingContext = new ThrowingSaveDbContext(context, new DbUpdateException("DB error.", inner));
+        var service = CreateService(throwingContext, student);
+
+        await Assert.ThrowsAsync<DbUpdateException>(() =>
+            service.CreateRequestAsync(new RentalCreateRequest { InstrumentId = instrument.Id }));
+    }
+
+    private static RentalCommandService CreateService(IAppDbContext context, Student student, IRentalNotificationDispatcher? dispatcher = null)
     {
         var currentUser = new StubCurrentActor(student: student);
         return new(context, TestMapper.Create(), new FixedClock(Now), currentUser, currentUser, currentUser,
             dispatcher ?? new NoOpNotificationDispatcher(), new StubDisplayNameService());
     }
 
-    private static RentalCommandService CreateStoreService(ENoteContext context, int storeId, IRentalNotificationDispatcher? dispatcher = null)
+    private static RentalCommandService CreateStoreService(IAppDbContext context, int storeId, IRentalNotificationDispatcher? dispatcher = null)
     {
         var currentUser = new StubCurrentActor(storeId: storeId);
         return new(context, TestMapper.Create(), new FixedClock(Now), currentUser, currentUser, currentUser,
