@@ -13,7 +13,7 @@ public sealed class RankingService(
 {
     public async Task<IReadOnlyList<CourseRankingEntryDto>> GetForInstructorAsync(int courseId, CancellationToken cancellationToken = default)
     {
-        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId);
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId, cancellationToken);
 
         if (!await instructorAccess.OwnsCourseAsync(courseId, instructorId, cancellationToken))
         {

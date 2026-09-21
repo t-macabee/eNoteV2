@@ -42,7 +42,7 @@ public sealed class PictureAccessService(
                 return true;
             }
 
-            var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId);
+            var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId, cancellationToken);
 
             return await context.Set<Enrollment>()
                 .AsNoTracking()

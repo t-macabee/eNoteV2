@@ -25,7 +25,7 @@ public sealed class InstructorStudentController(
         [FromQuery] StudentSearchObject search,
         CancellationToken cancellationToken)
     {
-        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId);
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId, cancellationToken);
         var result = await studentService.GetPagedForInstructorAsync(instructorId, search, cancellationToken);
         return Ok(result);
     }
@@ -34,7 +34,7 @@ public sealed class InstructorStudentController(
     [ProducesResponseType(typeof(StudentDto), StatusCodes.Status200OK)]
     public async Task<ActionResult<StudentDto>> GetById(int id, CancellationToken cancellationToken)
     {
-        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId);
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId, cancellationToken);
         var dto = await studentService.GetByIdForInstructorAsync(instructorId, id, cancellationToken);
         return Ok(dto);
     }
@@ -43,7 +43,7 @@ public sealed class InstructorStudentController(
     [ProducesResponseType(typeof(List<StudentEnrollmentDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<List<StudentEnrollmentDto>>> GetEnrollments(int id, CancellationToken cancellationToken)
     {
-        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId);
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId, cancellationToken);
         var result = await studentService.GetEnrollmentsForInstructorAsync(instructorId, id, cancellationToken);
         return Ok(result);
     }

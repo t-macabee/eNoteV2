@@ -117,7 +117,7 @@ public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, 
             throw new BusinessException(result.Error);
         }
 
-        var dto = await LoadDtoAsync(rental);
+        var dto = await LoadDtoAsync(rental, cancellationToken);
         await notificationDispatcher.DispatchTransitionAsync(dto, trigger, userId);
 
         if (result.Value.UsesInstrumentLock)
@@ -153,11 +153,11 @@ public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, 
         return rental;
     }
 
-    private async Task<InstrumentRentalDto> LoadDtoAsync(InstrumentRental entity)
+    private async Task<InstrumentRentalDto> LoadDtoAsync(InstrumentRental entity, CancellationToken cancellationToken)
     {
         var result = mapper.Map<InstrumentRentalDto>(entity);
         result.ApplyCharges(entity, entity.CalculateCharges(clock.UtcNow));
-        result.StudentName = await displayNames.GetStudentDisplayNameAsync(entity.StudentProfile);
+        result.StudentName = await displayNames.GetStudentDisplayNameAsync(entity.StudentProfile, cancellationToken);
         return result;
     }
 

@@ -10,7 +10,7 @@ public sealed class CourseService(IAppDbContext context, IMapper mapper, ICurren
 {
     public async Task<CourseDto> GetByIdForInstructorAsync(int id, CancellationToken cancellationToken = default)
     {
-        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId);
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId, cancellationToken);
 
         return await instructorAccess.CoursesFor(instructorId)
             .AsNoTracking()
@@ -33,7 +33,7 @@ public sealed class CourseService(IAppDbContext context, IMapper mapper, ICurren
 
     public async Task<PagedResult<CourseDto>> GetPagedCatalogForInstructorAsync(CourseSearchObject search, CancellationToken cancellationToken = default)
     {
-        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId);
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId, cancellationToken);
 
         var query = WhereCatalogVisible(context.Set<Course>().AsNoTracking(), instructorId)
             .ApplySearch(search);
@@ -43,7 +43,7 @@ public sealed class CourseService(IAppDbContext context, IMapper mapper, ICurren
 
     public async Task<CourseDto> GetCatalogByIdForInstructorAsync(int id, CancellationToken cancellationToken = default)
     {
-        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId);
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId, cancellationToken);
 
         return await LoadCourseDetailDtoAsync(
             WhereCatalogVisible(context.Set<Course>(), instructorId),
@@ -53,7 +53,7 @@ public sealed class CourseService(IAppDbContext context, IMapper mapper, ICurren
 
     public async Task<List<CourseCatalogInstructorDto>> GetCatalogInstructorsAsync(CancellationToken cancellationToken = default)
     {
-        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId);
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId, cancellationToken);
 
         var instructors = await WhereCatalogVisible(context.Set<Course>().AsNoTracking().Include(c => c.Instructor), instructorId)
             .Select(c => new { c.Instructor.Id, c.Instructor.AppUserId })
@@ -75,7 +75,7 @@ public sealed class CourseService(IAppDbContext context, IMapper mapper, ICurren
 
     public async Task<CourseCatalogSummaryDto> GetCatalogSummaryAsync(CancellationToken cancellationToken = default)
     {
-        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId);
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId, cancellationToken);
 
         var visibleCourses = WhereCatalogVisible(context.Set<Course>().AsNoTracking(), instructorId);
 
@@ -133,7 +133,7 @@ public sealed class CourseService(IAppDbContext context, IMapper mapper, ICurren
 
     public async Task<PagedResult<CourseDto>> GetPagedForInstructorAsync(CourseSearchObject search, CancellationToken cancellationToken = default)
     {
-        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId);
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId, cancellationToken);
 
         var query = instructorAccess.CoursesFor(instructorId)
             .AsNoTracking()
@@ -346,7 +346,7 @@ public sealed class CourseService(IAppDbContext context, IMapper mapper, ICurren
 
     public async Task<CourseDto> CreateAsync(CourseRequest request, CancellationToken cancellationToken = default)
     {
-        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId);
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId, cancellationToken);
 
         logger.LogInformation("Creating course {CourseName} by instructor user {InstructorUserId}", request.Name, currentUser.UserId);
 
@@ -372,7 +372,7 @@ public sealed class CourseService(IAppDbContext context, IMapper mapper, ICurren
 
     public async Task<CourseDto> UpdateAsync(int id, CourseRequest request, CancellationToken cancellationToken = default)
     {
-        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId);
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId, cancellationToken);
 
         var entity = await instructorAccess.CoursesFor(instructorId)
             .FirstOrDefaultAsync(c => c.Id == id, cancellationToken) ?? throw new NotFoundException(Messages.CourseNotFound);
@@ -391,7 +391,7 @@ public sealed class CourseService(IAppDbContext context, IMapper mapper, ICurren
 
     public async Task DeleteAsync(int id, CancellationToken cancellationToken = default)
     {
-        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId);
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId, cancellationToken);
 
         var entity = await instructorAccess.CoursesFor(instructorId).FirstOrDefaultAsync(c => c.Id == id, cancellationToken) ?? throw new NotFoundException(Messages.CourseNotFound);
 

@@ -5,7 +5,8 @@ namespace eNote.Application.Features.Identity.Instructors;
 
 public sealed class InstructorAccessService(IAppDbContext context, IUserProfileLookup lookup)
 {
-    public async Task<int> GetCurrentInstructorIdAsync(int appUserId) => (await lookup.GetInstructorAsync(appUserId)).Id;
+    public async Task<int> GetCurrentInstructorIdAsync(int appUserId, CancellationToken cancellationToken = default)
+        => (await lookup.GetInstructorAsync(appUserId, cancellationToken)).Id;
 
     public Task<bool> OwnsCourseAsync(int courseId, int instructorId, CancellationToken cancellationToken = default) =>
         context.Set<Course>().AnyAsync(c => c.Id == courseId && c.InstructorId == instructorId, cancellationToken);

@@ -7,7 +7,7 @@ public sealed class InstructorAnnouncementService(IAppDbContext context, IClock 
 {
     public async Task<AnnouncementDto> CreateForCourseAsync(int courseId, AnnouncementRequest request, CancellationToken cancellationToken = default)
     {
-        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId);
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId, cancellationToken);
 
         if (!await instructorAccess.OwnsCourseAsync(courseId, instructorId, cancellationToken))
         {

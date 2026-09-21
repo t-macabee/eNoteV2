@@ -50,7 +50,7 @@ public sealed class FileAccessService(
 
         if (roles.Contains(AppRoles.Instructor))
         {
-            var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(userId);
+            var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(userId, cancellationToken);
             return authData.InstructorId == instructorId;
         }
 
