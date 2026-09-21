@@ -45,5 +45,12 @@ public sealed class InstrumentRentalConfig : IEntityTypeConfiguration<Instrument
         builder.HasIndex(x => x.InstrumentId)
                .HasFilter($"\"{nameof(InstrumentRental.RentalStatus)}\" IN ({(int)InstrumentRentalStatus.Approved}, {(int)InstrumentRentalStatus.Active})").IsUnique()
                .HasDatabaseName(DbConstraintNames.InstrumentRentalActiveOrApprovedUniqueIndex);
+
+        builder.HasIndex(x => new { x.InstrumentId, x.StudentProfileId })
+               .HasFilter($"\"{nameof(InstrumentRental.RentalStatus)}\" = {(int)InstrumentRentalStatus.Pending}")
+               .IsUnique()
+               .HasDatabaseName(DbConstraintNames.InstrumentRentalPendingUniqueIndex);
+
+        builder.Property(x => x.Version).IsRowVersion();
     }
 }

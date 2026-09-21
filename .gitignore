@@ -81,3 +81,5 @@ build/
 .tokensave/
 .mcp.json
 index.db
+.enote-audit/
+enote-audit/

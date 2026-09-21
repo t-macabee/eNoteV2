@@ -4,6 +4,7 @@ public static class DbConstraintNames
 {
 
     public const string InstrumentRentalActiveOrApprovedUniqueIndex = "UX_InstrumentRental_InstrumentId_ActiveOrApproved";
+    public const string InstrumentRentalPendingUniqueIndex = "UX_InstrumentRental_InstrumentId_StudentProfileId_Pending";
 
     public const string NotificationUserRentalCreatedAtUniqueIndex = "IX_Notification_UserId_RentalId_CreatedAt";
 

@@ -161,7 +161,13 @@ public sealed class LectureAttendanceService(
 
         try
         {
+            context.Set<Lecture>().Entry(lecture).State = EntityState.Modified;
             await context.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateConcurrencyException ex)
+        {
+            logger.LogWarning(ex, "Concurrency conflict while marking attendance for lecture {LectureId}", lectureId);
+            throw new ConflictException(Messages.LectureRsvpConflict);
         }
         catch (DbUpdateException ex) when (DbErrors.IsUniqueViolation(ex, DbConstraintNames.AttendanceStudentIdLectureIdUniqueIndex))
         {

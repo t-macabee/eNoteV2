@@ -230,6 +230,23 @@ public sealed class LectureAttendanceServiceTests
             }));
     }
 
+    [Fact]
+    public async Task MarkAttendanceAsync_TreatsConcurrencyViolation_AsConflict()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var context = new ThrowingSaveDbContext(harness.Context, new DbUpdateConcurrencyException("Concurrency conflict."));
+        var service = CreateService(context, harness.Context, harness.Instructor, harness.Student);
+
+        var ex = await Assert.ThrowsAsync<ConflictException>(() =>
+            service.MarkAttendanceAsync(harness.Lecture.Id, new MarkAttendanceRequest
+            {
+                StudentId = harness.Student.Id,
+                AttendanceStatus = AttendanceStatus.Present
+            }));
+
+        Assert.Equal(Messages.LectureRsvpConflict, ex.Message);
+    }
+
     private static LectureAttendanceService CreateService(ENoteContext context, Instructor instructor, Student student) =>
         CreateService(context, context, instructor, student);
 

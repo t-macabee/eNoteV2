@@ -196,22 +196,25 @@ public sealed class StripeWebhookService(
 
             var rentalPayment = await context.Set<RentalPayment>()
                 .IgnoreQueryFilters()
+                .Include(p => p.Refunds)
                 .FirstOrDefaultAsync(p => p.StripePaymentIntentId == charge.PaymentIntentId, cancellationToken);
 
             if (rentalPayment is not null)
             {
                 if (rentalPayment.Status is PaymentStatus.Succeeded or PaymentStatus.PartiallyRefunded && charge.AmountRefunded > 0)
                 {
-                    var refundId = charge.Refunds?.Data?.FirstOrDefault()?.Id ?? rentalPayment.StripeRefundId;
-                    if (refundId is null)
+                    if (charge.Refunds?.Data is { Count: > 0 } refundList)
                     {
-                        logger.LogWarning("Charge {ChargeId} refunded without a refund id", charge.Id);
+                        foreach (var refItem in refundList)
+                        {
+                            rentalPayment.ApplyRefund(refItem.Amount, refItem.Id, clock.UtcNow);
+                        }
                     }
 
                     var alreadyRefunded = rentalPayment.RefundedCents ?? 0;
-
                     if (charge.AmountRefunded > alreadyRefunded)
                     {
+                        var refundId = charge.Refunds?.Data?.FirstOrDefault()?.Id ?? rentalPayment.StripeRefundId;
                         rentalPayment.ApplyRefund(charge.AmountRefunded - alreadyRefunded, refundId, clock.UtcNow);
                     }
                 }
@@ -253,6 +256,7 @@ public sealed class StripeWebhookService(
             var rentalPayment = await context.Set<RentalPayment>()
                 .IgnoreQueryFilters()
                 .Include(p => p.InstrumentRental)
+                .Include(p => p.Refunds)
                 .FirstOrDefaultAsync(p => p.StripePaymentIntentId == refund.PaymentIntentId, cancellationToken);
 
             if (rentalPayment is null)
@@ -275,7 +279,8 @@ public sealed class StripeWebhookService(
             if (rentalPayment.Status is PaymentStatus.Succeeded or PaymentStatus.PartiallyRefunded or PaymentStatus.Refunded)
             {
                 // The charge.refunded fallback records a null refund id when the payload carries no refund list.
-                var counted = rentalPayment.StripeRefundId == refund.Id
+                var counted = (!string.IsNullOrWhiteSpace(refund.Id) && rentalPayment.Refunds.Any(r => r.StripeRefundId == refund.Id))
+                    || rentalPayment.StripeRefundId == refund.Id
                     || (rentalPayment.StripeRefundId is null && (rentalPayment.RefundedCents ?? 0) >= refund.Amount);
 
                 if (refund.Status == "succeeded")
@@ -293,7 +298,7 @@ public sealed class StripeWebhookService(
                 {
                     if (counted)
                     {
-                        rentalPayment.ReverseRefund(refund.Amount);
+                        rentalPayment.ReverseRefund(refund.Amount, refund.Id);
                         logger.LogWarning("Refund {RefundId} failed for payment {PaymentId}; the counted refund was reversed", refund.Id, rentalPayment.Id);
                     }
                     else
@@ -333,6 +338,11 @@ public sealed class StripeWebhookService(
         try
         {
             await context.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateConcurrencyException ex)
+        {
+            logger.LogWarning(ex, "Concurrency conflict processing Stripe webhook event {EventId}", eventId);
+            throw;
         }
         catch (DbUpdateException ex) when (DbErrors.IsUniqueViolation(ex, DbConstraintNames.StripeWebhookEventStripeEventIdUniqueIndex))
         {

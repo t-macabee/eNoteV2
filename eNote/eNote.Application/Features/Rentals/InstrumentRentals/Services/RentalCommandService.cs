@@ -91,14 +91,6 @@ public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, 
 
     private async Task<InstrumentRentalDto> ExecuteTransitionWithNotificationAsync(InstrumentRental rental, RentalTrigger trigger, RentalActor rentalActor, int userId, RentalStatusRequest? request, CancellationToken cancellationToken)
     {
-        var dto = await ExecuteTransitionAsync(rental, trigger, rentalActor, userId, request, cancellationToken);
-        await notificationDispatcher.DispatchTransitionAsync(dto, trigger, userId);
-        await context.SaveChangesAsync(cancellationToken);
-        return dto;
-    }
-
-    private async Task<InstrumentRentalDto> ExecuteTransitionAsync(InstrumentRental rental, RentalTrigger trigger, RentalActor rentalActor, int userId, RentalStatusRequest? request, CancellationToken cancellationToken)
-    {
         var hasConflict = false;
 
         if (trigger is RentalTrigger.Approve)
@@ -125,16 +117,19 @@ public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, 
             throw new BusinessException(result.Error);
         }
 
+        var dto = await LoadDtoAsync(rental);
+        await notificationDispatcher.DispatchTransitionAsync(dto, trigger, userId);
+
         if (result.Value.UsesInstrumentLock)
         {
             await SaveWithLockConflictMessageAsync(Messages.InstrumentReservedOrRented, cancellationToken);
         }
         else
         {
-            await context.SaveChangesAsync(cancellationToken);
+            await SaveWithLockConflictMessageAsync(Messages.Conflict, cancellationToken);
         }
 
-        return await LoadDtoAsync(rental);
+        return dto;
     }
 
     private async Task<InstrumentRental> LoadForStoreAsync(int rentalId, CancellationToken cancellationToken)
@@ -185,9 +180,17 @@ public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, 
         {
             await context.SaveChangesAsync(cancellationToken);
         }
+        catch (DbUpdateConcurrencyException)
+        {
+            throw new ConflictException(Messages.ConcurrencyConflict);
+        }
         catch (DbUpdateException ex) when (DbErrors.IsUniqueViolation(ex, DbConstraintNames.InstrumentRentalActiveOrApprovedUniqueIndex))
         {
             throw new BusinessException(message);
+        }
+        catch (DbUpdateException ex) when (DbErrors.IsUniqueViolation(ex, DbConstraintNames.InstrumentRentalPendingUniqueIndex))
+        {
+            throw new BusinessException(Messages.RentalPendingRequired);
         }
     }
 

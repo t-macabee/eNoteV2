@@ -20,72 +20,69 @@ public sealed class TuitionPaymentService(
 {
     public async Task<CreateTuitionIntentResponse> CreateIntentAsync(int enrollmentId, CancellationToken cancellationToken = default)
     {
-        return await context.ExecuteInTransactionAsync(async () =>
+        var enrollment = await LoadForStudentAsync(enrollmentId, cancellationToken);
+
+        if (enrollment.EnrollmentStatus != EnrollmentStatus.Active)
         {
-            var enrollment = await LoadForStudentAsync(enrollmentId, cancellationToken);
+            throw new BusinessException(Messages.StudentNotEnrolled);
+        }
 
-            if (enrollment.EnrollmentStatus != EnrollmentStatus.Active)
+        // Deliberately no "already paid" refusal: a paid enrollment may buy the next period early, and
+        // ExtendPaidUntil stacks the new period on top of the existing PaidUntil.
+        if (enrollment.Course.Price == 0)
+        {
+            throw new BusinessException(Messages.CourseIsFree);
+        }
+
+        if (!enrollment.Course.IsPublished || enrollment.Course.EndDate < clock.UtcNow)
+        {
+            throw new BusinessException(Messages.CourseNotPayable);
+        }
+
+        var existingRows = context.Set<CoursePayment>()
+            .Where(p => p.EnrollmentId == enrollment.Id
+                && p.Status == PaymentStatus.RequiresAction
+                && p.CreatedAt >= clock.UtcNow - PaymentGatewayHelpers.RequiresActionReuseWindow)
+            .OrderByDescending(p => p.CreatedAt);
+
+        var result = await PaymentGatewayHelpers.ReuseOrCreatePaymentIntentAsync(
+            logger,
+            context,
+            paymentGateway,
+            $"enrollment {enrollment.Id}",
+            existingRows,
+            async () =>
             {
-                throw new BusinessException(Messages.StudentNotEnrolled);
-            }
+                var amountCents = PaymentGatewayHelpers.ToCents(enrollment.Course.Price);
+                var paidUntilKey = enrollment.PaidUntil.HasValue ? enrollment.PaidUntil.Value.ToString("O") : "none";
+                var attempt = await context.Set<CoursePayment>().CountAsync(p => p.EnrollmentId == enrollment.Id, cancellationToken);
+                var idempotencyKey = $"tuition:{enrollment.Id}:{paidUntilKey}:{attempt}:v2";
 
-            // Deliberately no "already paid" refusal: a paid enrollment may buy the next period early, and
-            // ExtendPaidUntil stacks the new period on top of the existing PaidUntil.
-            if (enrollment.Course.Price == 0)
-            {
-                throw new BusinessException(Messages.CourseIsFree);
-            }
-
-            if (!enrollment.Course.IsPublished || enrollment.Course.EndDate < clock.UtcNow)
-            {
-                throw new BusinessException(Messages.CourseNotPayable);
-            }
-
-            var existingRows = context.Set<CoursePayment>()
-                .Where(p => p.EnrollmentId == enrollment.Id
-                    && p.Status == PaymentStatus.RequiresAction
-                    && p.CreatedAt >= clock.UtcNow - PaymentGatewayHelpers.RequiresActionReuseWindow)
-                .OrderByDescending(p => p.CreatedAt);
-
-            var result = await PaymentGatewayHelpers.ReuseOrCreatePaymentIntentAsync(
-                logger,
-                context,
-                paymentGateway,
-                $"enrollment {enrollment.Id}",
-                existingRows,
-                async () =>
+                var metadata = new Dictionary<string, string>
                 {
-                    var amountCents = PaymentGatewayHelpers.ToCents(enrollment.Course.Price);
-                    var paidUntilKey = enrollment.PaidUntil.HasValue ? enrollment.PaidUntil.Value.ToString("O") : "none";
-                    var attempt = await context.Set<CoursePayment>().CountAsync(p => p.EnrollmentId == enrollment.Id, cancellationToken);
-                    var idempotencyKey = $"tuition:{enrollment.Id}:{paidUntilKey}:{attempt}:v2";
+                    ["enrollmentId"] = enrollment.Id.ToString(),
+                    ["courseId"] = enrollment.CourseId.ToString(),
+                    ["studentId"] = enrollment.StudentId.ToString()
+                };
 
-                    var metadata = new Dictionary<string, string>
-                    {
-                        ["enrollmentId"] = enrollment.Id.ToString(),
-                        ["courseId"] = enrollment.CourseId.ToString(),
-                        ["studentId"] = enrollment.StudentId.ToString()
-                    };
-
-                    return new PaymentIntentCreation(amountCents, options.Currency, metadata, idempotencyKey, TuitionOptions.StatementDescriptorSuffix);
-                },
-                intent => new CoursePayment(
-                    enrollment.Id,
-                    intent.Id,
-                    intent.AmountCents,
-                    intent.Currency,
-                    PaymentGatewayHelpers.MapStatus(intent.Status)),
-                DbConstraintNames.CoursePaymentPaymentIntentIdUniqueIndex,
-                cancellationToken);
-
-            return new CreateTuitionIntentResponse(
+                return new PaymentIntentCreation(amountCents, options.Currency, metadata, idempotencyKey, TuitionOptions.StatementDescriptorSuffix);
+            },
+            intent => new CoursePayment(
                 enrollment.Id,
-                result.PaymentIntentId,
-                result.ClientSecret,
-                result.AmountCents,
-                result.Currency,
-                result.Status);
-        }, cancellationToken);
+                intent.Id,
+                intent.AmountCents,
+                intent.Currency,
+                PaymentGatewayHelpers.MapStatus(intent.Status)),
+            DbConstraintNames.CoursePaymentPaymentIntentIdUniqueIndex,
+            cancellationToken);
+
+        return new CreateTuitionIntentResponse(
+            enrollment.Id,
+            result.PaymentIntentId,
+            result.ClientSecret,
+            result.AmountCents,
+            result.Currency,
+            result.Status);
     }
 
     public async Task<CoursePaymentDto> GetLatestAsync(int enrollmentId, CancellationToken cancellationToken = default)

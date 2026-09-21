@@ -287,6 +287,50 @@ public sealed class RentalPaymentWebhookTests
         Assert.Single(await context.Set<StripeWebhookEvent>().ToListAsync());
     }
 
+    [Fact]
+    public async Task HandleWebhook_CrossEventInterleaving_DoesNotDoubleCountRefund()
+    {
+        var (context, _, _) = await SeedSucceededPaymentAsync();
+        var service = CreateWebhookService(context);
+
+        var chargeEvt = new Event
+        {
+            Id = "evt_charge_refunded_multi",
+            Type = "charge.refunded",
+            Data = new Stripe.EventData
+            {
+                Object = new Charge
+                {
+                    Id = "ch_test_1",
+                    PaymentIntentId = "pi_test_1",
+                    AmountRefunded = 3500,
+                    Refunds = new StripeList<Refund>
+                    {
+                        Data =
+                        [
+                            new Refund { Id = "re_A", Amount = 2000 },
+                            new Refund { Id = "re_B", Amount = 1500 }
+                        ]
+                    }
+                }
+            }
+        };
+
+        await service.HandleAsync(chargeEvt, "{}");
+
+        var payment = await context.Set<RentalPayment>().Include(p => p.Refunds).SingleAsync();
+        Assert.Equal(3500, payment.RefundedCents);
+        Assert.Equal(2, payment.Refunds.Count);
+
+        var refundBEvt = CreateRefundUpdatedEvent("evt_refund_b_updated", "pi_test_1", "re_B", 1500, "succeeded");
+        await service.HandleAsync(refundBEvt, "{}");
+
+        payment = await context.Set<RentalPayment>().Include(p => p.Refunds).SingleAsync();
+        Assert.Equal(PaymentStatus.PartiallyRefunded, payment.Status);
+        Assert.Equal(3500, payment.RefundedCents);
+        Assert.Equal(2, payment.Refunds.Count);
+    }
+
     // ---- Helpers ----------------------------------------------------------
 
     private static async Task<(ENoteContext Context, InstrumentRental Rental, RentalPayment Payment)> SeedRequiresActionPaymentAsync()

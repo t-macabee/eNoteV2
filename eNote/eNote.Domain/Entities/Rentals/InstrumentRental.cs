@@ -30,6 +30,7 @@ public sealed class InstrumentRental : AuditableEntity, ITenantScoped
     public bool IsPaid { get; private set; }
     public DateTime? PaidAt { get; private set; }
     public decimal? AmountPaid { get; private set; }
+    public byte[] Version { get; private set; } = null!;
 
     public ICollection<RentalPayment> Payments { get; private set; } = [];
 

@@ -19,58 +19,55 @@ public sealed class RentalPaymentService(
 {
     public async Task<CreatePaymentIntentResponse> CreatePaymentIntentAsync(int rentalId, CancellationToken cancellationToken = default)
     {
-        return await context.ExecuteInTransactionAsync(async () =>
-        {
-            var rental = await LoadForStudentAsync(rentalId, cancellationToken);
+        var rental = await LoadForStudentAsync(rentalId, cancellationToken);
 
-            EnsureCanCreatePaymentIntent(rental);
+        EnsureCanCreatePaymentIntent(rental);
 
-            var existingRows = context.Set<RentalPayment>()
-                .Where(p => p.InstrumentRentalId == rental.Id
-                    && p.Status == PaymentStatus.RequiresAction
-                    && p.CreatedAt >= clock.UtcNow - PaymentGatewayHelpers.RequiresActionReuseWindow)
-                .OrderByDescending(p => p.CreatedAt);
+        var existingRows = context.Set<RentalPayment>()
+            .Where(p => p.InstrumentRentalId == rental.Id
+                && p.Status == PaymentStatus.RequiresAction
+                && p.CreatedAt >= clock.UtcNow - PaymentGatewayHelpers.RequiresActionReuseWindow)
+            .OrderByDescending(p => p.CreatedAt);
 
-            var result = await PaymentGatewayHelpers.ReuseOrCreatePaymentIntentAsync(
-                logger,
-                context,
-                paymentGateway,
-                $"rental {rental.Id}",
-                existingRows,
-                async () =>
+        var result = await PaymentGatewayHelpers.ReuseOrCreatePaymentIntentAsync(
+            logger,
+            context,
+            paymentGateway,
+            $"rental {rental.Id}",
+            existingRows,
+            async () =>
+            {
+                var charges = rental.CalculateCharges(rental.ReturnedAt ?? clock.UtcNow);
+
+                if (charges.TotalFee is not decimal totalFee || totalFee <= 0)
                 {
-                    var charges = rental.CalculateCharges(rental.ReturnedAt ?? clock.UtcNow);
+                    throw new BusinessException(Messages.PaymentNotPayableInStatus);
+                }
 
-                    if (charges.TotalFee is not decimal totalFee || totalFee <= 0)
-                    {
-                        throw new BusinessException(Messages.PaymentNotPayableInStatus);
-                    }
+                var cents = PaymentGatewayHelpers.ToCents(totalFee);
+                var attempt = await context.Set<RentalPayment>().CountAsync(p => p.InstrumentRentalId == rental.Id, cancellationToken);
+                var idempotencyKey = $"rental:{rental.Id}:total:{cents}:{rental.ReturnedAt:O}:{attempt}:v3";
 
-                    var cents = PaymentGatewayHelpers.ToCents(totalFee);
-                    var attempt = await context.Set<RentalPayment>().CountAsync(p => p.InstrumentRentalId == rental.Id, cancellationToken);
-                    var idempotencyKey = $"rental:{rental.Id}:total:{cents}:{rental.ReturnedAt:O}:{attempt}:v3";
+                var metadata = new Dictionary<string, string>
+                {
+                    ["rentalId"] = rental.Id.ToString(),
+                    ["storeId"] = rental.MusicStoreId.ToString(),
+                    ["studentId"] = rental.StudentProfile.AppUserId.ToString()
+                };
 
-                    var metadata = new Dictionary<string, string>
-                    {
-                        ["rentalId"] = rental.Id.ToString(),
-                        ["storeId"] = rental.MusicStoreId.ToString(),
-                        ["studentId"] = rental.StudentProfile.AppUserId.ToString()
-                    };
+                return new PaymentIntentCreation(cents, options.Currency, metadata, idempotencyKey, options.StatementDescriptor);
+            },
+            intent => new RentalPayment(
+                rental.Id,
+                rental.MusicStoreId,
+                intent.Id,
+                intent.AmountCents,
+                intent.Currency,
+                PaymentGatewayHelpers.MapStatus(intent.Status)),
+            DbConstraintNames.RentalPaymentStripePaymentIntentIdUniqueIndex,
+            cancellationToken);
 
-                    return new PaymentIntentCreation(cents, options.Currency, metadata, idempotencyKey, options.StatementDescriptor);
-                },
-                intent => new RentalPayment(
-                    rental.Id,
-                    rental.MusicStoreId,
-                    intent.Id,
-                    intent.AmountCents,
-                    intent.Currency,
-                    PaymentGatewayHelpers.MapStatus(intent.Status)),
-                DbConstraintNames.RentalPaymentStripePaymentIntentIdUniqueIndex,
-                cancellationToken);
-
-            return new CreatePaymentIntentResponse(rental.Id, result.PaymentIntentId, result.ClientSecret, result.AmountCents, result.Currency, result.Status);
-        }, cancellationToken);
+        return new CreatePaymentIntentResponse(rental.Id, result.PaymentIntentId, result.ClientSecret, result.AmountCents, result.Currency, result.Status);
     }
 
     public async Task<RentalPaymentDto> GetPaymentStatusAsync(int rentalId, CancellationToken cancellationToken = default)
@@ -99,54 +96,63 @@ public sealed class RentalPaymentService(
 
     public async Task<RentalPaymentDto> RefundAsync(int rentalId, long? amountCents, CancellationToken cancellationToken = default)
     {
-        return await context.ExecuteInTransactionAsync(async () =>
+        var rental = await LoadForStoreAsync(rentalId, cancellationToken);
+
+        var payment = await context.Set<RentalPayment>()
+            .Include(p => p.Refunds)
+            .SingleOrDefaultAsync(p => p.InstrumentRentalId == rental.Id && (p.Status == PaymentStatus.Succeeded || p.Status == PaymentStatus.PartiallyRefunded), cancellationToken)
+            ?? throw new NotFoundException(Messages.PaymentNotFound);
+
+        var centsToRefund = amountCents ?? payment.AmountChargedCents;
+        var remaining = payment.AmountChargedCents - (payment.RefundedCents ?? 0);
+
+        if (centsToRefund <= 0 || centsToRefund > remaining)
         {
-            var rental = await LoadForStoreAsync(rentalId, cancellationToken);
+            throw new BusinessException(Messages.RefundExceedsCharged);
+        }
 
-            var payment = await context.Set<RentalPayment>()
-                .SingleOrDefaultAsync(p => p.InstrumentRentalId == rental.Id && (p.Status == PaymentStatus.Succeeded || p.Status == PaymentStatus.PartiallyRefunded), cancellationToken)
-                ?? throw new NotFoundException(Messages.PaymentNotFound);
+        var refund = await PaymentGatewayHelpers.InvokeGatewayAsync(
+            logger,
+            () => paymentGateway.CreateRefundAsync(
+                payment.StripePaymentIntentId,
+                centsToRefund,
+                "requested_by_customer",
+                $"refund:{payment.Id}:{payment.RefundedCents ?? 0}:{centsToRefund}",
+                cancellationToken));
 
-            var centsToRefund = amountCents ?? payment.AmountChargedCents;
-            var remaining = payment.AmountChargedCents - (payment.RefundedCents ?? 0);
+        if (refund.Status == "pending")
+        {
+            logger.LogInformation("Refund {RefundId} for payment {PaymentId} is pending; leaving payment unchanged", refund.Id, payment.Id);
+            return mapper.Map<RentalPaymentDto>(payment);
+        }
 
-            if (centsToRefund <= 0 || centsToRefund > remaining)
-            {
-                throw new BusinessException(Messages.RefundExceedsCharged);
-            }
+        if (refund.Status != "succeeded")
+        {
+            throw new BusinessException(Messages.RefundFailed);
+        }
 
-            var refund = await PaymentGatewayHelpers.InvokeGatewayAsync(
-                logger,
-                () => paymentGateway.CreateRefundAsync(
-                    payment.StripePaymentIntentId,
-                    centsToRefund,
-                    "requested_by_customer",
-                    $"refund:{payment.Id}:{payment.RefundedCents ?? 0}:{centsToRefund}",
-                    cancellationToken));
-
-            if (refund.Status == "pending")
-            {
-                logger.LogInformation("Refund {RefundId} for payment {PaymentId} is pending; leaving payment unchanged", refund.Id, payment.Id);
-                return mapper.Map<RentalPaymentDto>(payment);
-            }
-
-            if (refund.Status != "succeeded")
-            {
-                throw new BusinessException(Messages.RefundFailed);
-            }
-
+        await context.ExecuteInTransactionAsync(async () =>
+        {
             payment.ApplyRefund(refund.AmountCents, refund.Id, clock.UtcNow);
-            await context.SaveChangesAsync(cancellationToken);
 
             var dto = mapper.Map<InstrumentRentalDto>(rental);
             dto.ApplyCharges(rental, rental.CalculateCharges(clock.UtcNow));
             await notificationDispatcher.DispatchPaymentRefundedAsync(dto, refund.AmountCents, payment.Currency, currentUser.UserId);
-            await context.SaveChangesAsync(cancellationToken);
 
-            logger.LogInformation("Refunded {AmountCents} {Currency} on PaymentIntent {PaymentIntentId} for rental {RentalId}", refund.AmountCents, payment.Currency, payment.StripePaymentIntentId, rental.Id);
-
-            return mapper.Map<RentalPaymentDto>(payment);
+            try
+            {
+                await context.SaveChangesAsync(cancellationToken);
+            }
+            catch (DbUpdateConcurrencyException ex)
+            {
+                logger.LogWarning(ex, "Concurrency conflict during refund for rental {RentalId}", rental.Id);
+                throw new ConflictException(Messages.ConcurrencyConflict);
+            }
         }, cancellationToken);
+
+        logger.LogInformation("Refunded {AmountCents} {Currency} on PaymentIntent {PaymentIntentId} for rental {RentalId}", refund.AmountCents, payment.Currency, payment.StripePaymentIntentId, rental.Id);
+
+        return mapper.Map<RentalPaymentDto>(payment);
     }
 
     private async Task<InstrumentRental> LoadForStoreAsync(int rentalId, CancellationToken cancellationToken)

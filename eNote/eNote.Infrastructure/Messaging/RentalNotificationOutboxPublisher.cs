@@ -60,8 +60,6 @@ public sealed class RentalNotificationOutboxPublisher(IServiceProvider services,
 
         if (messages.Count == 0) return;
 
-        await using var tx = await db.BeginTransactionAsync(ct);
-
         foreach (var message in messages)
         {
             try
@@ -89,7 +87,6 @@ public sealed class RentalNotificationOutboxPublisher(IServiceProvider services,
         try
         {
             await db.SaveChangesAsync(ct);
-            await tx.CommitAsync(ct);
         }
         catch (Exception ex)
         {

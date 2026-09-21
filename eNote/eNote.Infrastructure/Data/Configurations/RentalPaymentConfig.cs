@@ -49,5 +49,7 @@ public sealed class RentalPaymentConfig : IEntityTypeConfiguration<RentalPayment
                .HasMaxLength(64);
 
         builder.HasIndex(x => new { x.InstrumentRentalId, x.Status });
+
+        builder.Property(x => x.Version).IsRowVersion();
     }
 }

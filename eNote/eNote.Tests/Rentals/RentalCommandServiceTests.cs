@@ -295,6 +295,21 @@ public sealed class RentalCommandServiceTests
         Assert.Equal(RentalTrigger.Cancel, recorder.TransitionCalls[0].Trigger);
     }
 
+    [Fact]
+    public async Task CreateRequestAsync_Throws_WhenRentalAlreadyPending()
+    {
+        await using var context = CreateContext();
+        var student = await SeedStudentAsync(context, hasActiveMembership: true);
+        var instrument = await RentalTestData.SeedInstrumentAsync(context);
+        var pendingRental = new InstrumentRental(instrument.Id, student.Id, instrument.MusicStoreId, Now, null);
+        context.Set<InstrumentRental>().Add(pendingRental);
+        await context.SaveChangesAsync();
+
+        var service = CreateService(context, student);
+        var ex = await Assert.ThrowsAsync<BusinessException>(() => service.CreateRequestAsync(new RentalCreateRequest { InstrumentId = instrument.Id }));
+        Assert.Equal(Messages.RentalPendingRequired, ex.Message);
+    }
+
     private static RentalCommandService CreateService(ENoteContext context, Student student, IRentalNotificationDispatcher? dispatcher = null)
     {
         var currentUser = new StubCurrentActor(student: student);

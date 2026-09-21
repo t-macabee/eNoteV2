@@ -10,6 +10,7 @@ public class Enrollment : AuditableEntity
 
     public EnrollmentStatus EnrollmentStatus { get; private set; }
     public DateTime? PaidUntil { get; private set; }
+    public byte[] Version { get; private set; } = null!;
 
     public ICollection<CoursePayment> Payments { get; private set; } = [];
 

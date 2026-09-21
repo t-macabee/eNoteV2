@@ -8,6 +8,7 @@ public static class Messages
     public const string Unauthorized = "Niste autorizovani.";
     public const string Forbidden = "Nemate pristup ovom resursu.";
     public const string Conflict = "Sukob resursa.";
+    public const string ConcurrencyConflict = "Podaci su u međuvremenu izmijenjeni. Osvježite stranicu i pokušajte ponovo.";
 
     public const string InvalidCredentials = "Pogrešno korisničko ime ili lozinka.";
     public const string AccountLocked = "Nalog je privremeno zaključan. Pokušajte ponovo kasnije.";
