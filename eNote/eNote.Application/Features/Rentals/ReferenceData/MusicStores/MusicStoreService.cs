@@ -68,6 +68,25 @@ public sealed class MusicStoreService(IAppDbContext context, IFileStorageService
         return Map(reloaded);
     }
 
+    public async Task<MusicStoreDto> UpdateOperationalDetailsAsync(int id, string businessHours, string? phoneNumber, CancellationToken cancellationToken = default)
+    {
+        var entity = await Db.Set<MusicStore>().FirstOrDefaultAsync(x => x.Id == id, cancellationToken)
+            ?? throw new NotFoundException(NotFoundMessage);
+
+        entity.UpdateDetails(
+            entity.StoreName,
+            businessHours.Trim(),
+            entity.AddressId,
+            phoneNumber?.Trim());
+
+        await Db.SaveChangesAsync(cancellationToken);
+
+        var reloaded = await Db.Set<MusicStore>().AsNoTracking().Include(x => x.Address).ThenInclude(a => a!.City).FirstOrDefaultAsync(x => x.Id == id, cancellationToken)
+            ?? throw new NotFoundException(NotFoundMessage);
+
+        return Map(reloaded);
+    }
+
     public async Task<MusicStoreDto> UploadImageAsync(int id, Stream stream, string fileName, string contentType, CancellationToken ct = default)
     {
         var entity = await Db.Set<MusicStore>().FirstOrDefaultAsync(x => x.Id == id, ct)

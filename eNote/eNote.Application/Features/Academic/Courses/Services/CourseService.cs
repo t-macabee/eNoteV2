@@ -76,11 +76,15 @@ public sealed class CourseService(IAppDbContext context, IMapper mapper, ICurren
     {
         var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId);
 
-        var totalCourses = await WhereCatalogVisible(context.Set<Course>().AsNoTracking(), instructorId)
-            .CountAsync(cancellationToken);
+        var visibleCourses = WhereCatalogVisible(context.Set<Course>().AsNoTracking(), instructorId);
 
-        var totalStudents = await context.Set<Student>()
-            .AsNoTracking()
+        var totalCourses = await visibleCourses.CountAsync(cancellationToken);
+
+        var totalStudents = await visibleCourses
+            .SelectMany(c => c.Enrollments)
+            .Where(e => e.EnrollmentStatus == EnrollmentStatus.Active)
+            .Select(e => e.StudentId)
+            .Distinct()
             .CountAsync(cancellationToken);
 
         return new CourseCatalogSummaryDto

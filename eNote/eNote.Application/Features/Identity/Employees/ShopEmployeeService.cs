@@ -96,6 +96,11 @@ public sealed class ShopEmployeeService(
             throw new NotFoundException(Messages.NotFound);
         }
 
+        if (target.IsManager && target.AppUserId != currentEmployee.AppUserId)
+        {
+            throw new BusinessException("Store managers cannot deactivate other store managers.");
+        }
+
         return await provisioningService.SetUserActiveAsync(targetUserId, isActive, ct);
     }
 

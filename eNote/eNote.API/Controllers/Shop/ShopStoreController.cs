@@ -32,10 +32,10 @@ public sealed class ShopStoreController(
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<MusicStoreDto>> UpdateOwnStore([FromBody] MusicStoreRequest request, CancellationToken ct)
+    public async Task<ActionResult<MusicStoreDto>> UpdateOwnStore([FromBody] ShopStoreUpdateRequest request, CancellationToken ct)
     {
         var storeId = await employeeService.GetCurrentManagerStoreIdAsync(ct);
-        return Ok(await storeService.UpdateAsync(storeId, request, ct));
+        return Ok(await storeService.UpdateOperationalDetailsAsync(storeId, request.BusinessHours, request.PhoneNumber, ct));
     }
 
     [HttpPost("image")]

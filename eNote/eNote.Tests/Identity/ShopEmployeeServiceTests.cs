@@ -447,6 +447,32 @@ public sealed class ShopEmployeeServiceTests
     }
 
     [Fact]
+    public async Task SetEmployeeActiveByManagerAsync_ThrowsBusinessException_WhenTargetIsAlsoManager()
+    {
+        await using var context = TestDbContextFactory.CreateContext(Now);
+
+        var store = new MusicStore("Store Alpha", "08:00-16:00");
+        context.Set<MusicStore>().Add(store);
+        await context.SaveChangesAsync();
+
+        var manager = new MusicStoreEmployee(appUserId: 10, musicStoreId: store.Id, isManager: true);
+        var peerManager = new MusicStoreEmployee(appUserId: 20, musicStoreId: store.Id, isManager: true);
+        context.Set<MusicStoreEmployee>().AddRange(manager, peerManager);
+        await context.SaveChangesAsync();
+
+        var actor = new StubCurrentActor(userId: 10);
+        var account = new StubUserAccountService();
+        var provisioning = new UserProvisioningService(context, account, new SystemClock(), new StubFileStorageService(), actor);
+        var service = new ShopEmployeeService(context, new StubUserIdentityService(), actor, provisioning);
+
+        var ex = await Assert.ThrowsAsync<BusinessException>(() =>
+            service.SetEmployeeActiveByManagerAsync(20, false));
+
+        Assert.Equal("Store managers cannot deactivate other store managers.", ex.Message);
+        Assert.Null(account.SetActiveCall);
+    }
+
+    [Fact]
     public async Task GetCurrentManagerStoreIdAsync_ReturnsStoreId_WhenCallerIsManager()
     {
         await using var context = TestDbContextFactory.CreateContext(Now);

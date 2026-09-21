@@ -250,7 +250,7 @@ public sealed class AdminStudentServiceTests
     }
 
     [Fact]
-    public async Task GetEnrollmentsForInstructorAsync_ReturnsAllActiveEnrollments_WhenStudentIsInInstructorCourse()
+    public async Task GetEnrollmentsForInstructorAsync_ReturnsOnlyInstructorEnrollments_WhenStudentIsInInstructorCourse()
     {
         await using var context = TestDbContextFactory.CreateContext(Now);
 
@@ -284,16 +284,11 @@ public sealed class AdminStudentServiceTests
 
         var enrollments = await service.GetEnrollmentsForInstructorAsync(instructor1.Id, student.Id);
 
-        Assert.Equal(2, enrollments.Count);
-        var c1 = enrollments.Single(e => e.CourseId == course1.Id);
-        Assert.Equal("Guitar 101", c1.CourseName);
-        Assert.Equal(instructor1.Id, c1.InstructorId);
-        Assert.Equal("Jane Doe", c1.InstructorName);
-
-        var c2 = enrollments.Single(e => e.CourseId == course2.Id);
-        Assert.Equal("Violin 101", c2.CourseName);
-        Assert.Equal(instructor2.Id, c2.InstructorId);
-        Assert.Equal("Alice Smith", c2.InstructorName);
+        var single = Assert.Single(enrollments);
+        Assert.Equal(course1.Id, single.CourseId);
+        Assert.Equal("Guitar 101", single.CourseName);
+        Assert.Equal(instructor1.Id, single.InstructorId);
+        Assert.Equal("Jane Doe", single.InstructorName);
     }
 
     [Fact]
@@ -365,5 +360,48 @@ public sealed class AdminStudentServiceTests
 
         await Assert.ThrowsAsync<NotFoundException>(() => service.GetEnrollmentsForInstructorAsync(instructor1.Id, student1.Id));
         await Assert.ThrowsAsync<NotFoundException>(() => service.GetEnrollmentsForInstructorAsync(instructor1.Id, student2.Id));
+    }
+
+    [Fact]
+    public async Task GetPagedForInstructorAsync_ExcludesCanceledEnrollments_IncludesCompletedEnrollments()
+    {
+        await using var context = TestDbContextFactory.CreateContext(Now);
+
+        var instructor = new Instructor(100);
+        context.Set<Instructor>().Add(instructor);
+        await context.SaveChangesAsync();
+
+        var course = new Course("Guitar 101", null, 100m, Now, Now.AddMonths(3), instructor.Id) { CreatedById = instructor.AppUserId };
+        context.Set<Course>().Add(course);
+        await context.SaveChangesAsync();
+
+        var activeStudent = new Student(10, Now);
+        var completedStudent = new Student(20, Now);
+        var canceledStudent = new Student(30, Now);
+        context.Set<Student>().AddRange(activeStudent, completedStudent, canceledStudent);
+        await context.SaveChangesAsync();
+
+        context.Set<Enrollment>().AddRange(
+            new Enrollment(activeStudent.Id, course.Id, EnrollmentStatus.Active),
+            new Enrollment(completedStudent.Id, course.Id, EnrollmentStatus.Completed),
+            new Enrollment(canceledStudent.Id, course.Id, EnrollmentStatus.Canceled));
+        await context.SaveChangesAsync();
+
+        var identity = new StubUserIdentityService(new Dictionary<int, UserIdentityDto>
+        {
+            [10] = StubUserIdentityService.User(10, "active", "Active", "Student"),
+            [20] = StubUserIdentityService.User(20, "completed", "Completed", "Student"),
+            [30] = StubUserIdentityService.User(30, "canceled", "Canceled", "Student")
+        });
+
+        var instructorAccess = new InstructorAccessService(context, new StubUserProfileLookup(instructor: instructor));
+        var service = new AdminStudentService(context, identity, instructorAccess);
+
+        var result = await service.GetPagedForInstructorAsync(instructor.Id, new StudentSearchObject());
+
+        Assert.Equal(2, result.Items.Count);
+        Assert.Contains(result.Items, s => s.Id == activeStudent.Id);
+        Assert.Contains(result.Items, s => s.Id == completedStudent.Id);
+        Assert.DoesNotContain(result.Items, s => s.Id == canceledStudent.Id);
     }
 }

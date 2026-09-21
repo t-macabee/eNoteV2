@@ -49,12 +49,14 @@ public sealed class AdminStudentService(
         // Deliberate asymmetry: the gate is on the student; the payload is not.
         await EnsureStudentVisibleToInstructorAsync(instructorId, studentId, cancellationToken);
 
-        // 2. Return that student's enrollments across every instructor, filtered to EnrollmentStatus.Active.
+        // 2. Return that student's enrollments for this instructor, filtered to EnrollmentStatus.Active.
         var enrollments = await context.Set<Enrollment>()
             .AsNoTracking()
             .Include(e => e.Course)
                 .ThenInclude(c => c.Instructor)
-            .Where(e => e.StudentId == studentId && e.EnrollmentStatus == EnrollmentStatus.Active)
+            .Where(e => e.StudentId == studentId
+                     && e.Course.InstructorId == instructorId
+                     && e.EnrollmentStatus == EnrollmentStatus.Active)
             .ToListAsync(cancellationToken);
 
         var appUserIds = enrollments
@@ -91,6 +93,7 @@ public sealed class AdminStudentService(
 
         return context.Set<Enrollment>()
             .AsNoTracking()
+            .Where(e => e.EnrollmentStatus != EnrollmentStatus.Canceled)
             .Join(
                 instructorCourses,
                 e => e.CourseId,

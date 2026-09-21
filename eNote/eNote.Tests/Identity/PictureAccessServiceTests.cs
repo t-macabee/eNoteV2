@@ -1,5 +1,6 @@
 using eNote.API.Controllers.Users;
 using eNote.Application.Constants;
+using eNote.Application.Features.Identity.Instructors;
 using eNote.Application.Features.Identity.Users.Services;
 using eNote.Tests.TestUtils;
 using Microsoft.AspNetCore.Http;
@@ -73,14 +74,14 @@ public sealed class PictureAccessServiceTests
     }
 
     [Fact]
-    public async Task Instructor_CanView_UnenrolledStudentPicture()
+    public async Task Instructor_CannotView_UnenrolledStudentPicture()
     {
         var seed = await SeedAsync();
         var service = CreateService(seed.Context, seed.Instructor1.AppUserId, new FixedStoreContext(1),
             new Dictionary<int, IReadOnlyList<string>> { [seed.Instructor1.AppUserId] = [AppRoles.Instructor] });
 
-        // StudentB has no enrolment anywhere — still visible (no enrolment join).
-        Assert.True(await service.CanViewPictureAsync(seed.StudentB.AppUserId));
+        // StudentB has no enrolment in Instructor1's courses — not visible.
+        Assert.False(await service.CanViewPictureAsync(seed.StudentB.AppUserId));
     }
 
     [Fact]
@@ -255,7 +256,8 @@ public sealed class PictureAccessServiceTests
         new(context,
             new StubCurrentActor(userId: viewerUserId),
             stores,
-            new StubUserIdentityService(roles: roles));
+            new StubUserIdentityService(roles: roles),
+            new InstructorAccessService(context, new UserProfileLookup(context)));
 
     private static UsersController CreateController(bool canView, (Stream? Data, string? ContentType) picture)
     {

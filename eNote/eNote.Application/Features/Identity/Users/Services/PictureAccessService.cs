@@ -1,4 +1,7 @@
 using eNote.Application.Constants;
+using eNote.Application.Features.Identity.Instructors;
+using eNote.Domain.Entities.Academic;
+using eNote.Domain.Enums;
 
 namespace eNote.Application.Features.Identity.Users.Services;
 
@@ -13,7 +16,8 @@ public sealed class PictureAccessService(
     IAppDbContext context,
     ICurrentUserContext currentUser,
     IStoreContext stores,
-    IUserIdentityService identity) : IPictureAccessService
+    IUserIdentityService identity,
+    InstructorAccessService instructorAccess) : IPictureAccessService
 {
     public async Task<bool> CanViewPictureAsync(int targetAppUserId, CancellationToken cancellationToken = default)
     {
@@ -32,21 +36,19 @@ public sealed class PictureAccessService(
 
         if (roles.Contains(AppRoles.Instructor))
         {
-            // Any other instructor, and any student with no enrolment join:
-            // instructors create student profiles, so gating by the viewer's
-            // own courses would hide students enrolled with a colleague.
-            // Store employees: no.
             if (await context.Set<Instructor>().AsNoTracking()
                 .AnyAsync(x => x.AppUserId == targetAppUserId, cancellationToken))
             {
                 return true;
             }
 
-            if (await context.Set<Student>().AsNoTracking()
-                .AnyAsync(x => x.AppUserId == targetAppUserId, cancellationToken))
-            {
-                return true;
-            }
+            var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId);
+
+            return await context.Set<Enrollment>()
+                .AsNoTracking()
+                .AnyAsync(e => e.Student.AppUserId == targetAppUserId
+                            && e.Course.InstructorId == instructorId
+                            && e.EnrollmentStatus == EnrollmentStatus.Active, cancellationToken);
         }
 
         if (roles.Contains(AppRoles.StoreEmployee))

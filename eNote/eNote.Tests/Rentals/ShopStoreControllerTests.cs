@@ -65,9 +65,8 @@ public sealed class ShopStoreControllerTests
         var addressService = new AddressService(ctx);
         var controller = new ShopStoreController(storeService, employeeService, addressService, storeContext);
 
-        var request = new MusicStoreRequest
+        var request = new ShopStoreUpdateRequest
         {
-            StoreName = "Store Alpha Updated",
             BusinessHours = "09:00-17:00",
             PhoneNumber = "+38761234567"
         };
@@ -77,7 +76,9 @@ public sealed class ShopStoreControllerTests
         var ok = Assert.IsType<OkObjectResult>(result.Result);
         var dto = Assert.IsType<MusicStoreDto>(ok.Value);
         Assert.Equal(store.Id, dto.Id);
-        Assert.Equal("Store Alpha Updated", dto.StoreName);
+        Assert.Equal("Store Alpha", dto.StoreName);
+        Assert.Equal("09:00-17:00", dto.BusinessHours);
+        Assert.Equal("+38761234567", dto.PhoneNumber);
     }
 
     [Fact]
@@ -99,9 +100,8 @@ public sealed class ShopStoreControllerTests
         var addressService = new AddressService(ctx);
         var controller = new ShopStoreController(storeService, employeeService, addressService, storeContext);
 
-        var request = new MusicStoreRequest
+        var request = new ShopStoreUpdateRequest
         {
-            StoreName = "Unauthorized Change",
             BusinessHours = "09:00-17:00"
         };
 
