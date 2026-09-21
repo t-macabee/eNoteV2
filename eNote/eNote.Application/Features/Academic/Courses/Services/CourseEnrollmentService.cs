@@ -12,7 +12,7 @@ public sealed class CourseEnrollmentService(
 {
     public async Task EnrollAsync(int courseId, CancellationToken cancellationToken = default)
     {
-        var student = await students.GetCurrentStudentAsync();
+        var student = await students.GetCurrentStudentAsync(cancellationToken);
 
         if (!student.HasActiveMembership(clock.UtcNow))
         {
@@ -59,7 +59,7 @@ public sealed class CourseEnrollmentService(
 
     public async Task UnenrollAsync(int courseId, CancellationToken cancellationToken = default)
     {
-        var student = await students.GetCurrentStudentAsync();
+        var student = await students.GetCurrentStudentAsync(cancellationToken);
 
         var enrollment = await context.Set<Enrollment>()
             .FirstOrDefaultAsync(e =>

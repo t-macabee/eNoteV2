@@ -100,7 +100,7 @@ public sealed class CourseService(IAppDbContext context, IMapper mapper, ICurren
 
     public async Task<CourseDto> GetByIdForStudentAsync(int id, CancellationToken cancellationToken = default)
     {
-        var studentId = await students.GetCurrentStudentIdAsync();
+        var studentId = await students.GetCurrentStudentIdAsync(cancellationToken);
 
         return await context.Set<Course>()
             .AsNoTracking()
@@ -177,7 +177,7 @@ public sealed class CourseService(IAppDbContext context, IMapper mapper, ICurren
 
     public async Task<PagedResult<CourseDto>> GetPagedForStudentAsync(CourseSearchObject search, CancellationToken cancellationToken = default)
     {
-        var studentId = await students.GetCurrentStudentIdAsync();
+        var studentId = await students.GetCurrentStudentIdAsync(cancellationToken);
 
         var query = context.Set<Course>()
             .AsNoTracking()

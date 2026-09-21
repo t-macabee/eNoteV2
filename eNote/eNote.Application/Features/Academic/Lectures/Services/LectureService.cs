@@ -41,7 +41,7 @@ public sealed class LectureService(
 
     public async Task<LectureDto> GetByIdForStudentAsync(int id, CancellationToken cancellationToken = default)
     {
-        var studentId = await students.GetCurrentStudentIdAsync();
+        var studentId = await students.GetCurrentStudentIdAsync(cancellationToken);
 
         var dto = await context.Set<Lecture>()
             .AsNoTracking()
@@ -117,7 +117,7 @@ public sealed class LectureService(
 
     public async Task<PagedResult<LectureDto>> GetPagedForStudentAsync(LectureSearchObject search, CancellationToken cancellationToken = default)
     {
-        var studentId = await students.GetCurrentStudentIdAsync();
+        var studentId = await students.GetCurrentStudentIdAsync(cancellationToken);
 
         var query = context.Set<Lecture>()
             .AsNoTracking()

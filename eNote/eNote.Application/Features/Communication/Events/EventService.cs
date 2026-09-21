@@ -74,7 +74,7 @@ public sealed class EventService(IAppDbContext context, ICurrentUserContext curr
     public async Task<PagedResult<EventDto>> GetPagedForStudentAsync(EventSearchObject search, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(students);
-        var studentId = await students.GetCurrentStudentIdAsync();
+        var studentId = await students.GetCurrentStudentIdAsync(cancellationToken);
 
         IQueryable<Event> query = Db.Set<Event>()
             .AsNoTracking()

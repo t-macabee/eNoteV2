@@ -49,7 +49,7 @@ public sealed class AssignmentSubmissionService(
 
     public async Task<AssignmentSubmissionDto> GetOwnSubmissionAsync(int assignmentId, CancellationToken cancellationToken = default)
     {
-        var student = await students.GetCurrentStudentAsync();
+        var student = await students.GetCurrentStudentAsync(cancellationToken);
 
         var assignmentExists = await context.Set<Assignment>()
             .ForEnrolledStudentById(student.Id, assignmentId, clock.UtcNow)
@@ -70,7 +70,7 @@ public sealed class AssignmentSubmissionService(
 
     public async Task<PagedResult<AssignmentSubmissionDto>> GetHistoryForStudentAsync(AssignmentSubmissionSearchObject search, CancellationToken cancellationToken = default)
     {
-        var student = await students.GetCurrentStudentAsync();
+        var student = await students.GetCurrentStudentAsync(cancellationToken);
 
         var accessibleAssignments = context.Set<Assignment>()
             .ForEnrolledStudent(student.Id, clock.UtcNow);
@@ -156,7 +156,7 @@ public sealed class AssignmentSubmissionService(
 
     private async Task<(Student Student, Assignment Assignment, AssignmentSubmission? Existing)> ValidateSubmissionAsync(int assignmentId, CancellationToken cancellationToken)
     {
-        var student = await students.GetCurrentStudentAsync();
+        var student = await students.GetCurrentStudentAsync(cancellationToken);
 
         var assignment = await context.Set<Assignment>()
             .ForEnrolledStudentById(student.Id, assignmentId, clock.UtcNow)

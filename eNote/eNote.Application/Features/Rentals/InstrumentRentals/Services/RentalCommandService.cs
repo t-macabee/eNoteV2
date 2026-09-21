@@ -11,7 +11,7 @@ public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, 
     {
         var dto = await context.ExecuteInTransactionAsync(async () =>
         {
-            var student = await students.GetCurrentStudentAsync();
+            var student = await students.GetCurrentStudentAsync(cancellationToken);
 
             if (!student.HasActiveMembership(clock.UtcNow))
             {

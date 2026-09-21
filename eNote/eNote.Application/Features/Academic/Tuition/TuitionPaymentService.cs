@@ -115,7 +115,7 @@ public sealed class TuitionPaymentService(
 
     private async Task EnsureStudentOwnsEnrollmentAsync(int enrollmentId, CancellationToken cancellationToken)
     {
-        var studentId = await students.GetCurrentStudentIdAsync();
+        var studentId = await students.GetCurrentStudentIdAsync(cancellationToken);
         var exists = await context.Set<Enrollment>()
             .AsNoTracking()
             .AnyAsync(e => e.Id == enrollmentId && e.StudentId == studentId, cancellationToken);
@@ -128,7 +128,7 @@ public sealed class TuitionPaymentService(
 
     private async Task<Enrollment> LoadForStudentAsync(int enrollmentId, CancellationToken cancellationToken)
     {
-        var studentId = await students.GetCurrentStudentIdAsync();
+        var studentId = await students.GetCurrentStudentIdAsync(cancellationToken);
         var enrollment = await context.Set<Enrollment>()
             .Include(e => e.Course)
             .FirstOrDefaultAsync(e => e.Id == enrollmentId, cancellationToken)

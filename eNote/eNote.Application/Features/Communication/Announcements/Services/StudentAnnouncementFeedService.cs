@@ -6,7 +6,7 @@ public sealed class StudentAnnouncementFeedService(IAppDbContext context, IStude
 {
     public async Task<PagedResult<AnnouncementDto>> GetFeedForStudentAsync(AnnouncementSearchObject search, CancellationToken cancellationToken = default)
     {
-        var studentId = await students.GetCurrentStudentIdAsync();
+        var studentId = await students.GetCurrentStudentIdAsync(cancellationToken);
 
         var query = context.Set<Announcement>()
             .AsNoTracking()

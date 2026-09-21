@@ -72,7 +72,7 @@ public sealed class InstrumentService(
 
     public async Task<InstrumentDto> CreateAsync(InstrumentCreateRequest request, CancellationToken cancellationToken = default)
     {
-        var employee = await EnsureStoreAccessAsync();
+        var employee = await EnsureStoreAccessAsync(cancellationToken);
         await EnsureInstrumentTypeExistsAsync(request.InstrumentTypeId, cancellationToken);
 
         var entity = new Instrument(
@@ -91,7 +91,7 @@ public sealed class InstrumentService(
 
     public async Task<InstrumentDto> UpdateAsync(int id, InstrumentUpdateRequest request, CancellationToken cancellationToken = default)
     {
-        await EnsureStoreAccessAsync();
+        await EnsureStoreAccessAsync(cancellationToken);
 
         var entity = await context.Set<Instrument>()
             .FirstOrDefaultAsync(x => x.Id == id, cancellationToken)
@@ -116,7 +116,7 @@ public sealed class InstrumentService(
 
     public async Task<InstrumentDto> UploadImageAsync(int id, Stream stream, string fileName, string contentType, CancellationToken ct = default)
     {
-        await EnsureStoreAccessAsync();
+        await EnsureStoreAccessAsync(ct);
 
         var entity = await context.Set<Instrument>()
             .FirstOrDefaultAsync(x => x.Id == id, ct)
@@ -133,7 +133,7 @@ public sealed class InstrumentService(
 
     public async Task DeleteAsync(int id, CancellationToken cancellationToken = default)
     {
-        await EnsureStoreAccessAsync();
+        await EnsureStoreAccessAsync(cancellationToken);
 
         var instrument = await context.Set<Instrument>()
             .FirstOrDefaultAsync(x => x.Id == id, cancellationToken)
@@ -148,8 +148,8 @@ public sealed class InstrumentService(
         await context.SaveChangesAsync(cancellationToken);
     }
 
-    private Task<MusicStoreEmployee> EnsureStoreAccessAsync() =>
-        students.GetCurrentEmployeeAsync();
+    private Task<MusicStoreEmployee> EnsureStoreAccessAsync(CancellationToken cancellationToken) =>
+        students.GetCurrentEmployeeAsync(cancellationToken);
 
     private async Task EnsureInstrumentTypeExistsAsync(int instrumentTypeId, CancellationToken cancellationToken)
     {

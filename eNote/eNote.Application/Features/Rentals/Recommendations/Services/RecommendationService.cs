@@ -20,7 +20,7 @@ public sealed class RecommendationService(IAppDbContext context, IMapper mapper,
     {
         count = NormalizeCount(count);
 
-        var studentId = await students.GetCurrentStudentIdAsync();
+        var studentId = await students.GetCurrentStudentIdAsync(cancellationToken);
 
         var userId = currentUser.UserId;
 

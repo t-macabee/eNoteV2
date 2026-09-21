@@ -64,7 +64,7 @@ public sealed class AssignmentService(
 
     public async Task<PagedResult<AssignmentDto>> GetForStudentAsync(AssignmentSearchObject search, CancellationToken cancellationToken = default)
     {
-        var studentId = await students.GetCurrentStudentIdAsync();
+        var studentId = await students.GetCurrentStudentIdAsync(cancellationToken);
 
         var query = context.Set<Assignment>()
             .AsNoTracking()
@@ -76,7 +76,7 @@ public sealed class AssignmentService(
 
     public async Task<AssignmentDto> GetByIdForStudentAsync(int assignmentId, CancellationToken cancellationToken = default)
     {
-        var studentId = await students.GetCurrentStudentIdAsync();
+        var studentId = await students.GetCurrentStudentIdAsync(cancellationToken);
 
         var entity = await context.Set<Assignment>()
             .ForEnrolledStudentById(studentId, assignmentId, clock.UtcNow)

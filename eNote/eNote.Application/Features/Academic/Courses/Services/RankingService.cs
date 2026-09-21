@@ -25,7 +25,7 @@ public sealed class RankingService(
 
     public async Task<IReadOnlyList<CourseRankingEntryDto>> GetForStudentAsync(int courseId, CancellationToken cancellationToken = default)
     {
-        var studentId = await students.GetCurrentStudentIdAsync();
+        var studentId = await students.GetCurrentStudentIdAsync(cancellationToken);
 
         if (!await context.IsEnrolledAndPaidAsync(studentId, courseId, clock.UtcNow, cancellationToken))
         {
