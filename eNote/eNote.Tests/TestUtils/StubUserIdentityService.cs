@@ -29,6 +29,23 @@ public sealed class StubUserIdentityService : IUserIdentityService
     public Task<IReadOnlyList<string>> GetRolesAsync(int userId) =>
         Task.FromResult(_roles.GetValueOrDefault(userId) ?? []);
 
+    public Task<IReadOnlyList<int>> FindUserIdsAsync(string? name, bool? isActive, CancellationToken cancellationToken = default)
+    {
+        var query = _users.Values.AsEnumerable();
+
+        if (!string.IsNullOrWhiteSpace(name))
+        {
+            query = query.Where(u => TestUserNameHelper.MatchesName(u.FirstName, u.LastName, u.Username, name));
+        }
+
+        if (isActive.HasValue)
+        {
+            query = query.Where(u => u.IsActive == isActive.Value);
+        }
+
+        return Task.FromResult<IReadOnlyList<int>>([.. query.Select(u => u.Id)]);
+    }
+
     public static UserIdentityDto User(int id, string username, string? firstName = null, string? lastName = null) => new()
     {
         Id = id,

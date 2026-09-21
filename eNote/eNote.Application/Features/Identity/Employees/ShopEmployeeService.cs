@@ -23,21 +23,13 @@ public sealed class ShopEmployeeService(
 
         var storeId = currentEmployee.MusicStoreId;
 
-        var employees = await context.Set<MusicStoreEmployee>()
+        IQueryable<MusicStoreEmployee> query = context.Set<MusicStoreEmployee>()
             .IgnoreQueryFilters()
             .AsNoTracking()
             .Include(x => x.MusicStore)
-            .Where(x => x.MusicStoreId == storeId && x.AppUserId != currentEmployee.AppUserId)
-            .OrderBy(x => x.Id)
-            .ToListAsync(cancellationToken);
+            .Where(x => x.MusicStoreId == storeId && x.AppUserId != currentEmployee.AppUserId);
 
-        var users = await identityService.GetUsersBulkAsync(
-            employees.Select(x => x.AppUserId),
-            cancellationToken);
-
-        List<ShopEmployeeDto> mapped = [.. employees.Select(x => Map(x, users.GetValueOrDefault(x.AppUserId)))];
-
-        return mapped.FilterAndPage(search, search.Name, search.IsActive);
+        return await BuildPagedResultAsync(query, search, cancellationToken);
     }
 
     public async Task<PagedResult<ShopEmployeeDto>> GetPagedAsync(
@@ -47,23 +39,45 @@ public sealed class ShopEmployeeService(
         IQueryable<MusicStoreEmployee> query = context.Set<MusicStoreEmployee>()
             .IgnoreQueryFilters()
             .AsNoTracking()
-            .Include(x => x.MusicStore)
-            .OrderBy(x => x.Id);
+            .Include(x => x.MusicStore);
 
         if (search.MusicStoreId.HasValue)
         {
             query = query.Where(x => x.MusicStoreId == search.MusicStoreId.Value);
         }
 
-        List<MusicStoreEmployee> employees = await query.ToListAsync(cancellationToken);
+        return await BuildPagedResultAsync(query, search, cancellationToken);
+    }
 
-        var users = await identityService.GetUsersBulkAsync(
-            employees.Select(x => x.AppUserId),
-            cancellationToken);
+    private async Task<PagedResult<ShopEmployeeDto>> BuildPagedResultAsync(
+        IQueryable<MusicStoreEmployee> query,
+        ShopEmployeeSearchObject search,
+        CancellationToken cancellationToken)
+    {
+        if (search.IsActive == true)
+        {
+            query = query.Where(e => e.IsActive);
+            query = await query.WhereUserMatchesAsync(identityService, search.Name, true, cancellationToken);
+        }
+        else if (search.IsActive == false)
+        {
+            query = await query.WhereUserMatchesAsync(identityService, search.Name, null, cancellationToken);
+            var inactiveIds = await identityService.FindUserIdsAsync(search.Name, false, cancellationToken);
+            query = query.Where(e => !e.IsActive || inactiveIds.Contains(e.AppUserId));
+        }
+        else
+        {
+            query = await query.WhereUserMatchesAsync(identityService, search.Name, null, cancellationToken);
+        }
 
-        List<ShopEmployeeDto> mapped = [.. employees.Select(x => Map(x, users.GetValueOrDefault(x.AppUserId)))];
-
-        return mapped.FilterAndPage(search, search.Name, search.IsActive);
+        return await query.ToPagedResultAsync(
+            search,
+            async (employees, ct) =>
+            {
+                var users = await identityService.GetUsersBulkAsync(employees.Select(x => x.AppUserId), ct);
+                return employees.Select(x => Map(x, users.GetValueOrDefault(x.AppUserId)));
+            },
+            ct: cancellationToken);
     }
 
     public async Task<ShopEmployeeDto> GetByIdAsync(

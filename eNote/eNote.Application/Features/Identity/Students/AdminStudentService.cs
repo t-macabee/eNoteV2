@@ -1,3 +1,4 @@
+using eNote.Application.Common.Paging;
 using eNote.Application.Features.Identity.Instructors;
 using eNote.Application.Features.Identity.Users;
 using eNote.Application.Features.Identity.Users.Services;
@@ -12,8 +13,7 @@ public sealed class AdminStudentService(
     public async Task<PagedResult<StudentDto>> GetPagedAsync(StudentSearchObject search, CancellationToken cancellationToken = default)
     {
         IQueryable<Student> query = context.Set<Student>()
-            .AsNoTracking()
-            .OrderBy(x => x.Id);
+            .AsNoTracking();
 
         return await BuildPagedResultAsync(query, search, cancellationToken);
     }
@@ -23,7 +23,7 @@ public sealed class AdminStudentService(
         StudentSearchObject search,
         CancellationToken cancellationToken = default)
     {
-        IQueryable<Student> query = StudentsVisibleTo(instructorId).OrderBy(x => x.Id);
+        IQueryable<Student> query = StudentsVisibleTo(instructorId);
 
         return await BuildPagedResultAsync(query, search, cancellationToken);
     }
@@ -112,12 +112,16 @@ public sealed class AdminStudentService(
         StudentSearchObject search,
         CancellationToken cancellationToken)
     {
-        List<Student> students = await query.ToListAsync(cancellationToken);
-        IReadOnlyDictionary<int, UserIdentityDto> users = await identityService.GetUsersBulkAsync(students.Select(x => x.AppUserId), cancellationToken);
+        query = await query.WhereUserMatchesAsync(identityService, search.Name, search.IsActive, cancellationToken);
 
-        List<StudentDto> mapped = [.. students.Select(x => Map(x, users.GetValueOrDefault(x.AppUserId)))];
-
-        return mapped.FilterAndPage(search, search.Name, search.IsActive);
+        return await query.ToPagedResultAsync(
+            search,
+            async (students, ct) =>
+            {
+                var users = await identityService.GetUsersBulkAsync(students.Select(x => x.AppUserId), ct);
+                return students.Select(x => Map(x, users.GetValueOrDefault(x.AppUserId)));
+            },
+            ct: cancellationToken);
     }
 
     public async Task<StudentDto> GetByIdAsync(int id, CancellationToken cancellationToken = default)

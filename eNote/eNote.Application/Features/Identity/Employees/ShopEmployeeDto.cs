@@ -1,6 +1,6 @@
 namespace eNote.Application.Features.Identity.Employees;
 
-public sealed class ShopEmployeeDto : IUserProfileDto
+public sealed class ShopEmployeeDto
 {
     public int Id { get; init; }
     public int AppUserId { get; init; }

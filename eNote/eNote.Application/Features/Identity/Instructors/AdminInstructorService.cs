@@ -1,3 +1,4 @@
+using eNote.Application.Common.Paging;
 using eNote.Application.Features.Identity.Users;
 using eNote.Application.Features.Identity.Users.Services;
 
@@ -8,15 +9,18 @@ public sealed class AdminInstructorService(IAppDbContext context, IUserIdentityS
     public async Task<PagedResult<InstructorDto>> GetPagedAsync(InstructorSearchObject search, CancellationToken cancellationToken = default)
     {
         IQueryable<Instructor> query = context.Set<Instructor>()
-            .AsNoTracking()
-            .OrderBy(x => x.Id);
+            .AsNoTracking();
 
-        List<Instructor> instructors = await query.ToListAsync(cancellationToken);
-        IReadOnlyDictionary<int, UserIdentityDto> users = await identityService.GetUsersBulkAsync(instructors.Select(x => x.AppUserId), cancellationToken);
+        query = await query.WhereUserMatchesAsync(identityService, search.Name, search.IsActive, cancellationToken);
 
-        List<InstructorDto> mapped = [.. instructors.Select(x => Map(x, users.GetValueOrDefault(x.AppUserId)))];
-
-        return mapped.FilterAndPage(search, search.Name, search.IsActive);
+        return await query.ToPagedResultAsync(
+            search,
+            async (instructors, ct) =>
+            {
+                var users = await identityService.GetUsersBulkAsync(instructors.Select(x => x.AppUserId), ct);
+                return instructors.Select(x => Map(x, users.GetValueOrDefault(x.AppUserId)));
+            },
+            ct: cancellationToken);
     }
 
     public async Task<InstructorDto> GetByIdAsync(int id, CancellationToken cancellationToken = default)

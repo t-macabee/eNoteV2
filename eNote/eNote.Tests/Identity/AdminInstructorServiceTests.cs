@@ -103,4 +103,36 @@ public sealed class AdminInstructorServiceTests
         Assert.Equal("Jane", dto.FirstName);
         Assert.Equal("jdoe", dto.Username);
     }
+
+    [Fact]
+    public async Task GetPagedAsync_WithIncludeTotalCount_ReturnsFilteredCount_NotPageCount()
+    {
+        await using var context = TestDbContextFactory.CreateContext(Now);
+        context.Set<Instructor>().AddRange(
+            new Instructor(1),
+            new Instructor(2),
+            new Instructor(3));
+        await context.SaveChangesAsync();
+
+        var identity = new StubUserIdentityService(new Dictionary<int, UserIdentityDto>
+        {
+            [1] = new() { Id = 1, Username = "inst_1", FirstName = "Alice", LastName = "Active", IsActive = true },
+            [2] = new() { Id = 2, Username = "inst_2", FirstName = "Bob", LastName = "Active", IsActive = true },
+            [3] = new() { Id = 3, Username = "inst_3", FirstName = "Charlie", LastName = "Inactive", IsActive = false }
+        });
+        var service = new AdminInstructorService(context, identity);
+
+        var result = await service.GetPagedAsync(new InstructorSearchObject
+        {
+            IsActive = true,
+            Page = 1,
+            PageSize = 1,
+            IncludeTotalCount = true
+        });
+
+        Assert.Single(result.Items);
+        Assert.Equal(1, result.Page);
+        Assert.Equal(1, result.PageSize);
+        Assert.Equal(2, result.TotalCount);
+    }
 }

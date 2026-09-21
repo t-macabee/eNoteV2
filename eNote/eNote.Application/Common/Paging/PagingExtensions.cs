@@ -1,6 +1,4 @@
-﻿using eNote.Application.Common.Search;
-using eNote.Application.Features.Identity;
-using eNote.Application.Features.Identity.Users;
+using eNote.Application.Common.Search;
 using eNote.Domain.Entities.Shared.Base;
 
 namespace eNote.Application.Common.Paging;
@@ -35,24 +33,23 @@ public static class PagingExtensions
         };
     }
 
-    public static PagedResult<TDto> FilterAndPage<TDto>(
-        this IEnumerable<TDto> items,
-        BaseSearchObject search,
-        string? name,
-        bool? isActive) where TDto : IUserProfileDto
+    public static async Task<PagedResult<TModel>> ToPagedResultAsync<TEntity, TSearch, TModel>(
+        this IQueryable<TEntity> query,
+        TSearch search,
+        Func<List<TEntity>, CancellationToken, Task<IEnumerable<TModel>>> mapPageAsync,
+        Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>>? orderBy = null,
+        CancellationToken ct = default) where TSearch : BaseSearchObject where TEntity : IEntity
     {
-        List<TDto> filtered = [.. items
-            .Where(x => UserNameHelper.MatchesName(x.FirstName, x.LastName, x.Username, name))
-            .Where(x => !isActive.HasValue || x.IsActive == isActive.Value)];
+        var (page, pageSize, total, entities) = await FetchPageAsync(query, search, orderBy, ct);
 
-        (int page, int pageSize) = PagingLimits.Normalize(search.Page, search.PageSize);
+        var items = await mapPageAsync(entities, ct);
 
-        return new PagedResult<TDto>
+        return new PagedResult<TModel>
         {
-            Items = [.. filtered.Skip((page - 1) * pageSize).Take(pageSize)],
+            Items = [.. items],
             Page = page,
             PageSize = pageSize,
-            TotalCount = search.IncludeTotalCount ? filtered.Count : null
+            TotalCount = total
         };
     }
 

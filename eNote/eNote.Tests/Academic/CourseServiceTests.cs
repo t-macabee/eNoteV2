@@ -585,5 +585,8 @@ public sealed class CourseServiceTests
 
         public Task<IReadOnlyList<string>> GetRolesAsync(int userId) =>
             Task.FromResult<IReadOnlyList<string>>([]);
+
+        public Task<IReadOnlyList<int>> FindUserIdsAsync(string? name, bool? isActive, CancellationToken cancellationToken = default) =>
+            Task.FromResult<IReadOnlyList<int>>([]);
     }
 }

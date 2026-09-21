@@ -48,6 +48,35 @@ public sealed class ShopEmployeeServiceTests
     }
 
     [Fact]
+    public async Task GetPagedForCurrentStoreAsync_ReturnsEmployee_WhenUserInactiveAndEmployeeActive_AndFilteredByInactive()
+    {
+        await using var context = TestDbContextFactory.CreateContext(Now);
+
+        var store = new MusicStore("Store", "09-17");
+        context.Set<MusicStore>().Add(store);
+        await context.SaveChangesAsync();
+
+        var manager = new MusicStoreEmployee(appUserId: 10, musicStoreId: store.Id, isManager: true);
+        var activeEntityInactiveUser = new MusicStoreEmployee(appUserId: 20, musicStoreId: store.Id, isManager: false) { IsActive = true };
+        context.Set<MusicStoreEmployee>().AddRange(manager, activeEntityInactiveUser);
+        await context.SaveChangesAsync();
+
+        var identity = new StubUserIdentityService(new Dictionary<int, UserIdentityDto>
+        {
+            [10] = StubUserIdentityService.User(10, "manager", "Mia", "Manager"),
+            [20] = new() { Id = 20, Username = "inactive_user", FirstName = "Ivan", LastName = "Inactive", IsActive = false }
+        });
+
+        var service = new ShopEmployeeService(context, identity, new StubCurrentActor(userId: 10), null!);
+
+        var result = await service.GetPagedForCurrentStoreAsync(new ShopEmployeeSearchObject { IsActive = false });
+
+        var dto = Assert.Single(result.Items);
+        Assert.Equal(20, dto.AppUserId);
+        Assert.False(dto.IsActive);
+    }
+
+    [Fact]
     public async Task GetPagedAsync_ReturnsEmployeesAcrossAllStores_WithStoreInfo()
     {
         await using var context = TestDbContextFactory.CreateContext(Now);

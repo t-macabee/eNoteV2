@@ -4,26 +4,6 @@ namespace eNote.Tests.Identity;
 
 public sealed class UserNameHelperTests
 {
-    [Theory]
-    [InlineData("Jane", "Doe", "jdoe", "Jane", true)]
-    [InlineData("Jane", "Doe", "jdoe", "doe", true)]
-    [InlineData("Jane", "Doe", "jdoe", "JDOE", true)]
-    [InlineData("Jane", "Doe", "jdoe", "jane doe", true)]
-    [InlineData("Jane", "Doe", "jdoe", "Smith", false)]
-    [InlineData(null, null, null, "Smith", false)]
-    public void MatchesName_MatchesFirstNameLastNameUsernameOrFullName(string? firstName, string? lastName, string? username, string? name, bool expected)
-    {
-        Assert.Equal(expected, UserNameHelper.MatchesName(firstName, lastName, username, name));
-    }
-
-    [Theory]
-    [InlineData(null)]
-    [InlineData("")]
-    [InlineData("   ")]
-    public void MatchesName_ReturnsTrue_WhenNameBlankOrMissing(string? name)
-    {
-        Assert.True(UserNameHelper.MatchesName("Jane", "Doe", "jdoe", name));
-    }
 
     [Fact]
     public void FormatName_PrefersFullName()

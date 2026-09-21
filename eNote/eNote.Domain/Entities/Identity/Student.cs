@@ -1,6 +1,6 @@
 namespace eNote.Domain.Entities.Identity;
 
-public sealed class Student : AuditableEntity
+public sealed class Student : AuditableEntity, IHasAppUserId
 {
     public int AppUserId { get; private set; }
     public DateTime EnrollmentDate { get; private set; }

@@ -1,6 +1,6 @@
 namespace eNote.Domain.Entities.Identity;
 
-public class Instructor : AuditableEntity
+public class Instructor : AuditableEntity, IHasAppUserId
 {
     public int AppUserId { get; private set; }
 
