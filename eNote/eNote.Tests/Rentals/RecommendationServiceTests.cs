@@ -187,6 +187,88 @@ public sealed class RecommendationServiceTests
         Assert.Contains(result.First(r => r.Instrument.Id == collabLessFrequent.Id).Reasons, r => r.Contains("sličnim izborima"));
     }
 
+    [Fact]
+    public async Task GetRecommendedInstrumentsAsync_CandidatePoolTruncation_KeepsHigherSharedRentalCountInstrument()
+    {
+        // LoadCandidateInstrumentsAsync's pool is capped at CandidatePoolSize (80) regardless
+        // of the requested count. This seeds exactly one candidate over that budget so the
+        // deterministic collaborative order (by shared-rental count desc, then instrument id
+        // asc) decides which one is dropped: 78 tied "filler" candidates plus a high-count and
+        // a low-count boundary pair. The low-count instrument is created last so it has the
+        // highest id among the count=1 tier, guaranteeing it is the one pushed past the cutoff.
+        const int fillerCount = 78;
+
+        await using var context = RentalTestData.CreateContext(Now);
+        var student = await SeedStudentAsync(context);
+        var (typeA, typeB) = await SeedTwoTypesAsync(context);
+        var store = await SeedStoreAsync(context);
+
+        var commonInstrument = new Instrument("Common", "YAM", null, null, typeA.Id, store.Id);
+        context.Set<Instrument>().Add(commonInstrument);
+        await context.SaveChangesAsync();
+
+        context.Set<InstrumentRental>().Add(CreateCompletedRental(commonInstrument.Id, student.Id, store.Id, Now.AddDays(-90)));
+        await context.SaveChangesAsync();
+
+        var fillers = new List<Instrument>();
+        for (var i = 0; i < fillerCount; i++)
+        {
+            fillers.Add(new Instrument($"Filler{i}", "YAM", null, null, typeB.Id, store.Id));
+        }
+        context.Set<Instrument>().AddRange(fillers);
+        await context.SaveChangesAsync();
+
+        var highCountInstrument = new Instrument("HighCount", "YAM", null, null, typeB.Id, store.Id);
+        context.Set<Instrument>().Add(highCountInstrument);
+        await context.SaveChangesAsync();
+
+        var lowCountInstrument = new Instrument("LowCount", "YAM", null, null, typeB.Id, store.Id);
+        context.Set<Instrument>().Add(lowCountInstrument);
+        await context.SaveChangesAsync();
+
+        var rentals = new List<InstrumentRental>();
+        var similarStudentId = 300;
+        foreach (var filler in fillers)
+        {
+            rentals.Add(CreateCompletedRental(commonInstrument.Id, similarStudentId, store.Id, Now.AddDays(-70)));
+            rentals.Add(CreateCompletedRental(filler.Id, similarStudentId, store.Id, Now.AddDays(-70)));
+            similarStudentId++;
+        }
+
+        for (var i = 0; i < 2; i++)
+        {
+            rentals.Add(CreateCompletedRental(commonInstrument.Id, similarStudentId, store.Id, Now.AddDays(-70)));
+            rentals.Add(CreateCompletedRental(highCountInstrument.Id, similarStudentId, store.Id, Now.AddDays(-70)));
+            similarStudentId++;
+        }
+
+        rentals.Add(CreateCompletedRental(commonInstrument.Id, similarStudentId, store.Id, Now.AddDays(-70)));
+        rentals.Add(CreateCompletedRental(lowCountInstrument.Id, similarStudentId, store.Id, Now.AddDays(-70)));
+
+        context.Set<InstrumentRental>().AddRange(rentals);
+        context.Set<InstrumentView>().AddRange(
+            new InstrumentView(student.AppUserId, highCountInstrument.Id, Now.AddDays(-5)),
+            new InstrumentView(student.AppUserId, lowCountInstrument.Id, Now.AddDays(-5)));
+        await context.SaveChangesAsync();
+
+        var service = CreateService(context, student);
+
+        var result = await service.GetRecommendedInstrumentsAsync();
+
+        var resultIds = result.Select(r => r.Instrument.Id).ToHashSet();
+        Assert.Contains(highCountInstrument.Id, resultIds);
+        Assert.DoesNotContain(lowCountInstrument.Id, resultIds);
+    }
+
+    private static InstrumentRental CreateCompletedRental(int instrumentId, int studentProfileId, int storeId, DateTime requestedAt)
+    {
+        var rental = new InstrumentRental(instrumentId, studentProfileId, storeId, requestedAt, null);
+        rental.Approve(50m, null, requestedAt, 1);
+        rental.Pickup(requestedAt.AddDays(1));
+        rental.Complete(requestedAt.AddDays(5), null);
+        return rental;
+    }
+
     private static async Task<Student> SeedStudentAsync(ENoteContext context)
     {
         var student = new Student(appUserId: 100, Now.AddMonths(-1));

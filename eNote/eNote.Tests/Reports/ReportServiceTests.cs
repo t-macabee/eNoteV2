@@ -4,6 +4,8 @@ using eNote.Application.Features.Identity.Users.Services;
 using eNote.Domain.Entities.Assignments;
 using eNote.Infrastructure.Reports;
 using eNote.Tests.TestUtils;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using System.Text;
 
 namespace eNote.Tests.Reports;
@@ -65,6 +67,64 @@ public sealed class ReportServiceTests
         var service = CreateService(harness, harness.Instructor, new ThrowingStoreContext());
 
         await Assert.ThrowsAsync<StoreNotResolvedException>(() => service.GenerateStoreRentalSummaryPdfAsync());
+    }
+
+    [Fact]
+    public async Task GenerateStoreRentalSummaryPdfAsync_ExcludesOtherStoreRentals_WhenGlobalFilterIsPermissive()
+    {
+        var scopedOnlyBytes = await GenerateRentalSummaryPdfAsync(includeOtherStoreRental: false);
+        var withOtherStoreRentalBytes = await GenerateRentalSummaryPdfAsync(includeOtherStoreRental: true);
+
+        // CreatePermissiveContext leaves ExplicitStoreId unset, so the EF global tenant
+        // filter is inert (GetStoreId() returns null) and cannot itself exclude the other
+        // store's rental. Only the explicit MusicStoreId predicate in ReportService can.
+        // No PDF text-extraction library is available in this project, so an extra row is
+        // asserted via byte length rather than parsed content.
+        Assert.Equal(scopedOnlyBytes.Length, withOtherStoreRentalBytes.Length);
+    }
+
+    private async Task<byte[]> GenerateRentalSummaryPdfAsync(bool includeOtherStoreRental)
+    {
+        var context = CreatePermissiveContext();
+        var harness = await AcademicTestData.SeedAsync(context, Now);
+
+        var type = new InstrumentType { Type = "Guitar", MonthlyFee = 50m };
+        context.Set<InstrumentType>().Add(type);
+        await context.SaveChangesAsync();
+
+        var store1 = new MusicStore("Music Shop A", "09-17");
+        var store2 = new MusicStore("Music Shop B", "09-17");
+        context.Set<MusicStore>().AddRange(store1, store2);
+        await context.SaveChangesAsync();
+
+        var instrument1 = new Instrument("Stradivarius", "Yamaha", null, null, type.Id, store1.Id);
+        context.Set<Instrument>().Add(instrument1);
+        await context.SaveChangesAsync();
+
+        context.Set<InstrumentRental>().Add(RentalTestData.CreateCompletedRental(instrument1, harness.Student.Id, Now));
+
+        if (includeOtherStoreRental)
+        {
+            var instrument2 = new Instrument("Stradivarius", "Yamaha", null, null, type.Id, store2.Id);
+            context.Set<Instrument>().Add(instrument2);
+            await context.SaveChangesAsync();
+
+            context.Set<InstrumentRental>().Add(RentalTestData.CreateCompletedRental(instrument2, harness.Student.Id, Now));
+        }
+
+        await context.SaveChangesAsync();
+
+        var service = CreateService(harness, harness.Instructor, new StubCurrentActor(storeId: store1.Id));
+        return await service.GenerateStoreRentalSummaryPdfAsync();
+    }
+
+    private static ENoteContext CreatePermissiveContext()
+    {
+        var options = new DbContextOptionsBuilder<ENoteContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning))
+            .Options;
+        return new ENoteContext(options, new FixedClock(Now), new StubCurrentActor(storeId: 1));
     }
 
     private static ReportService CreateService(AcademicHarness harness, Instructor instructor, IStoreContext? stores = null)
