@@ -13,14 +13,6 @@ Widget networkImageOrPlaceholder(
     return placeholder();
   }
   final trimmed = url.trim();
-  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
-    return _networkImage(
-      trimmed,
-      size: size,
-      borderRadius: borderRadius,
-      placeholder: placeholder,
-    );
-  }
   if (trimmed.startsWith('/')) {
     final client = apiClient;
     if (client == null) return placeholder();

@@ -7,6 +7,8 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using System.Net;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using System.Text;
 using System.Threading.RateLimiting;
 
@@ -212,6 +214,26 @@ public sealed class RateLimitingTests
 
         using var rejected = limiter.AttemptAcquire(1);
         Assert.False(rejected.IsAcquired);
+    }
+
+    [Fact]
+    public void UploadPartition_KeysOnJwtSubClaim()
+    {
+        var context = new DefaultHttpContext
+        {
+            User = new ClaimsPrincipal(new ClaimsIdentity(
+            [
+                new Claim(JwtRegisteredClaimNames.Sub, "42")
+            ]))
+        };
+
+        Assert.Equal("42", new UploadRateLimiterPolicy().GetPartition(context).PartitionKey);
+    }
+
+    [Fact]
+    public void UploadPartition_FallsBackToAnon_WithoutSubClaim()
+    {
+        Assert.Equal("anon", new UploadRateLimiterPolicy().GetPartition(new DefaultHttpContext()).PartitionKey);
     }
 
     private static async Task InvokePeekAsync(HttpContext context)

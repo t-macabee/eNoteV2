@@ -136,4 +136,53 @@ void main() {
       expect(authState.isManager, isFalse);
     });
   });
+
+  group('AuthState.logout', () {
+    test('revoke: true calls the injected revoker and clears the session', () async {
+      var revokeCalls = 0;
+      final authState = AuthState(
+        baseUrl: 'http://localhost:5059/api/v1/',
+        tokenReader: () => fakeJwt(),
+        tokenRevoker: () async {
+          revokeCalls++;
+        },
+      );
+      expect(authState.isAuthenticated, isTrue);
+
+      await authState.logout(revoke: true);
+
+      expect(revokeCalls, 1);
+      expect(authState.isAuthenticated, isFalse);
+    });
+
+    test('revoke defaults to false and skips the revoker', () async {
+      var revokeCalls = 0;
+      final authState = AuthState(
+        baseUrl: 'http://localhost:5059/api/v1/',
+        tokenReader: () => fakeJwt(),
+        tokenRevoker: () async {
+          revokeCalls++;
+        },
+      );
+
+      await authState.logout();
+
+      expect(revokeCalls, 0);
+      expect(authState.isAuthenticated, isFalse);
+    });
+
+    test('a failing revoker still clears the session', () async {
+      final authState = AuthState(
+        baseUrl: 'http://localhost:5059/api/v1/',
+        tokenReader: () => fakeJwt(),
+        tokenRevoker: () async {
+          throw Exception('offline');
+        },
+      );
+
+      await authState.logout(revoke: true);
+
+      expect(authState.isAuthenticated, isFalse);
+    });
+  });
 }

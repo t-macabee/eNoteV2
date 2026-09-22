@@ -1,4 +1,5 @@
 using eNote.Application.Common.Crud;
+using eNote.Application.Common.Files;
 
 namespace eNote.Application.Features.Rentals.ReferenceData.MusicStores;
 
@@ -87,10 +88,27 @@ public sealed class MusicStoreService(IAppDbContext context, IFileStorageService
         return Map(reloaded);
     }
 
+    public override async Task DeleteAsync(int id, CancellationToken cancellationToken = default)
+    {
+        var imagePath = await Db.Set<MusicStore>()
+            .Where(x => x.Id == id)
+            .Select(x => x.ImagePath)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        await base.DeleteAsync(id, cancellationToken);
+
+        if (!string.IsNullOrWhiteSpace(imagePath))
+        {
+            fileStorage.Delete(imagePath);
+        }
+    }
+
     public async Task<MusicStoreDto> UploadImageAsync(int id, Stream stream, string fileName, string contentType, CancellationToken ct = default)
     {
         var entity = await Db.Set<MusicStore>().FirstOrDefaultAsync(x => x.Id == id, ct)
             ?? throw new NotFoundException(NotFoundMessage);
+
+        await StoreStorageQuota.EnsureWithinQuotaAsync(Db, fileStorage, id, stream.Length, entity.ImagePath, ct);
 
         var previousPath = entity.ImagePath;
         var path = await fileStorage.SaveAsync(stream, fileName, contentType, "music-stores", ct);

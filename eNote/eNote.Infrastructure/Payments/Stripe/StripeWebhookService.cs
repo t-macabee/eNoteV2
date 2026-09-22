@@ -74,6 +74,7 @@ public sealed class StripeWebhookService(
 
             default:
                 logger.LogInformation("Ignoring unhandled Stripe webhook event type {EventType}", stripeEvent.Type);
+                await RecordEventAsync(stripeEvent.Id, stripeEvent.Type, rawJson, cancellationToken);
                 break;
         }
     }
@@ -132,7 +133,7 @@ public sealed class StripeWebhookService(
                 return;
             }
 
-            logger.LogWarning("PaymentIntent {PaymentIntentId} not found for succeeded webhook", paymentIntentId);
+            await ThrowUnmatchedPaymentIntentAsync(paymentIntentId, "succeeded");
         }, cancellationToken);
     }
 
@@ -175,7 +176,7 @@ public sealed class StripeWebhookService(
                 return;
             }
 
-            logger.LogWarning("PaymentIntent {PaymentIntentId} not found for failed webhook", paymentIntentId);
+            await ThrowUnmatchedPaymentIntentAsync(paymentIntentId, "failed");
         }, cancellationToken);
     }
 
@@ -234,7 +235,7 @@ public sealed class StripeWebhookService(
                 return;
             }
 
-            logger.LogWarning("PaymentIntent {PaymentIntentId} not found for refunded webhook", charge.PaymentIntentId);
+            await ThrowUnmatchedPaymentIntentAsync(charge.PaymentIntentId, "refunded");
         }, cancellationToken);
     }
 
@@ -272,7 +273,7 @@ public sealed class StripeWebhookService(
                     return;
                 }
 
-                logger.LogWarning("PaymentIntent {PaymentIntentId} not found for refund.updated webhook", refund.PaymentIntentId);
+                await ThrowUnmatchedPaymentIntentAsync(refund.PaymentIntentId, "refund.updated");
                 return;
             }
 
@@ -322,6 +323,12 @@ public sealed class StripeWebhookService(
         {
             logger.LogWarning("PaymentIntent {PaymentIntentId} succeeded without a charge id", paymentIntentId);
         }
+    }
+
+    private Task ThrowUnmatchedPaymentIntentAsync(string paymentIntentId, string eventKind)
+    {
+        logger.LogWarning("PaymentIntent {PaymentIntentId} not found for {EventKind} webhook; returning 503 for Stripe retry.", paymentIntentId, eventKind);
+        throw new PaymentNotYetVisibleException(Messages.PaymentNotYetVisible);
     }
 
     private Task<bool> IsEventProcessedAsync(string eventId, CancellationToken cancellationToken) =>

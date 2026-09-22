@@ -35,7 +35,4 @@ internal static class FileSignatureDetector
 
         return "application/octet-stream";
     }
-
-    internal static bool IsAllowed(ReadOnlySpan<byte> data, string[] allowedContentTypes) =>
-        allowedContentTypes.Contains(DetectContentType(data), StringComparer.OrdinalIgnoreCase);
 }

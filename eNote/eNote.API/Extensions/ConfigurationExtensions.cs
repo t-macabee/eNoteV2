@@ -1,4 +1,5 @@
-﻿using eNote.Infrastructure.Messaging;
+﻿using eNote.Infrastructure.Identity;
+using eNote.Infrastructure.Messaging;
 
 namespace eNote.API.Extensions;
 
@@ -23,7 +24,7 @@ public static class ConfigurationExtensions
         {
             errors.Add("JWT__Key (minimum 32 characters)");
         }
-        else if (jwtKey == "ThisIsASecretKeyThatIsAtLeast32CharactersLong!")
+        else if (IsPlaceholderSecret(jwtKey))
         {
             errors.Add("JWT__Key (placeholder value — must be changed before deployment)");
         }
@@ -48,10 +49,20 @@ public static class ConfigurationExtensions
         {
             errors.Add("Stripe__SecretKey (must start with sk_)");
         }
+        else if (IsPlaceholderSecret(stripeSecretKey))
+        {
+            errors.Add("Stripe__SecretKey (placeholder value — must be changed before deployment)");
+        }
 
-        if (string.IsNullOrWhiteSpace(configuration["Stripe:WebhookSecret"]))
+        var stripeWebhookSecret = configuration["Stripe:WebhookSecret"];
+
+        if (string.IsNullOrWhiteSpace(stripeWebhookSecret))
         {
             errors.Add("Stripe__WebhookSecret");
+        }
+        else if (IsPlaceholderSecret(stripeWebhookSecret))
+        {
+            errors.Add("Stripe__WebhookSecret (placeholder value — must be changed before deployment)");
         }
 
         var rabbitMqError = RabbitMqConfiguration.GetMissingConfigurationError(configuration);
@@ -61,7 +72,7 @@ public static class ConfigurationExtensions
             errors.Add(rabbitMqError);
         }
 
-        foreach (var smtpKey in new[] { "Smtp:Host", "Smtp:From", "Smtp:PasswordResetUrl" })
+        foreach (var smtpKey in SmtpEmailService.RequiredConfigurationKeys)
         {
             if (string.IsNullOrWhiteSpace(configuration[smtpKey]))
             {
@@ -74,4 +85,11 @@ public static class ConfigurationExtensions
             throw new InvalidOperationException("Missing or invalid required configuration values: " + string.Join(", ", errors));
         }
     }
+
+    private static bool IsPlaceholderSecret(string value) =>
+        value.Contains("change-this-in-production", StringComparison.OrdinalIgnoreCase)
+        || value.Contains("fake_local_dev_placeholder", StringComparison.OrdinalIgnoreCase)
+        || value == "ThisIsASecretKeyThatIsAtLeast32CharactersLong!"
+        || value.StartsWith("sk_test_...", StringComparison.Ordinal)
+        || value.StartsWith("whsec_...", StringComparison.Ordinal);
 }

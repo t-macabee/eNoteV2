@@ -1,3 +1,4 @@
+using eNote.Application.Common.Files;
 using System.Linq.Expressions;
 
 namespace eNote.Application.Features.Rentals.Instruments.Services;
@@ -79,7 +80,7 @@ public sealed class InstrumentService(
             request.Model.Trim(),
             request.Manufacturer.Trim(),
             request.Description?.Trim(),
-            request.ImagePath?.Trim(),
+            null,
             request.InstrumentTypeId,
             employee.MusicStoreId);
 
@@ -106,7 +107,7 @@ public sealed class InstrumentService(
             request.Model?.Trim() ?? entity.Model,
             request.Manufacturer?.Trim() ?? entity.Manufacturer,
             request.Description?.Trim() ?? entity.Description,
-            request.ImagePath?.Trim() ?? entity.ImagePath,
+            entity.ImagePath,
             request.InstrumentTypeId ?? entity.InstrumentTypeId);
 
         await context.SaveChangesAsync(cancellationToken);
@@ -121,6 +122,8 @@ public sealed class InstrumentService(
         var entity = await context.Set<Instrument>()
             .FirstOrDefaultAsync(x => x.Id == id, ct)
             ?? throw new NotFoundException(Messages.InstrumentNotFound);
+
+        await StoreStorageQuota.EnsureWithinQuotaAsync(context, fileStorage, entity.MusicStoreId, stream.Length, entity.ImagePath, ct);
 
         var previousPath = entity.ImagePath;
         var path = await fileStorage.SaveAsync(stream, fileName, contentType, "instruments", ct);
@@ -146,6 +149,11 @@ public sealed class InstrumentService(
 
         instrument.SoftDelete();
         await context.SaveChangesAsync(cancellationToken);
+
+        if (!string.IsNullOrWhiteSpace(instrument.ImagePath))
+        {
+            fileStorage.Delete(instrument.ImagePath);
+        }
     }
 
     private Task<MusicStoreEmployee> EnsureStoreAccessAsync(CancellationToken cancellationToken) =>

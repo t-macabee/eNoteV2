@@ -17,7 +17,7 @@ public sealed class InstructorAccessServiceTests
         await context.SaveChangesAsync();
         var service = CreateService(context, instructor);
 
-        Assert.Equal(instructor.Id, await service.GetCurrentInstructorIdAsync(100));
+        Assert.Equal(instructor.Id, await service.GetCurrentInstructorIdAsync(100, CancellationToken.None));
     }
 
     [Fact]

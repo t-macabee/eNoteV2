@@ -1,3 +1,5 @@
+using eNote.Application.Common.Files;
+using eNote.Application.Common.Localization;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Features.Rentals.Instruments;
 using eNote.Application.Features.Rentals.Instruments.Services;
@@ -200,6 +202,65 @@ public sealed class InstrumentServiceTests
         Assert.NotNull(loaded.InstrumentType);
         Assert.NotNull(loaded.MusicStore);
         Assert.Empty(loaded.InstrumentRentals);
+    }
+
+    [Fact]
+    public async Task DeleteAsync_DeletesStoredImage_AfterSoftDelete()
+    {
+        var ctx = CreateContext();
+        var type = await SeedInstrumentTypeAsync(ctx, "Guitar");
+        var store = await SeedStoreAsync(ctx, "Music Shop Sarajevo");
+        var instrument = new Instrument("Stratocaster", "Fender", null, "/api/v1/uploads/instruments/old.png", type.Id, store.Id);
+        ctx.Set<Instrument>().Add(instrument);
+        await ctx.SaveChangesAsync();
+        var storage = new RecordingFileStorageService();
+        var service = CreateStoreInstrumentService(ctx, store.Id, storage);
+
+        await service.DeleteAsync(instrument.Id);
+
+        Assert.False((await ctx.Set<Instrument>().IgnoreQueryFilters().SingleAsync(x => x.Id == instrument.Id)).IsActive);
+        Assert.Equal(["/api/v1/uploads/instruments/old.png"], storage.DeletedPaths);
+    }
+
+    [Fact]
+    public async Task UploadImageAsync_ThrowsQuotaExceeded_WhenStoreUsageWouldExceed()
+    {
+        var ctx = CreateContext();
+        var type = await SeedInstrumentTypeAsync(ctx, "Guitar");
+        var store = await SeedStoreAsync(ctx, "Music Shop Sarajevo");
+        var existing = new Instrument("Pacifica", "Yamaha", null, "/api/v1/uploads/instruments/existing.png", type.Id, store.Id);
+        var target = new Instrument("Stratocaster", "Fender", null, null, type.Id, store.Id);
+        ctx.Set<Instrument>().AddRange(existing, target);
+        await ctx.SaveChangesAsync();
+        var storage = new RecordingFileStorageService();
+        storage.FileSizes["/api/v1/uploads/instruments/existing.png"] = FileUploadLimits.MaxStoreUploadBytes;
+        var service = CreateStoreInstrumentService(ctx, store.Id, storage);
+
+        using var stream = new MemoryStream([1, 2, 3]);
+        var ex = await Assert.ThrowsAsync<BusinessException>(() =>
+            service.UploadImageAsync(target.Id, stream, "guitar.png", "image/png"));
+
+        Assert.Equal(Messages.StorageQuotaExceeded, ex.Message);
+        Assert.Empty(storage.SavedPaths);
+    }
+
+    [Fact]
+    public async Task UploadImageAsync_AllowsReplacement_WhenPreviousImageFillsQuota()
+    {
+        var ctx = CreateContext();
+        var type = await SeedInstrumentTypeAsync(ctx, "Guitar");
+        var store = await SeedStoreAsync(ctx, "Music Shop Sarajevo");
+        var instrument = new Instrument("Stratocaster", "Fender", null, "/api/v1/uploads/instruments/existing.png", type.Id, store.Id);
+        ctx.Set<Instrument>().Add(instrument);
+        await ctx.SaveChangesAsync();
+        var storage = new RecordingFileStorageService();
+        storage.FileSizes["/api/v1/uploads/instruments/existing.png"] = FileUploadLimits.MaxStoreUploadBytes;
+        var service = CreateStoreInstrumentService(ctx, store.Id, storage);
+
+        using var stream = new MemoryStream([1, 2, 3]);
+        var updated = await service.UploadImageAsync(instrument.Id, stream, "guitar.png", "image/png");
+
+        Assert.Equal(storage.SavedPaths.Single(), updated.ImagePath);
     }
 
     private static ENoteContext CreateContext()

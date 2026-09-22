@@ -1,3 +1,4 @@
+using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Constants;
 using eNote.Application.Features.Rentals.Payments.Services;
@@ -105,16 +106,59 @@ public sealed class RentalPaymentWebhookTests
     }
 
     [Fact]
-    public async Task HandleWebhook_UnknownPaymentIntent_IsNoOp()
+    public async Task HandleWebhook_UnknownPaymentIntent_ThrowsForStripeRetry()
     {
         var (context, _, _) = await SeedRequiresActionPaymentAsync();
         var service = CreateWebhookService(context);
         var evt = CreatePaymentIntentEvent("evt_test_unknown", "payment_intent.succeeded", "pi_unknown", "succeeded", "ch_unknown");
 
-        await service.HandleAsync(evt, "{}");
+        var exception = await Assert.ThrowsAsync<PaymentNotYetVisibleException>(() => service.HandleAsync(evt, "{}"));
 
+        Assert.Equal(503, exception.StatusCode);
         Assert.Empty(await context.Set<StripeWebhookEvent>().ToListAsync());
         Assert.Equal(PaymentStatus.RequiresAction, (await context.Set<RentalPayment>().SingleAsync()).Status);
+    }
+
+    [Fact]
+    public async Task HandleWebhook_UnknownPaymentIntent_Failed_ThrowsForStripeRetry()
+    {
+        var (context, _, _) = await SeedRequiresActionPaymentAsync();
+        var service = CreateWebhookService(context);
+        var evt = CreatePaymentIntentEvent("evt_test_unknown_failed", "payment_intent.payment_failed", "pi_unknown", "requires_payment_method", null);
+
+        var exception = await Assert.ThrowsAsync<PaymentNotYetVisibleException>(() => service.HandleAsync(evt, "{}"));
+
+        Assert.Equal(503, exception.StatusCode);
+        Assert.Empty(await context.Set<StripeWebhookEvent>().ToListAsync());
+        Assert.Equal(PaymentStatus.RequiresAction, (await context.Set<RentalPayment>().SingleAsync()).Status);
+    }
+
+    [Fact]
+    public async Task HandleWebhook_UnknownPaymentIntent_Refunded_ThrowsForStripeRetry()
+    {
+        var (context, _, _) = await SeedSucceededPaymentAsync();
+        var service = CreateWebhookService(context);
+        var evt = CreateChargeRefundedEvent("evt_test_unknown_refunded", "pi_unknown", "ch_unknown", 5000);
+
+        var exception = await Assert.ThrowsAsync<PaymentNotYetVisibleException>(() => service.HandleAsync(evt, "{}"));
+
+        Assert.Equal(503, exception.StatusCode);
+        Assert.Empty(await context.Set<StripeWebhookEvent>().ToListAsync());
+        Assert.Equal(PaymentStatus.Succeeded, (await context.Set<RentalPayment>().SingleAsync()).Status);
+    }
+
+    [Fact]
+    public async Task HandleWebhook_UnknownPaymentIntent_RefundUpdated_ThrowsForStripeRetry()
+    {
+        var (context, _, _) = await SeedSucceededPaymentAsync();
+        var service = CreateWebhookService(context);
+        var evt = CreateRefundUpdatedEvent("evt_test_unknown_refund_updated", "pi_unknown", "re_unknown", 2000, "succeeded");
+
+        var exception = await Assert.ThrowsAsync<PaymentNotYetVisibleException>(() => service.HandleAsync(evt, "{}"));
+
+        Assert.Equal(503, exception.StatusCode);
+        Assert.Empty(await context.Set<StripeWebhookEvent>().ToListAsync());
+        Assert.Equal(PaymentStatus.Succeeded, (await context.Set<RentalPayment>().SingleAsync()).Status);
     }
 
     [Fact]

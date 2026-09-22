@@ -1,3 +1,4 @@
+using eNote.Application.Common.Files;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Features.Rentals.ReferenceData.MusicStores;
@@ -360,6 +361,66 @@ public sealed class MusicStoreServiceTests
         var ex = await Assert.ThrowsAsync<BusinessException>(() => service.DeleteAsync(created.Id));
 
         Assert.Equal(Messages.MusicStoreDeleteBlocked, ex.Message);
+    }
+
+    [Fact]
+    public async Task DeleteAsync_DeletesStoredImage()
+    {
+        var ctx = TestDbContextFactory.CreateContext(Now);
+        var store = new MusicStore("Image Store", "09-17");
+        store.UpdateImagePath("/api/v1/uploads/music-stores/store.png");
+        ctx.Set<MusicStore>().Add(store);
+        await ctx.SaveChangesAsync();
+        var storage = new RecordingFileStorageService();
+        var service = CreateService(ctx, storage);
+
+        await service.DeleteAsync(store.Id);
+
+        Assert.Equal(["/api/v1/uploads/music-stores/store.png"], storage.DeletedPaths);
+        Assert.DoesNotContain(ctx.Set<MusicStore>(), x => x.Id == store.Id);
+    }
+
+    [Fact]
+    public async Task DeleteAsync_KeepsStoredImage_WhenDeleteBlocked()
+    {
+        var ctx = TestDbContextFactory.CreateContext(Now);
+        var store = new MusicStore("Image Store", "09-17");
+        store.UpdateImagePath("/api/v1/uploads/music-stores/store.png");
+        ctx.Set<MusicStore>().Add(store);
+        var type = new InstrumentType { Type = "Guitar", MonthlyFee = 50m };
+        ctx.Set<InstrumentType>().Add(type);
+        await ctx.SaveChangesAsync();
+        ctx.Set<Instrument>().Add(new Instrument("Strat", "Fender", null, null, type.Id, store.Id));
+        await ctx.SaveChangesAsync();
+        var storage = new RecordingFileStorageService();
+        var service = CreateService(ctx, storage);
+
+        await Assert.ThrowsAsync<BusinessException>(() => service.DeleteAsync(store.Id));
+
+        Assert.Empty(storage.DeletedPaths);
+    }
+
+    [Fact]
+    public async Task UploadImageAsync_ThrowsQuotaExceeded_WhenStoreImagesFillQuota()
+    {
+        var ctx = TestDbContextFactory.CreateContext(Now);
+        var store = new MusicStore("Image Store", "09-17");
+        ctx.Set<MusicStore>().Add(store);
+        var type = new InstrumentType { Type = "Guitar", MonthlyFee = 50m };
+        ctx.Set<InstrumentType>().Add(type);
+        await ctx.SaveChangesAsync();
+        var instrument = new Instrument("Strat", "Fender", null, "/api/v1/uploads/instruments/big.png", type.Id, store.Id);
+        ctx.Set<Instrument>().Add(instrument);
+        await ctx.SaveChangesAsync();
+        var storage = new RecordingFileStorageService();
+        storage.FileSizes["/api/v1/uploads/instruments/big.png"] = FileUploadLimits.MaxStoreUploadBytes;
+        var service = CreateService(ctx, storage);
+
+        using var stream = new MemoryStream([1, 2, 3]);
+        var ex = await Assert.ThrowsAsync<BusinessException>(() => service.UploadImageAsync(store.Id, stream, "store.png", "image/png"));
+
+        Assert.Equal(Messages.StorageQuotaExceeded, ex.Message);
+        Assert.Empty(storage.SavedPaths);
     }
 
     private static MusicStoreService CreateService(IAppDbContext ctx, IFileStorageService? fileStorage = null) =>

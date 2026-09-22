@@ -7,7 +7,7 @@ public sealed class LectureNoteRequestValidator : AbstractValidator<LectureNoteR
 {
     public LectureNoteRequestValidator()
     {
-        RuleFor(x => x.Title).NotEmpty();
+        RuleFor(x => x.Title).NotEmpty().MaximumLength(200);
         RuleFor(x => x.Content).NotEmpty();
     }
 }

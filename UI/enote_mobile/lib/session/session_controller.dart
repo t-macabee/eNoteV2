@@ -92,10 +92,7 @@ class SessionController extends ChangeNotifier {
 
   Future<void> logoutAndRevoke() async {
     _clearProfile();
-    try {
-      await apiClient.post('auth/logout');
-    } catch (_) {}
-    await authState.logout();
+    await authState.logout(revoke: true);
     notifications.stopPolling();
     onStopRealtime?.call();
   }

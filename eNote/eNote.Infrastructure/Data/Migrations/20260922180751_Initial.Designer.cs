@@ -12,7 +12,7 @@ using eNote.Infrastructure.Data;
 namespace eNote.Infrastructure.Data.Migrations
 {
     [DbContext(typeof(ENoteContext))]
-    [Migration("20260914204201_Initial")]
+    [Migration("20260922180751_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -162,7 +162,8 @@ namespace eNote.Infrastructure.Data.Migrations
                     b.HasIndex("LectureId");
 
                     b.HasIndex("StudentId", "LectureId")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasDatabaseName("IX_Attendance_StudentId_LectureId");
 
                     b.ToTable("Attendance");
                 });
@@ -328,12 +329,19 @@ namespace eNote.Infrastructure.Data.Migrations
                     b.Property<int?>("UpdatedById")
                         .HasColumnType("int");
 
+                    b.Property<byte[]>("Version")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
                     b.HasKey("Id");
 
                     b.HasIndex("CourseId");
 
                     b.HasIndex("StudentId", "CourseId")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasDatabaseName("IX_Enrollment_StudentId_CourseId");
 
                     b.ToTable("Enrollment");
                 });
@@ -722,6 +730,7 @@ namespace eNote.Infrastructure.Data.Migrations
 
                     b.HasIndex("UserId", "RentalId", "CreatedAt")
                         .IsUnique()
+                        .HasDatabaseName("IX_Notification_UserId_RentalId_CreatedAt")
                         .HasFilter("[RentalId] IS NOT NULL");
 
                     b.HasIndex("UserId", "RentalId", "Title");
@@ -734,7 +743,7 @@ namespace eNote.Infrastructure.Data.Migrations
                     b.ToTable("Notification");
                 });
 
-            modelBuilder.Entity("eNote.Domain.Entities.Communication.RentalNotificationOutbox", b =>
+            modelBuilder.Entity("eNote.Domain.Entities.Communication.NotificationOutbox", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -850,8 +859,7 @@ namespace eNote.Infrastructure.Data.Migrations
                     b.HasIndex("AppUserId")
                         .IsUnique();
 
-                    b.HasIndex("MusicStoreId", "AppUserId")
-                        .IsUnique();
+                    b.HasIndex("MusicStoreId");
 
                     b.ToTable("MusicStoreEmployee");
                 });
@@ -878,7 +886,8 @@ namespace eNote.Infrastructure.Data.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("Jti")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasDatabaseName("IX_RevokedToken_Jti");
 
                     b.ToTable("RevokedToken");
                 });
@@ -1050,14 +1059,29 @@ namespace eNote.Infrastructure.Data.Migrations
                     b.Property<int?>("UpdatedById")
                         .HasColumnType("int");
 
+                    b.Property<byte[]>("Version")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("ApprovedById");
 
                     b.HasIndex("InstrumentId")
                         .IsUnique()
                         .HasDatabaseName("UX_InstrumentRental_InstrumentId_ActiveOrApproved")
                         .HasFilter("\"RentalStatus\" IN (2, 3)");
 
+                    b.HasIndex("RejectedById");
+
                     b.HasIndex("StudentProfileId");
+
+                    b.HasIndex("InstrumentId", "StudentProfileId")
+                        .IsUnique()
+                        .HasDatabaseName("UX_InstrumentRental_InstrumentId_StudentProfileId_Pending")
+                        .HasFilter("\"RentalStatus\" = 1");
 
                     b.ToTable("InstrumentRental");
                 });
@@ -1143,7 +1167,8 @@ namespace eNote.Infrastructure.Data.Migrations
                     b.HasIndex("LastViewedAt");
 
                     b.HasIndex("UserId", "InstrumentId")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasDatabaseName("IX_InstrumentView_UserId_InstrumentId");
 
                     b.ToTable("InstrumentView");
                 });
@@ -1259,6 +1284,12 @@ namespace eNote.Infrastructure.Data.Migrations
                     b.Property<int?>("UpdatedById")
                         .HasColumnType("int");
 
+                    b.Property<byte[]>("Version")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
                     b.HasKey("Id");
 
                     b.HasIndex("StripeEventId")
@@ -1273,6 +1304,38 @@ namespace eNote.Infrastructure.Data.Migrations
                     b.HasIndex("InstrumentRentalId", "Status");
 
                     b.ToTable("RentalPayment");
+                });
+
+            modelBuilder.Entity("eNote.Domain.Entities.Rentals.RentalRefund", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<long>("AmountCents")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime>("AppliedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("RentalPaymentId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("StripeRefundId")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RentalPaymentId");
+
+                    b.HasIndex("StripeRefundId")
+                        .IsUnique();
+
+                    b.ToTable("RentalRefund");
                 });
 
             modelBuilder.Entity("eNote.Domain.Entities.Rentals.StripeWebhookEvent", b =>
@@ -1858,11 +1921,21 @@ namespace eNote.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("eNote.Domain.Entities.Rentals.InstrumentRental", b =>
                 {
+                    b.HasOne("eNote.Infrastructure.Identity.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("ApprovedById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("eNote.Domain.Entities.Rentals.Instrument", "Instrument")
                         .WithMany("InstrumentRentals")
                         .HasForeignKey("InstrumentId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.HasOne("eNote.Infrastructure.Identity.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("RejectedById")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("eNote.Domain.Entities.Identity.Student", "StudentProfile")
                         .WithMany("InstrumentRentals")
@@ -1909,6 +1982,17 @@ namespace eNote.Infrastructure.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("InstrumentRental");
+                });
+
+            modelBuilder.Entity("eNote.Domain.Entities.Rentals.RentalRefund", b =>
+                {
+                    b.HasOne("eNote.Domain.Entities.Rentals.RentalPayment", "RentalPayment")
+                        .WithMany("Refunds")
+                        .HasForeignKey("RentalPaymentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("RentalPayment");
                 });
 
             modelBuilder.Entity("eNote.Domain.Entities.Shared.Address", b =>
@@ -1984,6 +2068,11 @@ namespace eNote.Infrastructure.Data.Migrations
                     b.Navigation("Employees");
 
                     b.Navigation("Instruments");
+                });
+
+            modelBuilder.Entity("eNote.Domain.Entities.Rentals.RentalPayment", b =>
+                {
+                    b.Navigation("Refunds");
                 });
 
             modelBuilder.Entity("eNote.Domain.Entities.Shared.City", b =>

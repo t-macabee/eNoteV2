@@ -26,9 +26,14 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 EXPOSE 8080
 COPY --from=build /app/api/publish .
+RUN mkdir -p /app/wwwroot/uploads \
+    && chown -R $APP_UID:$APP_UID /app
+USER $APP_UID
 ENTRYPOINT ["dotnet", "eNote.API.dll"]
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS worker
 WORKDIR /app
 COPY --from=build /app/worker/publish .
+RUN chown -R $APP_UID:$APP_UID /app
+USER $APP_UID
 ENTRYPOINT ["dotnet", "eNote.Worker.dll"]

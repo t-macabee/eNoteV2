@@ -193,6 +193,7 @@ class _NotePromptDialogState extends State<_NotePromptDialog> {
         controller: _controller,
         autofocus: true,
         maxLines: 3,
+        maxLength: 500,
         decoration: InputDecoration(
           labelText: 'Razlog *',
           errorText: isEmpty ? 'Razlog je obavezan.' : null,

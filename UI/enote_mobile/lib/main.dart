@@ -13,6 +13,7 @@ Future<void> main() async {
   final tokenStore = TokenStore();
   await tokenStore.load();
   late AuthState authState;
+  late ApiClient apiClient;
   final sessionHttp = SessionHttpClient(
     onUnauthorized: () {
       SessionController.markSessionExpired();
@@ -25,9 +26,10 @@ Future<void> main() async {
     baseUrl: kApiBaseUrl,
     tokenReader: tokenStore.read,
     tokenWriter: tokenStore.write,
+    tokenRevoker: () => apiClient.post('auth/logout'),
     httpClient: sessionHttp,
   );
-  final apiClient = ApiClient(
+  apiClient = ApiClient(
     baseUrl: kApiBaseUrl,
     authState: authState,
     httpClient: sessionHttp,

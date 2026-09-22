@@ -36,6 +36,8 @@ public static class Messages
     public const string CourseNotOwned = "Niste vlasnik navedenog kursa.";
     public const string CoursePriceMustBeNonNegative = "Cijena mora biti nenegativan decimalni broj (npr. 25.00).";
     public const string CoursePriceExceedsMaximum = "Cijena ne smije biti veća od 10000.";
+    public const string InstrumentTypeFeeMustBeNonNegative = "Mjesečna naknada mora biti nenegativan decimalni broj.";
+    public const string InstrumentTypeFeeExceedsMaximum = "Mjesečna naknada ne smije biti veća od 99999999.99.";
 
     public const string LectureNotFound = "Predavanje nije pronađeno.";
     public const string LectureCancelled = "Predavanje je otkazano.";
@@ -62,6 +64,7 @@ public static class Messages
     public const string RefundFailed = "Povrat sredstava nije uspio.";
     public const string PaymentNotFound = "Plaćanje nije pronađeno.";
     public const string PaymentProviderUnavailable = "Plaćanje trenutno nije dostupno. Pokušajte ponovo kasnije.";
+    public const string PaymentNotYetVisible = "Plaćanje još nije vidljivo u sistemu. Stripe će pokušati ponovo.";
     public const string RentalUnpaidDebt = "Imate neizmireno dugovanje od prethodnog iznajmljivanja. Izmirite ga prije novog zahtjeva.";
     public const string StripeWebhookSignatureInvalid = "Neispravan Stripe webhook potpis.";
 
@@ -99,6 +102,7 @@ public static class Messages
 
     public const string FileNotProvided = "Fajl nije priložen.";
     public const string FileTooLarge = "Veličina fajla prelazi maksimalno dozvoljenih 5 MB.";
+    public const string StorageQuotaExceeded = "Prekoračen je maksimalni dozvoljeni prostor za slike prodavnice.";
     public const string InvalidFileFormat = "Dozvoljeni formati su JPEG, PNG i WebP.";
     public const string AssignmentFileTypeNotAllowed = "Dozvoljeni formati za zadatak su JPEG, PNG i PDF.";
 

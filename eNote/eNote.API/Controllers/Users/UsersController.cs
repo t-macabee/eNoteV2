@@ -1,8 +1,10 @@
 using eNote.API.Controllers.Base;
-using eNote.Application.Common.Localization;
+using eNote.API.Extensions;
+using eNote.Application.Common.Files;
 using eNote.Application.Features.Identity.Users;
 using eNote.Application.Features.Identity.Users.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace eNote.API.Controllers.Users;
 
@@ -43,18 +45,19 @@ public sealed class UsersController(UserProfileService profileService, UserSelfS
     }
 
     [HttpPut("me/picture")]
-    [RequestSizeLimit(5 * 1024 * 1024)]
+    [RequestSizeLimit(FileUploadLimits.MaxRequestBytes)]
+    [EnableRateLimiting(RateLimitingExtensions.UploadsPolicy)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> UploadPicture(IFormFile? file)
+    public async Task<IActionResult> UploadPicture(IFormFile? file, CancellationToken cancellationToken)
     {
-        if (file is null || file.Length == 0)
+        if (ValidateUpload(file) is { } uploadError)
         {
-            return BadRequest(new { message = Messages.FileNotProvided });
+            return uploadError;
         }
 
-        await using var stream = file.OpenReadStream();
-        (var success, var error) = await selfService.UpdatePictureAsync(stream, file.FileName, file.ContentType);
+        await using var stream = file!.OpenReadStream();
+        (var success, var error) = await selfService.UpdatePictureAsync(stream, file.FileName, file.ContentType, cancellationToken);
 
         if (!success)
         {

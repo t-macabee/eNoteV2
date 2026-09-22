@@ -1,4 +1,6 @@
 using eNote.API.Controllers.Base;
+using eNote.API.Extensions;
+using eNote.Application.Common.Files;
 using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Paging;
@@ -8,6 +10,7 @@ using eNote.Application.Features.Rentals.ReferenceData.Addresses;
 using eNote.Application.Features.Rentals.ReferenceData.MusicStores;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace eNote.API.Controllers.Shop;
 
@@ -39,6 +42,8 @@ public sealed class ShopStoreController(
     }
 
     [HttpPost("image")]
+    [RequestSizeLimit(FileUploadLimits.MaxRequestBytes)]
+    [EnableRateLimiting(RateLimitingExtensions.UploadsPolicy)]
     [ProducesResponseType(typeof(MusicStoreDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]

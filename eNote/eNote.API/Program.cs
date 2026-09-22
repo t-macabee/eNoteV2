@@ -2,7 +2,11 @@ using eNote.API.Realtime.Consumers;
 using eNote.API.Converters;
 using eNote.API.Extensions;
 using eNote.API.Hubs;
+using eNote.Contracts.Assignments;
+using eNote.Contracts.Lectures;
+using eNote.Contracts.Rentals;
 using eNote.Infrastructure;
+using eNote.Infrastructure.Messaging;
 using Scalar.AspNetCore;
 using Serilog;
 using System.Text.Json.Serialization;
@@ -34,6 +38,10 @@ builder.Services
         bus.AddConsumer<RentalRefundedPushConsumer>();
         bus.AddConsumer<LectureCancelledPushConsumer>();
         bus.AddConsumer<SubmissionGradedPushConsumer>();
+        bus.AddConsumer<FaultLoggingConsumer<RentalStatusChanged>>();
+        bus.AddConsumer<FaultLoggingConsumer<RentalRefunded>>();
+        bus.AddConsumer<FaultLoggingConsumer<LectureCancelled>>();
+        bus.AddConsumer<FaultLoggingConsumer<SubmissionGraded>>();
     }, registerNotificationOutboxPublisher: false)
     .AddJwtAuthentication()
     .AddAuthorization()
@@ -67,10 +75,13 @@ app.UseCors(CorsExtensions.PolicyName);
 app.UseErrorHandling();
 app.UseMiddleware<eNote.API.Middleware.AuthRateLimitIdentityMiddleware>();
 
-if (app.Environment.IsDevelopment())
+if (app.Configuration.GetValue("Seed:Enabled", app.Environment.IsDevelopment()))
 {
     await app.InitializeDevelopmentDataAsync();
+}
 
+if (app.Environment.IsDevelopment())
+{
     app.MapOpenApi().WithDocumentPerVersion();
 
     app.MapScalarApiReference(options =>
@@ -82,8 +93,9 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-app.UseRateLimiter();
 app.UseAuthentication();
+// Must run after UseAuthentication: partition policies key on the JWT "sub" claim.
+app.UseRateLimiter();
 app.UseMiddleware<eNote.API.Middleware.TenantInitializationMiddleware>();
 app.UseAuthorization();
 

@@ -9,9 +9,9 @@ public sealed class DatabaseHeartbeatServiceTests
 {
     [Theory]
     [InlineData(HealthStatus.Healthy, true)]
-    [InlineData(HealthStatus.Degraded, true)]
+    [InlineData(HealthStatus.Degraded, false)]
     [InlineData(HealthStatus.Unhealthy, false)]
-    public async Task UpdateMarkerAsync_KeepsMarkerFile_UnlessUnhealthy(HealthStatus status, bool markerExpected)
+    public async Task UpdateMarkerAsync_KeepsMarkerFile_OnlyWhenHealthy(HealthStatus status, bool markerExpected)
     {
         var markerPath = TempMarkerPath();
         await File.WriteAllTextAsync(markerPath, "stale");

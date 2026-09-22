@@ -34,6 +34,7 @@ import 'shell/master_screen.dart';
 void main() {
   final navigatorKey = GlobalKey<NavigatorState>();
   late AuthState authState;
+  late ApiClient apiClient;
   final sessionHttp = SessionHttpClient(
     timeout: const Duration(seconds: 20),
     onUnauthorized: () {
@@ -44,8 +45,9 @@ void main() {
   authState = AuthState(
     baseUrl: kApiBaseUrl,
     httpClient: sessionHttp,
+    tokenRevoker: () => apiClient.post('auth/logout'),
   );
-  final apiClient = ApiClient(
+  apiClient = ApiClient(
     baseUrl: kApiBaseUrl,
     authState: authState,
     httpClient: sessionHttp,

@@ -6,6 +6,7 @@ public sealed class RecordingFileStorageService : IFileStorageService
     public List<(string FileName, string ContentType, string Subfolder)> SavedFiles { get; } = [];
     public List<string> SavedPaths { get; } = [];
     public List<string> OpenReadCalls { get; } = [];
+    public Dictionary<string, long> FileSizes { get; } = [];
     public (Stream? Data, string? ContentType) OpenReadResult { get; set; } = (null, null);
 
     public Task<string> SaveAsync(Stream stream, string fileName, string contentType, string subfolder, CancellationToken ct = default)
@@ -27,6 +28,8 @@ public sealed class RecordingFileStorageService : IFileStorageService
         OpenReadCalls.Add(path);
         return OpenReadResult;
     }
+
+    public long GetFileSize(string path) => FileSizes.GetValueOrDefault(path);
 
     public void Delete(string path) => DeletedPaths.Add(path);
 }

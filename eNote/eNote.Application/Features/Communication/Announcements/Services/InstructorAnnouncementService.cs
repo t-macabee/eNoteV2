@@ -24,19 +24,19 @@ public sealed class InstructorAnnouncementService(IAppDbContext context, IClock 
 
     public async Task<AnnouncementDto> GetByIdForCourseAsync(int courseId, int announcementId, CancellationToken cancellationToken = default)
     {
-        var entity = await (await GetCourseAnnouncementQueryAsync(courseId)).FirstOrDefaultAsync(a => a.Id == announcementId, cancellationToken) ?? throw new NotFoundException(Messages.AnnouncementNotFound);
+        var entity = await (await GetCourseAnnouncementQueryAsync(courseId, cancellationToken)).FirstOrDefaultAsync(a => a.Id == announcementId, cancellationToken) ?? throw new NotFoundException(Messages.AnnouncementNotFound);
 
         return mapper.Map<AnnouncementDto>(entity);
     }
 
     public async Task<PagedResult<AnnouncementDto>> GetForCourseAsync(int courseId, AnnouncementSearchObject search, CancellationToken cancellationToken = default)
     {
-        return await (await GetCourseAnnouncementQueryAsync(courseId)).ApplySearch(search).ToPagedResultAsync(search, mapper.Map<AnnouncementDto>, q => q.OrderByDescending(x => x.PublishedAt), cancellationToken);
+        return await (await GetCourseAnnouncementQueryAsync(courseId, cancellationToken)).ApplySearch(search).ToPagedResultAsync(search, mapper.Map<AnnouncementDto>, q => q.OrderByDescending(x => x.PublishedAt), cancellationToken);
     }
 
     public async Task<AnnouncementDto> UpdateForCourseAsync(int courseId, int announcementId, AnnouncementRequest request, CancellationToken cancellationToken = default)
     {
-        var entity = await (await GetCourseAnnouncementQueryAsync(courseId, track: true)).FirstOrDefaultAsync(a => a.Id == announcementId, cancellationToken) ?? throw new NotFoundException(Messages.AnnouncementNotFound);
+        var entity = await (await GetCourseAnnouncementQueryAsync(courseId, cancellationToken, track: true)).FirstOrDefaultAsync(a => a.Id == announcementId, cancellationToken) ?? throw new NotFoundException(Messages.AnnouncementNotFound);
 
         entity.UpdateDetails(request.Title.Trim(), request.Content.Trim());
         entity.UpdatedById = currentUser.UserId;
@@ -48,7 +48,7 @@ public sealed class InstructorAnnouncementService(IAppDbContext context, IClock 
 
     public async Task DeleteForCourseAsync(int courseId, int announcementId, CancellationToken cancellationToken = default)
     {
-        var entity = await (await GetCourseAnnouncementQueryAsync(courseId, track: true)).FirstOrDefaultAsync(a => a.Id == announcementId, cancellationToken) ?? throw new NotFoundException(Messages.AnnouncementNotFound);
+        var entity = await (await GetCourseAnnouncementQueryAsync(courseId, cancellationToken, track: true)).FirstOrDefaultAsync(a => a.Id == announcementId, cancellationToken) ?? throw new NotFoundException(Messages.AnnouncementNotFound);
 
         entity.SoftDelete();
         entity.UpdatedById = currentUser.UserId;
@@ -56,9 +56,9 @@ public sealed class InstructorAnnouncementService(IAppDbContext context, IClock 
         await context.SaveChangesAsync(cancellationToken);
     }
 
-    private async Task<IQueryable<Announcement>> GetCourseAnnouncementQueryAsync(int courseId, bool track = false)
+    private async Task<IQueryable<Announcement>> GetCourseAnnouncementQueryAsync(int courseId, CancellationToken cancellationToken, bool track = false)
     {
-        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId);
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId, cancellationToken);
 
         return instructorAccess.CourseAnnouncementsFor(courseId, instructorId, track);
     }

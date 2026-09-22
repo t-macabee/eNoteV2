@@ -384,6 +384,7 @@ namespace eNote.Infrastructure.Data.Migrations
                     CourseId = table.Column<int>(type: "int", nullable: false),
                     EnrollmentStatus = table.Column<int>(type: "int", nullable: false),
                     PaidUntil = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    Version = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedById = table.Column<int>(type: "int", nullable: true),
@@ -733,6 +734,7 @@ namespace eNote.Infrastructure.Data.Migrations
                     IsPaid = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
                     PaidAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     AmountPaid = table.Column<decimal>(type: "decimal(10,2)", precision: 10, scale: 2, nullable: true),
+                    Version = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedById = table.Column<int>(type: "int", nullable: true),
@@ -741,6 +743,18 @@ namespace eNote.Infrastructure.Data.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_InstrumentRental", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_InstrumentRental_AspNetUsers_ApprovedById",
+                        column: x => x.ApprovedById,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_InstrumentRental_AspNetUsers_RejectedById",
+                        column: x => x.RejectedById,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_InstrumentRental_Instrument_InstrumentId",
                         column: x => x.InstrumentId,
@@ -834,6 +848,7 @@ namespace eNote.Infrastructure.Data.Migrations
                     RefundedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     RefundedCents = table.Column<long>(type: "bigint", nullable: true),
                     StripeRefundId = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: true),
+                    Version = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedById = table.Column<int>(type: "int", nullable: true),
@@ -892,6 +907,28 @@ namespace eNote.Infrastructure.Data.Migrations
                         principalTable: "Lecture",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "RentalRefund",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    RentalPaymentId = table.Column<int>(type: "int", nullable: false),
+                    StripeRefundId = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: false),
+                    AmountCents = table.Column<long>(type: "bigint", nullable: false),
+                    AppliedAtUtc = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_RentalRefund", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_RentalRefund_RentalPayment_RentalPaymentId",
+                        column: x => x.RentalPaymentId,
+                        principalTable: "RentalPayment",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.InsertData(
@@ -1105,6 +1142,16 @@ namespace eNote.Infrastructure.Data.Migrations
                 column: "MusicStoreId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_InstrumentRental_ApprovedById",
+                table: "InstrumentRental",
+                column: "ApprovedById");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_InstrumentRental_RejectedById",
+                table: "InstrumentRental",
+                column: "RejectedById");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_InstrumentRental_StudentProfileId",
                 table: "InstrumentRental",
                 column: "StudentProfileId");
@@ -1115,6 +1162,13 @@ namespace eNote.Infrastructure.Data.Migrations
                 column: "InstrumentId",
                 unique: true,
                 filter: "\"RentalStatus\" IN (2, 3)");
+
+            migrationBuilder.CreateIndex(
+                name: "UX_InstrumentRental_InstrumentId_StudentProfileId_Pending",
+                table: "InstrumentRental",
+                columns: new[] { "InstrumentId", "StudentProfileId" },
+                unique: true,
+                filter: "\"RentalStatus\" = 1");
 
             migrationBuilder.CreateIndex(
                 name: "IX_InstrumentView_InstrumentId",
@@ -1154,10 +1208,9 @@ namespace eNote.Infrastructure.Data.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_MusicStoreEmployee_MusicStoreId_AppUserId",
+                name: "IX_MusicStoreEmployee_MusicStoreId",
                 table: "MusicStoreEmployee",
-                columns: new[] { "MusicStoreId", "AppUserId" },
-                unique: true);
+                column: "MusicStoreId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Notification_CreatedAt",
@@ -1234,6 +1287,17 @@ namespace eNote.Infrastructure.Data.Migrations
                 filter: "\"StripeEventId\" IS NOT NULL");
 
             migrationBuilder.CreateIndex(
+                name: "IX_RentalRefund_RentalPaymentId",
+                table: "RentalRefund",
+                column: "RentalPaymentId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_RentalRefund_StripeRefundId",
+                table: "RentalRefund",
+                column: "StripeRefundId",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_RevokedToken_Jti",
                 table: "RevokedToken",
                 column: "Jti",
@@ -1298,7 +1362,7 @@ namespace eNote.Infrastructure.Data.Migrations
                 name: "RentalNotificationOutbox");
 
             migrationBuilder.DropTable(
-                name: "RentalPayment");
+                name: "RentalRefund");
 
             migrationBuilder.DropTable(
                 name: "RevokedToken");
@@ -1316,10 +1380,16 @@ namespace eNote.Infrastructure.Data.Migrations
                 name: "AssignmentSubmission");
 
             migrationBuilder.DropTable(
-                name: "InstrumentRental");
+                name: "RentalPayment");
 
             migrationBuilder.DropTable(
                 name: "Assignment");
+
+            migrationBuilder.DropTable(
+                name: "InstrumentRental");
+
+            migrationBuilder.DropTable(
+                name: "Lecture");
 
             migrationBuilder.DropTable(
                 name: "Instrument");
@@ -1328,7 +1398,7 @@ namespace eNote.Infrastructure.Data.Migrations
                 name: "Student");
 
             migrationBuilder.DropTable(
-                name: "Lecture");
+                name: "Course");
 
             migrationBuilder.DropTable(
                 name: "InstrumentType");
@@ -1337,19 +1407,16 @@ namespace eNote.Infrastructure.Data.Migrations
                 name: "MusicStore");
 
             migrationBuilder.DropTable(
-                name: "Course");
+                name: "Instructor");
 
             migrationBuilder.DropTable(
                 name: "Address");
 
             migrationBuilder.DropTable(
-                name: "Instructor");
+                name: "AspNetUsers");
 
             migrationBuilder.DropTable(
                 name: "City");
-
-            migrationBuilder.DropTable(
-                name: "AspNetUsers");
         }
     }
 }

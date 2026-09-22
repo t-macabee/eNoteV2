@@ -62,12 +62,15 @@ Map<String, http.Response> _profileResponses(String? paidUntilIso) => {
 String _iso(DateTime value) => value.toIso8601String();
 
 SessionController _controller(http.Client http) {
-  final authState = AuthState(
+  late final AuthState authState;
+  late final ApiClient apiClient;
+  authState = AuthState(
     baseUrl: 'http://10.0.2.2:5059/api/v1/',
     tokenReader: () => fakeJwt(),
+    tokenRevoker: () => apiClient.post('auth/logout'),
     httpClient: http,
   );
-  final apiClient = ApiClient(
+  apiClient = ApiClient(
     baseUrl: 'http://10.0.2.2:5059/api/v1/',
     authState: authState,
     httpClient: http,

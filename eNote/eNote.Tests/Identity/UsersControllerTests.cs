@@ -11,7 +11,7 @@ public sealed class UsersControllerTests
     {
         var controller = new UsersController(null!, null!, null!, null!);
 
-        var result = await controller.UploadPicture(null);
+        var result = await controller.UploadPicture(null, CancellationToken.None);
 
         var badRequest = Assert.IsType<BadRequestObjectResult>(result);
         Assert.Contains(Messages.FileNotProvided, badRequest.Value!.ToString());

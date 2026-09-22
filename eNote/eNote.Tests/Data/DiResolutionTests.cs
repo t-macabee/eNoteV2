@@ -101,7 +101,7 @@ public sealed class DiResolutionTests
             ["Smtp:Host"] = "localhost",
             ["Smtp:From"] = "noreply@example.com",
             ["Smtp:PasswordResetUrl"] = "https://localhost/reset-password",
-            ["Jwt:ExpirationDays"] = "7",
+            ["Jwt:ExpirationMinutes"] = "30",
         };
         foreach (var pair in additional)
         {

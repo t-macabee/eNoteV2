@@ -7,6 +7,7 @@ services:
     environment:
       ACCEPT_EULA: "Y"
       MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:?Set MSSQL_SA_PASSWORD in .env (min 8 chars, upper, lower, number, symbol)}
+    # Local development only. Change MSSQL_SA_PASSWORD if SQLSERVER_PORT is ever published beyond the host.
     ports:
       - "${SQLSERVER_PORT:-1433}:1433"
     volumes:
@@ -17,6 +18,7 @@ services:
       timeout: 5s
       retries: 12
       start_period: 40s
+    stop_grace_period: 30s
 
   rabbitmq:
     image: rabbitmq:3.13-management
@@ -30,6 +32,7 @@ services:
       timeout: 5s
       retries: 5
       start_period: 20s
+    stop_grace_period: 30s
 
   mailhog:
     image: mailhog/mailhog:v1.0.1
@@ -46,14 +49,14 @@ services:
       target: api
     container_name: enote-api
     environment:
-      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
       ASPNETCORE_URLS: http://+:8080
       ConnectionStrings__DefaultConnection: Server=sqlserver,1433;Database=150057;User Id=sa;Password=${MSSQL_SA_PASSWORD};TrustServerCertificate=True;MultipleActiveResultSets=true
       Jwt__Key: ${JWT__KEY:?Set JWT__KEY in .env (min 32 characters)}
       Seed__DefaultPassword: ${SEED_DEFAULT_PASSWORD:-test}
       Jwt__Issuer: ENote.Api
       Jwt__Audience: ENote.Client
-      Jwt__ExpirationDays: 7
+      Jwt__ExpirationMinutes: 120
       RabbitMQ__Host: rabbitmq
       RabbitMQ__VirtualHost: /
       RabbitMQ__User: ${RABBITMQ_USER:-guest}
@@ -84,6 +87,7 @@ services:
       mailhog:
         condition: service_started
     restart: unless-stopped
+    stop_grace_period: 30s
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
       interval: 15s
@@ -98,7 +102,7 @@ services:
       target: worker
     container_name: enote-worker
     environment:
-      DOTNET_ENVIRONMENT: Development
+      DOTNET_ENVIRONMENT: ${DOTNET_ENVIRONMENT:-Development}
       ConnectionStrings__DefaultConnection: Server=sqlserver,1433;Database=150057;User Id=sa;Password=${MSSQL_SA_PASSWORD};TrustServerCertificate=True;MultipleActiveResultSets=true
       RabbitMQ__Host: rabbitmq
       RabbitMQ__VirtualHost: /
@@ -117,6 +121,7 @@ services:
       api:
         condition: service_healthy
     restart: unless-stopped
+    stop_grace_period: 60s
     healthcheck:
       test: ["CMD-SHELL", "test -f /tmp/enote-worker-healthy || exit 1"]
       interval: 30s

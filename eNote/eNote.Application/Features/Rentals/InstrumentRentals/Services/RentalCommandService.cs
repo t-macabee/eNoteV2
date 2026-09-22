@@ -52,7 +52,7 @@ public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, 
             await SaveWithLockConflictMessageAsync(Messages.InstrumentReservedOrRented, cancellationToken);
 
             var dto = await LoadDtoAsync(rental.Id, cancellationToken);
-            await notificationDispatcher.DispatchCreatedAsync(dto, currentUser.UserId);
+            await notificationDispatcher.DispatchCreatedAsync(dto, currentUser.UserId, cancellationToken);
             await context.SaveChangesAsync(cancellationToken);
 
             return dto;
@@ -168,10 +168,7 @@ public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, 
             .WithRentalDetails()
             .FirstOrDefaultAsync(x => x.Id == rentalId, cancellationToken) ?? throw new NotFoundException(Messages.RentalNotFoundAfterUpdate);
 
-        var result = mapper.Map<InstrumentRentalDto>(entity);
-        result.ApplyCharges(entity, entity.CalculateCharges(clock.UtcNow));
-        result.StudentName = await displayNames.GetStudentDisplayNameAsync(entity.StudentProfile, cancellationToken);
-        return result;
+        return await LoadDtoAsync(entity, cancellationToken);
     }
 
     private async Task SaveWithLockConflictMessageAsync(string message, CancellationToken cancellationToken)

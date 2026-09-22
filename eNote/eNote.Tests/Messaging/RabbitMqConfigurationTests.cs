@@ -18,6 +18,7 @@ public sealed class RabbitMqConfigurationTests
 
     [Theory]
     [InlineData("RabbitMQ:Host", "rabbitmq")]
+    [InlineData("RabbitMQ:Username", "guest")]
     [InlineData("RabbitMQ:User", "guest")]
     public void GetMissingConfigurationError_ReturnsNull_WhenEitherHostOrUserIsSet(string key, string value)
     {

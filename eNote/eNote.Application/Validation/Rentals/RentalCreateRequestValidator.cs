@@ -8,5 +8,6 @@ public sealed class RentalCreateRequestValidator : AbstractValidator<RentalCreat
     public RentalCreateRequestValidator()
     {
         RuleFor(x => x.InstrumentId).GreaterThan(0);
+        RuleFor(x => x.Note).MaximumLength(500);
     }
 }

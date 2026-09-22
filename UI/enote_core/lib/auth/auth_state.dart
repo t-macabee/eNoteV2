@@ -12,6 +12,7 @@ class AuthState extends ChangeNotifier {
   final String _baseUrl;
   final String? Function()? _tokenReader;
   final void Function(String? token)? _tokenWriter;
+  final Future<void> Function()? _tokenRevoker;
   final http.Client _httpClient;
 
   String? _accessToken;
@@ -24,6 +25,7 @@ class AuthState extends ChangeNotifier {
     String baseUrl = '',
     this._tokenReader,
     this._tokenWriter,
+    this._tokenRevoker,
     http.Client? httpClient,
   })  : _baseUrl = baseUrl.isEmpty || baseUrl.endsWith('/')
             ? baseUrl
@@ -133,7 +135,13 @@ class AuthState extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> logout() {
+  Future<void> logout({bool revoke = false}) async {
+    final revoker = _tokenRevoker;
+    if (revoke && revoker != null) {
+      try {
+        await revoker().timeout(const Duration(seconds: 3));
+      } catch (_) {}
+    }
     _accessToken = null;
     _userId = null;
     _username = null;
@@ -141,6 +149,5 @@ class AuthState extends ChangeNotifier {
     _isManager = false;
     _tokenWriter?.call(null);
     notifyListeners();
-    return Future.value();
   }
 }

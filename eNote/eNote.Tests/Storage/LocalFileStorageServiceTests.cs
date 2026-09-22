@@ -1,3 +1,4 @@
+using eNote.Application.Common.Files;
 using eNote.Application.Common.Localization;
 using eNote.Infrastructure.Storage;
 using Microsoft.Extensions.Configuration;
@@ -115,6 +116,37 @@ public sealed class LocalFileStorageServiceTests : IDisposable
             service.SaveAssignmentAsync(stream, "image.webp", "image/webp"));
 
         Assert.Equal(Messages.AssignmentFileTypeNotAllowed, exception.Message);
+    }
+
+    [Fact]
+    public async Task GetFileSize_ReturnsStoredFileLength()
+    {
+        var service = CreateService();
+        using var stream = PngStream();
+        var path = await service.SaveAsync(stream, "picture.png", "image/png", "profile-pictures");
+
+        Assert.Equal(stream.Length, service.GetFileSize(path));
+    }
+
+    [Fact]
+    public void GetFileSize_ReturnsZero_WhenFileMissingOrPathUnsafe()
+    {
+        var service = CreateService();
+
+        Assert.Equal(0, service.GetFileSize("/api/v1/uploads/profile-pictures/missing.png"));
+        Assert.Equal(0, service.GetFileSize("/api/v1/uploads/../../secret.png"));
+    }
+
+    [Fact]
+    public async Task SaveAsync_RejectsFileLargerThanLimit()
+    {
+        var service = CreateService();
+        using var stream = new MemoryStream(new byte[FileUploadLimits.MaxFileBytes + 1]);
+
+        var ex = await Assert.ThrowsAsync<BusinessException>(() =>
+            service.SaveAsync(stream, "big.png", "image/png", "profile-pictures"));
+
+        Assert.Equal(Messages.FileTooLarge, ex.Message);
     }
 
     private LocalFileStorageService CreateService()

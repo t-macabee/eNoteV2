@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.RateLimiting;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using System.Text.Json;
 using System.Threading.RateLimiting;
 
@@ -8,12 +10,14 @@ namespace eNote.API.Extensions;
 public static class RateLimitingExtensions
 {
     public const string AuthPolicy = "auth";
+    public const string UploadsPolicy = "uploads";
 
     public static IServiceCollection AddApplicationRateLimiting(this IServiceCollection services)
     {
         services.AddRateLimiter(options =>
         {
             options.AddPolicy<string, AuthRateLimiterPolicy>(AuthPolicy);
+            options.AddPolicy<string, UploadRateLimiterPolicy>(UploadsPolicy);
 
             options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
             {
@@ -61,6 +65,18 @@ public sealed class AuthRateLimiterPolicy : IRateLimiterPolicy<string>
         }
 
         return RateLimitingExtensions.Window(key, 10);
+    }
+}
+
+public sealed class UploadRateLimiterPolicy : IRateLimiterPolicy<string>
+{
+    public Func<OnRejectedContext, CancellationToken, ValueTask>? OnRejected => null;
+
+    public RateLimitPartition<string> GetPartition(HttpContext httpContext)
+    {
+        var key = httpContext.User.FindFirstValue(JwtRegisteredClaimNames.Sub) ?? "anon";
+
+        return RateLimitingExtensions.Window(key, 20);
     }
 }
 

@@ -16,13 +16,24 @@ public sealed class SmtpEmailService : IEmailService
     private readonly string? _username;
     private readonly string? _password;
 
+    public static IReadOnlyList<string> RequiredConfigurationKeys { get; } =
+        ["Smtp:Host", "Smtp:From", "Smtp:PasswordResetUrl"];
+
     public SmtpEmailService(IConfiguration configuration)
     {
-        _host = configuration["Smtp:Host"] ?? throw new InvalidOperationException("Smtp:Host is required.");
-        _from = configuration["Smtp:From"] ?? throw new InvalidOperationException("Smtp:From is required.");
+        foreach (var key in RequiredConfigurationKeys)
+        {
+            if (string.IsNullOrWhiteSpace(configuration[key]))
+            {
+                throw new InvalidOperationException($"{key} is required.");
+            }
+        }
+
+        _host = configuration["Smtp:Host"]!;
+        _from = configuration["Smtp:From"]!;
         _port = configuration.GetValue("Smtp:Port", 25);
         _enableSsl = configuration.GetValue("Smtp:EnableSsl", true);
-        _passwordResetUrl = configuration["Smtp:PasswordResetUrl"] ?? throw new InvalidOperationException("Smtp:PasswordResetUrl is required.");
+        _passwordResetUrl = configuration["Smtp:PasswordResetUrl"]!;
         _username = configuration["Smtp:Username"];
         _password = configuration["Smtp:Password"];
     }

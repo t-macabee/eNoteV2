@@ -7,8 +7,8 @@ public sealed class UserSelfService(
     public Task<(bool Success, string? Error)> UpdateProfileAsync(UpdateProfileRequest request)
         => accountService.UpdateExistingUserAsync(currentUserService.UserId, request.Email, request.FirstName, request.LastName, request.DateOfBirth);
 
-    public Task<(bool Success, string? Error)> UpdatePictureAsync(Stream picture, string fileName, string contentType)
-        => accountService.UpdatePictureAsync(currentUserService.UserId, picture, fileName, contentType);
+    public Task<(bool Success, string? Error)> UpdatePictureAsync(Stream picture, string fileName, string contentType, CancellationToken cancellationToken)
+        => accountService.UpdatePictureAsync(currentUserService.UserId, picture, fileName, contentType, cancellationToken);
 
     public Task<(Stream? Data, string? ContentType)> GetPictureAsync()
         => accountService.GetPictureAsync(currentUserService.UserId);

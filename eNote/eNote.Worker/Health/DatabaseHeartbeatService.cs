@@ -33,7 +33,7 @@ public sealed class DatabaseHeartbeatService(HealthCheckService healthChecks, IL
 
     internal async Task UpdateMarkerAsync(HealthReport report, CancellationToken cancellationToken)
     {
-        if (report.Status == HealthStatus.Unhealthy)
+        if (report.Status != HealthStatus.Healthy)
         {
             File.Delete(_markerPath);
             return;

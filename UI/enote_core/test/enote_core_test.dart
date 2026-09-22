@@ -107,7 +107,7 @@ void main() {
       expect(provider.url, 'http://localhost:5059/api/v1/uploads/instruments/guitar.jpg');
     });
 
-    testWidgets('absolute url renders directly', (WidgetTester tester) async {
+    testWidgets('absolute url renders placeholder', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -122,11 +122,8 @@ void main() {
         ),
       );
 
-      final imageFinder = find.byType(Image);
-      expect(imageFinder, findsOneWidget);
-      final image = tester.widget<Image>(imageFinder);
-      final provider = image.image as NetworkImage;
-      expect(provider.url, 'https://example.com/photo.png');
+      expect(find.byType(Image), findsNothing);
+      expect(find.text('placeholder'), findsOneWidget);
     });
   });
 }

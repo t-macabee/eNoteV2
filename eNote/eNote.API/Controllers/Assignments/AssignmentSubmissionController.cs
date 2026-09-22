@@ -1,4 +1,6 @@
 using eNote.API.Controllers.Base;
+using eNote.API.Extensions;
+using eNote.Application.Common.Files;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Paging;
 using eNote.Application.Constants;
@@ -6,6 +8,7 @@ using eNote.Application.Features.Academic.Assignments;
 using eNote.Application.Features.Academic.Assignments.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace eNote.API.Controllers.Assignments;
 
@@ -54,7 +57,8 @@ public sealed class AssignmentSubmissionController(AssignmentSubmissionService s
 
     [Authorize(Roles = AppRoles.Student)]
     [HttpPost("~/api/v{version:apiVersion}/student/assignments/{id:int}/submit")]
-    [RequestSizeLimit(5 * 1024 * 1024)]
+    [RequestSizeLimit(FileUploadLimits.MaxRequestBytes)]
+    [EnableRateLimiting(RateLimitingExtensions.UploadsPolicy)]
     [ProducesResponseType(typeof(AssignmentSubmissionDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<AssignmentSubmissionDto>> Submit(int id, IFormFile? file, CancellationToken ct) =>

@@ -9,7 +9,7 @@ public sealed class RecordingNotificationDispatcher : IRentalNotificationDispatc
     public List<(InstrumentRentalDto Rental, RentalTrigger Trigger, int ActorUserId)> TransitionCalls { get; } = [];
     public List<(InstrumentRentalDto Rental, long RefundedCents, string Currency, int ActorUserId)> RefundCalls { get; } = [];
 
-    public Task DispatchCreatedAsync(InstrumentRentalDto rental, int studentUserId)
+    public Task DispatchCreatedAsync(InstrumentRentalDto rental, int studentUserId, CancellationToken cancellationToken = default)
     {
         CreatedCalls.Add((rental, studentUserId));
         return Task.CompletedTask;

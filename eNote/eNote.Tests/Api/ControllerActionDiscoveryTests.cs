@@ -1,9 +1,17 @@
 using System.Reflection;
 using eNote.API.Controllers.Admin;
+using eNote.API.Controllers.Assignments;
+using eNote.API.Controllers.Instruments;
+using eNote.API.Controllers.Shop;
+using eNote.API.Controllers.Users;
+using eNote.API.Extensions;
+using eNote.Application.Common.Files;
+using Microsoft.AspNetCore.Http.Metadata;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ApplicationParts;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
@@ -56,6 +64,31 @@ public sealed class ControllerActionDiscoveryTests
             .ToList();
 
         Assert.StartsWith("ReferenceDataController", Assert.Single(declaringTypes));
+    }
+
+    [Fact]
+    public void UploadActions_AreSizeCapped_AndRateLimited()
+    {
+        (Type Controller, string Action)[] uploadActions =
+        [
+            (typeof(InstrumentController), nameof(InstrumentController.UploadImage)),
+            (typeof(AdminMusicStoreController), nameof(AdminMusicStoreController.UploadImage)),
+            (typeof(ShopStoreController), nameof(ShopStoreController.UploadOwnStoreImage)),
+            (typeof(AssignmentSubmissionController), nameof(AssignmentSubmissionController.Submit)),
+            (typeof(UsersController), nameof(UsersController.UploadPicture))
+        ];
+
+        foreach (var (controller, action) in uploadActions)
+        {
+            var method = controller.GetMethod(action);
+            Assert.NotNull(method);
+
+            var sizeLimit = Assert.Single(method!.GetCustomAttributes<RequestSizeLimitAttribute>());
+            Assert.Equal(FileUploadLimits.MaxRequestBytes, ((IRequestSizeLimitMetadata)sizeLimit).MaxRequestBodySize);
+
+            var throttle = Assert.Single(method.GetCustomAttributes<EnableRateLimitingAttribute>());
+            Assert.Equal(RateLimitingExtensions.UploadsPolicy, throttle.PolicyName);
+        }
     }
 
     private static List<ControllerActionDescriptor> DiscoveredActions()

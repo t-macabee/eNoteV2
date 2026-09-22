@@ -1,4 +1,5 @@
 using eNote.Application.Common.Exceptions;
+using eNote.Application.Common.Files;
 using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Localization;
 using Microsoft.Extensions.Configuration;
@@ -7,7 +8,6 @@ namespace eNote.Infrastructure.Storage;
 
 public sealed class LocalFileStorageService : IFileStorageService
 {
-    private const long MaxFileSizeBytes = 5 * 1024 * 1024;
     public const string UploadsRoutePrefix = "/api/v1/uploads";
     private static readonly string[] AllowedImageContentTypes = [FileSignatureDetector.JpegMimeType, FileSignatureDetector.PngMimeType, FileSignatureDetector.WebpMimeType];
     private static readonly string[] AllowedAssignmentContentTypes = [FileSignatureDetector.PdfMimeType, FileSignatureDetector.JpegMimeType, FileSignatureDetector.PngMimeType];
@@ -28,16 +28,16 @@ public sealed class LocalFileStorageService : IFileStorageService
 
     public async Task<string> SaveAsync(Stream stream, string fileName, string contentType, string subfolder, CancellationToken ct = default)
     {
-        await ValidateAsync(stream, contentType, AllowedImageContentTypes, Messages.InvalidFileFormat, ct);
+        var detectedType = await ValidateAsync(stream, contentType, AllowedImageContentTypes, Messages.InvalidFileFormat, ct);
 
-        return await SaveToDiskAsync(stream, subfolder, ct);
+        return await SaveToDiskAsync(stream, subfolder, detectedType, ct);
     }
 
     public async Task<string> SaveAssignmentAsync(Stream stream, string fileName, string contentType, CancellationToken ct = default)
     {
-        await ValidateAsync(stream, contentType, AllowedAssignmentContentTypes, Messages.AssignmentFileTypeNotAllowed, ct);
+        var detectedType = await ValidateAsync(stream, contentType, AllowedAssignmentContentTypes, Messages.AssignmentFileTypeNotAllowed, ct);
 
-        return await SaveToDiskAsync(stream, "assignments", ct);
+        return await SaveToDiskAsync(stream, "assignments", detectedType, ct);
     }
 
     public (Stream? Data, string? ContentType) OpenRead(string path)
@@ -61,6 +61,13 @@ public sealed class LocalFileStorageService : IFileStorageService
         return (File.OpenRead(fullPath), contentType);
     }
 
+    public long GetFileSize(string path)
+    {
+        var fullPath = ResolveUploadPath(path);
+
+        return fullPath is not null && File.Exists(fullPath) ? new FileInfo(fullPath).Length : 0;
+    }
+
     public void Delete(string path)
     {
         var fullPath = ResolveUploadPath(path);
@@ -71,18 +78,11 @@ public sealed class LocalFileStorageService : IFileStorageService
         }
     }
 
-    private async Task<string> SaveToDiskAsync(Stream stream, string subfolder, CancellationToken ct)
+    private async Task<string> SaveToDiskAsync(Stream stream, string subfolder, string detectedType, CancellationToken ct)
     {
         var uploadsRoot = Path.Combine(_rootPath, "uploads", subfolder);
 
         Directory.CreateDirectory(uploadsRoot);
-
-        var header = new byte[12];
-        var read = await stream.ReadAsync(header.AsMemory(0, header.Length), ct);
-
-        stream.Position = 0;
-
-        var detectedType = FileSignatureDetector.DetectContentType(header.AsSpan(0, read));
 
         var ext = detectedType switch
         {
@@ -102,9 +102,11 @@ public sealed class LocalFileStorageService : IFileStorageService
         return $"{UploadsRoutePrefix}/{subfolder}/{uniqueName}";
     }
 
-    private static async Task ValidateAsync(Stream stream, string contentType, string[] allowedContentTypes, string invalidFormatMessage, CancellationToken ct)
+    private static async Task<string> ValidateAsync(Stream stream, string contentType, string[] allowedContentTypes, string invalidFormatMessage, CancellationToken ct)
     {
-        if (!stream.CanSeek || stream.Length > MaxFileSizeBytes)
+        ArgumentException.ThrowIfNullOrEmpty(contentType);
+
+        if (!stream.CanSeek || stream.Length > FileUploadLimits.MaxFileBytes)
         {
             throw new BusinessException(Messages.FileTooLarge);
         }
@@ -114,10 +116,14 @@ public sealed class LocalFileStorageService : IFileStorageService
 
         stream.Position = 0;
 
-        if (!FileSignatureDetector.IsAllowed(header.AsSpan(0, read), allowedContentTypes) || !allowedContentTypes.Contains(contentType.ToLowerInvariant()))
+        var detectedType = FileSignatureDetector.DetectContentType(header.AsSpan(0, read));
+
+        if (!allowedContentTypes.Contains(detectedType) || !allowedContentTypes.Contains(contentType.ToLowerInvariant()))
         {
             throw new BusinessException(invalidFormatMessage);
         }
+
+        return detectedType;
     }
 
     private string? ResolveUploadPath(string path)

@@ -15,6 +15,8 @@ public sealed class StripeWebhookController(StripeWebhookService webhookService)
     [HttpPost]
     [Consumes("application/json")]
     [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
     public async Task<IActionResult> Handle(CancellationToken cancellationToken)
     {
         string json;

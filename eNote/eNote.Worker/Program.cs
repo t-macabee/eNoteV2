@@ -1,4 +1,7 @@
 using eNote.Application.Common.Interfaces;
+using eNote.Contracts.Assignments;
+using eNote.Contracts.Lectures;
+using eNote.Contracts.Rentals;
 using eNote.Infrastructure;
 using eNote.Infrastructure.Messaging;
 using eNote.Worker;
@@ -42,6 +45,10 @@ builder.Services.AddInfrastructure(builder.Configuration, bus =>
     bus.AddConsumer<RentalRefundedConsumer>();
     bus.AddConsumer<LectureCancelledConsumer>();
     bus.AddConsumer<SubmissionGradedConsumer>();
+    bus.AddConsumer<FaultLoggingConsumer<RentalStatusChanged>>();
+    bus.AddConsumer<FaultLoggingConsumer<RentalRefunded>>();
+    bus.AddConsumer<FaultLoggingConsumer<LectureCancelled>>();
+    bus.AddConsumer<FaultLoggingConsumer<SubmissionGraded>>();
 }, validateJwtOptions: false);
 builder.Services.AddInfrastructureHealthChecks();
 builder.Services.AddHostedService<DatabaseHeartbeatService>();

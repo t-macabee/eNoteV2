@@ -20,6 +20,7 @@ public static class RabbitMqConfiguration
 
     public static string? GetMissingConfigurationError(IConfiguration configuration) =>
         string.IsNullOrWhiteSpace(configuration["RabbitMQ:Host"]) &&
+        string.IsNullOrWhiteSpace(configuration["RabbitMQ:Username"]) &&
         string.IsNullOrWhiteSpace(configuration["RabbitMQ:User"])
             ? "RabbitMQ__Host (or RabbitMQ__User)"
             : null;

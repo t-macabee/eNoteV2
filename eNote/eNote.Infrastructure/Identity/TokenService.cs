@@ -44,7 +44,7 @@ public sealed class TokenService(IOptions<JwtOptions> jwtOptions, IClock clock) 
             issuer: options.Issuer,
             audience: options.Audience,
             claims: claims,
-            expires: clock.UtcNow.AddDays(options.ExpirationDays),
+            expires: clock.UtcNow.AddMinutes(options.ExpirationMinutes),
             signingCredentials: creds
         );
 

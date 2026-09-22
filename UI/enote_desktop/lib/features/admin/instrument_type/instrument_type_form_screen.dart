@@ -74,7 +74,7 @@ class _InstrumentTypeFormScreenState extends State<InstrumentTypeFormScreen>
           inputFormatters: [
             FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
           ],
-          validator: Validators.nonNegativeDecimal,
+          validator: (value) => Validators.nonNegativeDecimal(value, max: 99999999.99),
         ),
       ],
       onSave: _save,

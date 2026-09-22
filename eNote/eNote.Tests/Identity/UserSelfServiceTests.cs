@@ -52,7 +52,7 @@ public sealed class UserSelfServiceTests
         var service = new UserSelfService(account, new StubCurrentActor(userId: 11));
         await using var picture = new MemoryStream([1, 2, 3]);
 
-        await service.UpdatePictureAsync(picture, "picture.png", "image/png");
+        await service.UpdatePictureAsync(picture, "picture.png", "image/png", CancellationToken.None);
         await service.GetPictureAsync();
         await service.DeletePictureAsync();
 

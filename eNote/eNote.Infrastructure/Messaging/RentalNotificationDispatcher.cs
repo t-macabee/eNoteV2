@@ -13,7 +13,7 @@ public sealed class RentalNotificationDispatcher(
     IAppDbContext context,
     IClock clock) : IRentalNotificationDispatcher
 {
-    public async Task DispatchCreatedAsync(InstrumentRentalDto rental, int studentUserId)
+    public async Task DispatchCreatedAsync(InstrumentRentalDto rental, int studentUserId, CancellationToken cancellationToken = default)
     {
         var (title, body) = BuildCreatedContent(rental);
         var message = new RentalStatusChanged(rental.Id, studentUserId, studentUserId, rental.RentalStatus.ToString(), rental.InstrumentModel, title, body, clock.UtcNow);
@@ -30,7 +30,7 @@ public sealed class RentalNotificationDispatcher(
                 employee => employee.AppUserId,
                 user => user.Id,
                 (employee, _) => employee.AppUserId)
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         foreach (var employeeUserId in employeeUserIds)
         {

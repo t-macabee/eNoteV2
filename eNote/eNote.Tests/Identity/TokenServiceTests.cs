@@ -15,7 +15,7 @@ public sealed class TokenServiceTests
     [Fact]
     public void GenerateToken_IncludesSubjectUsernameAndRoles()
     {
-        var service = CreateService(expirationDays: 7);
+        var service = CreateService(expirationMinutes: 30);
 
         var token = service.GenerateToken(42, "jdoe", ["Student", "Instructor"]);
 
@@ -28,15 +28,15 @@ public sealed class TokenServiceTests
     }
 
     [Fact]
-    public void GenerateToken_ExpiresAfterConfiguredDays()
+    public void GenerateToken_ExpiresAfterConfiguredMinutes()
     {
-        var service = CreateService(expirationDays: 5);
+        var service = CreateService(expirationMinutes: 30);
 
         var token = service.GenerateToken(1, "jdoe", ["Student"]);
 
         var claims = ReadClaims(token);
         var expiresAt = claims.Single(c => c.Type == JwtRegisteredClaimNames.Exp).Value;
-        var expected = new DateTimeOffset(Now.AddDays(5)).ToUnixTimeSeconds();
+        var expected = new DateTimeOffset(Now.AddMinutes(30)).ToUnixTimeSeconds();
         Assert.Equal(expected, long.Parse(expiresAt));
     }
 
@@ -44,7 +44,7 @@ public sealed class TokenServiceTests
     public void GenerateToken_IsSignedWithConfiguredKey()
     {
         var key = "test-key-that-is-longer-than-32-characters";
-        var service = CreateService(expirationDays: 7, key: key);
+        var service = CreateService(expirationMinutes: 30, key: key);
 
         var token = service.GenerateToken(1, "jdoe", ["Student"]);
 
@@ -62,7 +62,7 @@ public sealed class TokenServiceTests
         {
             ["Jwt:Issuer"] = "Issuer",
             ["Jwt:Audience"] = "Audience",
-            ["Jwt:ExpirationDays"] = "7"
+            ["Jwt:ExpirationMinutes"] = "30"
         }).Build();
 
         var services = new ServiceCollection();
@@ -79,15 +79,15 @@ public sealed class TokenServiceTests
         Assert.Contains("Key", ex.Message);
     }
 
-    private static TokenService CreateService(int expirationDays, string? key = null) =>
-        new(Options.Create(BuildOptions(expirationDays, key)), new FixedClock(Now));
+    private static TokenService CreateService(int expirationMinutes, string? key = null) =>
+        new(Options.Create(BuildOptions(expirationMinutes, key)), new FixedClock(Now));
 
-    private static JwtOptions BuildOptions(int expirationDays, string? key) => new()
+    private static JwtOptions BuildOptions(int expirationMinutes, string? key) => new()
     {
         Key = key ?? "test-signing-key-that-is-32-characters-long!!",
         Issuer = "Issuer",
         Audience = "Audience",
-        ExpirationDays = expirationDays
+        ExpirationMinutes = expirationMinutes
     };
 
     private static List<Claim> ReadClaims(string token) =>

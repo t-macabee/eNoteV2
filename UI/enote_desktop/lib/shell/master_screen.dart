@@ -80,7 +80,7 @@ class _MasterScreenState extends State<MasterScreen> {
   }
 
   void _logout() {
-    context.read<AuthState>().logout();
+    context.read<AuthState>().logout(revoke: true);
   }
 
   void _onEntrySelected(RoleMenuEntry entry) {

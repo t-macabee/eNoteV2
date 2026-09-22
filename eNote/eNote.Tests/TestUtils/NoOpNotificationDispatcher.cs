@@ -5,7 +5,7 @@ namespace eNote.Tests.TestUtils;
 
 public sealed class NoOpNotificationDispatcher : IRentalNotificationDispatcher
 {
-    public Task DispatchCreatedAsync(InstrumentRentalDto rental, int studentUserId) => Task.CompletedTask;
+    public Task DispatchCreatedAsync(InstrumentRentalDto rental, int studentUserId, CancellationToken cancellationToken = default) => Task.CompletedTask;
 
     public Task DispatchTransitionAsync(InstrumentRentalDto rental, RentalTrigger trigger, int actorUserId) => Task.CompletedTask;
 

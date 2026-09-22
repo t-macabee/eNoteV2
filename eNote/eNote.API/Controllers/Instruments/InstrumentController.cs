@@ -1,4 +1,6 @@
 using eNote.API.Controllers.Base;
+using eNote.API.Extensions;
+using eNote.Application.Common.Files;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Paging;
 using eNote.Application.Constants;
@@ -9,6 +11,7 @@ using eNote.Application.Features.Rentals.Recommendations.Services;
 using eNote.Application.Features.Rentals.ReferenceData.InstrumentTypes;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace eNote.API.Controllers.Instruments;
 
@@ -77,6 +80,8 @@ public sealed class InstrumentController(
 
     [Authorize(Roles = AppRoles.StoreEmployee)]
     [HttpPost("~/api/v{version:apiVersion}/shop/instruments/{id:int}/image")]
+    [RequestSizeLimit(FileUploadLimits.MaxRequestBytes)]
+    [EnableRateLimiting(RateLimitingExtensions.UploadsPolicy)]
     [ProducesResponseType(typeof(InstrumentDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<InstrumentDto>> UploadImage(int id, IFormFile? file, CancellationToken ct) =>
