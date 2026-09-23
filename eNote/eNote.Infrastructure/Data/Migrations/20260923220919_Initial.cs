@@ -808,6 +808,7 @@ namespace eNote.Infrastructure.Data.Migrations
                     FilePath = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
                     SubmittedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     Grade = table.Column<int>(type: "int", nullable: true),
+                    Feedback = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedById = table.Column<int>(type: "int", nullable: true),

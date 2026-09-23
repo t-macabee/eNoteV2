@@ -26,4 +26,25 @@ public sealed class AssignmentSubmissionTests
 
         Assert.Equal(grade, submission.Grade);
     }
+
+    [Fact]
+    public void SetGrade_StoresTrimmedFeedback()
+    {
+        var submission = new AssignmentSubmission(1, 1);
+
+        submission.SetGrade(85, "  Dobro  ");
+
+        Assert.Equal("Dobro", submission.Feedback);
+    }
+
+    [Fact]
+    public void SetGrade_BlankFeedback_ClearsIt()
+    {
+        var submission = new AssignmentSubmission(1, 1);
+        submission.SetGrade(85, "Dobro");
+
+        submission.SetGrade(80, "   ");
+
+        Assert.Null(submission.Feedback);
+    }
 }

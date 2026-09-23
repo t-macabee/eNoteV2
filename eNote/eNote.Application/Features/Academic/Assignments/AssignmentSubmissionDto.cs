@@ -12,4 +12,5 @@ public class AssignmentSubmissionDto
     public DateTime? SubmittedAt { get; set; }
 
     public int? Grade { get; set; }
+    public string? Feedback { get; set; }
 }

@@ -27,7 +27,7 @@ Map<String, dynamic> _assignmentJson({required String dueAt}) => {
   'dueAt': dueAt,
 };
 
-Map<String, dynamic> _submissionJson({int? grade}) => {
+Map<String, dynamic> _submissionJson({int? grade, String? feedback}) => {
   'id': 3,
   'assignmentId': 5,
   'studentId': 7,
@@ -35,6 +35,7 @@ Map<String, dynamic> _submissionJson({int? grade}) => {
   'filePath': '/api/v1/uploads/assignments/abc.pdf',
   'submittedAt': '2026-09-09T18:20:00',
   'grade': grade,
+  'feedback': ?feedback,
 };
 
 ScriptedClient _client({
@@ -207,6 +208,21 @@ void main() {
     expect(find.text('87'), findsOneWidget);
     expect(find.text('Ocjena (od 100)'), findsOneWidget);
     expect(find.text('Rang lista kursa'), findsOneWidget);
+    expect(find.text('Komentar instruktora'), findsNothing);
+  });
+
+  testWidgets('state C shows the instructor comment', (
+    tester,
+  ) async {
+    final harness = _Harness(
+      dueAt: _futureDueAt,
+      submission: _submissionJson(grade: 87, feedback: 'Odlično'),
+    );
+    await tester.pumpWidget(harness.app());
+    await tester.pumpAndSettle();
+
+    expect(find.text('Komentar instruktora'), findsOneWidget);
+    expect(find.text('Odlično'), findsOneWidget);
   });
 
   testWidgets('state C hides the ranking shortcut without a courseId', (

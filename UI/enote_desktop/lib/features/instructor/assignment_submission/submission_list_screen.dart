@@ -40,6 +40,9 @@ class _SubmissionListScreenState extends State<SubmissionListScreen> {
     final controller = TextEditingController(
       text: item.grade?.toString() ?? '',
     );
+    final feedbackController = TextEditingController(
+      text: item.feedback ?? '',
+    );
     final formKey = GlobalKey<FormState>();
     bool isSaving = false;
     final provider = context.read<SubmissionProvider>();
@@ -54,15 +57,30 @@ class _SubmissionListScreenState extends State<SubmissionListScreen> {
           ),
           content: Form(
             key: formKey,
-            child: TextFormField(
-              controller: controller,
-              keyboardType: TextInputType.number,
-              autofocus: true,
-              decoration: const InputDecoration(
-                labelText: 'Ocjena (0–100)',
-                border: OutlineInputBorder(),
-              ),
-              validator: Validators.grade(0, 100),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  controller: controller,
+                  keyboardType: TextInputType.number,
+                  autofocus: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Ocjena (0–100)',
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: Validators.grade(0, 100),
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: feedbackController,
+                  maxLines: 4,
+                  maxLength: 1000,
+                  decoration: const InputDecoration(
+                    labelText: 'Komentar (nije obavezno)',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+              ],
             ),
           ),
           actions: [
@@ -79,7 +97,11 @@ class _SubmissionListScreenState extends State<SubmissionListScreen> {
                       if (parsed == null) return;
                       setDialogState(() => isSaving = true);
                       try {
-                        await provider.grade(item.id, parsed);
+                        await provider.grade(
+                          item.id,
+                          parsed,
+                          feedback: feedbackController.text.trim(),
+                        );
                         if (dialogCtx.mounted) {
                           Navigator.of(dialogCtx).pop(parsed);
                         }
@@ -104,6 +126,7 @@ class _SubmissionListScreenState extends State<SubmissionListScreen> {
     );
 
     controller.dispose();
+    feedbackController.dispose();
 
     if (savedGrade != null && mounted) {
       widget.onMutation?.call();

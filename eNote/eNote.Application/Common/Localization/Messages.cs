@@ -78,6 +78,7 @@ public static class Messages
     public const string AssignmentNotSubmitted = "Zadatak nije predan.";
     public const string AssignmentSubmissionNotFound = "Predaja zadatka nije pronađena.";
     public const string AssignmentInvalidGrade = "Ocjena mora biti između 0 i 100.";
+    public const string AssignmentFeedbackTooLong = "Komentar ne smije biti duži od 1000 karaktera.";
     public const string LectureNoteNotFound = "Bilješka predavanja nije pronađena.";
     public const string StudentNotEnrolled = "Student nije upisan na kurs.";
     public const string AlreadyEnrolled = "Student je već upisan na kurs.";

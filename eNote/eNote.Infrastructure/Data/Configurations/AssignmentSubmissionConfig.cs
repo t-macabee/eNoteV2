@@ -22,6 +22,7 @@ public sealed class AssignmentSubmissionConfig : IEntityTypeConfiguration<Assign
 
         builder.Property(s => s.Grade).HasDefaultValue(null);
         builder.Property(s => s.FilePath).HasMaxLength(500);
+        builder.Property(s => s.Feedback).HasMaxLength(1000);
 
         builder.HasIndex(s => new { s.AssignmentId, s.StudentId })
                .IsUnique()

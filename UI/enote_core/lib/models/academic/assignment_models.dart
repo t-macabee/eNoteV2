@@ -59,6 +59,7 @@ class AssignmentSubmissionDto {
   final String? filePath;
   final DateTime? submittedAt;
   final int? grade;
+  final String? feedback;
 
   AssignmentSubmissionDto({
     required this.id,
@@ -68,6 +69,7 @@ class AssignmentSubmissionDto {
     this.filePath,
     this.submittedAt,
     this.grade,
+    this.feedback,
   });
 
   factory AssignmentSubmissionDto.fromJson(Map<String, dynamic> json) {
@@ -79,6 +81,7 @@ class AssignmentSubmissionDto {
       filePath: json['filePath'] as String?,
       submittedAt: parseDate(json['submittedAt']),
       grade: json['grade'] as int?,
+      feedback: json['feedback'] as String?,
     );
   }
 
@@ -90,14 +93,19 @@ class AssignmentSubmissionDto {
     if (filePath != null) 'filePath': filePath,
     if (submittedAt != null) 'submittedAt': submittedAt!.toIso8601String(),
     if (grade != null) 'grade': grade,
+    if (feedback != null) 'feedback': feedback,
   };
 }
 
 class GradeAssignmentRequest {
   final int grade;
+  final String? feedback;
 
-  GradeAssignmentRequest({required this.grade});
+  GradeAssignmentRequest({required this.grade, this.feedback});
 
-  Map<String, dynamic> toJson() => {'grade': grade};
+  Map<String, dynamic> toJson() => {
+    'grade': grade,
+    if (feedback != null) 'feedback': feedback,
+  };
 }
 

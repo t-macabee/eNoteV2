@@ -10,6 +10,7 @@ public class AssignmentSubmission : AuditableEntity
     public string? FilePath { get; private set; }
     public DateTime? SubmittedAt { get; private set; }
     public int? Grade { get; private set; }
+    public string? Feedback { get; private set; }
 
     protected AssignmentSubmission()
     {
@@ -27,7 +28,7 @@ public class AssignmentSubmission : AuditableEntity
         SubmittedAt = submittedAt;
     }
 
-    public void SetGrade(int grade)
+    public void SetGrade(int grade, string? feedback = null)
     {
         if (grade < 0 || grade > 100)
         {
@@ -35,5 +36,6 @@ public class AssignmentSubmission : AuditableEntity
         }
 
         Grade = grade;
+        Feedback = string.IsNullOrWhiteSpace(feedback) ? null : feedback.Trim();
     }
 }

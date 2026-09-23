@@ -92,6 +92,28 @@ public sealed class AssignmentSubmissionServiceTests
     }
 
     [Fact]
+    public async Task GradeAsync_StoresFeedback()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var assignment = new Assignment("Homework", "Do it", Now.AddDays(7), harness.Lecture.Id);
+        harness.Context.Set<Assignment>().Add(assignment);
+        await harness.Context.SaveChangesAsync();
+        var submission = new AssignmentSubmission(assignment.Id, harness.Student.Id);
+        submission.Submit("/api/uploads/assignments/hw.pdf", Now);
+        harness.Context.Set<AssignmentSubmission>().Add(submission);
+        await harness.Context.SaveChangesAsync();
+        var service = CreateService(harness.Context, harness.Instructor, new RecordingFileStorageService(), harness.Student);
+
+        var dto = await service.GradeAsync(harness.Lecture.Id, assignment.Id, submission.Id, new GradeAssignmentRequest { Grade = 85, Feedback = "Odlično" });
+
+        Assert.Equal(85, dto.Grade);
+        Assert.Equal("Odlično", dto.Feedback);
+        var row = await harness.Context.Set<AssignmentSubmission>().SingleAsync();
+        Assert.Equal(85, row.Grade);
+        Assert.Equal("Odlično", row.Feedback);
+    }
+
+    [Fact]
     public async Task GradeAsync_DispatchesGradedNotification_ForSubmittingStudent()
     {
         var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);

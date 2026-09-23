@@ -286,6 +286,12 @@ class _AssignmentDetailScreenState extends State<AssignmentDetailScreen>
           'Ocjena (od 100)',
           style: Theme.of(context).textTheme.bodyMedium,
         ),
+        if (submission.feedback != null) ...[
+          const SizedBox(height: 12),
+          Text('Komentar instruktora', style: Theme.of(context).textTheme.titleSmall),
+          const SizedBox(height: 4),
+          Text(submission.feedback!),
+        ],
         if (widget.courseId != null) ...[
           const SizedBox(height: 8),
           TextButton(

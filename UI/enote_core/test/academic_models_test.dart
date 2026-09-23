@@ -193,4 +193,45 @@ void main() {
       expect(RsvpRequest(confirm: false).toJson(), {'confirm': false});
     });
   });
+
+  group('AssignmentSubmissionDto', () {
+    test('fromJson and toJson round-trip', () {
+      final json = {
+        'id': 1,
+        'assignmentId': 2,
+        'studentId': 3,
+        'studentName': 'Student Test',
+        'filePath': '/uploads/test.pdf',
+        'submittedAt': '2026-09-24T10:00:00.000',
+        'grade': 85,
+        'feedback': 'Odlično',
+      };
+      final dto = AssignmentSubmissionDto.fromJson(json);
+
+      expect(dto.id, 1);
+      expect(dto.assignmentId, 2);
+      expect(dto.studentId, 3);
+      expect(dto.studentName, 'Student Test');
+      expect(dto.filePath, '/uploads/test.pdf');
+      expect(dto.submittedAt, DateTime.parse('2026-09-24T10:00:00.000'));
+      expect(dto.grade, 85);
+      expect(dto.feedback, 'Odlično');
+      expect(dto.toJson(), equals(json));
+    });
+  });
+
+  group('GradeAssignmentRequest', () {
+    test('toJson has no feedback key when null and has it when set', () {
+      final requestWithoutFeedback = GradeAssignmentRequest(grade: 85);
+      expect(requestWithoutFeedback.toJson(), equals({'grade': 85}));
+      expect(requestWithoutFeedback.toJson().containsKey('feedback'), isFalse);
+
+      final requestWithFeedback =
+          GradeAssignmentRequest(grade: 85, feedback: 'Odlično');
+      expect(
+        requestWithFeedback.toJson(),
+        equals({'grade': 85, 'feedback': 'Odlično'}),
+      );
+    });
+  });
 }

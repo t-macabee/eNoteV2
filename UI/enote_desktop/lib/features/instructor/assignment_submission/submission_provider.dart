@@ -14,10 +14,14 @@ class SubmissionProvider extends CrudProvider<AssignmentSubmissionDto> {
   AssignmentSubmissionDto fromJson(Map<String, dynamic> json) =>
       AssignmentSubmissionDto.fromJson(json);
 
-  Future<AssignmentSubmissionDto> grade(int submissionId, int grade) async {
+  Future<AssignmentSubmissionDto> grade(
+    int submissionId,
+    int grade, {
+    String? feedback,
+  }) async {
     final response = await apiClient.put(
       '$endpoint/$submissionId/grade',
-      body: GradeAssignmentRequest(grade: grade).toJson(),
+      body: GradeAssignmentRequest(grade: grade, feedback: feedback).toJson(),
     );
 
     final data = decodeOrThrow(response);

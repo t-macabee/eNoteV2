@@ -144,7 +144,7 @@ public sealed class AssignmentSubmissionService(
             throw new BusinessException(Messages.AssignmentNotSubmitted);
         }
 
-        submission.SetGrade(request.Grade);
+        submission.SetGrade(request.Grade, request.Feedback);
         submission.UpdatedById = currentUser.UserId;
 
         await notificationDispatcher.DispatchGradedAsync(submission.Id, submission.Student.AppUserId, assignment.Title, request.Grade);
