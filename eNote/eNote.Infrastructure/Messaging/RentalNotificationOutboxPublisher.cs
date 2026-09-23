@@ -70,6 +70,7 @@ public sealed class RentalNotificationOutboxPublisher(IServiceProvider services,
                     NotificationMessageTypes.LectureCancelled => JsonSerializer.Deserialize<LectureCancelled>(message.PayloadJson, JsonOptions)!,
                     NotificationMessageTypes.SubmissionGraded => JsonSerializer.Deserialize<SubmissionGraded>(message.PayloadJson, JsonOptions)!,
                     NotificationMessageTypes.PaymentRefunded => JsonSerializer.Deserialize<RentalRefunded>(message.PayloadJson, JsonOptions)!,
+                    NotificationMessageTypes.AnnouncementPublished => JsonSerializer.Deserialize<AnnouncementPublished>(message.PayloadJson, JsonOptions)!,
                     _ => throw new InvalidOperationException($"Unknown notification outbox message type '{message.MessageType}'.")
                 };
 

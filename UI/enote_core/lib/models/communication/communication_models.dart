@@ -68,6 +68,7 @@ class NotificationDto {
   final int? rentalId;
   final int? lectureId;
   final int? submissionId;
+  final int? announcementId;
   final String title;
   final String body;
   final bool isRead;
@@ -78,6 +79,7 @@ class NotificationDto {
     this.rentalId,
     this.lectureId,
     this.submissionId,
+    this.announcementId,
     required this.title,
     required this.body,
     required this.isRead,
@@ -90,6 +92,7 @@ class NotificationDto {
       rentalId: json['rentalId'] as int?,
       lectureId: json['lectureId'] as int?,
       submissionId: json['submissionId'] as int?,
+      announcementId: json['announcementId'] as int?,
       title: json['title'] as String? ?? '',
       body: json['body'] as String? ?? '',
       isRead: json['isRead'] as bool? ?? false,
@@ -102,6 +105,7 @@ class NotificationDto {
     if (rentalId != null) 'rentalId': rentalId,
     if (lectureId != null) 'lectureId': lectureId,
     if (submissionId != null) 'submissionId': submissionId,
+    if (announcementId != null) 'announcementId': announcementId,
     'title': title,
     'body': body,
     'isRead': isRead,
@@ -245,6 +249,7 @@ class NotificationPushDto {
   final int? rentalId;
   final int? lectureId;
   final int? submissionId;
+  final int? announcementId;
   final String title;
   final String body;
   final DateTime createdAt;
@@ -253,6 +258,7 @@ class NotificationPushDto {
     this.rentalId,
     this.lectureId,
     this.submissionId,
+    this.announcementId,
     required this.title,
     required this.body,
     required this.createdAt,
@@ -263,6 +269,7 @@ class NotificationPushDto {
       rentalId: json['rentalId'] as int?,
       lectureId: json['lectureId'] as int?,
       submissionId: json['submissionId'] as int?,
+      announcementId: json['announcementId'] as int?,
       title: json['title'] as String? ?? '',
       body: json['body'] as String? ?? '',
       createdAt: parseDate(json['createdAt']) ?? DateTime.now(),

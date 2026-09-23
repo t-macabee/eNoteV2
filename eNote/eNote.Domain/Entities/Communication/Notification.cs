@@ -8,6 +8,7 @@ public sealed class Notification : BaseEntity
     public int? RentalId { get; private set; }
     public int? LectureId { get; private set; }
     public int? SubmissionId { get; private set; }
+    public int? AnnouncementId { get; private set; }
 
     public string Title { get; private set; } = null!;
     public string Body { get; private set; } = null!;
@@ -19,7 +20,7 @@ public sealed class Notification : BaseEntity
     {
     }
 
-    public Notification(int userId, string title, string body, DateTime createdAt, int? rentalId = null, int? lectureId = null, int? submissionId = null)
+    public Notification(int userId, string title, string body, DateTime createdAt, int? rentalId = null, int? lectureId = null, int? submissionId = null, int? announcementId = null)
     {
         UserId = userId;
         Title = title;
@@ -28,6 +29,7 @@ public sealed class Notification : BaseEntity
         RentalId = rentalId;
         LectureId = lectureId;
         SubmissionId = submissionId;
+        AnnouncementId = announcementId;
     }
 
     public void MarkRead()

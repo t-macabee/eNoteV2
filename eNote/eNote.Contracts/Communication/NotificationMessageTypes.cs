@@ -6,4 +6,5 @@ public static class NotificationMessageTypes
     public const string LectureCancelled = nameof(LectureCancelled);
     public const string SubmissionGraded = nameof(SubmissionGraded);
     public const string PaymentRefunded = nameof(PaymentRefunded);
+    public const string AnnouncementPublished = nameof(AnnouncementPublished);
 }

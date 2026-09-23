@@ -151,6 +151,7 @@ class NotificationController extends ChangeNotifier {
         rentalId: n.rentalId,
         lectureId: n.lectureId,
         submissionId: n.submissionId,
+        announcementId: n.announcementId,
         title: n.title,
         body: n.body,
         isRead: true,

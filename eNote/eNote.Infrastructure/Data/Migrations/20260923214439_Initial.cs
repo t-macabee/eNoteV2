@@ -875,6 +875,7 @@ namespace eNote.Infrastructure.Data.Migrations
                     RentalId = table.Column<int>(type: "int", nullable: true),
                     LectureId = table.Column<int>(type: "int", nullable: true),
                     SubmissionId = table.Column<int>(type: "int", nullable: true),
+                    AnnouncementId = table.Column<int>(type: "int", nullable: true),
                     Title = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
                     Body = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: false),
                     IsRead = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
@@ -883,6 +884,12 @@ namespace eNote.Infrastructure.Data.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Notification", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Notification_Announcement_AnnouncementId",
+                        column: x => x.AnnouncementId,
+                        principalTable: "Announcement",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_Notification_AspNetUsers_UserId",
                         column: x => x.UserId,
@@ -1213,6 +1220,11 @@ namespace eNote.Infrastructure.Data.Migrations
                 column: "MusicStoreId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Notification_AnnouncementId",
+                table: "Notification",
+                column: "AnnouncementId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Notification_CreatedAt",
                 table: "Notification",
                 column: "CreatedAt");
@@ -1231,6 +1243,13 @@ namespace eNote.Infrastructure.Data.Migrations
                 name: "IX_Notification_SubmissionId",
                 table: "Notification",
                 column: "SubmissionId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Notification_UserId_AnnouncementId_CreatedAt",
+                table: "Notification",
+                columns: new[] { "UserId", "AnnouncementId", "CreatedAt" },
+                unique: true,
+                filter: "[AnnouncementId] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Notification_UserId_IsRead",
@@ -1320,9 +1339,6 @@ namespace eNote.Infrastructure.Data.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "Announcement");
-
-            migrationBuilder.DropTable(
                 name: "AspNetRoleClaims");
 
             migrationBuilder.DropTable(
@@ -1375,6 +1391,9 @@ namespace eNote.Infrastructure.Data.Migrations
 
             migrationBuilder.DropTable(
                 name: "Enrollment");
+
+            migrationBuilder.DropTable(
+                name: "Announcement");
 
             migrationBuilder.DropTable(
                 name: "AssignmentSubmission");

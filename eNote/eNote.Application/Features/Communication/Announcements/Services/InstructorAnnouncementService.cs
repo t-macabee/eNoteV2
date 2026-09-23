@@ -3,7 +3,7 @@ using MapsterMapper;
 
 namespace eNote.Application.Features.Communication.Announcements.Services;
 
-public sealed class InstructorAnnouncementService(IAppDbContext context, IClock clock, ICurrentUserContext currentUser, InstructorAccessService instructorAccess, IMapper mapper)
+public sealed class InstructorAnnouncementService(IAppDbContext context, IClock clock, ICurrentUserContext currentUser, InstructorAccessService instructorAccess, IMapper mapper, IAnnouncementNotificationDispatcher notificationDispatcher)
 {
     public async Task<AnnouncementDto> CreateForCourseAsync(int courseId, AnnouncementRequest request, CancellationToken cancellationToken = default)
     {
@@ -16,10 +16,21 @@ public sealed class InstructorAnnouncementService(IAppDbContext context, IClock 
 
         var entity = AnnouncementBuilder.Build(request, courseId, null, clock, currentUser);
 
-        context.Set<Announcement>().Add(entity);
-        await context.SaveChangesAsync(cancellationToken);
+        return await context.ExecuteInTransactionAsync(async () =>
+        {
+            context.Set<Announcement>().Add(entity);
+            await context.SaveChangesAsync(cancellationToken);
 
-        return mapper.Map<AnnouncementDto>(entity);
+            var enrolledStudentUserIds = await context.Set<Enrollment>()
+                .Where(e => e.CourseId == courseId && e.EnrollmentStatus == EnrollmentStatus.Active)
+                .Select(e => e.Student.AppUserId)
+                .ToListAsync(cancellationToken);
+
+            await notificationDispatcher.DispatchPublishedAsync(entity.Id, entity.Title, enrolledStudentUserIds);
+            await context.SaveChangesAsync(cancellationToken);
+
+            return mapper.Map<AnnouncementDto>(entity);
+        }, cancellationToken);
     }
 
     public async Task<AnnouncementDto> GetByIdForCourseAsync(int courseId, int announcementId, CancellationToken cancellationToken = default)

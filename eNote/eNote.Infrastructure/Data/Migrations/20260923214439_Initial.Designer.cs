@@ -12,7 +12,7 @@ using eNote.Infrastructure.Data;
 namespace eNote.Infrastructure.Data.Migrations
 {
     [DbContext(typeof(ENoteContext))]
-    [Migration("20260923113333_Initial")]
+    [Migration("20260923214439_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -681,6 +681,9 @@ namespace eNote.Infrastructure.Data.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<int?>("AnnouncementId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Body")
                         .IsRequired()
                         .HasMaxLength(2000)
@@ -713,6 +716,8 @@ namespace eNote.Infrastructure.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("AnnouncementId");
+
                     b.HasIndex("CreatedAt");
 
                     b.HasIndex("LectureId");
@@ -722,6 +727,11 @@ namespace eNote.Infrastructure.Data.Migrations
                     b.HasIndex("SubmissionId");
 
                     b.HasIndex("UserId", "IsRead");
+
+                    b.HasIndex("UserId", "AnnouncementId", "CreatedAt")
+                        .IsUnique()
+                        .HasDatabaseName("IX_Notification_UserId_AnnouncementId_CreatedAt")
+                        .HasFilter("[AnnouncementId] IS NOT NULL");
 
                     b.HasIndex("UserId", "LectureId", "CreatedAt")
                         .IsUnique()
@@ -1843,6 +1853,11 @@ namespace eNote.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("eNote.Domain.Entities.Communication.Notification", b =>
                 {
+                    b.HasOne("eNote.Domain.Entities.Communication.Announcement", null)
+                        .WithMany()
+                        .HasForeignKey("AnnouncementId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("eNote.Domain.Entities.Academic.Lecture", null)
                         .WithMany()
                         .HasForeignKey("LectureId")
