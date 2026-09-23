@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Persistence;
@@ -133,7 +134,7 @@ public sealed class StripeWebhookService(
                 return;
             }
 
-            await ThrowUnmatchedPaymentIntentAsync(paymentIntentId, "succeeded");
+            ThrowUnmatchedPaymentIntent(paymentIntentId, "succeeded");
         }, cancellationToken);
     }
 
@@ -176,7 +177,7 @@ public sealed class StripeWebhookService(
                 return;
             }
 
-            await ThrowUnmatchedPaymentIntentAsync(paymentIntentId, "failed");
+            ThrowUnmatchedPaymentIntent(paymentIntentId, "failed");
         }, cancellationToken);
     }
 
@@ -187,6 +188,7 @@ public sealed class StripeWebhookService(
             if (string.IsNullOrWhiteSpace(charge.PaymentIntentId))
             {
                 logger.LogWarning("Charge {ChargeId} has no PaymentIntentId; ignoring refunded webhook", charge.Id);
+                await RecordEventAsync(eventId, ChargeRefunded, rawJson, cancellationToken);
                 return;
             }
 
@@ -235,7 +237,7 @@ public sealed class StripeWebhookService(
                 return;
             }
 
-            await ThrowUnmatchedPaymentIntentAsync(charge.PaymentIntentId, "refunded");
+            ThrowUnmatchedPaymentIntent(charge.PaymentIntentId, "refunded");
         }, cancellationToken);
     }
 
@@ -246,6 +248,7 @@ public sealed class StripeWebhookService(
             if (string.IsNullOrWhiteSpace(refund.PaymentIntentId))
             {
                 logger.LogWarning("Refund {RefundId} has no PaymentIntentId; ignoring refund.updated webhook", refund.Id);
+                await RecordEventAsync(eventId, ChargeRefundUpdated, rawJson, cancellationToken);
                 return;
             }
 
@@ -273,8 +276,7 @@ public sealed class StripeWebhookService(
                     return;
                 }
 
-                await ThrowUnmatchedPaymentIntentAsync(refund.PaymentIntentId, "refund.updated");
-                return;
+                ThrowUnmatchedPaymentIntent(refund.PaymentIntentId, "refund.updated");
             }
 
             if (rentalPayment.Status is PaymentStatus.Succeeded or PaymentStatus.PartiallyRefunded or PaymentStatus.Refunded)
@@ -325,7 +327,8 @@ public sealed class StripeWebhookService(
         }
     }
 
-    private Task ThrowUnmatchedPaymentIntentAsync(string paymentIntentId, string eventKind)
+    [DoesNotReturn]
+    private void ThrowUnmatchedPaymentIntent(string paymentIntentId, string eventKind)
     {
         logger.LogWarning("PaymentIntent {PaymentIntentId} not found for {EventKind} webhook; returning 503 for Stripe retry.", paymentIntentId, eventKind);
         throw new PaymentNotYetVisibleException(Messages.PaymentNotYetVisible);

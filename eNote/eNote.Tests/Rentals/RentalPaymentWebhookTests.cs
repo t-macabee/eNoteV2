@@ -162,6 +162,40 @@ public sealed class RentalPaymentWebhookTests
     }
 
     [Fact]
+    public async Task HandleWebhook_ChargeRefundedWithoutPaymentIntentId_RecordsEventOnly()
+    {
+        var (context, _, _) = await SeedSucceededPaymentAsync();
+        var service = CreateWebhookService(context);
+        var evt = CreateChargeRefundedEvent("evt_test_refunded_no_payment_intent", null, "ch_unknown", 5000);
+
+        await service.HandleAsync(evt, "{}");
+
+        var payment = await context.Set<RentalPayment>().SingleAsync();
+        Assert.Equal(PaymentStatus.Succeeded, payment.Status);
+        Assert.Null(payment.RefundedCents);
+        var recorded = Assert.Single(await context.Set<StripeWebhookEvent>().ToListAsync());
+        Assert.Equal("evt_test_refunded_no_payment_intent", recorded.StripeEventId);
+        Assert.Equal("charge.refunded", recorded.Type);
+    }
+
+    [Fact]
+    public async Task HandleWebhook_RefundUpdatedWithoutPaymentIntentId_RecordsEventOnly()
+    {
+        var (context, _, _) = await SeedSucceededPaymentAsync();
+        var service = CreateWebhookService(context);
+        var evt = CreateRefundUpdatedEvent("evt_test_refund_updated_no_payment_intent", null, "re_unknown", 2000, "succeeded");
+
+        await service.HandleAsync(evt, "{}");
+
+        var payment = await context.Set<RentalPayment>().SingleAsync();
+        Assert.Equal(PaymentStatus.Succeeded, payment.Status);
+        Assert.Null(payment.RefundedCents);
+        var recorded = Assert.Single(await context.Set<StripeWebhookEvent>().ToListAsync());
+        Assert.Equal("evt_test_refund_updated_no_payment_intent", recorded.StripeEventId);
+        Assert.Equal("charge.refund.updated", recorded.Type);
+    }
+
+    [Fact]
     public async Task HandleWebhook_Succeeded_AppliesPayment_WhenInstrumentDeactivated()
     {
         var (context, rental, _) = await SeedRequiresActionPaymentAsync();
@@ -482,7 +516,7 @@ public sealed class RentalPaymentWebhookTests
         };
     }
 
-    private static Event CreateChargeRefundedEvent(string eventId, string paymentIntentId, string chargeId, long amountRefunded, bool includeRefunds = true)
+    private static Event CreateChargeRefundedEvent(string eventId, string? paymentIntentId, string chargeId, long amountRefunded, bool includeRefunds = true)
     {
         var refunds = new StripeList<Refund>();
         if (includeRefunds)
@@ -506,7 +540,7 @@ public sealed class RentalPaymentWebhookTests
         };
     }
 
-    private static Event CreateRefundUpdatedEvent(string eventId, string paymentIntentId, string refundId, long amount, string status)
+    private static Event CreateRefundUpdatedEvent(string eventId, string? paymentIntentId, string refundId, long amount, string status)
     {
         var refund = new Refund
         {
