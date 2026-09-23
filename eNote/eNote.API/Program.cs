@@ -2,11 +2,7 @@ using eNote.API.Realtime.Consumers;
 using eNote.API.Converters;
 using eNote.API.Extensions;
 using eNote.API.Hubs;
-using eNote.Contracts.Assignments;
-using eNote.Contracts.Lectures;
-using eNote.Contracts.Rentals;
 using eNote.Infrastructure;
-using eNote.Infrastructure.Messaging;
 using Scalar.AspNetCore;
 using Serilog;
 using System.Text.Json.Serialization;
@@ -38,10 +34,8 @@ builder.Services
         bus.AddConsumer<RentalRefundedPushConsumer>();
         bus.AddConsumer<LectureCancelledPushConsumer>();
         bus.AddConsumer<SubmissionGradedPushConsumer>();
-        bus.AddConsumer<FaultLoggingConsumer<RentalStatusChanged>>();
-        bus.AddConsumer<FaultLoggingConsumer<RentalRefunded>>();
-        bus.AddConsumer<FaultLoggingConsumer<LectureCancelled>>();
-        bus.AddConsumer<FaultLoggingConsumer<SubmissionGraded>>();
+        // No FaultLoggingConsumer<T> here: its endpoint is named after T, the same queue as the
+        // worker's consumer, so the API would compete for the worker's messages. The worker logs faults.
     })
     .AddJwtAuthentication()
     .AddAuthorization()
