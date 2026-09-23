@@ -15,7 +15,7 @@ public sealed class RecordingNotificationDispatcher : IRentalNotificationDispatc
         return Task.CompletedTask;
     }
 
-    public Task DispatchTransitionAsync(InstrumentRentalDto rental, RentalTrigger trigger, int actorUserId)
+    public Task DispatchTransitionAsync(InstrumentRentalDto rental, RentalTrigger trigger, int actorUserId, CancellationToken cancellationToken = default)
     {
         TransitionCalls.Add((rental, trigger, actorUserId));
         return Task.CompletedTask;

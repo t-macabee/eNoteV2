@@ -110,6 +110,72 @@ public sealed class RentalNotificationDispatcherTests
         Assert.Equal(currency, payload.Currency);
     }
 
+    [Fact]
+    public async Task DispatchTransitionAsync_StudentCancel_NotifiesActiveStoreEmployees_NotStudent()
+    {
+        await using var context = TestDbContextFactory.CreateContext(Now);
+
+        var store = new MusicStore("Store", "09-17");
+        context.Set<MusicStore>().Add(store);
+        await context.SaveChangesAsync();
+
+        context.Set<AppUser>().AddRange(
+            new AppUser { Id = 10, UserName = "former", Email = "former@example.com", IsActive = false },
+            new AppUser { Id = 11, UserName = "current", Email = "current@example.com", IsActive = true });
+        context.Set<MusicStoreEmployee>().AddRange(
+            new MusicStoreEmployee(appUserId: 10, musicStoreId: store.Id, isManager: false),
+            new MusicStoreEmployee(appUserId: 11, musicStoreId: store.Id, isManager: false));
+        await context.SaveChangesAsync();
+
+        var dispatcher = new RentalNotificationDispatcher(context, new FixedClock(Now));
+        var dto = CreateRentalDto();
+        dto.MusicStoreId = store.Id;
+        dto.RentalStatus = InstrumentRentalStatus.Canceled;
+
+        await dispatcher.DispatchTransitionAsync(dto, RentalTrigger.Cancel, actorUserId: 5);
+        await context.SaveChangesAsync();
+
+        var recipients = (await context.Set<NotificationOutbox>().ToListAsync())
+            .Select(row => JsonSerializer.Deserialize<RentalStatusChanged>(row.PayloadJson, new JsonSerializerOptions(JsonSerializerDefaults.Web))!)
+            .ToList();
+        Assert.Equal([11], recipients.Select(r => r.StudentUserId).Order().ToList());
+        Assert.All(recipients, r => Assert.Equal("Zahtjev otkazan", r.Title));
+        Assert.All(recipients, r => Assert.Contains("Student je otkazao", r.Body));
+    }
+
+    [Fact]
+    public async Task DispatchTransitionAsync_StoreCancel_NotifiesStudent()
+    {
+        await using var context = TestDbContextFactory.CreateContext(Now);
+
+        var store = new MusicStore("Store", "09-17");
+        context.Set<MusicStore>().Add(store);
+        await context.SaveChangesAsync();
+
+        context.Set<AppUser>().AddRange(
+            new AppUser { Id = 10, UserName = "former", Email = "former@example.com", IsActive = false },
+            new AppUser { Id = 11, UserName = "current", Email = "current@example.com", IsActive = true });
+        context.Set<MusicStoreEmployee>().AddRange(
+            new MusicStoreEmployee(appUserId: 10, musicStoreId: store.Id, isManager: false),
+            new MusicStoreEmployee(appUserId: 11, musicStoreId: store.Id, isManager: false));
+        await context.SaveChangesAsync();
+
+        var dispatcher = new RentalNotificationDispatcher(context, new FixedClock(Now));
+        var dto = CreateRentalDto();
+        dto.MusicStoreId = store.Id;
+        dto.RentalStatus = InstrumentRentalStatus.Canceled;
+
+        await dispatcher.DispatchTransitionAsync(dto, RentalTrigger.Cancel, actorUserId: 11);
+        await context.SaveChangesAsync();
+
+        var recipients = (await context.Set<NotificationOutbox>().ToListAsync())
+            .Select(row => JsonSerializer.Deserialize<RentalStatusChanged>(row.PayloadJson, new JsonSerializerOptions(JsonSerializerDefaults.Web))!)
+            .ToList();
+        var recipient = Assert.Single(recipients);
+        Assert.Equal([5], recipients.Select(r => r.StudentUserId));
+        Assert.Contains("Vaš zahtjev", recipient.Body);
+    }
+
     private static InstrumentRentalDto CreateRentalDto() => new()
     {
         Id = 1,

@@ -51,6 +51,25 @@ public sealed class SmtpEmailService : IEmailService
             HtmlBody = $"<p>Za reset lozinke otvorite <a href=\"{resetLink}\">ovaj link</a>.</p>"
         }.ToMessageBody();
 
+        await SendAsync(message, cancellationToken);
+    }
+
+    public async Task SendNotificationAsync(string email, string subject, string body, CancellationToken cancellationToken = default)
+    {
+        var message = new MimeMessage();
+        message.From.Add(MailboxAddress.Parse(_from));
+        message.To.Add(MailboxAddress.Parse(email));
+        message.Subject = subject;
+        message.Body = new BodyBuilder
+        {
+            TextBody = body
+        }.ToMessageBody();
+
+        await SendAsync(message, cancellationToken);
+    }
+
+    private async Task SendAsync(MimeMessage message, CancellationToken cancellationToken)
+    {
         using var client = new SmtpClient();
         var socketOptions = ResolveSocketOptions(_enableSsl, _port);
         await client.ConnectAsync(_host, _port, socketOptions, cancellationToken);

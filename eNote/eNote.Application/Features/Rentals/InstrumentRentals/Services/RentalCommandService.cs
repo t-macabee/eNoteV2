@@ -118,7 +118,7 @@ public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, 
         }
 
         var dto = await LoadDtoAsync(rental, cancellationToken);
-        await notificationDispatcher.DispatchTransitionAsync(dto, trigger, userId);
+        await notificationDispatcher.DispatchTransitionAsync(dto, trigger, userId, cancellationToken);
 
         if (result.Value.UsesInstrumentLock)
         {

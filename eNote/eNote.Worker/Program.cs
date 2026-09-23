@@ -42,6 +42,7 @@ builder.Services.AddScoped<ICurrentUserContext, WorkerActor>();
 builder.Services.AddInfrastructure(builder.Configuration, bus =>
 {
     bus.AddConsumer<RentalStatusChangedConsumer>();
+    bus.AddConsumer<RentalStatusChangedEmailConsumer>();
     bus.AddConsumer<RentalRefundedConsumer>();
     bus.AddConsumer<LectureCancelledConsumer>();
     bus.AddConsumer<SubmissionGradedConsumer>();

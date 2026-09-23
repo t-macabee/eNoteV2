@@ -231,6 +231,9 @@ public sealed class AuthServiceTests
     {
         public Task SendPasswordResetAsync(string email, string token, CancellationToken cancellationToken = default) =>
             throw new InvalidOperationException("SMTP unavailable");
+
+        public Task SendNotificationAsync(string email, string subject, string body, CancellationToken cancellationToken = default) =>
+            throw new InvalidOperationException("SMTP unavailable");
     }
 
     private sealed class StubTokenService : ITokenService

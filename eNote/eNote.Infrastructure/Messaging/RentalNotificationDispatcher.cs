@@ -22,15 +22,7 @@ public sealed class RentalNotificationDispatcher(
         // Desktop-relevant notification: inform responsible StoreEmployees about the new request.
         // Follows the same outbox + Worker consumer pattern used for student notifications.
         var now = clock.UtcNow;
-        var employeeUserIds = await context.Set<MusicStoreEmployee>()
-            .AsNoTracking()
-            .IgnoreQueryFilters()
-            .Where(x => x.MusicStoreId == rental.MusicStoreId && x.IsActive)
-            .Join(context.Set<AppUser>().Where(user => user.IsActive),
-                employee => employee.AppUserId,
-                user => user.Id,
-                (employee, _) => employee.AppUserId)
-            .ToListAsync(cancellationToken);
+        var employeeUserIds = await LoadActiveEmployeeUserIdsAsync(rental.MusicStoreId, cancellationToken);
 
         foreach (var employeeUserId in employeeUserIds)
         {
@@ -41,13 +33,39 @@ public sealed class RentalNotificationDispatcher(
         }
     }
 
-    public Task DispatchTransitionAsync(InstrumentRentalDto rental, RentalTrigger trigger, int actorUserId)
+    public async Task DispatchTransitionAsync(InstrumentRentalDto rental, RentalTrigger trigger, int actorUserId, CancellationToken cancellationToken = default)
     {
+        // A cancel notifies the party that did not cancel: the student's cancel
+        // informs the store; a store employee's cancel informs the student.
+        if (trigger == RentalTrigger.Cancel && actorUserId == rental.StudentUserId)
+        {
+            var now = clock.UtcNow;
+            var (empTitle, empBody) = BuildStoreCancelledContent(rental);
+            foreach (var employeeUserId in await LoadActiveEmployeeUserIdsAsync(rental.MusicStoreId, cancellationToken))
+            {
+                if (employeeUserId == rental.StudentUserId) continue;
+                var empMessage = new RentalStatusChanged(rental.Id, employeeUserId, actorUserId, rental.RentalStatus.ToString(), rental.InstrumentModel, empTitle, empBody, now);
+                EnqueueOutbox(empMessage);
+            }
+
+            return;
+        }
+
         var (title, body) = BuildNotificationContent(rental, trigger);
         var message = new RentalStatusChanged(rental.Id, rental.StudentUserId, actorUserId, rental.RentalStatus.ToString(), rental.InstrumentModel, title, body, clock.UtcNow);
         EnqueueOutbox(message);
-        return Task.CompletedTask;
     }
+
+    private async Task<List<int>> LoadActiveEmployeeUserIdsAsync(int musicStoreId, CancellationToken cancellationToken) =>
+        await context.Set<MusicStoreEmployee>()
+            .AsNoTracking()
+            .IgnoreQueryFilters()
+            .Where(x => x.MusicStoreId == musicStoreId && x.IsActive)
+            .Join(context.Set<AppUser>().Where(user => user.IsActive),
+                employee => employee.AppUserId,
+                user => user.Id,
+                (employee, _) => employee.AppUserId)
+            .ToListAsync(cancellationToken);
 
     public Task DispatchPaymentRefundedAsync(InstrumentRentalDto rental, long refundedCents, string currency, int actorUserId)
     {
@@ -84,6 +102,9 @@ public sealed class RentalNotificationDispatcher(
 
     private static (string Title, string Body) BuildStoreCreatedContent(InstrumentRentalDto rental) =>
         ("Novi zahtjev za iznajmljivanje", $"Zaprimljen je novi zahtjev za instrument {rental.InstrumentModel} u prodavnici {rental.StoreName}.");
+
+    private static (string Title, string Body) BuildStoreCancelledContent(InstrumentRentalDto rental) =>
+        ("Zahtjev otkazan", string.IsNullOrWhiteSpace(rental.Note) ? $"Student je otkazao zahtjev za instrument {rental.InstrumentModel} u prodavnici {rental.StoreName}." : $"Student je otkazao zahtjev za instrument {rental.InstrumentModel} u prodavnici {rental.StoreName}. Razlog: {rental.Note}");
 
     private void EnqueueOutbox(RentalStatusChanged message) =>
         NotificationOutboxWriter.Enqueue(context, NotificationMessageTypes.RentalStatusChanged, message);

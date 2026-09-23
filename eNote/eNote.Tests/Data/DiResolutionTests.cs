@@ -89,6 +89,7 @@ public sealed class DiResolutionTests
         services.AddInfrastructure(configuration, bus =>
         {
             bus.AddConsumer<RentalStatusChangedConsumer>();
+            bus.AddConsumer<RentalStatusChangedEmailConsumer>();
             bus.AddConsumer<RentalRefundedConsumer>();
         }, registerNotificationOutboxPublisher: false);
 

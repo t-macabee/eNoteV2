@@ -63,8 +63,9 @@ dotnet run --project eNote.Worker
 ```
 
 Worker je zaseban projekat i zaseban kontejner. API objavljuje notifikacijske
-poruke na RabbitMQ i ponavlja neuspjela slanja. Worker ih preuzima sa RabbitMQ-a
-i šalje notifikacije i mailove.
+poruke na RabbitMQ i ponavlja neuspjela slanja. Worker ih preuzima sa RabbitMQ-a,
+sprema notifikacije i šalje mail kada je zahtjev za najam odobren, odbijen ili
+otkazan.
 
 ## Prijava
 
