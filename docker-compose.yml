@@ -1,5 +1,12 @@
 name: enote
 
+# Values that differ inside Docker: containers reach other services by service name.
+# Everything else comes from .env through env_file.
+x-docker-overrides: &docker-overrides
+  ConnectionStrings__DefaultConnection: Server=sqlserver,1433;Database=150057;User Id=sa;Password=${MSSQL_SA_PASSWORD};TrustServerCertificate=True;MultipleActiveResultSets=true
+  RabbitMQ__Host: rabbitmq
+  Smtp__Host: mailhog
+
 services:
   sqlserver:
     image: mcr.microsoft.com/mssql/server:2022-CU13-ubuntu-22.04
@@ -48,33 +55,11 @@ services:
       dockerfile: Dockerfile
       target: api
     container_name: enote-api
+    env_file: .env
     environment:
+      <<: *docker-overrides
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
       ASPNETCORE_URLS: http://+:8080
-      ConnectionStrings__DefaultConnection: Server=sqlserver,1433;Database=150057;User Id=sa;Password=${MSSQL_SA_PASSWORD};TrustServerCertificate=True;MultipleActiveResultSets=true
-      Jwt__Key: ${JWT__KEY:?Set JWT__KEY in .env (min 32 characters)}
-      Seed__DefaultPassword: ${SEED_DEFAULT_PASSWORD:-test}
-      Jwt__Issuer: ENote.Api
-      Jwt__Audience: ENote.Client
-      Jwt__ExpirationMinutes: 120
-      RabbitMQ__Host: rabbitmq
-      RabbitMQ__VirtualHost: /
-      RabbitMQ__User: ${RABBITMQ_USER:-guest}
-      RabbitMQ__Password: ${RABBITMQ_PASSWORD:-guest}
-      Cors__AllowedOrigins__0: http://localhost:3000
-      Cors__AllowedOrigins__1: http://localhost:5059
-      Smtp__Host: ${SMTP_HOST:?Set SMTP_HOST in .env}
-      Smtp__From: ${SMTP_FROM:?Set SMTP_FROM in .env}
-      Smtp__Port: ${SMTP_PORT:-587}
-      Smtp__EnableSsl: ${SMTP_ENABLE_SSL:-true}
-      Smtp__Username: ${SMTP_USERNAME}
-      Smtp__Password: ${SMTP_PASSWORD}
-      Smtp__PasswordResetUrl: ${SMTP_PASSWORD_RESET_URL:?Set SMTP_PASSWORD_RESET_URL in .env}
-      Stripe__SecretKey: ${STRIPE_SECRET_KEY:?Set STRIPE_SECRET_KEY in .env}
-      Stripe__PublishableKey: ${STRIPE_PUBLISHABLE_KEY:-}
-      Stripe__WebhookSecret: ${STRIPE_WEBHOOK_SECRET:?Set STRIPE_WEBHOOK_SECRET in .env}
-      Stripe__Currency: ${STRIPE_CURRENCY:-bam}
-      Stripe__StatementDescriptor: ${STRIPE_STATEMENT_DESCRIPTOR:-ENOTE Rental}
     ports:
       - "${API_PORT:-5059}:8080"
     volumes:
@@ -101,13 +86,10 @@ services:
       dockerfile: Dockerfile
       target: worker
     container_name: enote-worker
+    env_file: .env
     environment:
+      <<: *docker-overrides
       DOTNET_ENVIRONMENT: ${DOTNET_ENVIRONMENT:-Development}
-      ConnectionStrings__DefaultConnection: Server=sqlserver,1433;Database=150057;User Id=sa;Password=${MSSQL_SA_PASSWORD};TrustServerCertificate=True;MultipleActiveResultSets=true
-      RabbitMQ__Host: rabbitmq
-      RabbitMQ__VirtualHost: /
-      RabbitMQ__User: ${RABBITMQ_USER:-guest}
-      RabbitMQ__Password: ${RABBITMQ_PASSWORD:-guest}
     depends_on:
       sqlserver:
         condition: service_healthy

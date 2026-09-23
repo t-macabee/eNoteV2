@@ -16,5 +16,5 @@ public sealed record JwtOptions
     public string Audience { get; init; } = string.Empty;
 
     [Range(5, 120)]
-    public int ExpirationMinutes { get; init; } = 120;
+    public int ExpirationMinutes { get; init; }
 }

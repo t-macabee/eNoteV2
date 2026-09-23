@@ -28,7 +28,7 @@ public static class IdentitySeed
         // password policy: the policy in DependencyInjection stays strict for
         // real registrations, and these seeded demo accounts get their hash
         // applied directly in ApplyReviewPasswordAsync below.
-        var reviewPassword = configuration["Seed:DefaultPassword"] ?? "test";
+        var reviewPassword = configuration["Seed:DefaultPassword"] ?? throw new InvalidOperationException("Seed__DefaultPassword is required.");
 
         await RoleSeed.SeedRoles(roleManager);
 

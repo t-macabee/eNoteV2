@@ -24,10 +24,12 @@ Ovo je najkraći put i pokreće bazu, RabbitMQ, API i worker odjednom.
    cp .env.docker.example .env
    ```
 
-   Popunite `MSSQL_SA_PASSWORD`, `JWT__KEY` (najmanje 32 znaka), `SMTP_*`
-   uključujući `SMTP_PASSWORD_RESET_URL=enote://reset-password` (da link za
-   reset lozinke otvara mobilnu aplikaciju) i `STRIPE_*` vrijednosti.
-   `docker compose` neće startati bez njih.
+   Popunite `MSSQL_SA_PASSWORD`, `Jwt__Key` (najmanje 32 znaka), `Smtp__*`
+   uključujući `Smtp__PasswordResetUrl=enote://reset-password` (da link za
+   reset lozinke otvara mobilnu aplikaciju), `Stripe__SecretKey` i
+   `Stripe__WebhookSecret`. Svaka vrijednost se upisuje samo jednom, u `.env`;
+   `docker compose` prosljeđuje tu datoteku api i worker kontejnerima i
+   zamjenjuje samo imena hostova (`sqlserver`, `rabbitmq`, `mailhog`).
 
 2. Pokrenite sve servise:
 
@@ -43,6 +45,8 @@ Za fizički telefon API mora slušati na svim interfejsima
 koristiti Docker, koji već objavljuje port na svim interfejsima.
 
 ## Pokretanje bez Dockera
+
+`dotnet run` čita isti `.env`. Mail ide na Mailhog na `localhost:1025`; pokrenite ga sa `docker compose up -d mailhog`.
 
 Iz foldera `eNote/`:
 
@@ -134,7 +138,7 @@ prikazuje predavanja, ispis ih skriva.
 
 Najam instrumenta se naplaćuje jednom, kada najam pređe u status `Complete` ili
 `ReturnedEarly`. Iznos računa server. Podrazumijevana valuta je BAM i mijenja se
-kroz `STRIPE_CURRENCY`.
+kroz `Stripe__Currency`.
 
 Školarina se naplaćuje po kursu, mjesečno. `Course.Price` je mjesečna cijena
 kursa; student je plaća unaprijed i time dobija 30 dana pristupa sadržaju tog
@@ -142,7 +146,7 @@ kursa. Obnova je ručna, a ponovna uplata prije isteka ne gubi dane
 (`PaidUntil = max(trenutno, PaidUntil) + 30 dana`). Kurs sa cijenom 0 je
 besplatan. Iznos i ovdje računa server.
 
-Obavezne varijable su `STRIPE_SECRET_KEY` i `STRIPE_WEBHOOK_SECRET`. Webhook
+Obavezne varijable su `Stripe__SecretKey` i `Stripe__WebhookSecret`. Webhook
 treba usmjeriti na `POST /api/v1/payments/stripe/webhook`, lokalno preko
 `stripe listen`.
 

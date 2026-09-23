@@ -65,6 +65,16 @@ public static class ConfigurationExtensions
             errors.Add("Stripe__WebhookSecret (placeholder value — must be changed before deployment)");
         }
 
+        if (string.IsNullOrWhiteSpace(configuration["Stripe:Currency"]))
+        {
+            errors.Add("Stripe__Currency");
+        }
+
+        if (string.IsNullOrWhiteSpace(configuration["Stripe:StatementDescriptor"]))
+        {
+            errors.Add("Stripe__StatementDescriptor");
+        }
+
         var rabbitMqError = RabbitMqConfiguration.GetMissingConfigurationError(configuration);
 
         if (rabbitMqError is not null)

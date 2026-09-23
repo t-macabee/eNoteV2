@@ -66,7 +66,7 @@ public static class DependencyInjection
         services.AddScoped<IRentalNotificationDispatcher, RentalNotificationDispatcher>();
         services.AddScoped<ILectureNotificationDispatcher, LectureNotificationDispatcher>();
         services.AddScoped<ISubmissionNotificationDispatcher, SubmissionNotificationDispatcher>();
-        services.AddScoped(provider => BuildStripeOptions(configuration));
+        services.AddSingleton(_ => BuildStripeOptions(configuration));
         services.AddScoped<IPaymentGateway, StripePaymentGateway>();
         services.AddScoped<StripeWebhookService>();
         // Only one process may drain the outbox, or concurrent pollers can publish the same row twice.
@@ -136,10 +136,9 @@ public static class DependencyInjection
         return new StripeOptions
         {
             SecretKey = section["SecretKey"] ?? string.Empty,
-            PublishableKey = section["PublishableKey"] ?? string.Empty,
             WebhookSecret = section["WebhookSecret"] ?? string.Empty,
-            Currency = string.IsNullOrWhiteSpace(section["Currency"]) ? "bam" : section["Currency"]!.Trim().ToLowerInvariant(),
-            StatementDescriptor = string.IsNullOrWhiteSpace(section["StatementDescriptor"]) ? "ENOTE Rental" : section["StatementDescriptor"]!
+            Currency = (section["Currency"] ?? string.Empty).Trim().ToLowerInvariant(),
+            StatementDescriptor = section["StatementDescriptor"] ?? string.Empty
         };
     }
 

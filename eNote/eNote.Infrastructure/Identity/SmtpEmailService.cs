@@ -17,7 +17,7 @@ public sealed class SmtpEmailService : IEmailService
     private readonly string? _password;
 
     public static IReadOnlyList<string> RequiredConfigurationKeys { get; } =
-        ["Smtp:Host", "Smtp:From", "Smtp:PasswordResetUrl"];
+        ["Smtp:Host", "Smtp:From", "Smtp:PasswordResetUrl", "Smtp:Port", "Smtp:EnableSsl"];
 
     public SmtpEmailService(IConfiguration configuration)
     {
@@ -31,8 +31,8 @@ public sealed class SmtpEmailService : IEmailService
 
         _host = configuration["Smtp:Host"]!;
         _from = configuration["Smtp:From"]!;
-        _port = configuration.GetValue("Smtp:Port", 25);
-        _enableSsl = configuration.GetValue("Smtp:EnableSsl", true);
+        _port = configuration.GetValue<int>("Smtp:Port");
+        _enableSsl = configuration.GetValue<bool>("Smtp:EnableSsl");
         _passwordResetUrl = configuration["Smtp:PasswordResetUrl"]!;
         _username = configuration["Smtp:Username"];
         _password = configuration["Smtp:Password"];

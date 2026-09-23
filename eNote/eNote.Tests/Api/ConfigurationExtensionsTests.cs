@@ -15,6 +15,8 @@ public sealed class ConfigurationExtensionsTests
         Assert.Contains("Smtp__Host", exception.Message);
         Assert.Contains("Smtp__From", exception.Message);
         Assert.Contains("Smtp__PasswordResetUrl", exception.Message);
+        Assert.Contains("Smtp__Port", exception.Message);
+        Assert.Contains("Smtp__EnableSsl", exception.Message);
     }
 
     [Fact]
@@ -59,11 +61,23 @@ public sealed class ConfigurationExtensionsTests
         Assert.Contains(expectedError, exception.Message);
     }
 
+    [Fact]
+    public void ValidateRequiredSettings_ThrowsListingStripeCurrencyAndDescriptor_WhenMissing()
+    {
+        var configuration = CreateConfiguration(includeSmtp: true, includeStripeDisplay: false);
+
+        var exception = Assert.Throws<InvalidOperationException>(() => configuration.ValidateRequiredSettings());
+
+        Assert.Contains("Stripe__Currency", exception.Message);
+        Assert.Contains("Stripe__StatementDescriptor", exception.Message);
+    }
+
     private static IConfiguration CreateConfiguration(
         bool includeSmtp,
         string jwtKey = "test-signing-key-that-is-long-enough-123",
         string stripeSecretKey = "sk_test_123",
-        string stripeWebhookSecret = "whsec_123")
+        string stripeWebhookSecret = "whsec_123",
+        bool includeStripeDisplay = true)
     {
         var values = new Dictionary<string, string?>
         {
@@ -76,11 +90,19 @@ public sealed class ConfigurationExtensionsTests
             ["RabbitMQ:Host"] = "localhost",
         };
 
+        if (includeStripeDisplay)
+        {
+            values["Stripe:Currency"] = "bam";
+            values["Stripe:StatementDescriptor"] = "ENOTE Rental";
+        }
+
         if (includeSmtp)
         {
             values["Smtp:Host"] = "localhost";
             values["Smtp:From"] = "noreply@example.com";
             values["Smtp:PasswordResetUrl"] = "https://localhost/reset-password";
+            values["Smtp:Port"] = "1025";
+            values["Smtp:EnableSsl"] = "false";
         }
 
         return new ConfigurationBuilder().AddInMemoryCollection(values).Build();
