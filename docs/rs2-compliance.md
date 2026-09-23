@@ -18,10 +18,11 @@ Administrator ima CRUD ekrane za sve referentne tabele u domenu:
 `Address.CityId` je strani ključ prema tabeli gradova i bira se kroz dropdown, ne
 kao slobodan tekst.
 
-`Instructor` je namjerno samo za čitanje u `InstructorListScreen`. Instruktori se
-kreiraju i uređuju kroz `AdminUsersController` i `UserProvisionFormScreen`, gdje
-se postavlja i uloga. Drugi CRUD nad istim nalozima bi se vremenom razišao sa
-prvim.
+`Instructor` je namjerno samo za čitanje u `InstructorListScreen`. Administrator
+kreira instruktorske naloge kroz `AdminUsersController` i `UserProvisionFormScreen`,
+gdje se postavlja i uloga. Administrator daje samo pristup: lične podatke
+(ime, prezime, e-mail, telefon) svaki korisnik uređuje sam na svom profilu
+(`PUT users/me`).
 
 Tabele `Country`, `Category` i `Status` ne postoje. Sve adrese su unutar BiH i
 imaju oblik grad, ulica, broj, a instrumenti nemaju kategorije odvojene od vrste.

@@ -42,7 +42,7 @@ builder.Services
         bus.AddConsumer<FaultLoggingConsumer<RentalRefunded>>();
         bus.AddConsumer<FaultLoggingConsumer<LectureCancelled>>();
         bus.AddConsumer<FaultLoggingConsumer<SubmissionGraded>>();
-    }, registerNotificationOutboxPublisher: false)
+    })
     .AddJwtAuthentication()
     .AddAuthorization()
     .AddApplicationServices(builder.Configuration)

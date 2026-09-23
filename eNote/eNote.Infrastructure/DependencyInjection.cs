@@ -70,7 +70,7 @@ public static class DependencyInjection
         services.AddScoped<IPaymentGateway, StripePaymentGateway>();
         services.AddScoped<StripeWebhookService>();
         // Only one process may drain the outbox, or concurrent pollers can publish the same row twice.
-        // Worker owns this by default; the API opts out (see eNote.API/Program.cs).
+        // The API owns this by default; the Worker opts out (see eNote.Worker/Program.cs).
         if (registerNotificationOutboxPublisher)
         {
             services.AddHostedService<RentalNotificationOutboxPublisher>();

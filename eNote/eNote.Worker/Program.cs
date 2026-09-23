@@ -49,7 +49,7 @@ builder.Services.AddInfrastructure(builder.Configuration, bus =>
     bus.AddConsumer<FaultLoggingConsumer<RentalRefunded>>();
     bus.AddConsumer<FaultLoggingConsumer<LectureCancelled>>();
     bus.AddConsumer<FaultLoggingConsumer<SubmissionGraded>>();
-}, validateJwtOptions: false);
+}, registerNotificationOutboxPublisher: false, validateJwtOptions: false);
 builder.Services.AddInfrastructureHealthChecks();
 builder.Services.AddHostedService<DatabaseHeartbeatService>();
 

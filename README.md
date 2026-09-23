@@ -58,8 +58,9 @@ Worker se pokreće posebno, u drugom terminalu:
 dotnet run --project eNote.Worker
 ```
 
-Worker je zaseban projekat i zaseban kontejner. On preuzima poruke sa RabbitMQ-a
-i šalje notifikacije i mailove, te ponavlja neuspjele notifikacije o najmu.
+Worker je zaseban projekat i zaseban kontejner. API objavljuje notifikacijske
+poruke na RabbitMQ i ponavlja neuspjela slanja. Worker ih preuzima sa RabbitMQ-a
+i šalje notifikacije i mailove.
 
 ## Prijava
 

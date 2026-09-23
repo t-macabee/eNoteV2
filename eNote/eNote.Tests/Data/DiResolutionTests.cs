@@ -2,6 +2,7 @@ using eNote.API.Realtime.Consumers;
 using eNote.API.Extensions;
 using eNote.Application.Common.Persistence;
 using eNote.Infrastructure;
+using eNote.Infrastructure.Messaging;
 using eNote.Worker;
 using eNote.Worker.Consumers;
 using eNote.Tests.TestUtils;
@@ -66,6 +67,7 @@ public sealed class DiResolutionTests
             .AddMapsterMappings();
 
         await AssertAllENoteInterfacesResolvable(services);
+        Assert.True(RegistersOutboxPublisher(services), "The API must drain the notification outbox.");
 
         await using var provider = services.BuildServiceProvider();
         var bearer = provider.GetRequiredService<IOptionsMonitor<JwtBearerOptions>>().Get(JwtBearerDefaults.AuthenticationScheme);
@@ -88,9 +90,10 @@ public sealed class DiResolutionTests
         {
             bus.AddConsumer<RentalStatusChangedConsumer>();
             bus.AddConsumer<RentalRefundedConsumer>();
-        });
+        }, registerNotificationOutboxPublisher: false);
 
         await AssertAllENoteInterfacesResolvable(services);
+        Assert.False(RegistersOutboxPublisher(services), "Only the API may drain the notification outbox.");
     }
 
     private static IConfiguration CreateConfiguration(Dictionary<string, string?> additional)
@@ -110,6 +113,9 @@ public sealed class DiResolutionTests
 
         return new ConfigurationBuilder().AddInMemoryCollection(values).Build();
     }
+
+    private static bool RegistersOutboxPublisher(ServiceCollection services) =>
+        services.Any(d => d.ServiceType == typeof(IHostedService) && d.ImplementationType == typeof(RentalNotificationOutboxPublisher));
 
     private static async Task AssertAllENoteInterfacesResolvable(ServiceCollection services)
     {
