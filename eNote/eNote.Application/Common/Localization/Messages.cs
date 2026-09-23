@@ -46,6 +46,8 @@ public static class Messages
     public const string AttendanceAlreadyMarked = "Prisustvo za ovog studenta je već evidentirano.";
     public const string LectureTimeConflict = "Termin predavanja se preklapa s postojećim predavanjem.";
     public const string LectureCapacityBelowConfirmed = "Kapacitet ne može biti manji od broja već potvrđenih prisustava.";
+    public const string LectureAlreadyHeld = "Održano predavanje nije moguće otkazati.";
+    public const string LectureRsvpClosed = "Prijave su zatvorene jer je predavanje počelo.";
 
     public const string InstrumentTypeNotFound = "Vrsta instrumenta ne postoji.";
     public const string InstrumentNotFound = "Instrument nije pronađen.";

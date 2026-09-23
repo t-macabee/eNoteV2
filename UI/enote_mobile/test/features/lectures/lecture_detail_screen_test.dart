@@ -12,19 +12,26 @@ import 'package:enote_mobile/features/lectures/rsvp_sheet.dart';
 
 import '../../helpers.dart';
 
-const _lectureJson = {
+Map<String, dynamic> _lectureJson({required String lectureTime}) => {
   'id': 11,
   'name': 'Akordi I',
   'location': 'Sala 2',
   'lectureType': 'Theoretical',
   'lectureStatus': 'Scheduled',
   'isCancelled': false,
-  'lectureTime': '2026-09-14T18:00:00',
+  'lectureTime': lectureTime,
   'duration': 60,
   'capacity': 20,
   'attendeeCount': 5,
   'myAttendanceStatus': 'Pending',
 };
+
+final _futureLectureTime = DateTime.now()
+    .add(const Duration(days: 365))
+    .toIso8601String();
+final _pastLectureTime = DateTime.now()
+    .subtract(const Duration(hours: 1))
+    .toIso8601String();
 
 class _GatedLectureProvider extends LectureProvider {
   Completer<RsvpResponse>? rsvpGate;
@@ -43,7 +50,10 @@ void main() {
       'completing the RSVP after the detail screen is gone throws nothing',
       (tester) async {
     final client = ScriptedClient(
-      (_) => jsonResponse(jsonEncode(_lectureJson), 200),
+      (_) => jsonResponse(
+        jsonEncode(_lectureJson(lectureTime: _futureLectureTime)),
+        200,
+      ),
     );
     final authState = AuthState(
       baseUrl: 'http://10.0.2.2:5059/api/v1/',
@@ -122,5 +132,53 @@ void main() {
     await tester.pump();
 
     expect(find.byType(RsvpSheet), findsOneWidget);
+  });
+
+  testWidgets('RSVP is closed after the lecture starts', (tester) async {
+    final client = ScriptedClient(
+      (_) => jsonResponse(
+        jsonEncode(_lectureJson(lectureTime: _pastLectureTime)),
+        200,
+      ),
+    );
+    final authState = AuthState(
+      baseUrl: 'http://10.0.2.2:5059/api/v1/',
+      tokenReader: () => fakeJwt(),
+      httpClient: client,
+    );
+    final apiClient = ApiClient(
+      baseUrl: 'http://10.0.2.2:5059/api/v1/',
+      authState: authState,
+      httpClient: client,
+    );
+    final lectures = LectureProvider(apiClient: apiClient);
+
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider<AuthState>.value(value: authState),
+          Provider<ApiClient>.value(value: apiClient),
+          ChangeNotifierProvider<LectureProvider>.value(value: lectures),
+        ],
+        child: const MaterialApp(
+          home: LectureDetailScreen(lectureId: 11),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('Prijave su zatvorene jer je predavanje počelo.'),
+      findsOneWidget,
+    );
+    final arrive = tester.widget<FilledButton>(
+      find.widgetWithText(FilledButton, 'Dolazim'),
+    );
+    final decline = tester.widget<OutlinedButton>(
+      find.widgetWithText(OutlinedButton, 'Ne dolazim'),
+    );
+    expect(arrive.onPressed, isNull);
+    expect(decline.onPressed, isNull);
   });
 }

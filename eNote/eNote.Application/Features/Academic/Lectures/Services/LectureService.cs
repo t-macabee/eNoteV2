@@ -264,6 +264,11 @@ public sealed class LectureService(
             throw new BusinessException(Messages.LectureCancelled);
         }
 
+        if (entity.LectureStatus == LectureStatus.Held)
+        {
+            throw new BusinessException(Messages.LectureAlreadyHeld);
+        }
+
         entity.Cancel();
         entity.UpdatedById = currentUser.UserId;
 

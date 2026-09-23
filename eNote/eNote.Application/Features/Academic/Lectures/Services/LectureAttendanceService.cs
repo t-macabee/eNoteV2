@@ -21,6 +21,11 @@ public sealed class LectureAttendanceService(
             .Include(x => x.Course)
             .FirstOrDefaultAsync(x => x.Id == lectureId && x.Course.IsPublished && x.LectureStatus != LectureStatus.Cancelled, cancellationToken) ?? throw new NotFoundException(Messages.LectureNotFound);
 
+        if (clock.UtcNow > lecture.LectureTime)
+        {
+            throw new BusinessException(Messages.LectureRsvpClosed);
+        }
+
         var studentId = await students.GetCurrentStudentIdAsync(cancellationToken);
 
         if (!await context.IsEnrolledAndPaidAsync(studentId, lecture.CourseId, clock.UtcNow, cancellationToken))
@@ -157,6 +162,11 @@ public sealed class LectureAttendanceService(
         {
             attendance.UpdateStatus(request.AttendanceStatus);
             attendance.UpdatedById = currentUser.UserId;
+        }
+
+        if (clock.UtcNow >= lecture.LectureTime)
+        {
+            lecture.MarkHeld();
         }
 
         try

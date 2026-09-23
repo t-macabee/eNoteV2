@@ -1,3 +1,4 @@
+using eNote.Application.Common.Localization;
 using eNote.Application.Features.Academic.Lectures;
 using eNote.Application.Features.Academic.Lectures.Services;
 using eNote.Tests.TestUtils;
@@ -117,6 +118,19 @@ public sealed class LectureServiceTests
         var dto = await service.CancelAsync(harness.Lecture.Id);
 
         Assert.True(dto.IsCancelled);
+    }
+
+    [Fact]
+    public async Task CancelAsync_Throws_WhenLectureHeld()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        harness.Context.Set<Lecture>().Single(l => l.Id == harness.Lecture.Id).MarkHeld();
+        await harness.Context.SaveChangesAsync();
+        var service = CreateService(harness.Context, harness.Instructor);
+
+        var ex = await Assert.ThrowsAsync<BusinessException>(() => service.CancelAsync(harness.Lecture.Id));
+
+        Assert.Equal(Messages.LectureAlreadyHeld, ex.Message);
     }
 
     [Fact]

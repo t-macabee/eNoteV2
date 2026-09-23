@@ -84,6 +84,14 @@ class _LectureListScreenState extends State<LectureListScreen> {
     }
   }
 
+  String? _cancelBlockedReason(LectureDto item) {
+    if (item.isCancelled) return 'Već otkazano';
+    if (item.lectureStatus == LectureStatus.held) {
+      return 'Održano predavanje nije moguće otkazati';
+    }
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
     return EntityListScreen<LectureDto>(
@@ -175,10 +183,14 @@ class _LectureListScreenState extends State<LectureListScreen> {
             icon: Icon(
               Icons.cancel,
               size: 18,
-              color: item.isCancelled ? Colors.grey : Colors.orange,
+              color: _cancelBlockedReason(item) != null
+                  ? Colors.grey
+                  : Colors.orange,
             ),
-            tooltip: item.isCancelled ? 'Već otkazano' : 'Otkaži',
-            onPressed: item.isCancelled ? null : () => _cancelLecture(item),
+            tooltip: _cancelBlockedReason(item) ?? 'Otkaži',
+            onPressed: _cancelBlockedReason(item) != null
+                ? null
+                : () => _cancelLecture(item),
           ),
         ],
       ),

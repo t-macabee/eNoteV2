@@ -178,8 +178,8 @@ class _LectureDetailScreenState extends State<LectureDetailScreen> {
     );
   }
 
-  /// Client-derived disabled reason (03 P3): cancelled, held, or full while
-  /// the student has not confirmed yet.
+  /// Client-derived disabled reason (03 P3): cancelled, held, started, or full
+  /// while the student has not confirmed yet.
   String? _blockedReason(LectureDto lecture) {
     if (lecture.isCancelled ||
         lecture.lectureStatus == LectureStatus.cancelled) {
@@ -187,6 +187,9 @@ class _LectureDetailScreenState extends State<LectureDetailScreen> {
     }
     if (lecture.lectureStatus == LectureStatus.held) {
       return 'Predavanje je održano.';
+    }
+    if (DateTime.now().isAfter(lecture.lectureTime)) {
+      return 'Prijave su zatvorene jer je predavanje počelo.';
     }
     final capacity = lecture.capacity;
     final confirmed =

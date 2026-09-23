@@ -55,6 +55,21 @@ public sealed class Lecture : AuditableEntity
         LectureStatus = LectureStatus.Cancelled;
     }
 
+    public void MarkHeld()
+    {
+        if (LectureStatus == LectureStatus.Held)
+        {
+            return;
+        }
+
+        if (LectureStatus != LectureStatus.Scheduled)
+        {
+            throw new InvalidOperationException("Only a scheduled lecture can be marked as held.");
+        }
+
+        LectureStatus = LectureStatus.Held;
+    }
+
     public void SoftDelete()
     {
         IsActive = false;
