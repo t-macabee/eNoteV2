@@ -11,14 +11,12 @@ namespace eNote.API.Controllers.Files;
 [Route("api/v{version:apiVersion}/uploads")]
 public sealed class UploadsController(IFileStorageService fileStorage, IFileAccessService fileAccess, ICurrentUserContext currentUser) : CoreController
 {
-    [AllowAnonymous]
     [HttpGet("instruments/{fileName}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public IActionResult GetInstrument(string fileName) => Serve("instruments", fileName);
 
-    [AllowAnonymous]
     [HttpGet("music-stores/{fileName}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]

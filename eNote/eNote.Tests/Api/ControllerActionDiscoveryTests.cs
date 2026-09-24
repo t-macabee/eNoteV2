@@ -6,6 +6,7 @@ using eNote.API.Controllers.Shop;
 using eNote.API.Controllers.Users;
 using eNote.API.Extensions;
 using eNote.Application.Common.Files;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.Metadata;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ApplicationParts;
@@ -89,6 +90,28 @@ public sealed class ControllerActionDiscoveryTests
             var throttle = Assert.Single(method.GetCustomAttributes<EnableRateLimitingAttribute>());
             Assert.Equal(RateLimitingExtensions.UploadsPolicy, throttle.PolicyName);
         }
+    }
+
+    [Fact]
+    public void AnonymousActions_AreOnlyTheAllowListed()
+    {
+        string[] expected =
+        [
+            "AuthController.ForgotPassword",
+            "AuthController.Login",
+            "AuthController.Register",
+            "AuthController.ResetPassword",
+            "StripeWebhookController.Handle"
+        ];
+
+        var anonymous = DiscoveredActions()
+            .Where(a => a.MethodInfo.IsDefined(typeof(AllowAnonymousAttribute), inherit: true)
+                || a.ControllerTypeInfo.IsDefined(typeof(AllowAnonymousAttribute), inherit: true))
+            .Select(a => $"{a.ControllerTypeInfo.Name}.{a.MethodInfo.Name}")
+            .Order(StringComparer.Ordinal)
+            .ToArray();
+
+        Assert.Equal(expected, anonymous);
     }
 
     private static List<ControllerActionDescriptor> DiscoveredActions()

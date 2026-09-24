@@ -20,9 +20,8 @@ public sealed class InstrumentController(
     RecommendationService recommendationService,
     InstrumentTypeService instrumentTypeService) : CoreController
 {
-    // ── Public actions (no auth required) ───────────────────────────
+    // ── Catalog actions (any signed-in user) ────────────────────────
 
-    [AllowAnonymous]
     [HttpGet("~/api/v{version:apiVersion}/instruments/public")]
     [ProducesResponseType(typeof(PagedResult<InstrumentDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<PagedResult<InstrumentDto>>> GetPublicPaged([FromQuery] InstrumentSearchObject search, CancellationToken cancellationToken)
@@ -31,7 +30,6 @@ public sealed class InstrumentController(
         return Ok(result);
     }
 
-    [AllowAnonymous]
     [HttpGet("~/api/v{version:apiVersion}/instruments/public/{id:int}")]
     [ProducesResponseType(typeof(InstrumentDto), StatusCodes.Status200OK)]
     public async Task<ActionResult<InstrumentDto>> GetPublicById(int id, CancellationToken cancellationToken)

@@ -2,8 +2,8 @@ import 'package:enote_core/enote_core.dart';
 
 /// Catalogue provider for the Instrumenti tab (S7, S8).
 ///
-/// The list endpoint is anonymous (`instruments/public`); the recommendation
-/// and view-tracking endpoints are student-scoped.
+/// The list endpoint (`instruments/public`) is open to any signed-in user;
+/// the recommendation and view-tracking endpoints are student-scoped.
 class InstrumentProvider extends ReadOnlyProvider<InstrumentDto> {
   /// Rows per catalogue page (02 §3).
   static const int pageSize = 20;
