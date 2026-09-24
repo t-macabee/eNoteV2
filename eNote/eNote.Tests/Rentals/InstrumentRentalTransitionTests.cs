@@ -13,7 +13,8 @@ public sealed class InstrumentRentalTransitionTests
             UserId = 10,
             Actor = RentalActor.StoreEmployee,
             HasInstrumentLockConflict = false,
-            MonthlyFee = 50m
+            MonthlyFee = 50m,
+            ResponseNote = "Instrument je na servisu."
         };
 
         var result = rental.Transition(RentalTrigger.Reject, context, Now);
@@ -21,6 +22,31 @@ public sealed class InstrumentRentalTransitionTests
         Assert.True(result.IsSuccess);
         Assert.Equal(InstrumentRentalStatus.Rejected, rental.RentalStatus);
         Assert.NotNull(rental.RejectedAt);
+        Assert.Equal("Instrument je na servisu.", rental.Note);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void Reject_WithoutNote_Fails(string? note)
+    {
+        var rental = new InstrumentRental(1, 1, 1, Now, "note");
+        var context = new RentalTransitionContext
+        {
+            UserId = 10,
+            Actor = RentalActor.StoreEmployee,
+            HasInstrumentLockConflict = false,
+            MonthlyFee = 50m,
+            ResponseNote = note
+        };
+
+        var result = rental.Transition(RentalTrigger.Reject, context, Now);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal("Razlog odbijanja je obavezan.", result.Error);
+        Assert.Equal(InstrumentRentalStatus.Pending, rental.RentalStatus);
+        Assert.Null(rental.RejectedAt);
     }
 
     [Fact]

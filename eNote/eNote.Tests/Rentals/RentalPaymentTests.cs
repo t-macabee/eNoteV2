@@ -28,7 +28,7 @@ public sealed class RentalPaymentTests
     }
 
     [Fact]
-    public void ReturnEarly_Refund_CappedAtMonthlyFee()
+    public void ReturnEarly_Refund_WholeAmount_LeavesZeroOwed()
     {
         var rental = new InstrumentRental(1, 1, 1, Now.AddDays(-20), null);
         rental.Approve(50m, null, Now.AddDays(-10), 1);
@@ -41,7 +41,7 @@ public sealed class RentalPaymentTests
 
         payment.ApplyRefund(cents, "re_test_1", Now);
 
-        Assert.True(payment.RefundedCents <= rental.Fee * 100m);
+        Assert.Equal(0, payment.AmountChargedCents - payment.RefundedCents);
         Assert.Equal(PaymentStatus.Refunded, payment.Status);
     }
 

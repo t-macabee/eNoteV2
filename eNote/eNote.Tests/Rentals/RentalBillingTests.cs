@@ -17,7 +17,7 @@ public sealed class RentalBillingTests
     }
 
     [Fact]
-    public void CalculateCharges_ActiveRental_ChargesAtLeastOneMonth()
+    public void CalculateCharges_ActiveRental_ChargesDaysSoFar()
     {
         var rental = new InstrumentRental(1, 1, 1, Now.AddDays(-10), null);
         rental.Approve(50m, null, Now.AddDays(-5), 1);
@@ -25,9 +25,10 @@ public sealed class RentalBillingTests
 
         var charges = rental.CalculateCharges(Now);
 
-        Assert.Equal(50m, charges.TotalFee);
-        Assert.Equal(1, charges.MonthsCharged);
-        Assert.False(charges.IsProrated);
+        Assert.Equal(5m, charges.TotalFee);
+        Assert.Equal(3, charges.DaysCharged);
+        Assert.Null(charges.MonthsCharged);
+        Assert.True(charges.IsProrated);
     }
 
     [Fact]
@@ -51,9 +52,10 @@ public sealed class RentalBillingTests
     {
         var pickedUp = Now.AddDays(-45);
         var activeCharges = RentalChargeCalculator.Calculate(pickedUp, null, InstrumentRentalStatus.Active, 50m, Now);
-        Assert.Equal(2, activeCharges.MonthsCharged);
-        Assert.Equal(100m, activeCharges.TotalFee);
-        Assert.False(activeCharges.IsProrated);
+        Assert.Equal(45, activeCharges.DaysCharged);
+        Assert.Equal(75m, activeCharges.TotalFee);
+        Assert.Null(activeCharges.MonthsCharged);
+        Assert.True(activeCharges.IsProrated);
 
         var earlyCharges = RentalChargeCalculator.Calculate(Now.AddDays(-10), Now.AddDays(-5), InstrumentRentalStatus.ReturnedEarly, 30m, Now);
         Assert.True(earlyCharges.IsProrated);
@@ -63,5 +65,29 @@ public sealed class RentalBillingTests
 
         var ineligibleCharges = RentalChargeCalculator.Calculate(null, null, InstrumentRentalStatus.Pending, 30m, Now);
         Assert.Null(ineligibleCharges.TotalFee);
+    }
+
+    [Fact]
+    public void CalculateCharges_After89Days_CompleteAndReturnEarlyChargeTheSame()
+    {
+        var completed = RentalChargeCalculator.Calculate(Now.AddDays(-89), Now, InstrumentRentalStatus.Completed, 45m, Now);
+        var returnedEarly = RentalChargeCalculator.Calculate(Now.AddDays(-89), Now, InstrumentRentalStatus.ReturnedEarly, 45m, Now);
+
+        Assert.Equal(89, completed.DaysCharged);
+        Assert.Equal(1.5m, completed.DailyFee);
+        Assert.Equal(133.50m, completed.TotalFee);
+
+        Assert.Equal(89, returnedEarly.DaysCharged);
+        Assert.Equal(1.5m, returnedEarly.DailyFee);
+        Assert.Equal(133.50m, returnedEarly.TotalFee);
+    }
+
+    [Fact]
+    public void CalculateCharges_ReturnedSameMoment_ChargesOneDay()
+    {
+        var charges = RentalChargeCalculator.Calculate(Now, Now, InstrumentRentalStatus.Completed, 30m, Now);
+
+        Assert.Equal(1, charges.DaysCharged);
+        Assert.Equal(1m, charges.TotalFee);
     }
 }

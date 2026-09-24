@@ -37,8 +37,7 @@ public sealed class InstrumentRental : AuditableEntity, ITenantScoped
     /// <summary>
     /// Computes the charges due for this rental as of <paramref name="now"/>.
     /// Nothing is billed before pickup or when the status is not billing-eligible.
-    /// An early return is prorated by day (fee / 30, capped at the monthly fee);
-    /// every other billable status charges whole months (ceiling of days / 30, minimum 1).
+    /// Every billable status is charged by the day: days used (ceiling, minimum 1) × fee / 30.
     /// </summary>
     public RentalCharges CalculateCharges(DateTime now) =>
         RentalChargeCalculator.Calculate(PickedUpAt, ReturnedAt, RentalStatus, Fee, now);
@@ -173,6 +172,9 @@ public sealed class InstrumentRental : AuditableEntity, ITenantScoped
     private static string? GuardNoInstrumentLockConflict(RentalTransitionContext context) =>
         context.HasInstrumentLockConflict ? InstrumentReservedOrRentedMessage : null;
 
+    private static string? GuardRejectReason(RentalTransitionContext context) =>
+        string.IsNullOrWhiteSpace(context.ResponseNote) ? RentalRejectReasonRequiredMessage : null;
+
     private static string? ResolveNote(InstrumentRental rental, RentalTransitionContext context) =>
         !string.IsNullOrWhiteSpace(context.ResponseNote) ? context.ResponseNote : rental.Note;
 
@@ -190,7 +192,7 @@ public sealed class InstrumentRental : AuditableEntity, ITenantScoped
             From: InstrumentRentalStatus.Pending,
             Trigger: RentalTrigger.Reject,
             Actors: [RentalActor.StoreEmployee],
-            Guard: null,
+            Guard: (_, context) => GuardRejectReason(context),
             Apply: (rental, context, now) => rental.Reject(now, context.ResponseNote, context.UserId),
             UsesInstrumentLock: false),
 
@@ -244,6 +246,7 @@ public sealed class InstrumentRental : AuditableEntity, ITenantScoped
     private const string RentalAccessDeniedMessage = "Nemate pravo nad ovim zahtjevom.";
     private const string RentalApprovePendingOnlyMessage = "Samo zahtjev na čekanju može biti odobren.";
     private const string RentalRejectPendingOnlyMessage = "Samo zahtjev na čekanju se može odbiti.";
+    private const string RentalRejectReasonRequiredMessage = "Razlog odbijanja je obavezan.";
     private const string RentalPickupApprovedOnlyMessage = "Samo odobreno iznajmljivanje se može preuzeti.";
     private const string RentalCompleteActiveOnlyMessage = "Samo aktivno iznajmljivanje se može završiti.";
     private const string RentalCancelPendingOrApprovedOnlyMessage = "Samo zahtjev na čekanju ili odobren zahtjev se može otkazati.";

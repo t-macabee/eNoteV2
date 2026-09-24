@@ -80,12 +80,12 @@ public sealed class RentalPaymentServiceTests
 
         Assert.Equal(rental.Id, result.RentalId);
         Assert.Equal("pi_test_1", result.PaymentIntentId);
-        Assert.Equal(5000, result.AmountCents);
+        Assert.Equal(1000, result.AmountCents);
         Assert.Equal("eur", result.Currency);
         Assert.Equal(PaymentStatus.RequiresAction, result.Status);
         Assert.False(string.IsNullOrWhiteSpace(result.ClientSecret));
         Assert.Single(gateway.CreateCalls);
-        Assert.Equal(5000, gateway.CreateCalls[0].AmountCents);
+        Assert.Equal(1000, gateway.CreateCalls[0].AmountCents);
         Assert.Equal("eur", gateway.CreateCalls[0].Currency);
     }
 
@@ -122,9 +122,9 @@ public sealed class RentalPaymentServiceTests
 
         var result = await service.CreatePaymentIntentAsync(rental.Id);
 
-        Assert.Equal(5000, result.AmountCents);
+        Assert.Equal(1000, result.AmountCents);
         Assert.Equal("eur", result.Currency);
-        Assert.Equal(5000, gateway.CreateCalls[0].AmountCents);
+        Assert.Equal(1000, gateway.CreateCalls[0].AmountCents);
         Assert.Equal("eur", gateway.CreateCalls[0].Currency);
     }
 
