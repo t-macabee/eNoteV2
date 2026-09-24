@@ -111,6 +111,7 @@ class _MusicStoreFormScreenState extends State<MusicStoreFormScreen>
           controller: _phoneNumberController,
           label: 'Broj telefona',
           required: false,
+          validator: Validators.optionalPhone,
         ),
         AsyncDropdown<AddressReferenceDto>(
           label: 'Adresa',

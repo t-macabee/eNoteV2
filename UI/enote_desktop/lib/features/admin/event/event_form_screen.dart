@@ -10,6 +10,9 @@ import '../../../widgets/form_controller_lifecycle.dart';
 import '../address/address_provider.dart';
 import 'event_provider.dart';
 
+const _scopedReason =
+    'Događaj pripada kursu. Administrator može mijenjati i brisati samo događaje na nivou platforme.';
+
 /// Create/edit form for `admin/events`. Admin can only manage platform-wide
 /// events (without course or instructor scoping).
 class EventFormScreen extends StatefulWidget {
@@ -81,35 +84,72 @@ class _EventFormScreenState extends State<EventFormScreen>
   @override
   Widget build(BuildContext context) {
     final existing = widget.existing;
-    final canDelete = existing != null && !existing.isScoped;
+    final readOnly = existing?.isScoped ?? false;
 
     return EntityFormScaffold(
       presentation: widget.presentation,
-      title: widget.existing == null ? 'Dodaj događaj' : 'Uredi događaj',
+      title: widget.existing == null
+          ? 'Dodaj događaj'
+          : (readOnly ? 'Pregled događaja' : 'Uredi događaj'),
       isEditMode: widget.existing != null,
-      onDelete: canDelete
+      saveEnabled: !readOnly,
+      onDelete: existing != null && !readOnly
           ? () async {
               await context.read<EventProvider>().remove(existing.id);
               return true;
             }
           : null,
+      deleteDisabledReason: readOnly ? _scopedReason : null,
       fieldsBuilder: (_) => [
-        EntityTextField(controller: _titleController, label: 'Naziv'),
+        if (readOnly) ...[
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.orange.shade50,
+              border: Border.all(color: Colors.orange.shade200),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Row(
+              children: [
+                Icon(Icons.info_outline, color: Colors.orange),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    _scopedReason,
+                    style: TextStyle(color: Colors.orange),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+        EntityTextField(
+          controller: _titleController,
+          label: 'Naziv',
+          enabled: !readOnly,
+          required: !readOnly,
+        ),
         EntityTextField(
           controller: _descriptionController,
           label: 'Opis',
           maxLines: 3,
+          enabled: !readOnly,
+          required: !readOnly,
         ),
         DateTimeField(
           labelText: 'Početak',
           initialValue: _startsAt,
           onChanged: (value) => _startsAt = value,
-          validator: (value) => value == null ? 'Početak je obavezan.' : null,
+          enabled: !readOnly,
+          validator: readOnly
+              ? null
+              : (value) => value == null ? 'Početak je obavezan.' : null,
         ),
         DateTimeField(
           labelText: 'Kraj',
           initialValue: _endsAt,
           onChanged: (value) => _endsAt = value,
+          enabled: !readOnly,
         ),
         AsyncDropdown<AddressReferenceDto>(
           label: 'Adresa',
@@ -125,6 +165,7 @@ class _EventFormScreenState extends State<EventFormScreen>
           itemId: (address) => address.id,
           value: _addressId,
           onChanged: (id, _) => setState(() => _addressId = id as int?),
+          enabled: !readOnly,
         ),
       ],
       onSave: _save,

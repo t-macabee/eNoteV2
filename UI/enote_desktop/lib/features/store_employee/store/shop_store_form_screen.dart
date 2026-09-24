@@ -96,11 +96,7 @@ class _ShopStoreFormScreenState extends State<ShopStoreFormScreen>
           controller: _phoneNumberController,
           label: 'Broj telefona',
           required: false,
-          validator: (v) => v == null || v.trim().isEmpty
-              ? null
-              // The backend only length-checks the number, so stored values
-              // may carry spacing — strip it before the format check.
-              : Validators.phone(v.replaceAll(' ', '')),
+          validator: Validators.optionalPhone,
         ),
         AsyncDropdown<AddressReferenceDto>(
           label: 'Adresa',

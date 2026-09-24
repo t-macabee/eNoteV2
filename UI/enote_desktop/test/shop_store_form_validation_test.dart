@@ -95,7 +95,12 @@ void main() {
     await tester.tap(find.widgetWithText(FilledButton, 'Sačuvaj'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Unesite važeći broj telefona.'), findsOneWidget);
+    expect(
+      find.text(
+        'Unesite broj telefona sa 6 do 15 cifara, opcionalno sa + na početku; razmaci su dozvoljeni (npr. +387 61 123 456).',
+      ),
+      findsOneWidget,
+    );
     expect(client.putUrls.length, equals(0));
   });
 
@@ -110,7 +115,12 @@ void main() {
     await tester.tap(find.widgetWithText(FilledButton, 'Sačuvaj'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Unesite važeći broj telefona.'), findsNothing);
+    expect(
+      find.text(
+        'Unesite broj telefona sa 6 do 15 cifara, opcionalno sa + na početku; razmaci su dozvoljeni (npr. +387 61 123 456).',
+      ),
+      findsNothing,
+    );
     expect(client.putUrls.length, equals(1));
   });
 }

@@ -59,13 +59,14 @@ class Validators {
         return null;
       };
 
-  static String? phone(String? value) {
-    if (value == null || value.trim().isEmpty) {
-      return 'Telefon je obavezan.';
-    }
-    final phoneRegex = RegExp(r'^\+?\d{6,15}$');
-    if (!phoneRegex.hasMatch(value.trim())) {
-      return 'Unesite važeći broj telefona.';
+  /// Optional phone: empty is valid. Spaces are removed before the check,
+  /// the same rule as the server's `PhoneRules`.
+  static String? optionalPhone(String? value) {
+    final digits = value?.replaceAll(' ', '') ?? '';
+    if (digits.isEmpty) return null;
+    if (!RegExp(r'^\+?\d{6,15}$').hasMatch(digits)) {
+      return 'Unesite broj telefona sa 6 do 15 cifara, opcionalno sa + na '
+          'početku; razmaci su dozvoljeni (npr. +387 61 123 456).';
     }
     return null;
   }

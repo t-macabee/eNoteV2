@@ -21,6 +21,10 @@ class EntityFormScaffold extends StatefulWidget {
   final String saveLabel;
   final String savedMessage;
   final Future<bool> Function()? onDelete;
+
+  /// When set and [onDelete] is null, the delete button is shown disabled with
+  /// this text as its tooltip.
+  final String? deleteDisabledReason;
   final String deleteLabel;
   final String deleteConfirmTitle;
   final String deleteConfirmMessage;
@@ -39,6 +43,7 @@ class EntityFormScaffold extends StatefulWidget {
     this.saveLabel = 'Sačuvaj',
     this.savedMessage = 'Uspješno sačuvano.',
     this.onDelete,
+    this.deleteDisabledReason,
     this.deleteLabel = 'Obriši',
     this.deleteConfirmTitle = 'Potvrdite brisanje',
     this.deleteConfirmMessage =
@@ -135,8 +140,26 @@ class _EntityFormScaffoldState extends State<EntityFormScaffold>
     return spaced;
   }
 
+  Widget _deleteButton() {
+    final button = EntityDeleteButton(
+      isSaving: _isSaving,
+      isDeleting: _isDeleting,
+      onPressed: widget.onDelete == null ? null : _delete,
+      label: widget.deleteLabel,
+    );
+    if (widget.onDelete == null && widget.deleteDisabledReason != null) {
+      return Tooltip(
+        message: widget.deleteDisabledReason!,
+        child: button,
+      );
+    }
+    return button;
+  }
+
   Widget _buildPage(BuildContext context) {
-    final showDelete = widget.isEditMode && widget.onDelete != null;
+    final showDelete =
+        widget.isEditMode &&
+        (widget.onDelete != null || widget.deleteDisabledReason != null);
 
     return Scaffold(
       appBar: AppBar(
@@ -160,12 +183,7 @@ class _EntityFormScaffoldState extends State<EntityFormScaffold>
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  EntityDeleteButton(
-                    isSaving: _isSaving,
-                    isDeleting: _isDeleting,
-                    onPressed: _delete,
-                    label: widget.deleteLabel,
-                  ),
+                  _deleteButton(),
                   EntitySaveButton(
                     isSaving: _isSaving,
                     isDeleting: _isDeleting,
@@ -191,7 +209,9 @@ class _EntityFormScaffoldState extends State<EntityFormScaffold>
 
   Widget _buildDialog(BuildContext context) {
     final maxHeight = MediaQuery.sizeOf(context).height * 0.8;
-    final showDelete = widget.isEditMode && widget.onDelete != null;
+    final showDelete =
+        widget.isEditMode &&
+        (widget.onDelete != null || widget.deleteDisabledReason != null);
 
     return AlertDialog(
       constraints: BoxConstraints(maxWidth: 640, maxHeight: maxHeight),
@@ -232,12 +252,7 @@ class _EntityFormScaffoldState extends State<EntityFormScaffold>
             Row(
               children: [
                 if (showDelete) ...[
-                  EntityDeleteButton(
-                    isSaving: _isSaving,
-                    isDeleting: _isDeleting,
-                    onPressed: _delete,
-                    label: widget.deleteLabel,
-                  ),
+                  _deleteButton(),
                   const Spacer(),
                 ],
                 if (!showDelete) const Spacer(),

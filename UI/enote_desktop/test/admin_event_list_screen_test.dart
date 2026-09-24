@@ -117,7 +117,7 @@ void main() {
   );
 
   testWidgets(
-    'Tapping a scoped event displays ErrorBanner without opening EventFormScreen',
+    'Tapping a scoped event opens a read-only EventFormScreen with disabled save and delete',
     (WidgetTester tester) async {
       tester.view.physicalSize = const Size(1400, 1000);
       tester.view.devicePixelRatio = 1.0;
@@ -132,16 +132,22 @@ void main() {
       await tester.tap(find.text('Guitar Masterclass'));
       await tester.pumpAndSettle();
 
-      // Error banner is displayed explaining why admin cannot edit scoped event
-      expect(
-        find.text(
-          'Administrator može upravljati samo događajima na nivou platforme.',
-        ),
-        findsOneWidget,
-      );
+      // EventFormScreen is opened in read-only mode
+      expect(find.byType(EventFormScreen), findsOneWidget);
+      expect(find.text('Pregled događaja'), findsOneWidget);
 
-      // EventFormScreen is NOT opened
-      expect(find.byType(EventFormScreen), findsNothing);
+      final saveButton =
+          tester.widget<FilledButton>(find.widgetWithText(FilledButton, 'Sačuvaj'));
+      expect(saveButton.onPressed, isNull);
+
+      final deleteButton =
+          tester.widget<OutlinedButton>(find.widgetWithText(OutlinedButton, 'Obriši'));
+      expect(deleteButton.onPressed, isNull);
+
+      const scopedReason =
+          'Događaj pripada kursu. Administrator može mijenjati i brisati samo događaje na nivou platforme.';
+      expect(find.byTooltip(scopedReason), findsOneWidget);
+      expect(find.text(scopedReason), findsOneWidget);
     },
   );
 

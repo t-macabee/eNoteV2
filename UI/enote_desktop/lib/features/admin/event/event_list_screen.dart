@@ -25,14 +25,6 @@ class _EventListScreenState extends State<EventListScreen> {
   int? _instructorId;
 
   Future<void> _openForm([EventDto? existing]) async {
-    if (existing != null && existing.isScoped) {
-      ErrorBanner.show(
-        context,
-        message:
-            'Administrator može upravljati samo događajima na nivou platforme.',
-      );
-      return;
-    }
     await EntityFormScaffold.showAsDialog(
       context,
       builder: (_) => EventFormScreen(
@@ -128,17 +120,7 @@ class _EventListScreenState extends State<EventListScreen> {
           if (_instructorId != null) 'instructorId': _instructorId,
 })),
         onAdd: () => _openForm(),
-        onTap: (context, item) {
-          if (item.isScoped) {
-            ErrorBanner.show(
-              context,
-              message:
-                  'Administrator može upravljati samo događajima na nivou platforme.',
-            );
-            return;
-          }
-          _openForm(item);
-        },
+        onTap: (context, item) => _openForm(item),
       ),
     );
   }

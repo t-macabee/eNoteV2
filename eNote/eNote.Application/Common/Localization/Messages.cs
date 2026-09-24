@@ -24,6 +24,8 @@ public static class Messages
     public const string UnknownUserName = "Nepoznat korisnik";
     public const string StoreNotFound = "Radnja nije pronađena.";
     public const string MusicStoreRequiredForEmployee = "Prodavnica je obavezna za uposlenika radnje.";
+    public const string PhoneNumberFormat = "Unesite broj telefona sa 6 do 15 cifara, opcionalno sa + na početku; razmaci su dozvoljeni (npr. +387 61 123 456).";
+    public const string PhoneNumberTooLong = "Broj telefona ne smije biti duži od 30 karaktera.";
 
     public const string StudentProfileNotFound = "Student profil nije pronađen.";
     public const string MembershipPaidUntilFuture = "PaidUntil mora biti u budućnosti.";

@@ -171,4 +171,48 @@ void main() {
 
     expect(find.text('Uredi prodavnicu'), findsNothing);
   });
+
+  testWidgets('MusicStoreFormScreen shows error message and does not submit when phone format is invalid',
+      (WidgetTester tester) async {
+    final authState = AuthState(baseUrl: 'http://localhost:5059/api/v1/');
+    final httpClient = _client();
+    final apiClient = ApiClient(
+      baseUrl: 'http://localhost:5059/api/v1/',
+      authState: authState,
+      httpClient: httpClient,
+    );
+    final musicStoreProvider = MusicStoreProvider(apiClient: apiClient);
+    final addressProvider = AddressProvider(apiClient: apiClient);
+
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          Provider<ApiClient>.value(value: apiClient),
+          ChangeNotifierProvider<MusicStoreProvider>.value(value: musicStoreProvider),
+          ChangeNotifierProvider<AddressProvider>.value(value: addressProvider),
+        ],
+        child: const MaterialApp(
+          home: MusicStoreFormScreen(),
+        ),
+      ),
+    );
+
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.widgetWithText(TextFormField, 'Naziv'), 'Nova Prodavnica');
+    await tester.enterText(find.widgetWithText(TextFormField, 'Radno vrijeme'), '08:00 - 16:00');
+    await tester.enterText(find.widgetWithText(TextFormField, 'Broj telefona'), 'abc');
+
+    await tester.tap(find.widgetWithText(FilledButton, 'Sačuvaj'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text(
+        'Unesite broj telefona sa 6 do 15 cifara, opcionalno sa + na početku; razmaci su dozvoljeni (npr. +387 61 123 456).',
+      ),
+      findsOneWidget,
+    );
+    expect(httpClient.postedBodies, isEmpty);
+  });
 }

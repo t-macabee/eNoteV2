@@ -12,6 +12,6 @@ public sealed class ShopStoreUpdateRequestValidator : AbstractValidator<ShopStor
             .MaximumLength(50).WithMessage("Radno vrijeme ne smije biti duže od 50 karaktera.");
 
         RuleFor(x => x.PhoneNumber)
-            .MaximumLength(30).When(x => x.PhoneNumber != null);
+            .PhoneNumber().When(x => !string.IsNullOrWhiteSpace(x.PhoneNumber));
     }
 }

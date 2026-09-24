@@ -37,14 +37,14 @@ class EntitySaveButton extends StatelessWidget {
 class EntityDeleteButton extends StatelessWidget {
   final bool isSaving;
   final bool isDeleting;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
   final String label;
 
   const EntityDeleteButton({
     super.key,
     required this.isSaving,
     required this.isDeleting,
-    required this.onPressed,
+    this.onPressed,
     required this.label,
   });
 
