@@ -86,11 +86,15 @@ Svi seed nalozi koriste lozinku `test`. Lozinka se može promijeniti kroz
 | instructor | test | Instructor | Desktop aplikacija |
 | student | test | Student | Mobilna aplikacija |
 | storeemployee | test | StoreEmployee | Desktop aplikacija |
+| student1 … student6 | test | Student | Mobilna aplikacija |
 
 Svi nalozi dijele istu seed lozinku (`Seed__DefaultPassword`). Mobilna
 aplikacija prihvata samo naloge sa ulogom Student (`student`, odnosno `mobile`);
-ostale uloge dobijaju ekran sa objašnjenjem. Seedovani `student` je već upisan
-na oba objavljena kursa i ima članarinu važeću godinu dana.
+ostale uloge dobijaju ekran sa objašnjenjem. Svi seedovani studenti su upisani
+na oba objavljena kursa i imaju članarinu važeću godinu dana; `mobile` ima jedno
+završeno iznajmljivanje koje nije plaćeno (prikazuje Stripe plaćanje, a dok se ne
+plati `mobile` ne može zatražiti novo iznajmljivanje); seedovana plaćena iznajmljivanja
+nemaju Stripe plaćanje, pa se povrat novca prikazuje uz novo testno plaćanje.
 
 Registracija novih korisnika kroz aplikaciju i dalje traži jaču lozinku
 (najmanje 8 znakova, veliko slovo, malo slovo, broj i specijalni znak). Seed

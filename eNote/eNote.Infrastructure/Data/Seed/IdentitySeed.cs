@@ -34,22 +34,30 @@ public static class IdentitySeed
 
         var defaultStoreId = await StoreSeed.EnsureDefaultStoreAsync(context);
 
-        (string, string, string, int?)[] testUsers = new[]
-        {
-            ("desktop", "desktop@enote.com", AppRoles.Administrator, default(int?)),
-            ("mobile", "mobile@enote.com", AppRoles.Student, default(int?)),
-            ("admin", "admin@enote.com", AppRoles.Administrator, default(int?)),
-            ("instructor", "instructor@enote.com", AppRoles.Instructor, default(int?)),
-            ("student", "student@enote.com", AppRoles.Student, default(int?)),
-            ("storeemployee", "storeEmployee@enote.com", AppRoles.StoreEmployee, defaultStoreId)
-        };
+        (string, string, string, string, string, int?)[] testUsers =
+        [
+            ("desktop", "desktop@enote.com", "Lejla", "Hadžić", AppRoles.Administrator, default(int?)),
+            ("mobile", "mobile@enote.com", "Emina", "Kovačević", AppRoles.Student, default(int?)),
+            ("admin", "admin@enote.com", "Kenan", "Alić", AppRoles.Administrator, default(int?)),
+            ("instructor", "instructor@enote.com", "Selma", "Begić", AppRoles.Instructor, default(int?)),
+            ("student", "student@enote.com", "Adnan", "Mehić", AppRoles.Student, default(int?)),
+            ("storeemployee", "storeEmployee@enote.com", "Haris", "Delić", AppRoles.StoreEmployee, defaultStoreId),
+            ("student1", "student1@enote.com", "Amar", "Hodžić", AppRoles.Student, default(int?)),
+            ("student2", "student2@enote.com", "Lamija", "Mujić", AppRoles.Student, default(int?)),
+            ("student3", "student3@enote.com", "Dino", "Karić", AppRoles.Student, default(int?)),
+            ("student4", "student4@enote.com", "Ajla", "Softić", AppRoles.Student, default(int?)),
+            ("student5", "student5@enote.com", "Faruk", "Omerović", AppRoles.Student, default(int?)),
+            ("student6", "student6@enote.com", "Nejra", "Bašić", AppRoles.Student, default(int?))
+        ];
 
-        foreach ((var username, var email, var role, var storeId) in testUsers)
+        foreach ((var username, var email, var firstName, var lastName, var role, var storeId) in testUsers)
         {
             (var _, var error) = await provisioningService.ProvisionUserAsync(new UserProvisionRequest
             {
                 Username = username,
                 Email = email,
+                FirstName = firstName,
+                LastName = lastName,
                 Password = BootstrapPassword,
                 Role = role,
                 MusicStoreId = storeId

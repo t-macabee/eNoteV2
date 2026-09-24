@@ -15,7 +15,27 @@ public static class DevelopmentDataSeed
         await InstrumentSeed.SeedInstruments(context);
         await EnrollmentSeed.SeedEnrollments(context, clock);
         await StudentMembershipSeed.SeedMemberships(context, clock);
+        await AcademicActivitySeed.SeedAttendance(context, clock);
+        await AcademicActivitySeed.SeedAssignmentsAndSubmissions(context, clock);
+        await AcademicActivitySeed.SeedLectureNotes(context, clock);
+        await CommunicationSeed.SeedAnnouncements(context, clock);
+        await CommunicationSeed.SeedEvents(context, clock);
+        await RentalActivitySeed.SeedRentals(context, clock);
+        await RentalActivitySeed.SeedInstrumentViews(context, clock);
+        await CommunicationSeed.SeedNotifications(context, clock);
     }
+}
+
+internal static class SeedStudents
+{
+    // The seeded Student accounts. Seeders use this order as the student index (B10).
+    public static readonly string[] Usernames = ["mobile", "student", "student1", "student2", "student3", "student4", "student5", "student6"];
+
+    public static async Task<Dictionary<string, Student>> GetByUsernameAsync(ENoteContext context) =>
+        await context.Users
+            .Where(u => Usernames.Contains(u.UserName!))
+            .Join(context.Set<Student>(), u => u.Id, s => s.AppUserId, (u, s) => new { u.UserName, Student = s })
+            .ToDictionaryAsync(x => x.UserName!, x => x.Student);
 }
 
 internal static class MusicStoreSeed
@@ -111,12 +131,26 @@ internal static class LectureSeed
             return;
         }
 
-        // One day after each course start (see CourseSeed), at 19:30.
+        // Relative to the seed clock, each at 19:30. The first lecture of each course is
+        // one day after the course start (see CourseSeed).
         var today = clock.UtcNow.Date;
 
+        var c1Id = courses[0].Id;
+        var c2Id = courses[1].Id;
+
         context.AddRange(
-            new Lecture("Uvodno predavanje", "Amfiteatar gradskog BKC-a", 90, today.AddDays(-29).AddHours(19).AddMinutes(30), LectureType.Theoretical, null, courses[0].Id),
-            new Lecture("Uvodno predavanje", "Amfiteatar gradskog BKC-a", 60, today.AddDays(-13).AddHours(19).AddMinutes(30), LectureType.Theoretical, null, courses[1].Id)
+            // c1
+            new Lecture("Uvodno predavanje", "Amfiteatar gradskog BKC-a", 90, today.AddDays(-29).AddHours(19).AddMinutes(30), LectureType.Theoretical, null, c1Id),
+            new Lecture("Intervali i skale", "Amfiteatar gradskog BKC-a", 90, today.AddDays(-15).AddHours(19).AddMinutes(30), LectureType.Theoretical, null, c1Id),
+            new Lecture("Ritam i metrika", "Amfiteatar gradskog BKC-a", 90, today.AddDays(-8).AddHours(19).AddMinutes(30), LectureType.Theoretical, null, c1Id),
+            new Lecture("Harmonija u praksi", "Amfiteatar gradskog BKC-a", 90, today.AddDays(4).AddHours(19).AddMinutes(30), LectureType.Practical, null, c1Id),
+            new Lecture("Ponavljanje gradiva", "Amfiteatar gradskog BKC-a", 60, today.AddDays(11).AddHours(19).AddMinutes(30), LectureType.Theoretical, null, c1Id),
+
+            // c2
+            new Lecture("Uvodno predavanje", "Amfiteatar gradskog BKC-a", 60, today.AddDays(-13).AddHours(19).AddMinutes(30), LectureType.Theoretical, null, c2Id),
+            new Lecture("Tehnika desne ruke", "Amfiteatar gradskog BKC-a", 60, today.AddDays(-6).AddHours(19).AddMinutes(30), LectureType.Practical, null, c2Id),
+            new Lecture("Improvizacija na bluesu", "Amfiteatar gradskog BKC-a", 60, today.AddDays(3).AddHours(19).AddMinutes(30), LectureType.Practical, null, c2Id),
+            new Lecture("Sviranje u bendu", "Amfiteatar gradskog BKC-a", 60, today.AddDays(10).AddHours(19).AddMinutes(30), LectureType.Practical, null, c2Id)
         );
 
         await context.SaveChangesAsync();
@@ -232,12 +266,11 @@ internal static class EnrollmentSeed
             return;
         }
 
-        var studentId = await context.Set<Student>()
-            .OrderBy(s => s.Id)
+        var studentIds = await context.Set<Student>()
             .Select(s => s.Id)
-            .FirstOrDefaultAsync();
+            .ToListAsync();
 
-        if (studentId == 0)
+        if (studentIds.Count == 0)
         {
             return;
         }
@@ -247,12 +280,13 @@ internal static class EnrollmentSeed
             .Select(c => c.Id)
             .ToListAsync();
 
-        List<Enrollment> enrollments = [.. courseIds.Select(courseId =>
-        {
-            var enrollment = new Enrollment(studentId, courseId, EnrollmentStatus.Active);
-            enrollment.ExtendPaidUntil(clock.UtcNow, TuitionOptions.PeriodDays);
-            return enrollment;
-        })];
+        List<Enrollment> enrollments = [.. studentIds.SelectMany(studentId =>
+            courseIds.Select(courseId =>
+            {
+                var enrollment = new Enrollment(studentId, courseId, EnrollmentStatus.Active);
+                enrollment.ExtendPaidUntil(clock.UtcNow, TuitionOptions.PeriodDays);
+                return enrollment;
+            }))];
 
         context.Set<Enrollment>().AddRange(enrollments);
         await context.SaveChangesAsync();
