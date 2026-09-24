@@ -42,6 +42,23 @@ public sealed class UploadsControllerTests
     }
 
     [Fact]
+    public void GetAnnouncement_ReturnsFileStream_WhenFileExists()
+    {
+        var storage = new RecordingFileStorageService
+        {
+            OpenReadResult = (new MemoryStream([1, 2, 3]), "image/webp")
+        };
+        var controller = CreateController(storage);
+
+        var result = controller.GetAnnouncement("news.webp");
+
+        var fileResult = Assert.IsType<FileStreamResult>(result);
+        Assert.Equal("image/webp", fileResult.ContentType);
+        Assert.True(fileResult.EnableRangeProcessing);
+        Assert.Equal(["/api/v1/uploads/announcements/news.webp"], storage.OpenReadCalls);
+    }
+
+    [Fact]
     public void GetInstrument_ReturnsNotFound_WhenFileMissing()
     {
         var storage = new RecordingFileStorageService { OpenReadResult = (null, null) };

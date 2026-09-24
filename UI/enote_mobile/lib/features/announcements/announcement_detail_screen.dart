@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
+
+import '../../widgets/wide_image.dart';
 
 /// S26 — announcement detail (02 §5 S26): the passed object is already
 /// loaded, so no request is issued. Names and dates only, never ids.
@@ -20,6 +23,14 @@ class AnnouncementDetailScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          if (announcement.imagePath != null &&
+              announcement.imagePath!.isNotEmpty) ...[
+            HeroImage(
+              imageUrl: announcement.imagePath,
+              apiClient: context.read<ApiClient>(),
+            ),
+            const SizedBox(height: 16),
+          ],
           Text(
             announcement.title,
             style: Theme.of(context).textTheme.headlineSmall,

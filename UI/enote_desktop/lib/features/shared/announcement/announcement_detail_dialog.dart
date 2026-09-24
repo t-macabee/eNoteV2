@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
+import '../../../theme/app_theme.dart';
 import '../../../widgets/detail_row.dart';
 import '../../../widgets/dialog_shell.dart';
 
@@ -30,6 +32,32 @@ class AnnouncementDetailDialog extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if (announcement.imagePath != null &&
+                announcement.imagePath!.isNotEmpty) ...[
+              AspectRatio(
+                aspectRatio: 1.5,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: networkImageOrPlaceholder(
+                    announcement.imagePath,
+                    context.read<ApiClient>(),
+                    size: double.infinity,
+                    borderRadius: 12,
+                    placeholder: () => Container(
+                      color: AppTheme.background,
+                      child: const Center(
+                        child: Icon(
+                          Icons.campaign_outlined,
+                          size: 48,
+                          color: AppTheme.textTertiary,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
             DetailRow(
               icon: Icons.title_outlined,
               label: 'Naslov',

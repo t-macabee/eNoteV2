@@ -7,6 +7,7 @@ class AnnouncementDto {
   final int? musicStoreId;
   final String title;
   final String content;
+  final String? imagePath;
   final AnnouncementScope scope;
   final String? courseName;
   final String? storeName;
@@ -18,6 +19,7 @@ class AnnouncementDto {
     this.musicStoreId,
     required this.title,
     required this.content,
+    this.imagePath,
     required this.scope,
     this.courseName,
     this.storeName,
@@ -31,6 +33,7 @@ class AnnouncementDto {
       musicStoreId: json['musicStoreId'] as int?,
       title: json['title'] as String? ?? '',
       content: json['content'] as String? ?? '',
+      imagePath: json['imagePath'] as String?,
       scope: AnnouncementScope.fromJson(json['scope'] as String?),
       courseName: json['courseName'] as String?,
       storeName: json['storeName'] as String?,
@@ -44,6 +47,7 @@ class AnnouncementDto {
     if (musicStoreId != null) 'musicStoreId': musicStoreId,
     'title': title,
     'content': content,
+    if (imagePath != null) 'imagePath': imagePath,
     'scope': scope.toJson(),
     if (courseName != null) 'courseName': courseName,
     if (storeName != null) 'storeName': storeName,

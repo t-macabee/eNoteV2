@@ -1,9 +1,13 @@
 import 'package:enote_core/enote_core.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../../../theme/app_theme.dart';
 import '../../../widgets/entity_form_scaffold.dart';
 import '../../../widgets/entity_text_field.dart';
 import '../../../widgets/form_controller_lifecycle.dart';
+import '../../../widgets/image_upload_helper.dart';
 
 class AnnouncementFormScreen extends StatefulWidget {
   final CrudProvider<AnnouncementDto> provider;
@@ -26,6 +30,8 @@ class _AnnouncementFormScreenState extends State<AnnouncementFormScreen>
   late final _titleController = textController();
   late final _contentController = textController();
 
+  String? _currentImagePath;
+
   bool get _isEditMode => widget.existing != null;
 
   @override
@@ -35,7 +41,28 @@ class _AnnouncementFormScreenState extends State<AnnouncementFormScreen>
     if (existing != null) {
       _titleController.text = existing.title;
       _contentController.text = existing.content;
+      _currentImagePath = existing.imagePath;
     }
+  }
+
+  Future<String?> _uploadImage(
+      Uint8List bytes, String fileName, String contentType) {
+    return uploadImageFor(
+      widget.provider,
+      widget.existing!.id,
+      bytes,
+      fileName,
+      contentType,
+      context: context,
+      onSuccess: (updated) {
+        if (mounted) {
+          setState(() {
+            _currentImagePath = updated.imagePath;
+          });
+        }
+        return updated.imagePath;
+      },
+    );
   }
 
   Future<bool> _save() async {
@@ -66,6 +93,25 @@ class _AnnouncementFormScreenState extends State<AnnouncementFormScreen>
           maxLines: 8,
           minLines: 4,
         ),
+        if (_isEditMode) ...[
+          const Text('Slika', style: TextStyle(fontWeight: FontWeight.bold)),
+          const Text(
+            'Slika se automatski sprema prilikom odabira.',
+            style: TextStyle(
+              fontSize: 12,
+              color: AppTheme.textSecondary,
+            ),
+          ),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: ImageField(
+              imageUrl: _currentImagePath,
+              imagePicker: pickImageBytes,
+              onUpload: _uploadImage,
+              apiClient: context.read<ApiClient>(),
+            ),
+          ),
+        ],
       ],
       onSave: _save,
       onReset: clearTextControllers,

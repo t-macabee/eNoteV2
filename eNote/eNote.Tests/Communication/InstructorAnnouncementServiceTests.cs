@@ -85,6 +85,40 @@ public sealed class InstructorAnnouncementServiceTests
     }
 
     [Fact]
+    public async Task UploadImageForCourseAsync_SetsPath_AndDeletesPreviousFile()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var announcement = new Announcement("Welcome", "Hello", harness.Course.Id, null, Now);
+        harness.Context.Set<Announcement>().Add(announcement);
+        await harness.Context.SaveChangesAsync();
+        var fileStorage = new RecordingFileStorageService();
+        var service = CreateService(harness.Context, harness.Instructor, AcademicTestData.CreateInstructorAccess(harness.Context, harness.Instructor), fileStorage: fileStorage);
+
+        await service.UploadImageForCourseAsync(harness.Course.Id, announcement.Id, new MemoryStream([1, 2, 3]), "a.png", "image/png");
+        var dto = await service.UploadImageForCourseAsync(harness.Course.Id, announcement.Id, new MemoryStream([1, 2, 3]), "b.png", "image/png");
+
+        Assert.Equal(fileStorage.SavedPaths[1], dto.ImagePath);
+        Assert.Equal([fileStorage.SavedPaths[0]], fileStorage.DeletedPaths);
+        Assert.All(fileStorage.SavedFiles, f => Assert.Equal("announcements", f.Subfolder));
+    }
+
+    [Fact]
+    public async Task DeleteForCourseAsync_DeletesImageFile()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var announcement = new Announcement("Welcome", "Hello", harness.Course.Id, null, Now);
+        harness.Context.Set<Announcement>().Add(announcement);
+        await harness.Context.SaveChangesAsync();
+        var fileStorage = new RecordingFileStorageService();
+        var service = CreateService(harness.Context, harness.Instructor, AcademicTestData.CreateInstructorAccess(harness.Context, harness.Instructor), fileStorage: fileStorage);
+
+        await service.UploadImageForCourseAsync(harness.Course.Id, announcement.Id, new MemoryStream([1, 2, 3]), "a.png", "image/png");
+        await service.DeleteForCourseAsync(harness.Course.Id, announcement.Id);
+
+        Assert.Contains(fileStorage.SavedPaths[0], fileStorage.DeletedPaths);
+    }
+
+    [Fact]
     public async Task GetForCourseAsync_FiltersByTitle()
     {
         var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
@@ -103,11 +137,13 @@ public sealed class InstructorAnnouncementServiceTests
         ENoteContext context,
         Instructor instructor,
         InstructorAccessService instructorAccess,
-        StubCurrentActor? actor = null) =>
+        StubCurrentActor? actor = null,
+        RecordingFileStorageService? fileStorage = null) =>
         new(context,
             new FixedClock(Now),
             actor ?? new StubCurrentActor(instructor: instructor),
             instructorAccess,
             TestMapper.Create(),
-            new AnnouncementNotificationDispatcher(context, new FixedClock(Now)));
+            new AnnouncementNotificationDispatcher(context, new FixedClock(Now)),
+            fileStorage ?? new RecordingFileStorageService());
 }

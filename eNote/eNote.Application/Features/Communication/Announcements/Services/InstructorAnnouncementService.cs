@@ -3,7 +3,7 @@ using MapsterMapper;
 
 namespace eNote.Application.Features.Communication.Announcements.Services;
 
-public sealed class InstructorAnnouncementService(IAppDbContext context, IClock clock, ICurrentUserContext currentUser, InstructorAccessService instructorAccess, IMapper mapper, IAnnouncementNotificationDispatcher notificationDispatcher)
+public sealed class InstructorAnnouncementService(IAppDbContext context, IClock clock, ICurrentUserContext currentUser, InstructorAccessService instructorAccess, IMapper mapper, IAnnouncementNotificationDispatcher notificationDispatcher, IFileStorageService fileStorage)
 {
     public async Task<AnnouncementDto> CreateForCourseAsync(int courseId, AnnouncementRequest request, CancellationToken cancellationToken = default)
     {
@@ -57,6 +57,20 @@ public sealed class InstructorAnnouncementService(IAppDbContext context, IClock 
         return mapper.Map<AnnouncementDto>(entity);
     }
 
+    public async Task<AnnouncementDto> UploadImageForCourseAsync(int courseId, int announcementId, Stream stream, string fileName, string contentType, CancellationToken ct = default)
+    {
+        var entity = await (await GetCourseAnnouncementQueryAsync(courseId, ct, track: true)).FirstOrDefaultAsync(a => a.Id == announcementId, ct) ?? throw new NotFoundException(Messages.AnnouncementNotFound);
+
+        var previousPath = entity.ImagePath;
+        var path = await fileStorage.SaveAsync(stream, fileName, contentType, "announcements", ct);
+        entity.UpdateImagePath(path);
+        entity.UpdatedById = currentUser.UserId;
+
+        await context.SaveChangesReplacingFileAsync(fileStorage, path, previousPath, ct);
+
+        return mapper.Map<AnnouncementDto>(entity);
+    }
+
     public async Task DeleteForCourseAsync(int courseId, int announcementId, CancellationToken cancellationToken = default)
     {
         var entity = await (await GetCourseAnnouncementQueryAsync(courseId, cancellationToken, track: true)).FirstOrDefaultAsync(a => a.Id == announcementId, cancellationToken) ?? throw new NotFoundException(Messages.AnnouncementNotFound);
@@ -65,6 +79,11 @@ public sealed class InstructorAnnouncementService(IAppDbContext context, IClock 
         entity.UpdatedById = currentUser.UserId;
 
         await context.SaveChangesAsync(cancellationToken);
+
+        if (!string.IsNullOrWhiteSpace(entity.ImagePath))
+        {
+            fileStorage.Delete(entity.ImagePath);
+        }
     }
 
     private async Task<IQueryable<Announcement>> GetCourseAnnouncementQueryAsync(int courseId, CancellationToken cancellationToken, bool track = false)

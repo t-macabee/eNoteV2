@@ -10,6 +10,7 @@ const _announcementJson = {
   'courseId': 2,
   'title': 'Dodatni čas u petak',
   'content': 'Vidimo se u Sali 2.',
+  'imagePath': '/api/v1/uploads/announcements/harmony.webp',
   'scope': 'Course',
   'courseName': 'Osnove teorije muzike',
   'publishedAt': '2026-09-12T10:00:00',
@@ -64,5 +65,9 @@ void main() {
     expect(page.items.single.title, 'Dodatni čas u petak');
     expect(page.items.single.scope, AnnouncementScope.course);
     expect(page.items.single.courseName, 'Osnove teorije muzike');
+    expect(
+      page.items.single.imagePath,
+      '/api/v1/uploads/announcements/harmony.webp',
+    );
   });
 }

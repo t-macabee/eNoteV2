@@ -123,6 +123,10 @@ public sealed class DevelopmentDataSeedTests
         Assert.Equal(5, await ctx.Set<LectureNote>().CountAsync());
         Assert.Equal(6, await ctx.Set<Announcement>().CountAsync());
 
+        var announcements = await ctx.Set<Announcement>().ToListAsync();
+        Assert.All(announcements, a => Assert.StartsWith("/api/v1/uploads/announcements/", a.ImagePath));
+        Assert.Equal(6, announcements.Select(a => a.ImagePath).Distinct().Count());
+
         var events = await ctx.Set<Event>().ToListAsync();
         Assert.Equal(3, events.Count);
         Assert.Single(events, e => e.CourseId != null);

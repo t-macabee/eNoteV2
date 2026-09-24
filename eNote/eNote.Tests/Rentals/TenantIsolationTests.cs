@@ -139,7 +139,7 @@ public sealed class TenantIsolationTests
         context.Set<Announcement>().AddRange(store1Announcement, store2Announcement);
         await context.SaveChangesAsync();
 
-        var service = new StoreAnnouncementService(context, new FixedClock(Now), new StubCurrentActor(storeId: store1.Id), new StubCurrentActor(storeId: store1.Id), TestMapper.Create());
+        var service = new StoreAnnouncementService(context, new FixedClock(Now), new StubCurrentActor(storeId: store1.Id), new StubCurrentActor(storeId: store1.Id), TestMapper.Create(), new RecordingFileStorageService());
         var result = await service.GetForStoreAsync(new AnnouncementSearchObject { PageSize = 10 });
 
         Assert.Single(result.Items);

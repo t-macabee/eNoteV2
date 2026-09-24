@@ -9,6 +9,7 @@ public class Announcement : AuditableEntity
 
     public string Title { get; private set; } = null!;
     public string Content { get; private set; } = null!;
+    public string? ImagePath { get; private set; }
 
     public DateTime PublishedAt { get; private set; }
     public bool IsActive { get; private set; } = true;
@@ -32,6 +33,8 @@ public class Announcement : AuditableEntity
         Title = title;
         Content = content;
     }
+
+    public void UpdateImagePath(string path) => ImagePath = path;
 
     public void SoftDelete()
     {

@@ -1,8 +1,9 @@
+using eNote.Application.Common.Files;
 using MapsterMapper;
 
 namespace eNote.Application.Features.Communication.Announcements.Services;
 
-public sealed class StoreAnnouncementService(IAppDbContext context, IClock clock, ICurrentUserContext currentUser, IStoreContext stores, IMapper mapper)
+public sealed class StoreAnnouncementService(IAppDbContext context, IClock clock, ICurrentUserContext currentUser, IStoreContext stores, IMapper mapper, IFileStorageService fileStorage)
 {
     public async Task<AnnouncementDto> CreateForStoreAsync(AnnouncementRequest request, CancellationToken cancellationToken = default)
     {
@@ -55,6 +56,26 @@ public sealed class StoreAnnouncementService(IAppDbContext context, IClock clock
         return mapper.Map<AnnouncementDto>(entity);
     }
 
+    public async Task<AnnouncementDto> UploadImageForStoreAsync(int announcementId, Stream stream, string fileName, string contentType, CancellationToken ct = default)
+    {
+        var storeId = await stores.GetCurrentStoreIdAsync(ct);
+
+        var entity = await context.Set<Announcement>()
+            .Include(a => a.MusicStore)
+            .FirstOrDefaultAsync(a => a.Id == announcementId && a.MusicStoreId == storeId, ct) ?? throw new NotFoundException(Messages.AnnouncementNotFound);
+
+        await StoreStorageQuota.EnsureWithinQuotaAsync(context, fileStorage, storeId, stream.Length, entity.ImagePath, ct);
+
+        var previousPath = entity.ImagePath;
+        var path = await fileStorage.SaveAsync(stream, fileName, contentType, "announcements", ct);
+        entity.UpdateImagePath(path);
+        entity.UpdatedById = currentUser.UserId;
+
+        await context.SaveChangesReplacingFileAsync(fileStorage, path, previousPath, ct);
+
+        return mapper.Map<AnnouncementDto>(entity);
+    }
+
     public async Task DeleteForStoreAsync(int announcementId, CancellationToken cancellationToken = default)
     {
         var storeId = await stores.GetCurrentStoreIdAsync(cancellationToken);
@@ -66,5 +87,10 @@ public sealed class StoreAnnouncementService(IAppDbContext context, IClock clock
         entity.UpdatedById = currentUser.UserId;
 
         await context.SaveChangesAsync(cancellationToken);
+
+        if (!string.IsNullOrWhiteSpace(entity.ImagePath))
+        {
+            fileStorage.Delete(entity.ImagePath);
+        }
     }
 }

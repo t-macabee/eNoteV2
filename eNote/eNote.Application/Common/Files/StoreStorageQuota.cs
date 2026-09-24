@@ -16,6 +16,12 @@ public static class StoreStorageQuota
             .Select(x => x.ImagePath!)
             .ToListAsync(ct);
 
+        paths.AddRange(await db.Set<Announcement>()
+            .IgnoreQueryFilters()
+            .Where(x => x.MusicStoreId == musicStoreId && x.ImagePath != null)
+            .Select(x => x.ImagePath!)
+            .ToListAsync(ct));
+
         var storeImagePath = await db.Set<MusicStore>()
             .Where(x => x.Id == musicStoreId)
             .Select(x => x.ImagePath)

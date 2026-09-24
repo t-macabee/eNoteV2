@@ -1,4 +1,6 @@
 using eNote.API.Controllers.Base;
+using eNote.API.Extensions;
+using eNote.Application.Common.Files;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Paging;
 using eNote.Application.Constants;
@@ -6,6 +8,7 @@ using eNote.Application.Features.Communication.Announcements;
 using eNote.Application.Features.Communication.Announcements.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace eNote.API.Controllers.Announcements;
 
@@ -53,6 +56,15 @@ public sealed class AnnouncementController(
     }
 
     [Authorize(Roles = AppRoles.Instructor)]
+    [HttpPost("~/api/v{version:apiVersion}/instructor/courses/{courseId:int}/announcements/{announcementId:int}/image")]
+    [RequestSizeLimit(FileUploadLimits.MaxRequestBytes)]
+    [EnableRateLimiting(RateLimitingExtensions.UploadsPolicy)]
+    [ProducesResponseType(typeof(AnnouncementDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<AnnouncementDto>> UploadImageForCourse(int courseId, int announcementId, IFormFile? file, CancellationToken ct) =>
+        await UploadAsync(file, (stream, fileName, contentType, token) => instructorAnnouncementService.UploadImageForCourseAsync(courseId, announcementId, stream, fileName, contentType, token), ct);
+
+    [Authorize(Roles = AppRoles.Instructor)]
     [HttpDelete("~/api/v{version:apiVersion}/instructor/courses/{courseId:int}/announcements/{announcementId:int}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> DeleteForCourse(int courseId, int announcementId, CancellationToken cancellationToken)
@@ -98,6 +110,15 @@ public sealed class AnnouncementController(
         var result = await storeAnnouncementService.UpdateForStoreAsync(announcementId, request, cancellationToken);
         return Ok(result);
     }
+
+    [Authorize(Roles = AppRoles.StoreEmployee)]
+    [HttpPost("~/api/v{version:apiVersion}/shop/announcements/{announcementId:int}/image")]
+    [RequestSizeLimit(FileUploadLimits.MaxRequestBytes)]
+    [EnableRateLimiting(RateLimitingExtensions.UploadsPolicy)]
+    [ProducesResponseType(typeof(AnnouncementDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<AnnouncementDto>> UploadImageForStore(int announcementId, IFormFile? file, CancellationToken ct) =>
+        await UploadAsync(file, (stream, fileName, contentType, token) => storeAnnouncementService.UploadImageForStoreAsync(announcementId, stream, fileName, contentType, token), ct);
 
     [Authorize(Roles = AppRoles.StoreEmployee)]
     [HttpDelete("~/api/v{version:apiVersion}/shop/announcements/{announcementId:int}")]

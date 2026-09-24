@@ -1,5 +1,6 @@
 using System.Reflection;
 using eNote.API.Controllers.Admin;
+using eNote.API.Controllers.Announcements;
 using eNote.API.Controllers.Assignments;
 using eNote.API.Controllers.Instruments;
 using eNote.API.Controllers.Shop;
@@ -76,7 +77,9 @@ public sealed class ControllerActionDiscoveryTests
             (typeof(AdminMusicStoreController), nameof(AdminMusicStoreController.UploadImage)),
             (typeof(ShopStoreController), nameof(ShopStoreController.UploadOwnStoreImage)),
             (typeof(AssignmentSubmissionController), nameof(AssignmentSubmissionController.Submit)),
-            (typeof(UsersController), nameof(UsersController.UploadPicture))
+            (typeof(UsersController), nameof(UsersController.UploadPicture)),
+            (typeof(AnnouncementController), nameof(AnnouncementController.UploadImageForCourse)),
+            (typeof(AnnouncementController), nameof(AnnouncementController.UploadImageForStore))
         ];
 
         foreach (var (controller, action) in uploadActions)

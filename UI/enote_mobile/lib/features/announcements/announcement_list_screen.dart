@@ -68,8 +68,14 @@ class _AnnouncementRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final isCourse = announcement.scope == AnnouncementScope.course;
     return ListTile(
-      leading: Icon(
-        isCourse ? Icons.school_outlined : Icons.storefront_outlined,
+      leading: networkImageOrPlaceholder(
+        announcement.imagePath,
+        context.read<ApiClient>(),
+        size: 48,
+        borderRadius: 8,
+        placeholder: () => Icon(
+          isCourse ? Icons.school_outlined : Icons.storefront_outlined,
+        ),
       ),
       title: Text(announcement.title),
       subtitle: Text(

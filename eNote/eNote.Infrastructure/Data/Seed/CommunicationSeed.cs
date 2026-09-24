@@ -4,12 +4,16 @@ using eNote.Domain.Entities.Assignments;
 using eNote.Domain.Entities.Communication;
 using eNote.Domain.Entities.Identity;
 using eNote.Domain.Entities.Rentals;
+using eNote.Infrastructure.Storage;
 using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Infrastructure.Data.Seed;
 
 internal static class CommunicationSeed
 {
+    // Matches the path a real upload gets (see InstrumentSeed.SeedImagePathPrefix).
+    public const string SeedImagePathPrefix = $"{LocalFileStorageService.UploadsRoutePrefix}/announcements/";
+
     public static async Task SeedAnnouncements(ENoteContext context, IClock clock)
     {
         if (await context.Set<Announcement>().AnyAsync())
@@ -25,55 +29,68 @@ internal static class CommunicationSeed
         var defaultStoreId = await StoreSeed.EnsureDefaultStoreAsync(context);
         var now = clock.UtcNow;
 
+        Announcement Create(string title, string content, int? courseId, int? musicStoreId, DateTime publishedAt, string imageFile)
+        {
+            var announcement = new Announcement(title, content, courseId, musicStoreId, publishedAt);
+            announcement.UpdateImagePath($"{SeedImagePathPrefix}{imageFile}");
+            return announcement;
+        }
+
         var announcements = new List<Announcement>();
 
         if (courses.Count >= 1)
         {
-            announcements.Add(new Announcement(
+            announcements.Add(Create(
                 "Uvodni materijali za kurs",
                 "Materijali za pripremu su dostupni u sekciji kursa.",
                 courses[0].Id,
                 null,
-                now.AddDays(-20)));
+                now.AddDays(-20),
+                "intro-materials.webp"));
 
-            announcements.Add(new Announcement(
+            announcements.Add(Create(
                 "Priprema za harmoniju",
                 "Mole se studenti da ponove gradivo o ljestvicama prije narednog časa.",
                 courses[0].Id,
                 null,
-                now.AddDays(-5)));
+                now.AddDays(-5),
+                "harmony.webp"));
         }
 
         if (courses.Count >= 2)
         {
-            announcements.Add(new Announcement(
+            announcements.Add(Create(
                 "Preporučene vježbe za gitaru",
                 "Vježbajte koordinaciju prstiju prema postavljenim primjerima.",
                 courses[1].Id,
                 null,
-                now.AddDays(-10)));
+                now.AddDays(-10),
+                "guitar-exercises.webp"));
 
-            announcements.Add(new Announcement(
+            announcements.Add(Create(
                 "Raspored praktičnih časova",
                 "Naredni čas gitare fokusira se na improvizaciju.",
                 courses[1].Id,
                 null,
-                now.AddDays(-2)));
+                now.AddDays(-2),
+                "practice-schedule.webp"));
         }
 
-        announcements.Add(new Announcement(
+        announcements.Add(Create(
             "Popust na opremu za studente",
             "Svi studenti ostvaruju popust na dodatnu opremu tokom ovog mjeseca.",
             null,
             defaultStoreId,
-            now.AddDays(-7)));
+            now.AddDays(-7),
+            "gear-discount.webp"));
 
-        announcements.Add(new Announcement(
+        announcements.Add(Create(
             "Novi instrumenti na stanju",
             "U radnju su stigli novi modeli gitara i pojačala.",
             null,
             defaultStoreId,
-            now.AddDays(-1)));
+            now.AddDays(-1),
+            "new-instruments.webp"));
 
         context.Set<Announcement>().AddRange(announcements);
         await context.SaveChangesAsync();
