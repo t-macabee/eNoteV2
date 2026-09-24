@@ -91,7 +91,7 @@ public sealed class RecommendationServiceTests
     }
 
     [Fact]
-    public async Task GetRecommendedInstrumentsAsync_PopularityCutoff_ExcludesRentalsOlderThan6Months()
+    public async Task GetRecommendedInstrumentsAsync_Popularity_CountsAllRentals()
     {
         await using var context = RentalTestData.CreateContext(Now);
         var student = await SeedStudentAsync(context);
@@ -103,17 +103,11 @@ public sealed class RecommendationServiceTests
         context.Set<Instrument>().AddRange(instrumentRecent, instrumentOld);
         await context.SaveChangesAsync();
 
-        var rRecent = new InstrumentRental(instrumentRecent.Id, student.Id + 1, store.Id, Now.AddMonths(-2), null);
-        rRecent.Approve(50m, null, Now.AddMonths(-2), 1);
-        rRecent.Pickup(Now.AddMonths(-2));
-        rRecent.Complete(Now.AddMonths(-1), null);
+        var rOld1 = CreateCompletedRental(instrumentOld.Id, student.Id + 2, store.Id, Now.AddMonths(-8));
+        var rOld2 = CreateCompletedRental(instrumentOld.Id, student.Id + 3, store.Id, Now.AddMonths(-8));
+        var rRecent = CreateCompletedRental(instrumentRecent.Id, student.Id + 1, store.Id, Now.AddMonths(-2));
 
-        var rOld = new InstrumentRental(instrumentOld.Id, student.Id + 2, store.Id, Now.AddMonths(-8), null);
-        rOld.Approve(50m, null, Now.AddMonths(-8), 1);
-        rOld.Pickup(Now.AddMonths(-8));
-        rOld.Complete(Now.AddMonths(-7), null);
-
-        context.Set<InstrumentRental>().AddRange(rRecent, rOld);
+        context.Set<InstrumentRental>().AddRange(rOld1, rOld2, rRecent);
         await context.SaveChangesAsync();
 
         var service = CreateService(context, student);
@@ -124,9 +118,9 @@ public sealed class RecommendationServiceTests
         var recentRec = result.First(r => r.Instrument.Id == instrumentRecent.Id);
         var oldRec = result.First(r => r.Instrument.Id == instrumentOld.Id);
 
-        Assert.True(recentRec.Score > oldRec.Score);
+        Assert.True(oldRec.Score > recentRec.Score);
+        Assert.Contains(oldRec.Reasons, r => r.Contains("Popularan"));
         Assert.Contains(recentRec.Reasons, r => r.Contains("Popularan"));
-        Assert.DoesNotContain(oldRec.Reasons, r => r.Contains("Popularan"));
     }
 
     [Fact]

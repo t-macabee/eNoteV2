@@ -37,12 +37,9 @@ public sealed class RecommendationService(IAppDbContext context, IMapper mapper,
             .Where(x => x.UserId == userId)
             .ToDictionaryAsync(x => x.InstrumentId, x => new InstrumentViewSnapshot(x.ViewCount), cancellationToken);
 
-        var popularityCutoff = clock.UtcNow.AddMonths(-6);
-
         Dictionary<int, int> globalRentalCounts = await context.Set<InstrumentRental>()
             .AsNoTracking()
-            .Where(x => x.RequestedAt >= popularityCutoff &&
-                (x.RentalStatus == InstrumentRentalStatus.Approved || x.RentalStatus == InstrumentRentalStatus.Active || x.RentalStatus == InstrumentRentalStatus.Completed || x.RentalStatus == InstrumentRentalStatus.ReturnedEarly))
+            .Where(x => x.RentalStatus == InstrumentRentalStatus.Approved || x.RentalStatus == InstrumentRentalStatus.Active || x.RentalStatus == InstrumentRentalStatus.Completed || x.RentalStatus == InstrumentRentalStatus.ReturnedEarly)
             .GroupBy(x => x.InstrumentId)
             .Select(g => new { g.Key, Count = g.Count() })
             .ToDictionaryAsync(x => x.Key, x => x.Count, cancellationToken);
