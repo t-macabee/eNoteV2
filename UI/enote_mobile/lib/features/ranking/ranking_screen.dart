@@ -8,7 +8,7 @@ import '../../theme/app_theme.dart';
 import '../../widgets/async_state_view.dart';
 import 'ranking_provider.dart';
 
-/// S16 — course ranking (02 §5 S16): plain unpaged list (02 D6).
+/// S16 — course ranking (02 §5 S16): the server returns the top 15, plus the student's own row with its real rank when it is below 15.
 /// The "your row" highlight is applied only when
 /// `CourseRankingEntryDto.studentId` matches the profile id (02 §12 item 4);
 /// per-row avatars are never requested.
@@ -40,7 +40,7 @@ class _RankingScreenState extends State<RankingScreen> {
         ?.profile
         .id;
     return Scaffold(
-      appBar: AppBar(title: const Text('Rang lista')),
+      appBar: AppBar(title: const Text('Rang lista – 15 najboljih')),
       body: FutureBuilder<List<CourseRankingEntryDto>>(
         future: _rankingFuture,
         builder: (context, snapshot) {
@@ -66,7 +66,13 @@ class _RankingScreenState extends State<RankingScreen> {
           }
           return ListView.separated(
             itemCount: ranking.length,
-            separatorBuilder: (_, _) => const Divider(height: 1),
+            separatorBuilder: (_, index) =>
+                ranking[index + 1].rank > ranking[index].rank + 1
+                    ? const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 4),
+                        child: Center(child: Text('…')),
+                      )
+                    : const Divider(height: 1),
             itemBuilder: (context, index) {
               final entry = ranking[index];
               final isMine =

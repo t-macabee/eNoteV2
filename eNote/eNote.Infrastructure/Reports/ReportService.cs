@@ -22,7 +22,7 @@ internal sealed class ReportService(IAppDbContext context, IClock clock, Ranking
 
     public async Task<byte[]> GenerateCourseRankingPdfAsync(int courseId, CancellationToken cancellationToken = default)
     {
-        var entries = await rankingService.GetForInstructorAsync(courseId, cancellationToken);
+        var entries = await rankingService.GetFullForInstructorAsync(courseId, cancellationToken);
         var courseName = await context.Set<Course>().AsNoTracking().Where(c => c.Id == courseId).Select(c => c.Name).FirstOrDefaultAsync(cancellationToken) ?? Messages.ReportCourseFallback;
         return Document.Create(container => container.Page(page =>
         {

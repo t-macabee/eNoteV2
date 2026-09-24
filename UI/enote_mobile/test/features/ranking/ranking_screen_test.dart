@@ -82,4 +82,66 @@ void main() {
     expect(find.text('Amir Hadzic'), findsOneWidget);
     expect(find.text('1'), findsOneWidget);
   });
+
+  testWidgets('RankingScreen shows a gap before the own row outside the top 15',
+      (WidgetTester tester) async {
+    final rankingJson = jsonEncode([
+      {
+        'studentId': 7,
+        'studentName': 'Amir Hadzic',
+        'rank': 1,
+        'averageGrade': 9.5,
+        'gradedSubmissions': 4,
+      },
+      {
+        'studentId': 9,
+        'studentName': 'Drugi Student',
+        'rank': 20,
+        'averageGrade': 6.0,
+        'gradedSubmissions': 2,
+      },
+    ]);
+
+    final client = ScriptedClient((_) => jsonResponse(rankingJson, 200));
+    final authState = AuthState(
+      baseUrl: 'http://10.0.2.2:5059/api/v1/',
+      tokenReader: () => fakeJwt(),
+      httpClient: client,
+    );
+    final apiClient = ApiClient(
+      baseUrl: 'http://10.0.2.2:5059/api/v1/',
+      authState: authState,
+      httpClient: client,
+    );
+    final rankingProvider = RankingProvider(apiClient: apiClient);
+    final sessionController = SessionController(
+      apiClient: apiClient,
+      authState: authState,
+      notifications: NotificationController(
+        apiClient: apiClient,
+        endpoint: 'student/notifications',
+      ),
+    );
+
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          Provider<ApiClient>.value(value: apiClient),
+          Provider<RankingProvider>.value(value: rankingProvider),
+          ChangeNotifierProvider<SessionController>.value(
+            value: sessionController,
+          ),
+        ],
+        child: const MaterialApp(
+          home: RankingScreen(courseId: 2),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.text('…'), findsOneWidget);
+    expect(find.text('Amir Hadzic'), findsOneWidget);
+    expect(find.text('Drugi Student'), findsOneWidget);
+  });
 }

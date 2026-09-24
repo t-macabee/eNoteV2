@@ -8,7 +8,7 @@ class RankingProvider {
 
   RankingProvider({required this.apiClient});
 
-  /// The server returns the ranking unpaged (02 D6) — a bare JSON list.
+  /// The server returns the top 15 (plus the caller's own row when it is below 15) as a bare JSON list.
   Future<List<CourseRankingEntryDto>> getForCourse(int courseId) async {
     final response = await apiClient.get(
       'student/courses/$courseId/ranking',

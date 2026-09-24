@@ -29,6 +29,15 @@ imaju oblik grad, ulica, broj, a instrumenti nemaju kategorije odvojene od vrste
 Prazne tabele bez upita, filtera ili izvještaja koji ih koriste bile bi
 normalizacija bez svrhe.
 
+## Rang lista
+
+Rang lista kursa je ograničena lista: API vraća 15 najboljih studenata
+(`RankingService.RankingTopCount`), poredanih po prosjeku ocjena, pa po ID-u
+studenta. Student koji je ispod 15. mjesta dobije i svoj red na kraju liste,
+sa stvarnim mjestom (npr. 20.), a mobilna aplikacija prije njega prikaže "…".
+PDF izvještaj za instruktora sadrži sve ocijenjene studente, jer se koristi za
+zaključne ocjene.
+
 ## Pretraga na listama
 
 `RankingScreen` ima filter po imenu studenta iznad tabele, sa odgodom pri kucanju.

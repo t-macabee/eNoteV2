@@ -9,7 +9,7 @@ import 'package:enote_desktop/features/instructor/ranking/ranking_screen.dart';
 import 'helpers.dart';
 
 void main() {
-  testWidgets('RankingView renders the bare unpaged ranking list',
+  testWidgets('RankingView renders the ranking list',
       (tester) async {
     tester.view.physicalSize = const Size(1200, 900);
     tester.view.devicePixelRatio = 1.0;

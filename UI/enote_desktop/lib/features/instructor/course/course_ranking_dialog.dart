@@ -35,7 +35,7 @@ class CourseRankingDialog extends StatelessWidget {
       width: DialogShellWidth.lg,
       header: DialogShellHeader(
         label: const Text(
-          'Rangiranje',
+          'Rangiranje – 15 najboljih',
           style: TextStyle(
             color: AppTheme.textPrimary,
             fontWeight: FontWeight.w600,
@@ -43,7 +43,7 @@ class CourseRankingDialog extends StatelessWidget {
           ),
         ),
         action: PdfReportButton(
-          label: 'Izvještaj',
+          label: 'Izvještaj – svi studenti',
           fileName: 'course-ranking.pdf',
           endpoint: reportEndpoint,
         ),

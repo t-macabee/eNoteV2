@@ -11,7 +11,12 @@ public sealed class RankingService(
     InstructorAccessService instructorAccess,
     IClock clock)
 {
-    public async Task<IReadOnlyList<CourseRankingEntryDto>> GetForInstructorAsync(int courseId, CancellationToken cancellationToken = default)
+    public const int RankingTopCount = 15;
+
+    public async Task<IReadOnlyList<CourseRankingEntryDto>> GetForInstructorAsync(int courseId, CancellationToken cancellationToken = default) =>
+        [.. (await GetFullForInstructorAsync(courseId, cancellationToken)).Take(RankingTopCount)];
+
+    public async Task<IReadOnlyList<CourseRankingEntryDto>> GetFullForInstructorAsync(int courseId, CancellationToken cancellationToken = default)
     {
         var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId, cancellationToken);
 
@@ -32,7 +37,15 @@ public sealed class RankingService(
             throw new AuthorizationException(Messages.StudentNotEnrolled);
         }
 
-        return await BuildRankingAsync(courseId, cancellationToken);
+        var ranking = await BuildRankingAsync(courseId, cancellationToken);
+        List<CourseRankingEntryDto> top = [.. ranking.Take(RankingTopCount)];
+        var ownEntry = ranking.Skip(RankingTopCount).FirstOrDefault(e => e.StudentId == studentId);
+        if (ownEntry is not null)
+        {
+            top.Add(ownEntry);
+        }
+
+        return top;
     }
 
     private async Task<IReadOnlyList<CourseRankingEntryDto>> BuildRankingAsync(int courseId, CancellationToken cancellationToken)
