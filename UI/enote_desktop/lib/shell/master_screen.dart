@@ -19,6 +19,7 @@ class MasterScreen extends StatefulWidget {
 
 class _MasterScreenState extends State<MasterScreen> {
   RoleMenuEntry? _selectedEntry;
+  RoleMenuEntry? _homeEntry;
   AuthState? _authState;
   NotificationController? _notificationController;
 
@@ -29,6 +30,7 @@ class _MasterScreenState extends State<MasterScreen> {
     for (final entry in kRoleMenuEntries) {
       if (!entry.isDialog && entry.allowedRoles.any(roles.contains)) {
         _selectedEntry = entry;
+        _homeEntry = entry;
         break;
       }
     }
@@ -93,6 +95,14 @@ class _MasterScreenState extends State<MasterScreen> {
     }
     setState(() {
       _selectedEntry = entry;
+    });
+  }
+
+  bool get _isOnHome => identical(_selectedEntry, _homeEntry);
+
+  void _goBack() {
+    setState(() {
+      _selectedEntry = _homeEntry;
     });
   }
 
@@ -176,10 +186,31 @@ class _MasterScreenState extends State<MasterScreen> {
             onEditStore: (isStoreEmployee && isManager) ? _openEditStore : null,
           ),
           Expanded(
-            child: _selectedEntry?.screenBuilder(context) ??
-                const Center(
-                  child: Text('Molimo odaberite opciju iz izbornika.'),
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Tooltip(
+                      message: _isOnHome
+                          ? 'Ovo je početni ekran'
+                          : 'Nazad na početni ekran',
+                      child: IconButton(
+                        icon: const BackButtonIcon(),
+                        onPressed: _isOnHome ? null : _goBack,
+                      ),
+                    ),
+                  ),
                 ),
+                Expanded(
+                  child: _selectedEntry?.screenBuilder(context) ??
+                      const Center(
+                        child: Text('Molimo odaberite opciju iz izbornika.'),
+                      ),
+                ),
+              ],
+            ),
           ),
         ],
       ),

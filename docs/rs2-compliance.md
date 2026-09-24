@@ -58,10 +58,14 @@ na `City.Name`, `Address.CityId`, `Address.Street`, `Address.Number`,
 
 ## Navigacija unazad
 
-Liste su smještene u drawer kroz `MasterScreen` i `RoleMenu`, a ne kao rute na
-steku. Drawer je primarna navigacija. Forme imaju dugme za zatvaranje u gornjem
-desnom uglu. Dugme "Nazad" na listama nije dodano jer nema rute na koju bi se
-vratilo, pa bi obećavalo ponašanje koje ne postoji.
+Liste su smještene u drawer kroz `MasterScreen` i `RoleMenu`. Prva stavka
+menija za ulogu je početni ekran (administrator: "Korisnici", instruktor:
+"Kursevi", zaposlenik prodavnice: "Moja prodavnica"). Dugme "Nazad" iznad
+sadržaja vraća sa bilo kojeg drugog ekrana na početni ekran. Na početnom ekranu
+dugme je onemogućeno, a tooltip objašnjava razlog ("Ovo je početni ekran").
+Dijalozi (npr. "Referentni podaci") se zatvaraju dugmetom u gornjem desnom uglu.
+Ekrani detalja koji se otvaraju kao nova ruta imaju svoju strelicu nazad u
+`AppBar`.
 
 ## Veze više prema više
 
