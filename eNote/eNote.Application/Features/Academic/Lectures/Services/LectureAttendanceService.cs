@@ -114,7 +114,7 @@ public sealed class LectureAttendanceService(
             {
                 Id = a.Id,
                 StudentId = a.StudentId,
-                StudentName = names.GetValueOrDefault(a.StudentId, $"Student {a.StudentId}"),
+                StudentName = names.GetValueOrDefault(a.StudentId, Messages.UnknownUserName),
                 AttendanceStatus = a.AttendanceStatus
             })],
             Page = page,

@@ -44,7 +44,7 @@ class CourseRankingDialog extends StatelessWidget {
         ),
         action: PdfReportButton(
           label: 'Izvještaj',
-          fileName: 'course-$courseId-ranking.pdf',
+          fileName: 'course-ranking.pdf',
           endpoint: reportEndpoint,
         ),
         onClose: () => Navigator.of(context).pop(),

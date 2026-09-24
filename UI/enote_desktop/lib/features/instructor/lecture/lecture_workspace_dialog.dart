@@ -114,7 +114,7 @@ class _LectureWorkspaceDialogState extends State<LectureWorkspaceDialog> {
   Widget? _getHeaderAction(_WorkspaceView top) => switch (top) {
         _AttendanceView(:final lecture) => PdfReportButton(
             label: 'Izvještaj',
-            fileName: 'lecture-${lecture.id}-attendance.pdf',
+            fileName: 'lecture-attendance.pdf',
             endpoint: context
                 .read<LectureProvider>()
                 .attendanceReportEndpoint(lecture.id),

@@ -53,7 +53,7 @@ class _SubmissionListScreenState extends State<SubmissionListScreen> {
       builder: (_) => StatefulBuilder(
         builder: (dialogCtx, setDialogState) => AlertDialog(
           title: Text(
-            'Ocijeni — ${item.studentName ?? 'Student ${item.studentId}'}',
+            'Ocijeni — ${item.studentName ?? 'Nepoznat korisnik'}',
           ),
           content: Form(
             key: formKey,
@@ -148,7 +148,7 @@ class _SubmissionListScreenState extends State<SubmissionListScreen> {
         columns: [
           ColumnSpec<AssignmentSubmissionDto>(
             label: 'Student',
-            value: (item) => item.studentName ?? 'Student ${item.studentId}',
+            value: (item) => item.studentName ?? 'Nepoznat korisnik',
           ),
           ColumnSpec<AssignmentSubmissionDto>(
             label: 'Predato',

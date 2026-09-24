@@ -21,6 +21,7 @@ public static class Messages
     public const string UserDeleteBlocked = "Korisnik ima evidentiranu historiju i ne može biti obrisan. Deaktivirajte ga umjesto toga.";
     public const string CannotModifyOwnAccount = "Ne možete mijenjati vlastiti nalog.";
     public const string UnknownRole = "Nepoznata uloga.";
+    public const string UnknownUserName = "Nepoznat korisnik";
     public const string StoreNotFound = "Radnja nije pronađena.";
     public const string MusicStoreRequiredForEmployee = "Prodavnica je obavezna za uposlenika radnje.";
 
@@ -123,7 +124,6 @@ public static class Messages
     public const string ReportColumnStudent = "Student";
     public const string ReportColumnAverage = "Prosjek";
     public const string ReportColumnGraded = "Ocijenjeno";
-    public const string ReportColumnId = "ID";
     public const string ReportColumnInstrument = "Instrument";
     public const string ReportColumnStatus = "Status";
     public const string ReportColumnFee = "Naknada";
@@ -132,7 +132,6 @@ public static class Messages
     public const string ReportColumnBusinessHours = "Radno vrijeme";
     public const string ReportCourseFallback = "Kurs";
     public const string ReportStoreFallback = "Prodavnica";
-    public const string ReportStudentFallback = "Student";
 
     public static string RoleCreateFailed(string role, string errors) =>
         $"Greška pri kreiranju uloge {role}: {errors}";

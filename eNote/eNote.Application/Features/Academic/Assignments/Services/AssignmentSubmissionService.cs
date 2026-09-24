@@ -94,7 +94,7 @@ public sealed class AssignmentSubmissionService(
 
         return new PagedResult<AssignmentSubmissionDto>
         {
-            Items = [.. submissions.Select(x => MapSubmission(x, names.GetValueOrDefault(x.StudentId, $"Student {x.StudentId}")))],
+            Items = [.. submissions.Select(x => MapSubmission(x, names.GetValueOrDefault(x.StudentId, Messages.UnknownUserName)))],
             Page = page,
             PageSize = pageSize,
             TotalCount = total
@@ -123,7 +123,7 @@ public sealed class AssignmentSubmissionService(
 
         return new PagedResult<AssignmentSubmissionDto>
         {
-            Items = [.. submissions.Select(x => MapSubmission(x, names.GetValueOrDefault(x.StudentId, $"Student {x.StudentId}")))],
+            Items = [.. submissions.Select(x => MapSubmission(x, names.GetValueOrDefault(x.StudentId, Messages.UnknownUserName)))],
             Page = page,
             PageSize = pageSize,
             TotalCount = total

@@ -63,7 +63,7 @@ class _CourseCatalogScreenState extends State<CourseCatalogScreen> {
         for (final instructor in _instructors)
           DropdownMenuItem(
             value: instructor.id,
-            child: Text(instructor.name ?? 'Instruktor #${instructor.id}'),
+            child: Text(instructor.name ?? 'Nepoznat korisnik'),
           ),
       ],
       onChanged: (value) {

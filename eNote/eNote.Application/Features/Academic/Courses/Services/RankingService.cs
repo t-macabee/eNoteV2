@@ -69,7 +69,7 @@ public sealed class RankingService(
             {
                 var gradeStats = gradeData[s.Id];
 
-                return new RankedStudentEntry(s, gradeStats.Average, gradeStats.Count, nameMap.GetValueOrDefault(s.Id, $"Student {s.Id}"));
+                return new RankedStudentEntry(s, gradeStats.Average, gradeStats.Count, nameMap.GetValueOrDefault(s.Id, Messages.UnknownUserName));
             })
             .OrderByDescending(x => x.Average)
             .ThenBy(x => x.Student.Id)

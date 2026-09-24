@@ -121,7 +121,7 @@ class _RentalDetailScreenState extends State<RentalDetailScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(_rental != null
-            ? 'Iznajmljivanje #${_rental!.id} — ${_rental!.instrumentModel}'
+            ? 'Iznajmljivanje — ${_rental!.instrumentModel}'
             : 'Iznajmljivanje'),
       ),
       body: _isLoading
@@ -263,7 +263,7 @@ class _RentalDetailScreenState extends State<RentalDetailScreen> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    rental.studentName ?? 'Student #${rental.studentUserId}',
+                    rental.studentName ?? 'Nepoznat korisnik',
                     style: const TextStyle(fontWeight: FontWeight.w500),
                   ),
                 ),
@@ -274,9 +274,9 @@ class _RentalDetailScreenState extends State<RentalDetailScreen> {
             const SizedBox(height: 8),
             _timelineRow('Zatraženo', rental.requestedAt),
             if (rental.approvedAt != null)
-              _timelineRow('Odobreno', rental.approvedAt!, 'by #${rental.approvedById}'),
+              _timelineRow('Odobreno', rental.approvedAt!),
             if (rental.rejectedAt != null)
-              _timelineRow('Odbijeno', rental.rejectedAt!, 'by #${rental.rejectedById}'),
+              _timelineRow('Odbijeno', rental.rejectedAt!),
             if (rental.pickedUpAt != null)
               _timelineRow('Preuzeto', rental.pickedUpAt!),
             if (rental.returnedAt != null)
@@ -287,7 +287,7 @@ class _RentalDetailScreenState extends State<RentalDetailScreen> {
     );
   }
 
-  Widget _timelineRow(String label, DateTime date, [String? suffix]) {
+  Widget _timelineRow(String label, DateTime date) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 4),
       child: Row(
@@ -300,11 +300,6 @@ class _RentalDetailScreenState extends State<RentalDetailScreen> {
             formatDateTime(date),
             style: const TextStyle(fontSize: 13),
           ),
-          if (suffix != null)
-            Padding(
-              padding: const EdgeInsets.only(left: 8),
-              child: Text(suffix, style: const TextStyle(color: Colors.grey, fontSize: 12)),
-            ),
         ],
       ),
     );

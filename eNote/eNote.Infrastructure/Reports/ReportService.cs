@@ -23,7 +23,7 @@ internal sealed class ReportService(IAppDbContext context, IClock clock, Ranking
     public async Task<byte[]> GenerateCourseRankingPdfAsync(int courseId, CancellationToken cancellationToken = default)
     {
         var entries = await rankingService.GetForInstructorAsync(courseId, cancellationToken);
-        var courseName = await context.Set<Course>().AsNoTracking().Where(c => c.Id == courseId).Select(c => c.Name).FirstOrDefaultAsync(cancellationToken) ?? $"{Messages.ReportCourseFallback} {courseId}";
+        var courseName = await context.Set<Course>().AsNoTracking().Where(c => c.Id == courseId).Select(c => c.Name).FirstOrDefaultAsync(cancellationToken) ?? Messages.ReportCourseFallback;
         return Document.Create(container => container.Page(page =>
         {
             page.Margin(30);
@@ -41,14 +41,13 @@ internal sealed class ReportService(IAppDbContext context, IClock clock, Ranking
     public async Task<byte[]> GenerateStoreRentalSummaryPdfAsync(CancellationToken cancellationToken = default)
     {
         var storeId = await stores.GetCurrentStoreIdAsync(cancellationToken);
-        var storeName = await context.Set<MusicStore>().AsNoTracking().Where(s => s.Id == storeId).Select(s => s.StoreName).FirstOrDefaultAsync(cancellationToken) ?? $"{Messages.ReportStoreFallback} {storeId}";
+        var storeName = await context.Set<MusicStore>().AsNoTracking().Where(s => s.Id == storeId).Select(s => s.StoreName).FirstOrDefaultAsync(cancellationToken) ?? Messages.ReportStoreFallback;
         var rentals = await context.Set<InstrumentRental>()
             .AsNoTracking()
             .Where(x => x.MusicStoreId == storeId)
             .OrderByDescending(x => x.RequestedAt)
             .Select(x => new RentalSummaryRow
             {
-                Id = x.Id,
                 InstrumentModel = x.Instrument.Model,
                 RentalStatus = x.RentalStatus,
                 Fee = x.Fee,
@@ -62,9 +61,9 @@ internal sealed class ReportService(IAppDbContext context, IClock clock, Ranking
             page.Header().Text($"{Messages.ReportRentalSummaryTitle} — {storeName}").Bold().FontSize(18);
             page.Content().PaddingVertical(10).Table(table =>
             {
-                table.ColumnsDefinition(columns => { columns.ConstantColumn(35); columns.RelativeColumn(2); columns.RelativeColumn(2); columns.RelativeColumn(2); columns.RelativeColumn(2); });
-                table.Header(header => { header.Cell().Element(CellStyle).Text(Messages.ReportColumnId); header.Cell().Element(CellStyle).Text(Messages.ReportColumnInstrument); header.Cell().Element(CellStyle).Text(Messages.ReportColumnStatus); header.Cell().Element(CellStyle).Text(Messages.ReportColumnFee); header.Cell().Element(CellStyle).Text(Messages.ReportColumnTotal); });
-                foreach (var rental in rentals) { var charges = rental.CalculateCharges(clock.UtcNow); table.Cell().Element(CellStyle).Text(rental.Id.ToString()); table.Cell().Element(CellStyle).Text(rental.InstrumentModel); table.Cell().Element(CellStyle).Text(rental.RentalStatus.ToString()); table.Cell().Element(CellStyle).Text(rental.Fee.ToString("F2", ReportCulture)); table.Cell().Element(CellStyle).Text(charges.TotalFee?.ToString("F2", ReportCulture) ?? "-"); }
+                table.ColumnsDefinition(columns => { columns.RelativeColumn(2); columns.RelativeColumn(2); columns.RelativeColumn(2); columns.RelativeColumn(2); });
+                table.Header(header => { header.Cell().Element(CellStyle).Text(Messages.ReportColumnInstrument); header.Cell().Element(CellStyle).Text(Messages.ReportColumnStatus); header.Cell().Element(CellStyle).Text(Messages.ReportColumnFee); header.Cell().Element(CellStyle).Text(Messages.ReportColumnTotal); });
+                foreach (var rental in rentals) { var charges = rental.CalculateCharges(clock.UtcNow); table.Cell().Element(CellStyle).Text(rental.InstrumentModel); table.Cell().Element(CellStyle).Text(rental.RentalStatus.ToString()); table.Cell().Element(CellStyle).Text(rental.Fee.ToString("F2", ReportCulture)); table.Cell().Element(CellStyle).Text(charges.TotalFee?.ToString("F2", ReportCulture) ?? "-"); }
             });
             page.Footer().AlignRight().Text($"{Messages.ReportGeneratedLabel}: {clock.UtcNow:dd.MM.yyyy HH:mm} UTC").FontSize(9);
         })).GeneratePdf();
@@ -75,7 +74,7 @@ internal sealed class ReportService(IAppDbContext context, IClock clock, Ranking
         var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId, cancellationToken);
         var lecture = await instructorAccess.GetOwnedLectureAsync(lectureId, instructorId, includeAttendances: true, cancellationToken: cancellationToken);
         var nameMap = await displayNames.GetStudentDisplayNamesAsync(lecture.Attendances.Select(a => a.Student!), cancellationToken);
-        var rows = lecture.Attendances.OrderBy(a => a.StudentId).Select(a => new AttendanceRow(nameMap.GetValueOrDefault(a.StudentId, $"{Messages.ReportStudentFallback} {a.StudentId}"), a.AttendanceStatus)).ToList();
+        var rows = lecture.Attendances.OrderBy(a => a.StudentId).Select(a => new AttendanceRow(nameMap.GetValueOrDefault(a.StudentId, Messages.UnknownUserName), a.AttendanceStatus)).ToList();
         return Document.Create(container => container.Page(page =>
         {
             page.Margin(30);
@@ -99,9 +98,9 @@ internal sealed class ReportService(IAppDbContext context, IClock clock, Ranking
             page.Header().Text(Messages.ReportStoreReportTitle).Bold().FontSize(18);
             page.Content().PaddingVertical(10).Table(table =>
             {
-                table.ColumnsDefinition(columns => { columns.ConstantColumn(35); columns.RelativeColumn(3); columns.RelativeColumn(2); });
-                table.Header(header => { header.Cell().Element(CellStyle).Text(Messages.ReportColumnId); header.Cell().Element(CellStyle).Text(Messages.ReportColumnName); header.Cell().Element(CellStyle).Text(Messages.ReportColumnBusinessHours); });
-                foreach (var store in stores) { table.Cell().Element(CellStyle).Text(store.Id.ToString()); table.Cell().Element(CellStyle).Text(store.StoreName); table.Cell().Element(CellStyle).Text(store.BusinessHours); }
+                table.ColumnsDefinition(columns => { columns.RelativeColumn(3); columns.RelativeColumn(2); });
+                table.Header(header => { header.Cell().Element(CellStyle).Text(Messages.ReportColumnName); header.Cell().Element(CellStyle).Text(Messages.ReportColumnBusinessHours); });
+                foreach (var store in stores) { table.Cell().Element(CellStyle).Text(store.StoreName); table.Cell().Element(CellStyle).Text(store.BusinessHours); }
             });
             page.Footer().AlignRight().Text($"{Messages.ReportGeneratedLabel}: {clock.UtcNow:dd.MM.yyyy HH:mm} UTC").FontSize(9);
         })).GeneratePdf();
@@ -112,7 +111,6 @@ internal sealed class ReportService(IAppDbContext context, IClock clock, Ranking
 
     private sealed record RentalSummaryRow
     {
-        public int Id { get; init; }
         public string InstrumentModel { get; init; } = string.Empty;
         public InstrumentRentalStatus RentalStatus { get; init; }
         public decimal Fee { get; init; }
