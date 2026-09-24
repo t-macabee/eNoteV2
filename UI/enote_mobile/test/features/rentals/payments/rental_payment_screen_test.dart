@@ -30,9 +30,7 @@ Map<String, dynamic> _rental({bool isPaid = false}) => {
   'pickedUpAt': '2026-09-03T16:30:00',
   'fee': 40.0,
   'dailyFee': 1.33,
-  'monthsCharged': 0,
   'daysCharged': 6,
-  'isProrated': true,
   'totalFee': 8.0,
   'isPaid': isPaid,
 };
@@ -252,7 +250,7 @@ void main() {
     expect(find.text('Muzika d.o.o. · Završeno'), findsOneWidget);
     expect(find.text('8.00 KM'), findsWidgets);
     expect(
-      find.text('6 dana × 1.33 KM · proporcionalno'),
+      find.text('6 dana × 1.33 KM'),
       findsOneWidget,
     );
     expect(

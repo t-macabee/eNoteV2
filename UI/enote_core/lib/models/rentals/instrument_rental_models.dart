@@ -24,9 +24,7 @@ class InstrumentRentalDto {
   final int? rejectedById;
   final double fee;
   final double? dailyFee;
-  final int? monthsCharged;
   final int? daysCharged;
-  final bool isProrated;
   final double? totalFee;
   final bool isPaid;
   final double? amountPaid;
@@ -55,9 +53,7 @@ class InstrumentRentalDto {
     this.rejectedById,
     required this.fee,
     this.dailyFee,
-    this.monthsCharged,
     this.daysCharged,
-    required this.isProrated,
     this.totalFee,
     required this.isPaid,
     this.amountPaid,
@@ -89,9 +85,7 @@ class InstrumentRentalDto {
       rejectedById: json['rejectedById'] as int?,
       fee: (json['fee'] as num?)?.toDouble() ?? 0.0,
       dailyFee: (json['dailyFee'] as num?)?.toDouble(),
-      monthsCharged: json['monthsCharged'] as int?,
       daysCharged: json['daysCharged'] as int?,
-      isProrated: json['isProrated'] as bool? ?? false,
       totalFee: (json['totalFee'] as num?)?.toDouble(),
       isPaid: json['isPaid'] as bool? ?? false,
       amountPaid: (json['amountPaid'] as num?)?.toDouble(),
@@ -122,14 +116,19 @@ class InstrumentRentalDto {
     if (rejectedById != null) 'rejectedById': rejectedById,
     'fee': fee,
     if (dailyFee != null) 'dailyFee': dailyFee,
-    if (monthsCharged != null) 'monthsCharged': monthsCharged,
     if (daysCharged != null) 'daysCharged': daysCharged,
-    'isProrated': isProrated,
     if (totalFee != null) 'totalFee': totalFee,
     'isPaid': isPaid,
     if (amountPaid != null) 'amountPaid': amountPaid,
     if (paidAt != null) 'paidAt': paidAt!.toIso8601String(),
   };
+
+  /// "N dana × X KM", or "—" before anything is charged.
+  String get chargeLabel {
+    final days = daysCharged;
+    if (days == null) return '—';
+    return '$days dana × ${formatKM(dailyFee)}';
+  }
 }
 
 class RentalCreateRequest {

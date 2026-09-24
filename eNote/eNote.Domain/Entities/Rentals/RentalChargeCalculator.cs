@@ -15,7 +15,7 @@ public static class RentalChargeCalculator
     {
         if (!pickedUpAt.HasValue || !status.IsBillingEligible())
         {
-            return new RentalCharges(null, null, null, null, false);
+            return new RentalCharges(null, null, null);
         }
 
         var start = pickedUpAt.Value;
@@ -35,6 +35,6 @@ public static class RentalChargeCalculator
 
         var dailyFee = fee / DaysPerBillingCycle;
 
-        return new RentalCharges(MonthsCharged: null, DaysCharged: daysCharged, DailyFee: decimal.Round(dailyFee, 2), TotalFee: decimal.Round(daysCharged * dailyFee, 2), IsProrated: true);
+        return new RentalCharges(DaysCharged: daysCharged, DailyFee: decimal.Round(dailyFee, 2), TotalFee: decimal.Round(daysCharged * dailyFee, 2));
     }
 }

@@ -28,9 +28,7 @@ public class InstrumentRentalDto
 
     public decimal Fee { get; set; }
     public decimal? DailyFee { get; set; }
-    public int? MonthsCharged { get; set; }
     public int? DaysCharged { get; set; }
-    public bool IsProrated { get; set; }
     public decimal? TotalFee { get; set; }
 
     public bool IsPaid { get; set; }

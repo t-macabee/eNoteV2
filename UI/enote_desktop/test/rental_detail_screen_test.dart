@@ -43,7 +43,6 @@ void main() {
           'rentalStatus': 'Active',
           'requestedAt': DateTime.now().toIso8601String(),
           'fee': 10.0,
-          'isProrated': false,
           'isPaid': true,
           'amountPaid': 10.0,
           'paidAt': DateTime.now().toIso8601String(),

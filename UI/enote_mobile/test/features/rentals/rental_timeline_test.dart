@@ -34,7 +34,6 @@ InstrumentRentalDto _rental({
     'approvedById': _approvedById,
     'rejectedById': _rejectedById,
     'fee': 40.0,
-    'isProrated': false,
     'totalFee': 8.0,
     'isPaid': isPaid,
     if (isPaid) 'amountPaid': 8.0,

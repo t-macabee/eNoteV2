@@ -6,9 +6,7 @@ public static class RentalChargesMapping
     {
         dto.Fee = rental.Fee;
         dto.DailyFee = charges.DailyFee;
-        dto.MonthsCharged = charges.MonthsCharged;
         dto.DaysCharged = charges.DaysCharged;
-        dto.IsProrated = charges.IsProrated;
         dto.TotalFee = charges.TotalFee;
     }
 }

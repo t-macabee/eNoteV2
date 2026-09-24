@@ -107,17 +107,6 @@ class _RentalPaymentScreenState extends State<RentalPaymentScreen> {
     if (mounted) Navigator.of(context).pop(true);
   }
 
-  String _charge(InstrumentRentalDto rental) {
-    final parts = <String>[];
-    final months = rental.monthsCharged ?? 0;
-    final days = rental.daysCharged ?? 0;
-    if (days > 0) parts.add('$days dana × ${formatKM(rental.dailyFee)}');
-    if (months > 0) parts.add('$months mj. × ${formatKM(rental.fee)}');
-    if (parts.isEmpty) return '—';
-    final base = parts.join(' / ');
-    return rental.isProrated ? '$base · proporcionalno' : base;
-  }
-
   @override
   Widget build(BuildContext context) {
     final rental = _rental;
@@ -199,7 +188,7 @@ class _RentalPaymentScreenState extends State<RentalPaymentScreen> {
         ),
         const SizedBox(height: 16),
         LabeledValue(label: 'Iznos', value: formatKM(rental.totalFee)),
-        LabeledValue(label: 'Obračun', value: _charge(rental)),
+        LabeledValue(label: 'Obračun', value: rental.chargeLabel),
       ],
     );
   }

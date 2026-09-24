@@ -36,7 +36,6 @@ ScriptedClient _client() => ScriptedClient((request) {
           'rentalStatus': 'Active',
           'requestedAt': DateTime(2026, 1, 5).toIso8601String(),
           'fee': 10.0,
-          'isProrated': false,
           'totalFee': 5.0,
           'isPaid': false,
         }

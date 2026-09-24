@@ -364,12 +364,7 @@ class _RentalDetailScreenState extends State<RentalDetailScreen> {
             const SizedBox(height: 8),
             _chargeRow('Mjesečna naknada', formatKM(rental.fee)),
             if (rental.totalFee != null) ...[
-              _chargeRow(
-                rental.isProrated ? 'Ukupno (proporcionalno)' : 'Ukupno',
-                formatKM(rental.totalFee),
-              ),
-              if (rental.monthsCharged != null)
-                _chargeRow('Mjeseci', '${rental.monthsCharged}'),
+              _chargeRow('Ukupno', formatKM(rental.totalFee)),
               if (rental.daysCharged != null)
                 _chargeRow('Dani', '${rental.daysCharged}'),
             ] else

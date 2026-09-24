@@ -190,21 +190,13 @@ class _RentalDetailScreenState extends State<RentalDetailScreen> {
           label: 'Mjesečna naknada',
           value: formatKM(rental.fee),
         ),
-        LabeledValue(label: 'Obračun', value: _charge(rental)),
+        LabeledValue(label: 'Obračun', value: rental.chargeLabel),
         LabeledValue(label: 'Ukupno', value: formatKM(rental.totalFee)),
         LabeledValue(label: 'Plaćeno', value: _paid(rental)),
         if (payment != null && refundedCents > 0)
           LabeledValue(label: 'Povrat', value: _refund(payment)),
       ],
     );
-  }
-
-  String _charge(InstrumentRentalDto rental) {
-    final months = rental.monthsCharged;
-    final days = rental.daysCharged;
-    if (months == null && days == null) return '—';
-    final base = '${months ?? 0} mj. + ${days ?? 0} dana';
-    return rental.isProrated ? '$base · proporcionalno' : base;
   }
 
   String _paid(InstrumentRentalDto rental) {

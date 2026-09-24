@@ -63,4 +63,29 @@ void main() {
       expect(withoutId.rentalId, isNull);
     });
   });
+
+  group('InstrumentRentalDto.chargeLabel', () {
+    InstrumentRentalDto rental(Map<String, dynamic> extra) =>
+        InstrumentRentalDto.fromJson({
+          'id': 1,
+          'instrumentModel': 'C40',
+          'instrumentType': 'Gitara',
+          'storeName': 'Muzika d.o.o.',
+          'rentalStatus': 'Completed',
+          'requestedAt': '2026-06-01T00:00:00Z',
+          'fee': 40.0,
+          ...extra,
+        });
+
+    test('shows days times the daily fee', () {
+      expect(
+        rental({'daysCharged': 6, 'dailyFee': 1.33}).chargeLabel,
+        '6 dana × 1.33 KM',
+      );
+    });
+
+    test('shows a dash before anything is charged', () {
+      expect(rental({}).chargeLabel, '—');
+    });
+  });
 }

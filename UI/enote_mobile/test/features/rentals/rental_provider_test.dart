@@ -22,7 +22,6 @@ const _rental = {
   'rentalStatus': 'Pending',
   'requestedAt': '2026-09-01T10:12:00',
   'fee': 40.0,
-  'isProrated': false,
   'isPaid': false,
 };
 

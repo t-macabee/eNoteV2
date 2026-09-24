@@ -77,7 +77,6 @@ public sealed class RentalQueryServiceTests
         Assert.Equal(50m, dto.Fee);
         Assert.True(dto.TotalFee > 0);
         Assert.True(dto.DaysCharged >= 1);
-        Assert.Null(dto.MonthsCharged);
     }
 
     [Fact]
