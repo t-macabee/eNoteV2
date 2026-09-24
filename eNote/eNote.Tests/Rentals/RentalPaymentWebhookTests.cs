@@ -1,13 +1,19 @@
+using System.Text.Json;
 using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Constants;
+using eNote.Application.Features.Rentals.InstrumentRentals.Services;
 using eNote.Application.Features.Rentals.Payments.Services;
+using eNote.Contracts.Rentals;
+using eNote.Domain.Entities.Communication;
+using eNote.Infrastructure.Messaging;
 using eNote.Infrastructure.Payments.Stripe;
 using eNote.Tests.TestUtils;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Logging.Abstractions;
 using Stripe;
+using Event = Stripe.Event;
 
 namespace eNote.Tests.Rentals;
 
@@ -38,6 +44,40 @@ public sealed class RentalPaymentWebhookTests
         Assert.True(reloadedRental.IsPaid);
         Assert.Equal(5000L, payment.AmountChargedCents);
         Assert.Single(await context.Set<StripeWebhookEvent>().ToListAsync());
+    }
+
+    [Fact]
+    public async Task HandleWebhook_Succeeded_EnqueuesOnePaymentNotification()
+    {
+        var (context, rental, _) = await SeedRequiresActionPaymentAsync();
+        var service = CreateWebhookService(context, new RentalNotificationDispatcher(context, new FixedClock(Now)));
+        var evt = CreatePaymentIntentEvent("evt_test_succeeded_1", "payment_intent.succeeded", "pi_test_1", "succeeded", "ch_test_1");
+
+        await service.HandleAsync(evt, "{}");
+        await service.HandleAsync(evt, "{}");
+
+        var messages = await ReadStatusMessagesAsync(context);
+        var message = Assert.Single(messages);
+        Assert.Equal(rental.Id, message.RentalId);
+        Assert.Equal(100, message.StudentUserId);
+        Assert.Equal(100, message.ActorUserId);
+        Assert.Equal("Stradivarius", message.InstrumentModel);
+        Assert.Equal("Plaćanje uspješno", message.Title);
+        Assert.Contains("Stradivarius", message.Body);
+        Assert.EndsWith("EUR.", message.Body);
+    }
+
+    [Fact]
+    public async Task HandleWebhook_SucceededForAlreadySucceededPayment_EnqueuesNoNotification()
+    {
+        var (context, _, _) = await SeedSucceededPaymentAsync();
+        var service = CreateWebhookService(context, new RentalNotificationDispatcher(context, new FixedClock(Now)));
+        var evt = CreatePaymentIntentEvent("evt_test_succeeded_2", "payment_intent.succeeded", "pi_test_1", "succeeded", "ch_test_1");
+
+        await service.HandleAsync(evt, "{}");
+
+        var messages = await ReadStatusMessagesAsync(context);
+        Assert.Empty(messages);
     }
 
     [Fact]
@@ -202,7 +242,7 @@ public sealed class RentalPaymentWebhookTests
         var instrument = await context.Set<Instrument>().SingleAsync(x => x.Id == rental.InstrumentId);
         instrument.SoftDelete();
         await context.SaveChangesAsync();
-        var service = CreateWebhookService(context);
+        var service = CreateWebhookService(context, new RentalNotificationDispatcher(context, new FixedClock(Now)));
         var evt = CreatePaymentIntentEvent("evt_test_succeeded_deactivated", "payment_intent.succeeded", "pi_test_1", "succeeded", "ch_test_1");
 
         await service.HandleAsync(evt, "{}");
@@ -212,6 +252,9 @@ public sealed class RentalPaymentWebhookTests
         var reloadedRental = await context.Set<InstrumentRental>().IgnoreQueryFilters().SingleAsync(x => x.Id == rental.Id);
         Assert.True(reloadedRental.IsPaid);
         Assert.Single(await context.Set<StripeWebhookEvent>().ToListAsync());
+        var messages = await ReadStatusMessagesAsync(context);
+        var message = Assert.Single(messages);
+        Assert.Equal("Stradivarius", message.InstrumentModel);
     }
 
     [Fact]
@@ -493,8 +536,14 @@ public sealed class RentalPaymentWebhookTests
         return (context, student, instrument);
     }
 
-    private static StripeWebhookService CreateWebhookService(IAppDbContext context) =>
-        new(context, new FixedClock(Now), new StripeOptions { Currency = "eur" }, NullLogger<StripeWebhookService>.Instance);
+    private static StripeWebhookService CreateWebhookService(IAppDbContext context, IRentalNotificationDispatcher? notifications = null) =>
+        new(context, new FixedClock(Now), new StripeOptions { Currency = "eur" }, notifications ?? new NoOpNotificationDispatcher(), NullLogger<StripeWebhookService>.Instance);
+
+    private static async Task<List<RentalStatusChanged>> ReadStatusMessagesAsync(IAppDbContext context) =>
+        (await context.Set<NotificationOutbox>().ToListAsync())
+            .Where(row => row.MessageType == NotificationMessageTypes.RentalStatusChanged)
+            .Select(row => JsonSerializer.Deserialize<RentalStatusChanged>(row.PayloadJson, new JsonSerializerOptions(JsonSerializerDefaults.Web))!)
+            .ToList();
 
     private static Event CreatePaymentIntentEvent(string eventId, string type, string paymentIntentId, string status, string? chargeId)
     {

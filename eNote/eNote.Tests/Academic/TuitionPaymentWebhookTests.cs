@@ -235,7 +235,7 @@ public sealed class TuitionPaymentWebhookTests
     }
 
     private static StripeWebhookService CreateWebhookService(ENoteContext context) =>
-        new(context, new FixedClock(Now), new StripeOptions { Currency = "bam", WebhookSecret = "whsec_test" }, NullLogger<StripeWebhookService>.Instance);
+        new(context, new FixedClock(Now), new StripeOptions { Currency = "bam", WebhookSecret = "whsec_test" }, new NoOpNotificationDispatcher(), NullLogger<StripeWebhookService>.Instance);
 
     private static Event CreatePaymentIntentEvent(string eventId, string type, string paymentIntentId, string status, string? chargeId)
     {

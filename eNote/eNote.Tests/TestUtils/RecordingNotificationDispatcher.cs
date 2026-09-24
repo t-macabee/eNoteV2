@@ -26,4 +26,6 @@ public sealed class RecordingNotificationDispatcher : IRentalNotificationDispatc
         RefundCalls.Add((rental, refundedCents, currency, actorUserId));
         return Task.CompletedTask;
     }
+
+    public Task DispatchPaymentSucceededAsync(int rentalId, long amountCents, string currency, CancellationToken cancellationToken = default) => Task.CompletedTask;
 }

@@ -5,6 +5,7 @@ using eNote.Application.Common.Persistence;
 using eNote.Application.Common.Time;
 using eNote.Application.Constants;
 using eNote.Application.Features.Academic.Tuition;
+using eNote.Application.Features.Rentals.InstrumentRentals.Services;
 using eNote.Application.Features.Rentals.Payments.Services;
 using eNote.Domain.Entities.Academic;
 using Microsoft.EntityFrameworkCore;
@@ -23,6 +24,7 @@ public sealed class StripeWebhookService(
     IAppDbContext context,
     IClock clock,
     StripeOptions options,
+    IRentalNotificationDispatcher notifications,
     ILogger<StripeWebhookService> logger)
 {
     private const string PaymentIntentSucceeded = "payment_intent.succeeded";
@@ -101,6 +103,7 @@ public sealed class StripeWebhookService(
                     LogMissingChargeId(chargeId, paymentIntentId);
                     rentalPayment.MarkSucceeded(chargeId, eventId, clock.UtcNow);
                     rentalPayment.InstrumentRental.MarkPaid(rentalPayment.AmountChargedCents, clock.UtcNow);
+                    await notifications.DispatchPaymentSucceededAsync(rentalPayment.InstrumentRentalId, rentalPayment.AmountChargedCents, rentalPayment.Currency, cancellationToken);
                 }
 
                 await RecordEventAsync(eventId, PaymentIntentSucceeded, rawJson, cancellationToken);

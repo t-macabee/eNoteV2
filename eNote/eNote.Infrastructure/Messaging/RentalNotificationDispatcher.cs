@@ -86,6 +86,23 @@ public sealed class RentalNotificationDispatcher(
         return Task.CompletedTask;
     }
 
+    public async Task DispatchPaymentSucceededAsync(int rentalId, long amountCents, string currency, CancellationToken cancellationToken = default)
+    {
+        // The Stripe webhook has no mapped DTO; load only what the message needs.
+        // Filters are ignored because a paid rental's instrument can be deactivated.
+        var rental = await context.Set<InstrumentRental>()
+            .AsNoTracking()
+            .IgnoreQueryFilters()
+            .Where(r => r.Id == rentalId)
+            .Select(r => new { StudentUserId = r.StudentProfile.AppUserId, r.Instrument.Model, r.RentalStatus })
+            .SingleAsync(cancellationToken);
+
+        var amount = amountCents / 100m;
+        var body = $"Plaćanje za instrument {rental.Model} je uspješno. Iznos: {amount:F2} {FormatCurrency(currency)}.";
+        var message = new RentalStatusChanged(rentalId, rental.StudentUserId, rental.StudentUserId, rental.RentalStatus.ToString(), rental.Model, "Plaćanje uspješno", body, clock.UtcNow);
+        EnqueueOutbox(message);
+    }
+
     // Currency display contract, mirrored in
     // UI/enote_core/lib/formatting/formatters.dart (_currencyLabel):
     // an empty code or the BAM code is displayed as KM; every other code
