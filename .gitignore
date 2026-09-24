@@ -17,8 +17,8 @@ docs/rs2-upute.md
 *.csproj.user
 
 # Environment & secrets
+.env
 .env.*
-!.env
 !.env.example
 !.env.docker.example
 appsettings.*.local.json
@@ -74,6 +74,7 @@ build/
 *.swp
 *~
 *.zip
+!.env-tajne.zip
 *.apk
 
 # Agent artifacts

@@ -37,4 +37,24 @@ public sealed class DevelopmentDataSeedTests
         Assert.Equal(EnrollmentStatus.Active, enrollment.EnrollmentStatus);
         Assert.Equal(Now.AddDays(30), enrollment.PaidUntil);
     }
+
+    [Fact]
+    public async Task SeedCourses_CoursesAreRunningAtSeedTime()
+    {
+        await using var ctx = TestDbContextFactory.CreateContext(Now);
+        var clock = new FixedClock(Now);
+
+        ctx.Set<Instructor>().Add(new Instructor(1));
+        await ctx.SaveChangesAsync();
+
+        await CourseSeed.SeedCourses(ctx, clock);
+
+        var courses = await ctx.Set<Course>().ToListAsync();
+        Assert.Equal(2, courses.Count);
+        Assert.All(courses, c =>
+        {
+            Assert.True(c.StartDate < Now);
+            Assert.True(c.EndDate > Now);
+        });
+    }
 }

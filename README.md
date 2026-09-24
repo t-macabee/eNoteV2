@@ -18,13 +18,19 @@ preko putanje.
 
 Ovo je najkraći put i pokreće bazu, RabbitMQ, API i worker odjednom.
 
-1. Napravite `.env` u korijenu repozitorija:
+1. Napravite `.env` u korijenu repozitorija.
+
+   Za pregled rada: raspakujte `.env-tajne.zip` u korijen repozitorija.
+   Šifra za arhivu je postavljena na DLWMS. Arhiva sadrži gotov `.env` sa
+   svim vrijednostima, pa ništa ne treba popunjavati.
+
+   Bez arhive, napravite `.env` iz primjera:
 
    ```bash
    cp .env.docker.example .env
    ```
 
-   Popunite `MSSQL_SA_PASSWORD`, `Jwt__Key` (najmanje 32 znaka), `Smtp__*`
+   Zatim popunite `MSSQL_SA_PASSWORD`, `Jwt__Key` (najmanje 32 znaka), `Smtp__*`
    uključujući `Smtp__PasswordResetUrl=enote://reset-password` (da link za
    reset lozinke otvara mobilnu aplikaciju), `Stripe__SecretKey` i
    `Stripe__WebhookSecret`. Svaka vrijednost se upisuje samo jednom, u `.env`;
@@ -156,6 +162,15 @@ ključ se ne izlaže kroz endpoint nego se prosljeđuje sa
 `--dart-define=STRIPE_PUBLISHABLE_KEY=pk_test_…`. Za lokalno testiranje pokrenite
 `stripe listen --forward-to localhost:5059/api/v1/payments/stripe/webhook`; isti
 webhook pokriva i najam i školarinu.
+
+Za pregled rada treba [Stripe CLI](https://docs.stripe.com/stripe-cli). Prijava
+na Stripe nalog nije potrebna. Kada API radi, u drugom terminalu pokrenite:
+
+```bash
+stripe listen --api-key <Stripe__SecretKey iz .env> --forward-to localhost:5059/api/v1/payments/stripe/webhook
+```
+
+Bez ovog koraka webhook ne stiže do API-ja i plaćanje ostaje neplaćeno.
 
 | Endpoint | Uloga |
 |---|---|

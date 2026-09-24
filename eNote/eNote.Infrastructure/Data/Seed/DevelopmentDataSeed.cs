@@ -10,8 +10,8 @@ public static class DevelopmentDataSeed
     public static async Task SeedAsync(ENoteContext context, IClock clock)
     {
         await MusicStoreSeed.SeedStores(context);
-        await CourseSeed.SeedCourses(context);
-        await LectureSeed.SeedLectures(context);
+        await CourseSeed.SeedCourses(context, clock);
+        await LectureSeed.SeedLectures(context, clock);
         await InstrumentSeed.SeedInstruments(context);
         await EnrollmentSeed.SeedEnrollments(context, clock);
         await StudentMembershipSeed.SeedMemberships(context, clock);
@@ -65,7 +65,9 @@ internal static class StudentMembershipSeed
 
 internal static class CourseSeed
 {
-    public static async Task SeedCourses(ENoteContext context)
+    // Dates are relative to the seed time so the seeded courses are still
+    // running when the app is reviewed; tuition payment rejects ended courses.
+    public static async Task SeedCourses(ENoteContext context, IClock clock)
     {
         if (await context.Set<Course>().AnyAsync())
         {
@@ -77,10 +79,12 @@ internal static class CourseSeed
             .Select(i => i.Id)
             .FirstAsync();
 
-        var c1 = new Course("Osnove teorije muzike", "Uvod u osnove teorije muzike.", 800, DateTime.SpecifyKind(new DateTime(2024, 8, 10), DateTimeKind.Utc), DateTime.SpecifyKind(new DateTime(2024, 10, 10), DateTimeKind.Utc), instructorId);
+        var today = clock.UtcNow.Date;
+
+        var c1 = new Course("Osnove teorije muzike", "Uvod u osnove teorije muzike.", 800, today.AddDays(-30), today.AddYears(1), instructorId);
         c1.SetPublishedStatus(true);
 
-        var c2 = new Course("Napredne tehnike gitare", "Napredne tehnike i improvizacija.", 800, DateTime.SpecifyKind(new DateTime(2024, 9, 12), DateTimeKind.Utc), DateTime.SpecifyKind(new DateTime(2024, 10, 12), DateTimeKind.Utc), instructorId);
+        var c2 = new Course("Napredne tehnike gitare", "Napredne tehnike i improvizacija.", 800, today.AddDays(-14), today.AddYears(1), instructorId);
         c2.SetPublishedStatus(true);
 
         context.Set<Course>().AddRange(c1, c2);
@@ -90,7 +94,7 @@ internal static class CourseSeed
 
 internal static class LectureSeed
 {
-    public static async Task SeedLectures(ENoteContext context)
+    public static async Task SeedLectures(ENoteContext context, IClock clock)
     {
         if (await context.Set<Lecture>().AnyAsync())
         {
@@ -107,9 +111,12 @@ internal static class LectureSeed
             return;
         }
 
+        // One day after each course start (see CourseSeed), at 19:30.
+        var today = clock.UtcNow.Date;
+
         context.AddRange(
-            new Lecture("Uvodno predavanje", "Amfiteatar gradskog BKC-a", 90, DateTime.SpecifyKind(new DateTime(2024, 8, 11, 19, 30, 0), DateTimeKind.Utc), LectureType.Theoretical, null, courses[0].Id),
-            new Lecture("Uvodno predavanje", "Amfiteatar gradskog BKC-a", 60, DateTime.SpecifyKind(new DateTime(2024, 8, 19, 19, 30, 0), DateTimeKind.Utc), LectureType.Theoretical, null, courses[1].Id)
+            new Lecture("Uvodno predavanje", "Amfiteatar gradskog BKC-a", 90, today.AddDays(-29).AddHours(19).AddMinutes(30), LectureType.Theoretical, null, courses[0].Id),
+            new Lecture("Uvodno predavanje", "Amfiteatar gradskog BKC-a", 60, today.AddDays(-13).AddHours(19).AddMinutes(30), LectureType.Theoretical, null, courses[1].Id)
         );
 
         await context.SaveChangesAsync();
