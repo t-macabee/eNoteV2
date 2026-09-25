@@ -235,4 +235,5 @@ cd UI/enote_mobile && flutter analyze && flutter test
 ## Ostala dokumentacija
 
 - [recommender-dokumentacija.md](recommender-dokumentacija.md) opisuje recommender sistem
+- [recommender-dokumentacija.zip](recommender-dokumentacija.zip) sadrži isti dokument u Word formatu, sa screenshotovima (Checklist, stavka 32)
 - [docs/rs2-compliance.md](docs/rs2-compliance.md) objašnjava odluke vezane za zahtjeve predmeta

@@ -75,6 +75,7 @@ build/
 *~
 *.zip
 !.env-tajne.zip
+!recommender-dokumentacija.zip
 *.apk
 
 # Agent artifacts

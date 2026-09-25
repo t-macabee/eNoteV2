@@ -25,7 +25,7 @@ Ukupni skor je zbir četiri signala sa fiksnim težinama. Konstante su na vrhu
 | Najam | 0.40 | Vrste instrumenata koje je student već najmio, plus instrumenti koje biraju slični studenti |
 | Pregledi | 0.30 | `InstrumentView` za tog korisnika, normalizovano po najvećem broju pregleda |
 | Sličnost | 0.20 | Isti proizvođač daje 1.0, ista vrsta daje 0.6 |
-| Popularnost | 0.10 | Ukupan broj najmova instrumenta, normalizovan po najnajmljenijem |
+| Popularnost | 0.10 | Broj najmova instrumenta (odobreni, aktivni, završeni i vraćeni prije roka), normalizovan po najnajmljenijem |
 
 ```
 total = najam * 0.40 + pregledi * 0.30 + sličnost * 0.20 + popularnost * 0.10
@@ -68,14 +68,17 @@ prag:
 
 ```json
 {
-  "instrument": { "id": 3, "model": "AC15C1", "manufacturer": "Vox" },
-  "score": 0.7421,
+  "instrument": { "id": 1, "model": "Stratocaster", "manufacturer": "Fender" },
+  "score": 0.805,
   "reasons": [
-    "Na osnovu vaše historije najma (Limeni).",
+    "Na osnovu vaše historije najma (Žičani).",
+    "Sličan vašim prethodnim izborima proizvođača ili vrste.",
     "Popularan među studentima."
   ]
 }
 ```
+
+Odgovor je stvarni rezultat za seed nalog student.
 
 ## Podaci koje aplikacija prikuplja
 
@@ -92,7 +95,27 @@ ne koriste.
 
 `eNote/eNote.Tests/Rentals/RecommendationServiceTests.cs`
 
-## Screenshotovi
+## Glavna logika u kodu
 
-TODO prije predaje: dodati screenshot koda `RecommendationService` i screenshot
-ekrana sa preporukama iz pokrenute mobilne aplikacije.
+`eNote/eNote.Application/Features/Rentals/Recommendations/Services/RecommendationService.cs`
+
+Petlja koja računa četiri signala i ukupni skor (linije 88–103):
+
+![Računanje skora](docs/recommender/kod-skor.png)
+
+Metoda BuildReasons, koja gradi objašnjenja (linije 315–350):
+
+![Razlozi preporuke](docs/recommender/kod-razlozi.png)
+
+## Preporuke u aplikaciji
+
+- `UI/enote_mobile/lib/features/instruments/instrument_catalog_screen.dart`
+- `UI/enote_mobile/lib/features/instruments/recommendation_strip.dart`
+
+Mobilna aplikacija, tab Instrumenti, prijavljen student:
+
+![Traka s preporukama](docs/recommender/aplikacija-preporuke.png)
+
+Dugme "+N razloga" otvara sva objašnjenja jedne preporuke:
+
+![Objašnjenja preporuke](docs/recommender/aplikacija-razlozi.png)
