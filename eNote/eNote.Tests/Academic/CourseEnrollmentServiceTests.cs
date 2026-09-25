@@ -13,7 +13,7 @@ public sealed class CourseEnrollmentServiceTests
     private static readonly DateTime Now = new(2026, 6, 22, 12, 0, 0, DateTimeKind.Utc);
 
     [Fact]
-    public async Task EnrollAsync_CreatesActiveEnrollment_ForPublishedCourse()
+    public async Task EnrollAsync_CreatesPendingRequest_ForPublishedCourse()
     {
         await using var context = CreateContext();
         var (student, course) = await SeedStudentAndCourseAsync(context, hasActiveMembership: true);
@@ -22,12 +22,12 @@ public sealed class CourseEnrollmentServiceTests
         await service.EnrollAsync(course.Id);
 
         var enrollment = await context.Set<Enrollment>().SingleAsync(x => x.StudentId == student.Id && x.CourseId == course.Id);
-        Assert.Equal(EnrollmentStatus.Active, enrollment.EnrollmentStatus);
+        Assert.Equal(EnrollmentStatus.Pending, enrollment.EnrollmentStatus);
         Assert.Equal(student.AppUserId, enrollment.CreatedById);
     }
 
     [Fact]
-    public async Task EnrollAsync_ReactivatesCanceledEnrollment()
+    public async Task EnrollAsync_ReopensCanceledEnrollment_AsPending()
     {
         await using var context = CreateContext();
         var (student, course) = await SeedStudentAndCourseAsync(context, hasActiveMembership: true);
@@ -38,7 +38,7 @@ public sealed class CourseEnrollmentServiceTests
         await service.EnrollAsync(course.Id);
 
         var enrollment = await context.Set<Enrollment>().SingleAsync(x => x.StudentId == student.Id && x.CourseId == course.Id);
-        Assert.Equal(EnrollmentStatus.Active, enrollment.EnrollmentStatus);
+        Assert.Equal(EnrollmentStatus.Pending, enrollment.EnrollmentStatus);
         Assert.Equal(student.AppUserId, enrollment.UpdatedById);
     }
 
@@ -60,8 +60,90 @@ public sealed class CourseEnrollmentServiceTests
 
         await service.EnrollAsync(course.Id);
         var reactivated = await context.Set<Enrollment>().SingleAsync(x => x.StudentId == student.Id && x.CourseId == course.Id);
-        Assert.Equal(EnrollmentStatus.Active, reactivated.EnrollmentStatus);
+        Assert.Equal(EnrollmentStatus.Pending, reactivated.EnrollmentStatus);
         Assert.Equal(Now.AddDays(30), reactivated.PaidUntil);
+    }
+
+    [Fact]
+    public async Task EnrollAsync_ReopensRejectedEnrollment_AsPending_AndClearsDecision()
+    {
+        await using var context = CreateContext();
+        var (student, course) = await SeedStudentAndCourseAsync(context, hasActiveMembership: true);
+        var rejected = new Enrollment(student.Id, course.Id, EnrollmentStatus.Pending);
+        rejected.Transition(EnrollmentTrigger.Reject, userId: 300, now: Now, reason: "Popunjeno");
+        context.Set<Enrollment>().Add(rejected);
+        await context.SaveChangesAsync();
+        var service = CreateService(context, student);
+
+        await service.EnrollAsync(course.Id);
+
+        var enrollment = await context.Set<Enrollment>().SingleAsync(x => x.StudentId == student.Id && x.CourseId == course.Id);
+        Assert.Equal(EnrollmentStatus.Pending, enrollment.EnrollmentStatus);
+        Assert.Equal(student.AppUserId, enrollment.UpdatedById);
+        Assert.Null(enrollment.DecidedById);
+        Assert.Null(enrollment.DecidedAt);
+        Assert.Null(enrollment.DecisionNote);
+    }
+
+    [Fact]
+    public async Task EnrollAsync_IsNoOp_WhenPending()
+    {
+        await using var context = CreateContext();
+        var (student, course) = await SeedStudentAndCourseAsync(context, hasActiveMembership: true);
+        context.Set<Enrollment>().Add(new Enrollment(student.Id, course.Id, EnrollmentStatus.Pending));
+        await context.SaveChangesAsync();
+        var service = CreateService(context, student);
+
+        await service.EnrollAsync(course.Id);
+
+        var enrollment = await context.Set<Enrollment>().SingleAsync(x => x.StudentId == student.Id && x.CourseId == course.Id);
+        Assert.Equal(EnrollmentStatus.Pending, enrollment.EnrollmentStatus);
+        Assert.Null(enrollment.UpdatedById);
+    }
+
+    [Fact]
+    public async Task EnrollAsync_Throws_WhenCourseCompleted()
+    {
+        await using var context = CreateContext();
+        var (student, course) = await SeedStudentAndCourseAsync(context, hasActiveMembership: true);
+        context.Set<Enrollment>().Add(new Enrollment(student.Id, course.Id, EnrollmentStatus.Completed));
+        await context.SaveChangesAsync();
+        var service = CreateService(context, student);
+
+        await Assert.ThrowsAsync<BusinessException>(() => service.EnrollAsync(course.Id));
+
+        var enrollment = await context.Set<Enrollment>().SingleAsync(x => x.StudentId == student.Id && x.CourseId == course.Id);
+        Assert.Equal(EnrollmentStatus.Completed, enrollment.EnrollmentStatus);
+    }
+
+    [Fact]
+    public async Task UnenrollAsync_CancelsPendingRequest()
+    {
+        await using var context = CreateContext();
+        var (student, course) = await SeedStudentAndCourseAsync(context, hasActiveMembership: true);
+        context.Set<Enrollment>().Add(new Enrollment(student.Id, course.Id, EnrollmentStatus.Pending));
+        await context.SaveChangesAsync();
+        var service = CreateService(context, student);
+
+        await service.UnenrollAsync(course.Id);
+
+        var enrollment = await context.Set<Enrollment>().SingleAsync(x => x.StudentId == student.Id && x.CourseId == course.Id);
+        Assert.Equal(EnrollmentStatus.Canceled, enrollment.EnrollmentStatus);
+        Assert.Equal(student.AppUserId, enrollment.UpdatedById);
+    }
+
+    [Fact]
+    public async Task UnenrollAsync_TreatsConcurrencyViolation_AsConflict()
+    {
+        await using var context = CreateContext();
+        var (student, course) = await SeedStudentAndCourseAsync(context, hasActiveMembership: true);
+        context.Set<Enrollment>().Add(new Enrollment(student.Id, course.Id, EnrollmentStatus.Active));
+        await context.SaveChangesAsync();
+        var service = CreateService(new ThrowingSaveDbContext(context, new DbUpdateConcurrencyException("Concurrency conflict.")), student);
+
+        var ex = await Assert.ThrowsAsync<ConflictException>(() => service.UnenrollAsync(course.Id));
+
+        Assert.Equal(Messages.ConcurrencyConflict, ex.Message);
     }
 
     [Fact]

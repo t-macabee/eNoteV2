@@ -151,7 +151,7 @@ public sealed class TuitionPaymentWebhookTests
     public async Task HandleWebhook_Succeeded_CanceledEnrollment_DoesNotExtendPaidUntil()
     {
         var (context, enrollment, payment) = await SeedRequiresActionTuitionPaymentAsync();
-        enrollment.UpdateStatus(EnrollmentStatus.Canceled);
+        enrollment.Transition(EnrollmentTrigger.Cancel, userId: 1, now: Now);
         await context.SaveChangesAsync();
         var service = CreateWebhookService(context);
         var evt = CreatePaymentIntentEvent("evt_tuition_succeeded_canceled", "payment_intent.succeeded", payment.StripePaymentIntentId, "succeeded", "ch_tuition_canceled");

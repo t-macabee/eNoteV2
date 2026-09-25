@@ -23,6 +23,7 @@ public sealed class EnrollmentConfig : IEntityTypeConfiguration<Enrollment>
         builder.HasIndex(e => new { e.StudentId, e.CourseId }).IsUnique().HasDatabaseName(DbConstraintNames.EnrollmentStudentIdCourseIdUniqueIndex);
         builder.Property(e => e.EnrollmentStatus).HasConversion<int>();
         builder.Property(e => e.PaidUntil);
+        builder.Property(e => e.DecisionNote).HasMaxLength(500);
         builder.Property(e => e.Version).IsRowVersion();
     }
 }

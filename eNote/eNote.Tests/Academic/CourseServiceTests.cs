@@ -451,6 +451,27 @@ public sealed class CourseServiceTests
     }
 
     [Fact]
+    public async Task GetByIdForStudentAsync_MapsEnrollmentStatus_AndDecisionNote()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var enrollment = await harness.Context.Set<Enrollment>()
+            .SingleAsync(e => e.StudentId == harness.Student.Id && e.CourseId == harness.Course.Id);
+        enrollment.Transition(EnrollmentTrigger.Cancel, userId: 1, now: Now);
+        enrollment.Transition(EnrollmentTrigger.Request, userId: 1, now: Now);
+        enrollment.Transition(EnrollmentTrigger.Reject, userId: 1, now: Now, reason: "Popunjeno");
+        await harness.Context.SaveChangesAsync();
+        var actor = new StubCurrentActor(student: harness.Student);
+        var service = CreateService(harness.Context, harness.Instructor, actor);
+
+        var dto = await service.GetByIdForStudentAsync(harness.Course.Id);
+
+        Assert.Equal(EnrollmentStatus.Rejected, dto.EnrollmentStatus);
+        Assert.Equal("Popunjeno", dto.EnrollmentDecisionNote);
+        Assert.False(dto.IsEnrolled);
+        Assert.Null(dto.EnrollmentId);
+    }
+
+    [Fact]
     public async Task GetPagedForStudentAsync_MapsEnrollmentId_PaidUntil_AndIsFree()
     {
         var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
@@ -468,12 +489,14 @@ public sealed class CourseServiceTests
         Assert.True(paidDto.IsEnrolled);
         Assert.NotNull(paidDto.EnrollmentId);
         Assert.Equal(Now.AddDays(30), paidDto.PaidUntil);
+        Assert.Equal(EnrollmentStatus.Active, paidDto.EnrollmentStatus);
         Assert.False(paidDto.IsFree);
 
         var freeDto = result.Items.Single(c => c.Id == freeCourse.Id);
         Assert.False(freeDto.IsEnrolled);
         Assert.Null(freeDto.EnrollmentId);
         Assert.Null(freeDto.PaidUntil);
+        Assert.Null(freeDto.EnrollmentStatus);
         Assert.True(freeDto.IsFree);
     }
 

@@ -35,6 +35,7 @@ builder.Services
         bus.AddConsumer<LectureCancelledPushConsumer>();
         bus.AddConsumer<SubmissionGradedPushConsumer>();
         bus.AddConsumer<AnnouncementPublishedPushConsumer>();
+        bus.AddConsumer<EnrollmentStatusChangedPushConsumer>();
         // No FaultLoggingConsumer<T> here: its endpoint is named after T, the same queue as the
         // worker's consumer, so the API would compete for the worker's messages. The worker logs faults.
     })

@@ -107,7 +107,10 @@ internal static class CourseSeed
         var c2 = new Course("Napredne tehnike gitare", "Napredne tehnike i improvizacija.", 800, today.AddDays(-14), today.AddYears(1), instructorId);
         c2.SetPublishedStatus(true);
 
-        context.Set<Course>().AddRange(c1, c2);
+        var c3 = new Course("Solfeđo za početnike", "Čitanje nota i pjevanje s lista za početnike.", 600, today.AddDays(-7), today.AddYears(1), instructorId);
+        c3.SetPublishedStatus(true);
+
+        context.Set<Course>().AddRange(c1, c2, c3);
         await context.SaveChangesAsync();
     }
 }
@@ -277,16 +280,40 @@ internal static class EnrollmentSeed
 
         var courseIds = await context.Set<Course>()
             .Where(c => c.IsPublished)
+            .OrderBy(c => c.Id)
             .Select(c => c.Id)
             .ToListAsync();
 
+        // The third published course takes enrollment requests (B14), so only the first two get Active rows.
+        var activeCourseIds = courseIds.Take(2).ToList();
+
         List<Enrollment> enrollments = [.. studentIds.SelectMany(studentId =>
-            courseIds.Select(courseId =>
+            activeCourseIds.Select(courseId =>
             {
                 var enrollment = new Enrollment(studentId, courseId, EnrollmentStatus.Active);
                 enrollment.ExtendPaidUntil(clock.UtcNow, TuitionOptions.PeriodDays);
                 return enrollment;
             }))];
+
+        if (courseIds.Count > 2)
+        {
+            var requestCourse = await context.Set<Course>()
+                .Include(c => c.Instructor)
+                .SingleAsync(c => c.Id == courseIds[2]);
+            var students = await SeedStudents.GetByUsernameAsync(context);
+
+            if (students.TryGetValue("student", out var student))
+            {
+                enrollments.Add(new Enrollment(student.Id, requestCourse.Id, EnrollmentStatus.Pending));
+            }
+
+            if (students.TryGetValue("student1", out var student1))
+            {
+                var rejected = new Enrollment(student1.Id, requestCourse.Id, EnrollmentStatus.Pending);
+                rejected.Transition(EnrollmentTrigger.Reject, requestCourse.Instructor.AppUserId, clock.UtcNow, "Grupa za ovaj termin je popunjena. Prijavite se ponovo za sljedeći termin.");
+                enrollments.Add(rejected);
+            }
+        }
 
         context.Set<Enrollment>().AddRange(enrollments);
         await context.SaveChangesAsync();

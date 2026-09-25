@@ -34,6 +34,11 @@ public sealed class NotificationConfig : IEntityTypeConfiguration<Notification>
                .HasForeignKey(x => x.AnnouncementId)
                .OnDelete(DeleteBehavior.Restrict);
 
+        builder.HasOne<Enrollment>()
+               .WithMany()
+               .HasForeignKey(x => x.EnrollmentId)
+               .OnDelete(DeleteBehavior.Restrict);
+
         builder.Property(x => x.Title).HasMaxLength(200).IsRequired();
         builder.Property(x => x.Body).HasMaxLength(2000).IsRequired();
         builder.Property(x => x.IsRead).HasDefaultValue(false);
@@ -53,6 +58,9 @@ public sealed class NotificationConfig : IEntityTypeConfiguration<Notification>
             .IsUnique();
         builder.HasIndex(x => new { x.UserId, x.AnnouncementId, x.CreatedAt })
             .HasDatabaseName(DbConstraintNames.NotificationUserAnnouncementCreatedAtUniqueIndex)
+            .IsUnique();
+        builder.HasIndex(x => new { x.UserId, x.EnrollmentId, x.CreatedAt })
+            .HasDatabaseName(DbConstraintNames.NotificationUserEnrollmentCreatedAtUniqueIndex)
             .IsUnique();
     }
 }

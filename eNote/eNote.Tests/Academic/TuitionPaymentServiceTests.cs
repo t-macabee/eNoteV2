@@ -94,7 +94,7 @@ public sealed class TuitionPaymentServiceTests
     public async Task CreateIntentAsync_CanceledEnrollment_Throws_StudentNotEnrolled()
     {
         var (context, student, _, enrollment) = await SetupScenarioAsync(price: 100m);
-        enrollment.UpdateStatus(EnrollmentStatus.Canceled);
+        enrollment.Transition(EnrollmentTrigger.Cancel, userId: 1, now: Now);
         await context.SaveChangesAsync();
 
         var service = CreateService(context, student);

@@ -125,6 +125,14 @@ public sealed class CourseService(IAppDbContext context, IMapper mapper, ICurren
                 PaidUntil = c.Enrollments
                     .Where(e => e.StudentId == studentId && e.EnrollmentStatus == EnrollmentStatus.Active)
                     .Select(e => e.PaidUntil)
+                    .FirstOrDefault(),
+                EnrollmentStatus = c.Enrollments
+                    .Where(e => e.StudentId == studentId)
+                    .Select(e => (EnrollmentStatus?)e.EnrollmentStatus)
+                    .FirstOrDefault(),
+                EnrollmentDecisionNote = c.Enrollments
+                    .Where(e => e.StudentId == studentId)
+                    .Select(e => e.DecisionNote)
                     .FirstOrDefault()
             })
             .FirstOrDefaultAsync(cancellationToken)
@@ -226,6 +234,14 @@ public sealed class CourseService(IAppDbContext context, IMapper mapper, ICurren
                 PaidUntil = c.Enrollments
                     .Where(e => e.StudentId == studentId && e.EnrollmentStatus == EnrollmentStatus.Active)
                     .Select(e => e.PaidUntil)
+                    .FirstOrDefault(),
+                EnrollmentStatus = c.Enrollments
+                    .Where(e => e.StudentId == studentId)
+                    .Select(e => (EnrollmentStatus?)e.EnrollmentStatus)
+                    .FirstOrDefault(),
+                EnrollmentDecisionNote = c.Enrollments
+                    .Where(e => e.StudentId == studentId)
+                    .Select(e => e.DecisionNote)
                     .FirstOrDefault()
             })
             .ToListAsync(cancellationToken);

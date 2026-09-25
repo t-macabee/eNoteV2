@@ -75,7 +75,7 @@ public sealed class DevelopmentDataSeedTests
         await CourseSeed.SeedCourses(ctx, clock);
 
         var courses = await ctx.Set<Course>().ToListAsync();
-        Assert.Equal(2, courses.Count);
+        Assert.Equal(3, courses.Count);
         Assert.All(courses, c =>
         {
             Assert.True(c.StartDate < Now);
@@ -103,7 +103,12 @@ public sealed class DevelopmentDataSeedTests
         });
 
         Assert.Equal(8, await ctx.Set<Student>().CountAsync());
-        Assert.Equal(16, await ctx.Set<Enrollment>().CountAsync());
+        var enrollments = await ctx.Set<Enrollment>().ToListAsync();
+        Assert.Equal(18, enrollments.Count);
+        Assert.Single(enrollments, e => e.EnrollmentStatus == EnrollmentStatus.Pending);
+        var rejectedEnrollment = enrollments.Single(e => e.EnrollmentStatus == EnrollmentStatus.Rejected);
+        Assert.False(string.IsNullOrWhiteSpace(rejectedEnrollment.DecisionNote));
+        Assert.NotNull(rejectedEnrollment.DecidedById);
 
         var lectures = await ctx.Set<Lecture>().ToListAsync();
         Assert.Equal(9, lectures.Count);
@@ -165,7 +170,7 @@ public sealed class DevelopmentDataSeedTests
 
         Assert.Equal(12, await ctx.Users.CountAsync());
         Assert.Equal(8, await ctx.Set<Student>().CountAsync());
-        Assert.Equal(16, await ctx.Set<Enrollment>().CountAsync());
+        Assert.Equal(18, await ctx.Set<Enrollment>().CountAsync());
         Assert.Equal(9, await ctx.Set<Lecture>().CountAsync());
         Assert.Equal(48, await ctx.Set<Attendance>().CountAsync());
         Assert.Equal(6, await ctx.Set<Assignment>().CountAsync());

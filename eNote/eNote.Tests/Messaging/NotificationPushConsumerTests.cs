@@ -3,6 +3,7 @@ using eNote.API.Hubs;
 using eNote.Application.Features.Communication.Notifications;
 using eNote.Contracts.Assignments;
 using eNote.Contracts.Communication;
+using eNote.Contracts.Enrollments;
 using eNote.Contracts.Lectures;
 using eNote.Contracts.Rentals;
 using MassTransit;
@@ -124,6 +125,26 @@ public sealed class NotificationPushConsumerTests
         Assert.Equal(9, dto.AnnouncementId);
         Assert.Equal("Nova obavijest", dto.Title);
         Assert.Contains("Pushed announcement-published notification to SignalR group for user 5, announcement 9.", harness.Messages);
+    }
+
+    [Fact]
+    public async Task EnrollmentStatusChanged_PushesToTheStudentGroup()
+    {
+        var harness = await StartAsync<EnrollmentStatusChangedPushConsumer, EnrollmentStatusChanged>();
+        try
+        {
+            await harness.Harness.Bus.Publish(new EnrollmentStatusChanged(9, 5, "Upis odobren", "Vaš zahtjev za upis na kurs 'Guitar 101' je odobren.", Now));
+            Assert.True(await harness.Harness.Consumed.Any<EnrollmentStatusChanged>());
+        }
+        finally
+        {
+            await harness.Harness.Stop();
+        }
+
+        var (group, method, dto) = AssertPush(harness);
+        Assert.Equal("user:5", group);
+        Assert.Equal("Upis odobren", dto.Title);
+        Assert.Contains("Pushed enrollment-status-changed notification to SignalR group for user 5, enrollment 9.", harness.Messages);
     }
 
     private static (string Group, string Method, NotificationPushDto Dto) AssertPush(PushHarness harness)

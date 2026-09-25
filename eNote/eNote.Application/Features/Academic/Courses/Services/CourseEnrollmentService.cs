@@ -27,34 +27,41 @@ public sealed class CourseEnrollmentService(
         var enrollment = await context.Set<Enrollment>()
             .FirstOrDefaultAsync(e => e.StudentId == student.Id && e.CourseId == courseId, cancellationToken);
 
-        if (enrollment?.EnrollmentStatus == EnrollmentStatus.Active)
+        if (enrollment is null)
         {
-            return;
-        }
-
-        if (enrollment?.EnrollmentStatus == EnrollmentStatus.Canceled)
-        {
-            enrollment.UpdateStatus(EnrollmentStatus.Active);
-            enrollment.UpdatedById = currentUser.UserId;
-        }
-        else
-        {
-            context.Set<Enrollment>().Add(new Enrollment(student.Id, courseId, EnrollmentStatus.Active)
+            context.Set<Enrollment>().Add(new Enrollment(student.Id, courseId, EnrollmentStatus.Pending)
             {
                 CreatedById = currentUser.UserId
             });
+        }
+        else if (enrollment.EnrollmentStatus is EnrollmentStatus.Pending or EnrollmentStatus.Active)
+        {
+            return;
+        }
+        else
+        {
+            var result = enrollment.Transition(EnrollmentTrigger.Request, currentUser.UserId, clock.UtcNow);
+
+            if (!result.IsSuccess)
+            {
+                throw new BusinessException(result.Error);
+            }
         }
 
         try
         {
             await context.SaveChangesAsync(cancellationToken);
         }
+        catch (DbUpdateConcurrencyException)
+        {
+            throw new ConflictException(Messages.ConcurrencyConflict);
+        }
         catch (DbUpdateException ex) when (DbErrors.IsUniqueViolation(ex, DbConstraintNames.EnrollmentStudentIdCourseIdUniqueIndex))
         {
             throw new ConflictException(Messages.AlreadyEnrolled);
         }
 
-        logger.LogInformation("Student {StudentUserId} enrolled in course {CourseId}", currentUser.UserId, courseId);
+        logger.LogInformation("Student {StudentUserId} requested enrollment in course {CourseId}", currentUser.UserId, courseId);
     }
 
     public async Task UnenrollAsync(int courseId, CancellationToken cancellationToken = default)
@@ -65,7 +72,7 @@ public sealed class CourseEnrollmentService(
             .FirstOrDefaultAsync(e =>
                 e.CourseId == courseId &&
                 e.StudentId == student.Id &&
-                e.EnrollmentStatus == EnrollmentStatus.Active,
+                (e.EnrollmentStatus == EnrollmentStatus.Active || e.EnrollmentStatus == EnrollmentStatus.Pending),
                 cancellationToken)
             ?? throw new BusinessException(Messages.StudentNotEnrolled);
 
@@ -80,9 +87,21 @@ public sealed class CourseEnrollmentService(
             throw new BusinessException(Messages.UnenrollBlockedByPendingPayment);
         }
 
-        enrollment.UpdateStatus(EnrollmentStatus.Canceled);
-        enrollment.UpdatedById = currentUser.UserId;
-        await context.SaveChangesAsync(cancellationToken);
+        var result = enrollment.Transition(EnrollmentTrigger.Cancel, currentUser.UserId, clock.UtcNow);
+
+        if (!result.IsSuccess)
+        {
+            throw new BusinessException(result.Error);
+        }
+
+        try
+        {
+            await context.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            throw new ConflictException(Messages.ConcurrencyConflict);
+        }
 
         logger.LogInformation("Student {StudentUserId} unenrolled from course {CourseId}", currentUser.UserId, courseId);
     }

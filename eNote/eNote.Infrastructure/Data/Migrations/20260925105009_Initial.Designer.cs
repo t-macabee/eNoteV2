@@ -12,7 +12,7 @@ using eNote.Infrastructure.Data;
 namespace eNote.Infrastructure.Data.Migrations
 {
     [DbContext(typeof(ENoteContext))]
-    [Migration("20260924213005_Initial")]
+    [Migration("20260925105009_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -313,6 +313,16 @@ namespace eNote.Infrastructure.Data.Migrations
 
                     b.Property<int?>("CreatedById")
                         .HasColumnType("int");
+
+                    b.Property<DateTime?>("DecidedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("DecidedById")
+                        .HasColumnType("int");
+
+                    b.Property<string>("DecisionNote")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
                     b.Property<int>("EnrollmentStatus")
                         .HasColumnType("int");
@@ -700,6 +710,9 @@ namespace eNote.Infrastructure.Data.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<int?>("EnrollmentId")
+                        .HasColumnType("int");
+
                     b.Property<bool>("IsRead")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bit")
@@ -728,6 +741,8 @@ namespace eNote.Infrastructure.Data.Migrations
 
                     b.HasIndex("CreatedAt");
 
+                    b.HasIndex("EnrollmentId");
+
                     b.HasIndex("LectureId");
 
                     b.HasIndex("RentalId");
@@ -740,6 +755,11 @@ namespace eNote.Infrastructure.Data.Migrations
                         .IsUnique()
                         .HasDatabaseName("IX_Notification_UserId_AnnouncementId_CreatedAt")
                         .HasFilter("[AnnouncementId] IS NOT NULL");
+
+                    b.HasIndex("UserId", "EnrollmentId", "CreatedAt")
+                        .IsUnique()
+                        .HasDatabaseName("IX_Notification_UserId_EnrollmentId_CreatedAt")
+                        .HasFilter("[EnrollmentId] IS NOT NULL");
 
                     b.HasIndex("UserId", "LectureId", "CreatedAt")
                         .IsUnique()
@@ -1864,6 +1884,11 @@ namespace eNote.Infrastructure.Data.Migrations
                     b.HasOne("eNote.Domain.Entities.Communication.Announcement", null)
                         .WithMany()
                         .HasForeignKey("AnnouncementId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("eNote.Domain.Entities.Academic.Enrollment", null)
+                        .WithMany()
+                        .HasForeignKey("EnrollmentId")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("eNote.Domain.Entities.Academic.Lecture", null)

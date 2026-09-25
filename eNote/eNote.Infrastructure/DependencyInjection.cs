@@ -2,6 +2,7 @@ using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Common.Time;
 using eNote.Application.Features.Academic.Assignments.Services;
+using eNote.Application.Features.Academic.Courses.Services;
 using eNote.Application.Features.Academic.Lectures.Services;
 using eNote.Application.Features.Communication.Announcements.Services;
 using eNote.Application.Features.Identity.Auth.Services;
@@ -67,6 +68,7 @@ public static class DependencyInjection
         services.AddScoped<IRentalNotificationDispatcher, RentalNotificationDispatcher>();
         services.AddScoped<ILectureNotificationDispatcher, LectureNotificationDispatcher>();
         services.AddScoped<IAnnouncementNotificationDispatcher, AnnouncementNotificationDispatcher>();
+        services.AddScoped<IEnrollmentNotificationDispatcher, EnrollmentNotificationDispatcher>();
         services.AddScoped<ISubmissionNotificationDispatcher, SubmissionNotificationDispatcher>();
         services.AddSingleton(_ => BuildStripeOptions(configuration));
         services.AddScoped<IPaymentGateway, StripePaymentGateway>();

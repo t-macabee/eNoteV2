@@ -10,7 +10,8 @@ namespace eNote.API.Controllers.Courses;
 
 public sealed class CourseController(
     CourseService service,
-    CourseEnrollmentService enrollmentService) : CoreController
+    CourseEnrollmentService enrollmentService,
+    InstructorEnrollmentService instructorEnrollmentService) : CoreController
 {
     // ── Instructor actions ──────────────────────────────────────────
 
@@ -93,6 +94,48 @@ public sealed class CourseController(
     {
         await service.DeleteAsync(id, cancellationToken);
         return NoContent();
+    }
+
+    [Authorize(Roles = AppRoles.Instructor)]
+    [HttpGet("~/api/v{version:apiVersion}/instructor/courses/{courseId:int}/enrollments")]
+    [ProducesResponseType(typeof(PagedResult<CourseEnrollmentDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<PagedResult<CourseEnrollmentDto>>> GetEnrollments(int courseId, [FromQuery] CourseEnrollmentSearchObject search, CancellationToken cancellationToken)
+    {
+        var result = await instructorEnrollmentService.GetForCourseAsync(courseId, search, cancellationToken);
+        return Ok(result);
+    }
+
+    [Authorize(Roles = AppRoles.Instructor)]
+    [HttpPost("~/api/v{version:apiVersion}/instructor/courses/{courseId:int}/enrollments/{enrollmentId:int}/approve")]
+    [ProducesResponseType(typeof(CourseEnrollmentDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<CourseEnrollmentDto>> ApproveEnrollment(int courseId, int enrollmentId, CancellationToken cancellationToken)
+    {
+        var dto = await instructorEnrollmentService.ApproveAsync(courseId, enrollmentId, cancellationToken);
+        return Ok(dto);
+    }
+
+    [Authorize(Roles = AppRoles.Instructor)]
+    [HttpPost("~/api/v{version:apiVersion}/instructor/courses/{courseId:int}/enrollments/{enrollmentId:int}/reject")]
+    [ProducesResponseType(typeof(CourseEnrollmentDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<CourseEnrollmentDto>> RejectEnrollment(int courseId, int enrollmentId, [FromBody] EnrollmentRejectRequest request, CancellationToken cancellationToken)
+    {
+        var dto = await instructorEnrollmentService.RejectAsync(courseId, enrollmentId, request, cancellationToken);
+        return Ok(dto);
+    }
+
+    [Authorize(Roles = AppRoles.Instructor)]
+    [HttpPost("~/api/v{version:apiVersion}/instructor/courses/{courseId:int}/enrollments/{enrollmentId:int}/complete")]
+    [ProducesResponseType(typeof(CourseEnrollmentDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<CourseEnrollmentDto>> CompleteEnrollment(int courseId, int enrollmentId, CancellationToken cancellationToken)
+    {
+        var dto = await instructorEnrollmentService.CompleteAsync(courseId, enrollmentId, cancellationToken);
+        return Ok(dto);
     }
 
     // ── Student actions ─────────────────────────────────────────────

@@ -384,6 +384,9 @@ namespace eNote.Infrastructure.Data.Migrations
                     CourseId = table.Column<int>(type: "int", nullable: false),
                     EnrollmentStatus = table.Column<int>(type: "int", nullable: false),
                     PaidUntil = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    DecidedById = table.Column<int>(type: "int", nullable: true),
+                    DecidedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    DecisionNote = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
                     Version = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
@@ -878,6 +881,7 @@ namespace eNote.Infrastructure.Data.Migrations
                     LectureId = table.Column<int>(type: "int", nullable: true),
                     SubmissionId = table.Column<int>(type: "int", nullable: true),
                     AnnouncementId = table.Column<int>(type: "int", nullable: true),
+                    EnrollmentId = table.Column<int>(type: "int", nullable: true),
                     Title = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
                     Body = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: false),
                     IsRead = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
@@ -902,6 +906,12 @@ namespace eNote.Infrastructure.Data.Migrations
                         name: "FK_Notification_AssignmentSubmission_SubmissionId",
                         column: x => x.SubmissionId,
                         principalTable: "AssignmentSubmission",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Notification_Enrollment_EnrollmentId",
+                        column: x => x.EnrollmentId,
+                        principalTable: "Enrollment",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
@@ -1232,6 +1242,11 @@ namespace eNote.Infrastructure.Data.Migrations
                 column: "CreatedAt");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Notification_EnrollmentId",
+                table: "Notification",
+                column: "EnrollmentId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Notification_LectureId",
                 table: "Notification",
                 column: "LectureId");
@@ -1252,6 +1267,13 @@ namespace eNote.Infrastructure.Data.Migrations
                 columns: new[] { "UserId", "AnnouncementId", "CreatedAt" },
                 unique: true,
                 filter: "[AnnouncementId] IS NOT NULL");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Notification_UserId_EnrollmentId_CreatedAt",
+                table: "Notification",
+                columns: new[] { "UserId", "EnrollmentId", "CreatedAt" },
+                unique: true,
+                filter: "[EnrollmentId] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Notification_UserId_IsRead",
@@ -1392,13 +1414,13 @@ namespace eNote.Infrastructure.Data.Migrations
                 name: "AspNetRoles");
 
             migrationBuilder.DropTable(
-                name: "Enrollment");
-
-            migrationBuilder.DropTable(
                 name: "Announcement");
 
             migrationBuilder.DropTable(
                 name: "AssignmentSubmission");
+
+            migrationBuilder.DropTable(
+                name: "Enrollment");
 
             migrationBuilder.DropTable(
                 name: "RentalPayment");

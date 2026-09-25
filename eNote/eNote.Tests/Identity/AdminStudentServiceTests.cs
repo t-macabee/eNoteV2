@@ -363,6 +363,52 @@ public sealed class AdminStudentServiceTests
     }
 
     [Fact]
+    public async Task GetPagedForInstructorAsync_ExcludesPendingAndRejectedRequests()
+    {
+        await using var context = TestDbContextFactory.CreateContext(Now);
+
+        var instructor = new Instructor(100);
+        context.Set<Instructor>().Add(instructor);
+        await context.SaveChangesAsync();
+
+        var course = new Course("Guitar 101", null, 100m, Now, Now.AddMonths(3), instructor.Id) { CreatedById = instructor.AppUserId };
+        context.Set<Course>().Add(course);
+        await context.SaveChangesAsync();
+
+        var activeStudent = new Student(10, Now);
+        var pendingStudent = new Student(20, Now);
+        var rejectedStudent = new Student(30, Now);
+        context.Set<Student>().AddRange(activeStudent, pendingStudent, rejectedStudent);
+        await context.SaveChangesAsync();
+
+        var rejected = new Enrollment(rejectedStudent.Id, course.Id, EnrollmentStatus.Pending);
+        rejected.Transition(EnrollmentTrigger.Reject, userId: instructor.AppUserId, now: Now, reason: "Popunjeno");
+
+        context.Set<Enrollment>().AddRange(
+            new Enrollment(activeStudent.Id, course.Id, EnrollmentStatus.Active),
+            new Enrollment(pendingStudent.Id, course.Id, EnrollmentStatus.Pending),
+            rejected);
+        await context.SaveChangesAsync();
+
+        var identity = new StubUserIdentityService(new Dictionary<int, UserIdentityDto>
+        {
+            [10] = StubUserIdentityService.User(10, "active", "Active", "Student"),
+            [20] = StubUserIdentityService.User(20, "pending", "Pending", "Student"),
+            [30] = StubUserIdentityService.User(30, "rejected", "Rejected", "Student")
+        });
+
+        var instructorAccess = new InstructorAccessService(context, new StubUserProfileLookup(instructor: instructor));
+        var service = new AdminStudentService(context, identity, instructorAccess);
+
+        var result = await service.GetPagedForInstructorAsync(instructor.Id, new StudentSearchObject());
+
+        var item = Assert.Single(result.Items);
+        Assert.Equal(activeStudent.Id, item.Id);
+        Assert.DoesNotContain(result.Items, s => s.Id == pendingStudent.Id);
+        Assert.DoesNotContain(result.Items, s => s.Id == rejectedStudent.Id);
+    }
+
+    [Fact]
     public async Task GetPagedForInstructorAsync_ExcludesCanceledEnrollments_IncludesCompletedEnrollments()
     {
         await using var context = TestDbContextFactory.CreateContext(Now);

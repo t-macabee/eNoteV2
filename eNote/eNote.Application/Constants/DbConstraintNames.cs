@@ -16,6 +16,8 @@ public static class DbConstraintNames
 
     public const string NotificationUserAnnouncementCreatedAtUniqueIndex = "IX_Notification_UserId_AnnouncementId_CreatedAt";
 
+    public const string NotificationUserEnrollmentCreatedAtUniqueIndex = "IX_Notification_UserId_EnrollmentId_CreatedAt";
+
     public const string RentalPaymentStripePaymentIntentIdUniqueIndex = "UX_RentalPayment_PaymentIntentId";
 
     public const string RentalPaymentStripeEventIdUniqueIndex = "UX_RentalPayment_StripeEventId";

@@ -98,7 +98,7 @@ public sealed class AdminStudentService(
 
         return context.Set<Enrollment>()
             .AsNoTracking()
-            .Where(e => e.EnrollmentStatus != EnrollmentStatus.Canceled)
+            .Where(e => e.EnrollmentStatus == EnrollmentStatus.Active || e.EnrollmentStatus == EnrollmentStatus.Completed)
             .Join(
                 instructorCourses,
                 e => e.CourseId,
