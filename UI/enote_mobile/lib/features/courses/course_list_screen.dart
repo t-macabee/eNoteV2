@@ -88,12 +88,14 @@ class _CourseRow extends StatelessWidget {
         '${formatDateNullable(course.startDate)}–'
         '${formatDateNullable(course.endDate)}',
       ),
-      trailing: course.isEnrolled
-          ? const Chip(
-              label: Text('Upisan'),
+      trailing:
+          course.enrollmentStatus == null ||
+              course.enrollmentStatus == EnrollmentStatus.canceled
+          ? null
+          : Chip(
+              label: Text(enrollmentStatusLabel(course.enrollmentStatus!)),
               visualDensity: VisualDensity.compact,
-            )
-          : null,
+            ),
       onTap: () => Navigator.of(context).pushNamed(
         AppRouter.courseDetail,
         arguments: CourseDetailArgs(course.id),

@@ -115,6 +115,61 @@ void main() {
     });
   });
 
+  group('CourseDto enrollment fields', () {
+    test('missing keys default to null', () {
+      final dto = CourseDto.fromJson({'id': 1, 'name': 'n'});
+      expect(dto.enrollmentStatus, isNull);
+      expect(dto.enrollmentDecisionNote, isNull);
+    });
+
+    test('rejected request parses the status and the decision note', () {
+      final dto = CourseDto.fromJson({
+        'id': 1,
+        'name': 'n',
+        'enrollmentStatus': 'Rejected',
+        'enrollmentDecisionNote': 'Grupa za ovaj termin je popunjena.',
+      });
+      expect(dto.enrollmentStatus, EnrollmentStatus.rejected);
+      expect(dto.enrollmentDecisionNote, 'Grupa za ovaj termin je popunjena.');
+    });
+  });
+
+  group('CourseEnrollmentDto', () {
+    test('fromJson parses every field', () {
+      final dto = CourseEnrollmentDto.fromJson({
+        'id': 3,
+        'studentId': 7,
+        'studentName': 'Student Enote',
+        'enrollmentStatus': 'Pending',
+        'paidUntil': '2026-10-09T12:41:00',
+        'decidedAt': '2026-09-20T08:15:00',
+        'decisionNote': 'Grupa za ovaj termin je popunjena.',
+      });
+      expect(dto.id, 3);
+      expect(dto.studentId, 7);
+      expect(dto.studentName, 'Student Enote');
+      expect(dto.enrollmentStatus, EnrollmentStatus.pending);
+      expect(dto.paidUntil, DateTime.parse('2026-10-09T12:41:00'));
+      expect(dto.decidedAt, DateTime.parse('2026-09-20T08:15:00'));
+      expect(dto.decisionNote, 'Grupa za ovaj termin je popunjena.');
+    });
+
+    test('fromJson accepts nulls for the nullable fields', () {
+      final dto = CourseEnrollmentDto.fromJson({
+        'id': 4,
+        'studentId': 8,
+        'studentName': 'Drugi Student',
+        'enrollmentStatus': 'Active',
+        'paidUntil': null,
+        'decidedAt': null,
+        'decisionNote': null,
+      });
+      expect(dto.paidUntil, isNull);
+      expect(dto.decidedAt, isNull);
+      expect(dto.decisionNote, isNull);
+    });
+  });
+
   group('LectureDto.myAttendanceStatus', () {
     test('missing key defaults to null', () {
       final dto = LectureDto.fromJson({'id': 1, 'name': 'n'});

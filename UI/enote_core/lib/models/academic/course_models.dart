@@ -1,5 +1,6 @@
 import '../../api/api_response.dart';
 import '../../formatting/formatters.dart';
+import '../shared/enums.dart';
 class CourseDto {
   final int id;
   final int instructorId;
@@ -14,6 +15,8 @@ class CourseDto {
   final bool isEnrolled;
   final int? enrollmentId;
   final DateTime? paidUntil;
+  final EnrollmentStatus? enrollmentStatus;
+  final String? enrollmentDecisionNote;
   final bool isFree;
 
   CourseDto({
@@ -30,6 +33,8 @@ class CourseDto {
     this.isEnrolled = false,
     this.enrollmentId,
     this.paidUntil,
+    this.enrollmentStatus,
+    this.enrollmentDecisionNote,
     this.isFree = false,
   });
 
@@ -48,6 +53,10 @@ class CourseDto {
       isEnrolled: json['isEnrolled'] as bool? ?? false,
       enrollmentId: json['enrollmentId'] as int?,
       paidUntil: parseDate(json['paidUntil']),
+      enrollmentStatus: json['enrollmentStatus'] == null
+          ? null
+          : EnrollmentStatus.fromJson(json['enrollmentStatus'] as String?),
+      enrollmentDecisionNote: json['enrollmentDecisionNote'] as String?,
       isFree: json['isFree'] as bool? ?? false,
     );
   }
@@ -66,8 +75,44 @@ class CourseDto {
     if (isEnrolled) 'isEnrolled': isEnrolled,
     if (enrollmentId != null) 'enrollmentId': enrollmentId,
     if (paidUntil != null) 'paidUntil': paidUntil!.toIso8601String(),
+    if (enrollmentStatus != null) 'enrollmentStatus': enrollmentStatus!.toJson(),
+    if (enrollmentDecisionNote != null)
+      'enrollmentDecisionNote': enrollmentDecisionNote,
     if (isFree) 'isFree': isFree,
   };
+}
+
+class CourseEnrollmentDto {
+  final int id;
+  final int studentId;
+  final String studentName;
+  final EnrollmentStatus enrollmentStatus;
+  final DateTime? paidUntil;
+  final DateTime? decidedAt;
+  final String? decisionNote;
+
+  CourseEnrollmentDto({
+    required this.id,
+    required this.studentId,
+    required this.studentName,
+    required this.enrollmentStatus,
+    this.paidUntil,
+    this.decidedAt,
+    this.decisionNote,
+  });
+
+  factory CourseEnrollmentDto.fromJson(Map<String, dynamic> json) {
+    return CourseEnrollmentDto(
+      id: json['id'] as int? ?? 0,
+      studentId: json['studentId'] as int? ?? 0,
+      studentName: json['studentName'] as String? ?? '',
+      enrollmentStatus:
+          EnrollmentStatus.fromJson(json['enrollmentStatus'] as String?),
+      paidUntil: parseDate(json['paidUntil']),
+      decidedAt: parseDate(json['decidedAt']),
+      decisionNote: json['decisionNote'] as String?,
+    );
+  }
 }
 
 class CourseRequest {

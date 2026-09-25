@@ -3,7 +3,7 @@ using FluentValidation;
 
 namespace eNote.Application.Validation.Academic;
 
-// 500 = _NotePromptDialog maxLength (UI/enote_desktop/lib/features/store_employee/rental/rental_transition_action_row.dart:196)
+// 500 = ReasonPromptDialog maxLength (UI/enote_desktop/lib/widgets/reason_prompt_dialog.dart:44)
 public sealed class EnrollmentRejectRequestValidator : AbstractValidator<EnrollmentRejectRequest>
 {
     public EnrollmentRejectRequestValidator()

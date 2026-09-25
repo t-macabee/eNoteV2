@@ -11,6 +11,16 @@ void main() {
     });
   });
 
+  group('enrollmentStatusLabel', () {
+    test('maps every value to its label', () {
+      expect(enrollmentStatusLabel(EnrollmentStatus.active), 'Upisan');
+      expect(enrollmentStatusLabel(EnrollmentStatus.pending), 'Na čekanju');
+      expect(enrollmentStatusLabel(EnrollmentStatus.rejected), 'Odbijeno');
+      expect(enrollmentStatusLabel(EnrollmentStatus.canceled), 'Otkazano');
+      expect(enrollmentStatusLabel(EnrollmentStatus.completed), 'Položen');
+    });
+  });
+
   group('lectureStatusLabel', () {
     test('every value has a non-empty label', () {
       for (final value in LectureStatus.values) {

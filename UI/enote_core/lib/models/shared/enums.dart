@@ -80,6 +80,19 @@ enum InstrumentRentalStatus {
       _fromWireName(values, json, InstrumentRentalStatus.pending);
 }
 
+enum EnrollmentStatus {
+  active,
+  completed,
+  canceled,
+  pending,
+  rejected;
+
+  String toJson() => _wireName(this);
+
+  static EnrollmentStatus fromJson(String? json) =>
+      _fromWireName(values, json, EnrollmentStatus.pending);
+}
+
 enum AnnouncementScope {
   course,
   musicStore;

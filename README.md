@@ -91,10 +91,14 @@ Svi seed nalozi koriste lozinku `test`. Lozinka se može promijeniti kroz
 Svi nalozi dijele istu seed lozinku (`Seed__DefaultPassword`). Mobilna
 aplikacija prihvata samo naloge sa ulogom Student (`student`, odnosno `mobile`);
 ostale uloge dobijaju ekran sa objašnjenjem. Svi seedovani studenti su upisani
-na oba objavljena kursa i imaju članarinu važeću godinu dana; `mobile` ima jedno
-završeno iznajmljivanje koje nije plaćeno (prikazuje Stripe plaćanje, a dok se ne
-plati `mobile` ne može zatražiti novo iznajmljivanje); seedovana plaćena iznajmljivanja
-nemaju Stripe plaćanje, pa se povrat novca prikazuje uz novo testno plaćanje.
+na prva dva objavljena kursa i imaju članarinu važeću godinu dana. Treći kurs
+"Solfeđo za početnike" prima zahtjeve za upis: `student` ima zahtjev koji čeka
+odobrenje, a `instructor` ga odobrava ili odbija na desktop aplikaciji
+(Kursevi → kurs → Upisi); `student1` ima odbijen zahtjev s razlogom. `mobile`
+ima jedno završeno iznajmljivanje koje nije plaćeno (prikazuje Stripe plaćanje,
+a dok se ne plati `mobile` ne može zatražiti novo iznajmljivanje); seedovana
+plaćena iznajmljivanja nemaju Stripe plaćanje, pa se povrat novca prikazuje uz
+novo testno plaćanje.
 
 Registracija novih korisnika kroz aplikaciju i dalje traži jaču lozinku
 (najmanje 8 znakova, veliko slovo, malo slovo, broj i specijalni znak). Seed
@@ -142,8 +146,9 @@ flutter build apk --release --dart-define=API_BASE_URL=http://10.0.2.2:5059/api/
 ```
 
 Master–details forma na mobilnom klijentu je detalj *Kurs*
-(`CourseDetailScreen`): zaglavlje kursa i njegova paginirana predavanja; upis
-prikazuje predavanja, ispis ih skriva.
+(`CourseDetailScreen`): zaglavlje kursa i njegova paginirana predavanja; zahtjev
+za upis čeka odobrenje instruktora, odobren upis prikazuje predavanja, ispis ih
+skriva.
 
 ## Plaćanja
 

@@ -14,7 +14,8 @@ import 'package:enote_mobile/theme/app_theme.dart';
 import '../../helpers.dart';
 
 Map<String, dynamic> _courseJson({
-  required bool enrolled,
+  String? enrollmentStatus,
+  String? enrollmentDecisionNote,
   int? enrollmentId,
   String? paidUntil,
   bool isFree = false,
@@ -29,7 +30,9 @@ Map<String, dynamic> _courseJson({
   'price': 800.0,
   'enrolledCount': 14,
   'instructorName': 'Amir Hadzic',
-  'isEnrolled': enrolled,
+  'isEnrolled': enrollmentStatus == 'Active',
+  'enrollmentStatus': ?enrollmentStatus,
+  'enrollmentDecisionNote': ?enrollmentDecisionNote,
   'enrollmentId': ?enrollmentId,
   'paidUntil': ?paidUntil,
   'isFree': isFree,
@@ -57,13 +60,14 @@ const _lecturesPage = {
 };
 
 ScriptedClient _client({
-  required bool enrolled,
+  String? enrollmentStatus,
+  String? enrollmentDecisionNote,
   required DateTime paidUntil,
   int? enrollmentId,
   bool isFree = false,
   String? coursePaidUntil,
 }) {
-  var isEnrolled = enrolled;
+  var status = enrollmentStatus;
   return ScriptedClient((request) {
     final path = request.url.path;
     Object body;
@@ -76,18 +80,19 @@ ScriptedClient _client({
         body = {'items': []};
       case 'GET /api/v1/student/courses/2':
         body = _courseJson(
-          enrolled: isEnrolled,
-          enrollmentId: isEnrolled ? enrollmentId : null,
+          enrollmentStatus: status,
+          enrollmentDecisionNote: enrollmentDecisionNote,
+          enrollmentId: status == 'Active' ? enrollmentId : null,
           paidUntil: coursePaidUntil,
           isFree: isFree,
         );
       case 'GET /api/v1/student/lectures':
         body = _lecturesPage;
       case 'POST /api/v1/student/courses/2/enroll':
-        isEnrolled = true;
+        status = 'Pending';
         body = {'message': 'OK'};
       case 'POST /api/v1/student/courses/2/unenroll':
-        isEnrolled = false;
+        status = 'Canceled';
         body = {'message': 'OK'};
       default:
         body = {'message': 'OK'};
@@ -103,14 +108,16 @@ class _Harness {
   late final SessionController session;
 
   Future<void> bootstrap({
-    bool enrolled = false,
+    String? enrollmentStatus,
+    String? enrollmentDecisionNote,
     DateTime? paidUntil,
     int? enrollmentId,
     bool isFree = false,
     String? coursePaidUntil,
   }) async {
     client = _client(
-      enrolled: enrolled,
+      enrollmentStatus: enrollmentStatus,
+      enrollmentDecisionNote: enrollmentDecisionNote,
       paidUntil: paidUntil ?? DateTime.utc(2027, 9, 9),
       enrollmentId: enrollmentId,
       isFree: isFree,
@@ -167,7 +174,7 @@ void main() {
     'not enrolled shows the empty-state copy and no further lectures request',
     (tester) async {
       final harness = _Harness();
-      await harness.bootstrap(enrolled: false);
+      await harness.bootstrap();
       await tester.pumpWidget(harness.app());
       await tester.pumpAndSettle();
 
@@ -188,7 +195,7 @@ void main() {
     tester,
   ) async {
     final harness = _Harness();
-    await harness.bootstrap(enrolled: true);
+    await harness.bootstrap(enrollmentStatus: 'Active');
     await tester.pumpWidget(harness.app());
     await tester.pumpAndSettle();
 
@@ -203,11 +210,11 @@ void main() {
     );
   });
 
-  testWidgets('tap Upi\u0161i se confirms and refetches both halves', (
+  testWidgets('tap Upi\u0161i se sends a request and shows the pending state', (
     tester,
   ) async {
     final harness = _Harness();
-    await harness.bootstrap(enrolled: false);
+    await harness.bootstrap();
     await tester.pumpWidget(harness.app());
     await tester.pumpAndSettle();
 
@@ -227,20 +234,31 @@ void main() {
       1,
     );
     expect(countRequests(harness.client, 'GET /api/v1/student/courses/2'), 2);
-    expect(countRequests(harness.client, 'GET /api/v1/student/lectures'), 2);
+    // Nothing opens before approval: no lectures refetch, no tuition screen.
+    expect(countRequests(harness.client, 'GET /api/v1/student/lectures'), 1);
     expect(
-      find.text('Uspješno ste upisani na kurs Osnove teorije muzike.'),
+      find.text(
+        'Zahtjev za upis na kurs Osnove teorije muzike je poslan. '
+        'Instruktor ga treba odobriti.',
+      ),
       findsOneWidget,
     );
-    expect(find.text('Upisan'), findsOneWidget);
-    expect(find.textContaining('Akordi I'), findsOneWidget);
+    expect(find.text('Na čekanju'), findsOneWidget);
+    expect(
+      find.text('Zahtjev za upis čeka odobrenje instruktora.'),
+      findsOneWidget,
+    );
+    expect(
+      find.widgetWithText(OutlinedButton, 'Otkaži zahtjev'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('Ispiši se refetches the master half only, no snackbar', (
     tester,
   ) async {
     final harness = _Harness();
-    await harness.bootstrap(enrolled: true);
+    await harness.bootstrap(enrollmentStatus: 'Active');
     await tester.pumpWidget(harness.app());
     await tester.pumpAndSettle();
 
@@ -267,7 +285,10 @@ void main() {
       findsOneWidget,
     );
     expect(
-      find.text('Uspješno ste upisani na kurs Osnove teorije muzike.'),
+      find.text(
+        'Zahtjev za upis na kurs Osnove teorije muzike je poslan. '
+        'Instruktor ga treba odobriti.',
+      ),
       findsNothing,
     );
   });
@@ -276,7 +297,7 @@ void main() {
     tester,
   ) async {
     final harness = _Harness();
-    await harness.bootstrap(enrolled: true);
+    await harness.bootstrap(enrollmentStatus: 'Active');
     await tester.pumpWidget(harness.app());
     await tester.pumpAndSettle();
     expect(countRequests(harness.client, 'GET /api/v1/student/lectures'), 1);
@@ -298,7 +319,6 @@ void main() {
   ) async {
     final harness = _Harness();
     await harness.bootstrap(
-      enrolled: false,
       paidUntil: DateTime.utc(2026, 9, 8),
     );
     await tester.pumpWidget(harness.app());
@@ -319,7 +339,7 @@ void main() {
     tester,
   ) async {
     final harness = _Harness();
-    await harness.bootstrap(enrolled: true, enrollmentId: 5);
+    await harness.bootstrap(enrollmentStatus: 'Active', enrollmentId: 5);
     await tester.pumpWidget(harness.app());
     await tester.pumpAndSettle();
 
@@ -333,7 +353,7 @@ void main() {
   ) async {
     final harness = _Harness();
     await harness.bootstrap(
-      enrolled: true,
+      enrollmentStatus: 'Active',
       enrollmentId: 5,
       coursePaidUntil: '2020-01-01T00:00:00Z',
     );
@@ -352,7 +372,7 @@ void main() {
   ) async {
     final harness = _Harness();
     await harness.bootstrap(
-      enrolled: true,
+      enrollmentStatus: 'Active',
       enrollmentId: 5,
       coursePaidUntil: '2027-01-01T00:00:00Z',
     );
@@ -368,7 +388,11 @@ void main() {
     tester,
   ) async {
     final harness = _Harness();
-    await harness.bootstrap(enrolled: true, enrollmentId: 5, isFree: true);
+    await harness.bootstrap(
+      enrollmentStatus: 'Active',
+      enrollmentId: 5,
+      isFree: true,
+    );
     await tester.pumpWidget(harness.app());
     await tester.pumpAndSettle();
 
@@ -377,11 +401,9 @@ void main() {
     expect(find.text('Plaćeno do'), findsNothing);
   });
 
-  testWidgets('enrolling a paid course pushes the tuition screen', (
-    tester,
-  ) async {
+  testWidgets('a request does not open tuition', (tester) async {
     final harness = _Harness();
-    await harness.bootstrap(enrolled: false, enrollmentId: 5);
+    await harness.bootstrap(enrollmentId: 5);
     await tester.pumpWidget(harness.app());
     await tester.pumpAndSettle();
 
@@ -390,15 +412,86 @@ void main() {
     await tester.tap(find.text('Potvrdi'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Plaćanje školarine'), findsOneWidget);
-    expect(find.text('Plati 800.00 KM'), findsOneWidget);
+    expect(find.text('Plaćanje školarine'), findsNothing);
+    expect(find.text('Plati 800.00 KM'), findsNothing);
+  });
+
+  testWidgets('rejected shows the reason and an enabled Upiši se', (
+    tester,
+  ) async {
+    final harness = _Harness();
+    await harness.bootstrap(
+      enrollmentStatus: 'Rejected',
+      enrollmentDecisionNote: 'Grupa za ovaj termin je popunjena.',
+    );
+    await tester.pumpWidget(harness.app());
+    await tester.pumpAndSettle();
+
+    expect(find.text('Odbijeno'), findsOneWidget);
+    expect(
+      find.text(
+        'Zahtjev za upis je odbijen: Grupa za ovaj termin je popunjena.',
+      ),
+      findsOneWidget,
+    );
+    final button = tester.widget<FilledButton>(
+      find.widgetWithText(FilledButton, 'Upiši se'),
+    );
+    expect(button.onPressed, isNotNull);
+  });
+
+  testWidgets('completed disables Upiši se and shows the reason', (
+    tester,
+  ) async {
+    final harness = _Harness();
+    await harness.bootstrap(enrollmentStatus: 'Completed');
+    await tester.pumpWidget(harness.app());
+    await tester.pumpAndSettle();
+
+    expect(find.text('Položen'), findsOneWidget);
+    expect(
+      find.text('Kurs ste završili. Ponovni upis nije moguć.'),
+      findsOneWidget,
+    );
+    final button = tester.widget<FilledButton>(
+      find.widgetWithText(FilledButton, 'Upiši se'),
+    );
+    expect(button.onPressed, isNull);
+  });
+
+  testWidgets('Otkaži zahtjev on a pending request POSTs unenroll', (
+    tester,
+  ) async {
+    final harness = _Harness();
+    await harness.bootstrap(enrollmentStatus: 'Pending');
+    await tester.pumpWidget(harness.app());
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.widgetWithText(OutlinedButton, 'Otkaži zahtjev'));
+    await tester.pumpAndSettle();
+    expect(find.text('Otkazivanje zahtjeva'), findsOneWidget);
+    expect(
+      find.text(
+        'Želite li otkazati zahtjev za upis na kurs "Osnove teorije muzike"?',
+      ),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.text('Potvrdi'));
+    await tester.pumpAndSettle();
+
+    expect(
+      countRequests(harness.client, 'POST /api/v1/student/courses/2/unenroll'),
+      1,
+    );
+    expect(countRequests(harness.client, 'GET /api/v1/student/courses/2'), 2);
   });
 
   testWidgets('returning from tuition with a null result reloads the course', (
     tester,
   ) async {
     final harness = _Harness();
-    await harness.bootstrap(enrolled: true, enrollmentId: 5);
+    await harness.bootstrap(enrollmentStatus: 'Active', enrollmentId: 5);
     await tester.pumpWidget(harness.app());
     await tester.pumpAndSettle();
     expect(countRequests(harness.client, 'GET /api/v1/student/courses/2'), 1);

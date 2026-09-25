@@ -8,12 +8,14 @@ class CourseDetailActionBar extends StatelessWidget {
   final VoidCallback onLectures;
   final VoidCallback onAnnouncements;
   final VoidCallback onRanking;
+  final VoidCallback onEnrollments;
 
   const CourseDetailActionBar({
     super.key,
     required this.onLectures,
     required this.onAnnouncements,
     required this.onRanking,
+    required this.onEnrollments,
   });
 
   @override
@@ -33,6 +35,11 @@ class CourseDetailActionBar extends StatelessWidget {
             icon: const Icon(Icons.campaign, size: 18),
             label: const Text('Objave'),
             onPressed: onAnnouncements,
+          ),
+          OutlinedButton.icon(
+            icon: const Icon(Icons.how_to_reg, size: 18),
+            label: const Text('Upisi'),
+            onPressed: onEnrollments,
           ),
           OutlinedButton.icon(
             icon: const Icon(Icons.leaderboard, size: 18),

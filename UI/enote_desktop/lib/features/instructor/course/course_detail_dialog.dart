@@ -9,6 +9,7 @@ import '../lecture/lecture_workspace_dialog.dart';
 import '../ranking/ranking_provider.dart';
 import 'course_announcements_dialog.dart';
 import 'course_detail_sections.dart';
+import 'course_enrollments_dialog.dart';
 import 'course_form_screen.dart';
 import 'course_provider.dart';
 import 'course_ranking_dialog.dart';
@@ -154,6 +155,17 @@ class _CourseDetailDialogState extends State<CourseDetailDialog>
     }
   }
 
+  Future<void> _openEnrollments() async {
+    final changed = await CourseEnrollmentsDialog.show(
+      context,
+      courseId: _course.id,
+      courseName: _course.name,
+    );
+    if (changed == true && mounted) {
+      _refreshCourse();
+    }
+  }
+
   Future<void> _openRanking() async {
     await CourseRankingDialog.show(
       context,
@@ -200,6 +212,7 @@ class _CourseDetailDialogState extends State<CourseDetailDialog>
               onLectures: _openLectures,
               onAnnouncements: _openAnnouncements,
               onRanking: _openRanking,
+              onEnrollments: _openEnrollments,
             ),
             Flexible(
               child: SingleChildScrollView(

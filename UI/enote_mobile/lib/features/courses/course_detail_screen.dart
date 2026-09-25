@@ -112,25 +112,15 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
       () async {
         await context.read<CourseProvider>().enroll(course.id);
         await _loadCourse();
-        _lecturesController.refresh(resetPage: true);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                'Uspješno ste upisani na kurs ${course.name}.',
+                'Zahtjev za upis na kurs ${course.name} je poslan. '
+                'Instruktor ga treba odobriti.',
               ),
             ),
           );
-        }
-        // An enrollment starts unpaid: send the student straight to tuition
-        // unless the course is free (decision 7). Reload on return so the
-        // banner flips to `Plaćeno do`.
-        final enrolledCourse = _course;
-        if (mounted &&
-            enrolledCourse != null &&
-            !enrolledCourse.isFree &&
-            enrolledCourse.enrollmentId != null) {
-          await _openTuition(enrolledCourse);
         }
       },
       showBanner: true,
@@ -138,10 +128,13 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
   }
 
   Future<void> _unenroll(CourseDto course) async {
+    final pending = course.enrollmentStatus == EnrollmentStatus.pending;
     final confirmed = await confirmDialog(
       context: context,
-      title: 'Ispis sa kursa',
-      message: 'Želite li se ispisati sa kursa "${course.name}"?',
+      title: pending ? 'Otkazivanje zahtjeva' : 'Ispis sa kursa',
+      message: pending
+          ? 'Želite li otkazati zahtjev za upis na kurs "${course.name}"?'
+          : 'Želite li se ispisati sa kursa "${course.name}"?',
     );
     if (confirmed != true || !mounted) return;
     await submitWith(
@@ -220,11 +213,16 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
           ),
         ),
         if (!enrolled)
-          const SliverToBoxAdapter(
+          SliverToBoxAdapter(
             child: Padding(
-              padding: EdgeInsets.all(24),
+              padding: const EdgeInsets.all(24),
               child: Text(
-                'Upišite se da vidite predavanja ovog kursa.',
+                switch (course.enrollmentStatus) {
+                  EnrollmentStatus.pending =>
+                    'Predavanja su vidljiva nakon što instruktor odobri upis.',
+                  EnrollmentStatus.completed => 'Kurs ste završili.',
+                  _ => 'Upišite se da vidite predavanja ovog kursa.',
+                },
                 textAlign: TextAlign.center,
               ),
             ),

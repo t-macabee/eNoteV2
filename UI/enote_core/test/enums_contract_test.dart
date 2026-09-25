@@ -75,6 +75,28 @@ void main() {
     });
   });
 
+  group('EnrollmentStatus wire contract', () {
+    test('every value round-trips via toJson/fromJson', () {
+      for (final value in EnrollmentStatus.values) {
+        expect(EnrollmentStatus.fromJson(value.toJson()), value);
+      }
+    });
+
+    // Contract: eNote.Domain/Enums/EnrollmentStatus.cs — Active, Completed,
+    // Canceled, Pending, Rejected (JsonStringEnumConverter).
+    test('fromJson maps every backend wire value', () {
+      expect(EnrollmentStatus.fromJson('Active'), EnrollmentStatus.active);
+      expect(EnrollmentStatus.fromJson('Completed'), EnrollmentStatus.completed);
+      expect(EnrollmentStatus.fromJson('Canceled'), EnrollmentStatus.canceled);
+      expect(EnrollmentStatus.fromJson('Pending'), EnrollmentStatus.pending);
+      expect(EnrollmentStatus.fromJson('Rejected'), EnrollmentStatus.rejected);
+    });
+
+    test('unknown names fall back to pending', () {
+      expect(EnrollmentStatus.fromJson('garbage'), EnrollmentStatus.pending);
+    });
+  });
+
   group('RentalTrigger wire contract', () {
     test('every value round-trips via toJson/fromJson', () {
       for (final value in RentalTrigger.values) {

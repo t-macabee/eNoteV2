@@ -32,6 +32,10 @@ class CourseMasterCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final status = course.enrollmentStatus;
+    final canRequest = status == null ||
+        status == EnrollmentStatus.canceled ||
+        status == EnrollmentStatus.rejected;
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -45,7 +49,8 @@ class CourseMasterCard extends StatelessWidget {
                   style: Theme.of(context).textTheme.headlineSmall,
                 ),
               ),
-              if (enrolled) const Chip(label: Text('Upisan')),
+              if (status != null && status != EnrollmentStatus.canceled)
+                Chip(label: Text(enrollmentStatusLabel(status))),
             ],
           ),
           const SizedBox(height: 12),
@@ -71,7 +76,30 @@ class CourseMasterCard extends StatelessWidget {
               style: Theme.of(context).textTheme.bodyMedium,
             ),
           ],
-          if (membershipBlocked && !enrolled) ...[
+          if (status == EnrollmentStatus.pending) ...[
+            const SizedBox(height: 8),
+            const BlockedReasonBanner(
+              icon: Icons.hourglass_empty,
+              reason: 'Zahtjev za upis čeka odobrenje instruktora.',
+            ),
+          ],
+          if (status == EnrollmentStatus.rejected) ...[
+            const SizedBox(height: 8),
+            BlockedReasonBanner(
+              icon: Icons.info_outline,
+              reason:
+                  'Zahtjev za upis je odbijen: '
+                  '${course.enrollmentDecisionNote ?? '-'}',
+            ),
+          ],
+          if (status == EnrollmentStatus.completed) ...[
+            const SizedBox(height: 8),
+            const BlockedReasonBanner(
+              icon: Icons.check_circle_outline,
+              reason: 'Kurs ste završili. Ponovni upis nije moguć.',
+            ),
+          ],
+          if (membershipBlocked && canRequest) ...[
             const SizedBox(height: 8),
             BlockedReasonBanner(
               icon: Icons.info_outline,
@@ -88,14 +116,24 @@ class CourseMasterCard extends StatelessWidget {
           const SizedBox(height: 12),
           Row(
             children: [
-              if (enrolled)
+              if (status == EnrollmentStatus.active)
                 OutlinedButton(
                   onPressed: isActing ? null : onUnenroll,
                   child: const Text('Ispiši se'),
                 )
+              else if (status == EnrollmentStatus.pending)
+                OutlinedButton(
+                  onPressed: isActing ? null : onUnenroll,
+                  child: const Text('Otkaži zahtjev'),
+                )
               else
                 FilledButton(
-                  onPressed: (membershipBlocked || isActing) ? null : onEnroll,
+                  onPressed:
+                      (membershipBlocked ||
+                          isActing ||
+                          status == EnrollmentStatus.completed)
+                      ? null
+                      : onEnroll,
                   child: const Text('Upiši se'),
                 ),
               const SizedBox(width: 8),
