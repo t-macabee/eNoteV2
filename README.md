@@ -1,5 +1,7 @@
 # eNote
 
+**English summary:** eNote is a platform for a music school: courses, lectures, assignments, instrument rentals and notifications. It has an ASP.NET Core API (SQL Server, EF Core, JWT with four roles), a separate worker service on RabbitMQ for email and notifications, Stripe payments with signed webhooks, and two Flutter apps that share one Dart package: a Windows desktop app for staff and an Android app for students. 700+ backend tests run in CI. The rest of this README is in Bosnian, as the faculty requires.
+
 Platforma za muzičku školu. Pokriva kurseve, predavanja, zadatke, najam
 instrumenata i notifikacije. Sastoji se od ASP.NET Core API-ja, zasebnog worker
 servisa i dva Flutter klijenta koji se nalaze u ovom repozitoriju pod `UI/`:
