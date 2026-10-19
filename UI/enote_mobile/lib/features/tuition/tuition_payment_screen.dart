@@ -11,12 +11,6 @@ import '../payments/payment_review.dart';
 import '../payments/payment_sheet_gateway.dart';
 import 'tuition_payment_provider.dart';
 
-/// The tuition payment flow for one enrollment: review, Stripe sheet,
-/// processing, succeeded, failed/cancelled, pending.
-///
-/// Mirrors the rental screen but needs no server load for the review step: the course
-/// name and monthly price travel with the route arguments. The screen never
-/// caches a `clientSecret` and never renders `paymentIntentId`.
 class TuitionPaymentScreen extends StatefulWidget {
   final int enrollmentId;
   final String courseName;
@@ -41,8 +35,6 @@ class TuitionPaymentScreen extends StatefulWidget {
 class _TuitionPaymentScreenState extends State<TuitionPaymentScreen> {
   late final PaymentFlowController _flow;
 
-  /// Read per call, not in `initState`: callers that never pay (e.g. the
-  /// instrument detail deep link) need not provide it.
   TuitionPaymentProvider get _payments =>
       context.read<TuitionPaymentProvider>();
 

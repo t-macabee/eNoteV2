@@ -27,9 +27,6 @@ class _NullBytesPicker extends FilePicker {
 }
 
 void main() {
-  // The real platform is never registered in widget tests (the `late`
-  // `_instance` throws on read), and no other test touches the plugin, so
-  // restore only when there is something to restore.
   FilePicker? realPicker;
   try {
     realPicker = FilePicker.platform;

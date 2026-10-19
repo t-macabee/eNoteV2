@@ -7,8 +7,6 @@ import '../../shell/app_router.dart';
 import '../../widgets/paged_list_view.dart';
 import 'announcement_provider.dart';
 
-/// Announcement list (tab 1 · Objave): paged list, search → `title`
-/// server-side.
 class AnnouncementListScreen extends StatefulWidget {
   const AnnouncementListScreen({super.key});
 

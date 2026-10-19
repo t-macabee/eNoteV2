@@ -38,8 +38,6 @@ Map<String, dynamic> _payment(String status) => {
   'periodEnd': '2026-10-09T12:41:00',
 };
 
-/// Routes by path; intent and payment queues let each test script retries
-/// and poll sequences. Empty queues fall back to success shapes.
 class _TuitionStubClient extends http.BaseClient {
   final List<({int status, Object body})> intents;
   final List<({int status, Object body})> payments;

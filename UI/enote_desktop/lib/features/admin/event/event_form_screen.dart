@@ -13,14 +13,9 @@ import 'event_provider.dart';
 const _scopedReason =
     'Događaj pripada kursu. Administrator može mijenjati i brisati samo događaje na nivou platforme.';
 
-/// Create/edit form for `admin/events`. Admin can only manage platform-wide
-/// events (without course or instructor scoping).
 class EventFormScreen extends StatefulWidget {
   final EventDto? existing;
 
-  /// How the wrapped [EntityFormScaffold] is presented — pass
-  /// [EntityFormPresentation.dialog] when opened via
-  /// [EntityFormScaffold.showAsDialog].
   final EntityFormPresentation presentation;
 
   const EventFormScreen({
@@ -87,6 +82,10 @@ class _EventFormScreenState extends State<EventFormScreen>
     final readOnly = existing?.isScoped ?? false;
 
     return EntityFormScaffold(
+      savedMessage: 'Događaj je sačuvan.',
+      deleteConfirmMessage:
+          'Da li ste sigurni da želite da obrišete događaj "${existing?.title ?? ''}"?',
+      deletedMessage: 'Događaj je obrisan.',
       presentation: widget.presentation,
       title: widget.existing == null
           ? 'Dodaj događaj'

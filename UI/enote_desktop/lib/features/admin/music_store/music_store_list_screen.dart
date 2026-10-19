@@ -7,7 +7,7 @@ import '../../../widgets/entity_form_scaffold.dart';
 import '../../../widgets/entity_grid_screen.dart';
 import '../../../widgets/pdf_report_button.dart';
 import '../city/city_provider.dart';
-import 'music_store_detail_screen.dart';
+import 'music_store_detail_dialog.dart';
 import 'music_store_form_screen.dart';
 import 'music_store_provider.dart';
 
@@ -21,7 +21,6 @@ class MusicStoreListScreen extends StatefulWidget {
 class _MusicStoreListScreenState extends State<MusicStoreListScreen> {
   final _gridKey = GlobalKey<EntityGridScreenState<MusicStoreDto>>();
 
-  /// null = "Svi gradovi" (default) — no city filter applied.
   int? _cityId;
   List<CityDto> _cities = [];
   bool _citiesLoading = true;
@@ -80,11 +79,7 @@ class _MusicStoreListScreenState extends State<MusicStoreListScreen> {
         titleOf: (item) => item.storeName,
         imageUrlOf: (store) => store.imagePath,
         onTap: (context, item) async {
-          await Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => MusicStoreDetailScreen(storeId: item.id),
-            ),
-          );
+          await MusicStoreDetailDialog.show(context, item.id);
           _gridKey.currentState?.refresh();
         },
         filterBar: EntityFilterDropdown<int?>(
@@ -106,17 +101,10 @@ class _MusicStoreListScreenState extends State<MusicStoreListScreen> {
             _applyFilters();
           },
         ),
-        // Read `_cityId` at call time (a field), not a snapshot — matches
-        // UserGridScreen's rationale: setState doesn't rebuild
-        // synchronously, so this closure must see the latest value even if
-        // it runs against a stale build.
         fetcher: (page, pageSize, search) => context.read<MusicStoreProvider>().search(pagedQuery(page, pageSize, search, searchField: 'storeName', filters: {
           if (_cityId != null) 'cityId': _cityId,
 })),
         onAdd: () => _openForm(),
-        // Only group by city when no specific city filter is active — when
-        // one city is selected every visible row already shares it, so a
-        // section header would be redundant.
         groupKeyOf: _cityId == null
             ? (store) => store.addressCity ?? 'Nepoznat grad'
             : null,

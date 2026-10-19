@@ -183,7 +183,6 @@ void main() {
         findsOneWidget,
       );
       expect(find.textContaining('Akordi I'), findsNothing);
-      // The initial load fires exactly one lectures request.
       expect(countRequests(harness.client, 'GET /api/v1/student/lectures'), 1);
 
       await tester.pump(const Duration(seconds: 1));
@@ -234,7 +233,6 @@ void main() {
       1,
     );
     expect(countRequests(harness.client, 'GET /api/v1/student/courses/2'), 2);
-    // Nothing opens before approval: no lectures refetch, no tuition screen.
     expect(countRequests(harness.client, 'GET /api/v1/student/lectures'), 1);
     expect(
       find.text(
@@ -278,7 +276,6 @@ void main() {
       1,
     );
     expect(countRequests(harness.client, 'GET /api/v1/student/courses/2'), 2);
-    // No further lectures request after the initial load.
     expect(countRequests(harness.client, 'GET /api/v1/student/lectures'), 1);
     expect(
       find.text('Upišite se da vidite predavanja ovog kursa.'),
@@ -306,7 +303,6 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.textContaining('Akordi I'));
     await tester.pumpAndSettle();
-    // The router case pushes the real S18 through the scoped providers.
     expect(find.text('Prijavljeno'), findsOneWidget);
 
     await tester.pageBack();
@@ -500,7 +496,6 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Plaćanje školarine'), findsOneWidget);
 
-    // The route pops without a result (close icon or Android back).
     await tester.pageBack();
     await tester.pumpAndSettle();
     expect(countRequests(harness.client, 'GET /api/v1/student/courses/2'), 2);

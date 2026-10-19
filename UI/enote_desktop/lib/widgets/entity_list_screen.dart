@@ -26,22 +26,15 @@ typedef EntityFetcher<T> = Future<PagedResult<T>> Function(
   String search,
 );
 
-/// How an [EntityListScreen] is presented to the user.
 enum EntityListPresentation {
-  /// Full page — [Scaffold] with an [AppBar] (the default).
   page,
 
-  /// Embedded headless presentation with no outer [Scaffold]/[AppBar],
-  /// forcing inline toolbar layout.
   embedded,
 }
 
-/// How rows in [EntityListScreen] are rendered.
 enum EntityListStyle {
-  /// Standard [DataTable] grid (the default).
   table,
 
-  /// Compact [ListTile]-style rows for reference data / narrow layouts.
   tiles,
 }
 
@@ -58,28 +51,19 @@ class EntityListConfig<T> {
   final String? addLabel;
   final bool showAddButton;
   final bool showDeleteConfirmation;
+  final String Function(T item)? deleteConfirmMessageOf;
+  final String? deletedMessage;
   final bool showSearchBar;
   final Widget? filterBar;
 
-  /// Presentation mode of the list screen. When [EntityListPresentation.embedded],
-  /// outer Scaffold/AppBar chrome is omitted and the inline toolbar is forced.
   final EntityListPresentation presentation;
 
-  /// How data rows are rendered. When [EntityListStyle.tiles], items are
-  /// rendered as [ListTile] rows rather than a [DataTable].
   final EntityListStyle listStyle;
 
-  /// Leading icon displayed on each row when [listStyle] is [EntityListStyle.tiles].
   final IconData? rowIcon;
 
-  /// Indices into [columns] rendered in the tile subtitle when [listStyle]
-  /// is [EntityListStyle.tiles]. When `null` (the default), all columns
-  /// after the first are shown, preserving the historical behavior.
   final List<int>? tileSubtitleColumns;
 
-  /// Tap handler for the tile row when [listStyle] is [EntityListStyle.tiles].
-  /// When non-null it is used for [ListTile.onTap]; otherwise [onEdit] is
-  /// used as before.
   final void Function(BuildContext context, T item)? onRowTap;
 
   const EntityListConfig({
@@ -95,6 +79,8 @@ class EntityListConfig<T> {
     this.addLabel = 'Dodaj',
     this.showAddButton = true,
     this.showDeleteConfirmation = true,
+    this.deleteConfirmMessageOf,
+    this.deletedMessage,
     this.showSearchBar = true,
     this.filterBar,
     this.presentation = EntityListPresentation.page,
@@ -115,8 +101,6 @@ class EntityListScreen<T> extends StatefulWidget {
 }
 
 class EntityListScreenState<T> extends State<EntityListScreen<T>> {
-  /// Fixed at 20 for every list screen. The grid's page size is
-  /// config-driven; this one deliberately is not.
   static const int _pageSize = 20;
 
   late final PagedFetchController<T> _controller;
@@ -125,10 +109,6 @@ class EntityListScreenState<T> extends State<EntityListScreen<T>> {
   void initState() {
     super.initState();
     _controller = PagedFetchController<T>(
-      // Delegate rather than passing `widget.config.fetcher` directly: screens
-      // rebuild their config on every build, and some fetcher closures read
-      // filter state as fields at call time. Going through `widget.config`
-      // here keeps that behaviour.
       fetcher: (page, pageSize, search) =>
           widget.config.fetcher(page, pageSize, search),
       pageSize: _pageSize,
@@ -153,12 +133,6 @@ class EntityListScreenState<T> extends State<EntityListScreen<T>> {
     if (mounted) setState(() {});
   }
 
-  /// Re-runs the current page/search — call after add/edit/delete, or when
-  /// external filters (a [filterBar] control) change and should re-trigger
-  /// the fetch from page 1.
-  ///
-  /// [resetPage] defaults to false so the existing no-arg callers keep their
-  /// current behaviour.
   void refresh({bool resetPage = false}) =>
       _controller.refresh(resetPage: resetPage);
 
@@ -167,14 +141,20 @@ class EntityListScreenState<T> extends State<EntityListScreen<T>> {
       final confirmed = await confirmDialog(
         context: context,
         title: 'Potvrdite brisanje',
-        message: 'Da li ste sigurni da želite da obrišete ovaj zapis?',
+        message: widget.config.deleteConfirmMessageOf?.call(item) ??
+            'Da li ste sigurni da želite da obrišete ovaj zapis?',
       );
       if (confirmed != true) return;
     }
 
     if (!mounted) return;
     try {
-      await widget.config.onDelete?.call(context, item);
+      final deleted = await widget.config.onDelete?.call(context, item);
+      final deletedMessage = widget.config.deletedMessage;
+      if (mounted && deleted == true && deletedMessage != null) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(deletedMessage)));
+      }
     } catch (e) {
       if (mounted) {
         ErrorBanner.show(context, message: userMessage(e));

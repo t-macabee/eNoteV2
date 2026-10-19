@@ -1,14 +1,5 @@
 import 'package:flutter/material.dart';
 
-/// The single-row toolbar shared by [EntityGridScreen] and the inline-toolbar
-/// mode of [EntityListScreen]: search field, filter bar, trailing widget and
-/// Add button, all on one line at one height.
-///
-/// This covers the *inline* layout only. [EntityListScreen] also has a stacked
-/// layout — a full-width search bar above the filter bar, with Add living in
-/// the AppBar actions — which is what its default (non-inline, non-embedded)
-/// consumers use. That path has no grid counterpart and stays in
-/// [EntityListScreen].
 class EntityToolbar extends StatelessWidget {
   const EntityToolbar({
     super.key,
@@ -43,14 +34,6 @@ class EntityToolbar extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Search + filterBar share one Expanded slot so they're the
-            // only thing that gives way when the row is tight (the search
-            // field shrinks below its 420 cap instead of overflowing).
-            // Keeping them out of the outer Row's flex pool — rather than
-            // giving the search field its own Flexible there — means they
-            // don't compete with trailing/the add button for space: any
-            // width they don't use here stays inside this Expanded instead
-            // of leaking past the button as unused trailing space.
             Expanded(
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -81,9 +64,6 @@ class EntityToolbar extends StatelessWidget {
                     ),
                   if (showSearch && filterBar != null)
                     const SizedBox(width: 12),
-                  // Placed directly (no Expanded/Flexible): filterBar must
-                  // size itself to its own content (e.g. a Row with
-                  // MainAxisSize.min, or a fixed-width SizedBox).
                   ?filterBar,
                 ],
               ),

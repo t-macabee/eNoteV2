@@ -2,9 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../notifications/notification_controller.dart';
 
-/// Bell icon with an unread-count badge, driven by the same
-/// [NotificationController] the full notification list uses — opening the
-/// list and coming back never desyncs the badge from what's actually unread.
 class NotificationBadge extends StatelessWidget {
   final NotificationController controller;
   final VoidCallback onTap;

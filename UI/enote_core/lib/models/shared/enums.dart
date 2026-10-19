@@ -1,6 +1,3 @@
-/// The API serialises every enum as its PascalCase member name
-/// (`JsonStringEnumConverter`, no naming policy). Dart member names are the
-/// same words in camelCase, so the wire form is derived, not tabulated.
 String _wireName(Enum value) =>
     value.name[0].toUpperCase() + value.name.substring(1);
 

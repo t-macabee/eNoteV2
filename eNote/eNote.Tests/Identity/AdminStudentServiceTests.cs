@@ -136,9 +136,6 @@ public sealed class AdminStudentServiceTests
         context.Set<Student>().AddRange(student1, student2, student3);
         await context.SaveChangesAsync();
 
-        // student1 is enrolled in both course1 and course1b (instructor 1)
-        // student2 is enrolled in course2 (instructor 2)
-        // student3 is not enrolled in any course
         context.Set<Enrollment>().AddRange(
             new Enrollment(student1.Id, course1.Id, EnrollmentStatus.Active),
             new Enrollment(student1.Id, course1b.Id, EnrollmentStatus.Active),
@@ -165,7 +162,6 @@ public sealed class AdminStudentServiceTests
         Assert.Equal(student2.Id, instructor2Item.Id);
         Assert.Equal(1, instructor2Result.TotalCount);
 
-        // Admin unscoped query still returns all students
         var adminResult = await service.GetPagedAsync(new StudentSearchObject { IncludeTotalCount = true });
         Assert.Equal(3, adminResult.Items.Count);
         Assert.Equal(3, adminResult.TotalCount);
@@ -232,7 +228,6 @@ public sealed class AdminStudentServiceTests
         context.Set<Student>().AddRange(student1, student2);
         await context.SaveChangesAsync();
 
-        // student1 is enrolled in instructor2's course only
         context.Set<Enrollment>().Add(new Enrollment(student1.Id, course2.Id, EnrollmentStatus.Active));
         await context.SaveChangesAsync();
 
@@ -351,7 +346,6 @@ public sealed class AdminStudentServiceTests
         context.Set<Student>().AddRange(student1, student2);
         await context.SaveChangesAsync();
 
-        // student1 is enrolled in instructor2's course only
         context.Set<Enrollment>().Add(new Enrollment(student1.Id, course2.Id, EnrollmentStatus.Active));
         await context.SaveChangesAsync();
 

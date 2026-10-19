@@ -19,8 +19,6 @@ public sealed class RentalNotificationDispatcher(
         var message = new RentalStatusChanged(rental.Id, studentUserId, studentUserId, rental.RentalStatus.ToString(), rental.InstrumentModel, title, body, clock.UtcNow);
         EnqueueOutbox(message);
 
-        // Desktop-relevant notification: inform responsible StoreEmployees about the new request.
-        // Follows the same outbox + Worker consumer pattern used for student notifications.
         var now = clock.UtcNow;
         var employeeUserIds = await LoadActiveEmployeeUserIdsAsync(rental.MusicStoreId, cancellationToken);
 
@@ -35,8 +33,6 @@ public sealed class RentalNotificationDispatcher(
 
     public async Task DispatchTransitionAsync(InstrumentRentalDto rental, RentalTrigger trigger, int actorUserId, CancellationToken cancellationToken = default)
     {
-        // A cancel notifies the party that did not cancel: the student's cancel
-        // informs the store; a store employee's cancel informs the student.
         if (trigger == RentalTrigger.Cancel && actorUserId == rental.StudentUserId)
         {
             var now = clock.UtcNow;
@@ -88,8 +84,6 @@ public sealed class RentalNotificationDispatcher(
 
     public async Task DispatchPaymentSucceededAsync(int rentalId, long amountCents, string currency, CancellationToken cancellationToken = default)
     {
-        // The Stripe webhook has no mapped DTO; load only what the message needs.
-        // Filters are ignored because a paid rental's instrument can be deactivated.
         var rental = await context.Set<InstrumentRental>()
             .AsNoTracking()
             .IgnoreQueryFilters()
@@ -103,10 +97,6 @@ public sealed class RentalNotificationDispatcher(
         EnqueueOutbox(message);
     }
 
-    // Currency display contract, mirrored in
-    // UI/enote_core/lib/formatting/formatters.dart (_currencyLabel):
-    // an empty code or the BAM code is displayed as KM; every other code
-    // is upper-cased.
     private const string LocalCurrencyCode = "bam";
     private const string LocalCurrencyLabel = "KM";
 

@@ -2,11 +2,6 @@ using eNote.Application.Features.Rentals.Payments.Services;
 
 namespace eNote.Tests.TestUtils;
 
-/// <summary>
-/// In-memory IPaymentGateway double for unit tests. Never touches Stripe:
-/// returns stub pi_test_* / re_test_* ids and a fake client secret. Keeps a
-/// record of every call so tests can assert what was sent to the gateway.
-/// </summary>
 public sealed class FakePaymentGateway : IPaymentGateway
 {
     private readonly Dictionary<string, PaymentIntentData> _intents = new();

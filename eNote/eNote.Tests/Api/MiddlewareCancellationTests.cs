@@ -5,8 +5,6 @@ using Microsoft.AspNetCore.Http;
 
 namespace eNote.Tests.Api;
 
-// Characterization: UseExceptionHandler itself answers an aborted request with 499 and no body
-// before our handler runs, so UseErrorHandling needs no OperationCanceledException arm (B7-05).
 public sealed class MiddlewareCancellationTests
 {
     [Fact]

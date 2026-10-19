@@ -7,11 +7,6 @@ import '../../../widgets/entity_filter_dropdown.dart';
 import '../../../widgets/entity_grid_screen.dart';
 import 'admin_course_provider.dart';
 
-/// Admin course overview: paged, read-only list across ALL instructors, for
-/// cross-system oversight. Course create/edit/delete is Instructor-owned
-/// (`CourseController`) — Admin has no write access here. Admins can filter
-/// by name (search bar) and published status, and see which instructor owns
-/// each course.
 class AdminCourseListScreen extends StatefulWidget {
   const AdminCourseListScreen({super.key});
 
@@ -22,7 +17,6 @@ class AdminCourseListScreen extends StatefulWidget {
 class _AdminCourseListScreenState extends State<AdminCourseListScreen> {
   final _gridKey = GlobalKey<EntityGridScreenState<CourseDto>>();
 
-  /// null = "Svi" (default) — no published-status filter applied.
   bool? _isPublished;
 
   void _applyFilters() {
@@ -38,6 +32,7 @@ class _AdminCourseListScreenState extends State<AdminCourseListScreen> {
         searchHint: 'Pretraži po nazivu...',
         placeholderIcon: Icons.class_,
         titleOf: (item) => item.name,
+        imageUrlOf: (item) => item.imagePath,
         filterBar: EntityFilterDropdown<bool?>(
           label: 'Objavljen',
           width: 220,

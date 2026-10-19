@@ -36,8 +36,6 @@ builder.Services
         bus.AddConsumer<SubmissionGradedPushConsumer>();
         bus.AddConsumer<AnnouncementPublishedPushConsumer>();
         bus.AddConsumer<EnrollmentStatusChangedPushConsumer>();
-        // No FaultLoggingConsumer<T> here: its endpoint is named after T, the same queue as the
-        // worker's consumer, so the API would compete for the worker's messages. The worker logs faults.
     })
     .AddJwtAuthentication()
     .AddAuthorization()
@@ -90,7 +88,6 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseAuthentication();
-// Must run after UseAuthentication: partition policies key on the JWT "sub" claim.
 app.UseRateLimiter();
 app.UseMiddleware<eNote.API.Middleware.TenantInitializationMiddleware>();
 app.UseAuthorization();

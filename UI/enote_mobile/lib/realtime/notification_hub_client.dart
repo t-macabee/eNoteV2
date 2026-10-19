@@ -5,29 +5,18 @@ import 'package:signalr_netcore/signalr_client.dart';
 
 import 'package:enote_core/enote_core.dart';
 
-/// SignalR client for `/hubs/notifications`.
-///
-/// Primary (instant) path for notifications; the 30 s REST poll in
-/// [NotificationController] stays the always-on fallback, so a failed hub
-/// never breaks the badge — [start] logs and returns instead of throwing.
 class NotificationHubClient {
   final String hubUrl;
   final Future<String> Function() tokenProvider;
 
-  /// Refreshes the inbox list (called on every push; the hub payload has no
-  /// `id`/`isRead`, so it cannot be inserted locally).
   VoidCallback onRefresh;
 
-  /// Shows the foreground push UI (called after [onRefresh]).
   void Function(NotificationPushDto push) onPush;
 
   HubConnection? _connection;
   bool _starting = false;
   String? _tokenUsed;
 
-  /// Test seam: builds the [HubConnection] used by [start]. Defaults to the
-  /// real SignalR builder; tests inject a fake to count rebuilds without
-  /// touching the network.
   final HubConnection Function()? connectionFactory;
 
   NotificationHubClient({
@@ -42,8 +31,6 @@ class NotificationHubClient {
 
   static void _noopPush(NotificationPushDto _) {}
 
-  /// Derives the hub URL from the API base URL the same way core
-  /// `networkImageOrPlaceholder` derives the origin.
   static String deriveHubUrl(String apiBaseUrl) {
     final uri = Uri.tryParse(apiBaseUrl);
     final origin = (uri != null && uri.hasScheme)

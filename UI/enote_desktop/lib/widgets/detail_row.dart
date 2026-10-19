@@ -1,16 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 
-/// An icon + stacked label/value row used in read-only detail panels/dialogs
-/// (e.g. store details, instrument details). Factored out of
-/// `MusicStoreDetailScreen`, `ShopStoreScreen` and `InstrumentDetailDialog`,
-/// which each defined an identical private `_buildInfoRow` method.
-///
-/// Named `DetailRow` rather than `InfoRow` to avoid colliding with
-/// `enote_core`'s `InfoRow` (a different, side-by-side label/value layout
-/// already used by `UserGridScreen`/`ProfileDialog`) — the two aren't
-/// interchangeable, so this stays a separate widget rather than replacing
-/// that one.
 class DetailRow extends StatelessWidget {
   final IconData icon;
   final String label;

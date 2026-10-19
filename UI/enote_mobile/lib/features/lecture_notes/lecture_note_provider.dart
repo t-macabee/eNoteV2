@@ -1,9 +1,5 @@
 import 'package:enote_core/enote_core.dart';
 
-/// Lecture notes over `student/lectures/{lectureId}/notes`.
-///
-/// Route-scoped: created in the `/lectures/notes` route because the endpoint
-/// depends on the lecture.
 class LectureNoteProvider extends ReadOnlyProvider<LectureNoteDto> {
   final int lectureId;
 

@@ -13,10 +13,6 @@ class AssignmentListScreen extends StatefulWidget {
   final int lectureId;
   final String lectureName;
 
-  /// Defaults to [EntityListPresentation.page] (own Scaffold/AppBar, with a
-  /// back/close button when pushed via Navigator). Pass
-  /// [EntityListPresentation.embedded] only when the caller already
-  /// provides that chrome.
   final EntityListPresentation presentation;
   final void Function(AssignmentDto assignment)? onOpenSubmissions;
   final VoidCallback? onMutation;
@@ -86,6 +82,9 @@ class _AssignmentListScreenState extends State<AssignmentListScreen> {
         fetcher: (page, pageSize, search) => context.read<AssignmentProvider>().search(pagedQuery(page, pageSize, search, searchField: 'title')),
         onAdd: () => _openForm(),
         onEdit: (context, item) => _openForm(item),
+        deleteConfirmMessageOf: (item) =>
+            'Da li ste sigurni da želite da obrišete zadatak "${item.title}"?',
+        deletedMessage: 'Zadatak je obrisan.',
         onDelete: (context, item) async {
           final provider = context.read<AssignmentProvider>();
           await provider.remove(item.id);

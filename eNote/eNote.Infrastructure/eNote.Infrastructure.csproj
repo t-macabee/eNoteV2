@@ -25,6 +25,7 @@
     <PackageReference Include="MimeKit" />
     <PackageReference Include="QuestPDF" />
     <PackageReference Include="Stripe.net" />
+    <PackageReference Include="System.Security.Cryptography.Pkcs" />
   </ItemGroup>
 
   <ItemGroup>

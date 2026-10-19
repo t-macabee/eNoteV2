@@ -15,9 +15,6 @@ import 'music_store_provider.dart';
 class MusicStoreFormScreen extends StatefulWidget {
   final MusicStoreDto? existing;
 
-  /// How the wrapped [EntityFormScaffold] is presented — pass
-  /// [EntityFormPresentation.dialog] when opened via
-  /// [EntityFormScaffold.showAsDialog].
   final EntityFormPresentation presentation;
 
   const MusicStoreFormScreen({
@@ -91,6 +88,7 @@ class _MusicStoreFormScreenState extends State<MusicStoreFormScreen>
   @override
   Widget build(BuildContext context) {
     return EntityFormScaffold(
+      savedMessage: 'Prodavnica je sačuvana.',
       presentation: widget.presentation,
       title: _isEditMode ? 'Uredi prodavnicu' : 'Dodaj prodavnicu',
       isEditMode: _isEditMode,

@@ -80,7 +80,6 @@ void main() {
         await tester.pumpAndSettle();
       }
 
-      // First save: fill Model, Proizvođač, and pick type "Gitara".
       await fillBasicFields();
       await pickInstrumentType('Gitara');
       await save();
@@ -92,9 +91,6 @@ void main() {
       expect(firstBody['model'], equals('Test model'));
       expect(firstBody['manufacturer'], equals('Test proizvođač'));
 
-      // Second save: only re-fill Model and Proizvođač, type dropdown left untouched.
-      // The form's onReset cleared _selectedInstrumentTypeId to null, so the dropdown
-      // should also show empty (not the stale "Gitara" from before the fix).
       await fillBasicFields();
       await save();
 

@@ -69,10 +69,6 @@ class _PagedListViewState<T> extends State<PagedListView<T>> {
         Expanded(
           child: RefreshIndicator(
             onRefresh: () => widget.controller.load(),
-            // The state view replaces the list only when there is no list to
-            // show. A failed reload on top of loaded rows keeps the rows:
-            // taking the state-view branch with items present used to render
-            // an empty `SizedBox`, blanking the screen.
             child: isLoading || items.isEmpty
                 ? ListView(
                     physics: const AlwaysScrollableScrollPhysics(),

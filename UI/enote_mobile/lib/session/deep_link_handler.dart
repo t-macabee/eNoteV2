@@ -72,9 +72,6 @@ class DeepLinkHandler {
           arguments: ResetArgs(email: email, token: token),
         );
       case StripeRedirectTarget():
-        // A redirect-based Stripe method coming back to the app: if a
-        // payment screen is on top it runs one more poll cycle, else
-        // the link is ignored.
         StripeRedirect.handler?.call();
         break;
       case UnknownTarget():

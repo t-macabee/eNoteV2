@@ -5,9 +5,6 @@ import '../formatting/formatters.dart';
 import '../models/communication/communication_models.dart';
 import '../notifications/notification_controller.dart';
 import 'error_banner.dart';
-/// Full notification screen, driven by the same [NotificationController]
-/// instance as the shell's `NotificationBadge` — marking a row read here
-/// updates the bell's count immediately, with no separate fetch.
 class NotificationListView extends StatefulWidget {
   final NotificationController controller;
 

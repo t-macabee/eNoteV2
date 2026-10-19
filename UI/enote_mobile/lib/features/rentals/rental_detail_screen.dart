@@ -13,7 +13,6 @@ import 'payments/rental_payment_provider.dart';
 import 'rental_provider.dart';
 import 'rental_timeline.dart';
 
-/// Rental detail: header, timeline, fees, and the two actions.
 class RentalDetailScreen extends StatefulWidget {
   final int rentalId;
 
@@ -220,9 +219,6 @@ class _RentalDetailScreenState extends State<RentalDetailScreen> {
     return parts.join(' · ');
   }
 
-  /// `[ Plati ]` is bound to the server's own payable predicate:
-  /// the instrument was actually picked up, it has come back, the total is
-  /// known and nothing has been paid yet.
   bool _isPayable(InstrumentRentalDto rental) {
     final isReturned =
         rental.rentalStatus == InstrumentRentalStatus.completed ||
@@ -249,8 +245,6 @@ class _RentalDetailScreenState extends State<RentalDetailScreen> {
                   arguments: PaymentArgs(rental.id),
                 )
                 .then((_) {
-                  // A finished payment flips isPaid server-side; reload so
-                  // the screen shows Plaćeno without a manual refresh.
                   if (mounted) _load();
                 }),
             child: Text('Plati ${formatKM(rental.totalFee)}'),

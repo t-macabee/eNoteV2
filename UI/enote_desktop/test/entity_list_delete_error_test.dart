@@ -66,4 +66,58 @@ void main() {
     expect(fetchCount, 2);
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('EntityListScreen names the item in the confirm and shows the deleted message',
+      (WidgetTester tester) async {
+    final authState = AuthState(baseUrl: 'http://localhost:5059/api/v1/');
+    final apiClient = ApiClient(
+      baseUrl: 'http://localhost:5059/api/v1/',
+      authState: authState,
+      httpClient: ScriptedClient((_) => jsonResponse('', 200)),
+    );
+
+    await tester.pumpWidget(
+      Provider<ApiClient>.value(
+        value: apiClient,
+        child: MaterialApp(
+          home: Scaffold(
+            body: EntityListScreen<String>(
+              config: EntityListConfig<String>(
+                title: 'Gradovi',
+                fetcher: (page, pageSize, search) async => PagedResult<String>(
+                  items: const ['Mostar'],
+                  page: 1,
+                  pageSize: 10,
+                  totalCount: 1,
+                ),
+                columns: [
+                  ColumnSpec(
+                    label: 'Naziv',
+                    value: (item) => item,
+                  ),
+                ],
+                deleteConfirmMessageOf: (item) =>
+                    'Da li ste sigurni da želite da obrišete grad "$item"?',
+                deletedMessage: 'Grad je obrisan.',
+                onDelete: (context, item) async => true,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.delete).first);
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('Da li ste sigurni da želite da obrišete grad "Mostar"?'),
+      findsOneWidget,
+    );
+    await tester.tap(find.text('Potvrdi'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Grad je obrisan.'), findsOneWidget);
+  });
 }

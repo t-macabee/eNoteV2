@@ -5,14 +5,10 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'helpers.dart';
 
-/// Records every (page, pageSize, search) triple the controller asks for, and
-/// lets a test hold a response open so overlapping loads can be arranged.
 class _RecordingFetcher {
   final List<(int, int, String)> calls = [];
   final List<Completer<PagedResult<String>>> pending = [];
 
-  /// When set, responses resolve through a completer the test controls
-  /// instead of immediately.
   bool manual = false;
 
   PagedResult<String> Function(int page)? responder;
@@ -54,9 +50,6 @@ void main() {
     });
 
     test('passes its configured pageSize through unchanged', () async {
-      // I1: the list uses 20 and the grid uses 24. A controller that
-      // substituted a default of its own would silently repaginate one of
-      // them, which no widget test would catch.
       final fetcher = _RecordingFetcher();
       final controller =
           PagedFetchController<String>(fetcher: fetcher.call, pageSize: 24);
@@ -79,7 +72,6 @@ void main() {
       controller.searchController.text = 'g';
       controller.searchController.text = 'gi';
       controller.searchController.text = 'git';
-      // Still inside the debounce window — nothing has been sent yet.
       expect(fetcher.calls, isEmpty);
 
       await pastDebounce();
@@ -115,7 +107,6 @@ void main() {
           PagedFetchController<String>(fetcher: fetcher.call, pageSize: 20);
       addTearDown(controller.dispose);
 
-      // Two overlapping loads; the first one resolves last.
       final first = controller.load();
       final second = controller.load();
       expect(fetcher.pending.length, 2);
@@ -143,7 +134,6 @@ void main() {
 
       fetcher.pending[0].complete(PagedResult<String>(items: ['stale']));
       await first;
-      // The newer request is still running, so the spinner must stay up.
       expect(controller.isLoading, isTrue);
 
       fetcher.pending[1].complete(PagedResult<String>(items: ['newest']));
@@ -195,7 +185,6 @@ void main() {
 
       await controller.load();
 
-      // "Stranica 1 od 1", never "od 0".
       expect(controller.totalPages, 1);
       expect(controller.hasNextPage, isFalse);
       expect(controller.hasPreviousPage, isFalse);

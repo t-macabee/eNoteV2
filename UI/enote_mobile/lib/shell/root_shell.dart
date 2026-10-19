@@ -19,17 +19,10 @@ class RootShell extends StatefulWidget {
 
   const RootShell({super.key});
 
-  /// Routes a notification payload to its detail screen: switches to the
-  /// matching tab, then pushes the target route on that tab's navigator so
-  /// the back stack stays sensible. Called from the inbox (which
-  /// lives on the root navigator) after it pops itself.
   static void routeNotification(NotificationDto notification) {
     shellKey.currentState?.routeNotification(notification);
   }
 
-  /// Switches the bottom navigation to [index]. Used after an action on one
-  /// tab whose result lives on another — a sent rental request lands the
-  /// student on Iznajmljivanja.
   static void switchTab(int index) {
     shellKey.currentState?.selectTab(index);
   }
@@ -71,7 +64,6 @@ class RootShellState extends State<RootShell> with WidgetsBindingObserver {
   void didChangeDependencies() {
     super.didChangeDependencies();
     final notifications = context.read<NotificationController>();
-    // Saved for dispose(): ancestor lookup is unsafe once deactivated.
     _notifications = notifications;
     notifications.startPolling();
     final hub = context.read<NotificationHubClient>();
@@ -133,10 +125,6 @@ class RootShellState extends State<RootShell> with WidgetsBindingObserver {
     );
   }
 
-  /// Switches to the tab matching [notification]'s payload, then pushes the
-  /// target detail route on that tab's navigator (rentals → tab 2,
-  /// lectures → tab 1, submissions → tab 1).
-  /// Payload-less notifications are ignored.
   void routeNotification(NotificationDto notification) {
     final int tab;
     final String route;
@@ -163,7 +151,6 @@ class RootShellState extends State<RootShell> with WidgetsBindingObserver {
     });
   }
 
-  /// Selects [index] on the bottom navigation.
   void selectTab(int index) {
     if (!mounted || index == _index) return;
     setState(() => _index = index);

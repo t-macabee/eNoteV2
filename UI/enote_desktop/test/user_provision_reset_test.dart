@@ -88,7 +88,6 @@ void main() {
         await tester.pumpAndSettle();
       }
 
-      // First provision: StoreEmployee with store A.
       await fillBasicFields('prvi');
       await pickRole(UserRole.storeEmployee);
       await pickStore('Trgovina A');
@@ -101,9 +100,6 @@ void main() {
       expect(firstBody['musicStoreId'], 1,
           reason: 'the first provision must send the selected store');
 
-      // Second provision: only re-pick the role — the store dropdown is left
-      // untouched, exactly like the repro. After the reset fix the store
-      // required-dropdown is empty, so the submit must be blocked.
       await fillBasicFields('drugi');
       await pickRole(UserRole.storeEmployee);
       await save();

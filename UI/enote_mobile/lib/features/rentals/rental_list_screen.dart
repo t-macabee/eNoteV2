@@ -9,11 +9,6 @@ import '../../widgets/paged_list_view.dart';
 import '../../widgets/status_chip.dart';
 import 'rental_provider.dart';
 
-/// The Iznajmljivanja tab root.
-///
-/// No text search: the server offers none for this endpoint. The
-/// only filter is the status dropdown, whose domain is the seven
-/// [InstrumentRentalStatus] values.
 class RentalListScreen extends StatefulWidget {
   const RentalListScreen({super.key});
 
@@ -53,9 +48,6 @@ class _RentalListScreenState extends State<RentalListScreen> {
     super.dispose();
   }
 
-  /// A create or a cancel elsewhere in the app (the request sheet, the detail
-  /// screen) notifies the provider; the list reloads from page 1 so the new
-  /// rental shows on top (server order is `RequestedAt` desc).
   void _onRentalsChanged() {
     if (!mounted) return;
     _controller.refresh(resetPage: true);
@@ -108,15 +100,12 @@ class _RentalRow extends StatelessWidget {
 
   const _RentalRow({required this.rental, required this.onTap});
 
-  /// Payment is only meaningful once the instrument came back.
   bool get _showsPaidMark =>
       rental.rentalStatus == InstrumentRentalStatus.completed ||
       rental.rentalStatus == InstrumentRentalStatus.returnedEarly;
 
   @override
   Widget build(BuildContext context) {
-    // Laid out by hand rather than with a ListTile: the status chip stacked
-    // over the payment mark is taller than a tile's trailing slot allows.
     return Column(
       children: [
         InkWell(

@@ -112,8 +112,6 @@ void main() {
         matching: find.widgetWithText(FilledButton, 'Dolazim'),
       ),
     );
-    // No settle here: the sheet shows an indeterminate spinner while the
-    // RSVP future is pending, which never settles.
     await tester.pump();
     await tester.pump();
 

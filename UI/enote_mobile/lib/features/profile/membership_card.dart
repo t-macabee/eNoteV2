@@ -4,8 +4,6 @@ import 'package:enote_core/enote_core.dart';
 
 import '../../theme/app_theme.dart';
 
-/// Membership state card. The three variants and their copy are
-/// `membership.active / expired / none`.
 class MembershipCard extends StatelessWidget {
   final DateTime? paidUntil;
   final bool isMembershipActive;

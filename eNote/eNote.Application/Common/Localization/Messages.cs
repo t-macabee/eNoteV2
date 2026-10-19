@@ -119,7 +119,6 @@ public static class Messages
     public const string EventEndsBeforeStarts = "Vrijeme završetka mora biti nakon vremena početka.";
     public const string AdminEventPlatformWideOnly = "Administrator može upravljati samo događajima na nivou platforme.";
 
-    // Reports
     public const string ReportRankingTitle = "Rang lista";
     public const string ReportRentalSummaryTitle = "Pregled iznajmljivanja";
     public const string ReportAttendanceTitle = "Prisustvo";

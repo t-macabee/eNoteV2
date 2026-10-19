@@ -52,8 +52,6 @@ void main() {
     final sent = client.requests.single;
     expect(sent.method, 'GET');
     expect(sent.url.path, '/api/v1/instruments/public');
-    // Every key carries the `search.` prefix: an unprefixed `search` key
-    // makes ASP.NET drop the rest of the query (see InstrumentProvider).
     expect(sent.url.queryParameters, {
       'search.Page': '2',
       'search.PageSize': '20',

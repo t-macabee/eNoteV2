@@ -10,8 +10,6 @@ namespace eNote.API.Controllers.Courses;
 
 public sealed class RankingController(RankingService rankingService, IReportService reportService) : CoreController
 {
-    // ── Instructor actions ──────────────────────────────────────────
-
     [Authorize(Roles = AppRoles.Instructor)]
     [HttpGet("~/api/v{version:apiVersion}/instructor/courses/{courseId:int}/ranking")]
     [ProducesResponseType(typeof(IReadOnlyList<CourseRankingEntryDto>), StatusCodes.Status200OK)]
@@ -28,8 +26,6 @@ public sealed class RankingController(RankingService rankingService, IReportServ
         var pdf = await reportService.GenerateCourseRankingPdfAsync(courseId, cancellationToken);
         return File(pdf, "application/pdf", $"course-{courseId}-ranking.pdf");
     }
-
-    // ── Student actions ─────────────────────────────────────────────
 
     [Authorize(Roles = AppRoles.Student)]
     [HttpGet("~/api/v{version:apiVersion}/student/courses/{courseId:int}/ranking")]

@@ -12,9 +12,6 @@ class AssignmentFormScreen extends StatefulWidget {
   final int lectureId;
   final AssignmentDto? existing;
 
-  /// How the wrapped [EntityFormScaffold] is presented — pass
-  /// [EntityFormPresentation.dialog] when opened via
-  /// [EntityFormScaffold.showAsDialog].
   final EntityFormPresentation presentation;
 
   const AssignmentFormScreen({
@@ -67,6 +64,7 @@ class _AssignmentFormScreenState extends State<AssignmentFormScreen>
   @override
   Widget build(BuildContext context) {
     return EntityFormScaffold(
+      savedMessage: 'Zadatak je sačuvan.',
       presentation: widget.presentation,
       title: _isEditMode ? 'Uredi zadatak' : 'Dodaj zadatak',
       isEditMode: _isEditMode,

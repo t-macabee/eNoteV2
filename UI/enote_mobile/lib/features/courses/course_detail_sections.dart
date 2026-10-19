@@ -149,8 +149,6 @@ class CourseMasterCard extends StatelessWidget {
   }
 }
 
-/// Enrolled only: an unpaid/expired period gets a banner with the renewal
-/// action, a paid one gets a plain reminder row, a free course gets nothing.
 class _TuitionBanner extends StatelessWidget {
   final CourseDto course;
   final VoidCallback onTuition;
@@ -183,8 +181,6 @@ class _TuitionBanner extends StatelessWidget {
   }
 }
 
-/// Pinned lectures section header: `SectionHeader` copy with a 🔍 action
-/// that reveals the lectures `name` search field below it.
 class CourseLecturesHeader extends SliverPersistentHeaderDelegate {
   final String title;
   final bool showSearch;
@@ -214,9 +210,6 @@ class CourseLecturesHeader extends SliverPersistentHeaderDelegate {
     double shrinkOffset,
     bool overlapsContent,
   ) {
-    // Fixed-height equivalent of SectionHeader (uppercase labelSmall +
-    // trailing action): SectionHeader's own vertical padding does not fit a
-    // 48 px pinned extent, so the row is laid out to exactly 48 px here.
     return Container(
       color: backgroundColor,
       child: Column(
@@ -261,9 +254,6 @@ class CourseLecturesHeader extends SliverPersistentHeaderDelegate {
       showSearch != oldDelegate.showSearch ||
       backgroundColor != oldDelegate.backgroundColor ||
       textStyle != oldDelegate.textStyle ||
-      // `onToggleSearch` is deliberately not compared: it is an inline
-      // closure with a fresh identity on every parent build, so comparing it
-      // would make the delegate rebuild unconditionally.
       searchController != oldDelegate.searchController;
 }
 

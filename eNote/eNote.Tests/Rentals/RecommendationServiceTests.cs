@@ -184,12 +184,6 @@ public sealed class RecommendationServiceTests
     [Fact]
     public async Task GetRecommendedInstrumentsAsync_CandidatePoolTruncation_KeepsHigherSharedRentalCountInstrument()
     {
-        // LoadCandidateInstrumentsAsync's pool is capped at CandidatePoolSize (80) regardless
-        // of the requested count. This seeds exactly one candidate over that budget so the
-        // deterministic collaborative order (by shared-rental count desc, then instrument id
-        // asc) decides which one is dropped: 78 tied "filler" candidates plus a high-count and
-        // a low-count boundary pair. The low-count instrument is created last so it has the
-        // highest id among the count=1 tier, guaranteeing it is the one pushed past the cutoff.
         const int fillerCount = 78;
 
         await using var context = RentalTestData.CreateContext(Now);

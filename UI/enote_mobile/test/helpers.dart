@@ -21,7 +21,6 @@ Map<String, dynamic> meJson({DateTime? paidUntil, bool hasPicture = false}) => {
   'hasPicture': hasPicture,
 };
 
-/// Number of recorded requests matching `'METHOD /path'` (query ignored).
 int countRequests(ScriptedClient client, String marker) =>
     client.requests.where((r) => '${r.method} ${r.url.path}' == marker).length;
 
@@ -29,8 +28,6 @@ Future<void> pumpPastDebounce(WidgetTester tester) => tester.pump(
   PagedFetchController.defaultSearchDebounce + const Duration(milliseconds: 100),
 );
 
-/// Hand-rolled [HubConnection] double: connects instantly, records lifecycles,
-/// never touches the network.
 class FakeHubConnection implements HubConnection {
   HubConnectionState _state = HubConnectionState.Disconnected;
   int startCalls = 0;

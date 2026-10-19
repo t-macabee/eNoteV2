@@ -1,3 +1,5 @@
+using eNote.Application.Common.Files;
+
 namespace eNote.Application.Features.Academic.Courses;
 
 public class CourseDto
@@ -22,6 +24,7 @@ public class CourseDto
     public EnrollmentStatus? EnrollmentStatus { get; set; }
     public string? EnrollmentDecisionNote { get; set; }
     public bool IsFree => Price == 0;
+    public string ImagePath => DefaultImages.Course;
 
     public string? InstructorName { get; set; }
 }

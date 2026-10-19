@@ -8,9 +8,6 @@ import '../../widgets/paged_list_view.dart';
 import 'assignment_provider.dart';
 import 'file_picker_field.dart';
 
-/// Own submission history: paged list over
-/// `AssignmentProvider.myHistory`, no search. Rows show names and dates
-/// only, never ids. Tap opens the assignment detail for its grade.
 class SubmissionHistoryScreen extends StatefulWidget {
   const SubmissionHistoryScreen({super.key});
 

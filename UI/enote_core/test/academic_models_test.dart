@@ -87,6 +87,17 @@ void main() {
     });
   });
 
+  group('CourseDto imagePath', () {
+    test('fromJson parses the server-computed default image', () {
+      final dto = CourseDto.fromJson({
+        'id': 1,
+        'name': 'n',
+        'imagePath': '/api/v1/uploads/courses/default.webp',
+      });
+      expect(dto.imagePath, '/api/v1/uploads/courses/default.webp');
+    });
+  });
+
   group('CourseDto tuition fields', () {
     test('missing keys default to null/false', () {
       final dto = CourseDto.fromJson({'id': 1, 'name': 'n'});

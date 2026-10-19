@@ -4,11 +4,6 @@ import 'package:enote_core/enote_core.dart';
 
 import '../../../widgets/reason_prompt_dialog.dart';
 
-/// One button per valid transition off the current [InstrumentRentalStatus],
-/// table-driven off the same (status → trigger) pairs
-/// `InstrumentRental.Transition`'s state machine defines for the
-/// StoreEmployee actor — approve/reject/pickup/complete/return-early/cancel.
-/// Reused by every rental detail screen instead of a bespoke button set per screen.
 class RentalTransitionActionRow extends StatefulWidget {
   final InstrumentRentalStatus status;
   final Future<void> Function(RentalTrigger trigger, {String? note}) onTransition;
@@ -43,8 +38,6 @@ class _TransitionAction {
   });
 }
 
-// Mirrors eNote.Domain's InstrumentRental.CreateTransitions() for the
-// StoreEmployee actor (eNote/eNote.Domain/Entities/Rentals/InstrumentRental.cs).
 const _actionsByStatus = <InstrumentRentalStatus, List<_TransitionAction>>{
   InstrumentRentalStatus.pending: [
     _TransitionAction(
@@ -101,7 +94,7 @@ class _RentalTransitionActionRowState extends State<RentalTransitionActionRow> {
     String? note;
     if (action.requiresNote) {
       note = await promptForReason(context, title: action.label);
-      if (note == null) return; // dialog cancelled or empty
+      if (note == null) return;
     } else {
       final confirmed = await confirmDialog(
         context: context,

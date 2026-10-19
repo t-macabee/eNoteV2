@@ -19,8 +19,6 @@ public sealed class InstrumentController(
     RecommendationService recommendationService,
     InstrumentTypeService instrumentTypeService) : CoreController
 {
-    // ── Catalog actions (any signed-in user) ────────────────────────
-
     [HttpGet("~/api/v{version:apiVersion}/instruments/public")]
     [ProducesResponseType(typeof(PagedResult<InstrumentDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<PagedResult<InstrumentDto>>> GetPublicPaged([FromQuery] InstrumentSearchObject search, CancellationToken cancellationToken)
@@ -36,8 +34,6 @@ public sealed class InstrumentController(
         var result = await instrumentService.GetByIdAsync(id, publicView: true, cancellationToken);
         return Ok(result);
     }
-
-    // ── Store employee actions ──────────────────────────────────────
 
     [Authorize(Roles = AppRoles.StoreEmployee)]
     [HttpGet("~/api/v{version:apiVersion}/shop/instruments")]
@@ -101,8 +97,6 @@ public sealed class InstrumentController(
     {
         return Ok(await instrumentTypeService.GetPagedAsync(search, cancellationToken));
     }
-
-    // ── Student actions ─────────────────────────────────────────────
 
     [Authorize(Roles = AppRoles.Student)]
     [HttpGet("~/api/v{version:apiVersion}/student/instruments/recommended")]

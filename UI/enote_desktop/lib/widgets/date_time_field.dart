@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:enote_core/enote_core.dart';
 import 'date_field.dart';
-/// Like `DateField`, but picks a date and a time — for fields such as
-/// `Event.StartsAt`/`EndsAt` that carry a time component `DateField` (date
-/// only) can't represent.
 class DateTimeField extends FormField<DateTime?> {
   DateTimeField({
     super.key,

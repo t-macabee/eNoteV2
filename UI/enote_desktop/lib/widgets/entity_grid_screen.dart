@@ -10,12 +10,6 @@ typedef EntityGridFetcher<T> = Future<PagedResult<T>> Function(
   String search,
 );
 
-/// Config-driven counterpart to [EntityListConfig] / [EntityListScreen] —
-/// same "config in, cards out" shape, but renders a [GridView] of
-/// hover-scrim cards instead of a [DataTable]. See
-/// `instrumenti_list_screen.dart` in the old eNote project for the visual
-/// pattern this adapts (square card, cover image or placeholder,
-/// black-scrim overlay that fades in on hover).
 class EntityGridConfig<T> {
   final String? title;
   final EntityGridFetcher<T> fetcher;
@@ -26,8 +20,6 @@ class EntityGridConfig<T> {
   final String? Function(T item)? badgeOf;
   final void Function(BuildContext context, T item)? onTap;
 
-  /// The only hook for card-level actions. Destructive actions belong in
-  /// detail dialogs / [EntityFormScaffold], not here.
   final List<Widget> Function(BuildContext context, T item)? cardActions;
   final VoidCallback? onAdd;
   final String? addLabel;
@@ -35,18 +27,10 @@ class EntityGridConfig<T> {
   final String searchHint;
   final bool showSearchBar;
 
-  /// When true, renders just the search bar + grid + pagination, with no
-  /// Scaffold/AppBar of its own — for embedding inside another screen's
-  /// layout, e.g. a detail screen's side panel.
   final bool embedded;
 
-  /// Rendered inline in the filter row, right-aligned via a spacer
-  /// alongside the add button — e.g. a [PdfReportButton].
   final Widget? trailing;
 
-  /// Rendered next to the search field, in the same row. Keep it compact
-  /// (e.g. wrap a dropdown in a width-bounded, left-aligned box) — it is
-  /// given the remaining row width via [Expanded], not a fixed slot.
   final Widget? filterBar;
 
 
@@ -55,19 +39,6 @@ class EntityGridConfig<T> {
   final int pageSize;
   final String emptyMessage;
 
-  /// Optional grouping key for the loaded page of items. When set, the grid
-  /// is split into sections — one [EntitySectionLabel] per distinct key value
-  /// (sorted alphabetically, case-insensitive), each followed by its own
-  /// [GridView] using the same delegate/card widget as the flat grid. When
-  /// null, the grid renders as a single flat [GridView] (every screen using
-  /// this widget today).
-  ///
-  /// Caveat: grouping applies within the loaded page only — consistent with
-  /// how the flat grid already paginates. With the current seed data (a
-  /// handful of stores/cities) everything fits on one page in practice, so
-  /// this reads as full grouping. If the dataset ever exceeds a page, a
-  /// city's stores could split across pages — acceptable for this admin
-  /// screen, not worth solving now.
   final String Function(T item)? groupKeyOf;
 
   const EntityGridConfig({
@@ -112,10 +83,6 @@ class EntityGridScreenState<T> extends State<EntityGridScreen<T>> {
   void initState() {
     super.initState();
     _controller = PagedFetchController<T>(
-      // Delegate rather than passing `widget.config.fetcher` directly: screens
-      // rebuild their config on every build, and some fetcher closures read
-      // filter state as fields at call time. Going through `widget.config`
-      // here keeps that behaviour.
       fetcher: (page, pageSize, search) =>
           widget.config.fetcher(page, pageSize, search),
       pageSize: widget.config.pageSize,
@@ -140,9 +107,6 @@ class EntityGridScreenState<T> extends State<EntityGridScreen<T>> {
     if (mounted) setState(() {});
   }
 
-  /// Re-runs the current page/search — call after add/edit/delete, or when
-  /// external filters (a [filterBar] control) change and should re-trigger
-  /// the fetch from page 1.
   void refresh({bool resetPage = false}) =>
       _controller.refresh(resetPage: resetPage);
 
@@ -153,9 +117,6 @@ class EntityGridScreenState<T> extends State<EntityGridScreen<T>> {
       return content;
     }
     return Scaffold(
-      // Search, filters, trailing and the add button all live in the toolbar
-      // row now (see [EntityToolbar]) so they share one height — an AppBar
-      // is only worth its own toolbar when there's a title to show.
       appBar: widget.config.title != null
           ? AppBar(title: Text(widget.config.title!))
           : null,
@@ -215,11 +176,6 @@ class EntityGridScreenState<T> extends State<EntityGridScreen<T>> {
     );
   }
 
-  /// Builds the children for the body [Column] when [groupKeyOf] is set:
-  /// the loaded page of items is grouped by that key (sorted
-  /// alphabetically, case-insensitive), and each group is rendered as an
-  /// [EntitySectionLabel] followed by its own [GridView], with spacing
-  /// between sections.
   List<Widget> _buildGroupedChildren(String Function(T item) groupKeyOf) {
     final groups = <String, List<T>>{};
     for (final item in _controller.items) {
@@ -414,10 +370,6 @@ class _EntityGridCardState<T> extends State<_EntityGridCard<T>> {
   }
 }
 
-/// A section header rendered above a group of entity grid cards (or above a
-/// static section of content). Promoted out of `user_grid_screen.dart` so the
-/// User grid ("Instruktori"/"Studenti" labels) and the grouped Music Store
-/// grid share one definition with an identical look.
 class EntitySectionLabel extends StatelessWidget {
   final String label;
 

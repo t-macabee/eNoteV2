@@ -12,9 +12,6 @@ import 'course_provider.dart';
 class CourseFormScreen extends StatefulWidget {
   final CourseDto? existing;
 
-  /// How the wrapped [EntityFormScaffold] is presented — pass
-  /// [EntityFormPresentation.dialog] when opened via
-  /// [EntityFormScaffold.showAsDialog].
   final EntityFormPresentation presentation;
 
   const CourseFormScreen({
@@ -50,7 +47,6 @@ class _CourseFormScreenState extends State<CourseFormScreen>
   }
 
   Future<bool> _save() async {
-    // Client-side guard: end date not before start date
     if (_startDate != null && _endDate != null && _endDate!.isBefore(_startDate!)) {
       ErrorBanner.show(
         context,
@@ -67,8 +63,6 @@ class _CourseFormScreenState extends State<CourseFormScreen>
     }
 
     final descriptionText = _descriptionController.text.trim();
-    // Publishing stays in the detail dialog behind its confirm; the form
-    // round-trips the loaded value on edit and sends false on create.
     final request = CourseRequest(
       name: _nameController.text.trim(),
       description: descriptionText.isEmpty ? null : descriptionText,
@@ -86,6 +80,7 @@ class _CourseFormScreenState extends State<CourseFormScreen>
   @override
   Widget build(BuildContext context) {
     return EntityFormScaffold(
+      savedMessage: 'Kurs je sačuvan.',
       presentation: widget.presentation,
       title: widget.existing == null ? 'Dodaj kurs' : 'Uredi kurs',
       isEditMode: widget.existing != null,

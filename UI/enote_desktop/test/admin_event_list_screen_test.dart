@@ -8,6 +8,7 @@ import 'package:enote_desktop/features/admin/event/event_form_screen.dart';
 import 'package:enote_desktop/features/admin/event/event_list_screen.dart';
 import 'package:enote_desktop/features/admin/event/event_provider.dart';
 import 'package:enote_desktop/features/admin/instructor/instructor_provider.dart';
+import 'package:enote_desktop/widgets/entity_grid_screen.dart';
 
 import 'helpers.dart';
 
@@ -96,6 +97,23 @@ Widget _buildTestApp(ScriptedClient mockClient) {
 
 void main() {
   testWidgets(
+    'the event toolbar fits a 1280 x 720 window beside the 281 px sidebar',
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1280 - 281, 720);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(_buildTestApp(_client()));
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      final search = find.widgetWithText(TextField, 'Pretraži po nazivu...');
+      expect(tester.getSize(search).width, greaterThanOrEqualTo(200));
+    },
+  );
+
+  testWidgets(
     'EventListScreen displays both platform-wide and scoped events with read-only badge on scoped events',
     (WidgetTester tester) async {
       tester.view.physicalSize = const Size(1400, 1000);
@@ -107,12 +125,36 @@ void main() {
       await tester.pumpWidget(_buildTestApp(mockClient));
       await tester.pumpAndSettle();
 
-      // Both events rendered
       expect(find.text('Platform Gala'), findsOneWidget);
       expect(find.text('Guitar Masterclass'), findsOneWidget);
 
-      // Scoped event has visual badge "Samo pregled"
       expect(find.text('Samo pregled'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'the admin event grid passes each event imagePath',
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1400, 1000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final mockClient = _client();
+      await tester.pumpWidget(_buildTestApp(mockClient));
+      await tester.pumpAndSettle();
+
+      final grid = tester.widget<EntityGridScreen<EventDto>>(
+        find.byType(EntityGridScreen<EventDto>),
+      );
+      final event = EventDto(
+        id: 3,
+        title: 'Orchestra Night',
+        description: 'Default image',
+        startsAt: DateTime.utc(2026, 9, 20),
+        imagePath: '/api/v1/uploads/events/default.webp',
+      );
+      expect(grid.config.imageUrlOf!(event), event.imagePath);
     },
   );
 
@@ -128,11 +170,9 @@ void main() {
       await tester.pumpWidget(_buildTestApp(mockClient));
       await tester.pumpAndSettle();
 
-      // Tap on scoped event
       await tester.tap(find.text('Guitar Masterclass'));
       await tester.pumpAndSettle();
 
-      // EventFormScreen is opened in read-only mode
       expect(find.byType(EventFormScreen), findsOneWidget);
       expect(find.text('Pregled događaja'), findsOneWidget);
 
@@ -163,11 +203,9 @@ void main() {
       await tester.pumpWidget(_buildTestApp(mockClient));
       await tester.pumpAndSettle();
 
-      // Tap on platform-wide event
       await tester.tap(find.text('Platform Gala'));
       await tester.pumpAndSettle();
 
-      // EventFormScreen is opened in edit mode
       expect(find.byType(EventFormScreen), findsOneWidget);
       expect(find.text('Uredi događaj'), findsOneWidget);
     },

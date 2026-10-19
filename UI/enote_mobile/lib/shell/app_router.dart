@@ -52,8 +52,6 @@ class LectureNoteDetailArgs {
 class AssignmentDetailArgs {
   final int assignmentId;
 
-  /// Carries the course only when the assignment detail was reached from one:
-  /// the `( Rang lista kursa )` shortcut renders iff this is non-null.
   final int? courseId;
 
   const AssignmentDetailArgs(this.assignmentId, {this.courseId});

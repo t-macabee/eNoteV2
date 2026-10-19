@@ -5,13 +5,34 @@ import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
 import 'package:enote_desktop/features/store_employee/instrument/instrument_provider.dart';
+import 'package:enote_desktop/features/store_employee/rental/rental_detail_dialog.dart';
 import 'package:enote_desktop/features/store_employee/rental/rental_list_screen.dart';
 import 'package:enote_desktop/features/store_employee/rental/rental_provider.dart';
 
 import 'helpers.dart';
 
+Map<String, dynamic> _rentalItem() => {
+      'id': 7,
+      'instrumentId': 1,
+      'musicStoreId': 1,
+      'studentProfileId': 1,
+      'studentUserId': 2,
+      'studentName': 'Student Test',
+      'instrumentModel': 'Stratocaster',
+      'instrumentType': 'Gitara',
+      'storeName': 'Shop',
+      'rentalStatus': 'Active',
+      'requestedAt': DateTime(2026, 1, 5).toIso8601String(),
+      'fee': 10.0,
+      'totalFee': 5.0,
+      'isPaid': false,
+    };
+
 ScriptedClient _client() => ScriptedClient((request) {
   final path = request.url.path;
+  if (request.method == 'GET' && path.endsWith('/shop/rentals/7')) {
+    return jsonResponse(_rentalItem(), 200);
+  }
   if (request.method == 'GET' && path.contains('shop/instruments')) {
     return jsonResponse(const {
       'items': [],
@@ -22,24 +43,7 @@ ScriptedClient _client() => ScriptedClient((request) {
   }
   if (request.method == 'GET' && path.contains('shop/rentals')) {
     return jsonResponse({
-      'items': [
-        {
-          'id': 7,
-          'instrumentId': 1,
-          'musicStoreId': 1,
-          'studentProfileId': 1,
-          'studentUserId': 2,
-          'studentName': 'Student Test',
-          'instrumentModel': 'Stratocaster',
-          'instrumentType': 'Gitara',
-          'storeName': 'Shop',
-          'rentalStatus': 'Active',
-          'requestedAt': DateTime(2026, 1, 5).toIso8601String(),
-          'fee': 10.0,
-          'totalFee': 5.0,
-          'isPaid': false,
-        }
-      ],
+      'items': [_rentalItem()],
       'page': 1,
       'pageSize': 20,
       'totalCount': 1,
@@ -107,5 +111,17 @@ void main() {
     await _pumpList(tester, client);
 
     expect(find.text('10.00 KM / 5.00 KM'), findsOneWidget);
+  });
+
+  testWidgets('opening a rental row shows a dialog, not a new page',
+      (tester) async {
+    final client = _client();
+    await _pumpList(tester, client);
+
+    await tester.tap(find.byIcon(Icons.edit));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(Dialog), findsOneWidget);
+    expect(find.byType(RentalDetailDialog), findsOneWidget);
   });
 }

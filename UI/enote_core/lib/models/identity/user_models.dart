@@ -20,7 +20,6 @@ class UserProfileResponse {
       username: json['username'] as String? ?? '',
       email: json['email'] as String?,
       profile: UserProfile.fromJson(json['profile'] as Map<String, dynamic>),
-      // Backend serializes positional record as role/username/email/profile/hasPicture (camelCased).
       hasPicture: json['hasPicture'] as bool? ?? false,
     );
   }

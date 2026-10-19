@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 
-/// Form field shared by the auth and profile forms: label, controller,
-/// validator, and (for secrets) a built-in obscure toggle.
 class AppTextField extends StatefulWidget {
   final TextEditingController controller;
   final String label;

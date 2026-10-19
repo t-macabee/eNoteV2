@@ -6,9 +6,6 @@ import 'package:enote_core/enote_core.dart';
 import '../../widgets/async_state_view.dart';
 import 'lecture_note_provider.dart';
 
-/// Lecture note detail: title + selectable body text.
-/// The [LectureNoteProvider] is scoped to the `/lectures/notes/detail`
-/// route.
 class LectureNoteDetailScreen extends StatefulWidget {
   final int noteId;
 

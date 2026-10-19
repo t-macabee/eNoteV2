@@ -7,15 +7,6 @@ import '../api/api_response.dart';
 import '../models/identity/auth_models.dart';
 import '../paging/paged_result.dart';
 
-/// Read-only provider surface: search/getById only.
-///
-/// Used by providers whose screens demonstrably call only the narrow subset
-/// (e.g. AdminCourse, Instructor/Student/StoreEmployee lookup for the Users
-/// union view, shop address/type lookups, catalog). Providers that need
-/// insert/update/remove/uploadImage must extend [CrudProvider] (or
-/// [BaseProvider] when they also need [BaseProvider.createDelegatedUser]).
-/// `notifyListeners()` is opt-in for consumers that watch; desktop lists
-/// refresh through `GlobalKey.refresh()`.
 abstract class ReadOnlyProvider<T> with ChangeNotifier {
   final ApiClient apiClient;
   final String endpoint;
@@ -43,9 +34,6 @@ abstract class ReadOnlyProvider<T> with ChangeNotifier {
     R Function(Map<String, dynamic>) fromJsonT, {
     Map<String, dynamic>? params,
   }) {
-    // Decodes via decodeOrThrow so a 200 with an empty, HTML, or otherwise
-    // malformed body raises the distinct parse-failure ApiException instead
-    // of a raw TypeError/FormatException.
     final data = decodeOrThrow(response);
     try {
       final items = (data['items'] as List<dynamic>? ?? []);
@@ -72,8 +60,6 @@ abstract class ReadOnlyProvider<T> with ChangeNotifier {
 
   Future<PagedResult<T>> search(Map<String, dynamic> params) => getPage(params: params);
 
-  /// Mutations notify after an await; dialog-scoped providers can be disposed
-  /// before that completes, so a late notify is dropped instead of throwing.
   @override
   void notifyListeners() {
     if (!_disposed) super.notifyListeners();
@@ -86,9 +72,6 @@ abstract class ReadOnlyProvider<T> with ChangeNotifier {
   }
 }
 
-/// Full CRUD surface (without delegated-user provisioning).
-///
-/// Extends [ReadOnlyProvider] with insert/update/remove/uploadImage.
 abstract class CrudProvider<T> extends ReadOnlyProvider<T> {
   CrudProvider({
     required super.apiClient,
@@ -118,9 +101,6 @@ abstract class CrudProvider<T> extends ReadOnlyProvider<T> {
     final response = await apiClient.post(endpoint, body: request);
     throwIfError(response);
 
-    // The single documented empty-body special case: the backend answers
-    // some creates with 204 / an empty body, meaning "created, nothing to
-    // return". Callers depend on null here.
     if (response.statusCode == 204 || response.body.isEmpty) {
       notifyListeners();
       return null;
@@ -145,11 +125,6 @@ abstract class CrudProvider<T> extends ReadOnlyProvider<T> {
   }
 }
 
-/// Wide provider surface kept for backwards compatibility.
-///
-/// Extends [CrudProvider] with delegated-user provisioning.
-/// New read-only providers should extend [ReadOnlyProvider]; pure CRUD
-/// providers without delegated creation should extend [CrudProvider].
 abstract class BaseProvider<T> extends CrudProvider<T> {
   BaseProvider({
     required super.apiClient,

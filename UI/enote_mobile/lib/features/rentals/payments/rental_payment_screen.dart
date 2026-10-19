@@ -15,11 +15,6 @@ import '../../payments/payment_review.dart';
 import '../../payments/payment_sheet_gateway.dart';
 import 'rental_payment_provider.dart';
 
-/// The payment flow: review, Stripe sheet, processing, succeeded,
-/// failed/cancelled, pending.
-///
-/// The screen never caches a `clientSecret` and never renders
-/// `paymentIntentId`.
 class RentalPaymentScreen extends StatefulWidget {
   final int rentalId;
   final PaymentSheetGateway gateway;
@@ -43,8 +38,6 @@ class _RentalPaymentScreenState extends State<RentalPaymentScreen> {
   bool _isLoading = true;
   late final PaymentFlowController _flow;
 
-  /// Read per call, not in `initState`: callers that never pay (e.g. the
-  /// instrument detail deep link) need not provide it.
   RentalPaymentProvider get _payments => context.read<RentalPaymentProvider>();
 
   @override

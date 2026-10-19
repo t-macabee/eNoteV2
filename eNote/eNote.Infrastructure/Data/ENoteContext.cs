@@ -17,10 +17,6 @@ public class ENoteContext(DbContextOptions<ENoteContext> options, IClock clock, 
     private int? _storeId;
     private bool _storeResolved;
 
-    /// <summary>
-    /// Bypasses database store-id resolution when set (tests and tooling).
-    /// Production requests resolve the store through <see cref="GetCurrentStoreIdAsync"/> instead.
-    /// </summary>
     public int? ExplicitStoreId { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

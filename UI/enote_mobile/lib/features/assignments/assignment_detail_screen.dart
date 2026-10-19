@@ -13,18 +13,10 @@ import '../../widgets/section_header.dart';
 import 'assignment_provider.dart';
 import 'file_picker_field.dart';
 
-/// Assignment detail with the file-submission section.
-///
-/// Load = assignment ‖ own submission; a 404 submission means nothing has been submitted yet.
-/// The *Predavanje ›* row navigates by id but never renders it. Image
-/// submissions preview inline with the bearer header; PDFs show the
-/// name only. The `( Rang lista kursa )` shortcut renders only when the route
-/// args carry a [courseId] (`AssignmentDto` has none).
 class AssignmentDetailScreen extends StatefulWidget {
   final int assignmentId;
   final int? courseId;
 
-  /// Test seam forwarded to the [FilePickerField].
   final Future<PickedAssignmentFile?> Function()? pickFiles;
 
   const AssignmentDetailScreen({
@@ -199,7 +191,6 @@ class _AssignmentDetailScreenState extends State<AssignmentDetailScreen>
     return _pickerState();
   }
 
-  /// State A: nothing submitted, before due.
   Widget _pickerState() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -231,7 +222,6 @@ class _AssignmentDetailScreenState extends State<AssignmentDetailScreen>
     );
   }
 
-  /// Nothing submitted, past due.
   Widget _pastDueState() {
     return const Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -246,7 +236,6 @@ class _AssignmentDetailScreenState extends State<AssignmentDetailScreen>
     );
   }
 
-  /// State B: submitted, not graded.
   Widget _submittedState(AssignmentSubmissionDto submission) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -265,7 +254,6 @@ class _AssignmentDetailScreenState extends State<AssignmentDetailScreen>
     );
   }
 
-  /// State C: graded.
   Widget _gradedState(AssignmentSubmissionDto submission) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

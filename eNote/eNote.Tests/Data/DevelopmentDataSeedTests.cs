@@ -1,4 +1,5 @@
 using System.Text;
+using eNote.Application.Common.Files;
 using eNote.Domain.Entities.Assignments;
 using eNote.Domain.Entities.Communication;
 using eNote.Infrastructure.Data.Seed;
@@ -127,8 +128,7 @@ public sealed class DevelopmentDataSeedTests
         Assert.Equal(6, await ctx.Set<Announcement>().CountAsync());
 
         var announcements = await ctx.Set<Announcement>().ToListAsync();
-        Assert.All(announcements, a => Assert.StartsWith("/api/v1/uploads/announcements/", a.ImagePath));
-        Assert.Equal(6, announcements.Select(a => a.ImagePath).Distinct().Count());
+        Assert.All(announcements, a => Assert.Null(a.ImagePath));
 
         var events = await ctx.Set<Event>().ToListAsync();
         Assert.Equal(3, events.Count);
@@ -168,6 +168,7 @@ public sealed class DevelopmentDataSeedTests
         imagePaths.AddRange((await ctx.Set<Announcement>().Select(a => a.ImagePath).ToListAsync()).OfType<string>());
         imagePaths.AddRange((await ctx.Set<MusicStore>().Select(s => s.ImagePath).ToListAsync()).OfType<string>());
         imagePaths.AddRange((await ctx.Users.Select(u => u.PicturePath).ToListAsync()).OfType<string>());
+        imagePaths.AddRange([DefaultImages.Announcement, DefaultImages.Course, DefaultImages.Event, DefaultImages.MusicStore, DefaultImages.UserPicture]);
 
         Assert.NotEmpty(imagePaths);
 
@@ -177,8 +178,6 @@ public sealed class DevelopmentDataSeedTests
         {
             Assert.StartsWith(LocalFileStorageService.UploadsRoutePrefix + "/", imagePath);
 
-            // SaveToDiskAsync stores every upload under <storage root>/uploads, and the API
-            // path is the route prefix plus that same subfolder.
             var relativePath = imagePath[(LocalFileStorageService.UploadsRoutePrefix.Length + 1)..]
                 .Replace('/', Path.DirectorySeparatorChar);
             var fullPath = Path.Combine(webRoot, "uploads", relativePath);

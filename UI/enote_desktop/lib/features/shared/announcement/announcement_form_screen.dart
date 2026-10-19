@@ -81,6 +81,7 @@ class _AnnouncementFormScreenState extends State<AnnouncementFormScreen>
   @override
   Widget build(BuildContext context) {
     return EntityFormScaffold(
+      savedMessage: 'Objava je sačuvana.',
       presentation: widget.presentation,
       title: _isEditMode ? 'Uredi objavu' : 'Dodaj objavu',
       isEditMode: _isEditMode,

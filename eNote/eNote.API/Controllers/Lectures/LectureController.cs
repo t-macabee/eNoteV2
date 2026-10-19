@@ -14,8 +14,6 @@ public sealed class LectureController(
     LectureAttendanceService attendanceService,
     IReportService reportService) : CoreController
 {
-    // ── Instructor actions ──────────────────────────────────────────
-
     [Authorize(Roles = AppRoles.Instructor)]
     [HttpGet("~/api/v{version:apiVersion}/instructor/lectures")]
     [ProducesResponseType(typeof(PagedResult<LectureDto>), StatusCodes.Status200OK)]
@@ -96,8 +94,6 @@ public sealed class LectureController(
         var dto = await attendanceService.MarkAttendanceAsync(id, request, cancellationToken);
         return Ok(dto);
     }
-
-    // ── Student actions ─────────────────────────────────────────────
 
     [Authorize(Roles = AppRoles.Student)]
     [HttpGet("~/api/v{version:apiVersion}/student/lectures")]

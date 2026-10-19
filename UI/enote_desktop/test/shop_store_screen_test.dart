@@ -67,16 +67,13 @@ void main() {
     await tester.pumpWidget(_buildTestApp(isManager: false, httpClient: httpClient));
     await tester.pumpAndSettle();
 
-    // Verify info rows populated
     expect(find.text('Muzička Prodavnica'), findsOneWidget);
     expect(find.text('08:00 - 16:00'), findsOneWidget);
     expect(find.text('+387 61 111 222'), findsOneWidget);
     expect(find.text('Ferhadija 15, Sarajevo'), findsOneWidget);
 
-    // Verify Uredi button is not present for non-managers
     expect(find.widgetWithText(ElevatedButton, 'Uredi'), findsNothing);
 
-    // Verify instruments grid is rendered on the right panel
     expect(find.byType(EntityGridScreen<InstrumentDto>), findsOneWidget);
     expect(find.text('Stratocaster'), findsOneWidget);
     expect(find.text('Fender'), findsOneWidget);
@@ -96,10 +93,8 @@ void main() {
     await tester.pumpWidget(_buildTestApp(isManager: true, httpClient: httpClient));
     await tester.pumpAndSettle();
 
-    // Verify Uredi button is not present in ShopStoreScreen left panel
     expect(find.widgetWithText(ElevatedButton, 'Uredi'), findsNothing);
 
-    // Verify instruments grid is rendered
     expect(find.byType(EntityGridScreen<InstrumentDto>), findsOneWidget);
   });
 
@@ -117,34 +112,27 @@ void main() {
     await tester.pumpWidget(buildStoreEmployeeShell(isManager: true, httpClient: httpClient));
     await tester.pumpAndSettle();
 
-    // Open settings popup menu in bottom-left RoleMenu
     await tester.tap(find.byTooltip('Postavke'));
     await tester.pumpAndSettle();
 
-    // Verify Uredi prodavnicu is present in popup menu
     expect(find.text('Uredi prodavnicu'), findsOneWidget);
 
-    // Tap Uredi prodavnicu to open the dialog
     await tester.tap(find.text('Uredi prodavnicu'));
     await tester.pumpAndSettle();
 
-    // Verify ShopStoreFormScreen is displayed as dialog
     expect(find.byType(ShopStoreFormScreen), findsOneWidget);
     expect(find.widgetWithText(TextFormField, 'Naziv'), findsOneWidget);
 
-    // Edit a field and save
     await tester.enterText(
         find.widgetWithText(TextFormField, 'Naziv'), 'Ažurirana Prodavnica');
     await tester.tap(find.widgetWithText(FilledButton, 'Sačuvaj'));
     await tester.pumpAndSettle();
 
-    // Verify PUT request was made to shop/store
     expect(httpClient.putUrls, hasLength(1));
     expect(httpClient.putUrls.first, endsWith('shop/store'));
     final body = jsonDecode(httpClient.putBodies.first) as Map<String, dynamic>;
     expect(body['storeName'], equals('Ažurirana Prodavnica'));
 
-    // Verify dialog is dismissed
     expect(find.byType(ShopStoreFormScreen), findsNothing);
   });
 
@@ -162,11 +150,9 @@ void main() {
     await tester.pumpWidget(buildStoreEmployeeShell(isManager: false, httpClient: httpClient));
     await tester.pumpAndSettle();
 
-    // Open settings popup menu in bottom-left RoleMenu
     await tester.tap(find.byTooltip('Postavke'));
     await tester.pumpAndSettle();
 
-    // Verify Uredi prodavnicu is NOT present in popup menu
     expect(find.text('Uredi prodavnicu'), findsNothing);
   });
 
@@ -185,13 +171,9 @@ void main() {
     await tester.pumpWidget(_buildTestApp(isManager: true, httpClient: httpClient));
     await tester.pumpAndSettle();
 
-    // Tap the instrument card in the right-panel grid
     await tester.tap(find.text('Stratocaster'));
     await tester.pumpAndSettle();
 
-    // Verify InstrumentDetailDialog opened with its detail fields. 'Gitara'
-    // also appears in the (still-mounted, now-obscured) instrument-type
-    // filter dropdown behind the dialog, so scope the search to the dialog.
     expect(find.byType(InstrumentDetailDialog), findsOneWidget);
     expect(
       find.descendant(
@@ -204,7 +186,6 @@ void main() {
     expect(find.widgetWithText(OutlinedButton, 'Uredi'), findsOneWidget);
     expect(find.widgetWithText(OutlinedButton, 'Obriši'), findsOneWidget);
 
-    // Tap Uredi to open InstrumentFormScreen, then close it
     await tester.tap(find.widgetWithText(OutlinedButton, 'Uredi'));
     await tester.pumpAndSettle();
 
@@ -218,10 +199,8 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // Back in the detail dialog
     expect(find.byType(InstrumentDetailDialog), findsOneWidget);
 
-    // Tap Obriši and confirm deletion
     await tester.tap(find.widgetWithText(OutlinedButton, 'Obriši'));
     await tester.pumpAndSettle();
 

@@ -6,7 +6,7 @@ import '../../../widgets/entity_filter_dropdown.dart';
 import '../../../widgets/entity_list_screen.dart';
 import '../../../widgets/pdf_report_button.dart';
 import '../instrument/instrument_provider.dart';
-import 'rental_detail_screen.dart';
+import 'rental_detail_dialog.dart';
 import 'rental_provider.dart';
 import 'rental_status_display.dart';
 
@@ -158,11 +158,7 @@ class _RentalListScreenState extends State<RentalListScreen> {
             'instrumentId': _selectedInstrumentId,
 })),
         onEdit: (context, item) async {
-          await Navigator.of(context).push<bool>(
-            MaterialPageRoute<bool>(
-              builder: (_) => RentalDetailScreen(rentalId: item.id),
-            ),
-          );
+          await RentalDetailDialog.show(context, item.id);
           _listKey.currentState?.refresh();
         },
         showAddButton: false,

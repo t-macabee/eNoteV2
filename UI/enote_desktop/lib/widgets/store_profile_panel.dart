@@ -6,14 +6,6 @@ import 'package:enote_core/enote_core.dart';
 import '../theme/app_theme.dart';
 import 'detail_row.dart';
 
-/// Shared store profile panel used by the shop's own-store screen and the
-/// admin music-store detail screen: cover image, name, and address / phone /
-/// hours rows.
-///
-/// The two callers were near-identical; the only difference is the admin
-/// action section (Uredi / Obriši buttons). It is gated behind [showActions]
-/// (default off, preserving the shop's read-only rendering) with explicit
-/// [onEdit]/[onDelete] callbacks so no caller changes appearance.
 class StoreProfilePanel extends StatelessWidget {
   final MusicStoreDto store;
   final bool showActions;

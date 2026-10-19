@@ -160,22 +160,18 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      // "Svi korisnici" by default queries all three endpoints
       expect(mockClient.requestedUrls.any((u) => u.contains('admin/instructors')), isTrue);
       expect(mockClient.requestedUrls.any((u) => u.contains('admin/students')), isTrue);
       expect(mockClient.requestedUrls.any((u) => u.contains('admin/employees')), isTrue);
 
-      // Verify names rendered across roles
       expect(find.text('Wolfgang Mozart'), findsOneWidget);
       expect(find.text('Ludwig Beethoven'), findsOneWidget);
       expect(find.text('Johann Bach'), findsOneWidget);
       expect(find.text('Frederic Chopin'), findsOneWidget);
 
-      // Verify store name labels rendered for employees
       expect(find.text('Sarajevo Guitar House'), findsOneWidget);
       expect(find.text('Mostar Piano Center'), findsOneWidget);
 
-      // Section labels
       expect(find.text('Instruktori'), findsOneWidget);
       expect(find.text('Studenti'), findsOneWidget);
       expect(find.text('Uposlenik prodavnice'), findsOneWidget);
@@ -228,26 +224,21 @@ void main() {
 
       mockClient.requests.clear();
 
-      // Open role dropdown
       await tester.tap(find.byType(DropdownButtonFormField<UserRole?>));
       await tester.pumpAndSettle();
 
-      // Pick "StoreEmployee"
       await tester.tap(find.text('Uposlenik prodavnice').last);
       await tester.pumpAndSettle();
 
-      // Should query only admin/employees
       expect(mockClient.requestedUrls.any((u) => u.contains('admin/employees')), isTrue);
       expect(mockClient.requestedUrls.any((u) => u.contains('admin/instructors')), isFalse);
       expect(mockClient.requestedUrls.any((u) => u.contains('admin/students')), isFalse);
 
-      // Employees are shown, instructors and students are not
       expect(find.text('Johann Bach'), findsOneWidget);
       expect(find.text('Frederic Chopin'), findsOneWidget);
       expect(find.text('Wolfgang Mozart'), findsNothing);
       expect(find.text('Ludwig Beethoven'), findsNothing);
 
-      // Store names are visible
       expect(find.text('Sarajevo Guitar House'), findsOneWidget);
       expect(find.text('Mostar Piano Center'), findsOneWidget);
     },
@@ -297,13 +288,11 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      // Filter to StoreEmployee
       await tester.tap(find.byType(DropdownButtonFormField<UserRole?>));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Uposlenik prodavnice').last);
       await tester.pumpAndSettle();
 
-      // Search for "Chopin"
       final searchField = find.widgetWithText(TextField, 'Pretraži po imenu...');
       await tester.enterText(searchField, 'Chopin');
       await pumpPastDebounce(tester);
@@ -313,30 +302,26 @@ void main() {
       expect(find.text('Mostar Piano Center'), findsOneWidget);
       expect(find.text('Johann Bach'), findsNothing);
 
-      // Open details dialog for Frederic Chopin
       await tester.tap(find.text('Frederic Chopin'));
       await tester.pumpAndSettle();
 
-      // Deaktiviraj button should be visible in dialog
       final deactivateButton = find.text('Deaktiviraj');
       expect(deactivateButton, findsOneWidget);
 
-      // Tap Deaktiviraj to open confirm dialog
       await tester.tap(deactivateButton);
       await tester.pumpAndSettle();
 
-      // Assert confirm dialog wording
       expect(find.text('Potvrdite deaktivaciju'), findsOneWidget);
       expect(
-        find.text('Da li ste sigurni da želite da deaktivirate ovog korisnika?'),
+        find.text(
+          'Da li ste sigurni da želite da deaktivirate korisnika "Frederic Chopin"?',
+        ),
         findsOneWidget,
       );
 
-      // Confirm deactivation
       await tester.tap(find.text('Potvrdi'));
       await tester.pumpAndSettle();
 
-      // Assert PUT admin/users/44/status was called
       expect(mockClient.putUrls, hasLength(1));
       expect(mockClient.putUrls[0], endsWith('admin/users/44/status'));
     },
@@ -386,34 +371,27 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      // Filter to StoreEmployee
       await tester.tap(find.byType(DropdownButtonFormField<UserRole?>));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Uposlenik prodavnice').last);
       await tester.pumpAndSettle();
 
-      // Search for "Chopin"
       final searchField = find.widgetWithText(TextField, 'Pretraži po imenu...');
       await tester.enterText(searchField, 'Chopin');
       await pumpPastDebounce(tester);
       await tester.pumpAndSettle();
 
-      // Open details dialog for Frederic Chopin
       await tester.tap(find.text('Frederic Chopin'));
       await tester.pumpAndSettle();
 
-      // Tap trash icon
       await tester.tap(find.byIcon(Icons.delete_outline));
       await tester.pumpAndSettle();
 
-      // Assert confirm dialog wording
       expect(find.text('Trajno brisanje'), findsOneWidget);
 
-      // Confirm deletion
       await tester.tap(find.text('Potvrdi'));
       await tester.pumpAndSettle();
 
-      // Assert DELETE admin/users/44 was called
       expect(mockClient.deletedUrls, hasLength(1));
       expect(mockClient.deletedUrls[0], endsWith('admin/users/44'));
     },

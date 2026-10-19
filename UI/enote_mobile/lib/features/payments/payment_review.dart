@@ -4,15 +4,11 @@ import 'package:enote_core/enote_core.dart';
 
 import '../../theme/app_theme.dart';
 
-/// The review state (A) shared by the tuition and rental payment screens:
-/// the calling screen's summary rows, the Stripe note and the pay button.
 class PaymentReview extends StatelessWidget {
   final double? amount;
   final VoidCallback onPay;
   final bool isBusy;
 
-  /// When false, the pay button is disabled and a visible reason replaces the
-  /// silent failure that would otherwise appear only after the confirm dialog.
   final bool isConfigured;
   final List<Widget> children;
 

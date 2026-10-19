@@ -59,8 +59,6 @@ class Validators {
         return null;
       };
 
-  /// Optional phone: empty is valid. Spaces are removed before the check,
-  /// the same rule as the server's `PhoneRules`.
   static String? optionalPhone(String? value) {
     final digits = value?.replaceAll(' ', '') ?? '';
     if (digits.isEmpty) return null;

@@ -3,39 +3,13 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'paged_result.dart';
 
-/// Fetches one page of [T]. Structurally identical to `EntityFetcher` and
-/// `EntityGridFetcher` — those typedefs stay where they are so the two config
-/// classes keep their own vocabulary.
 typedef PagedFetcher<T> = Future<PagedResult<T>> Function(
   int page,
   int pageSize,
   String search,
 );
 
-/// The paged load / search-debounce / stale-response state machine shared by
-/// [EntityListScreen] and [EntityGridScreen], which previously carried one
-/// hand-copied instance each.
-///
-/// Owns exactly the behaviour the two screens agreed on: the current page, the
-/// loaded items, the total count, the loading flag, the search field and its
-/// 300 ms debounce, and the request-id guard that drops a response whose
-/// request has already been superseded.
-///
-/// It deliberately owns nothing presentational. Delete confirmation, the empty
-/// state, the toolbar layout and the page body differ between the two screens
-/// on purpose (a `DataTable` and a `GridView` are not the same thing), so those
-/// stay in each widget's `build`.
-///
-/// A failed load is stored in [error] and cleared by the next successful one,
-/// so every paged list can render it without keeping its own copy. [onError]
-/// stays for callers that need a side effect (an `ErrorBanner` needs a
-/// [BuildContext] and a [ChangeNotifier] has none); it fires only for a
-/// response that is still current, and the owning widget is responsible for
-/// its own `mounted` check.
 class PagedFetchController<T> extends ChangeNotifier {
-  /// Default search debounce. Exposed so tests can reference it instead of
-  /// hardcoding `400 ms` pumps — if this changes, `pastDebounce()` in
-  /// `test/helpers.dart` and widget-test pumps follow automatically.
   static const Duration defaultSearchDebounce = Duration(milliseconds: 300);
 
   PagedFetchController({
@@ -47,20 +21,10 @@ class PagedFetchController<T> extends ChangeNotifier {
     searchController.addListener(_onSearchChanged);
   }
 
-  /// Called with the page/pageSize/search triple for every load.
-  ///
-  /// Owning widgets should pass a closure that reads `widget.config.fetcher` at
-  /// call time rather than the fetcher itself, so a rebuilt config is picked up
-  /// — several screens rebuild their config on every `build` with closures that
-  /// read filter state as fields.
   final PagedFetcher<T> fetcher;
 
-  /// Rows requested per page. No default on purpose: [EntityListScreen] uses
-  /// 20 and [EntityGridScreen] uses `config.pageSize` (24). A default here
-  /// would silently repaginate one of them.
   final int pageSize;
 
-  /// Invoked when a still-current load throws.
   final void Function(Object error)? onError;
 
   final Duration searchDebounceDuration;
@@ -82,15 +46,10 @@ class PagedFetchController<T> extends ChangeNotifier {
   int? get totalCount => _totalCount;
   bool get isLoading => _isLoading;
 
-  /// The most recent failure from a still-current load; null after a success.
   Object? get error => _error;
 
   String get search => _currentSearch;
 
-  /// Null until the first load resolves — callers hide pagination while it is.
-  ///
-  /// Clamped to at least 1 so an empty result set reads "Stranica 1 od 1"
-  /// rather than "Stranica 1 od 0".
   int? get totalPages => _totalCount == null
       ? null
       : (_totalCount! / pageSize).ceil().clamp(1, 1 << 30);
@@ -114,8 +73,6 @@ class PagedFetchController<T> extends ChangeNotifier {
     });
   }
 
-  /// Loads the current page. Concurrent calls are serialised by request id:
-  /// only the newest one is allowed to write back.
   Future<void> load() async {
     final requestId = ++_requestId;
     _isLoading = true;
@@ -140,8 +97,6 @@ class PagedFetchController<T> extends ChangeNotifier {
     }
   }
 
-  /// Re-runs the current page/search — call after add/edit/delete, or when an
-  /// external filter changes and should re-trigger the fetch from page 1.
   void refresh({bool resetPage = false}) {
     if (resetPage) _currentPage = 1;
     load();
@@ -159,8 +114,6 @@ class PagedFetchController<T> extends ChangeNotifier {
     load();
   }
 
-  /// The [State.mounted] equivalent for a listenable: a fetch can outlive the
-  /// widget that started it, and notifying after disposal throws.
   void _notify() {
     if (_disposed) return;
     notifyListeners();

@@ -60,8 +60,6 @@ public static class DependencyInjection
             connectionString,
             sql => sql.MigrationsAssembly(typeof(ENoteContext).Assembly.FullName)));
         services.AddScoped<IAppDbContext>(provider => provider.GetRequiredService<ENoteContext>());
-        // ENoteContext owns tenant store-id resolution (it feeds its global query filters),
-        // so IStoreContext is satisfied by the same scoped instance.
         services.AddScoped<IStoreContext>(provider => provider.GetRequiredService<ENoteContext>());
         services.AddScoped<IMigrationRunner, MigrationRunner>();
         services.AddScoped<IDatabaseHealthProbe, DatabaseHealthProbe>();
@@ -73,8 +71,6 @@ public static class DependencyInjection
         services.AddSingleton(_ => BuildStripeOptions(configuration));
         services.AddScoped<IPaymentGateway, StripePaymentGateway>();
         services.AddScoped<StripeWebhookService>();
-        // Only one process may drain the outbox, or concurrent pollers can publish the same row twice.
-        // The API owns this by default; the Worker opts out (see eNote.Worker/Program.cs).
         if (registerNotificationOutboxPublisher)
         {
             services.AddHostedService<RentalNotificationOutboxPublisher>();
@@ -85,13 +81,6 @@ public static class DependencyInjection
         return services;
     }
 
-    /// <summary>
-    /// Infra impls of Application ports whose object graph reaches back into the
-    /// Application layer (ReportService needs RankingService/InstructorAccessService;
-    /// AuthService needs IUserProvisioningService). MUST be composed by a host that
-    /// also calls AddApplication() — do not fold into AddInfrastructure(), which the
-    /// Worker calls without AddApplication.
-    /// </summary>
     public static IServiceCollection AddInfrastructureApplicationPorts(this IServiceCollection services)
     {
         services.AddScoped<IReportService, ReportService>();

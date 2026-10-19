@@ -7,10 +7,6 @@ import '../../widgets/form_submit_state.dart';
 import '../../widgets/mobile_form_scaffold.dart';
 import 'profile_provider.dart';
 
-/// The old-password gate, reached only from the explicit
-/// *Promijeni lozinku* action on the profile screen. The backend rotates the security stamp
-/// on a password change, so the current JWT is rejected from then on: the
-/// screen logs out and returns to the login screen.
 class ChangePasswordScreen extends StatefulWidget {
   const ChangePasswordScreen({super.key});
 
@@ -51,9 +47,6 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen>
         ),
       );
       if (!mounted) return;
-      // The old token is dead from this point on, so `logoutAndRevoke` must
-      // not POST `auth/logout` with it: clear the local session directly.
-      // The shell dispose stops polling and the hub once login shows again.
       navigator.popUntil((route) => route.isFirst);
       authState.logout();
       messenger.showSnackBar(

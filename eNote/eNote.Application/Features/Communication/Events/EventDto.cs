@@ -1,3 +1,5 @@
+using eNote.Application.Common.Files;
+
 namespace eNote.Application.Features.Communication.Events;
 
 public sealed class EventDto
@@ -15,4 +17,5 @@ public sealed class EventDto
     public int? InstructorId { get; init; }
     public DateTime CreatedAt { get; init; }
     public DateTime? UpdatedAt { get; init; }
+    public string ImagePath => DefaultImages.Event;
 }

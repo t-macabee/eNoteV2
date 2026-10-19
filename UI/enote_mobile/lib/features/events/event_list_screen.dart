@@ -8,10 +8,6 @@ import '../../widgets/app_date_picker_field.dart';
 import '../../widgets/paged_list_view.dart';
 import 'event_provider.dart';
 
-/// Event list (tab 1 · Događaji): two date pickers → `from` / `to`.
-/// The category label is derived from `courseId == null` only —
-/// never `isPlatformWide`: an uncoursed event with an instructor is
-/// still *Škola*.
 class EventListScreen extends StatefulWidget {
   const EventListScreen({super.key});
 
@@ -49,8 +45,6 @@ class _EventListScreenState extends State<EventListScreen>
         search,
         filters: {
           if (_from != null) 'from': _from!.toIso8601String(),
-          // `_to` is date-only (midnight); the server filters `StartsAt <= To`,
-          // so send the end of the day to include its events.
           if (_to != null)
             'to': DateTime(_to!.year, _to!.month, _to!.day, 23, 59, 59)
                 .toIso8601String(),
@@ -110,8 +104,6 @@ class _EventListScreenState extends State<EventListScreen>
   }
 }
 
-/// Category label for the student feed: `courseId == null` is
-/// platform-wide, regardless of `instructorId`.
 String eventCategoryLabel(EventDto event) {
   if (event.courseId == null) return 'Škola';
   return event.courseName ?? '—';

@@ -173,8 +173,7 @@ void main() {
     expect(mockClient.postUrls.single, endsWith('instructor/students'));
     expect(mockClient.postBodies.single, contains('"username":"newstudent"'));
     
-    // EntityFormScaffold does not pop in create mode, it resets and shows a snackbar.
-    expect(find.text('Uspješno sačuvano.'), findsOneWidget);
+    expect(find.text('Student je kreiran.'), findsOneWidget);
     expect(find.byType(InstructorStudentFormScreen), findsOneWidget);
   });
 
@@ -271,8 +270,7 @@ void main() {
     expect(mockClient.postUrls.single, endsWith('shop/employees'));
     expect(mockClient.postBodies.single, contains('"username":"newemployee"'));
     
-    // EntityFormScaffold does not pop in create mode, it resets and shows a snackbar.
-    expect(find.text('Uspješno sačuvano.'), findsOneWidget);
+    expect(find.text('Zaposlenik je kreiran.'), findsOneWidget);
     expect(find.byType(ShopEmployeeFormScreen), findsOneWidget);
   });
 
@@ -391,7 +389,6 @@ void main() {
       },
     ];
 
-    // Case 1: Caller is NOT a manager (isManager: false, subject: '20')
     final nonManagerAuthState = AuthState(
       baseUrl: 'http://localhost:5059/api/v1/',
       httpClient: mockClient,
@@ -419,13 +416,11 @@ void main() {
 
     expect(find.text('Miralem Pjanic'), findsOneWidget);
     expect(find.text('Edin Visca'), findsOneWidget);
-    // Non-manager: No toggle buttons rendered
     expect(find.byIcon(Icons.toggle_on), findsNothing);
     expect(find.byIcon(Icons.toggle_off), findsNothing);
     expect(find.byTooltip('Deaktiviraj'), findsNothing);
     expect(find.byTooltip('Aktiviraj'), findsNothing);
 
-    // Case 2: Caller IS a manager (isManager: true, subject: '20')
     final managerAuthState = AuthState(
       baseUrl: 'http://localhost:5059/api/v1/',
       httpClient: mockClient,
@@ -454,11 +449,9 @@ void main() {
     expect(find.text('Miralem Pjanic'), findsOneWidget);
     expect(find.text('Edin Visca'), findsOneWidget);
 
-    // Toggle renders on Edin Visca's card (appUserId 30 != 20), but NEVER on caller's card (appUserId 20 == 20)
     expect(find.byIcon(Icons.toggle_on), findsOneWidget);
     expect(find.byTooltip('Deaktiviraj'), findsOneWidget);
 
-    // Tapping toggle on Edin Visca triggers confirmation dialog
     await tester.tap(find.byTooltip('Deaktiviraj'));
     await tester.pumpAndSettle();
 

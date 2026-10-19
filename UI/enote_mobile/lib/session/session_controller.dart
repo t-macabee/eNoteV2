@@ -16,10 +16,6 @@ class SessionController extends ChangeNotifier {
     _sessionExpired = true;
   }
 
-  /// Stops realtime delivery when the 401 path in `main.dart` fires. Wired by
-  /// the app-level provider to the same closure passed as [onStopRealtime]
-  /// (which [logoutAndRevoke] uses), because `main.dart` has no instance and
-  /// must not build a second hub client.
   static VoidCallback? stopRealtime;
 
   UserProfileResponse? _profile;
@@ -36,18 +32,10 @@ class SessionController extends ChangeNotifier {
   UserProfileResponse? get profile => _profile;
   Object? get bootstrapError => _bootstrapError;
 
-  /// Read path for the profile picture URL cache buster. Bumped on every
-  /// successful [reloadProfile] so the picture URL carries a fresh `?v=`
-  /// after an upload/delete and the new bytes are fetched (the URL is
-  /// cacheable, so the version is what forces a reload).
   int get pictureVersion => _pictureVersion;
 
   DateTime? get membershipPaidUntil => profile?.profile.membershipPaidUntil;
 
-  /// The membership is active through the end of the expiry **day**
-  /// (inclusive boundary, UTC): `false` when no expiry is set; otherwise
-  /// `true` while [membershipPaidUntil]'s UTC calendar day is not before the
-  /// current UTC calendar day.
   bool get isMembershipActive =>
       membership.isMembershipActive(membershipPaidUntil);
 
@@ -57,9 +45,6 @@ class SessionController extends ChangeNotifier {
     return value;
   }
 
-  /// Drops the cached user so nothing from a previous session is readable —
-  /// on logout, and on every fresh [bootstrap] (the 401 path in `main.dart`
-  /// has no instance; the next `RootShell` mount bootstraps and clears here).
   void _clearProfile() {
     _profile = null;
     _bootstrapError = null;

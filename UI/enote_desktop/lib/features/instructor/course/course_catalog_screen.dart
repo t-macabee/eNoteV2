@@ -61,7 +61,6 @@ class _CourseCatalogScreenState extends State<CourseCatalogScreen> {
         _summary = summary;
       });
     } catch (_) {
-      // If the call fails, render nothing — never block the catalog on it.
     }
   }
 
@@ -96,6 +95,7 @@ class _CourseCatalogScreenState extends State<CourseCatalogScreen> {
       config: EntityGridConfig<CourseDto>(
         placeholderIcon: Icons.class_,
         titleOf: (item) => item.name,
+        imageUrlOf: (item) => item.imagePath,
         subtitleOf: (item) => item.instructorName,
         searchHint: 'Pretraži po nazivu...',
         filterBar: _buildFilterBar(),

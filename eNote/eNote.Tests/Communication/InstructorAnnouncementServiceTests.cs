@@ -1,3 +1,4 @@
+using eNote.Application.Common.Files;
 using eNote.Application.Features.Communication.Announcements;
 using eNote.Application.Features.Communication.Announcements.Services;
 using eNote.Application.Features.Identity.Instructors;
@@ -97,6 +98,20 @@ public sealed class InstructorAnnouncementServiceTests
         Assert.Equal(fileStorage.SavedPaths[1], dto.ImagePath);
         Assert.Equal([fileStorage.SavedPaths[0]], fileStorage.DeletedPaths);
         Assert.All(fileStorage.SavedFiles, f => Assert.Equal("announcements", f.Subfolder));
+    }
+
+    [Fact]
+    public async Task GetByIdForCourseAsync_ReturnsDefaultImage_WhenAnnouncementHasNoImage()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var announcement = new Announcement("Welcome", "Hello", harness.Course.Id, null, Now);
+        harness.Context.Set<Announcement>().Add(announcement);
+        await harness.Context.SaveChangesAsync();
+        var service = CreateService(harness.Context, harness.Instructor, AcademicTestData.CreateInstructorAccess(harness.Context, harness.Instructor));
+
+        var dto = await service.GetByIdForCourseAsync(harness.Course.Id, announcement.Id);
+
+        Assert.Equal(DefaultImages.Announcement, dto.ImagePath);
     }
 
     [Fact]

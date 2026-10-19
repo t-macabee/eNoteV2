@@ -67,8 +67,11 @@ void main() {
       await session.bootstrap();
 
       await tester.pumpWidget(
-        ChangeNotifierProvider<SessionController>.value(
-          value: session,
+        MultiProvider(
+          providers: [
+            Provider<ApiClient>.value(value: apiClient),
+            ChangeNotifierProvider<SessionController>.value(value: session),
+          ],
           child: const MaterialApp(
             home: Scaffold(body: ProfileScreen()),
           ),

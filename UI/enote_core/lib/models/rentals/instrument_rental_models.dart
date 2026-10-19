@@ -123,7 +123,6 @@ class InstrumentRentalDto {
     if (paidAt != null) 'paidAt': paidAt!.toIso8601String(),
   };
 
-  /// "N dana × X KM", or "—" before anything is charged.
   String get chargeLabel {
     final days = daysCharged;
     if (days == null) return '—';

@@ -37,22 +37,11 @@ String formatDisplayName(String? firstName, String? lastName, String? username) 
   return username ?? '-';
 }
 
-/// Formats a money amount as `X.XX <currency>` (default `KM`), or an em dash
-/// when null.
-///
-/// Use only for money amounts. Several
-/// `toStringAsFixed(2)` sites are not money (grades, form-controller text)
-/// or carry the unit in a column header already — adding ` KM` there would
-/// duplicate the unit.
 String formatKM(double? value, {String currency = 'KM'}) {
   if (value == null) return '—';
   return '${value.toStringAsFixed(2)} ${_currencyLabel(currency)}';
 }
 
-// Currency display contract, mirrored in
-// eNote/eNote.Infrastructure/Messaging/RentalNotificationDispatcher.cs
-// (FormatCurrency): an empty code or the BAM code is displayed as KM;
-// every other code is upper-cased.
 const _localCurrencyCode = 'bam';
 const _localCurrencyLabel = 'KM';
 
@@ -63,7 +52,6 @@ String _currencyLabel(String currency) {
   return currency.toUpperCase();
 }
 
-/// Returns [s], or an em dash when null or empty.
 String orDash(String? s) {
   if (s == null || s.isEmpty) return '—';
   return s;
@@ -74,19 +62,12 @@ String truncate(String text, int maxLength) {
   return '${text.substring(0, maxLength)}…';
 }
 
-/// Formats a succeeded payment's amount and, when known, its paid date,
-/// joined with ` · ` — the shared D-state detail line for `PaymentStatusView`
-/// across the rental and tuition payment screens.
 String formatPaymentDetail(int amountCents, DateTime? paidAt, {String currency = 'KM'}) {
   final parts = <String>[formatKM(amountCents / 100, currency: currency)];
   if (paidAt != null) parts.add(formatDateTime(paidAt));
   return parts.join(' · ');
 }
 
-/// Converts a local (client-entered) DateTime to the absolute-instant wire
-/// format the server expects. Pair with parseDate()'s .toLocal() on the way
-/// back in — the round trip must preserve the same instant, not the same
-/// local clock reading.
 String toUtcIso(DateTime date) => date.toUtc().toIso8601String();
 
 DateTime? parseDate(dynamic value) {

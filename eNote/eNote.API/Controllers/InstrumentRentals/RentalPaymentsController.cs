@@ -7,11 +7,6 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace eNote.API.Controllers.InstrumentRentals;
 
-/// <summary>
-/// Student-facing payment-intent creation/status and store-facing refunds.
-/// Follows RentalController's two-prefix convention: student routes live under
-/// /student/rentals, the store refund route is an absolute /shop/rentals route.
-/// </summary>
 [Route("api/v{version:apiVersion}/student/rentals/{rentalId:int}/payments")]
 public sealed class RentalPaymentsController(RentalPaymentService payments) : CoreController
 {

@@ -5,10 +5,6 @@ import 'package:enote_core/enote_core.dart';
 import '../../widgets/entity_form_scaffold.dart';
 import 'profile_provider.dart';
 
-/// "Promijeni lozinku" form opened from [ProfileDialog] — its own
-/// [EntityFormScaffold] with its own Save/Cancel. The backend rotates the
-/// security stamp on a password change, so the current JWT is rejected from
-/// then on: a success logs out back to the login screen.
 class ChangePasswordDialog extends StatefulWidget {
   const ChangePasswordDialog({super.key});
 
@@ -38,18 +34,10 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
       ChangePasswordRequest(
         currentPassword: _currentPasswordController.text,
         newPassword: _newPasswordController.text,
-        // The backend's ChangePasswordRequest.ConfirmNewPassword is a
-        // required member — omitting it fails JSON model binding before
-        // validation even runs.
         confirmNewPassword: _confirmPasswordController.text,
       ),
     );
     if (!mounted) return false;
-    // The old token is dead from this point on: pop back to the login
-    // route and clear the local session directly instead of POSTing
-    // `auth/logout` with the revoked token. Returning false keeps the
-    // scaffold from popping or snackbar-ing a second time. The master
-    // screen stops polling on the auth change.
     navigator.popUntil((route) => route.isFirst);
     authState.logout();
     messenger.showSnackBar(

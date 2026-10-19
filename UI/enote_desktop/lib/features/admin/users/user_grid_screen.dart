@@ -15,19 +15,11 @@ import 'user_details_dialog.dart';
 import 'user_list_item.dart';
 import 'user_provision_form_screen.dart';
 
-/// One month after [from], clamped to the target month's last day.
-///
-/// `DateTime` normalises overflow, so Jan 31 + 1 month would land on Mar 2/3.
-/// Clamping keeps the "Produži članstvo" default inside the intended month.
 DateTime nextMonthClamped(DateTime from) {
-  // Day 0 of the month after next is the last day of the target month;
-  // DateTime normalises month 13/14 into the next year.
   final lastDay = DateTime(from.year, from.month + 2, 0).day;
   return DateTime(from.year, from.month + 1, from.day.clamp(1, lastDay));
 }
 
-/// Administrator "Users" tab — card grid of Students + Instructors + StoreEmployees,
-/// filterable by name and role.
 class UserGridScreen extends StatefulWidget {
   const UserGridScreen({super.key});
 
@@ -38,24 +30,12 @@ class UserGridScreen extends StatefulWidget {
 class _UserGridScreenState extends State<UserGridScreen> {
   final _gridKey = GlobalKey<EntityGridScreenState<UserListItem>>();
 
-  /// null = "Svi korisnici" (default) — shows Instruktori + Studenti + StoreEmployee as
-  /// labeled sections. Otherwise filters to just that role.
   UserRole? _role;
 
-  /// Admin-only filter for account standing. Unlike [_role] this has no
-  /// "svi" option — it always applies, defaulting to active accounts so
-  /// deactivated users don't clutter the default view.
   bool _showActive = true;
 
-  /// Fixed per-role fetch cap for the all-roles ("Svi korisnici") merge view.
-  /// Each role endpoint is asked for page 1 up to this many rows, the three
-  /// lists are merged client-side, and the requested page window is sliced
-  /// from the merged list. Keeps the union view correct without backend work.
   static const int _unionFetchCap = 100;
 
-  /// True when any role endpoint reported more rows than [_unionFetchCap],
-  /// meaning the merge view is truncated. Surfaced as a one-line hint above
-  /// the grid (via `trailing`) so truncation is never silent.
   bool _unionTruncated = false;
 
   void _setUnionTruncated(bool value) {
@@ -163,14 +143,6 @@ class _UserGridScreenState extends State<UserGridScreen> {
     _gridKey.currentState?.refresh(resetPage: true);
   }
 
-  /// Loads one page for the current [_role] / [_showActive] filters.
-  ///
-  /// Reads `_role` and `_showActive` as fields at call time rather than
-  /// taking them as parameters: `setState` doesn't rebuild synchronously, so
-  /// `_applyFilters` calling `_gridKey.currentState?.refresh()` right after
-  /// `setState` can still run against the previous build's config. Reading
-  /// the fields here keeps the fetch correct regardless of when the config
-  /// that points at this method was created.
   Future<PagedResult<UserListItem>> _fetchUsers(
     int page,
     int pageSize,
@@ -217,10 +189,6 @@ class _UserGridScreenState extends State<UserGridScreen> {
       );
     }
 
-    // _role == null: the three role endpoints have independent server-side
-    // paging, so requesting the same page/pageSize from each and
-    // concatenating repeats/skips rows. Instead fetch page 1 up to a fixed
-    // cap from each role, merge client-side, then slice the requested window.
     final unionQuery = pagedQuery(
       1,
       _unionFetchCap,
@@ -269,18 +237,11 @@ class _UserGridScreenState extends State<UserGridScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // `_fetchUsers` reads `_role` and `_showActive` as fields at call time
-    // rather than taking them as parameters snapshotted here — `setState`
-    // doesn't rebuild synchronously, so `_applyFilters` calling
-    // `_gridKey.currentState?.refresh()` right after `setState` can still
-    // be running against this build's (about-to-be-stale) config. See the
-    // doc comment on `_fetchUsers`.
     return EntityGridScreen<UserListItem>(
       key: _gridKey,
       config: EntityGridConfig<UserListItem>(
         searchHint: 'Pretraži po imenu...',
         placeholderIcon: Icons.person_outline,
-        // Visible only when the all-roles merge view hit the per-role cap.
         trailing: _unionTruncated && _role == null
             ? const Center(
                 child: Text(
@@ -289,15 +250,9 @@ class _UserGridScreenState extends State<UserGridScreen> {
                 ),
               )
             : null,
-        // Avatar image only — a 404 (no picture / not visible) falls back to
-        // the placeholder icon. Hover-card content below is untouched.
         imageUrlOf: (item) =>
             userPictureUrl(context.read<ApiClient>(), item.appUserId),
         titleOf: (item) => item.displayName,
-        // Membership date is deliberately left off the hover card — tapping
-        // the card opens `_UserDetailsDialog`, which already shows the full
-        // membership status and a "Produži članstvo" button, so repeating
-        // the date here is redundant.
         subtitleOf: (item) => switch (item.role) {
           UserRole.student => item.membershipPaidUntil == null
               ? (item.username != null ? '@${item.username}' : 'Student')
@@ -310,9 +265,6 @@ class _UserGridScreenState extends State<UserGridScreen> {
             item.username != null ? '@${item.username}' : null,
           _ => item.username != null ? '@${item.username}' : null,
         },
-        // No cardActions here: "Produži članstvo" already lives in
-        // `_UserDetailsDialog`, which `onTap` opens — a second copy on the
-        // hover overlay was pure duplication.
         onTap: (context, item) => _showUserDetailsDialog(context, item),
         groupKeyOf: _role == null
             ? (item) => switch (item.role) {

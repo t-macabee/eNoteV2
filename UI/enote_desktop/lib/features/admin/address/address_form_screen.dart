@@ -55,6 +55,7 @@ class _AddressFormScreenState extends State<AddressFormScreen>
   @override
   Widget build(BuildContext context) {
     return EntityFormScaffold(
+      savedMessage: 'Adresa je sačuvana.',
       presentation: widget.presentation,
       title: widget.existing == null ? 'Dodaj adresu' : 'Uredi adresu',
       isEditMode: widget.existing != null,

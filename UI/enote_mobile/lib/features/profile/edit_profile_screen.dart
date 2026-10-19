@@ -27,9 +27,6 @@ class _PickedImage {
   });
 }
 
-/// Profile edit form (incl. picture upload/remove). Reached only from
-/// the profile screen, so [SessionController.profile] is loaded when this route opens.
-/// No password field anywhere (the old-password gate is a separate screen).
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
 
@@ -130,7 +127,6 @@ class _EditProfileScreenState extends State<EditProfileScreen>
     );
   }
 
-  /// Shared by the *Promijeni sliku* button and the avatar-tap upload.
   Future<void> _uploadPicked(_PickedImage picked) async {
     final provider = context.read<ProfileProvider>();
     final session = context.read<SessionController>();
@@ -153,8 +149,6 @@ class _EditProfileScreenState extends State<EditProfileScreen>
     await _uploadPicked(picked);
   }
 
-  /// Adapter for core [ImageField]: validation only, upload happens through
-  /// the widget's own [ImageField.onUpload] pipeline.
   Future<Uint8List?> _imagePickerBytes() async =>
       (await _pickImage())?.bytes;
 
@@ -202,13 +196,11 @@ class _EditProfileScreenState extends State<EditProfileScreen>
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
     final hasPicture = profile.hasPicture;
-    final pictureUrl = hasPicture
-        ? userPictureUrl(
-            context.read<ApiClient>(),
-            'me',
-            cacheBuster: session.pictureVersion,
-          )
-        : null;
+    final pictureUrl = userPictureUrl(
+      context.read<ApiClient>(),
+      'me',
+      cacheBuster: session.pictureVersion,
+    );
 
     return MobileFormScaffold(
       title: 'Uredi profil',

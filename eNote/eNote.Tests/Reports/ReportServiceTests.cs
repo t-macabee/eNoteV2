@@ -85,11 +85,6 @@ public sealed class ReportServiceTests
         var scopedOnlyBytes = await GenerateRentalSummaryPdfAsync(includeOtherStoreRental: false);
         var withOtherStoreRentalBytes = await GenerateRentalSummaryPdfAsync(includeOtherStoreRental: true);
 
-        // CreatePermissiveContext leaves ExplicitStoreId unset, so the EF global tenant
-        // filter is inert (GetStoreId() returns null) and cannot itself exclude the other
-        // store's rental. Only the explicit MusicStoreId predicate in ReportService can.
-        // No PDF text-extraction library is available in this project, so an extra row is
-        // asserted via byte length rather than parsed content.
         Assert.Equal(scopedOnlyBytes.Length, withOtherStoreRentalBytes.Length);
     }
 

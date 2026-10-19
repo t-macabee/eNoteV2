@@ -18,9 +18,6 @@ import '../features/store_employee/store/shop_store_screen.dart';
 import '../widgets/entity_list_screen.dart';
 import 'role_menu.dart';
 
-// Administrator shell shape: primary tabs (Korisnici, Trgovina muzičke
-// opreme, Kursevi, Događaji) followed by reference data CRUD (Gradovi, Adrese,
-// Tipovi instrumenata). Instructor accounts are folded into the Users tab.
 const kRoleMenuEntries = <RoleMenuEntry>[
   RoleMenuEntry(
     icon: Icons.people_outline,

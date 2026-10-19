@@ -1,10 +1,5 @@
 import 'package:enote_core/enote_core.dart';
 
-/// Provider seam for the admin "Users" tab's destructive/mutating calls
-/// against `admin/users/{id}`.
-///
-/// `remove(id)` (hard delete) is inherited from [CrudProvider] and already
-/// does the status check — do not add a fourth delete method here.
 class AdminUserProvider extends CrudProvider<UserProfileResponse> {
   AdminUserProvider({required super.apiClient}) : super(endpoint: 'admin/users');
 
@@ -12,9 +7,6 @@ class AdminUserProvider extends CrudProvider<UserProfileResponse> {
   UserProfileResponse fromJson(Map<String, dynamic> json) =>
       UserProfileResponse.fromJson(json);
 
-  /// `GET admin/users/{id}`. Throws [ApiException] on error — callers that
-  /// want a soft failure (e.g. `_UserDetailsDialog`, which falls back to
-  /// basic item info) must catch at the call site, not here.
   Future<UserProfileResponse> getProfile(int id) => getById(id);
 
   Future<int> provision(UserProvisionRequest request) async {
@@ -23,7 +15,6 @@ class AdminUserProvider extends CrudProvider<UserProfileResponse> {
     return data['userId'] as int? ?? data['id'] as int? ?? 0;
   }
 
-  /// `PUT admin/users/{id}/status`.
   Future<void> setStatus(int id, bool isActive) async {
     final response = await apiClient.put(
       '$endpoint/$id/status',
@@ -33,8 +24,6 @@ class AdminUserProvider extends CrudProvider<UserProfileResponse> {
     notifyListeners();
   }
 
-  /// `PUT admin/users/{id}/membership`. Returns [paidUntil] back so callers
-  /// can optimistically update local state without a second round-trip.
   Future<DateTime> renewMembership(int id, DateTime paidUntil) async {
     final request = UpdateMembershipRequest(paidUntil: paidUntil);
     final response = await apiClient.put(

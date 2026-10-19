@@ -78,18 +78,15 @@ void main() {
     await tester.pump();
     await tester.pumpAndSettle();
 
-    // Fill fields
     await tester.enterText(find.widgetWithText(TextFormField, 'Naziv'), 'Nova Prodavnica');
     await tester.enterText(find.widgetWithText(TextFormField, 'Radno vrijeme'), '08:00 - 16:00');
     await tester.enterText(find.widgetWithText(TextFormField, 'Broj telefona'), '+387 61 111 222');
 
-    // Pick address from dropdown
     await tester.tap(find.byType(DropdownButtonFormField<Object>));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Ferhadija 15, Sarajevo').last);
     await tester.pumpAndSettle();
 
-    // Save
     await tester.tap(find.widgetWithText(FilledButton, 'Sačuvaj'));
     await tester.pumpAndSettle();
 
@@ -155,17 +152,13 @@ void main() {
     await tester.tap(find.text('Open Dialog'));
     await tester.pumpAndSettle();
 
-    // Verify dialog title
     expect(find.text('Uredi prodavnicu'), findsOneWidget);
 
-    // Verify image auto-save helper text is present in edit mode
     expect(find.text('Slika se automatski sprema prilikom odabira.'), findsOneWidget);
 
-    // Verify actions row contains Otkaži and Sačuvaj
     expect(find.widgetWithText(TextButton, 'Otkaži'), findsOneWidget);
     expect(find.widgetWithText(FilledButton, 'Sačuvaj'), findsOneWidget);
 
-    // Tapping Otkaži closes the dialog
     await tester.tap(find.widgetWithText(TextButton, 'Otkaži'));
     await tester.pumpAndSettle();
 

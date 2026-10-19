@@ -13,8 +13,6 @@ namespace eNote.API.Controllers.Assignments;
 
 public sealed class AssignmentSubmissionController(AssignmentSubmissionService submissionService) : CoreController
 {
-    // ── Instructor actions ──────────────────────────────────────────
-
     [Authorize(Roles = AppRoles.Instructor)]
     [HttpGet("~/api/v{version:apiVersion}/instructor/lectures/{lectureId:int}/assignments/{assignmentId:int}/submissions")]
     [ProducesResponseType(typeof(PagedResult<AssignmentSubmissionDto>), StatusCodes.Status200OK)]
@@ -32,8 +30,6 @@ public sealed class AssignmentSubmissionController(AssignmentSubmissionService s
         var dto = await submissionService.GradeAsync(lectureId, assignmentId, submissionId, request, cancellationToken);
         return Ok(dto);
     }
-
-    // ── Student actions ─────────────────────────────────────────────
 
     [Authorize(Roles = AppRoles.Student)]
     [HttpGet("~/api/v{version:apiVersion}/student/assignments/{id:int}/submission")]

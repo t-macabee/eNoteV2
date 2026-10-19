@@ -4,9 +4,6 @@ import 'package:enote_core/enote_core.dart';
 import '../../../widgets/detail_row.dart';
 import '../../../widgets/dialog_shell.dart';
 
-/// Read-only catalog detail — deliberately separate from [CourseDetailDialog],
-/// which exposes Delete/Uredi actions that must not appear on other
-/// instructors' courses.
 class CourseCatalogDetailDialog extends StatelessWidget {
   final CourseDto course;
 

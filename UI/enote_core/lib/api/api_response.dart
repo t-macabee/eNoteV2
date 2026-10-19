@@ -5,8 +5,6 @@ import 'package:http/http.dart' as http;
 import 'api_error_mapper.dart';
 import 'api_exception.dart';
 
-/// Throws [ApiException] with a user-facing Bosnian message if [response]
-/// carries an error status. Returns normally otherwise.
 void throwIfError(http.Response response) {
   if (response.statusCode >= 400) {
     throw ApiException(
@@ -15,24 +13,15 @@ void throwIfError(http.Response response) {
   }
 }
 
-/// [throwIfError], then decodes the body as a JSON object.
-///
-/// An empty, malformed, or non-object body throws an [ApiException] with a
-/// distinct Bosnian message (not the offline fallback from [userMessage]),
-/// so a parse failure is never misreported as a connectivity problem.
 Map<String, dynamic> decodeOrThrow(http.Response response) =>
     _decodeOrThrow<Map<String, dynamic>>(response);
 
-/// [decodeOrThrow] for bare-list endpoints.
 List<dynamic> decodeListOrThrow(http.Response response) =>
     _decodeOrThrow<List<dynamic>>(response);
 
-/// Decodes a bare JSON-array body, mirroring [decodeListOrThrow]'s
-/// parse-failure contract for callers that already hold the raw body text.
 List<dynamic> decodeListOrThrowBody(String body) =>
     _decodeBodyOrThrow<List<dynamic>>(body);
 
-/// [decodeListOrThrow], then maps each element through [fromJson].
 List<T> decodeList<T>(
   http.Response response,
   T Function(Map<String, dynamic>) fromJson,
@@ -50,8 +39,7 @@ T _decodeBodyOrThrow<T>(String body) {
   try {
     final decoded = jsonDecode(body);
     if (decoded is T) return decoded;
-  } on FormatException {
-    // fall through
+  } on FormatException catch (_) {
   }
   throw ApiException('Neispravan odgovor servera.');
 }

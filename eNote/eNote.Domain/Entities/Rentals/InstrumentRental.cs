@@ -34,11 +34,6 @@ public sealed class InstrumentRental : AuditableEntity, ITenantScoped
 
     public ICollection<RentalPayment> Payments { get; private set; } = [];
 
-    /// <summary>
-    /// Computes the charges due for this rental as of <paramref name="now"/>.
-    /// Nothing is billed before pickup or when the status is not billing-eligible.
-    /// Every billable status is charged by the day: days used (ceiling, minimum 1) × fee / 30.
-    /// </summary>
     public RentalCharges CalculateCharges(DateTime now) =>
         RentalChargeCalculator.Calculate(PickedUpAt, ReturnedAt, RentalStatus, Fee, now);
 
@@ -103,16 +98,6 @@ public sealed class InstrumentRental : AuditableEntity, ITenantScoped
         RentalStatus = InstrumentRentalStatus.ReturnedEarly;
     }
 
-    /// <summary>
-    /// Marks the rental as paid using the exact cents charged for the succeeded
-    /// Stripe payment. The PaymentIntent id is not cached on the rental; it lives
-    /// on the <see cref="RentalPayment"/> attempt row, so it isn't a parameter here.
-    /// Per product decision, paying stays permanent: a later refund
-    /// (<see cref="RentalPayment.ApplyRefund"/>) does NOT flip <see cref="IsPaid"/>
-    /// back to false — once paid, the rental stays paid even if a courtesy refund is
-    /// later issued. There is no corresponding MarkRefunded on this entity for that
-    /// reason: refund state lives entirely on RentalPayment.
-    /// </summary>
     public void MarkPaid(long cents, DateTime paidAt)
     {
         IsPaid = true;
@@ -120,12 +105,6 @@ public sealed class InstrumentRental : AuditableEntity, ITenantScoped
         AmountPaid = cents / 100m;
     }
 
-    /// <summary>
-    /// Validates and applies a status transition against the current <see cref="RentalStatus"/>,
-    /// dispatching to the matching mutator (<see cref="Approve"/>, <see cref="Reject"/>, etc.).
-    /// Folds what used to be the separate RentalStateMachine's guard/dispatch table onto the
-    /// entity itself, since the guards only ever inspect and mutate this entity's own state.
-    /// </summary>
     public Result<RentalTransitionResult> Transition(RentalTrigger trigger, RentalTransitionContext context, DateTime now)
     {
         var transition = FindTransition(RentalStatus, trigger, context.Actor);
@@ -239,10 +218,6 @@ public sealed class InstrumentRental : AuditableEntity, ITenantScoped
 
     private static readonly IReadOnlyList<TransitionDefinition> Transitions = CreateTransitions();
 
-    // Domain-owned transition failure messages. eNote.Application.Common.Localization.Messages
-    // (the app-wide message catalog) is an Application-layer type that Domain cannot reference
-    // without inverting the project dependency (eNote.Domain has zero project references), so
-    // these mirror that catalog's wording for the same conditions rather than sharing it.
     private const string RentalAccessDeniedMessage = "Nemate pravo nad ovim zahtjevom.";
     private const string RentalApprovePendingOnlyMessage = "Samo zahtjev na čekanju može biti odobren.";
     private const string RentalRejectPendingOnlyMessage = "Samo zahtjev na čekanju se može odbiti.";

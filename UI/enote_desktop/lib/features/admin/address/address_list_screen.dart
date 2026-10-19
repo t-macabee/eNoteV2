@@ -63,6 +63,9 @@ class _AddressListScreenState extends State<AddressListScreen> {
         fetcher: (page, pageSize, search) => context.read<AddressProvider>().search(pagedQuery(page, pageSize, search, searchField: 'city')),
         onAdd: () => _openForm(),
         onEdit: (context, item) => _openForm(item),
+        deleteConfirmMessageOf: (item) =>
+            'Da li ste sigurni da želite da obrišete adresu "${item.street} ${item.number}"?',
+        deletedMessage: 'Adresa je obrisana.',
         onDelete: (context, item) async {
           await context.read<AddressProvider>().remove(item.id);
           return true;

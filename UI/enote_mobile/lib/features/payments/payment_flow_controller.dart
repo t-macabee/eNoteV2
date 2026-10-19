@@ -5,18 +5,9 @@ import 'package:enote_core/enote_core.dart';
 import 'payment_sheet_gateway.dart';
 import 'stripe_redirect.dart';
 
-/// The screens of the shared payment state machine.
 enum PaymentView { review, processing, succeeded, failed, pending }
 
-/// State machine behind the tuition and rental payment screens.
-///
-/// The screen owns the provider wiring and the review body; everything from
-/// the Stripe sheet onward lives here, including the [StripeRedirect] slot
-/// (claimed on construction, restored on [dispose]). Provider calls arrive as
-/// callbacks so the flow can be unit-tested without widgets.
 class PaymentFlowController extends ChangeNotifier {
-  /// Shown when a Canceled sheet turns out to be a decline (server row is
-  /// Failed).
   static const declinedMessage = 'Kartica je odbijena.';
   static const _cancelledMessage = 'Plaćanje je otkazano.';
   static const _unavailableMessage =
@@ -27,7 +18,6 @@ class PaymentFlowController extends ChangeNotifier {
   final Future<String> Function() createIntent;
   final Future<PaymentRecord?> Function() status;
 
-  /// Resolves to the latest row; anything but `succeeded` lands on pending.
   final Future<PaymentRecord?> Function() pollUntilSucceeded;
 
   PaymentFlowController({
@@ -62,7 +52,6 @@ class PaymentFlowController extends ChangeNotifier {
     if (!_disposed) notifyListeners();
   }
 
-  /// One payment attempt: create-intent → init → present → poll.
   Future<void> attempt() async {
     if (isBusy) return;
     isBusy = true;
@@ -77,9 +66,6 @@ class PaymentFlowController extends ChangeNotifier {
       await gateway.init(clientSecret);
       await gateway.present();
     } on PaymentSheetCancelled {
-      // flutter_stripe 14.0.0 reports a decline-then-dismiss as
-      // FailureCode.Canceled, identical to a walk-away: one server read
-      // disambiguates (the payment_failed webhook marks the row Failed).
       var message = _cancelledMessage;
       try {
         final current = await status();
@@ -87,7 +73,6 @@ class PaymentFlowController extends ChangeNotifier {
           message = declinedMessage;
         }
       } catch (_) {
-        // The read itself failed: keep the cancel copy.
       }
       view = PaymentView.failed;
       failureMessage = message;
@@ -109,14 +94,11 @@ class PaymentFlowController extends ChangeNotifier {
     await poll();
   }
 
-  /// Deep-link re-entry (`enote://stripe-redirect`): poll again only while
-  /// waiting on the server.
   void recheck() {
     if (_disposed || view != PaymentView.pending || isPolling) return;
     poll();
   }
 
-  /// One poll cycle (the `Provjeri ponovo` pending state, deep-link re-entry).
   Future<void> poll() async {
     if (isPolling) return;
     isPolling = true;

@@ -94,8 +94,6 @@ void main() {
     await tester.tap(find.text('Pošalji zahtjev'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Potvrdi'));
-    // No settle: the submit button shows an indeterminate spinner while the
-    // create request is pending.
     await tester.pump();
     await tester.pump();
 

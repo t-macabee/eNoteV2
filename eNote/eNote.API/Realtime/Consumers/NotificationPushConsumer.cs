@@ -5,12 +5,8 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace eNote.API.Realtime.Consumers;
 
-/// A mapped notification: the target user, the SignalR payload, and the two
-/// log fields (notification kind and the entity reference).
 public sealed record NotificationPush(int StudentUserId, NotificationPushDto Payload, string Kind, string Reference);
 
-/// Shared SignalR push for notification messages. Subclasses only map their
-/// message; the group send and the log line are identical for every kind.
 public abstract class NotificationPushConsumer<TMessage>(IHubContext<NotificationHub> hubContext, ILogger logger) : IConsumer<TMessage>
     where TMessage : class
 {

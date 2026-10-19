@@ -23,8 +23,6 @@ public sealed class TuitionPaymentService(
             throw new BusinessException(Messages.StudentNotEnrolled);
         }
 
-        // Deliberately no "already paid" refusal: a paid enrollment may buy the next period early, and
-        // ExtendPaidUntil stacks the new period on top of the existing PaidUntil.
         if (enrollment.Course.Price == 0)
         {
             throw new BusinessException(Messages.CourseIsFree);

@@ -128,8 +128,6 @@ Future<_Harness> _pumpDetail(
   WidgetTester tester,
   ScriptedClient client,
 ) async {
-  // Tall surface: the 16:9 hero pushes the request button past the default
-  // 800x600 test viewport, and every assertion here is about that button.
   tester.view.physicalSize = const Size(400, 1600);
   tester.view.devicePixelRatio = 1.0;
   addTearDown(tester.view.resetDevicePixelRatio);
@@ -176,7 +174,6 @@ void main() {
   testWidgets('reason 1: unpaid debt wins over every other reason', (
     tester,
   ) async {
-    // All three client-side reasons apply at once.
     await _pumpDetail(
       tester,
       _client(

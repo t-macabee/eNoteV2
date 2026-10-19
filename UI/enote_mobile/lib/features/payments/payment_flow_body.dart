@@ -5,9 +5,6 @@ import 'package:enote_core/enote_core.dart';
 import 'payment_flow_controller.dart';
 import 'payment_status_view.dart';
 
-/// Chrome shared by both payment screens: rebuilds [body] on [controller], blocks
-/// back navigation while processing, and shows a close action only in the
-/// states a user may leave from (A, E, F).
 class PaymentFlowScaffold extends StatelessWidget {
   final PaymentFlowController controller;
   final String title;
@@ -50,19 +47,12 @@ class PaymentFlowScaffold extends StatelessWidget {
   }
 }
 
-/// The payment flow, shared by the tuition and rental screens.
-///
-/// The review body stays with the calling screen and arrives as
-/// [reviewChild]; every later state is a [PaymentStatusView] driven by
-/// [controller].
 class PaymentFlowBody extends StatelessWidget {
   final PaymentFlowController controller;
   final Widget reviewChild;
 
-  /// Optional D-state note; rentals keep the [PaymentStatusView] default.
   final String? successNote;
 
-  /// D-state back button label and action, screen-specific.
   final String successCancelLabel;
   final VoidCallback onSuccessBack;
 

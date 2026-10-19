@@ -13,10 +13,6 @@ class SubmissionListScreen extends StatefulWidget {
   final int assignmentId;
   final String assignmentTitle;
 
-  /// Defaults to [EntityListPresentation.page] (own Scaffold/AppBar, with a
-  /// back/close button when pushed via Navigator). Pass
-  /// [EntityListPresentation.embedded] only when the caller already
-  /// provides that chrome.
   final EntityListPresentation presentation;
   final VoidCallback? onMutation;
 

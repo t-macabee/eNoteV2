@@ -30,8 +30,6 @@ public class Enrollment : AuditableEntity
         EnrollmentStatus = status;
     }
 
-    // The only allowed status changes. The route and role pick the trigger, so there is no actor column
-    // (unlike InstrumentRental): Request/Cancel are student actions, Approve/Reject/Complete are instructor actions.
     private static readonly IReadOnlyDictionary<(EnrollmentStatus From, EnrollmentTrigger Trigger), EnrollmentStatus> Transitions =
         new Dictionary<(EnrollmentStatus, EnrollmentTrigger), EnrollmentStatus>
         {
@@ -91,7 +89,6 @@ public class Enrollment : AuditableEntity
         _ => throw new ArgumentOutOfRangeException(nameof(trigger), trigger, null)
     };
 
-    /// <returns>The period start (the later of the previous <see cref="PaidUntil"/> or <paramref name="utcNow"/>) and the new <see cref="PaidUntil"/>, so callers don't have to re-derive them.</returns>
     public (DateTime Start, DateTime End) ExtendPaidUntil(DateTime utcNow, int days)
     {
         if (days <= 0)
@@ -104,9 +101,6 @@ public class Enrollment : AuditableEntity
         return (periodStart, PaidUntil.Value);
     }
 
-    // Domain-owned transition failure messages. eNote.Application.Common.Localization.Messages
-    // (the app-wide message catalog) is an Application-layer type that Domain cannot reference
-    // without inverting the project dependency (eNote.Domain has zero project references).
     private const string EnrollmentAlreadyCompletedMessage = "Ovaj kurs ste već završili. Ponovni upis nije moguć.";
     private const string EnrollmentApprovePendingOnlyMessage = "Samo zahtjev za upis na čekanju može biti odobren.";
     private const string EnrollmentRejectPendingOnlyMessage = "Samo zahtjev za upis na čekanju se može odbiti.";

@@ -11,9 +11,6 @@ import 'instrument_type_provider.dart';
 class InstrumentTypeFormScreen extends StatefulWidget {
   final InstrumentTypeDto? existing;
 
-  /// How the wrapped [EntityFormScaffold] is presented — pass
-  /// [EntityFormPresentation.dialog] when opened via
-  /// [EntityFormScaffold.showAsDialog].
   final EntityFormPresentation presentation;
 
   const InstrumentTypeFormScreen({
@@ -58,6 +55,7 @@ class _InstrumentTypeFormScreenState extends State<InstrumentTypeFormScreen>
   @override
   Widget build(BuildContext context) {
     return EntityFormScaffold(
+      savedMessage: 'Tip instrumenta je sačuvan.',
       presentation: widget.presentation,
       title: widget.existing == null
           ? 'Dodaj tip instrumenta'

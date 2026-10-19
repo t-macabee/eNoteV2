@@ -16,8 +16,6 @@ import '../rentals/rental_provider.dart';
 import '../rentals/rental_request_sheet.dart';
 import 'instrument_provider.dart';
 
-/// The one reason that blocks a rental request, already resolved to the
-/// priority order when several reasons apply.
 class _BlockedReason {
   final String copy;
   final String? actionLabel;
@@ -26,7 +24,6 @@ class _BlockedReason {
   const _BlockedReason(this.copy, {this.actionLabel, this.onAction});
 }
 
-/// Instrument detail with the request action and its blocking states.
 class InstrumentDetailScreen extends StatefulWidget {
   final int instrumentId;
 
@@ -45,8 +42,6 @@ class _InstrumentDetailScreenState extends State<InstrumentDetailScreen> {
   @override
   void initState() {
     super.initState();
-    // Analytics only, and deliberately not awaited: the screen must never
-    // wait on it.
     unawaited(context.read<InstrumentProvider>().recordView(widget.instrumentId));
     _load();
   }
@@ -93,8 +88,6 @@ class _InstrumentDetailScreenState extends State<InstrumentDetailScreen> {
                     arguments: PaymentArgs(debt.rentalId!),
                   )
                   .then((_) {
-                    // A finished payment clears the debt; reload so the
-                    // banner disappears without a manual refresh.
                     if (mounted) _load();
                   }),
       );
@@ -105,9 +98,6 @@ class _InstrumentDetailScreenState extends State<InstrumentDetailScreen> {
       return _BlockedReason(
         until == null
             ? 'Članarina nije aktivna.'
-            // formatDate already ends in a period (Bosnian date form), so the
-            // copy's sentence stop after {date} is not written again here.
-            // The profile's MembershipCard renders the same string the same way.
             : 'Članarina je istekla ${formatDate(until)} '
                   'Obratite se školi za obnovu.',
       );

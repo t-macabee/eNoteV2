@@ -65,7 +65,6 @@ int _filledDots(WidgetTester tester) =>
 int _hollowDots(WidgetTester tester) =>
     tester.widgetList(find.byIcon(Icons.circle_outlined)).length;
 
-/// Every string the timeline actually painted, for the id-leak assertion.
 List<String> _renderedText(WidgetTester tester) => tester
     .widgetList<Text>(find.byType(Text))
     .map((t) => t.data ?? '')

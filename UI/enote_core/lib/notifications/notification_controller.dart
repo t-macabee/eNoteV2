@@ -34,8 +34,6 @@ class NotificationController extends ChangeNotifier {
   String? get error => _error;
   bool get hasMore => _hasMore;
 
-  /// Starts refreshing the unread count on [pollInterval] and loads the
-  /// first page immediately. Call once when the shell mounts.
   void startPolling() {
     _pollTimer?.cancel();
     refresh();
@@ -50,13 +48,6 @@ class NotificationController extends ChangeNotifier {
   Future<void> refresh({NotificationSearchObject? search}) async {
     _isLoading = true;
     _error = null;
-    // Deferred: refresh() can be called synchronously from a widget's
-    // didChangeDependencies/initState (e.g. MasterScreen.startPolling on
-    // login), which runs mid-build. Notifying listeners before any `await`
-    // would try to rebuild an ancestor Provider while the framework is still
-    // building this frame ("setState() or markNeedsBuild() called during
-    // build"). scheduleMicrotask pushes the notification past the end of
-    // the current build/frame.
     scheduleMicrotask(notifyListeners);
 
     try {
@@ -109,8 +100,6 @@ class NotificationController extends ChangeNotifier {
     }
   }
 
-  /// Cheaper than [refresh] — used by the polling timer so it doesn't
-  /// re-fetch the whole list every tick.
   Future<void> refreshUnreadCount() async {
     try {
       final response = await apiClient.get('$endpoint/unread-count');
@@ -119,7 +108,6 @@ class NotificationController extends ChangeNotifier {
       _unreadCount = NotificationUnreadCountDto.fromJson(data).unreadCount;
       notifyListeners();
     } catch (_) {
-      // Silent: the next poll tick retries.
     }
   }
 

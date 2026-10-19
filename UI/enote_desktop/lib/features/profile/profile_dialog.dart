@@ -7,10 +7,6 @@ import 'change_password_dialog.dart';
 import 'edit_profile_dialog.dart';
 import 'profile_provider.dart';
 
-/// Read-only summary of the logged-in user's account, with "Uredi" and
-/// "Promijeni lozinku" opening their own dedicated forms (each with its own
-/// Save/Cancel), the same way editing a music store opens its own form
-/// rather than editing inline.
 class ProfileDialog extends StatefulWidget {
   const ProfileDialog({super.key});
 
@@ -21,8 +17,6 @@ class ProfileDialog extends StatefulWidget {
 class _ProfileDialogState extends State<ProfileDialog> {
   UserProfileResponse? _profileResponse;
   bool _isLoading = true;
-  // Bumped after every profile reload so `users/me/picture` reloads too —
-  // the URL is cacheable, so without `?v=` the old bytes would linger.
   int _pictureVersion = 0;
 
   @override
@@ -61,8 +55,6 @@ class _ProfileDialogState extends State<ProfileDialog> {
         initialHasPicture: profile.hasPicture,
       ),
     );
-    // The edit dialog pops on save (edit mode), so this summary is
-    // refreshed once it's closed.
     if (mounted) _fetchProfile();
   }
 
@@ -170,10 +162,6 @@ class _ProfileDialogState extends State<ProfileDialog> {
     );
   }
 
-  /// Display-only avatar: the user's picture when [hasPicture] is true,
-  /// otherwise a fallback circle with initials. A 404 from `me/picture`
-  /// (no picture / not visible) falls back to initials via [errorBuilder],
-  /// never an error banner.
   Widget _buildAvatar(BuildContext context, UserProfileResponse profile) {
     Widget initialsAvatar() {
       return CircleAvatar(
@@ -193,8 +181,6 @@ class _ProfileDialogState extends State<ProfileDialog> {
         ),
       );
     }
-
-    if (!profile.hasPicture) return initialsAvatar();
 
     final provider = context.read<ProfileProvider>();
     final apiClient = context.read<ApiClient>();

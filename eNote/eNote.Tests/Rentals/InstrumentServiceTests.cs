@@ -78,7 +78,6 @@ public sealed class InstrumentServiceTests
 
         var service = CreateInstrumentService(ctx);
 
-        // Search matches Model
         var modelMatch = await service.GetPagedAsync(new InstrumentSearchObject
         {
             Search = "Stratocaster"
@@ -86,7 +85,6 @@ public sealed class InstrumentServiceTests
         Assert.Single(modelMatch.Items);
         Assert.Equal("Stratocaster", modelMatch.Items[0].Model);
 
-        // Search matches Manufacturer
         var mfrMatch = await service.GetPagedAsync(new InstrumentSearchObject
         {
             Search = "Yamaha"

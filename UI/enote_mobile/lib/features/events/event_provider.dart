@@ -1,6 +1,5 @@
 import 'package:enote_core/enote_core.dart';
 
-/// Student events over `student/events`.
 class EventProvider extends ReadOnlyProvider<EventDto> {
   EventProvider({required super.apiClient}) : super(endpoint: 'student/events');
 

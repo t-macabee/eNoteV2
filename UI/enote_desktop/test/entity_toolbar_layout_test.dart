@@ -6,18 +6,6 @@ import 'package:enote_desktop/widgets/entity_grid_screen.dart';
 import 'package:enote_desktop/widgets/entity_list_screen.dart';
 
 
-/// Guards the toolbar and page-size invariants that [EntityListScreen] and
-/// [EntityGridScreen] do *not* share, and which the extraction of
-/// [EntityToolbar] and `PagedFetchController` out of the two screens could
-/// otherwise flatten without failing anything.
-///
-/// The two screens look like twins but differ deliberately:
-///  * the list has a second, stacked toolbar layout (search bar above the
-///    filter bar, Add button in the AppBar actions) that the grid has no
-///    counterpart for, and that every default list screen uses;
-///  * the list paginates at 20 rows, the grid at 24.
-
-/// Records the page size each screen asks for.
 class _Recorder {
   final List<int> pageSizes = [];
 
@@ -55,9 +43,6 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // This is the regression the extraction most plausibly introduces:
-      // treating the toolbar as fully shared moves Add out of the AppBar and
-      // every default list screen loses its Add button.
       expect(
         find.descendant(
           of: find.byType(AppBar),
@@ -119,7 +104,6 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // Only the host screen's Scaffold, and no AppBar of the list's own.
       expect(find.byType(Scaffold), findsOneWidget);
       expect(find.byType(AppBar), findsNothing);
       expect(find.byType(EntityToolbar), findsOneWidget);

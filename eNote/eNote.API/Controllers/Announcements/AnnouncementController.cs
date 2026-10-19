@@ -16,8 +16,6 @@ public sealed class AnnouncementController(
     StoreAnnouncementService storeAnnouncementService,
     StudentAnnouncementFeedService feedService) : CoreController
 {
-    // ── Instructor actions ──────────────────────────────────────────
-
     [Authorize(Roles = AppRoles.Instructor)]
     [HttpGet("~/api/v{version:apiVersion}/instructor/courses/{courseId:int}/announcements")]
     [ProducesResponseType(typeof(PagedResult<AnnouncementDto>), StatusCodes.Status200OK)]
@@ -72,8 +70,6 @@ public sealed class AnnouncementController(
         return NoContent();
     }
 
-    // ── Store employee actions ──────────────────────────────────────
-
     [Authorize(Roles = AppRoles.StoreEmployee)]
     [HttpGet("~/api/v{version:apiVersion}/shop/announcements")]
     [ProducesResponseType(typeof(PagedResult<AnnouncementDto>), StatusCodes.Status200OK)]
@@ -127,8 +123,6 @@ public sealed class AnnouncementController(
         await storeAnnouncementService.DeleteForStoreAsync(announcementId, cancellationToken);
         return NoContent();
     }
-
-    // ── Student actions ─────────────────────────────────────────────
 
     [Authorize(Roles = AppRoles.Student)]
     [HttpGet("~/api/v{version:apiVersion}/student/announcements")]

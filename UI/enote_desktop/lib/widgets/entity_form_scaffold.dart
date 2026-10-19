@@ -3,13 +3,9 @@ import 'package:enote_core/enote_core.dart';
 import 'entity_form_sections.dart';
 import 'form_submit_state.dart';
 
-/// How an [EntityFormScaffold] is presented to the user.
 enum EntityFormPresentation {
-  /// Full page — [Scaffold] with an [AppBar] (the default).
   page,
 
-  /// Bounded, scrollable [AlertDialog]. Open with
-  /// [EntityFormScaffold.showAsDialog].
   dialog,
 }
 
@@ -20,10 +16,9 @@ class EntityFormScaffold extends StatefulWidget {
   final bool isEditMode;
   final String saveLabel;
   final String savedMessage;
+  final String? deletedMessage;
   final Future<bool> Function()? onDelete;
 
-  /// When set and [onDelete] is null, the delete button is shown disabled with
-  /// this text as its tooltip.
   final String? deleteDisabledReason;
   final String deleteLabel;
   final String deleteConfirmTitle;
@@ -42,6 +37,7 @@ class EntityFormScaffold extends StatefulWidget {
     this.isEditMode = false,
     this.saveLabel = 'Sačuvaj',
     this.savedMessage = 'Uspješno sačuvano.',
+    this.deletedMessage,
     this.onDelete,
     this.deleteDisabledReason,
     this.deleteLabel = 'Obriši',
@@ -90,6 +86,11 @@ class _EntityFormScaffoldState extends State<EntityFormScaffold>
       final success = await widget.onDelete!();
       if (!mounted) return;
       if (success) {
+        final deletedMessage = widget.deletedMessage;
+        if (deletedMessage != null) {
+          ScaffoldMessenger.of(context)
+              .showSnackBar(SnackBar(content: Text(deletedMessage)));
+        }
         Navigator.of(context).pop(true);
       }
     });
@@ -128,8 +129,6 @@ class _EntityFormScaffoldState extends State<EntityFormScaffold>
     };
   }
 
-  /// Interleaves [spacing] gaps between fields for the page-mode [ListView],
-  /// which has no `spacing` property unlike [Column].
   List<Widget> _withSpacing(List<Widget> fields, double spacing) {
     if (fields.length <= 1) return fields;
     final spaced = <Widget>[];

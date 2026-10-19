@@ -120,9 +120,6 @@ class _ShopStoreScreenState extends State<ShopStoreScreen> {
   @override
   Widget build(BuildContext context) {
     final storeProvider = context.watch<ShopStoreProvider>();
-    // Build-local view of the store: provider data wins when present,
-    // otherwise fall back to the last value loaded by _loadStore().
-    // Never assigns to _store here — _loadStore() remains its only writer.
     final store = storeProvider.store ?? _store;
 
     return _buildBody(context, store);
@@ -177,7 +174,6 @@ class _ShopStoreScreenState extends State<ShopStoreScreen> {
               addLabel: 'Dodaj instrument',
               onAdd: () => _openInstrumentForm(),
               onTap: (context, item) async {
-                // Deletion is handled inside InstrumentDetailDialog.
                 final changed =
                     await InstrumentDetailDialog.show(context, item);
                 if (changed == true) {

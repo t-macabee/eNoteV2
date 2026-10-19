@@ -6,7 +6,6 @@ import '../../../theme/app_theme.dart';
 import '../../../widgets/detail_row.dart';
 import '../../../widgets/dialog_shell.dart';
 
-/// Read-only detail dialog for a single announcement.
 class AnnouncementDetailDialog extends StatelessWidget {
   final AnnouncementDto announcement;
 

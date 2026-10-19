@@ -164,6 +164,7 @@ class EventDto {
   final int? instructorId;
   final DateTime? createdAt;
   final DateTime? updatedAt;
+  final String? imagePath;
 
   EventDto({
     required this.id,
@@ -179,6 +180,7 @@ class EventDto {
     this.instructorId,
     this.createdAt,
     this.updatedAt,
+    this.imagePath,
   });
 
   bool get isPlatformWide => courseId == null && instructorId == null;
@@ -199,6 +201,7 @@ class EventDto {
       instructorId: json['instructorId'] as int?,
       createdAt: parseDate(json['createdAt']),
       updatedAt: parseDate(json['updatedAt']),
+      imagePath: json['imagePath'] as String?,
     );
   }
 

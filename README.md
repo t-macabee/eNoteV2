@@ -39,15 +39,17 @@ Ovo je najkraći put i pokreće bazu, RabbitMQ, API i worker odjednom.
    `docker compose` prosljeđuje tu datoteku api i worker kontejnerima i
    zamjenjuje samo imena hostova (`sqlserver`, `rabbitmq`, `mailhog`).
 
-2. Ako ste repozitorij već pokretali kroz Docker, uklonite stari volumen sa
-   uploadovanim slikama; Docker u imenovani volumen kopira sadržaj samo pri
-   prvom kreiranju, pa stari volumen sakrije slike iz seeda:
+2. Ako ste repozitorij već pokretali kroz Docker, uklonite stare volumene.
+   Docker u imenovani volumen kopira slike iz seeda samo pri kreiranju
+   volumena, a baza zadržava stare seed redove koji mogu pokazivati na
+   obrisane datoteke:
 
    ```bash
-   docker volume rm enote-uploads
+   docker compose down -v
    ```
 
-   `docker compose down -v` radi isto, ali briše i `enote-sql-data`.
+   Time se brišu `enote_enote-sql-data` i `enote_enote-uploads`. Baza se
+   ponovo kreira i popunjava seed podacima pri sljedećem pokretanju.
 
 3. Pokrenite sve servise:
 

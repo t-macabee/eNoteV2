@@ -123,10 +123,6 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider<InstructorStudentProvider>(
           create: (_) => InstructorStudentProvider(apiClient: apiClient),
         ),
-        // Note: LectureNoteProvider is NOT registered globally — its endpoint
-        // depends on the lecture being viewed (instructor/lectures/{lectureId}/notes),
-        // so it is instantiated per-navigation via a screen-scoped
-        // ChangeNotifierProvider in LectureListScreen._openNotes.
         ChangeNotifierProvider<InstrumentProvider>(
           create: (_) => InstrumentProvider(apiClient: apiClient),
         ),

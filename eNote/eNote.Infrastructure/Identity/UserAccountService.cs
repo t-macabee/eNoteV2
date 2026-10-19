@@ -1,4 +1,5 @@
 using eNote.Application.Common.Exceptions;
+using eNote.Application.Common.Files;
 using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Localization;
 using eNote.Application.Features.Identity.Users.Services;
@@ -189,9 +190,14 @@ public sealed class UserAccountService(UserManager<AppUser> userManager, IFileSt
     {
         var user = await userManager.FindByIdAsync(userId.ToString());
 
-        if (string.IsNullOrWhiteSpace(user?.PicturePath))
+        if (user is null)
         {
             return (null, null);
+        }
+
+        if (string.IsNullOrWhiteSpace(user.PicturePath))
+        {
+            return fileStorage.OpenRead(DefaultImages.UserPicture);
         }
 
         return fileStorage.OpenRead(user.PicturePath);

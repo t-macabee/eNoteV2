@@ -11,7 +11,6 @@ public sealed class MusicStoreServiceTests
 {
     private static readonly DateTime Now = new(2026, 7, 1, 12, 0, 0, DateTimeKind.Utc);
 
-    // contract: Create round-trips AddressId and returns populated AddressStreet/AddressCity (regression for Create-without-Include pitfall)
     [Fact]
     public async Task CreateAsync_WithAddress_ReturnsPopulatedAddressFields()
     {
@@ -77,7 +76,6 @@ public sealed class MusicStoreServiceTests
         Assert.Equal("+38762333444", fetched.PhoneNumber);
     }
 
-    // contract: Update round-trips AddressId and returns populated AddressStreet/AddressCity
     [Fact]
     public async Task UpdateAsync_ChangesAddress_ReturnsPopulatedFields()
     {
@@ -242,6 +240,20 @@ public sealed class MusicStoreServiceTests
     }
 
     [Fact]
+    public async Task GetByIdAsync_ReturnsDefaultImage_WhenStoreHasNoImage()
+    {
+        var ctx = TestDbContextFactory.CreateContext(Now);
+        var store = new MusicStore("Image Store", "09-17");
+        ctx.Set<MusicStore>().Add(store);
+        await ctx.SaveChangesAsync();
+        var service = CreateService(ctx);
+
+        var dto = await service.GetByIdAsync(store.Id);
+
+        Assert.Equal(DefaultImages.MusicStore, dto.ImagePath);
+    }
+
+    [Fact]
     public async Task UploadImageAsync_DeletesPreviousImage_AfterReplacement()
     {
         var ctx = TestDbContextFactory.CreateContext(Now);
@@ -259,7 +271,24 @@ public sealed class MusicStoreServiceTests
         Assert.Equal(["/old/store.png"], storage.DeletedPaths);
     }
 
-    // contract: GetPagedAsync filters by CityId correctly
+    [Fact]
+    public async Task UploadImageAsync_DoesNotDeleteDefaultImage_WhenStoreHasNoImage()
+    {
+        var ctx = TestDbContextFactory.CreateContext(Now);
+        var store = new MusicStore("Image Store", "09-17");
+        ctx.Set<MusicStore>().Add(store);
+        await ctx.SaveChangesAsync();
+        var storage = new RecordingFileStorageService();
+        var service = CreateService(ctx, storage);
+
+        using var stream = new MemoryStream([1, 2, 3]);
+        var updated = await service.UploadImageAsync(store.Id, stream, "store.png", "image/png");
+
+        Assert.Equal(storage.SavedPaths.Single(), updated.ImagePath);
+        Assert.Empty(storage.DeletedPaths);
+        Assert.DoesNotContain(DefaultImages.MusicStore, storage.DeletedPaths);
+    }
+
     [Fact]
     public async Task GetPagedAsync_FiltersByCityId()
     {
@@ -303,7 +332,6 @@ public sealed class MusicStoreServiceTests
         Assert.Equal("With Address", filtered.Items[0].StoreName);
     }
 
-    // characterization: existing StoreName search filter still works unchanged
     [Fact]
     public async Task GetPagedAsync_FiltersByStoreName_StillWorks()
     {

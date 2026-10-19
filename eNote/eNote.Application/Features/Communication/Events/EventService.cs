@@ -103,7 +103,6 @@ public sealed class EventService(IAppDbContext context, ICurrentUserContext curr
 
         var dto = await base.UpdateAsync(id, request, cancellationToken);
 
-        // Re-fetch with includes for enriched navigation fields
         return await GetByIdAsync(dto.Id, cancellationToken);
     }
 

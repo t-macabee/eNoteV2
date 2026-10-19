@@ -70,7 +70,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Classical Piano'), findsOneWidget);
-    expect(find.text('Mozart'), findsWidgets); // dropdown item and card subtitle
+    expect(find.text('Mozart'), findsWidgets);
     expect(find.text('42 kurseva · 128 studenata'), findsOneWidget);
     expect(find.byIcon(Icons.add), findsNothing);
   });

@@ -7,7 +7,6 @@ Future<bool?> confirmDialog({
   String confirmText = 'Potvrdi',
   String cancelText = 'Otkaži',
 }) {
-  // Intentionally targets root navigator (showDialog's default useRootNavigator: true).
   return showDialog<bool>(
     context: context,
     barrierDismissible: false,

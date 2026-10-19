@@ -1,14 +1,10 @@
 using eNote.Application.Common.Time;
-using eNote.Infrastructure.Storage;
 using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Infrastructure.Data.Seed;
 
 internal static class CommunicationSeed
 {
-    // Matches the path a real upload gets (see InstrumentSeed.SeedImagePathPrefix).
-    public const string SeedImagePathPrefix = $"{LocalFileStorageService.UploadsRoutePrefix}/announcements/";
-
     public static async Task SeedAnnouncements(ENoteContext context, IClock clock)
     {
         if (await context.Set<Announcement>().AnyAsync())
@@ -24,11 +20,9 @@ internal static class CommunicationSeed
         var defaultStoreId = await StoreSeed.EnsureDefaultStoreAsync(context);
         var now = clock.UtcNow;
 
-        Announcement Create(string title, string content, int? courseId, int? musicStoreId, DateTime publishedAt, string imageFile)
+        Announcement Create(string title, string content, int? courseId, int? musicStoreId, DateTime publishedAt)
         {
-            var announcement = new Announcement(title, content, courseId, musicStoreId, publishedAt);
-            announcement.UpdateImagePath($"{SeedImagePathPrefix}{imageFile}");
-            return announcement;
+            return new Announcement(title, content, courseId, musicStoreId, publishedAt);
         }
 
         var announcements = new List<Announcement>();
@@ -40,16 +34,14 @@ internal static class CommunicationSeed
                 "Materijali za pripremu su dostupni u sekciji kursa.",
                 courses[0].Id,
                 null,
-                now.AddDays(-20),
-                "intro-materials.webp"));
+                now.AddDays(-20)));
 
             announcements.Add(Create(
                 "Priprema za harmoniju",
                 "Mole se studenti da ponove gradivo o ljestvicama prije narednog časa.",
                 courses[0].Id,
                 null,
-                now.AddDays(-5),
-                "harmony.webp"));
+                now.AddDays(-5)));
         }
 
         if (courses.Count >= 2)
@@ -59,16 +51,14 @@ internal static class CommunicationSeed
                 "Vježbajte koordinaciju prstiju prema postavljenim primjerima.",
                 courses[1].Id,
                 null,
-                now.AddDays(-10),
-                "guitar-exercises.webp"));
+                now.AddDays(-10)));
 
             announcements.Add(Create(
                 "Raspored praktičnih časova",
                 "Naredni čas gitare fokusira se na improvizaciju.",
                 courses[1].Id,
                 null,
-                now.AddDays(-2),
-                "practice-schedule.webp"));
+                now.AddDays(-2)));
         }
 
         announcements.Add(Create(
@@ -76,16 +66,14 @@ internal static class CommunicationSeed
             "Svi studenti ostvaruju popust na dodatnu opremu tokom ovog mjeseca.",
             null,
             defaultStoreId,
-            now.AddDays(-7),
-            "gear-discount.webp"));
+            now.AddDays(-7)));
 
         announcements.Add(Create(
             "Novi instrumenti na stanju",
             "U radnju su stigli novi modeli gitara i pojačala.",
             null,
             defaultStoreId,
-            now.AddDays(-1),
-            "new-instruments.webp"));
+            now.AddDays(-1)));
 
         context.Set<Announcement>().AddRange(announcements);
         await context.SaveChangesAsync();

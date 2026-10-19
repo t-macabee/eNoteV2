@@ -107,8 +107,9 @@ void main() {
     expect(find.text('Administrator'), findsOneWidget);
   });
 
-  testWidgets('ProfileDialog shows initials fallback when hasPicture is false',
-      (tester) async {
+  testWidgets(
+      'ProfileDialog requests the picture URL when hasPicture is false and '
+      'shows initials only when the request fails', (tester) async {
     final client = _client({
       'role': 'Administrator',
       'username': 'admin',
@@ -149,6 +150,12 @@ void main() {
     );
 
     await tester.pumpAndSettle();
+
+    final image = tester.widget<Image>(find.byType(Image));
+    expect(
+      (image.image as NetworkImage).url,
+      'http://test/api/v1/users/me/picture?v=1',
+    );
 
     expect(find.text('AM'), findsOneWidget);
   });

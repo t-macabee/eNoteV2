@@ -44,11 +44,8 @@ public sealed class AdminStudentService(
         int studentId,
         CancellationToken cancellationToken = default)
     {
-        // 1. First, re-run the existing student-ownership gate: the student must be enrolled in one of this instructor's courses.
-        // Deliberate asymmetry: the gate is on the student; the payload is not.
         await EnsureStudentVisibleToInstructorAsync(instructorId, studentId, cancellationToken);
 
-        // 2. Return that student's enrollments for this instructor, filtered to EnrollmentStatus.Active.
         var enrollments = await context.Set<Enrollment>()
             .AsNoTracking()
             .Where(e => e.StudentId == studentId

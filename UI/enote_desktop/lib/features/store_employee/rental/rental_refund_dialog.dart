@@ -2,11 +2,6 @@ import 'package:flutter/material.dart';
 
 import 'package:enote_core/enote_core.dart';
 
-/// Returns the confirmed refund amount in KM, or `null` when cancelled.
-/// An empty input confirms a full refund, reported as `0`.
-///
-/// When [maxAmountCents] is given, a positive input above the remaining
-/// refundable balance is rejected inline instead of failing server-side.
 Future<double?> showRefundAmountDialog(
   BuildContext context, {
   int? maxAmountCents,
@@ -17,9 +12,6 @@ Future<double?> showRefundAmountDialog(
       builder: (_) => _RefundAmountDialog(maxAmountCents: maxAmountCents),
     );
 
-/// Owns the text controller so it is disposed with the route, after the
-/// exit transition — disposing it in the button handlers before the pop left
-/// the still-mounted [TextField] on a dead listenable.
 class _RefundAmountDialog extends StatefulWidget {
   final int? maxAmountCents;
 

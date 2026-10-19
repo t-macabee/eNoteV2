@@ -11,12 +11,6 @@ class AnnouncementListScreen extends StatefulWidget {
   final CrudProvider<AnnouncementDto> provider;
   final String? title;
 
-  /// Defaults to [EntityListPresentation.page] (own Scaffold/AppBar, with a
-  /// back/close button when pushed via Navigator) — required by callers
-  /// like the instructor's per-course "Objave" screen, which pushes this
-  /// widget bare via MaterialPageRoute with no Scaffold of its own. Pass
-  /// [EntityListPresentation.embedded] only when the caller already
-  /// provides that chrome (e.g. a tab body inside MasterScreen).
   final EntityListPresentation presentation;
 
   const AnnouncementListScreen({
@@ -80,6 +74,9 @@ class _AnnouncementListScreenState extends State<AnnouncementListScreen> {
         onAdd: () => _openForm(),
         onRowTap: (context, item) => AnnouncementDetailDialog.show(context, item),
         onEdit: (context, item) => _openForm(item),
+        deleteConfirmMessageOf: (item) =>
+            'Da li ste sigurni da želite da obrišete objavu "${item.title}"?',
+        deletedMessage: 'Objava je obrisana.',
         onDelete: (context, item) async {
           await widget.provider.remove(item.id);
           return true;

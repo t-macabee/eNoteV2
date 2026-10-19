@@ -7,11 +7,6 @@ import '../../theme/app_theme.dart';
 import '../../widgets/section_header.dart';
 import '../../widgets/wide_image.dart';
 
-/// Horizontal recommendation strip above the catalogue list.
-///
-/// Renders nothing at all when there is nothing to recommend: the
-/// recommender is an extra, so a failed or empty call must leave the
-/// catalogue looking normal rather than showing an error.
 class RecommendationStrip extends StatelessWidget {
   static const double cardWidth = 160;
   static const double cardHeight = 200;

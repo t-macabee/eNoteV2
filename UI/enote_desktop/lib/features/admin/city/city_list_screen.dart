@@ -55,6 +55,9 @@ class _CityListScreenState extends State<CityListScreen> {
         fetcher: (page, pageSize, search) => context.read<CityProvider>().search(pagedQuery(page, pageSize, search, searchField: 'name')),
         onAdd: () => _openForm(),
         onEdit: (context, item) => _openForm(item),
+        deleteConfirmMessageOf: (item) =>
+            'Da li ste sigurni da želite da obrišete grad "${item.name}"?',
+        deletedMessage: 'Grad je obrisan.',
         onDelete: (context, item) async {
           await context.read<CityProvider>().remove(item.id);
           return true;

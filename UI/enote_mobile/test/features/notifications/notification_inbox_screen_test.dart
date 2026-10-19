@@ -50,7 +50,6 @@ ScriptedClient _client({required List<Map<String, dynamic>> items}) {
     }
     if (request.method == 'GET' &&
         path == '/api/v1/student/notifications/unread-count') {
-      // Server count is the badge's only source; mirror the fixture.
       final unread = allRead
           ? 0
           : items.where((item) => item['isRead'] == false).length;
@@ -107,7 +106,6 @@ class _Harness {
         'http://10.0.2.2:5059/api/v1/',
       ),
       tokenProvider: () async => 'token',
-      // No real network in widget tests; the fake hub connects instantly.
       connectionFactory: FakeHubConnection.new,
     );
     session = SessionController(
@@ -345,7 +343,6 @@ void main() {
         createdAt: DateTime(2026, 9, 10),
       ),
     );
-    // Complete entrance animation and start the display timer
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 750));
 
@@ -355,7 +352,6 @@ void main() {
     expect(snackBar.behavior, SnackBarBehavior.floating);
     expect(snackBar.duration, const Duration(seconds: 4));
 
-    // Fast forward past the 4-second display duration and settle exit animation
     await tester.pump(const Duration(seconds: 4));
     await tester.pumpAndSettle();
     expect(find.text('Nova obavijest'), findsNothing);

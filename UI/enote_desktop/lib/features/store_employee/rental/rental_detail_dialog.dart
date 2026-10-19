@@ -2,21 +2,29 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
+import '../../../widgets/dialog_shell.dart';
 import 'rental_transition_action_row.dart';
 import 'rental_status_display.dart';
 import 'rental_refund_dialog.dart';
 import 'rental_provider.dart';
 
-class RentalDetailScreen extends StatefulWidget {
+class RentalDetailDialog extends StatefulWidget {
   final int rentalId;
 
-  const RentalDetailScreen({super.key, required this.rentalId});
+  const RentalDetailDialog({super.key, required this.rentalId});
+
+  static Future<void> show(BuildContext context, int rentalId) {
+    return showDialog<void>(
+      context: context,
+      builder: (_) => RentalDetailDialog(rentalId: rentalId),
+    );
+  }
 
   @override
-  State<RentalDetailScreen> createState() => _RentalDetailScreenState();
+  State<RentalDetailDialog> createState() => _RentalDetailDialogState();
 }
 
-class _RentalDetailScreenState extends State<RentalDetailScreen> {
+class _RentalDetailDialogState extends State<RentalDetailDialog> {
   InstrumentRentalDto? _rental;
   RentalPaymentDto? _payment;
   bool _isLoading = true;
@@ -39,8 +47,6 @@ class _RentalDetailScreenState extends State<RentalDetailScreen> {
         try {
           payment = await provider.getPaymentStatus(widget.rentalId);
         } catch (_) {
-          // Best-effort: a payment-status hiccup shouldn't blank the
-          // whole screen when the rental itself loaded successfully.
           payment = null;
         }
       }
@@ -109,7 +115,7 @@ class _RentalDetailScreenState extends State<RentalDetailScreen> {
       if (!mounted) return;
       setState(() => _rental = updated);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Status ažuriran.')),
+        SnackBar(content: Text(rentalTransitionSuccessMessage(trigger))),
       );
     } finally {
       if (mounted) setState(() => _isTransitioning = false);
@@ -118,26 +124,31 @@ class _RentalDetailScreenState extends State<RentalDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(_rental != null
-            ? 'Iznajmljivanje — ${_rental!.instrumentModel}'
-            : 'Iznajmljivanje'),
-      ),
+    return DialogShell(
+      title: _rental != null
+          ? 'Iznajmljivanje - ${_rental!.instrumentModel}'
+          : 'Iznajmljivanje',
+      width: DialogShellWidth.lg,
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const SizedBox(
+              height: 200,
+              child: Center(child: CircularProgressIndicator()),
+            )
           : _rental == null
-              ? Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Text('Greška pri učitavanju.'),
-                      const SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: _load,
-                        child: const Text('Pokušaj ponovo'),
-                      ),
-                    ],
+              ? SizedBox(
+                  height: 200,
+                  child: Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text('Greška pri učitavanju.'),
+                        const SizedBox(height: 16),
+                        ElevatedButton(
+                          onPressed: _load,
+                          child: const Text('Pokušaj ponovo'),
+                        ),
+                      ],
+                    ),
                   ),
                 )
               : _buildBody(),
@@ -249,8 +260,6 @@ class _RentalDetailScreenState extends State<RentalDetailScreen> {
             const SizedBox(height: 8),
             Row(
               children: [
-                // Avatar image only, keyed by StudentUserId (the AppUser id),
-                // never StudentProfileId. A 404 falls back to the icon.
                 UserAvatar(
                   userId: rental.studentUserId,
                   apiClient: context.read<ApiClient>(),
@@ -368,7 +377,7 @@ class _RentalDetailScreenState extends State<RentalDetailScreen> {
             _chargeRow(
               'Plaćeno',
               rental.isPaid
-                  ? 'Da (${rental.amountPaid != null ? formatKM(rental.amountPaid) : '-'}${rental.paidAt != null ? ' — ${formatDate(rental.paidAt!)}' : ''})'
+                  ? 'Da (${rental.amountPaid != null ? formatKM(rental.amountPaid) : '-'}${rental.paidAt != null ? ' - ${formatDate(rental.paidAt!)}' : ''})'
                   : 'Ne',
             ),
             if (_payment != null && (_payment!.refundedCents ?? 0) > 0) ...[

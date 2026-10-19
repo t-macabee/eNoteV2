@@ -95,8 +95,6 @@ void main() {
     await tester.pump();
     await tester.enterText(fields.at(2), 'Test1234!');
     await tester.pump();
-    // Edit the new password after the confirmation was entered. The live
-    // confirm validator must notice without a forced rebuild.
     await tester.enterText(fields.at(1), 'Drugacij1!');
     await tester.pump();
     await _save(tester);

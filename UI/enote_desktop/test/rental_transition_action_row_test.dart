@@ -99,19 +99,15 @@ void main() {
       await tester.tap(find.widgetWithText(ElevatedButton, 'Otkaži'));
       await tester.pumpAndSettle();
 
-      // Reason dialog is shown with title 'Otkaži'
       expect(find.byType(AlertDialog), findsOneWidget);
       expect(find.text('Razlog *'), findsOneWidget);
 
-      // Confirm button is initially disabled because note is empty
       final confirmButton = tester.widget<ElevatedButton>(find.widgetWithText(ElevatedButton, 'Potvrdi'));
       expect(confirmButton.onPressed, isNull);
 
-      // Enter a reason
       await tester.enterText(find.byType(TextField), 'Student se nije pojavio');
       await tester.pumpAndSettle();
 
-      // Confirm button is now enabled
       await tester.tap(find.widgetWithText(ElevatedButton, 'Potvrdi'));
       await tester.pumpAndSettle();
 

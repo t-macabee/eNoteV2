@@ -6,8 +6,6 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace eNote.API.Controllers.Base;
 
-/// The five CRUD actions shared by the Admin reference-data controllers. Each
-/// derived controller carries its own route and role; only [GetId] is added.
 public abstract class ReferenceDataController<TEntity, TDto, TRequest, TSearch>(
     ReferenceDataCrudService<TEntity, TDto, TRequest, TSearch> service)
     : CoreController

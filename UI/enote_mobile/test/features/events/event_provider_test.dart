@@ -76,7 +76,6 @@ void main() {
 
     final event = await provider.getById(6);
 
-    // Categorise on courseId alone, never isPlatformWide.
     expect(event.courseId, isNull);
     expect(event.instructorId, 3);
     expect(event.isPlatformWide, isFalse);

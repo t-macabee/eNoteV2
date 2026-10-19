@@ -16,11 +16,6 @@ using Event = Stripe.Event;
 
 namespace eNote.Tests.Rentals;
 
-/// <summary>
-/// StripeWebhookService tests. Per the plan, these bypass Stripe's signature
-/// verification (EventUtility.ConstructEvent is Stripe.net's own code) and call
-/// the handler directly with a pre-parsed Event object.
-/// </summary>
 public sealed class RentalPaymentWebhookTests
 {
     private static readonly DateTime Now = new(2026, 6, 15, 12, 0, 0, DateTimeKind.Utc);
@@ -475,8 +470,6 @@ public sealed class RentalPaymentWebhookTests
 
         await Assert.ThrowsAsync<DbUpdateConcurrencyException>(() => service.HandleAsync(evt, "{}"));
     }
-
-    // ---- Helpers ----------------------------------------------------------
 
     private static async Task<(ENoteContext Context, InstrumentRental Rental, RentalPayment Payment)> SeedRequiresActionPaymentAsync()
     {

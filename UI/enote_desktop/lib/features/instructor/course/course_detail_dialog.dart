@@ -121,13 +121,16 @@ class _CourseDetailDialogState extends State<CourseDetailDialog>
       context: context,
       title: 'Potvrdite brisanje',
       message:
-          'Da li ste sigurni da želite da obrišete ovaj kurs? Brisanjem kursa deaktiviraće se i njegova predavanja.',
+          'Da li ste sigurni da želite da obrišete kurs "${_course.name}"? Brisanjem kursa deaktiviraće se i njegova predavanja.',
     );
     if (confirmed != true || !mounted) return;
 
     await submitWith((busy) => _isDeleting = busy, () async {
       await context.read<CourseProvider>().remove(_course.id);
       if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Kurs je obrisan.')),
+        );
         _popDialog(true);
       }
     });

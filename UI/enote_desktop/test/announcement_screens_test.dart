@@ -55,11 +55,6 @@ void main() {
       providers: [
         Provider<ApiClient>.value(value: apiClient),
       ],
-      // No wrapping Scaffold here — this reproduces course_list_screen.dart's
-      // bare `Navigator.push(MaterialPageRoute(builder: (_) =>
-      // AnnouncementListScreen(...)))`, which relies on the widget's own
-      // (default `page`) presentation to supply the Scaffold/AppBar, title,
-      // and back button.
       child: MaterialApp(
         home: AnnouncementListScreen(
           provider: provider,
@@ -120,9 +115,6 @@ void main() {
       providers: [
         Provider<ApiClient>.value(value: apiClient),
       ],
-      // Wrapped in a Scaffold here to match master_screen.dart, which embeds
-      // this screen as a tab body inside its own Scaffold and opts into
-      // `embedded` presentation.
       child: MaterialApp(
         home: Scaffold(
           body: AnnouncementListScreen(

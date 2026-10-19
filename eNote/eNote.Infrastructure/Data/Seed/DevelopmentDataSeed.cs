@@ -28,7 +28,6 @@ public static class DevelopmentDataSeed
 
 internal static class SeedStudents
 {
-    // The seeded Student accounts. Seeders use this order as the student index (B10).
     public static readonly string[] Usernames = ["mobile", "student", "student1", "student2", "student3", "student4", "student5", "student6"];
 
     public static async Task<Dictionary<string, Student>> GetByUsernameAsync(ENoteContext context) =>
@@ -82,8 +81,6 @@ internal static class StudentMembershipSeed
 
 internal static class CourseSeed
 {
-    // Dates are relative to the seed time so the seeded courses are still
-    // running when the app is reviewed; tuition payment rejects ended courses.
     public static async Task SeedCourses(ENoteContext context, IClock clock)
     {
         if (await context.Set<Course>().AnyAsync())
@@ -131,23 +128,18 @@ internal static class LectureSeed
             return;
         }
 
-        // Relative to the seed clock, each at 19:30. The first lecture of each course is
-        // one day after the course start (see CourseSeed).
         var today = clock.UtcNow.Date;
 
         var c1Id = courses[0].Id;
         var c2Id = courses[1].Id;
 
         context.AddRange(
-            // c1
 
             new Lecture("Uvodno predavanje", "Amfiteatar gradskog BKC-a", 90, today.AddDays(-29).AddHours(19).AddMinutes(30), LectureType.Theoretical, null, c1Id),
             new Lecture("Intervali i skale", "Amfiteatar gradskog BKC-a", 90, today.AddDays(-15).AddHours(19).AddMinutes(30), LectureType.Theoretical, null, c1Id),
             new Lecture("Ritam i metrika", "Amfiteatar gradskog BKC-a", 90, today.AddDays(-8).AddHours(19).AddMinutes(30), LectureType.Theoretical, null, c1Id),
             new Lecture("Harmonija u praksi", "Amfiteatar gradskog BKC-a", 90, today.AddDays(4).AddHours(19).AddMinutes(30), LectureType.Practical, null, c1Id),
             new Lecture("Ponavljanje gradiva", "Amfiteatar gradskog BKC-a", 60, today.AddDays(11).AddHours(19).AddMinutes(30), LectureType.Theoretical, null, c1Id),
-
-            // c2
 
             new Lecture("Uvodno predavanje", "Amfiteatar gradskog BKC-a", 60, today.AddDays(-13).AddHours(19).AddMinutes(30), LectureType.Theoretical, null, c2Id),
             new Lecture("Tehnika desne ruke", "Amfiteatar gradskog BKC-a", 60, today.AddDays(-6).AddHours(19).AddMinutes(30), LectureType.Practical, null, c2Id),
@@ -161,9 +153,6 @@ internal static class LectureSeed
 
 internal static class InstrumentSeed
 {
-    // Matches the URL LocalFileStorageService.SaveToDiskAsync hands back for a real
-    // upload, so seeded instruments resolve through the same GetInstrument endpoint
-    // (UploadsController) instead of a wwwroot path nothing serves.
     public const string SeedImagePathPrefix = $"{LocalFileStorageService.UploadsRoutePrefix}/instruments/";
 
     public static async Task SeedInstruments(ENoteContext context)
@@ -283,7 +272,6 @@ internal static class EnrollmentSeed
             .Select(c => c.Id)
             .ToListAsync();
 
-        // The third published course takes enrollment requests (B14), so only the first two get Active rows.
         var activeCourseIds = courseIds.Take(2).ToList();
 
         List<Enrollment> enrollments = [.. studentIds.SelectMany(studentId =>

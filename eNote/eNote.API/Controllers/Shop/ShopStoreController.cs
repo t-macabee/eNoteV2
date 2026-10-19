@@ -54,9 +54,6 @@ public sealed class ShopStoreController(
             return await storeService.UploadImageAsync(storeId, stream, fileName, contentType, token);
         }, ct);
 
-    // Read-only address lookup for the "Uredi prodavnicu" address dropdown —
-    // AdminAddressController owns address CRUD, this mirrors the same
-    // read-only pattern InstrumentController uses for shop/instrument-types.
     [HttpGet("~/api/v{version:apiVersion}/shop/addresses")]
     [ProducesResponseType(typeof(PagedResult<AddressReferenceDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<PagedResult<AddressReferenceDto>>> GetAddresses(

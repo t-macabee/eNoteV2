@@ -261,7 +261,6 @@ public sealed class UserProvisioningServiceTests
         var account = new RecordingUserAccountService { CreateUserId = 10 };
         var service = CreateService(context, account);
 
-        // First employee
         var (firstId, _) = await service.ProvisionUserAsync(new UserProvisionRequest
         {
             Username = "emp1",
@@ -274,7 +273,6 @@ public sealed class UserProvisioningServiceTests
         var firstEmp = await context.Set<MusicStoreEmployee>().SingleAsync(e => e.AppUserId == firstId);
         Assert.True(firstEmp.IsManager);
 
-        // Second employee
         account.CreateUserId = 11;
         var (secondId, _) = await service.ProvisionUserAsync(new UserProvisionRequest
         {

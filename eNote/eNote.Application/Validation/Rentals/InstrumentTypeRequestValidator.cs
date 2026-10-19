@@ -11,7 +11,7 @@ public sealed class InstrumentTypeRequestValidator : AbstractValidator<Instrumen
         RuleFor(x => x.MonthlyFee)
             .GreaterThanOrEqualTo(0)
             .WithMessage(Messages.InstrumentTypeFeeMustBeNonNegative)
-            .LessThanOrEqualTo(99_999_999.99m)   // fits InstrumentRental.Fee decimal(10,2) — see InstrumentRentalConfig.cs:34
+            .LessThanOrEqualTo(99_999_999.99m)
             .WithMessage(Messages.InstrumentTypeFeeExceedsMaximum);
     }
 }

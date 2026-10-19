@@ -8,17 +8,9 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace eNote.Tests.Identity;
 
-/// <summary>
-/// Mirrors <c>FileAccessServiceTests</c>: one case per visibility-table row
-/// (allow and deny), plus the two C0 landmine guards. Every deny means the
-/// controller returns a bare 404 (see the controller tests below) — never a
-/// 403 or BusinessException — so denies are marked with `// → 404`.
-/// </summary>
 public sealed class PictureAccessServiceTests
 {
     private static readonly DateTime Now = new(2026, 7, 1, 12, 0, 0, DateTimeKind.Utc);
-
-    // ── Administrator → everyone ──────────────────────────────────────
 
     [Fact]
     public async Task Admin_CanView_StudentPicture()
@@ -50,8 +42,6 @@ public sealed class PictureAccessServiceTests
         Assert.True(await service.CanViewPictureAsync(seed.Employee1.AppUserId));
     }
 
-    // ── Instructor ────────────────────────────────────────────────────
-
     [Fact]
     public async Task Instructor_CanView_OtherInstructorPicture()
     {
@@ -69,7 +59,6 @@ public sealed class PictureAccessServiceTests
         var service = CreateService(seed.Context, seed.Instructor1.AppUserId, new FixedStoreContext(1),
             new Dictionary<int, IReadOnlyList<string>> { [seed.Instructor1.AppUserId] = [AppRoles.Instructor] });
 
-        // StudentA is enrolled in Instructor1's course.
         Assert.True(await service.CanViewPictureAsync(seed.StudentA.AppUserId));
     }
 
@@ -80,7 +69,6 @@ public sealed class PictureAccessServiceTests
         var service = CreateService(seed.Context, seed.Instructor1.AppUserId, new FixedStoreContext(1),
             new Dictionary<int, IReadOnlyList<string>> { [seed.Instructor1.AppUserId] = [AppRoles.Instructor] });
 
-        // StudentB has no enrolment in Instructor1's courses — not visible.
         Assert.False(await service.CanViewPictureAsync(seed.StudentB.AppUserId));
     }
 
@@ -91,10 +79,8 @@ public sealed class PictureAccessServiceTests
         var service = CreateService(seed.Context, seed.Instructor1.AppUserId, new FixedStoreContext(1),
             new Dictionary<int, IReadOnlyList<string>> { [seed.Instructor1.AppUserId] = [AppRoles.Instructor] });
 
-        Assert.False(await service.CanViewPictureAsync(seed.Employee1.AppUserId)); // → 404
+        Assert.False(await service.CanViewPictureAsync(seed.Employee1.AppUserId));
     }
-
-    // ── StoreEmployee ─────────────────────────────────────────────────
 
     [Fact]
     public async Task Employee_CanView_SameStoreEmployeePicture()
@@ -113,7 +99,7 @@ public sealed class PictureAccessServiceTests
         var service = CreateService(seed.Context, seed.Employee1.AppUserId, new FixedStoreContext(seed.Store1.Id),
             new Dictionary<int, IReadOnlyList<string>> { [seed.Employee1.AppUserId] = [AppRoles.StoreEmployee] });
 
-        Assert.False(await service.CanViewPictureAsync(seed.Employee3.AppUserId)); // → 404
+        Assert.False(await service.CanViewPictureAsync(seed.Employee3.AppUserId));
     }
 
     [Fact]
@@ -133,10 +119,8 @@ public sealed class PictureAccessServiceTests
         var service = CreateService(seed.Context, seed.Employee1.AppUserId, new FixedStoreContext(seed.Store1.Id),
             new Dictionary<int, IReadOnlyList<string>> { [seed.Employee1.AppUserId] = [AppRoles.StoreEmployee] });
 
-        Assert.False(await service.CanViewPictureAsync(seed.StudentB.AppUserId)); // → 404
+        Assert.False(await service.CanViewPictureAsync(seed.StudentB.AppUserId));
     }
-
-    // ── Student ───────────────────────────────────────────────────────
 
     [Fact]
     public async Task Student_CanView_InstructorPicture()
@@ -155,7 +139,7 @@ public sealed class PictureAccessServiceTests
         var service = CreateService(seed.Context, seed.StudentA.AppUserId, new FixedStoreContext(1),
             new Dictionary<int, IReadOnlyList<string>> { [seed.StudentA.AppUserId] = [AppRoles.Student] });
 
-        Assert.False(await service.CanViewPictureAsync(seed.StudentB.AppUserId)); // → 404
+        Assert.False(await service.CanViewPictureAsync(seed.StudentB.AppUserId));
     }
 
     [Fact]
@@ -165,10 +149,8 @@ public sealed class PictureAccessServiceTests
         var service = CreateService(seed.Context, seed.StudentA.AppUserId, new FixedStoreContext(1),
             new Dictionary<int, IReadOnlyList<string>> { [seed.StudentA.AppUserId] = [AppRoles.Student] });
 
-        Assert.False(await service.CanViewPictureAsync(seed.Employee1.AppUserId)); // → 404
+        Assert.False(await service.CanViewPictureAsync(seed.Employee1.AppUserId));
     }
-
-    // ── Self ──────────────────────────────────────────────────────────
 
     [Fact]
     public async Task Anyone_CanView_OwnPicture()
@@ -180,38 +162,29 @@ public sealed class PictureAccessServiceTests
         Assert.True(await service.CanViewPictureAsync(seed.StudentA.AppUserId));
     }
 
-    // ── C0 landmines ──────────────────────────────────────────────────
-
     [Fact]
     public async Task Employee_UnresolvedStore_DeniesOtherStoreEmployeePicture()
     {
-        // Fail-closed guard (C0.1): with no store resolved the tenant filter
-        // matches everything, so an implementation relying on the filter
-        // instead of an explicit MusicStoreId comparison would allow this.
         var seed = await SeedAsync();
         seed.Context.ExplicitStoreId = null;
         var service = CreateService(seed.Context, seed.Employee3.AppUserId, new ThrowingStoreContext(),
             new Dictionary<int, IReadOnlyList<string>> { [seed.Employee3.AppUserId] = [AppRoles.StoreEmployee] });
 
-        Assert.False(await service.CanViewPictureAsync(seed.Employee1.AppUserId)); // → 404
+        Assert.False(await service.CanViewPictureAsync(seed.Employee1.AppUserId));
     }
 
     [Fact]
     public async Task ProfileId_AsId_DoesNotResolveAnotherUser()
     {
-        // Student.Id is not AppUser.Id: passing the profile id must not
-        // return the wrong person's image.
         var seed = await SeedAsync();
         Assert.NotEqual(seed.StudentA.Id, seed.StudentA.AppUserId);
 
         var service = CreateService(seed.Context, seed.Instructor1.AppUserId, new FixedStoreContext(1),
             new Dictionary<int, IReadOnlyList<string>> { [seed.Instructor1.AppUserId] = [AppRoles.Instructor] });
 
-        Assert.False(await service.CanViewPictureAsync(seed.StudentA.Id)); // → 404
+        Assert.False(await service.CanViewPictureAsync(seed.StudentA.Id));
         Assert.True(await service.CanViewPictureAsync(seed.StudentA.AppUserId));
     }
-
-    // ── Controller: every failure is a bare 404 ───────────────────────
 
     [Fact]
     public async Task GetUserPicture_ReturnsNotFound_WhenAccessDenied()
@@ -245,8 +218,6 @@ public sealed class PictureAccessServiceTests
         Assert.Equal("private, no-store", controller.Response.Headers.CacheControl.ToString());
         Assert.Equal("Authorization", controller.Response.Headers.Vary.ToString());
     }
-
-    // ── Helpers ───────────────────────────────────────────────────────
 
     private static PictureAccessService CreateService(
         ENoteContext context,
@@ -354,8 +325,6 @@ public sealed class PictureAccessServiceTests
         context.Set<Instrument>().Add(instrument);
         await context.SaveChangesAsync();
 
-        // Any status counts: a plain requested (Pending) rental links the
-        // student to the store.
         context.Set<InstrumentRental>().Add(new InstrumentRental(instrument.Id, studentA.Id, store1.Id, Now, null));
         await context.SaveChangesAsync();
 

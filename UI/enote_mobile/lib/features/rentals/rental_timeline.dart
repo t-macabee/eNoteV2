@@ -4,11 +4,6 @@ import 'package:enote_core/enote_core.dart';
 
 import '../../theme/app_theme.dart';
 
-/// One row of the rental timeline.
-///
-/// [isFilled] is what separates a step that has happened from one that is
-/// still expected: filled steps carry a timestamp and an actor, hollow ones
-/// only name what comes next.
 class RentalTimelineStep {
   final String label;
   final DateTime? at;
@@ -26,7 +21,6 @@ class RentalTimelineStep {
     this.isTerminalFailure = false,
   });
 
-  /// `Vi · "note"` / `Muzika d.o.o.` / null when the step has no actor.
   String? get actorLine {
     final who = actor;
     if (who == null) return null;
@@ -36,11 +30,6 @@ class RentalTimelineStep {
   }
 }
 
-/// The rental detail's *Vremenska linija*, built from [InstrumentRentalDto] alone.
-///
-/// The DTO carries no actor names, only the approver's and rejecter's user
-/// ids, so every store-side step names the **store** instead — never a
-/// person and never a raw id.
 class RentalTimeline extends StatelessWidget {
   final InstrumentRentalDto rental;
 
@@ -48,7 +37,6 @@ class RentalTimeline extends StatelessWidget {
 
   static const String _me = 'Vi';
 
-  /// The steps for [rental]'s current status, in timeline order.
   static List<RentalTimelineStep> stepsFor(InstrumentRentalDto rental) {
     final store = rental.storeName;
     final requested = RentalTimelineStep(
@@ -121,7 +109,6 @@ class RentalTimeline extends StatelessWidget {
           isTerminalFailure: true,
         ),
       ],
-      // The DTO has no `canceledAt`, so this step carries no timestamp.
       InstrumentRentalStatus.canceled => [
         requested,
         RentalTimelineStep(

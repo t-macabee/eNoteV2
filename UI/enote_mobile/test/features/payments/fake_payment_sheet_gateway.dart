@@ -2,9 +2,6 @@ import 'dart:collection';
 
 import 'package:enote_mobile/features/payments/payment_sheet_gateway.dart';
 
-/// Scripted [PaymentSheetGateway] for widget tests: each [present] consumes
-/// the next queued outcome (`null` resolves, an [Exception] is thrown) and
-/// defaults to success once the queue is empty.
 class FakePaymentSheetGateway implements PaymentSheetGateway {
   final Queue<Object?> _presentScript = Queue<Object?>();
   Exception? initError;

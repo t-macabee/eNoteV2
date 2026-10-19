@@ -60,8 +60,6 @@ public sealed class RentalQueryService(IAppDbContext context, IMapper mapper, IC
     {
         var now = clock.UtcNow;
         var (page, pageSize) = PagingLimits.Normalize(search.Page, search.PageSize);
-        // Count the filtered set, not the whole table: otherwise a status
-        // filter reports the unfiltered total and the page bar overstates it.
         var filtered = query.ApplySearch(search);
         var total = search.IncludeTotalCount ? await filtered.CountAsync(cancellationToken) : (int?)null;
 

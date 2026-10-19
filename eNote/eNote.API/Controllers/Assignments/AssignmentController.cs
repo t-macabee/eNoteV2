@@ -10,8 +10,6 @@ namespace eNote.API.Controllers.Assignments;
 
 public sealed class AssignmentController(AssignmentService service) : CoreController
 {
-    // ── Instructor actions ──────────────────────────────────────────
-
     [Authorize(Roles = AppRoles.Instructor)]
     [HttpGet("~/api/v{version:apiVersion}/instructor/lectures/{lectureId:int}/assignments")]
     [ProducesResponseType(typeof(PagedResult<AssignmentDto>), StatusCodes.Status200OK)]
@@ -56,8 +54,6 @@ public sealed class AssignmentController(AssignmentService service) : CoreContro
         await service.DeleteAsync(lectureId, assignmentId, cancellationToken);
         return NoContent();
     }
-
-    // ── Student actions ─────────────────────────────────────────────
 
     [Authorize(Roles = AppRoles.Student)]
     [HttpGet("~/api/v{version:apiVersion}/student/assignments")]

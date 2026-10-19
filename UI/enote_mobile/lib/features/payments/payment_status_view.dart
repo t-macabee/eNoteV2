@@ -2,28 +2,20 @@ import 'package:flutter/material.dart';
 
 import '../../theme/app_theme.dart';
 
-/// The poll-driven payment states of the payment flow.
 enum PaymentFlowState { processing, succeeded, failed, pending }
 
-/// The states after review: the review screen is built by
-/// the calling payment screen itself.
 class PaymentStatusView extends StatelessWidget {
   final PaymentFlowState state;
 
-  /// D subtitle (`{amount} · {dateTime}`) or E detail message.
   final String? detail;
 
-  /// Retry button label (`Pokušaj ponovo` on E, `Provjeri ponovo` on F).
   final String? retryLabel;
   final VoidCallback? onRetry;
   final bool isBusy;
 
-  /// Cancel/back button label (`Odustani` on E, `Nazad` on F,
-  /// `Nazad na …` on D, screen-specific).
   final String cancelLabel;
   final VoidCallback? onCancel;
 
-  /// Optional D-state note; rentals keep their existing copy.
   final String? successNote;
 
   const PaymentStatusView({

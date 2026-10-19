@@ -18,6 +18,7 @@ class CourseDto {
   final EnrollmentStatus? enrollmentStatus;
   final String? enrollmentDecisionNote;
   final bool isFree;
+  final String? imagePath;
 
   CourseDto({
     required this.id,
@@ -36,6 +37,7 @@ class CourseDto {
     this.enrollmentStatus,
     this.enrollmentDecisionNote,
     this.isFree = false,
+    this.imagePath,
   });
 
   factory CourseDto.fromJson(Map<String, dynamic> json) {
@@ -58,6 +60,7 @@ class CourseDto {
           : EnrollmentStatus.fromJson(json['enrollmentStatus'] as String?),
       enrollmentDecisionNote: json['enrollmentDecisionNote'] as String?,
       isFree: json['isFree'] as bool? ?? false,
+      imagePath: json['imagePath'] as String?,
     );
   }
 

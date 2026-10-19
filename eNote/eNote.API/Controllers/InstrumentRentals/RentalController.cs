@@ -14,8 +14,6 @@ public sealed class RentalController(
     RentalCommandService commandService,
     IReportService reportService) : CoreController
 {
-    // ── Store employee actions ──────────────────────────────────────
-
     [Authorize(Roles = AppRoles.StoreEmployee)]
     [HttpGet("~/api/v{version:apiVersion}/shop/rentals/report")]
     [ProducesResponseType(StatusCodes.Status200OK)]
@@ -96,8 +94,6 @@ public sealed class RentalController(
         var dto = await commandService.CancelForStoreAsync(id, request, cancellationToken);
         return Ok(dto);
     }
-
-    // ── Student actions ─────────────────────────────────────────────
 
     [Authorize(Roles = AppRoles.Student)]
     [HttpGet("~/api/v{version:apiVersion}/student/rentals")]

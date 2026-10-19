@@ -3,7 +3,6 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
-/// Picks an image file and returns its bytes, or null when the user cancels.
 Future<Uint8List?> pickImageBytes() async {
   final result = await FilePicker.platform.pickFiles(
     type: FileType.image,
@@ -13,13 +12,6 @@ Future<Uint8List?> pickImageBytes() async {
   return result.files.first.bytes;
 }
 
-/// Runs [upload] and applies the form's shared success side effects
-/// (snackbar) or error banner.
-///
-/// Returns whatever [upload] resolves to, or null on failure. [upload] is
-/// deliberately id-agnostic so single-record providers (`ShopStoreProvider`,
-/// `ProfileProvider`) can share this flow without an id-taking
-/// `CrudProvider`.
 Future<String?> uploadImageWith(
   Future<String?> Function() upload, {
   required BuildContext context,
@@ -40,12 +32,6 @@ Future<String?> uploadImageWith(
   }
 }
 
-/// Uploads an image for the entity of type [T] held by [provider] and applies
-/// the form's success side effects ([onSuccess], snackbar) or error banner.
-///
-/// Returns the uploaded image path through [onSuccess], or null on failure.
-/// [provider] should be the already-resolved provider instance (e.g. from
-/// `context.read`), since this helper is deliberately type-agnostic.
 Future<String?> uploadImageFor<T>(
   CrudProvider<T> provider,
   int id,

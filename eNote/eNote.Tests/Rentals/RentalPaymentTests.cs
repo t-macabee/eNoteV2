@@ -1,10 +1,5 @@
 namespace eNote.Tests.Rentals;
 
-/// <summary>
-/// Pure domain tests for payment/refund math and the paid flag. These have no DB
-/// and no Stripe dependency; they lock in the billing decision that a refund does
-/// not flip InstrumentRental.IsPaid back to false.
-/// </summary>
 public sealed class RentalPaymentTests
 {
     private static readonly DateTime Now = new(2026, 6, 15, 12, 0, 0, DateTimeKind.Utc);
@@ -57,10 +52,6 @@ public sealed class RentalPaymentTests
         Assert.Equal(50m, rental.AmountPaid);
     }
 
-    // Regression: a naive implementation would flip IsPaid back to false when a
-    // refund is issued. The product decision is that once paid, the rental stays
-    // paid; refund state lives entirely on RentalPayment (there is no MarkRefunded
-    // on InstrumentRental by design).
     [Fact]
     public void Refund_Succeeds_IsPaidRemainsTrue()
     {

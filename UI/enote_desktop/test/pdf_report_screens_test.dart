@@ -29,8 +29,6 @@ void main() {
   late FakeSaveFilePicker picker;
 
   setUp(() {
-    // Cancelling keeps the test off the file system: the request and the
-    // suggested name are what these tests assert.
     picker = FakeSaveFilePicker();
     FilePicker.platform = picker;
   });

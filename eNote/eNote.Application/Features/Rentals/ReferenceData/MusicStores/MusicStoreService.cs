@@ -11,7 +11,7 @@ public sealed class MusicStoreService(IAppDbContext context, IFileStorageService
         StoreName = entity.StoreName,
         BusinessHours = entity.BusinessHours,
         PhoneNumber = entity.PhoneNumber,
-        ImagePath = entity.ImagePath,
+        ImagePath = entity.ImagePath ?? DefaultImages.MusicStore,
         AddressId = entity.AddressId,
         AddressStreet = entity.Address?.Street,
         AddressCity = entity.Address?.City?.Name

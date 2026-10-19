@@ -15,8 +15,6 @@ public sealed class RentalPaymentServiceTests
 {
     private static readonly DateTime Now = new(2026, 6, 15, 12, 0, 0, DateTimeKind.Utc);
 
-    // ---- Billing moment / status guard -----------------------------------
-
     [Fact]
     public async Task CreatePaymentIntent_FromPending_Throws_NotPayable()
     {
@@ -109,9 +107,6 @@ public sealed class RentalPaymentServiceTests
     [Fact]
     public async Task CreatePaymentIntent_ComputesCentsFromServerCharges_IgnoresClientAmount()
     {
-        // The service intentionally has no client-amount input; the amount is always
-        // recomputed from rental.CalculateCharges on the server. This test locks in
-        // that behavior and the decided EUR currency.
         var (context, student, currentUser) = await CreateStudentContextAsync();
         var instrument = await RentalTestData.SeedInstrumentAsync(context);
         var rental = RentalTestData.CreateCompletedRental(instrument, student.Id, Now);
@@ -213,8 +208,6 @@ public sealed class RentalPaymentServiceTests
         Assert.Equal(Messages.PaymentAlreadyCompleted, ex.Message);
         Assert.Empty(gateway.CreateCalls);
     }
-
-    // ---- Refunds ----------------------------------------------------------
 
     [Fact]
     public async Task Refund_Fails_WhenNoSucceededPayment()
@@ -368,8 +361,6 @@ public sealed class RentalPaymentServiceTests
     [Fact]
     public async Task Refund_Succeeds_IsPaidRemainsTrue()
     {
-        // Regression for the decided behavior: a refund must not flip IsPaid back
-        // to false. This is the service-level version of the domain test.
         var (context, student, _) = await CreateStudentContextAsync();
         var instrument = await RentalTestData.SeedInstrumentAsync(context);
         var rental = await SeedPaidRentalAsync(context, instrument, student);
@@ -383,8 +374,6 @@ public sealed class RentalPaymentServiceTests
         Assert.NotNull(reloaded.PaidAt);
         Assert.Equal(50m, reloaded.AmountPaid);
     }
-
-    // ---- GetPaymentStatusForStore ----------------------------------------
 
     [Fact]
     public async Task GetPaymentStatusForStore_Succeeds_ReturnsLatestPayment()
@@ -434,8 +423,6 @@ public sealed class RentalPaymentServiceTests
 
         Assert.Equal(Messages.PaymentNotFound, ex.Message);
     }
-
-    // ---- Authorization ----------------------------------------------------
 
     [Fact]
     public async Task Student_CanCreateIntent_ForOwnRental()
@@ -497,8 +484,6 @@ public sealed class RentalPaymentServiceTests
         Assert.Equal(PaymentStatus.Refunded, dto.Status);
     }
 
-    // ---- Payment provider failure (Stripe unavailable) ---------------------
-
     [Fact]
     public async Task CreatePaymentIntent_WhenGatewayThrows_ServiceThrows_PaymentProviderUnavailable()
     {
@@ -534,8 +519,6 @@ public sealed class RentalPaymentServiceTests
         Assert.Equal(400, ex.StatusCode);
         Assert.Equal("error.payment_provider_unavailable", ex.ErrorCode);
     }
-
-    // ---- Helpers ----------------------------------------------------------
 
     private static ENoteContext CreateContext(StubCurrentActor currentUser)
     {

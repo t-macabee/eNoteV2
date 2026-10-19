@@ -9,9 +9,6 @@ import '../../widgets/entity_form_scaffold.dart';
 import '../../widgets/image_upload_helper.dart';
 import 'profile_provider.dart';
 
-/// "Uredi" form opened from [ProfileDialog] — same pattern as editing a
-/// music store: its own [EntityFormScaffold] with its own Save/Cancel, which
-/// pops on save since the scaffold runs in edit mode.
 class EditProfileDialog extends StatefulWidget {
   final String? initialFirstName;
   final String? initialLastName;
@@ -38,9 +35,6 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
   final _emailController = TextEditingController();
   DateTime? _dateOfBirth;
   bool _hasPicture = false;
-  // Bumped after every upload/delete so the `me/picture` URL reloads —
-  // the URL is cacheable, so `?v=` (plus ImageField's new imageUrl) is what
-  // makes the new bytes appear without reopening the dialog.
   int _pictureVersion = 0;
 
   @override
@@ -131,11 +125,9 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
           alignment: Alignment.centerLeft,
           child: ImageField(
             key: ValueKey('profile-picture-$_pictureVersion-$_hasPicture'),
-            imageUrl: _hasPicture
-                ? context
-                    .read<ProfileProvider>()
-                    .pictureUrl(cacheBuster: _pictureVersion)
-                : null,
+            imageUrl: context
+                .read<ProfileProvider>()
+                .pictureUrl(cacheBuster: _pictureVersion),
             imagePicker: pickImageBytes,
             onUpload: _uploadImage,
             apiClient: context.read<ApiClient>(),

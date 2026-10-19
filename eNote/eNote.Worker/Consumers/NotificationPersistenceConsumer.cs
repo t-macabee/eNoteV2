@@ -5,13 +5,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Worker.Consumers;
 
-/// A notification row to persist: the domain entity, the unique index that
-/// guards it, and the two log fields (notification kind and entity reference).
 public sealed record NotificationWrite(Notification Notification, string Kind, string ReferenceLabel, object ReferenceValue, string ConstraintName);
 
-/// Shared persistence for notification messages. Subclasses only map their
-/// message; the add/save/duplicate-skip/log sequence is identical for every
-/// kind.
 public abstract class NotificationPersistenceConsumer<TMessage>(IAppDbContext dbContext, ILogger logger) : IConsumer<TMessage>
     where TMessage : class
 {

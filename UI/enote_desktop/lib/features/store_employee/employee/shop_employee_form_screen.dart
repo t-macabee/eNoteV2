@@ -36,6 +36,7 @@ class _ShopEmployeeFormScreenState extends State<ShopEmployeeFormScreen> {
   @override
   Widget build(BuildContext context) {
     return EntityFormScaffold(
+      savedMessage: 'Zaposlenik je kreiran.',
       presentation: widget.presentation,
       title: 'Kreiraj zaposlenika',
       saveLabel: 'Kreiraj',

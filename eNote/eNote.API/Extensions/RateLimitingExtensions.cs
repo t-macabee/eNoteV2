@@ -84,11 +84,6 @@ public static class AuthRateLimitIdentity
 {
     private const int MaxBodyBytes = 4096;
 
-    // The rate limiter's partition callback is synchronous and Kestrel forbids synchronous
-    // body reads, so AuthRateLimitIdentityMiddleware peeks the body asynchronously before
-    // UseRateLimiter and stashes the identity for the policy. Body-keyed only for
-    // login / forgot-password / reset-password; register keeps the IP bucket because a new
-    // username has no stable identity yet.
     public static bool IsIdentityAction(HttpContext httpContext) =>
         httpContext.GetEndpoint()?.Metadata.GetMetadata<ControllerActionDescriptor>() is
         { ControllerName: "Auth", ActionName: "Login" or "ForgotPassword" or "ResetPassword" };

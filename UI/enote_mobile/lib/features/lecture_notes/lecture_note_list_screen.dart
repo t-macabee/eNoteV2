@@ -7,8 +7,6 @@ import '../../shell/app_router.dart';
 import '../../widgets/paged_list_view.dart';
 import 'lecture_note_provider.dart';
 
-/// Lecture notes list. The [LectureNoteProvider] is
-/// scoped to the `/lectures/notes` route.
 class LectureNoteListScreen extends StatefulWidget {
   final int lectureId;
 

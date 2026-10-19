@@ -9,16 +9,12 @@ import 'fake_payment_sheet_gateway.dart';
 
 const _baseUrl = 'http://10.0.2.2:5059/api/v1/';
 
-/// Builds the app under test from the shared [AuthState]/[ApiClient]; each
-/// payment screen supplies its own provider set and pushed screen.
 typedef PaymentScreenAppBuilder = Widget Function(
   AuthState authState,
   ApiClient apiClient,
   String publishableKey,
 );
 
-/// Pumps one payment screen behind an `Open pay` button and waits for it to
-/// settle. Shared by the tuition and rental payment screen tests.
 Future<void> pumpPaymentScreen(
   WidgetTester tester, {
   required http.Client client,

@@ -48,6 +48,7 @@ class _EventListScreenState extends State<EventListScreen> {
         searchHint: 'Pretraži po nazivu...',
         placeholderIcon: Icons.event_outlined,
         titleOf: (item) => item.title,
+        imageUrlOf: (item) => item.imagePath,
         subtitleOf: (item) {
           final time = formatDateTime(item.startsAt);
           if (item.isScoped) {
@@ -60,7 +61,7 @@ class _EventListScreenState extends State<EventListScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             SizedBox(
-              width: 280,
+              width: 180,
               child: DateField(
                 labelText: 'Od',
                 initialValue: _from,
@@ -72,7 +73,7 @@ class _EventListScreenState extends State<EventListScreen> {
             ),
             const SizedBox(width: 12),
             SizedBox(
-              width: 280,
+              width: 180,
               child: DateField(
                 labelText: 'Do',
                 initialValue: _to,
@@ -84,7 +85,7 @@ class _EventListScreenState extends State<EventListScreen> {
             ),
             const SizedBox(width: 12),
             SizedBox(
-              width: 280,
+              width: 220,
               child: AsyncDropdown<InstructorDto>(
                 label: 'Instruktor',
                 fetcher: () async {

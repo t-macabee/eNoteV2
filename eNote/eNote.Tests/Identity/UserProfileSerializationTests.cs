@@ -14,8 +14,6 @@ public class UserProfileSerializationTests
 
         var json = JsonSerializer.Serialize(response);
 
-        // System.Text.Json uses camelCase if configured so, but by default it's PascalCase.
-        // We just assert that it contains the discriminator and the fields.
         Assert.Contains("student", json);
         Assert.Contains("John", json);
         Assert.Contains("Doe", json);

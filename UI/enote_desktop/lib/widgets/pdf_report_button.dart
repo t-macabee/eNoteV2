@@ -7,7 +7,6 @@ import 'package:flutter/material.dart';
 import 'package:printing/printing.dart';
 import 'package:provider/provider.dart';
 
-/// ASCII file name for a downloaded report, e.g. `course-12-ranking-20261018.pdf`.
 String reportFileName(String report) {
   final now = DateTime.now();
   final stamp = '${now.year}'
@@ -23,8 +22,6 @@ class PdfReportButton extends StatefulWidget {
   final String fileName;
   final String endpoint;
 
-  /// Replaces the platform save dialog; tests supply a double so no file is
-  /// written to disk.
   final PdfSaver? savePdf;
 
   const PdfReportButton({
@@ -59,8 +56,6 @@ class _PdfReportButtonState extends State<PdfReportButton> {
     }
   }
 
-  /// Asks for a destination through the platform save dialog, then writes the
-  /// report there. Returns the chosen path, or null when the user cancels.
   static Future<String?> _save(Uint8List bytes, String fileName) async {
     final path = await FilePicker.platform.saveFile(
       dialogTitle: 'Sačuvaj izvještaj',

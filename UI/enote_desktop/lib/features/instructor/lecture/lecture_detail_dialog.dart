@@ -5,7 +5,6 @@ import '../../../widgets/detail_row.dart';
 import '../../../widgets/dialog_shell.dart';
 import 'lecture_type_label.dart';
 
-/// Read-only detail dialog for a single lecture.
 class LectureDetailDialog extends StatelessWidget {
   final LectureDto lecture;
 

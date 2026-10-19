@@ -38,7 +38,7 @@ class _UserDetailsDialogState extends State<UserDetailsDialog> {
     final confirmed = await confirmDialog(
       context: context,
       title: nextStatus ? 'Potvrdite aktivaciju' : 'Potvrdite deaktivaciju',
-      message: nextStatus ? 'Da li ste sigurni da želite da aktivirate ovog korisnika?' : 'Da li ste sigurni da želite da deaktivirate ovog korisnika?',
+      message: nextStatus ? 'Da li ste sigurni da želite da aktivirate korisnika "${widget.item.displayName}"?' : 'Da li ste sigurni da želite da deaktivirate korisnika "${widget.item.displayName}"?',
     );
     if (confirmed != true) return;
     if (!mounted) return;
@@ -47,12 +47,14 @@ class _UserDetailsDialogState extends State<UserDetailsDialog> {
     try {
       final success = await widget.onStatusChange(nextStatus);
       if (success && mounted) {
-        // Optimistically reflect the new status so the button label/action
-        // and the delete-button-adjacent state update immediately — the
-        // underlying grid may re-filter this user out of view entirely
-        // (e.g. the "Aktivni" tab), but this dialog stays open and must
-        // not keep offering the action that was just taken.
         setState(() => _isActive = nextStatus);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              nextStatus ? 'Korisnik je aktiviran.' : 'Korisnik je deaktiviran.',
+            ),
+          ),
+        );
       }
     } finally {
       if (mounted) {
@@ -67,7 +69,7 @@ class _UserDetailsDialogState extends State<UserDetailsDialog> {
     final confirmed = await confirmDialog(
       context: context,
       title: 'Trajno brisanje',
-      message: 'Da li ste sigurni da želite trajno obrisati ovog korisnika? Ovo se razlikuje od deaktivacije i ne može se poništiti.',
+      message: 'Da li ste sigurni da želite trajno obrisati korisnika "${widget.item.displayName}"? Ovo se razlikuje od deaktivacije i ne može se poništiti.',
     );
     if (confirmed != true) return;
     if (!mounted) return;
@@ -76,6 +78,9 @@ class _UserDetailsDialogState extends State<UserDetailsDialog> {
     try {
       final success = await widget.onDelete();
       if (success && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Korisnik je obrisan.')),
+        );
         Navigator.of(context).pop();
       }
     } finally {
@@ -155,7 +160,6 @@ class _UserDetailsDialogState extends State<UserDetailsDialog> {
         });
       }
     } catch (_) {
-      // Ignored: fallback to basic item info
     } finally {
       if (mounted) {
         setState(() => _isLoadingProfile = false);
@@ -195,8 +199,6 @@ class _UserDetailsDialogState extends State<UserDetailsDialog> {
                     userId: item.appUserId,
                     apiClient: context.read<ApiClient>(),
                     radius: 28,
-                    // Avatar image only — a 404 falls back to the existing
-                    // initials. Nothing else in this dialog changes.
                     placeholder: () => CircleAvatar(
                       radius: 28,
                       backgroundColor: AppTheme.primary,

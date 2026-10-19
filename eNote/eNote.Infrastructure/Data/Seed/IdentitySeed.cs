@@ -23,11 +23,6 @@ public static class IdentitySeed
         var userManager = serviceProvider.GetRequiredService<UserManager<AppUser>>();
         var configuration = serviceProvider.GetRequiredService<IConfiguration>();
 
-        // Password handed to reviewers (RS2 Upute section 5 credentials table).
-        // It is deliberately short and deliberately NOT run through Identity's
-        // password policy: the policy in DependencyInjection stays strict for
-        // real registrations, and these seeded demo accounts get their hash
-        // applied directly in ApplyReviewPasswordAsync below.
         var reviewPassword = configuration["Seed:DefaultPassword"] ?? throw new InvalidOperationException("Seed__DefaultPassword is required.");
 
         await RoleSeed.SeedRoles(roleManager);
@@ -77,8 +72,6 @@ public static class IdentitySeed
         }
     }
 
-    // Satisfies the Identity policy so ProvisionUserAsync can create the account;
-    // never used to log in, because ApplyReviewPasswordAsync overwrites the hash.
     private const string BootstrapPassword = "Seed1234!";
 
     private static async Task ApplyReviewPasswordAsync(UserManager<AppUser> userManager, string username, string password)

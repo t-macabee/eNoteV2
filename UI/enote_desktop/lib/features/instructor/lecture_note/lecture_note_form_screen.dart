@@ -11,9 +11,6 @@ class LectureNoteFormScreen extends StatefulWidget {
   final int lectureId;
   final LectureNoteDto? existing;
 
-  /// How the wrapped [EntityFormScaffold] is presented — pass
-  /// [EntityFormPresentation.dialog] when opened via
-  /// [EntityFormScaffold.showAsDialog].
   final EntityFormPresentation presentation;
 
   const LectureNoteFormScreen({
@@ -58,6 +55,7 @@ class _LectureNoteFormScreenState extends State<LectureNoteFormScreen>
   @override
   Widget build(BuildContext context) {
     return EntityFormScaffold(
+      savedMessage: 'Bilješka je sačuvana.',
       presentation: widget.presentation,
       title: _isEditMode ? 'Uredi bilješku' : 'Dodaj bilješku',
       isEditMode: _isEditMode,

@@ -1,5 +1,3 @@
-/// Test helpers shared by the enote_core, enote_desktop and enote_mobile test
-/// suites. Add as a dev_dependency only.
 library;
 
 import 'dart:async';
@@ -10,8 +8,6 @@ import 'package:http/http.dart' as http;
 String base64UrlSegment(String input) =>
     base64Url.encode(utf8.encode(input)).replaceAll('=', '');
 
-/// Unsigned JWT accepted by `AuthState` in tests. Each app's `test/helpers.dart`
-/// may wrap this with its own default identity.
 String fakeJwt({
   String subject = '1',
   String username = 'student',
@@ -33,7 +29,6 @@ String fakeJwt({
   return '$header.$payload.signature';
 }
 
-/// JSON response; a [String] body is sent verbatim, anything else is encoded.
 http.Response jsonResponse(
   Object? body,
   int status, {
@@ -47,9 +42,6 @@ http.Response jsonResponse(
   );
 }
 
-/// Maps a request to a response and records every request. Defaults to 404
-/// when no handler is supplied. Keeps the `send()` → [http.StreamedResponse]
-/// boilerplate in one place.
 class ScriptedClient extends http.BaseClient {
   ScriptedClient([this.handler]);
 
@@ -80,7 +72,6 @@ class ScriptedClient extends http.BaseClient {
   }
 }
 
-/// Fixed-response convenience over [ScriptedClient].
 class RecordingHttpClient extends ScriptedClient {
   RecordingHttpClient({int statusCode = 200, Map<String, dynamic> body = const {}})
       : super((_) => jsonResponse(body, statusCode));

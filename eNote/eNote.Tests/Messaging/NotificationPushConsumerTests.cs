@@ -11,9 +11,6 @@ using Microsoft.Extensions.Logging;
 
 namespace eNote.Tests.Messaging;
 
-/// Covers the shared SignalR push owned by NotificationPushConsumer&lt;TMessage&gt;:
-/// the target group, the payload each consumer maps, and the log line with the
-/// notification kind and reference.
 public sealed class NotificationPushConsumerTests
 {
     private static readonly DateTime Now = new(2026, 7, 1, 12, 0, 0, DateTimeKind.Utc);

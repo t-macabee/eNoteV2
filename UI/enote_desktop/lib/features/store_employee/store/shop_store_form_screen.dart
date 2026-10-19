@@ -83,6 +83,7 @@ class _ShopStoreFormScreenState extends State<ShopStoreFormScreen>
   @override
   Widget build(BuildContext context) {
     return EntityFormScaffold(
+      savedMessage: 'Prodavnica je sačuvana.',
       presentation: widget.presentation,
       title: 'Uredi prodavnicu',
       isEditMode: true,

@@ -40,8 +40,6 @@ const _historyBody = {
   'totalCount': 1,
 };
 
-/// Records the raw request so the test can inspect the [http.MultipartRequest]
-/// fields; [ScriptedClient] records only an [http.Request] view.
 class _MultipartStubClient extends http.BaseClient {
   final List<http.BaseRequest> sent = [];
 

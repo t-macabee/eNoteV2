@@ -6,8 +6,6 @@ import '../address/address_list_screen.dart';
 import '../city/city_list_screen.dart';
 import '../instrument_type/instrument_type_list_screen.dart';
 
-/// A tabbed dialog unifying reference data management for
-/// Gradovi, Adrese, and Tipovi instrumenata.
 class ReferenceDataDialog extends StatelessWidget {
   const ReferenceDataDialog({super.key});
 

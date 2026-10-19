@@ -13,8 +13,6 @@ public sealed class CourseController(
     CourseEnrollmentService enrollmentService,
     InstructorEnrollmentService instructorEnrollmentService) : CoreController
 {
-    // ── Instructor actions ──────────────────────────────────────────
-
     [Authorize(Roles = AppRoles.Instructor)]
     [HttpGet("~/api/v{version:apiVersion}/instructor/courses")]
     [ProducesResponseType(typeof(PagedResult<CourseDto>), StatusCodes.Status200OK)]
@@ -137,8 +135,6 @@ public sealed class CourseController(
         var dto = await instructorEnrollmentService.CompleteAsync(courseId, enrollmentId, cancellationToken);
         return Ok(dto);
     }
-
-    // ── Student actions ─────────────────────────────────────────────
 
     [Authorize(Roles = AppRoles.Student)]
     [HttpGet("~/api/v{version:apiVersion}/student/courses")]

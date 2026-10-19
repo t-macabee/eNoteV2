@@ -387,10 +387,8 @@ public sealed class CourseServiceTests
         var student3 = new Student(52, Now);
         harness.Context.Set<Student>().AddRange(student2, student3);
 
-        // student2 is enrolled in harness.Course
         harness.Context.Set<Enrollment>().Add(new Enrollment(student2.Id, harness.Course.Id, EnrollmentStatus.Active));
 
-        // Other instructor's published course (visible in catalog): enroll student3
         var otherInstructor = new Instructor(200);
         harness.Context.Set<Instructor>().Add(otherInstructor);
         var otherPublished = new Course("Violin", null, 90m, Now, Now.AddMonths(4), otherInstructor.Id);
@@ -398,7 +396,6 @@ public sealed class CourseServiceTests
         harness.Context.Set<Course>().Add(otherPublished);
         harness.Context.Set<Enrollment>().Add(new Enrollment(student3.Id, otherPublished.Id, EnrollmentStatus.Active));
 
-        // Other instructor's unpublished course (not visible): enroll student4
         var student4 = new Student(53, Now);
         harness.Context.Set<Student>().Add(student4);
         var otherUnpublished = new Course("Secret Drums", null, 90m, Now, Now.AddMonths(4), otherInstructor.Id);
@@ -411,7 +408,6 @@ public sealed class CourseServiceTests
 
         var summary = await service.GetCatalogSummaryAsync();
 
-        // 3 visible students: harness.Student, student2, student3 (student4 excluded)
         Assert.Equal(3, summary.TotalStudents);
     }
 

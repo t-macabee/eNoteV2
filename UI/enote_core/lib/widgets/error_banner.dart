@@ -70,7 +70,7 @@ class ErrorBanner extends StatelessWidget implements PreferredSizeWidget {
         action: autoDismiss
             ? null
             : SnackBarAction(
-                label: 'Zatvoriti',
+                label: 'Zatvori',
                 textColor: Colors.white,
                 onPressed: () {
                   if (onDismissed != null) {

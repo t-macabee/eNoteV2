@@ -29,6 +29,18 @@ public sealed class UploadsController(IFileStorageService fileStorage, IFileAcce
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public IActionResult GetAnnouncement(string fileName) => Serve("announcements", fileName);
 
+    [HttpGet("courses/{fileName}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public IActionResult GetCourse(string fileName) => Serve("courses", fileName);
+
+    [HttpGet("events/{fileName}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public IActionResult GetEvent(string fileName) => Serve("events", fileName);
+
     [Authorize]
     [HttpGet("assignments/{fileName}")]
     [ProducesResponseType(StatusCodes.Status200OK)]

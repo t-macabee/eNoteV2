@@ -10,8 +10,6 @@ namespace eNote.API.Controllers.LectureNotes;
 
 public sealed class LectureNoteController(LectureNoteService service) : CoreController
 {
-    // Instructor
-
     [Authorize(Roles = AppRoles.Instructor)]
     [HttpGet("~/api/v{version:apiVersion}/instructor/lectures/{lectureId:int}/notes")]
     [ProducesResponseType(typeof(PagedResult<LectureNoteDto>), StatusCodes.Status200OK)]
@@ -56,8 +54,6 @@ public sealed class LectureNoteController(LectureNoteService service) : CoreCont
         await service.DeleteAsync(lectureId, noteId, cancellationToken);
         return NoContent();
     }
-
-    // Student
 
     [Authorize(Roles = AppRoles.Student)]
     [HttpGet("~/api/v{version:apiVersion}/student/lectures/{lectureId:int}/notes")]

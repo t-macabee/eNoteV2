@@ -11,7 +11,6 @@ public sealed class RentalStatusChangedEmailConsumer(
     IEmailService email,
     ILogger<RentalStatusChangedEmailConsumer> logger) : IConsumer<RentalStatusChanged>
 {
-    // The decisions the recipient must not miss.
     private static readonly HashSet<string> EmailStatuses =
     [
         nameof(InstrumentRentalStatus.Approved),

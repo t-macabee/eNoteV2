@@ -7,11 +7,6 @@ import '../../../widgets/detail_row.dart';
 import '../../../widgets/dialog_shell.dart';
 import 'instructor_student_provider.dart';
 
-/// Read-only student info for instructors — deliberately minimal: no
-/// membership renew, activate/deactivate or delete actions (those are admin
-/// only), just the facts the instructor needs: who the student is, when they
-/// enrolled, their membership status, and cross-enrollments in other courses
-/// (shown because the student is already visible to this instructor).
 class InstructorStudentDetailsDialog extends StatefulWidget {
   final StudentDto student;
 
@@ -42,7 +37,6 @@ class _InstructorStudentDetailsDialogState
         setState(() => _student = fresh);
       }
     } catch (_) {
-      // Ignored: fall back to the details already in the grid item
     }
 
     try {

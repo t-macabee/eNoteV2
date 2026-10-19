@@ -60,6 +60,9 @@ class _InstrumentTypeListScreenState extends State<InstrumentTypeListScreen> {
         fetcher: (page, pageSize, search) => context.read<InstrumentTypeProvider>().search(pagedQuery(page, pageSize, search, searchField: 'type')),
         onAdd: () => _openForm(),
         onEdit: (context, item) => _openForm(item),
+        deleteConfirmMessageOf: (item) =>
+            'Da li ste sigurni da želite da obrišete tip instrumenta "${item.type}"?',
+        deletedMessage: 'Tip instrumenta je obrisan.',
         onDelete: (context, item) async {
           await context.read<InstrumentTypeProvider>().remove(item.id);
           return true;

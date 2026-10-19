@@ -1,3 +1,4 @@
+using eNote.Application.Common.Files;
 using eNote.Application.Common.Localization;
 using eNote.Infrastructure.Identity;
 using eNote.Tests.TestUtils;
@@ -134,6 +135,27 @@ public sealed class UserAccountServiceTests
         Assert.Same(stored, data);
         Assert.Equal("image/png", contentType);
         Assert.Equal("/api/uploads/profile-pictures/pic.png", harness.FileStorage.OpenReadCalls.Single());
+    }
+
+    [Fact]
+    public async Task GetPictureAsync_ReturnsDefaultPicture_WhenUserHasNoPicture()
+    {
+        var harness = await CreateHarnessAsync();
+        var service = harness.Service;
+        await service.CreateUserAsync("jdoe", "jdoe@example.com", "Password1!", null, null);
+        var user = (await harness.UserManager.FindByNameAsync("jdoe"))!;
+        using var defaultPicture = new MemoryStream([1, 2, 3]);
+        harness.FileStorage.OpenReadResult = (defaultPicture, "image/webp");
+
+        var (data, contentType) = await service.GetPictureAsync(user.Id);
+
+        Assert.Same(defaultPicture, data);
+        Assert.Equal("image/webp", contentType);
+        Assert.Equal(DefaultImages.UserPicture, harness.FileStorage.OpenReadCalls.Single());
+
+        var identity = await new UserIdentityService(harness.UserManager).GetUserAsync(user.Id);
+        Assert.False(identity!.HasPicture);
+        Assert.Null((await harness.UserManager.FindByIdAsync(user.Id.ToString()))!.PicturePath);
     }
 
     [Fact]

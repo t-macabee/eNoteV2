@@ -14,11 +14,6 @@ using StripeEvent = Stripe.Event;
 
 namespace eNote.Infrastructure.Payments.Stripe;
 
-/// <summary>
-/// Verifies Stripe webhook signatures, applies payment_intent/charge side effects
-/// idempotently, and records every processed event in the <see cref="StripeWebhookEvent"/>
-/// table so Stripe replays cannot double-apply.
-/// </summary>
 public sealed class StripeWebhookService(
     IAppDbContext context,
     IClock clock,
@@ -50,7 +45,6 @@ public sealed class StripeWebhookService(
 
     public async Task HandleAsync(StripeEvent stripeEvent, string rawJson, CancellationToken cancellationToken = default)
     {
-        // Fast-path replay guard; the transactional handlers below repeat it to close races.
         if (await IsEventProcessedAsync(stripeEvent.Id, cancellationToken))
         {
             return;
@@ -122,7 +116,6 @@ public sealed class StripeWebhookService(
                     var isActive = coursePayment.Enrollment.EnrollmentStatus == EnrollmentStatus.Active;
                     if (!isActive)
                     {
-                        // Money was taken but the enrollment is not active: record the payment, grant no access.
                         logger.LogWarning("Skipping PaidUntil extension for non-active enrollment {EnrollmentId} on payment intent {PaymentIntentId}", coursePayment.EnrollmentId, paymentIntentId);
                     }
                     var (periodStart, periodEnd) = isActive
@@ -283,7 +276,6 @@ public sealed class StripeWebhookService(
 
             if (rentalPayment.Status is PaymentStatus.Succeeded or PaymentStatus.PartiallyRefunded or PaymentStatus.Refunded)
             {
-                // The charge.refunded fallback records a null refund id when the payload carries no refund list.
                 var counted = (!string.IsNullOrWhiteSpace(refund.Id) && rentalPayment.Refunds.Any(r => r.StripeRefundId == refund.Id))
                     || rentalPayment.StripeRefundId == refund.Id
                     || (rentalPayment.StripeRefundId is null && (rentalPayment.RefundedCents ?? 0) >= refund.Amount);

@@ -1,13 +1,5 @@
-# Academic / RS2 local reference documents
-docs/rs2-checklist.md
-docs/rs2-inspection-log.md
-docs/rs2-handoff-prompt.md
-docs/rs2-prijava-teme.md
-docs/rs2-upute.md
-
 # IDE / editor (local-only)
 .vscode/
-.agents/
 .idea/
 *.suo
 *.user
@@ -79,10 +71,3 @@ build/
 !.env-tajne.zip
 !recommender-dokumentacija.zip
 *.apk
-
-# Agent artifacts
-.claude/
-.tokensave/
-.mcp.json
-index.db
-AGENTS.md

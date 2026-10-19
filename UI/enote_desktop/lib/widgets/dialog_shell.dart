@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
 
-/// Supported maximum widths for [DialogShell].
 enum DialogShellWidth {
   sm(480),
   md(620),
@@ -15,13 +14,6 @@ enum DialogShellWidth {
   double get maxWidth => value;
 }
 
-/// Compact single-row dialog header shared by workspace and sibling dialogs.
-///
-/// Renders `leading`, `label`, `action` and a close button in one row with
-/// the workspace padding (`EdgeInsets.fromLTRB(8, 4, 8, 4)`). When there is
-/// no [leading], nothing is rendered in its slot and the label is padded
-/// with `EdgeInsets.only(left: 16)` so the text starts at a normal dialog
-/// margin instead of leaving dead space.
 class DialogShellHeader extends StatelessWidget {
   final Widget? leading;
   final Widget label;
@@ -67,7 +59,6 @@ class DialogShellHeader extends StatelessWidget {
   }
 }
 
-/// A reusable dialog frame matching the application theme.
 class DialogShell extends StatelessWidget {
   final String? title;
   final Widget body;

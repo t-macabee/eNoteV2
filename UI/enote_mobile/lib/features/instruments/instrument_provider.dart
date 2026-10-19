@@ -1,11 +1,6 @@
 import 'package:enote_core/enote_core.dart';
 
-/// Catalogue provider for the Instrumenti tab.
-///
-/// The list endpoint (`instruments/public`) is open to any signed-in user;
-/// the recommendation and view-tracking endpoints are student-scoped.
 class InstrumentProvider extends ReadOnlyProvider<InstrumentDto> {
-  /// Rows per catalogue page.
   static const int pageSize = 20;
 
   InstrumentProvider({required super.apiClient})
@@ -15,21 +10,8 @@ class InstrumentProvider extends ReadOnlyProvider<InstrumentDto> {
   InstrumentDto fromJson(Map<String, dynamic> json) =>
       InstrumentDto.fromJson(json);
 
-  /// Query-string prefix every parameter of this endpoint must carry.
-  ///
-  /// `Observed fact` (verified against the running API 2026-09-09): the
-  /// action binds `[FromQuery] InstrumentSearchObject search`, so the moment
-  /// the query string contains a key literally named `search`, ASP.NET model
-  /// binding switches to the `search.` prefix and silently drops every
-  /// unprefixed key — `page`, `pageSize`, `includeTotalCount`, `isAvailable`
-  /// **and** the search term itself. `?search=Fender` therefore returns all
-  /// 25 instruments on a default-sized page. Sending the whole query
-  /// prefixed binds correctly and is the only client-side form that works.
   static const String _queryPrefix = 'search.';
 
-  /// One catalogue page. [onlyAvailable] maps to the server's `IsAvailable`
-  /// filter and is omitted when off, so the toggle off means "show all"
-  /// rather than "show only unavailable".
   Future<PagedResult<InstrumentDto>> fetchPage(
     int page,
     int pageSize,
@@ -47,7 +29,6 @@ class InstrumentProvider extends ReadOnlyProvider<InstrumentDto> {
     );
   }
 
-  /// `GET student/instruments/recommended?count=` (C1).
   Future<List<InstrumentRecommendationDto>> recommended({int count = 5}) async {
     final response = await apiClient.get(
       'student/instruments/recommended',
@@ -56,15 +37,10 @@ class InstrumentProvider extends ReadOnlyProvider<InstrumentDto> {
     return decodeList(response, InstrumentRecommendationDto.fromJson);
   }
 
-  /// `POST student/instruments/{id}/view`.
-  ///
-  /// An analytics signal only: every failure is swallowed so the detail
-  /// screen never blocks or errors on it.
   Future<void> recordView(int id) async {
     try {
       await apiClient.post('student/instruments/$id/view');
     } catch (_) {
-      // Deliberately ignored.
     }
   }
 }

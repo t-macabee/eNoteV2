@@ -98,9 +98,6 @@ public sealed class UsersController(UserProfileService profileService, UserSelfS
         return NoContent();
     }
 
-    // Privacy: "no such user", "user has no picture" and "you may not see
-    // this user" all return the same bare 404 so this endpoint cannot be used
-    // as a user-id oracle. Do not "fix" this into a 403 or BusinessException.
     [HttpGet("{id:int}/picture")]
     [Produces("image/jpeg", "image/png", "image/webp")]
     [ProducesResponseType(StatusCodes.Status200OK)]

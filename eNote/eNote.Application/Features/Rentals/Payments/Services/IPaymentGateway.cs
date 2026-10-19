@@ -12,11 +12,6 @@ public sealed record RefundData(
     long AmountCents,
     string Status);
 
-/// <summary>
-/// Port for the Stripe payment provider. Kept in the Application layer so payment
-/// orchestration can be unit-tested against a fake gateway; the concrete
-/// <c>StripePaymentGateway</c> lives in Infrastructure.
-/// </summary>
 public interface IPaymentGateway
 {
     Task<PaymentIntentData> CreatePaymentIntentAsync(

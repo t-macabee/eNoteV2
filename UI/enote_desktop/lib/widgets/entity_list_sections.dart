@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import 'entity_list_screen.dart';
 
-/// Shared edit/delete action row used by both list row renderers.
 class EntityRowActions extends StatelessWidget {
   final List<Widget> extraWidgets;
   final VoidCallback? onEdit;
@@ -205,9 +204,6 @@ class EntityListTable<T> extends StatelessWidget {
   }
 }
 
-/// The stacked (non-inline) search bar. List-only: the grid has no
-/// counterpart, and this is the layout the default list screens use, with
-/// their Add button in the AppBar actions above.
 class EntityListSearchBar extends StatelessWidget {
   final TextEditingController controller;
   final String hint;

@@ -54,8 +54,6 @@ Map<String, dynamic> _payment(String status) => {
   'paidAt': '2026-09-09T12:41:00',
 };
 
-/// Routes by path; intent and payment queues let each test script retries
-/// and poll sequences. Empty queues fall back to success shapes.
 class _PayStubClient extends http.BaseClient {
   Map<String, dynamic> rental;
   final List<({int status, Map<String, dynamic> body})> intents;
@@ -179,10 +177,6 @@ Future<void> _confirmPay(WidgetTester tester) async {
   await tester.pumpAndSettle();
   expect(find.textContaining('Potvrda plaćanja'), findsOneWidget);
   await tester.tap(find.text('Potvrdi'));
-  // Zero-duration pumps only: the dialog future and the stubbed
-  // create-intent/init/present chain all complete in microtasks, while the
-  // 2 s poll delays must not elapse yet (`pumpAndSettle` would advance the
-  // fake clock straight through them into D or F).
   await tester.pump();
   await tester.pump();
   await tester.pump();

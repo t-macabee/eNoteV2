@@ -7,9 +7,5 @@ public sealed record RentalTransitionContext
     public required bool HasInstrumentLockConflict { get; init; }
     public required decimal MonthlyFee { get; init; }
 
-    /// <summary>
-    /// The note text from the caller's <c>RentalStatusRequest</c> (an Application-layer DTO not
-    /// visible to Domain), flattened to the one field the transition logic actually reads.
-    /// </summary>
     public string? ResponseNote { get; init; }
 }

@@ -12,10 +12,6 @@ import 'package:enote_mobile/theme/app_theme.dart';
 
 import '../../helpers.dart';
 
-/// Relative to the real wall clock instead of a hardcoded date, so these
-/// fixtures don't drift into the wrong past/future state as calendar time
-/// passes (`DateTime.now().isAfter(dueAt)` in assignment_detail_screen.dart
-/// uses the real clock, not a mocked one).
 final _futureDueAt = DateTime.now().add(const Duration(days: 365)).toIso8601String();
 final _pastDueAt = DateTime.now().subtract(const Duration(days: 1)).toIso8601String();
 

@@ -43,29 +43,24 @@ void main() {
     await tester.pumpWidget(MyApp(authState: authState, apiClient: apiClient));
     await tester.pumpAndSettle();
 
-    // Verify sidebar menu entries: Referentni podaci is present, old separate entries are not
     expect(find.text('Referentni podaci'), findsOneWidget);
     expect(find.text('Gradovi'), findsNothing);
     expect(find.text('Adrese'), findsNothing);
     expect(find.text('Tipovi instrumenata'), findsNothing);
 
-    // Open Reference Data dialog
     await tester.tap(find.text('Referentni podaci'));
     await tester.pumpAndSettle();
 
-    // Verify dialog and tab labels exist
     expect(find.byType(ReferenceDataDialog), findsOneWidget);
     expect(find.text('Gradovi'), findsOneWidget);
     expect(find.text('Adrese'), findsOneWidget);
     expect(find.text('Tipovi instrumenata'), findsOneWidget);
     expect(find.byType(CityListScreen), findsOneWidget);
 
-    // Navigate to Adrese tab
     await tester.tap(find.text('Adrese'));
     await tester.pumpAndSettle();
     expect(find.byType(AddressListScreen), findsOneWidget);
 
-    // Navigate to Tipovi instrumenata tab
     await tester.tap(find.text('Tipovi instrumenata'));
     await tester.pumpAndSettle();
     expect(find.byType(InstrumentTypeListScreen), findsOneWidget);

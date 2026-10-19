@@ -19,10 +19,6 @@ class LectureListScreen extends StatefulWidget {
   final int courseId;
   final String courseName;
 
-  /// Defaults to [EntityListPresentation.page] (own Scaffold/AppBar, with a
-  /// back/close button when pushed via Navigator). Pass
-  /// [EntityListPresentation.embedded] only when the caller already
-  /// provides that chrome.
   final EntityListPresentation presentation;
   final EntityListStyle listStyle;
   final void Function(LectureDto lecture, LectureSubView subView)? onOpenSubView;
@@ -151,6 +147,9 @@ class _LectureListScreenState extends State<LectureListScreen> {
 })),
         onAdd: () => _openForm(),
         onEdit: (context, item) => _openForm(item),
+        deleteConfirmMessageOf: (item) =>
+            'Da li ste sigurni da želite da obrišete predavanje "${item.name}"?',
+        deletedMessage: 'Predavanje je obrisano.',
         onDelete: (context, item) async {
           final provider = context.read<LectureProvider>();
           await provider.remove(item.id);

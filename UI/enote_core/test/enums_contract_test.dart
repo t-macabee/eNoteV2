@@ -10,8 +10,6 @@ void main() {
       }
     });
 
-    // Contract: eNote.Domain/Enums/LectureStatus.cs — Scheduled, Held,
-    // Cancelled (JsonStringEnumConverter, Program.cs:50).
     test('fromJson maps every backend wire value', () {
       expect(LectureStatus.fromJson('Scheduled'), LectureStatus.scheduled);
       expect(LectureStatus.fromJson('Held'), LectureStatus.held);
@@ -30,8 +28,6 @@ void main() {
       }
     });
 
-    // Contract: eNote.Domain/Enums/AttendanceStatus.cs — Pending, Present,
-    // Absent.
     test('fromJson maps every backend wire value', () {
       expect(AttendanceStatus.fromJson('Pending'), AttendanceStatus.pending);
       expect(AttendanceStatus.fromJson('Present'), AttendanceStatus.present);
@@ -50,8 +46,6 @@ void main() {
       }
     });
 
-    // Contract: eNote.Domain/Enums/InstrumentRentalStatus.cs — Pending,
-    // Approved, Active, Completed, Rejected, Canceled, ReturnedEarly.
     test('fromJson maps every backend wire value', () {
       expect(
           InstrumentRentalStatus.fromJson('Pending'), InstrumentRentalStatus.pending);
@@ -82,8 +76,6 @@ void main() {
       }
     });
 
-    // Contract: eNote.Domain/Enums/EnrollmentStatus.cs — Active, Completed,
-    // Canceled, Pending, Rejected (JsonStringEnumConverter).
     test('fromJson maps every backend wire value', () {
       expect(EnrollmentStatus.fromJson('Active'), EnrollmentStatus.active);
       expect(EnrollmentStatus.fromJson('Completed'), EnrollmentStatus.completed);
@@ -104,8 +96,6 @@ void main() {
       }
     });
 
-    // Contract: eNote.Domain/Enums/RentalTrigger.cs — Approve, Reject,
-    // Pickup, Complete, Cancel, ReturnEarly (0-based, no explicit values).
     test('fromJson maps every backend wire value', () {
       expect(RentalTrigger.fromJson(0), RentalTrigger.approve);
       expect(RentalTrigger.fromJson(1), RentalTrigger.reject);
@@ -123,8 +113,6 @@ void main() {
       }
     });
 
-    // Contract: eNote.Domain/Enums/AnnouncementScope.cs — Course,
-    // MusicStore, serialized as a string via JsonStringEnumConverter.
     test('fromJson maps every backend wire value', () {
       expect(AnnouncementScope.fromJson('Course'), AnnouncementScope.course);
       expect(
@@ -143,9 +131,6 @@ void main() {
       }
     });
 
-    // Contract: eNote.Domain/Enums/PaymentStatus.cs — RequiresAction,
-    // Succeeded, Failed, Canceled, Refunded, PartiallyRefunded,
-    // serialized as a string via JsonStringEnumConverter.
     test('fromJson maps every backend wire value', () {
       expect(
           PaymentStatus.fromJson('RequiresAction'), PaymentStatus.requiresAction);

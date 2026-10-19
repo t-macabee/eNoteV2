@@ -19,10 +19,6 @@ using Microsoft.Extensions.Hosting;
 
 namespace eNote.Tests.Api;
 
-/// The Admin reference-data controllers inherit their CRUD actions from
-/// ReferenceDataController&lt;TEntity, TDto, TRequest, TSearch&gt;. These tests run
-/// MVC's own action discovery over the API assembly, so an inherited action
-/// that stops being routable fails here instead of only in a manual smoke test.
 public sealed class ControllerActionDiscoveryTests
 {
     private static readonly (string Name, string Suffix)[] CrudActions =

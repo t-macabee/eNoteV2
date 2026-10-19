@@ -38,6 +38,7 @@ class _InstructorStudentFormScreenState
   @override
   Widget build(BuildContext context) {
     return EntityFormScaffold(
+      savedMessage: 'Student je kreiran.',
       title: 'Kreiraj studenta',
       saveLabel: 'Kreiraj',
       presentation: widget.presentation,

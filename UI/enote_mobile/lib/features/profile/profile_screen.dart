@@ -10,10 +10,6 @@ import '../../widgets/async_state_view.dart';
 import '../../widgets/labeled_value.dart';
 import 'membership_card.dart';
 
-/// Profile view (tab 3 root). Reads [SessionController.profile] as the
-/// single profile source; every mutation elsewhere goes through
-/// `SessionController.reloadProfile()` so this screen always shows the
-/// reloaded values on pop.
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
@@ -144,8 +140,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
       );
     }
-
-    if (!profile.hasPicture) return initialsAvatar();
 
     return networkImageOrPlaceholder(
       userPictureUrl(

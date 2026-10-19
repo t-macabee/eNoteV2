@@ -8,7 +8,6 @@ public class MusicStoreEmployeeConfig : IEntityTypeConfiguration<MusicStoreEmplo
 {
     public void Configure(EntityTypeBuilder<MusicStoreEmployee> builder)
     {
-        // No soft-delete global filter here by design: the manager list shows deactivated staff.
         builder.HasUniqueIndex(nameof(MusicStoreEmployee.AppUserId));
 
         builder.Property(x => x.IsManager).IsRequired();

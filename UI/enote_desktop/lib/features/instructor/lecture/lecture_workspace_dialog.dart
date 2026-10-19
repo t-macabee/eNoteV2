@@ -45,8 +45,6 @@ class _SubmissionsView extends _WorkspaceView {
   const _SubmissionsView(this.lecture, this.assignment);
 }
 
-/// A wide workspace dialog for lecture management and its child views
-/// (Attendance, Notes, Assignments, and Submissions).
 class LectureWorkspaceDialog extends StatefulWidget {
   final ApiClient apiClient;
   final int courseId;
@@ -59,8 +57,6 @@ class LectureWorkspaceDialog extends StatefulWidget {
     required this.courseName,
   });
 
-  /// Opens the lecture workspace dialog. Returns `true` if any mutation
-  /// occurred inside the workspace.
   static Future<bool?> show(
     BuildContext context, {
     required int courseId,

@@ -75,7 +75,6 @@ void main() {
         await tester.pumpAndSettle();
       }
 
-      // First save: fill all fields including city.
       await fillBasicFields();
       await pickCity('Sarajevo');
       await save();
@@ -86,9 +85,6 @@ void main() {
       expect(firstBody['street'], equals('Ulica A'));
       expect(firstBody['number'], equals('10'));
 
-      // Second save: only re-fill the text fields, city dropdown left untouched.
-      // The form's onReset cleared _selectedCityId to null, so the dropdown
-      // should also show empty (not the stale "Sarajevo" from before the fix).
       await fillBasicFields();
       await save();
 
