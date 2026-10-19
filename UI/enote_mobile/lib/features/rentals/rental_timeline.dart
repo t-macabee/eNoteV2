@@ -36,11 +36,11 @@ class RentalTimelineStep {
   }
 }
 
-/// S11's *Vremenska linija*, built from [InstrumentRentalDto] alone.
+/// The rental detail's *Vremenska linija*, built from [InstrumentRentalDto] alone.
 ///
 /// The DTO carries no actor names, only the approver's and rejecter's user
 /// ids, so every store-side step names the **store** instead — never a
-/// person and never a raw id (01 §11.1 item 4).
+/// person and never a raw id.
 class RentalTimeline extends StatelessWidget {
   final InstrumentRentalDto rental;
 
@@ -48,7 +48,7 @@ class RentalTimeline extends StatelessWidget {
 
   static const String _me = 'Vi';
 
-  /// The steps for [rental]'s current status, in the order of 02 §4.2.
+  /// The steps for [rental]'s current status, in timeline order.
   static List<RentalTimelineStep> stepsFor(InstrumentRentalDto rental) {
     final store = rental.storeName;
     final requested = RentalTimelineStep(

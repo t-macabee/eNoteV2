@@ -1,8 +1,4 @@
 using eNote.Application.Features.Rentals.Payments.Services;
-using eNote.Domain.Entities.Academic;
-using eNote.Domain.Entities.Rentals;
-using eNote.Domain.Enums;
-using eNote.Infrastructure.Data;
 using eNote.Infrastructure.Payments.Stripe;
 using eNote.Tests.TestUtils;
 using Microsoft.EntityFrameworkCore;

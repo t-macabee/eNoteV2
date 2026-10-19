@@ -1,8 +1,5 @@
-using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Persistence;
-using eNote.Application.Common.Time;
 using eNote.Application.Features.Identity.Users.Services;
-using eNote.Infrastructure.Data;
 using eNote.Infrastructure.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;

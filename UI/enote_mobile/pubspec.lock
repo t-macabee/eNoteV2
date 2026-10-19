@@ -120,6 +120,13 @@ packages:
       relative: true
     source: path
     version: "0.1.0"
+  enote_test_support:
+    dependency: "direct dev"
+    description:
+      path: "../enote_test_support"
+      relative: true
+    source: path
+    version: "0.0.1"
   fake_async:
     dependency: "direct dev"
     description:

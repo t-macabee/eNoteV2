@@ -4,8 +4,8 @@ import 'package:enote_core/enote_core.dart';
 /// `succeeded`.
 ///
 /// Returns the succeeded payment, or the last observation (still pending or
-/// `null` when no payment row exists yet) so the caller can show state F
-/// instead of a false success.
+/// `null` when no payment row exists yet) so the caller can show the pending
+/// state instead of a false success.
 Future<T?> pollUntilSucceeded<T>(
   Future<T?> Function() fetch,
   PaymentStatus? Function(T) statusOf, {

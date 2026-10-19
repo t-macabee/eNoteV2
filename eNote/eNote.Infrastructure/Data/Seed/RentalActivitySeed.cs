@@ -1,8 +1,5 @@
 using eNote.Application.Common.Time;
-using eNote.Domain.Entities.Identity;
-using eNote.Domain.Entities.Rentals;
 using eNote.Domain.Entities.Rentals.Transitions;
-using eNote.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Infrastructure.Data.Seed;

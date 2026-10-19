@@ -1,13 +1,10 @@
 using eNote.API.Controllers.Shop;
-using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Paging;
 using eNote.Application.Features.Identity.Auth;
 using eNote.Application.Features.Identity.Employees;
 using eNote.Application.Features.Identity.Users;
 using eNote.Application.Features.Identity.Users.Services;
-using eNote.Domain.Entities.Identity;
-using eNote.Domain.Entities.Rentals;
 using eNote.Tests.TestUtils;
 using Microsoft.AspNetCore.Mvc;
 

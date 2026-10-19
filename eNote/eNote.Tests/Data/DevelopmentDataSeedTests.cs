@@ -1,10 +1,8 @@
-using eNote.Domain.Entities.Academic;
+using System.Text;
 using eNote.Domain.Entities.Assignments;
 using eNote.Domain.Entities.Communication;
-using eNote.Domain.Entities.Identity;
-using eNote.Domain.Entities.Rentals;
-using eNote.Domain.Enums;
 using eNote.Infrastructure.Data.Seed;
+using eNote.Infrastructure.Storage;
 using eNote.Tests.TestUtils;
 using Microsoft.EntityFrameworkCore;
 
@@ -152,6 +150,67 @@ public sealed class DevelopmentDataSeedTests
         var notifications = await ctx.Set<Notification>().ToListAsync();
         Assert.Equal(3, notifications.Count);
         Assert.Single(notifications, n => n.IsRead);
+    }
+
+    [Fact]
+    public async Task SeedAsync_WritesImagePathsThatMapToNonEmptyWebpFiles()
+    {
+        await using var ctx = TestDbContextFactory.CreateContext(Now);
+        await ctx.Database.EnsureCreatedAsync();
+        await using var provider = SeedTestHarness.BuildProvider(ctx, Now);
+        var clock = new FixedClock(Now);
+
+        await IdentitySeed.SeedAsync(provider);
+        await DevelopmentDataSeed.SeedAsync(ctx, clock);
+
+        var imagePaths = new List<string>();
+        imagePaths.AddRange((await ctx.Set<Instrument>().Select(i => i.ImagePath).ToListAsync()).OfType<string>());
+        imagePaths.AddRange((await ctx.Set<Announcement>().Select(a => a.ImagePath).ToListAsync()).OfType<string>());
+        imagePaths.AddRange((await ctx.Set<MusicStore>().Select(s => s.ImagePath).ToListAsync()).OfType<string>());
+        imagePaths.AddRange((await ctx.Users.Select(u => u.PicturePath).ToListAsync()).OfType<string>());
+
+        Assert.NotEmpty(imagePaths);
+
+        var webRoot = ApiWebRoot();
+
+        foreach (var imagePath in imagePaths)
+        {
+            Assert.StartsWith(LocalFileStorageService.UploadsRoutePrefix + "/", imagePath);
+
+            // SaveToDiskAsync stores every upload under <storage root>/uploads, and the API
+            // path is the route prefix plus that same subfolder.
+            var relativePath = imagePath[(LocalFileStorageService.UploadsRoutePrefix.Length + 1)..]
+                .Replace('/', Path.DirectorySeparatorChar);
+            var fullPath = Path.Combine(webRoot, "uploads", relativePath);
+
+            Assert.True(File.Exists(fullPath), $"Seed image is missing on disk: {imagePath} -> {fullPath}");
+
+            var bytes = await File.ReadAllBytesAsync(fullPath);
+
+            Assert.NotEmpty(bytes);
+            Assert.True(bytes.Length >= 12, $"Seed image is too short to hold a WebP header: {imagePath}");
+            Assert.Equal("RIFF", Encoding.ASCII.GetString(bytes, 0, 4));
+            Assert.Equal("WEBP", Encoding.ASCII.GetString(bytes, 8, 4));
+        }
+    }
+
+    private static string ApiWebRoot()
+    {
+        DirectoryInfo? directory = new(AppContext.BaseDirectory);
+
+        while (directory is not null)
+        {
+            var candidate = Path.Combine(directory.FullName, "eNote.API", "wwwroot");
+
+            if (Directory.Exists(candidate))
+            {
+                return candidate;
+            }
+
+            directory = directory.Parent;
+        }
+
+        throw new DirectoryNotFoundException($"Could not locate eNote.API/wwwroot above {AppContext.BaseDirectory}");
     }
 
     [Fact]

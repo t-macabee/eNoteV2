@@ -1,10 +1,7 @@
 using eNote.API.Realtime.Consumers;
 using eNote.API.Hubs;
 using eNote.Application.Features.Communication.Notifications;
-using eNote.Contracts.Assignments;
-using eNote.Contracts.Communication;
 using eNote.Contracts.Enrollments;
-using eNote.Contracts.Lectures;
 using eNote.Contracts.Rentals;
 using MassTransit;
 using MassTransit.Testing;
@@ -14,7 +11,7 @@ using Microsoft.Extensions.Logging;
 
 namespace eNote.Tests.Messaging;
 
-/// Covers the shared SignalR push owned by NotificationPushConsumer<TMessage>:
+/// Covers the shared SignalR push owned by NotificationPushConsumer&lt;TMessage&gt;:
 /// the target group, the payload each consumer maps, and the log line with the
 /// notification kind and reference.
 public sealed class NotificationPushConsumerTests

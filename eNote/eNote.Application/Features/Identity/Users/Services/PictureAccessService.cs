@@ -1,7 +1,5 @@
 using eNote.Application.Constants;
 using eNote.Application.Features.Identity.Instructors;
-using eNote.Domain.Entities.Academic;
-using eNote.Domain.Enums;
 
 namespace eNote.Application.Features.Identity.Users.Services;
 

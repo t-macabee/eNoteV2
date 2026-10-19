@@ -8,9 +8,9 @@ import '../../widgets/app_date_picker_field.dart';
 import '../../widgets/paged_list_view.dart';
 import 'event_provider.dart';
 
-/// S27 — event list (tab 1 · Događaji): two date pickers → `from` / `to`
-/// (02 §5 S27). The category label is derived from `courseId == null` only —
-/// never `isPlatformWide` (01 A9): an uncoursed event with an instructor is
+/// Event list (tab 1 · Događaji): two date pickers → `from` / `to`.
+/// The category label is derived from `courseId == null` only —
+/// never `isPlatformWide`: an uncoursed event with an instructor is
 /// still *Škola*.
 class EventListScreen extends StatefulWidget {
   const EventListScreen({super.key});
@@ -110,7 +110,7 @@ class _EventListScreenState extends State<EventListScreen>
   }
 }
 
-/// Category label for the student feed (01 A9): `courseId == null` is
+/// Category label for the student feed: `courseId == null` is
 /// platform-wide, regardless of `instructorId`.
 String eventCategoryLabel(EventDto event) {
   if (event.courseId == null) return 'Škola';

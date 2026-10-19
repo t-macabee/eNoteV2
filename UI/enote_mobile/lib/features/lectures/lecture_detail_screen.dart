@@ -11,7 +11,7 @@ import 'lecture_labels.dart';
 import 'lecture_provider.dart';
 import 'rsvp_sheet.dart';
 
-/// S18 — lecture detail (02 §5 S18) with the RSVP section (S19 sheet).
+/// Lecture detail with the RSVP section.
 class LectureDetailScreen extends StatefulWidget {
   final int lectureId;
 
@@ -178,7 +178,7 @@ class _LectureDetailScreenState extends State<LectureDetailScreen> {
     );
   }
 
-  /// Client-derived disabled reason (03 P3): cancelled, held, started, or full
+  /// Client-derived disabled reason: cancelled, held, started, or full
   /// while the student has not confirmed yet.
   String? _blockedReason(LectureDto lecture) {
     if (lecture.isCancelled ||

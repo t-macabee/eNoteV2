@@ -12,13 +12,13 @@ import '../rentals/rental_provider.dart';
 import 'instrument_provider.dart';
 import 'recommendation_strip.dart';
 
-/// S7 — the Instrumenti tab root: debt banner, recommendation strip and the
+/// The Instrumenti tab root: debt banner, recommendation strip and the
 /// paged catalogue.
 ///
 /// The three first-load calls (`recommended`, catalogue page 1, `debt`) are
 /// independent and all start on the first frame: this widget's [initState]
 /// fires the recommendation and debt calls while the [PagedListView] it
-/// builds fires the page load (01 §6.5).
+/// builds fires the page load.
 class InstrumentCatalogScreen extends StatefulWidget {
   const InstrumentCatalogScreen({super.key});
 
@@ -63,7 +63,7 @@ class _InstrumentCatalogScreenState extends State<InstrumentCatalogScreen> {
       final result = await context.read<InstrumentProvider>().recommended();
       if (mounted) setState(() => _recommendations = result);
     } catch (_) {
-      // The strip is an extra: a failure hides it, it never errors (02 §5).
+      // The strip is an extra: a failure hides it, it never errors.
       if (mounted) setState(() => _recommendations = const []);
     }
   }

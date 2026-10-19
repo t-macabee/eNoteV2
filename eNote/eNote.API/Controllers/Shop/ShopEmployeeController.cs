@@ -33,7 +33,7 @@ public sealed class ShopEmployeeController(
         [FromBody] DelegatedUserCreateRequest request,
         CancellationToken cancellationToken)
     {
-        (int userId, string? error) = await provisioningService.ProvisionEmployeeByManagerAsync(request, cancellationToken);
+        (var userId, var error) = await provisioningService.ProvisionEmployeeByManagerAsync(request, cancellationToken);
 
         if (error is not null)
         {

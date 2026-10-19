@@ -4,9 +4,9 @@ import '../../payments/payment_polling.dart' as polling;
 
 /// Rental payment state (`student/rentals/{rentalId}/payments`).
 ///
-/// Phase 5 needs the read side only: S11 shows what has been paid or
-/// refunded. `createIntent` and the status poll arrive with the payment
-/// screen (T48).
+/// Phase 5 needs the read side only: the rental detail shows what has
+/// been paid or refunded. `createIntent` and the status poll arrive with
+/// the payment screen.
 class RentalPaymentProvider {
   final ApiClient apiClient;
 
@@ -15,7 +15,7 @@ class RentalPaymentProvider {
   /// `GET student/rentals/{rentalId}/payments`.
   ///
   /// A 404 means the student has not started paying yet, which is a normal
-  /// state and not an error (01 §6.5).
+  /// state and not an error.
   Future<RentalPaymentDto?> status(int rentalId) async {
     final response = await apiClient.get('student/rentals/$rentalId/payments');
     if (response.statusCode == 404) return null;
@@ -25,8 +25,7 @@ class RentalPaymentProvider {
   /// `POST student/rentals/{rentalId}/payments/create-intent`.
   ///
   /// The `clientSecret` is never cached: every retry calls this again and
-  /// the server reuses the same `RequiresAction` intent within 30 minutes
-  /// (02 §10.4).
+  /// the server reuses the same `RequiresAction` intent within 30 minutes.
   Future<CreatePaymentIntentResponse> createIntent(int rentalId) async {
     final response = await apiClient.post(
       'student/rentals/$rentalId/payments/create-intent',

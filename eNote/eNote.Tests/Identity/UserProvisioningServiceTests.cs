@@ -1,4 +1,3 @@
-using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Localization;
 using eNote.Application.Constants;
 using eNote.Application.Features.Identity.Auth;
@@ -445,7 +444,8 @@ public sealed class UserProvisioningServiceTests
         var student = new Student(appUserId: 15, enrollmentDate: Now);
         context.Set<Student>().Add(student);
         await context.SaveChangesAsync();
-        
+
+
         var course = new eNote.Domain.Entities.Academic.Course("Math", "Desc", 10, null, null, 1);
         context.Set<eNote.Domain.Entities.Academic.Course>().Add(course);
         await context.SaveChangesAsync();

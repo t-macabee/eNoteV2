@@ -62,7 +62,7 @@ public static class PagingExtensions
             total = await query.CountAsync(ct);
         }
 
-        (int page, int pageSize) = PagingLimits.Normalize(search.Page, search.PageSize);
+        (var page, var pageSize) = PagingLimits.Normalize(search.Page, search.PageSize);
 
         if (orderBy is not null)
         {

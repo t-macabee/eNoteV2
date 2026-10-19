@@ -43,7 +43,7 @@ internal sealed class AuthService(UserManager<AppUser> userManager, SignInManage
             throw new BusinessException(Messages.UserSingleRoleRequired);
         }
 
-        bool isManager = false;
+        var isManager = false;
         if (roles.Contains(AppRoles.StoreEmployee))
         {
             isManager = await userProvisioning.IsStoreManagerAsync(user.Id, cancellationToken);

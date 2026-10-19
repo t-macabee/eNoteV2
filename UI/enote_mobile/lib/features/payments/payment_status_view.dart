@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../../theme/app_theme.dart';
 
-/// The poll-driven payment states of S12 (02 §10.3 C–F).
+/// The poll-driven payment states of the payment flow.
 enum PaymentFlowState { processing, succeeded, failed, pending }
 
-/// States C–F of the payment flow: the review screen (state A) is built by
+/// The states after review: the review screen is built by
 /// the calling payment screen itself.
 class PaymentStatusView extends StatelessWidget {
   final PaymentFlowState state;
@@ -116,6 +116,7 @@ class PaymentStatusView extends StatelessWidget {
   };
 
   String? get _note => switch (state) {
+    PaymentFlowState.processing => 'Ne zatvarajte ekran, provjeravamo plaćanje.',
     PaymentFlowState.succeeded => successNote ?? 'Iznajmljivanje je izmireno.',
     PaymentFlowState.pending => 'Provjerite ponovo za nekoliko sekundi.',
     _ => null,

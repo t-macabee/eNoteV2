@@ -67,7 +67,7 @@ class _UserProvisionFormScreenState extends State<UserProvisionFormScreen> {
           items: UserRole.values
               .map((role) => DropdownMenuItem(
                     value: role,
-                    child: Text(role.label),
+                    child: Text(userRoleLabel(role)),
                   ))
               .toList(),
           onChanged: (role) => setState(() {

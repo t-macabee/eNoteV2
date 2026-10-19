@@ -1,6 +1,6 @@
 import 'package:enote_core/enote_core.dart';
 
-/// Student course catalogue over `student/courses` (01 §4.3).
+/// Student course catalogue over `student/courses`.
 class CourseProvider extends ReadOnlyProvider<CourseDto> {
   CourseProvider({required super.apiClient})
     : super(endpoint: 'student/courses');

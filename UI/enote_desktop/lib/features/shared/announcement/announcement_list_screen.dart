@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
 import '../../../widgets/entity_form_scaffold.dart';
@@ -54,6 +55,14 @@ class _AnnouncementListScreenState extends State<AnnouncementListScreen> {
         title: widget.title ?? 'Objave',
         presentation: widget.presentation,
         columns: [
+          ColumnSpec<AnnouncementDto>(
+            label: 'Slika',
+            value: (item) => item.imagePath,
+            cellBuilder: (context, item) => ImageThumbnail(
+              imageUrl: item.imagePath,
+              apiClient: context.read<ApiClient>(),
+            ),
+          ),
           ColumnSpec<AnnouncementDto>(
             label: 'Naslov',
             value: (item) => item.title,

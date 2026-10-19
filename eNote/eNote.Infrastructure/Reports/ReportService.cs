@@ -28,11 +28,15 @@ internal sealed class ReportService(IAppDbContext context, IClock clock, Ranking
         {
             page.Margin(30);
             page.Header().Text($"{Messages.ReportRankingTitle} — {courseName}").Bold().FontSize(18);
-            page.Content().PaddingVertical(10).Table(table =>
+            page.Content().PaddingVertical(10).Element(content =>
             {
-                table.ColumnsDefinition(columns => { columns.ConstantColumn(40); columns.RelativeColumn(3); columns.RelativeColumn(2); columns.RelativeColumn(2); });
-                table.Header(header => { header.Cell().Element(CellStyle).Text(Messages.ReportColumnRank); header.Cell().Element(CellStyle).Text(Messages.ReportColumnStudent); header.Cell().Element(CellStyle).Text(Messages.ReportColumnAverage); header.Cell().Element(CellStyle).Text(Messages.ReportColumnGraded); });
-                foreach (var entry in entries) { table.Cell().Element(CellStyle).Text(entry.Rank.ToString()); table.Cell().Element(CellStyle).Text(entry.StudentName); table.Cell().Element(CellStyle).Text(entry.AverageGrade?.ToString("F2", ReportCulture) ?? "-"); table.Cell().Element(CellStyle).Text(entry.GradedSubmissions.ToString()); }
+                if (entries.Count == 0) { content.Text(Messages.ReportNoData).FontSize(11); return; }
+                content.Table(table =>
+                {
+                    table.ColumnsDefinition(columns => { columns.ConstantColumn(40); columns.RelativeColumn(3); columns.RelativeColumn(2); columns.RelativeColumn(2); });
+                    table.Header(header => { header.Cell().Element(CellStyle).Text(Messages.ReportColumnRank); header.Cell().Element(CellStyle).Text(Messages.ReportColumnStudent); header.Cell().Element(CellStyle).Text(Messages.ReportColumnAverage); header.Cell().Element(CellStyle).Text(Messages.ReportColumnGraded); });
+                    foreach (var entry in entries) { table.Cell().Element(CellStyle).Text(entry.Rank.ToString()); table.Cell().Element(CellStyle).Text(entry.StudentName); table.Cell().Element(CellStyle).Text(entry.AverageGrade?.ToString("F2", ReportCulture) ?? "-"); table.Cell().Element(CellStyle).Text(entry.GradedSubmissions.ToString()); }
+                });
             });
             page.Footer().AlignRight().Text($"{Messages.ReportGeneratedLabel}: {clock.UtcNow:dd.MM.yyyy HH:mm} UTC").FontSize(9);
         })).GeneratePdf();
@@ -59,11 +63,15 @@ internal sealed class ReportService(IAppDbContext context, IClock clock, Ranking
         {
             page.Margin(30);
             page.Header().Text($"{Messages.ReportRentalSummaryTitle} — {storeName}").Bold().FontSize(18);
-            page.Content().PaddingVertical(10).Table(table =>
+            page.Content().PaddingVertical(10).Element(content =>
             {
-                table.ColumnsDefinition(columns => { columns.RelativeColumn(2); columns.RelativeColumn(2); columns.RelativeColumn(2); columns.RelativeColumn(2); });
-                table.Header(header => { header.Cell().Element(CellStyle).Text(Messages.ReportColumnInstrument); header.Cell().Element(CellStyle).Text(Messages.ReportColumnStatus); header.Cell().Element(CellStyle).Text(Messages.ReportColumnFee); header.Cell().Element(CellStyle).Text(Messages.ReportColumnTotal); });
-                foreach (var rental in rentals) { var charges = rental.CalculateCharges(clock.UtcNow); table.Cell().Element(CellStyle).Text(rental.InstrumentModel); table.Cell().Element(CellStyle).Text(rental.RentalStatus.ToString()); table.Cell().Element(CellStyle).Text(rental.Fee.ToString("F2", ReportCulture)); table.Cell().Element(CellStyle).Text(charges.TotalFee?.ToString("F2", ReportCulture) ?? "-"); }
+                if (rentals.Count == 0) { content.Text(Messages.ReportNoData).FontSize(11); return; }
+                content.Table(table =>
+                {
+                    table.ColumnsDefinition(columns => { columns.RelativeColumn(3); columns.RelativeColumn(2); columns.RelativeColumn(3); columns.RelativeColumn(2); columns.RelativeColumn(2); });
+                    table.Header(header => { header.Cell().Element(CellStyle).Text(Messages.ReportColumnInstrument); header.Cell().Element(CellStyle).Text(Messages.ReportColumnStatus); header.Cell().Element(CellStyle).Text(Messages.ReportColumnPeriod); header.Cell().Element(CellStyle).Text(Messages.ReportColumnFee); header.Cell().Element(CellStyle).Text(Messages.ReportColumnTotal); });
+                    foreach (var rental in rentals) { var charges = rental.CalculateCharges(clock.UtcNow); table.Cell().Element(CellStyle).Text(rental.InstrumentModel); table.Cell().Element(CellStyle).Text(ReportLabels.Rental(rental.RentalStatus)); table.Cell().Element(CellStyle).Text(FormatPeriod(rental.PickedUpAt, rental.ReturnedAt)); table.Cell().Element(CellStyle).Text(rental.Fee.ToString("F2", ReportCulture)); table.Cell().Element(CellStyle).Text(charges.TotalFee?.ToString("F2", ReportCulture) ?? "-"); }
+                });
             });
             page.Footer().AlignRight().Text($"{Messages.ReportGeneratedLabel}: {clock.UtcNow:dd.MM.yyyy HH:mm} UTC").FontSize(9);
         })).GeneratePdf();
@@ -74,16 +82,23 @@ internal sealed class ReportService(IAppDbContext context, IClock clock, Ranking
         var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId, cancellationToken);
         var lecture = await instructorAccess.GetOwnedLectureAsync(lectureId, instructorId, includeAttendances: true, cancellationToken: cancellationToken);
         var nameMap = await displayNames.GetStudentDisplayNamesAsync(lecture.Attendances.Select(a => a.Student!), cancellationToken);
-        var rows = lecture.Attendances.OrderBy(a => a.StudentId).Select(a => new AttendanceRow(nameMap.GetValueOrDefault(a.StudentId, Messages.UnknownUserName), a.AttendanceStatus)).ToList();
+        var rows = lecture.Attendances
+            .Select(a => new AttendanceRow(nameMap.GetValueOrDefault(a.StudentId, Messages.UnknownUserName), a.AttendanceStatus))
+            .OrderBy(row => row.StudentName, StringComparer.CurrentCulture)
+            .ToList();
         return Document.Create(container => container.Page(page =>
         {
             page.Margin(30);
             page.Header().Column(column => { column.Item().Text($"{Messages.ReportAttendanceTitle} — {lecture.Name}").Bold().FontSize(18); column.Item().Text($"{lecture.LectureTime:dd.MM.yyyy HH:mm} · {lecture.Location}").FontSize(11); });
-            page.Content().PaddingVertical(10).Table(table =>
+            page.Content().PaddingVertical(10).Element(content =>
             {
-                table.ColumnsDefinition(columns => { columns.RelativeColumn(3); columns.RelativeColumn(2); });
-                table.Header(header => { header.Cell().Element(CellStyle).Text(Messages.ReportColumnStudent); header.Cell().Element(CellStyle).Text(Messages.ReportColumnStatus); });
-                foreach (var row in rows) { table.Cell().Element(CellStyle).Text(row.StudentName); table.Cell().Element(CellStyle).Text(row.Status.ToString()); }
+                if (rows.Count == 0) { content.Text(Messages.ReportNoData).FontSize(11); return; }
+                content.Table(table =>
+                {
+                    table.ColumnsDefinition(columns => { columns.RelativeColumn(3); columns.RelativeColumn(2); });
+                    table.Header(header => { header.Cell().Element(CellStyle).Text(Messages.ReportColumnStudent); header.Cell().Element(CellStyle).Text(Messages.ReportColumnStatus); });
+                    foreach (var row in rows) { table.Cell().Element(CellStyle).Text(row.StudentName); table.Cell().Element(CellStyle).Text(ReportLabels.Attendance(row.Status)); }
+                });
             });
             page.Footer().AlignRight().Text($"{Messages.ReportGeneratedLabel}: {clock.UtcNow:dd.MM.yyyy HH:mm} UTC").FontSize(9);
         })).GeneratePdf();
@@ -96,17 +111,25 @@ internal sealed class ReportService(IAppDbContext context, IClock clock, Ranking
         {
             page.Margin(30);
             page.Header().Text(Messages.ReportStoreReportTitle).Bold().FontSize(18);
-            page.Content().PaddingVertical(10).Table(table =>
+            page.Content().PaddingVertical(10).Element(content =>
             {
-                table.ColumnsDefinition(columns => { columns.RelativeColumn(3); columns.RelativeColumn(2); });
-                table.Header(header => { header.Cell().Element(CellStyle).Text(Messages.ReportColumnName); header.Cell().Element(CellStyle).Text(Messages.ReportColumnBusinessHours); });
-                foreach (var store in stores) { table.Cell().Element(CellStyle).Text(store.StoreName); table.Cell().Element(CellStyle).Text(store.BusinessHours); }
+                if (stores.Count == 0) { content.Text(Messages.ReportNoData).FontSize(11); return; }
+                content.Table(table =>
+                {
+                    table.ColumnsDefinition(columns => { columns.RelativeColumn(3); columns.RelativeColumn(2); });
+                    table.Header(header => { header.Cell().Element(CellStyle).Text(Messages.ReportColumnName); header.Cell().Element(CellStyle).Text(Messages.ReportColumnBusinessHours); });
+                    foreach (var store in stores) { table.Cell().Element(CellStyle).Text(store.StoreName); table.Cell().Element(CellStyle).Text(store.BusinessHours); }
+                });
             });
             page.Footer().AlignRight().Text($"{Messages.ReportGeneratedLabel}: {clock.UtcNow:dd.MM.yyyy HH:mm} UTC").FontSize(9);
         })).GeneratePdf();
     }
 
     private static IContainer CellStyle(IContainer container) => container.BorderBottom(1).BorderColor(Colors.Grey.Lighten2).PaddingVertical(4).PaddingHorizontal(2);
+
+    private static string FormatPeriod(DateTime? pickedUpAt, DateTime? returnedAt) =>
+        $"{pickedUpAt?.ToString("dd.MM.yyyy", ReportCulture) ?? "-"} – {returnedAt?.ToString("dd.MM.yyyy", ReportCulture) ?? "-"}";
+
     private sealed record AttendanceRow(string StudentName, AttendanceStatus Status);
 
     private sealed record RentalSummaryRow

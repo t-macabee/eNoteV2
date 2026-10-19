@@ -318,8 +318,9 @@ class _UserGridScreenState extends State<UserGridScreen> {
             ? (item) => switch (item.role) {
                 UserRole.instructor => 'Instruktori',
                 UserRole.student => 'Studenti',
-                UserRole.storeEmployee => 'StoreEmployee',
-                _ => item.role.label,
+                UserRole.storeEmployee =>
+                  userRoleLabel(UserRole.storeEmployee),
+                _ => userRoleLabel(item.role),
               }
             : null,
         filterBar: Row(
@@ -329,17 +330,22 @@ class _UserGridScreenState extends State<UserGridScreen> {
               label: 'Uloga',
               width: 220,
               value: _role,
-              items: const [
-                DropdownMenuItem(value: null, child: Text('Svi korisnici')),
-                DropdownMenuItem(
-                  value: UserRole.instructor,
-                  child: Text('Instruktor'),
+              items: [
+                const DropdownMenuItem(
+                  value: null,
+                  child: Text('Svi korisnici'),
                 ),
                 DropdownMenuItem(
-                    value: UserRole.student, child: Text('Student')),
+                  value: UserRole.instructor,
+                  child: Text(userRoleLabel(UserRole.instructor)),
+                ),
+                DropdownMenuItem(
+                  value: UserRole.student,
+                  child: Text(userRoleLabel(UserRole.student)),
+                ),
                 DropdownMenuItem(
                   value: UserRole.storeEmployee,
-                  child: Text('StoreEmployee'),
+                  child: Text(userRoleLabel(UserRole.storeEmployee)),
                 ),
               ],
               onChanged: (role) {

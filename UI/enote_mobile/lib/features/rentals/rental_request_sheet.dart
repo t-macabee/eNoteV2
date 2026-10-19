@@ -8,12 +8,12 @@ import '../../theme/app_theme.dart';
 import '../../widgets/form_submit_state.dart';
 import 'rental_provider.dart';
 
-/// S9 — the rental request sheet.
+/// The rental request sheet.
 ///
-/// Opens over the instrument detail screen (S8). On a successful create it
+/// Opens over the instrument detail screen. On a successful create it
 /// closes itself, moves the student to the Iznajmljivanja tab and confirms
 /// with a snackbar; any refusal from the server is shown verbatim under the
-/// button instead (02 §4.4, reason 4).
+/// button instead.
 Future<void> showRentalRequestSheet(
   BuildContext context,
   InstrumentDto instrument,
@@ -31,7 +31,7 @@ Future<void> showRentalRequestSheet(
 
 class RentalRequestSheet extends StatefulWidget {
   /// Mirrors the RSVP note limit; the server itself validates only that the
-  /// instrument id is set (02 §5, S9).
+  /// instrument id is set.
   static const int noteMaxLength = 500;
 
   final InstrumentDto instrument;

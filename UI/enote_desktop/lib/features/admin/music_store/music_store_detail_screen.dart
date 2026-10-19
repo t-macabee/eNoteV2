@@ -26,6 +26,8 @@ class _MusicStoreDetailScreenState extends State<MusicStoreDetailScreen> {
   bool _isLoading = true;
   int? _instrumentTypeId;
   List<InstrumentTypeDto> _instrumentTypes = [];
+  bool _instrumentTypesLoading = true;
+  String? _instrumentTypesError;
 
   @override
   void initState() {
@@ -37,6 +39,10 @@ class _MusicStoreDetailScreenState extends State<MusicStoreDetailScreen> {
   }
 
   Future<void> _loadInstrumentTypes() async {
+    setState(() {
+      _instrumentTypesLoading = true;
+      _instrumentTypesError = null;
+    });
     try {
       final result = await context.read<InstrumentTypeProvider>().search({
         'page': 1,
@@ -45,9 +51,14 @@ class _MusicStoreDetailScreenState extends State<MusicStoreDetailScreen> {
       if (!mounted) return;
       setState(() {
         _instrumentTypes = result.items;
+        _instrumentTypesLoading = false;
       });
     } catch (_) {
-      // Non-fatal if instrument types fail to load
+      if (!mounted) return;
+      setState(() {
+        _instrumentTypesError = 'Filteri nisu učitani.';
+        _instrumentTypesLoading = false;
+      });
     }
   }
 
@@ -164,6 +175,9 @@ class _MusicStoreDetailScreenState extends State<MusicStoreDetailScreen> {
                                   label: 'Tip instrumenta',
                                   width: 220,
                                   value: _instrumentTypeId,
+                                  isLoading: _instrumentTypesLoading,
+                                  errorText: _instrumentTypesError,
+                                  onRetry: _loadInstrumentTypes,
                                   items: [
                                     const DropdownMenuItem(
                                       value: null,

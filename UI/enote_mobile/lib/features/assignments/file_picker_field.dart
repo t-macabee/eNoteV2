@@ -2,7 +2,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
-/// A file picked for an assignment submission (S23).
+/// A file picked for an assignment submission.
 class PickedAssignmentFile {
   final Uint8List bytes;
   final String fileName;
@@ -20,7 +20,7 @@ const _assignmentSizeLimit = 5 * 1024 * 1024;
 
 /// Pure validation shared by the widget and its tests: returns the message to
 /// render **below** the picker, or null when the file is acceptable
-/// (02 §11 `assignment.tooLarge` / `assignment.badType`, 03 R7).
+/// (`assignment.tooLarge` / `assignment.badType`).
 String? validateAssignmentFile(String fileName, int byteLength) {
   final dot = fileName.lastIndexOf('.');
   final extension = dot == -1
@@ -57,7 +57,7 @@ String formatFileSize(int bytes) {
   return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
 }
 
-/// Last segment of a stored `uploads/assignments/…` path (02 §4.7) — the
+/// Last segment of a stored `uploads/assignments/…` path — the
 /// only part of [filePath] ever rendered.
 String assignmentFileName(String? filePath) {
   if (filePath == null || filePath.isEmpty) return '—';
@@ -65,7 +65,7 @@ String assignmentFileName(String? filePath) {
   return segments.isEmpty ? '—' : segments.last;
 }
 
-/// File picker for the assignment submission section (S23 state A, 02 §4.7).
+/// File picker for the assignment submission section.
 ///
 /// The picker accepts any file and validates client-side (extension + 5 MB),
 /// so rejected files surface the design messages below the control instead

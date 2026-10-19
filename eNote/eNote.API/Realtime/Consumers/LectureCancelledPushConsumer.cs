@@ -1,7 +1,6 @@
 using eNote.API.Hubs;
 using eNote.Application.Features.Communication.Notifications;
 using eNote.Contracts.Lectures;
-using MassTransit;
 using Microsoft.AspNetCore.SignalR;
 
 namespace eNote.API.Realtime.Consumers;

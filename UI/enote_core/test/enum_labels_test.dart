@@ -36,4 +36,13 @@ void main() {
       }
     });
   });
+
+  group('userRoleLabel', () {
+    test('maps every value to its Bosnian label', () {
+      expect(userRoleLabel(UserRole.administrator), 'Administrator');
+      expect(userRoleLabel(UserRole.instructor), 'Instruktor');
+      expect(userRoleLabel(UserRole.student), 'Student');
+      expect(userRoleLabel(UserRole.storeEmployee), 'Uposlenik prodavnice');
+    });
+  });
 }

@@ -99,6 +99,7 @@ class _AsyncDropdownState<T> extends State<AsyncDropdown<T>> {
         }
 
         final items = snapshot.data ?? const [];
+        final isEmpty = items.isEmpty;
         final currentValue = items.any((e) => widget.itemId(e) == widget.value)
             ? widget.value
             : null;
@@ -109,6 +110,14 @@ class _AsyncDropdownState<T> extends State<AsyncDropdown<T>> {
           decoration: InputDecoration(
             labelText: widget.label,
             border: const OutlineInputBorder(),
+            helperText: isEmpty ? 'Nema dostupnih opcija' : null,
+            suffixIcon: isEmpty
+                ? IconButton(
+                    icon: const Icon(Icons.refresh),
+                    tooltip: 'Pokušaj ponovo',
+                    onPressed: _reload,
+                  )
+                : null,
           ),
           hint: Text(widget.hint),
           isExpanded: true,
@@ -120,7 +129,7 @@ class _AsyncDropdownState<T> extends State<AsyncDropdown<T>> {
                 ),
               )
               .toList(),
-          onChanged: widget.enabled
+          onChanged: widget.enabled && !isEmpty
               ? (id) {
                   final item = items.cast<T?>().firstWhere(
                     (e) => e != null && widget.itemId(e) == id,

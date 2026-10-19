@@ -40,9 +40,6 @@ internal static class SeedStudents
 
 internal static class MusicStoreSeed
 {
-    // IdentitySeed.StoreSeed always creates exactly one default store first
-    // (see EnsureDefaultStoreAsync), so ">1" is the right idempotency check
-    // here rather than "any at all".
     public static async Task SeedStores(ENoteContext context)
     {
         if (await context.Set<MusicStore>().CountAsync() > 1)
@@ -143,6 +140,7 @@ internal static class LectureSeed
 
         context.AddRange(
             // c1
+
             new Lecture("Uvodno predavanje", "Amfiteatar gradskog BKC-a", 90, today.AddDays(-29).AddHours(19).AddMinutes(30), LectureType.Theoretical, null, c1Id),
             new Lecture("Intervali i skale", "Amfiteatar gradskog BKC-a", 90, today.AddDays(-15).AddHours(19).AddMinutes(30), LectureType.Theoretical, null, c1Id),
             new Lecture("Ritam i metrika", "Amfiteatar gradskog BKC-a", 90, today.AddDays(-8).AddHours(19).AddMinutes(30), LectureType.Theoretical, null, c1Id),
@@ -150,6 +148,7 @@ internal static class LectureSeed
             new Lecture("Ponavljanje gradiva", "Amfiteatar gradskog BKC-a", 60, today.AddDays(11).AddHours(19).AddMinutes(30), LectureType.Theoretical, null, c1Id),
 
             // c2
+
             new Lecture("Uvodno predavanje", "Amfiteatar gradskog BKC-a", 60, today.AddDays(-13).AddHours(19).AddMinutes(30), LectureType.Theoretical, null, c2Id),
             new Lecture("Tehnika desne ruke", "Amfiteatar gradskog BKC-a", 60, today.AddDays(-6).AddHours(19).AddMinutes(30), LectureType.Practical, null, c2Id),
             new Lecture("Improvizacija na bluesu", "Amfiteatar gradskog BKC-a", 60, today.AddDays(3).AddHours(19).AddMinutes(30), LectureType.Practical, null, c2Id),

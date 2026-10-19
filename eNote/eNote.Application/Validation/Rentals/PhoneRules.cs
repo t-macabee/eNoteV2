@@ -1,5 +1,4 @@
 using System.Text.RegularExpressions;
-using eNote.Application.Common.Localization;
 using FluentValidation;
 
 namespace eNote.Application.Validation.Rentals;

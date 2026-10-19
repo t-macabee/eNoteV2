@@ -3,7 +3,6 @@ using eNote.Application.Common.Persistence;
 using eNote.Application.Constants;
 using eNote.Application.Features.Academic.Lectures;
 using eNote.Application.Features.Academic.Lectures.Services;
-using eNote.Application.Features.Identity.Users.Services;
 using eNote.Tests.TestUtils;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;

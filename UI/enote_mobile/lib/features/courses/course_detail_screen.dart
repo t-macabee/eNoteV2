@@ -11,10 +11,10 @@ import '../lectures/lecture_provider.dart';
 import 'course_detail_sections.dart';
 import 'course_provider.dart';
 
-/// S15 — the master–details form: course master card + its lectures
-/// (02 §4.1). The lectures section is decided by `isEnrolled`, not by list
+/// The master–details form: course master card + its lectures.
+/// The lectures section is decided by `isEnrolled`, not by list
 /// length: a non-enrolled course shows the explained empty state and issues
-/// no further lectures requests after the initial load (02 D7).
+/// no further lectures requests after the initial load.
 class CourseDetailScreen extends StatefulWidget {
   final int courseId;
 
@@ -142,7 +142,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
       () async {
         await context.read<CourseProvider>().unenroll(course.id);
         // Refetch the master half only: the details half flips to the
-        // explained empty state without another lectures request (03 §5.3).
+        // explained empty state without another lectures request.
         await _loadCourse();
       },
       showBanner: true,
@@ -251,9 +251,9 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
                       AppRouter.lectureDetail,
                       arguments: LectureDetailArgs(lecture.id),
                     );
-                    // The RSVP answer may have changed inside S18 — refetch
-                    // the current lectures page so the row shows the same
-                    // state on return (03 §5.3 step 5). Never fires while
+                    // The RSVP answer may have changed inside the lecture
+                    // detail — refetch the current lectures page so the row
+                    // shows the same state on return. Never fires while
                     // not enrolled: rows (and their taps) don't exist then.
                     if (!context.mounted) return;
                     if (_course?.isEnrolled ?? false) {

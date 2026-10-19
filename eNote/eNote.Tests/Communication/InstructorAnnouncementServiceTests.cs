@@ -1,10 +1,7 @@
 using eNote.Application.Features.Communication.Announcements;
 using eNote.Application.Features.Communication.Announcements.Services;
 using eNote.Application.Features.Identity.Instructors;
-using eNote.Contracts.Communication;
-using eNote.Domain.Entities.Academic;
 using eNote.Domain.Entities.Communication;
-using eNote.Domain.Enums;
 using eNote.Infrastructure.Messaging;
 using eNote.Tests.TestUtils;
 using Microsoft.EntityFrameworkCore;

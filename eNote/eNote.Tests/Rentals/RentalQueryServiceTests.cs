@@ -1,4 +1,3 @@
-using eNote.Application.Features.Identity.Users.Services;
 using eNote.Application.Features.Rentals.InstrumentRentals;
 using eNote.Application.Features.Rentals.InstrumentRentals.Services;
 using eNote.Tests.TestUtils;

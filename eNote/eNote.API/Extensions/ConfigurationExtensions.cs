@@ -1,4 +1,4 @@
-﻿using eNote.Infrastructure.Identity;
+using eNote.Infrastructure.Identity;
 using eNote.Infrastructure.Messaging;
 
 namespace eNote.API.Extensions;
@@ -88,6 +88,11 @@ public static class ConfigurationExtensions
             {
                 errors.Add(smtpKey.Replace(":", "__"));
             }
+        }
+
+        if (string.IsNullOrWhiteSpace(configuration["Storage:Root"]))
+        {
+            errors.Add("Storage__Root");
         }
 
         if (errors.Count > 0)

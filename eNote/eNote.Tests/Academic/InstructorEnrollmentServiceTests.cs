@@ -3,7 +3,6 @@ using eNote.Application.Common.Persistence;
 using eNote.Application.Features.Academic.Courses;
 using eNote.Application.Features.Academic.Courses.Services;
 using eNote.Application.Features.Identity.Instructors;
-using eNote.Contracts.Communication;
 using eNote.Contracts.Enrollments;
 using eNote.Domain.Entities.Communication;
 using eNote.Infrastructure.Messaging;

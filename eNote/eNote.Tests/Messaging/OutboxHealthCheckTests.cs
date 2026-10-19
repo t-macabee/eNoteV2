@@ -2,7 +2,6 @@ using eNote.Domain.Entities.Communication;
 using eNote.Infrastructure.Health;
 using eNote.Infrastructure.Messaging;
 using eNote.Tests.TestUtils;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 namespace eNote.Tests.Messaging;

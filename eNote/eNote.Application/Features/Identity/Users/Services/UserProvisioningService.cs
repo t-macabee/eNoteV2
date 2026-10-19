@@ -1,11 +1,5 @@
-using eNote.Application.Common.Exceptions;
-using eNote.Application.Common.Interfaces;
-using eNote.Application.Common.Localization;
 using eNote.Application.Constants;
 using eNote.Application.Features.Identity.Auth;
-using eNote.Domain.Entities.Identity;
-using eNote.Domain.Entities.Rentals;
-using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Application.Features.Identity.Users.Services;
 
@@ -189,7 +183,7 @@ public sealed class UserProvisioningService(
             return (false, Messages.CannotModifyOwnAccount);
         }
 
-        bool hasAuthoredHistory = await context.Set<eNote.Domain.Entities.Communication.Announcement>().IgnoreQueryFilters().AnyAsync(a => a.CreatedById == userId, cancellationToken) ||
+        var hasAuthoredHistory = await context.Set<eNote.Domain.Entities.Communication.Announcement>().IgnoreQueryFilters().AnyAsync(a => a.CreatedById == userId, cancellationToken) ||
                                   await context.Set<eNote.Domain.Entities.Communication.Event>().IgnoreQueryFilters().AnyAsync(e => e.CreatedById == userId, cancellationToken) ||
                                   await context.Set<eNote.Domain.Entities.Rentals.InstrumentRental>().IgnoreQueryFilters().AnyAsync(r => r.ApprovedById == userId || r.RejectedById == userId, cancellationToken);
         if (hasAuthoredHistory) return (false, Messages.UserDeleteBlocked);
@@ -197,19 +191,20 @@ public sealed class UserProvisioningService(
         var student = await context.Set<Student>().FirstOrDefaultAsync(s => s.AppUserId == userId, cancellationToken);
         if (student != null)
         {
-            bool hasDependents = await context.Set<eNote.Domain.Entities.Academic.Enrollment>().IgnoreQueryFilters().AnyAsync(e => e.StudentId == student.Id, cancellationToken) ||
+            var hasDependents = await context.Set<eNote.Domain.Entities.Academic.Enrollment>().IgnoreQueryFilters().AnyAsync(e => e.StudentId == student.Id, cancellationToken) ||
                                  await context.Set<eNote.Domain.Entities.Academic.Attendance>().IgnoreQueryFilters().AnyAsync(a => a.StudentId == student.Id, cancellationToken) ||
                                  await context.Set<eNote.Domain.Entities.Assignments.AssignmentSubmission>().IgnoreQueryFilters().AnyAsync(s => s.StudentId == student.Id, cancellationToken) ||
                                  await context.Set<eNote.Domain.Entities.Rentals.InstrumentRental>().IgnoreQueryFilters().AnyAsync(r => r.StudentProfileId == student.Id, cancellationToken);
             if (hasDependents) return (false, Messages.UserDeleteBlocked);
-            
+
+
             context.Set<Student>().Remove(student);
         }
 
         var instructor = await context.Set<Instructor>().FirstOrDefaultAsync(i => i.AppUserId == userId, cancellationToken);
         if (instructor != null)
         {
-            bool hasDependents = await context.Set<eNote.Domain.Entities.Academic.Course>().IgnoreQueryFilters().AnyAsync(c => c.InstructorId == instructor.Id, cancellationToken) ||
+            var hasDependents = await context.Set<eNote.Domain.Entities.Academic.Course>().IgnoreQueryFilters().AnyAsync(c => c.InstructorId == instructor.Id, cancellationToken) ||
                                  await context.Set<eNote.Domain.Entities.Communication.Event>().IgnoreQueryFilters().AnyAsync(e => e.InstructorId == instructor.Id, cancellationToken);
             if (hasDependents) return (false, Messages.UserDeleteBlocked);
 
@@ -223,9 +218,11 @@ public sealed class UserProvisioningService(
         }
 
         using var transaction = await context.BeginTransactionAsync(cancellationToken);
-        
+
+
         await context.SaveChangesAsync(cancellationToken);
-        
+
+
         var (success, error, picturePath) = await accountService.DeleteUserAsync(userId, cancellationToken);
         if (!success)
         {
@@ -281,7 +278,7 @@ public sealed class UserProvisioningService(
                             .IgnoreQueryFilters()
                             .AnyAsync(x => x.MusicStoreId == musicStoreId.Value, cancellationToken);
 
-                        bool managerFlag = isManager ?? isFirstEmployeeForStore;
+                        var managerFlag = isManager ?? isFirstEmployeeForStore;
 
                         context.Set<MusicStoreEmployee>().Add(new MusicStoreEmployee(userId, musicStoreId.Value, managerFlag));
                         break;

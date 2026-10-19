@@ -1,5 +1,4 @@
 using eNote.Application.Common.Localization;
-using eNote.Application.Constants;
 using eNote.Application.Features.Academic.Assignments;
 using eNote.Application.Features.Academic.Assignments.Services;
 using eNote.Application.Features.Academic.Courses.Services;
@@ -7,12 +6,7 @@ using eNote.Application.Features.Academic.LectureNotes;
 using eNote.Application.Features.Academic.LectureNotes.Services;
 using eNote.Application.Features.Academic.Lectures;
 using eNote.Application.Features.Academic.Lectures.Services;
-using eNote.Application.Features.Identity.Instructors;
-using eNote.Application.Features.Identity.Users.Services;
-using eNote.Domain.Entities.Academic;
 using eNote.Domain.Entities.Assignments;
-using eNote.Domain.Enums;
-using eNote.Infrastructure.Data;
 using eNote.Tests.TestUtils;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;

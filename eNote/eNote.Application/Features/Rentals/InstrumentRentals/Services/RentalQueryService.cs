@@ -21,7 +21,7 @@ public sealed class RentalQueryService(IAppDbContext context, IMapper mapper, IC
 
     public async Task<RentalDebtDto> GetDebtForStudentAsync(CancellationToken cancellationToken = default)
     {
-        int? rentalId = await context.Set<InstrumentRental>()
+        var rentalId = await context.Set<InstrumentRental>()
             .AsNoTracking()
             .IgnoreQueryFilters()
             .Where(x => x.StudentProfile.AppUserId == currentUser.UserId

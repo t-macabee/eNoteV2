@@ -1,11 +1,5 @@
-using eNote.Application.Common.Exceptions;
-using eNote.Application.Common.Interfaces;
-using eNote.Application.Common.Localization;
-using eNote.Application.Common.Paging;
 using eNote.Application.Features.Identity.Users;
 using eNote.Application.Features.Identity.Users.Services;
-using eNote.Domain.Entities.Identity;
-using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Application.Features.Identity.Employees;
 
@@ -112,7 +106,7 @@ public sealed class ShopEmployeeService(
 
         if (target.IsManager && target.AppUserId != currentEmployee.AppUserId)
         {
-            throw new BusinessException("Store managers cannot deactivate other store managers.");
+            throw new BusinessException(Messages.CannotDeactivateOtherManager);
         }
 
         return await provisioningService.SetUserActiveAsync(targetUserId, isActive, ct);

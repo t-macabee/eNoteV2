@@ -2,7 +2,6 @@ using eNote.API.Controllers.Base;
 using eNote.API.Extensions;
 using eNote.Application.Common.Files;
 using eNote.Application.Common.Interfaces;
-using eNote.Application.Common.Localization;
 using eNote.Application.Common.Paging;
 using eNote.Application.Constants;
 using eNote.Application.Features.Identity.Employees;

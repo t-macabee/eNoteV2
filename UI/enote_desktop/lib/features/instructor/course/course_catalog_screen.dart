@@ -19,34 +19,47 @@ class _CourseCatalogScreenState extends State<CourseCatalogScreen> {
 
   int? _selectedInstructorId;
   List<CourseCatalogInstructorDto> _instructors = [];
+  bool _instructorsLoading = true;
+  String? _instructorsError;
   CourseCatalogSummaryDto? _summary;
 
   @override
   void initState() {
     super.initState();
-    _loadInitialData();
+    _loadInstructors();
+    _loadSummary();
   }
 
-  Future<void> _loadInitialData() async {
-    final provider = context.read<CourseCatalogProvider>();
+  Future<void> _loadInstructors() async {
+    setState(() {
+      _instructorsLoading = true;
+      _instructorsError = null;
+    });
     try {
-      final instructors = await provider.getCatalogInstructors();
-      if (mounted) {
-        setState(() {
-          _instructors = instructors;
-        });
-      }
+      final instructors =
+          await context.read<CourseCatalogProvider>().getCatalogInstructors();
+      if (!mounted) return;
+      setState(() {
+        _instructors = instructors;
+        _instructorsLoading = false;
+      });
     } catch (_) {
-      // Catalog still works without instructor dropdown items.
+      if (!mounted) return;
+      setState(() {
+        _instructorsError = 'Filteri nisu učitani.';
+        _instructorsLoading = false;
+      });
     }
+  }
 
+  Future<void> _loadSummary() async {
     try {
-      final summary = await provider.getCatalogSummary();
-      if (mounted) {
-        setState(() {
-          _summary = summary;
-        });
-      }
+      final summary =
+          await context.read<CourseCatalogProvider>().getCatalogSummary();
+      if (!mounted) return;
+      setState(() {
+        _summary = summary;
+      });
     } catch (_) {
       // If the call fails, render nothing — never block the catalog on it.
     }
@@ -58,6 +71,9 @@ class _CourseCatalogScreenState extends State<CourseCatalogScreen> {
       width: 240,
       outlined: true,
       value: _selectedInstructorId,
+      isLoading: _instructorsLoading,
+      errorText: _instructorsError,
+      onRetry: _loadInstructors,
       items: [
         const DropdownMenuItem(value: null, child: Text('Svi instruktori')),
         for (final instructor in _instructors)

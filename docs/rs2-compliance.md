@@ -18,7 +18,7 @@ Administrator ima CRUD ekrane za sve referentne tabele u domenu:
 `Address.CityId` je strani ključ prema tabeli gradova i bira se kroz dropdown, ne
 kao slobodan tekst.
 
-`Instructor` je namjerno samo za čitanje u `InstructorListScreen`. Administrator
+`Instructor` je namjerno samo za čitanje: instruktori se prikazuju u tabu "Korisnici" (`UserGridScreen`), a `InstructorProvider` nema operacije pisanja. Administrator
 kreira instruktorske naloge kroz `AdminUsersController` i `UserProvisionFormScreen`,
 gdje se postavlja i uloga. Administrator daje samo pristup: lične podatke
 (ime, prezime, e-mail, telefon) svaki korisnik uređuje sam na svom profilu
@@ -56,6 +56,9 @@ kada je opravdan, a ovdje pretraga ne bi pomogla:
 Search objekti ovih endpointa (`AttendanceSearchObject`, `SubmissionSearchObject`,
 `AssignmentSubmissionSearchObject`) zato nose samo straničenje iz
 `BaseSearchObject`.
+
+Četiri PDF izvještaja (`/report` endpointi) takođe nemaju parametre za pretragu:
+Uputstvo ih traži na listama, a izvještaj uvijek sadrži sve redove.
 
 ## Poruke validacije
 

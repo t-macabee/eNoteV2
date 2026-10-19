@@ -8,8 +8,8 @@ import '../../widgets/paged_list_view.dart';
 import '../../widgets/status_chip.dart';
 import 'lecture_provider.dart';
 
-/// S17 — lecture list (tab 1 › Predavanja): paged list with a
-/// *Predstojeća* (`from = now`) toggle (02 §5 S17).
+/// Lecture list (tab 1 › Predavanja): paged list with a
+/// *Predstojeća* (`from = now`) toggle.
 class LectureListScreen extends StatefulWidget {
   const LectureListScreen({super.key});
 

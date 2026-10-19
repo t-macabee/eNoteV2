@@ -7,8 +7,8 @@ import '../theme/app_theme.dart';
 /// A wide (non-square) image box built on core [networkImageOrPlaceholder].
 ///
 /// The core helper always renders a square of `size`, which is right for the
-/// 56/72 px list thumbnails but not for the 16:9 hero (S8) or the 160×88
-/// recommendation card (S7). Both keep using it: the square is laid out at
+/// 56/72 px list thumbnails but not for the 16:9 hero or the 160×88
+/// recommendation card. Both keep using it: the square is laid out at
 /// the target *width* and then clipped to the target height around its
 /// centre, so the placeholder branch and the auth-header/relative-path rules
 /// stay exactly the ones core defines.
@@ -37,7 +37,7 @@ Widget wideNetworkImage(
   );
 }
 
-/// Full-width 16:9 hero image (S8).
+/// Full-width 16:9 hero image.
 class HeroImage extends StatelessWidget {
   final String? imageUrl;
   final ApiClient? apiClient;

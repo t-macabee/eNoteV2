@@ -178,7 +178,7 @@ void main() {
       // Section labels
       expect(find.text('Instruktori'), findsOneWidget);
       expect(find.text('Studenti'), findsOneWidget);
-      expect(find.text('StoreEmployee'), findsOneWidget);
+      expect(find.text('Uposlenik prodavnice'), findsOneWidget);
     },
   );
 
@@ -233,7 +233,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Pick "StoreEmployee"
-      await tester.tap(find.text('StoreEmployee').last);
+      await tester.tap(find.text('Uposlenik prodavnice').last);
       await tester.pumpAndSettle();
 
       // Should query only admin/employees
@@ -300,7 +300,7 @@ void main() {
       // Filter to StoreEmployee
       await tester.tap(find.byType(DropdownButtonFormField<UserRole?>));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('StoreEmployee').last);
+      await tester.tap(find.text('Uposlenik prodavnice').last);
       await tester.pumpAndSettle();
 
       // Search for "Chopin"
@@ -389,7 +389,7 @@ void main() {
       // Filter to StoreEmployee
       await tester.tap(find.byType(DropdownButtonFormField<UserRole?>));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('StoreEmployee').last);
+      await tester.tap(find.text('Uposlenik prodavnice').last);
       await tester.pumpAndSettle();
 
       // Search for "Chopin"

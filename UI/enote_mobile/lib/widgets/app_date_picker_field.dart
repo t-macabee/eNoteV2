@@ -9,6 +9,10 @@ class AppDatePickerField extends StatefulWidget {
   final DateTime? firstDate;
   final DateTime? lastDate;
 
+  /// When false, a set value has no clear action. Used where the API cannot
+  /// persist an explicit null back to the server.
+  final bool allowClear;
+
   const AppDatePickerField({
     super.key,
     required this.label,
@@ -16,6 +20,7 @@ class AppDatePickerField extends StatefulWidget {
     required this.onChanged,
     this.firstDate,
     this.lastDate,
+    this.allowClear = true,
   });
 
   @override
@@ -66,7 +71,22 @@ class _AppDatePickerFieldState extends State<AppDatePickerField> {
       readOnly: true,
       decoration: InputDecoration(
         labelText: widget.label,
-        suffixIcon: const Icon(Icons.calendar_today_outlined),
+        suffixIcon: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (widget.value != null && widget.allowClear)
+              IconButton(
+                icon: const Icon(Icons.clear, size: 18),
+                tooltip: 'Obriši',
+                onPressed: () => widget.onChanged(null),
+              ),
+            IconButton(
+              icon: const Icon(Icons.calendar_today_outlined, size: 18),
+              tooltip: 'Odaberi datum',
+              onPressed: _pick,
+            ),
+          ],
+        ),
       ),
       onTap: _pick,
     );

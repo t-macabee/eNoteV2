@@ -1,9 +1,7 @@
 using eNote.API.Middleware;
-using eNote.Application.Common.Exceptions;
 using eNote.Application.Constants;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Controllers;
-using Microsoft.AspNetCore.Routing;
 using System.Security.Claims;
 
 namespace eNote.Tests.Middleware;

@@ -98,6 +98,24 @@ public sealed class InstrumentServiceTests
 
 
     [Fact]
+    public async Task GetPagedAsync_OrdersNewestInstrumentFirst()
+    {
+        var ctx = CreateContext();
+        var type = await SeedInstrumentTypeAsync(ctx, "Guitar");
+        var store = await SeedStoreAsync(ctx, "Music Shop Sarajevo");
+
+        var oldest = await SeedInstrumentAsync(ctx, store.Id, type.Id, "Pacifica", "Yamaha");
+        var middle = await SeedInstrumentAsync(ctx, store.Id, type.Id, "Stratocaster", "Fender");
+        var newest = await SeedInstrumentAsync(ctx, store.Id, type.Id, "Les Paul", "Gibson");
+
+        var service = CreateInstrumentService(ctx);
+
+        var paged = await service.GetPagedAsync(new InstrumentSearchObject(), publicView: true);
+
+        Assert.Equal([newest.Id, middle.Id, oldest.Id], paged.Items.Select(x => x.Id));
+    }
+
+    [Fact]
     public async Task UploadImageAsync_DeletesNewFile_WhenSaveFails()
     {
         var ctx = CreateContext();

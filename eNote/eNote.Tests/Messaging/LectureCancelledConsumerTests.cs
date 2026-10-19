@@ -1,5 +1,4 @@
 using eNote.Application.Common.Persistence;
-using eNote.Contracts.Lectures;
 using eNote.Domain.Entities.Communication;
 using eNote.Tests.TestUtils;
 using eNote.Worker.Consumers;

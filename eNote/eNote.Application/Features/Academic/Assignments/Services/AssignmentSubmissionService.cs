@@ -1,5 +1,4 @@
 using eNote.Application.Constants;
-using eNote.Application.Features.Academic;
 using eNote.Application.Features.Identity.Instructors;
 using eNote.Application.Features.Identity.Users.Services;
 using MapsterMapper;

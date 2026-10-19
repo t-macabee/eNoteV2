@@ -1,4 +1,3 @@
-using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Application.Common.Persistence;
 

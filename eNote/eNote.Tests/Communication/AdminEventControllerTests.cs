@@ -1,5 +1,4 @@
 using eNote.API.Controllers.Admin;
-using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Localization;
 using eNote.Application.Features.Communication.Events;
 using eNote.Tests.TestUtils;

@@ -1,5 +1,3 @@
-using eNote.Domain.Entities.Academic;
-using eNote.Domain.Enums;
 
 namespace eNote.Tests.Academic;
 

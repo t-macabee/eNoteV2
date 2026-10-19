@@ -183,7 +183,7 @@ void main() {
         findsOneWidget,
       );
       expect(find.textContaining('Akordi I'), findsNothing);
-      // The initial load (02 D7) fires exactly one lectures request.
+      // The initial load fires exactly one lectures request.
       expect(countRequests(harness.client, 'GET /api/v1/student/lectures'), 1);
 
       await tester.pump(const Duration(seconds: 1));
@@ -278,7 +278,7 @@ void main() {
       1,
     );
     expect(countRequests(harness.client, 'GET /api/v1/student/courses/2'), 2);
-    // No further lectures request after the initial load (03 §5.3 step 3).
+    // No further lectures request after the initial load.
     expect(countRequests(harness.client, 'GET /api/v1/student/lectures'), 1);
     expect(
       find.text('Upišite se da vidite predavanja ovog kursa.'),

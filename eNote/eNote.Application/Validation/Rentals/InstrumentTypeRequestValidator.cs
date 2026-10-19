@@ -1,4 +1,3 @@
-using eNote.Application.Common.Localization;
 using eNote.Application.Features.Rentals.ReferenceData.InstrumentTypes;
 using FluentValidation;
 

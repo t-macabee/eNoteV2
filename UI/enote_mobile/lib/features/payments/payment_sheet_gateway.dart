@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
 
-/// The one interface in the app (03 PD5): a two-method abstraction over
-/// `Stripe.instance` so every payment state in 02 §10 is widget-testable
+/// The one interface in the app: a two-method abstraction over
+/// `Stripe.instance` so every payment state is widget-testable
 /// without the Stripe SDK.
 abstract class PaymentSheetGateway {
-  /// Initialises the sheet for [clientSecret] (fresh per attempt, 02 §10.4).
+  /// Initialises the sheet for [clientSecret] (fresh per attempt).
   Future<void> init(String clientSecret);
 
   /// Presents the sheet. Resolves when the sheet completes; throws

@@ -56,7 +56,7 @@ public sealed class InstrumentService(
         var total = search.IncludeTotalCount ? await query.CountAsync(cancellationToken) : (int?)null;
 
         var items = await query
-            .OrderBy(x => x.Id)
+            .OrderByDescending(x => x.Id)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .Select(ProjectToDto)

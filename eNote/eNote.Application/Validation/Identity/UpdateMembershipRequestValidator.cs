@@ -1,5 +1,3 @@
-using eNote.Application.Common.Localization;
-using eNote.Application.Common.Time;
 using eNote.Application.Features.Identity.Users;
 using FluentValidation;
 

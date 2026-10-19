@@ -7,7 +7,6 @@ using eNote.Application.Constants;
 using eNote.Application.Features.Academic.Tuition;
 using eNote.Application.Features.Rentals.InstrumentRentals.Services;
 using eNote.Application.Features.Rentals.Payments.Services;
-using eNote.Domain.Entities.Academic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Stripe;

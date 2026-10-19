@@ -1,5 +1,4 @@
 using eNote.Application.Common.Persistence;
-using eNote.Domain.Entities.Communication;
 using eNote.Infrastructure.Messaging;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.HealthChecks;

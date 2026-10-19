@@ -233,4 +233,109 @@ void main() {
     expect(httpClient.deletedUrls.first, endsWith('shop/instruments/1'));
     expect(find.byType(InstrumentDetailDialog), findsNothing);
   });
+
+  testWidgets(
+      'a new instrument lands on the visible first page after a save',
+      (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(1280, 800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final instruments = <Map<String, dynamic>>[
+      for (var id = 1; id <= 24; id++)
+        {
+          'id': id,
+          'model': 'Instrument $id',
+          'manufacturer': 'Proizvođač $id',
+          'instrumentTypeId': 1,
+          'instrumentType': 'Gitara',
+          'musicStore': 'Muzička Prodavnica',
+          'isAvailable': true,
+        },
+    ];
+    var nextId = 25;
+
+    final httpClient = ScriptedClient((request) {
+      final url = request.url.toString();
+
+      if (request.method == 'POST' && url.contains('shop/instruments')) {
+        final body = jsonDecode(request.body) as Map<String, dynamic>;
+        final created = {
+          'id': nextId++,
+          'model': body['model'],
+          'manufacturer': body['manufacturer'],
+          'instrumentTypeId': body['instrumentTypeId'],
+          'instrumentType': 'Gitara',
+          'musicStore': 'Muzička Prodavnica',
+          'isAvailable': true,
+        };
+        instruments.insert(0, created);
+        return jsonResponse(created, 201);
+      }
+
+      if (request.method == 'GET' && url.contains('shop/instruments')) {
+        final newestFirst = [...instruments]
+          ..sort((a, b) => (b['id'] as int).compareTo(a['id'] as int));
+        return jsonResponse({
+          'items': newestFirst.take(24).toList(),
+          'page': 1,
+          'pageSize': 24,
+          'totalCount': instruments.length,
+        }, 200);
+      }
+
+      if (url.contains('shop/store')) {
+        return jsonResponse(const {
+          'id': 10,
+          'storeName': 'Muzička Prodavnica',
+          'businessHours': '08:00 - 16:00',
+          'addressCity': 'Sarajevo',
+        }, 200);
+      }
+
+      if (url.contains('shop/instrument-types')) {
+        return jsonResponse(const {
+          'items': [
+            {'id': 1, 'type': 'Gitara', 'monthlyFee': 50.0},
+          ],
+          'page': 1,
+          'pageSize': 100,
+          'totalCount': 1,
+        }, 200);
+      }
+
+      return jsonResponse(const {
+        'items': [],
+        'page': 1,
+        'pageSize': 20,
+        'totalCount': 0,
+      }, 200);
+    });
+
+    await tester.pumpWidget(_buildTestApp(isManager: true, httpClient: httpClient));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Dodaj instrument'));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+        find.widgetWithText(TextFormField, 'Model'), 'Nova gitara');
+    await tester.enterText(
+        find.widgetWithText(TextFormField, 'Proizvođač'), 'Novi proizvođač');
+    await tester.tap(find.byType(DropdownButtonFormField<Object>));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Gitara').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilledButton, 'Sačuvaj'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Zatvori'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Nova gitara'), findsOneWidget);
+    expect(find.text('Instrument 1'), findsNothing);
+  });
 }

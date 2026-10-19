@@ -52,7 +52,7 @@ class LectureNoteDetailArgs {
 class AssignmentDetailArgs {
   final int assignmentId;
 
-  /// Carries the course only when S23 was reached from one (02 §12 item 5):
+  /// Carries the course only when the assignment detail was reached from one:
   /// the `( Rang lista kursa )` shortcut renders iff this is non-null.
   final int? courseId;
 

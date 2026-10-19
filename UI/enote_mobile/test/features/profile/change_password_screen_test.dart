@@ -142,8 +142,8 @@ void main() {
     expect(find.text('Trenutna lozinka je obavezna.'), findsNothing);
   });
 
-  testWidgets('submit stays disabled until all fields are valid and then '
-      'issues the PUT on success', (tester) async {
+  testWidgets('submit stays enabled, validates on tap, and issues the PUT '
+      'once all fields are valid', (tester) async {
     final harness = _Harness();
     await tester.pumpWidget(harness.app(_host()));
     await _openScreen(tester);
@@ -152,7 +152,13 @@ void main() {
       find.widgetWithText(FilledButton, 'Promijeni lozinku'),
     );
 
-    expect(submitButton().onPressed, isNull);
+    expect(submitButton().onPressed, isNotNull);
+
+    await tester.tap(find.text('Promijeni lozinku'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Trenutna lozinka je obavezan.'), findsOneWidget);
+    expect(harness.client.requests, isEmpty);
 
     await _fill(
       tester,

@@ -1,0 +1,13 @@
+name: enote_test_support
+description: Test helpers shared by the enote_core, enote_desktop and enote_mobile test suites.
+publish_to: none
+version: 0.0.1
+
+environment:
+  sdk: ^3.13.0
+
+dependencies:
+  http: ^1.6.0
+
+dev_dependencies:
+  flutter_lints: ^6.0.0

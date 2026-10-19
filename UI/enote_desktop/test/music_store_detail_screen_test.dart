@@ -189,4 +189,94 @@ void main() {
       reason: 'search request must preserve search.musicStoreId=1 alongside search.search=Yamaha',
     );
   });
+
+  testWidgets(
+    'a failed instrument-type load shows the filter error and retry loads it',
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1280, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      var typeCalls = 0;
+      final httpClient = ScriptedClient((request) {
+        final url = request.url.toString();
+
+        if (url.contains('admin/instrument-types')) {
+          typeCalls++;
+          if (typeCalls == 1) {
+            return jsonResponse(const {'message': 'Greška'}, 500);
+          }
+          return jsonResponse(const {
+            'items': [
+              {'id': 2, 'type': 'Klavir', 'monthlyFee': 50.0},
+            ],
+            'page': 1,
+            'pageSize': 100,
+            'totalCount': 1,
+          }, 200);
+        }
+
+        if (url.contains('admin/music-stores/1')) {
+          return jsonResponse(const {
+            'id': 1,
+            'storeName': 'Muzička Kuća Sarajevo',
+            'businessHours': '09:00 - 19:00',
+            'addressCity': 'Sarajevo',
+          }, 200);
+        }
+
+        return jsonResponse(const {
+          'items': [],
+          'page': 1,
+          'pageSize': 24,
+          'totalCount': 0,
+        }, 200);
+      });
+
+      final apiClient = ApiClient(
+        baseUrl: 'http://localhost:5059/api/v1/',
+        authState: AuthState(baseUrl: 'http://localhost:5059/api/v1/'),
+        httpClient: httpClient,
+      );
+
+      await tester.pumpWidget(
+        MultiProvider(
+          providers: [
+            Provider<ApiClient>.value(value: apiClient),
+            ChangeNotifierProvider<MusicStoreProvider>.value(
+              value: MusicStoreProvider(apiClient: apiClient),
+            ),
+            ChangeNotifierProvider<StoreInstrumentProvider>.value(
+              value: StoreInstrumentProvider(apiClient: apiClient),
+            ),
+            ChangeNotifierProvider<AddressProvider>.value(
+              value: AddressProvider(apiClient: apiClient),
+            ),
+            ChangeNotifierProvider<InstrumentTypeProvider>.value(
+              value: InstrumentTypeProvider(apiClient: apiClient),
+            ),
+          ],
+          child: const MaterialApp(
+            home: MusicStoreDetailScreen(storeId: 1),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Filteri nisu učitani.'), findsOneWidget);
+
+      await tester.tap(find.byTooltip('Pokušaj ponovo'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Filteri nisu učitani.'), findsNothing);
+      expect(typeCalls, 2);
+
+      await tester.tap(find.byType(DropdownButtonFormField<int?>));
+      await tester.pumpAndSettle();
+      expect(find.text('Klavir'), findsOneWidget);
+    },
+  );
 }

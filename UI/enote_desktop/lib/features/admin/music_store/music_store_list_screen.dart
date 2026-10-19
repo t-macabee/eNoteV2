@@ -24,6 +24,8 @@ class _MusicStoreListScreenState extends State<MusicStoreListScreen> {
   /// null = "Svi gradovi" (default) — no city filter applied.
   int? _cityId;
   List<CityDto> _cities = [];
+  bool _citiesLoading = true;
+  String? _citiesError;
 
   @override
   void initState() {
@@ -32,12 +34,23 @@ class _MusicStoreListScreenState extends State<MusicStoreListScreen> {
   }
 
   Future<void> _loadCities() async {
+    setState(() {
+      _citiesLoading = true;
+      _citiesError = null;
+    });
     try {
       final result = await context.read<CityProvider>().search(pagedQuery(1, 100, ''));
       if (!mounted) return;
-      setState(() => _cities = result.items);
+      setState(() {
+        _cities = result.items;
+        _citiesLoading = false;
+      });
     } catch (_) {
-      // Non-fatal if cities fail to load
+      if (!mounted) return;
+      setState(() {
+        _citiesError = 'Filteri nisu učitani.';
+        _citiesLoading = false;
+      });
     }
   }
 
@@ -65,6 +78,7 @@ class _MusicStoreListScreenState extends State<MusicStoreListScreen> {
         searchHint: 'Pretraži...',
         placeholderIcon: Icons.storefront_outlined,
         titleOf: (item) => item.storeName,
+        imageUrlOf: (store) => store.imagePath,
         onTap: (context, item) async {
           await Navigator.of(context).push(
             MaterialPageRoute(
@@ -78,6 +92,9 @@ class _MusicStoreListScreenState extends State<MusicStoreListScreen> {
           width: 220,
           isExpanded: false,
           value: _cityId,
+          isLoading: _citiesLoading,
+          errorText: _citiesError,
+          onRetry: _loadCities,
           items: [
             const DropdownMenuItem(value: null, child: Text('Svi gradovi')),
             ..._cities.map(
@@ -103,9 +120,9 @@ class _MusicStoreListScreenState extends State<MusicStoreListScreen> {
         groupKeyOf: _cityId == null
             ? (store) => store.addressCity ?? 'Nepoznat grad'
             : null,
-        trailing: const PdfReportButton(
+        trailing: PdfReportButton(
           label: 'Izvještaj',
-          fileName: 'music-stores-report.pdf',
+          fileName: reportFileName('music-stores-report'),
           endpoint: 'admin/music-stores/report',
         ),
       ),

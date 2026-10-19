@@ -7,10 +7,10 @@ import '../../shell/root_shell.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/async_state_view.dart';
 
-/// S29 — notification inbox on the root navigator.
+/// Notification inbox on the root navigator.
 ///
 /// Own tiles over the shared [NotificationController] (core
-/// `NotificationListView` is not used, 02 §7): unread rows render a filled
+/// `NotificationListView` is not used): unread rows render a filled
 /// primary dot with a bold title, read rows a hollow dot with normal weight.
 /// Tapping an unread row PATCHes `…/read` first and only then routes by
 /// payload; tapping a read row routes directly.

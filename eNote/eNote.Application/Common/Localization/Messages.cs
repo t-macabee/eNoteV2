@@ -24,6 +24,7 @@ public static class Messages
     public const string UnknownUserName = "Nepoznat korisnik";
     public const string StoreNotFound = "Radnja nije pronađena.";
     public const string MusicStoreRequiredForEmployee = "Prodavnica je obavezna za uposlenika radnje.";
+    public const string MusicStoreSelectionRequired = "Odaberite prodavnicu iz liste.";
     public const string PhoneNumberFormat = "Unesite broj telefona sa 6 do 15 cifara, opcionalno sa + na početku; razmaci su dozvoljeni (npr. +387 61 123 456).";
     public const string PhoneNumberTooLong = "Broj telefona ne smije biti duži od 30 karaktera.";
 
@@ -33,6 +34,7 @@ public static class Messages
     public const string EmployeeProfileNotFound = "Profil uposlenika radnje nije pronađen.";
     public const string ActiveEmployeeStoreNotFound = "Profil uposlenika radnje nije pronađen ili nije aktivan.";
     public const string ManagerRoleRequired = "Samo voditelj radnje može upravljati zaposlenicima.";
+    public const string CannotDeactivateOtherManager = "Rukovodilac prodavnice ne može deaktivirati drugog rukovodioca.";
 
     public const string CourseNotFound = "Kurs nije pronađen.";
     public const string CourseIdRequired = "Kurs je obavezan.";
@@ -47,6 +49,7 @@ public static class Messages
     public const string LectureFull = "Predavanje je popunjeno.";
     public const string LectureRsvpConflict = "Sukob pri rezervaciji predavanja. Pokušajte ponovo.";
     public const string AttendanceAlreadyMarked = "Prisustvo za ovog studenta je već evidentirano.";
+    public const string StudentSelectionRequired = "Odaberite studenta iz liste.";
     public const string LectureTimeConflict = "Termin predavanja se preklapa s postojećim predavanjem.";
     public const string LectureCapacityBelowConfirmed = "Kapacitet ne može biti manji od broja već potvrđenih prisustava.";
     public const string LectureAlreadyHeld = "Održano predavanje nije moguće otkazati.";
@@ -128,12 +131,26 @@ public static class Messages
     public const string ReportColumnGraded = "Ocijenjeno";
     public const string ReportColumnInstrument = "Instrument";
     public const string ReportColumnStatus = "Status";
+    public const string ReportColumnPeriod = "Period";
     public const string ReportColumnFee = "Naknada";
     public const string ReportColumnTotal = "Ukupno";
     public const string ReportColumnName = "Naziv";
     public const string ReportColumnBusinessHours = "Radno vrijeme";
     public const string ReportCourseFallback = "Kurs";
     public const string ReportStoreFallback = "Prodavnica";
+    public const string ReportNoData = "Nema podataka za odabrane kriterije.";
+
+    public const string ReportRentalStatusPending = "Na čekanju";
+    public const string ReportRentalStatusApproved = "Odobreno";
+    public const string ReportRentalStatusActive = "Aktivno";
+    public const string ReportRentalStatusCompleted = "Završeno";
+    public const string ReportRentalStatusRejected = "Odbijeno";
+    public const string ReportRentalStatusCanceled = "Otkazano";
+    public const string ReportRentalStatusReturnedEarly = "Prijevremeni povrat";
+
+    public const string ReportAttendanceStatusPending = "Na čekanju";
+    public const string ReportAttendanceStatusPresent = "Prisutan";
+    public const string ReportAttendanceStatusAbsent = "Odsutan";
 
     public static string RoleCreateFailed(string role, string errors) =>
         $"Greška pri kreiranju uloge {role}: {errors}";

@@ -7,8 +7,8 @@ import '../../widgets/form_submit_state.dart';
 import '../../widgets/mobile_form_scaffold.dart';
 import 'profile_provider.dart';
 
-/// S32 — the old-password gate, reached only from the explicit
-/// *Promijeni lozinku* action on S30. The backend rotates the security stamp
+/// The old-password gate, reached only from the explicit
+/// *Promijeni lozinku* action on the profile screen. The backend rotates the security stamp
 /// on a password change, so the current JWT is rejected from then on: the
 /// screen logs out and returns to the login screen.
 class ChangePasswordScreen extends StatefulWidget {
@@ -27,7 +27,6 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen>
   bool _currentObscured = true;
   bool _newObscured = true;
   bool _confirmObscured = true;
-  bool _canSubmit = false;
 
   @override
   void dispose() {
@@ -37,13 +36,8 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen>
     super.dispose();
   }
 
-  void _revalidate() {
-    final form = _formKey.currentState;
-    if (form == null) return;
-    setState(() => _canSubmit = form.validate());
-  }
-
   Future<void> _submit() async {
+    if (!(_formKey.currentState?.validate() ?? false)) return;
     final messenger = ScaffoldMessenger.of(context);
     final navigator = Navigator.of(context);
     final authState = context.read<AuthState>();
@@ -85,7 +79,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen>
     return MobileFormScaffold(
       title: 'Promjena lozinke',
       submitLabel: 'Promijeni lozinku',
-      onSubmit: _canSubmit ? _submit : null,
+      onSubmit: _submit,
       isBusy: isSubmitting,
       errorMessage: submitError,
       children: [
@@ -103,7 +97,6 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen>
                 ),
                 obscureText: _currentObscured,
                 textInputAction: TextInputAction.next,
-                onChanged: (_) => _revalidate(),
                 validator: Validators.required('Trenutna lozinka'),
               ),
               const SizedBox(height: 16),
@@ -116,7 +109,6 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen>
                 ),
                 obscureText: _newObscured,
                 textInputAction: TextInputAction.next,
-                onChanged: (_) => _revalidate(),
                 validator: Validators.password,
               ),
               const SizedBox(height: 16),
@@ -130,7 +122,6 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen>
                 ),
                 obscureText: _confirmObscured,
                 textInputAction: TextInputAction.done,
-                onChanged: (_) => _revalidate(),
                 validator:
                     Validators.confirmPassword(() => _newController.text),
               ),

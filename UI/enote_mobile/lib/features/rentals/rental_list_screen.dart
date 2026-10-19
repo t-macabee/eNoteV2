@@ -9,9 +9,9 @@ import '../../widgets/paged_list_view.dart';
 import '../../widgets/status_chip.dart';
 import 'rental_provider.dart';
 
-/// S10 — the Iznajmljivanja tab root.
+/// The Iznajmljivanja tab root.
 ///
-/// No text search: the server offers none for this endpoint (02 §3.1). The
+/// No text search: the server offers none for this endpoint. The
 /// only filter is the status dropdown, whose domain is the seven
 /// [InstrumentRentalStatus] values.
 class RentalListScreen extends StatefulWidget {
@@ -108,7 +108,7 @@ class _RentalRow extends StatelessWidget {
 
   const _RentalRow({required this.rental, required this.onTap});
 
-  /// Payment is only meaningful once the instrument came back (02 §3.1).
+  /// Payment is only meaningful once the instrument came back.
   bool get _showsPaidMark =>
       rental.rentalStatus == InstrumentRentalStatus.completed ||
       rental.rentalStatus == InstrumentRentalStatus.returnedEarly;

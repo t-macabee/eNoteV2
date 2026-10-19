@@ -4,5 +4,9 @@ root = true
 csharp_style_var_for_built_in_types = true:suggestion
 csharp_style_var_when_type_is_apparent = true:suggestion
 csharp_style_namespace_declarations = file_scoped:warning
+dotnet_diagnostic.IDE0005.severity = warning
 dotnet_diagnostic.IDE0007.severity = warning
 dotnet_diagnostic.IDE0008.severity = none
+
+[**/Data/Migrations/*.cs]
+generated_code = true

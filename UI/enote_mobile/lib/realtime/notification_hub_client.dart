@@ -5,7 +5,7 @@ import 'package:signalr_netcore/signalr_client.dart';
 
 import 'package:enote_core/enote_core.dart';
 
-/// SignalR client for `/hubs/notifications` (T35).
+/// SignalR client for `/hubs/notifications`.
 ///
 /// Primary (instant) path for notifications; the 30 s REST poll in
 /// [NotificationController] stays the always-on fallback, so a failed hub
@@ -43,7 +43,7 @@ class NotificationHubClient {
   static void _noopPush(NotificationPushDto _) {}
 
   /// Derives the hub URL from the API base URL the same way core
-  /// `networkImageOrPlaceholder` derives the origin (01 G13).
+  /// `networkImageOrPlaceholder` derives the origin.
   static String deriveHubUrl(String apiBaseUrl) {
     final uri = Uri.tryParse(apiBaseUrl);
     final origin = (uri != null && uri.hasScheme)

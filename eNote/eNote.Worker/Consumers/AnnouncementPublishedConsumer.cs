@@ -2,7 +2,6 @@ using eNote.Application.Common.Persistence;
 using eNote.Application.Constants;
 using eNote.Contracts.Communication;
 using eNote.Domain.Entities.Communication;
-using MassTransit;
 
 namespace eNote.Worker.Consumers;
 

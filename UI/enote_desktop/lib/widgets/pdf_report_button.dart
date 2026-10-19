@@ -1,24 +1,39 @@
+import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:enote_core/enote_core.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:printing/printing.dart';
-import 'package:enote_core/enote_core.dart';
-
 import 'package:provider/provider.dart';
+
+/// ASCII file name for a downloaded report, e.g. `course-12-ranking-20261018.pdf`.
+String reportFileName(String report) {
+  final now = DateTime.now();
+  final stamp = '${now.year}'
+      '${now.month.toString().padLeft(2, '0')}'
+      '${now.day.toString().padLeft(2, '0')}';
+  return '$report-$stamp.pdf';
+}
+
+typedef PdfSaver = Future<String?> Function(Uint8List bytes, String fileName);
 
 class PdfReportButton extends StatefulWidget {
   final String label;
   final String fileName;
-  final Future<Uint8List> Function()? fetchPdf;
-  final String? endpoint;
+  final String endpoint;
+
+  /// Replaces the platform save dialog; tests supply a double so no file is
+  /// written to disk.
+  final PdfSaver? savePdf;
 
   const PdfReportButton({
     super.key,
     required this.label,
     required this.fileName,
-    this.fetchPdf,
-    this.endpoint,
-  }) : assert(fetchPdf != null || endpoint != null, 'Must provide either fetchPdf or endpoint');
+    required this.endpoint,
+    this.savePdf,
+  });
 
   @override
   State<PdfReportButton> createState() => _PdfReportButtonState();
@@ -30,18 +45,12 @@ class _PdfReportButtonState extends State<PdfReportButton> {
   Future<Uint8List?> _load() async {
     setState(() => _isLoading = true);
     try {
-      if (widget.fetchPdf != null) {
-        return await widget.fetchPdf!();
-      } else {
-        final client = Provider.of<ApiClient>(context, listen: false);
-        final response = await client.get(widget.endpoint!);
-        throwIfError(response);
-        return response.bodyBytes;
-      }
+      final client = Provider.of<ApiClient>(context, listen: false);
+      final response = await client.get(widget.endpoint);
+      throwIfError(response);
+      return response.bodyBytes;
     } catch (e) {
-      if (mounted) {
-        ErrorBanner.show(context, message: userMessage(e));
-      }
+      _showError(e);
       return null;
     } finally {
       if (mounted) {
@@ -50,19 +59,50 @@ class _PdfReportButtonState extends State<PdfReportButton> {
     }
   }
 
-  Future<void> _print() async {
-    final bytes = await _load();
-    if (bytes == null) return;
-    await Printing.layoutPdf(
-      onLayout: (_) async => bytes,
-      name: widget.fileName,
+  /// Asks for a destination through the platform save dialog, then writes the
+  /// report there. Returns the chosen path, or null when the user cancels.
+  static Future<String?> _save(Uint8List bytes, String fileName) async {
+    final path = await FilePicker.platform.saveFile(
+      dialogTitle: 'Sačuvaj izvještaj',
+      fileName: fileName,
+      type: FileType.custom,
+      allowedExtensions: const ['pdf'],
     );
+    if (path == null) return null;
+    await File(path).writeAsBytes(bytes);
+    return path;
+  }
+
+  Future<void> _print() async {
+    try {
+      final bytes = await _load();
+      if (bytes == null) return;
+      await Printing.layoutPdf(
+        onLayout: (_) async => bytes,
+        name: widget.fileName,
+      );
+    } catch (e) {
+      _showError(e);
+    }
   }
 
   Future<void> _download() async {
     final bytes = await _load();
     if (bytes == null) return;
-    await Printing.sharePdf(bytes: bytes, filename: widget.fileName);
+    try {
+      final path = await (widget.savePdf ?? _save)(bytes, widget.fileName);
+      if (path == null || !mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Izvještaj sačuvan: $path')),
+      );
+    } catch (e) {
+      _showError(e);
+    }
+  }
+
+  void _showError(Object error) {
+    if (!mounted) return;
+    ErrorBanner.show(context, message: userMessage(error));
   }
 
   @override

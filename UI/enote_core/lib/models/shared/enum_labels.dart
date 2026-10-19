@@ -29,3 +29,10 @@ String lectureTypeLabel(LectureType type) => switch (type) {
   LectureType.practical => 'Praktično',
   LectureType.combined => 'Kombinovano',
 };
+
+String userRoleLabel(UserRole role) => switch (role) {
+  UserRole.administrator => 'Administrator',
+  UserRole.instructor => 'Instruktor',
+  UserRole.student => 'Student',
+  UserRole.storeEmployee => 'Uposlenik prodavnice',
+};

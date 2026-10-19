@@ -103,6 +103,8 @@ class _ProfileDialogState extends State<ProfileDialog> {
     final username = profile.username.isNotEmpty
         ? profile.username
         : (context.read<AuthState>().username ?? '');
+    final role = UserRole.fromString(profile.role);
+    final roleLabel = role != null ? userRoleLabel(role) : profile.role;
 
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -138,7 +140,7 @@ class _ProfileDialogState extends State<ProfileDialog> {
               Center(child: _buildAvatar(context, profile)),
               const SizedBox(height: 12),
               InfoRow(label: 'Korisničko ime', value: username, labelWidth: 120),
-              InfoRow(label: 'Uloga', value: profile.role, labelWidth: 120),
+              InfoRow(label: 'Uloga', value: roleLabel, labelWidth: 120),
               InfoRow(label: 'Ime', value: firstName, labelWidth: 120),
               InfoRow(label: 'Prezime', value: lastName, labelWidth: 120),
               InfoRow(label: 'Email', value: email, labelWidth: 120),

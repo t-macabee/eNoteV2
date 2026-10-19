@@ -240,7 +240,7 @@ class _UserDetailsDialogState extends State<UserDetailsDialog> {
                   const SizedBox(width: 12),
                   Chip(
                     label: Text(
-                      item.role.label,
+                      userRoleLabel(item.role),
                       style: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w500,

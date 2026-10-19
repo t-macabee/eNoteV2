@@ -72,7 +72,7 @@ void main() {
       Future<void> pickRole(UserRole role) async {
         await tester.tap(find.byType(DropdownButtonFormField<UserRole>));
         await tester.pumpAndSettle();
-        await tester.tap(find.text(role.label).last);
+        await tester.tap(find.text(userRoleLabel(role)).last);
         await tester.pumpAndSettle();
       }
 

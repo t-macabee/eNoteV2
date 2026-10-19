@@ -13,13 +13,13 @@ import '../../widgets/section_header.dart';
 import 'assignment_provider.dart';
 import 'file_picker_field.dart';
 
-/// S23 — assignment detail with the file-submission section (02 §4.7).
+/// Assignment detail with the file-submission section.
 ///
-/// Load = assignment ‖ own submission (02 D7); a 404 submission is state A.
+/// Load = assignment ‖ own submission; a 404 submission means nothing has been submitted yet.
 /// The *Predavanje ›* row navigates by id but never renders it. Image
-/// submissions preview inline with the bearer header (01 G13); PDFs show the
+/// submissions preview inline with the bearer header; PDFs show the
 /// name only. The `( Rang lista kursa )` shortcut renders only when the route
-/// args carry a [courseId] (`AssignmentDto` has none, 02 §12 item 5).
+/// args carry a [courseId] (`AssignmentDto` has none).
 class AssignmentDetailScreen extends StatefulWidget {
   final int assignmentId;
   final int? courseId;
@@ -231,7 +231,7 @@ class _AssignmentDetailScreenState extends State<AssignmentDetailScreen>
     );
   }
 
-  /// State A′: nothing submitted, past due.
+  /// Nothing submitted, past due.
   Widget _pastDueState() {
     return const Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,

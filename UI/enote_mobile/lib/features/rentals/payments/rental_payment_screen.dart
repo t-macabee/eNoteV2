@@ -15,11 +15,11 @@ import '../../payments/payment_review.dart';
 import '../../payments/payment_sheet_gateway.dart';
 import 'rental_payment_provider.dart';
 
-/// S12 — the payment flow (02 §4.3, §10): review (A), Stripe sheet (B),
-/// processing (C), succeeded (D), failed/cancelled (E), pending (F).
+/// The payment flow: review, Stripe sheet, processing, succeeded,
+/// failed/cancelled, pending.
 ///
-/// The screen never caches a `clientSecret` (02 §10.4) and never renders
-/// `paymentIntentId` (02 §10.5).
+/// The screen never caches a `clientSecret` and never renders
+/// `paymentIntentId`.
 class RentalPaymentScreen extends StatefulWidget {
   final int rentalId;
   final PaymentSheetGateway gateway;
@@ -157,6 +157,7 @@ class _RentalPaymentScreenState extends State<RentalPaymentScreen> {
       amount: rental.totalFee,
       onPay: _pay,
       isBusy: _flow.isBusy,
+      isConfigured: _flow.isConfigured,
       children: [
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,

@@ -1,7 +1,7 @@
 import 'package:enote_core/enote_core.dart';
 
 /// Wraps the logged-in student's own `users/me` endpoints for the profile
-/// screens (S30–S32).
+/// screens.
 ///
 /// Plain class over [ApiClient]; not a paged provider because `users/me`
 /// is a single-record resource.

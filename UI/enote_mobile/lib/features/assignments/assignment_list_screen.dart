@@ -7,11 +7,12 @@ import '../../shell/app_router.dart';
 import '../../widgets/paged_list_view.dart';
 import 'assignment_provider.dart';
 
-/// S22 — assignment list (tab 1 · Zadaci): paged list with a *Rok istekao*
-/// (`dueBefore = now`) toggle (02 §5 S22).
+/// Assignment list (tab 1 · Zadaci): paged list with a *Rok istekao*
+/// (`dueBefore = now`) toggle.
 ///
-/// Tab bodies share the Učenje AppBar, so the *Moje predaje* entry to S24 is
-/// a trailing action above the list rather than an AppBar button.
+/// Tab bodies share the Učenje AppBar, so the *Moje predaje* entry to
+/// the submission history is a trailing action above the list rather than an
+/// AppBar button.
 class AssignmentListScreen extends StatefulWidget {
   const AssignmentListScreen({super.key});
 

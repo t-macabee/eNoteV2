@@ -5,7 +5,7 @@ import 'package:enote_core/enote_core.dart';
 import 'payment_sheet_gateway.dart';
 import 'stripe_redirect.dart';
 
-/// The screens of the shared payment state machine (02 §10.3 A–F).
+/// The screens of the shared payment state machine.
 enum PaymentView { review, processing, succeeded, failed, pending }
 
 /// State machine behind the tuition and rental payment screens.
@@ -116,7 +116,7 @@ class PaymentFlowController extends ChangeNotifier {
     poll();
   }
 
-  /// One poll cycle (state F `Provjeri ponovo`, deep-link re-entry).
+  /// One poll cycle (the `Provjeri ponovo` pending state, deep-link re-entry).
   Future<void> poll() async {
     if (isPolling) return;
     isPolling = true;

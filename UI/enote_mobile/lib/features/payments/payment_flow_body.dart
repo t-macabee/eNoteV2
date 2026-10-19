@@ -50,9 +50,9 @@ class PaymentFlowScaffold extends StatelessWidget {
   }
 }
 
-/// States A–F of the payment flow, shared by the tuition and rental screens.
+/// The payment flow, shared by the tuition and rental screens.
 ///
-/// The review body (state A) stays with the calling screen and arrives as
+/// The review body stays with the calling screen and arrives as
 /// [reviewChild]; every later state is a [PaymentStatusView] driven by
 /// [controller].
 class PaymentFlowBody extends StatelessWidget {

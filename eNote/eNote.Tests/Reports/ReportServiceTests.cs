@@ -1,6 +1,4 @@
-using eNote.Application.Common.Interfaces;
 using eNote.Application.Features.Academic.Courses.Services;
-using eNote.Application.Features.Identity.Users.Services;
 using eNote.Domain.Entities.Assignments;
 using eNote.Infrastructure.Reports;
 using eNote.Tests.TestUtils;
@@ -31,6 +29,18 @@ public sealed class ReportServiceTests
         var bytes = await service.GenerateCourseRankingPdfAsync(harness.Course.Id);
 
         Assert.StartsWith("%PDF", Encoding.ASCII.GetString(bytes, 0, 4));
+    }
+
+    [Fact]
+    public async Task GenerateCourseRankingPdfAsync_Throws_ForCourseOfAnotherInstructor()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var otherInstructor = new Instructor(300);
+        harness.Context.Set<Instructor>().Add(otherInstructor);
+        await harness.Context.SaveChangesAsync();
+        var service = CreateService(harness, otherInstructor);
+
+        await Assert.ThrowsAsync<NotFoundException>(() => service.GenerateCourseRankingPdfAsync(harness.Course.Id));
     }
 
     [Fact]
@@ -81,6 +91,75 @@ public sealed class ReportServiceTests
         // No PDF text-extraction library is available in this project, so an extra row is
         // asserted via byte length rather than parsed content.
         Assert.Equal(scopedOnlyBytes.Length, withOtherStoreRentalBytes.Length);
+    }
+
+    [Fact]
+    public async Task GenerateAdminMusicStoreReportAsync_ReturnsPdf()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        harness.Context.Set<MusicStore>().Add(new MusicStore("Music Shop", "09-17"));
+        await harness.Context.SaveChangesAsync();
+        var service = CreateService(harness, harness.Instructor);
+
+        var bytes = await service.GenerateAdminMusicStoreReportAsync();
+
+        Assert.StartsWith("%PDF", Encoding.ASCII.GetString(bytes, 0, 4));
+    }
+
+    [Fact]
+    public async Task GenerateAdminMusicStoreReportAsync_ReturnsPdf_WhenThereAreNoRows()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var service = CreateService(harness, harness.Instructor);
+
+        var bytes = await service.GenerateAdminMusicStoreReportAsync();
+
+        Assert.StartsWith("%PDF", Encoding.ASCII.GetString(bytes, 0, 4));
+    }
+
+    [Fact]
+    public void ReportLabels_Rental_ReturnsBosnianLabelForEveryStatus()
+    {
+        foreach (var status in Enum.GetValues<InstrumentRentalStatus>())
+        {
+            var label = ReportLabels.Rental(status);
+
+            Assert.False(string.IsNullOrWhiteSpace(label));
+            Assert.NotEqual(status.ToString(), label);
+        }
+    }
+
+    [Fact]
+    public void ReportLabels_Attendance_ReturnsBosnianLabelForEveryStatus()
+    {
+        foreach (var status in Enum.GetValues<AttendanceStatus>())
+        {
+            var label = ReportLabels.Attendance(status);
+
+            Assert.False(string.IsNullOrWhiteSpace(label));
+            Assert.NotEqual(status.ToString(), label);
+        }
+    }
+
+    [Fact]
+    public void ReportLabels_Rental_MatchesTheDesktopAppWording()
+    {
+        Assert.Equal("Prijevremeni povrat", ReportLabels.Rental(InstrumentRentalStatus.ReturnedEarly));
+        Assert.Equal("Na čekanju", ReportLabels.Rental(InstrumentRentalStatus.Pending));
+    }
+
+    [Fact]
+    public void ReportLabels_Attendance_MatchesTheDesktopAppWording()
+    {
+        Assert.Equal("Prisutan", ReportLabels.Attendance(AttendanceStatus.Present));
+        Assert.Equal("Odsutan", ReportLabels.Attendance(AttendanceStatus.Absent));
+    }
+
+    [Fact]
+    public void ReportLabels_Throws_ForStatusOutsideTheEnum()
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(() => ReportLabels.Rental((InstrumentRentalStatus)99));
+        Assert.Throws<ArgumentOutOfRangeException>(() => ReportLabels.Attendance((AttendanceStatus)99));
     }
 
     private async Task<byte[]> GenerateRentalSummaryPdfAsync(bool includeOtherStoreRental)

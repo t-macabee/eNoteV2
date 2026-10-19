@@ -39,7 +39,17 @@ Ovo je najkraći put i pokreće bazu, RabbitMQ, API i worker odjednom.
    `docker compose` prosljeđuje tu datoteku api i worker kontejnerima i
    zamjenjuje samo imena hostova (`sqlserver`, `rabbitmq`, `mailhog`).
 
-2. Pokrenite sve servise:
+2. Ako ste repozitorij već pokretali kroz Docker, uklonite stari volumen sa
+   uploadovanim slikama; Docker u imenovani volumen kopira sadržaj samo pri
+   prvom kreiranju, pa stari volumen sakrije slike iz seeda:
+
+   ```bash
+   docker volume rm enote-uploads
+   ```
+
+   `docker compose down -v` radi isto, ali briše i `enote-sql-data`.
+
+3. Pokrenite sve servise:
 
    ```bash
    docker compose up --build
@@ -231,6 +241,7 @@ cd UI/enote_mobile && flutter analyze && flutter test
 | `eNote.Contracts` | Ugovori poruka |
 | `eNote.Tests` | Testovi |
 | `UI/enote_core` | Zajednički Dart paket za oba klijenta |
+| `UI/enote_test_support` | Pomoćne klase za testove, dev zavisnost sva tri Dart paketa |
 | `UI/enote_desktop` | Windows desktop aplikacija |
 | `UI/enote_mobile` | Android mobilna aplikacija |
 

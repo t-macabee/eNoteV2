@@ -1,5 +1,5 @@
-/// Test-only helpers shared by the enote_core, enote_mobile and enote_desktop
-/// test suites. Not exported from `enote_core.dart`; import directly.
+/// Test helpers shared by the enote_core, enote_desktop and enote_mobile test
+/// suites. Add as a dev_dependency only.
 library;
 
 import 'dart:async';

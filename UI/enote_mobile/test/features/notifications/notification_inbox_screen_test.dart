@@ -50,7 +50,7 @@ ScriptedClient _client({required List<Map<String, dynamic>> items}) {
     }
     if (request.method == 'GET' &&
         path == '/api/v1/student/notifications/unread-count') {
-      // Server count is the badge's only source (T18); mirror the fixture.
+      // Server count is the badge's only source; mirror the fixture.
       final unread = allRead
           ? 0
           : items.where((item) => item['isRead'] == false).length;
@@ -107,6 +107,8 @@ class _Harness {
         'http://10.0.2.2:5059/api/v1/',
       ),
       tokenProvider: () async => 'token',
+      // No real network in widget tests; the fake hub connects instantly.
+      connectionFactory: FakeHubConnection.new,
     );
     session = SessionController(
       apiClient: apiClient,

@@ -27,9 +27,9 @@ class _PickedImage {
   });
 }
 
-/// S31 — profile edit form (incl. picture upload/remove). Reached only from
-/// S30, so [SessionController.profile] is loaded when this route opens.
-/// No password field anywhere (the old-password gate is the separate S32).
+/// Profile edit form (incl. picture upload/remove). Reached only from
+/// the profile screen, so [SessionController.profile] is loaded when this route opens.
+/// No password field anywhere (the old-password gate is a separate screen).
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
 

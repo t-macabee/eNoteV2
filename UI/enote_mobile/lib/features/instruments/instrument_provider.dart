@@ -1,11 +1,11 @@
 import 'package:enote_core/enote_core.dart';
 
-/// Catalogue provider for the Instrumenti tab (S7, S8).
+/// Catalogue provider for the Instrumenti tab.
 ///
 /// The list endpoint (`instruments/public`) is open to any signed-in user;
 /// the recommendation and view-tracking endpoints are student-scoped.
 class InstrumentProvider extends ReadOnlyProvider<InstrumentDto> {
-  /// Rows per catalogue page (02 §3).
+  /// Rows per catalogue page.
   static const int pageSize = 20;
 
   InstrumentProvider({required super.apiClient})
@@ -59,7 +59,7 @@ class InstrumentProvider extends ReadOnlyProvider<InstrumentDto> {
   /// `POST student/instruments/{id}/view`.
   ///
   /// An analytics signal only: every failure is swallowed so the detail
-  /// screen never blocks or errors on it (01 §4.3).
+  /// screen never blocks or errors on it.
   Future<void> recordView(int id) async {
     try {
       await apiClient.post('student/instruments/$id/view');

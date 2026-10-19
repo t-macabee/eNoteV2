@@ -26,17 +26,37 @@ class _RentalListScreenState extends State<RentalListScreen> {
   final _listKey = GlobalKey<EntityListScreenState<InstrumentRentalDto>>();
   InstrumentRentalStatus? _selectedStatus;
   int? _selectedInstrumentId;
-  late Future<List<InstrumentDto>> _instrumentsFuture;
+  List<InstrumentDto> _instruments = [];
+  bool _instrumentsLoading = true;
+  String? _instrumentsError;
 
   @override
   void initState() {
     super.initState();
-    // Non-fatal if instruments fail to load — the filter just offers no options.
-    _instrumentsFuture = context
-        .read<InstrumentProvider>()
-        .search(pagedQuery(1, 100, ''))
-        .then((result) => result.items)
-        .catchError((_) => const <InstrumentDto>[]);
+    _loadInstruments();
+  }
+
+  Future<void> _loadInstruments() async {
+    setState(() {
+      _instrumentsLoading = true;
+      _instrumentsError = null;
+    });
+    try {
+      final result = await context
+          .read<InstrumentProvider>()
+          .search(pagedQuery(1, 100, ''));
+      if (!mounted) return;
+      setState(() {
+        _instruments = result.items;
+        _instrumentsLoading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _instrumentsError = 'Filteri nisu učitani.';
+        _instrumentsLoading = false;
+      });
+    }
   }
 
   Widget _buildFilterBar() {
@@ -60,33 +80,26 @@ class _RentalListScreenState extends State<RentalListScreen> {
             },
           ),
           const SizedBox(width: 16),
-          SizedBox(
+          EntityFilterDropdown<int?>(
+            label: 'Instrument',
             width: 220,
-            child: FutureBuilder<List<InstrumentDto>>(
-              future: _instrumentsFuture,
-              builder: (context, snapshot) {
-                final instruments = snapshot.data ?? const <InstrumentDto>[];
-                return DropdownButtonFormField<int?>(
-                  isExpanded: true,
-                  initialValue: _selectedInstrumentId,
-                  decoration: const InputDecoration(
-                    labelText: 'Instrument',
-                    border: OutlineInputBorder(),
-                  ),
-                  items: [
-                    const DropdownMenuItem(value: null, child: Text('Svi instrumenti')),
-                    for (final instrument in instruments)
-                      DropdownMenuItem(value: instrument.id, child: Text(instrument.model)),
-                  ],
-                  onChanged: snapshot.connectionState == ConnectionState.done
-                      ? (value) {
-                          setState(() => _selectedInstrumentId = value);
-                          _listKey.currentState?.refresh();
-                        }
-                      : null,
-                );
-              },
-            ),
+            outlined: true,
+            value: _selectedInstrumentId,
+            isLoading: _instrumentsLoading,
+            errorText: _instrumentsError,
+            onRetry: _loadInstruments,
+            items: [
+              const DropdownMenuItem(value: null, child: Text('Svi instrumenti')),
+              for (final instrument in _instruments)
+                DropdownMenuItem(
+                  value: instrument.id,
+                  child: Text(instrument.model),
+                ),
+            ],
+            onChanged: (value) {
+              setState(() => _selectedInstrumentId = value);
+              _listKey.currentState?.refresh();
+            },
           ),
         ],
       ),
@@ -154,9 +167,9 @@ class _RentalListScreenState extends State<RentalListScreen> {
         },
         showAddButton: false,
         showDeleteConfirmation: false,
-        trailing: const PdfReportButton(
+        trailing: PdfReportButton(
           label: 'Izvještaj',
-          fileName: 'store-rentals.pdf',
+          fileName: reportFileName('store-rentals'),
           endpoint: 'shop/rentals/report',
         ),
       ),

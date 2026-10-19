@@ -1,5 +1,4 @@
 using System.Text.Json;
-using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Constants;
 using eNote.Application.Features.Rentals.InstrumentRentals.Services;

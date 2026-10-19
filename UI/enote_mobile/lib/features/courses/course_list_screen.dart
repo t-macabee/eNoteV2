@@ -7,8 +7,8 @@ import '../../shell/app_router.dart';
 import '../../widgets/paged_list_view.dart';
 import 'course_provider.dart';
 
-/// S14 — course catalogue (tab 1 › Kursevi): paged list with a
-/// *Moji kursevi* (`enrolledOnly`) toggle (02 §5 S14).
+/// Course catalogue (tab 1 › Kursevi): paged list with a
+/// *Moji kursevi* (`enrolledOnly`) toggle.
 class CourseListScreen extends StatefulWidget {
   const CourseListScreen({super.key});
 

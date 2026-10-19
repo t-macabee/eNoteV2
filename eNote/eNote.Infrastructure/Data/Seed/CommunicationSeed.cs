@@ -1,9 +1,4 @@
 using eNote.Application.Common.Time;
-using eNote.Domain.Entities.Academic;
-using eNote.Domain.Entities.Assignments;
-using eNote.Domain.Entities.Communication;
-using eNote.Domain.Entities.Identity;
-using eNote.Domain.Entities.Rentals;
 using eNote.Infrastructure.Storage;
 using Microsoft.EntityFrameworkCore;
 

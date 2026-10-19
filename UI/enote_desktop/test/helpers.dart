@@ -1,11 +1,13 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:enote_core/enote_core.dart';
-import 'package:enote_core/testing/testing.dart' as core;
-import 'package:enote_core/testing/testing.dart' hide fakeJwt;
-export 'package:enote_core/testing/testing.dart' hide fakeJwt;
+import 'package:enote_test_support/enote_test_support.dart' as core;
+import 'package:enote_test_support/enote_test_support.dart' hide fakeJwt;
+export 'package:enote_test_support/enote_test_support.dart' hide fakeJwt;
 
 /// Desktop default identity; see [core.fakeJwt] for the claim layout.
 String fakeJwt({
@@ -15,6 +17,30 @@ String fakeJwt({
   bool isManager = false,
 }) => core.fakeJwt(
       subject: subject, username: username, role: role, isManager: isManager);
+
+/// Stands in for the platform save dialog in widget tests: records the
+/// suggested file name and returns [path]. A null [path] means the user
+/// cancelled. Install with `FilePicker.platform = FakeSaveFilePicker(...)`.
+class FakeSaveFilePicker extends FilePicker {
+  FakeSaveFilePicker({this.path});
+
+  String? path;
+  String? savedFileName;
+
+  @override
+  Future<String?> saveFile({
+    String? dialogTitle,
+    String? fileName,
+    String? initialDirectory,
+    FileType type = FileType.any,
+    List<String>? allowedExtensions,
+    Uint8List? bytes,
+    bool lockParentWindow = false,
+  }) async {
+    savedFileName = fileName;
+    return path;
+  }
+}
 
 /// Pumps long enough for [PagedFetchController]'s search debounce to elapse,
 /// derived from the actual constant (+100 ms buffer for fake-clock safety) so

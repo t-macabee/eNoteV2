@@ -1,6 +1,6 @@
 import 'package:enote_core/enote_core.dart';
 
-/// Course ranking over `student/courses/{courseId}/ranking` (01 §4.3).
+/// Course ranking over `student/courses/{courseId}/ranking`.
 ///
 /// Plain class (no listeners): the ranking screen loads once per open.
 class RankingProvider {

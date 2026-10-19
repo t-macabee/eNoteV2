@@ -8,9 +8,9 @@ import '../../theme/app_theme.dart';
 import '../../widgets/async_state_view.dart';
 import 'ranking_provider.dart';
 
-/// S16 — course ranking (02 §5 S16): the server returns the top 15, plus the student's own row with its real rank when it is below 15.
+/// Course ranking: the server returns the top 15, plus the student's own row with its real rank when it is below 15.
 /// The "your row" highlight is applied only when
-/// `CourseRankingEntryDto.studentId` matches the profile id (02 §12 item 4);
+/// `CourseRankingEntryDto.studentId` matches the profile id;
 /// per-row avatars are never requested.
 class RankingScreen extends StatefulWidget {
   final int courseId;

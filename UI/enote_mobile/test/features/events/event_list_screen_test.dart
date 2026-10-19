@@ -64,5 +64,14 @@ void main() {
       filtered.single.url.queryParameters['to'],
       expected.toIso8601String(),
     );
+
+    await tester.tap(find.byTooltip('Obriši'));
+    await tester.pumpAndSettle();
+
+    expect(find.byTooltip('Obriši'), findsNothing);
+    expect(
+      client.requests.last.url.queryParameters.containsKey('to'),
+      isFalse,
+    );
   });
 }

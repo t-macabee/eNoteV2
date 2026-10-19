@@ -4,7 +4,7 @@ import 'package:enote_core/enote_core.dart';
 
 import '../../widgets/labeled_value.dart';
 
-/// S28 — event detail (02 §5 S28): the passed object is already loaded, so no
+/// Event detail: the passed object is already loaded, so no
 /// request is issued. `addressId` is never shown.
 class EventDetailScreen extends StatelessWidget {
   final EventDto event;

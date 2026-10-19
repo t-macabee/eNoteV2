@@ -5,7 +5,7 @@ import 'package:enote_core/enote_core.dart';
 
 import '../../widgets/wide_image.dart';
 
-/// S26 — announcement detail (02 §5 S26): the passed object is already
+/// Announcement detail: the passed object is already
 /// loaded, so no request is issued. Names and dates only, never ids.
 class AnnouncementDetailScreen extends StatelessWidget {
   final AnnouncementDto announcement;

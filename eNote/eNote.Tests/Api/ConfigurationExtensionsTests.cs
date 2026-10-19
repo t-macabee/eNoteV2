@@ -72,12 +72,23 @@ public sealed class ConfigurationExtensionsTests
         Assert.Contains("Stripe__StatementDescriptor", exception.Message);
     }
 
+    [Fact]
+    public void ValidateRequiredSettings_ThrowsListingStorageRoot_WhenMissing()
+    {
+        var configuration = CreateConfiguration(includeSmtp: true, includeStorageRoot: false);
+
+        var exception = Assert.Throws<InvalidOperationException>(() => configuration.ValidateRequiredSettings());
+
+        Assert.Contains("Storage__Root", exception.Message);
+    }
+
     private static IConfiguration CreateConfiguration(
         bool includeSmtp,
         string jwtKey = "test-signing-key-that-is-long-enough-123",
         string stripeSecretKey = "sk_test_123",
         string stripeWebhookSecret = "whsec_123",
-        bool includeStripeDisplay = true)
+        bool includeStripeDisplay = true,
+        bool includeStorageRoot = true)
     {
         var values = new Dictionary<string, string?>
         {
@@ -89,6 +100,11 @@ public sealed class ConfigurationExtensionsTests
             ["Stripe:WebhookSecret"] = stripeWebhookSecret,
             ["RabbitMQ:Host"] = "localhost",
         };
+
+        if (includeStorageRoot)
+        {
+            values["Storage:Root"] = "wwwroot";
+        }
 
         if (includeStripeDisplay)
         {

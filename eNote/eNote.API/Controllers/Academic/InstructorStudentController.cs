@@ -55,7 +55,7 @@ public sealed class InstructorStudentController(
         [FromBody] DelegatedUserCreateRequest request,
         CancellationToken cancellationToken)
     {
-        (int userId, string? error) = await provisioningService.ProvisionStudentByInstructorAsync(request, cancellationToken);
+        (var userId, var error) = await provisioningService.ProvisionStudentByInstructorAsync(request, cancellationToken);
 
         if (error is not null)
         {

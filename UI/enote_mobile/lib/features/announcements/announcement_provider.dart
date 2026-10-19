@@ -1,6 +1,6 @@
 import 'package:enote_core/enote_core.dart';
 
-/// Student announcement feed over `student/announcements` (01 §4.3, §6.1).
+/// Student announcement feed over `student/announcements`.
 class AnnouncementProvider extends ReadOnlyProvider<AnnouncementDto> {
   AnnouncementProvider({required super.apiClient})
     : super(endpoint: 'student/announcements');

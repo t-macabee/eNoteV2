@@ -1,4 +1,3 @@
-using eNote.Application.Common.Interfaces;
 using eNote.Application.Features.Identity.Users;
 using eNote.Application.Features.Identity.Users.Services;
 using eNote.Contracts.Rentals;

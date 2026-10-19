@@ -6,7 +6,7 @@ import 'package:enote_core/enote_core.dart';
 import '../../widgets/form_submit_state.dart';
 import 'lecture_provider.dart';
 
-/// S19 — RSVP sheet over S18 (02 §5 S19): no confirm dialog (RSVP is
+/// RSVP sheet over the lecture detail: no confirm dialog (RSVP is
 /// reversible). Server refusals render in the `ErrorBanner` under the button.
 class RsvpSheet extends StatefulWidget {
   final int lectureId;

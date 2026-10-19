@@ -6,8 +6,8 @@ import '../courses/course_list_screen.dart';
 import '../events/event_list_screen.dart';
 import '../lectures/lecture_list_screen.dart';
 
-/// S13 — the Učenje tab root: scrollable top `TabBar` over the academic
-/// lists (02 §5 S13). Every tab body keeps its state with
+/// The Učenje tab root: scrollable top `TabBar` over the academic
+/// lists. Every tab body keeps its state with
 /// `AutomaticKeepAliveClientMixin`.
 class LearningTabsScreen extends StatelessWidget {
   const LearningTabsScreen({super.key});

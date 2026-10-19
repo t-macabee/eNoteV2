@@ -2,8 +2,6 @@ using eNote.API.Controllers.Tuition;
 using eNote.Application.Constants;
 using eNote.Application.Features.Academic.Tuition;
 using eNote.Application.Features.Rentals.Payments.Services;
-using eNote.Domain.Entities.Academic;
-using eNote.Domain.Enums;
 using eNote.Tests.TestUtils;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

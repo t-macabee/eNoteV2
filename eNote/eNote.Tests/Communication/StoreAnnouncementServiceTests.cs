@@ -2,7 +2,6 @@ using eNote.Application.Common.Files;
 using eNote.Application.Features.Communication.Announcements;
 using eNote.Application.Features.Communication.Announcements.Services;
 using eNote.Domain.Entities.Communication;
-using eNote.Domain.Entities.Rentals;
 using eNote.Tests.TestUtils;
 using Microsoft.EntityFrameworkCore;
 

@@ -1,10 +1,6 @@
-using eNote.Application.Common.Localization;
 using eNote.Application.Constants;
 using eNote.Application.Features.Rentals.Payments.Services;
-using eNote.Domain.Entities.Academic;
-using eNote.Domain.Enums;
 using MapsterMapper;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace eNote.Application.Features.Academic.Tuition;

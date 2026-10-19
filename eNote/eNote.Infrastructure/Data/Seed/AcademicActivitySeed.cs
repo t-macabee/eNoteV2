@@ -1,8 +1,4 @@
 using eNote.Application.Common.Time;
-using eNote.Domain.Entities.Academic;
-using eNote.Domain.Entities.Assignments;
-using eNote.Domain.Entities.Identity;
-using eNote.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Infrastructure.Data.Seed;
@@ -30,10 +26,10 @@ internal static class AcademicActivitySeed
             .OrderBy(l => l.LectureTime)
             .ToListAsync();
 
-        for (int lectureIndex = 0; lectureIndex < pastLectures.Count; lectureIndex++)
+        for (var lectureIndex = 0; lectureIndex < pastLectures.Count; lectureIndex++)
         {
             var lecture = pastLectures[lectureIndex];
-            for (int studentIndex = 0; studentIndex < orderedStudents.Count; studentIndex++)
+            for (var studentIndex = 0; studentIndex < orderedStudents.Count; studentIndex++)
             {
                 var student = orderedStudents[studentIndex];
                 var status = (studentIndex + lectureIndex) % 5 == 0 ? AttendanceStatus.Absent : AttendanceStatus.Present;
@@ -51,7 +47,7 @@ internal static class AcademicActivitySeed
 
         foreach (var lecture in futureLectures)
         {
-            for (int i = 0; i < 4; i++)
+            for (var i = 0; i < 4; i++)
             {
                 context.Set<Attendance>().Add(new Attendance(orderedStudents[i].Id, lecture.Id, AttendanceStatus.Pending));
             }
@@ -82,7 +78,7 @@ internal static class AcademicActivitySeed
             .ToListAsync();
 
         var closedAssignments = new List<Assignment>();
-        for (int i = 0; i < pastLectures.Count; i++)
+        for (var i = 0; i < pastLectures.Count; i++)
         {
             var lecture = pastLectures[i];
             var assignment = new Assignment(
@@ -110,16 +106,16 @@ internal static class AcademicActivitySeed
 
         await context.SaveChangesAsync();
 
-        for (int assignmentIndex = 0; assignmentIndex < closedAssignments.Count; assignmentIndex++)
+        for (var assignmentIndex = 0; assignmentIndex < closedAssignments.Count; assignmentIndex++)
         {
             var assignment = closedAssignments[assignmentIndex];
-            for (int studentIndex = 0; studentIndex < orderedStudents.Count; studentIndex++)
+            for (var studentIndex = 0; studentIndex < orderedStudents.Count; studentIndex++)
             {
                 var student = orderedStudents[studentIndex];
                 var submission = new AssignmentSubmission(assignment.Id, student.Id);
                 submission.Submit(null, assignment.DueAt.AddDays(-1));
-                int grade = 55 + (studentIndex * 7 + assignmentIndex * 13) % 46;
-                string? feedback = (studentIndex + assignmentIndex) % 2 == 0 ? "Dobar rad, obrati pažnju na ritam." : null;
+                var grade = 55 + (studentIndex * 7 + assignmentIndex * 13) % 46;
+                var feedback = (studentIndex + assignmentIndex) % 2 == 0 ? "Dobar rad, obrati pažnju na ritam." : null;
                 submission.SetGrade(grade, feedback);
                 context.Set<AssignmentSubmission>().Add(submission);
             }

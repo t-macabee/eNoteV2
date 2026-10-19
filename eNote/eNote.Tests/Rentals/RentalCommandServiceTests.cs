@@ -1,7 +1,6 @@
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Constants;
-using eNote.Application.Features.Identity.Users.Services;
 using eNote.Application.Features.Rentals.InstrumentRentals;
 using eNote.Application.Features.Rentals.InstrumentRentals.Services;
 using eNote.Tests.TestUtils;

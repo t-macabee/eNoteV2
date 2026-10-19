@@ -21,7 +21,7 @@ class RootShell extends StatefulWidget {
 
   /// Routes a notification payload to its detail screen: switches to the
   /// matching tab, then pushes the target route on that tab's navigator so
-  /// the back stack stays sensible (02 §6.1). Called from the inbox (which
+  /// the back stack stays sensible. Called from the inbox (which
   /// lives on the root navigator) after it pops itself.
   static void routeNotification(NotificationDto notification) {
     shellKey.currentState?.routeNotification(notification);
@@ -29,7 +29,7 @@ class RootShell extends StatefulWidget {
 
   /// Switches the bottom navigation to [index]. Used after an action on one
   /// tab whose result lives on another — a sent rental request lands the
-  /// student on Iznajmljivanja (02 §5, S9).
+  /// student on Iznajmljivanja.
   static void switchTab(int index) {
     shellKey.currentState?.selectTab(index);
   }
@@ -134,8 +134,8 @@ class RootShellState extends State<RootShell> with WidgetsBindingObserver {
   }
 
   /// Switches to the tab matching [notification]'s payload, then pushes the
-  /// target detail route on that tab's navigator (rentals → tab 2 S11,
-  /// lectures → tab 1 S18, submissions → tab 1 S24 — all wired since T64).
+  /// target detail route on that tab's navigator (rentals → tab 2,
+  /// lectures → tab 1, submissions → tab 1).
   /// Payload-less notifications are ignored.
   void routeNotification(NotificationDto notification) {
     final int tab;

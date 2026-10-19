@@ -3,7 +3,6 @@ using eNote.Application.Common.Persistence;
 using eNote.Application.Constants;
 using eNote.Application.Features.Academic.Assignments;
 using eNote.Application.Features.Academic.Assignments.Services;
-using eNote.Application.Features.Identity.Users.Services;
 using eNote.Domain.Entities.Assignments;
 using eNote.Tests.TestUtils;
 using Microsoft.EntityFrameworkCore;

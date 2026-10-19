@@ -585,7 +585,7 @@ void main() {
     expect(gateway.presentCalls, 0);
   });
 
-  testWidgets('an empty publishable key shows the unavailable copy, no sheet', (
+  testWidgets('an empty publishable key disables pay and shows the reason', (
     tester,
   ) async {
     final gateway = FakePaymentSheetGateway();
@@ -596,12 +596,21 @@ void main() {
       publishableKey: '',
     );
 
-    await _confirmPay(tester);
-
     expect(
-      find.text('Plaćanje trenutno nije dostupno. Pokušajte ponovo kasnije.'),
+      find.text('Plaćanje nije podešeno u ovoj verziji aplikacije.'),
       findsOneWidget,
     );
+    final payButton = tester.widget<FilledButton>(
+      find.widgetWithText(FilledButton, 'Plati 8.00 KM'),
+    );
+    expect(payButton.onPressed, isNull);
+
+    await tester.tap(find.text('Plati 8.00 KM'));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('Potvrda plaćanja'), findsNothing);
+    expect(find.text('Plaćanje trenutno nije dostupno. Pokušajte ponovo kasnije.'),
+        findsNothing);
     expect(gateway.presentCalls, 0);
   });
 }

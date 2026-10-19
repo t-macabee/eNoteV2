@@ -2,7 +2,6 @@ using eNote.Application.Common.Localization;
 using eNote.Application.Features.Rentals.ReferenceData.Addresses;
 using eNote.Domain.Entities.Shared;
 using eNote.Tests.TestUtils;
-using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Tests.Rentals;
 

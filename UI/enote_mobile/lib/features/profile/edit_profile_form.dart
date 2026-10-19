@@ -121,6 +121,7 @@ class EditProfileFields extends StatelessWidget {
             label: 'Datum rođenja',
             value: dateOfBirth,
             lastDate: DateTime.now(),
+            allowClear: false,
             onChanged: onDateOfBirthChanged,
           ),
         ],

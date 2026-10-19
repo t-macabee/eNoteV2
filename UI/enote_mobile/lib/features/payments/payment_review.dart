@@ -10,6 +10,10 @@ class PaymentReview extends StatelessWidget {
   final double? amount;
   final VoidCallback onPay;
   final bool isBusy;
+
+  /// When false, the pay button is disabled and a visible reason replaces the
+  /// silent failure that would otherwise appear only after the confirm dialog.
+  final bool isConfigured;
   final List<Widget> children;
 
   const PaymentReview({
@@ -17,6 +21,7 @@ class PaymentReview extends StatelessWidget {
     required this.amount,
     required this.onPay,
     required this.isBusy,
+    required this.isConfigured,
     required this.children,
   });
 
@@ -43,8 +48,15 @@ class PaymentReview extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 24),
+        if (!isConfigured) ...[
+          const Text(
+            'Plaćanje nije podešeno u ovoj verziji aplikacije.',
+            style: TextStyle(color: AppTheme.error),
+          ),
+          const SizedBox(height: 12),
+        ],
         FilledButton(
-          onPressed: isBusy ? null : onPay,
+          onPressed: isBusy || !isConfigured ? null : onPay,
           child: isBusy
               ? const SizedBox(
                   width: 20,

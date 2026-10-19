@@ -1,5 +1,5 @@
 import 'package:enote_core/enote_core.dart';
-export 'package:enote_core/testing/testing.dart';
+export 'package:enote_test_support/enote_test_support.dart';
 
 /// Long enough for the controller's search debounce to elapse, derived from
 /// [PagedFetchController.defaultSearchDebounce] (+100 ms buffer for real-timer

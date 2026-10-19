@@ -11,10 +11,10 @@ import '../payments/payment_review.dart';
 import '../payments/payment_sheet_gateway.dart';
 import 'tuition_payment_provider.dart';
 
-/// The tuition payment flow for one enrollment: review (A), Stripe sheet (B),
-/// processing (C), succeeded (D), failed/cancelled (E), pending (F).
+/// The tuition payment flow for one enrollment: review, Stripe sheet,
+/// processing, succeeded, failed/cancelled, pending.
 ///
-/// Mirrors the rental screen but needs no server load for state A: the course
+/// Mirrors the rental screen but needs no server load for the review step: the course
 /// name and monthly price travel with the route arguments. The screen never
 /// caches a `clientSecret` and never renders `paymentIntentId`.
 class TuitionPaymentScreen extends StatefulWidget {
@@ -103,6 +103,7 @@ class _TuitionPaymentScreenState extends State<TuitionPaymentScreen> {
       amount: widget.price,
       onPay: _pay,
       isBusy: _flow.isBusy,
+      isConfigured: _flow.isConfigured,
       children: [
         Text(widget.courseName, style: Theme.of(context).textTheme.titleLarge),
         const SizedBox(height: 16),

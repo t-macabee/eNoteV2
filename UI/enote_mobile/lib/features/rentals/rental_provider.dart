@@ -1,10 +1,10 @@
 import 'package:enote_core/enote_core.dart';
 
-/// The student's own rentals (S10, S11) plus the two composed checks the
-/// catalogue and the request sheet need: the unpaid-debt gate (01 §6.4) and
+/// The student's own rentals plus the two composed checks the
+/// catalogue and the request sheet need: the unpaid-debt gate and
 /// the create/cancel commands.
 class RentalProvider extends ReadOnlyProvider<InstrumentRentalDto> {
-  /// Rows per rental page (02 §3).
+  /// Rows per rental page.
   static const int pageSize = 20;
 
   RentalProvider({required super.apiClient}) : super(endpoint: 'student/rentals');
