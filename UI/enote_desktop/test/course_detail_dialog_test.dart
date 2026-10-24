@@ -155,9 +155,11 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('a failed delete shows the banner and keeps the dialog open',
+  testWidgets('a blocked delete shows the server message and keeps the dialog open',
       (tester) async {
-    final httpClient = _client(failMessage: 'Brisanje kursa nije uspjelo.');
+    const blockedMessage =
+        'Kurs ima studente s plaćenim pristupom do 31.07.2026. Uklonite objavu kursa da ga sakrijete iz ponude; brisanje je moguće nakon isteka.';
+    final httpClient = _client(failMessage: blockedMessage);
     await pumpDialog(tester, httpClient, course());
 
     await tester.tap(find.widgetWithText(OutlinedButton, 'Obriši'));
@@ -168,7 +170,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(httpClient.deletedUrls.length, 1);
-    expect(find.text('Brisanje kursa nije uspjelo.'), findsOneWidget);
+    expect(find.text(blockedMessage), findsOneWidget);
     expect(find.byType(CourseDetailDialog), findsOneWidget);
     final deleteButton = tester.widget<OutlinedButton>(
       find.widgetWithText(OutlinedButton, 'Obriši'),

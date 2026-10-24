@@ -41,6 +41,10 @@ public static class Messages
     public const string CourseNotOwned = "Niste vlasnik navedenog kursa.";
     public const string CoursePriceMustBeNonNegative = "Cijena mora biti nenegativan decimalni broj (npr. 25.00).";
     public const string CoursePriceExceedsMaximum = "Cijena ne smije biti veća od 10000.";
+
+    public static string CourseDeleteBlockedByPaidAccess(DateTime paidUntil) =>
+        $"Kurs ima studente s plaćenim pristupom do {paidUntil:dd.MM.yyyy}. Uklonite objavu kursa da ga sakrijete iz ponude; brisanje je moguće nakon isteka.";
+
     public const string InstrumentTypeFeeMustBeNonNegative = "Mjesečna naknada mora biti nenegativan decimalni broj.";
     public const string InstrumentTypeFeeExceedsMaximum = "Mjesečna naknada ne smije biti veća od 99999999.99.";
 

@@ -1,7 +1,9 @@
+using eNote.Application.Common.Localization;
 using eNote.Application.Features.Academic.Courses;
 using eNote.Application.Features.Academic.Courses.Services;
 using eNote.Application.Features.Identity.Users;
 using eNote.Application.Features.Identity.Users.Services;
+using eNote.Application.Features.Rentals.Payments.Services;
 using eNote.Infrastructure.Identity;
 using eNote.Tests.TestUtils;
 using Microsoft.AspNetCore.Identity;
@@ -528,6 +530,8 @@ public sealed class CourseServiceTests
     public async Task DeleteAsync_SoftDeletesCourse_AndDeactivatesEveryLecture_WithAuditStamp()
     {
         var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var enrollment = await harness.Context.Set<Enrollment>().SingleAsync(e => e.CourseId == harness.Course.Id);
+        enrollment.Transition(EnrollmentTrigger.Cancel, userId: 1, now: Now);
         var secondLecture = new Lecture("Second lesson", "Room 2", 45, Now.AddDays(1), LectureType.Practical, 20, harness.Course.Id);
         harness.Context.Set<Lecture>().Add(secondLecture);
         await harness.Context.SaveChangesAsync();
@@ -549,6 +553,126 @@ public sealed class CourseServiceTests
             Assert.Equal(Now, lecture.UpdatedAt);
             Assert.Equal(7, lecture.UpdatedById);
         });
+    }
+
+    [Fact]
+    public async Task DeleteAsync_Throws_WithPaidUntil_WhenPaidAccessIsActive()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var service = CreateService(harness.Context, harness.Instructor);
+
+        var ex = await Assert.ThrowsAsync<BusinessException>(() => service.DeleteAsync(harness.Course.Id));
+
+        Assert.Equal(Messages.CourseDeleteBlockedByPaidAccess(Now.AddDays(30)), ex.Message);
+        var course = await harness.Context.Set<Course>().AsNoTracking().SingleAsync(c => c.Id == harness.Course.Id);
+        Assert.True(course.IsActive);
+        Assert.True(course.IsPublished);
+    }
+
+    [Fact]
+    public async Task DeleteAsync_Throws_WithLatestPaidUntil_AcrossEnrollments()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var secondStudent = new Student(appUserId: 51, enrollmentDate: Now);
+        harness.Context.Set<Student>().Add(secondStudent);
+        var secondEnrollment = new Enrollment(secondStudent.Id, harness.Course.Id, EnrollmentStatus.Active);
+        secondEnrollment.ExtendPaidUntil(Now, 60);
+        harness.Context.Set<Enrollment>().Add(secondEnrollment);
+        await harness.Context.SaveChangesAsync();
+        var service = CreateService(harness.Context, harness.Instructor);
+
+        var ex = await Assert.ThrowsAsync<BusinessException>(() => service.DeleteAsync(harness.Course.Id));
+
+        Assert.Equal(Messages.CourseDeleteBlockedByPaidAccess(Now.AddDays(60)), ex.Message);
+    }
+
+    [Fact]
+    public async Task DeleteAsync_Succeeds_WhenPaidAccessExpired()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var paidEnrollment = await harness.Context.Set<Enrollment>().SingleAsync(e => e.CourseId == harness.Course.Id);
+        paidEnrollment.Transition(EnrollmentTrigger.Cancel, userId: 1, now: Now);
+        var student = new Student(appUserId: 51, enrollmentDate: Now.AddDays(-90));
+        harness.Context.Set<Student>().Add(student);
+        var expiredEnrollment = new Enrollment(student.Id, harness.Course.Id, EnrollmentStatus.Active);
+        expiredEnrollment.ExtendPaidUntil(Now.AddDays(-40), 10);
+        harness.Context.Set<Enrollment>().Add(expiredEnrollment);
+        await harness.Context.SaveChangesAsync();
+        var service = CreateService(harness.Context, harness.Instructor);
+
+        await service.DeleteAsync(harness.Course.Id);
+
+        var course = await harness.Context.Set<Course>().AsNoTracking().IgnoreQueryFilters().SingleAsync(c => c.Id == harness.Course.Id);
+        Assert.False(course.IsActive);
+    }
+
+    [Fact]
+    public async Task DeleteAsync_Succeeds_ForFreeCourse_WithActiveEnrollment()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var course = await harness.Context.Set<Course>().SingleAsync(c => c.Id == harness.Course.Id);
+        course.UpdateDetails(course.Name, course.Description, 0m, course.StartDate, course.EndDate);
+        await harness.Context.SaveChangesAsync();
+        var service = CreateService(harness.Context, harness.Instructor);
+
+        await service.DeleteAsync(harness.Course.Id);
+
+        var stored = await harness.Context.Set<Course>().AsNoTracking().IgnoreQueryFilters().SingleAsync(c => c.Id == harness.Course.Id);
+        Assert.False(stored.IsActive);
+    }
+
+    [Fact]
+    public async Task DeleteAsync_CancelsOpenPaymentAttemptOnStripe_ThenDeletesCourse()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var paidEnrollment = await harness.Context.Set<Enrollment>().SingleAsync(e => e.CourseId == harness.Course.Id);
+        paidEnrollment.Transition(EnrollmentTrigger.Cancel, userId: 1, now: Now);
+        var student = new Student(appUserId: 51, enrollmentDate: Now);
+        harness.Context.Set<Student>().Add(student);
+        var pendingEnrollment = new Enrollment(student.Id, harness.Course.Id, EnrollmentStatus.Pending);
+        harness.Context.Set<Enrollment>().Add(pendingEnrollment);
+        await harness.Context.SaveChangesAsync();
+        harness.Context.Set<CoursePayment>().Add(new CoursePayment(pendingEnrollment.Id, "pi_open", 10000, "bam", PaymentStatus.RequiresAction));
+        await harness.Context.SaveChangesAsync();
+        var gateway = new FakePaymentGateway();
+        gateway.AddIntent("pi_open", 10000, "bam");
+        var service = CreateService(harness.Context, harness.Instructor, gateway: gateway);
+
+        await service.DeleteAsync(harness.Course.Id);
+
+        Assert.Single(gateway.CancelCalls);
+        Assert.Equal("pi_open", gateway.CancelCalls[0].PaymentIntentId);
+        var payment = await harness.Context.Set<CoursePayment>().AsNoTracking().SingleAsync();
+        Assert.Equal(PaymentStatus.Canceled, payment.Status);
+        var course = await harness.Context.Set<Course>().AsNoTracking().IgnoreQueryFilters().SingleAsync(c => c.Id == harness.Course.Id);
+        Assert.False(course.IsActive);
+    }
+
+    [Fact]
+    public async Task DeleteAsync_Blocks_WhenOpenIntentIsProcessing()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var paidEnrollment = await harness.Context.Set<Enrollment>().SingleAsync(e => e.CourseId == harness.Course.Id);
+        paidEnrollment.Transition(EnrollmentTrigger.Cancel, userId: 1, now: Now);
+        var student = new Student(appUserId: 51, enrollmentDate: Now);
+        harness.Context.Set<Student>().Add(student);
+        var pendingEnrollment = new Enrollment(student.Id, harness.Course.Id, EnrollmentStatus.Pending);
+        harness.Context.Set<Enrollment>().Add(pendingEnrollment);
+        await harness.Context.SaveChangesAsync();
+        harness.Context.Set<CoursePayment>().Add(new CoursePayment(pendingEnrollment.Id, "pi_processing", 10000, "bam", PaymentStatus.RequiresAction));
+        await harness.Context.SaveChangesAsync();
+        var gateway = new FakePaymentGateway();
+        gateway.AddIntent("pi_processing", 10000, "bam", "processing");
+        var service = CreateService(harness.Context, harness.Instructor, gateway: gateway);
+
+        var ex = await Assert.ThrowsAsync<BusinessException>(() => service.DeleteAsync(harness.Course.Id));
+
+        Assert.Equal(Messages.PaymentProcessing, ex.Message);
+        Assert.Empty(gateway.CancelCalls);
+        var payment = await harness.Context.Set<CoursePayment>().AsNoTracking().SingleAsync();
+        Assert.Equal(PaymentStatus.RequiresAction, payment.Status);
+        var course = await harness.Context.Set<Course>().AsNoTracking().SingleAsync(c => c.Id == harness.Course.Id);
+        Assert.True(course.IsActive);
     }
 
     [Fact]
@@ -620,7 +744,7 @@ public sealed class CourseServiceTests
         }, "Password1!");
     }
 
-    private static CourseService CreateService(ENoteContext context, Instructor instructor, StubCurrentActor? actor = null, IUserIdentityService? identity = null)
+    private static CourseService CreateService(ENoteContext context, Instructor instructor, StubCurrentActor? actor = null, IUserIdentityService? identity = null, IPaymentGateway? gateway = null)
     {
         var currentUser = actor ?? new StubCurrentActor(instructor: instructor);
         return new(context,
@@ -629,7 +753,9 @@ public sealed class CourseServiceTests
             currentUser,
             AcademicTestData.CreateInstructorAccess(context, instructor),
             NullLogger<CourseService>.Instance,
-            identity ?? new StubUserIdentityService());
+            identity ?? new StubUserIdentityService(),
+            gateway ?? new FakePaymentGateway(),
+            new FixedClock(Now));
     }
 
     private sealed class RecordingUserIdentityService(Dictionary<int, UserIdentityDto> users) : IUserIdentityService

@@ -1,12 +1,13 @@
 using eNote.Application.Features.Identity.Instructors;
 using eNote.Application.Features.Identity.Users;
 using eNote.Application.Features.Identity.Users.Services;
+using eNote.Application.Features.Rentals.Payments.Services;
 using MapsterMapper;
 using Microsoft.Extensions.Logging;
 
 namespace eNote.Application.Features.Academic.Courses.Services;
 
-public sealed class CourseService(IAppDbContext context, IMapper mapper, ICurrentUserContext currentUser, IStudentContext students, InstructorAccessService instructorAccess, ILogger<CourseService> logger, IUserIdentityService identityService)
+public sealed class CourseService(IAppDbContext context, IMapper mapper, ICurrentUserContext currentUser, IStudentContext students, InstructorAccessService instructorAccess, ILogger<CourseService> logger, IUserIdentityService identityService, IPaymentGateway paymentGateway, IClock clock)
 {
     public async Task<CourseDto> GetByIdForInstructorAsync(int id, CancellationToken cancellationToken = default)
     {
@@ -416,6 +417,9 @@ public sealed class CourseService(IAppDbContext context, IMapper mapper, ICurren
 
     private async Task SoftDeleteCourseAsync(Course entity, CancellationToken cancellationToken)
     {
+        await EnsureNoActivePaidAccessAsync(entity, cancellationToken);
+        await CancelOpenPaymentAttemptsAsync(entity, cancellationToken);
+
         entity.SoftDelete();
         entity.UpdatedById = currentUser.UserId;
 
@@ -430,5 +434,42 @@ public sealed class CourseService(IAppDbContext context, IMapper mapper, ICurren
         }
 
         await context.SaveChangesAsync(cancellationToken);
+    }
+
+    private async Task EnsureNoActivePaidAccessAsync(Course entity, CancellationToken cancellationToken)
+    {
+        if (entity.Price <= 0)
+        {
+            return;
+        }
+
+        var latestPaidUntil = await context.Set<Enrollment>()
+            .Where(e => e.CourseId == entity.Id
+                && e.EnrollmentStatus == EnrollmentStatus.Active
+                && e.PaidUntil >= clock.UtcNow)
+            .MaxAsync(e => e.PaidUntil, cancellationToken);
+
+        if (latestPaidUntil.HasValue)
+        {
+            throw new BusinessException(Messages.CourseDeleteBlockedByPaidAccess(latestPaidUntil.Value));
+        }
+    }
+
+    private async Task CancelOpenPaymentAttemptsAsync(Course entity, CancellationToken cancellationToken)
+    {
+        var openAttempts = await context.Set<CoursePayment>()
+            .Where(p => p.Enrollment.CourseId == entity.Id
+                && (p.Status == PaymentStatus.RequiresAction || p.Status == PaymentStatus.Failed))
+            .OrderByDescending(p => p.CreatedAt)
+            .ToListAsync(cancellationToken);
+
+        await PaymentGatewayHelpers.ResolveOpenAttemptsAsync(
+            logger,
+            context,
+            paymentGateway,
+            openAttempts,
+            expected: null,
+            Messages.PaymentProcessing,
+            cancellationToken);
     }
 }

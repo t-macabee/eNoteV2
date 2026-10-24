@@ -23,7 +23,9 @@ public sealed class DefaultImageDtoTests
             actor,
             AcademicTestData.CreateInstructorAccess(harness.Context, harness.Instructor),
             NullLogger<CourseService>.Instance,
-            new StubUserIdentityService());
+            new StubUserIdentityService(),
+            new FakePaymentGateway(),
+            new FixedClock(Now));
 
         var courseDto = await courseService.GetByIdForAdminAsync(harness.Course.Id);
 
