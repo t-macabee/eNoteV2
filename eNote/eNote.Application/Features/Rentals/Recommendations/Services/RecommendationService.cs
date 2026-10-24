@@ -183,10 +183,20 @@ public sealed class RecommendationService(IAppDbContext context, IMapper mapper,
                 .Take(poolSize / 2)
                 .ToListAsync(cancellationToken);
 
-        var candidateIds = preferredIds
+        var mergedIds = preferredIds
             .Concat(collaborativeInstrumentIds)
             .Concat(popularIds)
             .Distinct()
+            .ToList();
+
+        var activeIds = await context.Set<Instrument>()
+            .AsNoTracking()
+            .Where(x => x.IsActive && mergedIds.Contains(x.Id))
+            .Select(x => x.Id)
+            .ToHashSetAsync(cancellationToken);
+
+        var candidateIds = mergedIds
+            .Where(activeIds.Contains)
             .Take(poolSize)
             .ToList();
 

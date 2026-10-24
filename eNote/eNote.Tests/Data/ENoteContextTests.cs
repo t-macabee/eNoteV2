@@ -17,7 +17,6 @@ public sealed class ENoteContextTests
     [Theory]
     [InlineData(typeof(Assignment))]
     [InlineData(typeof(Course))]
-    [InlineData(typeof(Instrument))]
     [InlineData(typeof(Lecture))]
     [InlineData(typeof(LectureNote))]
     public void Model_SoftDeletableEntities_HaveActiveQueryFilter(Type entityType)
@@ -31,6 +30,23 @@ public sealed class ENoteContextTests
 
         Assert.NotNull(filter);
         Assert.Contains("IsActive", filter.ToString());
+    }
+
+    [Theory]
+    [InlineData(typeof(Instrument))]
+    [InlineData(typeof(InstrumentRental))]
+    public void Model_RentalCatalogEntities_HaveTenantOnlyQueryFilter(Type entityType)
+    {
+        using var context = CreateContext(Baseline);
+
+        var filter = context.Model.FindEntityType(entityType)?
+            .GetDeclaredQueryFilters()
+            .Select(queryFilter => queryFilter.Expression)
+            .SingleOrDefault();
+
+        Assert.NotNull(filter);
+        Assert.Contains("MusicStoreId", filter.ToString());
+        Assert.DoesNotContain("IsActive", filter.ToString());
     }
 
     [Fact]

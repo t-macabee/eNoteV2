@@ -129,54 +129,69 @@ class _RentalDetailScreenState extends State<RentalDetailScreen> {
 
   Widget _header(InstrumentRentalDto rental) {
     final payment = _payment;
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ImageThumbnail(
-            imageUrl: rental.instrumentImagePath,
-            apiClient: context.read<ApiClient>(),
-            size: 72,
-            borderRadius: 8,
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  rental.instrumentModel,
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  rental.instrumentType,
-                  style: const TextStyle(color: AppTheme.textSecondary),
-                ),
-                Text(
-                  rental.storeName,
-                  style: const TextStyle(color: AppTheme.textSecondary),
-                ),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 4,
-                  children: [
-                    StatusChip.rental(rental.rentalStatus),
-                    if (rental.isPaid)
-                      StatusChip.payment(PaymentStatus.succeeded),
-                    if (payment != null &&
-                        (payment.status == PaymentStatus.refunded ||
-                            payment.status == PaymentStatus.partiallyRefunded))
-                      StatusChip.payment(payment.status),
-                  ],
-                ),
-              ],
+    return InkWell(
+      onTap: rental.instrumentIsActive ? () => _openInstrument(rental) : null,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ImageThumbnail(
+              imageUrl: rental.instrumentImagePath,
+              apiClient: context.read<ApiClient>(),
+              size: 72,
+              borderRadius: 8,
             ),
-          ),
-        ],
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    rental.instrumentModel,
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    rental.instrumentType,
+                    style: const TextStyle(color: AppTheme.textSecondary),
+                  ),
+                  Text(
+                    rental.storeName,
+                    style: const TextStyle(color: AppTheme.textSecondary),
+                  ),
+                  if (!rental.instrumentIsActive)
+                    const Text(
+                      'Instrument više nije u ponudi',
+                      style: TextStyle(color: AppTheme.error),
+                    ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 4,
+                    children: [
+                      StatusChip.rental(rental.rentalStatus),
+                      if (rental.isPaid)
+                        StatusChip.payment(PaymentStatus.succeeded),
+                      if (payment != null &&
+                          (payment.status == PaymentStatus.refunded ||
+                              payment.status == PaymentStatus.partiallyRefunded))
+                        StatusChip.payment(payment.status),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
+    );
+  }
+
+  void _openInstrument(InstrumentRentalDto rental) {
+    Navigator.of(context).pushNamed(
+      AppRouter.instrumentDetail,
+      arguments: InstrumentDetailArgs(rental.instrumentId),
     );
   }
 

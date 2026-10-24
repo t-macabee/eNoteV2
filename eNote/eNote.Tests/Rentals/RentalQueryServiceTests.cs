@@ -101,6 +101,26 @@ public sealed class RentalQueryServiceTests
         Assert.Equal(unpaid.Id, debt.RentalId);
     }
 
+    [Fact]
+    public async Task GetByIdForStudentAsync_ReturnsRental_WhenInstrumentSoftDeleted()
+    {
+        await using var context = RentalTestData.CreateContext(Now);
+        var student = await SeedStudentAsync(context, appUserId: 100);
+        var instrument = await RentalTestData.SeedInstrumentAsync(context);
+        var rental = RentalTestData.CreateCompletedRental(instrument, student.Id, Now);
+        context.Set<InstrumentRental>().Add(rental);
+        await context.SaveChangesAsync();
+
+        instrument.SoftDelete();
+        await context.SaveChangesAsync();
+        var service = CreateService(context, student);
+
+        var dto = await service.GetByIdForStudentAsync(rental.Id);
+
+        Assert.Equal(rental.Id, dto.Id);
+        Assert.False(dto.InstrumentIsActive);
+    }
+
     private static async Task<Student> SeedStudentAsync(ENoteContext context, int appUserId)
     {
         var student = new Student(appUserId, Now.AddMonths(-1));

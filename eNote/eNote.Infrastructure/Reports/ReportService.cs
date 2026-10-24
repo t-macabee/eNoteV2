@@ -46,19 +46,7 @@ internal sealed class ReportService(IAppDbContext context, IClock clock, Ranking
     {
         var storeId = await stores.GetCurrentStoreIdAsync(cancellationToken);
         var storeName = await context.Set<MusicStore>().AsNoTracking().Where(s => s.Id == storeId).Select(s => s.StoreName).FirstOrDefaultAsync(cancellationToken) ?? Messages.ReportStoreFallback;
-        var rentals = await context.Set<InstrumentRental>()
-            .AsNoTracking()
-            .Where(x => x.MusicStoreId == storeId)
-            .OrderByDescending(x => x.RequestedAt)
-            .Select(x => new RentalSummaryRow
-            {
-                InstrumentModel = x.Instrument.Model,
-                RentalStatus = x.RentalStatus,
-                Fee = x.Fee,
-                PickedUpAt = x.PickedUpAt,
-                ReturnedAt = x.ReturnedAt
-            })
-            .ToListAsync(cancellationToken);
+        var rentals = await LoadRentalSummaryRowsAsync(storeId, cancellationToken);
         return Document.Create(container => container.Page(page =>
         {
             page.Margin(30);
@@ -132,7 +120,22 @@ internal sealed class ReportService(IAppDbContext context, IClock clock, Ranking
 
     private sealed record AttendanceRow(string StudentName, AttendanceStatus Status);
 
-    private sealed record RentalSummaryRow
+    internal async Task<List<RentalSummaryRow>> LoadRentalSummaryRowsAsync(int storeId, CancellationToken cancellationToken) =>
+        await context.Set<InstrumentRental>()
+            .AsNoTracking()
+            .Where(x => x.MusicStoreId == storeId)
+            .OrderByDescending(x => x.RequestedAt)
+            .Select(x => new RentalSummaryRow
+            {
+                InstrumentModel = x.Instrument.Model,
+                RentalStatus = x.RentalStatus,
+                Fee = x.Fee,
+                PickedUpAt = x.PickedUpAt,
+                ReturnedAt = x.ReturnedAt
+            })
+            .ToListAsync(cancellationToken);
+
+    internal sealed record RentalSummaryRow
     {
         public string InstrumentModel { get; init; } = string.Empty;
         public InstrumentRentalStatus RentalStatus { get; init; }

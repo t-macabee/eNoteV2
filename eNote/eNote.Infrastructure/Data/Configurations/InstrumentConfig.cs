@@ -22,6 +22,5 @@ public sealed class InstrumentConfig : IEntityTypeConfiguration<Instrument>
         builder.Property(x => x.Description).HasMaxLength(1000);
 
         builder.Ignore(x => x.IsAvailable);
-        builder.HasQueryFilter(x => x.IsActive);
     }
 }

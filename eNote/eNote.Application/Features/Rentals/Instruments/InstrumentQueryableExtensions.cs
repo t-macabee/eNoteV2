@@ -2,6 +2,9 @@ namespace eNote.Application.Features.Rentals.Instruments;
 
 public static class InstrumentQueryableExtensions
 {
+    public static IQueryable<Instrument> WhereActive(this IQueryable<Instrument> query) =>
+        query.Where(x => x.IsActive);
+
     public static IQueryable<Instrument> WithInstrumentDetails(this IQueryable<Instrument> query) =>
         query
             .Include(x => x.MusicStore)

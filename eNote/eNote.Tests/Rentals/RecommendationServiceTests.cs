@@ -248,6 +248,38 @@ public sealed class RecommendationServiceTests
         Assert.DoesNotContain(lowCountInstrument.Id, resultIds);
     }
 
+    [Fact]
+    public async Task GetRecommendedInstrumentsAsync_ExcludesArchivedInstrument_EvenWhenPopular()
+    {
+        await using var context = RentalTestData.CreateContext(Now);
+        var student = await SeedStudentAsync(context);
+        var (typeA, typeB) = await SeedTwoTypesAsync(context);
+        var store = await SeedStoreAsync(context);
+
+        var archived = new Instrument("Archived", "YAM", null, null, typeA.Id, store.Id);
+        var active = new Instrument("Active", "YAM", null, null, typeB.Id, store.Id);
+        context.Set<Instrument>().AddRange(archived, active);
+        await context.SaveChangesAsync();
+
+        var rentals = new List<InstrumentRental>();
+        for (var similarStudentId = 201; similarStudentId < 204; similarStudentId++)
+        {
+            rentals.Add(CreateCompletedRental(archived.Id, similarStudentId, store.Id, Now.AddDays(-40)));
+        }
+
+        context.Set<InstrumentRental>().AddRange(rentals);
+        await context.SaveChangesAsync();
+
+        archived.SoftDelete();
+        await context.SaveChangesAsync();
+        var service = CreateService(context, student);
+
+        var result = await service.GetRecommendedInstrumentsAsync();
+
+        Assert.DoesNotContain(result, r => r.Instrument.Id == archived.Id);
+        Assert.Contains(result, r => r.Instrument.Id == active.Id);
+    }
+
     private static InstrumentRental CreateCompletedRental(int instrumentId, int studentProfileId, int storeId, DateTime requestedAt)
     {
         var rental = new InstrumentRental(instrumentId, studentProfileId, storeId, requestedAt, null);

@@ -13,6 +13,7 @@ public sealed class InstrumentRentalMappingConfig : IRegister
             .Map(x => x.StoreName, x => x.Instrument.MusicStore.StoreName)
             .Map(x => x.StudentUserId, x => x.StudentProfile.AppUserId)
             .Map(x => x.InstrumentImagePath, x => x.Instrument.ImagePath)
+            .Map(x => x.InstrumentIsActive, x => x.Instrument.IsActive)
             .Map(x => x.IsPaid, x => x.IsPaid)
             .Map(x => x.AmountPaid, x => x.AmountPaid)
             .Map(x => x.PaidAt, x => x.PaidAt);

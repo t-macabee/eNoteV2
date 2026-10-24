@@ -80,6 +80,26 @@ public sealed class ReportServiceTests
     }
 
     [Fact]
+    public async Task LoadRentalSummaryRowsAsync_IncludesRentalsOfArchivedInstruments()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var instrument = await RentalTestData.SeedInstrumentAsync(harness.Context);
+        var rental = RentalTestData.CreateCompletedRental(instrument, harness.Student.Id, Now);
+        harness.Context.Set<InstrumentRental>().Add(rental);
+        await harness.Context.SaveChangesAsync();
+
+        instrument.SoftDelete();
+        await harness.Context.SaveChangesAsync();
+        var service = CreateService(harness, harness.Instructor, new StubCurrentActor(storeId: instrument.MusicStoreId));
+
+        var rows = await service.LoadRentalSummaryRowsAsync(instrument.MusicStoreId, CancellationToken.None);
+
+        var row = Assert.Single(rows);
+        Assert.Equal("Stradivarius", row.InstrumentModel);
+        Assert.Equal(10.00m, row.CalculateCharges(Now).TotalFee);
+    }
+
+    [Fact]
     public async Task GenerateStoreRentalSummaryPdfAsync_ExcludesOtherStoreRentals_WhenGlobalFilterIsPermissive()
     {
         var scopedOnlyBytes = await GenerateRentalSummaryPdfAsync(includeOtherStoreRental: false);

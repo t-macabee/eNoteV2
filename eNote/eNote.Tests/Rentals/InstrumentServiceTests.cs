@@ -27,16 +27,16 @@ public sealed class InstrumentServiceTests
 
         var service = CreateInstrumentService(ctx);
 
-        var filteredStore1 = await service.GetPagedAsync(new InstrumentSearchObject { MusicStoreId = store1.Id }, publicView: true);
+        var filteredStore1 = await service.GetPagedAsync(new InstrumentSearchObject { MusicStoreId = store1.Id });
         Assert.Equal(2, filteredStore1.Items.Count);
         Assert.All(filteredStore1.Items, x => Assert.Equal("Music Shop Sarajevo", x.MusicStore));
 
-        var filteredStore2 = await service.GetPagedAsync(new InstrumentSearchObject { MusicStoreId = store2.Id }, publicView: true);
+        var filteredStore2 = await service.GetPagedAsync(new InstrumentSearchObject { MusicStoreId = store2.Id });
         Assert.Single(filteredStore2.Items);
         Assert.Equal("Les Paul", filteredStore2.Items[0].Model);
         Assert.Equal("Music Shop Mostar", filteredStore2.Items[0].MusicStore);
 
-        var noFilter = await service.GetPagedAsync(new InstrumentSearchObject(), publicView: true);
+        var noFilter = await service.GetPagedAsync(new InstrumentSearchObject());
         Assert.Equal(3, noFilter.Items.Count);
     }
 
@@ -58,7 +58,7 @@ public sealed class InstrumentServiceTests
         {
             Model = "Pacifica",
             MusicStoreId = store1.Id
-        }, publicView: true);
+        });
 
         Assert.Single(filtered.Items);
         Assert.Equal("Music Shop Sarajevo", filtered.Items[0].MusicStore);
@@ -81,14 +81,14 @@ public sealed class InstrumentServiceTests
         var modelMatch = await service.GetPagedAsync(new InstrumentSearchObject
         {
             Search = "Stratocaster"
-        }, publicView: true);
+        });
         Assert.Single(modelMatch.Items);
         Assert.Equal("Stratocaster", modelMatch.Items[0].Model);
 
         var mfrMatch = await service.GetPagedAsync(new InstrumentSearchObject
         {
             Search = "Yamaha"
-        }, publicView: true);
+        });
         Assert.Single(mfrMatch.Items);
         Assert.Equal("Pacifica 112V", mfrMatch.Items[0].Model);
         Assert.Equal("Yamaha", mfrMatch.Items[0].Manufacturer);
@@ -108,7 +108,7 @@ public sealed class InstrumentServiceTests
 
         var service = CreateInstrumentService(ctx);
 
-        var paged = await service.GetPagedAsync(new InstrumentSearchObject(), publicView: true);
+        var paged = await service.GetPagedAsync(new InstrumentSearchObject());
 
         Assert.Equal([newest.Id, middle.Id, oldest.Id], paged.Items.Select(x => x.Id));
     }
@@ -164,7 +164,7 @@ public sealed class InstrumentServiceTests
 
         var service = CreateInstrumentService(ctx);
 
-        var paged = await service.GetPagedAsync(new InstrumentSearchObject(), publicView: true);
+        var paged = await service.GetPagedAsync(new InstrumentSearchObject());
 
         Assert.Equal(2, paged.Items.Count);
         var availDto = paged.Items.Single(x => x.Id == instrumentAvailable.Id);
@@ -172,6 +172,25 @@ public sealed class InstrumentServiceTests
 
         Assert.True(availDto.IsAvailable);
         Assert.False(rentedDto.IsAvailable);
+    }
+
+    [Fact]
+    public async Task GetPagedAsync_ExcludesArchivedInstruments()
+    {
+        var ctx = CreateContext();
+        var type = await SeedInstrumentTypeAsync(ctx, "Guitar");
+        var store = await SeedStoreAsync(ctx, "Music Shop Sarajevo");
+        var active = await SeedInstrumentAsync(ctx, store.Id, type.Id, "Stratocaster", "Fender");
+        var archived = await SeedInstrumentAsync(ctx, store.Id, type.Id, "Les Paul", "Gibson");
+        archived.SoftDelete();
+        await ctx.SaveChangesAsync();
+
+        var service = CreateInstrumentService(ctx);
+
+        var paged = await service.GetPagedAsync(new InstrumentSearchObject());
+
+        Assert.Equal([active.Id], paged.Items.Select(x => x.Id));
+        await Assert.ThrowsAsync<NotFoundException>(() => service.GetByIdAsync(archived.Id));
     }
 
     [Fact]
@@ -189,7 +208,7 @@ public sealed class InstrumentServiceTests
 
         var service = CreateInstrumentService(ctx);
 
-        var dto = await service.GetByIdAsync(instrument.Id, publicView: true);
+        var dto = await service.GetByIdAsync(instrument.Id);
 
         Assert.False(dto.IsAvailable);
         Assert.Equal("Stratocaster", dto.Model);

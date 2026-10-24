@@ -23,15 +23,11 @@ public sealed class InstrumentService(
             r.RentalStatus == InstrumentRentalStatus.Active)
     };
 
-    public async Task<InstrumentDto> GetByIdAsync(int id, bool publicView = false, CancellationToken cancellationToken = default)
+    public async Task<InstrumentDto> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
         var query = context.Set<Instrument>()
-            .AsNoTracking();
-
-        if (publicView)
-        {
-            query = query.IgnoreQueryFilters().Where(x => x.IsActive);
-        }
+            .AsNoTracking()
+            .WhereActive();
 
         return await query
             .Where(x => x.Id == id)
@@ -40,15 +36,11 @@ public sealed class InstrumentService(
             ?? throw new NotFoundException(Messages.NotFound);
     }
 
-    public async Task<PagedResult<InstrumentDto>> GetPagedAsync(InstrumentSearchObject search, bool publicView = false, CancellationToken cancellationToken = default)
+    public async Task<PagedResult<InstrumentDto>> GetPagedAsync(InstrumentSearchObject search, CancellationToken cancellationToken = default)
     {
         var query = context.Set<Instrument>()
-            .AsNoTracking();
-
-        if (publicView)
-        {
-            query = query.IgnoreQueryFilters().Where(x => x.IsActive);
-        }
+            .AsNoTracking()
+            .WhereActive();
 
         query = query.ApplySearch(search);
 
@@ -95,6 +87,7 @@ public sealed class InstrumentService(
         await EnsureStoreAccessAsync(cancellationToken);
 
         var entity = await context.Set<Instrument>()
+            .WhereActive()
             .FirstOrDefaultAsync(x => x.Id == id, cancellationToken)
             ?? throw new NotFoundException(Messages.NotFound);
 
@@ -120,6 +113,7 @@ public sealed class InstrumentService(
         await EnsureStoreAccessAsync(ct);
 
         var entity = await context.Set<Instrument>()
+            .WhereActive()
             .FirstOrDefaultAsync(x => x.Id == id, ct)
             ?? throw new NotFoundException(Messages.InstrumentNotFound);
 
@@ -139,6 +133,7 @@ public sealed class InstrumentService(
         await EnsureStoreAccessAsync(cancellationToken);
 
         var instrument = await context.Set<Instrument>()
+            .WhereActive()
             .FirstOrDefaultAsync(x => x.Id == id, cancellationToken)
             ?? throw new NotFoundException(Messages.NotFound);
 
@@ -168,5 +163,5 @@ public sealed class InstrumentService(
     }
 
     private Task<InstrumentDto> ReloadAsync(int id, CancellationToken cancellationToken) =>
-        context.Set<Instrument>().AsNoTracking().Where(x => x.Id == id).Select(ProjectToDto).FirstAsync(cancellationToken);
+        context.Set<Instrument>().AsNoTracking().WhereActive().Where(x => x.Id == id).Select(ProjectToDto).FirstAsync(cancellationToken);
 }

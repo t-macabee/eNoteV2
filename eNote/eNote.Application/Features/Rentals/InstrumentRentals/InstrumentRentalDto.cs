@@ -13,6 +13,7 @@ public class InstrumentRentalDto
     public string InstrumentType { get; set; } = null!;
     public string StoreName { get; set; } = null!;
     public string? InstrumentImagePath { get; set; }
+    public bool InstrumentIsActive { get; set; }
     public InstrumentRentalStatus RentalStatus { get; set; }
     public string? RequestNote { get; set; }
     public string? Note { get; set; }

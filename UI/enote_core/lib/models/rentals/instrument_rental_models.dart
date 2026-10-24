@@ -12,6 +12,7 @@ class InstrumentRentalDto {
   final String instrumentType;
   final String storeName;
   final String? instrumentImagePath;
+  final bool instrumentIsActive;
   final InstrumentRentalStatus rentalStatus;
   final String? requestNote;
   final String? note;
@@ -41,6 +42,7 @@ class InstrumentRentalDto {
     required this.instrumentType,
     required this.storeName,
     this.instrumentImagePath,
+    this.instrumentIsActive = true,
     required this.rentalStatus,
     this.requestNote,
     this.note,
@@ -72,6 +74,7 @@ class InstrumentRentalDto {
       instrumentType: json['instrumentType'] as String? ?? '',
       storeName: json['storeName'] as String? ?? '',
       instrumentImagePath: json['instrumentImagePath'] as String?,
+      instrumentIsActive: json['instrumentIsActive'] as bool? ?? true,
       rentalStatus:
           InstrumentRentalStatus.fromJson(json['rentalStatus'] as String?),
       requestNote: json['requestNote'] as String?,
@@ -104,6 +107,7 @@ class InstrumentRentalDto {
     'instrumentType': instrumentType,
     'storeName': storeName,
     if (instrumentImagePath != null) 'instrumentImagePath': instrumentImagePath,
+    'instrumentIsActive': instrumentIsActive,
     'rentalStatus': rentalStatus.toJson(),
     if (requestNote != null) 'requestNote': requestNote,
     if (note != null) 'note': note,

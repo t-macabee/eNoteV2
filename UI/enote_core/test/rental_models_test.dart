@@ -64,6 +64,29 @@ void main() {
     });
   });
 
+  group('InstrumentRentalDto.instrumentIsActive', () {
+    InstrumentRentalDto rental(Map<String, dynamic> extra) =>
+        InstrumentRentalDto.fromJson({
+          'id': 1,
+          'instrumentModel': 'C40',
+          'instrumentType': 'Gitara',
+          'storeName': 'Muzika d.o.o.',
+          'rentalStatus': 'Completed',
+          'requestedAt': '2026-06-01T00:00:00Z',
+          'fee': 40.0,
+          ...extra,
+        });
+
+    test('reads the archived flag from the payload', () {
+      expect(rental({'instrumentIsActive': false}).instrumentIsActive, isFalse);
+      expect(rental({'instrumentIsActive': true}).instrumentIsActive, isTrue);
+    });
+
+    test('treats a payload without the flag as an active instrument', () {
+      expect(rental({}).instrumentIsActive, isTrue);
+    });
+  });
+
   group('InstrumentRentalDto.chargeLabel', () {
     InstrumentRentalDto rental(Map<String, dynamic> extra) =>
         InstrumentRentalDto.fromJson({
