@@ -174,6 +174,18 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
     await _loadCourse();
   }
 
+  void _openTuitionHistory(CourseDto course) {
+    final enrollmentId = course.enrollmentId;
+    if (enrollmentId == null) return;
+    Navigator.of(context).pushNamed(
+      AppRouter.tuitionHistory,
+      arguments: TuitionHistoryArgs(
+        enrollmentId,
+        courseName: course.name,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final course = _course;
@@ -211,6 +223,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
             onUnenroll: () => _unenroll(course),
             onRanking: () => _openRanking(course),
             onTuition: () => _openTuition(course),
+            onTuitionHistory: () => _openTuitionHistory(course),
           ),
         ),
         if (!enrolled)

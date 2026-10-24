@@ -41,11 +41,14 @@ public sealed class InstructorStudentController(
     }
 
     [HttpGet("{id:int}/enrollments")]
-    [ProducesResponseType(typeof(List<StudentEnrollmentDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<List<StudentEnrollmentDto>>> GetEnrollments(int id, CancellationToken cancellationToken)
+    [ProducesResponseType(typeof(PagedResult<StudentEnrollmentDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<PagedResult<StudentEnrollmentDto>>> GetEnrollments(
+        int id,
+        [FromQuery] StudentEnrollmentSearchObject search,
+        CancellationToken cancellationToken)
     {
         var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId, cancellationToken);
-        var result = await studentService.GetEnrollmentsForInstructorAsync(instructorId, id, cancellationToken);
+        var result = await studentService.GetEnrollmentsForInstructorAsync(instructorId, id, search, cancellationToken);
         return Ok(result);
     }
 

@@ -96,18 +96,21 @@ public sealed class TuitionPaymentService(
         return mapper.Map<CoursePaymentDto>(payment);
     }
 
-    public async Task<IReadOnlyList<CoursePaymentDto>> GetHistoryAsync(int enrollmentId, CancellationToken cancellationToken = default)
+    public async Task<PagedResult<CoursePaymentDto>> GetHistoryAsync(
+        int enrollmentId,
+        CoursePaymentSearchObject search,
+        CancellationToken cancellationToken = default)
     {
         await EnsureStudentOwnsEnrollmentAsync(enrollmentId, cancellationToken);
 
-        var payments = await context.Set<CoursePayment>()
+        return await context.Set<CoursePayment>()
             .AsNoTracking()
             .Where(p => p.EnrollmentId == enrollmentId)
-            .OrderByDescending(p => p.CreatedAt)
-            .Take(50)
-            .ToListAsync(cancellationToken);
-
-        return mapper.Map<List<CoursePaymentDto>>(payments);
+            .ToPagedResultAsync(
+                search,
+                mapper.Map<CoursePaymentDto>,
+                q => q.OrderByDescending(p => p.CreatedAt),
+                cancellationToken);
     }
 
     private async Task EnsureStudentOwnsEnrollmentAsync(int enrollmentId, CancellationToken cancellationToken)

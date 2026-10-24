@@ -102,17 +102,54 @@ void main() {
     expect(await _provider(missing).status(_enrollmentId), isNull);
   });
 
-  test('history decodes a list', () async {
-    final client = _scriptedClient([], fallbackBody: [_payment('Succeeded')]);
-    final history = await _provider(client).history(_enrollmentId);
-    expect(history, hasLength(1));
-    expect(history.single.status, PaymentStatus.succeeded);
+  test('history sends the page and decodes the paged payments', () async {
+    final client = _scriptedClient([
+      (
+        statusCode: 200,
+        body: {
+          'items': [
+            {
+              ..._payment('Refunded'),
+              'refundedAt': '2026-10-01T09:00:00',
+              'refundedCents': 80000,
+            },
+          ],
+          'page': 2,
+          'pageSize': 5,
+          'totalCount': 6,
+        },
+      ),
+    ]);
+
+    final page = await _provider(client).history(
+      _enrollmentId,
+      page: 2,
+      pageSize: 5,
+    );
+
+    final sent = client.requests.single;
+    expect(sent.method, 'GET');
+    expect(
+      sent.url.path,
+      '/api/v1/student/enrollments/$_enrollmentId/tuition/history',
+    );
+    expect(sent.url.queryParameters['page'], '2');
+    expect(sent.url.queryParameters['pageSize'], '5');
+    expect(sent.url.queryParameters['includeTotalCount'], 'true');
+
+    expect(page.items, hasLength(1));
+    expect(page.page, 2);
+    expect(page.pageSize, 5);
+    expect(page.totalCount, 6);
+    expect(page.items.single.status, PaymentStatus.refunded);
+    expect(page.items.single.refundedCents, 80000);
+    expect(page.items.single.refundedAt, DateTime.parse('2026-10-01T09:00:00'));
   });
 
-  test('history rejects a non-list body through decodeListOrThrow', () async {
-    final client = _scriptedClient([
-      (statusCode: 200, body: {'message': 'not a list'}),
-    ]);
+  test('history rejects a malformed body', () async {
+    final client = ScriptedClient(
+      (_) => http.Response('not-json{{{', 200),
+    );
     await expectLater(
       _provider(client).history(_enrollmentId),
       throwsA(isA<ApiException>()),

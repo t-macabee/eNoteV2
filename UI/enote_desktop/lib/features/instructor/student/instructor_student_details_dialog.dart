@@ -24,10 +24,15 @@ class InstructorStudentDetailsDialog extends StatefulWidget {
 
 class _InstructorStudentDetailsDialogState
     extends State<InstructorStudentDetailsDialog> {
+  static const int _enrollmentPageSize = 5;
+
   late StudentDto _student = widget.student;
   late DateTime? _membershipPaidUntil = widget.student.membershipPaidUntil;
   List<StudentEnrollmentDto>? _enrollments;
   bool _enrollmentsError = false;
+  bool _enrollmentsLoading = false;
+  bool _hasMoreEnrollments = false;
+  int _enrollmentPage = 1;
   List<LectureDto>? _individualLectures;
 
   @override
@@ -51,10 +56,16 @@ class _InstructorStudentDetailsDialogState
     }
 
     try {
-      final enrollments = await provider.getEnrollments(widget.student.id);
+      final enrollments = await provider.getEnrollments(
+        widget.student.id,
+        page: 1,
+        pageSize: _enrollmentPageSize,
+      );
       if (mounted) {
         setState(() {
-          _enrollments = enrollments;
+          _enrollments = enrollments.items.toList();
+          _enrollmentPage = enrollments.page;
+          _hasMoreEnrollments = enrollments.hasNext;
           _enrollmentsError = false;
         });
       }
@@ -80,6 +91,32 @@ class _InstructorStudentDetailsDialogState
       if (mounted) {
         setState(() => _individualLectures = const []);
       }
+    }
+  }
+
+  Future<void> _loadMoreEnrollments() async {
+    if (_enrollmentsLoading || !_hasMoreEnrollments) return;
+
+    setState(() => _enrollmentsLoading = true);
+    try {
+      final next = await context.read<InstructorStudentProvider>()
+          .getEnrollments(
+            widget.student.id,
+            page: _enrollmentPage + 1,
+            pageSize: _enrollmentPageSize,
+          );
+      if (!mounted) return;
+      setState(() {
+        _enrollments = [...?_enrollments, ...next.items];
+        _enrollmentPage = next.page;
+        _hasMoreEnrollments = next.hasNext;
+      });
+    } catch (e) {
+      if (mounted) {
+        ErrorBanner.show(context, message: userMessage(e));
+      }
+    } finally {
+      if (mounted) setState(() => _enrollmentsLoading = false);
     }
   }
 
@@ -187,6 +224,16 @@ class _InstructorStudentDetailsDialogState
                   icon: Icons.class_outlined,
                   label: e.courseName,
                   value: e.instructorName ?? '—',
+                ),
+              ),
+            if (_hasMoreEnrollments)
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton(
+                  onPressed: _enrollmentsLoading
+                      ? null
+                      : _loadMoreEnrollments,
+                  child: const Text('Učitaj još'),
                 ),
               ),
             const SizedBox(height: 16),

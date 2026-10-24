@@ -2,7 +2,6 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import '../api/api_client.dart';
-import '../api/api_exception.dart';
 import '../api/api_response.dart';
 import '../models/identity/auth_models.dart';
 import '../paging/paged_result.dart';
@@ -33,24 +32,7 @@ abstract class ReadOnlyProvider<T> with ChangeNotifier {
     http.Response response,
     R Function(Map<String, dynamic>) fromJsonT, {
     Map<String, dynamic>? params,
-  }) {
-    final data = decodeOrThrow(response);
-    try {
-      final items = (data['items'] as List<dynamic>? ?? []);
-      final page = data['page'] as int? ?? params?['page'] as int? ?? 1;
-      final pageSize = data['pageSize'] as int? ?? params?['pageSize'] as int? ?? 20;
-      final totalCount = data['totalCount'] as int?;
-      return PagedResult<R>(
-        items: items.map((e) => fromJsonT(Map<String, dynamic>.from(e))).toList(),
-        page: page,
-        pageSize: pageSize,
-        totalCount: totalCount,
-      );
-    } catch (e) {
-      if (e is ApiException) rethrow;
-      throw ApiException('Neispravan odgovor servera.');
-    }
-  }
+  }) => decodePage(response, fromJsonT, params: params);
 
   Future<T> getById(int id) async {
     final response = await apiClient.get('$endpoint/$id');

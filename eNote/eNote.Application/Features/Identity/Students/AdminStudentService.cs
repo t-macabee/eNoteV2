@@ -39,43 +39,40 @@ public sealed class AdminStudentService(
         return Map(entity, user);
     }
 
-    public async Task<List<StudentEnrollmentDto>> GetEnrollmentsForInstructorAsync(
+    public async Task<PagedResult<StudentEnrollmentDto>> GetEnrollmentsForInstructorAsync(
         int instructorId,
         int studentId,
+        StudentEnrollmentSearchObject search,
         CancellationToken cancellationToken = default)
     {
         await EnsureStudentVisibleToInstructorAsync(instructorId, studentId, cancellationToken);
 
-        var enrollments = await context.Set<Enrollment>()
+        var query = context.Set<Enrollment>()
             .AsNoTracking()
+            .Include(e => e.Course)
+            .ThenInclude(c => c.Instructor)
             .Where(e => e.StudentId == studentId
                      && e.Course.InstructorId == instructorId
-                     && e.EnrollmentStatus == EnrollmentStatus.Active)
-            .Select(e => new
+                     && e.EnrollmentStatus == EnrollmentStatus.Active);
+
+        return await query.ToPagedResultAsync(
+            search,
+            async (enrollments, ct) =>
             {
-                e.CourseId,
-                CourseName = e.Course.Name,
-                e.Course.InstructorId,
-                InstructorAppUserId = e.Course.Instructor.AppUserId
-            })
-            .ToListAsync(cancellationToken);
+                var users = await identityService.GetUsersBulkAsync(
+                    enrollments.Select(e => e.Course.Instructor.AppUserId).Distinct(),
+                    ct);
 
-        var appUserIds = enrollments
-            .Select(e => e.InstructorAppUserId)
-            .Distinct();
-
-        var users = await identityService.GetUsersBulkAsync(appUserIds, cancellationToken);
-
-        return enrollments
-            .Select(e => new StudentEnrollmentDto
-            {
-                CourseId = e.CourseId,
-                CourseName = e.CourseName,
-                InstructorId = e.InstructorId,
-                InstructorName = UserNameHelper.FormatName(users.GetValueOrDefault(e.InstructorAppUserId))
-            })
-            .OrderBy(e => e.CourseName)
-            .ToList();
+                return enrollments.Select(e => new StudentEnrollmentDto
+                {
+                    CourseId = e.CourseId,
+                    CourseName = e.Course.Name,
+                    InstructorId = e.Course.InstructorId,
+                    InstructorName = UserNameHelper.FormatName(users.GetValueOrDefault(e.Course.Instructor.AppUserId))
+                });
+            },
+            q => q.OrderBy(e => e.Course.Name),
+            cancellationToken);
     }
 
     private async Task<Student> EnsureStudentVisibleToInstructorAsync(

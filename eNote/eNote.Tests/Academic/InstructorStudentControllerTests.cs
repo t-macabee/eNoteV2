@@ -133,11 +133,14 @@ public sealed class InstructorStudentControllerTests
         var currentUser = new StubCurrentActor(instructor: harness.Instructor, userId: harness.Instructor.AppUserId);
         var controller = new InstructorStudentController(studentService, CreateMembershipService(ctx, studentService, currentUser), new StubProvisioningService(), currentUser, instructorAccess);
 
-        var result = await controller.GetEnrollments(harness.Student.Id, CancellationToken.None);
+        var result = await controller.GetEnrollments(
+            harness.Student.Id,
+            new StudentEnrollmentSearchObject(),
+            CancellationToken.None);
 
         var ok = Assert.IsType<OkObjectResult>(result.Result);
-        var enrollments = Assert.IsType<List<StudentEnrollmentDto>>(ok.Value);
-        var item = Assert.Single(enrollments);
+        var enrollments = Assert.IsType<PagedResult<StudentEnrollmentDto>>(ok.Value);
+        var item = Assert.Single(enrollments.Items);
         Assert.Equal(harness.Course.Id, item.CourseId);
     }
 
@@ -170,7 +173,8 @@ public sealed class InstructorStudentControllerTests
         var currentUser = new StubCurrentActor(instructor: harness.Instructor, userId: harness.Instructor.AppUserId);
         var controller = new InstructorStudentController(studentService, CreateMembershipService(ctx, studentService, currentUser), new StubProvisioningService(), currentUser, instructorAccess);
 
-        await Assert.ThrowsAsync<NotFoundException>(() => controller.GetEnrollments(otherStudent.Id, CancellationToken.None));
+        await Assert.ThrowsAsync<NotFoundException>(() => controller.GetEnrollments(
+            otherStudent.Id, new StudentEnrollmentSearchObject(), CancellationToken.None));
     }
 
     [Fact]

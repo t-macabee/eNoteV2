@@ -22,11 +22,17 @@ class TuitionPaymentProvider {
     return CreateTuitionIntentResponse.fromJson(decodeOrThrow(response));
   }
 
-  Future<List<CoursePaymentDto>> history(int enrollmentId) async {
+  Future<PagedResult<CoursePaymentDto>> history(
+    int enrollmentId, {
+    int page = 1,
+    int pageSize = 20,
+  }) async {
+    final params = pagedQuery(page, pageSize, '');
     final response = await apiClient.get(
       'student/enrollments/$enrollmentId/tuition/history',
+      queryParams: params,
     );
-    return decodeList(response, CoursePaymentDto.fromJson);
+    return decodePage(response, CoursePaymentDto.fromJson, params: params);
   }
 
   Future<CoursePaymentDto?> pollUntilSucceeded(int enrollmentId) =>

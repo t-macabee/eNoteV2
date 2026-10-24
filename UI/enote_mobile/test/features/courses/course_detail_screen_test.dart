@@ -74,6 +74,27 @@ const _lecturesPage = {
   'totalCount': 1,
 };
 
+const _tuitionHistoryPage = {
+  'items': [
+    {
+      'id': 31,
+      'enrollmentId': 5,
+      'paymentIntentId': 'pi_tuition_1',
+      'amountCents': 80000,
+      'currency': 'bam',
+      'status': 'Refunded',
+      'paidAt': '2026-09-09T12:41:00',
+      'periodStart': '2026-09-09T12:41:00',
+      'periodEnd': '2026-10-09T12:41:00',
+      'refundedAt': '2026-10-01T09:00:00',
+      'refundedCents': 80000,
+    },
+  ],
+  'page': 1,
+  'pageSize': 20,
+  'totalCount': 1,
+};
+
 ScriptedClient _client({
   String? enrollmentStatus,
   String? enrollmentDecisionNote,
@@ -87,6 +108,9 @@ ScriptedClient _client({
   var status = enrollmentStatus;
   return ScriptedClient((request) {
     final path = request.url.path;
+    if (path.endsWith('/tuition/history')) {
+      return jsonResponse(_tuitionHistoryPage, 200);
+    }
     Object body;
     switch ('${request.method} $path') {
       case 'GET /api/v1/users/me':
@@ -431,6 +455,40 @@ void main() {
     expect(find.text('Plaćeno do'), findsNothing);
   });
 
+  testWidgets('Historija uplata opens the paged payment history', (
+    tester,
+  ) async {
+    final harness = _Harness();
+    await harness.bootstrap(
+      enrollmentStatus: 'Active',
+      enrollmentId: 5,
+      coursePaidUntil: '2027-01-01T00:00:00Z',
+    );
+    await tester.pumpWidget(harness.app());
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(
+      find.widgetWithText(TextButton, 'Historija uplata'),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(TextButton, 'Historija uplata'));
+    await tester.pumpAndSettle();
+
+    expect(
+      countRequests(
+        harness.client,
+        'GET /api/v1/student/enrollments/5/tuition/history',
+      ),
+      1,
+    );
+    expect(find.text('Puni povrat'), findsOneWidget);
+    expect(find.textContaining('Povrat: 800.00 KM'), findsOneWidget);
+    expect(
+      find.textContaining('Pristup: 09.09.2026. – 09.10.2026.'),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('a request does not open tuition', (tester) async {
     final harness = _Harness();
     await harness.bootstrap(enrollmentId: 5);
@@ -616,6 +674,10 @@ void main() {
     expect(countRequests(harness.client, 'GET /api/v1/student/lectures'), 0);
 
     harness.access.paidUntil = '2027-01-01T00:00:00Z';
+    await tester.ensureVisible(
+      find.widgetWithText(TextButton, 'Obnovi školarinu'),
+    );
+    await tester.pumpAndSettle();
     await tester.tap(find.widgetWithText(TextButton, 'Obnovi školarinu'));
     await tester.pumpAndSettle();
     expect(find.text('Plaćanje školarine'), findsOneWidget);

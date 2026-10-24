@@ -1,4 +1,5 @@
 using eNote.API.Controllers.Tuition;
+using eNote.Application.Common.Paging;
 using eNote.Application.Constants;
 using eNote.Application.Features.Academic.Tuition;
 using eNote.Application.Features.Rentals.Payments.Services;
@@ -96,19 +97,26 @@ public sealed class TuitionPaymentsControllerTests
     public async Task GetHistory_ReturnsOkResult_WithList()
     {
         var (context, student, _, enrollment) = await TuitionTestData.SetupScenarioAsync(Now, price: 150m);
-        var older = new CoursePayment(enrollment.Id, "pi_123", 15000, "bam", PaymentStatus.Succeeded) { CreatedAt = Now.AddDays(-30) };
-        var newer = new CoursePayment(enrollment.Id, "pi_456", 15000, "bam", PaymentStatus.Succeeded) { CreatedAt = Now };
+        var older = new CoursePayment(enrollment.Id, "pi_123", 15000, "bam", PaymentStatus.Succeeded);
+        var newer = new CoursePayment(enrollment.Id, "pi_456", 15000, "bam", PaymentStatus.Succeeded);
         context.Set<CoursePayment>().AddRange(older, newer);
+        await context.SaveChangesAsync();
+
+        older.CreatedAt = Now.AddDays(-30);
+        newer.CreatedAt = Now;
         await context.SaveChangesAsync();
         var controller = new TuitionPaymentsController(CreateService(context, student));
 
-        var result = await controller.GetHistory(enrollment.Id, CancellationToken.None);
+        var result = await controller.GetHistory(
+            enrollment.Id,
+            new CoursePaymentSearchObject { Page = 1, PageSize = 1 },
+            CancellationToken.None);
 
         var ok = Assert.IsType<OkObjectResult>(result.Result);
-        var list = Assert.IsAssignableFrom<IReadOnlyList<CoursePaymentDto>>(ok.Value);
-        Assert.Equal(2, list.Count);
-        Assert.Equal("pi_456", list[0].PaymentIntentId);
-        Assert.Equal("pi_123", list[1].PaymentIntentId);
+        var page = Assert.IsType<PagedResult<CoursePaymentDto>>(ok.Value);
+        var item = Assert.Single(page.Items);
+        Assert.Equal("pi_456", item.PaymentIntentId);
+        Assert.Equal(2, page.TotalCount);
     }
 
     private static TuitionPaymentService CreateService(ENoteContext context, Student student) =>

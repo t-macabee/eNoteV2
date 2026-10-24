@@ -341,16 +341,55 @@ public sealed class TuitionPaymentServiceTests
         var service = CreateService(context, student, clock: clock);
 
         var p1 = new CoursePayment(enrollment.Id, "pi_1", 10000, "bam", PaymentStatus.Succeeded);
-        p1.CreatedAt = Now.AddDays(-10);
         var p2 = new CoursePayment(enrollment.Id, "pi_2", 10000, "bam", PaymentStatus.RequiresAction);
-        p2.CreatedAt = Now;
         context.Set<CoursePayment>().AddRange(p1, p2);
         await context.SaveChangesAsync();
 
-        var history = await service.GetHistoryAsync(enrollment.Id);
+        p1.CreatedAt = Now.AddDays(-10);
+        p2.CreatedAt = Now;
+        await context.SaveChangesAsync();
+
+        var history = await service.GetHistoryAsync(enrollment.Id, new CoursePaymentSearchObject());
         Assert.Equal(2, history.Count);
-        Assert.Equal("pi_2", history[0].PaymentIntentId);
-        Assert.Equal("pi_1", history[1].PaymentIntentId);
+        Assert.Equal(2, history.TotalCount);
+        Assert.Equal("pi_2", history.Items[0].PaymentIntentId);
+        Assert.Equal("pi_1", history.Items[1].PaymentIntentId);
+    }
+
+    [Fact]
+    public async Task GetHistoryAsync_PagesThePayments()
+    {
+        var (context, student, _, enrollment) = await SetupScenarioAsync(price: 100m);
+        var service = CreateService(context, student);
+
+        var p1 = new CoursePayment(enrollment.Id, "pi_1", 10000, "bam", PaymentStatus.Succeeded);
+        var p2 = new CoursePayment(enrollment.Id, "pi_2", 10000, "bam", PaymentStatus.Succeeded);
+        var p3 = new CoursePayment(enrollment.Id, "pi_3", 10000, "bam", PaymentStatus.Succeeded);
+        context.Set<CoursePayment>().AddRange(p1, p2, p3);
+        await context.SaveChangesAsync();
+
+        p1.CreatedAt = Now.AddDays(-20);
+        p2.CreatedAt = Now.AddDays(-10);
+        p3.CreatedAt = Now;
+        await context.SaveChangesAsync();
+
+        var first = await service.GetHistoryAsync(
+            enrollment.Id,
+            new CoursePaymentSearchObject { Page = 1, PageSize = 2 });
+
+        Assert.Equal(2, first.Items.Count);
+        Assert.Equal(1, first.Page);
+        Assert.Equal(2, first.PageSize);
+        Assert.Equal(3, first.TotalCount);
+        Assert.Equal("pi_3", first.Items[0].PaymentIntentId);
+        Assert.Equal("pi_2", first.Items[1].PaymentIntentId);
+
+        var second = await service.GetHistoryAsync(
+            enrollment.Id,
+            new CoursePaymentSearchObject { Page = 2, PageSize = 2 });
+
+        var item = Assert.Single(second.Items);
+        Assert.Equal("pi_1", item.PaymentIntentId);
     }
 
     [Fact]

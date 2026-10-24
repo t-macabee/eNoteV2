@@ -1,4 +1,5 @@
 using eNote.API.Controllers.Base;
+using eNote.Application.Common.Paging;
 using eNote.Application.Constants;
 using eNote.Application.Features.Academic.Tuition;
 using Microsoft.AspNetCore.Authorization;
@@ -28,10 +29,13 @@ public sealed class TuitionPaymentsController(TuitionPaymentService tuitionServi
     }
 
     [HttpGet("history")]
-    [ProducesResponseType(typeof(IReadOnlyList<CoursePaymentDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<IReadOnlyList<CoursePaymentDto>>> GetHistory(int enrollmentId, CancellationToken cancellationToken)
+    [ProducesResponseType(typeof(PagedResult<CoursePaymentDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<PagedResult<CoursePaymentDto>>> GetHistory(
+        int enrollmentId,
+        [FromQuery] CoursePaymentSearchObject search,
+        CancellationToken cancellationToken)
     {
-        var result = await tuitionService.GetHistoryAsync(enrollmentId, cancellationToken);
+        var result = await tuitionService.GetHistoryAsync(enrollmentId, search, cancellationToken);
         return Ok(result);
     }
 }

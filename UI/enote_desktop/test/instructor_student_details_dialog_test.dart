@@ -124,6 +124,14 @@ void main() {
             'totalCount': 0,
           }, 200);
         }
+        if (request.url.path.endsWith('/enrollments')) {
+          return jsonResponse({
+            'items': [],
+            'page': 1,
+            'pageSize': 5,
+            'totalCount': 0,
+          }, 200);
+        }
         if (request.url.path.endsWith('/lectures')) {
           return jsonResponse({
             'items': [],
@@ -177,5 +185,101 @@ void main() {
     );
     expect(warningButton.onPressed, isNull);
     expect(find.text('Nema evidentiranih potvrda.'), findsOneWidget);
+  });
+
+  testWidgets('F3-16: enrollments load one page at a time', (tester) async {
+    final requestedPages = <String?>[];
+    final apiClient = ApiClient(
+      baseUrl: 'http://localhost:5059/api/v1/',
+      authState: AuthState(),
+      httpClient: ScriptedClient((request) {
+        if (request.url.path.endsWith('/membership-payments')) {
+          return jsonResponse({
+            'items': [],
+            'page': 1,
+            'pageSize': 5,
+            'totalCount': 0,
+          }, 200);
+        }
+        if (request.url.path.endsWith('/enrollments')) {
+          final page = int.parse(request.url.queryParameters['page'] ?? '1');
+          requestedPages.add(request.url.queryParameters['page']);
+          final names = page == 1
+              ? ['Cello 101', 'Flute 101', 'Guitar 101', 'Piano 101', 'Violin 101']
+              : ['Drums 101'];
+          return jsonResponse({
+            'items': [
+              for (final (index, name) in names.indexed)
+                {
+                  'courseId': page * 100 + index,
+                  'courseName': name,
+                  'instructorId': 100,
+                  'instructorName': 'Ana Novak',
+                },
+            ],
+            'page': page,
+            'pageSize': 5,
+            'totalCount': 6,
+          }, 200);
+        }
+        if (request.url.path.endsWith('/lectures')) {
+          return jsonResponse({
+            'items': [],
+            'page': 1,
+            'pageSize': 100,
+            'totalCount': 0,
+          }, 200);
+        }
+        return jsonResponse({
+          'id': 5,
+          'appUserId': 50,
+          'firstName': 'Johann',
+          'lastName': 'Bach',
+          'username': 'jbach',
+          'membershipPaidUntil': '2027-01-01T00:00:00Z',
+        }, 200);
+      }),
+    );
+
+    final student = StudentDto(
+      id: 5,
+      appUserId: 50,
+      firstName: 'Johann',
+      lastName: 'Bach',
+      username: 'jbach',
+    );
+
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          Provider<ApiClient>.value(value: apiClient),
+          ChangeNotifierProvider(
+            create: (_) => InstructorStudentProvider(apiClient: apiClient),
+          ),
+          ChangeNotifierProvider(
+            create: (_) => LectureProvider(apiClient: apiClient),
+          ),
+        ],
+        child: MaterialApp(
+          home: Scaffold(
+            body: InstructorStudentDetailsDialog(student: student),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Cello 101'), findsOneWidget);
+    expect(find.text('Drums 101'), findsNothing);
+    expect(requestedPages, ['1']);
+
+    await tester.ensureVisible(find.text('Učitaj još'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Učitaj još'));
+    await tester.pumpAndSettle();
+
+    expect(requestedPages, ['1', '2']);
+    expect(find.text('Drums 101'), findsOneWidget);
+    expect(find.text('Učitaj još'), findsNothing);
   });
 }

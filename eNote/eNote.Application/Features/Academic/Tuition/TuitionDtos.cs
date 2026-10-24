@@ -18,4 +18,6 @@ public sealed record CoursePaymentDto(
     PaymentStatus Status,
     DateTime? PaidAt,
     DateTime? PeriodStart,
-    DateTime? PeriodEnd);
+    DateTime? PeriodEnd,
+    DateTime? RefundedAt,
+    long? RefundedCents);

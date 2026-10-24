@@ -20,6 +20,7 @@ class CourseMasterCard extends StatelessWidget {
   final VoidCallback onUnenroll;
   final VoidCallback onRanking;
   final VoidCallback onTuition;
+  final VoidCallback onTuitionHistory;
 
   const CourseMasterCard({
     super.key,
@@ -32,6 +33,7 @@ class CourseMasterCard extends StatelessWidget {
     required this.onUnenroll,
     required this.onRanking,
     required this.onTuition,
+    required this.onTuitionHistory,
   });
 
   @override
@@ -127,7 +129,11 @@ class CourseMasterCard extends StatelessWidget {
           ],
           if (enrolled && !course.isFree) ...[
             const SizedBox(height: 8),
-            _TuitionBanner(course: course, onTuition: onTuition),
+            _TuitionBanner(
+              course: course,
+              onTuition: onTuition,
+              onHistory: course.enrollmentId == null ? null : onTuitionHistory,
+            ),
           ],
           const SizedBox(height: 12),
           Row(
@@ -172,11 +178,34 @@ class CourseMasterCard extends StatelessWidget {
 class _TuitionBanner extends StatelessWidget {
   final CourseDto course;
   final VoidCallback onTuition;
+  final VoidCallback? onHistory;
 
-  const _TuitionBanner({required this.course, required this.onTuition});
+  const _TuitionBanner({
+    required this.course,
+    required this.onTuition,
+    required this.onHistory,
+  });
 
   @override
   Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _status(),
+        if (onHistory != null)
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton.icon(
+              onPressed: onHistory,
+              icon: const Icon(Icons.receipt_long_outlined, size: 18),
+              label: const Text('Historija uplata'),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _status() {
     final paidUntil = course.paidUntil;
     if (paidUntil == null) {
       return BlockedReasonBanner(

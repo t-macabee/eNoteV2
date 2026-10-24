@@ -86,19 +86,27 @@ void main() {
   });
 
   group('InstructorStudentProvider.getEnrollments', () {
-    test('getEnrollments fetches from instructor/students/{id}/enrollments', () async {
+    test('getEnrollments fetches a page from instructor/students/{id}/enrollments', () async {
       final mockClient = ScriptedClient((req) async {
         expect(req.url.path, '/api/v1/instructor/students/42/enrollments');
         expect(req.method, 'GET');
+        expect(req.url.queryParameters['page'], '2');
+        expect(req.url.queryParameters['pageSize'], '5');
+        expect(req.url.queryParameters['includeTotalCount'], 'true');
         return http.Response(
-          jsonEncode([
-            {
-              'courseId': 101,
-              'courseName': 'Cello Basics',
-              'instructorId': 5,
-              'instructorName': 'Ana Novak',
-            },
-          ]),
+          jsonEncode({
+            'items': [
+              {
+                'courseId': 101,
+                'courseName': 'Cello Basics',
+                'instructorId': 5,
+                'instructorName': 'Ana Novak',
+              },
+            ],
+            'page': 2,
+            'pageSize': 5,
+            'totalCount': 6,
+          }),
           200,
         );
       });
@@ -110,13 +118,16 @@ void main() {
       );
       final provider = InstructorStudentProvider(apiClient: apiClient);
 
-      final enrollments = await provider.getEnrollments(42);
+      final enrollments = await provider.getEnrollments(42, page: 2, pageSize: 5);
 
-      expect(enrollments.length, 1);
-      expect(enrollments[0].courseId, 101);
-      expect(enrollments[0].courseName, 'Cello Basics');
-      expect(enrollments[0].instructorId, 5);
-      expect(enrollments[0].instructorName, 'Ana Novak');
+      expect(enrollments.items.length, 1);
+      expect(enrollments.page, 2);
+      expect(enrollments.pageSize, 5);
+      expect(enrollments.totalCount, 6);
+      expect(enrollments.items[0].courseId, 101);
+      expect(enrollments.items[0].courseName, 'Cello Basics');
+      expect(enrollments.items[0].instructorId, 5);
+      expect(enrollments.items[0].instructorName, 'Ana Novak');
     });
   });
 }

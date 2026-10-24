@@ -49,6 +49,8 @@ class CoursePaymentDto implements PaymentRecord {
   final DateTime? paidAt;
   final DateTime? periodStart;
   final DateTime? periodEnd;
+  final DateTime? refundedAt;
+  final int? refundedCents;
 
   CoursePaymentDto({
     required this.id,
@@ -60,6 +62,8 @@ class CoursePaymentDto implements PaymentRecord {
     this.paidAt,
     this.periodStart,
     this.periodEnd,
+    this.refundedAt,
+    this.refundedCents,
   });
 
   factory CoursePaymentDto.fromJson(Map<String, dynamic> json) {
@@ -73,6 +77,8 @@ class CoursePaymentDto implements PaymentRecord {
       paidAt: parseDate(json['paidAt']),
       periodStart: parseDate(json['periodStart']),
       periodEnd: parseDate(json['periodEnd']),
+      refundedAt: parseDate(json['refundedAt']),
+      refundedCents: (json['refundedCents'] as num?)?.toInt(),
     );
   }
 }

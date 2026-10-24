@@ -98,14 +98,19 @@ void main() {
       }
       if (req.url.path.endsWith('/enrollments')) {
         return http.Response(
-          jsonEncode([
-            {
-              'courseId': 10,
-              'courseName': 'Violin 101',
-              'instructorId': 2,
-              'instructorName': 'Beethoven',
-            },
-          ]),
+          jsonEncode({
+            'items': [
+              {
+                'courseId': 10,
+                'courseName': 'Violin 101',
+                'instructorId': 2,
+                'instructorName': 'Beethoven',
+              },
+            ],
+            'page': 1,
+            'pageSize': 5,
+            'totalCount': 1,
+          }),
           200,
         );
       }

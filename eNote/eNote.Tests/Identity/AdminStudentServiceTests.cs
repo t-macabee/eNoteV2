@@ -277,13 +277,69 @@ public sealed class AdminStudentServiceTests
         var instructorAccess = new InstructorAccessService(context, new StubUserProfileLookup(instructor: instructor1));
         var service = new AdminStudentService(context, identity, instructorAccess);
 
-        var enrollments = await service.GetEnrollmentsForInstructorAsync(instructor1.Id, student.Id);
+        var enrollments = await service.GetEnrollmentsForInstructorAsync(
+            instructor1.Id,
+            student.Id,
+            new StudentEnrollmentSearchObject());
 
-        var single = Assert.Single(enrollments);
+        var single = Assert.Single(enrollments.Items);
         Assert.Equal(course1.Id, single.CourseId);
         Assert.Equal("Guitar 101", single.CourseName);
         Assert.Equal(instructor1.Id, single.InstructorId);
         Assert.Equal("Jane Doe", single.InstructorName);
+    }
+
+    [Fact]
+    public async Task GetEnrollmentsForInstructorAsync_PagesByCourseName()
+    {
+        await using var context = TestDbContextFactory.CreateContext(Now);
+
+        var instructor = new Instructor(100);
+        context.Set<Instructor>().Add(instructor);
+        await context.SaveChangesAsync();
+
+        var piano = new Course("Piano 101", null, 100m, Now, Now.AddMonths(3), instructor.Id) { CreatedById = instructor.AppUserId };
+        var cello = new Course("Cello 101", null, 100m, Now, Now.AddMonths(3), instructor.Id) { CreatedById = instructor.AppUserId };
+        var guitar = new Course("Guitar 101", null, 100m, Now, Now.AddMonths(3), instructor.Id) { CreatedById = instructor.AppUserId };
+        context.Set<Course>().AddRange(piano, cello, guitar);
+        await context.SaveChangesAsync();
+
+        var student = new Student(10, Now);
+        context.Set<Student>().Add(student);
+        await context.SaveChangesAsync();
+
+        context.Set<Enrollment>().AddRange(
+            new Enrollment(student.Id, piano.Id, EnrollmentStatus.Active),
+            new Enrollment(student.Id, cello.Id, EnrollmentStatus.Active),
+            new Enrollment(student.Id, guitar.Id, EnrollmentStatus.Active));
+        await context.SaveChangesAsync();
+
+        var identity = new StubUserIdentityService(new Dictionary<int, UserIdentityDto>
+        {
+            [100] = StubUserIdentityService.User(100, "jdoe", "Jane", "Doe")
+        });
+
+        var instructorAccess = new InstructorAccessService(context, new StubUserProfileLookup(instructor: instructor));
+        var service = new AdminStudentService(context, identity, instructorAccess);
+
+        var first = await service.GetEnrollmentsForInstructorAsync(
+            instructor.Id,
+            student.Id,
+            new StudentEnrollmentSearchObject { Page = 1, PageSize = 2 });
+
+        Assert.Equal(2, first.Items.Count);
+        Assert.Equal(3, first.TotalCount);
+        Assert.Equal("Cello 101", first.Items[0].CourseName);
+        Assert.Equal("Guitar 101", first.Items[1].CourseName);
+        Assert.All(first.Items, e => Assert.Equal("Jane Doe", e.InstructorName));
+
+        var second = await service.GetEnrollmentsForInstructorAsync(
+            instructor.Id,
+            student.Id,
+            new StudentEnrollmentSearchObject { Page = 2, PageSize = 2 });
+
+        var item = Assert.Single(second.Items);
+        Assert.Equal("Piano 101", item.CourseName);
     }
 
     [Fact]
@@ -319,11 +375,14 @@ public sealed class AdminStudentServiceTests
         var instructorAccess = new InstructorAccessService(context, new StubUserProfileLookup(instructor: instructor1));
         var service = new AdminStudentService(context, identity, instructorAccess);
 
-        var enrollments = await service.GetEnrollmentsForInstructorAsync(instructor1.Id, student.Id);
+        var enrollments = await service.GetEnrollmentsForInstructorAsync(
+            instructor1.Id,
+            student.Id,
+            new StudentEnrollmentSearchObject());
 
-        var single = Assert.Single(enrollments);
+        var single = Assert.Single(enrollments.Items);
         Assert.Equal(course1.Id, single.CourseId);
-        Assert.DoesNotContain(enrollments, e => e.CourseId == course2.Id);
+        Assert.DoesNotContain(enrollments.Items, e => e.CourseId == course2.Id);
     }
 
     [Fact]
@@ -352,8 +411,10 @@ public sealed class AdminStudentServiceTests
         var instructorAccess = new InstructorAccessService(context, new StubUserProfileLookup(instructor: instructor1));
         var service = new AdminStudentService(context, new StubUserIdentityService(), instructorAccess);
 
-        await Assert.ThrowsAsync<NotFoundException>(() => service.GetEnrollmentsForInstructorAsync(instructor1.Id, student1.Id));
-        await Assert.ThrowsAsync<NotFoundException>(() => service.GetEnrollmentsForInstructorAsync(instructor1.Id, student2.Id));
+        await Assert.ThrowsAsync<NotFoundException>(() => service.GetEnrollmentsForInstructorAsync(
+            instructor1.Id, student1.Id, new StudentEnrollmentSearchObject()));
+        await Assert.ThrowsAsync<NotFoundException>(() => service.GetEnrollmentsForInstructorAsync(
+            instructor1.Id, student2.Id, new StudentEnrollmentSearchObject()));
     }
 
     [Fact]
