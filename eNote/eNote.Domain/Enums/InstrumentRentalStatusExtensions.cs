@@ -8,6 +8,12 @@ public static class InstrumentRentalStatusExtensions
         InstrumentRentalStatus.Active
     ];
 
+    public static readonly InstrumentRentalStatus[] DebtStatuses =
+    [
+        InstrumentRentalStatus.Completed,
+        InstrumentRentalStatus.ReturnedEarly
+    ];
+
     public static bool BlocksInstrument(this InstrumentRentalStatus status) =>
         BlockingStatuses.Contains(status);
 

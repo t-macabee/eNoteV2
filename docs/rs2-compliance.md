@@ -106,6 +106,21 @@ bi se preklopio, a jedinstveni broj potvrde i pravilo da period počinje
 najranije od trenutnog `MembershipPaidUntil` čuvaju evidenciju od duplog unosa
 iste potvrde.
 
+## Brisanje profila
+
+Student sam briše profil kroz `DELETE users/me` u mobilnoj aplikaciji. Brisanje
+nije fizičko: `UserProvisioningService.DeleteUserAsync` opravdano odbija
+korisnike s historijom, a uplate, iznajmljivanja, ocjene i prisustvo su školski
+i finansijski zapisi. Zato `UserAccountService.CloseAccountAsync` zatvara račun
+i anonimizira lične podatke (ime, email, telefon, datum rođenja, slika,
+lozinka), a promijenjeni security stamp i `IsActive = false` prekidaju sve
+sesije. Zahtjevi za iznajmljivanje i upisi na čekanju ili aktivni se otkazuju,
+a otvoreni PaymentIntent-i se otkazuju na Stripe-u prije transakcije. Provjere
+najma i duga idu prije Stripe poziva, pa odbijeno brisanje ne mijenja nijednu
+uplatu. Slika profila se briše iz storagea tek nakon što transakcija prođe.
+Profil briše samo student; naloge instruktora i ostalog osoblja i dalje uređuje
+administrator.
+
 ## Slike na formama
 
 Sličice su 40 piksela, što je oko 5 posto širine forme.

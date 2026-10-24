@@ -75,9 +75,13 @@ class SessionController extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> logoutAndRevoke() async {
+  Future<void> logoutAndRevoke() => _endSession(revoke: true);
+
+  Future<void> endSession() => _endSession();
+
+  Future<void> _endSession({bool revoke = false}) async {
     _clearProfile();
-    await authState.logout(revoke: true);
+    await authState.logout(revoke: revoke);
     notifications.stopPolling();
     onStopRealtime?.call();
   }

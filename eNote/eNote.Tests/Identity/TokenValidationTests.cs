@@ -76,6 +76,22 @@ public sealed class TokenValidationTests
         Assert.False(context.Result!.Succeeded);
     }
 
+    [Fact]
+    public async Task OnTokenValidated_Rejects_AfterAccountIsClosed()
+    {
+        var harness = await CreateHarnessAsync(isActive: true);
+        var stampBefore = harness.User.SecurityStamp;
+        var accountService = new UserAccountService(
+            harness.Services.GetRequiredService<UserManager<AppUser>>(),
+            new RecordingFileStorageService());
+
+        await accountService.CloseAccountAsync(harness.User.Id);
+
+        var context = await ValidateAsync(harness, harness.User.Id.ToString(), stampBefore);
+
+        Assert.False(context.Result!.Succeeded);
+    }
+
     private static async Task<TokenValidatedContext> ValidateAsync(
         Harness harness,
         string subject,

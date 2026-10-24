@@ -9,6 +9,7 @@ void throwIfError(http.Response response) {
   if (response.statusCode >= 400) {
     throw ApiException(
       ApiErrorMapper.mapError(response.statusCode, response.body),
+      code: ApiError.fromResponseBody(response.body).code,
     );
   }
 }

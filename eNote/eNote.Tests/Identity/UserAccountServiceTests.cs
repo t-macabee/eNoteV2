@@ -214,6 +214,71 @@ public sealed class UserAccountServiceTests
     }
 
     [Fact]
+    public async Task VerifyPasswordAsync_ChecksTheStoredPassword()
+    {
+        var harness = await CreateHarnessAsync();
+        var service = harness.Service;
+        await service.CreateUserAsync("jdoe", "jdoe@example.com", "Password1!", null, null);
+        var userId = (await harness.UserManager.FindByNameAsync("jdoe"))!.Id;
+
+        Assert.True(await service.VerifyPasswordAsync(userId, "Password1!"));
+        Assert.False(await service.VerifyPasswordAsync(userId, "Wrong1!"));
+    }
+
+    [Fact]
+    public async Task VerifyPasswordAsync_ReturnsFalse_ForMissingUser()
+    {
+        var harness = await CreateHarnessAsync();
+
+        Assert.False(await harness.Service.VerifyPasswordAsync(999, "Password1!"));
+    }
+
+    [Fact]
+    public async Task CloseAccountAsync_AnonymizesAndDeactivatesUser()
+    {
+        var harness = await CreateHarnessAsync();
+        var service = harness.Service;
+        await service.CreateUserAsync("jdoe", "jdoe@example.com", "Password1!", "Jane", "Doe");
+        var user = (await harness.UserManager.FindByNameAsync("jdoe"))!;
+        user.PhoneNumber = "061111222";
+        user.DateOfBirth = new DateTime(2001, 3, 4);
+        user.PicturePath = "/api/uploads/profile-pictures/jdoe.png";
+        await harness.UserManager.UpdateAsync(user);
+        var stampBefore = user.SecurityStamp;
+
+        var result = await service.CloseAccountAsync(user.Id);
+
+        Assert.True(result.Success);
+        Assert.Null(result.Error);
+        Assert.Equal("/api/uploads/profile-pictures/jdoe.png", result.PicturePath);
+        var closed = (await harness.UserManager.FindByIdAsync(user.Id.ToString()))!;
+        Assert.Equal("Obrisani", closed.FirstName);
+        Assert.Equal("korisnik", closed.LastName);
+        Assert.Equal($"obrisan-{closed.Id}", closed.UserName);
+        Assert.Equal($"obrisan-{closed.Id}@enote.invalid", closed.Email);
+        Assert.Null(closed.PhoneNumber);
+        Assert.Null(closed.DateOfBirth);
+        Assert.Null(closed.PasswordHash);
+        Assert.Null(closed.PicturePath);
+        Assert.False(closed.IsActive);
+        Assert.NotEqual(stampBefore, closed.SecurityStamp);
+        Assert.Empty(harness.FileStorage.DeletedPaths);
+        Assert.False(await harness.UserManager.CheckPasswordAsync(closed, "Password1!"));
+    }
+
+    [Fact]
+    public async Task CloseAccountAsync_ReturnsError_ForMissingUser()
+    {
+        var harness = await CreateHarnessAsync();
+
+        var result = await harness.Service.CloseAccountAsync(999);
+
+        Assert.False(result.Success);
+        Assert.Equal(Messages.NotFound, result.Error);
+        Assert.Null(result.PicturePath);
+    }
+
+    [Fact]
     public async Task SetActiveAsync_DeactivatesUser()
     {
         var harness = await CreateHarnessAsync();

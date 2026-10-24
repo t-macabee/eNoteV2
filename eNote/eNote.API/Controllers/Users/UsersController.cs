@@ -1,15 +1,18 @@
 using eNote.API.Controllers.Base;
 using eNote.API.Extensions;
 using eNote.Application.Common.Files;
+using eNote.Application.Constants;
+using eNote.Application.Features.Identity.Auth.Services;
 using eNote.Application.Features.Identity.Users;
 using eNote.Application.Features.Identity.Users.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 
 namespace eNote.API.Controllers.Users;
 
 [Route("api/v{version:apiVersion}/users")]
-public sealed class UsersController(UserProfileService profileService, UserSelfService selfService, IPictureAccessService pictureAccess, IUserAccountService accountService) : CoreController
+public sealed class UsersController(UserProfileService profileService, UserSelfService selfService, IPictureAccessService pictureAccess, IUserAccountService accountService, ITokenRevocationService tokenRevocation) : CoreController
 {
     [HttpGet("me")]
     [ProducesResponseType(typeof(UserProfileResponse), StatusCodes.Status200OK)]
@@ -94,6 +97,18 @@ public sealed class UsersController(UserProfileService profileService, UserSelfS
         {
             return BadRequest(new { message = error });
         }
+
+        return NoContent();
+    }
+
+    [HttpDelete("me")]
+    [Authorize(Roles = AppRoles.Student)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> DeleteProfile([FromBody] DeleteProfileRequest request, CancellationToken cancellationToken)
+    {
+        await selfService.DeleteProfileAsync(request, cancellationToken);
+        await tokenRevocation.RevokeAsync(CurrentTokenJti, CurrentTokenExpiresAtUtc, cancellationToken);
 
         return NoContent();
     }

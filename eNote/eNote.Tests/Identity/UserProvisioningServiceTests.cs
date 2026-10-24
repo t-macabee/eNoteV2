@@ -617,6 +617,14 @@ public sealed class UserProvisioningServiceTests
             return Task.FromResult(SetActiveResult);
         }
 
+        public bool VerifyPasswordResult { get; set; } = true;
+
+        public Task<bool> VerifyPasswordAsync(int userId, string currentPassword, CancellationToken cancellationToken = default) =>
+            Task.FromResult(VerifyPasswordResult);
+
+        public Task<(bool Success, string? Error, string? PicturePath)> CloseAccountAsync(int userId, CancellationToken cancellationToken = default) =>
+            Task.FromResult((true, (string?)null, (string?)null));
+
         public (bool Success, string? Error, string? PicturePath) DeleteUserResult { get; set; } = (true, null, null);
 
         public Task<(bool Success, string? Error, string? PicturePath)> DeleteUserAsync(int userId, CancellationToken cancellationToken = default) =>

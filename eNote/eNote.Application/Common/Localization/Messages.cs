@@ -20,6 +20,10 @@ public static class Messages
     public const string UserSingleRoleRequired = "Korisnik mora imati tačno jednu ulogu.";
     public const string UserDeleteBlocked = "Korisnik ima evidentiranu historiju i ne može biti obrisan. Deaktivirajte ga umjesto toga.";
     public const string CannotModifyOwnAccount = "Ne možete mijenjati vlastiti nalog.";
+    public const string CurrentPasswordIncorrect = "Trenutna lozinka nije ispravna.";
+    public const string ProfileDeleteBlockedByUnpaidRental = "Profil se ne može obrisati jer imate neizmireno dugovanje za iznajmljivanje. Izmirite dug pa pokušajte ponovo.";
+    public const string ProfileDeleteBlockedByOpenRental = "Profil se ne može obrisati jer imate odobreno ili aktivno iznajmljivanje. Vratite instrument pa pokušajte ponovo.";
+    public const string ProfileDeletedRentalCancelNote = "Zahtjev je otkazan jer je student obrisao profil.";
     public const string UnknownRole = "Nepoznata uloga.";
     public const string UnknownUserName = "Nepoznat korisnik";
     public const string StoreNotFound = "Radnja nije pronađena.";

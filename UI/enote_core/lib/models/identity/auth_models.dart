@@ -110,6 +110,14 @@ class ChangePasswordRequest {
   };
 }
 
+class DeleteProfileRequest {
+  final String currentPassword;
+
+  DeleteProfileRequest({required this.currentPassword});
+
+  Map<String, dynamic> toJson() => {'currentPassword': currentPassword};
+}
+
 class UpdateProfileRequest {
   final String email;
   final String? firstName;

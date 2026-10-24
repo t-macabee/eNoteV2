@@ -1,16 +1,19 @@
 using eNote.Application.Features.Identity.Users;
 using eNote.Application.Features.Identity.Users.Services;
 using eNote.Tests.TestUtils;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace eNote.Tests.Identity;
 
 public sealed class UserSelfServiceTests
 {
+    private static readonly DateTime Now = new(2026, 7, 1, 12, 0, 0, DateTimeKind.Utc);
+
     [Fact]
     public async Task UpdateProfileAsync_UsesCurrentUserId()
     {
         var account = new RecordingUserAccountService();
-        var service = new UserSelfService(account, new StubCurrentActor(userId: 42));
+        var service = CreateService(account, userId: 42);
         var request = new UpdateProfileRequest
         {
             Email = "new@example.com",
@@ -30,7 +33,7 @@ public sealed class UserSelfServiceTests
     public async Task ChangePasswordAsync_UsesCurrentUserIdAndPasswordValues()
     {
         var account = new RecordingUserAccountService();
-        var service = new UserSelfService(account, new StubCurrentActor(userId: 7));
+        var service = CreateService(account, userId: 7);
         var request = new ChangePasswordRequest
         {
             CurrentPassword = "old",
@@ -49,7 +52,7 @@ public sealed class UserSelfServiceTests
     public async Task PictureMethods_UseCurrentUserId()
     {
         var account = new RecordingUserAccountService();
-        var service = new UserSelfService(account, new StubCurrentActor(userId: 11));
+        var service = CreateService(account, userId: 11);
         await using var picture = new MemoryStream([1, 2, 3]);
 
         await service.UpdatePictureAsync(picture, "picture.png", "image/png", CancellationToken.None);
@@ -61,6 +64,16 @@ public sealed class UserSelfServiceTests
         Assert.Equal(11, account.PictureGetUserId);
         Assert.Equal(11, account.PictureDeleteUserId);
     }
+
+    private static UserSelfService CreateService(RecordingUserAccountService account, int userId) =>
+        new(
+            account,
+            new StubCurrentActor(userId: userId),
+            TestDbContextFactory.CreateContext(Now),
+            new FixedClock(Now),
+            new FakePaymentGateway(),
+            new StubFileStorageService(),
+            NullLogger<UserSelfService>.Instance);
 
     private sealed class RecordingUserAccountService : IUserAccountService
     {
@@ -117,6 +130,12 @@ public sealed class UserSelfServiceTests
             NewPassword = newPassword;
             return Task.FromResult((true, (string?)null));
         }
+
+        public Task<bool> VerifyPasswordAsync(int userId, string currentPassword, CancellationToken cancellationToken = default) =>
+            Task.FromResult(true);
+
+        public Task<(bool Success, string? Error, string? PicturePath)> CloseAccountAsync(int userId, CancellationToken cancellationToken = default) =>
+            Task.FromResult((true, (string?)null, (string?)null));
 
         public Task<(bool Success, string? Error)> SetActiveAsync(int userId, bool isActive, CancellationToken cancellationToken = default) =>
             Task.FromResult((true, (string?)null));

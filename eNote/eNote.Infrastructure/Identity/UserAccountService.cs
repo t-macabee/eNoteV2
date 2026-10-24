@@ -9,6 +9,9 @@ namespace eNote.Infrastructure.Identity;
 
 public sealed class UserAccountService(UserManager<AppUser> userManager, IFileStorageService fileStorage) : IUserAccountService
 {
+    private const string ClosedAccountFirstName = "Obrisani";
+    private const string ClosedAccountLastName = "korisnik";
+    private const string ClosedAccountEmailDomain = "enote.invalid";
 
     public async Task<int?> FindUserIdByUsernameAsync(string username, CancellationToken cancellationToken = default)
     {
@@ -101,6 +104,18 @@ public sealed class UserAccountService(UserManager<AppUser> userManager, IFileSt
         return (true, null);
     }
 
+    public async Task<bool> VerifyPasswordAsync(int userId, string currentPassword, CancellationToken cancellationToken = default)
+    {
+        var user = await userManager.FindByIdAsync(userId.ToString());
+
+        if (user is null || string.IsNullOrWhiteSpace(user.PasswordHash))
+        {
+            return false;
+        }
+
+        return await userManager.CheckPasswordAsync(user, currentPassword);
+    }
+
     public async Task<(bool Success, string? Error)> SetActiveAsync(int userId, bool isActive, CancellationToken cancellationToken = default)
     {
         var user = await userManager.FindByIdAsync(userId.ToString());
@@ -120,6 +135,41 @@ public sealed class UserAccountService(UserManager<AppUser> userManager, IFileSt
         }
 
         return (true, null);
+    }
+
+    public async Task<(bool Success, string? Error, string? PicturePath)> CloseAccountAsync(int userId, CancellationToken cancellationToken = default)
+    {
+        var user = await userManager.FindByIdAsync(userId.ToString());
+
+        if (user is null)
+        {
+            return (false, Messages.NotFound, null);
+        }
+
+        var previousPicturePath = user.PicturePath;
+        var anonymousUserName = $"obrisan-{user.Id}";
+
+        user.FirstName = ClosedAccountFirstName;
+        user.LastName = ClosedAccountLastName;
+        user.UserName = anonymousUserName;
+        user.NormalizedUserName = userManager.NormalizeName(anonymousUserName);
+        user.Email = $"{anonymousUserName}@{ClosedAccountEmailDomain}";
+        user.NormalizedEmail = userManager.NormalizeEmail(user.Email);
+        user.PhoneNumber = null;
+        user.PhoneNumberConfirmed = false;
+        user.DateOfBirth = null;
+        user.PasswordHash = null;
+        user.PicturePath = null;
+        user.IsActive = false;
+
+        var result = await userManager.UpdateSecurityStampAsync(user);
+
+        if (!result.Succeeded)
+        {
+            return (false, string.Join("; ", result.Errors.Select(e => e.Description)), null);
+        }
+
+        return (true, null, previousPicturePath);
     }
 
     public async Task<(bool Success, string? Error)> UpdateExistingUserAsync(int userId, string email, string? firstName, string? lastName, DateTime? dateOfBirth = null, CancellationToken cancellationToken = default)

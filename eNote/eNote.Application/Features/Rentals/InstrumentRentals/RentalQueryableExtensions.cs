@@ -7,4 +7,7 @@ public static class RentalQueryableExtensions
             .Include(s => s.StudentProfile)
             .Include(r => r.Instrument).ThenInclude(i => i.InstrumentType)
             .Include(r => r.Instrument).ThenInclude(i => i.MusicStore);
+
+    public static IQueryable<InstrumentRental> WhereUnpaidDebt(this IQueryable<InstrumentRental> query) =>
+        query.Where(x => InstrumentRentalStatusExtensions.DebtStatuses.Contains(x.RentalStatus) && !x.IsPaid);
 }

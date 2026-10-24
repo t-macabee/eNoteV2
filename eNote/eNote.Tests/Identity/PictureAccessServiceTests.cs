@@ -232,7 +232,7 @@ public sealed class PictureAccessServiceTests
 
     private static UsersController CreateController(bool canView, (Stream? Data, string? ContentType) picture)
     {
-        var controller = new UsersController(null!, null!, new AllowFixed(canView), new PictureFixed(picture))
+        var controller = new UsersController(null!, null!, new AllowFixed(canView), new PictureFixed(picture), null!)
         {
             ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }
         };
@@ -276,6 +276,10 @@ public sealed class PictureAccessServiceTests
         public Task<(bool Success, string? Error)> ChangePasswordAsync(int userId, string currentPassword, string newPassword, CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();
         public Task<(bool Success, string? Error)> SetActiveAsync(int userId, bool isActive, CancellationToken cancellationToken = default) =>
+            throw new NotSupportedException();
+        public Task<bool> VerifyPasswordAsync(int userId, string currentPassword, CancellationToken cancellationToken = default) =>
+            throw new NotSupportedException();
+        public Task<(bool Success, string? Error, string? PicturePath)> CloseAccountAsync(int userId, CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();
         public Task<(bool Success, string? Error, string? PicturePath)> DeleteUserAsync(int userId, CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();

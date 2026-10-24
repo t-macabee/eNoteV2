@@ -83,10 +83,11 @@ class ApiClient {
     return response;
   }
 
-  Future<http.Response> delete(String path) async {
+  Future<http.Response> delete(String path, {Object? body}) async {
     final response = await _httpClient.delete(
       _uri(path),
       headers: _headers,
+      body: body != null ? jsonEncode(body) : null,
     );
     return response;
   }

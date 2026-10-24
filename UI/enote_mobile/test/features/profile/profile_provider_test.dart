@@ -154,4 +154,20 @@ void main() {
       'confirmNewPassword': 'Nova2@Bcd',
     });
   });
+
+  test('deleteProfile issues DELETE users/me with the current password',
+      () async {
+    final client = RecordingHttpClient(body: const {});
+    final provider = _provider(client);
+    await provider.deleteProfile(
+      DeleteProfileRequest(currentPassword: 'Stara1!'),
+    );
+
+    expect(client.requests, hasLength(1));
+    final sent = client.requests.single;
+    expect(sent.method, 'DELETE');
+    expect(sent.url.path, '/api/v1/users/me');
+    final body = jsonDecode(sent.body) as Map<String, dynamic>;
+    expect(body, {'currentPassword': 'Stara1!'});
+  });
 }

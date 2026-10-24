@@ -23,9 +23,8 @@ public sealed class RentalQueryService(IAppDbContext context, IMapper mapper, IC
     {
         var rentalId = await context.Set<InstrumentRental>()
             .AsNoTracking()
-            .Where(x => x.StudentProfile.AppUserId == currentUser.UserId
-                && (x.RentalStatus == InstrumentRentalStatus.Completed || x.RentalStatus == InstrumentRentalStatus.ReturnedEarly)
-                && !x.IsPaid)
+            .Where(x => x.StudentProfile.AppUserId == currentUser.UserId)
+            .WhereUnpaidDebt()
             .OrderBy(x => x.RequestedAt)
             .ThenBy(x => x.Id)
             .Select(x => (int?)x.Id)

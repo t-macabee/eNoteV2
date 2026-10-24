@@ -8,6 +8,7 @@ import '../../session/session_controller.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/async_state_view.dart';
 import '../../widgets/labeled_value.dart';
+import 'delete_profile_dialog.dart';
 import 'membership_card.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -39,6 +40,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (confirmed == true) {
       await controller.logoutAndRevoke();
     }
+  }
+
+  Future<void> _deleteProfile() async {
+    final messenger = ScaffoldMessenger.of(context);
+    final controller = context.read<SessionController>();
+    final deleted = await showDeleteProfileDialog(context);
+    if (deleted != true || !mounted) return;
+    await controller.endSession();
+    messenger.showSnackBar(
+      const SnackBar(content: Text('Profil je obrisan.')),
+    );
   }
 
   @override
@@ -117,6 +129,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   side: const BorderSide(color: AppTheme.error),
                 ),
                 child: const Text('Odjavi se'),
+              ),
+              const SizedBox(height: 24),
+              TextButton(
+                onPressed: _deleteProfile,
+                style: TextButton.styleFrom(foregroundColor: AppTheme.error),
+                child: const Text('Obriši profil'),
               ),
             ],
           ),

@@ -164,6 +164,11 @@ Master–details forma na mobilnom klijentu je detalj *Kurs*
 za upis čeka odobrenje instruktora, odobren upis prikazuje predavanja, ispis ih
 skriva.
 
+Student na ekranu *Profil* briše svoj nalog kroz `DELETE /api/v1/users/me`.
+Brisanje nije fizičko: uplate, iznajmljivanja, ocjene i prisustvo ostaju, a lični
+podaci se anonimiziraju i sve sesije se prekidaju. Nalog se ne briše dok student
+ima neplaćen završen najam, najam u toku ili uplatu koja se obrađuje.
+
 ## Plaćanja
 
 Najam instrumenta se naplaćuje jednom, kada najam pređe u status `Complete` ili
