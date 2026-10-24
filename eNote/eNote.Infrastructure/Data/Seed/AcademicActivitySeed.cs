@@ -22,7 +22,7 @@ internal static class AcademicActivitySeed
 
         var now = clock.UtcNow;
         var pastLectures = await context.Set<Lecture>()
-            .Where(l => l.LectureTime < now)
+            .Where(l => l.LectureTime < now && l.StudentId == null)
             .OrderBy(l => l.LectureTime)
             .ToListAsync();
 
@@ -40,7 +40,7 @@ internal static class AcademicActivitySeed
         }
 
         var futureLectures = await context.Set<Lecture>()
-            .Where(l => l.LectureTime > now)
+            .Where(l => l.LectureTime > now && l.StudentId == null)
             .OrderBy(l => l.LectureTime)
             .Take(2)
             .ToListAsync();
@@ -73,7 +73,7 @@ internal static class AcademicActivitySeed
 
         var now = clock.UtcNow;
         var pastLectures = await context.Set<Lecture>()
-            .Where(l => l.LectureTime < now)
+            .Where(l => l.LectureTime < now && l.StudentId == null)
             .OrderBy(l => l.LectureTime)
             .ToListAsync();
 

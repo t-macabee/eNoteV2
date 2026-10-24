@@ -97,7 +97,7 @@ class _LectureListScreenState extends State<LectureListScreen> {
         presentation: widget.presentation,
         listStyle: widget.listStyle,
         rowIcon: Icons.event_note,
-        tileSubtitleColumns: const [2, 3, 7],
+        tileSubtitleColumns: const [3, 4, 8],
         onRowTap: (context, item) => LectureDetailDialog.show(context, item),
         columns: [
           ColumnSpec<LectureDto>(
@@ -107,6 +107,12 @@ class _LectureListScreenState extends State<LectureListScreen> {
           ColumnSpec<LectureDto>(
             label: 'Tip',
             value: (item) => lectureTypeLabel(item.lectureType),
+          ),
+          ColumnSpec<LectureDto>(
+            label: 'Grupno / Individualno',
+            value: (item) => item.isIndividual
+                ? 'Individualno: ${item.studentName ?? '-'}'
+                : 'Grupno',
           ),
           ColumnSpec<LectureDto>(
             label: 'Datum',

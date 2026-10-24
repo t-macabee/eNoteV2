@@ -3,6 +3,8 @@ import '../../formatting/formatters.dart';
 
 class LectureDto {
   final int id;
+  final int? studentId;
+  final String? studentName;
   final String name;
   final String location;
   final LectureType lectureType;
@@ -18,6 +20,8 @@ class LectureDto {
 
   LectureDto({
     required this.id,
+    this.studentId,
+    this.studentName,
     required this.name,
     required this.location,
     required this.lectureType,
@@ -32,9 +36,13 @@ class LectureDto {
     this.myAttendanceStatus,
   });
 
+  bool get isIndividual => studentId != null;
+
   factory LectureDto.fromJson(Map<String, dynamic> json) {
     return LectureDto(
       id: json['id'] as int? ?? 0,
+      studentId: json['studentId'] as int?,
+      studentName: json['studentName'] as String?,
       name: json['name'] as String? ?? '',
       location: json['location'] as String? ?? '',
       lectureType: LectureType.fromJson(json['lectureType'] as String?),
@@ -54,6 +62,8 @@ class LectureDto {
 
   Map<String, dynamic> toJson() => {
     'id': id,
+    if (studentId != null) 'studentId': studentId,
+    if (studentName != null) 'studentName': studentName,
     'name': name,
     'location': location,
     'lectureType': lectureType.toJson(),
@@ -78,6 +88,7 @@ class LectureCreateRequest {
   final int duration;
   final int? capacity;
   final int courseId;
+  final int? studentId;
 
   LectureCreateRequest({
     required this.name,
@@ -87,6 +98,7 @@ class LectureCreateRequest {
     required this.duration,
     this.capacity,
     required this.courseId,
+    this.studentId,
   });
 
   Map<String, dynamic> toJson() => {
@@ -97,6 +109,7 @@ class LectureCreateRequest {
     'duration': duration,
     if (capacity != null) 'capacity': capacity,
     'courseId': courseId,
+    if (studentId != null) 'studentId': studentId,
   };
 }
 

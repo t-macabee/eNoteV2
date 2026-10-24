@@ -110,11 +110,16 @@ public sealed class DevelopmentDataSeedTests
         Assert.NotNull(rejectedEnrollment.DecidedById);
 
         var lectures = await ctx.Set<Lecture>().ToListAsync();
-        Assert.Equal(10, lectures.Count);
-        Assert.Equal(5, lectures.Count(l => l.LectureStatus == LectureStatus.Held));
+        Assert.Equal(12, lectures.Count);
+        Assert.Equal(6, lectures.Count(l => l.LectureStatus == LectureStatus.Held));
         var cancelledLecture = Assert.Single(lectures, l => l.LectureStatus == LectureStatus.Cancelled);
         Assert.False(string.IsNullOrWhiteSpace(cancelledLecture.CancellationReason));
         Assert.NotNull(cancelledLecture.CancelledAt);
+
+        var individualLectures = lectures.Where(l => l.StudentId != null).ToList();
+        Assert.Equal(2, individualLectures.Count);
+        Assert.All(individualLectures, l => Assert.Equal(1, l.Capacity));
+        Assert.Single(individualLectures.Select(l => l.StudentId).Distinct());
 
         Assert.Equal(48, await ctx.Set<Attendance>().CountAsync());
         Assert.Equal(6, await ctx.Set<Assignment>().CountAsync());
@@ -127,7 +132,9 @@ public sealed class DevelopmentDataSeedTests
             Assert.NotNull(s.Grade);
         });
 
-        Assert.Equal(5, await ctx.Set<LectureNote>().CountAsync());
+        Assert.Equal(7, await ctx.Set<LectureNote>().CountAsync());
+        var lectureNotes = await ctx.Set<LectureNote>().ToListAsync();
+        Assert.All(individualLectures, l => Assert.Contains(lectureNotes, n => n.LectureId == l.Id));
         Assert.Equal(6, await ctx.Set<Announcement>().CountAsync());
 
         var announcements = await ctx.Set<Announcement>().ToListAsync();
@@ -232,11 +239,12 @@ public sealed class DevelopmentDataSeedTests
         Assert.Equal(12, await ctx.Users.CountAsync());
         Assert.Equal(8, await ctx.Set<Student>().CountAsync());
         Assert.Equal(18, await ctx.Set<Enrollment>().CountAsync());
-        Assert.Equal(10, await ctx.Set<Lecture>().CountAsync());
+        Assert.Equal(12, await ctx.Set<Lecture>().CountAsync());
+        Assert.Equal(2, await ctx.Set<Lecture>().CountAsync(l => l.StudentId != null));
         Assert.Equal(48, await ctx.Set<Attendance>().CountAsync());
         Assert.Equal(6, await ctx.Set<Assignment>().CountAsync());
         Assert.Equal(40, await ctx.Set<AssignmentSubmission>().CountAsync());
-        Assert.Equal(5, await ctx.Set<LectureNote>().CountAsync());
+        Assert.Equal(7, await ctx.Set<LectureNote>().CountAsync());
         Assert.Equal(6, await ctx.Set<Announcement>().CountAsync());
         Assert.Equal(3, await ctx.Set<Event>().CountAsync());
         Assert.Equal(23, await ctx.Set<InstrumentRental>().IgnoreQueryFilters().CountAsync());

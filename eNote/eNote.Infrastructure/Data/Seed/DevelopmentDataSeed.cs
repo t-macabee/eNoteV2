@@ -18,6 +18,7 @@ public static class DevelopmentDataSeed
         await AcademicActivitySeed.SeedAttendance(context, clock);
         await AcademicActivitySeed.SeedAssignmentsAndSubmissions(context, clock);
         await AcademicActivitySeed.SeedLectureNotes(context, clock);
+        await LectureSeed.SeedIndividualLectures(context, clock);
         await CommunicationSeed.SeedAnnouncements(context, clock);
         await CommunicationSeed.SeedEvents(context, clock);
         await RentalActivitySeed.SeedRentals(context, clock);
@@ -154,6 +155,48 @@ internal static class LectureSeed
             new Lecture("Sviranje u bendu", "Amfiteatar gradskog BKC-a", 60, today.AddDays(10).AddHours(19).AddMinutes(30), LectureType.Practical, null, c2Id),
             cancelledLecture
         );
+
+        await context.SaveChangesAsync();
+    }
+
+    public static async Task SeedIndividualLectures(ENoteContext context, IClock clock)
+    {
+        if (await context.Set<Lecture>().AnyAsync(l => l.StudentId != null))
+        {
+            return;
+        }
+
+        var students = await SeedStudents.GetByUsernameAsync(context);
+
+        if (!students.TryGetValue("student", out var student))
+        {
+            return;
+        }
+
+        var courseId = await context.Set<Course>()
+            .Where(c => c.Enrollments.Any(e => e.StudentId == student.Id))
+            .OrderBy(c => c.Id)
+            .Select(c => (int?)c.Id)
+            .FirstOrDefaultAsync();
+
+        if (!courseId.HasValue)
+        {
+            return;
+        }
+
+        var today = clock.UtcNow.Date;
+
+        var held = new Lecture("Individualni čas: tehnika desne ruke", "Učionica 2", 45, today.AddDays(-5).AddHours(17), LectureType.Practical, null, courseId.Value, student.Id);
+        held.MarkHeld();
+
+        var scheduled = new Lecture("Individualni čas: priprema programa", "Učionica 2", 45, today.AddDays(2).AddHours(17), LectureType.Practical, null, courseId.Value, student.Id);
+
+        context.Set<Lecture>().AddRange(held, scheduled);
+        await context.SaveChangesAsync();
+
+        context.Set<LectureNote>().AddRange(
+            new LectureNote("Plan rada", "Vježba desne ruke: arpeđa i alternacija prstiju, 20 minuta dnevno.", held.Id),
+            new LectureNote("Plan rada", "Priprema programa za ispit: dvije skladbe i jedna ljestvica.", scheduled.Id));
 
         await context.SaveChangesAsync();
     }

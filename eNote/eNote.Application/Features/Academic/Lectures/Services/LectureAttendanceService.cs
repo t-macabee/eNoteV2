@@ -28,6 +28,11 @@ public sealed class LectureAttendanceService(
 
         var studentId = await students.GetCurrentStudentIdAsync(cancellationToken);
 
+        if (lecture.StudentId.HasValue && lecture.StudentId != studentId)
+        {
+            throw new NotFoundException(Messages.LectureNotFound);
+        }
+
         if (!await context.IsEnrolledAndPaidAsync(studentId, lecture.CourseId, clock.UtcNow, cancellationToken))
         {
             throw new BusinessException(Messages.StudentNotEnrolled);
@@ -95,7 +100,8 @@ public sealed class LectureAttendanceService(
         var query = context.Set<Attendance>()
             .AsNoTracking()
             .Include(x => x.Student)
-            .Where(x => x.LectureId == lectureId);
+            .Where(x => x.LectureId == lectureId)
+            .Where(x => x.Lecture.StudentId == null || x.StudentId == x.Lecture.StudentId);
 
         var (page, pageSize) = PagingLimits.Normalize(search.Page, search.PageSize);
         var total = search.IncludeTotalCount ? await query.CountAsync(cancellationToken) : (int?)null;
@@ -131,6 +137,11 @@ public sealed class LectureAttendanceService(
         if (lecture.IsCancelled)
         {
             throw new BusinessException(Messages.LectureCancelled);
+        }
+
+        if (lecture.StudentId.HasValue && lecture.StudentId != request.StudentId)
+        {
+            throw new BusinessException(Messages.LectureIndividualNotForStudent);
         }
 
         if (!await context.IsEnrolledInCourseAsync(request.StudentId, lecture.CourseId, cancellationToken))

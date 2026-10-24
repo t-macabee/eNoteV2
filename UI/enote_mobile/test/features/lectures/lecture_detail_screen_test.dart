@@ -232,4 +232,44 @@ void main() {
     expect(arrive.onPressed, isNull);
     expect(decline.onPressed, isNull);
   });
+
+  testWidgets('an individual lecture is marked as such', (tester) async {
+    final client = ScriptedClient(
+      (_) => jsonResponse(
+        jsonEncode({
+          ..._lectureJson(lectureTime: _futureLectureTime),
+          'studentId': 7,
+          'studentName': 'Amar Hodžić',
+        }),
+        200,
+      ),
+    );
+    final authState = AuthState(
+      baseUrl: 'http://10.0.2.2:5059/api/v1/',
+      tokenReader: () => fakeJwt(),
+      httpClient: client,
+    );
+    final apiClient = ApiClient(
+      baseUrl: 'http://10.0.2.2:5059/api/v1/',
+      authState: authState,
+      httpClient: client,
+    );
+    final lectures = LectureProvider(apiClient: apiClient);
+
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider<AuthState>.value(value: authState),
+          Provider<ApiClient>.value(value: apiClient),
+          ChangeNotifierProvider<LectureProvider>.value(value: lectures),
+        ],
+        child: const MaterialApp(
+          home: LectureDetailScreen(lectureId: 11),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Individualni čas'), findsOneWidget);
+  });
 }

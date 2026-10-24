@@ -18,6 +18,11 @@ public sealed class LectureConfig : IEntityTypeConfiguration<Lecture>
                .HasForeignKey(p => p.CancelledById)
                .OnDelete(DeleteBehavior.Restrict);
 
+        builder.HasOne(p => p.Student)
+               .WithMany()
+               .HasForeignKey(p => p.StudentId)
+               .OnDelete(DeleteBehavior.Restrict);
+
         builder.Property(p => p.Name).HasStringConfig(200, true);
         builder.Property(p => p.Location).HasStringConfig(200, true);
         builder.Property(p => p.Duration).IsRequired();
@@ -27,6 +32,7 @@ public sealed class LectureConfig : IEntityTypeConfiguration<Lecture>
         builder.Property(p => p.Capacity).IsRequired(false);
         builder.Property(p => p.CancellationReason).HasMaxLength(500);
         builder.Ignore(p => p.IsCancelled);
+        builder.Ignore(p => p.IsIndividual);
         builder.Property(p => p.IsActive).HasDefaultValue(true);
         builder.HasQueryFilter(p => p.IsActive);
         builder.Property(p => p.Version).IsRowVersion();

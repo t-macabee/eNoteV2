@@ -3,6 +3,9 @@ namespace eNote.Application.Features.Academic.Lectures;
 public class LectureDto
 {
     public int Id { get; set; }
+    public int? StudentId { get; set; }
+    public string? StudentName { get; set; }
+    public bool IsIndividual => StudentId.HasValue;
 
     public string Name { get; set; } = null!;
     public string Location { get; set; } = null!;

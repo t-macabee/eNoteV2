@@ -60,6 +60,8 @@ public static class Messages
     public const string LectureRsvpClosed = "Prijave su zatvorene jer je predavanje počelo.";
     public const string LectureCancelReasonRequired = "Razlog otkazivanja je obavezan.";
     public const string LectureCancelReasonLength = "Razlog otkazivanja mora imati između 3 i 500 karaktera.";
+    public const string LectureIndividualNotForStudent = "Individualno predavanje je namijenjeno samo odabranom studentu.";
+    public const string LectureStudentNotActiveEnrollment = "Učenik nije aktivno upisan na ovaj kurs.";
 
     public const string InstrumentTypeNotFound = "Vrsta instrumenta ne postoji.";
     public const string InstrumentNotFound = "Instrument nije pronađen.";

@@ -98,6 +98,11 @@ class _LectureRow extends StatelessWidget {
           Text(
             '${formatDateTime(lecture.lectureTime)} · ${lecture.location}',
           ),
+          if (lecture.isIndividual)
+            const Text(
+              'Individualni čas',
+              style: TextStyle(color: AppTheme.primary),
+            ),
           if (lecture.cancellationReason != null)
             Text(
               'Razlog: ${lecture.cancellationReason}',

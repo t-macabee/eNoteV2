@@ -121,6 +121,8 @@ class _LectureDetailScreenState extends State<LectureDetailScreen> {
             label: 'Tip',
             value: lectureTypeLabel(lecture.lectureType),
           ),
+          if (lecture.isIndividual)
+            LabeledValue(label: 'Čas', value: 'Individualni čas'),
           LabeledValue(
             label: 'Status',
             value: lectureStatusLabel(lecture.lectureStatus),

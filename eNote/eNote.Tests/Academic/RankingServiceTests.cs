@@ -190,6 +190,30 @@ public sealed class RankingServiceTests
         return students;
     }
 
+    [Fact]
+    public async Task GetForInstructorAsync_IgnoresSubmissionOfAnotherStudent_OnIndividualLecture()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var classmate = await AcademicTestData.AddEnrolledStudentAsync(harness, 60, Now);
+        var individualLecture = await AcademicTestData.AddIndividualLectureAsync(harness, classmate, Now.AddDays(1));
+        var individualAssignment = new Assignment("Individual plan", "Do it", Now.AddDays(7), individualLecture.Id);
+        harness.Context.Set<Assignment>().Add(individualAssignment);
+        await harness.Context.SaveChangesAsync();
+
+        harness.Context.Set<AssignmentSubmission>().AddRange(
+            CreateSubmission(individualAssignment.Id, classmate.Id, grade: 100),
+            CreateSubmission(individualAssignment.Id, harness.Student.Id, grade: 50));
+        await harness.Context.SaveChangesAsync();
+
+        var service = CreateService(harness.Context, harness.Instructor, harness.Student);
+        var ranking = await service.GetForInstructorAsync(harness.Course.Id);
+
+        var entry = Assert.Single(ranking);
+        Assert.Equal(classmate.Id, entry.StudentId);
+        Assert.Equal(100, entry.AverageGrade);
+        Assert.Equal(1, entry.GradedSubmissions);
+    }
+
     private static AssignmentSubmission CreateSubmission(int assignmentId, int studentId, int? grade)
     {
         var submission = new AssignmentSubmission(assignmentId, studentId);

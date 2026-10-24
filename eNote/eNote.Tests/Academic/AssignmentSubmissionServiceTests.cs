@@ -216,6 +216,41 @@ public sealed class AssignmentSubmissionServiceTests
         Assert.Equal(2, await harness.Context.Set<AssignmentSubmission>().CountAsync());
     }
 
+    [Fact]
+    public async Task SubmitWithFileAsync_Throws_ForAssignmentOfClassmatesIndividualLecture()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var classmate = await AcademicTestData.AddEnrolledStudentAsync(harness, 60, Now);
+        var classmateLecture = await AcademicTestData.AddIndividualLectureAsync(harness, classmate, Now.AddDays(2));
+        var assignment = new Assignment("Individual homework", "Do it", Now.AddDays(7), classmateLecture.Id);
+        harness.Context.Set<Assignment>().Add(assignment);
+        await harness.Context.SaveChangesAsync();
+        var fileStorage = new RecordingFileStorageService();
+        var service = CreateService(harness.Context, harness.Instructor, fileStorage, harness.Student);
+        using var stream = new MemoryStream([1, 2, 3]);
+
+        await Assert.ThrowsAsync<NotFoundException>(() =>
+            service.SubmitWithFileAsync(assignment.Id, stream, "hw.pdf", "application/pdf"));
+
+        Assert.Empty(fileStorage.SavedFiles);
+    }
+
+    [Fact]
+    public async Task SubmitWithFileAsync_CreatesSubmission_ForAssignmentOfOwnIndividualLecture()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var ownLecture = await AcademicTestData.AddIndividualLectureAsync(harness, harness.Student, Now.AddDays(2));
+        var assignment = new Assignment("Individual homework", "Do it", Now.AddDays(7), ownLecture.Id);
+        harness.Context.Set<Assignment>().Add(assignment);
+        await harness.Context.SaveChangesAsync();
+        var service = CreateService(harness.Context, harness.Instructor, new RecordingFileStorageService(), harness.Student);
+        using var stream = new MemoryStream([1, 2, 3]);
+
+        var dto = await service.SubmitWithFileAsync(assignment.Id, stream, "hw.pdf", "application/pdf");
+
+        Assert.NotNull(dto.SubmittedAt);
+    }
+
     private static AssignmentSubmissionService CreateService(IAppDbContext context, Instructor instructor, IFileStorageService fileStorage, Student student, ISubmissionNotificationDispatcher? notificationDispatcher = null) =>
         CreateService(context, (ENoteContext)context, instructor, fileStorage, student, notificationDispatcher);
 

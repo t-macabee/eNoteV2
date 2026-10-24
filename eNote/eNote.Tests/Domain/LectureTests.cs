@@ -68,4 +68,35 @@ public sealed class LectureTests
         Assert.Throws<InvalidOperationException>(() => lecture.Cancel("Second reason", 5, Now));
         Assert.Equal("First reason", lecture.CancellationReason);
     }
+
+    [Fact]
+    public void Constructor_WithoutStudent_CreatesGroupLecture()
+    {
+        var lecture = new Lecture("L", "Room 1", 60, DateTime.UtcNow, LectureType.Theoretical, 20, 1);
+
+        Assert.False(lecture.IsIndividual);
+        Assert.Null(lecture.StudentId);
+        Assert.Equal(20, lecture.Capacity);
+    }
+
+    [Fact]
+    public void Constructor_WithStudent_CreatesIndividualLectureWithCapacityOne()
+    {
+        var lecture = new Lecture("L", "Room 1", 60, DateTime.UtcNow, LectureType.Practical, 20, 1, studentId: 5);
+
+        Assert.True(lecture.IsIndividual);
+        Assert.Equal(5, lecture.StudentId);
+        Assert.Equal(1, lecture.Capacity);
+    }
+
+    [Fact]
+    public void UpdateDetails_IndividualLecture_KeepsCapacityOne()
+    {
+        var lecture = new Lecture("L", "Room 1", 60, DateTime.UtcNow, LectureType.Practical, null, 1, studentId: 5);
+
+        lecture.UpdateDetails("L2", "Room 2", 45, Now, capacity: 30);
+
+        Assert.Equal("L2", lecture.Name);
+        Assert.Equal(1, lecture.Capacity);
+    }
 }

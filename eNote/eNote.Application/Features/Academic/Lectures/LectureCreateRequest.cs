@@ -5,4 +5,6 @@ public class LectureCreateRequest : LectureUpdateRequest
     public LectureType LectureType { get; set; }
 
     public int CourseId { get; set; }
+
+    public int? StudentId { get; set; }
 }

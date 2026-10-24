@@ -1,4 +1,5 @@
 using eNote.Application.Features.Identity.Instructors;
+using eNote.Application.Features.Identity.Users.Services;
 using MapsterMapper;
 using Microsoft.Extensions.Logging;
 
@@ -9,6 +10,7 @@ public sealed class LectureService(
     ICurrentUserContext currentUser, IStudentContext students,
     InstructorAccessService instructorAccess,
     ILectureNotificationDispatcher notificationDispatcher,
+    IStudentDisplayNameService displayNames,
     ILogger<LectureService> logger,
     IMapper mapper,
     IClock clock)
@@ -23,6 +25,7 @@ public sealed class LectureService(
             .Select(x => new LectureDto
             {
                 Id = x.Id,
+                StudentId = x.StudentId,
                 Name = x.Name,
                 Location = x.Location,
                 LectureType = x.LectureType,
@@ -38,6 +41,8 @@ public sealed class LectureService(
             .FirstOrDefaultAsync(cancellationToken)
             ?? throw new NotFoundException(Messages.LectureNotFound);
 
+        await ApplyStudentNamesAsync([dto], cancellationToken);
+
         return dto;
     }
 
@@ -52,6 +57,7 @@ public sealed class LectureService(
             .Select(x => new LectureDto
             {
                 Id = x.Id,
+                StudentId = x.StudentId,
                 Name = x.Name,
                 Location = x.Location,
                 LectureType = x.LectureType,
@@ -70,6 +76,8 @@ public sealed class LectureService(
             })
             .FirstOrDefaultAsync(cancellationToken)
             ?? throw new NotFoundException(Messages.LectureNotFound);
+
+        await ApplyStudentNamesAsync([dto], cancellationToken);
 
         return dto;
     }
@@ -98,6 +106,7 @@ public sealed class LectureService(
             .Select(x => new LectureDto
             {
                 Id = x.Id,
+                StudentId = x.StudentId,
                 Name = x.Name,
                 Location = x.Location,
                 LectureType = x.LectureType,
@@ -111,6 +120,8 @@ public sealed class LectureService(
                 AttendeeCount = x.Attendances.Count(a => a.AttendanceStatus == AttendanceStatus.Present)
             })
             .ToListAsync(cancellationToken);
+
+        await ApplyStudentNamesAsync(items, cancellationToken);
 
         return new PagedResult<LectureDto>
         {
@@ -146,6 +157,7 @@ public sealed class LectureService(
             .Select(x => new LectureDto
             {
                 Id = x.Id,
+                StudentId = x.StudentId,
                 Name = x.Name,
                 Location = x.Location,
                 LectureType = x.LectureType,
@@ -164,6 +176,8 @@ public sealed class LectureService(
             })
             .ToListAsync(cancellationToken);
 
+        await ApplyStudentNamesAsync(items, cancellationToken);
+
         return new PagedResult<LectureDto>
         {
             Items = items,
@@ -177,6 +191,12 @@ public sealed class LectureService(
     {
         var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId, cancellationToken);
         await instructorAccess.EnsureOwnsCourseAsync(request.CourseId, instructorId, cancellationToken);
+
+        if (request.StudentId.HasValue && !await context.Set<Enrollment>()
+            .AnyAsync(e => e.StudentId == request.StudentId.Value && e.CourseId == request.CourseId && e.EnrollmentStatus == EnrollmentStatus.Active, cancellationToken))
+        {
+            throw new BusinessException(Messages.LectureStudentNotActiveEnrollment);
+        }
 
         var location = request.Location.Trim().ToLower();
 
@@ -193,7 +213,8 @@ public sealed class LectureService(
             request.LectureTime,
             request.LectureType,
             request.Capacity,
-            request.CourseId)
+            request.CourseId,
+            request.StudentId)
         {
             CreatedById = currentUser.UserId
         };
@@ -201,7 +222,9 @@ public sealed class LectureService(
         context.Set<Lecture>().Add(entity);
         await context.SaveChangesAsync(cancellationToken);
 
-        return mapper.Map<LectureDto>(entity);
+        var created = mapper.Map<LectureDto>(entity);
+        await ApplyStudentNamesAsync([created], cancellationToken);
+        return created;
     }
 
     public async Task<LectureDto> UpdateAsync(int id, LectureUpdateRequest request, CancellationToken cancellationToken = default)
@@ -246,6 +269,7 @@ public sealed class LectureService(
         var dto = mapper.Map<LectureDto>(entity);
         dto.AttendeeCount = await context.Set<Attendance>()
             .CountAsync(a => a.LectureId == id && a.AttendanceStatus == AttendanceStatus.Present, cancellationToken);
+        await ApplyStudentNamesAsync([dto], cancellationToken);
         return dto;
     }
 
@@ -281,7 +305,9 @@ public sealed class LectureService(
         entity.UpdatedById = currentUser.UserId;
 
         var enrolledStudentUserIds = await context.Set<Enrollment>()
-            .Where(e => e.CourseId == entity.CourseId && e.EnrollmentStatus == EnrollmentStatus.Active)
+            .Where(e => e.CourseId == entity.CourseId
+                && e.EnrollmentStatus == EnrollmentStatus.Active
+                && (entity.StudentId == null || e.StudentId == entity.StudentId))
             .Select(e => e.Student.AppUserId)
             .ToListAsync(cancellationToken);
 
@@ -292,6 +318,28 @@ public sealed class LectureService(
         var dto = mapper.Map<LectureDto>(entity);
         dto.AttendeeCount = await context.Set<Attendance>()
             .CountAsync(a => a.LectureId == id && a.AttendanceStatus == AttendanceStatus.Present, cancellationToken);
+        await ApplyStudentNamesAsync([dto], cancellationToken);
         return dto;
+    }
+
+    private async Task ApplyStudentNamesAsync(IEnumerable<LectureDto> items, CancellationToken cancellationToken)
+    {
+        List<LectureDto> individual = [.. items.Where(x => x.StudentId.HasValue)];
+
+        if (individual.Count == 0)
+        {
+            return;
+        }
+
+        HashSet<int> studentIds = [.. individual.Select(x => x.StudentId!.Value)];
+
+        var names = await displayNames.GetStudentDisplayNamesAsync(
+            await context.Set<Student>().Where(s => studentIds.Contains(s.Id)).ToListAsync(cancellationToken),
+            cancellationToken);
+
+        foreach (var item in individual)
+        {
+            item.StudentName = names.GetValueOrDefault(item.StudentId!.Value, Messages.UnknownUserName);
+        }
     }
 }

@@ -37,6 +37,28 @@ public static class AcademicTestData
         return new AcademicHarness(context, instructor, course, lecture, student);
     }
 
+    public static async Task<Student> AddEnrolledStudentAsync(AcademicHarness harness, int appUserId, DateTime now)
+    {
+        var student = new Student(appUserId, now);
+        harness.Context.Set<Student>().Add(student);
+        await harness.Context.SaveChangesAsync();
+
+        var enrollment = new Enrollment(student.Id, harness.Course.Id, EnrollmentStatus.Active);
+        enrollment.ExtendPaidUntil(now, 30);
+        harness.Context.Set<Enrollment>().Add(enrollment);
+        await harness.Context.SaveChangesAsync();
+
+        return student;
+    }
+
+    public static async Task<Lecture> AddIndividualLectureAsync(AcademicHarness harness, Student student, DateTime lectureTime)
+    {
+        var lecture = new Lecture("Individual lesson", "Room 3", 45, lectureTime, LectureType.Practical, null, harness.Course.Id, student.Id);
+        harness.Context.Set<Lecture>().Add(lecture);
+        await harness.Context.SaveChangesAsync();
+        return lecture;
+    }
+
     public static InstructorAccessService CreateInstructorAccess(ENoteContext context, Instructor instructor) =>
         new(context, new StubUserProfileLookup(instructor: instructor));
 

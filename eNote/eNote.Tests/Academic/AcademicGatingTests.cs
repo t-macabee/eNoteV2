@@ -206,6 +206,7 @@ public sealed class AcademicGatingTests
             actor,
             AcademicTestData.CreateInstructorAccess(context, instructor),
             dispatcher ?? new NoOpLectureNotificationDispatcher(),
+            new StubDisplayNameService(),
             NullLogger<LectureService>.Instance,
             TestMapper.Create(),
             new FixedClock(Now));

@@ -66,7 +66,10 @@ public sealed class RankingService(
 
         Dictionary<int, StudentGradeStats> gradeData = await context.Set<AssignmentSubmission>()
             .AsNoTracking()
-            .Where(s => s.Grade != null && s.Assignment.Lecture.CourseId == courseId && studentIds.Contains(s.StudentId))
+            .Where(s => s.Grade != null
+                && s.Assignment.Lecture.CourseId == courseId
+                && (s.Assignment.Lecture.StudentId == null || s.Assignment.Lecture.StudentId == s.StudentId)
+                && studentIds.Contains(s.StudentId))
             .GroupBy(s => s.StudentId)
             .Select(g =>
                 new StudentGradeStats(g.Key,

@@ -69,11 +69,7 @@ internal sealed class ReportService(IAppDbContext context, IClock clock, Ranking
     {
         var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId, cancellationToken);
         var lecture = await instructorAccess.GetOwnedLectureAsync(lectureId, instructorId, includeAttendances: true, cancellationToken: cancellationToken);
-        var nameMap = await displayNames.GetStudentDisplayNamesAsync(lecture.Attendances.Select(a => a.Student!), cancellationToken);
-        var rows = lecture.Attendances
-            .Select(a => new AttendanceRow(nameMap.GetValueOrDefault(a.StudentId, Messages.UnknownUserName), a.AttendanceStatus))
-            .OrderBy(row => row.StudentName, StringComparer.CurrentCulture)
-            .ToList();
+        var rows = await LoadAttendanceRowsAsync(lecture, cancellationToken);
         return Document.Create(container => container.Page(page =>
         {
             page.Margin(30);
@@ -118,7 +114,20 @@ internal sealed class ReportService(IAppDbContext context, IClock clock, Ranking
     private static string FormatPeriod(DateTime? pickedUpAt, DateTime? returnedAt) =>
         $"{pickedUpAt?.ToString("dd.MM.yyyy", ReportCulture) ?? "-"} – {returnedAt?.ToString("dd.MM.yyyy", ReportCulture) ?? "-"}";
 
-    private sealed record AttendanceRow(string StudentName, AttendanceStatus Status);
+    internal async Task<List<AttendanceRow>> LoadAttendanceRowsAsync(Lecture lecture, CancellationToken cancellationToken)
+    {
+        var attended = lecture.StudentId.HasValue
+            ? lecture.Attendances.Where(a => a.StudentId == lecture.StudentId.Value).ToList()
+            : lecture.Attendances.ToList();
+
+        var nameMap = await displayNames.GetStudentDisplayNamesAsync(attended.Select(a => a.Student!), cancellationToken);
+
+        return [.. attended
+            .Select(a => new AttendanceRow(nameMap.GetValueOrDefault(a.StudentId, Messages.UnknownUserName), a.AttendanceStatus))
+            .OrderBy(row => row.StudentName, StringComparer.CurrentCulture)];
+    }
+
+    internal sealed record AttendanceRow(string StudentName, AttendanceStatus Status);
 
     internal async Task<List<RentalSummaryRow>> LoadRentalSummaryRowsAsync(int storeId, CancellationToken cancellationToken) =>
         await context.Set<InstrumentRental>()

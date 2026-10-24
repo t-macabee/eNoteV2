@@ -221,6 +221,27 @@ public sealed class ReportServiceTests
         return new ENoteContext(options, new FixedClock(Now), new StubCurrentActor(storeId: 1));
     }
 
+    [Fact]
+    public async Task LoadAttendanceRowsAsync_ReturnsOnlyAssignedStudent_ForIndividualLecture()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var classmate = await AcademicTestData.AddEnrolledStudentAsync(harness, 60, Now);
+        var lecture = await AcademicTestData.AddIndividualLectureAsync(harness, harness.Student, Now.AddDays(1));
+        harness.Context.Set<Attendance>().AddRange(
+            new Attendance(harness.Student.Id, lecture.Id, AttendanceStatus.Present),
+            new Attendance(classmate.Id, lecture.Id, AttendanceStatus.Present));
+        await harness.Context.SaveChangesAsync();
+        var service = CreateService(harness, harness.Instructor);
+
+        var loaded = await harness.Context.Set<Lecture>()
+            .Include(x => x.Attendances).ThenInclude(a => a.Student)
+            .SingleAsync(x => x.Id == lecture.Id);
+        var rows = await service.LoadAttendanceRowsAsync(loaded, CancellationToken.None);
+
+        var row = Assert.Single(rows);
+        Assert.Equal($"Student {harness.Student.Id}", row.StudentName);
+    }
+
     private static ReportService CreateService(AcademicHarness harness, Instructor instructor, IStoreContext? stores = null)
     {
         var actor = new StubCurrentActor(instructor: instructor, student: harness.Student);

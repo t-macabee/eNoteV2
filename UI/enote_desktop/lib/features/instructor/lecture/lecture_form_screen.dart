@@ -7,6 +7,7 @@ import '../../../widgets/date_time_field.dart';
 import '../../../widgets/entity_form_scaffold.dart';
 import '../../../widgets/entity_text_field.dart';
 import '../../../widgets/form_controller_lifecycle.dart';
+import '../course/course_provider.dart';
 import 'lecture_provider.dart';
 
 class LectureFormScreen extends StatefulWidget {
@@ -32,9 +33,13 @@ class _LectureFormScreenState extends State<LectureFormScreen>
   late final _locationController = textController();
   late final _durationController = textController();
   late final _capacityController = textController();
+  late final _studentNameController = textController();
 
   LectureType _lectureType = LectureType.theoretical;
   DateTime? _lectureTime;
+  bool _isIndividual = false;
+  int? _studentId;
+  List<CourseEnrollmentDto>? _courseStudents;
 
   bool get _isCancelled => widget.existing?.isCancelled ?? false;
   bool get _isEditMode => widget.existing != null;
@@ -50,6 +55,45 @@ class _LectureFormScreenState extends State<LectureFormScreen>
       _lectureTime = existing.lectureTime;
       _durationController.text = existing.duration.toString();
       _capacityController.text = existing.capacity?.toString() ?? '';
+      _isIndividual = existing.isIndividual;
+      _studentId = existing.studentId;
+      _studentNameController.text = existing.studentName ?? '';
+    }
+
+    if (_isIndividual && !_isEditMode) {
+      _loadCourseStudents();
+    }
+  }
+
+  Future<void> _loadCourseStudents() async {
+    try {
+      final result = await context.read<CourseProvider>().getEnrollments(
+            widget.courseId,
+            params: pagedQuery(
+              1,
+              100,
+              '',
+              filters: {'enrollmentStatus': EnrollmentStatus.active.toJson()},
+            ),
+          );
+      if (mounted) {
+        setState(() => _courseStudents = result.items);
+      }
+    } catch (e) {
+      if (mounted) {
+        ErrorBanner.show(context, message: userMessage(e));
+      }
+    }
+  }
+
+  void _setIndividual(bool isIndividual) {
+    setState(() {
+      _isIndividual = isIndividual;
+      _studentId = null;
+      _capacityController.text = isIndividual ? '1' : '';
+    });
+    if (isIndividual) {
+      _loadCourseStudents();
     }
   }
 
@@ -84,8 +128,9 @@ class _LectureFormScreenState extends State<LectureFormScreen>
         lectureType: _lectureType,
         lectureTime: _lectureTime!,
         duration: duration,
-        capacity: capacity,
+        capacity: _isIndividual ? 1 : capacity,
         courseId: widget.courseId,
+        studentId: _isIndividual ? _studentId : null,
       );
       await provider.insert(request.toJson());
     } else {
@@ -170,6 +215,46 @@ class _LectureFormScreenState extends State<LectureFormScreen>
               ? (value) => value == null ? 'Tip je obavezan.' : null
               : null,
         ),
+        SegmentedButton<bool>(
+          segments: const [
+            ButtonSegment(value: false, label: Text('Grupno')),
+            ButtonSegment(value: true, label: Text('Individualno')),
+          ],
+          selected: {_isIndividual},
+          onSelectionChanged: enabled && !_isEditMode
+              ? (selection) => _setIndividual(selection.first)
+              : null,
+        ),
+        if (_isIndividual)
+          _isEditMode
+              ? EntityTextField(
+                  controller: _studentNameController,
+                  label: 'Student',
+                  required: false,
+                  enabled: false,
+                )
+              : DropdownButtonFormField<int>(
+                  initialValue: _studentId,
+                  decoration: const InputDecoration(
+                    labelText: 'Student',
+                    border: OutlineInputBorder(),
+                  ),
+                  items: [
+                    for (final enrollment
+                        in _courseStudents ?? <CourseEnrollmentDto>[])
+                      DropdownMenuItem(
+                        value: enrollment.studentId,
+                        child: Text(enrollment.studentName),
+                      ),
+                  ],
+                  onChanged: enabled
+                      ? (value) => setState(() => _studentId = value)
+                      : null,
+                  validator: enabled
+                      ? (value) =>
+                          value == null ? 'Student je obavezan.' : null
+                      : null,
+                ),
         DateTimeField(
           labelText: 'Vrijeme predavanja',
           initialValue: _lectureTime,
@@ -192,7 +277,7 @@ class _LectureFormScreenState extends State<LectureFormScreen>
           controller: _capacityController,
           label: 'Kapacitet (opcionalno)',
           hintText: 'ostavite prazno za neograničeno',
-          enabled: enabled,
+          enabled: enabled && !_isIndividual,
           keyboardType: TextInputType.number,
           inputFormatters: [FilteringTextInputFormatter.digitsOnly],
           validator: enabled ? _validateCapacity : null,
@@ -204,6 +289,8 @@ class _LectureFormScreenState extends State<LectureFormScreen>
         setState(() {
           _lectureTime = null;
           _lectureType = LectureType.theoretical;
+          _isIndividual = false;
+          _studentId = null;
         });
       },
     );

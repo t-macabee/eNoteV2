@@ -335,6 +335,81 @@ public sealed class LectureAttendanceServiceTests
         Assert.Empty(await harness.Context.Set<Attendance>().ToListAsync());
     }
 
+    [Fact]
+    public async Task RsvpAsync_Throws_ForIndividualLectureOfAnotherStudent()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var classmate = await AcademicTestData.AddEnrolledStudentAsync(harness, 60, Now);
+        var lecture = await AcademicTestData.AddIndividualLectureAsync(harness, classmate, Now.AddDays(1));
+        var service = CreateService(harness.Context, harness.Instructor, harness.Student);
+
+        await Assert.ThrowsAsync<NotFoundException>(() =>
+            service.RsvpAsync(lecture.Id, new RsvpRequest { Confirm = true }));
+
+        Assert.Empty(await harness.Context.Set<Attendance>().ToListAsync());
+    }
+
+    [Fact]
+    public async Task RsvpAsync_Confirm_CreatesAttendance_ForOwnIndividualLecture()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var lecture = await AcademicTestData.AddIndividualLectureAsync(harness, harness.Student, Now.AddDays(1));
+        var service = CreateService(harness.Context, harness.Instructor, harness.Student);
+
+        var response = await service.RsvpAsync(lecture.Id, new RsvpRequest { Confirm = true });
+
+        Assert.True(response.Confirmed);
+        var attendance = await harness.Context.Set<Attendance>().SingleAsync();
+        Assert.Equal(harness.Student.Id, attendance.StudentId);
+        Assert.Equal(lecture.Id, attendance.LectureId);
+    }
+
+    [Fact]
+    public async Task MarkAttendanceAsync_Throws_ForOtherStudent_OnIndividualLecture()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var classmate = await AcademicTestData.AddEnrolledStudentAsync(harness, 60, Now);
+        var lecture = await AcademicTestData.AddIndividualLectureAsync(harness, harness.Student, Now.AddDays(1));
+        var service = CreateService(harness.Context, harness.Instructor, harness.Student);
+
+        var ex = await Assert.ThrowsAsync<BusinessException>(() =>
+            service.MarkAttendanceAsync(lecture.Id, new MarkAttendanceRequest { StudentId = classmate.Id, AttendanceStatus = AttendanceStatus.Present }));
+
+        Assert.Equal(Messages.LectureIndividualNotForStudent, ex.Message);
+        Assert.Empty(await harness.Context.Set<Attendance>().ToListAsync());
+    }
+
+    [Fact]
+    public async Task MarkAttendanceAsync_MarksAssignedStudent_OnIndividualLecture()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var lecture = await AcademicTestData.AddIndividualLectureAsync(harness, harness.Student, Now.AddDays(1));
+        var service = CreateService(harness.Context, harness.Instructor, harness.Student);
+
+        var dto = await service.MarkAttendanceAsync(lecture.Id, new MarkAttendanceRequest { StudentId = harness.Student.Id, AttendanceStatus = AttendanceStatus.Present });
+
+        Assert.Equal(harness.Student.Id, dto.StudentId);
+        Assert.Equal(AttendanceStatus.Present, dto.AttendanceStatus);
+    }
+
+    [Fact]
+    public async Task GetAttendanceAsync_HidesAttendanceOfOtherStudents_OnIndividualLecture()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var classmate = await AcademicTestData.AddEnrolledStudentAsync(harness, 60, Now);
+        var lecture = await AcademicTestData.AddIndividualLectureAsync(harness, harness.Student, Now.AddDays(1));
+        harness.Context.Set<Attendance>().AddRange(
+            new Attendance(harness.Student.Id, lecture.Id, AttendanceStatus.Present),
+            new Attendance(classmate.Id, lecture.Id, AttendanceStatus.Present));
+        await harness.Context.SaveChangesAsync();
+        var service = CreateService(harness.Context, harness.Instructor, harness.Student);
+
+        var result = await service.GetAttendanceAsync(lecture.Id, new AttendanceSearchObject { Page = 1, PageSize = 10 });
+
+        var dto = Assert.Single(result.Items);
+        Assert.Equal(harness.Student.Id, dto.StudentId);
+    }
+
     private static LectureAttendanceService CreateService(ENoteContext context, Instructor instructor, Student student) =>
         CreateService(context, context, instructor, student);
 

@@ -24,6 +24,11 @@ public static class LectureSearchExtensions
             query = query.Where(x => x.CourseId == search.CourseId.Value);
         }
 
+        if (search.StudentId.HasValue)
+        {
+            query = query.Where(x => x.StudentId == search.StudentId.Value);
+        }
+
         if (from.HasValue)
         {
             query = query.Where(x => x.LectureTime >= from.Value);

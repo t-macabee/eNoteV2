@@ -252,6 +252,48 @@ void main() {
     });
   });
 
+  group('LectureDto individual fields', () {
+    test('missing keys default to a group lecture', () {
+      final dto = LectureDto.fromJson({'id': 1, 'name': 'n'});
+
+      expect(dto.studentId, isNull);
+      expect(dto.studentName, isNull);
+      expect(dto.isIndividual, isFalse);
+    });
+
+    test('parses the assigned student', () {
+      final dto = LectureDto.fromJson({
+        'id': 1,
+        'name': 'n',
+        'studentId': 7,
+        'studentName': 'Amar Hodžić',
+      });
+
+      expect(dto.studentId, 7);
+      expect(dto.studentName, 'Amar Hodžić');
+      expect(dto.isIndividual, isTrue);
+    });
+
+    test('LectureCreateRequest sends the assigned student', () {
+      final request = LectureCreateRequest(
+        name: 'Individualni čas',
+        location: 'Učionica 2',
+        lectureType: LectureType.practical,
+        lectureTime: DateTime(2026, 9, 14, 18),
+        duration: 45,
+        capacity: 1,
+        courseId: 3,
+        studentId: 7,
+      );
+
+      final json = request.toJson();
+
+      expect(json['studentId'], 7);
+      expect(json['capacity'], 1);
+      expect(json['courseId'], 3);
+    });
+  });
+
   group('parseCourseRanking', () {
     test('parses a bare JSON list', () {
       final entries = parseCourseRanking(jsonEncode([

@@ -5,6 +5,10 @@ import 'package:enote_core/enote_core.dart';
 import '../../../theme/app_theme.dart';
 import '../../../widgets/detail_row.dart';
 import '../../../widgets/dialog_shell.dart';
+import '../../../widgets/entity_list_screen.dart';
+import '../lecture/lecture_provider.dart';
+import '../lecture_note/lecture_note_list_screen.dart';
+import '../lecture_note/lecture_note_provider.dart';
 import 'instructor_student_provider.dart';
 
 class InstructorStudentDetailsDialog extends StatefulWidget {
@@ -22,6 +26,7 @@ class _InstructorStudentDetailsDialogState
   late StudentDto _student = widget.student;
   List<StudentEnrollmentDto>? _enrollments;
   bool _enrollmentsError = false;
+  List<LectureDto>? _individualLectures;
 
   @override
   void initState() {
@@ -31,6 +36,7 @@ class _InstructorStudentDetailsDialogState
 
   Future<void> _refresh() async {
     final provider = context.read<InstructorStudentProvider>();
+    final lectureProvider = context.read<LectureProvider>();
     try {
       final fresh = await provider.getById(widget.student.id);
       if (mounted && fresh.id == _student.id) {
@@ -52,6 +58,46 @@ class _InstructorStudentDetailsDialogState
         setState(() => _enrollmentsError = true);
       }
     }
+
+    try {
+      final lectures = await lectureProvider.search(
+            pagedQuery(
+              1,
+              100,
+              '',
+              filters: {'studentId': widget.student.id},
+            ),
+          );
+      if (mounted) {
+        setState(() => _individualLectures = lectures.items);
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _individualLectures = const []);
+      }
+    }
+  }
+
+  Future<void> _openNotes(LectureDto lecture) async {
+    final apiClient = context.read<ApiClient>();
+    await showDialog<void>(
+      context: context,
+      builder: (_) => ChangeNotifierProvider<LectureNoteProvider>(
+        create: (_) => LectureNoteProvider(
+          apiClient: apiClient,
+          lectureId: lecture.id,
+        ),
+        child: DialogShell(
+          title: 'Bilješke — ${lecture.name}',
+          width: DialogShellWidth.md,
+          body: LectureNoteListScreen(
+            lectureId: lecture.id,
+            lectureName: lecture.name,
+            presentation: EntityListPresentation.embedded,
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -138,6 +184,54 @@ class _InstructorStudentDetailsDialogState
                   icon: Icons.class_outlined,
                   label: e.courseName,
                   value: e.instructorName ?? '—',
+                ),
+              ),
+            const SizedBox(height: 16),
+            const Text(
+              'Individualni plan',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 8),
+            if (_individualLectures == null)
+              const SizedBox(
+                height: 24,
+                child: Center(
+                  child: SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                ),
+              )
+            else if (_individualLectures!.isEmpty)
+              const Text(
+                'Nema individualnih predavanja.',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: AppTheme.textSecondary,
+                ),
+              )
+            else
+              ..._individualLectures!.map(
+                (lecture) => ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.person_outline),
+                  title: Text(lecture.name),
+                  subtitle: Text(
+                    '${formatDateTime(lecture.lectureTime)} · ${lecture.location}',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppTheme.textSecondary,
+                    ),
+                  ),
+                  trailing: TextButton(
+                    onPressed: () => _openNotes(lecture),
+                    child: const Text('Bilješke'),
+                  ),
                 ),
               ),
           ],

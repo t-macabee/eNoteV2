@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:enote_core/enote_core.dart';
 import 'package:enote_desktop/features/instructor/course/course_catalog_provider.dart';
 import 'package:enote_desktop/features/instructor/course/course_catalog_screen.dart';
+import 'package:enote_desktop/features/instructor/lecture/lecture_provider.dart';
 import 'package:enote_desktop/features/instructor/student/instructor_student_details_dialog.dart';
 import 'package:enote_desktop/features/instructor/student/instructor_student_provider.dart';
 
@@ -90,6 +91,29 @@ void main() {
           200,
         );
       }
+      if (req.url.path.endsWith('/lectures')) {
+        return jsonResponse({
+          'items': [
+            {
+              'id': 31,
+              'studentId': 5,
+              'studentName': 'Johann Bach',
+              'name': 'Individualni čas',
+              'location': 'Učionica 2',
+              'lectureType': 'Practical',
+              'lectureStatus': 'Scheduled',
+              'isCancelled': false,
+              'lectureTime': '2026-09-14T18:00:00Z',
+              'duration': 45,
+              'capacity': 1,
+              'attendeeCount': 0,
+            },
+          ],
+          'page': 1,
+          'pageSize': 100,
+          'totalCount': 1,
+        }, 200);
+      }
       return http.Response(
         jsonEncode({
           'id': 5,
@@ -119,8 +143,16 @@ void main() {
     );
 
     await tester.pumpWidget(
-      ChangeNotifierProvider(
-        create: (_) => InstructorStudentProvider(apiClient: apiClient),
+      MultiProvider(
+        providers: [
+          Provider<ApiClient>.value(value: apiClient),
+          ChangeNotifierProvider(
+            create: (_) => InstructorStudentProvider(apiClient: apiClient),
+          ),
+          ChangeNotifierProvider(
+            create: (_) => LectureProvider(apiClient: apiClient),
+          ),
+        ],
         child: MaterialApp(
           home: Scaffold(
             body: Builder(
@@ -148,5 +180,7 @@ void main() {
     expect(find.text('Upisani kursevi'), findsOneWidget);
     expect(find.text('Violin 101'), findsOneWidget);
     expect(find.text('Beethoven'), findsOneWidget);
+    expect(find.text('Individualni plan'), findsOneWidget);
+    expect(find.text('Individualni čas'), findsOneWidget);
   });
 }

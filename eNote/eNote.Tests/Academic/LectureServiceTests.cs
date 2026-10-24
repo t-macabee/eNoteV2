@@ -461,6 +461,143 @@ public sealed class LectureServiceTests
         Assert.Equal(AttendanceStatus.Present, dto.MyAttendanceStatus);
     }
 
+    [Fact]
+    public async Task CreateAsync_CreatesIndividualLecture_ForActivelyEnrolledStudent()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var service = CreateService(harness.Context, harness.Instructor);
+
+        var dto = await service.CreateAsync(new LectureCreateRequest
+        {
+            CourseId = harness.Course.Id,
+            Name = "Individual lesson",
+            Location = "Room 2",
+            Duration = 45,
+            LectureTime = Now.AddDays(1),
+            LectureType = LectureType.Practical,
+            Capacity = 20,
+            StudentId = harness.Student.Id
+        });
+
+        Assert.Equal(harness.Student.Id, dto.StudentId);
+        Assert.True(dto.IsIndividual);
+        Assert.Equal(1, dto.Capacity);
+        Assert.Equal($"Student {harness.Student.Id}", dto.StudentName);
+    }
+
+    [Fact]
+    public async Task CreateAsync_Throws_WhenStudentIsNotActivelyEnrolled()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var stranger = new Student(77, Now);
+        harness.Context.Set<Student>().Add(stranger);
+        await harness.Context.SaveChangesAsync();
+        var service = CreateService(harness.Context, harness.Instructor);
+
+        var ex = await Assert.ThrowsAsync<BusinessException>(() =>
+            service.CreateAsync(new LectureCreateRequest
+            {
+                CourseId = harness.Course.Id,
+                Name = "Individual lesson",
+                Location = "Room 2",
+                Duration = 45,
+                LectureTime = Now.AddDays(1),
+                LectureType = LectureType.Practical,
+                StudentId = stranger.Id
+            }));
+
+        Assert.Equal(Messages.LectureStudentNotActiveEnrollment, ex.Message);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_IndividualLecture_KeepsCapacityOne()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var lecture = await AcademicTestData.AddIndividualLectureAsync(harness, harness.Student, Now.AddDays(2));
+        var service = CreateService(harness.Context, harness.Instructor);
+
+        var dto = await service.UpdateAsync(lecture.Id, new LectureUpdateRequest
+        {
+            Name = "Individual lesson",
+            Location = "Room 2",
+            Duration = 45,
+            LectureTime = Now.AddDays(1),
+            Capacity = 10
+        });
+
+        Assert.Equal(1, dto.Capacity);
+    }
+
+    [Fact]
+    public async Task GetPagedForInstructorAsync_ReturnsStudentName_ForIndividualLecture()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        await AcademicTestData.AddIndividualLectureAsync(harness, harness.Student, Now.AddDays(2));
+        var service = CreateService(harness.Context, harness.Instructor);
+
+        var result = await service.GetPagedForInstructorAsync(new LectureSearchObject { StudentId = harness.Student.Id });
+
+        var dto = Assert.Single(result.Items);
+        Assert.True(dto.IsIndividual);
+        Assert.Equal($"Student {harness.Student.Id}", dto.StudentName);
+    }
+
+    [Fact]
+    public async Task GetPagedForStudentAsync_HidesIndividualLecturesOfOtherStudents()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var classmate = await AcademicTestData.AddEnrolledStudentAsync(harness, 60, Now);
+        await AcademicTestData.AddIndividualLectureAsync(harness, classmate, Now.AddDays(3));
+        var service = CreateService(harness.Context, harness.Instructor, new StubCurrentActor(student: harness.Student));
+
+        var result = await service.GetPagedForStudentAsync(new LectureSearchObject());
+
+        var dto = Assert.Single(result.Items);
+        Assert.Equal(harness.Lecture.Id, dto.Id);
+    }
+
+    [Fact]
+    public async Task GetPagedForStudentAsync_ReturnsOwnIndividualLecture()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var own = await AcademicTestData.AddIndividualLectureAsync(harness, harness.Student, Now.AddDays(2));
+        var classmate = await AcademicTestData.AddEnrolledStudentAsync(harness, 60, Now);
+        await AcademicTestData.AddIndividualLectureAsync(harness, classmate, Now.AddDays(3));
+        var service = CreateService(harness.Context, harness.Instructor, new StubCurrentActor(student: harness.Student));
+
+        var result = await service.GetPagedForStudentAsync(new LectureSearchObject());
+
+        Assert.Equal(2, result.Items.Count);
+        var individual = Assert.Single(result.Items, x => x.IsIndividual);
+        Assert.Equal(own.Id, individual.Id);
+    }
+
+    [Fact]
+    public async Task GetByIdForStudentAsync_Throws_ForIndividualLectureOfAnotherStudent()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var classmate = await AcademicTestData.AddEnrolledStudentAsync(harness, 60, Now);
+        var lecture = await AcademicTestData.AddIndividualLectureAsync(harness, classmate, Now.AddDays(3));
+        var service = CreateService(harness.Context, harness.Instructor, new StubCurrentActor(student: harness.Student));
+
+        await Assert.ThrowsAsync<NotFoundException>(() => service.GetByIdForStudentAsync(lecture.Id));
+    }
+
+    [Fact]
+    public async Task CancelAsync_NotifiesOnlyAssignedStudent_ForIndividualLecture()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        await AcademicTestData.AddEnrolledStudentAsync(harness, 60, Now);
+        var lecture = await AcademicTestData.AddIndividualLectureAsync(harness, harness.Student, Now.AddDays(2));
+        var dispatcher = new RecordingLectureNotificationDispatcher();
+        var service = CreateService(harness.Context, harness.Instructor, notificationDispatcher: dispatcher);
+
+        await service.CancelAsync(lecture.Id, new LectureCancelRequest { Reason = "Instrument je pokvaren" });
+
+        var call = Assert.Single(dispatcher.CancelledCalls);
+        Assert.Equal([harness.Student.AppUserId], call.EnrolledStudentUserIds);
+    }
+
     private static LectureService CreateService(ENoteContext context, Instructor instructor, StubCurrentActor? actor = null, ILectureNotificationDispatcher? notificationDispatcher = null)
     {
         var currentUser = actor ?? new StubCurrentActor(instructor: instructor);
@@ -469,6 +606,7 @@ public sealed class LectureServiceTests
             currentUser,
             AcademicTestData.CreateInstructorAccess(context, instructor),
             notificationDispatcher ?? new NoOpLectureNotificationDispatcher(),
+            new StubDisplayNameService(),
             NullLogger<LectureService>.Instance,
             TestMapper.Create(),
             new FixedClock(Now));

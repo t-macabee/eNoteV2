@@ -431,6 +431,9 @@ namespace eNote.Infrastructure.Data.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
+                    b.Property<int?>("StudentId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
@@ -448,6 +451,8 @@ namespace eNote.Infrastructure.Data.Migrations
                     b.HasIndex("CancelledById");
 
                     b.HasIndex("CourseId");
+
+                    b.HasIndex("StudentId");
 
                     b.ToTable("Lecture");
                 });
@@ -1833,7 +1838,14 @@ namespace eNote.Infrastructure.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("eNote.Domain.Entities.Identity.Student", "Student")
+                        .WithMany()
+                        .HasForeignKey("StudentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.Navigation("Course");
+
+                    b.Navigation("Student");
                 });
 
             modelBuilder.Entity("eNote.Domain.Entities.Academic.LectureNote", b =>

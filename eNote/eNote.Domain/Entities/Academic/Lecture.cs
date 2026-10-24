@@ -6,6 +6,10 @@ public sealed class Lecture : AuditableEntity
     public int CourseId { get; private set; }
     public Course Course { get; private set; } = null!;
 
+    public int? StudentId { get; private set; }
+    public Student? Student { get; private set; }
+    public bool IsIndividual => StudentId.HasValue;
+
     public string Name { get; private set; } = null!;
     public string Location { get; private set; } = null!;
     public LectureType LectureType { get; private set; }
@@ -31,15 +35,16 @@ public sealed class Lecture : AuditableEntity
     {
     }
 
-    public Lecture(string name, string location, int duration, DateTime lectureTime, LectureType lectureType, int? capacity, int courseId)
+    public Lecture(string name, string location, int duration, DateTime lectureTime, LectureType lectureType, int? capacity, int courseId, int? studentId = null)
     {
         Name = name;
         Location = location;
         Duration = duration;
         LectureTime = lectureTime;
         LectureType = lectureType;
-        Capacity = capacity;
         CourseId = courseId;
+        StudentId = studentId;
+        Capacity = IndividualCapacity(capacity, studentId);
         LectureStatus = LectureStatus.Scheduled;
         IsActive = true;
     }
@@ -50,8 +55,10 @@ public sealed class Lecture : AuditableEntity
         Location = location;
         Duration = duration;
         LectureTime = lectureTime;
-        Capacity = capacity;
+        Capacity = IndividualCapacity(capacity, StudentId);
     }
+
+    private static int? IndividualCapacity(int? capacity, int? studentId) => studentId.HasValue ? 1 : capacity;
 
     public void Cancel(string reason, int userId, DateTime utcNow)
     {

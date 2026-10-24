@@ -94,4 +94,50 @@ public sealed class LectureNoteServiceTests
         Assert.Equal("Visible", dto.Title);
     }
 
+
+    [Fact]
+    public async Task GetForStudentAsync_HidesNotesOfClassmatesIndividualLecture()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        harness.Context.Set<LectureNote>().Add(new LectureNote("Group note", "Content", harness.Lecture.Id));
+        var classmate = await AcademicTestData.AddEnrolledStudentAsync(harness, 60, Now);
+        var classmateLecture = await AcademicTestData.AddIndividualLectureAsync(harness, classmate, Now.AddDays(2));
+        harness.Context.Set<LectureNote>().Add(new LectureNote("Classmate plan", "Content", classmateLecture.Id));
+        await harness.Context.SaveChangesAsync();
+        var service = AcademicTestData.CreateService<LectureNoteService>(harness.Context, harness.Instructor, new StubCurrentActor(student: harness.Student));
+
+        var groupNotes = await service.GetForStudentAsync(harness.Lecture.Id, new LectureNoteSearchObject { Page = 1, PageSize = 10 });
+        var classmateNotes = await service.GetForStudentAsync(classmateLecture.Id, new LectureNoteSearchObject { Page = 1, PageSize = 10 });
+
+        Assert.Equal("Group note", Assert.Single(groupNotes.Items).Title);
+        Assert.Empty(classmateNotes.Items);
+    }
+
+    [Fact]
+    public async Task GetByIdForStudentAsync_Throws_ForClassmatesIndividualLectureNote()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var classmate = await AcademicTestData.AddEnrolledStudentAsync(harness, 60, Now);
+        var classmateLecture = await AcademicTestData.AddIndividualLectureAsync(harness, classmate, Now.AddDays(2));
+        var note = new LectureNote("Classmate plan", "Content", classmateLecture.Id);
+        harness.Context.Set<LectureNote>().Add(note);
+        await harness.Context.SaveChangesAsync();
+        var service = AcademicTestData.CreateService<LectureNoteService>(harness.Context, harness.Instructor, new StubCurrentActor(student: harness.Student));
+
+        await Assert.ThrowsAsync<NotFoundException>(() => service.GetByIdForStudentAsync(classmateLecture.Id, note.Id));
+    }
+
+    [Fact]
+    public async Task GetForStudentAsync_ReturnsNotesOfOwnIndividualLecture()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var ownLecture = await AcademicTestData.AddIndividualLectureAsync(harness, harness.Student, Now.AddDays(2));
+        harness.Context.Set<LectureNote>().Add(new LectureNote("Moj plan", "Content", ownLecture.Id));
+        await harness.Context.SaveChangesAsync();
+        var service = AcademicTestData.CreateService<LectureNoteService>(harness.Context, harness.Instructor, new StubCurrentActor(student: harness.Student));
+
+        var result = await service.GetForStudentAsync(ownLecture.Id, new LectureNoteSearchObject { Page = 1, PageSize = 10 });
+
+        Assert.Equal("Moj plan", Assert.Single(result.Items).Title);
+    }
 }
