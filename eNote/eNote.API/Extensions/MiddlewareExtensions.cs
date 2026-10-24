@@ -30,7 +30,14 @@ public static class MiddlewareExtensions
 
                 var logger = context.RequestServices.GetService<ILogger<WebApplication>>();
 
-                logger?.LogError(exception, "Unhandled exception caught by middleware");
+                if (statusCode >= StatusCodes.Status500InternalServerError)
+                {
+                    logger?.LogError(exception, "Unhandled exception caught by middleware");
+                }
+                else
+                {
+                    logger?.LogWarning(exception, "Request failed with {StatusCode} {ErrorCode}: {Message}", statusCode, errorCode, message);
+                }
 
                 var response = new ErrorResponse
                 {

@@ -187,7 +187,9 @@ class _CourseDetailDialogState extends State<CourseDetailDialog>
           _dirty = true;
         });
       }
-    } catch (_) {}
+    } catch (e) {
+      if (mounted) ErrorBanner.show(context, message: userMessage(e));
+    }
   }
 
   @override

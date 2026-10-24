@@ -12,8 +12,8 @@ import 'package:enote_mobile/theme/app_theme.dart';
 
 import '../../helpers.dart';
 
-final _futureDueAt = DateTime.now().add(const Duration(days: 365)).toIso8601String();
-final _pastDueAt = DateTime.now().subtract(const Duration(days: 1)).toIso8601String();
+const _futureDueAt = '2099-06-15T14:30:00';
+const _pastDueAt = '2020-03-04T09:30:00';
 
 Map<String, dynamic> _assignmentJson({required String dueAt}) => {
   'id': 5,

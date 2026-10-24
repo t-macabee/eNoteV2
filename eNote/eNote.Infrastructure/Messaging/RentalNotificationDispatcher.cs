@@ -123,7 +123,7 @@ public sealed class RentalNotificationDispatcher(
         trigger switch
         {
             RentalTrigger.Approve =>
-                ("Zahtjev odobren", $"Vaš zahtjev za instrument {rental.InstrumentModel} je odobren. Mjesečna naknada: {rental.Fee:F2} KM."),
+                ("Zahtjev odobren", $"Vaš zahtjev za instrument {rental.InstrumentModel} je odobren. Mjesečna naknada: {rental.Fee:F2} {LocalCurrencyLabel}."),
             RentalTrigger.Reject =>
                 ("Zahtjev odbijen", string.IsNullOrWhiteSpace(rental.Note) ? $"Vaš zahtjev za instrument {rental.InstrumentModel} je odbijen." : $"Vaš zahtjev za instrument {rental.InstrumentModel} je odbijen. Razlog: {rental.Note}"),
             RentalTrigger.Pickup =>

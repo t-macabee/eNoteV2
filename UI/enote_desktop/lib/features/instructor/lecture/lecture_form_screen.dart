@@ -140,12 +140,14 @@ class _LectureFormScreenState extends State<LectureFormScreen>
           label: 'Naziv',
           enabled: enabled,
           required: enabled,
+          maxLength: 200,
         ),
         EntityTextField(
           controller: _locationController,
           label: 'Lokacija',
           enabled: enabled,
           required: enabled,
+          maxLength: 200,
         ),
         DropdownButtonFormField<LectureType>(
           initialValue: _lectureType,

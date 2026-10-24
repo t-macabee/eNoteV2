@@ -21,7 +21,7 @@ kao slobodan tekst.
 `Instructor` je namjerno samo za čitanje: instruktori se prikazuju u tabu "Korisnici" (`UserGridScreen`), a `InstructorProvider` nema operacije pisanja. Administrator
 kreira instruktorske naloge kroz `AdminUsersController` i `UserProvisionFormScreen`,
 gdje se postavlja i uloga. Administrator daje samo pristup: lične podatke
-(ime, prezime, e-mail, telefon) svaki korisnik uređuje sam na svom profilu
+(ime, prezime, e-mail, datum rođenja) svaki korisnik uređuje sam na svom profilu
 (`PUT users/me`).
 
 Tabele `Country`, `Category` i `Status` ne postoje. Sve adrese su unutar BiH i

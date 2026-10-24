@@ -90,6 +90,7 @@ class PaymentFlowController extends ChangeNotifier {
       _notify();
     }
     view = PaymentView.processing;
+    failureMessage = null;
     _notify();
     await poll();
   }
@@ -113,10 +114,9 @@ class PaymentFlowController extends ChangeNotifier {
         view = PaymentView.pending;
       }
       _notify();
-    } catch (e) {
+    } catch (_) {
       isPolling = false;
-      view = PaymentView.failed;
-      failureMessage = userMessage(e);
+      view = PaymentView.pending;
       _notify();
     }
   }

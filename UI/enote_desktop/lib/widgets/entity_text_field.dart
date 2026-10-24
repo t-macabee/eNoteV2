@@ -13,6 +13,7 @@ class EntityTextField extends StatelessWidget {
   final TextInputType? keyboardType;
   final List<TextInputFormatter>? inputFormatters;
   final bool enabled;
+  final int? maxLength;
 
   const EntityTextField({
     super.key,
@@ -26,6 +27,7 @@ class EntityTextField extends StatelessWidget {
     this.keyboardType,
     this.inputFormatters,
     this.enabled = true,
+    this.maxLength,
   });
 
   @override
@@ -39,6 +41,7 @@ class EntityTextField extends StatelessWidget {
       keyboardType: keyboardType,
       inputFormatters: inputFormatters,
       enabled: enabled,
+      maxLength: maxLength,
     );
   }
 }

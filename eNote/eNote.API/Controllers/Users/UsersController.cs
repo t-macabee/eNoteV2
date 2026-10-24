@@ -29,9 +29,9 @@ public sealed class UsersController(UserProfileService profileService, UserSelfS
     [HttpPut("me")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileRequest request)
+    public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileRequest request, CancellationToken cancellationToken)
     {
-        (var success, var error) = await selfService.UpdateProfileAsync(request);
+        (var success, var error) = await selfService.UpdateProfileAsync(request, cancellationToken);
 
         if (!success)
         {
@@ -71,9 +71,9 @@ public sealed class UsersController(UserProfileService profileService, UserSelfS
     [Produces("image/jpeg", "image/png", "image/webp")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetPicture()
+    public async Task<IActionResult> GetPicture(CancellationToken cancellationToken)
     {
-        (var data, var contentType) = await selfService.GetPictureAsync();
+        (var data, var contentType) = await selfService.GetPictureAsync(cancellationToken);
 
         if (data is null || contentType is null)
         {
@@ -86,9 +86,9 @@ public sealed class UsersController(UserProfileService profileService, UserSelfS
     [HttpDelete("me/picture")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> DeletePicture()
+    public async Task<IActionResult> DeletePicture(CancellationToken cancellationToken)
     {
-        (var success, var error) = await selfService.DeletePictureAsync();
+        (var success, var error) = await selfService.DeletePictureAsync(cancellationToken);
 
         if (!success)
         {
@@ -125,9 +125,9 @@ public sealed class UsersController(UserProfileService profileService, UserSelfS
     [HttpPut("me/password")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
+    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request, CancellationToken cancellationToken)
     {
-        (var success, var error) = await selfService.ChangePasswordAsync(request);
+        (var success, var error) = await selfService.ChangePasswordAsync(request, cancellationToken);
 
         if (!success)
         {

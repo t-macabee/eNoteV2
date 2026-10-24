@@ -94,6 +94,17 @@ Future<void> _openScreen(WidgetTester tester) async {
   await tester.pumpAndSettle();
 }
 
+Future<void> _tapSave(WidgetTester tester) async {
+  final button = find.text('Sačuvaj promjene');
+  await tester.scrollUntilVisible(
+    button,
+    200,
+    scrollable: find.byType(Scrollable).first,
+  );
+  await tester.tap(button);
+  await tester.pumpAndSettle();
+}
+
 void main() {
   testWidgets('edit profile has no obscured password field', (tester) async {
     final harness = _Harness();
@@ -117,8 +128,7 @@ void main() {
 
     final emailField = find.byType(TextFormField).at(2);
     await tester.enterText(emailField, 'not-an-email');
-    await tester.tap(find.text('Sačuvaj promjene'));
-    await tester.pumpAndSettle();
+    await _tapSave(tester);
 
     expect(find.text('Unesite važeću email adresu.'), findsOneWidget);
     final puts = harness.client.requests
@@ -137,8 +147,7 @@ void main() {
     await tester.enterText(fields.at(0), 'Novi');
     await tester.enterText(fields.at(1), 'Student');
     await tester.enterText(fields.at(2), 'novi@enote.com');
-    await tester.tap(find.text('Sačuvaj promjene'));
-    await tester.pumpAndSettle();
+    await _tapSave(tester);
 
     final puts = harness.client.requests
         .where((r) => r.method == 'PUT' && r.url.path == '/api/v1/users/me')

@@ -63,7 +63,7 @@ class _InstrumentTypeFormScreenState extends State<InstrumentTypeFormScreen>
       isEditMode: widget.existing != null,
       onReset: clearTextControllers,
       fieldsBuilder: (_) => [
-        EntityTextField(controller: _typeController, label: 'Tip'),
+        EntityTextField(controller: _typeController, label: 'Tip', maxLength: 100),
         EntityTextField(
           controller: _monthlyFeeController,
           label: 'Mjesečna naknada',

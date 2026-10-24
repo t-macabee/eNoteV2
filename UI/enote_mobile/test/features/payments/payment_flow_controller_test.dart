@@ -11,13 +11,17 @@ PaymentFlowController _controller({
   PaymentStatus? status,
   RentalPaymentDto? pollResult,
   bool isConfigured = true,
+  Object? pollError,
 }) {
   return PaymentFlowController(
     gateway: gateway,
     isConfigured: isConfigured,
     createIntent: () async => 'pi_test_123_secret_abc',
     status: () async => status == null ? null : _row(status),
-    pollUntilSucceeded: () async => pollResult,
+    pollUntilSucceeded: () async {
+      if (pollError != null) throw pollError;
+      return pollResult;
+    },
   );
 }
 
@@ -93,6 +97,42 @@ void main() {
     expect(controller.payment, isNull);
     expect(controller.isPolling, isFalse);
   });
+
+  test('a poll error after a successful sheet lands on pending', () async {
+    final controller = _controller(
+      gateway: FakePaymentSheetGateway(),
+      pollError: ApiException('Network error'),
+    );
+
+    await controller.attempt();
+
+    expect(controller.view, PaymentView.pending);
+    expect(controller.failureMessage, isNull);
+    expect(controller.isPolling, isFalse);
+  });
+
+  test(
+    'a retry after a declined sheet does not carry the old message into pending',
+    () async {
+      final gateway = FakePaymentSheetGateway()
+        ..queuePresent(PaymentSheetCancelled());
+      final controller = _controller(
+        gateway: gateway,
+        status: PaymentStatus.failed,
+        pollError: ApiException('Network error'),
+      );
+
+      await controller.attempt();
+
+      expect(controller.view, PaymentView.failed);
+      expect(controller.failureMessage, PaymentFlowController.declinedMessage);
+
+      await controller.attempt();
+
+      expect(controller.view, PaymentView.pending);
+      expect(controller.failureMessage, isNull);
+    },
+  );
 
   test('a succeeded poll carries the payment into view D', () async {
     final summary = _row(

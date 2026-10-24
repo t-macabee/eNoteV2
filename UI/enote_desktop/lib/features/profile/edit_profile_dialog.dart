@@ -89,6 +89,12 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
   }
 
   Future<void> _removePicture() async {
+    final confirmed = await confirmDialog(
+      context: context,
+      title: 'Uklanjanje slike',
+      message: 'Ukloniti profilnu sliku?',
+    );
+    if (confirmed != true || !mounted) return;
     try {
       await context.read<ProfileProvider>().deletePicture();
       if (mounted) {
@@ -145,15 +151,18 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
         TextFormField(
           controller: _firstNameController,
           decoration: const InputDecoration(labelText: 'Ime'),
+          maxLength: 256,
         ),
         TextFormField(
           controller: _lastNameController,
           decoration: const InputDecoration(labelText: 'Prezime'),
+          maxLength: 256,
         ),
         TextFormField(
           controller: _emailController,
           decoration: const InputDecoration(labelText: 'Email'),
           validator: Validators.email,
+          maxLength: 256,
         ),
         DateField(
           labelText: 'Datum rođenja',

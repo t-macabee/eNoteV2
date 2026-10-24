@@ -87,12 +87,13 @@ class _AnnouncementFormScreenState extends State<AnnouncementFormScreen>
       isEditMode: _isEditMode,
       closeAfterAdd: true,
       fieldsBuilder: (_) => [
-        EntityTextField(controller: _titleController, label: 'Naslov'),
+        EntityTextField(controller: _titleController, label: 'Naslov', maxLength: 150),
         EntityTextField(
           controller: _contentController,
           label: 'Sadržaj',
           maxLines: 8,
           minLines: 4,
+          maxLength: 4000,
         ),
         if (_isEditMode) ...[
           const Text('Slika', style: TextStyle(fontWeight: FontWeight.bold)),

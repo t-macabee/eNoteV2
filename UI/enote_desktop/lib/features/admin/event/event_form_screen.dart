@@ -127,6 +127,7 @@ class _EventFormScreenState extends State<EventFormScreen>
           label: 'Naziv',
           enabled: !readOnly,
           required: !readOnly,
+          maxLength: 150,
         ),
         EntityTextField(
           controller: _descriptionController,
@@ -134,6 +135,7 @@ class _EventFormScreenState extends State<EventFormScreen>
           maxLines: 3,
           enabled: !readOnly,
           required: !readOnly,
+          maxLength: 4000,
         ),
         DateTimeField(
           labelText: 'Početak',

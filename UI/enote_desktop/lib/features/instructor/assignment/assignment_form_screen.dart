@@ -70,7 +70,7 @@ class _AssignmentFormScreenState extends State<AssignmentFormScreen>
       isEditMode: _isEditMode,
       closeAfterAdd: true,
       fieldsBuilder: (_) => [
-        EntityTextField(controller: _titleController, label: 'Naslov'),
+        EntityTextField(controller: _titleController, label: 'Naslov', maxLength: 200),
         EntityTextField(
           controller: _descriptionController,
           label: 'Opis',

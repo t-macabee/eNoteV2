@@ -71,3 +71,11 @@ build/
 !.env-tajne.zip
 !recommender-dokumentacija.zip
 *.apk
+
+# Local AI tooling
+.agents/
+.claude/
+.mcp.json
+.tokensave/
+AGENTS.md
+

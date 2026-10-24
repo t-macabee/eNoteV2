@@ -52,7 +52,7 @@ class _CityFormScreenState extends State<CityFormScreen>
       isEditMode: widget.existing != null,
       onReset: clearTextControllers,
       fieldsBuilder: (_) => [
-        EntityTextField(controller: _nameController, label: 'Naziv grada'),
+        EntityTextField(controller: _nameController, label: 'Naziv grada', maxLength: 100),
       ],
       onSave: _save,
     );

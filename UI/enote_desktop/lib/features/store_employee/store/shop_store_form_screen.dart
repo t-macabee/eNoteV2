@@ -88,16 +88,18 @@ class _ShopStoreFormScreenState extends State<ShopStoreFormScreen>
       title: 'Uredi prodavnicu',
       isEditMode: true,
       fieldsBuilder: (_) => [
-        EntityTextField(controller: _storeNameController, label: 'Naziv'),
+        EntityTextField(controller: _storeNameController, label: 'Naziv', maxLength: 100),
         EntityTextField(
           controller: _businessHoursController,
           label: 'Radno vrijeme',
+          maxLength: 50,
         ),
         EntityTextField(
           controller: _phoneNumberController,
           label: 'Broj telefona',
           required: false,
           validator: Validators.optionalPhone,
+          maxLength: 30,
         ),
         AsyncDropdown<AddressReferenceDto>(
           label: 'Adresa',

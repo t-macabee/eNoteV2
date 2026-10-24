@@ -106,15 +106,16 @@ class EditProfileFields extends StatelessWidget {
       autovalidateMode: AutovalidateMode.onUserInteraction,
       child: Column(
         children: [
-          AppTextField(controller: firstNameController, label: 'Ime'),
+          AppTextField(controller: firstNameController, label: 'Ime', maxLength: 256),
           const SizedBox(height: 16),
-          AppTextField(controller: lastNameController, label: 'Prezime'),
+          AppTextField(controller: lastNameController, label: 'Prezime', maxLength: 256),
           const SizedBox(height: 16),
           AppTextField(
             controller: emailController,
             label: 'Email *',
             keyboardType: TextInputType.emailAddress,
             validator: Validators.email,
+            maxLength: 256,
           ),
           const SizedBox(height: 16),
           AppDatePickerField(

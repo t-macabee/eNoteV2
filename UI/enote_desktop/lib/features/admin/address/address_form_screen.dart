@@ -84,8 +84,8 @@ class _AddressFormScreenState extends State<AddressFormScreen>
             return null;
           },
         ),
-        EntityTextField(controller: _streetController, label: 'Ulica'),
-        EntityTextField(controller: _numberController, label: 'Broj'),
+        EntityTextField(controller: _streetController, label: 'Ulica', maxLength: 100),
+        EntityTextField(controller: _numberController, label: 'Broj', maxLength: 20),
       ],
       onSave: _save,
     );

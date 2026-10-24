@@ -106,10 +106,11 @@ class _InstrumentFormScreenState extends State<InstrumentFormScreen>
       title: _isEditMode ? 'Uredi instrument' : 'Dodaj instrument',
       isEditMode: _isEditMode,
       fieldsBuilder: (_) => [
-        EntityTextField(controller: _modelController, label: 'Model'),
+        EntityTextField(controller: _modelController, label: 'Model', maxLength: 100),
         EntityTextField(
           controller: _manufacturerController,
           label: 'Proizvođač',
+          maxLength: 100,
         ),
         EntityTextField(
           controller: _descriptionController,
@@ -117,6 +118,7 @@ class _InstrumentFormScreenState extends State<InstrumentFormScreen>
           required: false,
           maxLines: 3,
           minLines: 1,
+          maxLength: 1000,
         ),
         AsyncDropdown<InstrumentTypeDto>(
           label: 'Tip instrumenta',

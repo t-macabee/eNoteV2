@@ -60,7 +60,7 @@ class _LectureNoteFormScreenState extends State<LectureNoteFormScreen>
       title: _isEditMode ? 'Uredi bilješku' : 'Dodaj bilješku',
       isEditMode: _isEditMode,
       fieldsBuilder: (_) => [
-        EntityTextField(controller: _titleController, label: 'Naslov'),
+        EntityTextField(controller: _titleController, label: 'Naslov', maxLength: 200),
         EntityTextField(
           controller: _contentController,
           label: 'Sadržaj',

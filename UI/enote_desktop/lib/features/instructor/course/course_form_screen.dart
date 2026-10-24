@@ -86,7 +86,7 @@ class _CourseFormScreenState extends State<CourseFormScreen>
       isEditMode: widget.existing != null,
       closeAfterAdd: true,
       fieldsBuilder: (_) => [
-        EntityTextField(controller: _nameController, label: 'Naziv'),
+        EntityTextField(controller: _nameController, label: 'Naziv', maxLength: 200),
         EntityTextField(
           controller: _descriptionController,
           label: 'Opis',

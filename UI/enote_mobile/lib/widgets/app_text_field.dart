@@ -9,6 +9,7 @@ class AppTextField extends StatefulWidget {
   final bool obscure;
   final bool readOnly;
   final ValueChanged<String>? onFieldSubmitted;
+  final int? maxLength;
 
   const AppTextField({
     super.key,
@@ -20,6 +21,7 @@ class AppTextField extends StatefulWidget {
     this.obscure = false,
     this.readOnly = false,
     this.onFieldSubmitted,
+    this.maxLength,
   });
 
   @override
@@ -50,6 +52,7 @@ class _AppTextFieldState extends State<AppTextField> {
       readOnly: widget.readOnly,
       onFieldSubmitted: widget.onFieldSubmitted,
       validator: widget.validator,
+      maxLength: widget.maxLength,
     );
   }
 }
