@@ -4,6 +4,7 @@ using eNote.Application.Common.Localization;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Common.Time;
 using eNote.Application.Constants;
+using eNote.Application.Features.Academic.Courses.Services;
 using eNote.Application.Features.Academic.Tuition;
 using eNote.Application.Features.Rentals.InstrumentRentals.Services;
 using eNote.Application.Features.Rentals.Payments.Services;
@@ -18,13 +19,17 @@ public sealed class StripeWebhookService(
     IAppDbContext context,
     IClock clock,
     StripeOptions options,
+    IPaymentGateway paymentGateway,
     IRentalNotificationDispatcher notifications,
+    IEnrollmentNotificationDispatcher enrollmentNotifications,
     ILogger<StripeWebhookService> logger)
 {
     private const string PaymentIntentSucceeded = "payment_intent.succeeded";
     private const string PaymentIntentPaymentFailed = "payment_intent.payment_failed";
     private const string ChargeRefunded = "charge.refunded";
     private const string ChargeRefundUpdated = "charge.refund.updated";
+    private const string RefundSucceeded = "succeeded";
+    private const string RefundFailed = "failed";
 
     public async Task HandleAsync(string rawJson, string signatureHeader, CancellationToken cancellationToken = default)
     {
@@ -84,54 +89,76 @@ public sealed class StripeWebhookService(
                 return;
             }
 
-            var rentalPayment = await context.Set<RentalPayment>()
-                .IgnoreQueryFilters()
-                .Include(p => p.InstrumentRental)
-                .FirstOrDefaultAsync(p => p.StripePaymentIntentId == paymentIntentId, cancellationToken);
+            var payment = await LoadPaymentAsync(paymentIntentId, cancellationToken);
 
-            if (rentalPayment is not null)
+            switch (payment)
             {
-                if (rentalPayment.Status != PaymentStatus.Succeeded)
-                {
-                    LogMissingChargeId(chargeId, paymentIntentId);
-                    rentalPayment.MarkSucceeded(chargeId, eventId, clock.UtcNow);
-                    rentalPayment.InstrumentRental.MarkPaid(rentalPayment.AmountChargedCents, clock.UtcNow);
-                    await notifications.DispatchPaymentSucceededAsync(rentalPayment.InstrumentRentalId, rentalPayment.AmountChargedCents, rentalPayment.Currency, cancellationToken);
-                }
-
-                await RecordEventAsync(eventId, PaymentIntentSucceeded, rawJson, cancellationToken);
-                return;
+                case RentalPayment rentalPayment:
+                    await HandleRentalSucceededAsync(rentalPayment, chargeId, eventId, rawJson, cancellationToken);
+                    return;
+                case CoursePayment coursePayment:
+                    await HandleCourseSucceededAsync(coursePayment, chargeId, eventId, rawJson, cancellationToken);
+                    return;
+                case null:
+                    ThrowUnmatchedPaymentIntent(paymentIntentId, "succeeded");
+                    return;
             }
-
-            var coursePayment = await context.Set<CoursePayment>()
-                .IgnoreQueryFilters()
-                .Include(p => p.Enrollment)
-                .FirstOrDefaultAsync(p => p.StripePaymentIntentId == paymentIntentId, cancellationToken);
-
-            if (coursePayment is not null)
-            {
-                if (coursePayment.Status != PaymentStatus.Succeeded)
-                {
-                    var now = clock.UtcNow;
-                    var isActive = coursePayment.Enrollment.EnrollmentStatus == EnrollmentStatus.Active;
-                    if (!isActive)
-                    {
-                        logger.LogWarning("Skipping PaidUntil extension for non-active enrollment {EnrollmentId} on payment intent {PaymentIntentId}", coursePayment.EnrollmentId, paymentIntentId);
-                    }
-                    var (periodStart, periodEnd) = isActive
-                        ? coursePayment.Enrollment.ExtendPaidUntil(now, TuitionOptions.PeriodDays)
-                        : (now, now.AddDays(TuitionOptions.PeriodDays));
-                    LogMissingChargeId(chargeId, paymentIntentId);
-                    coursePayment.MarkSucceeded(chargeId, eventId, now, periodStart, periodEnd);
-                }
-
-                await RecordEventAsync(eventId, PaymentIntentSucceeded, rawJson, cancellationToken);
-                return;
-            }
-
-            ThrowUnmatchedPaymentIntent(paymentIntentId, "succeeded");
         }, cancellationToken);
     }
+
+    private async Task HandleRentalSucceededAsync(RentalPayment payment, string? chargeId, string eventId, string rawJson, CancellationToken cancellationToken)
+    {
+        if (payment.Status != PaymentStatus.Succeeded)
+        {
+            LogMissingChargeId(chargeId, payment.StripePaymentIntentId);
+            payment.MarkSucceeded(chargeId, eventId, clock.UtcNow);
+
+            if (payment.InstrumentRental.IsPaid)
+            {
+                await RefundDuplicatePaymentAsync(payment, cancellationToken);
+                await notifications.DispatchDuplicatePaymentRefundedAsync(payment.InstrumentRentalId, payment.AmountChargedCents, payment.Currency, cancellationToken);
+            }
+            else
+            {
+                payment.InstrumentRental.MarkPaid(payment.AmountChargedCents, clock.UtcNow);
+                await notifications.DispatchPaymentSucceededAsync(payment.InstrumentRentalId, payment.AmountChargedCents, payment.Currency, cancellationToken);
+            }
+        }
+
+        await RecordEventAsync(eventId, PaymentIntentSucceeded, rawJson, cancellationToken);
+    }
+
+    private async Task HandleCourseSucceededAsync(CoursePayment payment, string? chargeId, string eventId, string rawJson, CancellationToken cancellationToken)
+    {
+        if (payment.Status != PaymentStatus.Succeeded)
+        {
+            var now = clock.UtcNow;
+            var enrollment = payment.Enrollment;
+            LogMissingChargeId(chargeId, payment.StripePaymentIntentId);
+
+            if (CanGrantAccess(payment, now))
+            {
+                var (periodStart, periodEnd) = enrollment.ExtendPaidUntil(now, TuitionOptions.PeriodDays);
+                payment.MarkSucceeded(chargeId, eventId, now, periodStart, periodEnd);
+                await enrollmentNotifications.DispatchTuitionPaidAsync(enrollment.Id, enrollment.Student.AppUserId, enrollment.Course.Name, payment.AmountChargedCents, payment.Currency, periodEnd);
+            }
+            else
+            {
+                logger.LogWarning("Tuition payment {PaymentIntentId} cannot grant access; refunding it instead", payment.StripePaymentIntentId);
+                payment.MarkSucceeded(chargeId, eventId, now, periodStart: null, periodEnd: null);
+                await RefundDuplicatePaymentAsync(payment, cancellationToken);
+                await enrollmentNotifications.DispatchTuitionRefundedAsync(enrollment.Id, enrollment.Student.AppUserId, enrollment.Course.Name, payment.AmountChargedCents, payment.Currency);
+            }
+        }
+
+        await RecordEventAsync(eventId, PaymentIntentSucceeded, rawJson, cancellationToken);
+    }
+
+    private static bool CanGrantAccess(CoursePayment payment, DateTime now) =>
+        payment.Status != PaymentStatus.Canceled
+        && payment.Enrollment.EnrollmentStatus == EnrollmentStatus.Active
+        && payment.Enrollment.Course is { IsActive: true, IsPublished: true } course
+        && !course.HasEnded(now);
 
     private async Task HandlePaymentIntentFailedAsync(string paymentIntentId, string eventId, string rawJson, CancellationToken cancellationToken)
     {
@@ -142,37 +169,20 @@ public sealed class StripeWebhookService(
                 return;
             }
 
-            var rentalPayment = await context.Set<RentalPayment>()
-                .IgnoreQueryFilters()
-                .FirstOrDefaultAsync(p => p.StripePaymentIntentId == paymentIntentId, cancellationToken);
+            var payment = await LoadPaymentAsync(paymentIntentId, cancellationToken);
 
-            if (rentalPayment is not null)
+            if (payment is null)
             {
-                if (rentalPayment.Status is not (PaymentStatus.Succeeded or PaymentStatus.Refunded or PaymentStatus.PartiallyRefunded))
-                {
-                    rentalPayment.MarkFailed(eventId);
-                }
-
-                await RecordEventAsync(eventId, PaymentIntentPaymentFailed, rawJson, cancellationToken);
+                ThrowUnmatchedPaymentIntent(paymentIntentId, "failed");
                 return;
             }
 
-            var coursePayment = await context.Set<CoursePayment>()
-                .IgnoreQueryFilters()
-                .FirstOrDefaultAsync(p => p.StripePaymentIntentId == paymentIntentId, cancellationToken);
-
-            if (coursePayment is not null)
+            if (payment.Status is not (PaymentStatus.Succeeded or PaymentStatus.Refunded or PaymentStatus.PartiallyRefunded))
             {
-                if (coursePayment.Status != PaymentStatus.Succeeded)
-                {
-                    coursePayment.MarkFailed(eventId);
-                }
-
-                await RecordEventAsync(eventId, PaymentIntentPaymentFailed, rawJson, cancellationToken);
-                return;
+                payment.MarkFailed(eventId);
             }
 
-            ThrowUnmatchedPaymentIntent(paymentIntentId, "failed");
+            await RecordEventAsync(eventId, PaymentIntentPaymentFailed, rawJson, cancellationToken);
         }, cancellationToken);
     }
 
@@ -192,47 +202,22 @@ public sealed class StripeWebhookService(
                 return;
             }
 
-            var rentalPayment = await context.Set<RentalPayment>()
-                .IgnoreQueryFilters()
-                .Include(p => p.Refunds)
-                .FirstOrDefaultAsync(p => p.StripePaymentIntentId == charge.PaymentIntentId, cancellationToken);
+            var payment = await LoadPaymentAsync(charge.PaymentIntentId, cancellationToken);
 
-            if (rentalPayment is not null)
+            if (payment is null)
             {
-                if (rentalPayment.Status is PaymentStatus.Succeeded or PaymentStatus.PartiallyRefunded && charge.AmountRefunded > 0)
-                {
-                    if (charge.Refunds?.Data is { Count: > 0 } refundList)
-                    {
-                        foreach (var refItem in refundList)
-                        {
-                            rentalPayment.ApplyRefund(refItem.Amount, refItem.Id, clock.UtcNow);
-                        }
-                    }
-
-                    var alreadyRefunded = rentalPayment.RefundedCents ?? 0;
-                    if (charge.AmountRefunded > alreadyRefunded)
-                    {
-                        var refundId = charge.Refunds?.Data?.FirstOrDefault()?.Id ?? rentalPayment.StripeRefundId;
-                        rentalPayment.ApplyRefund(charge.AmountRefunded - alreadyRefunded, refundId, clock.UtcNow);
-                    }
-                }
-
-                await RecordEventAsync(eventId, ChargeRefunded, rawJson, cancellationToken);
+                ThrowUnmatchedPaymentIntent(charge.PaymentIntentId, "refunded");
                 return;
             }
 
-            var coursePayment = await context.Set<CoursePayment>()
-                .IgnoreQueryFilters()
-                .FirstOrDefaultAsync(p => p.StripePaymentIntentId == charge.PaymentIntentId, cancellationToken);
+            ApplyChargeRefund(payment, charge);
 
-            if (coursePayment is not null)
+            if (payment is CoursePayment coursePayment)
             {
-                logger.LogInformation("Charge {ChargeId} refunded for course payment {CoursePaymentId}; leaving payment as-is", charge.Id, coursePayment.Id);
-                await RecordEventAsync(eventId, ChargeRefunded, rawJson, cancellationToken);
-                return;
+                coursePayment.Enrollment.RevokeRefundedAccessPeriod(coursePayment);
             }
 
-            ThrowUnmatchedPaymentIntent(charge.PaymentIntentId, "refunded");
+            await RecordEventAsync(eventId, ChargeRefunded, rawJson, cancellationToken);
         }, cancellationToken);
     }
 
@@ -252,65 +237,135 @@ public sealed class StripeWebhookService(
                 return;
             }
 
-            var rentalPayment = await context.Set<RentalPayment>()
-                .IgnoreQueryFilters()
-                .Include(p => p.InstrumentRental)
-                .Include(p => p.Refunds)
-                .FirstOrDefaultAsync(p => p.StripePaymentIntentId == refund.PaymentIntentId, cancellationToken);
+            var payment = await LoadPaymentAsync(refund.PaymentIntentId, cancellationToken);
 
-            if (rentalPayment is null)
+            if (payment is null)
             {
-                var coursePayment = await context.Set<CoursePayment>()
-                    .IgnoreQueryFilters()
-                    .FirstOrDefaultAsync(p => p.StripePaymentIntentId == refund.PaymentIntentId, cancellationToken);
-
-                if (coursePayment is not null)
-                {
-                    logger.LogInformation("Refund {RefundId} updated for course payment {CoursePaymentId}; leaving payment as-is", refund.Id, coursePayment.Id);
-                    await RecordEventAsync(eventId, ChargeRefundUpdated, rawJson, cancellationToken);
-                    return;
-                }
-
                 ThrowUnmatchedPaymentIntent(refund.PaymentIntentId, "refund.updated");
+                return;
             }
 
-            if (rentalPayment.Status is PaymentStatus.Succeeded or PaymentStatus.PartiallyRefunded or PaymentStatus.Refunded)
-            {
-                var counted = (!string.IsNullOrWhiteSpace(refund.Id) && rentalPayment.Refunds.Any(r => r.StripeRefundId == refund.Id))
-                    || rentalPayment.StripeRefundId == refund.Id
-                    || (rentalPayment.StripeRefundId is null && (rentalPayment.RefundedCents ?? 0) >= refund.Amount);
-
-                if (refund.Status == "succeeded")
-                {
-                    if (counted)
-                    {
-                        logger.LogInformation("Refund {RefundId} already applied to payment {PaymentId}; skipping", refund.Id, rentalPayment.Id);
-                    }
-                    else
-                    {
-                        rentalPayment.ApplyRefund(refund.Amount, refund.Id, clock.UtcNow);
-                    }
-                }
-                else if (refund.Status == "failed")
-                {
-                    if (counted)
-                    {
-                        rentalPayment.ReverseRefund(refund.Amount, refund.Id);
-                        logger.LogWarning("Refund {RefundId} failed for payment {PaymentId}; the counted refund was reversed", refund.Id, rentalPayment.Id);
-                    }
-                    else
-                    {
-                        logger.LogWarning("Refund {RefundId} failed for payment {PaymentId}; no refund was applied", refund.Id, rentalPayment.Id);
-                    }
-                }
-            }
-            else
-            {
-                logger.LogInformation("Refund {RefundId} update for payment {PaymentId} in status {PaymentStatus}; ignoring", refund.Id, rentalPayment.Id, rentalPayment.Status);
-            }
+            ApplyRefundUpdate(payment, refund);
 
             await RecordEventAsync(eventId, ChargeRefundUpdated, rawJson, cancellationToken);
         }, cancellationToken);
+    }
+
+    private void ApplyChargeRefund(StripePayment payment, Charge charge)
+    {
+        if (payment.Status is not (PaymentStatus.Succeeded or PaymentStatus.PartiallyRefunded) || charge.AmountRefunded <= 0)
+        {
+            return;
+        }
+
+        if (charge.Refunds?.Data is { Count: > 0 } refundList)
+        {
+            foreach (var refundItem in refundList)
+            {
+                payment.ApplyRefund(refundItem.Amount, refundItem.Id, clock.UtcNow);
+            }
+        }
+
+        var alreadyRefunded = payment.RefundedCents ?? 0;
+        if (charge.AmountRefunded > alreadyRefunded)
+        {
+            var refundId = charge.Refunds?.Data?.FirstOrDefault()?.Id ?? payment.StripeRefundId;
+            payment.ApplyRefund(charge.AmountRefunded - alreadyRefunded, refundId, clock.UtcNow);
+        }
+    }
+
+    private void ApplyRefundUpdate(StripePayment payment, Refund refund)
+    {
+        if (payment.Status is not (PaymentStatus.Succeeded or PaymentStatus.PartiallyRefunded or PaymentStatus.Refunded))
+        {
+            logger.LogInformation("Refund {RefundId} update for payment {PaymentId} in status {PaymentStatus}; ignoring", refund.Id, payment.Id, payment.Status);
+            return;
+        }
+
+        var counted = IsRefundCounted(payment, refund);
+
+        if (refund.Status == RefundSucceeded)
+        {
+            if (counted)
+            {
+                logger.LogInformation("Refund {RefundId} already applied to payment {PaymentId}; skipping", refund.Id, payment.Id);
+                return;
+            }
+
+            payment.ApplyRefund(refund.Amount, refund.Id, clock.UtcNow);
+
+            if (payment is CoursePayment refundedCoursePayment)
+            {
+                refundedCoursePayment.Enrollment.RevokeRefundedAccessPeriod(refundedCoursePayment);
+            }
+
+            return;
+        }
+
+        if (refund.Status != RefundFailed)
+        {
+            return;
+        }
+
+        if (!counted)
+        {
+            logger.LogWarning("Refund {RefundId} failed for payment {PaymentId}; no refund was applied", refund.Id, payment.Id);
+            return;
+        }
+
+        payment.ReverseRefund(refund.Amount, refund.Id);
+
+        if (payment is CoursePayment reversedCoursePayment)
+        {
+            reversedCoursePayment.Enrollment.RestoreRefundedAccessPeriod(reversedCoursePayment);
+        }
+
+        logger.LogWarning("Refund {RefundId} failed for payment {PaymentId}; the counted refund was reversed", refund.Id, payment.Id);
+    }
+
+    private static bool IsRefundCounted(StripePayment payment, Refund refund) =>
+        (!string.IsNullOrWhiteSpace(refund.Id) && payment.Refunds.Any(r => r.StripeRefundId == refund.Id))
+        || payment.StripeRefundId == refund.Id
+        || (payment.StripeRefundId is null && (payment.RefundedCents ?? 0) >= refund.Amount);
+
+    private async Task<StripePayment?> LoadPaymentAsync(string paymentIntentId, CancellationToken cancellationToken)
+    {
+        var rentalPayment = await context.Set<RentalPayment>()
+            .IgnoreQueryFilters()
+            .Include(p => p.InstrumentRental)
+            .Include(p => p.Refunds)
+            .FirstOrDefaultAsync(p => p.StripePaymentIntentId == paymentIntentId, cancellationToken);
+
+        if (rentalPayment is not null)
+        {
+            return rentalPayment;
+        }
+
+        return await context.Set<CoursePayment>()
+            .IgnoreQueryFilters()
+            .Include(p => p.Enrollment)
+            .ThenInclude(e => e.Student)
+            .Include(p => p.Enrollment)
+            .ThenInclude(e => e.Course)
+            .Include(p => p.Refunds)
+            .FirstOrDefaultAsync(p => p.StripePaymentIntentId == paymentIntentId, cancellationToken);
+    }
+
+    private async Task RefundDuplicatePaymentAsync(StripePayment payment, CancellationToken cancellationToken)
+    {
+        // Stripe is called inside the webhook transaction on purpose: if the transaction fails, Stripe retries the
+        // event, and the idempotency key keeps a second refund from being created.
+        var refund = await paymentGateway.CreateRefundAsync(
+            payment.StripePaymentIntentId,
+            payment.AmountChargedCents,
+            "duplicate",
+            $"duplicate:{payment.StripePaymentIntentId}",
+            cancellationToken);
+
+        if (refund.Status == RefundSucceeded)
+        {
+            payment.ApplyRefund(refund.AmountCents, refund.Id, clock.UtcNow);
+        }
     }
 
     private void LogMissingChargeId(string? chargeId, string paymentIntentId)

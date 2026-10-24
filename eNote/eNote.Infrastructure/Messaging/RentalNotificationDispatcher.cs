@@ -4,6 +4,7 @@ using eNote.Application.Features.Rentals.InstrumentRentals;
 using eNote.Application.Features.Rentals.InstrumentRentals.Services;
 using eNote.Contracts.Communication;
 using eNote.Contracts.Rentals;
+using eNote.Domain.Enums;
 using eNote.Infrastructure.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -65,8 +66,7 @@ public sealed class RentalNotificationDispatcher(
 
     public Task DispatchPaymentRefundedAsync(InstrumentRentalDto rental, long refundedCents, string currency, int actorUserId)
     {
-        var amount = refundedCents / 100m;
-        var body = $"Za iznajmljivanje instrumenta {rental.InstrumentModel} vraćeno je {amount:F2} {FormatCurrency(currency)}.";
+        var body = $"Za iznajmljivanje instrumenta {rental.InstrumentModel} vraćeno je {CurrencyAmount.Format(refundedCents, currency)}.";
         var message = new RentalRefunded(
             rental.Id,
             rental.StudentUserId,
@@ -84,25 +84,31 @@ public sealed class RentalNotificationDispatcher(
 
     public async Task DispatchPaymentSucceededAsync(int rentalId, long amountCents, string currency, CancellationToken cancellationToken = default)
     {
-        var rental = await context.Set<InstrumentRental>()
-            .AsNoTracking()
-            .IgnoreQueryFilters()
-            .Where(r => r.Id == rentalId)
-            .Select(r => new { StudentUserId = r.StudentProfile.AppUserId, r.Instrument.Model, r.RentalStatus })
-            .SingleAsync(cancellationToken);
+        var rental = await LoadPaymentTargetAsync(rentalId, cancellationToken);
 
-        var amount = amountCents / 100m;
-        var body = $"Plaćanje za instrument {rental.Model} je uspješno. Iznos: {amount:F2} {FormatCurrency(currency)}.";
+        var body = $"Plaćanje za instrument {rental.Model} je uspješno. Iznos: {CurrencyAmount.Format(amountCents, currency)}.";
         var message = new RentalStatusChanged(rentalId, rental.StudentUserId, rental.StudentUserId, rental.RentalStatus.ToString(), rental.Model, "Plaćanje uspješno", body, clock.UtcNow);
         EnqueueOutbox(message);
     }
 
-    private const string LocalCurrencyCode = "bam";
-    private const string LocalCurrencyLabel = "KM";
+    public async Task DispatchDuplicatePaymentRefundedAsync(int rentalId, long amountCents, string currency, CancellationToken cancellationToken = default)
+    {
+        var rental = await LoadPaymentTargetAsync(rentalId, cancellationToken);
 
-    private static string FormatCurrency(string currency) =>
-        string.IsNullOrEmpty(currency) || currency.Equals(LocalCurrencyCode, StringComparison.OrdinalIgnoreCase) ? LocalCurrencyLabel
-        : currency.ToUpperInvariant();
+        var body = $"Dupla uplata je automatski vraćena. Iznos: {CurrencyAmount.Format(amountCents, currency)}.";
+        var message = new RentalStatusChanged(rentalId, rental.StudentUserId, rental.StudentUserId, rental.RentalStatus.ToString(), rental.Model, "Dupla uplata vraćena", body, clock.UtcNow);
+        EnqueueOutbox(message);
+    }
+
+    private async Task<PaymentTarget> LoadPaymentTargetAsync(int rentalId, CancellationToken cancellationToken) =>
+        await context.Set<InstrumentRental>()
+            .AsNoTracking()
+            .IgnoreQueryFilters()
+            .Where(r => r.Id == rentalId)
+            .Select(r => new PaymentTarget(r.StudentProfile.AppUserId, r.Instrument.Model, r.RentalStatus))
+            .SingleAsync(cancellationToken);
+
+    private sealed record PaymentTarget(int StudentUserId, string Model, InstrumentRentalStatus RentalStatus);
 
     private static (string Title, string Body) BuildCreatedContent(InstrumentRentalDto rental) =>
         ("Zahtjev za iznajmljivanje poslan", $"Vaš zahtjev za instrument {rental.InstrumentModel} je poslan prodavnici {rental.StoreName} i čeka odobrenje.");
@@ -123,7 +129,7 @@ public sealed class RentalNotificationDispatcher(
         trigger switch
         {
             RentalTrigger.Approve =>
-                ("Zahtjev odobren", $"Vaš zahtjev za instrument {rental.InstrumentModel} je odobren. Mjesečna naknada: {rental.Fee:F2} {LocalCurrencyLabel}."),
+                ("Zahtjev odobren", $"Vaš zahtjev za instrument {rental.InstrumentModel} je odobren. Mjesečna naknada: {CurrencyAmount.Local(rental.Fee)}."),
             RentalTrigger.Reject =>
                 ("Zahtjev odbijen", string.IsNullOrWhiteSpace(rental.Note) ? $"Vaš zahtjev za instrument {rental.InstrumentModel} je odbijen." : $"Vaš zahtjev za instrument {rental.InstrumentModel} je odbijen. Razlog: {rental.Note}"),
             RentalTrigger.Pickup =>

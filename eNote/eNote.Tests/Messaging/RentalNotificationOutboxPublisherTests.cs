@@ -146,6 +146,28 @@ public sealed class RentalNotificationOutboxPublisherTests
     }
 
     [Fact]
+    public async Task ProcessBatch_PublishesTuitionPaymentPayloads()
+    {
+        await using var context = TestDbContextFactory.CreateContext(Now);
+        var message = new TuitionPaymentNotification(1, 50, "Školarina plaćena", "Školarina za kurs 'Guitar 101' je plaćena.", Now);
+        context.Set<NotificationOutbox>().Add(new NotificationOutbox
+        {
+            MessageType = NotificationMessageTypes.TuitionPayment,
+            PayloadJson = JsonSerializer.Serialize(message, JsonOptions)
+        });
+        await context.SaveChangesAsync();
+        var endpoint = new StubPublishEndpoint();
+        var publisher = CreatePublisher(context, endpoint);
+
+        await InvokeProcessBatchAsync(publisher);
+
+        var published = Assert.Single(endpoint.Published);
+        var payload = Assert.IsType<TuitionPaymentNotification>(published);
+        Assert.Equal(1, payload.EnrollmentId);
+        Assert.Equal(50, payload.StudentUserId);
+    }
+
+    [Fact]
     public async Task ProcessBatch_IncrementsAttempts_ForUnknownMessageType()
     {
         await using var context = TestDbContextFactory.CreateContext(Now);

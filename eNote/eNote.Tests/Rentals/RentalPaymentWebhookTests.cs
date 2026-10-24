@@ -388,20 +388,38 @@ public sealed class RentalPaymentWebhookTests
     }
 
     [Fact]
-    public async Task HandleWebhook_ChargeRefundUpdated_ForCoursePayment_RecordsEventOnly()
+    public async Task HandleWebhook_Succeeded_WhenRentalAlreadyPaid_RefundsDuplicateAndKeepsPaidAt()
     {
-        var (context, _, _) = await SeedBaseAsync();
-        var coursePayment = new CoursePayment(1, "pi_course_test_1", 10000, "eur", PaymentStatus.Succeeded);
-        context.Set<CoursePayment>().Add(coursePayment);
+        var (context, rental, _) = await SeedSucceededPaymentAsync();
+        var duplicatePayment = new RentalPayment(rental.Id, rental.MusicStoreId, "pi_test_2", 5000, "eur", PaymentStatus.RequiresAction);
+        context.Set<RentalPayment>().Add(duplicatePayment);
         await context.SaveChangesAsync();
-        var service = CreateWebhookService(context);
 
-        await service.HandleAsync(CreateRefundUpdatedEvent("evt_test_refund_updated_course", "pi_course_test_1", "re_test_1", 2000, "succeeded"), "{}");
+        var gateway = new FakePaymentGateway();
+        var dispatcher = new RecordingNotificationDispatcher();
+        var service = CreateWebhookService(context, dispatcher, gateway);
+        var evt = CreatePaymentIntentEvent("evt_test_duplicate_succeeded", "payment_intent.succeeded", "pi_test_2", "succeeded", "ch_test_2");
 
-        var reloaded = await context.Set<CoursePayment>().SingleAsync(p => p.Id == coursePayment.Id);
-        Assert.Equal(PaymentStatus.Succeeded, reloaded.Status);
-        Assert.Null(reloaded.StripeEventId);
-        Assert.Single(await context.Set<StripeWebhookEvent>().ToListAsync());
+        await service.HandleAsync(evt, "{}");
+
+        var reloadedPayment = await context.Set<RentalPayment>().SingleAsync(p => p.Id == duplicatePayment.Id);
+        var reloadedRental = await context.Set<InstrumentRental>().SingleAsync(x => x.Id == rental.Id);
+
+        Assert.Equal(PaymentStatus.Refunded, reloadedPayment.Status);
+        Assert.Equal(5000, reloadedPayment.RefundedCents);
+        Assert.Equal("ch_test_2", reloadedPayment.StripeChargeId);
+        Assert.True(reloadedRental.IsPaid);
+        Assert.Equal(Now, reloadedRental.PaidAt);
+        Assert.Equal(50m, reloadedRental.AmountPaid);
+
+        var refundCall = Assert.Single(gateway.RefundCalls);
+        Assert.Equal("pi_test_2", refundCall.PaymentIntentId);
+        Assert.Equal(5000, refundCall.AmountCents);
+        Assert.Equal("duplicate:pi_test_2", refundCall.IdempotencyKey);
+
+        Assert.Empty(dispatcher.SucceededCalls);
+        var duplicateRefund = Assert.Single(dispatcher.DuplicateRefundCalls);
+        Assert.Equal(rental.Id, duplicateRefund.RentalId);
     }
 
     [Fact]
@@ -528,8 +546,14 @@ public sealed class RentalPaymentWebhookTests
         return (context, student, instrument);
     }
 
-    private static StripeWebhookService CreateWebhookService(IAppDbContext context, IRentalNotificationDispatcher? notifications = null) =>
-        new(context, new FixedClock(Now), new StripeOptions { Currency = "eur" }, notifications ?? new NoOpNotificationDispatcher(), NullLogger<StripeWebhookService>.Instance);
+    private static StripeWebhookService CreateWebhookService(IAppDbContext context, IRentalNotificationDispatcher? notifications = null, FakePaymentGateway? gateway = null) =>
+        new(context,
+            new FixedClock(Now),
+            new StripeOptions { Currency = "eur" },
+            gateway ?? new FakePaymentGateway(),
+            notifications ?? new NoOpNotificationDispatcher(),
+            new EnrollmentNotificationDispatcher(context, new FixedClock(Now)),
+            NullLogger<StripeWebhookService>.Instance);
 
     private static async Task<List<RentalStatusChanged>> ReadStatusMessagesAsync(IAppDbContext context) =>
         (await context.Set<NotificationOutbox>().ToListAsync())

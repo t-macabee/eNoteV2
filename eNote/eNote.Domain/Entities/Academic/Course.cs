@@ -47,6 +47,9 @@ public sealed class Course : AuditableEntity
         IsPublished = isPublished;
     }
 
+    /// <summary>The course is open for the whole end day.</summary>
+    public bool HasEnded(DateTime utcNow) => EndDate.HasValue && EndDate.Value.Date < utcNow.Date;
+
     public void SoftDelete()
     {
         IsActive = false;

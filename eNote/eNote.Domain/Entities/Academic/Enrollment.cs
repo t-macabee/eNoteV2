@@ -101,6 +101,39 @@ public class Enrollment : AuditableEntity
         return (periodStart, PaidUntil.Value);
     }
 
+    /// <summary>
+    /// A full refund of the payment whose period is the current access period moves PaidUntil back to that
+    /// period's start. A partial refund, or a refund of a payment without an access period, changes nothing.
+    /// </summary>
+    public void RevokeRefundedAccessPeriod(CoursePayment payment)
+    {
+        if (payment.Status != PaymentStatus.Refunded || payment.PeriodStart is null || payment.PeriodEnd is null)
+        {
+            return;
+        }
+
+        if (PaidUntil == payment.PeriodEnd)
+        {
+            PaidUntil = payment.PeriodStart;
+        }
+    }
+
+    /// <summary>
+    /// A failed refund restores the access period that the counted refund had taken back.
+    /// </summary>
+    public void RestoreRefundedAccessPeriod(CoursePayment payment)
+    {
+        if (payment.Status == PaymentStatus.Refunded || payment.PeriodStart is null || payment.PeriodEnd is null)
+        {
+            return;
+        }
+
+        if (PaidUntil == payment.PeriodStart)
+        {
+            PaidUntil = payment.PeriodEnd;
+        }
+    }
+
     private const string EnrollmentAlreadyCompletedMessage = "Ovaj kurs ste već završili. Ponovni upis nije moguć.";
     private const string EnrollmentApprovePendingOnlyMessage = "Samo zahtjev za upis na čekanju može biti odobren.";
     private const string EnrollmentRejectPendingOnlyMessage = "Samo zahtjev za upis na čekanju se može odbiti.";

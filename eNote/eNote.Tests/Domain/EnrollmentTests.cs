@@ -47,4 +47,68 @@ public sealed class EnrollmentTests
 
         Assert.Throws<ArgumentOutOfRangeException>(() => enrollment.ExtendPaidUntil(Now, days));
     }
+
+    [Fact]
+    public void RevokeRefundedAccessPeriod_FullRefundOfTheCurrentPeriod_MovesPaidUntilBack()
+    {
+        var enrollment = new Enrollment(1, 1, EnrollmentStatus.Active);
+        var (periodStart, periodEnd) = enrollment.ExtendPaidUntil(Now, 30);
+        var payment = CreateSucceededPayment(periodStart, periodEnd);
+
+        payment.ApplyRefund(5000, "re_test_1", Now);
+        enrollment.RevokeRefundedAccessPeriod(payment);
+
+        Assert.Equal(PaymentStatus.Refunded, payment.Status);
+        Assert.Equal(periodStart, enrollment.PaidUntil);
+    }
+
+    [Fact]
+    public void RevokeRefundedAccessPeriod_PartialRefund_KeepsPaidUntil()
+    {
+        var enrollment = new Enrollment(1, 1, EnrollmentStatus.Active);
+        var (periodStart, periodEnd) = enrollment.ExtendPaidUntil(Now, 30);
+        var payment = CreateSucceededPayment(periodStart, periodEnd);
+
+        payment.ApplyRefund(2000, "re_test_1", Now);
+        enrollment.RevokeRefundedAccessPeriod(payment);
+
+        Assert.Equal(PaymentStatus.PartiallyRefunded, payment.Status);
+        Assert.Equal(periodEnd, enrollment.PaidUntil);
+    }
+
+    [Fact]
+    public void RevokeRefundedAccessPeriod_PaymentWithoutPeriod_KeepsPaidUntil()
+    {
+        var enrollment = new Enrollment(1, 1, EnrollmentStatus.Active);
+        var (_, periodEnd) = enrollment.ExtendPaidUntil(Now, 30);
+        var payment = CreateSucceededPayment(null, null);
+
+        payment.ApplyRefund(5000, "re_test_1", Now);
+        enrollment.RevokeRefundedAccessPeriod(payment);
+
+        Assert.Equal(periodEnd, enrollment.PaidUntil);
+    }
+
+    [Fact]
+    public void RestoreRefundedAccessPeriod_ReversedFullRefund_RestoresPaidUntil()
+    {
+        var enrollment = new Enrollment(1, 1, EnrollmentStatus.Active);
+        var (periodStart, periodEnd) = enrollment.ExtendPaidUntil(Now, 30);
+        var payment = CreateSucceededPayment(periodStart, periodEnd);
+        payment.ApplyRefund(5000, "re_test_1", Now);
+        enrollment.RevokeRefundedAccessPeriod(payment);
+
+        payment.ReverseRefund(5000, "re_test_1");
+        enrollment.RestoreRefundedAccessPeriod(payment);
+
+        Assert.Equal(PaymentStatus.Succeeded, payment.Status);
+        Assert.Equal(periodEnd, enrollment.PaidUntil);
+    }
+
+    private static CoursePayment CreateSucceededPayment(DateTime? periodStart, DateTime? periodEnd)
+    {
+        var payment = new CoursePayment(1, "pi_test_1", 5000, "bam", PaymentStatus.RequiresAction);
+        payment.MarkSucceeded("ch_test_1", "evt_test_1", Now, periodStart, periodEnd);
+        return payment;
+    }
 }

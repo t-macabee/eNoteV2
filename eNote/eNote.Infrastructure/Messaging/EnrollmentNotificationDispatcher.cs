@@ -25,4 +25,24 @@ public sealed class EnrollmentNotificationDispatcher(
 
         return Task.CompletedTask;
     }
+
+    public Task DispatchTuitionPaidAsync(int enrollmentId, int studentUserId, string courseName, long amountCents, string currency, DateTime paidUntil)
+    {
+        var body = $"Školarina za kurs '{courseName}' je plaćena. Iznos: {CurrencyAmount.Format(amountCents, currency)}. Pristup do {paidUntil:dd.MM.yyyy}.";
+        return EnqueueTuitionAsync(enrollmentId, studentUserId, "Školarina plaćena", body);
+    }
+
+    public Task DispatchTuitionRefundedAsync(int enrollmentId, int studentUserId, string courseName, long amountCents, string currency)
+    {
+        var body = $"Uplata školarine za kurs '{courseName}' je vraćena. Iznos: {CurrencyAmount.Format(amountCents, currency)}.";
+        return EnqueueTuitionAsync(enrollmentId, studentUserId, "Školarina vraćena", body);
+    }
+
+    private Task EnqueueTuitionAsync(int enrollmentId, int studentUserId, string title, string body)
+    {
+        var message = new TuitionPaymentNotification(enrollmentId, studentUserId, title, body, clock.UtcNow);
+        NotificationOutboxWriter.Enqueue(context, NotificationMessageTypes.TuitionPayment, message);
+
+        return Task.CompletedTask;
+    }
 }

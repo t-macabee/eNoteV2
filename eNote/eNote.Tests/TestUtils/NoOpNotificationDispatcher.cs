@@ -11,4 +11,5 @@ public sealed class NoOpNotificationDispatcher : IRentalNotificationDispatcher
 
     public Task DispatchPaymentRefundedAsync(InstrumentRentalDto rental, long refundedCents, string currency, int actorUserId) => Task.CompletedTask;
     public Task DispatchPaymentSucceededAsync(int rentalId, long amountCents, string currency, CancellationToken cancellationToken = default) => Task.CompletedTask;
+    public Task DispatchDuplicatePaymentRefundedAsync(int rentalId, long amountCents, string currency, CancellationToken cancellationToken = default) => Task.CompletedTask;
 }

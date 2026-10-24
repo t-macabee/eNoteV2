@@ -176,6 +176,12 @@ kursa. Obnova je ručna, a ponovna uplata prije isteka ne gubi dane
 (`PaidUntil = max(trenutno, PaidUntil) + 30 dana`). Kurs sa cijenom 0 je
 besplatan. Iznos i ovdje računa server.
 
+Ako uplata školarine stigne za upis koji više nije aktivan ili za objavu kursa
+koja je uklonjena, webhook je označi kao uspješnu, ne daje pristup i odmah
+pokreće povrat cijelog iznosa. Isto važi za drugu uplatu istog najma. Puni
+povrat uplate koja je produžila pristup vraća `PaidUntil` na početak tog
+perioda; djelimični povrat ne mijenja pristup.
+
 Obavezne varijable su `Stripe__SecretKey` i `Stripe__WebhookSecret`. Webhook
 treba usmjeriti na `POST /api/v1/payments/stripe/webhook`, lokalno preko
 `stripe listen`.

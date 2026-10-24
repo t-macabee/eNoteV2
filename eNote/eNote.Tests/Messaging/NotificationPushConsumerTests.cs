@@ -141,6 +141,26 @@ public sealed class NotificationPushConsumerTests
         Assert.Contains("Pushed enrollment-status-changed notification to SignalR group for user 5, enrollment 9.", harness.Messages);
     }
 
+    [Fact]
+    public async Task TuitionPayment_PushesToTheStudentGroup()
+    {
+        var harness = await StartAsync<TuitionPaymentPushConsumer, TuitionPaymentNotification>();
+        try
+        {
+            await harness.Harness.Bus.Publish(new TuitionPaymentNotification(9, 5, "Školarina plaćena", "Školarina za kurs 'Guitar 101' je plaćena.", Now));
+            Assert.True(await harness.Harness.Consumed.Any<TuitionPaymentNotification>());
+        }
+        finally
+        {
+            await harness.Harness.Stop();
+        }
+
+        var (group, method, dto) = AssertPush(harness);
+        Assert.Equal("user:5", group);
+        Assert.Equal("Školarina plaćena", dto.Title);
+        Assert.Contains("Pushed tuition-payment notification to SignalR group for user 5, enrollment 9.", harness.Messages);
+    }
+
     private static (string Group, string Method, NotificationPushDto Dto) AssertPush(PushHarness harness)
     {
         var send = Assert.Single(harness.Hub.Sends);
