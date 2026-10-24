@@ -6,6 +6,10 @@ import '../../widgets/blocked_reason_banner.dart';
 import '../../widgets/labeled_value.dart';
 import '../lectures/lecture_labels.dart';
 
+String lockedContentReason(int lectureCount) =>
+    'Predavanja ($lectureCount) su privremeno nedostupna. '
+    'Obnovite školarinu da biste nastavili.';
+
 class CourseMasterCard extends StatelessWidget {
   final CourseDto course;
   final bool enrolled;
@@ -36,6 +40,11 @@ class CourseMasterCard extends StatelessWidget {
     final canRequest = status == null ||
         status == EnrollmentStatus.canceled ||
         status == EnrollmentStatus.rejected;
+    final lockedContent = enrolled && !course.hasContentAccess;
+    final rankingButton = TextButton(
+      onPressed: lockedContent ? null : onRanking,
+      child: const Text('Rang lista'),
+    );
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -145,10 +154,13 @@ class CourseMasterCard extends StatelessWidget {
                   child: const Text('Upiši se'),
                 ),
               const SizedBox(width: 8),
-              TextButton(
-                onPressed: onRanking,
-                child: const Text('Rang lista'),
-              ),
+              if (lockedContent)
+                Tooltip(
+                  message: lockedContentReason(course.lectureCount),
+                  child: rankingButton,
+                )
+              else
+                rankingButton,
             ],
           ),
         ],

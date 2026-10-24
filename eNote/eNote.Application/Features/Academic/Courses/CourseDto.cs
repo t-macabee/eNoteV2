@@ -19,6 +19,8 @@ public class CourseDto
     public int EnrolledCount { get; set; }
 
     public bool IsEnrolled { get; set; }
+    public bool HasContentAccess { get; set; }
+    public int LectureCount { get; set; }
     public bool HasEnded { get; set; }
     public int? EnrollmentId { get; set; }
     public DateTime? PaidUntil { get; set; }

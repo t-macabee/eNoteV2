@@ -13,6 +13,8 @@ class CourseDto {
   final int enrolledCount;
   final String? instructorName;
   final bool isEnrolled;
+  final bool hasContentAccess;
+  final int lectureCount;
   final bool hasEnded;
   final int? enrollmentId;
   final DateTime? paidUntil;
@@ -33,6 +35,8 @@ class CourseDto {
     required this.enrolledCount,
     this.instructorName,
     this.isEnrolled = false,
+    this.hasContentAccess = false,
+    this.lectureCount = 0,
     this.hasEnded = false,
     this.enrollmentId,
     this.paidUntil,
@@ -55,6 +59,8 @@ class CourseDto {
       enrolledCount: json['enrolledCount'] as int? ?? 0,
       instructorName: json['instructorName'] as String?,
       isEnrolled: json['isEnrolled'] as bool? ?? false,
+      hasContentAccess: json['hasContentAccess'] as bool? ?? false,
+      lectureCount: json['lectureCount'] as int? ?? 0,
       hasEnded: json['hasEnded'] as bool? ?? false,
       enrollmentId: json['enrollmentId'] as int?,
       paidUntil: parseDate(json['paidUntil']),
@@ -79,6 +85,8 @@ class CourseDto {
     'enrolledCount': enrolledCount,
     if (instructorName != null) 'instructorName': instructorName,
     if (isEnrolled) 'isEnrolled': isEnrolled,
+    if (hasContentAccess) 'hasContentAccess': hasContentAccess,
+    if (lectureCount > 0) 'lectureCount': lectureCount,
     if (hasEnded) 'hasEnded': hasEnded,
     if (enrollmentId != null) 'enrollmentId': enrollmentId,
     if (paidUntil != null) 'paidUntil': paidUntil!.toIso8601String(),

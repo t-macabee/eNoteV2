@@ -100,6 +100,28 @@ void main() {
     });
   });
 
+  group('CourseDto locked content fields', () {
+    test('missing keys default to false and zero', () {
+      final dto = CourseDto.fromJson({'id': 1, 'name': 'n'});
+      expect(dto.hasContentAccess, isFalse);
+      expect(dto.lectureCount, 0);
+    });
+
+    test('locked course parses false access and the lecture count', () {
+      final dto = CourseDto.fromJson({
+        'id': 1,
+        'name': 'n',
+        'isEnrolled': true,
+        'hasContentAccess': false,
+        'lectureCount': 12,
+      });
+      expect(dto.isEnrolled, isTrue);
+      expect(dto.hasContentAccess, isFalse);
+      expect(dto.lectureCount, 12);
+      expect(dto.toJson()['lectureCount'], 12);
+    });
+  });
+
   group('CourseDto imagePath', () {
     test('fromJson parses the server-computed default image', () {
       final dto = CourseDto.fromJson({

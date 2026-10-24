@@ -102,6 +102,7 @@ public sealed class CourseService(IAppDbContext context, IMapper mapper, ICurren
     public async Task<CourseDto> GetByIdForStudentAsync(int id, CancellationToken cancellationToken = default)
     {
         var studentId = await students.GetCurrentStudentIdAsync(cancellationToken);
+        var now = clock.UtcNow;
 
         var dto = await context.Set<Course>()
             .AsNoTracking()
@@ -119,6 +120,9 @@ public sealed class CourseService(IAppDbContext context, IMapper mapper, ICurren
                 Price = c.Price,
                 EnrolledCount = c.Enrollments.Count(e => e.EnrollmentStatus == EnrollmentStatus.Active),
                 IsEnrolled = c.Enrollments.Any(e => e.StudentId == studentId && e.EnrollmentStatus == EnrollmentStatus.Active),
+                HasContentAccess = c.Enrollments.AsQueryable().Any(StudentEnrollmentExtensions.HasContentAccess(studentId, now)),
+                LectureCount = c.Lectures.Count(l => l.LectureStatus != LectureStatus.Cancelled
+                    && (l.StudentId == null || l.StudentId == studentId)),
                 EnrollmentId = c.Enrollments
                     .Where(e => e.StudentId == studentId && e.EnrollmentStatus == EnrollmentStatus.Active)
                     .Select(e => (int?)e.Id)
@@ -139,7 +143,7 @@ public sealed class CourseService(IAppDbContext context, IMapper mapper, ICurren
             .FirstOrDefaultAsync(cancellationToken)
             ?? throw new NotFoundException(Messages.CourseNotFound);
 
-        dto.HasEnded = Course.HasEndedOn(dto.EndDate, clock.UtcNow);
+        dto.HasEnded = Course.HasEndedOn(dto.EndDate, now);
 
         return dto;
     }
@@ -191,6 +195,7 @@ public sealed class CourseService(IAppDbContext context, IMapper mapper, ICurren
     public async Task<PagedResult<CourseDto>> GetPagedForStudentAsync(CourseSearchObject search, CancellationToken cancellationToken = default)
     {
         var studentId = await students.GetCurrentStudentIdAsync(cancellationToken);
+        var now = clock.UtcNow;
 
         var query = context.Set<Course>()
             .AsNoTracking()
@@ -230,6 +235,9 @@ public sealed class CourseService(IAppDbContext context, IMapper mapper, ICurren
                 Price = c.Price,
                 EnrolledCount = c.Enrollments.Count(e => e.EnrollmentStatus == EnrollmentStatus.Active),
                 IsEnrolled = c.Enrollments.Any(e => e.StudentId == studentId && e.EnrollmentStatus == EnrollmentStatus.Active),
+                HasContentAccess = c.Enrollments.AsQueryable().Any(StudentEnrollmentExtensions.HasContentAccess(studentId, now)),
+                LectureCount = c.Lectures.Count(l => l.LectureStatus != LectureStatus.Cancelled
+                    && (l.StudentId == null || l.StudentId == studentId)),
                 EnrollmentId = c.Enrollments
                     .Where(e => e.StudentId == studentId && e.EnrollmentStatus == EnrollmentStatus.Active)
                     .Select(e => (int?)e.Id)
@@ -251,7 +259,7 @@ public sealed class CourseService(IAppDbContext context, IMapper mapper, ICurren
 
         foreach (var item in items)
         {
-            item.HasEnded = Course.HasEndedOn(item.EndDate, clock.UtcNow);
+            item.HasEnded = Course.HasEndedOn(item.EndDate, now);
         }
 
         return new PagedResult<CourseDto>

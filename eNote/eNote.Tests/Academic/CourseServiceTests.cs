@@ -515,6 +515,42 @@ public sealed class CourseServiceTests
     }
 
     [Fact]
+    public async Task GetByIdForStudentAsync_SetsHasContentAccess_AndLectureCount()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var otherStudent = await AcademicTestData.AddEnrolledStudentAsync(harness, 51, Now);
+        await AcademicTestData.AddIndividualLectureAsync(harness, harness.Student, Now.AddDays(1));
+        await AcademicTestData.AddIndividualLectureAsync(harness, otherStudent, Now.AddDays(2));
+        var cancelled = new Lecture("Cancelled lesson", "Room 1", 60, Now.AddDays(3), LectureType.Theoretical, 30, harness.Course.Id);
+        cancelled.Cancel("Instrument je pokvaren", 1, Now);
+        var deleted = new Lecture("Deleted lesson", "Room 1", 60, Now.AddDays(4), LectureType.Theoretical, 30, harness.Course.Id);
+        deleted.SoftDelete();
+        harness.Context.Set<Lecture>().AddRange(cancelled, deleted);
+        await harness.Context.SaveChangesAsync();
+        var actor = new StubCurrentActor(student: harness.Student);
+        var service = CreateService(harness.Context, harness.Instructor, actor);
+
+        var dto = await service.GetByIdForStudentAsync(harness.Course.Id);
+
+        Assert.True(dto.HasContentAccess);
+        Assert.Equal(2, dto.LectureCount);
+    }
+
+    [Fact]
+    public async Task GetByIdForStudentAsync_HasContentAccessIsFalse_ForExpiredTuition_ButCountsLectures()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now.AddDays(-40));
+        var actor = new StubCurrentActor(student: harness.Student);
+        var service = CreateService(harness.Context, harness.Instructor, actor);
+
+        var dto = await service.GetByIdForStudentAsync(harness.Course.Id);
+
+        Assert.True(dto.IsEnrolled);
+        Assert.False(dto.HasContentAccess);
+        Assert.Equal(1, dto.LectureCount);
+    }
+
+    [Fact]
     public async Task GetPagedForStudentAsync_MapsEnrollmentId_PaidUntil_AndIsFree()
     {
         var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
@@ -541,6 +577,31 @@ public sealed class CourseServiceTests
         Assert.Null(freeDto.PaidUntil);
         Assert.Null(freeDto.EnrollmentStatus);
         Assert.True(freeDto.IsFree);
+    }
+
+    [Fact]
+    public async Task GetPagedForStudentAsync_SetsHasContentAccess_ForPaidAndFreeCourses()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var freeCourse = new Course("Free Intro", null, 0m, Now, Now.AddMonths(1), harness.Instructor.Id);
+        freeCourse.SetPublishedStatus(true);
+        var expiredCourse = new Course("Expired", null, 80m, Now.AddMonths(-2), Now.AddMonths(1), harness.Instructor.Id);
+        expiredCourse.SetPublishedStatus(true);
+        harness.Context.Set<Course>().AddRange(freeCourse, expiredCourse);
+        await harness.Context.SaveChangesAsync();
+        harness.Context.Set<Enrollment>().Add(new Enrollment(harness.Student.Id, freeCourse.Id, EnrollmentStatus.Active));
+        harness.Context.Set<Enrollment>().Add(new Enrollment(harness.Student.Id, expiredCourse.Id, EnrollmentStatus.Active));
+        await harness.Context.SaveChangesAsync();
+        var actor = new StubCurrentActor(student: harness.Student);
+        var service = CreateService(harness.Context, harness.Instructor, actor);
+
+        var result = await service.GetPagedForStudentAsync(new CourseSearchObject());
+
+        Assert.True(result.Items.Single(c => c.Id == harness.Course.Id).HasContentAccess);
+        Assert.True(result.Items.Single(c => c.Id == freeCourse.Id).HasContentAccess);
+        Assert.False(result.Items.Single(c => c.Id == expiredCourse.Id).HasContentAccess);
+        Assert.Equal(1, result.Items.Single(c => c.Id == harness.Course.Id).LectureCount);
+        Assert.Equal(0, result.Items.Single(c => c.Id == freeCourse.Id).LectureCount);
     }
 
     [Fact]

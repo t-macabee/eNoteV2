@@ -6,6 +6,7 @@ import 'package:enote_core/enote_core.dart';
 import '../../session/session_controller.dart';
 import '../../shell/app_router.dart';
 import '../../widgets/async_state_view.dart';
+import '../../widgets/blocked_reason_banner.dart';
 import '../../widgets/form_submit_state.dart';
 import '../lectures/lecture_provider.dart';
 import 'course_detail_sections.dart';
@@ -28,6 +29,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
   bool _courseLoading = true;
   bool _showSearch = false;
   bool _acting = false;
+  bool _lecturesRequested = false;
 
   @override
   void initState() {
@@ -41,7 +43,6 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
     );
     _lecturesController.addListener(_onLectures);
     _loadCourse();
-    _lecturesController.load();
   }
 
   Future<PagedResult<LectureDto>> _fetchLectures(
@@ -85,6 +86,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
           _course = course;
           _courseLoading = false;
         });
+        _loadLecturesOnceUnlocked(course);
       }
     } catch (e) {
       if (mounted) {
@@ -94,6 +96,14 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
         });
       }
     }
+  }
+
+  void _loadLecturesOnceUnlocked(CourseDto course) {
+    if (_lecturesRequested || !course.isEnrolled || !course.hasContentAccess) {
+      return;
+    }
+    _lecturesRequested = true;
+    _lecturesController.load();
   }
 
   Future<void> _enroll(CourseDto course) async {
@@ -174,7 +184,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
         error: course == null ? _courseError : null,
         onRetry: () {
           _loadCourse();
-          _lecturesController.load();
+          if (_lecturesRequested) _lecturesController.load();
         },
         child: course == null
             ? const SizedBox.shrink()
@@ -216,6 +226,15 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
                 },
                 textAlign: TextAlign.center,
               ),
+            ),
+          )
+        else if (!course.hasContentAccess)
+          SliverToBoxAdapter(
+            child: BlockedReasonBanner(
+              icon: Icons.lock_outline,
+              reason: lockedContentReason(course.lectureCount),
+              actionLabel: 'Obnovi školarinu',
+              onAction: () => _openTuition(course),
             ),
           )
         else ...[
