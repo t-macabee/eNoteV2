@@ -61,6 +61,10 @@ public class ENoteContext(DbContextOptions<ENoteContext> options, IClock clock, 
                 .Property(p => p.Version)
                 .HasValueGenerator<InMemoryRowVersionGenerator>();
 
+            modelBuilder.Entity<CoursePayment>()
+                .Property(p => p.Version)
+                .HasValueGenerator<InMemoryRowVersionGenerator>();
+
             modelBuilder.Entity<Enrollment>()
                 .Property(e => e.Version)
                 .HasValueGenerator<InMemoryRowVersionGenerator>();

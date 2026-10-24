@@ -43,6 +43,11 @@ public sealed class CoursePaymentConfig : IEntityTypeConfiguration<CoursePayment
                .HasFilter("\"StripeEventId\" IS NOT NULL")
                .HasDatabaseName(DbConstraintNames.CoursePaymentStripeEventIdUniqueIndex);
 
+        builder.Property(x => x.StripeRefundId)
+               .HasMaxLength(64);
+
         builder.HasIndex(x => new { x.EnrollmentId, x.Status });
+
+        builder.Property(x => x.Version).IsRowVersion();
     }
 }

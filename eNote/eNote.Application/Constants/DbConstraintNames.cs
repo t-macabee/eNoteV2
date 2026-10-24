@@ -26,6 +26,10 @@ public static class DbConstraintNames
 
     public const string CoursePaymentStripeEventIdUniqueIndex = "UX_CoursePayment_StripeEventId";
 
+    public const string PaymentRefundStripeRefundIdUniqueIndex = "UX_PaymentRefund_StripeRefundId";
+
+    public const string PaymentRefundExactlyOnePaymentCheck = "CK_PaymentRefund_ExactlyOnePayment";
+
     public const string StripeWebhookEventStripeEventIdUniqueIndex = "UX_StripeWebhookEvent_StripeEventId";
 
     public const string RevokedTokenJtiUniqueIndex = "IX_RevokedToken_Jti";

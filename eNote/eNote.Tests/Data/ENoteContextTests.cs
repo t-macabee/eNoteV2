@@ -1,7 +1,11 @@
+using eNote.Application.Constants;
 using eNote.Domain.Entities.Assignments;
+using eNote.Domain.Entities.Shared;
 using eNote.Tests.TestUtils;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace eNote.Tests.Data;
 
@@ -137,6 +141,72 @@ public sealed class ENoteContextTests
 
         var count = await act.Set<Student>().CountAsync();
         Assert.Equal(0, count);
+    }
+
+    [Fact]
+    public void Model_PaymentRefund_RequiresExactlyOnePaymentForeignKeys()
+    {
+        using var context = CreateContext(Baseline);
+
+        var entityType = context.GetService<IDesignTimeModel>().Model.FindEntityType(typeof(PaymentRefund));
+        Assert.NotNull(entityType);
+
+        var check = Assert.Single(entityType.GetCheckConstraints());
+        Assert.Equal(DbConstraintNames.PaymentRefundExactlyOnePaymentCheck, check.Name);
+        Assert.Contains("RentalPaymentId", check.Sql);
+        Assert.Contains("CoursePaymentId", check.Sql);
+
+        var foreignKeyProperties = entityType.GetForeignKeys()
+            .SelectMany(fk => fk.Properties)
+            .Select(p => p.Name)
+            .OrderBy(name => name)
+            .ToList();
+        Assert.Equal(["CoursePaymentId", "RentalPaymentId"], foreignKeyProperties);
+
+        Assert.True(entityType.FindProperty(nameof(PaymentRefund.RentalPaymentId))!.IsNullable);
+        Assert.True(entityType.FindProperty(nameof(PaymentRefund.CoursePaymentId))!.IsNullable);
+    }
+
+    [Fact]
+    public void Model_PaymentRefund_HasUniqueStripeRefundIdIndex()
+    {
+        using var context = CreateContext(Baseline);
+
+        var index = context.Model.FindEntityType(typeof(PaymentRefund))!
+            .GetIndexes()
+            .Single(i => i.Properties.Select(p => p.Name).SequenceEqual([nameof(PaymentRefund.StripeRefundId)]));
+
+        Assert.True(index.IsUnique);
+        Assert.Equal(DbConstraintNames.PaymentRefundStripeRefundIdUniqueIndex, index.GetDatabaseName());
+    }
+
+    [Fact]
+    public void Model_CoursePayment_HasRowVersionConcurrencyToken()
+    {
+        using var context = CreateContext(Baseline);
+
+        var version = context.Model.FindEntityType(typeof(CoursePayment))!
+            .FindProperty(nameof(StripePayment.Version));
+
+        Assert.NotNull(version);
+        Assert.True(version.IsConcurrencyToken);
+        Assert.Equal(ValueGenerated.OnAddOrUpdate, version.ValueGenerated);
+    }
+
+    [Fact]
+    public async Task SaveChangesAsync_PersistsCourseRefund_WithCoursePaymentForeignKey()
+    {
+        await using var context = CreateContext(Baseline);
+        var payment = new CoursePayment(1, "pi_test_1", 5000, "bam", PaymentStatus.Succeeded);
+        payment.ApplyRefund(2000, "re_test_1", Baseline);
+
+        context.Set<CoursePayment>().Add(payment);
+        await context.SaveChangesAsync();
+
+        var stored = await context.Set<PaymentRefund>().SingleAsync();
+        Assert.Equal(payment.Id, stored.CoursePaymentId);
+        Assert.Null(stored.RentalPaymentId);
+        Assert.Equal(2000, stored.AmountCents);
     }
 
     private static ENoteContext CreateContext(DateTime now, string? databaseName = null)

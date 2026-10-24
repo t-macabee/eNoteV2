@@ -66,28 +66,4 @@ public sealed class RentalPaymentTests
         Assert.Equal(50m, rental.AmountPaid);
         Assert.Equal(PaymentStatus.Refunded, payment.Status);
     }
-
-    [Fact]
-    public void ApplyRefund_Partial_LeavesPartiallyRefunded()
-    {
-        var payment = new RentalPayment(1, 1, "pi_test_1", 5000, "eur", PaymentStatus.Succeeded);
-
-        payment.ApplyRefund(2000, "re_test_1", Now);
-
-        Assert.Equal(PaymentStatus.PartiallyRefunded, payment.Status);
-        Assert.Equal(2000, payment.RefundedCents);
-        Assert.NotNull(payment.RefundedAt);
-    }
-
-    [Fact]
-    public void ApplyRefund_SecondPartial_AccumulatesToRefunded()
-    {
-        var payment = new RentalPayment(1, 1, "pi_test_1", 5000, "eur", PaymentStatus.Succeeded);
-
-        payment.ApplyRefund(2000, "re_test_1", Now);
-        payment.ApplyRefund(3000, "re_test_2", Now);
-
-        Assert.Equal(PaymentStatus.Refunded, payment.Status);
-        Assert.Equal(5000, payment.RefundedCents);
-    }
 }

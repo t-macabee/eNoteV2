@@ -17,7 +17,7 @@ namespace eNote.Infrastructure.Data.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.11")
+                .HasAnnotation("ProductVersion", "10.0.13")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -256,6 +256,12 @@ namespace eNote.Infrastructure.Data.Migrations
                     b.Property<DateTime?>("PeriodStart")
                         .HasColumnType("datetime2");
 
+                    b.Property<DateTime?>("RefundedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<long?>("RefundedCents")
+                        .HasColumnType("bigint");
+
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
@@ -272,11 +278,21 @@ namespace eNote.Infrastructure.Data.Migrations
                         .HasMaxLength(64)
                         .HasColumnType("nvarchar(64)");
 
+                    b.Property<string>("StripeRefundId")
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
                     b.Property<int?>("UpdatedById")
                         .HasColumnType("int");
+
+                    b.Property<byte[]>("Version")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
 
                     b.HasKey("Id");
 
@@ -1341,38 +1357,6 @@ namespace eNote.Infrastructure.Data.Migrations
                     b.ToTable("RentalPayment");
                 });
 
-            modelBuilder.Entity("eNote.Domain.Entities.Rentals.RentalRefund", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<long>("AmountCents")
-                        .HasColumnType("bigint");
-
-                    b.Property<DateTime>("AppliedAtUtc")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("RentalPaymentId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("StripeRefundId")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("nvarchar(64)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("RentalPaymentId");
-
-                    b.HasIndex("StripeRefundId")
-                        .IsUnique();
-
-                    b.ToTable("RentalRefund");
-                });
-
             modelBuilder.Entity("eNote.Domain.Entities.Rentals.StripeWebhookEvent", b =>
                 {
                     b.Property<int>("Id")
@@ -1543,6 +1527,47 @@ namespace eNote.Infrastructure.Data.Migrations
                         {
                             Id = 5,
                             Name = "Zenica"
+                        });
+                });
+
+            modelBuilder.Entity("eNote.Domain.Entities.Shared.PaymentRefund", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<long>("AmountCents")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime>("AppliedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("CoursePaymentId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("RentalPaymentId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("StripeRefundId")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CoursePaymentId");
+
+                    b.HasIndex("RentalPaymentId");
+
+                    b.HasIndex("StripeRefundId")
+                        .IsUnique()
+                        .HasDatabaseName("UX_PaymentRefund_StripeRefundId");
+
+                    b.ToTable("PaymentRefund", t =>
+                        {
+                            t.HasCheckConstraint("CK_PaymentRefund_ExactlyOnePayment", "(\"RentalPaymentId\" IS NOT NULL AND \"CoursePaymentId\" IS NULL) OR (\"RentalPaymentId\" IS NULL AND \"CoursePaymentId\" IS NOT NULL)");
                         });
                 });
 
@@ -2029,17 +2054,6 @@ namespace eNote.Infrastructure.Data.Migrations
                     b.Navigation("InstrumentRental");
                 });
 
-            modelBuilder.Entity("eNote.Domain.Entities.Rentals.RentalRefund", b =>
-                {
-                    b.HasOne("eNote.Domain.Entities.Rentals.RentalPayment", "RentalPayment")
-                        .WithMany("Refunds")
-                        .HasForeignKey("RentalPaymentId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("RentalPayment");
-                });
-
             modelBuilder.Entity("eNote.Domain.Entities.Shared.Address", b =>
                 {
                     b.HasOne("eNote.Domain.Entities.Shared.City", "City")
@@ -2051,11 +2065,33 @@ namespace eNote.Infrastructure.Data.Migrations
                     b.Navigation("City");
                 });
 
+            modelBuilder.Entity("eNote.Domain.Entities.Shared.PaymentRefund", b =>
+                {
+                    b.HasOne("eNote.Domain.Entities.Academic.CoursePayment", "CoursePayment")
+                        .WithMany("Refunds")
+                        .HasForeignKey("CoursePaymentId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("eNote.Domain.Entities.Rentals.RentalPayment", "RentalPayment")
+                        .WithMany("Refunds")
+                        .HasForeignKey("RentalPaymentId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.Navigation("CoursePayment");
+
+                    b.Navigation("RentalPayment");
+                });
+
             modelBuilder.Entity("eNote.Domain.Entities.Academic.Course", b =>
                 {
                     b.Navigation("Enrollments");
 
                     b.Navigation("Lectures");
+                });
+
+            modelBuilder.Entity("eNote.Domain.Entities.Academic.CoursePayment", b =>
+                {
+                    b.Navigation("Refunds");
                 });
 
             modelBuilder.Entity("eNote.Domain.Entities.Academic.Enrollment", b =>
