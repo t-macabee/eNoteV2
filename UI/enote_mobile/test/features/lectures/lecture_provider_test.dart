@@ -101,6 +101,25 @@ void main() {
     expect(lecture.myAttendanceStatus, AttendanceStatus.present);
   });
 
+  test('fromJson maps the cancellation reason', () async {
+    final client = RecordingHttpClient(
+      body: {
+        ..._lectureJson,
+        'lectureStatus': 'Cancelled',
+        'isCancelled': true,
+        'cancellationReason': 'Instrument je pokvaren',
+        'cancelledAt': '2026-09-14T18:00:00',
+      },
+    );
+    final provider = _provider(client);
+
+    final lecture = await provider.getById(11);
+
+    expect(lecture.isCancelled, isTrue);
+    expect(lecture.cancellationReason, 'Instrument je pokvaren');
+    expect(lecture.cancelledAt, DateTime(2026, 9, 14, 18));
+  });
+
   test('fromJson keeps a null attendance as unanswered', () async {
     final client = RecordingHttpClient(
       body: {..._lectureJson, 'myAttendanceStatus': null},

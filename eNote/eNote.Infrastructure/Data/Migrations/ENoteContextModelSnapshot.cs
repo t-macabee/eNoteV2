@@ -382,6 +382,16 @@ namespace eNote.Infrastructure.Data.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("CancellationReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime?>("CancelledAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("CancelledById")
+                        .HasColumnType("int");
+
                     b.Property<int?>("Capacity")
                         .HasColumnType("int");
 
@@ -434,6 +444,8 @@ namespace eNote.Infrastructure.Data.Migrations
                         .HasColumnType("rowversion");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CancelledById");
 
                     b.HasIndex("CourseId");
 
@@ -1810,6 +1822,11 @@ namespace eNote.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("eNote.Domain.Entities.Academic.Lecture", b =>
                 {
+                    b.HasOne("eNote.Infrastructure.Identity.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("CancelledById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("eNote.Domain.Entities.Academic.Course", "Course")
                         .WithMany("Lectures")
                         .HasForeignKey("CourseId")

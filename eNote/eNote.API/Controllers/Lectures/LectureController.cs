@@ -62,9 +62,9 @@ public sealed class LectureController(
     [Authorize(Roles = AppRoles.Instructor)]
     [HttpPost("~/api/v{version:apiVersion}/instructor/lectures/{id:int}/cancel")]
     [ProducesResponseType(typeof(LectureDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<LectureDto>> Cancel(int id, CancellationToken cancellationToken)
+    public async Task<ActionResult<LectureDto>> Cancel(int id, [FromBody] LectureCancelRequest request, CancellationToken cancellationToken)
     {
-        var dto = await service.CancelAsync(id, cancellationToken);
+        var dto = await service.CancelAsync(id, request, cancellationToken);
         return Ok(dto);
     }
 

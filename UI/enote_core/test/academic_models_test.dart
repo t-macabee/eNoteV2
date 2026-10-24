@@ -213,6 +213,45 @@ void main() {
     });
   });
 
+  group('LectureDto cancellation fields', () {
+    test('missing keys default to null', () {
+      final dto = LectureDto.fromJson({'id': 1, 'name': 'n'});
+      expect(dto.cancellationReason, isNull);
+      expect(dto.cancelledAt, isNull);
+    });
+
+    test('parses the reason and the cancellation time', () {
+      final dto = LectureDto.fromJson({
+        'id': 1,
+        'name': 'n',
+        'lectureStatus': 'Cancelled',
+        'isCancelled': true,
+        'cancellationReason': 'Instrument je pokvaren',
+        'cancelledAt': '2026-09-14T18:00:00',
+      });
+
+      expect(dto.lectureStatus, LectureStatus.cancelled);
+      expect(dto.cancellationReason, 'Instrument je pokvaren');
+      expect(dto.cancelledAt, DateTime(2026, 9, 14, 18));
+    });
+
+    test('toJson round-trips the cancellation fields', () {
+      final dto = LectureDto.fromJson({
+        'id': 1,
+        'name': 'n',
+        'lectureStatus': 'Cancelled',
+        'isCancelled': true,
+        'cancellationReason': 'Instrument je pokvaren',
+        'cancelledAt': '2026-09-14T18:00:00',
+      });
+
+      final json = dto.toJson();
+
+      expect(json['cancellationReason'], 'Instrument je pokvaren');
+      expect(json['cancelledAt'], toUtcIso(DateTime(2026, 9, 14, 18)));
+    });
+  });
+
   group('parseCourseRanking', () {
     test('parses a bare JSON list', () {
       final entries = parseCourseRanking(jsonEncode([

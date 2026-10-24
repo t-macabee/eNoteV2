@@ -28,6 +28,8 @@ public sealed class LectureService(
                 LectureType = x.LectureType,
                 LectureStatus = x.LectureStatus,
                 IsCancelled = x.LectureStatus == LectureStatus.Cancelled,
+                CancellationReason = x.CancellationReason,
+                CancelledAt = x.CancelledAt,
                 LectureTime = x.LectureTime,
                 Duration = x.Duration,
                 Capacity = x.Capacity,
@@ -55,6 +57,8 @@ public sealed class LectureService(
                 LectureType = x.LectureType,
                 LectureStatus = x.LectureStatus,
                 IsCancelled = x.LectureStatus == LectureStatus.Cancelled,
+                CancellationReason = x.CancellationReason,
+                CancelledAt = x.CancelledAt,
                 LectureTime = x.LectureTime,
                 Duration = x.Duration,
                 Capacity = x.Capacity,
@@ -99,6 +103,8 @@ public sealed class LectureService(
                 LectureType = x.LectureType,
                 LectureStatus = x.LectureStatus,
                 IsCancelled = x.LectureStatus == LectureStatus.Cancelled,
+                CancellationReason = x.CancellationReason,
+                CancelledAt = x.CancelledAt,
                 LectureTime = x.LectureTime,
                 Duration = x.Duration,
                 Capacity = x.Capacity,
@@ -145,6 +151,8 @@ public sealed class LectureService(
                 LectureType = x.LectureType,
                 LectureStatus = x.LectureStatus,
                 IsCancelled = x.LectureStatus == LectureStatus.Cancelled,
+                CancellationReason = x.CancellationReason,
+                CancelledAt = x.CancelledAt,
                 LectureTime = x.LectureTime,
                 Duration = x.Duration,
                 Capacity = x.Capacity,
@@ -254,7 +262,7 @@ public sealed class LectureService(
         logger.LogInformation("Lecture {LectureId} soft-deleted by instructor user {InstructorUserId}", id, currentUser.UserId);
     }
 
-    public async Task<LectureDto> CancelAsync(int id, CancellationToken cancellationToken = default)
+    public async Task<LectureDto> CancelAsync(int id, LectureCancelRequest request, CancellationToken cancellationToken = default)
     {
         var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId, cancellationToken);
         var entity = await instructorAccess.GetOwnedLectureAsync(id, instructorId, track: true, cancellationToken: cancellationToken);
@@ -264,12 +272,12 @@ public sealed class LectureService(
             throw new BusinessException(Messages.LectureCancelled);
         }
 
-        if (entity.LectureStatus == LectureStatus.Held)
+        if (entity.LectureStatus != LectureStatus.Scheduled)
         {
             throw new BusinessException(Messages.LectureAlreadyHeld);
         }
 
-        entity.Cancel();
+        entity.Cancel(request.Reason, currentUser.UserId, clock.UtcNow);
         entity.UpdatedById = currentUser.UserId;
 
         var enrolledStudentUserIds = await context.Set<Enrollment>()
@@ -277,7 +285,7 @@ public sealed class LectureService(
             .Select(e => e.Student.AppUserId)
             .ToListAsync(cancellationToken);
 
-        await notificationDispatcher.DispatchCancelledAsync(entity.Id, entity.Name, enrolledStudentUserIds);
+        await notificationDispatcher.DispatchCancelledAsync(entity.Id, entity.Name, entity.CancellationReason!, enrolledStudentUserIds);
 
         await context.SaveChangesAsync(cancellationToken);
 

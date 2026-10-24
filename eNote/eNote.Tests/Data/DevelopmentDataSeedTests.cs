@@ -110,8 +110,11 @@ public sealed class DevelopmentDataSeedTests
         Assert.NotNull(rejectedEnrollment.DecidedById);
 
         var lectures = await ctx.Set<Lecture>().ToListAsync();
-        Assert.Equal(9, lectures.Count);
+        Assert.Equal(10, lectures.Count);
         Assert.Equal(5, lectures.Count(l => l.LectureStatus == LectureStatus.Held));
+        var cancelledLecture = Assert.Single(lectures, l => l.LectureStatus == LectureStatus.Cancelled);
+        Assert.False(string.IsNullOrWhiteSpace(cancelledLecture.CancellationReason));
+        Assert.NotNull(cancelledLecture.CancelledAt);
 
         Assert.Equal(48, await ctx.Set<Attendance>().CountAsync());
         Assert.Equal(6, await ctx.Set<Assignment>().CountAsync());
@@ -229,7 +232,7 @@ public sealed class DevelopmentDataSeedTests
         Assert.Equal(12, await ctx.Users.CountAsync());
         Assert.Equal(8, await ctx.Set<Student>().CountAsync());
         Assert.Equal(18, await ctx.Set<Enrollment>().CountAsync());
-        Assert.Equal(9, await ctx.Set<Lecture>().CountAsync());
+        Assert.Equal(10, await ctx.Set<Lecture>().CountAsync());
         Assert.Equal(48, await ctx.Set<Attendance>().CountAsync());
         Assert.Equal(6, await ctx.Set<Assignment>().CountAsync());
         Assert.Equal(40, await ctx.Set<AssignmentSubmission>().CountAsync());

@@ -8,6 +8,8 @@ class LectureDto {
   final LectureType lectureType;
   final LectureStatus lectureStatus;
   final bool isCancelled;
+  final String? cancellationReason;
+  final DateTime? cancelledAt;
   final DateTime lectureTime;
   final int duration;
   final int? capacity;
@@ -21,6 +23,8 @@ class LectureDto {
     required this.lectureType,
     required this.lectureStatus,
     required this.isCancelled,
+    this.cancellationReason,
+    this.cancelledAt,
     required this.lectureTime,
     required this.duration,
     this.capacity,
@@ -36,6 +40,8 @@ class LectureDto {
       lectureType: LectureType.fromJson(json['lectureType'] as String?),
       lectureStatus: LectureStatus.fromJson(json['lectureStatus'] as String?),
       isCancelled: json['isCancelled'] as bool? ?? false,
+      cancellationReason: json['cancellationReason'] as String?,
+      cancelledAt: parseDate(json['cancelledAt']),
       lectureTime: parseDate(json['lectureTime']) ?? DateTime.now(),
       duration: json['duration'] as int? ?? 0,
       capacity: json['capacity'] as int?,
@@ -53,6 +59,8 @@ class LectureDto {
     'lectureType': lectureType.toJson(),
     'lectureStatus': lectureStatus.toJson(),
     'isCancelled': isCancelled,
+    if (cancellationReason != null) 'cancellationReason': cancellationReason,
+    if (cancelledAt != null) 'cancelledAt': toUtcIso(cancelledAt!),
     'lectureTime': toUtcIso(lectureTime),
     'duration': duration,
     if (capacity != null) 'capacity': capacity,

@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:enote_core/enote_core.dart';
 
 import '../../shell/app_router.dart';
+import '../../theme/app_theme.dart';
 import '../../widgets/paged_list_view.dart';
 import '../../widgets/status_chip.dart';
 import 'lecture_provider.dart';
@@ -90,8 +91,19 @@ class _LectureRow extends StatelessWidget {
     return ListTile(
       leading: Icon(_iconFor(lecture.lectureType)),
       title: Text(lecture.name),
-      subtitle: Text(
-        '${formatDateTime(lecture.lectureTime)} · ${lecture.location}',
+      subtitle: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            '${formatDateTime(lecture.lectureTime)} · ${lecture.location}',
+          ),
+          if (lecture.cancellationReason != null)
+            Text(
+              'Razlog: ${lecture.cancellationReason}',
+              style: const TextStyle(color: AppTheme.error),
+            ),
+        ],
       ),
       trailing: StatusChip.lectureStatus(lecture.lectureStatus),
       onTap: () => Navigator.of(context).pushNamed(

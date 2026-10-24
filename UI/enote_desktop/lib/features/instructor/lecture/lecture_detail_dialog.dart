@@ -65,6 +65,18 @@ class LectureDetailDialog extends StatelessWidget {
               label: 'Status',
               value: lectureStatusLabel(lecture),
             ),
+            if (lecture.cancellationReason != null)
+              DetailRow(
+                icon: Icons.cancel_outlined,
+                label: 'Razlog otkazivanja',
+                value: lecture.cancellationReason!,
+              ),
+            if (lecture.cancelledAt != null)
+              DetailRow(
+                icon: Icons.event_busy_outlined,
+                label: 'Otkazano',
+                value: formatDateTime(lecture.cancelledAt!),
+              ),
           ],
         ),
       ),

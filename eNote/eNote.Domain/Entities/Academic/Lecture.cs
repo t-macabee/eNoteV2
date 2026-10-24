@@ -17,6 +17,9 @@ public sealed class Lecture : AuditableEntity
 
     public LectureStatus LectureStatus { get; private set; }
     public bool IsCancelled => LectureStatus == LectureStatus.Cancelled;
+    public string? CancellationReason { get; private set; }
+    public DateTime? CancelledAt { get; private set; }
+    public int? CancelledById { get; private set; }
     public bool IsActive { get; private set; } = true;
     public byte[] Version { get; private set; } = null!;
 
@@ -50,8 +53,16 @@ public sealed class Lecture : AuditableEntity
         Capacity = capacity;
     }
 
-    public void Cancel()
+    public void Cancel(string reason, int userId, DateTime utcNow)
     {
+        if (LectureStatus != LectureStatus.Scheduled)
+        {
+            throw new InvalidOperationException("Only a scheduled lecture can be cancelled.");
+        }
+
+        CancellationReason = reason.Trim();
+        CancelledAt = utcNow;
+        CancelledById = userId;
         LectureStatus = LectureStatus.Cancelled;
     }
 

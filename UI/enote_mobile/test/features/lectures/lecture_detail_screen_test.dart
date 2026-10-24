@@ -132,6 +132,59 @@ void main() {
     expect(find.byType(RsvpSheet), findsOneWidget);
   });
 
+  testWidgets('a cancelled lecture shows the reason and closes the RSVP', (
+    tester,
+  ) async {
+    final client = ScriptedClient(
+      (_) => jsonResponse(
+        jsonEncode({
+          ..._lectureJson(lectureTime: _futureLectureTime),
+          'lectureStatus': 'Cancelled',
+          'isCancelled': true,
+          'cancellationReason': 'Instrument je pokvaren',
+        }),
+        200,
+      ),
+    );
+    final authState = AuthState(
+      baseUrl: 'http://10.0.2.2:5059/api/v1/',
+      tokenReader: () => fakeJwt(),
+      httpClient: client,
+    );
+    final apiClient = ApiClient(
+      baseUrl: 'http://10.0.2.2:5059/api/v1/',
+      authState: authState,
+      httpClient: client,
+    );
+    final lectures = LectureProvider(apiClient: apiClient);
+
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider<AuthState>.value(value: authState),
+          Provider<ApiClient>.value(value: apiClient),
+          ChangeNotifierProvider<LectureProvider>.value(value: lectures),
+        ],
+        child: const MaterialApp(
+          home: LectureDetailScreen(lectureId: 11),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.text('Otkazano'), findsOneWidget);
+    expect(find.text('Razlog otkazivanja'), findsOneWidget);
+    expect(find.text('Instrument je pokvaren'), findsOneWidget);
+    expect(find.text('Predavanje je otkazano.'), findsOneWidget);
+    expect(
+      tester
+          .widget<FilledButton>(find.widgetWithText(FilledButton, 'Dolazim'))
+          .onPressed,
+      isNull,
+    );
+  });
+
   testWidgets('RSVP is closed after the lecture starts', (tester) async {
     final client = ScriptedClient(
       (_) => jsonResponse(

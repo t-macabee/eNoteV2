@@ -133,6 +133,13 @@ internal static class LectureSeed
         var c1Id = courses[0].Id;
         var c2Id = courses[1].Id;
 
+        var cancelledLecture = new Lecture("Radionica improvizacije", "Amfiteatar gradskog BKC-a", 90, today.AddDays(6).AddHours(19).AddMinutes(30), LectureType.Practical, null, c1Id);
+        var instructorUserId = await context.Set<Instructor>()
+            .OrderBy(i => i.Id)
+            .Select(i => i.AppUserId)
+            .FirstAsync();
+        cancelledLecture.Cancel("Instruktor je spriječen, termin se pomjera.", instructorUserId, clock.UtcNow);
+
         context.AddRange(
 
             new Lecture("Uvodno predavanje", "Amfiteatar gradskog BKC-a", 90, today.AddDays(-29).AddHours(19).AddMinutes(30), LectureType.Theoretical, null, c1Id),
@@ -144,7 +151,8 @@ internal static class LectureSeed
             new Lecture("Uvodno predavanje", "Amfiteatar gradskog BKC-a", 60, today.AddDays(-13).AddHours(19).AddMinutes(30), LectureType.Theoretical, null, c2Id),
             new Lecture("Tehnika desne ruke", "Amfiteatar gradskog BKC-a", 60, today.AddDays(-6).AddHours(19).AddMinutes(30), LectureType.Practical, null, c2Id),
             new Lecture("Improvizacija na bluesu", "Amfiteatar gradskog BKC-a", 60, today.AddDays(3).AddHours(19).AddMinutes(30), LectureType.Practical, null, c2Id),
-            new Lecture("Sviranje u bendu", "Amfiteatar gradskog BKC-a", 60, today.AddDays(10).AddHours(19).AddMinutes(30), LectureType.Practical, null, c2Id)
+            new Lecture("Sviranje u bendu", "Amfiteatar gradskog BKC-a", 60, today.AddDays(10).AddHours(19).AddMinutes(30), LectureType.Practical, null, c2Id),
+            cancelledLecture
         );
 
         await context.SaveChangesAsync();

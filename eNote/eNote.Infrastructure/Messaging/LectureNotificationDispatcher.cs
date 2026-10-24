@@ -10,9 +10,9 @@ public sealed class LectureNotificationDispatcher(
     IAppDbContext context,
     IClock clock) : ILectureNotificationDispatcher
 {
-    public Task DispatchCancelledAsync(int lectureId, string lectureName, IReadOnlyCollection<int> enrolledStudentUserIds)
+    public Task DispatchCancelledAsync(int lectureId, string lectureName, string reason, IReadOnlyCollection<int> enrolledStudentUserIds)
     {
-        var (title, body) = ("Predavanje otkazano", $"Predavanje '{lectureName}' je otkazano.");
+        var (title, body) = ("Predavanje otkazano", $"Predavanje '{lectureName}' je otkazano. Razlog: {reason}");
         var occurredAtUtc = clock.UtcNow;
 
         foreach (var studentUserId in enrolledStudentUserIds)

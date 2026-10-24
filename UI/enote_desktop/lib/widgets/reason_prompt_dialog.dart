@@ -1,17 +1,26 @@
 import 'package:flutter/material.dart';
 
-Future<String?> promptForReason(BuildContext context, {required String title}) {
+Future<String?> promptForReason(
+  BuildContext context, {
+  required String title,
+  int minLength = 1,
+}) {
   return showDialog<String>(
     context: context,
     barrierDismissible: false,
-    builder: (context) => ReasonPromptDialog(title: title),
+    builder: (context) => ReasonPromptDialog(title: title, minLength: minLength),
   );
 }
 
 class ReasonPromptDialog extends StatefulWidget {
   final String title;
+  final int minLength;
 
-  const ReasonPromptDialog({super.key, required this.title});
+  const ReasonPromptDialog({
+    super.key,
+    required this.title,
+    this.minLength = 1,
+  });
 
   @override
   State<ReasonPromptDialog> createState() => _ReasonPromptDialogState();
@@ -32,9 +41,20 @@ class _ReasonPromptDialogState extends State<ReasonPromptDialog> {
     super.dispose();
   }
 
+  String? get _errorText {
+    final reason = _controller.text.trim();
+    if (reason.isEmpty) {
+      return 'Razlog je obavezan.';
+    }
+    if (reason.length < widget.minLength) {
+      return 'Razlog mora imati najmanje ${widget.minLength} karaktera.';
+    }
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
-    final isEmpty = _controller.text.trim().isEmpty;
+    final errorText = _errorText;
     return AlertDialog(
       title: Text(widget.title),
       content: TextField(
@@ -44,7 +64,7 @@ class _ReasonPromptDialogState extends State<ReasonPromptDialog> {
         maxLength: 500,
         decoration: InputDecoration(
           labelText: 'Razlog *',
-          errorText: isEmpty ? 'Razlog je obavezan.' : null,
+          errorText: errorText,
           border: const OutlineInputBorder(),
         ),
         onChanged: (_) => setState(() {}),
@@ -55,7 +75,7 @@ class _ReasonPromptDialogState extends State<ReasonPromptDialog> {
           child: const Text('Otkaži'),
         ),
         ElevatedButton(
-          onPressed: isEmpty
+          onPressed: errorText != null
               ? null
               : () => Navigator.of(context).pop(_controller.text.trim()),
           child: const Text('Potvrdi'),

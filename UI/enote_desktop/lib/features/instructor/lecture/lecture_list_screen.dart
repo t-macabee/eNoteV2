@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:enote_core/enote_core.dart' hide lectureStatusLabel;
 import '../../../widgets/entity_form_scaffold.dart';
 import '../../../widgets/entity_list_screen.dart';
+import '../../../widgets/reason_prompt_dialog.dart';
 import 'lecture_detail_dialog.dart';
 import 'lecture_form_screen.dart';
 import 'lecture_provider.dart';
@@ -58,16 +59,15 @@ class _LectureListScreenState extends State<LectureListScreen> {
 
   Future<void> _cancelLecture(LectureDto lecture) async {
     if (lecture.isCancelled) return;
-    final confirmed = await confirmDialog(
-      context: context,
-      title: 'Potvrdite otkazivanje',
-      message:
-          'Da li ste sigurni da želite otkazati ovo predavanje? Svi upisani studenti biće obaviješteni.',
+    final reason = await promptForReason(
+      context,
+      title: 'Otkazivanje predavanja "${lecture.name}"',
+      minLength: 3,
     );
-    if (confirmed != true) return;
+    if (reason == null) return;
     if (!mounted) return;
     try {
-      await context.read<LectureProvider>().cancel(lecture.id);
+      await context.read<LectureProvider>().cancel(lecture.id, reason);
       if (!mounted) return;
       widget.onMutation?.call();
       ScaffoldMessenger.of(context).showSnackBar(

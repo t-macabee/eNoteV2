@@ -9,6 +9,8 @@ public class LectureDto
     public LectureType LectureType { get; set; }
     public LectureStatus LectureStatus { get; set; }
     public bool IsCancelled { get; set; }
+    public string? CancellationReason { get; set; }
+    public DateTime? CancelledAt { get; set; }
 
     public DateTime LectureTime { get; set; }
     public int Duration { get; set; }

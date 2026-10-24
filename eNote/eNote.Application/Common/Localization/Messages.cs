@@ -58,6 +58,8 @@ public static class Messages
     public const string LectureCapacityBelowConfirmed = "Kapacitet ne može biti manji od broja već potvrđenih prisustava.";
     public const string LectureAlreadyHeld = "Održano predavanje nije moguće otkazati.";
     public const string LectureRsvpClosed = "Prijave su zatvorene jer je predavanje počelo.";
+    public const string LectureCancelReasonRequired = "Razlog otkazivanja je obavezan.";
+    public const string LectureCancelReasonLength = "Razlog otkazivanja mora imati između 3 i 500 karaktera.";
 
     public const string InstrumentTypeNotFound = "Vrsta instrumenta ne postoji.";
     public const string InstrumentNotFound = "Instrument nije pronađen.";

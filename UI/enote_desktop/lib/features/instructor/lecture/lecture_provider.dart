@@ -6,8 +6,11 @@ class LectureProvider extends CrudProvider<LectureDto> {
   @override
   LectureDto fromJson(Map<String, dynamic> json) => LectureDto.fromJson(json);
 
-  Future<LectureDto> cancel(int id) async {
-    final response = await apiClient.post('$endpoint/$id/cancel');
+  Future<LectureDto> cancel(int id, String reason) async {
+    final response = await apiClient.post(
+      '$endpoint/$id/cancel',
+      body: {'reason': reason},
+    );
     final data = decodeOrThrow(response);
     notifyListeners();
     return fromJson(data);

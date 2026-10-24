@@ -125,6 +125,11 @@ class _LectureDetailScreenState extends State<LectureDetailScreen> {
             label: 'Status',
             value: lectureStatusLabel(lecture.lectureStatus),
           ),
+          if (lecture.cancellationReason != null)
+            LabeledValue(
+              label: 'Razlog otkazivanja',
+              value: lecture.cancellationReason!,
+            ),
           LabeledValue(
             label: 'Prijavljeno',
             value:

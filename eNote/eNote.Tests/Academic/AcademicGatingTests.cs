@@ -178,7 +178,7 @@ public sealed class AcademicGatingTests
         var dispatcher = new RecordingLectureNotificationDispatcher();
         var instructorService = CreateLectureService(context, instructor, new StubCurrentActor(instructor: instructor), dispatcher);
 
-        await instructorService.CancelAsync(lecture.Id);
+        await instructorService.CancelAsync(lecture.Id, new LectureCancelRequest { Reason = "Instrument je pokvaren" });
 
         var call = Assert.Single(dispatcher.CancelledCalls);
         Assert.Contains(unpaidStudent.AppUserId, call.EnrolledStudentUserIds);

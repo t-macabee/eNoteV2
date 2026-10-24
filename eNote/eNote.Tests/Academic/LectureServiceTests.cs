@@ -95,7 +95,7 @@ public sealed class LectureServiceTests
     public async Task UpdateAsync_Throws_WhenLectureCancelled()
     {
         var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
-        harness.Context.Set<Lecture>().Single(l => l.Id == harness.Lecture.Id).Cancel();
+        harness.Context.Set<Lecture>().Single(l => l.Id == harness.Lecture.Id).Cancel("Razlog otkazivanja", 1, Now);
         await harness.Context.SaveChangesAsync();
         var service = CreateService(harness.Context, harness.Instructor);
 
@@ -115,9 +115,40 @@ public sealed class LectureServiceTests
         var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
         var service = CreateService(harness.Context, harness.Instructor);
 
-        var dto = await service.CancelAsync(harness.Lecture.Id);
+        var dto = await service.CancelAsync(harness.Lecture.Id, new LectureCancelRequest { Reason = "Instrument je pokvaren" });
 
         Assert.True(dto.IsCancelled);
+        Assert.Equal("Instrument je pokvaren", dto.CancellationReason);
+        Assert.Equal(Now, dto.CancelledAt);
+    }
+
+    [Fact]
+    public async Task CancelAsync_StoresReasonAndCancellingUser()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var service = CreateService(harness.Context, harness.Instructor, new StubCurrentActor(instructor: harness.Instructor, userId: harness.Instructor.AppUserId));
+
+        await service.CancelAsync(harness.Lecture.Id, new LectureCancelRequest { Reason = "  Instrument je pokvaren  " });
+
+        var lecture = harness.Context.Set<Lecture>().Single(l => l.Id == harness.Lecture.Id);
+        Assert.Equal(LectureStatus.Cancelled, lecture.LectureStatus);
+        Assert.Equal("Instrument je pokvaren", lecture.CancellationReason);
+        Assert.Equal(Now, lecture.CancelledAt);
+        Assert.Equal(harness.Instructor.AppUserId, lecture.CancelledById);
+    }
+
+    [Fact]
+    public async Task CancelAsync_Throws_WhenAlreadyCancelled()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        harness.Context.Set<Lecture>().Single(l => l.Id == harness.Lecture.Id).Cancel("Razlog otkazivanja", 1, Now);
+        await harness.Context.SaveChangesAsync();
+        var service = CreateService(harness.Context, harness.Instructor);
+
+        var ex = await Assert.ThrowsAsync<BusinessException>(() =>
+            service.CancelAsync(harness.Lecture.Id, new LectureCancelRequest { Reason = "Drugi razlog" }));
+
+        Assert.Equal(Messages.LectureCancelled, ex.Message);
     }
 
     [Fact]
@@ -128,7 +159,7 @@ public sealed class LectureServiceTests
         await harness.Context.SaveChangesAsync();
         var service = CreateService(harness.Context, harness.Instructor);
 
-        var ex = await Assert.ThrowsAsync<BusinessException>(() => service.CancelAsync(harness.Lecture.Id));
+        var ex = await Assert.ThrowsAsync<BusinessException>(() => service.CancelAsync(harness.Lecture.Id, new LectureCancelRequest { Reason = "Instrument je pokvaren" }));
 
         Assert.Equal(Messages.LectureAlreadyHeld, ex.Message);
     }
@@ -142,7 +173,7 @@ public sealed class LectureServiceTests
         harness.Context.ChangeTracker.Clear();
         var service = CreateService(harness.Context, harness.Instructor);
 
-        var dto = await service.CancelAsync(harness.Lecture.Id);
+        var dto = await service.CancelAsync(harness.Lecture.Id, new LectureCancelRequest { Reason = "Instrument je pokvaren" });
 
         Assert.Equal(1, dto.AttendeeCount);
     }
@@ -154,11 +185,12 @@ public sealed class LectureServiceTests
         var dispatcher = new RecordingLectureNotificationDispatcher();
         var service = CreateService(harness.Context, harness.Instructor, notificationDispatcher: dispatcher);
 
-        await service.CancelAsync(harness.Lecture.Id);
+        await service.CancelAsync(harness.Lecture.Id, new LectureCancelRequest { Reason = "Instrument je pokvaren" });
 
         var call = Assert.Single(dispatcher.CancelledCalls);
         Assert.Equal(harness.Lecture.Id, call.LectureId);
         Assert.Equal(harness.Lecture.Name, call.LectureName);
+        Assert.Equal("Instrument je pokvaren", call.Reason);
         Assert.Equal([harness.Student.AppUserId], call.EnrolledStudentUserIds);
     }
 
@@ -174,7 +206,7 @@ public sealed class LectureServiceTests
         var dispatcher = new RecordingLectureNotificationDispatcher();
         var service = CreateService(harness.Context, harness.Instructor, notificationDispatcher: dispatcher);
 
-        await service.CancelAsync(harness.Lecture.Id);
+        await service.CancelAsync(harness.Lecture.Id, new LectureCancelRequest { Reason = "Instrument je pokvaren" });
 
         var call = Assert.Single(dispatcher.CancelledCalls);
         Assert.DoesNotContain(droppedStudent.AppUserId, call.EnrolledStudentUserIds);
@@ -203,6 +235,36 @@ public sealed class LectureServiceTests
         var dto = await service.GetByIdForStudentAsync(harness.Lecture.Id);
 
         Assert.Equal(harness.Lecture.Id, dto.Id);
+    }
+
+    [Fact]
+    public async Task GetByIdForStudentAsync_ReturnsCancelledLectureWithReason()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        harness.Context.Set<Lecture>().Single(l => l.Id == harness.Lecture.Id).Cancel("Instrument je pokvaren", 1, Now);
+        await harness.Context.SaveChangesAsync();
+        var service = CreateService(harness.Context, harness.Instructor, new StubCurrentActor(student: harness.Student));
+
+        var dto = await service.GetByIdForStudentAsync(harness.Lecture.Id);
+
+        Assert.True(dto.IsCancelled);
+        Assert.Equal("Instrument je pokvaren", dto.CancellationReason);
+        Assert.Equal(Now, dto.CancelledAt);
+    }
+
+    [Fact]
+    public async Task GetPagedForStudentAsync_ReturnsCancelledLectures()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        harness.Context.Set<Lecture>().Single(l => l.Id == harness.Lecture.Id).Cancel("Instrument je pokvaren", 1, Now);
+        await harness.Context.SaveChangesAsync();
+        harness.Context.ChangeTracker.Clear();
+        var service = CreateService(harness.Context, harness.Instructor, new StubCurrentActor(student: harness.Student));
+
+        var result = await service.GetPagedForStudentAsync(new LectureSearchObject());
+
+        var dto = Assert.Single(result.Items);
+        Assert.Equal("Instrument je pokvaren", dto.CancellationReason);
     }
 
     [Fact]
@@ -264,7 +326,7 @@ public sealed class LectureServiceTests
     public async Task CreateAsync_IgnoresCancelledLectures()
     {
         var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
-        harness.Context.Set<Lecture>().Single(l => l.Id == harness.Lecture.Id).Cancel();
+        harness.Context.Set<Lecture>().Single(l => l.Id == harness.Lecture.Id).Cancel("Razlog otkazivanja", 1, Now);
         await harness.Context.SaveChangesAsync();
         var service = CreateService(harness.Context, harness.Instructor);
 
@@ -323,7 +385,7 @@ public sealed class LectureServiceTests
     public async Task UpdateAsync_CancelledCheck_PrecedesCapacityValidation()
     {
         var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
-        harness.Context.Set<Lecture>().Single(l => l.Id == harness.Lecture.Id).Cancel();
+        harness.Context.Set<Lecture>().Single(l => l.Id == harness.Lecture.Id).Cancel("Razlog otkazivanja", 1, Now);
         harness.Context.Set<Attendance>().Add(new Attendance(harness.Student.Id, harness.Lecture.Id, AttendanceStatus.Present));
         await harness.Context.SaveChangesAsync();
         var service = CreateService(harness.Context, harness.Instructor);
