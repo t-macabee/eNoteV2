@@ -8,6 +8,7 @@ public class LectureSearchObject : BaseSearchObject
     public int? StudentId { get; set; }
     public string? Name { get; set; }
     public LectureType? LectureType { get; set; }
+    public LectureStatus? LectureStatus { get; set; }
 
     public DateTime? From { get; set; }
     public DateTime? To { get; set; }

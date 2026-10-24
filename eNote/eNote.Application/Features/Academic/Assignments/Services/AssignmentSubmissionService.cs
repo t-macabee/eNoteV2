@@ -10,6 +10,7 @@ public sealed class AssignmentSubmissionService(
     IClock clock,
     ICurrentUserContext currentUser, IStudentContext students,
     IStudentDisplayNameService displayNames,
+    IUserIdentityService identity,
     InstructorAccessService instructorAccess,
     IFileStorageService fileStorage,
     ISubmissionNotificationDispatcher notificationDispatcher,
@@ -108,6 +109,19 @@ public sealed class AssignmentSubmissionService(
             .AsNoTracking()
             .Include(x => x.Student)
             .Where(x => x.AssignmentId == assignmentId);
+
+        if (search.IsGraded.HasValue)
+        {
+            query = search.IsGraded.Value
+                ? query.Where(x => x.Grade != null)
+                : query.Where(x => x.Grade == null);
+        }
+
+        if (!string.IsNullOrWhiteSpace(search.StudentName))
+        {
+            var studentUserIds = await identity.FindUserIdsAsync(search.StudentName, null, cancellationToken);
+            query = query.Where(x => studentUserIds.Contains(x.Student.AppUserId));
+        }
 
         var (page, pageSize) = PagingLimits.Normalize(search.Page, search.PageSize);
         var total = search.IncludeTotalCount ? await query.CountAsync(cancellationToken) : (int?)null;

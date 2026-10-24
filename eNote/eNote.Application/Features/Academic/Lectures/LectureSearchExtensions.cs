@@ -19,6 +19,11 @@ public static class LectureSearchExtensions
             query = query.Where(x => x.LectureType == search.LectureType.Value);
         }
 
+        if (search.LectureStatus.HasValue)
+        {
+            query = query.Where(x => x.LectureStatus == search.LectureStatus.Value);
+        }
+
         if (search.CourseId.HasValue)
         {
             query = query.Where(x => x.CourseId == search.CourseId.Value);

@@ -598,6 +598,23 @@ public sealed class LectureServiceTests
         Assert.Equal([harness.Student.AppUserId], call.EnrolledStudentUserIds);
     }
 
+    [Fact]
+    public async Task GetPagedForInstructorAsync_FiltersByLectureStatus()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var cancelled = new Lecture("Cancelled lesson", "Room 2", 60, Now.AddDays(1), LectureType.Theoretical, 30, harness.Course.Id);
+        cancelled.Cancel("Instrument je pokvaren", harness.Instructor.AppUserId, Now);
+        harness.Context.Set<Lecture>().Add(cancelled);
+        await harness.Context.SaveChangesAsync();
+        var service = CreateService(harness.Context, harness.Instructor);
+
+        var scheduled = await service.GetPagedForInstructorAsync(new LectureSearchObject { LectureStatus = LectureStatus.Scheduled });
+        var cancelledResult = await service.GetPagedForInstructorAsync(new LectureSearchObject { LectureStatus = LectureStatus.Cancelled });
+
+        Assert.Equal(harness.Lecture.Id, Assert.Single(scheduled.Items).Id);
+        Assert.Equal(cancelled.Id, Assert.Single(cancelledResult.Items).Id);
+    }
+
     private static LectureService CreateService(ENoteContext context, Instructor instructor, StubCurrentActor? actor = null, ILectureNotificationDispatcher? notificationDispatcher = null)
     {
         var currentUser = actor ?? new StubCurrentActor(instructor: instructor);

@@ -3,6 +3,8 @@ using eNote.Application.Common.Persistence;
 using eNote.Application.Constants;
 using eNote.Application.Features.Academic.Assignments;
 using eNote.Application.Features.Academic.Assignments.Services;
+using eNote.Application.Features.Identity.Users;
+using eNote.Application.Features.Identity.Users.Services;
 using eNote.Domain.Entities.Assignments;
 using eNote.Tests.TestUtils;
 using Microsoft.EntityFrameworkCore;
@@ -251,10 +253,60 @@ public sealed class AssignmentSubmissionServiceTests
         Assert.NotNull(dto.SubmittedAt);
     }
 
-    private static AssignmentSubmissionService CreateService(IAppDbContext context, Instructor instructor, IFileStorageService fileStorage, Student student, ISubmissionNotificationDispatcher? notificationDispatcher = null) =>
-        CreateService(context, (ENoteContext)context, instructor, fileStorage, student, notificationDispatcher);
+    [Fact]
+    public async Task GetSubmissionsAsync_FiltersByGradedState()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var classmate = await AcademicTestData.AddEnrolledStudentAsync(harness, 60, Now);
+        var assignment = new Assignment("Homework", "Do it", Now.AddDays(7), harness.Lecture.Id);
+        harness.Context.Set<Assignment>().Add(assignment);
+        await harness.Context.SaveChangesAsync();
+        var graded = new AssignmentSubmission(assignment.Id, harness.Student.Id);
+        graded.Submit("/hw1.pdf", Now);
+        graded.SetGrade(90);
+        var ungraded = new AssignmentSubmission(assignment.Id, classmate.Id);
+        ungraded.Submit("/hw2.pdf", Now);
+        harness.Context.Set<AssignmentSubmission>().AddRange(graded, ungraded);
+        await harness.Context.SaveChangesAsync();
+        var service = CreateService(harness.Context, harness.Instructor, new RecordingFileStorageService(), harness.Student);
 
-    private static AssignmentSubmissionService CreateService(IAppDbContext context, ENoteContext accessContext, Instructor instructor, IFileStorageService fileStorage, Student student, ISubmissionNotificationDispatcher? notificationDispatcher = null)
+        var gradedResult = await service.GetSubmissionsAsync(harness.Lecture.Id, assignment.Id, new SubmissionSearchObject { IsGraded = true });
+        var ungradedResult = await service.GetSubmissionsAsync(harness.Lecture.Id, assignment.Id, new SubmissionSearchObject { IsGraded = false });
+
+        Assert.Equal(graded.Id, Assert.Single(gradedResult.Items).Id);
+        Assert.Equal(ungraded.Id, Assert.Single(ungradedResult.Items).Id);
+    }
+
+    [Fact]
+    public async Task GetSubmissionsAsync_FiltersByStudentName()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var classmate = await AcademicTestData.AddEnrolledStudentAsync(harness, 60, Now);
+        var assignment = new Assignment("Homework", "Do it", Now.AddDays(7), harness.Lecture.Id);
+        harness.Context.Set<Assignment>().Add(assignment);
+        await harness.Context.SaveChangesAsync();
+        var ownSubmission = new AssignmentSubmission(assignment.Id, harness.Student.Id);
+        ownSubmission.Submit("/hw1.pdf", Now);
+        var classmateSubmission = new AssignmentSubmission(assignment.Id, classmate.Id);
+        classmateSubmission.Submit("/hw2.pdf", Now);
+        harness.Context.Set<AssignmentSubmission>().AddRange(ownSubmission, classmateSubmission);
+        await harness.Context.SaveChangesAsync();
+        var identity = new StubUserIdentityService(new Dictionary<int, UserIdentityDto>
+        {
+            [harness.Student.AppUserId] = StubUserIdentityService.User(harness.Student.AppUserId, "jdoe", "Jane", "Doe"),
+            [classmate.AppUserId] = StubUserIdentityService.User(classmate.AppUserId, "asmith", "Ann", "Smith")
+        });
+        var service = CreateService(harness.Context, harness.Instructor, new RecordingFileStorageService(), harness.Student, identity: identity);
+
+        var result = await service.GetSubmissionsAsync(harness.Lecture.Id, assignment.Id, new SubmissionSearchObject { StudentName = "Jane" });
+
+        Assert.Equal(ownSubmission.Id, Assert.Single(result.Items).Id);
+    }
+
+    private static AssignmentSubmissionService CreateService(IAppDbContext context, Instructor instructor, IFileStorageService fileStorage, Student student, ISubmissionNotificationDispatcher? notificationDispatcher = null, IUserIdentityService? identity = null) =>
+        CreateService(context, (ENoteContext)context, instructor, fileStorage, student, notificationDispatcher, identity);
+
+    private static AssignmentSubmissionService CreateService(IAppDbContext context, ENoteContext accessContext, Instructor instructor, IFileStorageService fileStorage, Student student, ISubmissionNotificationDispatcher? notificationDispatcher = null, IUserIdentityService? identity = null)
     {
         var currentUser = new StubCurrentActor(student: student);
         return new(context,
@@ -262,6 +314,7 @@ public sealed class AssignmentSubmissionServiceTests
             currentUser,
             currentUser,
             new StubDisplayNameService(),
+            identity ?? new StubUserIdentityService(),
             AcademicTestData.CreateInstructorAccess(accessContext, instructor),
             fileStorage,
             notificationDispatcher ?? new NoOpSubmissionNotificationDispatcher(),

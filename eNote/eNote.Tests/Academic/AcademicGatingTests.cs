@@ -152,6 +152,7 @@ public sealed class AcademicGatingTests
             unpaidActor,
             unpaidActor,
             new StubDisplayNameService(),
+            new StubUserIdentityService(),
             AcademicTestData.CreateInstructorAccess(context, instructor),
             new RecordingFileStorageService(),
             new NoOpSubmissionNotificationDispatcher(),

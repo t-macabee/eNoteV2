@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart' hide lectureStatusLabel;
+import 'package:enote_core/enote_core.dart' as core;
+import '../../../widgets/entity_filter_dropdown.dart';
 import '../../../widgets/entity_form_scaffold.dart';
 import '../../../widgets/entity_list_screen.dart';
 import '../../../widgets/reason_prompt_dialog.dart';
@@ -41,6 +43,8 @@ class LectureListScreen extends StatefulWidget {
 
 class _LectureListScreenState extends State<LectureListScreen> {
   final _listKey = GlobalKey<EntityListScreenState<LectureDto>>();
+
+  LectureStatus? _selectedStatus;
 
   Future<void> _openForm([LectureDto? existing]) async {
     final saved = await EntityFormScaffold.showAsDialog(
@@ -86,6 +90,34 @@ class _LectureListScreenState extends State<LectureListScreen> {
       return 'Održano predavanje nije moguće otkazati';
     }
     return null;
+  }
+
+  Widget _buildFilterBar() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        children: [
+          EntityFilterDropdown<LectureStatus?>(
+            label: 'Status',
+            width: 220,
+            outlined: true,
+            value: _selectedStatus,
+            items: [
+              const DropdownMenuItem(value: null, child: Text('Sve')),
+              for (final status in LectureStatus.values)
+                DropdownMenuItem(
+                  value: status,
+                  child: Text(core.lectureStatusLabel(status)),
+                ),
+            ],
+            onChanged: (value) {
+              setState(() => _selectedStatus = value);
+              _listKey.currentState?.refresh(resetPage: true);
+            },
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -148,8 +180,11 @@ class _LectureListScreenState extends State<LectureListScreen> {
             },
           ),
         ],
+        filterBar: _buildFilterBar(),
         fetcher: (page, pageSize, search) => context.read<LectureProvider>().search(pagedQuery(page, pageSize, search, searchField: 'name', filters: {
           'courseId': widget.courseId,
+          if (_selectedStatus != null)
+            'lectureStatus': _selectedStatus!.toJson(),
 })),
         onAdd: () => _openForm(),
         onEdit: (context, item) => _openForm(item),

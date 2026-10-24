@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
 
+import '../../../widgets/entity_filter_dropdown.dart';
 import '../../../widgets/entity_list_screen.dart';
 import 'submission_provider.dart';
 
@@ -31,6 +32,8 @@ class SubmissionListScreen extends StatefulWidget {
 
 class _SubmissionListScreenState extends State<SubmissionListScreen> {
   final _listKey = GlobalKey<EntityListScreenState<AssignmentSubmissionDto>>();
+
+  bool? _isGraded;
 
   Future<void> _openGradeDialog(AssignmentSubmissionDto item) async {
     final controller = TextEditingController(
@@ -132,6 +135,31 @@ class _SubmissionListScreenState extends State<SubmissionListScreen> {
     }
   }
 
+  Widget _buildFilterBar() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        children: [
+          EntityFilterDropdown<bool?>(
+            label: 'Ocjenjivanje',
+            width: 220,
+            outlined: true,
+            value: _isGraded,
+            items: const [
+              DropdownMenuItem(value: null, child: Text('Sve')),
+              DropdownMenuItem(value: true, child: Text('Ocijenjeno')),
+              DropdownMenuItem(value: false, child: Text('Neocijenjeno')),
+            ],
+            onChanged: (value) {
+              setState(() => _isGraded = value);
+              _listKey.currentState?.refresh(resetPage: true);
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return EntityListScreen<AssignmentSubmissionDto>(
@@ -140,7 +168,9 @@ class _SubmissionListScreenState extends State<SubmissionListScreen> {
         title: 'Predaje — ${widget.assignmentTitle}',
         presentation: widget.presentation,
         showAddButton: false,
-        showSearchBar: false,
+        showSearchBar: true,
+        searchHint: 'Pretraži po imenu studenta...',
+        filterBar: _buildFilterBar(),
         columns: [
           ColumnSpec<AssignmentSubmissionDto>(
             label: 'Student',
@@ -163,7 +193,15 @@ class _SubmissionListScreenState extends State<SubmissionListScreen> {
                 : null,
           ),
         ],
-        fetcher: (page, pageSize, search) => context.read<SubmissionProvider>().search(pagedQuery(page, pageSize, search)),
+        fetcher: (page, pageSize, search) => context.read<SubmissionProvider>().search(pagedQuery(
+          page,
+          pageSize,
+          search,
+          searchField: 'studentName',
+          filters: {
+            if (_isGraded != null) 'isGraded': _isGraded,
+          },
+        )),
         onEdit: (ctx, item) => _openGradeDialog(item),
         onDelete: null,
       ),
