@@ -19,6 +19,7 @@ Map<String, dynamic> _courseJson({
   int? enrollmentId,
   String? paidUntil,
   bool isFree = false,
+  bool hasEnded = false,
 }) => {
   'id': 2,
   'instructorId': 3,
@@ -36,6 +37,7 @@ Map<String, dynamic> _courseJson({
   'enrollmentId': ?enrollmentId,
   'paidUntil': ?paidUntil,
   'isFree': isFree,
+  'hasEnded': hasEnded,
 };
 
 const _lectureJson = {
@@ -66,6 +68,7 @@ ScriptedClient _client({
   int? enrollmentId,
   bool isFree = false,
   String? coursePaidUntil,
+  bool hasEnded = false,
 }) {
   var status = enrollmentStatus;
   return ScriptedClient((request) {
@@ -85,6 +88,7 @@ ScriptedClient _client({
           enrollmentId: status == 'Active' ? enrollmentId : null,
           paidUntil: coursePaidUntil,
           isFree: isFree,
+          hasEnded: hasEnded,
         );
       case 'GET /api/v1/student/lectures':
         body = _lecturesPage;
@@ -114,6 +118,7 @@ class _Harness {
     int? enrollmentId,
     bool isFree = false,
     String? coursePaidUntil,
+    bool hasEnded = false,
   }) async {
     client = _client(
       enrollmentStatus: enrollmentStatus,
@@ -122,6 +127,7 @@ class _Harness {
       enrollmentId: enrollmentId,
       isFree: isFree,
       coursePaidUntil: coursePaidUntil,
+      hasEnded: hasEnded,
     );
     authState = AuthState(
       baseUrl: 'http://10.0.2.2:5059/api/v1/',
@@ -447,6 +453,24 @@ void main() {
     expect(find.text('Položen'), findsOneWidget);
     expect(
       find.text('Kurs ste završili. Ponovni upis nije moguć.'),
+      findsOneWidget,
+    );
+    final button = tester.widget<FilledButton>(
+      find.widgetWithText(FilledButton, 'Upiši se'),
+    );
+    expect(button.onPressed, isNull);
+  });
+
+  testWidgets('an ended course shows the reason and disables Upiši se', (
+    tester,
+  ) async {
+    final harness = _Harness();
+    await harness.bootstrap(hasEnded: true);
+    await tester.pumpWidget(harness.app());
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('Kurs je završen. Upis više nije moguć.'),
       findsOneWidget,
     );
     final button = tester.widget<FilledButton>(

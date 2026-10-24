@@ -89,6 +89,37 @@ public sealed class InstructorEnrollmentServiceTests
     }
 
     [Fact]
+    public async Task ApproveAsync_Throws_WhenCourseEnded()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var (_, pending) = await AddPendingStudentAsync(harness);
+        harness.Course.UpdateDetails(harness.Course.Name, harness.Course.Description, harness.Course.Price, harness.Course.StartDate, Now.AddDays(-1));
+        await harness.Context.SaveChangesAsync();
+        var service = CreateService(harness.Context, harness.Instructor);
+
+        var ex = await Assert.ThrowsAsync<BusinessException>(() => service.ApproveAsync(harness.Course.Id, pending.Id));
+
+        Assert.Equal(Messages.CourseEnded, ex.Message);
+        var stored = await harness.Context.Set<Enrollment>().SingleAsync(e => e.Id == pending.Id);
+        Assert.Equal(EnrollmentStatus.Pending, stored.EnrollmentStatus);
+        Assert.Empty(await harness.Context.Set<NotificationOutbox>().ToListAsync());
+    }
+
+    [Fact]
+    public async Task RejectAsync_StillRejects_WhenCourseEnded()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var (_, pending) = await AddPendingStudentAsync(harness);
+        harness.Course.UpdateDetails(harness.Course.Name, harness.Course.Description, harness.Course.Price, harness.Course.StartDate, Now.AddDays(-1));
+        await harness.Context.SaveChangesAsync();
+        var service = CreateService(harness.Context, harness.Instructor);
+
+        var dto = await service.RejectAsync(harness.Course.Id, pending.Id, new EnrollmentRejectRequest { Reason = "Kurs je završen" });
+
+        Assert.Equal(EnrollmentStatus.Rejected, dto.EnrollmentStatus);
+    }
+
+    [Fact]
     public async Task RejectAsync_Throws_WithoutReason()
     {
         var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);

@@ -87,6 +87,19 @@ void main() {
     });
   });
 
+  group('CourseDto.hasEnded', () {
+    test('missing key defaults to false', () {
+      final dto = CourseDto.fromJson({'id': 1, 'name': 'n'});
+      expect(dto.hasEnded, isFalse);
+    });
+
+    test('true parses as true', () {
+      final dto =
+          CourseDto.fromJson({'id': 1, 'name': 'n', 'hasEnded': true});
+      expect(dto.hasEnded, isTrue);
+    });
+  });
+
   group('CourseDto imagePath', () {
     test('fromJson parses the server-computed default image', () {
       final dto = CourseDto.fromJson({

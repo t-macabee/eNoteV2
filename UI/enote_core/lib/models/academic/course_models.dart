@@ -13,6 +13,7 @@ class CourseDto {
   final int enrolledCount;
   final String? instructorName;
   final bool isEnrolled;
+  final bool hasEnded;
   final int? enrollmentId;
   final DateTime? paidUntil;
   final EnrollmentStatus? enrollmentStatus;
@@ -32,6 +33,7 @@ class CourseDto {
     required this.enrolledCount,
     this.instructorName,
     this.isEnrolled = false,
+    this.hasEnded = false,
     this.enrollmentId,
     this.paidUntil,
     this.enrollmentStatus,
@@ -53,6 +55,7 @@ class CourseDto {
       enrolledCount: json['enrolledCount'] as int? ?? 0,
       instructorName: json['instructorName'] as String?,
       isEnrolled: json['isEnrolled'] as bool? ?? false,
+      hasEnded: json['hasEnded'] as bool? ?? false,
       enrollmentId: json['enrollmentId'] as int?,
       paidUntil: parseDate(json['paidUntil']),
       enrollmentStatus: json['enrollmentStatus'] == null
@@ -76,6 +79,7 @@ class CourseDto {
     'enrolledCount': enrolledCount,
     if (instructorName != null) 'instructorName': instructorName,
     if (isEnrolled) 'isEnrolled': isEnrolled,
+    if (hasEnded) 'hasEnded': hasEnded,
     if (enrollmentId != null) 'enrollmentId': enrollmentId,
     if (paidUntil != null) 'paidUntil': paidUntil!.toIso8601String(),
     if (enrollmentStatus != null) 'enrollmentStatus': enrollmentStatus!.toJson(),

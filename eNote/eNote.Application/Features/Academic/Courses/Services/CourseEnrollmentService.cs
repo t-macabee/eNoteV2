@@ -20,10 +20,15 @@ public sealed class CourseEnrollmentService(
             throw new BusinessException(Messages.MembershipInactive);
         }
 
-        _ = await context.Set<Course>()
+        var course = await context.Set<Course>()
             .AsNoTracking()
             .FirstOrDefaultAsync(c => c.Id == courseId && c.IsPublished, cancellationToken)
             ?? throw new NotFoundException(Messages.CourseNotFound);
+
+        if (course.HasEnded(clock.UtcNow))
+        {
+            throw new BusinessException(Messages.CourseEnded);
+        }
 
         var enrollment = await context.Set<Enrollment>()
             .FirstOrDefaultAsync(e => e.StudentId == student.Id && e.CourseId == courseId, cancellationToken);

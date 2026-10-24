@@ -48,7 +48,10 @@ public sealed class Course : AuditableEntity
     }
 
     /// <summary>The course is open for the whole end day.</summary>
-    public bool HasEnded(DateTime utcNow) => EndDate.HasValue && EndDate.Value.Date < utcNow.Date;
+    public bool HasEnded(DateTime utcNow) => HasEndedOn(EndDate, utcNow);
+
+    public static bool HasEndedOn(DateTime? endDate, DateTime utcNow) =>
+        endDate.HasValue && endDate.Value.Date < utcNow.Date;
 
     public void SoftDelete()
     {

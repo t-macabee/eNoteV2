@@ -55,6 +55,51 @@ public sealed class CourseServiceTests
     }
 
     [Fact]
+    public async Task GetByIdForStudentAsync_SetsHasEnded_AfterTheEndDate()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        harness.Course.UpdateDetails(harness.Course.Name, harness.Course.Description, harness.Course.Price, harness.Course.StartDate, Now.AddDays(-1));
+        await harness.Context.SaveChangesAsync();
+        var actor = new StubCurrentActor(student: harness.Student);
+        var service = CreateService(harness.Context, harness.Instructor, actor);
+
+        var dto = await service.GetByIdForStudentAsync(harness.Course.Id);
+
+        Assert.True(dto.HasEnded);
+    }
+
+    [Fact]
+    public async Task GetByIdForStudentAsync_HasEndedIsFalse_OnTheEndDay()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        harness.Course.UpdateDetails(harness.Course.Name, harness.Course.Description, harness.Course.Price, harness.Course.StartDate, Now.Date);
+        await harness.Context.SaveChangesAsync();
+        var actor = new StubCurrentActor(student: harness.Student);
+        var service = CreateService(harness.Context, harness.Instructor, actor);
+
+        var dto = await service.GetByIdForStudentAsync(harness.Course.Id);
+
+        Assert.False(dto.HasEnded);
+    }
+
+    [Fact]
+    public async Task GetPagedForStudentAsync_SetsHasEnded()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var endedCourse = new Course("Ended", null, 50m, Now.AddMonths(-2), Now.AddDays(-1), harness.Instructor.Id);
+        endedCourse.SetPublishedStatus(true);
+        harness.Context.Set<Course>().Add(endedCourse);
+        await harness.Context.SaveChangesAsync();
+        var actor = new StubCurrentActor(student: harness.Student);
+        var service = CreateService(harness.Context, harness.Instructor, actor);
+
+        var result = await service.GetPagedForStudentAsync(new CourseSearchObject());
+
+        Assert.True(result.Items.Single(c => c.Id == endedCourse.Id).HasEnded);
+        Assert.False(result.Items.Single(c => c.Id == harness.Course.Id).HasEnded);
+    }
+
+    [Fact]
     public async Task GetByIdForStudentAsync_Throws_WhenCourseUnpublishedAndNotEnrolled()
     {
         var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);

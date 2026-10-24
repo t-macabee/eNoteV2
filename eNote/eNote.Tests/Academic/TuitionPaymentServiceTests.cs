@@ -75,6 +75,19 @@ public sealed class TuitionPaymentServiceTests
     }
 
     [Fact]
+    public async Task CreateIntentAsync_OnCourseEndDay_IsStillPayable()
+    {
+        var (context, student, course, enrollment) = await SetupScenarioAsync(price: 100m);
+        course.UpdateDetails(course.Name, course.Description, course.Price, course.StartDate, Now.Date);
+        await context.SaveChangesAsync();
+        var service = CreateService(context, student);
+
+        var result = await service.CreateIntentAsync(enrollment.Id);
+
+        Assert.Equal(10000, result.AmountCents);
+    }
+
+    [Fact]
     public async Task CreateIntentAsync_WrongStudent_Throws_NotFound()
     {
         var (context, _, _, enrollment) = await SetupScenarioAsync(price: 100m);

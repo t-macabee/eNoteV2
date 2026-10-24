@@ -28,7 +28,7 @@ public sealed class TuitionPaymentService(
             throw new BusinessException(Messages.CourseIsFree);
         }
 
-        if (!enrollment.Course.IsPublished || enrollment.Course.EndDate < clock.UtcNow)
+        if (!enrollment.Course.IsPublished || enrollment.Course.HasEnded(clock.UtcNow))
         {
             throw new BusinessException(Messages.CourseNotPayable);
         }

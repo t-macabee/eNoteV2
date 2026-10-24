@@ -64,6 +64,11 @@ public sealed class InstructorEnrollmentService(
             .FirstOrDefaultAsync(e => e.Id == enrollmentId && e.CourseId == courseId, ct)
             ?? throw new NotFoundException(Messages.EnrollmentNotFound);
 
+        if (trigger == EnrollmentTrigger.Approve && enrollment.Course.HasEnded(clock.UtcNow))
+        {
+            throw new BusinessException(Messages.CourseEnded);
+        }
+
         var result = enrollment.Transition(trigger, currentUser.UserId, clock.UtcNow, reason);
 
         if (!result.IsSuccess)

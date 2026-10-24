@@ -237,6 +237,36 @@ public sealed class CourseEnrollmentServiceTests
     }
 
     [Fact]
+    public async Task EnrollAsync_Throws_WhenCourseEnded()
+    {
+        await using var context = CreateContext();
+        var (student, course) = await SeedStudentAndCourseAsync(context, hasActiveMembership: true);
+        course.UpdateDetails(course.Name, course.Description, course.Price, course.StartDate, Now.AddDays(-1));
+        await context.SaveChangesAsync();
+        var service = CreateService(context, student);
+
+        var ex = await Assert.ThrowsAsync<BusinessException>(() => service.EnrollAsync(course.Id));
+
+        Assert.Equal(Messages.CourseEnded, ex.Message);
+        Assert.Empty(context.Set<Enrollment>());
+    }
+
+    [Fact]
+    public async Task EnrollAsync_AllowsRequest_OnCourseEndDay()
+    {
+        await using var context = CreateContext();
+        var (student, course) = await SeedStudentAndCourseAsync(context, hasActiveMembership: true);
+        course.UpdateDetails(course.Name, course.Description, course.Price, course.StartDate, Now.Date);
+        await context.SaveChangesAsync();
+        var service = CreateService(context, student);
+
+        await service.EnrollAsync(course.Id);
+
+        var enrollment = await context.Set<Enrollment>().SingleAsync(x => x.StudentId == student.Id && x.CourseId == course.Id);
+        Assert.Equal(EnrollmentStatus.Pending, enrollment.EnrollmentStatus);
+    }
+
+    [Fact]
     public async Task EnrollAsync_Throws_WhenCourseUnpublished()
     {
         await using var context = CreateContext();

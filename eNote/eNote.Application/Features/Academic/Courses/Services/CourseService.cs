@@ -103,7 +103,7 @@ public sealed class CourseService(IAppDbContext context, IMapper mapper, ICurren
     {
         var studentId = await students.GetCurrentStudentIdAsync(cancellationToken);
 
-        return await context.Set<Course>()
+        var dto = await context.Set<Course>()
             .AsNoTracking()
             .Where(c => c.Id == id &&
                 (c.IsPublished || c.Enrollments.Any(e => e.StudentId == studentId && e.EnrollmentStatus == EnrollmentStatus.Active)))
@@ -138,6 +138,10 @@ public sealed class CourseService(IAppDbContext context, IMapper mapper, ICurren
             })
             .FirstOrDefaultAsync(cancellationToken)
             ?? throw new NotFoundException(Messages.CourseNotFound);
+
+        dto.HasEnded = Course.HasEndedOn(dto.EndDate, clock.UtcNow);
+
+        return dto;
     }
 
     public async Task<PagedResult<CourseDto>> GetPagedForInstructorAsync(CourseSearchObject search, CancellationToken cancellationToken = default)
@@ -244,6 +248,11 @@ public sealed class CourseService(IAppDbContext context, IMapper mapper, ICurren
                     .FirstOrDefault()
             })
             .ToListAsync(cancellationToken);
+
+        foreach (var item in items)
+        {
+            item.HasEnded = Course.HasEndedOn(item.EndDate, clock.UtcNow);
+        }
 
         return new PagedResult<CourseDto>
         {

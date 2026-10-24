@@ -99,6 +99,13 @@ class CourseMasterCard extends StatelessWidget {
               reason: 'Kurs ste završili. Ponovni upis nije moguć.',
             ),
           ],
+          if (course.hasEnded && canRequest) ...[
+            const SizedBox(height: 8),
+            const BlockedReasonBanner(
+              icon: Icons.event_busy,
+              reason: 'Kurs je završen. Upis više nije moguć.',
+            ),
+          ],
           if (membershipBlocked && canRequest) ...[
             const SizedBox(height: 8),
             BlockedReasonBanner(
@@ -131,6 +138,7 @@ class CourseMasterCard extends StatelessWidget {
                   onPressed:
                       (membershipBlocked ||
                           isActing ||
+                          course.hasEnded ||
                           status == EnrollmentStatus.completed)
                       ? null
                       : onEnroll,
