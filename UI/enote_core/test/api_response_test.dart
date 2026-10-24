@@ -47,6 +47,29 @@ void main() {
       );
     });
 
+    test('400 validation response throws with per-field errors', () {
+      final response = http.Response(
+        '{"status": 400, "errors": {"DueAt": ["Rok za predaju mora biti u budućnosti."]}}',
+        400,
+        headers: jsonHeaders,
+      );
+      expect(
+        () => throwIfError(response),
+        throwsA(
+          isA<ApiException>()
+              .having((e) => e.code, 'code', isEmpty)
+              .having(
+                (e) => e.fieldError('DueAt'),
+                'fieldError',
+                'Rok za predaju mora biti u budućnosti.',
+              )
+              .having((e) => e.fieldError('dueat'), 'case-insensitive',
+                  'Rok za predaju mora biti u budućnosti.')
+              .having((e) => e.fieldError('Title'), 'other field', isNull),
+        ),
+      );
+    });
+
     test('404 throws default mapped message', () {
       final response = http.Response('', 404);
       expect(

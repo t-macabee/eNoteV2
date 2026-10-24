@@ -123,6 +123,7 @@ public static class Messages
     public const string MembershipWarningRecentlySent = "Upozorenje je već poslano u posljednja 24 sata.";
     public const string MembershipWarningMessageTooLong = "Poruka ne smije biti duža od 500 karaktera.";
     public const string AssignmentPastDue = "Rok za predaju zadatka je istekao.";
+    public const string AssignmentDueAtMustBeFuture = "Rok za predaju mora biti u budućnosti.";
 
     public const string AddressNotFound = "Adresa nije pronađena.";
     public const string CityNotFound = "Grad nije pronađen.";

@@ -31,7 +31,7 @@ public sealed class AssignmentController(AssignmentService service) : CoreContro
     [Authorize(Roles = AppRoles.Instructor)]
     [HttpPost("~/api/v{version:apiVersion}/instructor/lectures/{lectureId:int}/assignments")]
     [ProducesResponseType(typeof(AssignmentDto), StatusCodes.Status201Created)]
-    public async Task<ActionResult<AssignmentDto>> Create(int lectureId, [FromBody] AssignmentRequest request, CancellationToken cancellationToken)
+    public async Task<ActionResult<AssignmentDto>> Create(int lectureId, [FromBody] AssignmentCreateRequest request, CancellationToken cancellationToken)
     {
         var dto = await service.CreateAsync(lectureId, request, cancellationToken);
         return CreatedAtAction(nameof(GetByIdForInstructor), new { lectureId, assignmentId = dto.Id }, dto);

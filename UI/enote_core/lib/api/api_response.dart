@@ -7,9 +7,11 @@ import 'api_exception.dart';
 
 void throwIfError(http.Response response) {
   if (response.statusCode >= 400) {
+    final error = ApiError.fromResponseBody(response.body);
     throw ApiException(
       ApiErrorMapper.mapError(response.statusCode, response.body),
-      code: ApiError.fromResponseBody(response.body).code,
+      code: error.code,
+      errors: error.errors,
     );
   }
 }

@@ -29,7 +29,9 @@ class _AssignmentFormScreenState extends State<AssignmentFormScreen>
     with FormControllerLifecycle {
   late final _titleController = textController();
   late final _descriptionController = textController();
+  final _dueAtFieldKey = GlobalKey<FormFieldState<DateTime?>>();
   DateTime? _dueAt;
+  String? _dueAtError;
 
   bool get _isEditMode => widget.existing != null;
 
@@ -57,7 +59,15 @@ class _AssignmentFormScreenState extends State<AssignmentFormScreen>
       dueAt: _dueAt!,
     );
 
-    await provider.save(id: widget.existing?.id, request: request.toJson());
+    try {
+      await provider.save(id: widget.existing?.id, request: request.toJson());
+    } on ApiException catch (e) {
+      final dueAtError = _isEditMode ? null : e.fieldError('DueAt');
+      if (dueAtError == null) rethrow;
+      setState(() => _dueAtError = dueAtError);
+      _dueAtFieldKey.currentState?.validate();
+      return false;
+    }
     return true;
   }
 
@@ -78,16 +88,31 @@ class _AssignmentFormScreenState extends State<AssignmentFormScreen>
           minLines: 3,
         ),
         DateTimeField(
+          key: _dueAtFieldKey,
           labelText: 'Rok',
           initialValue: _dueAt,
-          validator: (value) => value == null ? 'Rok je obavezan.' : null,
-          onChanged: (value) => setState(() => _dueAt = value),
+          firstDate: _isEditMode ? null : DateTime.now(),
+          autovalidateMode: AutovalidateMode.onUserInteraction,
+          validator: (value) {
+            if (value == null) return 'Rok je obavezan.';
+            if (!_isEditMode && !value.isAfter(DateTime.now())) {
+              return 'Rok za predaju mora biti u budućnosti.';
+            }
+            return _dueAtError;
+          },
+          onChanged: (value) => setState(() {
+            _dueAt = value;
+            _dueAtError = null;
+          }),
         ),
       ],
       onSave: _save,
       onReset: () {
         clearTextControllers();
-        setState(() => _dueAt = null);
+        setState(() {
+          _dueAt = null;
+          _dueAtError = null;
+        });
       },
     );
   }

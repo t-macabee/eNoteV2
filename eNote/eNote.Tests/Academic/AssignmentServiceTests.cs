@@ -16,7 +16,7 @@ public sealed class AssignmentServiceTests
         var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
         var service = AcademicTestData.CreateService<AssignmentService>(harness.Context, harness.Instructor);
 
-        var dto = await service.CreateAsync(harness.Lecture.Id, new AssignmentRequest
+        var dto = await service.CreateAsync(harness.Lecture.Id, new AssignmentCreateRequest
         {
             Title = "Homework 1",
             Description = "Do the exercises",
@@ -37,7 +37,7 @@ public sealed class AssignmentServiceTests
         var service = AcademicTestData.CreateService<AssignmentService>(harness.Context, otherInstructor);
 
         await Assert.ThrowsAsync<AuthorizationException>(() =>
-            service.CreateAsync(harness.Lecture.Id, new AssignmentRequest
+            service.CreateAsync(harness.Lecture.Id, new AssignmentCreateRequest
             {
                 Title = "Homework",
                 Description = "Desc",

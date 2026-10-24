@@ -24,7 +24,7 @@ public sealed class AssignmentService(
     public async Task<AssignmentDto> GetByIdForInstructorAsync(int lectureId, int assignmentId, CancellationToken cancellationToken = default) =>
         mapper.Map<AssignmentDto>(await GetOwnedAssignmentAsync(lectureId, assignmentId, cancellationToken: cancellationToken));
 
-    public async Task<AssignmentDto> CreateAsync(int lectureId, AssignmentRequest request, CancellationToken cancellationToken = default)
+    public async Task<AssignmentDto> CreateAsync(int lectureId, AssignmentCreateRequest request, CancellationToken cancellationToken = default)
     {
         var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId, cancellationToken);
         await instructorAccess.EnsureOwnsLectureAsync(lectureId, instructorId, cancellationToken);
