@@ -44,8 +44,7 @@ class _TuitionPaymentScreenState extends State<TuitionPaymentScreen> {
     _flow = PaymentFlowController(
       gateway: widget.gateway,
       isConfigured: widget.stripePublishableKey.isNotEmpty,
-      createIntent: () async =>
-          (await _payments.createIntent(widget.enrollmentId)).clientSecret,
+      createIntent: () => _payments.createIntent(widget.enrollmentId),
       status: () => _payments.status(widget.enrollmentId),
       pollUntilSucceeded: () =>
           _payments.pollUntilSucceeded(widget.enrollmentId),
@@ -60,15 +59,17 @@ class _TuitionPaymentScreenState extends State<TuitionPaymentScreen> {
 
   Future<void> _pay() async {
     if (_flow.isBusy) return;
+    final intent = await _flow.prepare();
+    if (intent == null || !mounted) return;
     final confirmed = await confirmDialog(
       context: context,
       title: 'Potvrda plaćanja',
       message:
-          'Platiti ${formatKM(widget.price)} za kurs "${widget.courseName}" '
+          'Platiti ${intent.amountLabel} za kurs "${widget.courseName}" '
           'putem Stripe-a?',
     );
     if (confirmed != true || !mounted) return;
-    await _flow.attempt();
+    await _flow.confirmAndPresent();
   }
 
   void _backToCourse() {
@@ -91,15 +92,16 @@ class _TuitionPaymentScreenState extends State<TuitionPaymentScreen> {
   }
 
   Widget _review() {
+    final amountLabel = _flow.prepared?.amountLabel ?? formatKM(widget.price);
     return PaymentReview(
-      amount: widget.price,
+      amountLabel: amountLabel,
       onPay: _pay,
       isBusy: _flow.isBusy,
       isConfigured: _flow.isConfigured,
       children: [
         Text(widget.courseName, style: Theme.of(context).textTheme.titleLarge),
         const SizedBox(height: 16),
-        LabeledValue(label: 'Iznos', value: formatKM(widget.price)),
+        LabeledValue(label: 'Iznos', value: amountLabel),
         const LabeledValue(label: 'Trajanje pristupa', value: '30 dana'),
       ],
     );

@@ -145,14 +145,22 @@ Future<_Harness> _pumpPay(
   return harness;
 }
 
-Future<void> _confirmPay(WidgetTester tester) async {
+Future<void> _tapPay(WidgetTester tester) async {
   await tester.tap(find.text('Plati 800.00 KM'));
   await tester.pumpAndSettle();
-  expect(find.textContaining('Potvrda plaćanja'), findsOneWidget);
+}
+
+Future<void> _tapConfirm(WidgetTester tester) async {
   await tester.tap(find.text('Potvrdi'));
   await tester.pump();
   await tester.pump();
   await tester.pump();
+}
+
+Future<void> _confirmPay(WidgetTester tester) async {
+  await _tapPay(tester);
+  expect(find.textContaining('Potvrda plaćanja'), findsOneWidget);
+  await _tapConfirm(tester);
 }
 
 void main() {
@@ -306,6 +314,83 @@ void main() {
     expect(StripeRedirect.handler, isNull);
   });
 
+  testWidgets('the review, the confirmation and the button use the intent amount', (
+    tester,
+  ) async {
+    final client = _TuitionStubClient(
+      intents: [
+        (
+          status: 200,
+          body: {..._intent, 'amountCents': 90000},
+        ),
+      ],
+    );
+    final gateway = FakePaymentSheetGateway();
+    await _pumpPay(tester, client, gateway);
+
+    expect(find.text('Plati 800.00 KM'), findsOneWidget);
+
+    await _tapPay(tester);
+
+    expect(client.createCalls, 1);
+    expect(gateway.presentCalls, 0);
+    expect(find.text('Plati 900.00 KM'), findsOneWidget);
+    expect(find.text('900.00 KM'), findsWidgets);
+    expect(find.text('800.00 KM'), findsNothing);
+    expect(
+      find.text(
+        'Platiti 900.00 KM za kurs "Osnove teorije muzike" putem Stripe-a?',
+      ),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('a failure sends the student back through the review', (
+    tester,
+  ) async {
+    final client = _TuitionStubClient(
+      intents: [
+        (status: 200, body: _intent),
+        (
+          status: 200,
+          body: {..._intent, 'amountCents': 90000},
+        ),
+      ],
+      payments: [(status: 200, body: _payment('Failed'))],
+    );
+    final gateway = FakePaymentSheetGateway()
+      ..queuePresent(PaymentSheetCancelled());
+    await _pumpPay(tester, client, gateway);
+
+    await _confirmPay(tester);
+    expect(find.text('Plaćanje nije dovršeno'), findsOneWidget);
+    expect(find.text('Pokušaj ponovo'), findsOneWidget);
+
+    await tester.tap(find.text('Pokušaj ponovo'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Plati 800.00 KM'), findsOneWidget);
+    expect(client.createCalls, 1);
+
+    await _tapPay(tester);
+
+    expect(client.createCalls, 2);
+    expect(gateway.presentCalls, 1);
+    expect(
+      find.text(
+        'Platiti 900.00 KM za kurs "Osnove teorije muzike" putem Stripe-a?',
+      ),
+      findsOneWidget,
+    );
+
+    await _tapConfirm(tester);
+    expect(find.text('Provjeravamo status plaćanja…'), findsOneWidget);
+
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pumpAndSettle();
+    expect(find.text('Plaćanje uspješno'), findsOneWidget);
+  });
+
   testWidgets('a server refusal renders verbatim in E', (tester) async {
     final gateway = FakePaymentSheetGateway();
     await _pumpPay(
@@ -318,8 +403,9 @@ void main() {
       gateway,
     );
 
-    await _confirmPay(tester);
+    await _tapPay(tester);
 
+    expect(find.textContaining('Potvrda plaćanja'), findsNothing);
     expect(find.text('Plaćanje nije dovršeno'), findsOneWidget);
     expect(find.text('Kurs je besplatan.'), findsOneWidget);
     expect(gateway.presentCalls, 0);

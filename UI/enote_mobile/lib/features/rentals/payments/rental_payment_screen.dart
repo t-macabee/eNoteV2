@@ -46,8 +46,7 @@ class _RentalPaymentScreenState extends State<RentalPaymentScreen> {
     _flow = PaymentFlowController(
       gateway: widget.gateway,
       isConfigured: widget.stripePublishableKey.isNotEmpty,
-      createIntent: () async =>
-          (await _payments.createIntent(widget.rentalId)).clientSecret,
+      createIntent: () => _payments.createIntent(widget.rentalId),
       status: () => _payments.status(widget.rentalId),
       pollUntilSucceeded: () => _payments.pollUntilSucceeded(widget.rentalId),
     );
@@ -86,14 +85,16 @@ class _RentalPaymentScreenState extends State<RentalPaymentScreen> {
   Future<void> _pay() async {
     final rental = _rental;
     if (rental == null || _flow.isBusy) return;
+    final intent = await _flow.prepare();
+    if (intent == null || !mounted) return;
     final confirmed = await confirmDialog(
       context: context,
       title: 'Potvrda plaćanja',
       message:
-          'Platiti ${formatKM(rental.totalFee)} za ${rental.instrumentModel} putem Stripe-a?',
+          'Platiti ${intent.amountLabel} za ${rental.instrumentModel} putem Stripe-a?',
     );
     if (confirmed != true || !mounted) return;
-    await _flow.attempt();
+    await _flow.confirmAndPresent();
   }
 
   void _backToRental() {
@@ -146,8 +147,9 @@ class _RentalPaymentScreenState extends State<RentalPaymentScreen> {
   }
 
   Widget _review(InstrumentRentalDto rental) {
+    final amountLabel = _flow.prepared?.amountLabel ?? formatKM(rental.totalFee);
     return PaymentReview(
-      amount: rental.totalFee,
+      amountLabel: amountLabel,
       onPay: _pay,
       isBusy: _flow.isBusy,
       isConfigured: _flow.isConfigured,
@@ -181,7 +183,7 @@ class _RentalPaymentScreenState extends State<RentalPaymentScreen> {
           ],
         ),
         const SizedBox(height: 16),
-        LabeledValue(label: 'Iznos', value: formatKM(rental.totalFee)),
+        LabeledValue(label: 'Iznos', value: amountLabel),
         LabeledValue(label: 'Obračun', value: rental.chargeLabel),
       ],
     );

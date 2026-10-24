@@ -85,7 +85,7 @@ class PaymentFlowBody extends StatelessWidget {
         state: PaymentFlowState.failed,
         detail: controller.failureMessage,
         retryLabel: 'Pokušaj ponovo',
-        onRetry: controller.isBusy ? null : controller.attempt,
+        onRetry: controller.isBusy ? null : controller.retry,
         isBusy: controller.isBusy,
         cancelLabel: 'Odustani',
         onCancel: () => Navigator.of(context).maybePop(),

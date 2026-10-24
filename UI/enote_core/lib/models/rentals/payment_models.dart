@@ -1,4 +1,5 @@
 import 'package:enote_core/models/shared/enums.dart';
+import 'package:enote_core/models/shared/payment_intent_draft.dart';
 import 'package:enote_core/models/shared/payment_record.dart';
 import '../../formatting/formatters.dart';
 
@@ -45,11 +46,14 @@ class RentalPaymentDto implements PaymentRecord {
 
 }
 
-class CreatePaymentIntentResponse {
+class CreatePaymentIntentResponse with PaymentIntentDraft {
   final int rentalId;
   final String paymentIntentId;
+  @override
   final String clientSecret;
+  @override
   final int amountCents;
+  @override
   final String currency;
   final PaymentStatus status;
 

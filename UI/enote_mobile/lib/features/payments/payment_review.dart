@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 
-import 'package:enote_core/enote_core.dart';
-
 import '../../theme/app_theme.dart';
 
 class PaymentReview extends StatelessWidget {
-  final double? amount;
+  final String amountLabel;
   final VoidCallback onPay;
   final bool isBusy;
 
@@ -14,7 +12,7 @@ class PaymentReview extends StatelessWidget {
 
   const PaymentReview({
     super.key,
-    required this.amount,
+    required this.amountLabel,
     required this.onPay,
     required this.isBusy,
     required this.isConfigured,
@@ -59,7 +57,7 @@ class PaymentReview extends StatelessWidget {
                   height: 20,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
-              : Text('Plati ${formatKM(amount)}'),
+              : Text('Plati $amountLabel'),
         ),
       ],
     );

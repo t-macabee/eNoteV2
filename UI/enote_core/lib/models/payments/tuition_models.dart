@@ -1,12 +1,16 @@
 import 'package:enote_core/models/shared/enums.dart';
+import 'package:enote_core/models/shared/payment_intent_draft.dart';
 import 'package:enote_core/models/shared/payment_record.dart';
 import '../../formatting/formatters.dart';
 
-class CreateTuitionIntentResponse {
+class CreateTuitionIntentResponse with PaymentIntentDraft {
   final int enrollmentId;
   final String paymentIntentId;
+  @override
   final String clientSecret;
+  @override
   final int amountCents;
+  @override
   final String currency;
   final PaymentStatus status;
 

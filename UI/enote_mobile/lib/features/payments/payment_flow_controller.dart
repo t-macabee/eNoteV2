@@ -15,7 +15,7 @@ class PaymentFlowController extends ChangeNotifier {
 
   final PaymentSheetGateway gateway;
   final bool isConfigured;
-  final Future<String> Function() createIntent;
+  final Future<PaymentIntentDraft> Function() createIntent;
   final Future<PaymentRecord?> Function() status;
 
   final Future<PaymentRecord?> Function() pollUntilSucceeded;
@@ -35,6 +35,7 @@ class PaymentFlowController extends ChangeNotifier {
   bool isBusy = false;
   bool isPolling = false;
   PaymentRecord? payment;
+  PaymentIntentDraft? prepared;
 
   final VoidCallback? _previousRedirectHandler;
   bool _disposed = false;
@@ -52,18 +53,38 @@ class PaymentFlowController extends ChangeNotifier {
     if (!_disposed) notifyListeners();
   }
 
-  Future<void> attempt() async {
-    if (isBusy) return;
+  Future<PaymentIntentDraft?> prepare() async {
+    if (isBusy) return null;
+    prepared = null;
+    if (!isConfigured) {
+      view = PaymentView.failed;
+      failureMessage = _unavailableMessage;
+      _notify();
+      return null;
+    }
     isBusy = true;
     _notify();
     try {
-      if (!isConfigured) {
-        view = PaymentView.failed;
-        failureMessage = _unavailableMessage;
-        return;
-      }
-      final clientSecret = await createIntent();
-      await gateway.init(clientSecret);
+      final intent = await createIntent();
+      prepared = intent;
+      return intent;
+    } catch (e) {
+      view = PaymentView.failed;
+      failureMessage = userMessage(e);
+      return null;
+    } finally {
+      isBusy = false;
+      _notify();
+    }
+  }
+
+  Future<void> confirmAndPresent() async {
+    final intent = prepared;
+    if (intent == null || isBusy) return;
+    isBusy = true;
+    _notify();
+    try {
+      await gateway.init(intent.clientSecret);
       await gateway.present();
     } on PaymentSheetCancelled {
       var message = _cancelledMessage;
@@ -93,6 +114,14 @@ class PaymentFlowController extends ChangeNotifier {
     failureMessage = null;
     _notify();
     await poll();
+  }
+
+  void retry() {
+    if (isBusy) return;
+    prepared = null;
+    failureMessage = null;
+    view = PaymentView.review;
+    _notify();
   }
 
   void recheck() {
