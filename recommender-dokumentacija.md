@@ -49,6 +49,28 @@ vrsti ispadali iz preporuka.
 Instrumenti koje student trenutno drži u najmu (status `Approved` ili `Active`)
 izbacuju se iz rezultata.
 
+## Kandidati za preporuku
+
+Skup kandidata se gradi u metodi `LoadCandidateInstrumentsAsync`, prije računanja
+skora. Veličina skupa je `poolSize = max(count * 12, CandidatePoolSize)`, dakle 80
+za podrazumijevanih pet preporuka.
+
+| Izvor kandidata | Odakle se uzima | Koliko ulazi |
+|---|---|---|
+| Preferirane vrste | aktivni instrumenti vrsta iz historije najma studenta, po id-u | do `poolSize / 2` |
+| Pregledi | `InstrumentView` tog korisnika, po broju pregleda opadajuće pa po id-u | do `poolSize / 4` |
+| Kolaborativni | instrumenti studenata sa sličnim izborima najma | svi, po broju zajedničkih najmova |
+| Popularni | instrumenti sa najviše najmova ukupno | do `poolSize / 2` |
+
+Redoslijed je važan. Identifikatori se spajaju upravo tim redom (preferirane vrste,
+pregledi, kolaborativni, popularni), duplikati se uklanjaju i zadržava se prvih
+`poolSize`. Zato `Take(poolSize)` ne može odsjeći instrument koji je student
+pregledao: pregledani instrument ulazi u kandidate i kada nije ni preferirane vrste,
+ni kolaborativni, ni popularan. Prije odsijecanja izbacuju se neaktivni instrumenti,
+a ako kandidata ima manje od traženog broja `count`, skup se dopunjava aktivnim
+instrumentima po id-u. Na kraju se izbacuju instrumenti koje student trenutno drži
+u najmu.
+
 ## Objašnjive preporuke
 
 Svaka preporuka nosi listu razloga na bosanskom. Razlozi se grade u metodi
@@ -99,11 +121,11 @@ ne koriste.
 
 `eNote/eNote.Application/Features/Rentals/Recommendations/Services/RecommendationService.cs`
 
-Petlja koja računa četiri signala i ukupni skor (linije 88–103):
+Petlja koja računa četiri signala i ukupni skor (linije 98–111):
 
 ![Računanje skora](docs/recommender/kod-skor.png)
 
-Metoda BuildReasons, koja gradi objašnjenja (linije 315–350):
+Metoda BuildReasons, koja gradi objašnjenja (linije 341–376):
 
 ![Razlozi preporuke](docs/recommender/kod-razlozi.png)
 

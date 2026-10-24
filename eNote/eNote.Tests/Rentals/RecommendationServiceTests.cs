@@ -234,9 +234,6 @@ public sealed class RecommendationServiceTests
         rentals.Add(CreateCompletedRental(lowCountInstrument.Id, similarStudentId, store.Id, Now.AddDays(-70)));
 
         context.Set<InstrumentRental>().AddRange(rentals);
-        context.Set<InstrumentView>().AddRange(
-            new InstrumentView(student.AppUserId, highCountInstrument.Id, Now.AddDays(-5)),
-            new InstrumentView(student.AppUserId, lowCountInstrument.Id, Now.AddDays(-5)));
         await context.SaveChangesAsync();
 
         var service = CreateService(context, student);
@@ -246,6 +243,57 @@ public sealed class RecommendationServiceTests
         var resultIds = result.Select(r => r.Instrument.Id).ToHashSet();
         Assert.Contains(highCountInstrument.Id, resultIds);
         Assert.DoesNotContain(lowCountInstrument.Id, resultIds);
+    }
+
+    [Fact]
+    public async Task GetRecommendedInstrumentsAsync_ViewedInstrument_IsCandidateOutsidePreferredTypesCollaborativeAndPopular()
+    {
+        await using var context = RentalTestData.CreateContext(Now);
+        var student = await SeedStudentAsync(context);
+        var (typeA, typeB) = await SeedTwoTypesAsync(context);
+        var store = await SeedStoreAsync(context);
+
+        var ownInstrument = new Instrument("Own", "YAM", null, null, typeA.Id, store.Id);
+        context.Set<Instrument>().Add(ownInstrument);
+        await context.SaveChangesAsync();
+
+        context.Set<InstrumentRental>().Add(CreateCompletedRental(ownInstrument.Id, student.Id, store.Id, Now.AddDays(-90)));
+
+        var rentedByOthers = new List<Instrument>();
+        for (var i = 0; i < 40; i++)
+        {
+            rentedByOthers.Add(new Instrument($"Other{i}", "ROL", null, null, typeB.Id, store.Id));
+        }
+
+        context.Set<Instrument>().AddRange(rentedByOthers);
+        await context.SaveChangesAsync();
+
+        var similarStudentId = 400;
+        foreach (var instrument in rentedByOthers)
+        {
+            context.Set<InstrumentRental>().Add(CreateCompletedRental(instrument.Id, similarStudentId, store.Id, Now.AddDays(-70)));
+            similarStudentId++;
+        }
+
+        var viewedInstrument = new Instrument("Viewed", "ROL", null, null, typeB.Id, store.Id);
+        context.Set<Instrument>().Add(viewedInstrument);
+        await context.SaveChangesAsync();
+
+        var view = new InstrumentView(student.AppUserId, viewedInstrument.Id, Now.AddDays(-5));
+        for (var i = 0; i < 4; i++)
+        {
+            view.RecordView(Now.AddDays(-5 + i));
+        }
+
+        context.Set<InstrumentView>().Add(view);
+        await context.SaveChangesAsync();
+
+        var service = CreateService(context, student);
+
+        var result = await service.GetRecommendedInstrumentsAsync();
+
+        var recommendation = Assert.Single(result, r => r.Instrument.Id == viewedInstrument.Id);
+        Assert.Contains(recommendation.Reasons, r => r.Contains("Pregledali ste"));
     }
 
     [Fact]

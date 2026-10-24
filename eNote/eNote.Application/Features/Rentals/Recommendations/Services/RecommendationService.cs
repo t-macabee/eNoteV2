@@ -83,7 +83,7 @@ public sealed class RecommendationService(IAppDbContext context, IMapper mapper,
             .Select(x => x.InstrumentId)];
 
         var candidates = await LoadCandidateInstrumentsAsync(
-            preferredTypeIds, collaborativeInstrumentIds, count, globalRentalCounts, cancellationToken);
+            preferredTypeIds, collaborativeInstrumentIds, viewMap, count, globalRentalCounts, cancellationToken);
 
         if (activelyRentedIds.Count > 0)
             candidates = candidates.Where(x => !activelyRentedIds.Contains(x.Instrument.Id)).ToList();
@@ -164,9 +164,16 @@ public sealed class RecommendationService(IAppDbContext context, IMapper mapper,
         }
     }
 
-    private async Task<List<CandidateInstrument>> LoadCandidateInstrumentsAsync(IReadOnlyList<int> preferredTypeIds, IReadOnlyList<int> collaborativeInstrumentIds, int count, Dictionary<int, int> globalRentalCounts, CancellationToken cancellationToken)
+    private async Task<List<CandidateInstrument>> LoadCandidateInstrumentsAsync(IReadOnlyList<int> preferredTypeIds, IReadOnlyList<int> collaborativeInstrumentIds, Dictionary<int, InstrumentViewSnapshot> viewMap, int count, Dictionary<int, int> globalRentalCounts, CancellationToken cancellationToken)
     {
         var poolSize = Math.Max(count * 12, CandidatePoolSize);
+
+        var viewedIds = viewMap
+            .OrderByDescending(x => x.Value.ViewCount)
+            .ThenBy(x => x.Key)
+            .Select(x => x.Key)
+            .Take(poolSize / 4)
+            .ToList();
 
         var popularIds = globalRentalCounts
             .OrderByDescending(x => x.Value)
@@ -184,6 +191,7 @@ public sealed class RecommendationService(IAppDbContext context, IMapper mapper,
                 .ToListAsync(cancellationToken);
 
         var mergedIds = preferredIds
+            .Concat(viewedIds)
             .Concat(collaborativeInstrumentIds)
             .Concat(popularIds)
             .Distinct()
