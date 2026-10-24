@@ -101,7 +101,7 @@ public sealed class TuitionPaymentServiceTests
     }
 
     [Fact]
-    public async Task CreateIntentAsync_ReusesRequiresActionIntent_Within30Minutes()
+    public async Task CreateIntentAsync_ReusesOpenIntent()
     {
         var (context, student, _, enrollment) = await SetupScenarioAsync(price: 100m);
         var gateway = new FakePaymentGateway();
@@ -119,7 +119,7 @@ public sealed class TuitionPaymentServiceTests
     }
 
     [Fact]
-    public async Task CreateIntentAsync_CreatesNewIntent_After30Minutes()
+    public async Task CreateIntentAsync_ReusesOpenIntent_RegardlessOfAge()
     {
         var (context, student, _, enrollment) = await SetupScenarioAsync(price: 100m);
         var gateway = new FakePaymentGateway();
@@ -127,17 +127,17 @@ public sealed class TuitionPaymentServiceTests
         var service = CreateService(context, student, gateway, clock);
 
         var first = await service.CreateIntentAsync(enrollment.Id);
-        clock.UtcNow = Now.AddMinutes(31);
+        clock.UtcNow = Now.AddHours(5);
         var second = await service.CreateIntentAsync(enrollment.Id);
 
-        Assert.NotEqual(first.PaymentIntentId, second.PaymentIntentId);
-        Assert.Equal(2, gateway.CreateCalls.Count);
-        Assert.NotEqual(gateway.CreateCalls[0].IdempotencyKey, gateway.CreateCalls[1].IdempotencyKey);
-        Assert.Empty(gateway.RetrieveCalls);
+        Assert.Equal(first.PaymentIntentId, second.PaymentIntentId);
+        Assert.Single(gateway.CreateCalls);
+        Assert.Single(gateway.RetrieveCalls);
+        Assert.Empty(gateway.CancelCalls);
     }
 
     [Fact]
-    public async Task CreateIntentAsync_AfterFailedPayment_CreatesNewIntentWithNewKey()
+    public async Task CreateIntentAsync_AfterFailedPayment_ReusesIntentWhileStripeKeepsItPayable()
     {
         var (context, student, _, enrollment) = await SetupScenarioAsync(price: 100m);
         var gateway = new FakePaymentGateway();
@@ -152,20 +152,88 @@ public sealed class TuitionPaymentServiceTests
         clock.UtcNow = Now.AddMinutes(5);
         var second = await service.CreateIntentAsync(enrollment.Id);
 
-        Assert.NotEqual("pi_test_1", second.PaymentIntentId);
-        Assert.Equal(2, gateway.CreateCalls.Count);
-        Assert.NotEqual(gateway.CreateCalls[0].IdempotencyKey, gateway.CreateCalls[1].IdempotencyKey);
-        Assert.Empty(gateway.RetrieveCalls);
+        Assert.Equal("pi_test_1", second.PaymentIntentId);
+        Assert.Single(gateway.CreateCalls);
+        Assert.Single(gateway.RetrieveCalls);
+        Assert.Empty(gateway.CancelCalls);
     }
 
     [Fact]
-    public async Task CreateIntentAsync_ConcurrentDuplicate_ReturnsExistingIntent()
+    public async Task CreateIntentAsync_CancelsOpenIntentWithOldPrice_AndCreatesNewIntent()
+    {
+        var (context, student, course, enrollment) = await SetupScenarioAsync(price: 100m);
+        var gateway = new FakePaymentGateway();
+        var clock = new MutableClock(Now);
+        var service = CreateService(context, student, gateway, clock);
+
+        var first = await service.CreateIntentAsync(enrollment.Id);
+        course.UpdateDetails(course.Name, course.Description, 120m, course.StartDate, course.EndDate);
+        await context.SaveChangesAsync();
+
+        clock.UtcNow = Now.AddMinutes(5);
+        var second = await service.CreateIntentAsync(enrollment.Id);
+
+        Assert.NotEqual(first.PaymentIntentId, second.PaymentIntentId);
+        Assert.Equal(12000, second.AmountCents);
+        Assert.Equal("bam", second.Currency);
+        Assert.Single(gateway.CancelCalls);
+        Assert.Equal(first.PaymentIntentId, gateway.CancelCalls[0].PaymentIntentId);
+        Assert.Equal(2, gateway.CreateCalls.Count);
+        Assert.Equal(12000, gateway.CreateCalls[1].AmountCents);
+        var oldPayment = await context.Set<CoursePayment>().SingleAsync(p => p.StripePaymentIntentId == first.PaymentIntentId);
+        Assert.Equal(PaymentStatus.Canceled, oldPayment.Status);
+    }
+
+    [Fact]
+    public async Task CreateIntentAsync_CancelsLocallyFailedAttempt_WhenPriceChanged()
+    {
+        var (context, student, course, enrollment) = await SetupScenarioAsync(price: 100m);
+        var gateway = new FakePaymentGateway();
+        var clock = new MutableClock(Now);
+        var service = CreateService(context, student, gateway, clock);
+
+        var first = await service.CreateIntentAsync(enrollment.Id);
+        var payment = context.Set<CoursePayment>().Single();
+        payment.MarkFailed("evt_test_failed");
+        course.UpdateDetails(course.Name, course.Description, 125m, course.StartDate, course.EndDate);
+        await context.SaveChangesAsync();
+
+        clock.UtcNow = Now.AddMinutes(5);
+        var second = await service.CreateIntentAsync(enrollment.Id);
+
+        Assert.Equal(first.PaymentIntentId, gateway.CancelCalls[0].PaymentIntentId);
+        Assert.Equal("canceled", (await gateway.RetrievePaymentIntentAsync(first.PaymentIntentId)).Status);
+        Assert.Equal(12500, second.AmountCents);
+        var oldPayment = await context.Set<CoursePayment>().SingleAsync(p => p.StripePaymentIntentId == first.PaymentIntentId);
+        Assert.Equal(PaymentStatus.Canceled, oldPayment.Status);
+    }
+
+    [Theory]
+    [InlineData("processing")]
+    [InlineData("succeeded")]
+    public async Task CreateIntentAsync_Blocks_WhenStripeIsPastTheCardStep(string stripeStatus)
     {
         var (context, student, _, enrollment) = await SetupScenarioAsync(price: 100m);
-        var winner = new CoursePayment(enrollment.Id, "pi_test_1", 10000, "bam", PaymentStatus.RequiresAction);
-        context.Set<CoursePayment>().Add(winner);
-        await context.SaveChangesAsync();
-        winner.CreatedAt = Now.AddHours(-1);
+        var gateway = new FakePaymentGateway();
+        var service = CreateService(context, student, gateway);
+
+        await service.CreateIntentAsync(enrollment.Id);
+        gateway.SetIntentStatus("pi_test_1", stripeStatus);
+
+        var ex = await Assert.ThrowsAsync<BusinessException>(() => service.CreateIntentAsync(enrollment.Id));
+
+        Assert.Equal(Messages.PaymentProcessing, ex.Message);
+        Assert.Single(gateway.CreateCalls);
+        Assert.Empty(gateway.CancelCalls);
+        var payment = await context.Set<CoursePayment>().SingleAsync();
+        Assert.Equal(PaymentStatus.RequiresAction, payment.Status);
+    }
+
+    [Fact]
+    public async Task CreateIntentAsync_DuplicateIntentRow_ReturnsStoredWinner()
+    {
+        var (context, student, _, enrollment) = await SetupScenarioAsync(price: 100m);
+        context.Set<CoursePayment>().Add(new CoursePayment(enrollment.Id, "pi_test_1", 10000, "bam", PaymentStatus.Succeeded));
         await context.SaveChangesAsync();
         var gateway = new FakePaymentGateway();
         var inner = new Exception($"duplicate key value violates unique constraint \"{DbConstraintNames.CoursePaymentPaymentIntentIdUniqueIndex}\"");
@@ -175,13 +243,43 @@ public sealed class TuitionPaymentServiceTests
         var result = await service.CreateIntentAsync(enrollment.Id);
 
         Assert.Equal("pi_test_1", result.PaymentIntentId);
+        Assert.Equal("pi_test_1_secret", result.ClientSecret);
         Assert.Equal(enrollment.Id, result.EnrollmentId);
         Assert.Equal(10000, result.AmountCents);
         Assert.Equal("bam", result.Currency);
+        Assert.Equal(PaymentStatus.Succeeded, result.Status);
+        Assert.Empty(gateway.CancelCalls);
     }
 
     [Fact]
-    public async Task CreateIntentAsync_IdempotencyKey_StableUntilPaid()
+    public async Task CreateIntentAsync_OpenAttemptRace_CancelsLosingIntent_AndReturnsWinner()
+    {
+        var databaseName = Guid.NewGuid().ToString();
+        var (context, student, _, enrollment) = await SetupScenarioAsync(price: 100m, databaseName);
+        var gateway = new FakePaymentGateway();
+        gateway.AddIntent("pi_winner", 9000, "bam");
+        var parallel = TestDbContextFactory.CreateContext(Now, databaseName);
+        var inner = new Exception($"duplicate key value violates unique constraint \"{DbConstraintNames.CoursePaymentOpenAttemptUniqueIndex}\"");
+        var throwing = new ThrowingSaveDbContext(context, new DbUpdateException("Unique constraint violated.", inner), async () =>
+        {
+            parallel.Set<CoursePayment>().Add(new CoursePayment(enrollment.Id, "pi_winner", 9000, "bam", PaymentStatus.RequiresAction));
+            await parallel.SaveChangesAsync();
+        });
+        var service = CreateService(throwing, student, gateway);
+
+        var result = await service.CreateIntentAsync(enrollment.Id);
+
+        Assert.Equal("pi_winner", result.PaymentIntentId);
+        Assert.Equal("pi_winner_secret", result.ClientSecret);
+        Assert.Equal(9000, result.AmountCents);
+        Assert.Equal("bam", result.Currency);
+        Assert.Equal(PaymentStatus.RequiresAction, result.Status);
+        Assert.Single(gateway.CancelCalls);
+        Assert.Equal("pi_test_1", gateway.CancelCalls[0].PaymentIntentId);
+    }
+
+    [Fact]
+    public async Task CreateIntentAsync_IdempotencyKey_ContainsAmountAndChangesAfterPaid()
     {
         var (context, student, _, enrollment) = await SetupScenarioAsync(price: 100m);
         var gateway = new FakePaymentGateway();
@@ -190,8 +288,10 @@ public sealed class TuitionPaymentServiceTests
 
         await service.CreateIntentAsync(enrollment.Id);
         var key1 = gateway.CreateCalls[0].IdempotencyKey;
-        Assert.Equal($"tuition:{enrollment.Id}:none:0:v2", key1);
+        Assert.Equal($"tuition:{enrollment.Id}:none:10000:0:v3", key1);
 
+        var payment = context.Set<CoursePayment>().Single();
+        payment.MarkSucceeded("ch_test_1", "evt_test_1", Now, Now, Now.AddDays(30));
         enrollment.ExtendPaidUntil(Now, 30);
         await context.SaveChangesAsync();
 
@@ -199,7 +299,7 @@ public sealed class TuitionPaymentServiceTests
         await service.CreateIntentAsync(enrollment.Id);
 
         var key2 = gateway.CreateCalls[1].IdempotencyKey;
-        Assert.Equal($"tuition:{enrollment.Id}:{enrollment.PaidUntil:O}:1:v2", key2);
+        Assert.Equal($"tuition:{enrollment.Id}:{enrollment.PaidUntil:O}:10000:1:v3", key2);
         Assert.NotEqual(key1, key2);
     }
 
@@ -250,8 +350,8 @@ public sealed class TuitionPaymentServiceTests
         Assert.Equal(Messages.PaymentProviderUnavailable, ex.Message);
     }
 
-    private static Task<(ENoteContext Context, Student Student, Course Course, Enrollment Enrollment)> SetupScenarioAsync(decimal price) =>
-        TuitionTestData.SetupScenarioAsync(Now, price);
+    private static Task<(ENoteContext Context, Student Student, Course Course, Enrollment Enrollment)> SetupScenarioAsync(decimal price, string? databaseName = null) =>
+        TuitionTestData.SetupScenarioAsync(Now, price, databaseName);
 
     private static TuitionPaymentService CreateService(
         IAppDbContext context,

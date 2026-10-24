@@ -181,6 +181,15 @@ public sealed class ENoteContextTests
     }
 
     [Fact]
+    public void Model_Payment_HasOneOpenAttemptPerObligationUniqueIndex()
+    {
+        using var context = CreateContext(Baseline);
+
+        AssertOpenAttemptIndex<CoursePayment>(context, nameof(CoursePayment.EnrollmentId), DbConstraintNames.CoursePaymentOpenAttemptUniqueIndex);
+        AssertOpenAttemptIndex<RentalPayment>(context, nameof(RentalPayment.InstrumentRentalId), DbConstraintNames.RentalPaymentOpenAttemptUniqueIndex);
+    }
+
+    [Fact]
     public void Model_CoursePayment_HasRowVersionConcurrencyToken()
     {
         using var context = CreateContext(Baseline);
@@ -207,6 +216,18 @@ public sealed class ENoteContextTests
         Assert.Equal(payment.Id, stored.CoursePaymentId);
         Assert.Null(stored.RentalPaymentId);
         Assert.Equal(2000, stored.AmountCents);
+    }
+
+    private static void AssertOpenAttemptIndex<TEntity>(ENoteContext context, string obligationProperty, string indexName)
+        where TEntity : class
+    {
+        var index = context.Model.FindEntityType(typeof(TEntity))!
+            .GetIndexes()
+            .Single(i => i.GetDatabaseName() == indexName);
+
+        Assert.True(index.IsUnique);
+        Assert.Equal([obligationProperty], index.Properties.Select(p => p.Name));
+        Assert.Equal("\"Status\" IN (1, 3)", index.GetFilter());
     }
 
     private static ENoteContext CreateContext(DateTime now, string? databaseName = null)

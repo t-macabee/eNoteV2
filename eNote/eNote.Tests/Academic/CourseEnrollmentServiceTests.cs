@@ -2,6 +2,7 @@ using eNote.Application.Common.Localization;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Constants;
 using eNote.Application.Features.Academic.Courses.Services;
+using eNote.Application.Features.Rentals.Payments.Services;
 using eNote.Tests.TestUtils;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -163,7 +164,7 @@ public sealed class CourseEnrollmentServiceTests
     }
 
     [Fact]
-    public async Task UnenrollAsync_Throws_WhenOpenIntentInsideReuseWindow()
+    public async Task UnenrollAsync_CancelsOpenIntentOnStripe_ThenCancelsEnrollment()
     {
         await using var context = CreateContext();
         var (student, course) = await SeedStudentAndCourseAsync(context, hasActiveMembership: true);
@@ -172,34 +173,41 @@ public sealed class CourseEnrollmentServiceTests
         await context.SaveChangesAsync();
         context.Set<CoursePayment>().Add(new CoursePayment(enrollment.Id, "pi_open", 10000, "bam", PaymentStatus.RequiresAction));
         await context.SaveChangesAsync();
-        var service = CreateService(context, student);
+        var gateway = new FakePaymentGateway();
+        gateway.AddIntent("pi_open", 10000, "bam");
+        var service = CreateService(context, student, gateway);
 
-        var ex = await Assert.ThrowsAsync<BusinessException>(() => service.UnenrollAsync(course.Id));
+        await service.UnenrollAsync(course.Id);
 
-        Assert.Equal(Messages.UnenrollBlockedByPendingPayment, ex.Message);
+        Assert.Single(gateway.CancelCalls);
+        Assert.Equal("pi_open", gateway.CancelCalls[0].PaymentIntentId);
+        Assert.Equal("canceled", (await gateway.RetrievePaymentIntentAsync("pi_open")).Status);
+        var payment = await context.Set<CoursePayment>().SingleAsync();
+        Assert.Equal(PaymentStatus.Canceled, payment.Status);
         var stored = await context.Set<Enrollment>().SingleAsync(x => x.StudentId == student.Id && x.CourseId == course.Id);
-        Assert.Equal(EnrollmentStatus.Active, stored.EnrollmentStatus);
+        Assert.Equal(EnrollmentStatus.Canceled, stored.EnrollmentStatus);
     }
 
     [Fact]
-    public async Task UnenrollAsync_Succeeds_WhenIntentOlderThanReuseWindow()
+    public async Task UnenrollAsync_Blocks_WhenIntentIsProcessing()
     {
         await using var context = CreateContext();
         var (student, course) = await SeedStudentAndCourseAsync(context, hasActiveMembership: true);
         var enrollment = new Enrollment(student.Id, course.Id, EnrollmentStatus.Active);
         context.Set<Enrollment>().Add(enrollment);
         await context.SaveChangesAsync();
-        var payment = new CoursePayment(enrollment.Id, "pi_old", 10000, "bam", PaymentStatus.RequiresAction);
-        context.Set<CoursePayment>().Add(payment);
+        context.Set<CoursePayment>().Add(new CoursePayment(enrollment.Id, "pi_processing", 10000, "bam", PaymentStatus.RequiresAction));
         await context.SaveChangesAsync();
-        payment.CreatedAt = Now.AddHours(-1);
-        await context.SaveChangesAsync();
-        var service = CreateService(context, student);
+        var gateway = new FakePaymentGateway();
+        gateway.AddIntent("pi_processing", 10000, "bam", "processing");
+        var service = CreateService(context, student, gateway);
 
-        await service.UnenrollAsync(course.Id);
+        var ex = await Assert.ThrowsAsync<BusinessException>(() => service.UnenrollAsync(course.Id));
 
+        Assert.Equal(Messages.UnenrollBlockedByPendingPayment, ex.Message);
+        Assert.Empty(gateway.CancelCalls);
         var stored = await context.Set<Enrollment>().SingleAsync(x => x.StudentId == student.Id && x.CourseId == course.Id);
-        Assert.Equal(EnrollmentStatus.Canceled, stored.EnrollmentStatus);
+        Assert.Equal(EnrollmentStatus.Active, stored.EnrollmentStatus);
     }
 
     [Fact]
@@ -281,7 +289,7 @@ public sealed class CourseEnrollmentServiceTests
         Assert.Equal(Messages.AlreadyEnrolled, ex.Message);
     }
 
-    private static CourseEnrollmentService CreateService(IAppDbContext context, Student student)
+    private static CourseEnrollmentService CreateService(IAppDbContext context, Student student, IPaymentGateway? gateway = null)
     {
         var currentUser = new StubCurrentActor(student: student);
         return new(
@@ -289,6 +297,7 @@ public sealed class CourseEnrollmentServiceTests
             new FixedClock(Now),
             currentUser,
             currentUser,
+            gateway ?? new FakePaymentGateway(),
             NullLogger<CourseEnrollmentService>.Instance);
     }
 }

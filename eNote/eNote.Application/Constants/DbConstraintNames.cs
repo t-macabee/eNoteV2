@@ -20,9 +20,13 @@ public static class DbConstraintNames
 
     public const string RentalPaymentStripePaymentIntentIdUniqueIndex = "UX_RentalPayment_PaymentIntentId";
 
+    public const string RentalPaymentOpenAttemptUniqueIndex = "UX_RentalPayment_InstrumentRentalId_OpenAttempt";
+
     public const string RentalPaymentStripeEventIdUniqueIndex = "UX_RentalPayment_StripeEventId";
 
     public const string CoursePaymentPaymentIntentIdUniqueIndex = "UX_CoursePayment_PaymentIntentId";
+
+    public const string CoursePaymentOpenAttemptUniqueIndex = "UX_CoursePayment_EnrollmentId_OpenAttempt";
 
     public const string CoursePaymentStripeEventIdUniqueIndex = "UX_CoursePayment_StripeEventId";
 

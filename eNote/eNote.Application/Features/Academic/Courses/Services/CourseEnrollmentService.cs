@@ -8,6 +8,7 @@ public sealed class CourseEnrollmentService(
     IAppDbContext context,
     IClock clock,
     ICurrentUserContext currentUser, IStudentContext students,
+    IPaymentGateway paymentGateway,
     ILogger<CourseEnrollmentService> logger)
 {
     public async Task EnrollAsync(int courseId, CancellationToken cancellationToken = default)
@@ -76,16 +77,20 @@ public sealed class CourseEnrollmentService(
                 cancellationToken)
             ?? throw new BusinessException(Messages.StudentNotEnrolled);
 
-        var hasOpenPayment = await context.Set<CoursePayment>()
-            .AnyAsync(p => p.EnrollmentId == enrollment.Id
-                && p.Status == PaymentStatus.RequiresAction
-                && p.CreatedAt >= clock.UtcNow - PaymentGatewayHelpers.RequiresActionReuseWindow,
-                cancellationToken);
+        var openAttempts = await context.Set<CoursePayment>()
+            .Where(p => p.EnrollmentId == enrollment.Id
+                && (p.Status == PaymentStatus.RequiresAction || p.Status == PaymentStatus.Failed))
+            .OrderByDescending(p => p.CreatedAt)
+            .ToListAsync(cancellationToken);
 
-        if (hasOpenPayment)
-        {
-            throw new BusinessException(Messages.UnenrollBlockedByPendingPayment);
-        }
+        await PaymentGatewayHelpers.ResolveOpenAttemptsAsync(
+            logger,
+            context,
+            paymentGateway,
+            openAttempts,
+            expected: null,
+            Messages.UnenrollBlockedByPendingPayment,
+            cancellationToken);
 
         var result = enrollment.Transition(EnrollmentTrigger.Cancel, currentUser.UserId, clock.UtcNow);
 

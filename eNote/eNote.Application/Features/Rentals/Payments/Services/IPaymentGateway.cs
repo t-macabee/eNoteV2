@@ -26,6 +26,10 @@ public interface IPaymentGateway
         string paymentIntentId,
         CancellationToken cancellationToken = default);
 
+    Task<PaymentIntentData> CancelPaymentIntentAsync(
+        string paymentIntentId,
+        CancellationToken cancellationToken = default);
+
     Task<RefundData> CreateRefundAsync(
         string paymentIntentId,
         long? amountCents,

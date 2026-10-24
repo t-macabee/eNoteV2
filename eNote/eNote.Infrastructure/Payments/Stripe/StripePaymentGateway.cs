@@ -59,6 +59,17 @@ public sealed class StripePaymentGateway : IPaymentGateway
         return new PaymentIntentData(intent.Id, intent.ClientSecret, intent.Status, intent.Amount, intent.Currency);
     }
 
+    public async Task<PaymentIntentData> CancelPaymentIntentAsync(
+        string paymentIntentId,
+        CancellationToken cancellationToken = default)
+    {
+        var intent = await new PaymentIntentService(_client.Value).CancelAsync(paymentIntentId, options: null, requestOptions: null, cancellationToken: cancellationToken);
+
+        _logger.LogInformation("Stripe PaymentIntent {PaymentIntentId} canceled", intent.Id);
+
+        return new PaymentIntentData(intent.Id, intent.ClientSecret, intent.Status, intent.Amount, intent.Currency);
+    }
+
     public async Task<RefundData> CreateRefundAsync(
         string paymentIntentId,
         long? amountCents,

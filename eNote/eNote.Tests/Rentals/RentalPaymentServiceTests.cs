@@ -144,7 +144,7 @@ public sealed class RentalPaymentServiceTests
     }
 
     [Fact]
-    public async Task CreatePaymentIntent_CreatesNewIntent_After30Minutes()
+    public async Task CreatePaymentIntent_ReusesOpenIntent_RegardlessOfAge()
     {
         var (context, student, currentUser) = await CreateStudentContextAsync();
         var instrument = await RentalTestData.SeedInstrumentAsync(context);
@@ -156,27 +156,52 @@ public sealed class RentalPaymentServiceTests
         var service = CreateService(context, currentUser, gateway, clock: clock);
 
         var first = await service.CreatePaymentIntentAsync(rental.Id);
-        clock.UtcNow = Now.AddMinutes(31);
+        clock.UtcNow = Now.AddHours(5);
         var second = await service.CreatePaymentIntentAsync(rental.Id);
 
-        Assert.NotEqual(first.PaymentIntentId, second.PaymentIntentId);
-        Assert.Equal(2, gateway.CreateCalls.Count);
-        Assert.NotEqual(gateway.CreateCalls[0].IdempotencyKey, gateway.CreateCalls[1].IdempotencyKey);
-        Assert.Empty(gateway.RetrieveCalls);
+        Assert.Equal(first.PaymentIntentId, second.PaymentIntentId);
+        Assert.Equal(PaymentStatus.RequiresAction, second.Status);
+        Assert.Single(gateway.CreateCalls);
+        Assert.Single(gateway.RetrieveCalls);
+        Assert.Empty(gateway.CancelCalls);
+        Assert.Equal(1, await context.Set<RentalPayment>().CountAsync());
     }
 
-    [Fact]
-    public async Task CreatePaymentIntent_ConcurrentDuplicate_ReturnsExistingIntent()
+    [Theory]
+    [InlineData("processing")]
+    [InlineData("succeeded")]
+    public async Task CreatePaymentIntent_Blocks_WhenStripeIsPastTheCardStep(string stripeStatus)
     {
         var (context, student, currentUser) = await CreateStudentContextAsync();
         var instrument = await RentalTestData.SeedInstrumentAsync(context);
         var rental = RentalTestData.CreateCompletedRental(instrument, student.Id, Now);
         context.Set<InstrumentRental>().Add(rental);
         await context.SaveChangesAsync();
-        var winner = new RentalPayment(rental.Id, rental.MusicStoreId, "pi_test_1", 5000, "eur", PaymentStatus.RequiresAction);
-        context.Set<RentalPayment>().Add(winner);
+        var gateway = new FakePaymentGateway();
+        var service = CreateService(context, currentUser, gateway);
+
+        await service.CreatePaymentIntentAsync(rental.Id);
+        gateway.SetIntentStatus("pi_test_1", stripeStatus);
+
+        var ex = await Assert.ThrowsAsync<BusinessException>(() => service.CreatePaymentIntentAsync(rental.Id));
+
+        Assert.Equal(Messages.PaymentProcessing, ex.Message);
+        Assert.Single(gateway.CreateCalls);
+        Assert.Empty(gateway.CancelCalls);
+        var payment = await context.Set<RentalPayment>().SingleAsync();
+        Assert.Equal(PaymentStatus.RequiresAction, payment.Status);
+    }
+
+    [Fact]
+    public async Task CreatePaymentIntent_DuplicateIntentRow_ReturnsStoredWinner()
+    {
+        var (context, student, currentUser) = await CreateStudentContextAsync();
+        var instrument = await RentalTestData.SeedInstrumentAsync(context);
+        var rental = RentalTestData.CreateCompletedRental(instrument, student.Id, Now);
+        context.Set<InstrumentRental>().Add(rental);
         await context.SaveChangesAsync();
-        winner.CreatedAt = Now.AddHours(-1);
+        var winner = new RentalPayment(rental.Id, rental.MusicStoreId, "pi_test_1", 1000, "eur", PaymentStatus.Succeeded);
+        context.Set<RentalPayment>().Add(winner);
         await context.SaveChangesAsync();
         var gateway = new FakePaymentGateway();
         var inner = new Exception($"duplicate key value violates unique constraint \"{DbConstraintNames.RentalPaymentStripePaymentIntentIdUniqueIndex}\"");
@@ -186,9 +211,42 @@ public sealed class RentalPaymentServiceTests
         var result = await service.CreatePaymentIntentAsync(rental.Id);
 
         Assert.Equal("pi_test_1", result.PaymentIntentId);
-        Assert.Equal(rental.Id, result.RentalId);
-        Assert.Equal(5000, result.AmountCents);
+        Assert.Equal("pi_test_1_secret", result.ClientSecret);
+        Assert.Equal(1000, result.AmountCents);
         Assert.Equal("eur", result.Currency);
+        Assert.Equal(PaymentStatus.Succeeded, result.Status);
+        Assert.Empty(gateway.CancelCalls);
+    }
+
+    [Fact]
+    public async Task CreatePaymentIntent_OpenAttemptRace_CancelsLosingIntent_AndReturnsWinner()
+    {
+        var databaseName = Guid.NewGuid().ToString();
+        var (context, student, currentUser) = await CreateStudentContextAsync(databaseName: databaseName);
+        var instrument = await RentalTestData.SeedInstrumentAsync(context);
+        var rental = RentalTestData.CreateCompletedRental(instrument, student.Id, Now);
+        context.Set<InstrumentRental>().Add(rental);
+        await context.SaveChangesAsync();
+        var gateway = new FakePaymentGateway();
+        gateway.AddIntent("pi_winner", 2000, "eur");
+        var parallel = CreateContext(currentUser, databaseName);
+        var inner = new Exception($"duplicate key value violates unique constraint \"{DbConstraintNames.RentalPaymentOpenAttemptUniqueIndex}\"");
+        var throwing = new ThrowingSaveDbContext(context, new DbUpdateException("Unique constraint violated.", inner), async () =>
+        {
+            parallel.Set<RentalPayment>().Add(new RentalPayment(rental.Id, rental.MusicStoreId, "pi_winner", 2000, "eur", PaymentStatus.RequiresAction));
+            await parallel.SaveChangesAsync();
+        });
+        var service = CreateService(throwing, currentUser, gateway);
+
+        var result = await service.CreatePaymentIntentAsync(rental.Id);
+
+        Assert.Equal("pi_winner", result.PaymentIntentId);
+        Assert.Equal("pi_winner_secret", result.ClientSecret);
+        Assert.Equal(2000, result.AmountCents);
+        Assert.Equal("eur", result.Currency);
+        Assert.Equal(PaymentStatus.RequiresAction, result.Status);
+        Assert.Single(gateway.CancelCalls);
+        Assert.Equal("pi_test_1", gateway.CancelCalls[0].PaymentIntentId);
     }
 
     [Fact]
@@ -520,21 +578,21 @@ public sealed class RentalPaymentServiceTests
         Assert.Equal("error.payment_provider_unavailable", ex.ErrorCode);
     }
 
-    private static ENoteContext CreateContext(StubCurrentActor currentUser)
+    private static ENoteContext CreateContext(StubCurrentActor currentUser, string? databaseName = null)
     {
         var options = new DbContextOptionsBuilder<ENoteContext>()
-            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .UseInMemoryDatabase(databaseName ?? Guid.NewGuid().ToString())
             .ConfigureWarnings(warnings => warnings.Ignore(InMemoryEventId.TransactionIgnoredWarning))
             .Options;
         return new ENoteContext(options, new FixedClock(Now), currentUser) { ExplicitStoreId = 1 };
     }
 
-    private static async Task<(ENoteContext Context, Student Student, StubCurrentActor CurrentUser)> CreateStudentContextAsync(int appUserId = 100)
+    private static async Task<(ENoteContext Context, Student Student, StubCurrentActor CurrentUser)> CreateStudentContextAsync(int appUserId = 100, string? databaseName = null)
     {
         var student = new Student(appUserId, Now.AddMonths(-1));
         student.UpdateMembership(Now.AddDays(1));
         var currentUser = new StubCurrentActor(student: student);
-        var context = CreateContext(currentUser);
+        var context = CreateContext(currentUser, databaseName);
         context.Set<Student>().Add(student);
         await context.SaveChangesAsync();
         return (context, student, currentUser);

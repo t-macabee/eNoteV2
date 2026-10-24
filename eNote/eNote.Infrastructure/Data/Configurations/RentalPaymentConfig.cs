@@ -50,6 +50,11 @@ public sealed class RentalPaymentConfig : IEntityTypeConfiguration<RentalPayment
 
         builder.HasIndex(x => new { x.InstrumentRentalId, x.Status });
 
+        builder.HasIndex(x => x.InstrumentRentalId)
+               .IsUnique()
+               .HasFilter("\"Status\" IN (1, 3)")
+               .HasDatabaseName(DbConstraintNames.RentalPaymentOpenAttemptUniqueIndex);
+
         builder.Property(x => x.Version).IsRowVersion();
     }
 }

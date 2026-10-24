@@ -23,10 +23,18 @@ public sealed class RentalPaymentService(
 
         EnsureCanCreatePaymentIntent(rental);
 
-        var existingRows = context.Set<RentalPayment>()
+        var charges = rental.CalculateCharges(rental.ReturnedAt ?? clock.UtcNow);
+
+        if (charges.TotalFee is not decimal totalFee || totalFee <= 0)
+        {
+            throw new BusinessException(Messages.PaymentNotPayableInStatus);
+        }
+
+        var cents = PaymentGatewayHelpers.ToCents(totalFee);
+
+        var openAttempts = context.Set<RentalPayment>()
             .Where(p => p.InstrumentRentalId == rental.Id
-                && p.Status == PaymentStatus.RequiresAction
-                && p.CreatedAt >= clock.UtcNow - PaymentGatewayHelpers.RequiresActionReuseWindow)
+                && (p.Status == PaymentStatus.RequiresAction || p.Status == PaymentStatus.Failed))
             .OrderByDescending(p => p.CreatedAt);
 
         var result = await PaymentGatewayHelpers.ReuseOrCreatePaymentIntentAsync(
@@ -34,17 +42,10 @@ public sealed class RentalPaymentService(
             context,
             paymentGateway,
             $"rental {rental.Id}",
-            existingRows,
+            new ExpectedPayment(cents, options.Currency),
+            openAttempts,
             async () =>
             {
-                var charges = rental.CalculateCharges(rental.ReturnedAt ?? clock.UtcNow);
-
-                if (charges.TotalFee is not decimal totalFee || totalFee <= 0)
-                {
-                    throw new BusinessException(Messages.PaymentNotPayableInStatus);
-                }
-
-                var cents = PaymentGatewayHelpers.ToCents(totalFee);
                 var attempt = await context.Set<RentalPayment>().CountAsync(p => p.InstrumentRentalId == rental.Id, cancellationToken);
                 var idempotencyKey = $"rental:{rental.Id}:total:{cents}:{rental.ReturnedAt:O}:{attempt}:v3";
 
@@ -64,7 +65,9 @@ public sealed class RentalPaymentService(
                 intent.AmountCents,
                 intent.Currency,
                 PaymentGatewayHelpers.MapStatus(intent.Status)),
-            DbConstraintNames.RentalPaymentStripePaymentIntentIdUniqueIndex,
+            new PaymentConstraintNames(
+                DbConstraintNames.RentalPaymentStripePaymentIntentIdUniqueIndex,
+                DbConstraintNames.RentalPaymentOpenAttemptUniqueIndex),
             cancellationToken);
 
         return new CreatePaymentIntentResponse(rental.Id, result.PaymentIntentId, result.ClientSecret, result.AmountCents, result.Currency, result.Status);

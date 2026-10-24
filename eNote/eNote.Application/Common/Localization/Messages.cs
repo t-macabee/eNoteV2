@@ -68,6 +68,7 @@ public static class Messages
 
     public const string PaymentAlreadyCompleted = "Stavka je već plaćena.";
     public const string PaymentNotPayableInStatus = "Iznajmljivanje nije u stanju koje dozvoljava plaćanje.";
+    public const string PaymentProcessing = "Uplata se obrađuje. Pokušajte ponovo za nekoliko minuta.";
     public const string RefundExceedsCharged = "Iznos povrata premašuje naplaćeni iznos.";
     public const string RefundFailed = "Povrat sredstava nije uspio.";
     public const string PaymentNotFound = "Plaćanje nije pronađeno.";

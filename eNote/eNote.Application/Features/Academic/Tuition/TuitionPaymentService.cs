@@ -33,10 +33,11 @@ public sealed class TuitionPaymentService(
             throw new BusinessException(Messages.CourseNotPayable);
         }
 
-        var existingRows = context.Set<CoursePayment>()
+        var amountCents = PaymentGatewayHelpers.ToCents(enrollment.Course.Price);
+
+        var openAttempts = context.Set<CoursePayment>()
             .Where(p => p.EnrollmentId == enrollment.Id
-                && p.Status == PaymentStatus.RequiresAction
-                && p.CreatedAt >= clock.UtcNow - PaymentGatewayHelpers.RequiresActionReuseWindow)
+                && (p.Status == PaymentStatus.RequiresAction || p.Status == PaymentStatus.Failed))
             .OrderByDescending(p => p.CreatedAt);
 
         var result = await PaymentGatewayHelpers.ReuseOrCreatePaymentIntentAsync(
@@ -44,13 +45,13 @@ public sealed class TuitionPaymentService(
             context,
             paymentGateway,
             $"enrollment {enrollment.Id}",
-            existingRows,
+            new ExpectedPayment(amountCents, options.Currency),
+            openAttempts,
             async () =>
             {
-                var amountCents = PaymentGatewayHelpers.ToCents(enrollment.Course.Price);
                 var paidUntilKey = enrollment.PaidUntil.HasValue ? enrollment.PaidUntil.Value.ToString("O") : "none";
                 var attempt = await context.Set<CoursePayment>().CountAsync(p => p.EnrollmentId == enrollment.Id, cancellationToken);
-                var idempotencyKey = $"tuition:{enrollment.Id}:{paidUntilKey}:{attempt}:v2";
+                var idempotencyKey = $"tuition:{enrollment.Id}:{paidUntilKey}:{amountCents}:{attempt}:v3";
 
                 var metadata = new Dictionary<string, string>
                 {
@@ -67,7 +68,9 @@ public sealed class TuitionPaymentService(
                 intent.AmountCents,
                 intent.Currency,
                 PaymentGatewayHelpers.MapStatus(intent.Status)),
-            DbConstraintNames.CoursePaymentPaymentIntentIdUniqueIndex,
+            new PaymentConstraintNames(
+                DbConstraintNames.CoursePaymentPaymentIntentIdUniqueIndex,
+                DbConstraintNames.CoursePaymentOpenAttemptUniqueIndex),
             cancellationToken);
 
         return new CreateTuitionIntentResponse(

@@ -296,6 +296,11 @@ namespace eNote.Infrastructure.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("EnrollmentId")
+                        .IsUnique()
+                        .HasDatabaseName("UX_CoursePayment_EnrollmentId_OpenAttempt")
+                        .HasFilter("\"Status\" IN (1, 3)");
+
                     b.HasIndex("StripeEventId")
                         .IsUnique()
                         .HasDatabaseName("UX_CoursePayment_StripeEventId")
@@ -1342,6 +1347,11 @@ namespace eNote.Infrastructure.Data.Migrations
                         .HasColumnType("rowversion");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("InstrumentRentalId")
+                        .IsUnique()
+                        .HasDatabaseName("UX_RentalPayment_InstrumentRentalId_OpenAttempt")
+                        .HasFilter("\"Status\" IN (1, 3)");
 
                     b.HasIndex("StripeEventId")
                         .IsUnique()

@@ -9,13 +9,38 @@ public sealed class FakePaymentGateway : IPaymentGateway
 
     public List<FakeGatewayCreateCall> CreateCalls { get; } = [];
     public List<FakeGatewayRetrieveCall> RetrieveCalls { get; } = [];
+    public List<FakeGatewayCancelCall> CancelCalls { get; } = [];
     public List<FakeGatewayRefundCall> RefundCalls { get; } = [];
 
     public string RefundStatus { get; set; } = "succeeded";
     public Exception? RefundException { get; set; }
+    public Exception? CancelException { get; set; }
 
     private int _nextIntentNumber = 1;
     private int _nextRefundNumber = 1;
+
+    public PaymentIntentData AddIntent(string paymentIntentId, long amountCents, string currency, string status = "requires_payment_method")
+    {
+        var intent = new PaymentIntentData(paymentIntentId, $"{paymentIntentId}_secret", status, amountCents, currency);
+        _intents[paymentIntentId] = intent;
+        return intent;
+    }
+
+    public void SetIntentStatus(string paymentIntentId, string status)
+    {
+        if (!_intents.TryGetValue(paymentIntentId, out var intent))
+        {
+            throw new InvalidOperationException($"Unknown PaymentIntent {paymentIntentId}");
+        }
+
+        var updated = intent with { Status = status };
+        _intents[paymentIntentId] = updated;
+
+        foreach (var key in _intentsByIdempotencyKey.Where(entry => entry.Value.Id == paymentIntentId).Select(entry => entry.Key).ToList())
+        {
+            _intentsByIdempotencyKey[key] = updated;
+        }
+    }
 
     public Task<PaymentIntentData> CreatePaymentIntentAsync(
         long amountCents,
@@ -50,6 +75,25 @@ public sealed class FakePaymentGateway : IPaymentGateway
         return Task.FromResult(intent);
     }
 
+    public Task<PaymentIntentData> CancelPaymentIntentAsync(
+        string paymentIntentId,
+        CancellationToken cancellationToken = default)
+    {
+        if (!_intents.ContainsKey(paymentIntentId))
+        {
+            throw new InvalidOperationException($"Unknown PaymentIntent {paymentIntentId}");
+        }
+
+        CancelCalls.Add(new FakeGatewayCancelCall(paymentIntentId));
+        if (CancelException is not null)
+        {
+            throw CancelException;
+        }
+
+        SetIntentStatus(paymentIntentId, "canceled");
+        return Task.FromResult(_intents[paymentIntentId]);
+    }
+
     public Task<RefundData> CreateRefundAsync(
         string paymentIntentId,
         long? amountCents,
@@ -78,6 +122,8 @@ public sealed record FakeGatewayCreateCall(
 
 public sealed record FakeGatewayRetrieveCall(string PaymentIntentId);
 
+public sealed record FakeGatewayCancelCall(string PaymentIntentId);
+
 public sealed record FakeGatewayRefundCall(
     string RefundId,
     string PaymentIntentId,
@@ -99,6 +145,11 @@ public sealed class ThrowingPaymentGateway : IPaymentGateway
         => throw ExceptionToThrow;
 
     public Task<PaymentIntentData> RetrievePaymentIntentAsync(
+        string paymentIntentId,
+        CancellationToken cancellationToken = default)
+        => throw ExceptionToThrow;
+
+    public Task<PaymentIntentData> CancelPaymentIntentAsync(
         string paymentIntentId,
         CancellationToken cancellationToken = default)
         => throw ExceptionToThrow;

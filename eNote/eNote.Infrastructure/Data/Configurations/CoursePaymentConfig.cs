@@ -48,6 +48,11 @@ public sealed class CoursePaymentConfig : IEntityTypeConfiguration<CoursePayment
 
         builder.HasIndex(x => new { x.EnrollmentId, x.Status });
 
+        builder.HasIndex(x => x.EnrollmentId)
+               .IsUnique()
+               .HasFilter("\"Status\" IN (1, 3)")
+               .HasDatabaseName(DbConstraintNames.CoursePaymentOpenAttemptUniqueIndex);
+
         builder.Property(x => x.Version).IsRowVersion();
     }
 }
