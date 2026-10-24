@@ -9,4 +9,5 @@ public static class NotificationMessageTypes
     public const string AnnouncementPublished = nameof(AnnouncementPublished);
     public const string EnrollmentStatusChanged = nameof(EnrollmentStatusChanged);
     public const string TuitionPayment = nameof(TuitionPayment);
+    public const string MembershipWarning = nameof(MembershipWarning);
 }

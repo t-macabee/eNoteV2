@@ -96,6 +96,16 @@ student smije upisati, dok je školarina (`Enrollment.PaidUntil`) tačan UTC
 trenutak i odlučuje samo da li student vidi sadržaj upisanog kursa. Razlika u
 granularnosti je namjerna.
 
+Članarina se ne plaća kroz Stripe. Stripe obrađuje samo školarinu kursa
+(`CoursePayment`) i naknadu za iznajmljivanje (`RentalPayment`), a
+`MembershipPaidUntil` mijenja isključivo ručna potvrda koju administrator ili
+instruktor evidentira kroz `MembershipPayment`
+(`POST admin/students/{id}/membership-payments`). Zato ručni unos ne može
+duplicirati potvrđenu Stripe uplatu: za članarinu ne postoji Stripe zapis koji
+bi se preklopio, a jedinstveni broj potvrde i pravilo da period počinje
+najranije od trenutnog `MembershipPaidUntil` čuvaju evidenciju od duplog unosa
+iste potvrde.
+
 ## Slike na formama
 
 Sličice su 40 piksela, što je oko 5 posto širine forme.

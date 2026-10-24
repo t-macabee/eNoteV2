@@ -6,6 +6,7 @@ import '../../../theme/app_theme.dart';
 import '../../../widgets/detail_row.dart';
 import '../../../widgets/dialog_shell.dart';
 import '../../../widgets/entity_list_screen.dart';
+import '../../shared/membership/membership_section.dart';
 import '../lecture/lecture_provider.dart';
 import '../lecture_note/lecture_note_list_screen.dart';
 import '../lecture_note/lecture_note_provider.dart';
@@ -24,6 +25,7 @@ class InstructorStudentDetailsDialog extends StatefulWidget {
 class _InstructorStudentDetailsDialogState
     extends State<InstructorStudentDetailsDialog> {
   late StudentDto _student = widget.student;
+  late DateTime? _membershipPaidUntil = widget.student.membershipPaidUntil;
   List<StudentEnrollmentDto>? _enrollments;
   bool _enrollmentsError = false;
   List<LectureDto>? _individualLectures;
@@ -40,7 +42,10 @@ class _InstructorStudentDetailsDialogState
     try {
       final fresh = await provider.getById(widget.student.id);
       if (mounted && fresh.id == _student.id) {
-        setState(() => _student = fresh);
+        setState(() {
+          _student = fresh;
+          _membershipPaidUntil = fresh.membershipPaidUntil;
+        });
       }
     } catch (_) {
     }
@@ -103,11 +108,6 @@ class _InstructorStudentDetailsDialogState
   @override
   Widget build(BuildContext context) {
     final student = _student;
-    final membershipActive = isMembershipActive(student.membershipPaidUntil);
-
-    final statusValue = membershipActive
-        ? 'Aktivna do ${formatDateNullable(student.membershipPaidUntil)}'
-        : 'Istekla / Nema';
 
     return DialogShell(
       title: 'Detalji studenta',
@@ -136,10 +136,13 @@ class _InstructorStudentDetailsDialogState
               label: 'Datum upisa',
               value: formatDateNullable(student.enrollmentDate),
             ),
-            InfoRow(
-              icon: Icons.card_membership_outlined,
-              label: 'Status članarine',
-              value: statusValue,
+            const SizedBox(height: 8),
+            MembershipSection(
+              api: context.read<InstructorStudentProvider>(),
+              studentId: student.id,
+              membershipPaidUntil: _membershipPaidUntil,
+              onMembershipChanged: (paidUntil) =>
+                  setState(() => _membershipPaidUntil = paidUntil),
             ),
             const SizedBox(height: 16),
             const Text(

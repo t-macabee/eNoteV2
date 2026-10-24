@@ -1,5 +1,6 @@
 using eNote.Application.Common.Persistence;
 using eNote.Contracts.Enrollments;
+using eNote.Contracts.Identity;
 using eNote.Contracts.Rentals;
 using eNote.Domain.Entities.Communication;
 using eNote.Infrastructure.Messaging;
@@ -165,6 +166,28 @@ public sealed class RentalNotificationOutboxPublisherTests
         var payload = Assert.IsType<TuitionPaymentNotification>(published);
         Assert.Equal(1, payload.EnrollmentId);
         Assert.Equal(50, payload.StudentUserId);
+    }
+
+    [Fact]
+    public async Task ProcessBatch_PublishesMembershipWarningPayloads()
+    {
+        await using var context = TestDbContextFactory.CreateContext(Now);
+        var message = new MembershipWarning(50, "Upozorenje o članarini", "Vaša članarina ističe.", Now);
+        context.Set<NotificationOutbox>().Add(new NotificationOutbox
+        {
+            MessageType = NotificationMessageTypes.MembershipWarning,
+            PayloadJson = JsonSerializer.Serialize(message, JsonOptions)
+        });
+        await context.SaveChangesAsync();
+        var endpoint = new StubPublishEndpoint();
+        var publisher = CreatePublisher(context, endpoint);
+
+        await InvokeProcessBatchAsync(publisher);
+
+        var published = Assert.Single(endpoint.Published);
+        var payload = Assert.IsType<MembershipWarning>(published);
+        Assert.Equal(50, payload.StudentUserId);
+        Assert.Equal("Upozorenje o članarini", payload.Title);
     }
 
     [Fact]

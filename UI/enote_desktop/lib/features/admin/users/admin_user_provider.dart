@@ -23,15 +23,4 @@ class AdminUserProvider extends CrudProvider<UserProfileResponse> {
     throwIfError(response);
     notifyListeners();
   }
-
-  Future<DateTime> renewMembership(int id, DateTime paidUntil) async {
-    final request = UpdateMembershipRequest(paidUntil: paidUntil);
-    final response = await apiClient.put(
-      '$endpoint/$id/membership',
-      body: request.toJson(),
-    );
-    throwIfError(response);
-    notifyListeners();
-    return paidUntil;
-  }
 }

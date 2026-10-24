@@ -211,46 +211,6 @@ public sealed class UserProvisioningServiceTests
     }
 
     [Fact]
-    public async Task UpdateMembershipAsync_UpdatesStudent()
-    {
-        await using var context = TestDbContextFactory.CreateContext(Now);
-        var student = new Student(5, Now);
-        context.Set<Student>().Add(student);
-        await context.SaveChangesAsync();
-        var service = CreateService(context, new RecordingUserAccountService());
-
-        await service.UpdateMembershipAsync(5, new UpdateMembershipRequest { PaidUntil = Now.AddMonths(1) });
-
-        var updated = await context.Set<Student>().SingleAsync(s => s.AppUserId == 5);
-        Assert.True(updated.HasActiveMembership(Now));
-    }
-
-    [Fact]
-    public async Task UpdateMembershipAsync_Throws_WhenPaidUntilInPast()
-    {
-        await using var context = TestDbContextFactory.CreateContext(Now);
-        var student = new Student(5, Now);
-        context.Set<Student>().Add(student);
-        await context.SaveChangesAsync();
-        var service = CreateService(context, new RecordingUserAccountService());
-
-        var ex = await Assert.ThrowsAsync<BusinessException>(() =>
-            service.UpdateMembershipAsync(5, new UpdateMembershipRequest { PaidUntil = Now.AddDays(-1) }));
-
-        Assert.Equal(Messages.MembershipPaidUntilFuture, ex.Message);
-    }
-
-    [Fact]
-    public async Task UpdateMembershipAsync_Throws_WhenStudentMissing()
-    {
-        await using var context = TestDbContextFactory.CreateContext(Now);
-        var service = CreateService(context, new RecordingUserAccountService());
-
-        await Assert.ThrowsAsync<NotFoundException>(() =>
-            service.UpdateMembershipAsync(999, new UpdateMembershipRequest { PaidUntil = Now.AddMonths(1) }));
-    }
-
-    [Fact]
     public async Task ProvisionUserAsync_FirstEmployeeIsManager_SecondEmployeeIsNotManager()
     {
         await using var context = TestDbContextFactory.CreateContext(Now);
@@ -453,6 +413,26 @@ public sealed class UserProvisioningServiceTests
 
         var account = new RecordingUserAccountService();
         var service = CreateService(context, account);
+
+        var (success, error) = await service.DeleteUserAsync(15);
+
+        Assert.False(success);
+        Assert.Equal(Messages.UserDeleteBlocked, error);
+        Assert.True(await context.Set<Student>().AnyAsync(s => s.AppUserId == 15));
+    }
+
+    [Fact]
+    public async Task DeleteUserAsync_FailsWithDependents_WhenTheStudentHasMembershipPayments()
+    {
+        await using var context = TestDbContextFactory.CreateContext(Now);
+        var student = new Student(appUserId: 15, enrollmentDate: Now);
+        context.Set<Student>().Add(student);
+        await context.SaveChangesAsync();
+
+        context.Set<MembershipPayment>().Add(new MembershipPayment(student.Id, 50m, Now.Date, Now.Date, Now.Date.AddMonths(1), "CL-15", null, null));
+        await context.SaveChangesAsync();
+
+        var service = CreateService(context, new RecordingUserAccountService());
 
         var (success, error) = await service.DeleteUserAsync(15);
 

@@ -2,6 +2,7 @@ import 'package:enote_core/enote_core.dart';
 
 class UserListItem {
   final int appUserId;
+  final int? studentId;
   final String displayName;
   final String? username;
   final String? firstName;
@@ -15,6 +16,7 @@ class UserListItem {
 
   UserListItem.fromInstructor(InstructorDto i)
       : appUserId = i.appUserId,
+        studentId = null,
         displayName = formatDisplayName(i.firstName, i.lastName, i.username),
         username = i.username,
         firstName = i.firstName,
@@ -28,6 +30,7 @@ class UserListItem {
 
   UserListItem.fromStudent(StudentDto s)
       : appUserId = s.appUserId,
+        studentId = s.id,
         displayName = formatDisplayName(s.firstName, s.lastName, s.username),
         username = s.username,
         firstName = s.firstName,
@@ -41,6 +44,7 @@ class UserListItem {
 
   UserListItem.fromEmployee(ShopEmployeeDto e)
       : appUserId = e.appUserId,
+        studentId = null,
         displayName = formatDisplayName(e.firstName, e.lastName, e.username),
         username = e.username,
         firstName = e.firstName,

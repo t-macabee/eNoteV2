@@ -61,7 +61,7 @@ internal static class StudentMembershipSeed
     public static async Task SeedMemberships(ENoteContext context, IClock clock)
     {
         var students = await context.Set<Student>()
-            .Where(s => s.MembershipPaidUntil == null)
+            .OrderBy(s => s.Id)
             .ToListAsync();
 
         if (students.Count == 0)
@@ -69,11 +69,36 @@ internal static class StudentMembershipSeed
             return;
         }
 
+        var studentsWithPayments = await context.Set<MembershipPayment>()
+            .Select(p => p.StudentId)
+            .ToListAsync();
+
+        var today = clock.UtcNow.Date;
         var paidUntil = clock.UtcNow.AddYears(1);
 
         foreach (Student student in students)
         {
-            student.UpdateMembership(paidUntil);
+            var needsPayment = !studentsWithPayments.Contains(student.Id);
+            var expired = student.MembershipPaidUntil.HasValue &&
+                          student.MembershipPaidUntil.Value.Date <= today;
+
+            if (student.MembershipPaidUntil == null || (needsPayment && expired))
+            {
+                student.UpdateMembership(paidUntil);
+            }
+        }
+
+        foreach (Student student in students.Where(s => !studentsWithPayments.Contains(s.Id)))
+        {
+            context.Set<MembershipPayment>().Add(new MembershipPayment(
+                student.Id,
+                100m,
+                today,
+                today,
+                student.MembershipPaidUntil!.Value.Date,
+                $"CL-{student.Id:0000}-1",
+                "Seed članarina",
+                recordedById: null));
         }
 
         await context.SaveChangesAsync();

@@ -88,7 +88,7 @@ public sealed class AdminStudentService(
             ?? throw new NotFoundException(Messages.StudentProfileNotFound);
     }
 
-    private IQueryable<Student> StudentsVisibleTo(int instructorId)
+    internal IQueryable<Student> StudentsVisibleTo(int instructorId)
     {
         var instructorCourses = instructorAccess.CoursesFor(instructorId);
 

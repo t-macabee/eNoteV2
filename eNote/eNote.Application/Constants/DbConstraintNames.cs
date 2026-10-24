@@ -42,5 +42,7 @@ public static class DbConstraintNames
 
     public const string EnrollmentStudentIdCourseIdUniqueIndex = "IX_Enrollment_StudentId_CourseId";
 
+    public const string MembershipPaymentReceiptNumberUniqueIndex = "UX_MembershipPayment_ReceiptNumber";
+
     public const string AttendanceStudentIdLectureIdUniqueIndex = "IX_Attendance_StudentId_LectureId";
 }

@@ -328,6 +328,65 @@ void main() {
   );
 
   testWidgets(
+    'UserGridScreen refreshes after the user details dialog closes',
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1400, 1000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final mockClient = _client();
+      final authState = AuthState(
+        baseUrl: 'http://localhost:5059/api/v1/',
+        httpClient: mockClient,
+        tokenReader: () => fakeJwt(),
+      );
+      final apiClient = ApiClient(
+        baseUrl: 'http://localhost:5059/api/v1/',
+        authState: authState,
+        httpClient: mockClient,
+      );
+
+      await tester.pumpWidget(
+        MultiProvider(
+          providers: [
+            Provider<ApiClient>.value(value: apiClient),
+            ChangeNotifierProvider<AuthState>.value(value: authState),
+            ChangeNotifierProvider<InstructorProvider>(
+              create: (_) => InstructorProvider(apiClient: apiClient),
+            ),
+            ChangeNotifierProvider<StudentProvider>(
+              create: (_) => StudentProvider(apiClient: apiClient),
+            ),
+            ChangeNotifierProvider<StoreEmployeeProvider>(
+              create: (_) => StoreEmployeeProvider(apiClient: apiClient),
+            ),
+            ChangeNotifierProvider<AdminUserProvider>(
+              create: (_) => AdminUserProvider(apiClient: apiClient),
+            ),
+          ],
+          child: const MaterialApp(home: UserGridScreen()),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Ludwig Beethoven'));
+      await tester.pumpAndSettle();
+
+      mockClient.requests.clear();
+
+      await tester.tap(find.text('Zatvori'));
+      await tester.pumpAndSettle();
+
+      expect(
+        mockClient.requestedUrls.any((u) => u.contains('admin/students')),
+        isTrue,
+      );
+    },
+  );
+
+  testWidgets(
     'UserGridScreen deletes a user permanently',
     (WidgetTester tester) async {
       tester.view.physicalSize = const Size(1400, 1000);

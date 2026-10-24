@@ -151,22 +151,6 @@ public sealed class UserProvisioningService(
             .AnyAsync(x => x.AppUserId == userId && x.IsActive && x.IsManager, cancellationToken);
     }
 
-    public async Task UpdateMembershipAsync(int userId, UpdateMembershipRequest request, CancellationToken cancellationToken = default)
-    {
-        var student = await context.Set<Student>()
-            .FirstOrDefaultAsync(s => s.AppUserId == userId, cancellationToken)
-            ?? throw new NotFoundException(Messages.StudentProfileNotFound);
-
-        if (request.PaidUntil.HasValue && request.PaidUntil.Value <= clock.UtcNow)
-        {
-            throw new BusinessException(Messages.MembershipPaidUntilFuture);
-        }
-
-        student.UpdateMembership(request.PaidUntil);
-
-        await context.SaveChangesAsync(cancellationToken);
-    }
-
     public Task<(bool Success, string? Error)> SetUserActiveAsync(int userId, bool isActive, CancellationToken cancellationToken = default)
     {
         if (!isActive && currentUserContext != null && currentUserContext.UserId == userId)
@@ -194,7 +178,8 @@ public sealed class UserProvisioningService(
             var hasDependents = await context.Set<eNote.Domain.Entities.Academic.Enrollment>().IgnoreQueryFilters().AnyAsync(e => e.StudentId == student.Id, cancellationToken) ||
                                  await context.Set<eNote.Domain.Entities.Academic.Attendance>().IgnoreQueryFilters().AnyAsync(a => a.StudentId == student.Id, cancellationToken) ||
                                  await context.Set<eNote.Domain.Entities.Assignments.AssignmentSubmission>().IgnoreQueryFilters().AnyAsync(s => s.StudentId == student.Id, cancellationToken) ||
-                                 await context.Set<eNote.Domain.Entities.Rentals.InstrumentRental>().IgnoreQueryFilters().AnyAsync(r => r.StudentProfileId == student.Id, cancellationToken);
+                                 await context.Set<eNote.Domain.Entities.Rentals.InstrumentRental>().IgnoreQueryFilters().AnyAsync(r => r.StudentProfileId == student.Id, cancellationToken) ||
+                                 await context.Set<eNote.Domain.Entities.Identity.MembershipPayment>().IgnoreQueryFilters().AnyAsync(p => p.StudentId == student.Id, cancellationToken);
             if (hasDependents) return (false, Messages.UserDeleteBlocked);
 
 

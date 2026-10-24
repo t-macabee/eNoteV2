@@ -63,6 +63,26 @@ public sealed class DevelopmentDataSeedTests
     }
 
     [Fact]
+    public async Task SeedMemberships_ExtendsAnExpiredMembership_SoThePaymentEndsAfterItStarts()
+    {
+        await using var ctx = TestDbContextFactory.CreateContext(Now);
+        var clock = new FixedClock(Now);
+
+        var student = new Student(0, Now);
+        student.UpdateMembership(Now.Date.AddDays(-30));
+        ctx.Set<Student>().Add(student);
+        await ctx.SaveChangesAsync();
+
+        await StudentMembershipSeed.SeedMemberships(ctx, clock);
+
+        var payment = await ctx.Set<MembershipPayment>().SingleAsync();
+        Assert.True(payment.PeriodEnd > payment.PeriodStart);
+        Assert.Equal(Now.Date, payment.PeriodStart);
+        Assert.Equal(Now.Date.AddYears(1), payment.PeriodEnd);
+        Assert.Equal(payment.PeriodEnd, student.MembershipPaidUntil!.Value.Date);
+    }
+
+    [Fact]
     public async Task SeedCourses_CoursesAreRunningAtSeedTime()
     {
         await using var ctx = TestDbContextFactory.CreateContext(Now);

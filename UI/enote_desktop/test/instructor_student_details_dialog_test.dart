@@ -16,6 +16,24 @@ void main() {
       baseUrl: 'http://localhost:5059/api/v1/',
       authState: AuthState(),
       httpClient: ScriptedClient((request) {
+        if (request.url.path.endsWith('/membership-payments')) {
+          return jsonResponse({
+            'items': [
+              {
+                'id': 7,
+                'studentId': 5,
+                'amount': 40.0,
+                'paidAt': '2026-09-01T00:00:00Z',
+                'periodStart': '2026-09-01T00:00:00Z',
+                'periodEnd': '2027-01-01T00:00:00Z',
+                'receiptNumber': 'CL-7',
+              },
+            ],
+            'page': 1,
+            'pageSize': 5,
+            'totalCount': 1,
+          }, 200);
+        }
         if (request.url.path.endsWith('/enrollments')) {
           return jsonResponse({'message': 'boom'}, 500);
         }
@@ -87,5 +105,77 @@ void main() {
     expect(find.text('Individualni plan'), findsOneWidget);
     expect(find.text('Individualni čas'), findsOneWidget);
     expect(find.text('Bilješke'), findsOneWidget);
+    expect(find.text('Članarina'), findsOneWidget);
+    expect(find.textContaining('Potvrda CL-7'), findsOneWidget);
+    expect(find.text('Unesi potvrdu'), findsOneWidget);
+  });
+
+  testWidgets('E1-10: the warning button is disabled when membership lasts longer than a week',
+      (tester) async {
+    final apiClient = ApiClient(
+      baseUrl: 'http://localhost:5059/api/v1/',
+      authState: AuthState(),
+      httpClient: ScriptedClient((request) {
+        if (request.url.path.endsWith('/membership-payments')) {
+          return jsonResponse({
+            'items': [],
+            'page': 1,
+            'pageSize': 5,
+            'totalCount': 0,
+          }, 200);
+        }
+        if (request.url.path.endsWith('/lectures')) {
+          return jsonResponse({
+            'items': [],
+            'page': 1,
+            'pageSize': 100,
+            'totalCount': 0,
+          }, 200);
+        }
+        return jsonResponse({
+          'id': 5,
+          'appUserId': 50,
+          'firstName': 'Johann',
+          'lastName': 'Bach',
+          'username': 'jbach',
+          'membershipPaidUntil':
+              DateTime.now().add(const Duration(days: 60)).toIso8601String(),
+        }, 200);
+      }),
+    );
+
+    final student = StudentDto(
+      id: 5,
+      appUserId: 50,
+      firstName: 'Johann',
+      lastName: 'Bach',
+      username: 'jbach',
+    );
+
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          Provider<ApiClient>.value(value: apiClient),
+          ChangeNotifierProvider(
+            create: (_) => InstructorStudentProvider(apiClient: apiClient),
+          ),
+          ChangeNotifierProvider(
+            create: (_) => LectureProvider(apiClient: apiClient),
+          ),
+        ],
+        child: MaterialApp(
+          home: Scaffold(
+            body: InstructorStudentDetailsDialog(student: student),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final warningButton = tester.widget<OutlinedButton>(
+      find.widgetWithText(OutlinedButton, 'Pošalji upozorenje'),
+    );
+    expect(warningButton.onPressed, isNull);
+    expect(find.text('Nema evidentiranih potvrda.'), findsOneWidget);
   });
 }

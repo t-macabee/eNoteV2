@@ -29,7 +29,6 @@ public static class Messages
     public const string PhoneNumberTooLong = "Broj telefona ne smije biti duži od 30 karaktera.";
 
     public const string StudentProfileNotFound = "Student profil nije pronađen.";
-    public const string MembershipPaidUntilFuture = "PaidUntil mora biti u budućnosti.";
     public const string InstructorProfileNotFound = "Instruktor profil nije pronađen.";
     public const string EmployeeProfileNotFound = "Profil uposlenika radnje nije pronađen.";
     public const string ActiveEmployeeStoreNotFound = "Profil uposlenika radnje nije pronađen ili nije aktivan.";
@@ -106,6 +105,19 @@ public static class Messages
     public const string EnrollmentNotFound = "Upis nije pronađen.";
     public const string TuitionPaymentNotFound = "Plaćanje školarine nije pronađeno.";
     public const string MembershipInactive = "Članarina nije aktivna. Kontaktirajte administratora.";
+    public const string MembershipAmountInvalid = "Iznos članarine mora biti veći od 0 i najviše 99999999.99.";
+    public const string MembershipReceiptNumberRequired = "Broj potvrde je obavezan.";
+    public const string MembershipReceiptNumberLength = "Broj potvrde ne smije biti duži od 50 karaktera.";
+    public const string MembershipReceiptTaken = "Potvrda s ovim brojem je već evidentirana.";
+    public const string MembershipPeriodSelectionRequired = "Odredite period članarine krajem perioda ili brojem mjeseci.";
+    public const string MembershipMonthsRange = "Broj mjeseci mora biti između 1 i 24.";
+    public const string MembershipPeriodEndRange = "Kraj perioda mora biti između današnjeg datuma i deset godina u budućnosti.";
+    public const string MembershipPaidAtRange = "Datum uplate mora biti između deset godina u prošlosti i današnjeg datuma.";
+    public const string MembershipPeriodEndBeforeStart = "Kraj perioda mora biti nakon početka perioda.";
+    public const string MembershipNoteTooLong = "Napomena ne smije biti duža od 500 karaktera.";
+    public const string MembershipWarningNotAllowed = "Upozorenje se može poslati samo kada članarina ističe u narednih 7 dana ili je već istekla.";
+    public const string MembershipWarningRecentlySent = "Upozorenje je već poslano u posljednja 24 sata.";
+    public const string MembershipWarningMessageTooLong = "Poruka ne smije biti duža od 500 karaktera.";
     public const string AssignmentPastDue = "Rok za predaju zadatka je istekao.";
 
     public const string AddressNotFound = "Adresa nije pronađena.";

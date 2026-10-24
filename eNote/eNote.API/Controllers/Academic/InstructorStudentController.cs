@@ -15,6 +15,7 @@ namespace eNote.API.Controllers.Academic;
 [Route("api/v{version:apiVersion}/instructor/students")]
 public sealed class InstructorStudentController(
     AdminStudentService studentService,
+    MembershipService membershipService,
     IUserProvisioningService provisioningService,
     ICurrentUserContext currentUser,
     InstructorAccessService instructorAccess) : CoreController
@@ -46,6 +47,44 @@ public sealed class InstructorStudentController(
         var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId, cancellationToken);
         var result = await studentService.GetEnrollmentsForInstructorAsync(instructorId, id, cancellationToken);
         return Ok(result);
+    }
+
+    [HttpGet("{id:int}/membership-payments")]
+    [ProducesResponseType(typeof(PagedResult<MembershipPaymentDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<PagedResult<MembershipPaymentDto>>> GetMembershipPayments(
+        int id,
+        [FromQuery] MembershipPaymentSearchObject search,
+        CancellationToken cancellationToken)
+    {
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId, cancellationToken);
+        var result = await membershipService.GetPaymentsAsync(instructorId, id, search, cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpPost("{id:int}/membership-payments")]
+    [ProducesResponseType(typeof(MembershipPaymentDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<MembershipPaymentDto>> RecordMembershipPayment(
+        int id,
+        [FromBody] RecordMembershipPaymentRequest request,
+        CancellationToken cancellationToken)
+    {
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId, cancellationToken);
+        var payment = await membershipService.RecordPaymentAsync(instructorId, id, request, cancellationToken);
+        return StatusCode(StatusCodes.Status201Created, payment);
+    }
+
+    [HttpPost("{id:int}/membership-warning")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> SendMembershipWarning(
+        int id,
+        [FromBody] SendMembershipWarningRequest request,
+        CancellationToken cancellationToken)
+    {
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId, cancellationToken);
+        await membershipService.SendWarningAsync(instructorId, id, request, cancellationToken);
+        return NoContent();
     }
 
     [HttpPost]

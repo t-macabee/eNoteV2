@@ -5,6 +5,7 @@ public sealed class Student : AuditableEntity, IHasAppUserId
     public int AppUserId { get; private set; }
     public DateTime EnrollmentDate { get; private set; }
     public DateTime? MembershipPaidUntil { get; private set; }
+    public DateTime? MembershipWarningSentAt { get; private set; }
 
     public ICollection<Attendance> Attendances { get; private set; } = [];
     public ICollection<Enrollment> Enrollments { get; private set; } = [];
@@ -24,6 +25,11 @@ public sealed class Student : AuditableEntity, IHasAppUserId
     public void UpdateMembership(DateTime? paidUntil)
     {
         MembershipPaidUntil = paidUntil;
+    }
+
+    public void RecordMembershipWarning(DateTime utcNow)
+    {
+        MembershipWarningSentAt = utcNow;
     }
 
     public bool HasActiveMembership(DateTime utcNow)

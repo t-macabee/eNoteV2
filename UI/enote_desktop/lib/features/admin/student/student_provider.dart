@@ -1,6 +1,7 @@
 import 'package:enote_core/enote_core.dart';
 
-class StudentProvider extends ReadOnlyProvider<StudentDto> {
+class StudentProvider extends ReadOnlyProvider<StudentDto>
+    with MembershipPaymentsApi<StudentDto> {
   StudentProvider({
     required super.apiClient,
   }) : super(endpoint: 'admin/students');

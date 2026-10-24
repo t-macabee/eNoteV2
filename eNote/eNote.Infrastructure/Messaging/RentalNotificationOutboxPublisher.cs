@@ -3,6 +3,7 @@ using eNote.Application.Common.Time;
 using eNote.Contracts.Assignments;
 using eNote.Contracts.Communication;
 using eNote.Contracts.Enrollments;
+using eNote.Contracts.Identity;
 using eNote.Contracts.Lectures;
 using eNote.Contracts.Rentals;
 using MassTransit;
@@ -74,6 +75,7 @@ public sealed class RentalNotificationOutboxPublisher(IServiceProvider services,
                     NotificationMessageTypes.AnnouncementPublished => JsonSerializer.Deserialize<AnnouncementPublished>(message.PayloadJson, JsonOptions)!,
                     NotificationMessageTypes.EnrollmentStatusChanged => JsonSerializer.Deserialize<EnrollmentStatusChanged>(message.PayloadJson, JsonOptions)!,
                     NotificationMessageTypes.TuitionPayment => JsonSerializer.Deserialize<TuitionPaymentNotification>(message.PayloadJson, JsonOptions)!,
+                    NotificationMessageTypes.MembershipWarning => JsonSerializer.Deserialize<MembershipWarning>(message.PayloadJson, JsonOptions)!,
                     _ => throw new InvalidOperationException($"Unknown notification outbox message type '{message.MessageType}'.")
                 };
 

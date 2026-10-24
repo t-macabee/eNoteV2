@@ -4,19 +4,19 @@ import 'package:provider/provider.dart';
 import 'package:enote_core/enote_core.dart';
 
 import '../../../theme/app_theme.dart';
+import '../../shared/membership/membership_section.dart';
+import '../student/student_provider.dart';
 import 'admin_user_provider.dart';
 import 'user_list_item.dart';
 
 class UserDetailsDialog extends StatefulWidget {
   final UserListItem item;
-  final Future<DateTime?> Function() onRenewMembership;
   final Future<bool> Function(bool) onStatusChange;
   final Future<bool> Function() onDelete;
 
   const UserDetailsDialog({
     super.key,
     required this.item,
-    required this.onRenewMembership,
     required this.onStatusChange,
     required this.onDelete,
   });
@@ -167,25 +167,18 @@ class _UserDetailsDialogState extends State<UserDetailsDialog> {
     }
   }
 
-  Future<void> _handleRenew() async {
-    final updatedDate = await widget.onRenewMembership();
-    if (updatedDate != null && mounted) {
-      setState(() {
-        _membershipPaidUntil = updatedDate;
-      });
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final item = widget.item;
-    final membershipActive = isMembershipActive(_membershipPaidUntil);
 
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       clipBehavior: Clip.antiAlias,
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 520),
+        constraints: BoxConstraints(
+          maxWidth: 520,
+          maxHeight: MediaQuery.sizeOf(context).height * 0.85,
+        ),
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Column(
@@ -259,54 +252,66 @@ class _UserDetailsDialogState extends State<UserDetailsDialog> {
               const SizedBox(height: 20),
               const Divider(height: 1),
               const SizedBox(height: 16),
-              InfoRow(
-                icon: Icons.person_outline,
-                label: 'Ime i prezime',
-                value: item.displayName,
+              Flexible(
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      InfoRow(
+                        icon: Icons.person_outline,
+                        label: 'Ime i prezime',
+                        value: item.displayName,
+                      ),
+                      if (_email != null && _email!.isNotEmpty)
+                        InfoRow(
+                          icon: Icons.email_outlined,
+                          label: 'Email',
+                          value: _email!,
+                        ),
+                      if (item.role == UserRole.storeEmployee) ...[
+                        if (item.storeName != null &&
+                            item.storeName!.isNotEmpty)
+                          InfoRow(
+                            icon: Icons.store_outlined,
+                            label: 'Muzička prodavnica',
+                            value: item.storeName!,
+                          ),
+                        InfoRow(
+                          icon: Icons.badge_outlined,
+                          label: 'Pozicija',
+                          value: item.isManager == true
+                              ? 'Voditelj radnje'
+                              : 'Uposlenik radnje',
+                        ),
+                      ],
+                      if (item.role == UserRole.student) ...[
+                        if (item.enrollmentDate != null ||
+                            _profile?.enrollmentDate != null)
+                          InfoRow(
+                            icon: Icons.calendar_today_outlined,
+                            label: 'Datum upisa',
+                            value: formatDate(
+                              item.enrollmentDate ??
+                                  _profile!.enrollmentDate!,
+                            ),
+                          ),
+                        const SizedBox(height: 8),
+                        _buildMembershipSection(item),
+                      ],
+                      if (_isLoadingProfile) ...[
+                        const SizedBox(height: 12),
+                        const Center(
+                          child: SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
               ),
-              if (_email != null && _email!.isNotEmpty)
-                InfoRow(
-                  icon: Icons.email_outlined,
-                  label: 'Email',
-                  value: _email!,
-                ),
-              if (item.role == UserRole.storeEmployee) ...[
-                if (item.storeName != null && item.storeName!.isNotEmpty)
-                  InfoRow(
-                    icon: Icons.store_outlined,
-                    label: 'Muzička prodavnica',
-                    value: item.storeName!,
-                  ),
-                InfoRow(
-                  icon: Icons.badge_outlined,
-                  label: 'Pozicija',
-                  value: item.isManager == true
-                      ? 'Voditelj radnje'
-                      : 'Uposlenik radnje',
-                ),
-              ],
-              if (item.role == UserRole.student) ...[
-                if (item.enrollmentDate != null ||
-                    _profile?.enrollmentDate != null)
-                  InfoRow(
-                    icon: Icons.calendar_today_outlined,
-                    label: 'Datum upisa',
-                    value: formatDate(
-                      item.enrollmentDate ?? _profile!.enrollmentDate!,
-                    ),
-                  ),
-                _buildMembershipStatusRow(membershipActive),
-              ],
-              if (_isLoadingProfile) ...[
-                const SizedBox(height: 12),
-                const Center(
-                  child: SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
-                ),
-              ],
               const SizedBox(height: 24),
               Row(
                 children: [
@@ -316,14 +321,6 @@ class _UserDetailsDialogState extends State<UserDetailsDialog> {
                     onPressed: () => Navigator.of(context).pop(),
                     child: const Text('Zatvori'),
                   ),
-                  if (item.role == UserRole.student) ...[
-                    const SizedBox(width: 8),
-                    FilledButton.icon(
-                      onPressed: _handleRenew,
-                      icon: const Icon(Icons.edit_calendar, size: 18),
-                      label: const Text('Produži članstvo'),
-                    ),
-                  ],
                 ],
               ),
             ],
@@ -333,65 +330,16 @@ class _UserDetailsDialogState extends State<UserDetailsDialog> {
     );
   }
 
-  Widget _buildMembershipStatusRow(bool isActive) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(
-            Icons.card_membership_outlined,
-            size: 20,
-            color: isActive ? Colors.green : Colors.orange,
-          ),
-          const SizedBox(width: 12),
-          const SizedBox(
-            width: 140,
-            child: Text(
-              'Status članarine:',
-              style: TextStyle(
-                color: AppTheme.textSecondary,
-                fontSize: 13,
-              ),
-            ),
-          ),
-          Expanded(
-            child: Row(
-              children: [
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: isActive
-                        ? Colors.green.withValues(alpha: 0.15)
-                        : Colors.red.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    isActive ? 'Aktivna' : 'Istekla / Nema',
-                    style: TextStyle(
-                      color:
-                          isActive ? Colors.green.shade700 : Colors.red.shade700,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 12,
-                    ),
-                  ),
-                ),
-                if (_membershipPaidUntil != null) ...[
-                  const SizedBox(width: 8),
-                  Text(
-                    'do ${formatDate(_membershipPaidUntil!)}',
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: AppTheme.textPrimary,
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ],
-      ),
+  Widget _buildMembershipSection(UserListItem item) {
+    final studentId = item.studentId;
+    if (studentId == null) return const SizedBox.shrink();
+
+    return MembershipSection(
+      api: context.read<StudentProvider>(),
+      studentId: studentId,
+      membershipPaidUntil: _membershipPaidUntil,
+      onMembershipChanged: (paidUntil) =>
+          setState(() => _membershipPaidUntil = paidUntil),
     );
   }
 

@@ -197,6 +197,29 @@ public sealed class ENoteContextTests
     }
 
     [Fact]
+    public void Model_MembershipPayment_HasUniqueReceiptNumberIndex()
+    {
+        using var context = CreateContext(Baseline);
+
+        var entityType = context.Model.FindEntityType(typeof(MembershipPayment))!;
+        var index = entityType.GetIndexes()
+            .Single(i => i.Properties.Select(p => p.Name).SequenceEqual([nameof(MembershipPayment.ReceiptNumber)]));
+
+        Assert.True(index.IsUnique);
+        Assert.Equal(DbConstraintNames.MembershipPaymentReceiptNumberUniqueIndex, index.GetDatabaseName());
+        Assert.False(entityType.FindProperty(nameof(MembershipPayment.ReceiptNumber))!.IsNullable);
+        Assert.Equal(50, entityType.FindProperty(nameof(MembershipPayment.ReceiptNumber))!.GetMaxLength());
+        Assert.Equal(500, entityType.FindProperty(nameof(MembershipPayment.Note))!.GetMaxLength());
+        Assert.False(entityType.FindProperty(nameof(MembershipPayment.Amount))!.IsNullable);
+        Assert.False(entityType.FindProperty(nameof(MembershipPayment.PeriodStart))!.IsNullable);
+        Assert.False(entityType.FindProperty(nameof(MembershipPayment.PeriodEnd))!.IsNullable);
+
+        var foreignKey = Assert.Single(entityType.GetForeignKeys());
+        Assert.Equal(nameof(MembershipPayment.StudentId), Assert.Single(foreignKey.Properties).Name);
+        Assert.Equal(DeleteBehavior.Restrict, foreignKey.DeleteBehavior);
+    }
+
+    [Fact]
     public void Model_Payment_HasOneOpenAttemptPerObligationUniqueIndex()
     {
         using var context = CreateContext(Baseline);

@@ -1,6 +1,7 @@
 import 'package:enote_core/enote_core.dart';
 
-class InstructorStudentProvider extends BaseProvider<StudentDto> {
+class InstructorStudentProvider extends BaseProvider<StudentDto>
+    with MembershipPaymentsApi<StudentDto> {
   InstructorStudentProvider({required super.apiClient})
       : super(endpoint: 'instructor/students');
 

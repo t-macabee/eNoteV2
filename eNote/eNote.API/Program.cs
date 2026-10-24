@@ -37,6 +37,7 @@ builder.Services
         bus.AddConsumer<AnnouncementPublishedPushConsumer>();
         bus.AddConsumer<EnrollmentStatusChangedPushConsumer>();
         bus.AddConsumer<TuitionPaymentPushConsumer>();
+        bus.AddConsumer<MembershipWarningPushConsumer>();
     })
     .AddJwtAuthentication()
     .AddAuthorization()

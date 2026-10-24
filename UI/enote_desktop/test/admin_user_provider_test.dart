@@ -96,38 +96,4 @@ void main() {
       );
     });
   });
-
-  group('renewMembership', () {
-    test('sends PUT with paidUntil body and returns the picked date on success', () async {
-      final mockClient = _mockClient(statusCode: 204, responseBody: '');
-      final provider = _buildProvider(mockClient);
-      final paidUntil = DateTime(2027, 3, 1);
-
-      final result = await provider.renewMembership(22, paidUntil);
-
-      expect(result, paidUntil);
-      expect(mockClient.recorded.single.method, 'PUT');
-      expect(mockClient.recorded.single.url, endsWith('admin/users/22/membership'));
-      expect(mockClient.recorded.single.body, {'paidUntil': paidUntil.toIso8601String()});
-    });
-
-    test('400 throws ApiException with mapped message', () async {
-      final mockClient = _mockClient(
-        statusCode: 400,
-        responseBody: jsonEncode({'message': 'Nevažeći datum.'}),
-      );
-      final provider = _buildProvider(mockClient);
-
-      expect(
-        () => provider.renewMembership(22, DateTime(2027, 1, 1)),
-        throwsA(
-          isA<ApiException>().having(
-            (e) => e.message,
-            'message',
-            'Nevažeći datum.',
-          ),
-        ),
-      );
-    });
-  });
 }

@@ -15,11 +15,6 @@ import 'user_details_dialog.dart';
 import 'user_list_item.dart';
 import 'user_provision_form_screen.dart';
 
-DateTime nextMonthClamped(DateTime from) {
-  final lastDay = DateTime(from.year, from.month + 2, 0).day;
-  return DateTime(from.year, from.month + 1, from.day.clamp(1, lastDay));
-}
-
 class UserGridScreen extends StatefulWidget {
   const UserGridScreen({super.key});
 
@@ -52,43 +47,6 @@ class _UserGridScreenState extends State<UserGridScreen> {
       ),
     );
     _gridKey.currentState?.refresh();
-  }
-
-  Future<DateTime?> _renewMembership(
-    BuildContext context,
-    UserListItem item,
-  ) async {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final paidUntil = item.membershipPaidUntil;
-    final initialDate = nextMonthClamped(
-      paidUntil != null && paidUntil.isAfter(today) ? paidUntil : now,
-    );
-
-    final pickedDate = await showDatePicker(
-      context: context,
-      initialDate: initialDate.isBefore(today) ? today : initialDate,
-      firstDate: today,
-      lastDate: DateTime(today.year + 10),
-      helpText: 'Produži članstvo',
-      confirmText: 'Sačuvaj',
-      cancelText: 'Odustani',
-    );
-
-    if (pickedDate == null || !context.mounted) return null;
-
-    try {
-      final updated = await context
-          .read<AdminUserProvider>()
-          .renewMembership(item.appUserId, pickedDate);
-      _gridKey.currentState?.refresh();
-      return updated;
-    } catch (e) {
-      if (context.mounted) {
-        ErrorBanner.show(context, message: userMessage(e));
-      }
-      return null;
-    }
   }
 
   Future<bool> _setUserStatus(
@@ -126,16 +84,19 @@ class _UserGridScreenState extends State<UserGridScreen> {
     }
   }
 
-  void _showUserDetailsDialog(BuildContext context, UserListItem item) {
-    showDialog<void>(
+  Future<void> _showUserDetailsDialog(
+    BuildContext context,
+    UserListItem item,
+  ) async {
+    await showDialog<void>(
       context: context,
       builder: (dialogContext) => UserDetailsDialog(
         item: item,
-        onRenewMembership: () => _renewMembership(context, item),
         onStatusChange: (isActive) => _setUserStatus(context, item, isActive),
         onDelete: () => _deleteUser(context, item),
       ),
     );
+    _gridKey.currentState?.refresh();
   }
 
   void _applyFilters() {

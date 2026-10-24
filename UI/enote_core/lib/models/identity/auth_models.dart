@@ -163,13 +163,3 @@ class UserProvisionRequest {
     if (isManager != null) 'isManager': isManager,
   };
 }
-
-class UpdateMembershipRequest {
-  final DateTime? paidUntil;
-
-  UpdateMembershipRequest({this.paidUntil});
-
-  Map<String, dynamic> toJson() => {
-    if (paidUntil != null) 'paidUntil': paidUntil!.toIso8601String(),
-  };
-}

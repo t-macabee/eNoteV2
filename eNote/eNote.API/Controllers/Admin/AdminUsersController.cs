@@ -59,15 +59,6 @@ public sealed class AdminUsersController(
         });
     }
 
-    [HttpPut("{id:int}/membership")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> UpdateMembership(int id, [FromBody] UpdateMembershipRequest request, CancellationToken cancellationToken)
-    {
-        await provisioningService.UpdateMembershipAsync(id, request, cancellationToken);
-        return NoContent();
-    }
-
     [HttpPut("{id:int}/status")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]

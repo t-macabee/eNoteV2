@@ -78,6 +78,24 @@ void main() {
 
   testWidgets('InstructorStudentDetailsDialog renders student info and cross-enrollments', (tester) async {
     final mockClient = ScriptedClient((req) async {
+      if (req.url.path.endsWith('/membership-payments')) {
+        return jsonResponse({
+          'items': [
+            {
+              'id': 9,
+              'studentId': 5,
+              'amount': 40.0,
+              'paidAt': '2026-09-01T00:00:00Z',
+              'periodStart': '2026-09-01T00:00:00Z',
+              'periodEnd': '2027-01-01T00:00:00Z',
+              'receiptNumber': 'CL-9',
+            },
+          ],
+          'page': 1,
+          'pageSize': 5,
+          'totalCount': 1,
+        }, 200);
+      }
       if (req.url.path.endsWith('/enrollments')) {
         return http.Response(
           jsonEncode([
@@ -176,7 +194,8 @@ void main() {
 
     expect(find.text('Detalji studenta'), findsOneWidget);
     expect(find.text('Johann Bach'), findsOneWidget);
-    expect(find.text('Status članarine'), findsOneWidget);
+    expect(find.text('Članarina'), findsOneWidget);
+    expect(find.textContaining('Potvrda CL-9'), findsOneWidget);
     expect(find.text('Upisani kursevi'), findsOneWidget);
     expect(find.text('Violin 101'), findsOneWidget);
     expect(find.text('Beethoven'), findsOneWidget);
