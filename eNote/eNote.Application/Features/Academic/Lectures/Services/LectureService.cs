@@ -198,9 +198,7 @@ public sealed class LectureService(
             throw new BusinessException(Messages.LectureStudentNotActiveEnrollment);
         }
 
-        var location = request.Location.Trim().ToLower();
-
-        if (await context.Set<Lecture>().HasLocationConflictAsync(location, request.LectureTime, request.Duration, cancellationToken: cancellationToken) ||
+        if (await context.Set<Lecture>().HasLocationConflictAsync(request.Location, request.LectureTime, request.Duration, cancellationToken: cancellationToken) ||
             await context.Set<Lecture>().HasInstructorConflictAsync(instructorId, request.LectureTime, request.Duration, cancellationToken: cancellationToken))
         {
             throw new ConflictException(Messages.LectureTimeConflict);
@@ -245,9 +243,7 @@ public sealed class LectureService(
             }
         }
 
-        var location = request.Location.Trim().ToLower();
-
-        if (await context.Set<Lecture>().HasLocationConflictAsync(location, request.LectureTime, request.Duration, id, cancellationToken) ||
+        if (await context.Set<Lecture>().HasLocationConflictAsync(request.Location, request.LectureTime, request.Duration, id, cancellationToken) ||
             await context.Set<Lecture>().HasInstructorConflictAsync(instructorId, request.LectureTime, request.Duration, id, cancellationToken))
         {
             throw new ConflictException(Messages.LectureTimeConflict);

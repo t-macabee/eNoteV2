@@ -286,6 +286,24 @@ public sealed class LectureServiceTests
     }
 
     [Fact]
+    public async Task CreateAsync_Throws_WhenLocationOverlaps_WithKeywordSpaces()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var service = CreateService(harness.Context, harness.Instructor);
+
+        await Assert.ThrowsAsync<ConflictException>(() =>
+            service.CreateAsync(new LectureCreateRequest
+            {
+                CourseId = harness.Course.Id,
+                Name = "Overlap with spaces",
+                Location = "  room 1  ",
+                Duration = 60,
+                LectureTime = Now.AddMinutes(30),
+                LectureType = LectureType.Practical
+            }));
+    }
+
+    [Fact]
     public async Task CreateAsync_Throws_WhenInstructorOverlaps_AtDifferentLocation()
     {
         var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
