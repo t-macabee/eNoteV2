@@ -3,6 +3,8 @@ using eNote.API.Converters;
 using eNote.API.Extensions;
 using eNote.API.Hubs;
 using eNote.Infrastructure;
+using eNote.Infrastructure.Data.Seed;
+using Microsoft.Extensions.Options;
 using Scalar.AspNetCore;
 using Serilog;
 using System.Text.Json.Serialization;
@@ -16,7 +18,6 @@ Log.Logger = new LoggerConfiguration()
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 builder.Host.UseApplicationLogging();
-builder.Configuration.ValidateRequiredSettings();
 
 if (builder.Environment.IsDevelopment())
 {
@@ -46,7 +47,7 @@ builder.Services
     .AddJwtAuthentication()
     .AddAuthorization()
     .AddApplicationServices(builder.Configuration)
-    .AddApplicationCors(builder.Configuration, builder.Environment)
+    .AddApplicationCors(builder.Configuration)
     .AddApplicationRateLimiting()
     .AddResponseCompression(opts => opts.EnableForHttps = true)
     .AddMapsterMappings()
@@ -65,6 +66,8 @@ builder.Services.AddInfrastructureHealthChecks();
 
 WebApplication app = builder.Build();
 
+app.Services.GetRequiredService<IStartupValidator>().Validate();
+
 if (!app.Environment.IsDevelopment())
 {
     app.UseHttpsRedirection();
@@ -75,7 +78,7 @@ app.UseCors(CorsExtensions.PolicyName);
 app.UseErrorHandling();
 app.UseMiddleware<eNote.API.Middleware.AuthRateLimitIdentityMiddleware>();
 
-if (app.Configuration.GetValue("Seed:Enabled", app.Environment.IsDevelopment()))
+if (app.Services.GetRequiredService<IOptions<SeedOptions>>().Value.Enabled)
 {
     await app.InitializeDevelopmentDataAsync();
 }

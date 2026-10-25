@@ -128,6 +128,15 @@ public sealed class DiResolutionTests
             ["Smtp:Port"] = "1025",
             ["Smtp:EnableSsl"] = "false",
             ["Jwt:ExpirationMinutes"] = "30",
+            ["RabbitMQ:Host"] = "localhost",
+            ["RabbitMQ:VirtualHost"] = "/",
+            ["RabbitMQ:User"] = "guest",
+            ["RabbitMQ:Password"] = "guest",
+            ["Stripe:SecretKey"] = "sk_test_123",
+            ["Stripe:WebhookSecret"] = "whsec_123",
+            ["Stripe:Currency"] = "bam",
+            ["Stripe:StatementDescriptor"] = "ENOTE Rental",
+            ["Storage:Root"] = "wwwroot",
         };
         foreach (var pair in additional)
         {

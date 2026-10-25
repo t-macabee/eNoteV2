@@ -1,6 +1,6 @@
-﻿using MassTransit;
-using Microsoft.Extensions.Configuration;
+using MassTransit;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 namespace eNote.Infrastructure.Messaging;
 
@@ -8,7 +8,6 @@ public static class MassTransitServiceExtensions
 {
     public static IServiceCollection AddRabbitMqMassTransit(
         this IServiceCollection services,
-        IConfiguration configuration,
         Action<IBusRegistrationConfigurator>? configureBus = null)
     {
         services.AddMassTransit(x =>
@@ -17,13 +16,15 @@ public static class MassTransitServiceExtensions
 
             x.UsingRabbitMq((context, cfg) =>
             {
+                var options = context.GetRequiredService<IOptions<RabbitMqOptions>>().Value;
+
                 cfg.Host(
-                    RabbitMqConfiguration.GetHost(configuration),
-                    RabbitMqConfiguration.GetVirtualHost(configuration),
+                    options.Host,
+                    options.VirtualHost,
                     h =>
                     {
-                        h.Username(RabbitMqConfiguration.GetUsername(configuration));
-                        h.Password(RabbitMqConfiguration.GetPassword(configuration));
+                        h.Username(options.User);
+                        h.Password(options.Password);
                     });
 
                 cfg.UseMessageRetry(r => r.Exponential(4, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(2)));

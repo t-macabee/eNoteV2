@@ -1,7 +1,7 @@
 using eNote.Application.Common.Interfaces;
 using MailKit.Net.Smtp;
 using MailKit.Security;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 using MimeKit;
 
 namespace eNote.Infrastructure.Identity;
@@ -16,26 +16,17 @@ public sealed class SmtpEmailService : IEmailService
     private readonly string? _username;
     private readonly string? _password;
 
-    public static IReadOnlyList<string> RequiredConfigurationKeys { get; } =
-        ["Smtp:Host", "Smtp:From", "Smtp:PasswordResetUrl", "Smtp:Port", "Smtp:EnableSsl"];
-
-    public SmtpEmailService(IConfiguration configuration)
+    public SmtpEmailService(IOptions<SmtpOptions> options)
     {
-        foreach (var key in RequiredConfigurationKeys)
-        {
-            if (string.IsNullOrWhiteSpace(configuration[key]))
-            {
-                throw new InvalidOperationException($"{key} is required.");
-            }
-        }
+        var smtp = options.Value;
 
-        _host = configuration["Smtp:Host"]!;
-        _from = configuration["Smtp:From"]!;
-        _port = configuration.GetValue<int>("Smtp:Port");
-        _enableSsl = configuration.GetValue<bool>("Smtp:EnableSsl");
-        _passwordResetUrl = configuration["Smtp:PasswordResetUrl"]!;
-        _username = configuration["Smtp:Username"];
-        _password = configuration["Smtp:Password"];
+        _host = smtp.Host;
+        _from = smtp.From;
+        _port = smtp.Port;
+        _enableSsl = smtp.EnableSsl!.Value;
+        _passwordResetUrl = smtp.PasswordResetUrl;
+        _username = smtp.Username;
+        _password = smtp.Password;
     }
 
     public async Task SendPasswordResetAsync(string email, string token, CancellationToken cancellationToken = default)

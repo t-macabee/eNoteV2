@@ -23,13 +23,6 @@ Log.Logger = new LoggerConfiguration()
 
 builder.Services.AddApplicationLogging(builder.Configuration);
 
-var rabbitMqError = RabbitMqConfiguration.GetMissingConfigurationError(builder.Configuration);
-
-if (rabbitMqError is not null)
-{
-    throw new InvalidOperationException("Missing required configuration: " + rabbitMqError);
-}
-
 builder.Services.AddScoped<ICurrentUserContext, WorkerActor>();
 builder.Services
     .AddPersistence(builder.Configuration)

@@ -11,6 +11,7 @@ using eNote.Application.Features.Identity.Users.Services;
 using eNote.Application.Features.Rentals.InstrumentRentals.Services;
 using eNote.Application.Features.Rentals.Payments.Services;
 using eNote.Application.Features.Reports.Services;
+using eNote.Infrastructure.Configuration;
 using eNote.Infrastructure.Data;
 using eNote.Infrastructure.Data.Seed;
 using eNote.Infrastructure.Health;
@@ -25,6 +26,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
 
 namespace eNote.Infrastructure;
 
@@ -32,12 +34,14 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddPersistence(this IServiceCollection services, IConfiguration configuration)
     {
-        var connectionString = configuration.GetConnectionString("DefaultConnection")
-            ?? throw new InvalidOperationException("ConnectionStrings__DefaultConnection is required.");
+        services.AddOptions<ConnectionStringOptions>()
+            .Bind(configuration.GetSection(ConnectionStringOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
 
         services.AddSingleton<IClock, SystemClock>();
-        services.AddDbContext<ENoteContext>(options => options.UseSqlServer(
-            connectionString,
+        services.AddDbContext<ENoteContext>((provider, options) => options.UseSqlServer(
+            provider.GetRequiredService<IOptions<ConnectionStringOptions>>().Value.DefaultConnection,
             sql => sql.MigrationsAssembly(typeof(ENoteContext).Assembly.FullName)));
         services.AddScoped<IAppDbContext>(provider => provider.GetRequiredService<ENoteContext>());
         services.AddScoped<IStoreContext>(provider => provider.GetRequiredService<ENoteContext>());
@@ -76,6 +80,11 @@ public static class DependencyInjection
 
     public static IServiceCollection AddEmail(this IServiceCollection services, IConfiguration configuration)
     {
+        services.AddOptions<SmtpOptions>()
+            .Bind(configuration.GetSection(SmtpOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
         services.AddScoped<IEmailService, SmtpEmailService>();
 
         return services;
@@ -86,7 +95,12 @@ public static class DependencyInjection
         IConfiguration configuration,
         Action<IBusRegistrationConfigurator>? configureBus = null)
     {
-        services.AddRabbitMqMassTransit(configuration, configureBus);
+        services.AddOptions<RabbitMqOptions>()
+            .Bind(configuration.GetSection(RabbitMqOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
+        services.AddRabbitMqMassTransit(configureBus);
 
         return services;
     }
@@ -96,6 +110,27 @@ public static class DependencyInjection
         services.AddOptions<JwtOptions>()
             .Bind(configuration.GetSection(JwtOptions.SectionName))
             .ValidateDataAnnotations()
+            .Validate(o => !PlaceholderSecret.IsPlaceholder(o.Key), "Jwt__Key is a placeholder value and must be changed before deployment.")
+            .ValidateOnStart();
+
+        services.AddOptions<StripeOptions>()
+            .Bind(configuration.GetSection(StripeOptions.SectionName))
+            .ValidateDataAnnotations()
+            .Validate(o => string.IsNullOrWhiteSpace(o.SecretKey) || o.SecretKey.StartsWith("sk_", StringComparison.Ordinal), "Stripe__SecretKey must start with sk_.")
+            .Validate(o => !PlaceholderSecret.IsPlaceholder(o.SecretKey), "Stripe__SecretKey is a placeholder value and must be changed before deployment.")
+            .Validate(o => !PlaceholderSecret.IsPlaceholder(o.WebhookSecret), "Stripe__WebhookSecret is a placeholder value and must be changed before deployment.")
+            .PostConfigure(o => o.Currency = o.Currency.Trim().ToLowerInvariant())
+            .ValidateOnStart();
+
+        services.AddOptions<StorageOptions>()
+            .Bind(configuration.GetSection(StorageOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
+        services.AddOptions<SeedOptions>()
+            .Configure<IHostEnvironment>((options, environment) => options.Enabled = environment.IsDevelopment())
+            .Bind(configuration.GetSection(SeedOptions.SectionName))
+            .Validate(o => !o.Enabled || !string.IsNullOrWhiteSpace(o.DefaultPassword), "Seed__DefaultPassword is required.")
             .ValidateOnStart();
 
         services.AddMemoryCache();
@@ -111,7 +146,7 @@ public static class DependencyInjection
         services.AddScoped<IEnrollmentNotificationDispatcher, EnrollmentNotificationDispatcher>();
         services.AddScoped<IMembershipWarningDispatcher, MembershipWarningDispatcher>();
         services.AddScoped<ISubmissionNotificationDispatcher, SubmissionNotificationDispatcher>();
-        services.AddSingleton(_ => BuildStripeOptions(configuration));
+        services.AddSingleton(provider => provider.GetRequiredService<IOptions<StripeOptions>>().Value);
         services.AddScoped<IPaymentGateway, StripePaymentGateway>();
         services.AddScoped<StripeWebhookService>();
         services.AddHostedService<RentalNotificationOutboxPublisher>();
@@ -127,19 +162,6 @@ public static class DependencyInjection
             .Services;
 
     public static void LoadEnvironment() => Configuration.DotEnvConfiguration.Load();
-
-    private static StripeOptions BuildStripeOptions(IConfiguration configuration)
-    {
-        var section = configuration.GetSection("Stripe");
-
-        return new StripeOptions
-        {
-            SecretKey = section["SecretKey"] ?? string.Empty,
-            WebhookSecret = section["WebhookSecret"] ?? string.Empty,
-            Currency = (section["Currency"] ?? string.Empty).Trim().ToLowerInvariant(),
-            StatementDescriptor = section["StatementDescriptor"] ?? string.Empty
-        };
-    }
 
     public static async Task<IHost> InitializeDevelopmentDataAsync(this IHost host)
     {

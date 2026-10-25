@@ -1,7 +1,7 @@
 using eNote.Application.Common.Files;
 using eNote.Application.Common.Localization;
 using eNote.Infrastructure.Storage;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 
 namespace eNote.Tests.Storage;
 
@@ -151,13 +151,7 @@ public sealed class LocalFileStorageServiceTests : IDisposable
 
     private LocalFileStorageService CreateService()
     {
-        var configuration = new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string?>
-            {
-                ["Storage:Root"] = _webRoot
-            })
-            .Build();
-        return new LocalFileStorageService(configuration);
+        return new LocalFileStorageService(Options.Create(new StorageOptions { Root = _webRoot }));
     }
 
     private static MemoryStream PngStream() =>

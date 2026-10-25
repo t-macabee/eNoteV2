@@ -1,22 +1,24 @@
 using eNote.Infrastructure.Messaging;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Options;
 using RabbitMQ.Client;
 
 namespace eNote.Infrastructure.Health;
 
-public sealed class RabbitMqHealthCheck(IConfiguration configuration) : IHealthCheck
+public sealed class RabbitMqHealthCheck(IOptions<RabbitMqOptions> options) : IHealthCheck
 {
     public async Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default)
     {
         try
         {
+            var rabbitMq = options.Value;
+
             var factory = new ConnectionFactory
             {
-                HostName = RabbitMqConfiguration.GetHost(configuration),
-                VirtualHost = RabbitMqConfiguration.GetVirtualHost(configuration),
-                UserName = RabbitMqConfiguration.GetUsername(configuration),
-                Password = RabbitMqConfiguration.GetPassword(configuration)
+                HostName = rabbitMq.Host,
+                VirtualHost = rabbitMq.VirtualHost,
+                UserName = rabbitMq.User,
+                Password = rabbitMq.Password
             };
 
             await using var connection = await factory.CreateConnectionAsync(cancellationToken);

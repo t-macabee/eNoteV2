@@ -6,8 +6,8 @@ using eNote.Application.Features.Identity.Users.Services;
 using eNote.Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 namespace eNote.Infrastructure.Data.Seed;
 
@@ -21,9 +21,9 @@ public static class IdentitySeed
 
         var provisioningService = serviceProvider.GetRequiredService<IUserProvisioningService>();
         var userManager = serviceProvider.GetRequiredService<UserManager<AppUser>>();
-        var configuration = serviceProvider.GetRequiredService<IConfiguration>();
+        var seedOptions = serviceProvider.GetRequiredService<IOptions<SeedOptions>>().Value;
 
-        var reviewPassword = configuration["Seed:DefaultPassword"] ?? throw new InvalidOperationException("Seed__DefaultPassword is required.");
+        var reviewPassword = seedOptions.DefaultPassword;
 
         await RoleSeed.SeedRoles(roleManager);
 

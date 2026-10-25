@@ -2,7 +2,7 @@ using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Files;
 using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Localization;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 
 namespace eNote.Infrastructure.Storage;
 
@@ -14,16 +14,9 @@ public sealed class LocalFileStorageService : IFileStorageService
 
     private readonly string _rootPath;
 
-    public LocalFileStorageService(IConfiguration configuration)
+    public LocalFileStorageService(IOptions<StorageOptions> options)
     {
-        var configuredRoot = configuration["Storage:Root"];
-
-        if (string.IsNullOrWhiteSpace(configuredRoot))
-        {
-            configuredRoot = Path.Combine(Directory.GetCurrentDirectory(), "storage");
-        }
-
-        _rootPath = Path.GetFullPath(configuredRoot);
+        _rootPath = Path.GetFullPath(options.Value.Root);
     }
 
     public async Task<string> SaveAsync(Stream stream, string fileName, string contentType, string subfolder, CancellationToken ct = default)

@@ -1,5 +1,6 @@
 using eNote.Application.Common.Persistence;
 using eNote.Application.Features.Identity.Users.Services;
+using eNote.Infrastructure.Data.Seed;
 using eNote.Infrastructure.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -13,11 +14,12 @@ public static class SeedTestHarness
         var services = new ServiceCollection();
         services.AddSingleton(context);
         services.AddScoped<IAppDbContext>(_ => context);
-        services.AddSingleton<IConfiguration>(
-            new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
-            {
-                ["Seed:DefaultPassword"] = "test"
-            }).Build());
+        var configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
+        {
+            ["Seed:DefaultPassword"] = "test"
+        }).Build();
+        services.AddSingleton<IConfiguration>(configuration);
+        services.AddOptions<SeedOptions>().Bind(configuration.GetSection(SeedOptions.SectionName));
         services.AddScoped<IClock>(_ => new FixedClock(now));
         services.AddScoped<IFileStorageService>(_ => new StubFileStorageService());
         services.AddScoped<ICurrentUserContext>(_ => new StubCurrentActor());
