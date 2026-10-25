@@ -42,6 +42,18 @@ public sealed class ConfigurationOptionsTests
     }
 
     [Fact]
+    public void JwtOptions_EmptySection_FailsForEveryRequiredValue()
+    {
+        var services = BuildApiServices(removeKeys: ["Jwt:Key", "Jwt:Issuer", "Jwt:Audience"]);
+
+        var exception = Assert.Throws<OptionsValidationException>(() => ResolveOptions<JwtOptions>(services));
+
+        Assert.Contains("Jwt__Key is required.", exception.Message);
+        Assert.Contains("Jwt__Issuer is required.", exception.Message);
+        Assert.Contains("Jwt__Audience is required.", exception.Message);
+    }
+
+    [Fact]
     public void JwtOptions_ShortKey_Fails()
     {
         var services = BuildApiServices(overrides: new Dictionary<string, string?> { ["Jwt:Key"] = "short-key" });
@@ -75,6 +87,20 @@ public sealed class ConfigurationOptionsTests
         var exception = Assert.Throws<OptionsValidationException>(() => ResolveOptions<StripeOptions>(services));
 
         Assert.Contains(message, exception.Message);
+    }
+
+    [Fact]
+    public void StripeOptions_EmptySection_FailsForEveryRequiredValue()
+    {
+        var services = BuildApiServices(removeKeys:
+            ["Stripe:SecretKey", "Stripe:WebhookSecret", "Stripe:Currency", "Stripe:StatementDescriptor"]);
+
+        var exception = Assert.Throws<OptionsValidationException>(() => ResolveOptions<StripeOptions>(services));
+
+        Assert.Contains("Stripe__SecretKey is required.", exception.Message);
+        Assert.Contains("Stripe__WebhookSecret is required.", exception.Message);
+        Assert.Contains("Stripe__Currency is required.", exception.Message);
+        Assert.Contains("Stripe__StatementDescriptor is required.", exception.Message);
     }
 
     [Theory]
@@ -139,6 +165,22 @@ public sealed class ConfigurationOptionsTests
         var exception = Assert.Throws<OptionsValidationException>(() => ResolveOptions<SmtpOptions>(services));
 
         Assert.Contains(message, exception.Message);
+    }
+
+    [Fact]
+    public void SmtpOptions_EmptySection_FailsForEveryRequiredValue()
+    {
+        var services = new ServiceCollection();
+        services.AddEmail(CreateConfiguration(removeKeys:
+            ["Smtp:Host", "Smtp:From", "Smtp:PasswordResetUrl", "Smtp:Port", "Smtp:EnableSsl"]));
+
+        var exception = Assert.Throws<OptionsValidationException>(() => ResolveOptions<SmtpOptions>(services));
+
+        Assert.Contains("Smtp__Host is required.", exception.Message);
+        Assert.Contains("Smtp__From is required.", exception.Message);
+        Assert.Contains("Smtp__PasswordResetUrl is required.", exception.Message);
+        Assert.Contains("Smtp__Port must be between 1 and 65535.", exception.Message);
+        Assert.Contains("Smtp__EnableSsl is required.", exception.Message);
     }
 
     [Fact]
