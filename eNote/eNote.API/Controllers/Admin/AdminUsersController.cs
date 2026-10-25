@@ -1,4 +1,5 @@
 using eNote.API.Controllers.Base;
+using eNote.Application.Common.Paging;
 using eNote.Application.Constants;
 using eNote.Application.Features.Identity.Users;
 using eNote.Application.Features.Identity.Users.Services;
@@ -13,6 +14,15 @@ public sealed class AdminUsersController(
     UserProfileService profileService,
     IUserProvisioningService provisioningService) : CoreController
 {
+    [HttpGet]
+    [ProducesResponseType(typeof(PagedResult<AdminUserListItemDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<PagedResult<AdminUserListItemDto>>> GetPaged([FromQuery] AdminUserSearchObject search, CancellationToken cancellationToken)
+    {
+        var result = await profileService.GetPagedAsync(search, cancellationToken);
+
+        return Ok(result);
+    }
+
     [HttpGet("{id:int}")]
     [ProducesResponseType(typeof(UserProfileResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

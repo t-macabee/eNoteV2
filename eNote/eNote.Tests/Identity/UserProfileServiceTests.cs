@@ -215,6 +215,19 @@ public sealed class UserProfileServiceTests
         Assert.Equal(Messages.EmployeeProfileNotFound, ex.Message);
     }
 
+    [Fact]
+    public async Task GetPagedAsync_ReturnsIdentitySearchResult()
+    {
+        var identity = Identity(ActiveUser(1), AppRoles.Administrator);
+        var service = CreateService(identity);
+
+        var result = await service.GetPagedAsync(new AdminUserSearchObject());
+
+        var item = Assert.Single(result.Items);
+        Assert.Equal(1, item.AppUserId);
+        Assert.Equal(AppRoles.Administrator, item.Role);
+    }
+
     private static UserProfileService CreateService(StubUserIdentityService identity, int currentUserId = 1) =>
         new(new ThrowingDbContext(), identity, new ThrowingUserProfileLookup(), new StubCurrentActor(userId: currentUserId));
 

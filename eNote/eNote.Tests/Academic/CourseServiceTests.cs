@@ -1,4 +1,5 @@
 using eNote.Application.Common.Localization;
+using eNote.Application.Common.Paging;
 using eNote.Application.Features.Academic.Courses;
 using eNote.Application.Features.Academic.Courses.Services;
 using eNote.Application.Features.Identity.Users;
@@ -213,7 +214,7 @@ public sealed class CourseServiceTests
         await CreateActiveUserAsync(userManager, 100, "jdoe", "Jane", "Doe");
         await CreateActiveUserAsync(userManager, 200, "asmith", "Alice", "Smith");
 
-        var service = CreateService(context, instructor, identity: new UserIdentityService(userManager));
+        var service = CreateService(context, instructor, identity: new UserIdentityService(userManager, context));
 
         var result = await service.GetPagedForAdminAsync(new CourseSearchObject());
 
@@ -883,5 +884,8 @@ public sealed class CourseServiceTests
 
         public Task<IReadOnlyList<int>> FindUserIdsAsync(string? name, bool? isActive, CancellationToken cancellationToken = default) =>
             Task.FromResult<IReadOnlyList<int>>([]);
+
+        public Task<PagedResult<AdminUserListItemDto>> SearchAsync(AdminUserSearchObject search, CancellationToken cancellationToken = default) =>
+            throw new NotSupportedException();
     }
 }

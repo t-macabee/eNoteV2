@@ -149,7 +149,7 @@ public sealed class UserAccountServiceTests
         Assert.Equal("image/webp", contentType);
         Assert.Equal(DefaultImages.UserPicture, harness.FileStorage.OpenReadCalls.Single());
 
-        var identity = await new UserIdentityService(harness.UserManager).GetUserAsync(user.Id);
+        var identity = await new UserIdentityService(harness.UserManager, harness.Context).GetUserAsync(user.Id);
         Assert.False(identity!.HasPicture);
         Assert.Null((await harness.UserManager.FindByIdAsync(user.Id.ToString()))!.PicturePath);
     }
@@ -301,7 +301,7 @@ public sealed class UserAccountServiceTests
         var identity = IdentityTestHarness.Create(context);
         await identity.RoleManager.CreateAsync(new AppRole { Name = "Student" });
         var fileStorage = new RecordingFileStorageService();
-        return new Harness(identity.UserManager, identity.RoleManager, fileStorage, new UserAccountService(identity.UserManager, fileStorage));
+        return new Harness(identity.UserManager, identity.RoleManager, fileStorage, context, new UserAccountService(identity.UserManager, fileStorage));
     }
 
     private static MemoryStream PngStream() =>
@@ -311,11 +311,13 @@ public sealed class UserAccountServiceTests
         UserManager<AppUser> userManager,
         RoleManager<AppRole> roleManager,
         RecordingFileStorageService fileStorage,
+        ENoteContext context,
         UserAccountService service)
     {
         public UserManager<AppUser> UserManager => userManager;
         public RoleManager<AppRole> RoleManager => roleManager;
         public RecordingFileStorageService FileStorage => fileStorage;
+        public ENoteContext Context => context;
         public UserAccountService Service => service;
     }
 }

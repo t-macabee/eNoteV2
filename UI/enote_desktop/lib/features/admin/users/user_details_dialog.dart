@@ -7,10 +7,9 @@ import '../../../theme/app_theme.dart';
 import '../../shared/membership/membership_section.dart';
 import '../student/student_provider.dart';
 import 'admin_user_provider.dart';
-import 'user_list_item.dart';
 
 class UserDetailsDialog extends StatefulWidget {
-  final UserListItem item;
+  final AdminUserListItemDto item;
   final Future<bool> Function(bool) onStatusChange;
   final Future<bool> Function() onDelete;
 
@@ -31,7 +30,7 @@ class _UserDetailsDialogState extends State<UserDetailsDialog> {
   String? _email;
   bool _isLoadingProfile = true;
   bool _isStatusChanging = false;
-  late bool _isActive = widget.item.isActive ?? true;
+  late bool _isActive = widget.item.isActive;
 
   Future<void> _handleStatusChange() async {
     final nextStatus = !_isActive;
@@ -235,7 +234,9 @@ class _UserDetailsDialogState extends State<UserDetailsDialog> {
                   const SizedBox(width: 12),
                   Chip(
                     label: Text(
-                      userRoleLabel(item.role),
+                      item.role == null
+                          ? 'Nepoznata uloga'
+                          : userRoleLabel(item.role!),
                       style: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w500,
@@ -330,7 +331,7 @@ class _UserDetailsDialogState extends State<UserDetailsDialog> {
     );
   }
 
-  Widget _buildMembershipSection(UserListItem item) {
+  Widget _buildMembershipSection(AdminUserListItemDto item) {
     final studentId = item.studentId;
     if (studentId == null) return const SizedBox.shrink();
 

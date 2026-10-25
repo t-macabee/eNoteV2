@@ -1,4 +1,5 @@
 import '../../formatting/formatters.dart';
+import '../shared/enums.dart';
 class UserProfileResponse {
   final String role;
   final String username;
@@ -201,3 +202,48 @@ class ShopEmployeeDto {
   };
 }
 
+class AdminUserListItemDto {
+  final int appUserId;
+  final String? username;
+  final String? firstName;
+  final String? lastName;
+  final UserRole? role;
+  final bool isActive;
+  final int? studentId;
+  final DateTime? membershipPaidUntil;
+  final DateTime? enrollmentDate;
+  final String? storeName;
+  final bool? isManager;
+
+  AdminUserListItemDto({
+    required this.appUserId,
+    this.username,
+    this.firstName,
+    this.lastName,
+    this.role,
+    this.isActive = true,
+    this.studentId,
+    this.membershipPaidUntil,
+    this.enrollmentDate,
+    this.storeName,
+    this.isManager,
+  });
+
+  factory AdminUserListItemDto.fromJson(Map<String, dynamic> json) {
+    return AdminUserListItemDto(
+      appUserId: json['appUserId'] as int? ?? 0,
+      username: json['username'] as String?,
+      firstName: json['firstName'] as String?,
+      lastName: json['lastName'] as String?,
+      role: UserRole.fromString(json['role'] as String?),
+      isActive: json['isActive'] as bool? ?? true,
+      studentId: json['studentId'] as int?,
+      membershipPaidUntil: parseDate(json['membershipPaidUntil']),
+      enrollmentDate: parseDate(json['enrollmentDate']),
+      storeName: json['storeName'] as String?,
+      isManager: json['isManager'] as bool?,
+    );
+  }
+
+  String get displayName => formatDisplayName(firstName, lastName, username);
+}

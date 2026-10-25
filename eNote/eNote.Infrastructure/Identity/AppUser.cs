@@ -1,9 +1,10 @@
+using eNote.Domain.Entities.Shared.Base;
 using Microsoft.AspNetCore.Identity;
 using System.ComponentModel.DataAnnotations;
 
 namespace eNote.Infrastructure.Identity;
 
-public class AppUser : IdentityUser<int>
+public class AppUser : IdentityUser<int>, IEntity
 {
     [MaxLength(256)]
     public string? FirstName { get; set; }

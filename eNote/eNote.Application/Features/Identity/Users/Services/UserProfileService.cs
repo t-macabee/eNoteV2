@@ -1,3 +1,4 @@
+using eNote.Application.Common.Paging;
 using eNote.Application.Constants;
 using eNote.Application.Features.Identity.Users.Profiles;
 
@@ -9,6 +10,9 @@ public sealed class UserProfileService(
     IUserProfileLookup lookup,
     ICurrentUserContext currentUserService)
 {
+    public Task<PagedResult<AdminUserListItemDto>> GetPagedAsync(AdminUserSearchObject search, CancellationToken cancellationToken = default) =>
+        identity.SearchAsync(search, cancellationToken);
+
     public Task<UserProfileResponse> GetCurrentUserAsync(CancellationToken cancellationToken = default) => GetUserAsync(currentUserService.UserId, false, cancellationToken);
 
     public async Task<UserProfileResponse> GetUserAsync(int userId, bool includeInactive = false, CancellationToken cancellationToken = default)

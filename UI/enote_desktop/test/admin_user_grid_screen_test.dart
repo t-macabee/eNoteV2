@@ -3,109 +3,102 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
-import 'package:enote_desktop/features/admin/instructor/instructor_provider.dart';
-import 'package:enote_desktop/features/admin/student/student_provider.dart';
 import 'package:enote_desktop/features/admin/users/admin_user_provider.dart';
-import 'package:enote_desktop/features/admin/users/store_employee_provider.dart';
 import 'package:enote_desktop/features/admin/users/user_grid_screen.dart';
 
 import 'helpers.dart';
 
-ScriptedClient _client() => ScriptedClient((request) {
-  final url = request.url.toString();
+const _users = [
+  {
+    'appUserId': 10,
+    'username': 'aadmin',
+    'firstName': 'Ada',
+    'lastName': 'Admin',
+    'role': 'Administrator',
+    'isActive': true,
+  },
+  {
+    'appUserId': 11,
+    'username': 'wmozart',
+    'firstName': 'Wolfgang',
+    'lastName': 'Mozart',
+    'role': 'Instructor',
+    'isActive': true,
+  },
+  {
+    'appUserId': 22,
+    'username': 'lbeethoven',
+    'firstName': 'Ludwig',
+    'lastName': 'Beethoven',
+    'role': 'Student',
+    'isActive': true,
+    'studentId': 2,
+    'enrollmentDate': '2026-01-10T00:00:00Z',
+    'membershipPaidUntil': '2026-12-31T00:00:00Z',
+  },
+  {
+    'appUserId': 33,
+    'username': 'jbach',
+    'firstName': 'Johann',
+    'lastName': 'Bach',
+    'role': 'StoreEmployee',
+    'isActive': true,
+    'storeName': 'Sarajevo Guitar House',
+    'isManager': true,
+  },
+];
 
-  if (request.method == 'GET') {
-    if (url.contains('admin/instructors')) {
-      return jsonResponse({
-        'items': [
-          {
-            'id': 1,
-            'appUserId': 11,
-            'firstName': 'Wolfgang',
-            'lastName': 'Mozart',
-            'username': 'wmozart',
-          }
-        ],
-        'page': 1,
-        'pageSize': 20,
-        'totalCount': 1,
-      }, 200);
+ScriptedClient _client({int totalCount = 130}) => ScriptedClient((request) {
+  final uri = request.url;
+
+  if (request.method == 'GET' && RegExp(r'/admin/users/\d+$').hasMatch(uri.path)) {
+    final id = int.parse(uri.pathSegments.last);
+    return jsonResponse({
+      'role': 'Instructor',
+      'username': 'wmozart',
+      'email': 'w@example.com',
+      'profile': {
+        'id': id,
+        'firstName': 'Wolfgang',
+        'lastName': 'Mozart',
+        'isActive': true,
+      },
+    }, 200);
+  }
+
+  if (request.method == 'GET' && uri.path.endsWith('/admin/users')) {
+    final role = uri.queryParameters['role'];
+    final name = uri.queryParameters['name']?.toLowerCase();
+    final isActive = uri.queryParameters['isActive'];
+
+    var filtered = _users;
+
+    if (role != null && role.isNotEmpty) {
+      filtered = filtered.where((u) => u['role'] == role).toList();
     }
 
-    if (url.contains('admin/students')) {
-      return jsonResponse({
-        'items': [
-          {
-            'id': 2,
-            'appUserId': 22,
-            'firstName': 'Ludwig',
-            'lastName': 'Beethoven',
-            'username': 'lbeethoven',
-          }
-        ],
-        'page': 1,
-        'pageSize': 20,
-        'totalCount': 1,
-      }, 200);
+    if (isActive != null) {
+      final active = isActive == 'true';
+      filtered = filtered.where((u) => u['isActive'] == active).toList();
     }
 
-    if (url.contains('admin/employees')) {
-      final queryName = request.url.queryParameters['name'];
-      final allEmployees = [
-        {
-          'id': 3,
-          'appUserId': 33,
-          'musicStoreId': 5,
-          'storeName': 'Sarajevo Guitar House',
-          'firstName': 'Johann',
-          'lastName': 'Bach',
-          'username': 'jbach',
-          'isManager': true,
-          'isActive': true,
-        },
-        {
-          'id': 4,
-          'appUserId': 44,
-          'musicStoreId': 6,
-          'storeName': 'Mostar Piano Center',
-          'firstName': 'Frederic',
-          'lastName': 'Chopin',
-          'username': 'fchopin',
-          'isManager': false,
-          'isActive': true,
-        },
-      ];
-
-      final filtered = queryName == null || queryName.isEmpty
-          ? allEmployees
-          : allEmployees.where((e) {
-              final fn = (e['firstName'] as String).toLowerCase();
-              final ln = (e['lastName'] as String).toLowerCase();
-              final un = (e['username'] as String).toLowerCase();
-              final q = queryName.toLowerCase();
-              return fn.contains(q) || ln.contains(q) || un.contains(q);
-            }).toList();
-
-      return jsonResponse({
-        'items': filtered,
-        'page': 1,
-        'pageSize': 20,
-        'totalCount': filtered.length,
-      }, 200);
+    if (name != null && name.isNotEmpty) {
+      filtered = filtered.where((u) {
+        final haystack =
+            '${u['firstName']} ${u['lastName']} ${u['username']}'.toLowerCase();
+        return haystack.contains(name);
+      }).toList();
     }
 
-    if (url.contains('admin/users')) {
-      return jsonResponse({
-        'role': 'StoreEmployee',
-        'profile': {
-          'id': 4,
-          'firstName': 'Frederic',
-          'lastName': 'Chopin',
-          'username': 'fchopin',
-          'isActive': true,
-        },
-      }, 200);
-    }
+    final hasFilters =
+        (role != null && role.isNotEmpty) || (name != null && name.isNotEmpty);
+
+    return jsonResponse({
+      'items': filtered,
+      'page': int.tryParse(uri.queryParameters['page'] ?? '1') ?? 1,
+      'pageSize': int.tryParse(uri.queryParameters['pageSize'] ?? '24') ?? 24,
+      'totalCount': hasFilters ? filtered.length : totalCount,
+    }, 200);
   }
 
   if (request.method == 'DELETE' || request.method == 'PUT') {
@@ -115,194 +108,129 @@ ScriptedClient _client() => ScriptedClient((request) {
   return jsonResponse(const {}, 200);
 });
 
+Future<void> _pumpGrid(WidgetTester tester, ScriptedClient mockClient) async {
+  tester.view.physicalSize = const Size(1400, 1000);
+  tester.view.devicePixelRatio = 1.0;
+  addTearDown(tester.view.resetPhysicalSize);
+  addTearDown(tester.view.resetDevicePixelRatio);
+
+  final authState = AuthState(
+    baseUrl: 'http://localhost:5059/api/v1/',
+    httpClient: mockClient,
+    tokenReader: () => fakeJwt(),
+  );
+  final apiClient = ApiClient(
+    baseUrl: 'http://localhost:5059/api/v1/',
+    authState: authState,
+    httpClient: mockClient,
+  );
+
+  await tester.pumpWidget(
+    MultiProvider(
+      providers: [
+        Provider<ApiClient>.value(value: apiClient),
+        ChangeNotifierProvider<AuthState>.value(value: authState),
+        ChangeNotifierProvider<AdminUserProvider>(
+          create: (_) => AdminUserProvider(apiClient: apiClient),
+        ),
+      ],
+      child: const MaterialApp(home: UserGridScreen()),
+    ),
+  );
+
+  await tester.pumpAndSettle();
+}
+
+List<Uri> _adminUserRequests(ScriptedClient client) => [
+      for (final request in client.requests)
+        if (request.method == 'GET' && request.url.path.endsWith('/admin/users'))
+          request.url,
+    ];
+
 void main() {
   testWidgets(
-    'UserGridScreen displays all roles including StoreEmployees with their store names',
+    'UserGridScreen loads one paged request for all roles and uses the server totalCount',
     (WidgetTester tester) async {
-      tester.view.physicalSize = const Size(1400, 1000);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
-
       final mockClient = _client();
-      final authState = AuthState(
-        baseUrl: 'http://localhost:5059/api/v1/',
-        httpClient: mockClient,
-        tokenReader: () => fakeJwt(),
-      );
-      final apiClient = ApiClient(
-        baseUrl: 'http://localhost:5059/api/v1/',
-        authState: authState,
-        httpClient: mockClient,
-      );
+      await _pumpGrid(tester, mockClient);
 
-      await tester.pumpWidget(
-        MultiProvider(
-          providers: [
-            Provider<ApiClient>.value(value: apiClient),
-            ChangeNotifierProvider<AuthState>.value(value: authState),
-            ChangeNotifierProvider<InstructorProvider>(
-              create: (_) => InstructorProvider(apiClient: apiClient),
-            ),
-            ChangeNotifierProvider<StudentProvider>(
-              create: (_) => StudentProvider(apiClient: apiClient),
-            ),
-            ChangeNotifierProvider<StoreEmployeeProvider>(
-              create: (_) => StoreEmployeeProvider(apiClient: apiClient),
-            ),
-            ChangeNotifierProvider<AdminUserProvider>(
-              create: (_) => AdminUserProvider(apiClient: apiClient),
-            ),
-          ],
-          child: const MaterialApp(home: UserGridScreen()),
-        ),
+      final requests = _adminUserRequests(mockClient);
+      expect(requests, hasLength(1));
+      expect(requests.single.queryParameters['page'], '1');
+      expect(requests.single.queryParameters['isActive'], 'true');
+      expect(
+        mockClient.requestedUrls.any((u) => u.contains('admin/instructors')),
+        isFalse,
+      );
+      expect(
+        mockClient.requestedUrls.any((u) => u.contains('admin/students')),
+        isFalse,
+      );
+      expect(
+        mockClient.requestedUrls.any((u) => u.contains('admin/employees')),
+        isFalse,
       );
 
-      await tester.pumpAndSettle();
-
-      expect(mockClient.requestedUrls.any((u) => u.contains('admin/instructors')), isTrue);
-      expect(mockClient.requestedUrls.any((u) => u.contains('admin/students')), isTrue);
-      expect(mockClient.requestedUrls.any((u) => u.contains('admin/employees')), isTrue);
-
+      expect(find.text('Ada Admin'), findsOneWidget);
       expect(find.text('Wolfgang Mozart'), findsOneWidget);
       expect(find.text('Ludwig Beethoven'), findsOneWidget);
       expect(find.text('Johann Bach'), findsOneWidget);
-      expect(find.text('Frederic Chopin'), findsOneWidget);
-
       expect(find.text('Sarajevo Guitar House'), findsOneWidget);
-      expect(find.text('Mostar Piano Center'), findsOneWidget);
 
-      expect(find.text('Instruktori'), findsOneWidget);
-      expect(find.text('Studenti'), findsOneWidget);
-      expect(find.text('Uposlenik prodavnice'), findsOneWidget);
+      expect(find.text('Ukupno: 130'), findsOneWidget);
+      expect(find.text('Stranica 1 od 6'), findsOneWidget);
+
+      await tester.tap(find.text('Sljedeća'));
+      await tester.pumpAndSettle();
+
+      final nextRequests = _adminUserRequests(mockClient);
+      expect(nextRequests, hasLength(2));
+      expect(nextRequests.last.queryParameters['page'], '2');
+      expect(find.text('Stranica 2 od 6'), findsOneWidget);
     },
   );
 
   testWidgets(
-    'UserGridScreen filters to StoreEmployee role via dropdown',
+    'UserGridScreen filters by Administrator role with the server role filter',
     (WidgetTester tester) async {
-      tester.view.physicalSize = const Size(1400, 1000);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
-
       final mockClient = _client();
-      final authState = AuthState(
-        baseUrl: 'http://localhost:5059/api/v1/',
-        httpClient: mockClient,
-        tokenReader: () => fakeJwt(),
-      );
-      final apiClient = ApiClient(
-        baseUrl: 'http://localhost:5059/api/v1/',
-        authState: authState,
-        httpClient: mockClient,
-      );
-
-      await tester.pumpWidget(
-        MultiProvider(
-          providers: [
-            Provider<ApiClient>.value(value: apiClient),
-            ChangeNotifierProvider<AuthState>.value(value: authState),
-            ChangeNotifierProvider<InstructorProvider>(
-              create: (_) => InstructorProvider(apiClient: apiClient),
-            ),
-            ChangeNotifierProvider<StudentProvider>(
-              create: (_) => StudentProvider(apiClient: apiClient),
-            ),
-            ChangeNotifierProvider<StoreEmployeeProvider>(
-              create: (_) => StoreEmployeeProvider(apiClient: apiClient),
-            ),
-            ChangeNotifierProvider<AdminUserProvider>(
-              create: (_) => AdminUserProvider(apiClient: apiClient),
-            ),
-          ],
-          child: const MaterialApp(home: UserGridScreen()),
-        ),
-      );
-
-      await tester.pumpAndSettle();
+      await _pumpGrid(tester, mockClient);
 
       mockClient.requests.clear();
 
       await tester.tap(find.byType(DropdownButtonFormField<UserRole?>));
       await tester.pumpAndSettle();
-
-      await tester.tap(find.text('Uposlenik prodavnice').last);
+      await tester.tap(find.text('Administrator').last);
       await tester.pumpAndSettle();
 
-      expect(mockClient.requestedUrls.any((u) => u.contains('admin/employees')), isTrue);
-      expect(mockClient.requestedUrls.any((u) => u.contains('admin/instructors')), isFalse);
-      expect(mockClient.requestedUrls.any((u) => u.contains('admin/students')), isFalse);
+      final requests = _adminUserRequests(mockClient);
+      expect(requests, hasLength(1));
+      expect(requests.single.queryParameters['role'], 'Administrator');
 
-      expect(find.text('Johann Bach'), findsOneWidget);
-      expect(find.text('Frederic Chopin'), findsOneWidget);
+      expect(find.text('Ada Admin'), findsOneWidget);
       expect(find.text('Wolfgang Mozart'), findsNothing);
       expect(find.text('Ludwig Beethoven'), findsNothing);
-
-      expect(find.text('Sarajevo Guitar House'), findsOneWidget);
-      expect(find.text('Mostar Piano Center'), findsOneWidget);
+      expect(find.text('Johann Bach'), findsNothing);
     },
   );
 
   testWidgets(
-    'UserGridScreen searches StoreEmployees by name and can deactivate one',
+    'UserGridScreen searches by name and can deactivate a user',
     (WidgetTester tester) async {
-      tester.view.physicalSize = const Size(1400, 1000);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
-
       final mockClient = _client();
-      final authState = AuthState(
-        baseUrl: 'http://localhost:5059/api/v1/',
-        httpClient: mockClient,
-        tokenReader: () => fakeJwt(),
-      );
-      final apiClient = ApiClient(
-        baseUrl: 'http://localhost:5059/api/v1/',
-        authState: authState,
-        httpClient: mockClient,
-      );
+      await _pumpGrid(tester, mockClient);
 
-      await tester.pumpWidget(
-        MultiProvider(
-          providers: [
-            Provider<ApiClient>.value(value: apiClient),
-            ChangeNotifierProvider<AuthState>.value(value: authState),
-            ChangeNotifierProvider<InstructorProvider>(
-              create: (_) => InstructorProvider(apiClient: apiClient),
-            ),
-            ChangeNotifierProvider<StudentProvider>(
-              create: (_) => StudentProvider(apiClient: apiClient),
-            ),
-            ChangeNotifierProvider<StoreEmployeeProvider>(
-              create: (_) => StoreEmployeeProvider(apiClient: apiClient),
-            ),
-            ChangeNotifierProvider<AdminUserProvider>(
-              create: (_) => AdminUserProvider(apiClient: apiClient),
-            ),
-          ],
-          child: const MaterialApp(home: UserGridScreen()),
-        ),
-      );
-
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.byType(DropdownButtonFormField<UserRole?>));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Uposlenik prodavnice').last);
-      await tester.pumpAndSettle();
-
-      final searchField = find.widgetWithText(TextField, 'Pretraži po imenu...');
-      await tester.enterText(searchField, 'Chopin');
+      final searchField =
+          find.widgetWithText(TextField, 'Pretraži po imenu...');
+      await tester.enterText(searchField, 'Bach');
       await pumpPastDebounce(tester);
       await tester.pumpAndSettle();
 
-      expect(find.text('Frederic Chopin'), findsOneWidget);
-      expect(find.text('Mostar Piano Center'), findsOneWidget);
-      expect(find.text('Johann Bach'), findsNothing);
+      expect(find.text('Johann Bach'), findsOneWidget);
+      expect(find.text('Wolfgang Mozart'), findsNothing);
+      expect(find.text('Sarajevo Guitar House'), findsOneWidget);
 
-      await tester.tap(find.text('Frederic Chopin'));
+      await tester.tap(find.text('Johann Bach'));
       await tester.pumpAndSettle();
 
       final deactivateButton = find.text('Deaktiviraj');
@@ -314,7 +242,7 @@ void main() {
       expect(find.text('Potvrdite deaktivaciju'), findsOneWidget);
       expect(
         find.text(
-          'Da li ste sigurni da želite da deaktivirate korisnika "Frederic Chopin"?',
+          'Da li ste sigurni da želite da deaktivirate korisnika "Johann Bach"?',
         ),
         findsOneWidget,
       );
@@ -323,55 +251,17 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(mockClient.putUrls, hasLength(1));
-      expect(mockClient.putUrls[0], endsWith('admin/users/44/status'));
+      expect(mockClient.putUrls[0], endsWith('admin/users/33/status'));
     },
   );
 
   testWidgets(
     'UserGridScreen refreshes after the user details dialog closes',
     (WidgetTester tester) async {
-      tester.view.physicalSize = const Size(1400, 1000);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
-
       final mockClient = _client();
-      final authState = AuthState(
-        baseUrl: 'http://localhost:5059/api/v1/',
-        httpClient: mockClient,
-        tokenReader: () => fakeJwt(),
-      );
-      final apiClient = ApiClient(
-        baseUrl: 'http://localhost:5059/api/v1/',
-        authState: authState,
-        httpClient: mockClient,
-      );
+      await _pumpGrid(tester, mockClient);
 
-      await tester.pumpWidget(
-        MultiProvider(
-          providers: [
-            Provider<ApiClient>.value(value: apiClient),
-            ChangeNotifierProvider<AuthState>.value(value: authState),
-            ChangeNotifierProvider<InstructorProvider>(
-              create: (_) => InstructorProvider(apiClient: apiClient),
-            ),
-            ChangeNotifierProvider<StudentProvider>(
-              create: (_) => StudentProvider(apiClient: apiClient),
-            ),
-            ChangeNotifierProvider<StoreEmployeeProvider>(
-              create: (_) => StoreEmployeeProvider(apiClient: apiClient),
-            ),
-            ChangeNotifierProvider<AdminUserProvider>(
-              create: (_) => AdminUserProvider(apiClient: apiClient),
-            ),
-          ],
-          child: const MaterialApp(home: UserGridScreen()),
-        ),
-      );
-
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.text('Ludwig Beethoven'));
+      await tester.tap(find.text('Wolfgang Mozart'));
       await tester.pumpAndSettle();
 
       mockClient.requests.clear();
@@ -379,68 +269,23 @@ void main() {
       await tester.tap(find.text('Zatvori'));
       await tester.pumpAndSettle();
 
-      expect(
-        mockClient.requestedUrls.any((u) => u.contains('admin/students')),
-        isTrue,
-      );
+      expect(_adminUserRequests(mockClient), hasLength(1));
     },
   );
 
   testWidgets(
     'UserGridScreen deletes a user permanently',
     (WidgetTester tester) async {
-      tester.view.physicalSize = const Size(1400, 1000);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
-
       final mockClient = _client();
-      final authState = AuthState(
-        baseUrl: 'http://localhost:5059/api/v1/',
-        httpClient: mockClient,
-        tokenReader: () => fakeJwt(),
-      );
-      final apiClient = ApiClient(
-        baseUrl: 'http://localhost:5059/api/v1/',
-        authState: authState,
-        httpClient: mockClient,
-      );
+      await _pumpGrid(tester, mockClient);
 
-      await tester.pumpWidget(
-        MultiProvider(
-          providers: [
-            Provider<ApiClient>.value(value: apiClient),
-            ChangeNotifierProvider<AuthState>.value(value: authState),
-            ChangeNotifierProvider<InstructorProvider>(
-              create: (_) => InstructorProvider(apiClient: apiClient),
-            ),
-            ChangeNotifierProvider<StudentProvider>(
-              create: (_) => StudentProvider(apiClient: apiClient),
-            ),
-            ChangeNotifierProvider<StoreEmployeeProvider>(
-              create: (_) => StoreEmployeeProvider(apiClient: apiClient),
-            ),
-            ChangeNotifierProvider<AdminUserProvider>(
-              create: (_) => AdminUserProvider(apiClient: apiClient),
-            ),
-          ],
-          child: const MaterialApp(home: UserGridScreen()),
-        ),
-      );
-
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.byType(DropdownButtonFormField<UserRole?>));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Uposlenik prodavnice').last);
-      await tester.pumpAndSettle();
-
-      final searchField = find.widgetWithText(TextField, 'Pretraži po imenu...');
-      await tester.enterText(searchField, 'Chopin');
+      final searchField =
+          find.widgetWithText(TextField, 'Pretraži po imenu...');
+      await tester.enterText(searchField, 'Bach');
       await pumpPastDebounce(tester);
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Frederic Chopin'));
+      await tester.tap(find.text('Johann Bach'));
       await tester.pumpAndSettle();
 
       await tester.tap(find.byIcon(Icons.delete_outline));
@@ -452,7 +297,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(mockClient.deletedUrls, hasLength(1));
-      expect(mockClient.deletedUrls[0], endsWith('admin/users/44'));
+      expect(mockClient.deletedUrls[0], endsWith('admin/users/33'));
     },
   );
 }

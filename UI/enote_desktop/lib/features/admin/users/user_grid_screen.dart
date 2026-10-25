@@ -3,16 +3,11 @@ import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
 
-import '../../../theme/app_theme.dart';
 import '../../../widgets/entity_filter_dropdown.dart';
 import '../../../widgets/entity_form_scaffold.dart';
 import '../../../widgets/entity_grid_screen.dart';
-import '../instructor/instructor_provider.dart';
-import '../student/student_provider.dart';
 import 'admin_user_provider.dart';
-import 'store_employee_provider.dart';
 import 'user_details_dialog.dart';
-import 'user_list_item.dart';
 import 'user_provision_form_screen.dart';
 
 class UserGridScreen extends StatefulWidget {
@@ -23,21 +18,12 @@ class UserGridScreen extends StatefulWidget {
 }
 
 class _UserGridScreenState extends State<UserGridScreen> {
-  final _gridKey = GlobalKey<EntityGridScreenState<UserListItem>>();
+  final _gridKey =
+      GlobalKey<EntityGridScreenState<AdminUserListItemDto>>();
 
   UserRole? _role;
 
   bool _showActive = true;
-
-  static const int _unionFetchCap = 100;
-
-  bool _unionTruncated = false;
-
-  void _setUnionTruncated(bool value) {
-    if (_unionTruncated == value) return;
-    _unionTruncated = value;
-    if (mounted) setState(() {});
-  }
 
   Future<void> _openProvisionForm() async {
     await EntityFormScaffold.showAsDialog(
@@ -51,7 +37,7 @@ class _UserGridScreenState extends State<UserGridScreen> {
 
   Future<bool> _setUserStatus(
     BuildContext context,
-    UserListItem item,
+    AdminUserListItemDto item,
     bool isActive,
   ) async {
     try {
@@ -70,7 +56,7 @@ class _UserGridScreenState extends State<UserGridScreen> {
 
   Future<bool> _deleteUser(
     BuildContext context,
-    UserListItem item,
+    AdminUserListItemDto item,
   ) async {
     try {
       await context.read<AdminUserProvider>().remove(item.appUserId);
@@ -86,7 +72,7 @@ class _UserGridScreenState extends State<UserGridScreen> {
 
   Future<void> _showUserDetailsDialog(
     BuildContext context,
-    UserListItem item,
+    AdminUserListItemDto item,
   ) async {
     await showDialog<void>(
       context: context,
@@ -104,113 +90,32 @@ class _UserGridScreenState extends State<UserGridScreen> {
     _gridKey.currentState?.refresh(resetPage: true);
   }
 
-  Future<PagedResult<UserListItem>> _fetchUsers(
+  Future<PagedResult<AdminUserListItemDto>> _fetchUsers(
     int page,
     int pageSize,
     String search,
-  ) async {
+  ) {
     final query = pagedQuery(
       page,
       pageSize,
       search,
       searchField: 'name',
-      filters: {'isActive': _showActive},
+      filters: {
+        'isActive': _showActive,
+        if (_role != null) 'role': _role!.label,
+      },
     );
 
-    if (_role == UserRole.instructor) {
-      _setUnionTruncated(false);
-      final result = await context.read<InstructorProvider>().search(query);
-      return PagedResult<UserListItem>(
-        items: result.items.map(UserListItem.fromInstructor).toList(),
-        page: result.page,
-        pageSize: result.pageSize,
-        totalCount: result.totalCount,
-      );
-    }
-
-    if (_role == UserRole.student) {
-      _setUnionTruncated(false);
-      final result = await context.read<StudentProvider>().search(query);
-      return PagedResult<UserListItem>(
-        items: result.items.map(UserListItem.fromStudent).toList(),
-        page: result.page,
-        pageSize: result.pageSize,
-        totalCount: result.totalCount,
-      );
-    }
-
-    if (_role == UserRole.storeEmployee) {
-      _setUnionTruncated(false);
-      final result = await context.read<StoreEmployeeProvider>().search(query);
-      return PagedResult<UserListItem>(
-        items: result.items.map(UserListItem.fromEmployee).toList(),
-        page: result.page,
-        pageSize: result.pageSize,
-        totalCount: result.totalCount,
-      );
-    }
-
-    final unionQuery = pagedQuery(
-      1,
-      _unionFetchCap,
-      search,
-      searchField: 'name',
-      filters: {'isActive': _showActive},
-    );
-    final instructorFuture =
-        context.read<InstructorProvider>().search(unionQuery);
-    final studentFuture = context.read<StudentProvider>().search(unionQuery);
-    final employeeFuture =
-        context.read<StoreEmployeeProvider>().search(unionQuery);
-    final results = await Future.wait([
-      instructorFuture,
-      studentFuture,
-      employeeFuture,
-    ]);
-    final instructorResult = results[0] as PagedResult<InstructorDto>;
-    final studentResult = results[1] as PagedResult<StudentDto>;
-    final employeeResult = results[2] as PagedResult<ShopEmployeeDto>;
-
-    _setUnionTruncated(
-      (instructorResult.totalCount ?? 0) > _unionFetchCap ||
-          (studentResult.totalCount ?? 0) > _unionFetchCap ||
-          (employeeResult.totalCount ?? 0) > _unionFetchCap,
-    );
-
-    final merged = [
-      ...instructorResult.items.map(UserListItem.fromInstructor),
-      ...studentResult.items.map(UserListItem.fromStudent),
-      ...employeeResult.items.map(UserListItem.fromEmployee),
-    ];
-
-    final start = (page - 1) * pageSize;
-    final end = (start + pageSize).clamp(0, merged.length);
-    final window =
-        start >= merged.length ? <UserListItem>[] : merged.sublist(start, end);
-
-    return PagedResult<UserListItem>(
-      items: window,
-      page: page,
-      pageSize: pageSize,
-      totalCount: merged.length,
-    );
+    return context.read<AdminUserProvider>().getUsers(query);
   }
 
   @override
   Widget build(BuildContext context) {
-    return EntityGridScreen<UserListItem>(
+    return EntityGridScreen<AdminUserListItemDto>(
       key: _gridKey,
-      config: EntityGridConfig<UserListItem>(
+      config: EntityGridConfig<AdminUserListItemDto>(
         searchHint: 'Pretraži po imenu...',
         placeholderIcon: Icons.person_outline,
-        trailing: _unionTruncated && _role == null
-            ? const Center(
-                child: Text(
-                  'Prikazano prvih 100 — suzite pretragu po ulozi',
-                  style: TextStyle(color: AppTheme.textSecondary),
-                ),
-              )
-            : null,
         imageUrlOf: (item) =>
             userPictureUrl(context.read<ApiClient>(), item.appUserId),
         titleOf: (item) => item.displayName,
@@ -222,19 +127,12 @@ class _UserGridScreenState extends State<UserGridScreen> {
             item.storeName != null && item.storeName!.isNotEmpty
                 ? item.storeName
                 : (item.username != null ? '@${item.username}' : null),
-          UserRole.instructor =>
-            item.username != null ? '@${item.username}' : null,
           _ => item.username != null ? '@${item.username}' : null,
         },
         onTap: (context, item) => _showUserDetailsDialog(context, item),
         groupKeyOf: _role == null
-            ? (item) => switch (item.role) {
-                UserRole.instructor => 'Instruktori',
-                UserRole.student => 'Studenti',
-                UserRole.storeEmployee =>
-                  userRoleLabel(UserRole.storeEmployee),
-                _ => userRoleLabel(item.role),
-              }
+            ? (item) =>
+                item.role == null ? 'Ostalo' : userRoleLabel(item.role!)
             : null,
         filterBar: Row(
           mainAxisSize: MainAxisSize.min,
@@ -247,6 +145,10 @@ class _UserGridScreenState extends State<UserGridScreen> {
                 const DropdownMenuItem(
                   value: null,
                   child: Text('Svi korisnici'),
+                ),
+                DropdownMenuItem(
+                  value: UserRole.administrator,
+                  child: Text(userRoleLabel(UserRole.administrator)),
                 ),
                 DropdownMenuItem(
                   value: UserRole.instructor,

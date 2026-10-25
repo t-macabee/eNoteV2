@@ -1,5 +1,6 @@
 using eNote.API.Controllers.Admin;
 using eNote.Application.Common.Localization;
+using eNote.Application.Common.Paging;
 using eNote.Application.Constants;
 using eNote.Application.Features.Identity.Auth;
 using eNote.Application.Features.Identity.Users;
@@ -11,6 +12,34 @@ namespace eNote.Tests.Identity;
 
 public sealed class AdminUsersControllerTests
 {
+    [Fact]
+    public async Task GetPaged_ReturnsFilteredUsers()
+    {
+        var identity = new StubUserIdentityService(
+            users: new Dictionary<int, UserIdentityDto>
+            {
+                [15] = new() { Id = 15, Username = "admin", FirstName = "Ada", LastName = "Admin", IsActive = true },
+                [16] = new() { Id = 16, Username = "jdoe", FirstName = "Jane", LastName = "Doe", IsActive = true }
+            },
+            roles: new Dictionary<int, IReadOnlyList<string>>
+            {
+                [15] = [AppRoles.Administrator],
+                [16] = [AppRoles.Student]
+            });
+        var profileService = new UserProfileService(null!, identity, null!, new StubCurrentActor());
+        var controller = new AdminUsersController(profileService, new StubProvisioningService());
+
+        var result = await controller.GetPaged(
+            new AdminUserSearchObject { Role = AppRoles.Administrator },
+            CancellationToken.None);
+
+        var ok = Assert.IsType<OkObjectResult>(result.Result);
+        var page = Assert.IsType<PagedResult<AdminUserListItemDto>>(ok.Value);
+        var item = Assert.Single(page.Items);
+        Assert.Equal(15, item.AppUserId);
+        Assert.Equal(AppRoles.Administrator, item.Role);
+    }
+
     [Fact]
     public async Task GetById_ThrowsNotFound_WhenUserIsMissing()
     {
