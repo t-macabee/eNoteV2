@@ -16,7 +16,7 @@ public sealed class LectureAttendanceServiceTests
     [Fact]
     public async Task RsvpAsync_Confirm_CreatesPresentAttendance()
     {
-        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now, currentUser: new StubCurrentActor(userId: 50)), Now);
         var service = CreateService(harness.Context, harness.Instructor, harness.Student);
 
         var response = await service.RsvpAsync(harness.Lecture.Id, new RsvpRequest { Confirm = true });

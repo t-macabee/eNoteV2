@@ -21,7 +21,7 @@ public sealed class InstructorStudentControllerTests
         var instructorAccess = AcademicTestData.CreateInstructorAccess(ctx, harness.Instructor);
         var studentService = new AdminStudentService(ctx, new StubUserIdentityService(), instructorAccess);
         var currentUser = new StubCurrentActor(instructor: harness.Instructor, userId: harness.Instructor.AppUserId);
-        var controller = new InstructorStudentController(studentService, CreateMembershipService(ctx, studentService, currentUser), new StubProvisioningService(), currentUser, instructorAccess);
+        var controller = new InstructorStudentController(studentService, CreateMembershipService(ctx, studentService), new StubProvisioningService(), currentUser, instructorAccess);
 
         var result = await controller.GetPaged(new StudentSearchObject(), CancellationToken.None);
 
@@ -59,7 +59,7 @@ public sealed class InstructorStudentControllerTests
         var instructorAccess = AcademicTestData.CreateInstructorAccess(ctx, harness.Instructor);
         var studentService = new AdminStudentService(ctx, new StubUserIdentityService(), instructorAccess);
         var currentUser = new StubCurrentActor(instructor: harness.Instructor, userId: harness.Instructor.AppUserId);
-        var controller = new InstructorStudentController(studentService, CreateMembershipService(ctx, studentService, currentUser), new StubProvisioningService(), currentUser, instructorAccess);
+        var controller = new InstructorStudentController(studentService, CreateMembershipService(ctx, studentService), new StubProvisioningService(), currentUser, instructorAccess);
 
         var result = await controller.GetPaged(new StudentSearchObject(), CancellationToken.None);
 
@@ -77,7 +77,7 @@ public sealed class InstructorStudentControllerTests
         var instructorAccess = AcademicTestData.CreateInstructorAccess(ctx, harness.Instructor);
         var studentService = new AdminStudentService(ctx, new StubUserIdentityService(), instructorAccess);
         var currentUser = new StubCurrentActor(instructor: harness.Instructor, userId: harness.Instructor.AppUserId);
-        var controller = new InstructorStudentController(studentService, CreateMembershipService(ctx, studentService, currentUser), new StubProvisioningService(), currentUser, instructorAccess);
+        var controller = new InstructorStudentController(studentService, CreateMembershipService(ctx, studentService), new StubProvisioningService(), currentUser, instructorAccess);
 
         var result = await controller.GetById(harness.Student.Id, CancellationToken.None);
 
@@ -117,7 +117,7 @@ public sealed class InstructorStudentControllerTests
         var instructorAccess = AcademicTestData.CreateInstructorAccess(ctx, harness.Instructor);
         var studentService = new AdminStudentService(ctx, new StubUserIdentityService(), instructorAccess);
         var currentUser = new StubCurrentActor(instructor: harness.Instructor, userId: harness.Instructor.AppUserId);
-        var controller = new InstructorStudentController(studentService, CreateMembershipService(ctx, studentService, currentUser), new StubProvisioningService(), currentUser, instructorAccess);
+        var controller = new InstructorStudentController(studentService, CreateMembershipService(ctx, studentService), new StubProvisioningService(), currentUser, instructorAccess);
 
         await Assert.ThrowsAsync<NotFoundException>(() => controller.GetById(otherStudent.Id, CancellationToken.None));
         await Assert.ThrowsAsync<NotFoundException>(() => controller.GetById(unenrolledStudent.Id, CancellationToken.None));
@@ -131,7 +131,7 @@ public sealed class InstructorStudentControllerTests
         var instructorAccess = AcademicTestData.CreateInstructorAccess(ctx, harness.Instructor);
         var studentService = new AdminStudentService(ctx, new StubUserIdentityService(), instructorAccess);
         var currentUser = new StubCurrentActor(instructor: harness.Instructor, userId: harness.Instructor.AppUserId);
-        var controller = new InstructorStudentController(studentService, CreateMembershipService(ctx, studentService, currentUser), new StubProvisioningService(), currentUser, instructorAccess);
+        var controller = new InstructorStudentController(studentService, CreateMembershipService(ctx, studentService), new StubProvisioningService(), currentUser, instructorAccess);
 
         var result = await controller.GetEnrollments(
             harness.Student.Id,
@@ -171,7 +171,7 @@ public sealed class InstructorStudentControllerTests
         var instructorAccess = AcademicTestData.CreateInstructorAccess(ctx, harness.Instructor);
         var studentService = new AdminStudentService(ctx, new StubUserIdentityService(), instructorAccess);
         var currentUser = new StubCurrentActor(instructor: harness.Instructor, userId: harness.Instructor.AppUserId);
-        var controller = new InstructorStudentController(studentService, CreateMembershipService(ctx, studentService, currentUser), new StubProvisioningService(), currentUser, instructorAccess);
+        var controller = new InstructorStudentController(studentService, CreateMembershipService(ctx, studentService), new StubProvisioningService(), currentUser, instructorAccess);
 
         await Assert.ThrowsAsync<NotFoundException>(() => controller.GetEnrollments(
             otherStudent.Id, new StudentEnrollmentSearchObject(), CancellationToken.None));
@@ -186,7 +186,7 @@ public sealed class InstructorStudentControllerTests
         var studentService = new AdminStudentService(ctx, new StubUserIdentityService(), instructorAccess);
         var currentUser = new StubCurrentActor(instructor: harness.Instructor, userId: harness.Instructor.AppUserId);
         var stubProvisioning = new StubProvisioningService { CreateUserId = 42 };
-        var controller = new InstructorStudentController(studentService, CreateMembershipService(ctx, studentService, currentUser), stubProvisioning, currentUser, instructorAccess);
+        var controller = new InstructorStudentController(studentService, CreateMembershipService(ctx, studentService), stubProvisioning, currentUser, instructorAccess);
 
         var result = await controller.Create(new DelegatedUserCreateRequest
         {
@@ -208,7 +208,7 @@ public sealed class InstructorStudentControllerTests
         var studentService = new AdminStudentService(ctx, new StubUserIdentityService(), instructorAccess);
         var currentUser = new StubCurrentActor(instructor: harness.Instructor, userId: harness.Instructor.AppUserId);
         var stubProvisioning = new StubProvisioningService { CreateError = new ConflictException("Korisničko ime je već zauzeto.") };
-        var controller = new InstructorStudentController(studentService, CreateMembershipService(ctx, studentService, currentUser), stubProvisioning, currentUser, instructorAccess);
+        var controller = new InstructorStudentController(studentService, CreateMembershipService(ctx, studentService), stubProvisioning, currentUser, instructorAccess);
 
         var exception = await Assert.ThrowsAsync<ConflictException>(() => controller.Create(new DelegatedUserCreateRequest
         {
@@ -228,7 +228,7 @@ public sealed class InstructorStudentControllerTests
         var instructorAccess = AcademicTestData.CreateInstructorAccess(ctx, harness.Instructor);
         var studentService = new AdminStudentService(ctx, new StubUserIdentityService(), instructorAccess);
         var currentUser = new StubCurrentActor(instructor: harness.Instructor, userId: harness.Instructor.AppUserId);
-        var controller = new InstructorStudentController(studentService, CreateMembershipService(ctx, studentService, currentUser), new StubProvisioningService(), currentUser, instructorAccess);
+        var controller = new InstructorStudentController(studentService, CreateMembershipService(ctx, studentService), new StubProvisioningService(), currentUser, instructorAccess);
 
         var result = await controller.RecordMembershipPayment(harness.Student.Id, new RecordMembershipPaymentRequest
         {
@@ -255,7 +255,7 @@ public sealed class InstructorStudentControllerTests
         var instructorAccess = AcademicTestData.CreateInstructorAccess(ctx, harness.Instructor);
         var studentService = new AdminStudentService(ctx, new StubUserIdentityService(), instructorAccess);
         var currentUser = new StubCurrentActor(instructor: harness.Instructor, userId: harness.Instructor.AppUserId);
-        var controller = new InstructorStudentController(studentService, CreateMembershipService(ctx, studentService, currentUser), new StubProvisioningService(), currentUser, instructorAccess);
+        var controller = new InstructorStudentController(studentService, CreateMembershipService(ctx, studentService), new StubProvisioningService(), currentUser, instructorAccess);
 
         var result = await controller.GetMembershipPayments(harness.Student.Id, new MembershipPaymentSearchObject(), CancellationToken.None);
 
@@ -276,7 +276,7 @@ public sealed class InstructorStudentControllerTests
         var instructorAccess = AcademicTestData.CreateInstructorAccess(ctx, harness.Instructor);
         var studentService = new AdminStudentService(ctx, new StubUserIdentityService(), instructorAccess);
         var currentUser = new StubCurrentActor(instructor: harness.Instructor, userId: harness.Instructor.AppUserId);
-        var controller = new InstructorStudentController(studentService, CreateMembershipService(ctx, studentService, currentUser), new StubProvisioningService(), currentUser, instructorAccess);
+        var controller = new InstructorStudentController(studentService, CreateMembershipService(ctx, studentService), new StubProvisioningService(), currentUser, instructorAccess);
 
         var result = await controller.SendMembershipWarning(harness.Student.Id, new SendMembershipWarningRequest(), CancellationToken.None);
 
@@ -285,12 +285,10 @@ public sealed class InstructorStudentControllerTests
 
     private static MembershipService CreateMembershipService(
         ENoteContext context,
-        AdminStudentService students,
-        StubCurrentActor currentUser) => new(
+        AdminStudentService students) => new(
             context,
             students,
             new FixedClock(Now),
-            currentUser,
             new RecordingMembershipWarningDispatcher());
 
     private sealed class StubProvisioningService : IUserProvisioningService

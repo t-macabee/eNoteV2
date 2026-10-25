@@ -3,6 +3,7 @@ using eNote.Application.Common.Persistence;
 using eNote.Application.Constants;
 using eNote.Domain.Entities.Rentals;
 using eNote.Infrastructure.Identity;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Tests.Integration;
@@ -130,6 +131,23 @@ public sealed class DatabaseConstraintTests(SqlServerFixture fixture)
         await firstContext.SaveChangesAsync();
 
         await Assert.ThrowsAsync<DbUpdateConcurrencyException>(() => secondContext.SaveChangesAsync());
+    }
+
+    [Fact]
+    public async Task CourseWithUnknownCreatedById_IsForeignKeyViolation()
+    {
+        var database = await fixture.CreateDatabaseAsync();
+        await using var context = database.CreateContext();
+
+        var (_, instructor, _, _) = await SeedCourseEnrollmentAsync(context);
+
+        var course = new Course("Guitar", null, 100m, Now, Now.AddMonths(6), instructor.Id) { CreatedById = 999999 };
+        context.Set<Course>().Add(course);
+
+        var exception = await Assert.ThrowsAsync<DbUpdateException>(() => context.SaveChangesAsync());
+
+        var sqlException = Assert.IsType<SqlException>(exception.InnerException);
+        Assert.Equal(547, sqlException.Number);
     }
 
     private static async Task<(Student Student, Instructor Instructor, Course Course, Enrollment Enrollment)> SeedCourseEnrollmentAsync(

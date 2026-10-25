@@ -2,7 +2,7 @@ using eNote.Application.Common.Crud;
 
 namespace eNote.Application.Features.Communication.Events;
 
-public sealed class EventService(IAppDbContext context, ICurrentUserContext currentUser, IStudentContext? students = null) : ReferenceDataCrudService<Event, EventDto, EventRequest, EventSearchObject>(context)
+public sealed class EventService(IAppDbContext context, IStudentContext? students = null) : ReferenceDataCrudService<Event, EventDto, EventRequest, EventSearchObject>(context)
 {
     protected override EventDto Map(Event entity) => new()
     {
@@ -28,10 +28,7 @@ public sealed class EventService(IAppDbContext context, ICurrentUserContext curr
         request.EndsAt,
         request.AddressId,
         request.CourseId,
-        request.InstructorId)
-    {
-        CreatedById = currentUser.UserId
-    };
+        request.InstructorId);
 
     protected override void UpdateEntity(Event entity, EventRequest request)
     {
@@ -43,7 +40,6 @@ public sealed class EventService(IAppDbContext context, ICurrentUserContext curr
             request.AddressId,
             request.CourseId,
             request.InstructorId);
-        entity.UpdatedById = currentUser.UserId;
     }
 
     public override async Task<PagedResult<EventDto>> GetPagedAsync(EventSearchObject search, CancellationToken cancellationToken = default)

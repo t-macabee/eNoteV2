@@ -127,7 +127,7 @@ public sealed class MembershipServiceTests
     [Fact]
     public async Task RecordPaymentAsync_Succeeds_WhenInstructorTeachesTheStudent()
     {
-        await using var context = TestDbContextFactory.CreateContext(Now);
+        await using var context = TestDbContextFactory.CreateContext(Now, currentUser: new StubCurrentActor(userId: 100));
         var (instructor, student) = await SeedInstructorAndEnrolledStudentAsync(context);
         var service = CreateService(context, new RecordingMembershipWarningDispatcher(), instructor);
 
@@ -273,7 +273,6 @@ public sealed class MembershipServiceTests
             context,
             new AdminStudentService(context, new StubUserIdentityService(), instructorAccess),
             new FixedClock(Now),
-            new StubCurrentActor(userId: instructor?.AppUserId ?? 1),
             notifications);
     }
 

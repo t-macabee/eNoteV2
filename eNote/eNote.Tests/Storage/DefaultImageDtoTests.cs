@@ -29,7 +29,7 @@ public sealed class DefaultImageDtoTests
 
         var courseDto = await courseService.GetByIdForAdminAsync(harness.Course.Id);
 
-        var eventDto = await new EventService(harness.Context, actor).CreateAsync(new EventRequest
+        var eventDto = await new EventService(harness.Context).CreateAsync(new EventRequest
         {
             Title = "Image check",
             Description = "Has the event default image",

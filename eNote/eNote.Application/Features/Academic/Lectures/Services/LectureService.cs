@@ -214,10 +214,7 @@ public sealed class LectureService(
             request.LectureType,
             request.Capacity,
             request.CourseId,
-            request.StudentId)
-        {
-            CreatedById = currentUser.UserId
-        };
+            request.StudentId);
 
         context.Set<Lecture>().Add(entity);
         await context.SaveChangesAsync(cancellationToken);
@@ -262,7 +259,6 @@ public sealed class LectureService(
             request.Duration,
             request.LectureTime,
             request.Capacity);
-        entity.UpdatedById = currentUser.UserId;
 
         await context.SaveChangesAsync(cancellationToken);
 
@@ -279,7 +275,6 @@ public sealed class LectureService(
         var entity = await instructorAccess.GetOwnedLectureAsync(id, instructorId, track: true, cancellationToken: cancellationToken);
 
         entity.SoftDelete();
-        entity.UpdatedById = currentUser.UserId;
 
         await context.SaveChangesAsync(cancellationToken);
 
@@ -302,7 +297,6 @@ public sealed class LectureService(
         }
 
         entity.Cancel(request.Reason, currentUser.UserId, clock.UtcNow);
-        entity.UpdatedById = currentUser.UserId;
 
         var enrolledStudentUserIds = await context.Set<Enrollment>()
             .Where(e => e.CourseId == entity.CourseId

@@ -58,7 +58,6 @@ public sealed class EnrollmentTransitionTests
         Assert.True(result.IsSuccess);
         Assert.Equal(expected, result.Value);
         Assert.Equal(expected, enrollment.EnrollmentStatus);
-        Assert.Equal(UserId, enrollment.UpdatedById);
     }
 
     [Theory]
@@ -120,7 +119,6 @@ public sealed class EnrollmentTransitionTests
         Assert.Equal(EnrollmentStatus.Completed, enrollment.EnrollmentStatus);
         Assert.Equal(UserId, enrollment.DecidedById);
         Assert.Equal(Now, enrollment.DecidedAt);
-        Assert.Equal(77, enrollment.UpdatedById);
     }
 
     [Fact]

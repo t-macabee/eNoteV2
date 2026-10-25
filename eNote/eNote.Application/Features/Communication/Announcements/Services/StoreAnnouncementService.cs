@@ -3,13 +3,13 @@ using MapsterMapper;
 
 namespace eNote.Application.Features.Communication.Announcements.Services;
 
-public sealed class StoreAnnouncementService(IAppDbContext context, IClock clock, ICurrentUserContext currentUser, IStoreContext stores, IMapper mapper, IFileStorageService fileStorage)
+public sealed class StoreAnnouncementService(IAppDbContext context, IClock clock, IStoreContext stores, IMapper mapper, IFileStorageService fileStorage)
 {
     public async Task<AnnouncementDto> CreateForStoreAsync(AnnouncementRequest request, CancellationToken cancellationToken = default)
     {
         var storeId = await stores.GetCurrentStoreIdAsync(cancellationToken);
 
-        var entity = AnnouncementBuilder.Build(request, null, storeId, clock, currentUser);
+        var entity = AnnouncementBuilder.Build(request, null, storeId, clock);
 
         context.Set<Announcement>().Add(entity);
         await context.SaveChangesAsync(cancellationToken);
@@ -49,7 +49,6 @@ public sealed class StoreAnnouncementService(IAppDbContext context, IClock clock
             .FirstOrDefaultAsync(a => a.Id == announcementId && a.MusicStoreId == storeId, cancellationToken) ?? throw new NotFoundException(Messages.AnnouncementNotFound);
 
         entity.UpdateDetails(request.Title.Trim(), request.Content.Trim());
-        entity.UpdatedById = currentUser.UserId;
 
         await context.SaveChangesAsync(cancellationToken);
 
@@ -69,7 +68,6 @@ public sealed class StoreAnnouncementService(IAppDbContext context, IClock clock
         var previousPath = entity.ImagePath;
         var path = await fileStorage.SaveAsync(stream, fileName, contentType, "announcements", ct);
         entity.UpdateImagePath(path);
-        entity.UpdatedById = currentUser.UserId;
 
         await context.SaveChangesReplacingFileAsync(fileStorage, path, previousPath, ct);
 
@@ -84,7 +82,6 @@ public sealed class StoreAnnouncementService(IAppDbContext context, IClock clock
             .FirstOrDefaultAsync(a => a.Id == announcementId && a.MusicStoreId == storeId, cancellationToken) ?? throw new NotFoundException(Messages.AnnouncementNotFound);
 
         entity.SoftDelete();
-        entity.UpdatedById = currentUser.UserId;
 
         await context.SaveChangesAsync(cancellationToken);
 

@@ -55,7 +55,6 @@ public class Enrollment : AuditableEntity
         }
 
         EnrollmentStatus = target;
-        UpdatedById = userId;
 
         if (trigger == EnrollmentTrigger.Approve)
         {

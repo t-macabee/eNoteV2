@@ -29,10 +29,7 @@ public sealed class AssignmentService(
         var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId, cancellationToken);
         await instructorAccess.EnsureOwnsLectureAsync(lectureId, instructorId, cancellationToken);
 
-        var entity = new Assignment(request.Title.Trim(), request.Description.Trim(), request.DueAt, lectureId)
-        {
-            CreatedById = currentUser.UserId
-        };
+        var entity = new Assignment(request.Title.Trim(), request.Description.Trim(), request.DueAt, lectureId);
 
         context.Set<Assignment>().Add(entity);
         await context.SaveChangesAsync(cancellationToken);
@@ -45,7 +42,6 @@ public sealed class AssignmentService(
         var entity = await GetOwnedAssignmentAsync(lectureId, assignmentId, track: true, cancellationToken: cancellationToken);
 
         entity.UpdateDetails(request.Title.Trim(), request.Description.Trim(), request.DueAt);
-        entity.UpdatedById = currentUser.UserId;
 
         await context.SaveChangesAsync(cancellationToken);
 
@@ -57,7 +53,6 @@ public sealed class AssignmentService(
         var entity = await GetOwnedAssignmentAsync(lectureId, assignmentId, track: true, cancellationToken: cancellationToken);
 
         entity.SoftDelete();
-        entity.UpdatedById = currentUser.UserId;
 
         await context.SaveChangesAsync(cancellationToken);
     }

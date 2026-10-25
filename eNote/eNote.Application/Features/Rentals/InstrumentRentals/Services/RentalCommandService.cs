@@ -42,10 +42,7 @@ public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, 
                 throw new BusinessException(Messages.RentalUnpaidDebt);
             }
 
-            var rental = new InstrumentRental(request.InstrumentId, studentProfileId, instrument.MusicStoreId, clock.UtcNow, request.Note)
-            {
-                CreatedById = currentUser.UserId
-            };
+            var rental = new InstrumentRental(request.InstrumentId, studentProfileId, instrument.MusicStoreId, clock.UtcNow, request.Note);
 
             context.Set<InstrumentRental>().Add(rental);
             await SaveWithLockConflictMessageAsync(Messages.InstrumentReservedOrRented, cancellationToken);

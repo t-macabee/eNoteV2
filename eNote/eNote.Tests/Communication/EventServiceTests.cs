@@ -14,7 +14,7 @@ public sealed class EventServiceTests
     public async Task CreateAsync_WithoutOptionalFks_Succeeds()
     {
         var ctx = TestDbContextFactory.CreateContext(Now);
-        var service = new EventService(ctx, new StubCurrentActor());
+        var service = new EventService(ctx);
 
         var dto = await service.CreateAsync(new EventRequest
         {
@@ -34,8 +34,8 @@ public sealed class EventServiceTests
     [Fact]
     public async Task CreateAsync_SetsCreatedById_ToCurrentUser()
     {
-        var ctx = TestDbContextFactory.CreateContext(Now);
-        var service = new EventService(ctx, new StubCurrentActor(userId: 77));
+        var ctx = TestDbContextFactory.CreateContext(Now, currentUser: new StubCurrentActor(userId: 77));
+        var service = new EventService(ctx);
 
         var dto = await service.CreateAsync(new EventRequest
         {
@@ -52,8 +52,8 @@ public sealed class EventServiceTests
     [Fact]
     public async Task UpdateAsync_SetsUpdatedById_ToCurrentUser()
     {
-        var ctx = TestDbContextFactory.CreateContext(Now);
-        var service = new EventService(ctx, new StubCurrentActor(userId: 77));
+        var ctx = TestDbContextFactory.CreateContext(Now, currentUser: new StubCurrentActor(userId: 77));
+        var service = new EventService(ctx);
 
         var created = await service.CreateAsync(new EventRequest
         {
@@ -78,7 +78,7 @@ public sealed class EventServiceTests
     {
         var ctx = TestDbContextFactory.CreateContext(Now);
         var harness = await AcademicTestData.SeedAsync(ctx, Now);
-        var service = new EventService(ctx, new StubCurrentActor());
+        var service = new EventService(ctx);
 
         var dto = await service.CreateAsync(new EventRequest
         {
@@ -98,7 +98,7 @@ public sealed class EventServiceTests
     {
         var ctx = TestDbContextFactory.CreateContext(Now);
         var harness = await AcademicTestData.SeedAsync(ctx, Now);
-        var service = new EventService(ctx, new StubCurrentActor());
+        var service = new EventService(ctx);
 
         var dto = await service.CreateAsync(new EventRequest
         {
@@ -117,7 +117,7 @@ public sealed class EventServiceTests
     {
         var ctx = TestDbContextFactory.CreateContext(Now);
         var address = await SeedAddressAsync(ctx);
-        var service = new EventService(ctx, new StubCurrentActor());
+        var service = new EventService(ctx);
 
         var dto = await service.CreateAsync(new EventRequest
         {
@@ -136,7 +136,7 @@ public sealed class EventServiceTests
         var ctx = TestDbContextFactory.CreateContext(Now);
         var harness = await AcademicTestData.SeedAsync(ctx, Now);
         var address = await SeedAddressAsync(ctx);
-        var service = new EventService(ctx, new StubCurrentActor());
+        var service = new EventService(ctx);
 
         var dto = await service.CreateAsync(new EventRequest
         {
@@ -160,7 +160,7 @@ public sealed class EventServiceTests
     {
         var ctx = TestDbContextFactory.CreateContext(Now);
         var harness = await AcademicTestData.SeedAsync(ctx, Now);
-        var service = new EventService(ctx, new StubCurrentActor());
+        var service = new EventService(ctx);
 
         var dto = await service.CreateAsync(new EventRequest
         {
@@ -179,7 +179,7 @@ public sealed class EventServiceTests
     public async Task CreateAsync_WithoutEndsAt_Succeeds()
     {
         var ctx = TestDbContextFactory.CreateContext(Now);
-        var service = new EventService(ctx, new StubCurrentActor());
+        var service = new EventService(ctx);
 
         var dto = await service.CreateAsync(new EventRequest
         {
@@ -196,7 +196,7 @@ public sealed class EventServiceTests
     public async Task CreateAsync_EndsBeforeStarts_ThrowsBusinessException()
     {
         var ctx = TestDbContextFactory.CreateContext(Now);
-        var service = new EventService(ctx, new StubCurrentActor());
+        var service = new EventService(ctx);
 
         await Assert.ThrowsAsync<BusinessException>(() => service.CreateAsync(new EventRequest
         {
@@ -211,7 +211,7 @@ public sealed class EventServiceTests
     public async Task CreateAsync_InvalidAddressId_ThrowsNotFound()
     {
         var ctx = TestDbContextFactory.CreateContext(Now);
-        var service = new EventService(ctx, new StubCurrentActor());
+        var service = new EventService(ctx);
 
         await Assert.ThrowsAsync<NotFoundException>(() => service.CreateAsync(new EventRequest
         {
@@ -226,7 +226,7 @@ public sealed class EventServiceTests
     public async Task CreateAsync_InvalidCourseId_ThrowsNotFound()
     {
         var ctx = TestDbContextFactory.CreateContext(Now);
-        var service = new EventService(ctx, new StubCurrentActor());
+        var service = new EventService(ctx);
 
         await Assert.ThrowsAsync<NotFoundException>(() => service.CreateAsync(new EventRequest
         {
@@ -241,7 +241,7 @@ public sealed class EventServiceTests
     public async Task CreateAsync_InvalidInstructorId_ThrowsNotFound()
     {
         var ctx = TestDbContextFactory.CreateContext(Now);
-        var service = new EventService(ctx, new StubCurrentActor());
+        var service = new EventService(ctx);
 
         await Assert.ThrowsAsync<NotFoundException>(() => service.CreateAsync(new EventRequest
         {
@@ -257,7 +257,7 @@ public sealed class EventServiceTests
     {
         var ctx = TestDbContextFactory.CreateContext(Now);
         var address = await SeedAddressAsync(ctx);
-        var service = new EventService(ctx, new StubCurrentActor());
+        var service = new EventService(ctx);
 
         var created = await service.CreateAsync(new EventRequest
         {
@@ -286,7 +286,7 @@ public sealed class EventServiceTests
     {
         var ctx = TestDbContextFactory.CreateContext(Now);
         var address = await SeedAddressAsync(ctx);
-        var service = new EventService(ctx, new StubCurrentActor());
+        var service = new EventService(ctx);
 
         var created = await service.CreateAsync(new EventRequest
         {
@@ -311,7 +311,7 @@ public sealed class EventServiceTests
     public async Task DeleteAsync_RemovesEvent()
     {
         var ctx = TestDbContextFactory.CreateContext(Now);
-        var service = new EventService(ctx, new StubCurrentActor());
+        var service = new EventService(ctx);
 
         var dto = await service.CreateAsync(new EventRequest
         {
@@ -329,7 +329,7 @@ public sealed class EventServiceTests
     public async Task GetByIdAsync_NotFound_Throws()
     {
         var ctx = TestDbContextFactory.CreateContext(Now);
-        var service = new EventService(ctx, new StubCurrentActor());
+        var service = new EventService(ctx);
 
         await Assert.ThrowsAsync<NotFoundException>(() => service.GetByIdAsync(9999));
     }
@@ -339,7 +339,7 @@ public sealed class EventServiceTests
     {
         var ctx = TestDbContextFactory.CreateContext(Now);
         var harness = await AcademicTestData.SeedAsync(ctx, Now);
-        var service = new EventService(ctx, new StubCurrentActor());
+        var service = new EventService(ctx);
 
         await service.CreateAsync(new EventRequest { Title = "Concert A", Description = "D", StartsAt = Now.AddDays(1), CourseId = harness.Course.Id });
         await service.CreateAsync(new EventRequest { Title = "Concert B", Description = "D", StartsAt = Now.AddDays(2) });
@@ -357,7 +357,7 @@ public sealed class EventServiceTests
     public async Task GetPagedAsync_FiltersByDateRange()
     {
         var ctx = TestDbContextFactory.CreateContext(Now);
-        var service = new EventService(ctx, new StubCurrentActor());
+        var service = new EventService(ctx);
 
         await service.CreateAsync(new EventRequest { Title = "E1", Description = "D", StartsAt = Now.AddDays(1) });
         await service.CreateAsync(new EventRequest { Title = "E2", Description = "D", StartsAt = Now.AddDays(10) });

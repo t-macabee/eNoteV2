@@ -7,7 +7,6 @@ public sealed class MembershipService(
     IAppDbContext context,
     AdminStudentService students,
     IClock clock,
-    ICurrentUserContext currentUser,
     IMembershipWarningDispatcher notifications)
 {
     public const int WarningWindowDays = 7;
@@ -41,10 +40,7 @@ public sealed class MembershipService(
             periodStart,
             periodEnd,
             request.ReceiptNumber,
-            request.Note)
-        {
-            CreatedById = currentUser.UserId
-        };
+            request.Note);
 
         context.Set<MembershipPayment>().Add(payment);
         student.UpdateMembership(periodEnd);

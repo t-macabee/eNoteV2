@@ -45,7 +45,43 @@ public class ENoteContext(DbContextOptions<ENoteContext> options, IClock clock, 
 
         modelBuilder.Entity<Announcement>().HasQueryFilter(a => a.IsActive && (GetStoreId() == null || a.MusicStoreId == null || a.MusicStoreId == GetStoreId()));
 
+        ConfigureAuditUserForeignKeys(modelBuilder);
+
         ModelBuilderSeed.Seed(modelBuilder);
+    }
+
+    private static void ConfigureAuditUserForeignKeys(ModelBuilder modelBuilder)
+    {
+        var auditableEntityType = typeof(AuditableEntity);
+
+        foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+        {
+            if (!auditableEntityType.IsAssignableFrom(entityType.ClrType))
+            {
+                continue;
+            }
+
+            var method = typeof(ENoteContext)
+                .GetMethod(nameof(ConfigureAuditUserForeignKeysForEntity), System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!
+                .MakeGenericMethod(entityType.ClrType);
+
+            method.Invoke(null, [modelBuilder]);
+        }
+    }
+
+    private static void ConfigureAuditUserForeignKeysForEntity<TEntity>(ModelBuilder modelBuilder) where TEntity : AuditableEntity
+    {
+        modelBuilder.Entity<TEntity>()
+            .HasOne<AppUser>()
+            .WithMany()
+            .HasForeignKey(x => x.CreatedById)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<TEntity>()
+            .HasOne<AppUser>()
+            .WithMany()
+            .HasForeignKey(x => x.UpdatedById)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 
     private int? GetStoreId()
@@ -79,17 +115,29 @@ public class ENoteContext(DbContextOptions<ENoteContext> options, IClock clock, 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         var now = clock.UtcNow;
+        var isAuthenticated = currentUser.IsAuthenticated;
+        var userId = isAuthenticated ? currentUser.UserId : (int?)null;
 
         foreach (EntityEntry<AuditableEntity> entry in ChangeTracker.Entries<AuditableEntity>())
         {
             if (entry.State == EntityState.Added)
             {
                 entry.Entity.CreatedAt = now;
+
+                if (userId.HasValue)
+                {
+                    entry.Entity.CreatedById = userId.Value;
+                }
             }
 
             if (entry.State == EntityState.Modified)
             {
                 entry.Entity.UpdatedAt = now;
+
+                if (userId.HasValue)
+                {
+                    entry.Entity.UpdatedById = userId.Value;
+                }
             }
         }
 

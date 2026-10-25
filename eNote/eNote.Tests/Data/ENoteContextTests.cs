@@ -1,3 +1,4 @@
+using eNote.Application.Common.Interfaces;
 using eNote.Application.Constants;
 using eNote.Domain.Entities.Assignments;
 using eNote.Domain.Entities.Shared;
@@ -87,6 +88,61 @@ public sealed class ENoteContextTests
 
         Assert.Equal(Baseline, student.CreatedAt);
         Assert.Null(student.UpdatedAt);
+    }
+
+    [Fact]
+    public async Task SaveChangesAsync_SetsCreatedById_WhenEntityAdded()
+    {
+        await using var context = CreateContextWithActor(Baseline, new StubCurrentActor(userId: 42));
+        var student = new Student(appUserId: 100, enrollmentDate: Baseline);
+
+        context.Set<Student>().Add(student);
+        await context.SaveChangesAsync();
+
+        Assert.Equal(42, student.CreatedById);
+        Assert.Null(student.UpdatedById);
+    }
+
+    [Fact]
+    public async Task SaveChangesAsync_SetsUpdatedById_WhenEntityModified()
+    {
+        var dbName = Guid.NewGuid().ToString();
+
+        await using (var arrange = CreateContextWithActor(Baseline, new StubCurrentActor(userId: 42), dbName))
+        {
+            arrange.Set<Student>().Add(new Student(100, Baseline));
+            await arrange.SaveChangesAsync();
+        }
+
+        await using var act = CreateContextWithActor(Later, new StubCurrentActor(userId: 43), dbName);
+        var student = await act.Set<Student>().FirstAsync();
+
+        student.UpdateMembership(Later.AddDays(30));
+        await act.SaveChangesAsync();
+
+        Assert.Equal(42, student.CreatedById);
+        Assert.Equal(43, student.UpdatedById);
+    }
+
+    [Fact]
+    public async Task SaveChangesAsync_LeavesAuditUserIdsNull_WhenActorIsUnauthenticated()
+    {
+        var dbName = Guid.NewGuid().ToString();
+
+        await using (var arrange = CreateContextWithActor(Baseline, new StubCurrentActor(isAuthenticated: false), dbName))
+        {
+            arrange.Set<Student>().Add(new Student(100, Baseline));
+            await arrange.SaveChangesAsync();
+        }
+
+        await using var act = CreateContextWithActor(Later, new StubCurrentActor(isAuthenticated: false), dbName);
+        var student = await act.Set<Student>().FirstAsync();
+
+        student.UpdateMembership(Later.AddDays(30));
+        await act.SaveChangesAsync();
+
+        Assert.Null(student.CreatedById);
+        Assert.Null(student.UpdatedById);
     }
 
     [Fact]
@@ -213,8 +269,8 @@ public sealed class ENoteContextTests
         Assert.False(entityType.FindProperty(nameof(MembershipPayment.PeriodStart))!.IsNullable);
         Assert.False(entityType.FindProperty(nameof(MembershipPayment.PeriodEnd))!.IsNullable);
 
-        var foreignKey = Assert.Single(entityType.GetForeignKeys());
-        Assert.Equal(nameof(MembershipPayment.StudentId), Assert.Single(foreignKey.Properties).Name);
+        var foreignKey = entityType.GetForeignKeys()
+            .Single(fk => fk.Properties.Select(p => p.Name).SequenceEqual([nameof(MembershipPayment.StudentId)]));
         Assert.Equal(DeleteBehavior.Restrict, foreignKey.DeleteBehavior);
     }
 
@@ -270,4 +326,7 @@ public sealed class ENoteContextTests
 
     private static ENoteContext CreateContext(DateTime now, string? databaseName = null) =>
         TestDbContextFactory.CreateContext(now, databaseName);
+
+    private static ENoteContext CreateContextWithActor(DateTime now, ICurrentUserContext currentUser, string? databaseName = null) =>
+        TestDbContextFactory.CreateContext(now, databaseName, currentUser);
 }

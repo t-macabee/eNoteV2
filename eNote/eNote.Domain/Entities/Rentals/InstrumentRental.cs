@@ -120,7 +120,6 @@ public sealed class InstrumentRental : AuditableEntity, ITenantScoped
         }
 
         transition.Apply(this, context, now);
-        UpdatedById = context.UserId;
         return Result<RentalTransitionResult>.Success(new RentalTransitionResult(transition.UsesInstrumentLock));
     }
 

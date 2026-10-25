@@ -14,7 +14,7 @@ public sealed class AdminEventControllerTests
     public async Task Create_WithCourseId_ThrowsBusinessException()
     {
         var ctx = TestDbContextFactory.CreateContext(Now);
-        var controller = new AdminEventController(new EventService(ctx, new StubCurrentActor()));
+        var controller = new AdminEventController(new EventService(ctx));
 
         var ex = await Assert.ThrowsAsync<BusinessException>(() =>
             controller.Create(new EventRequest
@@ -32,7 +32,7 @@ public sealed class AdminEventControllerTests
     public async Task Create_WithInstructorId_ThrowsBusinessException()
     {
         var ctx = TestDbContextFactory.CreateContext(Now);
-        var controller = new AdminEventController(new EventService(ctx, new StubCurrentActor()));
+        var controller = new AdminEventController(new EventService(ctx));
 
         var ex = await Assert.ThrowsAsync<BusinessException>(() =>
             controller.Create(new EventRequest
@@ -50,7 +50,7 @@ public sealed class AdminEventControllerTests
     public async Task Create_PlatformWide_Succeeds()
     {
         var ctx = TestDbContextFactory.CreateContext(Now);
-        var controller = new AdminEventController(new EventService(ctx, new StubCurrentActor()));
+        var controller = new AdminEventController(new EventService(ctx));
 
         var actionResult = await controller.Create(new EventRequest
         {
@@ -71,7 +71,7 @@ public sealed class AdminEventControllerTests
     public async Task Update_WithCourseId_ThrowsBusinessException()
     {
         var ctx = TestDbContextFactory.CreateContext(Now);
-        var service = new EventService(ctx, new StubCurrentActor());
+        var service = new EventService(ctx);
         var existing = await service.CreateAsync(new EventRequest
         {
             Title = "Existing",
@@ -97,7 +97,7 @@ public sealed class AdminEventControllerTests
     {
         var ctx = TestDbContextFactory.CreateContext(Now);
         var harness = await AcademicTestData.SeedAsync(ctx, Now);
-        var service = new EventService(ctx, new StubCurrentActor());
+        var service = new EventService(ctx);
         var existing = await service.CreateAsync(new EventRequest
         {
             Title = "Course Event",
@@ -123,7 +123,7 @@ public sealed class AdminEventControllerTests
     {
         var ctx = TestDbContextFactory.CreateContext(Now);
         var harness = await AcademicTestData.SeedAsync(ctx, Now);
-        var service = new EventService(ctx, new StubCurrentActor());
+        var service = new EventService(ctx);
         var existing = await service.CreateAsync(new EventRequest
         {
             Title = "Instructor Event",
@@ -143,7 +143,7 @@ public sealed class AdminEventControllerTests
     public async Task Delete_PlatformWideEvent_Succeeds()
     {
         var ctx = TestDbContextFactory.CreateContext(Now);
-        var service = new EventService(ctx, new StubCurrentActor());
+        var service = new EventService(ctx);
         var existing = await service.CreateAsync(new EventRequest
         {
             Title = "Platform Event",

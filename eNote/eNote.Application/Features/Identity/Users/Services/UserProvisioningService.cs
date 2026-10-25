@@ -143,47 +143,20 @@ public sealed class UserProvisioningService(
             throw new ConflictException(Messages.CannotModifyOwnAccount);
         }
 
-        var hasAuthoredHistory = await context.Set<eNote.Domain.Entities.Communication.Announcement>().IgnoreQueryFilters().AnyAsync(a => a.CreatedById == userId, cancellationToken) ||
-                                  await context.Set<eNote.Domain.Entities.Communication.Event>().IgnoreQueryFilters().AnyAsync(e => e.CreatedById == userId, cancellationToken) ||
-                                  await context.Set<eNote.Domain.Entities.Rentals.InstrumentRental>().IgnoreQueryFilters().AnyAsync(r => r.ApprovedById == userId || r.RejectedById == userId, cancellationToken);
-        if (hasAuthoredHistory) throw new ConflictException(Messages.UserDeleteBlocked);
-
-        var student = await context.Set<Student>().FirstOrDefaultAsync(s => s.AppUserId == userId, cancellationToken);
-        if (student != null)
+        var picturePath = await context.ExecuteInTransactionAsync(async () =>
         {
-            var hasDependents = await context.Set<eNote.Domain.Entities.Academic.Enrollment>().IgnoreQueryFilters().AnyAsync(e => e.StudentId == student.Id, cancellationToken) ||
-                                 await context.Set<eNote.Domain.Entities.Academic.Attendance>().IgnoreQueryFilters().AnyAsync(a => a.StudentId == student.Id, cancellationToken) ||
-                                 await context.Set<eNote.Domain.Entities.Assignments.AssignmentSubmission>().IgnoreQueryFilters().AnyAsync(s => s.StudentId == student.Id, cancellationToken) ||
-                                 await context.Set<eNote.Domain.Entities.Rentals.InstrumentRental>().IgnoreQueryFilters().AnyAsync(r => r.StudentProfileId == student.Id, cancellationToken) ||
-                                 await context.Set<eNote.Domain.Entities.Identity.MembershipPayment>().IgnoreQueryFilters().AnyAsync(p => p.StudentId == student.Id, cancellationToken);
-            if (hasDependents) throw new ConflictException(Messages.UserDeleteBlocked);
+            var storeEmployees = await context.Set<MusicStoreEmployee>()
+                .Where(e => e.AppUserId == userId)
+                .ToListAsync(cancellationToken);
 
-            context.Set<Student>().Remove(student);
-        }
+            if (storeEmployees.Count > 0)
+            {
+                context.Set<MusicStoreEmployee>().RemoveRange(storeEmployees);
+                await context.SaveChangesAsync(cancellationToken);
+            }
 
-        var instructor = await context.Set<Instructor>().FirstOrDefaultAsync(i => i.AppUserId == userId, cancellationToken);
-        if (instructor != null)
-        {
-            var hasDependents = await context.Set<eNote.Domain.Entities.Academic.Course>().IgnoreQueryFilters().AnyAsync(c => c.InstructorId == instructor.Id, cancellationToken) ||
-                                 await context.Set<eNote.Domain.Entities.Communication.Event>().IgnoreQueryFilters().AnyAsync(e => e.InstructorId == instructor.Id, cancellationToken);
-            if (hasDependents) throw new ConflictException(Messages.UserDeleteBlocked);
-
-            context.Set<Instructor>().Remove(instructor);
-        }
-
-        var storeEmployee = await context.Set<MusicStoreEmployee>().FirstOrDefaultAsync(e => e.AppUserId == userId, cancellationToken);
-        if (storeEmployee != null)
-        {
-            context.Set<MusicStoreEmployee>().Remove(storeEmployee);
-        }
-
-        using var transaction = await context.BeginTransactionAsync(cancellationToken);
-
-        await context.SaveChangesAsync(cancellationToken);
-
-        var picturePath = await accountService.DeleteUserAsync(userId, cancellationToken);
-
-        await transaction.CommitAsync(cancellationToken);
+            return await accountService.DeleteUserAsync(userId, cancellationToken);
+        }, cancellationToken);
 
         if (!string.IsNullOrWhiteSpace(picturePath))
         {

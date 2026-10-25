@@ -280,7 +280,7 @@ public sealed class CourseEnrollmentServiceTests
     }
 
     private static ENoteContext CreateContext() =>
-        new(TestDbContextFactory.CreateOptions(), new FixedClock(Now), new StubCurrentActor(storeId: 1)) { ExplicitStoreId = 1 };
+        new(TestDbContextFactory.CreateOptions(), new FixedClock(Now), new StubCurrentActor(storeId: 1, userId: 100)) { ExplicitStoreId = 1 };
 
     private static async Task<(Student Student, Course Course)> SeedStudentAndCourseAsync(ENoteContext context, bool hasActiveMembership)
     {

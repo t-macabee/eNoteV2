@@ -26,15 +26,11 @@ public sealed class AssignmentSubmissionService(
         {
             if (existing is null)
             {
-                existing = new AssignmentSubmission(assignment.Id, student.Id)
-                {
-                    CreatedById = currentUser.UserId
-                };
+                existing = new AssignmentSubmission(assignment.Id, student.Id);
                 assignment.AssignmentSubmissions.Add(existing);
             }
 
             existing.Submit(path?.Trim(), clock.UtcNow);
-            existing.UpdatedById = currentUser.UserId;
 
             await SaveWithSubmissionConflictMessageAsync(ct);
         }
@@ -158,7 +154,6 @@ public sealed class AssignmentSubmissionService(
         }
 
         submission.SetGrade(request.Grade, request.Feedback);
-        submission.UpdatedById = currentUser.UserId;
 
         await notificationDispatcher.DispatchGradedAsync(submission.Id, submission.Student.AppUserId, assignment.Title, request.Grade);
 

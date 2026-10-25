@@ -388,10 +388,7 @@ public sealed class CourseService(IAppDbContext context, IMapper mapper, ICurren
             request.Price,
             request.StartDate,
             request.EndDate,
-            instructorId)
-        {
-            CreatedById = currentUser.UserId
-        };
+            instructorId);
         entity.SetPublishedStatus(request.IsPublished);
 
         context.Set<Course>().Add(entity);
@@ -411,7 +408,6 @@ public sealed class CourseService(IAppDbContext context, IMapper mapper, ICurren
 
         entity.UpdateDetails(request.Name.Trim(), request.Description?.Trim(), request.Price, request.StartDate, request.EndDate);
         entity.SetPublishedStatus(request.IsPublished);
-        entity.UpdatedById = currentUser.UserId;
 
         await context.SaveChangesAsync(cancellationToken);
 
@@ -438,7 +434,6 @@ public sealed class CourseService(IAppDbContext context, IMapper mapper, ICurren
         await CancelOpenPaymentAttemptsAsync(entity, cancellationToken);
 
         entity.SoftDelete();
-        entity.UpdatedById = currentUser.UserId;
 
         var lectures = await context.Set<Lecture>()
             .Where(l => l.CourseId == entity.Id)
@@ -447,7 +442,6 @@ public sealed class CourseService(IAppDbContext context, IMapper mapper, ICurren
         foreach (var lecture in lectures)
         {
             lecture.SoftDelete();
-            lecture.UpdatedById = currentUser.UserId;
         }
 
         await context.SaveChangesAsync(cancellationToken);

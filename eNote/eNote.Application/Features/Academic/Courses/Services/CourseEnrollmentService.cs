@@ -35,10 +35,7 @@ public sealed class CourseEnrollmentService(
 
         if (enrollment is null)
         {
-            context.Set<Enrollment>().Add(new Enrollment(student.Id, courseId, EnrollmentStatus.Pending)
-            {
-                CreatedById = currentUser.UserId
-            });
+            context.Set<Enrollment>().Add(new Enrollment(student.Id, courseId, EnrollmentStatus.Pending));
         }
         else if (enrollment.EnrollmentStatus is EnrollmentStatus.Pending or EnrollmentStatus.Active)
         {

@@ -14,7 +14,7 @@ public sealed class InstructorAnnouncementService(IAppDbContext context, IClock 
             throw new BusinessException(Messages.AnnouncementCourseForbidden);
         }
 
-        var entity = AnnouncementBuilder.Build(request, courseId, null, clock, currentUser);
+        var entity = AnnouncementBuilder.Build(request, courseId, null, clock);
 
         return await context.ExecuteInTransactionAsync(async () =>
         {
@@ -50,7 +50,6 @@ public sealed class InstructorAnnouncementService(IAppDbContext context, IClock 
         var entity = await (await GetCourseAnnouncementQueryAsync(courseId, cancellationToken, track: true)).FirstOrDefaultAsync(a => a.Id == announcementId, cancellationToken) ?? throw new NotFoundException(Messages.AnnouncementNotFound);
 
         entity.UpdateDetails(request.Title.Trim(), request.Content.Trim());
-        entity.UpdatedById = currentUser.UserId;
 
         await context.SaveChangesAsync(cancellationToken);
 
@@ -64,7 +63,6 @@ public sealed class InstructorAnnouncementService(IAppDbContext context, IClock 
         var previousPath = entity.ImagePath;
         var path = await fileStorage.SaveAsync(stream, fileName, contentType, "announcements", ct);
         entity.UpdateImagePath(path);
-        entity.UpdatedById = currentUser.UserId;
 
         await context.SaveChangesReplacingFileAsync(fileStorage, path, previousPath, ct);
 
@@ -76,7 +74,6 @@ public sealed class InstructorAnnouncementService(IAppDbContext context, IClock 
         var entity = await (await GetCourseAnnouncementQueryAsync(courseId, cancellationToken, track: true)).FirstOrDefaultAsync(a => a.Id == announcementId, cancellationToken) ?? throw new NotFoundException(Messages.AnnouncementNotFound);
 
         entity.SoftDelete();
-        entity.UpdatedById = currentUser.UserId;
 
         await context.SaveChangesAsync(cancellationToken);
 

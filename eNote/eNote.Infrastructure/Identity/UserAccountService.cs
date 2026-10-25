@@ -4,6 +4,8 @@ using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Localization;
 using eNote.Application.Features.Identity.Users.Services;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Infrastructure.Identity;
 
@@ -198,13 +200,18 @@ public sealed class UserAccountService(UserManager<AppUser> userManager, IFileSt
     {
         var user = await FindUserOrThrowAsync(userId);
 
-        await userManager.UpdateSecurityStampAsync(user);
-
-        var result = await userManager.DeleteAsync(user);
-
-        if (!result.Succeeded)
+        try
         {
-            throw new BusinessException(string.Join("; ", result.Errors.Select(e => e.Description)));
+            var result = await userManager.DeleteAsync(user);
+
+            if (!result.Succeeded)
+            {
+                throw new BusinessException(string.Join("; ", result.Errors.Select(e => e.Description)));
+            }
+        }
+        catch (DbUpdateException exception) when (exception.InnerException is SqlException { Number: 547 })
+        {
+            throw new ConflictException(Messages.UserDeleteBlocked);
         }
 
         return user.PicturePath;

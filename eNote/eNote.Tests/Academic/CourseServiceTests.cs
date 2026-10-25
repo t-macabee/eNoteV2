@@ -635,7 +635,7 @@ public sealed class CourseServiceTests
     [Fact]
     public async Task DeleteAsync_SoftDeletesCourse_AndDeactivatesEveryLecture_WithAuditStamp()
     {
-        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now, currentUser: new StubCurrentActor(userId: 7)), Now);
         var enrollment = await harness.Context.Set<Enrollment>().SingleAsync(e => e.CourseId == harness.Course.Id);
         enrollment.Transition(EnrollmentTrigger.Cancel, userId: 1, now: Now);
         var secondLecture = new Lecture("Second lesson", "Room 2", 45, Now.AddDays(1), LectureType.Practical, 20, harness.Course.Id);

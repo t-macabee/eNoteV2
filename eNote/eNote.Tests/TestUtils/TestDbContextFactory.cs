@@ -17,8 +17,8 @@ public static class TestDbContextFactory
             .Options;
     }
 
-    public static ENoteContext CreateContext(DateTime now, string? databaseName = null)
+    public static ENoteContext CreateContext(DateTime now, string? databaseName = null, ICurrentUserContext? currentUser = null)
     {
-        return new ENoteContext(CreateOptions(databaseName), new FixedClock(now), new StubCurrentActor(new Student(0, now))) { ExplicitStoreId = 1 };
+        return new ENoteContext(CreateOptions(databaseName), new FixedClock(now), currentUser ?? new StubCurrentActor(new Student(0, now))) { ExplicitStoreId = 1 };
     }
 }

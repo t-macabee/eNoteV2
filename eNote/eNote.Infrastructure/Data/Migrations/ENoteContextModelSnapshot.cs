@@ -156,7 +156,11 @@ namespace eNote.Infrastructure.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CreatedById");
+
                     b.HasIndex("LectureId");
+
+                    b.HasIndex("UpdatedById");
 
                     b.HasIndex("StudentId", "LectureId")
                         .IsUnique()
@@ -217,7 +221,11 @@ namespace eNote.Infrastructure.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CreatedById");
+
                     b.HasIndex("InstructorId");
+
+                    b.HasIndex("UpdatedById");
 
                     b.ToTable("Course");
                 });
@@ -296,6 +304,8 @@ namespace eNote.Infrastructure.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CreatedById");
+
                     b.HasIndex("EnrollmentId")
                         .IsUnique()
                         .HasDatabaseName("UX_CoursePayment_EnrollmentId_OpenAttempt")
@@ -309,6 +319,8 @@ namespace eNote.Infrastructure.Data.Migrations
                     b.HasIndex("StripePaymentIntentId")
                         .IsUnique()
                         .HasDatabaseName("UX_CoursePayment_PaymentIntentId");
+
+                    b.HasIndex("UpdatedById");
 
                     b.HasIndex("EnrollmentId", "Status");
 
@@ -366,6 +378,12 @@ namespace eNote.Infrastructure.Data.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CourseId");
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("DecidedById");
+
+                    b.HasIndex("UpdatedById");
 
                     b.HasIndex("StudentId", "CourseId")
                         .IsUnique()
@@ -452,7 +470,11 @@ namespace eNote.Infrastructure.Data.Migrations
 
                     b.HasIndex("CourseId");
 
+                    b.HasIndex("CreatedById");
+
                     b.HasIndex("StudentId");
+
+                    b.HasIndex("UpdatedById");
 
                     b.ToTable("Lecture");
                 });
@@ -496,7 +518,11 @@ namespace eNote.Infrastructure.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CreatedById");
+
                     b.HasIndex("LectureId");
+
+                    b.HasIndex("UpdatedById");
 
                     b.ToTable("LectureNote");
                 });
@@ -543,7 +569,11 @@ namespace eNote.Infrastructure.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CreatedById");
+
                     b.HasIndex("LectureId");
+
+                    b.HasIndex("UpdatedById");
 
                     b.ToTable("Assignment");
                 });
@@ -590,7 +620,11 @@ namespace eNote.Infrastructure.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CreatedById");
+
                     b.HasIndex("StudentId");
+
+                    b.HasIndex("UpdatedById");
 
                     b.HasIndex("AssignmentId", "StudentId")
                         .IsUnique()
@@ -657,6 +691,8 @@ namespace eNote.Infrastructure.Data.Migrations
 
                     b.HasIndex("PublishedAt");
 
+                    b.HasIndex("UpdatedById");
+
                     b.ToTable("Announcement", t =>
                         {
                             t.HasCheckConstraint("CK_Announcement_Scope", "(\"CourseId\" IS NOT NULL AND \"MusicStoreId\" IS NULL) OR (\"CourseId\" IS NULL AND \"MusicStoreId\" IS NOT NULL)");
@@ -719,6 +755,8 @@ namespace eNote.Infrastructure.Data.Migrations
                     b.HasIndex("InstructorId");
 
                     b.HasIndex("StartsAt");
+
+                    b.HasIndex("UpdatedById");
 
                     b.ToTable("Event", t =>
                         {
@@ -859,7 +897,11 @@ namespace eNote.Infrastructure.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CreatedById");
+
                     b.HasIndex("PublishedAt");
+
+                    b.HasIndex("UpdatedById");
 
                     b.ToTable("RentalNotificationOutbox", (string)null);
                 });
@@ -891,6 +933,10 @@ namespace eNote.Infrastructure.Data.Migrations
 
                     b.HasIndex("AppUserId")
                         .IsUnique();
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("UpdatedById");
 
                     b.ToTable("Instructor");
                 });
@@ -942,9 +988,13 @@ namespace eNote.Infrastructure.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CreatedById");
+
                     b.HasIndex("ReceiptNumber")
                         .IsUnique()
                         .HasDatabaseName("UX_MembershipPayment_ReceiptNumber");
+
+                    b.HasIndex("UpdatedById");
 
                     b.HasIndex("StudentId", "PaidAt");
 
@@ -988,7 +1038,11 @@ namespace eNote.Infrastructure.Data.Migrations
                     b.HasIndex("AppUserId")
                         .IsUnique();
 
+                    b.HasIndex("CreatedById");
+
                     b.HasIndex("MusicStoreId");
+
+                    b.HasIndex("UpdatedById");
 
                     b.ToTable("MusicStoreEmployee");
                 });
@@ -1058,6 +1112,10 @@ namespace eNote.Infrastructure.Data.Migrations
                     b.HasIndex("AppUserId")
                         .IsUnique();
 
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("UpdatedById");
+
                     b.ToTable("Student");
                 });
 
@@ -1109,9 +1167,13 @@ namespace eNote.Infrastructure.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CreatedById");
+
                     b.HasIndex("InstrumentTypeId");
 
                     b.HasIndex("MusicStoreId");
+
+                    b.HasIndex("UpdatedById");
 
                     b.ToTable("Instrument");
                 });
@@ -1201,6 +1263,8 @@ namespace eNote.Infrastructure.Data.Migrations
 
                     b.HasIndex("ApprovedById");
 
+                    b.HasIndex("CreatedById");
+
                     b.HasIndex("InstrumentId")
                         .IsUnique()
                         .HasDatabaseName("UX_InstrumentRental_InstrumentId_ActiveOrApproved")
@@ -1209,6 +1273,8 @@ namespace eNote.Infrastructure.Data.Migrations
                     b.HasIndex("RejectedById");
 
                     b.HasIndex("StudentProfileId");
+
+                    b.HasIndex("UpdatedById");
 
                     b.HasIndex("InstrumentId", "StudentProfileId")
                         .IsUnique()
@@ -1350,6 +1416,10 @@ namespace eNote.Infrastructure.Data.Migrations
 
                     b.HasIndex("AddressId");
 
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("UpdatedById");
+
                     b.ToTable("MusicStore");
                 });
 
@@ -1424,6 +1494,8 @@ namespace eNote.Infrastructure.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CreatedById");
+
                     b.HasIndex("InstrumentRentalId")
                         .IsUnique()
                         .HasDatabaseName("UX_RentalPayment_InstrumentRentalId_OpenAttempt")
@@ -1437,6 +1509,8 @@ namespace eNote.Infrastructure.Data.Migrations
                     b.HasIndex("StripePaymentIntentId")
                         .IsUnique()
                         .HasDatabaseName("UX_RentalPayment_PaymentIntentId");
+
+                    b.HasIndex("UpdatedById");
 
                     b.HasIndex("InstrumentRentalId", "Status");
 
@@ -1482,9 +1556,13 @@ namespace eNote.Infrastructure.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CreatedById");
+
                     b.HasIndex("StripeEventId")
                         .IsUnique()
                         .HasDatabaseName("UX_StripeWebhookEvent_StripeEventId");
+
+                    b.HasIndex("UpdatedById");
 
                     b.ToTable("StripeWebhookEvent");
                 });
@@ -1826,6 +1904,11 @@ namespace eNote.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("eNote.Domain.Entities.Academic.Attendance", b =>
                 {
+                    b.HasOne("eNote.Infrastructure.Identity.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("eNote.Domain.Entities.Academic.Lecture", "Lecture")
                         .WithMany("Attendances")
                         .HasForeignKey("LectureId")
@@ -1838,6 +1921,11 @@ namespace eNote.Infrastructure.Data.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("eNote.Infrastructure.Identity.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("UpdatedById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.Navigation("Lecture");
 
                     b.Navigation("Student");
@@ -1845,22 +1933,42 @@ namespace eNote.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("eNote.Domain.Entities.Academic.Course", b =>
                 {
+                    b.HasOne("eNote.Infrastructure.Identity.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("eNote.Domain.Entities.Identity.Instructor", "Instructor")
                         .WithMany("Courses")
                         .HasForeignKey("InstructorId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("eNote.Infrastructure.Identity.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("UpdatedById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.Navigation("Instructor");
                 });
 
             modelBuilder.Entity("eNote.Domain.Entities.Academic.CoursePayment", b =>
                 {
+                    b.HasOne("eNote.Infrastructure.Identity.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("eNote.Domain.Entities.Academic.Enrollment", "Enrollment")
                         .WithMany("Payments")
                         .HasForeignKey("EnrollmentId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.HasOne("eNote.Infrastructure.Identity.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("UpdatedById")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Enrollment");
                 });
@@ -1873,11 +1981,26 @@ namespace eNote.Infrastructure.Data.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("eNote.Infrastructure.Identity.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("eNote.Infrastructure.Identity.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("DecidedById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("eNote.Domain.Entities.Identity.Student", "Student")
                         .WithMany("Enrollments")
                         .HasForeignKey("StudentId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.HasOne("eNote.Infrastructure.Identity.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("UpdatedById")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Course");
 
@@ -1897,9 +2020,19 @@ namespace eNote.Infrastructure.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("eNote.Infrastructure.Identity.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("eNote.Domain.Entities.Identity.Student", "Student")
                         .WithMany()
                         .HasForeignKey("StudentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("eNote.Infrastructure.Identity.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("UpdatedById")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Course");
@@ -1909,22 +2042,42 @@ namespace eNote.Infrastructure.Data.Migrations
 
             modelBuilder.Entity("eNote.Domain.Entities.Academic.LectureNote", b =>
                 {
+                    b.HasOne("eNote.Infrastructure.Identity.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("eNote.Domain.Entities.Academic.Lecture", "Lecture")
                         .WithMany("LectureNotes")
                         .HasForeignKey("LectureId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("eNote.Infrastructure.Identity.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("UpdatedById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.Navigation("Lecture");
                 });
 
             modelBuilder.Entity("eNote.Domain.Entities.Assignments.Assignment", b =>
                 {
+                    b.HasOne("eNote.Infrastructure.Identity.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("eNote.Domain.Entities.Academic.Lecture", "Lecture")
                         .WithMany("Assignments")
                         .HasForeignKey("LectureId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("eNote.Infrastructure.Identity.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("UpdatedById")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Lecture");
                 });
@@ -1937,11 +2090,21 @@ namespace eNote.Infrastructure.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("eNote.Infrastructure.Identity.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("eNote.Domain.Entities.Identity.Student", "Student")
                         .WithMany("AssignmentSubmissions")
                         .HasForeignKey("StudentId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.HasOne("eNote.Infrastructure.Identity.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("UpdatedById")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Assignment");
 
@@ -1964,6 +2127,11 @@ namespace eNote.Infrastructure.Data.Migrations
                         .WithMany()
                         .HasForeignKey("MusicStoreId")
                         .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("eNote.Infrastructure.Identity.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("UpdatedById")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Course");
 
@@ -1990,6 +2158,11 @@ namespace eNote.Infrastructure.Data.Migrations
                     b.HasOne("eNote.Domain.Entities.Identity.Instructor", "Instructor")
                         .WithMany()
                         .HasForeignKey("InstructorId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("eNote.Infrastructure.Identity.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("UpdatedById")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Address");
@@ -2033,6 +2206,19 @@ namespace eNote.Infrastructure.Data.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("eNote.Domain.Entities.Communication.NotificationOutbox", b =>
+                {
+                    b.HasOne("eNote.Infrastructure.Identity.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("eNote.Infrastructure.Identity.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("UpdatedById")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
             modelBuilder.Entity("eNote.Domain.Entities.Identity.Instructor", b =>
                 {
                     b.HasOne("eNote.Infrastructure.Identity.AppUser", null)
@@ -2040,15 +2226,35 @@ namespace eNote.Infrastructure.Data.Migrations
                         .HasForeignKey("eNote.Domain.Entities.Identity.Instructor", "AppUserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("eNote.Infrastructure.Identity.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("eNote.Infrastructure.Identity.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("UpdatedById")
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("eNote.Domain.Entities.Identity.MembershipPayment", b =>
                 {
+                    b.HasOne("eNote.Infrastructure.Identity.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("eNote.Domain.Entities.Identity.Student", "Student")
                         .WithMany()
                         .HasForeignKey("StudentId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.HasOne("eNote.Infrastructure.Identity.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("UpdatedById")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Student");
                 });
@@ -2061,11 +2267,21 @@ namespace eNote.Infrastructure.Data.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("eNote.Infrastructure.Identity.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("eNote.Domain.Entities.Rentals.MusicStore", "MusicStore")
                         .WithMany("Employees")
                         .HasForeignKey("MusicStoreId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("eNote.Infrastructure.Identity.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("UpdatedById")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("MusicStore");
                 });
@@ -2077,10 +2293,25 @@ namespace eNote.Infrastructure.Data.Migrations
                         .HasForeignKey("eNote.Domain.Entities.Identity.Student", "AppUserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("eNote.Infrastructure.Identity.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("eNote.Infrastructure.Identity.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("UpdatedById")
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("eNote.Domain.Entities.Rentals.Instrument", b =>
                 {
+                    b.HasOne("eNote.Infrastructure.Identity.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("eNote.Domain.Entities.Rentals.InstrumentType", "InstrumentType")
                         .WithMany("Instruments")
                         .HasForeignKey("InstrumentTypeId")
@@ -2093,6 +2324,11 @@ namespace eNote.Infrastructure.Data.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("eNote.Infrastructure.Identity.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("UpdatedById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.Navigation("InstrumentType");
 
                     b.Navigation("MusicStore");
@@ -2103,6 +2339,11 @@ namespace eNote.Infrastructure.Data.Migrations
                     b.HasOne("eNote.Infrastructure.Identity.AppUser", null)
                         .WithMany()
                         .HasForeignKey("ApprovedById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("eNote.Infrastructure.Identity.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedById")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("eNote.Domain.Entities.Rentals.Instrument", "Instrument")
@@ -2121,6 +2362,11 @@ namespace eNote.Infrastructure.Data.Migrations
                         .HasForeignKey("StudentProfileId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.HasOne("eNote.Infrastructure.Identity.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("UpdatedById")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Instrument");
 
@@ -2149,18 +2395,51 @@ namespace eNote.Infrastructure.Data.Migrations
                         .HasForeignKey("AddressId")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("eNote.Infrastructure.Identity.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("eNote.Infrastructure.Identity.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("UpdatedById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.Navigation("Address");
                 });
 
             modelBuilder.Entity("eNote.Domain.Entities.Rentals.RentalPayment", b =>
                 {
+                    b.HasOne("eNote.Infrastructure.Identity.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("eNote.Domain.Entities.Rentals.InstrumentRental", "InstrumentRental")
                         .WithMany("Payments")
                         .HasForeignKey("InstrumentRentalId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("eNote.Infrastructure.Identity.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("UpdatedById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.Navigation("InstrumentRental");
+                });
+
+            modelBuilder.Entity("eNote.Domain.Entities.Rentals.StripeWebhookEvent", b =>
+                {
+                    b.HasOne("eNote.Infrastructure.Identity.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("eNote.Infrastructure.Identity.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("UpdatedById")
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("eNote.Domain.Entities.Shared.Address", b =>

@@ -1,4 +1,3 @@
-using eNote.Infrastructure.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -26,11 +25,6 @@ public sealed class EventConfig : IEntityTypeConfiguration<Event>
         builder.HasOne(x => x.Instructor)
             .WithMany()
             .HasForeignKey(x => x.InstructorId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        builder.HasOne<AppUser>()
-            .WithMany()
-            .HasForeignKey(x => x.CreatedById)
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasIndex(x => x.StartsAt);

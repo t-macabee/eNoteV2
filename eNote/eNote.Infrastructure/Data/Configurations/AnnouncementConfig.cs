@@ -1,4 +1,3 @@
-using eNote.Infrastructure.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -12,11 +11,6 @@ public sealed class AnnouncementConfig : IEntityTypeConfiguration<Announcement>
         builder.Property(x => x.Content).HasStringConfig(4000, true);
         builder.Property(x => x.ImagePath).HasMaxLength(500);
         builder.Property(x => x.IsActive).HasDefaultValue(true);
-
-        builder.HasOne<AppUser>()
-            .WithMany()
-            .HasForeignKey(x => x.CreatedById)
-            .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasOne(x => x.Course)
             .WithMany()

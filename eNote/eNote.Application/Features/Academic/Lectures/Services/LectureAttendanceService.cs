@@ -56,21 +56,16 @@ public sealed class LectureAttendanceService(
 
             if (existing is null)
             {
-                lecture.Attendances.Add(new Attendance(studentId, lecture.Id, AttendanceStatus.Present)
-                {
-                    CreatedById = currentUser.UserId
-                });
+                lecture.Attendances.Add(new Attendance(studentId, lecture.Id, AttendanceStatus.Present));
             }
             else
             {
                 existing.UpdateStatus(AttendanceStatus.Present);
-                existing.UpdatedById = currentUser.UserId;
             }
         }
         else
         {
             existing!.UpdateStatus(AttendanceStatus.Absent);
-            existing.UpdatedById = currentUser.UserId;
         }
 
         try
@@ -163,16 +158,12 @@ public sealed class LectureAttendanceService(
 
         if (attendance is null)
         {
-            attendance = new Attendance(request.StudentId, lecture.Id, request.AttendanceStatus)
-            {
-                CreatedById = currentUser.UserId
-            };
+            attendance = new Attendance(request.StudentId, lecture.Id, request.AttendanceStatus);
             lecture.Attendances.Add(attendance);
         }
         else
         {
             attendance.UpdateStatus(request.AttendanceStatus);
-            attendance.UpdatedById = currentUser.UserId;
         }
 
         if (clock.UtcNow >= lecture.LectureTime)

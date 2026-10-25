@@ -58,7 +58,6 @@ public sealed class AdminStudentControllerTests
             context,
             studentService,
             new FixedClock(Now),
-            new StubCurrentActor(userId: 1),
             new RecordingMembershipWarningDispatcher());
 
         return new AdminStudentController(studentService, membershipService);

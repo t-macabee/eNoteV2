@@ -29,10 +29,7 @@ public sealed class LectureNoteService(
         var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId, cancellationToken);
         await instructorAccess.EnsureOwnsLectureAsync(lectureId, instructorId, cancellationToken);
 
-        var entity = new LectureNote(request.Title.Trim(), request.Content.Trim(), lectureId)
-        {
-            CreatedById = currentUser.UserId
-        };
+        var entity = new LectureNote(request.Title.Trim(), request.Content.Trim(), lectureId);
 
         context.Set<LectureNote>().Add(entity);
         await context.SaveChangesAsync(cancellationToken);
@@ -45,7 +42,6 @@ public sealed class LectureNoteService(
         var entity = await GetOwnedNoteAsync(lectureId, noteId, track: true, cancellationToken: cancellationToken);
 
         entity.UpdateDetails(request.Title.Trim(), request.Content.Trim());
-        entity.UpdatedById = currentUser.UserId;
 
         await context.SaveChangesAsync(cancellationToken);
 
@@ -57,7 +53,6 @@ public sealed class LectureNoteService(
         var entity = await GetOwnedNoteAsync(lectureId, noteId, track: true, cancellationToken: cancellationToken);
 
         entity.SoftDelete();
-        entity.UpdatedById = currentUser.UserId;
 
         await context.SaveChangesAsync(cancellationToken);
     }
