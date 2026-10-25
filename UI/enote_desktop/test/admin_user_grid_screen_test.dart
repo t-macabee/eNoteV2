@@ -48,10 +48,13 @@ const _users = [
   },
 ];
 
-ScriptedClient _client({int totalCount = 130}) => ScriptedClient((request) {
+ScriptedClient _client({int totalCount = 130, bool failProfile = false}) => ScriptedClient((request) {
   final uri = request.url;
 
   if (request.method == 'GET' && RegExp(r'/admin/users/\d+$').hasMatch(uri.path)) {
+    if (failProfile) {
+      return jsonResponse({'message': 'boom'}, 500);
+    }
     final id = int.parse(uri.pathSegments.last);
     return jsonResponse({
       'role': 'Instructor',
@@ -298,6 +301,19 @@ void main() {
 
       expect(mockClient.deletedUrls, hasLength(1));
       expect(mockClient.deletedUrls[0], endsWith('admin/users/33'));
+    },
+  );
+
+  testWidgets(
+    'UserDetailsDialog shows an error text when the profile fetch fails',
+    (WidgetTester tester) async {
+      final mockClient = _client(failProfile: true);
+      await _pumpGrid(tester, mockClient);
+
+      await tester.tap(find.text('Wolfgang Mozart'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Greška pri učitavanju profila.'), findsOneWidget);
     },
   );
 }

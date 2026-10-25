@@ -103,11 +103,11 @@ class NotificationController extends ChangeNotifier {
   Future<void> refreshUnreadCount() async {
     try {
       final response = await apiClient.get('$endpoint/unread-count');
-      if (response.statusCode >= 400) return;
       final data = decodeOrThrow(response);
       _unreadCount = NotificationUnreadCountDto.fromJson(data).unreadCount;
       notifyListeners();
-    } catch (_) {
+    } catch (e) {
+      debugPrint('Unread count refresh failed: $e');
     }
   }
 

@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:enote_core/enote_core.dart';
 import '../../../widgets/async_dropdown.dart';
 import '../../../widgets/entity_grid_screen.dart';
+import '../../../widgets/inline_error_text.dart';
 import 'course_catalog_detail_dialog.dart';
 import 'course_catalog_provider.dart';
 
@@ -19,6 +20,7 @@ class _CourseCatalogScreenState extends State<CourseCatalogScreen> {
 
   int? _selectedInstructorId;
   CourseCatalogSummaryDto? _summary;
+  String? _summaryError;
 
   @override
   void initState() {
@@ -33,8 +35,13 @@ class _CourseCatalogScreenState extends State<CourseCatalogScreen> {
       if (!mounted) return;
       setState(() {
         _summary = summary;
+        _summaryError = null;
       });
-    } catch (_) {
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _summaryError = userMessage(e);
+      });
     }
   }
 
@@ -83,7 +90,14 @@ class _CourseCatalogScreenState extends State<CourseCatalogScreen> {
                   ),
                 ),
               )
-            : null,
+            : _summaryError != null
+                ? Center(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: InlineErrorText(_summaryError!),
+                    ),
+                  )
+                : null,
         onTap: (context, item) => CourseCatalogDetailDialog.show(context, item),
         fetcher: (page, pageSize, search) => context
             .read<CourseCatalogProvider>()

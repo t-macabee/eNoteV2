@@ -298,4 +298,55 @@ void main() {
     expect((dropdown.items![1].child as Text).data, 'Aaron');
     expect((dropdown.items!.last.child as Text).data, 'Zoe');
   });
+
+  testWidgets('a failed summary fetch shows an error in the summary area', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1400, 900);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+
+    final mockClient = ScriptedClient((req) async {
+      if (req.url.path.endsWith('/instructors')) {
+        return jsonResponse({
+          'items': [],
+          'page': 1,
+          'pageSize': 100,
+          'totalCount': 0,
+        }, 200);
+      }
+      if (req.url.path.endsWith('/summary')) {
+        return jsonResponse({'message': 'Sažetak nije dostupan.'}, 500);
+      }
+      return jsonResponse({
+        'items': [],
+        'page': 1,
+        'pageSize': 20,
+        'totalCount': 0,
+      }, 200);
+    });
+
+    final apiClient = ApiClient(
+      baseUrl: 'http://localhost:5059/api/v1/',
+      authState: AuthState(),
+      httpClient: mockClient,
+    );
+
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          Provider<ApiClient>.value(value: apiClient),
+          ChangeNotifierProvider(
+            create: (_) => CourseCatalogProvider(apiClient: apiClient),
+          ),
+        ],
+        child: const MaterialApp(home: CourseCatalogScreen()),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.text('Sažetak nije dostupan.'), findsOneWidget);
+    expect(find.textContaining('kurseva'), findsNothing);
+  });
 }

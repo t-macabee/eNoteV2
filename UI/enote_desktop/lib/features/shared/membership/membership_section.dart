@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:enote_core/enote_core.dart';
 
 import '../../../theme/app_theme.dart';
+import '../../../widgets/inline_error_text.dart';
 import 'membership_payment_dialog.dart';
 
 class MembershipSection extends StatefulWidget {
@@ -224,10 +225,7 @@ class _MembershipSectionState extends State<MembershipSection> {
 
   Widget _history() {
     if (_hasError) {
-      return const Text(
-        'Greška pri učitavanju potvrda.',
-        style: TextStyle(fontSize: 13, color: AppTheme.error),
-      );
+      return const InlineErrorText('Greška pri učitavanju potvrda.');
     }
 
     if (_isLoading && _payments.isEmpty) {

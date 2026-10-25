@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:enote_core/enote_core.dart';
@@ -171,7 +172,12 @@ void main() {
       expect(authState.isAuthenticated, isFalse);
     });
 
-    test('a failing revoker still clears the session', () async {
+    test('a failing revoker logs the failure and still clears the session', () async {
+      final logged = <String>[];
+      final previousDebugPrint = debugPrint;
+      debugPrint = (message, {wrapWidth}) => logged.add(message ?? '');
+      addTearDown(() => debugPrint = previousDebugPrint);
+
       final authState = AuthState(
         baseUrl: 'http://localhost:5059/api/v1/',
         tokenReader: () => fakeJwt(),
@@ -183,6 +189,8 @@ void main() {
       await authState.logout(revoke: true);
 
       expect(authState.isAuthenticated, isFalse);
+      expect(logged, hasLength(1));
+      expect(logged.single, contains('offline'));
     });
   });
 }

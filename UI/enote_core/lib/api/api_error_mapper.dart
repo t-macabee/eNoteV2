@@ -40,17 +40,17 @@ class ApiError {
 
   factory ApiError.fromResponseBody(String body) {
     final trimmed = body.trim();
-    if (trimmed.isEmpty) {
+    if (trimmed.isEmpty || trimmed.startsWith('<')) {
       return ApiError(status: 0, code: '', message: '');
     }
+    Object? decoded;
     try {
-      final decoded = jsonDecode(trimmed);
-      if (decoded is Map<String, dynamic>) {
-        return ApiError.fromJson(decoded);
-      }
-    } catch (_) {}
-    if (trimmed.startsWith('<')) {
-      return ApiError(status: 0, code: '', message: '');
+      decoded = jsonDecode(trimmed);
+    } on FormatException {
+      decoded = null;
+    }
+    if (decoded is Map<String, dynamic>) {
+      return ApiError.fromJson(decoded);
     }
     return ApiError(status: 0, code: '', message: trimmed);
   }

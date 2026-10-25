@@ -86,5 +86,12 @@ void main() {
         'Neispravan zahtjev.',
       );
     });
+
+    test('malformed JSON body is returned verbatim', () {
+      expect(
+        ApiErrorMapper.mapError(400, '{"message": "boom"'),
+        '{"message": "boom"',
+      );
+    });
   });
 }

@@ -93,7 +93,8 @@ class PaymentFlowController extends ChangeNotifier {
         if (current?.status == PaymentStatus.failed) {
           message = declinedMessage;
         }
-      } catch (_) {
+      } catch (e) {
+        debugPrint('Payment status check after cancel failed: $e');
       }
       view = PaymentView.failed;
       failureMessage = message;

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:enote_core/enote_core.dart';
 
 class InstrumentProvider extends ReadOnlyProvider<InstrumentDto> {
@@ -39,8 +40,10 @@ class InstrumentProvider extends ReadOnlyProvider<InstrumentDto> {
 
   Future<void> recordView(int id) async {
     try {
-      await apiClient.post('student/instruments/$id/view');
-    } catch (_) {
+      final response = await apiClient.post('student/instruments/$id/view');
+      throwIfError(response);
+    } catch (e) {
+      debugPrint('Recording the instrument view failed: $e');
     }
   }
 }

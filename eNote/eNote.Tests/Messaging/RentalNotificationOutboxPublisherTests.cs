@@ -256,7 +256,8 @@ public sealed class RentalNotificationOutboxPublisherTests
         var executeTask = (Task)typeof(BackgroundService)
             .GetProperty("ExecuteTask", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)!
             .GetValue(publisher)!;
-        Assert.True(executeTask.IsCompletedSuccessfully, "ExecuteAsync faulted on a poll failure instead of retrying next tick");
+        Assert.False(executeTask.IsFaulted, "ExecuteAsync faulted on a poll failure instead of retrying next tick");
+        Assert.True(executeTask.IsCanceled, "the stopped publisher task is expected to be canceled");
         Assert.True(throwingContext.SetCalls > 1, "the poll was not retried after the first failure");
     }
 

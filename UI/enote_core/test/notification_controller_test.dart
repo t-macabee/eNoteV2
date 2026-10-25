@@ -19,6 +19,7 @@ class _PagedFakeClient extends http.BaseClient {
   int unreadCount;
   final bool throwOnUnreadCount;
   final Set<int> failPages;
+  bool failUnreadCount = false;
 
   _PagedFakeClient(
     this.pages, {
@@ -33,6 +34,13 @@ class _PagedFakeClient extends http.BaseClient {
     if (request.url.path.endsWith('/unread-count')) {
       if (throwOnUnreadCount) {
         throw http.ClientException('offline');
+      }
+      if (failUnreadCount) {
+        return http.StreamedResponse(
+          Stream.value(utf8.encode('{"message":"Server error"}')),
+          500,
+          headers: {'content-type': 'application/json'},
+        );
       }
       final body = jsonEncode({'unreadCount': unreadCount});
       return http.StreamedResponse(
@@ -159,6 +167,24 @@ void main() {
     await c.refresh(search: NotificationSearchObject(pageSize: 2));
     expect(c.notifications.length, 1);
     expect(c.error, isNull);
+  });
+
+  test('refreshUnreadCount keeps the old count on a 500 and does not throw',
+      () async {
+    final client = _PagedFakeClient(
+      {
+        1: [_item(1)],
+      },
+      unreadCount: 4,
+    );
+    final c = _controller(client);
+    await c.refresh(search: NotificationSearchObject(pageSize: 2));
+    expect(c.unreadCount, 4);
+
+    client.failUnreadCount = true;
+    await expectLater(c.refreshUnreadCount(), completes);
+
+    expect(c.unreadCount, 4);
   });
 
   test('concurrent loadMore calls issue a single page 2 request', () async {

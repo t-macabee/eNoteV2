@@ -29,21 +29,17 @@ public sealed class RentalNotificationOutboxPublisher(IServiceProvider services,
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         using var timer = new PeriodicTimer(_interval);
-        try
+        while (await timer.WaitForNextTickAsync(stoppingToken))
         {
-            while (await timer.WaitForNextTickAsync(stoppingToken))
+            try
             {
-                try
-                {
-                    await ProcessBatchAsync(stoppingToken);
-                }
-                catch (Exception ex) when (ex is not OperationCanceledException)
-                {
-                    logger.LogError(ex, "Outbox poll failed; retrying next tick");
-                }
+                await ProcessBatchAsync(stoppingToken);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                logger.LogError(ex, "Outbox poll failed; retrying next tick");
             }
         }
-        catch (OperationCanceledException) { }
     }
 
     internal async Task ProcessBatchAsync(CancellationToken ct)

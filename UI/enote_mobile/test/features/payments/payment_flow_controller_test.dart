@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:enote_core/enote_core.dart';
@@ -14,6 +15,7 @@ PaymentFlowController _controller({
   Object? pollError,
   PaymentIntentDraft? intent,
   Object? intentError,
+  Object? statusError,
 }) {
   return PaymentFlowController(
     gateway: gateway,
@@ -22,7 +24,10 @@ PaymentFlowController _controller({
       if (intentError != null) throw intentError;
       return intent ?? _intent();
     },
-    status: () async => status == null ? null : _row(status),
+    status: () async {
+      if (statusError != null) throw statusError;
+      return status == null ? null : _row(status);
+    },
     pollUntilSucceeded: () async {
       if (pollError != null) throw pollError;
       return pollResult;
@@ -175,6 +180,28 @@ void main() {
       expect(controller.failureMessage, 'Plaćanje je otkazano.');
     },
   );
+
+  test('a failing status check after cancel keeps the cancel copy and logs',
+      () async {
+    final logged = <String>[];
+    final previousDebugPrint = debugPrint;
+    debugPrint = (message, {wrapWidth}) => logged.add(message ?? '');
+    addTearDown(() => debugPrint = previousDebugPrint);
+
+    final gateway = FakePaymentSheetGateway()
+      ..queuePresent(PaymentSheetCancelled());
+    final controller = _controller(
+      gateway: gateway,
+      statusError: ApiException('Network error'),
+    );
+
+    await _prepareAndPresent(controller);
+
+    expect(controller.view, PaymentView.failed);
+    expect(controller.failureMessage, 'Plaćanje je otkazano.');
+    expect(logged, hasLength(1));
+    expect(logged.single, contains('Network error'));
+  });
 
   test('a sheet failure shows the Stripe message', () async {
     final gateway = FakePaymentSheetGateway()

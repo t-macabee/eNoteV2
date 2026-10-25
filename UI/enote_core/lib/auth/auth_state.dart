@@ -140,7 +140,9 @@ class AuthState extends ChangeNotifier {
     if (revoke && revoker != null) {
       try {
         await revoker().timeout(const Duration(seconds: 3));
-      } catch (_) {}
+      } catch (e) {
+        debugPrint('Token revoke on logout failed: $e');
+      }
     }
     _accessToken = null;
     _userId = null;

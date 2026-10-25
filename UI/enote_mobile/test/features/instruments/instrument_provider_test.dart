@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 
@@ -161,13 +162,22 @@ void main() {
     await expectLater(provider.recordView(7), completes);
   });
 
-  test('recordView swallows an error status', () async {
+  test('recordView swallows an error status and logs it', () async {
+    final logged = <String>[];
+    final previousDebugPrint = debugPrint;
+    debugPrint = (message, {wrapWidth}) => logged.add(message ?? '');
+    addTearDown(() => debugPrint = previousDebugPrint);
+
     final client = ScriptedClient(
       (_) => jsonResponse('{"message":"Greška"}', 500),
     );
     final provider = _provider(client);
 
     await expectLater(provider.recordView(7), completes);
+
+    expect(client.requests.single.url.path, '/api/v1/student/instruments/7/view');
+    expect(logged, hasLength(1));
+    expect(logged.single, contains('Greška'));
   });
 }
 

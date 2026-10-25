@@ -63,10 +63,12 @@ T _decodeOrThrow<T>(http.Response response) {
 }
 
 T _decodeBodyOrThrow<T>(String body) {
+  Object? decoded;
   try {
-    final decoded = jsonDecode(body);
-    if (decoded is T) return decoded;
-  } on FormatException catch (_) {
+    decoded = jsonDecode(body);
+  } on FormatException {
+    decoded = null;
   }
+  if (decoded is T) return decoded;
   throw ApiException('Neispravan odgovor servera.');
 }

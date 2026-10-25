@@ -6,6 +6,7 @@ import '../../../theme/app_theme.dart';
 import '../../../widgets/detail_row.dart';
 import '../../../widgets/dialog_shell.dart';
 import '../../../widgets/entity_list_screen.dart';
+import '../../../widgets/inline_error_text.dart';
 import '../../shared/membership/membership_section.dart';
 import '../lecture/lecture_provider.dart';
 import '../lecture_note/lecture_note_list_screen.dart';
@@ -34,6 +35,8 @@ class _InstructorStudentDetailsDialogState
   bool _hasMoreEnrollments = false;
   int _enrollmentPage = 1;
   List<LectureDto>? _individualLectures;
+  bool _studentDetailsError = false;
+  bool _lecturesError = false;
   bool _lecturesLoading = false;
   bool _hasMoreLectures = false;
   int _lecturePage = 1;
@@ -53,9 +56,13 @@ class _InstructorStudentDetailsDialogState
         setState(() {
           _student = fresh;
           _membershipPaidUntil = fresh.membershipPaidUntil;
+          _studentDetailsError = false;
         });
       }
-    } catch (_) {
+    } catch (e) {
+      if (mounted) {
+        setState(() => _studentDetailsError = true);
+      }
     }
 
     try {
@@ -93,11 +100,12 @@ class _InstructorStudentDetailsDialogState
           _individualLectures = lectures.items.toList();
           _lecturePage = lectures.page;
           _hasMoreLectures = lectures.hasNext;
+          _lecturesError = false;
         });
       }
-    } catch (_) {
+    } catch (e) {
       if (mounted) {
-        setState(() => _individualLectures = const []);
+        setState(() => _lecturesError = true);
       }
     }
   }
@@ -190,6 +198,11 @@ class _InstructorStudentDetailsDialogState
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if (_studentDetailsError)
+              const Padding(
+                padding: EdgeInsets.only(bottom: 12),
+                child: InlineErrorText('Greška pri učitavanju detalja studenta.'),
+              ),
             InfoRow(
               icon: Icons.person_outline,
               label: 'Ime i prezime',
@@ -228,13 +241,7 @@ class _InstructorStudentDetailsDialogState
             ),
             const SizedBox(height: 8),
             if (_enrollmentsError)
-              const Text(
-                'Greška pri učitavanju upisa.',
-                style: TextStyle(
-                  fontSize: 13,
-                  color: AppTheme.error,
-                ),
-              )
+              const InlineErrorText('Greška pri učitavanju upisa.')
             else if (_enrollments == null)
               const SizedBox(
                 height: 24,
@@ -282,7 +289,10 @@ class _InstructorStudentDetailsDialogState
               ),
             ),
             const SizedBox(height: 8),
-            if (_individualLectures == null)
+            if (_lecturesError)
+              const InlineErrorText(
+                  'Greška pri učitavanju individualnih predavanja.')
+            else if (_individualLectures == null)
               const SizedBox(
                 height: 24,
                 child: Center(

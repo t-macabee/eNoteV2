@@ -9,6 +9,58 @@ import 'package:enote_desktop/features/instructor/student/instructor_student_pro
 
 import 'helpers.dart';
 
+Future<void> _pumpDialog(WidgetTester tester, ScriptedClient client) async {
+  final apiClient = ApiClient(
+    baseUrl: 'http://localhost:5059/api/v1/',
+    authState: AuthState(),
+    httpClient: client,
+  );
+
+  final student = StudentDto(
+    id: 5,
+    appUserId: 50,
+    firstName: 'Johann',
+    lastName: 'Bach',
+    username: 'jbach',
+  );
+
+  await tester.pumpWidget(
+    MultiProvider(
+      providers: [
+        Provider<ApiClient>.value(value: apiClient),
+        ChangeNotifierProvider(
+          create: (_) => InstructorStudentProvider(apiClient: apiClient),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => LectureProvider(apiClient: apiClient),
+        ),
+      ],
+      child: MaterialApp(
+        home: Scaffold(
+          body: InstructorStudentDetailsDialog(student: student),
+        ),
+      ),
+    ),
+  );
+  await tester.pumpAndSettle();
+}
+
+const _studentJson = {
+  'id': 5,
+  'appUserId': 50,
+  'firstName': 'Johann',
+  'lastName': 'Bach',
+  'username': 'jbach',
+  'membershipPaidUntil': '2027-01-01T00:00:00Z',
+};
+
+const _emptyPage = {
+  'items': [],
+  'page': 1,
+  'pageSize': 5,
+  'totalCount': 0,
+};
+
 void main() {
   testWidgets('F3-11: failed enrollments fetch shows an inline error',
       (tester) async {
@@ -387,5 +439,56 @@ void main() {
     expect(requestedPages, ['1', '2']);
     expect(find.text('Individualni čas 6'), findsOneWidget);
     expect(find.text('Učitaj još'), findsNothing);
+  });
+
+  testWidgets('a failed student details fetch shows an inline error', (
+    tester,
+  ) async {
+    final client = ScriptedClient((request) {
+      if (request.url.path.endsWith('/membership-payments')) {
+        return jsonResponse(_emptyPage, 200);
+      }
+      if (request.url.path.endsWith('/enrollments')) {
+        return jsonResponse(_emptyPage, 200);
+      }
+      if (request.url.path.endsWith('/lectures')) {
+        return jsonResponse(_emptyPage, 200);
+      }
+      return jsonResponse({'message': 'boom'}, 500);
+    });
+
+    await _pumpDialog(tester, client);
+
+    expect(find.text('Detalji studenta'), findsOneWidget);
+    expect(
+      find.text('Greška pri učitavanju detalja studenta.'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets(
+      'a failed individual plan fetch shows an error text, not an empty list',
+      (tester) async {
+    final client = ScriptedClient((request) {
+      if (request.url.path.endsWith('/membership-payments')) {
+        return jsonResponse(_emptyPage, 200);
+      }
+      if (request.url.path.endsWith('/enrollments')) {
+        return jsonResponse(_emptyPage, 200);
+      }
+      if (request.url.path.endsWith('/lectures')) {
+        return jsonResponse({'message': 'boom'}, 500);
+      }
+      return jsonResponse(_studentJson, 200);
+    });
+
+    await _pumpDialog(tester, client);
+
+    expect(find.text('Individualni plan'), findsOneWidget);
+    expect(
+      find.text('Greška pri učitavanju individualnih predavanja.'),
+      findsOneWidget,
+    );
+    expect(find.text('Nema individualnih predavanja.'), findsNothing);
   });
 }

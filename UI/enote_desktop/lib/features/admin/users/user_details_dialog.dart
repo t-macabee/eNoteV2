@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:enote_core/enote_core.dart';
 
 import '../../../theme/app_theme.dart';
+import '../../../widgets/inline_error_text.dart';
 import '../../shared/membership/membership_section.dart';
 import '../student/student_provider.dart';
 import 'admin_user_provider.dart';
@@ -29,6 +30,7 @@ class _UserDetailsDialogState extends State<UserDetailsDialog> {
   UserProfile? _profile;
   String? _email;
   bool _isLoadingProfile = true;
+  bool _profileError = false;
   bool _isStatusChanging = false;
   late bool _isActive = widget.item.isActive;
 
@@ -156,9 +158,13 @@ class _UserDetailsDialogState extends State<UserDetailsDialog> {
           if (_profile?.membershipPaidUntil != null) {
             _membershipPaidUntil = _profile!.membershipPaidUntil;
           }
+          _profileError = false;
         });
       }
-    } catch (_) {
+    } catch (e) {
+      if (mounted) {
+        setState(() => _profileError = true);
+      }
     } finally {
       if (mounted) {
         setState(() => _isLoadingProfile = false);
@@ -308,6 +314,9 @@ class _UserDetailsDialogState extends State<UserDetailsDialog> {
                             child: CircularProgressIndicator(strokeWidth: 2),
                           ),
                         ),
+                      ] else if (_profileError) ...[
+                        const SizedBox(height: 12),
+                        const InlineErrorText('Greška pri učitavanju profila.'),
                       ],
                     ],
                   ),
