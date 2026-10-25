@@ -1,6 +1,8 @@
 using eNote.API.Realtime.Consumers;
 using eNote.API.Extensions;
 using eNote.Application.Common.Persistence;
+using eNote.Application.Features.Identity.Auth.Services;
+using eNote.Application.Features.Rentals.Payments.Services;
 using eNote.Infrastructure;
 using eNote.Infrastructure.Messaging;
 using eNote.Worker;
@@ -9,6 +11,7 @@ using eNote.Tests.TestUtils;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Hosting;
@@ -56,11 +59,16 @@ public sealed class DiResolutionTests
         services.AddSingleton<IConfiguration>(configuration);
         services.AddSingleton<IHostEnvironment>(new FakeHostEnvironment());
 
-        services.AddInfrastructure(configuration, bus =>
-        {
-            bus.AddConsumer<RentalStatusChangedPushConsumer>();
-            bus.AddConsumer<RentalRefundedPushConsumer>();
-        })
+        services.AddPersistence(configuration)
+            .AddInfrastructureIdentity()
+            .AddEmail(configuration)
+            .AddMessaging(configuration, bus =>
+            {
+                bus.AddConsumer<RentalStatusChangedPushConsumer>();
+                bus.AddConsumer<RentalRefundedPushConsumer>();
+            })
+            .AddApiInfrastructure(configuration)
+            .AddInfrastructureHealthChecks()
             .AddJwtAuthentication()
             .AddAuthorization()
             .AddApplicationServices(configuration)
@@ -68,6 +76,7 @@ public sealed class DiResolutionTests
 
         await AssertAllENoteInterfacesResolvable(services);
         Assert.True(RegistersOutboxPublisher(services), "The API must drain the notification outbox.");
+        Assert.Contains(await HealthCheckRegistrationsAsync(services), registration => registration.Name == "outbox");
 
         await using var provider = services.BuildServiceProvider();
         var bearer = provider.GetRequiredService<IOptionsMonitor<JwtBearerOptions>>().Get(JwtBearerDefaults.AuthenticationScheme);
@@ -86,15 +95,26 @@ public sealed class DiResolutionTests
         services.AddSingleton<IHostEnvironment>(new FakeHostEnvironment());
 
         services.AddScoped<ICurrentUserContext, WorkerActor>();
-        services.AddInfrastructure(configuration, bus =>
-        {
-            bus.AddConsumer<RentalStatusChangedConsumer>();
-            bus.AddConsumer<RentalStatusChangedEmailConsumer>();
-            bus.AddConsumer<RentalRefundedConsumer>();
-        }, registerNotificationOutboxPublisher: false);
+        services.AddPersistence(configuration)
+            .AddInfrastructureIdentity()
+            .AddEmail(configuration)
+            .AddMessaging(configuration, bus =>
+            {
+                bus.AddConsumer<RentalStatusChangedConsumer>();
+                bus.AddConsumer<RentalStatusChangedEmailConsumer>();
+                bus.AddConsumer<RentalRefundedConsumer>();
+            })
+            .AddInfrastructureHealthChecks();
 
         await AssertAllENoteInterfacesResolvable(services);
         Assert.False(RegistersOutboxPublisher(services), "Only the API may drain the notification outbox.");
+        Assert.False(IsRegistered(services, typeof(IPaymentGateway)), "The worker does not take payments.");
+        Assert.False(IsRegistered(services, typeof(ITokenService)), "The worker does not issue tokens.");
+
+        var healthChecks = await HealthCheckRegistrationsAsync(services);
+        Assert.DoesNotContain(healthChecks, registration => registration.Name == "outbox");
+        Assert.Contains(healthChecks, registration => registration.Name == "database");
+        Assert.Contains(healthChecks, registration => registration.Name == "rabbitmq");
     }
 
     private static IConfiguration CreateConfiguration(Dictionary<string, string?> additional)
@@ -119,6 +139,16 @@ public sealed class DiResolutionTests
 
     private static bool RegistersOutboxPublisher(ServiceCollection services) =>
         services.Any(d => d.ServiceType == typeof(IHostedService) && d.ImplementationType == typeof(RentalNotificationOutboxPublisher));
+
+    private static bool IsRegistered(ServiceCollection services, Type serviceType) =>
+        services.Any(d => d.ServiceType == serviceType);
+
+    private static async Task<IReadOnlyList<HealthCheckRegistration>> HealthCheckRegistrationsAsync(ServiceCollection services)
+    {
+        await using var provider = services.BuildServiceProvider();
+
+        return provider.GetRequiredService<IOptions<HealthCheckServiceOptions>>().Value.Registrations.ToList();
+    }
 
     private static async Task AssertAllENoteInterfacesResolvable(ServiceCollection services)
     {

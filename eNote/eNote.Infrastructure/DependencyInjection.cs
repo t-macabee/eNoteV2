@@ -30,33 +30,12 @@ namespace eNote.Infrastructure;
 
 public static class DependencyInjection
 {
-    public static IServiceCollection AddInfrastructure(
-        this IServiceCollection services,
-        IConfiguration configuration,
-        Action<IBusRegistrationConfigurator>? configureBus = null,
-        bool registerNotificationOutboxPublisher = true,
-        bool validateJwtOptions = true)
+    public static IServiceCollection AddPersistence(this IServiceCollection services, IConfiguration configuration)
     {
         var connectionString = configuration.GetConnectionString("DefaultConnection")
             ?? throw new InvalidOperationException("ConnectionStrings__DefaultConnection is required.");
 
-        var jwtOptions = services.AddOptions<JwtOptions>()
-            .Bind(configuration.GetSection(JwtOptions.SectionName))
-            .ValidateDataAnnotations();
-
-        if (validateJwtOptions)
-        {
-            jwtOptions.ValidateOnStart();
-        }
-
         services.AddSingleton<IClock, SystemClock>();
-        services.AddMemoryCache();
-        services.AddScoped<IEmailService, SmtpEmailService>();
-        services.AddScoped<IFileStorageService, LocalFileStorageService>();
-        services.AddScoped<ITokenRevocationService, TokenRevocationService>();
-        services.AddScoped<ITokenService, TokenService>();
-        services.AddScoped<IUserAccountService, UserAccountService>();
-        services.AddScoped<IUserIdentityService, UserIdentityService>();
         services.AddDbContext<ENoteContext>(options => options.UseSqlServer(
             connectionString,
             sql => sql.MigrationsAssembly(typeof(ENoteContext).Assembly.FullName)));
@@ -64,34 +43,14 @@ public static class DependencyInjection
         services.AddScoped<IStoreContext>(provider => provider.GetRequiredService<ENoteContext>());
         services.AddScoped<IMigrationRunner, MigrationRunner>();
         services.AddScoped<IDatabaseHealthProbe, DatabaseHealthProbe>();
-        services.AddScoped<IRentalNotificationDispatcher, RentalNotificationDispatcher>();
-        services.AddScoped<ILectureNotificationDispatcher, LectureNotificationDispatcher>();
-        services.AddScoped<IAnnouncementNotificationDispatcher, AnnouncementNotificationDispatcher>();
-        services.AddScoped<IEnrollmentNotificationDispatcher, EnrollmentNotificationDispatcher>();
-        services.AddScoped<IMembershipWarningDispatcher, MembershipWarningDispatcher>();
-        services.AddScoped<ISubmissionNotificationDispatcher, SubmissionNotificationDispatcher>();
-        services.AddSingleton(_ => BuildStripeOptions(configuration));
-        services.AddScoped<IPaymentGateway, StripePaymentGateway>();
-        services.AddScoped<StripeWebhookService>();
-        if (registerNotificationOutboxPublisher)
-        {
-            services.AddHostedService<RentalNotificationOutboxPublisher>();
-        }
-        services.AddRabbitMqMassTransit(configuration, configureBus);
-        services.AddInfrastructureIdentity();
 
-        return services;
-    }
-
-    public static IServiceCollection AddInfrastructureApplicationPorts(this IServiceCollection services)
-    {
-        services.AddScoped<IReportService, ReportService>();
-        services.AddScoped<IAuthService, AuthService>();
         return services;
     }
 
     public static IServiceCollection AddInfrastructureIdentity(this IServiceCollection services)
     {
+        services.AddScoped<IUserIdentityService, UserIdentityService>();
+
         services.AddDataProtection();
 
         services.AddAuthenticationCore();
@@ -115,11 +74,56 @@ public static class DependencyInjection
         return services;
     }
 
+    public static IServiceCollection AddEmail(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.AddScoped<IEmailService, SmtpEmailService>();
+
+        return services;
+    }
+
+    public static IServiceCollection AddMessaging(
+        this IServiceCollection services,
+        IConfiguration configuration,
+        Action<IBusRegistrationConfigurator>? configureBus = null)
+    {
+        services.AddRabbitMqMassTransit(configuration, configureBus);
+
+        return services;
+    }
+
+    public static IServiceCollection AddApiInfrastructure(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.AddOptions<JwtOptions>()
+            .Bind(configuration.GetSection(JwtOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
+        services.AddMemoryCache();
+        services.AddScoped<IFileStorageService, LocalFileStorageService>();
+        services.AddScoped<ITokenRevocationService, TokenRevocationService>();
+        services.AddScoped<ITokenService, TokenService>();
+        services.AddScoped<IUserAccountService, UserAccountService>();
+        services.AddScoped<IReportService, ReportService>();
+        services.AddScoped<IAuthService, AuthService>();
+        services.AddScoped<IRentalNotificationDispatcher, RentalNotificationDispatcher>();
+        services.AddScoped<ILectureNotificationDispatcher, LectureNotificationDispatcher>();
+        services.AddScoped<IAnnouncementNotificationDispatcher, AnnouncementNotificationDispatcher>();
+        services.AddScoped<IEnrollmentNotificationDispatcher, EnrollmentNotificationDispatcher>();
+        services.AddScoped<IMembershipWarningDispatcher, MembershipWarningDispatcher>();
+        services.AddScoped<ISubmissionNotificationDispatcher, SubmissionNotificationDispatcher>();
+        services.AddSingleton(_ => BuildStripeOptions(configuration));
+        services.AddScoped<IPaymentGateway, StripePaymentGateway>();
+        services.AddScoped<StripeWebhookService>();
+        services.AddHostedService<RentalNotificationOutboxPublisher>();
+        services.AddHealthChecks().AddCheck<OutboxHealthCheck>("outbox");
+
+        return services;
+    }
+
     public static IServiceCollection AddInfrastructureHealthChecks(this IServiceCollection services) =>
         services.AddHealthChecks()
             .AddCheck<DatabaseHealthCheck>("database")
             .AddCheck<RabbitMqHealthCheck>("rabbitmq")
-            .AddCheck<OutboxHealthCheck>("outbox")
             .Services;
 
     public static void LoadEnvironment() => Configuration.DotEnvConfiguration.Load();

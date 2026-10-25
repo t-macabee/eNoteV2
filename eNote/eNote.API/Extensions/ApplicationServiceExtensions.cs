@@ -1,7 +1,6 @@
 using eNote.API.Services;
 using eNote.Application;
 using eNote.Application.Common.Interfaces;
-using eNote.Infrastructure;
 
 namespace eNote.API.Extensions;
 
@@ -14,7 +13,6 @@ public static class ApplicationServiceExtensions
 
         services.AddScoped<ICurrentUserContext, CurrentUserService>();
 
-        services.AddInfrastructureApplicationPorts();
         services.AddApplication();
 
         return services;

@@ -28,7 +28,10 @@ if (builder.Environment.IsDevelopment())
 }
 
 builder.Services
-    .AddInfrastructure(builder.Configuration, bus =>
+    .AddPersistence(builder.Configuration)
+    .AddInfrastructureIdentity()
+    .AddEmail(builder.Configuration)
+    .AddMessaging(builder.Configuration, bus =>
     {
         bus.AddConsumer<RentalStatusChangedPushConsumer>();
         bus.AddConsumer<RentalRefundedPushConsumer>();
@@ -39,6 +42,7 @@ builder.Services
         bus.AddConsumer<TuitionPaymentPushConsumer>();
         bus.AddConsumer<MembershipWarningPushConsumer>();
     })
+    .AddApiInfrastructure(builder.Configuration)
     .AddJwtAuthentication()
     .AddAuthorization()
     .AddApplicationServices(builder.Configuration)
