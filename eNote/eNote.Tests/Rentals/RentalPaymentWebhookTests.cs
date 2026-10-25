@@ -91,6 +91,24 @@ public sealed class RentalPaymentWebhookTests
     }
 
     [Fact]
+    public async Task HandleWebhook_Failed_DoesNotReopenCanceledPayment()
+    {
+        var (context, _, payment) = await SeedRequiresActionPaymentAsync();
+        payment.MarkCanceled();
+        await context.SaveChangesAsync();
+
+        var service = CreateWebhookService(context);
+        var evt = CreatePaymentIntentEvent("evt_test_failed_canceled", "payment_intent.payment_failed", "pi_test_1", "requires_payment_method", null);
+
+        await service.HandleAsync(evt, "{}");
+
+        var reloadedPayment = await context.Set<RentalPayment>().SingleAsync();
+        Assert.Equal(PaymentStatus.Canceled, reloadedPayment.Status);
+        Assert.Null(reloadedPayment.StripeEventId);
+        Assert.Single(await context.Set<StripeWebhookEvent>().Where(e => e.StripeEventId == "evt_test_failed_canceled").ToListAsync());
+    }
+
+    [Fact]
     public async Task HandleWebhook_ChargeRefunded_AppliesRefundAndKeepsIsPaid()
     {
         var (context, rental, _) = await SeedSucceededPaymentAsync();

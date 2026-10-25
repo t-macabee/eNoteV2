@@ -12,7 +12,7 @@ using eNote.Infrastructure.Data;
 namespace eNote.Infrastructure.Data.Migrations
 {
     [DbContext(typeof(ENoteContext))]
-    [Migration("20261024205955_MembershipPayments")]
+    [Migration("20261025082144_MembershipPayments")]
     partial class MembershipPayments
     {
         /// <inheritdoc />
@@ -933,9 +933,6 @@ namespace eNote.Infrastructure.Data.Migrations
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
-
-                    b.Property<int?>("RecordedById")
-                        .HasColumnType("int");
 
                     b.Property<int>("StudentId")
                         .HasColumnType("int");

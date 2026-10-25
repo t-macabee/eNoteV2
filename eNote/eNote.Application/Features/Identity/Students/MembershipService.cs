@@ -41,8 +41,10 @@ public sealed class MembershipService(
             periodStart,
             periodEnd,
             request.ReceiptNumber,
-            request.Note,
-            currentUser.IsAuthenticated ? currentUser.UserId : null);
+            request.Note)
+        {
+            CreatedById = currentUser.UserId
+        };
 
         context.Set<MembershipPayment>().Add(payment);
         student.UpdateMembership(periodEnd);
@@ -131,6 +133,5 @@ public sealed class MembershipService(
         payment.PeriodStart,
         payment.PeriodEnd,
         payment.ReceiptNumber,
-        payment.Note,
-        payment.RecordedById);
+        payment.Note);
 }

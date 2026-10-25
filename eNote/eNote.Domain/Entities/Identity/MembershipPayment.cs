@@ -10,7 +10,6 @@ public sealed class MembershipPayment : AuditableEntity
     public DateTime PeriodEnd { get; private set; }
     public string ReceiptNumber { get; private set; } = null!;
     public string? Note { get; private set; }
-    public int? RecordedById { get; private set; }
 
     private MembershipPayment()
     {
@@ -23,8 +22,7 @@ public sealed class MembershipPayment : AuditableEntity
         DateTime periodStart,
         DateTime periodEnd,
         string receiptNumber,
-        string? note,
-        int? recordedById)
+        string? note)
     {
         StudentId = studentId;
         Amount = amount;
@@ -33,6 +31,5 @@ public sealed class MembershipPayment : AuditableEntity
         PeriodEnd = periodEnd;
         ReceiptNumber = receiptNumber.Trim();
         Note = string.IsNullOrWhiteSpace(note) ? null : note.Trim();
-        RecordedById = recordedById;
     }
 }

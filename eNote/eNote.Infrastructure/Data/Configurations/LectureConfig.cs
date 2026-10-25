@@ -32,7 +32,6 @@ public sealed class LectureConfig : IEntityTypeConfiguration<Lecture>
         builder.Property(p => p.Capacity).IsRequired(false);
         builder.Property(p => p.CancellationReason).HasMaxLength(500);
         builder.Ignore(p => p.IsCancelled);
-        builder.Ignore(p => p.IsIndividual);
         builder.Property(p => p.IsActive).HasDefaultValue(true);
         builder.HasQueryFilter(p => p.IsActive);
         builder.Property(p => p.Version).IsRowVersion();

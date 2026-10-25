@@ -8,5 +8,4 @@ public sealed record MembershipPaymentDto(
     DateTime PeriodStart,
     DateTime PeriodEnd,
     string ReceiptNumber,
-    string? Note,
-    int? RecordedById);
+    string? Note);

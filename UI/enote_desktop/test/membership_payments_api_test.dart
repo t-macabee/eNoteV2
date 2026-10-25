@@ -29,7 +29,6 @@ Map<String, dynamic> _paymentJson() => {
   'periodEnd': '2027-01-01T00:00:00Z',
   'receiptNumber': 'CL-7',
   'note': 'Gotovina',
-  'recordedById': 3,
 };
 
 void main() {

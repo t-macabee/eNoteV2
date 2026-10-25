@@ -97,8 +97,7 @@ internal static class StudentMembershipSeed
                 today,
                 student.MembershipPaidUntil!.Value.Date,
                 $"CL-{student.Id:0000}-1",
-                "Seed članarina",
-                recordedById: null));
+                "Seed članarina"));
         }
 
         await context.SaveChangesAsync();

@@ -8,7 +8,6 @@ public sealed class Lecture : AuditableEntity
 
     public int? StudentId { get; private set; }
     public Student? Student { get; private set; }
-    public bool IsIndividual => StudentId.HasValue;
 
     public string Name { get; private set; } = null!;
     public string Location { get; private set; } = null!;

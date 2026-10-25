@@ -115,6 +115,24 @@ public sealed class TuitionPaymentWebhookTests
     }
 
     [Fact]
+    public async Task HandleWebhook_Failed_DoesNotReopenCanceledPayment()
+    {
+        var (context, _, payment) = await SeedRequiresActionTuitionPaymentAsync();
+        payment.MarkCanceled();
+        await context.SaveChangesAsync();
+
+        var service = CreateWebhookService(context);
+        var evt = CreatePaymentIntentEvent("evt_tuition_failed_canceled", "payment_intent.payment_failed", payment.StripePaymentIntentId, "requires_payment_method", null);
+
+        await service.HandleAsync(evt, "{}");
+
+        var reloadedPayment = await context.Set<CoursePayment>().SingleAsync(p => p.Id == payment.Id);
+        Assert.Equal(PaymentStatus.Canceled, reloadedPayment.Status);
+        Assert.Null(reloadedPayment.StripeEventId);
+        Assert.Single(await context.Set<StripeWebhookEvent>().Where(e => e.StripeEventId == "evt_tuition_failed_canceled").ToListAsync());
+    }
+
+    [Fact]
     public async Task HandleWebhook_Failed_DoesNotOverwriteRefundedPayment()
     {
         var (context, _, payment) = await SeedRequiresActionTuitionPaymentAsync();

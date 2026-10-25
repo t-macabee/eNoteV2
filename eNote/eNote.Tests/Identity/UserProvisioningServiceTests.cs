@@ -429,7 +429,7 @@ public sealed class UserProvisioningServiceTests
         context.Set<Student>().Add(student);
         await context.SaveChangesAsync();
 
-        context.Set<MembershipPayment>().Add(new MembershipPayment(student.Id, 50m, Now.Date, Now.Date, Now.Date.AddMonths(1), "CL-15", null, null));
+        context.Set<MembershipPayment>().Add(new MembershipPayment(student.Id, 50m, Now.Date, Now.Date, Now.Date.AddMonths(1), "CL-15", null));
         await context.SaveChangesAsync();
 
         var service = CreateService(context, new RecordingUserAccountService());

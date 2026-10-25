@@ -47,7 +47,6 @@ public sealed class Course : AuditableEntity
         IsPublished = isPublished;
     }
 
-    /// <summary>The course is open for the whole end day.</summary>
     public bool HasEnded(DateTime utcNow) => HasEndedOn(EndDate, utcNow);
 
     public static bool HasEndedOn(DateTime? endDate, DateTime utcNow) =>

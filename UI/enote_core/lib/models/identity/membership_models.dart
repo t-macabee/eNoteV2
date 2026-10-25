@@ -9,7 +9,6 @@ class MembershipPaymentDto {
   final DateTime periodEnd;
   final String receiptNumber;
   final String? note;
-  final int? recordedById;
 
   MembershipPaymentDto({
     required this.id,
@@ -20,7 +19,6 @@ class MembershipPaymentDto {
     required this.periodEnd,
     required this.receiptNumber,
     this.note,
-    this.recordedById,
   });
 
   factory MembershipPaymentDto.fromJson(Map<String, dynamic> json) {
@@ -33,7 +31,6 @@ class MembershipPaymentDto {
       periodEnd: parseDate(json['periodEnd']) ?? DateTime.now(),
       receiptNumber: json['receiptNumber'] as String? ?? '',
       note: json['note'] as String?,
-      recordedById: json['recordedById'] as int?,
     );
   }
 
@@ -46,7 +43,6 @@ class MembershipPaymentDto {
     'periodEnd': periodEnd.toIso8601String(),
     'receiptNumber': receiptNumber,
     if (note != null) 'note': note,
-    if (recordedById != null) 'recordedById': recordedById,
   };
 }
 

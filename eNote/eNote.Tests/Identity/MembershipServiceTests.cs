@@ -138,7 +138,7 @@ public sealed class MembershipServiceTests
             Months = 2
         });
 
-        Assert.Equal(instructor.AppUserId, payment.RecordedById);
+        Assert.Equal(instructor.AppUserId, (await context.Set<MembershipPayment>().SingleAsync(p => p.Id == payment.Id)).CreatedById);
         Assert.Equal(Now.Date.AddMonths(2), payment.PeriodEnd);
     }
 
@@ -150,9 +150,9 @@ public sealed class MembershipServiceTests
         context.Set<Student>().Add(student);
         await context.SaveChangesAsync();
         context.Set<MembershipPayment>().AddRange(
-            new MembershipPayment(student.Id, 50m, Now.Date.AddMonths(-2), Now.Date.AddMonths(-2), Now.Date.AddMonths(-1), "CL-A", null, null),
-            new MembershipPayment(student.Id, 50m, Now.Date.AddMonths(-1), Now.Date.AddMonths(-1), Now.Date, "CL-B", null, null),
-            new MembershipPayment(student.Id, 50m, Now.Date, Now.Date, Now.Date.AddMonths(1), "CL-C", null, null));
+            new MembershipPayment(student.Id, 50m, Now.Date.AddMonths(-2), Now.Date.AddMonths(-2), Now.Date.AddMonths(-1), "CL-A", null),
+            new MembershipPayment(student.Id, 50m, Now.Date.AddMonths(-1), Now.Date.AddMonths(-1), Now.Date, "CL-B", null),
+            new MembershipPayment(student.Id, 50m, Now.Date, Now.Date, Now.Date.AddMonths(1), "CL-C", null));
         await context.SaveChangesAsync();
         var service = CreateService(context, new RecordingMembershipWarningDispatcher(), instructor: null);
 

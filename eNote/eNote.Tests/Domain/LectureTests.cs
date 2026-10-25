@@ -74,7 +74,6 @@ public sealed class LectureTests
     {
         var lecture = new Lecture("L", "Room 1", 60, DateTime.UtcNow, LectureType.Theoretical, 20, 1);
 
-        Assert.False(lecture.IsIndividual);
         Assert.Null(lecture.StudentId);
         Assert.Equal(20, lecture.Capacity);
     }
@@ -84,7 +83,6 @@ public sealed class LectureTests
     {
         var lecture = new Lecture("L", "Room 1", 60, DateTime.UtcNow, LectureType.Practical, 20, 1, studentId: 5);
 
-        Assert.True(lecture.IsIndividual);
         Assert.Equal(5, lecture.StudentId);
         Assert.Equal(1, lecture.Capacity);
     }

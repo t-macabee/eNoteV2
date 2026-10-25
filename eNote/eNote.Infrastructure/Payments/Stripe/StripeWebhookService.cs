@@ -177,7 +177,7 @@ public sealed class StripeWebhookService(
                 return;
             }
 
-            if (payment.Status is not (PaymentStatus.Succeeded or PaymentStatus.Refunded or PaymentStatus.PartiallyRefunded))
+            if (payment.Status is PaymentStatus.RequiresAction or PaymentStatus.Failed)
             {
                 payment.MarkFailed(eventId);
             }

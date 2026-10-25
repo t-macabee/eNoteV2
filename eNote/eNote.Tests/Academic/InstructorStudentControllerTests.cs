@@ -250,7 +250,7 @@ public sealed class InstructorStudentControllerTests
     {
         await using var ctx = TestDbContextFactory.CreateContext(Now);
         var harness = await AcademicTestData.SeedAsync(ctx, Now);
-        ctx.Set<MembershipPayment>().Add(new MembershipPayment(harness.Student.Id, 40m, Now.Date, Now.Date, Now.Date.AddMonths(1), "CL-101", null, harness.Instructor.AppUserId));
+        ctx.Set<MembershipPayment>().Add(new MembershipPayment(harness.Student.Id, 40m, Now.Date, Now.Date, Now.Date.AddMonths(1), "CL-101", null));
         await ctx.SaveChangesAsync();
 
         var instructorAccess = AcademicTestData.CreateInstructorAccess(ctx, harness.Instructor);
