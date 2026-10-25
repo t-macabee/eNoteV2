@@ -92,8 +92,8 @@ public sealed class InstructorAnnouncementServiceTests
         var fileStorage = new RecordingFileStorageService();
         var service = CreateService(harness.Context, harness.Instructor, AcademicTestData.CreateInstructorAccess(harness.Context, harness.Instructor), fileStorage: fileStorage);
 
-        await service.UploadImageForCourseAsync(harness.Course.Id, announcement.Id, new MemoryStream([1, 2, 3]), "a.png", "image/png");
-        var dto = await service.UploadImageForCourseAsync(harness.Course.Id, announcement.Id, new MemoryStream([1, 2, 3]), "b.png", "image/png");
+        await service.UploadImageForCourseAsync(harness.Course.Id, announcement.Id, new MemoryStream([1, 2, 3]), "image/png");
+        var dto = await service.UploadImageForCourseAsync(harness.Course.Id, announcement.Id, new MemoryStream([1, 2, 3]), "image/png");
 
         Assert.Equal(fileStorage.SavedPaths[1], dto.ImagePath);
         Assert.Equal([fileStorage.SavedPaths[0]], fileStorage.DeletedPaths);
@@ -124,7 +124,7 @@ public sealed class InstructorAnnouncementServiceTests
         var fileStorage = new RecordingFileStorageService();
         var service = CreateService(harness.Context, harness.Instructor, AcademicTestData.CreateInstructorAccess(harness.Context, harness.Instructor), fileStorage: fileStorage);
 
-        await service.UploadImageForCourseAsync(harness.Course.Id, announcement.Id, new MemoryStream([1, 2, 3]), "a.png", "image/png");
+        await service.UploadImageForCourseAsync(harness.Course.Id, announcement.Id, new MemoryStream([1, 2, 3]), "image/png");
         await service.DeleteForCourseAsync(harness.Course.Id, announcement.Id);
 
         Assert.Contains(fileStorage.SavedPaths[0], fileStorage.DeletedPaths);

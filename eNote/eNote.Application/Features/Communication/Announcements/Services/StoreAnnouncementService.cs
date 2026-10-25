@@ -55,7 +55,7 @@ public sealed class StoreAnnouncementService(IAppDbContext context, IClock clock
         return mapper.Map<AnnouncementDto>(entity);
     }
 
-    public async Task<AnnouncementDto> UploadImageForStoreAsync(int announcementId, Stream stream, string fileName, string contentType, CancellationToken ct = default)
+    public async Task<AnnouncementDto> UploadImageForStoreAsync(int announcementId, Stream stream, string contentType, CancellationToken ct = default)
     {
         var storeId = await stores.GetCurrentStoreIdAsync(ct);
 
@@ -66,7 +66,7 @@ public sealed class StoreAnnouncementService(IAppDbContext context, IClock clock
         await StoreStorageQuota.EnsureWithinQuotaAsync(context, fileStorage, storeId, stream.Length, entity.ImagePath, ct);
 
         var previousPath = entity.ImagePath;
-        var path = await fileStorage.SaveAsync(stream, fileName, contentType, "announcements", ct);
+        var path = await fileStorage.SaveAsync(stream, contentType, "announcements", ct);
         entity.UpdateImagePath(path);
 
         await context.SaveChangesReplacingFileAsync(fileStorage, path, previousPath, ct);

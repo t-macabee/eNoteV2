@@ -1,13 +1,11 @@
 using eNote.API.Controllers.Base;
+using eNote.Application.Common.Files;
 using eNote.Application.Common.Interfaces;
 using eNote.Application.Features.Files.Services;
-using eNote.Infrastructure.Storage;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace eNote.API.Controllers.Files;
 
-[ApiController]
 [Route("api/v{version:apiVersion}/uploads")]
 public sealed class UploadsController(IFileStorageService fileStorage, IFileAccessService fileAccess, ICurrentUserContext currentUser) : CoreController
 {
@@ -41,7 +39,6 @@ public sealed class UploadsController(IFileStorageService fileStorage, IFileAcce
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public IActionResult GetEvent(string fileName) => Serve("events", fileName);
 
-    [Authorize]
     [HttpGet("assignments/{fileName}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -69,7 +66,7 @@ public sealed class UploadsController(IFileStorageService fileStorage, IFileAcce
             return BadRequest();
         }
 
-        var (data, contentType) = fileStorage.OpenRead($"{LocalFileStorageService.UploadsRoutePrefix}/{subfolder}/{fileName}");
+        var (data, contentType) = fileStorage.OpenRead($"{UploadPaths.RoutePrefix}/{subfolder}/{fileName}");
 
         if (data is null)
         {

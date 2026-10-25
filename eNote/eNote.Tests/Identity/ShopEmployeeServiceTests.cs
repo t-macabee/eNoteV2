@@ -552,7 +552,7 @@ public sealed class ShopEmployeeServiceTests
         public Task<int> CreateUserAsync(string username, string email, string password, string? firstName, string? lastName, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task AssignSingleRoleAsync(int userId, string role, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task UpdateExistingUserAsync(int userId, string email, string? firstName, string? lastName, DateTime? dateOfBirth = null, CancellationToken cancellationToken = default) => throw new NotImplementedException();
-        public Task UpdatePictureAsync(int userId, Stream picture, string fileName, string contentType, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task UpdatePictureAsync(int userId, Stream picture, string contentType, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<(Stream? Data, string? ContentType)> GetPictureAsync(int userId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task DeletePictureAsync(int userId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task ChangePasswordAsync(int userId, string currentPassword, string newPassword, CancellationToken cancellationToken = default) => throw new NotImplementedException();

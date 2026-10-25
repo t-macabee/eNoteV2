@@ -78,7 +78,7 @@ public sealed class InstrumentController(
     [ProducesResponseType(typeof(InstrumentDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<InstrumentDto>> UploadImage(int id, IFormFile? file, CancellationToken ct) =>
-        await UploadAsync(file, (stream, fileName, contentType, token) => instrumentService.UploadImageAsync(id, stream, fileName, contentType, token), ct);
+        await UploadAsync(file, (stream, contentType, token) => instrumentService.UploadImageAsync(id, stream, contentType, token), ct);
 
     [Authorize(Roles = AppRoles.StoreEmployee)]
     [HttpDelete("~/api/v{version:apiVersion}/shop/instruments/{id:int}")]

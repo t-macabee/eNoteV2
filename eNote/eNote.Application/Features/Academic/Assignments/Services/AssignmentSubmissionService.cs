@@ -16,11 +16,11 @@ public sealed class AssignmentSubmissionService(
     ISubmissionNotificationDispatcher notificationDispatcher,
     IMapper mapper)
 {
-    public async Task<AssignmentSubmissionDto> SubmitWithFileAsync(int assignmentId, Stream stream, string fileName, string contentType, CancellationToken ct = default)
+    public async Task<AssignmentSubmissionDto> SubmitWithFileAsync(int assignmentId, Stream stream, string contentType, CancellationToken ct = default)
     {
         var (student, assignment, existing) = await ValidateSubmissionAsync(assignmentId, ct);
 
-        var path = await fileStorage.SaveAssignmentAsync(stream, fileName, contentType, ct);
+        var path = await fileStorage.SaveAssignmentAsync(stream, contentType, ct);
 
         try
         {

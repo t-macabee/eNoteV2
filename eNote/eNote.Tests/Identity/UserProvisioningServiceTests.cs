@@ -459,7 +459,7 @@ public sealed class UserProvisioningServiceTests
             return Task.CompletedTask;
         }
 
-        public Task UpdatePictureAsync(int userId, Stream picture, string fileName, string contentType, CancellationToken cancellationToken = default) =>
+        public Task UpdatePictureAsync(int userId, Stream picture, string contentType, CancellationToken cancellationToken = default) =>
             Task.CompletedTask;
 
         public Task<(Stream? Data, string? ContentType)> GetPictureAsync(int userId, CancellationToken cancellationToken = default) =>

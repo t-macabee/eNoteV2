@@ -1,6 +1,6 @@
+using eNote.Application.Common.Files;
 using eNote.Application.Common.Time;
 using eNote.Application.Features.Academic.Tuition;
-using eNote.Infrastructure.Storage;
 using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Infrastructure.Data.Seed;
@@ -228,7 +228,7 @@ internal static class LectureSeed
 
 internal static class InstrumentSeed
 {
-    public const string SeedImagePathPrefix = $"{LocalFileStorageService.UploadsRoutePrefix}/instruments/";
+    public const string SeedImagePathPrefix = $"{UploadPaths.RoutePrefix}/instruments/";
 
     public static async Task SeedInstruments(ENoteContext context)
     {

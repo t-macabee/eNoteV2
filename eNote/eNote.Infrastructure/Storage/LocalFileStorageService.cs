@@ -8,7 +8,6 @@ namespace eNote.Infrastructure.Storage;
 
 public sealed class LocalFileStorageService : IFileStorageService
 {
-    public const string UploadsRoutePrefix = "/api/v1/uploads";
     private static readonly string[] AllowedImageContentTypes = [FileSignatureDetector.JpegMimeType, FileSignatureDetector.PngMimeType, FileSignatureDetector.WebpMimeType];
     private static readonly string[] AllowedAssignmentContentTypes = [FileSignatureDetector.PdfMimeType, FileSignatureDetector.JpegMimeType, FileSignatureDetector.PngMimeType];
 
@@ -19,14 +18,14 @@ public sealed class LocalFileStorageService : IFileStorageService
         _rootPath = Path.GetFullPath(options.Value.Root);
     }
 
-    public async Task<string> SaveAsync(Stream stream, string fileName, string contentType, string subfolder, CancellationToken ct = default)
+    public async Task<string> SaveAsync(Stream stream, string contentType, string subfolder, CancellationToken ct = default)
     {
         var detectedType = await ValidateAsync(stream, contentType, AllowedImageContentTypes, Messages.InvalidFileFormat, ct);
 
         return await SaveToDiskAsync(stream, subfolder, detectedType, ct);
     }
 
-    public async Task<string> SaveAssignmentAsync(Stream stream, string fileName, string contentType, CancellationToken ct = default)
+    public async Task<string> SaveAssignmentAsync(Stream stream, string contentType, CancellationToken ct = default)
     {
         var detectedType = await ValidateAsync(stream, contentType, AllowedAssignmentContentTypes, Messages.AssignmentFileTypeNotAllowed, ct);
 
@@ -42,14 +41,7 @@ public sealed class LocalFileStorageService : IFileStorageService
             return (null, null);
         }
 
-        var contentType = Path.GetExtension(fullPath).ToLowerInvariant() switch
-        {
-            ".jpg" or ".jpeg" => FileSignatureDetector.JpegMimeType,
-            ".png" => FileSignatureDetector.PngMimeType,
-            ".webp" => FileSignatureDetector.WebpMimeType,
-            ".pdf" => FileSignatureDetector.PdfMimeType,
-            _ => "application/octet-stream"
-        };
+        var contentType = FileSignatureDetector.GetMimeType(Path.GetExtension(fullPath));
 
         return (File.OpenRead(fullPath), contentType);
     }
@@ -77,14 +69,7 @@ public sealed class LocalFileStorageService : IFileStorageService
 
         Directory.CreateDirectory(uploadsRoot);
 
-        var ext = detectedType switch
-        {
-            "image/jpeg" => ".jpg",
-            "image/png" => ".png",
-            "image/webp" => ".webp",
-            "application/pdf" => ".pdf",
-            _ => throw new BusinessException(Messages.InvalidFileFormat)
-        };
+        var ext = FileSignatureDetector.GetExtension(detectedType) ?? throw new BusinessException(Messages.InvalidFileFormat);
 
         var uniqueName = $"{Guid.NewGuid()}{ext}";
         var fullPath = Path.Combine(uploadsRoot, uniqueName);
@@ -92,14 +77,19 @@ public sealed class LocalFileStorageService : IFileStorageService
         await using FileStream fileStream = File.Create(fullPath);
 
         await stream.CopyToAsync(fileStream, ct);
-        return $"{UploadsRoutePrefix}/{subfolder}/{uniqueName}";
+        return $"{UploadPaths.RoutePrefix}/{subfolder}/{uniqueName}";
     }
 
     private static async Task<string> ValidateAsync(Stream stream, string contentType, string[] allowedContentTypes, string invalidFormatMessage, CancellationToken ct)
     {
         ArgumentException.ThrowIfNullOrEmpty(contentType);
 
-        if (!stream.CanSeek || stream.Length > FileUploadLimits.MaxFileBytes)
+        if (!stream.CanSeek)
+        {
+            throw new ArgumentException("The upload stream must be seekable.", nameof(stream));
+        }
+
+        if (stream.Length > FileUploadLimits.MaxFileBytes)
         {
             throw new BusinessException(Messages.FileTooLarge);
         }
@@ -121,12 +111,12 @@ public sealed class LocalFileStorageService : IFileStorageService
 
     private string? ResolveUploadPath(string path)
     {
-        if (!path.StartsWith(UploadsRoutePrefix + "/", StringComparison.Ordinal) || path.Contains('?', StringComparison.Ordinal) || path.Contains('#', StringComparison.Ordinal))
+        if (!path.StartsWith(UploadPaths.RoutePrefix + "/", StringComparison.Ordinal) || path.Contains('?', StringComparison.Ordinal) || path.Contains('#', StringComparison.Ordinal))
         {
             return null;
         }
 
-        var relativePath = path[(UploadsRoutePrefix + "/").Length..].Replace('/', Path.DirectorySeparatorChar);
+        var relativePath = path[(UploadPaths.RoutePrefix + "/").Length..].Replace('/', Path.DirectorySeparatorChar);
         var uploadsRoot = Path.GetFullPath(Path.Combine(_rootPath, "uploads"));
         var fullPath = Path.GetFullPath(Path.Combine(uploadsRoot, relativePath));
 

@@ -16,8 +16,8 @@ public sealed class UserSelfService(
     public Task UpdateProfileAsync(UpdateProfileRequest request, CancellationToken cancellationToken = default)
         => accountService.UpdateExistingUserAsync(currentUserService.UserId, request.Email, request.FirstName, request.LastName, request.DateOfBirth, cancellationToken);
 
-    public Task UpdatePictureAsync(Stream picture, string fileName, string contentType, CancellationToken cancellationToken)
-        => accountService.UpdatePictureAsync(currentUserService.UserId, picture, fileName, contentType, cancellationToken);
+    public Task UpdatePictureAsync(Stream picture, string contentType, CancellationToken cancellationToken)
+        => accountService.UpdatePictureAsync(currentUserService.UserId, picture, contentType, cancellationToken);
 
     public Task<(Stream? Data, string? ContentType)> GetPictureAsync(CancellationToken cancellationToken = default)
         => accountService.GetPictureAsync(currentUserService.UserId, cancellationToken);

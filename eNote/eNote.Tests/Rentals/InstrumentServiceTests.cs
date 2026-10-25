@@ -123,7 +123,7 @@ public sealed class InstrumentServiceTests
         var service = CreateStoreInstrumentService(new ThrowingSaveDbContext(ctx, new InvalidOperationException("save failed")), store.Id, storage);
 
         using var stream = new MemoryStream([1, 2, 3]);
-        await Assert.ThrowsAsync<InvalidOperationException>(() => service.UploadImageAsync(instrument.Id, stream, "guitar.png", "image/png"));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => service.UploadImageAsync(instrument.Id, stream, "image/png"));
 
         Assert.Equal(storage.SavedPaths, storage.DeletedPaths);
     }
@@ -141,7 +141,7 @@ public sealed class InstrumentServiceTests
         var service = CreateStoreInstrumentService(ctx, store.Id, storage);
 
         using var stream = new MemoryStream([1, 2, 3]);
-        var updated = await service.UploadImageAsync(instrument.Id, stream, "guitar.png", "image/png");
+        var updated = await service.UploadImageAsync(instrument.Id, stream, "image/png");
 
         Assert.Equal(storage.SavedPaths.Single(), updated.ImagePath);
         Assert.Equal(["/old/instrument.png"], storage.DeletedPaths);
@@ -272,7 +272,7 @@ public sealed class InstrumentServiceTests
 
         using var stream = new MemoryStream([1, 2, 3]);
         var ex = await Assert.ThrowsAsync<BusinessException>(() =>
-            service.UploadImageAsync(target.Id, stream, "guitar.png", "image/png"));
+            service.UploadImageAsync(target.Id, stream, "image/png"));
 
         Assert.Equal(Messages.StorageQuotaExceeded, ex.Message);
         Assert.Empty(storage.SavedPaths);
@@ -292,7 +292,7 @@ public sealed class InstrumentServiceTests
         var service = CreateStoreInstrumentService(ctx, store.Id, storage);
 
         using var stream = new MemoryStream([1, 2, 3]);
-        var updated = await service.UploadImageAsync(instrument.Id, stream, "guitar.png", "image/png");
+        var updated = await service.UploadImageAsync(instrument.Id, stream, "image/png");
 
         Assert.Equal(storage.SavedPaths.Single(), updated.ImagePath);
     }

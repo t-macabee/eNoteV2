@@ -24,7 +24,7 @@ public sealed class AdminMusicStoreController(MusicStoreService service, IReport
     [ProducesResponseType(typeof(MusicStoreDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<MusicStoreDto>> UploadImage(int id, IFormFile? file, CancellationToken ct) =>
-        await UploadAsync(file, (stream, fileName, contentType, token) => service.UploadImageAsync(id, stream, fileName, contentType, token), ct);
+        await UploadAsync(file, (stream, contentType, token) => service.UploadImageAsync(id, stream, contentType, token), ct);
 
     [HttpGet("report")]
     [ProducesResponseType(StatusCodes.Status200OK)]

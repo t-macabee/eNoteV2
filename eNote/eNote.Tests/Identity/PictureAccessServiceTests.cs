@@ -267,7 +267,7 @@ public sealed class PictureAccessServiceTests
             throw new NotSupportedException();
         public Task UpdateExistingUserAsync(int userId, string email, string? firstName, string? lastName, DateTime? dateOfBirth = null, CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();
-        public Task UpdatePictureAsync(int userId, Stream picture, string fileName, string contentType, CancellationToken cancellationToken = default) =>
+        public Task UpdatePictureAsync(int userId, Stream picture, string contentType, CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();
         public Task<(Stream? Data, string? ContentType)> GetPictureAsync(int userId, CancellationToken cancellationToken = default) =>
             Task.FromResult(picture);

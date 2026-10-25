@@ -55,7 +55,7 @@ public sealed class StoreAnnouncementServiceTests
         var fileStorage = new RecordingFileStorageService();
         var service = CreateService(harness.Context, harness.Instructor, storeId: store.Id, fileStorage: fileStorage);
 
-        var dto = await service.UploadImageForStoreAsync(announcement.Id, new MemoryStream([1, 2, 3]), "a.png", "image/png");
+        var dto = await service.UploadImageForStoreAsync(announcement.Id, new MemoryStream([1, 2, 3]), "image/png");
 
         Assert.Equal(fileStorage.SavedPaths[0], dto.ImagePath);
         Assert.Equal("Music Shop", dto.StoreName);
@@ -78,7 +78,7 @@ public sealed class StoreAnnouncementServiceTests
         var service = CreateService(harness.Context, harness.Instructor, storeId: store.Id, fileStorage: fileStorage);
 
         await Assert.ThrowsAsync<BusinessException>(() =>
-            service.UploadImageForStoreAsync(target.Id, new MemoryStream([1]), "a.png", "image/png"));
+            service.UploadImageForStoreAsync(target.Id, new MemoryStream([1]), "image/png"));
 
         Assert.Empty(fileStorage.SavedPaths);
     }
@@ -96,7 +96,7 @@ public sealed class StoreAnnouncementServiceTests
         var fileStorage = new RecordingFileStorageService();
         var service = CreateService(harness.Context, harness.Instructor, storeId: store.Id, fileStorage: fileStorage);
 
-        await service.UploadImageForStoreAsync(announcement.Id, new MemoryStream([1, 2, 3]), "a.png", "image/png");
+        await service.UploadImageForStoreAsync(announcement.Id, new MemoryStream([1, 2, 3]), "image/png");
         await service.DeleteForStoreAsync(announcement.Id);
 
         Assert.Contains(fileStorage.SavedPaths[0], fileStorage.DeletedPaths);

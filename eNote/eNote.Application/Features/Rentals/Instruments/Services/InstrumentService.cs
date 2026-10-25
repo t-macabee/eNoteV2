@@ -108,7 +108,7 @@ public sealed class InstrumentService(
         return await ReloadAsync(entity.Id, cancellationToken);
     }
 
-    public async Task<InstrumentDto> UploadImageAsync(int id, Stream stream, string fileName, string contentType, CancellationToken ct = default)
+    public async Task<InstrumentDto> UploadImageAsync(int id, Stream stream, string contentType, CancellationToken ct = default)
     {
         await EnsureStoreAccessAsync(ct);
 
@@ -120,7 +120,7 @@ public sealed class InstrumentService(
         await StoreStorageQuota.EnsureWithinQuotaAsync(context, fileStorage, entity.MusicStoreId, stream.Length, entity.ImagePath, ct);
 
         var previousPath = entity.ImagePath;
-        var path = await fileStorage.SaveAsync(stream, fileName, contentType, "instruments", ct);
+        var path = await fileStorage.SaveAsync(stream, contentType, "instruments", ct);
         entity.UpdateDetails(entity.Model, entity.Manufacturer, entity.Description, path, entity.InstrumentTypeId);
 
         await context.SaveChangesReplacingFileAsync(fileStorage, path, previousPath, ct);

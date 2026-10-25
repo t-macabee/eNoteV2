@@ -59,7 +59,7 @@ public sealed class AnnouncementController(
     [ProducesResponseType(typeof(AnnouncementDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<AnnouncementDto>> UploadImageForCourse(int courseId, int announcementId, IFormFile? file, CancellationToken ct) =>
-        await UploadAsync(file, (stream, fileName, contentType, token) => instructorAnnouncementService.UploadImageForCourseAsync(courseId, announcementId, stream, fileName, contentType, token), ct);
+        await UploadAsync(file, (stream, contentType, token) => instructorAnnouncementService.UploadImageForCourseAsync(courseId, announcementId, stream, contentType, token), ct);
 
     [Authorize(Roles = AppRoles.Instructor)]
     [HttpDelete("~/api/v{version:apiVersion}/instructor/courses/{courseId:int}/announcements/{announcementId:int}")]
@@ -113,7 +113,7 @@ public sealed class AnnouncementController(
     [ProducesResponseType(typeof(AnnouncementDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<AnnouncementDto>> UploadImageForStore(int announcementId, IFormFile? file, CancellationToken ct) =>
-        await UploadAsync(file, (stream, fileName, contentType, token) => storeAnnouncementService.UploadImageForStoreAsync(announcementId, stream, fileName, contentType, token), ct);
+        await UploadAsync(file, (stream, contentType, token) => storeAnnouncementService.UploadImageForStoreAsync(announcementId, stream, contentType, token), ct);
 
     [Authorize(Roles = AppRoles.StoreEmployee)]
     [HttpDelete("~/api/v{version:apiVersion}/shop/announcements/{announcementId:int}")]

@@ -1,3 +1,4 @@
+using eNote.Application.Common.Files;
 using eNote.Application.Constants;
 using eNote.Application.Features.Identity.Instructors;
 using eNote.Application.Features.Identity.Users.Services;
@@ -10,7 +11,7 @@ public sealed class FileAccessService(
     InstructorAccessService instructorAccess,
     IUserIdentityService identity) : IFileAccessService
 {
-    private const string AssignmentApiPath = "/api/v1/uploads/assignments/";
+    private const string AssignmentApiPath = $"{UploadPaths.RoutePrefix}/assignments/";
     private const string AssignmentLegacyPath = "/api/uploads/assignments/";
     private const string AssignmentLegacyPathV0 = "/uploads/assignments/";
 

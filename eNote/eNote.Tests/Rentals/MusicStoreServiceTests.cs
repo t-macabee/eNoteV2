@@ -214,7 +214,7 @@ public sealed class MusicStoreServiceTests
         });
 
         using var stream = new MemoryStream([1, 2, 3]);
-        var updated = await service.UploadImageAsync(created.Id, stream, "store.png", "image/png");
+        var updated = await service.UploadImageAsync(created.Id, stream, "image/png");
 
         Assert.NotNull(updated.ImagePath);
         Assert.Contains("music-stores", updated.ImagePath);
@@ -234,7 +234,7 @@ public sealed class MusicStoreServiceTests
         var service = CreateService(new ThrowingSaveDbContext(ctx, new InvalidOperationException("save failed")), storage);
 
         using var stream = new MemoryStream([1, 2, 3]);
-        await Assert.ThrowsAsync<InvalidOperationException>(() => service.UploadImageAsync(store.Id, stream, "store.png", "image/png"));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => service.UploadImageAsync(store.Id, stream, "image/png"));
 
         Assert.Equal(storage.SavedPaths, storage.DeletedPaths);
     }
@@ -265,7 +265,7 @@ public sealed class MusicStoreServiceTests
         var service = CreateService(ctx, storage);
 
         using var stream = new MemoryStream([1, 2, 3]);
-        var updated = await service.UploadImageAsync(store.Id, stream, "store.png", "image/png");
+        var updated = await service.UploadImageAsync(store.Id, stream, "image/png");
 
         Assert.Equal(storage.SavedPaths.Single(), updated.ImagePath);
         Assert.Equal(["/old/store.png"], storage.DeletedPaths);
@@ -282,7 +282,7 @@ public sealed class MusicStoreServiceTests
         var service = CreateService(ctx, storage);
 
         using var stream = new MemoryStream([1, 2, 3]);
-        var updated = await service.UploadImageAsync(store.Id, stream, "store.png", "image/png");
+        var updated = await service.UploadImageAsync(store.Id, stream, "image/png");
 
         Assert.Equal(storage.SavedPaths.Single(), updated.ImagePath);
         Assert.Empty(storage.DeletedPaths);
@@ -445,7 +445,7 @@ public sealed class MusicStoreServiceTests
         var service = CreateService(ctx, storage);
 
         using var stream = new MemoryStream([1, 2, 3]);
-        var ex = await Assert.ThrowsAsync<BusinessException>(() => service.UploadImageAsync(store.Id, stream, "store.png", "image/png"));
+        var ex = await Assert.ThrowsAsync<BusinessException>(() => service.UploadImageAsync(store.Id, stream, "image/png"));
 
         Assert.Equal(Messages.StorageQuotaExceeded, ex.Message);
         Assert.Empty(storage.SavedPaths);

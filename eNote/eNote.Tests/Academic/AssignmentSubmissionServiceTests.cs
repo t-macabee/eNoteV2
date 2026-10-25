@@ -26,7 +26,7 @@ public sealed class AssignmentSubmissionServiceTests
         var service = CreateService(harness.Context, harness.Instructor, fileStorage, harness.Student);
         using var stream = new MemoryStream([1, 2, 3]);
 
-        var dto = await service.SubmitWithFileAsync(assignment.Id, stream, "hw.pdf", "application/pdf");
+        var dto = await service.SubmitWithFileAsync(assignment.Id, stream, "application/pdf");
 
         Assert.NotNull(dto.SubmittedAt);
         Assert.Single(fileStorage.SavedFiles);
@@ -50,7 +50,7 @@ public sealed class AssignmentSubmissionServiceTests
         using var stream = new MemoryStream([1, 2, 3]);
 
         await Assert.ThrowsAsync<ConflictException>(() =>
-            service.SubmitWithFileAsync(assignment.Id, stream, "hw2.pdf", "application/pdf"));
+            service.SubmitWithFileAsync(assignment.Id, stream, "application/pdf"));
 
         Assert.Empty(fileStorage.SavedFiles);
     }
@@ -67,7 +67,7 @@ public sealed class AssignmentSubmissionServiceTests
         using var stream = new MemoryStream([1, 2, 3]);
 
         await Assert.ThrowsAsync<BusinessException>(() =>
-            service.SubmitWithFileAsync(assignment.Id, stream, "hw.pdf", "application/pdf"));
+            service.SubmitWithFileAsync(assignment.Id, stream, "application/pdf"));
 
         Assert.Empty(fileStorage.SavedFiles);
     }
@@ -192,7 +192,7 @@ public sealed class AssignmentSubmissionServiceTests
         using var stream = new MemoryStream([1, 2, 3]);
 
         var ex = await Assert.ThrowsAsync<ConflictException>(() =>
-            service.SubmitWithFileAsync(assignment.Id, stream, "hw.pdf", "application/pdf"));
+            service.SubmitWithFileAsync(assignment.Id, stream, "application/pdf"));
 
         Assert.Equal(Messages.AssignmentAlreadySubmitted, ex.Message);
         Assert.Single(fileStorage.SavedFiles);
@@ -232,7 +232,7 @@ public sealed class AssignmentSubmissionServiceTests
         using var stream = new MemoryStream([1, 2, 3]);
 
         await Assert.ThrowsAsync<NotFoundException>(() =>
-            service.SubmitWithFileAsync(assignment.Id, stream, "hw.pdf", "application/pdf"));
+            service.SubmitWithFileAsync(assignment.Id, stream, "application/pdf"));
 
         Assert.Empty(fileStorage.SavedFiles);
     }
@@ -248,7 +248,7 @@ public sealed class AssignmentSubmissionServiceTests
         var service = CreateService(harness.Context, harness.Instructor, new RecordingFileStorageService(), harness.Student);
         using var stream = new MemoryStream([1, 2, 3]);
 
-        var dto = await service.SubmitWithFileAsync(assignment.Id, stream, "hw.pdf", "application/pdf");
+        var dto = await service.SubmitWithFileAsync(assignment.Id, stream, "application/pdf");
 
         Assert.NotNull(dto.SubmittedAt);
     }

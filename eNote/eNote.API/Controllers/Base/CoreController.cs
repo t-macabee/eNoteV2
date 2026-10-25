@@ -40,13 +40,13 @@ public abstract class CoreController : ControllerBase
 
     protected async Task<ActionResult<TDto>> UploadAsync<TDto>(
         IFormFile? file,
-        Func<Stream, string, string, CancellationToken, Task<TDto>> upload,
+        Func<Stream, string, CancellationToken, Task<TDto>> upload,
         CancellationToken cancellationToken)
     {
         ValidateUpload(file);
 
         await using Stream stream = file!.OpenReadStream();
-        var result = await upload(stream, file.FileName, file.ContentType, cancellationToken);
+        var result = await upload(stream, file.ContentType, cancellationToken);
         return new OkObjectResult(result);
     }
 }

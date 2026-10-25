@@ -57,5 +57,5 @@ public sealed class AssignmentSubmissionController(AssignmentSubmissionService s
     [ProducesResponseType(typeof(AssignmentSubmissionDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<AssignmentSubmissionDto>> Submit(int id, IFormFile? file, CancellationToken ct) =>
-        await UploadAsync(file, (stream, fileName, contentType, token) => submissionService.SubmitWithFileAsync(id, stream, fileName, contentType, token), ct);
+        await UploadAsync(file, (stream, contentType, token) => submissionService.SubmitWithFileAsync(id, stream, contentType, token), ct);
 }

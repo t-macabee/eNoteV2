@@ -6,6 +6,20 @@ internal static class FileSignatureDetector
     internal const string PngMimeType = "image/png";
     internal const string WebpMimeType = "image/webp";
     internal const string PdfMimeType = "application/pdf";
+    internal const string OctetStreamMimeType = "application/octet-stream";
+
+    private static readonly Dictionary<string, string> ExtensionsByMimeType = new(StringComparer.OrdinalIgnoreCase)
+    {
+        [JpegMimeType] = ".jpg",
+        [PngMimeType] = ".png",
+        [WebpMimeType] = ".webp",
+        [PdfMimeType] = ".pdf"
+    };
+
+    internal static string? GetExtension(string mimeType) => ExtensionsByMimeType.GetValueOrDefault(mimeType);
+
+    internal static string GetMimeType(string extension) =>
+        ExtensionsByMimeType.FirstOrDefault(x => x.Value.Equals(extension, StringComparison.OrdinalIgnoreCase)).Key ?? OctetStreamMimeType;
 
     internal static string DetectContentType(ReadOnlySpan<byte> data)
     {
@@ -33,6 +47,6 @@ internal static class FileSignatureDetector
             return PdfMimeType;
         }
 
-        return "application/octet-stream";
+        return OctetStreamMimeType;
     }
 }

@@ -48,10 +48,10 @@ public sealed class ShopStoreController(
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<MusicStoreDto>> UploadOwnStoreImage(IFormFile? file, CancellationToken ct) =>
-        await UploadAsync(file, async (stream, fileName, contentType, token) =>
+        await UploadAsync(file, async (stream, contentType, token) =>
         {
             var storeId = await employeeService.GetCurrentManagerStoreIdAsync(token);
-            return await storeService.UploadImageAsync(storeId, stream, fileName, contentType, token);
+            return await storeService.UploadImageAsync(storeId, stream, contentType, token);
         }, ct);
 
     [HttpGet("~/api/v{version:apiVersion}/shop/addresses")]

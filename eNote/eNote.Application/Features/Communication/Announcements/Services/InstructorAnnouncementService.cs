@@ -56,12 +56,12 @@ public sealed class InstructorAnnouncementService(IAppDbContext context, IClock 
         return mapper.Map<AnnouncementDto>(entity);
     }
 
-    public async Task<AnnouncementDto> UploadImageForCourseAsync(int courseId, int announcementId, Stream stream, string fileName, string contentType, CancellationToken ct = default)
+    public async Task<AnnouncementDto> UploadImageForCourseAsync(int courseId, int announcementId, Stream stream, string contentType, CancellationToken ct = default)
     {
         var entity = await (await GetCourseAnnouncementQueryAsync(courseId, ct, track: true)).FirstOrDefaultAsync(a => a.Id == announcementId, ct) ?? throw new NotFoundException(Messages.AnnouncementNotFound);
 
         var previousPath = entity.ImagePath;
-        var path = await fileStorage.SaveAsync(stream, fileName, contentType, "announcements", ct);
+        var path = await fileStorage.SaveAsync(stream, contentType, "announcements", ct);
         entity.UpdateImagePath(path);
 
         await context.SaveChangesReplacingFileAsync(fileStorage, path, previousPath, ct);

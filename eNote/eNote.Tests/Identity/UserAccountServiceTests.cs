@@ -107,7 +107,7 @@ public sealed class UserAccountServiceTests
         user.PicturePath = "/api/uploads/profile-pictures/old.png";
         await harness.UserManager.UpdateAsync(user);
 
-        await service.UpdatePictureAsync(user.Id, PngStream(), "picture.png", "image/png");
+        await service.UpdatePictureAsync(user.Id, PngStream(), "image/png");
 
         var updated = (await harness.UserManager.FindByIdAsync(user.Id.ToString()))!;
         Assert.StartsWith("/api/v1/uploads/profile-pictures/", updated.PicturePath);

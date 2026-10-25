@@ -1,7 +1,6 @@
 using System.Reflection;
 using eNote.API.Controllers.Files;
 using eNote.Application.Common.Files;
-using eNote.Infrastructure.Storage;
 using Microsoft.AspNetCore.Mvc;
 
 namespace eNote.Tests.Storage;
@@ -16,7 +15,7 @@ public sealed class DefaultImagesTests
     [InlineData(DefaultImages.UserPicture)]
     public void DefaultImage_IsServedFromUploadsRoute(string path)
     {
-        Assert.StartsWith(LocalFileStorageService.UploadsRoutePrefix + "/", path);
+        Assert.StartsWith(UploadPaths.RoutePrefix + "/", path);
     }
 
     [Theory]
@@ -26,7 +25,7 @@ public sealed class DefaultImagesTests
     [InlineData(DefaultImages.MusicStore)]
     public void DefaultImageFolder_HasUploadsControllerRoute(string path)
     {
-        var folder = path[(LocalFileStorageService.UploadsRoutePrefix.Length + 1)..].Split('/')[0];
+        var folder = path[(UploadPaths.RoutePrefix.Length + 1)..].Split('/')[0];
 
         var templates = typeof(UploadsController)
             .GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)

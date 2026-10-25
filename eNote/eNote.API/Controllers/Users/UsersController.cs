@@ -44,7 +44,7 @@ public sealed class UsersController(UserProfileService profileService, UserSelfS
         ValidateUpload(file);
 
         await using var stream = file!.OpenReadStream();
-        await selfService.UpdatePictureAsync(stream, file.FileName, file.ContentType, cancellationToken);
+        await selfService.UpdatePictureAsync(stream, file.ContentType, cancellationToken);
 
         return NoContent();
     }

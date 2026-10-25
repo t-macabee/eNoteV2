@@ -157,11 +157,11 @@ public sealed class UserAccountService(UserManager<AppUser> userManager, IFileSt
         }
     }
 
-    public async Task UpdatePictureAsync(int userId, Stream picture, string fileName, string contentType, CancellationToken cancellationToken = default)
+    public async Task UpdatePictureAsync(int userId, Stream picture, string contentType, CancellationToken cancellationToken = default)
     {
         var user = await FindUserOrThrowAsync(userId);
 
-        var picturePath = await fileStorage.SaveAsync(picture, fileName, contentType, "profile-pictures", cancellationToken);
+        var picturePath = await fileStorage.SaveAsync(picture, contentType, "profile-pictures", cancellationToken);
 
         var previousPicturePath = user.PicturePath;
         user.PicturePath = picturePath;

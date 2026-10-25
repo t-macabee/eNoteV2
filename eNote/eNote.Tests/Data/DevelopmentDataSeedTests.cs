@@ -3,7 +3,6 @@ using eNote.Application.Common.Files;
 using eNote.Domain.Entities.Assignments;
 using eNote.Domain.Entities.Communication;
 using eNote.Infrastructure.Data.Seed;
-using eNote.Infrastructure.Storage;
 using eNote.Tests.TestUtils;
 using Microsoft.EntityFrameworkCore;
 
@@ -205,9 +204,9 @@ public sealed class DevelopmentDataSeedTests
 
         foreach (var imagePath in imagePaths)
         {
-            Assert.StartsWith(LocalFileStorageService.UploadsRoutePrefix + "/", imagePath);
+            Assert.StartsWith(UploadPaths.RoutePrefix + "/", imagePath);
 
-            var relativePath = imagePath[(LocalFileStorageService.UploadsRoutePrefix.Length + 1)..]
+            var relativePath = imagePath[(UploadPaths.RoutePrefix.Length + 1)..]
                 .Replace('/', Path.DirectorySeparatorChar);
             var fullPath = Path.Combine(webRoot, "uploads", relativePath);
 

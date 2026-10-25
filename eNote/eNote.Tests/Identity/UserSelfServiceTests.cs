@@ -55,7 +55,7 @@ public sealed class UserSelfServiceTests
         var service = CreateService(account, userId: 11);
         await using var picture = new MemoryStream([1, 2, 3]);
 
-        await service.UpdatePictureAsync(picture, "picture.png", "image/png", CancellationToken.None);
+        await service.UpdatePictureAsync(picture, "image/png", CancellationToken.None);
         await service.GetPictureAsync();
         await service.DeletePictureAsync();
 
@@ -104,7 +104,7 @@ public sealed class UserSelfServiceTests
             return Task.CompletedTask;
         }
 
-        public Task UpdatePictureAsync(int userId, Stream picture, string fileName, string contentType, CancellationToken cancellationToken = default)
+        public Task UpdatePictureAsync(int userId, Stream picture, string contentType, CancellationToken cancellationToken = default)
         {
             PictureUpdateUserId = userId;
             Picture = picture;

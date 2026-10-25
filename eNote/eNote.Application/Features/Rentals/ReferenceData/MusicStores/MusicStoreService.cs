@@ -103,7 +103,7 @@ public sealed class MusicStoreService(IAppDbContext context, IFileStorageService
         }
     }
 
-    public async Task<MusicStoreDto> UploadImageAsync(int id, Stream stream, string fileName, string contentType, CancellationToken ct = default)
+    public async Task<MusicStoreDto> UploadImageAsync(int id, Stream stream, string contentType, CancellationToken ct = default)
     {
         var entity = await Db.Set<MusicStore>().FirstOrDefaultAsync(x => x.Id == id, ct)
             ?? throw new NotFoundException(NotFoundMessage);
@@ -111,7 +111,7 @@ public sealed class MusicStoreService(IAppDbContext context, IFileStorageService
         await StoreStorageQuota.EnsureWithinQuotaAsync(Db, fileStorage, id, stream.Length, entity.ImagePath, ct);
 
         var previousPath = entity.ImagePath;
-        var path = await fileStorage.SaveAsync(stream, fileName, contentType, "music-stores", ct);
+        var path = await fileStorage.SaveAsync(stream, contentType, "music-stores", ct);
         entity.UpdateImagePath(path);
 
         await Db.SaveChangesReplacingFileAsync(fileStorage, path, previousPath, ct);
