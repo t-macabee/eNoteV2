@@ -17,10 +17,9 @@ class AdminUserProvider extends CrudProvider<UserProfileResponse> {
     return parsePage(response, AdminUserListItemDto.fromJson, params: params);
   }
 
-  Future<int> provision(UserProvisionRequest request) async {
+  Future<void> provision(UserProvisionRequest request) async {
     final response = await apiClient.post(endpoint, body: request.toJson());
-    final data = decodeOrThrow(response);
-    return data['userId'] as int? ?? data['id'] as int? ?? 0;
+    throwIfError(response);
   }
 
   Future<void> setStatus(int id, bool isActive) async {

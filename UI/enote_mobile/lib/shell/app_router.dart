@@ -148,125 +148,80 @@ class AppRouter {
   static const String eventDetail = '/events/detail';
 
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
-    final args = settings.arguments;
-    switch (settings.name) {
-      case courseDetail:
-        final courseArgs = args is CourseDetailArgs ? args : null;
-        if (courseArgs == null) return _route(const _UnknownRouteScreen());
-        return _route(CourseDetailScreen(courseId: courseArgs.courseId));
-      case lectureDetail:
-        final lectureArgs = args is LectureDetailArgs ? args : null;
-        if (lectureArgs == null) return _route(const _UnknownRouteScreen());
-        return _route(
-          LectureDetailScreen(lectureId: lectureArgs.lectureId),
-        );
-      case lectureNotes:
-        final notesArgs = args is LectureNotesArgs ? args : null;
-        if (notesArgs == null) return _route(const _UnknownRouteScreen());
-        return _route(
-          ChangeNotifierProvider(
-            create: (context) => LectureNoteProvider(
-              apiClient: context.read<ApiClient>(),
-              lectureId: notesArgs.lectureId,
-            ),
-            child: LectureNoteListScreen(lectureId: notesArgs.lectureId),
+    return switch ((settings.name, settings.arguments)) {
+      (courseDetail, CourseDetailArgs a) => _route(
+        CourseDetailScreen(courseId: a.courseId),
+      ),
+      (lectureDetail, LectureDetailArgs a) => _route(
+        LectureDetailScreen(lectureId: a.lectureId),
+      ),
+      (lectureNotes, LectureNotesArgs a) => _route(
+        ChangeNotifierProvider(
+          create: (context) => LectureNoteProvider(
+            apiClient: context.read<ApiClient>(),
+            lectureId: a.lectureId,
           ),
-        );
-      case lectureNoteDetail:
-        final noteArgs = args is LectureNoteDetailArgs ? args : null;
-        if (noteArgs == null) return _route(const _UnknownRouteScreen());
-        return _route(
-          ChangeNotifierProvider(
-            create: (context) => LectureNoteProvider(
-              apiClient: context.read<ApiClient>(),
-              lectureId: noteArgs.lectureId,
-            ),
-            child: LectureNoteDetailScreen(noteId: noteArgs.noteId),
+          child: LectureNoteListScreen(lectureId: a.lectureId),
+        ),
+      ),
+      (lectureNoteDetail, LectureNoteDetailArgs a) => _route(
+        ChangeNotifierProvider(
+          create: (context) => LectureNoteProvider(
+            apiClient: context.read<ApiClient>(),
+            lectureId: a.lectureId,
           ),
-        );
-      case assignmentDetail:
-        final assignmentArgs = args is AssignmentDetailArgs ? args : null;
-        if (assignmentArgs == null) return _route(const _UnknownRouteScreen());
-        return _route(
-          AssignmentDetailScreen(
-            assignmentId: assignmentArgs.assignmentId,
-            courseId: assignmentArgs.courseId,
-          ),
-        );
-      case assignmentHistory:
-        return _route(const SubmissionHistoryScreen());
-      case ranking:
-        final rankingArgs = args is RankingArgs ? args : null;
-        if (rankingArgs == null) return _route(const _UnknownRouteScreen());
-        return _route(RankingScreen(courseId: rankingArgs.courseId));
-      case announcementDetail:
-        final announcementArgs = args is AnnouncementDetailArgs
-            ? args
-            : null;
-        if (announcementArgs == null) {
-          return _route(const _UnknownRouteScreen());
-        }
-        return _route(
-          AnnouncementDetailScreen(announcement: announcementArgs.announcement),
-        );
-      case instrumentDetail:
-        final instrumentArgs = args is InstrumentDetailArgs ? args : null;
-        if (instrumentArgs == null) return _route(const _UnknownRouteScreen());
-        return _route(
-          InstrumentDetailScreen(instrumentId: instrumentArgs.instrumentId),
-        );
-      case rentalDetail:
-        final rentalArgs = args is RentalDetailArgs ? args : null;
-        if (rentalArgs == null) return _route(const _UnknownRouteScreen());
-        return _route(RentalDetailScreen(rentalId: rentalArgs.rentalId));
-      case payment:
-        final paymentArgs = args is PaymentArgs ? args : null;
-        if (paymentArgs == null) return _route(const _UnknownRouteScreen());
-        return _route(RentalPaymentScreen(rentalId: paymentArgs.rentalId));
-      case tuitionPayment:
-        final tuitionArgs = args is TuitionArgs ? args : null;
-        if (tuitionArgs == null) return _route(const _UnknownRouteScreen());
-        return _route(
-          TuitionPaymentScreen(
-            enrollmentId: tuitionArgs.enrollmentId,
-            courseName: tuitionArgs.courseName,
-            price: tuitionArgs.price,
-          ),
-        );
-      case tuitionHistory:
-        final historyArgs = args is TuitionHistoryArgs ? args : null;
-        if (historyArgs == null) return _route(const _UnknownRouteScreen());
-        return _route(
-          TuitionHistoryScreen(
-            enrollmentId: historyArgs.enrollmentId,
-            courseName: historyArgs.courseName,
-          ),
-        );
-      case notifications:
-        return _route(const NotificationInboxScreen());
-      case profileEdit:
-        return _route(const EditProfileScreen());
-      case profilePassword:
-        return _route(const ChangePasswordScreen());
-      case register:
-        return _route(const RegisterScreen());
-      case forgotPassword:
-        return _route(const ForgotPasswordScreen());
-      case resetPassword:
-        final resetArgs = args is ResetArgs ? args : null;
-        return _route(
-          ResetPasswordScreen(
-            email: resetArgs?.email,
-            token: resetArgs?.token,
-          ),
-        );
-      case eventDetail:
-        final eventArgs = args is EventDetailArgs ? args : null;
-        if (eventArgs == null) return _route(const _UnknownRouteScreen());
-        return _route(EventDetailScreen(event: eventArgs.event));
-      default:
-        return _route(const _UnknownRouteScreen());
-    }
+          child: LectureNoteDetailScreen(noteId: a.noteId),
+        ),
+      ),
+      (assignmentDetail, AssignmentDetailArgs a) => _route(
+        AssignmentDetailScreen(
+          assignmentId: a.assignmentId,
+          courseId: a.courseId,
+        ),
+      ),
+      (assignmentHistory, _) => _route(const SubmissionHistoryScreen()),
+      (ranking, RankingArgs a) => _route(
+        RankingScreen(courseId: a.courseId),
+      ),
+      (announcementDetail, AnnouncementDetailArgs a) => _route(
+        AnnouncementDetailScreen(announcement: a.announcement),
+      ),
+      (instrumentDetail, InstrumentDetailArgs a) => _route(
+        InstrumentDetailScreen(instrumentId: a.instrumentId),
+      ),
+      (rentalDetail, RentalDetailArgs a) => _route(
+        RentalDetailScreen(rentalId: a.rentalId),
+      ),
+      (payment, PaymentArgs a) => _route(
+        RentalPaymentScreen(rentalId: a.rentalId),
+      ),
+      (tuitionPayment, TuitionArgs a) => _route(
+        TuitionPaymentScreen(
+          enrollmentId: a.enrollmentId,
+          courseName: a.courseName,
+          price: a.price,
+        ),
+      ),
+      (tuitionHistory, TuitionHistoryArgs a) => _route(
+        TuitionHistoryScreen(
+          enrollmentId: a.enrollmentId,
+          courseName: a.courseName,
+        ),
+      ),
+      (notifications, _) => _route(const NotificationInboxScreen()),
+      (profileEdit, _) => _route(const EditProfileScreen()),
+      (profilePassword, _) => _route(const ChangePasswordScreen()),
+      (register, _) => _route(const RegisterScreen()),
+      (forgotPassword, _) => _route(const ForgotPasswordScreen()),
+      (resetPassword, ResetArgs a) => _route(
+        ResetPasswordScreen(email: a.email, token: a.token),
+      ),
+      (resetPassword, _) => _route(const ResetPasswordScreen()),
+      (eventDetail, EventDetailArgs a) => _route(
+        EventDetailScreen(event: a.event),
+      ),
+      _ => _route(const _UnknownRouteScreen()),
+    };
   }
 
   static MaterialPageRoute<dynamic> _route(Widget child) {

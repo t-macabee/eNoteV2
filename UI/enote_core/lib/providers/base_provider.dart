@@ -107,14 +107,14 @@ abstract class CrudProvider<T> extends ReadOnlyProvider<T> {
   }
 }
 
-abstract class BaseProvider<T> extends CrudProvider<T> {
-  BaseProvider({
+abstract class DelegatedUserProvider<T> extends CrudProvider<T> {
+  DelegatedUserProvider({
     required super.apiClient,
     required super.endpoint,
   });
 
-  Future<int> createDelegatedUser(RegisterRequest request) async {
-    final data = decodeOrThrow(await apiClient.post(endpoint, body: request.toJson()));
-    return data['userId'] as int? ?? 0;
+  Future<void> createDelegatedUser(RegisterRequest request) async {
+    final response = await apiClient.post(endpoint, body: request.toJson());
+    throwIfError(response);
   }
 }

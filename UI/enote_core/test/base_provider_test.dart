@@ -6,6 +6,8 @@ import 'package:http/http.dart' as http;
 
 import 'package:enote_core/enote_core.dart';
 
+import 'helpers.dart';
+
 class _TestProvider extends ReadOnlyProvider<Map<String, dynamic>> {
   _TestProvider({required super.apiClient, required super.endpoint});
 
@@ -22,6 +24,17 @@ class _TestProvider extends ReadOnlyProvider<Map<String, dynamic>> {
 
 class _TestCrudProvider extends CrudProvider<Map<String, dynamic>> {
   _TestCrudProvider({required super.apiClient, required super.endpoint});
+
+  @override
+  Map<String, dynamic> fromJson(Map<String, dynamic> json) => json;
+}
+
+class _TestDelegatedUserProvider
+    extends DelegatedUserProvider<Map<String, dynamic>> {
+  _TestDelegatedUserProvider({
+    required super.apiClient,
+    required super.endpoint,
+  });
 
   @override
   Map<String, dynamic> fromJson(Map<String, dynamic> json) => json;
@@ -120,6 +133,54 @@ void main() {
       expect(result.page, 3);
       expect(result.pageSize, 15);
       expect(result.totalCount, isNull);
+    });
+  });
+
+  group('DelegatedUserProvider.createDelegatedUser', () {
+    final request = RegisterRequest(
+      username: 'lbeethoven',
+      email: 'l@example.com',
+      password: 'Lozinka123!',
+    );
+
+    _TestDelegatedUserProvider buildProvider(ScriptedClient client) {
+      return _TestDelegatedUserProvider(
+        apiClient: ApiClient(
+          baseUrl: 'http://localhost/',
+          authState: AuthState(),
+          httpClient: client,
+        ),
+        endpoint: 'instructor/students',
+      );
+    }
+
+    test('201 completes and posts the request body', () async {
+      final client = ScriptedClient((_) => jsonResponse({'userId': 42}, 201));
+
+      await expectLater(
+        buildProvider(client).createDelegatedUser(request),
+        completes,
+      );
+
+      expect(client.requests.single.method, 'POST');
+      expect(client.requests.single.body, contains('lbeethoven'));
+    });
+
+    test('409 throws ApiException with mapped message', () async {
+      final client = ScriptedClient(
+        (_) => jsonResponse({'message': 'Korisničko ime je zauzeto.'}, 409),
+      );
+
+      await expectLater(
+        buildProvider(client).createDelegatedUser(request),
+        throwsA(
+          isA<ApiException>().having(
+            (e) => e.message,
+            'message',
+            'Korisničko ime je zauzeto.',
+          ),
+        ),
+      );
     });
   });
 

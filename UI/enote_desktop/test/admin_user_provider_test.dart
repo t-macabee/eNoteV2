@@ -65,6 +65,48 @@ void main() {
     });
   });
 
+  group('provision', () {
+    final request = UserProvisionRequest(
+      username: 'lbeethoven',
+      email: 'l@example.com',
+      password: 'Lozinka123!',
+      role: 'Student',
+    );
+
+    test('201 completes and posts the request body', () async {
+      final mockClient = _mockClient(
+        statusCode: 201,
+        responseBody: jsonEncode({'userId': 42}),
+      );
+      final provider = _buildProvider(mockClient);
+
+      await expectLater(provider.provision(request), completes);
+
+      expect(mockClient.recorded.single.method, 'POST');
+      expect(mockClient.recorded.single.url, endsWith('admin/users'));
+      expect(mockClient.recorded.single.body?['username'], 'lbeethoven');
+    });
+
+    test('409 throws ApiException with mapped message', () async {
+      final mockClient = _mockClient(
+        statusCode: 409,
+        responseBody: jsonEncode({'message': 'Korisničko ime je zauzeto.'}),
+      );
+      final provider = _buildProvider(mockClient);
+
+      expect(
+        () => provider.provision(request),
+        throwsA(
+          isA<ApiException>().having(
+            (e) => e.message,
+            'message',
+            'Korisničko ime je zauzeto.',
+          ),
+        ),
+      );
+    });
+  });
+
   group('setStatus', () {
     test('sends PUT with isActive body and succeeds on 204', () async {
       final mockClient = _mockClient(statusCode: 204, responseBody: '');
