@@ -10,7 +10,7 @@ public sealed class OutboxHealthCheck(IAppDbContext dbContext) : IHealthCheck
     public async Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default)
     {
         var abandoned = await dbContext.Set<NotificationOutbox>()
-            .CountAsync(x => x.PublishedAt == null && x.Attempts >= RentalNotificationOutboxPublisher.MaxAttempts, cancellationToken);
+            .CountAsync(x => x.PublishedAt == null && x.Attempts >= NotificationOutboxPublisher.MaxAttempts, cancellationToken);
 
         return abandoned == 0
             ? HealthCheckResult.Healthy("No abandoned outbox messages.")

@@ -18,21 +18,6 @@ public static class PagingExtensions
         };
     }
 
-    public static async Task<PagedResult<TModel>> ToPagedResultAsync<TEntity, TSearch, TModel>(this IQueryable<TEntity> query, TSearch search, Func<TEntity, Task<TModel>> mapAsync, Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>>? orderBy = null, CancellationToken ct = default) where TSearch : BaseSearchObject where TEntity : IEntity
-    {
-        var (page, pageSize, total, entities) = await FetchPageAsync(query, search, orderBy, ct);
-
-        var items = await Task.WhenAll(entities.Select(mapAsync));
-
-        return new PagedResult<TModel>
-        {
-            Items = [.. items],
-            Page = page,
-            PageSize = pageSize,
-            TotalCount = total
-        };
-    }
-
     public static async Task<PagedResult<TModel>> ToPagedResultAsync<TEntity, TSearch, TModel>(
         this IQueryable<TEntity> query,
         TSearch search,

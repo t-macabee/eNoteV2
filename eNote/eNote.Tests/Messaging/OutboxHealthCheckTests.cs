@@ -39,7 +39,7 @@ public sealed class OutboxHealthCheckTests
         context.Set<NotificationOutbox>().Add(new NotificationOutbox
         {
             PayloadJson = "{}",
-            Attempts = RentalNotificationOutboxPublisher.MaxAttempts
+            Attempts = NotificationOutboxPublisher.MaxAttempts
         });
         await context.SaveChangesAsync();
         var check = new OutboxHealthCheck(context);

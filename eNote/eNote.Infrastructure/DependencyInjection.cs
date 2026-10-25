@@ -149,7 +149,7 @@ public static class DependencyInjection
         services.AddSingleton(provider => provider.GetRequiredService<IOptions<StripeOptions>>().Value);
         services.AddScoped<IPaymentGateway, StripePaymentGateway>();
         services.AddScoped<StripeWebhookService>();
-        services.AddHostedService<RentalNotificationOutboxPublisher>();
+        services.AddHostedService<NotificationOutboxPublisher>();
         services.AddHealthChecks().AddCheck<OutboxHealthCheck>("outbox");
 
         return services;

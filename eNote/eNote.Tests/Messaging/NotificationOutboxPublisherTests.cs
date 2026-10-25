@@ -16,7 +16,7 @@ using System.Text.Json;
 
 namespace eNote.Tests.Messaging;
 
-public sealed class RentalNotificationOutboxPublisherTests
+public sealed class NotificationOutboxPublisherTests
 {
     private static readonly DateTime Now = new(2026, 7, 1, 12, 0, 0, DateTimeKind.Utc);
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
@@ -243,7 +243,7 @@ public sealed class RentalNotificationOutboxPublisherTests
     {
         var throwingContext = new ThrowingSetDbContext();
         var provider = new StubServiceProvider(throwingContext, new StubPublishEndpoint(), new FixedClock(Now));
-        var publisher = new RentalNotificationOutboxPublisher(provider, NullLogger<RentalNotificationOutboxPublisher>.Instance, TimeSpan.FromMilliseconds(10));
+        var publisher = new NotificationOutboxPublisher(provider, NullLogger<NotificationOutboxPublisher>.Instance, TimeSpan.FromMilliseconds(10));
 
         await publisher.StartAsync(CancellationToken.None);
         var deadline = DateTime.UtcNow.AddSeconds(5);
@@ -261,15 +261,15 @@ public sealed class RentalNotificationOutboxPublisherTests
         Assert.True(throwingContext.SetCalls > 1, "the poll was not retried after the first failure");
     }
 
-    private static RentalNotificationOutboxPublisher CreatePublisher(ENoteContext context, StubPublishEndpoint? endpoint = null)
+    private static NotificationOutboxPublisher CreatePublisher(ENoteContext context, StubPublishEndpoint? endpoint = null)
     {
         endpoint ??= new StubPublishEndpoint();
         var provider = new StubServiceProvider(context, endpoint, new FixedClock(Now));
 
-        return new RentalNotificationOutboxPublisher(provider, NullLogger<RentalNotificationOutboxPublisher>.Instance);
+        return new NotificationOutboxPublisher(provider, NullLogger<NotificationOutboxPublisher>.Instance);
     }
 
-    private static Task InvokeProcessBatchAsync(RentalNotificationOutboxPublisher publisher) =>
+    private static Task InvokeProcessBatchAsync(NotificationOutboxPublisher publisher) =>
         publisher.ProcessBatchAsync(CancellationToken.None);
 
     private sealed class StubServiceProvider(IAppDbContext context, StubPublishEndpoint endpoint, IClock clock) : IServiceProvider

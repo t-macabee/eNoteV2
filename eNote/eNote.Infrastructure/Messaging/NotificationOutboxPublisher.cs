@@ -15,7 +15,7 @@ using System.Text.Json;
 
 namespace eNote.Infrastructure.Messaging;
 
-public sealed class RentalNotificationOutboxPublisher(IServiceProvider services, ILogger<RentalNotificationOutboxPublisher> logger, TimeSpan? interval = null) : BackgroundService
+public sealed class NotificationOutboxPublisher(IServiceProvider services, ILogger<NotificationOutboxPublisher> logger, TimeSpan? interval = null) : BackgroundService
 {
     private static readonly TimeSpan Interval = TimeSpan.FromSeconds(5);
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);

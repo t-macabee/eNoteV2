@@ -147,7 +147,7 @@ public sealed class DiResolutionTests
     }
 
     private static bool RegistersOutboxPublisher(ServiceCollection services) =>
-        services.Any(d => d.ServiceType == typeof(IHostedService) && d.ImplementationType == typeof(RentalNotificationOutboxPublisher));
+        services.Any(d => d.ServiceType == typeof(IHostedService) && d.ImplementationType == typeof(NotificationOutboxPublisher));
 
     private static bool IsRegistered(ServiceCollection services, Type serviceType) =>
         services.Any(d => d.ServiceType == serviceType);
