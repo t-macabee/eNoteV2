@@ -124,4 +124,56 @@ void main() {
     expect(find.byType(Dialog), findsOneWidget);
     expect(find.byType(RentalDetailDialog), findsOneWidget);
   });
+
+  testWidgets('the instrument filter loads every page of instruments', (
+    tester,
+  ) async {
+    final client = ScriptedClient((request) {
+      final path = request.url.path;
+      if (path.contains('shop/instruments')) {
+        final page = int.parse(request.url.queryParameters['page'] ?? '1');
+        return jsonResponse({
+          'items': [
+            for (var i = 0; i < (page == 1 ? 100 : 50); i++)
+              {
+                'id': page * 1000 + i,
+                'model': 'Instrument ${page * 1000 + i}',
+                'manufacturer': 'Fender',
+                'instrumentTypeId': 1,
+                'instrumentType': 'Gitara',
+                'musicStore': 'Shop',
+                'isAvailable': true,
+              },
+          ],
+          'page': page,
+          'pageSize': 100,
+          'totalCount': 150,
+        }, 200);
+      }
+      if (path.contains('shop/rentals')) {
+        return jsonResponse(const {
+          'items': [],
+          'page': 1,
+          'pageSize': 20,
+          'totalCount': 0,
+        }, 200);
+      }
+      return jsonResponse(const {}, 200);
+    });
+
+    await _pumpList(tester, client);
+
+    final instrumentUrls =
+        client.getUrls.where((u) => u.contains('shop/instruments')).toList();
+    expect(instrumentUrls, hasLength(2));
+    expect(instrumentUrls.first, contains('page=1'));
+    expect(instrumentUrls.last, contains('page=2'));
+
+    final dropdown = tester.widget<DropdownButton<Object>>(
+      find.byType(DropdownButton<Object>),
+    );
+    expect(dropdown.items, hasLength(151));
+    expect((dropdown.items!.first.child as Text).data, 'Svi instrumenti');
+    expect((dropdown.items!.last.child as Text).data, 'Instrument 2049');
+  });
 }

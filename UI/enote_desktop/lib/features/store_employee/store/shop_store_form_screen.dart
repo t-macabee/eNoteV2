@@ -104,11 +104,9 @@ class _ShopStoreFormScreenState extends State<ShopStoreFormScreen>
         AsyncDropdown<AddressReferenceDto>(
           label: 'Adresa',
           value: _selectedAddressId,
-          fetcher: () async {
-            final provider = context.read<ShopAddressProvider>();
-            final result = await provider.search(pagedQuery(1, 100, ''));
-            return result.items;
-          },
+          fetcher: () => fetchAllPages(
+            (query) => context.read<ShopAddressProvider>().search(query),
+          ),
           itemLabel: (item) => '${item.street} ${item.number}, ${item.city}',
           itemId: (item) => item.id,
           onChanged: (id, item) {

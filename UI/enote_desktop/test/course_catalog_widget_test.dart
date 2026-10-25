@@ -21,7 +21,17 @@ void main() {
 
     final mockClient = ScriptedClient((req) async {
       if (req.url.path.endsWith('/instructors')) {
-        return http.Response(jsonEncode([{'id': 1, 'name': 'Mozart'}]), 200);
+        return http.Response(
+          jsonEncode({
+            'items': [
+              {'id': 1, 'name': 'Mozart'},
+            ],
+            'page': 1,
+            'pageSize': 100,
+            'totalCount': 1,
+          }),
+          200,
+        );
       }
       if (req.url.path.endsWith('/summary')) {
         return http.Response(jsonEncode({'totalCourses': 42, 'totalStudents': 128}), 200);
@@ -206,5 +216,86 @@ void main() {
     expect(find.text('Beethoven'), findsOneWidget);
     expect(find.text('Individualni plan'), findsOneWidget);
     expect(find.text('Individualni čas'), findsOneWidget);
+  });
+
+  testWidgets('the instructor filter loads every page and sorts by name', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1400, 900);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+
+    final mockClient = ScriptedClient((req) async {
+      if (req.url.path.endsWith('/instructors')) {
+        final page = int.parse(req.url.queryParameters['page'] ?? '1');
+        final names = page == 1
+            ? [for (var i = 0; i < 100; i++) 'Instructor $i']
+            : ['Zoe', 'Aaron'];
+        return http.Response(
+          jsonEncode({
+            'items': [
+              for (final (index, name) in names.indexed)
+                {'id': page * 1000 + index, 'name': name},
+            ],
+            'page': page,
+            'pageSize': 100,
+            'totalCount': 102,
+          }),
+          200,
+        );
+      }
+      if (req.url.path.endsWith('/summary')) {
+        return http.Response(
+          jsonEncode({'totalCourses': 1, 'totalStudents': 1}),
+          200,
+        );
+      }
+      return http.Response(
+        jsonEncode({
+          'items': [],
+          'page': 1,
+          'pageSize': 20,
+          'totalCount': 0,
+        }),
+        200,
+      );
+    });
+
+    final apiClient = ApiClient(
+      baseUrl: 'http://localhost:5059/api/v1/',
+      authState: AuthState(),
+      httpClient: mockClient,
+    );
+
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          Provider<ApiClient>.value(value: apiClient),
+          ChangeNotifierProvider(
+            create: (_) => CourseCatalogProvider(apiClient: apiClient),
+          ),
+        ],
+        child: const MaterialApp(
+          home: CourseCatalogScreen(),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    final instructorUrls = mockClient.requestedUrls
+        .where((url) => url.contains('catalog/instructors'))
+        .toList();
+    expect(instructorUrls, hasLength(2));
+    expect(instructorUrls.first, contains('page=1'));
+    expect(instructorUrls.last, contains('page=2'));
+
+    final dropdown = tester.widget<DropdownButton<Object>>(
+      find.byType(DropdownButton<Object>),
+    );
+    expect(dropdown.items, hasLength(103));
+    expect((dropdown.items!.first.child as Text).data, 'Svi instruktori');
+    expect((dropdown.items![1].child as Text).data, 'Aaron');
+    expect((dropdown.items!.last.child as Text).data, 'Zoe');
   });
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
+import '../../../widgets/async_dropdown.dart';
 import '../../../widgets/entity_filter_dropdown.dart';
 import '../../../widgets/entity_list_screen.dart';
 import '../../../widgets/pdf_report_button.dart';
@@ -26,38 +27,6 @@ class _RentalListScreenState extends State<RentalListScreen> {
   final _listKey = GlobalKey<EntityListScreenState<InstrumentRentalDto>>();
   InstrumentRentalStatus? _selectedStatus;
   int? _selectedInstrumentId;
-  List<InstrumentDto> _instruments = [];
-  bool _instrumentsLoading = true;
-  String? _instrumentsError;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadInstruments();
-  }
-
-  Future<void> _loadInstruments() async {
-    setState(() {
-      _instrumentsLoading = true;
-      _instrumentsError = null;
-    });
-    try {
-      final result = await context
-          .read<InstrumentProvider>()
-          .search(pagedQuery(1, 100, ''));
-      if (!mounted) return;
-      setState(() {
-        _instruments = result.items;
-        _instrumentsLoading = false;
-      });
-    } catch (_) {
-      if (!mounted) return;
-      setState(() {
-        _instrumentsError = 'Filteri nisu učitani.';
-        _instrumentsLoading = false;
-      });
-    }
-  }
 
   Widget _buildFilterBar() {
     return Padding(
@@ -80,24 +49,18 @@ class _RentalListScreenState extends State<RentalListScreen> {
             },
           ),
           const SizedBox(width: 16),
-          EntityFilterDropdown<int?>(
+          AsyncDropdown<InstrumentDto>(
             label: 'Instrument',
             width: 220,
-            outlined: true,
+            emptyOptionLabel: 'Svi instrumenti',
             value: _selectedInstrumentId,
-            isLoading: _instrumentsLoading,
-            errorText: _instrumentsError,
-            onRetry: _loadInstruments,
-            items: [
-              const DropdownMenuItem(value: null, child: Text('Svi instrumenti')),
-              for (final instrument in _instruments)
-                DropdownMenuItem(
-                  value: instrument.id,
-                  child: Text(instrument.model),
-                ),
-            ],
-            onChanged: (value) {
-              setState(() => _selectedInstrumentId = value);
+            fetcher: () => fetchAllPages(
+              (query) => context.read<InstrumentProvider>().search(query),
+            ),
+            itemLabel: (instrument) => instrument.model,
+            itemId: (instrument) => instrument.id,
+            onChanged: (value, _) {
+              setState(() => _selectedInstrumentId = value as int?);
               _listKey.currentState?.refresh();
             },
           ),

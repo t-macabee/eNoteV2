@@ -1,5 +1,6 @@
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Paging;
+using eNote.Application.Common.Search;
 using eNote.Application.Features.Academic.Courses;
 using eNote.Application.Features.Academic.Courses.Services;
 using eNote.Application.Features.Identity.Users;
@@ -362,7 +363,7 @@ public sealed class CourseServiceTests
     }
 
     [Fact]
-    public async Task GetCatalogInstructorsAsync_ReturnsDistinctInstructors_SortedByName()
+    public async Task GetPagedCatalogInstructorsAsync_ReturnsDistinctInstructors_OrderedById()
     {
         var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
         var otherInstructor1 = new Instructor(200);
@@ -383,12 +384,44 @@ public sealed class CourseServiceTests
         });
         var service = CreateService(harness.Context, harness.Instructor, identity: identity);
 
-        var result = await service.GetCatalogInstructorsAsync();
+        var result = await service.GetPagedCatalogInstructorsAsync(new BaseSearchObject());
 
-        Assert.Equal(2, result.Count);
-        Assert.Equal("Alice Smith", result[0].Name);
-        Assert.Equal("Jane Doe", result[1].Name);
-        Assert.DoesNotContain(result, x => x.Name == "Charlie Brown");
+        Assert.Equal(2, result.TotalCount);
+        Assert.Equal(2, result.Items.Count);
+        Assert.Equal("Jane Doe", result.Items[0].Name);
+        Assert.Equal("Alice Smith", result.Items[1].Name);
+        Assert.DoesNotContain(result.Items, x => x.Name == "Charlie Brown");
+    }
+
+    [Fact]
+    public async Task GetPagedCatalogInstructorsAsync_PagesInTheDatabase_AndKeepsTotalCountExact()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var otherInstructor = new Instructor(200);
+        var thirdInstructor = new Instructor(300);
+        harness.Context.Set<Instructor>().AddRange(otherInstructor, thirdInstructor);
+        var otherCourse = new Course("Violin", null, 90m, Now, Now.AddMonths(4), otherInstructor.Id);
+        otherCourse.SetPublishedStatus(true);
+        var thirdCourse = new Course("Cello", null, 80m, Now, Now.AddMonths(3), thirdInstructor.Id);
+        thirdCourse.SetPublishedStatus(true);
+        harness.Context.Set<Course>().AddRange(otherCourse, thirdCourse);
+        await harness.Context.SaveChangesAsync();
+
+        var identity = new StubUserIdentityService(new Dictionary<int, UserIdentityDto>
+        {
+            [100] = StubUserIdentityService.User(100, "jdoe", "Jane", "Doe"),
+            [200] = StubUserIdentityService.User(200, "asmith", "Alice", "Smith"),
+            [300] = StubUserIdentityService.User(300, "cbrown", "Charlie", "Brown")
+        });
+        var service = CreateService(harness.Context, harness.Instructor, identity: identity);
+
+        var firstPage = await service.GetPagedCatalogInstructorsAsync(new BaseSearchObject { Page = 1, PageSize = 2 });
+        var secondPage = await service.GetPagedCatalogInstructorsAsync(new BaseSearchObject { Page = 2, PageSize = 2 });
+
+        Assert.Equal(3, firstPage.TotalCount);
+        Assert.Equal(new[] { "Jane Doe", "Alice Smith" }, firstPage.Items.Select(x => x.Name).ToArray());
+        Assert.Equal(3, secondPage.TotalCount);
+        Assert.Equal("Charlie Brown", Assert.Single(secondPage.Items).Name);
     }
 
     [Fact]

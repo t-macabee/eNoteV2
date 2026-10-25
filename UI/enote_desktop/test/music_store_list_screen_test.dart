@@ -61,6 +61,74 @@ ScriptedClient _client() => ScriptedClient((request) {
 });
 
 void main() {
+  testWidgets('the city filter loads every page of cities', (tester) async {
+    tester.view.physicalSize = const Size(1280, 800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final client = ScriptedClient((request) {
+      final url = request.url.toString();
+
+      if (url.contains('admin/cities')) {
+        final page = int.parse(request.url.queryParameters['page'] ?? '1');
+        return jsonResponse({
+          'items': [
+            for (var i = 0; i < (page == 1 ? 100 : 50); i++)
+              {'id': page * 1000 + i, 'name': 'Grad ${page * 1000 + i}'},
+          ],
+          'page': page,
+          'pageSize': 100,
+          'totalCount': 150,
+        }, 200);
+      }
+
+      return jsonResponse(const {
+        'items': [],
+        'page': 1,
+        'pageSize': 20,
+        'totalCount': 0,
+      }, 200);
+    });
+
+    final apiClient = ApiClient(
+      baseUrl: 'http://localhost:5059/api/v1/',
+      authState: AuthState(baseUrl: 'http://localhost:5059/api/v1/'),
+      httpClient: client,
+    );
+
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          Provider<ApiClient>.value(value: apiClient),
+          ChangeNotifierProvider<MusicStoreProvider>.value(
+            value: MusicStoreProvider(apiClient: apiClient),
+          ),
+          ChangeNotifierProvider<CityProvider>.value(
+            value: CityProvider(apiClient: apiClient),
+          ),
+        ],
+        child: const MaterialApp(home: MusicStoreListScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final cityUrls =
+        client.getUrls.where((u) => u.contains('admin/cities')).toList();
+    expect(cityUrls, hasLength(2));
+    expect(cityUrls[0], contains('page=1'));
+    expect(cityUrls[0], contains('pageSize=100'));
+    expect(cityUrls[1], contains('page=2'));
+
+    final dropdown = tester.widget<DropdownButton<Object>>(
+      find.byType(DropdownButton<Object>),
+    );
+    expect(dropdown.items, hasLength(151));
+    expect(dropdown.items!.first.value, isNull);
+    expect((dropdown.items!.first.child as Text).data, 'Svi gradovi');
+    expect((dropdown.items!.last.child as Text).data, 'Grad 2049');
+  });
+
   testWidgets('the store grid shows the placeholder for a null image and '
       'passes imagePath when one is set', (tester) async {
     tester.view.physicalSize = const Size(1280, 800);

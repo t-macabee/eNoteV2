@@ -83,13 +83,9 @@ class _UserProvisionFormScreenState extends State<UserProvisionFormScreen> {
         if (_role == UserRole.storeEmployee) ...[
           AsyncDropdown<MusicStoreDto>(
             label: 'Prodavnica',
-            fetcher: () async {
-              final result = await context.read<MusicStoreProvider>().search({
-                'page': 1,
-                'pageSize': 100,
-              });
-              return result.items;
-            },
+            fetcher: () => fetchAllPages(
+              (query) => context.read<MusicStoreProvider>().search(query),
+            ),
             itemLabel: (store) => store.storeName,
             itemId: (store) => store.id,
             value: _musicStoreId,

@@ -9,11 +9,6 @@ class EntityFilterDropdown<T> extends StatelessWidget {
   final bool isExpanded;
   final bool outlined;
 
-  final bool isLoading;
-
-  final String? errorText;
-  final VoidCallback? onRetry;
-
   const EntityFilterDropdown({
     super.key,
     required this.label,
@@ -23,54 +18,10 @@ class EntityFilterDropdown<T> extends StatelessWidget {
     this.width = 220,
     this.isExpanded = true,
     this.outlined = false,
-    this.isLoading = false,
-    this.errorText,
-    this.onRetry,
   });
 
   @override
   Widget build(BuildContext context) {
-    if (errorText != null) {
-      return SizedBox(
-        width: width,
-        child: InputDecorator(
-          decoration: InputDecoration(
-            labelText: label,
-            border: const OutlineInputBorder(),
-            errorText: errorText,
-            suffixIcon: IconButton(
-              icon: const Icon(Icons.refresh),
-              tooltip: 'Pokušaj ponovo',
-              onPressed: onRetry,
-            ),
-          ),
-          child: const Text('-'),
-        ),
-      );
-    }
-
-    if (isLoading) {
-      return SizedBox(
-        width: width,
-        child: InputDecorator(
-          decoration: InputDecoration(
-            labelText: label,
-            border: const OutlineInputBorder(),
-          ),
-          child: const SizedBox(
-            height: 20,
-            child: Center(
-              child: SizedBox(
-                width: 16,
-                height: 16,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              ),
-            ),
-          ),
-        ),
-      );
-    }
-
     return SizedBox(
       width: width,
       child: DropdownButtonFormField<T>(

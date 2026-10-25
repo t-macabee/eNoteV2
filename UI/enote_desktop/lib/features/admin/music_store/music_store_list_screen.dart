@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
-import '../../../widgets/entity_filter_dropdown.dart';
+import '../../../widgets/async_dropdown.dart';
 import '../../../widgets/entity_form_scaffold.dart';
 import '../../../widgets/entity_grid_screen.dart';
 import '../../../widgets/pdf_report_button.dart';
@@ -22,36 +22,6 @@ class _MusicStoreListScreenState extends State<MusicStoreListScreen> {
   final _gridKey = GlobalKey<EntityGridScreenState<MusicStoreDto>>();
 
   int? _cityId;
-  List<CityDto> _cities = [];
-  bool _citiesLoading = true;
-  String? _citiesError;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadCities();
-  }
-
-  Future<void> _loadCities() async {
-    setState(() {
-      _citiesLoading = true;
-      _citiesError = null;
-    });
-    try {
-      final result = await context.read<CityProvider>().search(pagedQuery(1, 100, ''));
-      if (!mounted) return;
-      setState(() {
-        _cities = result.items;
-        _citiesLoading = false;
-      });
-    } catch (_) {
-      if (!mounted) return;
-      setState(() {
-        _citiesError = 'Filteri nisu učitani.';
-        _citiesLoading = false;
-      });
-    }
-  }
 
   void _applyFilters() {
     setState(() {});
@@ -82,22 +52,18 @@ class _MusicStoreListScreenState extends State<MusicStoreListScreen> {
           await MusicStoreDetailDialog.show(context, item.id);
           _gridKey.currentState?.refresh();
         },
-        filterBar: EntityFilterDropdown<int?>(
+        filterBar: AsyncDropdown<CityDto>(
           label: 'Grad',
           width: 220,
-          isExpanded: false,
+          emptyOptionLabel: 'Svi gradovi',
           value: _cityId,
-          isLoading: _citiesLoading,
-          errorText: _citiesError,
-          onRetry: _loadCities,
-          items: [
-            const DropdownMenuItem(value: null, child: Text('Svi gradovi')),
-            ..._cities.map(
-              (city) => DropdownMenuItem(value: city.id, child: Text(city.name)),
-            ),
-          ],
-          onChanged: (cityId) {
-            _cityId = cityId;
+          fetcher: () => fetchAllPages(
+            (query) => context.read<CityProvider>().search(query),
+          ),
+          itemLabel: (city) => city.name,
+          itemId: (city) => city.id,
+          onChanged: (cityId, _) {
+            _cityId = cityId as int?;
             _applyFilters();
           },
         ),

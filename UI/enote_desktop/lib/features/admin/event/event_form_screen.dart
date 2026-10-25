@@ -116,13 +116,9 @@ class _EventFormScreenState extends State<EventFormScreen>
         ),
         AsyncDropdown<AddressReferenceDto>(
           label: 'Adresa',
-          fetcher: () async {
-            final result = await context.read<AddressProvider>().search({
-              'page': 1,
-              'pageSize': 200,
-            });
-            return result.items;
-          },
+          fetcher: () => fetchAllPages(
+            (query) => context.read<AddressProvider>().search(query),
+          ),
           itemLabel: (address) =>
               '${address.street} ${address.number}, ${address.city}',
           itemId: (address) => address.id,

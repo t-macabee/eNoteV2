@@ -67,11 +67,9 @@ class _AddressFormScreenState extends State<AddressFormScreen>
         AsyncDropdown<CityDto>(
           label: 'Grad',
           value: _selectedCityId,
-          fetcher: () async {
-            final provider = context.read<CityProvider>();
-            final result = await provider.search(pagedQuery(1, 100, ''));
-            return result.items;
-          },
+          fetcher: () => fetchAllPages(
+            (query) => context.read<CityProvider>().search(query),
+          ),
           itemLabel: (item) => item.name,
           itemId: (item) => item.id,
           onChanged: (id, item) {

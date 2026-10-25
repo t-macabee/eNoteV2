@@ -123,11 +123,9 @@ class _InstrumentFormScreenState extends State<InstrumentFormScreen>
         AsyncDropdown<InstrumentTypeDto>(
           label: 'Tip instrumenta',
           value: _selectedInstrumentTypeId,
-          fetcher: () async {
-            final provider = context.read<ShopInstrumentTypeProvider>();
-            final result = await provider.search(pagedQuery(1, 100, ''));
-            return result.items;
-          },
+          fetcher: () => fetchAllPages(
+            (query) => context.read<ShopInstrumentTypeProvider>().search(query),
+          ),
           itemLabel: (item) => item.type,
           itemId: (item) => item.id,
           onChanged: (id, item) {

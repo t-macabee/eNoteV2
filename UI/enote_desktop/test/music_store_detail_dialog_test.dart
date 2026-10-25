@@ -169,7 +169,7 @@ void main() {
         reason: 'public instruments endpoint must use search. prefixed keys',
       );
 
-      await tester.tap(find.byType(DropdownButtonFormField<int?>));
+      await tester.tap(find.byType(DropdownButtonFormField<Object>));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Klavir').last);
       await tester.pumpAndSettle();
@@ -257,15 +257,15 @@ void main() {
 
       await _pumpDialog(tester, apiClient);
 
-      expect(find.text('Filteri nisu učitani.'), findsOneWidget);
+      expect(find.text('Neuspjelo učitavanje.'), findsOneWidget);
 
       await tester.tap(find.byTooltip('Pokušaj ponovo'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Filteri nisu učitani.'), findsNothing);
+      expect(find.text('Neuspjelo učitavanje.'), findsNothing);
       expect(typeCalls, 2);
 
-      await tester.tap(find.byType(DropdownButtonFormField<int?>));
+      await tester.tap(find.byType(DropdownButtonFormField<Object>));
       await tester.pumpAndSettle();
       expect(find.text('Klavir'), findsOneWidget);
     },
@@ -296,5 +296,75 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(MusicStoreDetailDialog), findsNothing);
+  });
+
+  testWidgets('the instrument-type filter loads every page of instrument types', (
+    WidgetTester tester,
+  ) async {
+    tester.view.physicalSize = const Size(1280, 800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final httpClient = ScriptedClient((request) {
+      final url = request.url.toString();
+
+      if (url.contains('admin/instrument-types')) {
+        final page = int.parse(request.url.queryParameters['page'] ?? '1');
+        return jsonResponse({
+          'items': [
+            for (var i = 0; i < (page == 1 ? 100 : 50); i++)
+              {
+                'id': page * 1000 + i,
+                'type': 'Tip ${page * 1000 + i}',
+                'monthlyFee': 50.0,
+              },
+          ],
+          'page': page,
+          'pageSize': 100,
+          'totalCount': 150,
+        }, 200);
+      }
+
+      if (url.contains('admin/music-stores/1')) {
+        return jsonResponse(const {
+          'id': 1,
+          'storeName': 'Muzička Kuća Sarajevo',
+          'businessHours': '09:00 - 19:00',
+          'addressCity': 'Sarajevo',
+        }, 200);
+      }
+
+      return jsonResponse(const {
+        'items': [],
+        'page': 1,
+        'pageSize': 24,
+        'totalCount': 0,
+      }, 200);
+    });
+
+    final apiClient = ApiClient(
+      baseUrl: 'http://localhost:5059/api/v1/',
+      authState: AuthState(baseUrl: 'http://localhost:5059/api/v1/'),
+      httpClient: httpClient,
+    );
+
+    await _pumpDialog(tester, apiClient);
+
+    final typeUrls = httpClient.getUrls
+        .where((url) => url.contains('admin/instrument-types'))
+        .toList();
+    expect(typeUrls, hasLength(2));
+    expect(typeUrls.first, contains('page=1'));
+    expect(typeUrls.last, contains('page=2'));
+
+    final dropdown = tester.widget<DropdownButton<Object>>(
+      find.byType(DropdownButton<Object>),
+    );
+    expect(dropdown.items, hasLength(151));
+    expect(dropdown.items!.first.value, isNull);
+    expect(dropdown.items!.last.value, 2049);
   });
 }

@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
 import '../../../theme/app_theme.dart';
-import '../../../widgets/entity_filter_dropdown.dart';
+import '../../../widgets/async_dropdown.dart';
 import '../../../widgets/entity_form_scaffold.dart';
 import '../../../widgets/entity_grid_screen.dart';
 import '../../../widgets/store_profile_panel.dart';
@@ -31,9 +31,6 @@ class _ShopStoreScreenState extends State<ShopStoreScreen> {
   bool _isLoading = true;
   String? _errorMessage;
   int? _instrumentTypeId;
-  List<InstrumentTypeDto> _instrumentTypes = [];
-  bool _instrumentTypesLoading = true;
-  String? _instrumentTypesError;
 
   @override
   void initState() {
@@ -44,31 +41,6 @@ class _ShopStoreScreenState extends State<ShopStoreScreen> {
     } else {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _loadStore();
-      });
-    }
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadInstrumentTypes();
-    });
-  }
-
-  Future<void> _loadInstrumentTypes() async {
-    setState(() {
-      _instrumentTypesLoading = true;
-      _instrumentTypesError = null;
-    });
-    try {
-      final provider = context.read<ShopInstrumentTypeProvider>();
-      final result = await provider.search(pagedQuery(1, 100, ''));
-      if (!mounted) return;
-      setState(() {
-        _instrumentTypes = result.items;
-        _instrumentTypesLoading = false;
-      });
-    } catch (_) {
-      if (!mounted) return;
-      setState(() {
-        _instrumentTypesError = 'Filteri nisu učitani.';
-        _instrumentTypesLoading = false;
       });
     }
   }
@@ -180,27 +152,18 @@ class _ShopStoreScreenState extends State<ShopStoreScreen> {
                   _gridKey.currentState?.refresh();
                 }
               },
-              filterBar: EntityFilterDropdown<int?>(
+              filterBar: AsyncDropdown<InstrumentTypeDto>(
                 label: 'Tip instrumenta',
                 width: 220,
+                emptyOptionLabel: 'Svi instrumenti',
                 value: _instrumentTypeId,
-                isLoading: _instrumentTypesLoading,
-                errorText: _instrumentTypesError,
-                onRetry: _loadInstrumentTypes,
-                items: [
-                  const DropdownMenuItem(
-                    value: null,
-                    child: Text('Svi instrumenti'),
-                  ),
-                  ..._instrumentTypes.map(
-                    (type) => DropdownMenuItem(
-                      value: type.id,
-                      child: Text(type.type),
-                    ),
-                  ),
-                ],
-                onChanged: (typeId) {
-                  _instrumentTypeId = typeId;
+                fetcher: () => fetchAllPages(
+                  (query) => context.read<ShopInstrumentTypeProvider>().search(query),
+                ),
+                itemLabel: (type) => type.type,
+                itemId: (type) => type.id,
+                onChanged: (typeId, _) {
+                  _instrumentTypeId = typeId as int?;
                   _applyFilters();
                 },
               ),

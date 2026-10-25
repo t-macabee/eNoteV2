@@ -23,6 +23,7 @@ export 'models/rentals/payment_models.dart';
 export 'models/payments/tuition_models.dart';
 export 'paging/paged_result.dart';
 export 'paging/paged_query.dart';
+export 'paging/fetch_all_pages.dart';
 export 'providers/base_provider.dart';
 export 'providers/membership_payments_api.dart';
 export 'validators/validators.dart';

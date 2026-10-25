@@ -282,4 +282,110 @@ void main() {
     expect(find.text('Drums 101'), findsOneWidget);
     expect(find.text('Učitaj još'), findsNothing);
   });
+
+  testWidgets('individual lectures load one page at a time', (
+    tester,
+  ) async {
+    final requestedPages = <String?>[];
+    final apiClient = ApiClient(
+      baseUrl: 'http://localhost:5059/api/v1/',
+      authState: AuthState(),
+      httpClient: ScriptedClient((request) {
+        if (request.url.path.endsWith('/membership-payments')) {
+          return jsonResponse({
+            'items': [],
+            'page': 1,
+            'pageSize': 5,
+            'totalCount': 0,
+          }, 200);
+        }
+        if (request.url.path.endsWith('/enrollments')) {
+          return jsonResponse({
+            'items': [],
+            'page': 1,
+            'pageSize': 5,
+            'totalCount': 0,
+          }, 200);
+        }
+        if (request.url.path.endsWith('/lectures')) {
+          final page = int.parse(request.url.queryParameters['page'] ?? '1');
+          requestedPages.add(request.url.queryParameters['page']);
+          final start = page == 1 ? 1 : 6;
+
+          return jsonResponse({
+            'items': [
+              for (var i = start; i < start + (page == 1 ? 5 : 1); i++)
+                {
+                  'id': 20 + i,
+                  'studentId': 5,
+                  'studentName': 'Johann Bach',
+                  'name': 'Individualni čas $i',
+                  'location': 'Učionica 2',
+                  'lectureType': 'Practical',
+                  'lectureStatus': 'Scheduled',
+                  'isCancelled': false,
+                  'lectureTime': '2026-09-14T18:00:00Z',
+                  'duration': 45,
+                  'capacity': 1,
+                  'attendeeCount': 0,
+                },
+            ],
+            'page': page,
+            'pageSize': 5,
+            'totalCount': 6,
+          }, 200);
+        }
+        return jsonResponse({
+          'id': 5,
+          'appUserId': 50,
+          'firstName': 'Johann',
+          'lastName': 'Bach',
+          'username': 'jbach',
+          'membershipPaidUntil': '2027-01-01T00:00:00Z',
+        }, 200);
+      }),
+    );
+
+    final student = StudentDto(
+      id: 5,
+      appUserId: 50,
+      firstName: 'Johann',
+      lastName: 'Bach',
+      username: 'jbach',
+    );
+
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          Provider<ApiClient>.value(value: apiClient),
+          ChangeNotifierProvider(
+            create: (_) => InstructorStudentProvider(apiClient: apiClient),
+          ),
+          ChangeNotifierProvider(
+            create: (_) => LectureProvider(apiClient: apiClient),
+          ),
+        ],
+        child: MaterialApp(
+          home: Scaffold(
+            body: InstructorStudentDetailsDialog(student: student),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Individualni čas 1'), findsOneWidget);
+    expect(find.text('Individualni čas 5'), findsOneWidget);
+    expect(find.text('Individualni čas 6'), findsNothing);
+    expect(requestedPages, ['1']);
+
+    await tester.ensureVisible(find.text('Učitaj još'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Učitaj još'));
+    await tester.pumpAndSettle();
+
+    expect(requestedPages, ['1', '2']);
+    expect(find.text('Individualni čas 6'), findsOneWidget);
+    expect(find.text('Učitaj još'), findsNothing);
+  });
 }

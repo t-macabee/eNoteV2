@@ -1,5 +1,6 @@
 using eNote.API.Controllers.Base;
 using eNote.Application.Common.Paging;
+using eNote.Application.Common.Search;
 using eNote.Application.Constants;
 using eNote.Application.Features.Academic.Courses;
 using eNote.Application.Features.Academic.Courses.Services;
@@ -51,10 +52,10 @@ public sealed class CourseController(
 
     [Authorize(Roles = AppRoles.Instructor)]
     [HttpGet("~/api/v{version:apiVersion}/instructor/courses/catalog/instructors")]
-    [ProducesResponseType(typeof(List<CourseCatalogInstructorDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<List<CourseCatalogInstructorDto>>> GetCatalogInstructors(CancellationToken cancellationToken)
+    [ProducesResponseType(typeof(PagedResult<CourseCatalogInstructorDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<PagedResult<CourseCatalogInstructorDto>>> GetCatalogInstructors([FromQuery] BaseSearchObject search, CancellationToken cancellationToken)
     {
-        var result = await service.GetCatalogInstructorsAsync(cancellationToken);
+        var result = await service.GetPagedCatalogInstructorsAsync(search, cancellationToken);
         return Ok(result);
     }
 

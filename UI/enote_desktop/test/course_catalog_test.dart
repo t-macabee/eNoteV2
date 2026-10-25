@@ -11,15 +11,22 @@ import 'helpers.dart';
 
 void main() {
   group('CourseCatalogProvider', () {
-    test('getCatalogInstructors fetches from instructor/courses/catalog/instructors', () async {
+    test('getCatalogInstructors fetches a page from instructor/courses/catalog/instructors', () async {
       final mockClient = ScriptedClient((req) async {
         expect(req.url.path, '/api/v1/instructor/courses/catalog/instructors');
         expect(req.method, 'GET');
+        expect(req.url.queryParameters['page'], '2');
+        expect(req.url.queryParameters['pageSize'], '100');
         return http.Response(
-          jsonEncode([
-            {'id': 1, 'name': 'Professor Piano'},
-            {'id': 2, 'name': 'Maestro Guitar'},
-          ]),
+          jsonEncode({
+            'items': [
+              {'id': 1, 'name': 'Professor Piano'},
+              {'id': 2, 'name': 'Maestro Guitar'},
+            ],
+            'page': 2,
+            'pageSize': 100,
+            'totalCount': 102,
+          }),
           200,
         );
       });
@@ -31,13 +38,18 @@ void main() {
       );
       final provider = CourseCatalogProvider(apiClient: apiClient);
 
-      final instructors = await provider.getCatalogInstructors();
+      final instructors = await provider.getCatalogInstructors(
+        params: pagedQuery(2, 100, ''),
+      );
 
-      expect(instructors.length, 2);
-      expect(instructors[0].id, 1);
-      expect(instructors[0].name, 'Professor Piano');
-      expect(instructors[1].id, 2);
-      expect(instructors[1].name, 'Maestro Guitar');
+      expect(instructors.items.length, 2);
+      expect(instructors.page, 2);
+      expect(instructors.totalCount, 102);
+      expect(instructors.hasNext, isFalse);
+      expect(instructors.items[0].id, 1);
+      expect(instructors.items[0].name, 'Professor Piano');
+      expect(instructors.items[1].id, 2);
+      expect(instructors.items[1].name, 'Maestro Guitar');
     });
 
     test('getCatalogSummary fetches from instructor/courses/catalog/summary', () async {      final mockClient = ScriptedClient((req) async {

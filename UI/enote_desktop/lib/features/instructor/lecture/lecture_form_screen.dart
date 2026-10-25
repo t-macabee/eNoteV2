@@ -67,17 +67,15 @@ class _LectureFormScreenState extends State<LectureFormScreen>
 
   Future<void> _loadCourseStudents() async {
     try {
-      final result = await context.read<CourseProvider>().getEnrollments(
-            widget.courseId,
-            params: pagedQuery(
-              1,
-              100,
-              '',
-              filters: {'enrollmentStatus': EnrollmentStatus.active.toJson()},
-            ),
-          );
+      final courseId = widget.courseId;
+      final students = await fetchAllPages(
+        (query) => context
+            .read<CourseProvider>()
+            .getEnrollments(courseId, params: query),
+        filters: {'enrollmentStatus': EnrollmentStatus.active.toJson()},
+      );
       if (mounted) {
-        setState(() => _courseStudents = result.items);
+        setState(() => _courseStudents = students);
       }
     } catch (e) {
       if (mounted) {

@@ -10,6 +10,8 @@ class AsyncDropdown<T> extends StatefulWidget {
   final String? Function(Object? value)? validator;
   final bool enabled;
   final String hint;
+  final String? emptyOptionLabel;
+  final double? width;
 
   const AsyncDropdown({
     super.key,
@@ -22,6 +24,8 @@ class AsyncDropdown<T> extends StatefulWidget {
     this.validator,
     this.enabled = true,
     this.hint = 'Odaberite...',
+    this.emptyOptionLabel,
+    this.width,
   });
 
   @override
@@ -61,6 +65,13 @@ class _AsyncDropdownState<T> extends State<AsyncDropdown<T>> {
 
   @override
   Widget build(BuildContext context) {
+    return SizedBox(
+      width: widget.width,
+      child: _buildField(context),
+    );
+  }
+
+  Widget _buildField(BuildContext context) {
     return FutureBuilder<List<T>>(
       future: _future,
       builder: (context, snapshot) {
@@ -91,6 +102,7 @@ class _AsyncDropdownState<T> extends State<AsyncDropdown<T>> {
               errorText: 'Neuspjelo učitavanje.',
               suffixIcon: IconButton(
                 icon: const Icon(Icons.refresh),
+                tooltip: 'Pokušaj ponovo',
                 onPressed: _reload,
               ),
             ),
@@ -99,7 +111,7 @@ class _AsyncDropdownState<T> extends State<AsyncDropdown<T>> {
         }
 
         final items = snapshot.data ?? const [];
-        final isEmpty = items.isEmpty;
+        final isEmpty = items.isEmpty && widget.emptyOptionLabel == null;
         final currentValue = items.any((e) => widget.itemId(e) == widget.value)
             ? widget.value
             : null;
@@ -119,16 +131,21 @@ class _AsyncDropdownState<T> extends State<AsyncDropdown<T>> {
                   )
                 : null,
           ),
-          hint: Text(widget.hint),
+          hint: Text(widget.emptyOptionLabel ?? widget.hint),
           isExpanded: true,
-          items: items
-              .map(
-                (e) => DropdownMenuItem<Object>(
-                  value: widget.itemId(e),
-                  child: Text(widget.itemLabel(e)),
-                ),
-              )
-              .toList(),
+          items: [
+            if (widget.emptyOptionLabel != null)
+              DropdownMenuItem<Object>(
+                value: null,
+                child: Text(widget.emptyOptionLabel!),
+              ),
+            ...items.map(
+              (e) => DropdownMenuItem<Object>(
+                value: widget.itemId(e),
+                child: Text(widget.itemLabel(e)),
+              ),
+            ),
+          ],
           onChanged: widget.enabled && !isEmpty
               ? (id) {
                   final item = items.cast<T?>().firstWhere(

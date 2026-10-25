@@ -304,7 +304,12 @@ void main() {
         find.widgetWithText(TextFormField, 'Model'), 'Nova gitara');
     await tester.enterText(
         find.widgetWithText(TextFormField, 'Proizvođač'), 'Novi proizvođač');
-    await tester.tap(find.byType(DropdownButtonFormField<Object>));
+    await tester.tap(
+      find.descendant(
+        of: find.byType(Dialog),
+        matching: find.byType(DropdownButtonFormField<Object>),
+      ),
+    );
     await tester.pumpAndSettle();
     await tester.tap(find.text('Gitara').last);
     await tester.pumpAndSettle();
@@ -316,5 +321,71 @@ void main() {
 
     expect(find.text('Nova gitara'), findsOneWidget);
     expect(find.text('Instrument 1'), findsNothing);
+  });
+
+  testWidgets('the instrument-type filter loads every page of instrument types', (
+      WidgetTester tester) async {
+    tester.view.physicalSize = const Size(1280, 800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final httpClient = ScriptedClient((request) {
+      final url = request.url.toString();
+
+      if (url.contains('shop/store')) {
+        return jsonResponse(const {
+          'id': 10,
+          'storeName': 'Muzička Prodavnica',
+          'businessHours': '08:00 - 16:00',
+          'addressCity': 'Sarajevo',
+        }, 200);
+      }
+
+      if (url.contains('shop/instrument-types')) {
+        final page = int.parse(request.url.queryParameters['page'] ?? '1');
+        return jsonResponse({
+          'items': [
+            for (var i = 0; i < (page == 1 ? 100 : 50); i++)
+              {
+                'id': page * 1000 + i,
+                'type': 'Tip ${page * 1000 + i}',
+                'monthlyFee': 50.0,
+              },
+          ],
+          'page': page,
+          'pageSize': 100,
+          'totalCount': 150,
+        }, 200);
+      }
+
+      return jsonResponse(const {
+        'items': [],
+        'page': 1,
+        'pageSize': 20,
+        'totalCount': 0,
+      }, 200);
+    });
+
+    await tester.pumpWidget(
+      _buildTestApp(isManager: false, httpClient: httpClient),
+    );
+    await tester.pumpAndSettle();
+
+    final typeUrls = httpClient.getUrls
+        .where((url) => url.contains('shop/instrument-types'))
+        .toList();
+    expect(typeUrls, hasLength(2));
+    expect(typeUrls.first, contains('page=1'));
+    expect(typeUrls.last, contains('page=2'));
+
+    final dropdown = tester.widget<DropdownButton<Object>>(
+      find.byType(DropdownButton<Object>),
+    );
+    expect(dropdown.items, hasLength(151));
+    expect((dropdown.items!.first.child as Text).data, 'Svi instrumenti');
+    expect((dropdown.items!.last.child as Text).data, 'Tip 2049');
   });
 }

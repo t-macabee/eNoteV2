@@ -116,14 +116,9 @@ class _MusicStoreFormScreenState extends State<MusicStoreFormScreen>
         AsyncDropdown<AddressReferenceDto>(
           label: 'Adresa',
           value: _selectedAddressId,
-          fetcher: () async {
-            final provider = context.read<AddressProvider>();
-            final result = await provider.search({
-              'page': 1,
-              'pageSize': 100,
-            });
-            return result.items;
-          },
+          fetcher: () => fetchAllPages(
+            (query) => context.read<AddressProvider>().search(query),
+          ),
           itemLabel: (item) => '${item.street} ${item.number}, ${item.city}',
           itemId: (item) => item.id,
           onChanged: (id, item) {

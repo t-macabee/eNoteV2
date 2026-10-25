@@ -8,9 +8,19 @@ class CourseCatalogProvider extends ReadOnlyProvider<CourseDto> {
   @override
   CourseDto fromJson(Map<String, dynamic> json) => CourseDto.fromJson(json);
 
-  Future<List<CourseCatalogInstructorDto>> getCatalogInstructors() async {
-    final response = await apiClient.get('$endpoint/instructors');
-    return decodeList(response, CourseCatalogInstructorDto.fromJson);
+  Future<PagedResult<CourseCatalogInstructorDto>> getCatalogInstructors({
+    Map<String, dynamic>? params,
+  }) async {
+    final response = await apiClient.get(
+      '$endpoint/instructors',
+      queryParams: params,
+    );
+    throwIfError(response);
+    return parsePage<CourseCatalogInstructorDto>(
+      response,
+      (json) => CourseCatalogInstructorDto.fromJson(json),
+      params: params,
+    );
   }
 
   Future<CourseCatalogSummaryDto> getCatalogSummary() async {

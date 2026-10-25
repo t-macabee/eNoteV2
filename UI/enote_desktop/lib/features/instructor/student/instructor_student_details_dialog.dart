@@ -34,6 +34,9 @@ class _InstructorStudentDetailsDialogState
   bool _hasMoreEnrollments = false;
   int _enrollmentPage = 1;
   List<LectureDto>? _individualLectures;
+  bool _lecturesLoading = false;
+  bool _hasMoreLectures = false;
+  int _lecturePage = 1;
 
   @override
   void initState() {
@@ -75,22 +78,55 @@ class _InstructorStudentDetailsDialogState
       }
     }
 
+    final studentId = widget.student.id;
     try {
       final lectures = await lectureProvider.search(
             pagedQuery(
               1,
-              100,
+              _enrollmentPageSize,
               '',
-              filters: {'studentId': widget.student.id},
+              filters: {'studentId': studentId},
             ),
           );
       if (mounted) {
-        setState(() => _individualLectures = lectures.items);
+        setState(() {
+          _individualLectures = lectures.items.toList();
+          _lecturePage = lectures.page;
+          _hasMoreLectures = lectures.hasNext;
+        });
       }
     } catch (_) {
       if (mounted) {
         setState(() => _individualLectures = const []);
       }
+    }
+  }
+
+  Future<void> _loadMoreLectures() async {
+    if (_lecturesLoading || !_hasMoreLectures) return;
+
+    setState(() => _lecturesLoading = true);
+    try {
+      final next = await context.read<LectureProvider>().search(
+            pagedQuery(
+              _lecturePage + 1,
+              _enrollmentPageSize,
+              '',
+              filters: {'studentId': widget.student.id},
+            ),
+          );
+      if (!mounted) return;
+      setState(() {
+        _individualLectures = [...?_individualLectures, ...next.items];
+        _lecturePage = next.page;
+        _hasMoreLectures = next.hasNext;
+      });
+    } catch (e) {
+      if (mounted) {
+        ErrorBanner.show(context, message: userMessage(e));
+      }
+    } finally {
+      if (mounted) setState(() => _lecturesLoading = false);
     }
   }
 
@@ -282,6 +318,14 @@ class _InstructorStudentDetailsDialogState
                     onPressed: () => _openNotes(lecture),
                     child: const Text('Bilješke'),
                   ),
+                ),
+              ),
+            if (_hasMoreLectures)
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton(
+                  onPressed: _lecturesLoading ? null : _loadMoreLectures,
+                  child: const Text('Učitaj još'),
                 ),
               ),
           ],

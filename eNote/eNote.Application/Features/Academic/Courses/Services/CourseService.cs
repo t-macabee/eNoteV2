@@ -1,3 +1,4 @@
+using eNote.Application.Common.Search;
 using eNote.Application.Features.Identity.Instructors;
 using eNote.Application.Features.Identity.Users;
 using eNote.Application.Features.Identity.Users.Services;
@@ -52,26 +53,27 @@ public sealed class CourseService(IAppDbContext context, IMapper mapper, ICurren
             cancellationToken);
     }
 
-    public async Task<List<CourseCatalogInstructorDto>> GetCatalogInstructorsAsync(CancellationToken cancellationToken = default)
+    public async Task<PagedResult<CourseCatalogInstructorDto>> GetPagedCatalogInstructorsAsync(BaseSearchObject search, CancellationToken cancellationToken = default)
     {
         var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId, cancellationToken);
 
-        var instructors = await WhereCatalogVisible(context.Set<Course>().AsNoTracking().Include(c => c.Instructor), instructorId)
-            .Select(c => new { c.Instructor.Id, c.Instructor.AppUserId })
-            .Distinct()
-            .ToListAsync(cancellationToken);
+        IQueryable<Instructor> query = WhereCatalogVisible(context.Set<Course>().AsNoTracking(), instructorId)
+            .Select(c => c.Instructor)
+            .Distinct();
 
-        var appUserIds = instructors.Select(i => i.AppUserId).Distinct();
-        var users = await identityService.GetUsersBulkAsync(appUserIds, cancellationToken);
-
-        return instructors
-            .Select(i => new CourseCatalogInstructorDto
+        return await query.ToPagedResultAsync(
+            search,
+            async (instructors, ct) =>
             {
-                Id = i.Id,
-                Name = UserNameHelper.FormatName(users.GetValueOrDefault(i.AppUserId))
-            })
-            .OrderBy(i => i.Name)
-            .ToList();
+                var users = await identityService.GetUsersBulkAsync(instructors.Select(x => x.AppUserId), ct);
+                return instructors.Select(x => new CourseCatalogInstructorDto
+                {
+                    Id = x.Id,
+                    Name = UserNameHelper.FormatName(users.GetValueOrDefault(x.AppUserId))
+                });
+            },
+            q => q.OrderBy(x => x.Id),
+            cancellationToken);
     }
 
     public async Task<CourseCatalogSummaryDto> GetCatalogSummaryAsync(CancellationToken cancellationToken = default)

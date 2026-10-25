@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
-import '../../../widgets/entity_filter_dropdown.dart';
+import '../../../widgets/async_dropdown.dart';
 import '../../../widgets/entity_grid_screen.dart';
 import 'course_catalog_detail_dialog.dart';
 import 'course_catalog_provider.dart';
@@ -18,38 +18,12 @@ class _CourseCatalogScreenState extends State<CourseCatalogScreen> {
   final _gridKey = GlobalKey<EntityGridScreenState<CourseDto>>();
 
   int? _selectedInstructorId;
-  List<CourseCatalogInstructorDto> _instructors = [];
-  bool _instructorsLoading = true;
-  String? _instructorsError;
   CourseCatalogSummaryDto? _summary;
 
   @override
   void initState() {
     super.initState();
-    _loadInstructors();
     _loadSummary();
-  }
-
-  Future<void> _loadInstructors() async {
-    setState(() {
-      _instructorsLoading = true;
-      _instructorsError = null;
-    });
-    try {
-      final instructors =
-          await context.read<CourseCatalogProvider>().getCatalogInstructors();
-      if (!mounted) return;
-      setState(() {
-        _instructors = instructors;
-        _instructorsLoading = false;
-      });
-    } catch (_) {
-      if (!mounted) return;
-      setState(() {
-        _instructorsError = 'Filteri nisu učitani.';
-        _instructorsLoading = false;
-      });
-    }
   }
 
   Future<void> _loadSummary() async {
@@ -65,24 +39,23 @@ class _CourseCatalogScreenState extends State<CourseCatalogScreen> {
   }
 
   Widget _buildFilterBar() {
-    return EntityFilterDropdown<int?>(
+    return AsyncDropdown<CourseCatalogInstructorDto>(
       label: 'Instruktor',
       width: 240,
-      outlined: true,
+      emptyOptionLabel: 'Svi instruktori',
       value: _selectedInstructorId,
-      isLoading: _instructorsLoading,
-      errorText: _instructorsError,
-      onRetry: _loadInstructors,
-      items: [
-        const DropdownMenuItem(value: null, child: Text('Svi instruktori')),
-        for (final instructor in _instructors)
-          DropdownMenuItem(
-            value: instructor.id,
-            child: Text(instructor.name ?? 'Nepoznat korisnik'),
-          ),
-      ],
-      onChanged: (value) {
-        setState(() => _selectedInstructorId = value);
+      fetcher: () async {
+        final instructorProvider = context.read<CourseCatalogProvider>();
+        final instructors = await fetchAllPages(
+          (query) => instructorProvider.getCatalogInstructors(params: query),
+        );
+        return instructors
+          ..sort((a, b) => (a.name ?? '').compareTo(b.name ?? ''));
+      },
+      itemLabel: (instructor) => instructor.name ?? 'Nepoznat korisnik',
+      itemId: (instructor) => instructor.id,
+      onChanged: (value, _) {
+        setState(() => _selectedInstructorId = value as int?);
         _gridKey.currentState?.refresh(resetPage: true);
       },
     );
