@@ -47,25 +47,22 @@ public static class IdentitySeed
 
         foreach ((var username, var email, var firstName, var lastName, var role, var storeId) in testUsers)
         {
-            (var _, var error) = await provisioningService.ProvisionUserAsync(new UserProvisionRequest
+            try
             {
-                Username = username,
-                Email = email,
-                FirstName = firstName,
-                LastName = lastName,
-                Password = BootstrapPassword,
-                Role = role,
-                MusicStoreId = storeId
-            });
-
-            if (error == Messages.UsernameTaken)
+                await provisioningService.ProvisionUserAsync(new UserProvisionRequest
+                {
+                    Username = username,
+                    Email = email,
+                    FirstName = firstName,
+                    LastName = lastName,
+                    Password = BootstrapPassword,
+                    Role = role,
+                    MusicStoreId = storeId
+                });
+            }
+            catch (ConflictException exception) when (exception.Message == Messages.UsernameTaken)
             {
                 continue;
-            }
-
-            if (error is not null)
-            {
-                throw new BusinessException(error);
             }
 
             await ApplyReviewPasswordAsync(userManager, username, reviewPassword);

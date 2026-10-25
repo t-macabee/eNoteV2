@@ -385,10 +385,8 @@ public sealed class ShopEmployeeServiceTests
         var provisioning = new UserProvisioningService(context, account, new SystemClock(), new StubFileStorageService(), actor);
         var service = new ShopEmployeeService(context, new StubUserIdentityService(), actor, provisioning);
 
-        var (success, error) = await service.SetEmployeeActiveByManagerAsync(20, false);
+        await service.SetEmployeeActiveByManagerAsync(20, false);
 
-        Assert.True(success);
-        Assert.Null(error);
         Assert.Equal((20, false), account.SetActiveCall);
     }
 
@@ -446,7 +444,7 @@ public sealed class ShopEmployeeServiceTests
     }
 
     [Fact]
-    public async Task SetEmployeeActiveByManagerAsync_ReturnsFailure_WhenAttemptingSelfDeactivation()
+    public async Task SetEmployeeActiveByManagerAsync_ThrowsConflict_WhenAttemptingSelfDeactivation()
     {
         await using var context = TestDbContextFactory.CreateContext(Now);
 
@@ -463,10 +461,10 @@ public sealed class ShopEmployeeServiceTests
         var provisioning = new UserProvisioningService(context, account, new SystemClock(), new StubFileStorageService(), actor);
         var service = new ShopEmployeeService(context, new StubUserIdentityService(), actor, provisioning);
 
-        var (success, error) = await service.SetEmployeeActiveByManagerAsync(10, false);
+        var ex = await Assert.ThrowsAsync<ConflictException>(() =>
+            service.SetEmployeeActiveByManagerAsync(10, false));
 
-        Assert.False(success);
-        Assert.Equal(Messages.CannotModifyOwnAccount, error);
+        Assert.Equal(Messages.CannotModifyOwnAccount, ex.Message);
         Assert.Null(account.SetActiveCall);
     }
 
@@ -542,24 +540,24 @@ public sealed class ShopEmployeeServiceTests
     private sealed class StubUserAccountService : IUserAccountService
     {
         public (int UserId, bool IsActive)? SetActiveCall { get; private set; }
-        public (bool Success, string? Error) SetActiveResult { get; set; } = (true, null);
+        public Exception? SetActiveError { get; set; }
 
-        public Task<(bool Success, string? Error)> SetActiveAsync(int userId, bool isActive, CancellationToken cancellationToken = default)
+        public Task SetActiveAsync(int userId, bool isActive, CancellationToken cancellationToken = default)
         {
             SetActiveCall = (userId, isActive);
-            return Task.FromResult(SetActiveResult);
+            return SetActiveError is null ? Task.CompletedTask : Task.FromException(SetActiveError);
         }
 
         public Task<int?> FindUserIdByUsernameAsync(string username, CancellationToken cancellationToken = default) => throw new NotImplementedException();
-        public Task<(int? UserId, string? Error)> CreateUserAsync(string username, string email, string password, string? firstName, string? lastName, CancellationToken cancellationToken = default) => throw new NotImplementedException();
-        public Task<(bool Success, string? Error)> AssignSingleRoleAsync(int userId, string role, CancellationToken cancellationToken = default) => throw new NotImplementedException();
-        public Task<(bool Success, string? Error)> UpdateExistingUserAsync(int userId, string email, string? firstName, string? lastName, DateTime? dateOfBirth = null, CancellationToken cancellationToken = default) => throw new NotImplementedException();
-        public Task<(bool Success, string? Error)> UpdatePictureAsync(int userId, Stream picture, string fileName, string contentType, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<int> CreateUserAsync(string username, string email, string password, string? firstName, string? lastName, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task AssignSingleRoleAsync(int userId, string role, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task UpdateExistingUserAsync(int userId, string email, string? firstName, string? lastName, DateTime? dateOfBirth = null, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task UpdatePictureAsync(int userId, Stream picture, string fileName, string contentType, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<(Stream? Data, string? ContentType)> GetPictureAsync(int userId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
-        public Task<(bool Success, string? Error)> DeletePictureAsync(int userId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
-        public Task<(bool Success, string? Error)> ChangePasswordAsync(int userId, string currentPassword, string newPassword, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task DeletePictureAsync(int userId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task ChangePasswordAsync(int userId, string currentPassword, string newPassword, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<bool> VerifyPasswordAsync(int userId, string currentPassword, CancellationToken cancellationToken = default) => throw new NotImplementedException();
-        public Task<(bool Success, string? Error, string? PicturePath)> CloseAccountAsync(int userId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
-        public Task<(bool Success, string? Error, string? PicturePath)> DeleteUserAsync(int userId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<string?> CloseAccountAsync(int userId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task<string?> DeleteUserAsync(int userId, CancellationToken cancellationToken = default) => throw new NotImplementedException();
     }
 }

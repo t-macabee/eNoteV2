@@ -33,12 +33,7 @@ public sealed class ShopEmployeeController(
         [FromBody] DelegatedUserCreateRequest request,
         CancellationToken cancellationToken)
     {
-        (var userId, var error) = await provisioningService.ProvisionEmployeeByManagerAsync(request, cancellationToken);
-
-        if (error is not null)
-        {
-            return MapError(error);
-        }
+        var userId = await provisioningService.ProvisionEmployeeByManagerAsync(request, cancellationToken);
 
         return StatusCode(StatusCodes.Status201Created, new { userId });
     }
@@ -50,11 +45,7 @@ public sealed class ShopEmployeeController(
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> SetStatus(int id, [FromBody] UserStatusRequest request, CancellationToken cancellationToken)
     {
-        var (success, error) = await employeeService.SetEmployeeActiveByManagerAsync(id, request.IsActive, cancellationToken);
-        if (!success)
-        {
-            return MapError(error);
-        }
+        await employeeService.SetEmployeeActiveByManagerAsync(id, request.IsActive, cancellationToken);
         return NoContent();
     }
 }

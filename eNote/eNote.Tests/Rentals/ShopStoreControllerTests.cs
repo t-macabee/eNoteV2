@@ -171,7 +171,7 @@ public sealed class ShopStoreControllerTests
     }
 
     [Fact]
-    public async Task UploadOwnStoreImage_ReturnsBadRequest_WhenFileIsNull()
+    public async Task UploadOwnStoreImage_ThrowsBusinessException_WhenFileIsNull()
     {
         await using var ctx = TestDbContextFactory.CreateContext(Now);
         var store = new MusicStore("Store Alpha", "08:00-16:00");
@@ -189,10 +189,10 @@ public sealed class ShopStoreControllerTests
         var addressService = new AddressService(ctx);
         var controller = new ShopStoreController(storeService, employeeService, addressService, storeContext);
 
-        var result = await controller.UploadOwnStoreImage(null, CancellationToken.None);
+        var exception = await Assert.ThrowsAsync<BusinessException>(() =>
+            controller.UploadOwnStoreImage(null, CancellationToken.None));
 
-        var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
-        Assert.NotNull(badRequest.Value);
+        Assert.Equal(Messages.FileNotProvided, exception.Message);
     }
 
     private sealed class StubStoreContext(int storeId) : IStoreContext

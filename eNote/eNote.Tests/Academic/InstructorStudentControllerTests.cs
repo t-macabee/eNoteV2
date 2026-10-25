@@ -185,7 +185,7 @@ public sealed class InstructorStudentControllerTests
         var instructorAccess = AcademicTestData.CreateInstructorAccess(ctx, harness.Instructor);
         var studentService = new AdminStudentService(ctx, new StubUserIdentityService(), instructorAccess);
         var currentUser = new StubCurrentActor(instructor: harness.Instructor, userId: harness.Instructor.AppUserId);
-        var stubProvisioning = new StubProvisioningService { CreateResult = (42, null) };
+        var stubProvisioning = new StubProvisioningService { CreateUserId = 42 };
         var controller = new InstructorStudentController(studentService, CreateMembershipService(ctx, studentService, currentUser), stubProvisioning, currentUser, instructorAccess);
 
         var result = await controller.Create(new DelegatedUserCreateRequest
@@ -200,25 +200,24 @@ public sealed class InstructorStudentControllerTests
     }
 
     [Fact]
-    public async Task Create_ReturnsBadRequest_WhenErrorOccurs()
+    public async Task Create_ThrowsConflict_WhenUsernameTaken()
     {
         await using var ctx = TestDbContextFactory.CreateContext(Now);
         var harness = await AcademicTestData.SeedAsync(ctx, Now);
         var instructorAccess = AcademicTestData.CreateInstructorAccess(ctx, harness.Instructor);
         var studentService = new AdminStudentService(ctx, new StubUserIdentityService(), instructorAccess);
         var currentUser = new StubCurrentActor(instructor: harness.Instructor, userId: harness.Instructor.AppUserId);
-        var stubProvisioning = new StubProvisioningService { CreateResult = (0, "Username already taken") };
+        var stubProvisioning = new StubProvisioningService { CreateError = new ConflictException("Korisničko ime je već zauzeto.") };
         var controller = new InstructorStudentController(studentService, CreateMembershipService(ctx, studentService, currentUser), stubProvisioning, currentUser, instructorAccess);
 
-        var result = await controller.Create(new DelegatedUserCreateRequest
+        var exception = await Assert.ThrowsAsync<ConflictException>(() => controller.Create(new DelegatedUserCreateRequest
         {
             Username = "existingstudent",
             Email = "student@example.com",
             Password = "Password1!"
-        }, CancellationToken.None);
+        }, CancellationToken.None));
 
-        var badRequest = Assert.IsType<BadRequestObjectResult>(result);
-        Assert.NotNull(badRequest.Value);
+        Assert.Equal("Korisničko ime je već zauzeto.", exception.Message);
     }
 
     [Fact]
@@ -296,22 +295,23 @@ public sealed class InstructorStudentControllerTests
 
     private sealed class StubProvisioningService : IUserProvisioningService
     {
-        public (int UserId, string? Error) CreateResult { get; set; } = (1, null);
+        public int CreateUserId { get; set; } = 1;
+        public Exception? CreateError { get; set; }
 
-        public Task<(RegistrationResult? Registration, string? Error)> RegisterStudentAsync(RegisterRequest request, CancellationToken cancellationToken = default) =>
-            Task.FromResult<(RegistrationResult?, string?)>((null, null));
+        public Task<RegistrationResult> RegisterStudentAsync(RegisterRequest request, CancellationToken cancellationToken = default) =>
+            throw new NotSupportedException();
 
-        public Task<(int UserId, string? Error)> ProvisionUserAsync(UserProvisionRequest request, CancellationToken cancellationToken = default) =>
-            Task.FromResult((1, (string?)null));
+        public Task<int> ProvisionUserAsync(UserProvisionRequest request, CancellationToken cancellationToken = default) =>
+            Task.FromResult(CreateUserId);
 
-        public Task<(bool Success, string? Error)> SetUserActiveAsync(int userId, bool isActive, CancellationToken cancellationToken = default) => Task.FromResult((true, (string?)null));
-        public Task<(bool Success, string? Error)> DeleteUserAsync(int userId, CancellationToken cancellationToken = default) => Task.FromResult((true, (string?)null));
+        public Task SetUserActiveAsync(int userId, bool isActive, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task DeleteUserAsync(int userId, CancellationToken cancellationToken = default) => Task.CompletedTask;
         public Task<bool> IsStoreManagerAsync(int userId, CancellationToken cancellationToken = default) => Task.FromResult(false);
 
-        public Task<(int UserId, string? Error)> ProvisionStudentByInstructorAsync(DelegatedUserCreateRequest request, CancellationToken cancellationToken = default) =>
-            Task.FromResult(CreateResult);
+        public Task<int> ProvisionStudentByInstructorAsync(DelegatedUserCreateRequest request, CancellationToken cancellationToken = default) =>
+            CreateError is null ? Task.FromResult(CreateUserId) : Task.FromException<int>(CreateError);
 
-        public Task<(int UserId, string? Error)> ProvisionEmployeeByManagerAsync(DelegatedUserCreateRequest request, CancellationToken cancellationToken = default) =>
-            Task.FromResult(CreateResult);
+        public Task<int> ProvisionEmployeeByManagerAsync(DelegatedUserCreateRequest request, CancellationToken cancellationToken = default) =>
+            CreateError is null ? Task.FromResult(CreateUserId) : Task.FromException<int>(CreateError);
     }
 }

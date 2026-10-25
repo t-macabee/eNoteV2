@@ -20,19 +20,19 @@ public sealed class UserAccountService(UserManager<AppUser> userManager, IFileSt
         return user?.Id;
     }
 
-    public async Task<(int? UserId, string? Error)> CreateUserAsync(string username, string email, string password, string? firstName, string? lastName, CancellationToken cancellationToken = default)
+    public async Task<int> CreateUserAsync(string username, string email, string password, string? firstName, string? lastName, CancellationToken cancellationToken = default)
     {
         var normalizedUsername = username.Trim();
         var normalizedEmail = email.Trim();
 
         if (await userManager.FindByNameAsync(normalizedUsername) is not null)
         {
-            return (null, Messages.UsernameTaken);
+            throw new ConflictException(Messages.UsernameTaken);
         }
 
         if (await userManager.FindByEmailAsync(normalizedEmail) is not null)
         {
-            return (null, Messages.EmailTaken);
+            throw new ConflictException(Messages.EmailTaken);
         }
 
         var user = new AppUser
@@ -51,57 +51,32 @@ public sealed class UserAccountService(UserManager<AppUser> userManager, IFileSt
         {
             var errors = string.Join("; ", createResult.Errors.Select(e => e.Description));
 
-            return (null, Messages.UserCreateFailed(normalizedUsername, errors));
+            throw new BusinessException(Messages.UserCreateFailed(normalizedUsername, errors));
         }
 
-        return (user.Id, null);
+        return user.Id;
     }
 
-    public async Task<(bool Success, string? Error)> AssignSingleRoleAsync(int userId, string role, CancellationToken cancellationToken = default)
+    public async Task AssignSingleRoleAsync(int userId, string role, CancellationToken cancellationToken = default)
     {
-        var user = await userManager.FindByIdAsync(userId.ToString());
-
-        if (user is null)
-        {
-            return (false, Messages.NotFound);
-        }
+        var user = await FindUserOrThrowAsync(userId);
 
         var currentRoles = await userManager.GetRolesAsync(user);
 
-        var removeError = await RemoveOtherRolesAsync(user, currentRoles, role);
-
-        if (removeError is not null)
-        {
-            return (false, removeError);
-        }
-
-        var addError = await AddRoleIfMissingAsync(user, currentRoles, role);
-
-        if (addError is not null)
-        {
-            return (false, addError);
-        }
-
-        return (true, null);
+        await RemoveOtherRolesAsync(user, currentRoles, role);
+        await AddRoleIfMissingAsync(user, currentRoles, role);
     }
 
-    public async Task<(bool Success, string? Error)> ChangePasswordAsync(int userId, string currentPassword, string newPassword, CancellationToken cancellationToken = default)
+    public async Task ChangePasswordAsync(int userId, string currentPassword, string newPassword, CancellationToken cancellationToken = default)
     {
-        var user = await userManager.FindByIdAsync(userId.ToString());
-
-        if (user is null)
-        {
-            return (false, Messages.NotFound);
-        }
+        var user = await FindUserOrThrowAsync(userId);
 
         var result = await userManager.ChangePasswordAsync(user, currentPassword, newPassword);
 
         if (!result.Succeeded)
         {
-            return (false, string.Join("; ", result.Errors.Select(e => e.Description)));
+            throw new BusinessException(string.Join("; ", result.Errors.Select(e => e.Description)));
         }
-
-        return (true, null);
     }
 
     public async Task<bool> VerifyPasswordAsync(int userId, string currentPassword, CancellationToken cancellationToken = default)
@@ -116,14 +91,9 @@ public sealed class UserAccountService(UserManager<AppUser> userManager, IFileSt
         return await userManager.CheckPasswordAsync(user, currentPassword);
     }
 
-    public async Task<(bool Success, string? Error)> SetActiveAsync(int userId, bool isActive, CancellationToken cancellationToken = default)
+    public async Task SetActiveAsync(int userId, bool isActive, CancellationToken cancellationToken = default)
     {
-        var user = await userManager.FindByIdAsync(userId.ToString());
-
-        if (user is null)
-        {
-            return (false, Messages.NotFound);
-        }
+        var user = await FindUserOrThrowAsync(userId);
 
         user.IsActive = isActive;
 
@@ -131,20 +101,13 @@ public sealed class UserAccountService(UserManager<AppUser> userManager, IFileSt
 
         if (!result.Succeeded)
         {
-            return (false, string.Join("; ", result.Errors.Select(e => e.Description)));
+            throw new BusinessException(string.Join("; ", result.Errors.Select(e => e.Description)));
         }
-
-        return (true, null);
     }
 
-    public async Task<(bool Success, string? Error, string? PicturePath)> CloseAccountAsync(int userId, CancellationToken cancellationToken = default)
+    public async Task<string?> CloseAccountAsync(int userId, CancellationToken cancellationToken = default)
     {
-        var user = await userManager.FindByIdAsync(userId.ToString());
-
-        if (user is null)
-        {
-            return (false, Messages.NotFound, null);
-        }
+        var user = await FindUserOrThrowAsync(userId);
 
         var previousPicturePath = user.PicturePath;
         var anonymousUserName = $"obrisan-{user.Id}";
@@ -166,29 +129,19 @@ public sealed class UserAccountService(UserManager<AppUser> userManager, IFileSt
 
         if (!result.Succeeded)
         {
-            return (false, string.Join("; ", result.Errors.Select(e => e.Description)), null);
+            throw new BusinessException(string.Join("; ", result.Errors.Select(e => e.Description)));
         }
 
-        return (true, null, previousPicturePath);
+        return previousPicturePath;
     }
 
-    public async Task<(bool Success, string? Error)> UpdateExistingUserAsync(int userId, string email, string? firstName, string? lastName, DateTime? dateOfBirth = null, CancellationToken cancellationToken = default)
+    public async Task UpdateExistingUserAsync(int userId, string email, string? firstName, string? lastName, DateTime? dateOfBirth = null, CancellationToken cancellationToken = default)
     {
-        var user = await userManager.FindByIdAsync(userId.ToString());
-
-        if (user is null)
-        {
-            return (false, Messages.NotFound);
-        }
+        var user = await FindUserOrThrowAsync(userId);
 
         var normalizedEmail = email.Trim();
 
-        var emailError = await ApplyEmailChangeAsync(user, normalizedEmail, userId);
-
-        if (emailError is not null)
-        {
-            return (false, emailError);
-        }
+        await ApplyEmailChangeAsync(user, normalizedEmail, userId);
 
         ApplyProfileFields(user, firstName, lastName, dateOfBirth);
 
@@ -198,42 +151,20 @@ public sealed class UserAccountService(UserManager<AppUser> userManager, IFileSt
         {
             var errors = string.Join("; ", updateResult.Errors.Select(e => e.Description));
 
-            return (false, Messages.UserUpdateFailed(user.UserName!, errors));
+            throw new BusinessException(Messages.UserUpdateFailed(user.UserName!, errors));
         }
-
-        return (true, null);
     }
 
-    public async Task<(bool Success, string? Error)> UpdatePictureAsync(int userId, Stream picture, string fileName, string contentType, CancellationToken cancellationToken = default)
+    public async Task UpdatePictureAsync(int userId, Stream picture, string fileName, string contentType, CancellationToken cancellationToken = default)
     {
-        var user = await userManager.FindByIdAsync(userId.ToString());
+        var user = await FindUserOrThrowAsync(userId);
 
-        if (user is null)
-        {
-            return (false, Messages.NotFound);
-        }
-
-        string picturePath;
-        try
-        {
-            picturePath = await fileStorage.SaveAsync(picture, fileName, contentType, "profile-pictures", cancellationToken);
-        }
-        catch (BusinessException exception)
-        {
-            return (false, exception.Message);
-        }
+        var picturePath = await fileStorage.SaveAsync(picture, fileName, contentType, "profile-pictures", cancellationToken);
 
         var previousPicturePath = user.PicturePath;
         user.PicturePath = picturePath;
 
-        var updateError = await PersistPictureChangeAsync(user, previousPicturePath, picturePath);
-
-        if (updateError is not null)
-        {
-            return (false, updateError);
-        }
-
-        return (true, null);
+        await PersistPictureChangeAsync(user, previousPicturePath, picturePath);
     }
 
     public async Task<(Stream? Data, string? ContentType)> GetPictureAsync(int userId, CancellationToken cancellationToken = default)
@@ -253,36 +184,19 @@ public sealed class UserAccountService(UserManager<AppUser> userManager, IFileSt
         return fileStorage.OpenRead(user.PicturePath);
     }
 
-    public async Task<(bool Success, string? Error)> DeletePictureAsync(int userId, CancellationToken cancellationToken = default)
+    public async Task DeletePictureAsync(int userId, CancellationToken cancellationToken = default)
     {
-        var user = await userManager.FindByIdAsync(userId.ToString());
-
-        if (user is null)
-        {
-            return (false, Messages.NotFound);
-        }
+        var user = await FindUserOrThrowAsync(userId);
 
         var previousPicturePath = user.PicturePath;
         user.PicturePath = null;
 
-        var updateError = await PersistPictureChangeAsync(user, previousPicturePath);
-
-        if (updateError is not null)
-        {
-            return (false, updateError);
-        }
-
-        return (true, null);
+        await PersistPictureChangeAsync(user, previousPicturePath);
     }
 
-    public async Task<(bool Success, string? Error, string? PicturePath)> DeleteUserAsync(int userId, CancellationToken cancellationToken = default)
+    public async Task<string?> DeleteUserAsync(int userId, CancellationToken cancellationToken = default)
     {
-        var user = await userManager.FindByIdAsync(userId.ToString());
-
-        if (user is null)
-        {
-            return (false, Messages.NotFound, null);
-        }
+        var user = await FindUserOrThrowAsync(userId);
 
         await userManager.UpdateSecurityStampAsync(user);
 
@@ -290,68 +204,69 @@ public sealed class UserAccountService(UserManager<AppUser> userManager, IFileSt
 
         if (!result.Succeeded)
         {
-            return (false, string.Join("; ", result.Errors.Select(e => e.Description)), null);
+            throw new BusinessException(string.Join("; ", result.Errors.Select(e => e.Description)));
         }
 
-        return (true, null, user.PicturePath);
+        return user.PicturePath;
     }
 
-    private async Task<string?> RemoveOtherRolesAsync(AppUser user, IList<string> currentRoles, string role)
+    private async Task<AppUser> FindUserOrThrowAsync(int userId)
+    {
+        var user = await userManager.FindByIdAsync(userId.ToString());
+
+        return user ?? throw new NotFoundException(Messages.NotFound);
+    }
+
+    private async Task RemoveOtherRolesAsync(AppUser user, IList<string> currentRoles, string role)
     {
         string[] toRemove = [.. currentRoles.Where(r => r != role)];
 
         if (toRemove.Length == 0)
         {
-            return null;
+            return;
         }
 
         var removeResult = await userManager.RemoveFromRolesAsync(user, toRemove);
 
-        if (removeResult.Succeeded)
+        if (!removeResult.Succeeded)
         {
-            return null;
+            var errors = string.Join("; ", removeResult.Errors.Select(e => e.Description));
+            throw new BusinessException(Messages.UserRoleRemoveFailed(user.UserName!, errors));
         }
-
-        var errors = string.Join("; ", removeResult.Errors.Select(e => e.Description));
-        return Messages.UserRoleRemoveFailed(user.UserName!, errors);
     }
 
-    private async Task<string?> AddRoleIfMissingAsync(AppUser user, IList<string> currentRoles, string role)
+    private async Task AddRoleIfMissingAsync(AppUser user, IList<string> currentRoles, string role)
     {
         if (currentRoles.Contains(role))
         {
-            return null;
+            return;
         }
 
         var addResult = await userManager.AddToRoleAsync(user, role);
 
-        if (addResult.Succeeded)
+        if (!addResult.Succeeded)
         {
-            return null;
+            var errors = string.Join("; ", addResult.Errors.Select(e => e.Description));
+            throw new BusinessException(Messages.UserRoleAssignFailed(role, user.UserName!, errors));
         }
-
-        var errors = string.Join("; ", addResult.Errors.Select(e => e.Description));
-        return Messages.UserRoleAssignFailed(role, user.UserName!, errors);
     }
 
-    private async Task<string?> ApplyEmailChangeAsync(AppUser user, string normalizedEmail, int userId)
+    private async Task ApplyEmailChangeAsync(AppUser user, string normalizedEmail, int userId)
     {
         if (string.Equals(user.Email, normalizedEmail, StringComparison.OrdinalIgnoreCase))
         {
-            return null;
+            return;
         }
 
         var existingWithEmail = await userManager.FindByEmailAsync(normalizedEmail);
 
         if (existingWithEmail is not null && existingWithEmail.Id != userId)
         {
-            return Messages.EmailTaken;
+            throw new ConflictException(Messages.EmailTaken);
         }
 
         user.Email = normalizedEmail;
         user.NormalizedEmail = userManager.NormalizeEmail(normalizedEmail);
-
-        return null;
     }
 
     private static void ApplyProfileFields(AppUser user, string? firstName, string? lastName, DateTime? dateOfBirth)
@@ -365,7 +280,7 @@ public sealed class UserAccountService(UserManager<AppUser> userManager, IFileSt
         }
     }
 
-    private async Task<string?> PersistPictureChangeAsync(AppUser user, string? previousPicturePath, string? rollbackPath = null)
+    private async Task PersistPictureChangeAsync(AppUser user, string? previousPicturePath, string? rollbackPath = null)
     {
         var updateResult = await userManager.UpdateAsync(user);
 
@@ -377,14 +292,12 @@ public sealed class UserAccountService(UserManager<AppUser> userManager, IFileSt
             }
 
             var errors = string.Join("; ", updateResult.Errors.Select(e => e.Description));
-            return Messages.UserUpdateFailed(user.UserName!, errors);
+            throw new BusinessException(Messages.UserUpdateFailed(user.UserName!, errors));
         }
 
         if (!string.IsNullOrWhiteSpace(previousPicturePath))
         {
             fileStorage.Delete(previousPicturePath);
         }
-
-        return null;
     }
 }

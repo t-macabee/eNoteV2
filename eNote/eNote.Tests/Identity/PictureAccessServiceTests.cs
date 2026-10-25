@@ -261,27 +261,27 @@ public sealed class PictureAccessServiceTests
     {
         public Task<int?> FindUserIdByUsernameAsync(string username, CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();
-        public Task<(int? UserId, string? Error)> CreateUserAsync(string username, string email, string password, string? firstName, string? lastName, CancellationToken cancellationToken = default) =>
+        public Task<int> CreateUserAsync(string username, string email, string password, string? firstName, string? lastName, CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();
-        public Task<(bool Success, string? Error)> AssignSingleRoleAsync(int userId, string role, CancellationToken cancellationToken = default) =>
+        public Task AssignSingleRoleAsync(int userId, string role, CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();
-        public Task<(bool Success, string? Error)> UpdateExistingUserAsync(int userId, string email, string? firstName, string? lastName, DateTime? dateOfBirth = null, CancellationToken cancellationToken = default) =>
+        public Task UpdateExistingUserAsync(int userId, string email, string? firstName, string? lastName, DateTime? dateOfBirth = null, CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();
-        public Task<(bool Success, string? Error)> UpdatePictureAsync(int userId, Stream picture, string fileName, string contentType, CancellationToken cancellationToken = default) =>
+        public Task UpdatePictureAsync(int userId, Stream picture, string fileName, string contentType, CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();
         public Task<(Stream? Data, string? ContentType)> GetPictureAsync(int userId, CancellationToken cancellationToken = default) =>
             Task.FromResult(picture);
-        public Task<(bool Success, string? Error)> DeletePictureAsync(int userId, CancellationToken cancellationToken = default) =>
+        public Task DeletePictureAsync(int userId, CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();
-        public Task<(bool Success, string? Error)> ChangePasswordAsync(int userId, string currentPassword, string newPassword, CancellationToken cancellationToken = default) =>
+        public Task ChangePasswordAsync(int userId, string currentPassword, string newPassword, CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();
-        public Task<(bool Success, string? Error)> SetActiveAsync(int userId, bool isActive, CancellationToken cancellationToken = default) =>
+        public Task SetActiveAsync(int userId, bool isActive, CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();
         public Task<bool> VerifyPasswordAsync(int userId, string currentPassword, CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();
-        public Task<(bool Success, string? Error, string? PicturePath)> CloseAccountAsync(int userId, CancellationToken cancellationToken = default) =>
+        public Task<string?> CloseAccountAsync(int userId, CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();
-        public Task<(bool Success, string? Error, string? PicturePath)> DeleteUserAsync(int userId, CancellationToken cancellationToken = default) =>
+        public Task<string?> DeleteUserAsync(int userId, CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();
     }
 

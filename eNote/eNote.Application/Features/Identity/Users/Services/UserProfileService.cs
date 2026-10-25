@@ -9,15 +9,15 @@ public sealed class UserProfileService(
     IUserProfileLookup lookup,
     ICurrentUserContext currentUserService)
 {
-    public Task<UserProfileResponse?> GetCurrentUserAsync(CancellationToken cancellationToken = default) => GetUserAsync(currentUserService.UserId, false, cancellationToken);
+    public Task<UserProfileResponse> GetCurrentUserAsync(CancellationToken cancellationToken = default) => GetUserAsync(currentUserService.UserId, false, cancellationToken);
 
-    public async Task<UserProfileResponse?> GetUserAsync(int userId, bool includeInactive = false, CancellationToken cancellationToken = default)
+    public async Task<UserProfileResponse> GetUserAsync(int userId, bool includeInactive = false, CancellationToken cancellationToken = default)
     {
         var user = await identity.GetUserAsync(userId, cancellationToken);
 
         if (user == null || (!user.IsActive && !includeInactive))
         {
-            return null;
+            throw new NotFoundException(Messages.NotFound);
         }
 
         var roles = await identity.GetRolesAsync(userId, cancellationToken);

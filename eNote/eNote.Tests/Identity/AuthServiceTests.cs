@@ -255,26 +255,30 @@ public sealed class AuthServiceTests
         public RegisterRequest? LastRegisterRequest { get; private set; }
         public string? RegisterError { get; init; }
 
-        public Task<(RegistrationResult? Registration, string? Error)> RegisterStudentAsync(RegisterRequest request, CancellationToken cancellationToken = default)
+        public Task<RegistrationResult> RegisterStudentAsync(RegisterRequest request, CancellationToken cancellationToken = default)
         {
             LastRegisterRequest = request;
-            return Task.FromResult<(RegistrationResult?, string?)>(RegisterError is null
-                ? (new RegistrationResult(7, request.Username.Trim(), ["Student"]), null)
-                : (null, RegisterError));
+
+            if (RegisterError is not null)
+            {
+                throw new ConflictException(RegisterError);
+            }
+
+            return Task.FromResult(new RegistrationResult(7, request.Username.Trim(), ["Student"]));
         }
 
-        public Task<(int UserId, string? Error)> ProvisionUserAsync(UserProvisionRequest request, CancellationToken cancellationToken = default) =>
-            Task.FromResult((7, (string?)null));
+        public Task<int> ProvisionUserAsync(UserProvisionRequest request, CancellationToken cancellationToken = default) =>
+            Task.FromResult(7);
 
-        public Task<(bool Success, string? Error)> SetUserActiveAsync(int userId, bool isActive, CancellationToken cancellationToken = default) => Task.FromResult((true, (string?)null));
-        public Task<(bool Success, string? Error)> DeleteUserAsync(int userId, CancellationToken cancellationToken = default) => Task.FromResult((true, (string?)null));
+        public Task SetUserActiveAsync(int userId, bool isActive, CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task DeleteUserAsync(int userId, CancellationToken cancellationToken = default) => Task.CompletedTask;
         public Task<bool> IsStoreManagerAsync(int userId, CancellationToken cancellationToken = default) => Task.FromResult(false);
 
-        public Task<(int UserId, string? Error)> ProvisionStudentByInstructorAsync(DelegatedUserCreateRequest request, CancellationToken cancellationToken = default) =>
-            Task.FromResult((7, (string?)null));
+        public Task<int> ProvisionStudentByInstructorAsync(DelegatedUserCreateRequest request, CancellationToken cancellationToken = default) =>
+            Task.FromResult(7);
 
-        public Task<(int UserId, string? Error)> ProvisionEmployeeByManagerAsync(DelegatedUserCreateRequest request, CancellationToken cancellationToken = default) =>
-            Task.FromResult((7, (string?)null));
+        public Task<int> ProvisionEmployeeByManagerAsync(DelegatedUserCreateRequest request, CancellationToken cancellationToken = default) =>
+            Task.FromResult(7);
     }
 
     private sealed class StubHostEnvironment : IHostEnvironment

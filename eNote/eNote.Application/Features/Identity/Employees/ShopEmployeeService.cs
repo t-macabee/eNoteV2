@@ -90,7 +90,7 @@ public sealed class ShopEmployeeService(
         return Map(entity, user);
     }
 
-    public async Task<(bool Success, string? Error)> SetEmployeeActiveByManagerAsync(int targetUserId, bool isActive, CancellationToken ct = default)
+    public async Task SetEmployeeActiveByManagerAsync(int targetUserId, bool isActive, CancellationToken ct = default)
     {
         var currentEmployee = await UserProfileLookup.EnsureManagerAsync(context, currentUser.UserId, ct);
 
@@ -109,7 +109,7 @@ public sealed class ShopEmployeeService(
             throw new BusinessException(Messages.CannotDeactivateOtherManager);
         }
 
-        return await provisioningService.SetUserActiveAsync(targetUserId, isActive, ct);
+        await provisioningService.SetUserActiveAsync(targetUserId, isActive, ct);
     }
 
     public async Task<int> GetCurrentManagerStoreIdAsync(CancellationToken ct = default)

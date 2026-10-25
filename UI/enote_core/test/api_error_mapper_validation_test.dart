@@ -9,7 +9,6 @@ void main() {
     test('one field with one message', () {
       final body = jsonEncode({
         'type': 'https://tools.ietf.org/html/rfc9110#section-15.5.1',
-        'title': 'One or more validation errors occurred.',
         'status': 400,
         'errors': {
           'Password': ['Lozinka mora imati najmanje 8 znakova.']
@@ -31,13 +30,11 @@ void main() {
           'Korisničko ime je obavezno.\nDruga greška.\nUnesite važeću email adresu.');
     });
 
-    test('title only on 400', () {
+    test('unknown body falls back to the status default', () {
       final body =
           jsonEncode({'title': 'One or more validation errors occurred.'});
-      expect(ApiErrorMapper.mapError(400, body),
-          'One or more validation errors occurred.');
-      expect(ApiErrorMapper.mapError(404, body),
-          'Resurs nije pronađen.');
+      expect(ApiErrorMapper.mapError(400, body), 'Neispravan zahtjev.');
+      expect(ApiErrorMapper.mapError(404, body), 'Resurs nije pronađen.');
     });
 
     test('message still wins over errors', () {

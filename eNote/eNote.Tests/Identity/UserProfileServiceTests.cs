@@ -29,7 +29,7 @@ public sealed class UserProfileServiceTests
     }
 
     [Fact]
-    public async Task GetUserAsync_ReturnsNull_WhenUserIsInactive()
+    public async Task GetUserAsync_ThrowsNotFound_WhenUserIsInactive()
     {
         var identity = Identity(new UserIdentityDto
         {
@@ -40,9 +40,19 @@ public sealed class UserProfileServiceTests
 
         var service = CreateService(identity);
 
-        var result = await service.GetUserAsync(1);
+        var exception = await Assert.ThrowsAsync<NotFoundException>(() => service.GetUserAsync(1));
 
-        Assert.Null(result);
+        Assert.Equal(Messages.NotFound, exception.Message);
+    }
+
+    [Fact]
+    public async Task GetUserAsync_ThrowsNotFound_WhenUserIsMissing()
+    {
+        var service = CreateService(Identity(ActiveUser(1), AppRoles.Administrator));
+
+        var exception = await Assert.ThrowsAsync<NotFoundException>(() => service.GetUserAsync(99));
+
+        Assert.Equal(Messages.NotFound, exception.Message);
     }
 
     [Fact]

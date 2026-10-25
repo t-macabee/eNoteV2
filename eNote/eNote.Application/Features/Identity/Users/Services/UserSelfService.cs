@@ -13,19 +13,19 @@ public sealed class UserSelfService(
     IFileStorageService fileStorage,
     ILogger<UserSelfService> logger)
 {
-    public Task<(bool Success, string? Error)> UpdateProfileAsync(UpdateProfileRequest request, CancellationToken cancellationToken = default)
+    public Task UpdateProfileAsync(UpdateProfileRequest request, CancellationToken cancellationToken = default)
         => accountService.UpdateExistingUserAsync(currentUserService.UserId, request.Email, request.FirstName, request.LastName, request.DateOfBirth, cancellationToken);
 
-    public Task<(bool Success, string? Error)> UpdatePictureAsync(Stream picture, string fileName, string contentType, CancellationToken cancellationToken)
+    public Task UpdatePictureAsync(Stream picture, string fileName, string contentType, CancellationToken cancellationToken)
         => accountService.UpdatePictureAsync(currentUserService.UserId, picture, fileName, contentType, cancellationToken);
 
     public Task<(Stream? Data, string? ContentType)> GetPictureAsync(CancellationToken cancellationToken = default)
         => accountService.GetPictureAsync(currentUserService.UserId, cancellationToken);
 
-    public Task<(bool Success, string? Error)> DeletePictureAsync(CancellationToken cancellationToken = default)
+    public Task DeletePictureAsync(CancellationToken cancellationToken = default)
         => accountService.DeletePictureAsync(currentUserService.UserId, cancellationToken);
 
-    public Task<(bool Success, string? Error)> ChangePasswordAsync(ChangePasswordRequest request, CancellationToken cancellationToken = default)
+    public Task ChangePasswordAsync(ChangePasswordRequest request, CancellationToken cancellationToken = default)
         => accountService.ChangePasswordAsync(currentUserService.UserId, request.CurrentPassword, request.NewPassword, cancellationToken);
 
     public async Task DeleteProfileAsync(DeleteProfileRequest request, CancellationToken cancellationToken = default)
@@ -56,14 +56,7 @@ public sealed class UserSelfService(
 
                 await context.SaveChangesAsync(cancellationToken);
 
-                var (closed, error, closedPicturePath) = await accountService.CloseAccountAsync(userId, cancellationToken);
-
-                if (!closed)
-                {
-                    throw new BusinessException(error);
-                }
-
-                return closedPicturePath;
+                return await accountService.CloseAccountAsync(userId, cancellationToken);
             }, cancellationToken);
         }
         catch (DbUpdateConcurrencyException)

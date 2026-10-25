@@ -16,11 +16,9 @@ public sealed class UserAccountServiceTests
         var harness = await CreateHarnessAsync();
         var service = harness.Service;
 
-        var result = await service.CreateUserAsync("jdoe", "jdoe@example.com", "Password1!", "Jane", "Doe");
+        var userId = await service.CreateUserAsync("jdoe", "jdoe@example.com", "Password1!", "Jane", "Doe");
 
-        Assert.NotNull(result.UserId);
-        Assert.Null(result.Error);
-        var user = await harness.UserManager.FindByIdAsync(result.UserId!.Value.ToString());
+        var user = await harness.UserManager.FindByIdAsync(userId.ToString());
         Assert.NotNull(user);
         Assert.True(user.IsActive);
         Assert.True(user.EmailConfirmed);
@@ -28,29 +26,29 @@ public sealed class UserAccountServiceTests
     }
 
     [Fact]
-    public async Task CreateUserAsync_ReturnsError_WhenUsernameTaken()
+    public async Task CreateUserAsync_ThrowsConflict_WhenUsernameTaken()
     {
         var harness = await CreateHarnessAsync();
         var service = harness.Service;
         await service.CreateUserAsync("jdoe", "jdoe@example.com", "Password1!", null, null);
 
-        var result = await service.CreateUserAsync("jdoe", "other@example.com", "Password1!", null, null);
+        var exception = await Assert.ThrowsAsync<ConflictException>(() =>
+            service.CreateUserAsync("jdoe", "other@example.com", "Password1!", null, null));
 
-        Assert.Null(result.UserId);
-        Assert.Equal(Messages.UsernameTaken, result.Error);
+        Assert.Equal(Messages.UsernameTaken, exception.Message);
     }
 
     [Fact]
-    public async Task CreateUserAsync_ReturnsError_WhenEmailTaken()
+    public async Task CreateUserAsync_ThrowsConflict_WhenEmailTaken()
     {
         var harness = await CreateHarnessAsync();
         var service = harness.Service;
         await service.CreateUserAsync("jdoe", "jdoe@example.com", "Password1!", null, null);
 
-        var result = await service.CreateUserAsync("other", "jdoe@example.com", "Password1!", null, null);
+        var exception = await Assert.ThrowsAsync<ConflictException>(() =>
+            service.CreateUserAsync("other", "jdoe@example.com", "Password1!", null, null));
 
-        Assert.Null(result.UserId);
-        Assert.Equal(Messages.EmailTaken, result.Error);
+        Assert.Equal(Messages.EmailTaken, exception.Message);
     }
 
     [Fact]
@@ -63,20 +61,20 @@ public sealed class UserAccountServiceTests
         await service.AssignSingleRoleAsync(userId, "Student");
         await harness.RoleManager.CreateAsync(new AppRole { Name = "Instructor" });
 
-        var result = await service.AssignSingleRoleAsync(userId, "Instructor");
+        await service.AssignSingleRoleAsync(userId, "Instructor");
 
-        Assert.True(result.Success);
         var roles = await harness.UserManager.GetRolesAsync((await harness.UserManager.FindByIdAsync(userId.ToString()))!); Assert.Equal(["Instructor"], roles);
     }
 
     [Fact]
-    public async Task AssignSingleRoleAsync_ReturnsError_ForMissingUser()
+    public async Task AssignSingleRoleAsync_ThrowsNotFound_ForMissingUser()
     {
         var harness = await CreateHarnessAsync();
-        var result = await harness.Service.AssignSingleRoleAsync(999, "Student");
 
-        Assert.False(result.Success);
-        Assert.Equal(Messages.NotFound, result.Error);
+        var exception = await Assert.ThrowsAsync<NotFoundException>(() =>
+            harness.Service.AssignSingleRoleAsync(999, "Student"));
+
+        Assert.Equal(Messages.NotFound, exception.Message);
     }
 
     [Fact]
@@ -90,9 +88,8 @@ public sealed class UserAccountServiceTests
         existing.IsActive = false;
         await harness.UserManager.UpdateAsync(existing);
 
-        var result = await service.UpdateExistingUserAsync(userId, "new@example.com", "Janet", "Smith");
+        await service.UpdateExistingUserAsync(userId, "new@example.com", "Janet", "Smith");
 
-        Assert.True(result.Success);
         var user = (await harness.UserManager.FindByIdAsync(userId.ToString()))!;
         Assert.Equal("new@example.com", user.Email);
         Assert.Equal("Janet", user.FirstName);
@@ -110,9 +107,8 @@ public sealed class UserAccountServiceTests
         user.PicturePath = "/api/uploads/profile-pictures/old.png";
         await harness.UserManager.UpdateAsync(user);
 
-        var result = await service.UpdatePictureAsync(user.Id, PngStream(), "picture.png", "image/png");
+        await service.UpdatePictureAsync(user.Id, PngStream(), "picture.png", "image/png");
 
-        Assert.True(result.Success);
         var updated = (await harness.UserManager.FindByIdAsync(user.Id.ToString()))!;
         Assert.StartsWith("/api/v1/uploads/profile-pictures/", updated.PicturePath);
         Assert.Contains("/api/uploads/profile-pictures/old.png", harness.FileStorage.DeletedPaths);
@@ -168,9 +164,8 @@ public sealed class UserAccountServiceTests
         user.PicturePath = "/api/uploads/profile-pictures/pic.png";
         await harness.UserManager.UpdateAsync(user);
 
-        var result = await service.DeletePictureAsync(user.Id);
+        await service.DeletePictureAsync(user.Id);
 
-        Assert.True(result.Success);
         var updated = (await harness.UserManager.FindByIdAsync(user.Id.ToString()))!;
         Assert.Null(updated.PicturePath);
         Assert.Contains("/api/uploads/profile-pictures/pic.png", harness.FileStorage.DeletedPaths);
@@ -186,11 +181,9 @@ public sealed class UserAccountServiceTests
         user.PicturePath = "/api/uploads/profile-pictures/pic.png";
         await harness.UserManager.UpdateAsync(user);
 
-        var result = await service.DeleteUserAsync(user.Id);
+        var picturePath = await service.DeleteUserAsync(user.Id);
 
-        Assert.True(result.Success);
-        Assert.Null(result.Error);
-        Assert.Equal("/api/uploads/profile-pictures/pic.png", result.PicturePath);
+        Assert.Equal("/api/uploads/profile-pictures/pic.png", picturePath);
         Assert.Null(await harness.UserManager.FindByIdAsync(user.Id.ToString()));
         Assert.Empty(harness.FileStorage.DeletedPaths);
     }
@@ -205,9 +198,8 @@ public sealed class UserAccountServiceTests
 
         var stampBefore = (await harness.UserManager.FindByIdAsync(userId.ToString()))!.SecurityStamp;
 
-        var result = await service.ChangePasswordAsync(userId, "Password1!", "Newpassword1!");
+        await service.ChangePasswordAsync(userId, "Password1!", "Newpassword1!");
 
-        Assert.True(result.Success);
         var user = (await harness.UserManager.FindByIdAsync(userId.ToString()))!;
         Assert.True(await harness.UserManager.CheckPasswordAsync(user, "Newpassword1!"));
         Assert.NotEqual(stampBefore, user.SecurityStamp);
@@ -246,11 +238,9 @@ public sealed class UserAccountServiceTests
         await harness.UserManager.UpdateAsync(user);
         var stampBefore = user.SecurityStamp;
 
-        var result = await service.CloseAccountAsync(user.Id);
+        var picturePath = await service.CloseAccountAsync(user.Id);
 
-        Assert.True(result.Success);
-        Assert.Null(result.Error);
-        Assert.Equal("/api/uploads/profile-pictures/jdoe.png", result.PicturePath);
+        Assert.Equal("/api/uploads/profile-pictures/jdoe.png", picturePath);
         var closed = (await harness.UserManager.FindByIdAsync(user.Id.ToString()))!;
         Assert.Equal("Obrisani", closed.FirstName);
         Assert.Equal("korisnik", closed.LastName);
@@ -267,15 +257,14 @@ public sealed class UserAccountServiceTests
     }
 
     [Fact]
-    public async Task CloseAccountAsync_ReturnsError_ForMissingUser()
+    public async Task CloseAccountAsync_ThrowsNotFound_ForMissingUser()
     {
         var harness = await CreateHarnessAsync();
 
-        var result = await harness.Service.CloseAccountAsync(999);
+        var exception = await Assert.ThrowsAsync<NotFoundException>(() =>
+            harness.Service.CloseAccountAsync(999));
 
-        Assert.False(result.Success);
-        Assert.Equal(Messages.NotFound, result.Error);
-        Assert.Null(result.PicturePath);
+        Assert.Equal(Messages.NotFound, exception.Message);
     }
 
     [Fact]
@@ -288,24 +277,22 @@ public sealed class UserAccountServiceTests
 
         var stampBefore = (await harness.UserManager.FindByIdAsync(userId.ToString()))!.SecurityStamp;
 
-        var result = await service.SetActiveAsync(userId, false);
+        await service.SetActiveAsync(userId, false);
 
-        Assert.True(result.Success);
-        Assert.Null(result.Error);
         var user = (await harness.UserManager.FindByIdAsync(userId.ToString()))!;
         Assert.False(user.IsActive);
         Assert.NotEqual(stampBefore, user.SecurityStamp);
     }
 
     [Fact]
-    public async Task SetActiveAsync_ReturnsError_ForMissingUser()
+    public async Task SetActiveAsync_ThrowsNotFound_ForMissingUser()
     {
         var harness = await CreateHarnessAsync();
 
-        var result = await harness.Service.SetActiveAsync(999, false);
+        var exception = await Assert.ThrowsAsync<NotFoundException>(() =>
+            harness.Service.SetActiveAsync(999, false));
 
-        Assert.False(result.Success);
-        Assert.Equal(Messages.NotFound, result.Error);
+        Assert.Equal(Messages.NotFound, exception.Message);
     }
 
     private static async Task<Harness> CreateHarnessAsync()

@@ -21,11 +21,6 @@ public sealed class UsersController(UserProfileService profileService, UserSelfS
     {
         var profile = await profileService.GetCurrentUserAsync(cancellationToken);
 
-        if (profile is null)
-        {
-            return NotFound();
-        }
-
         return Ok(profile);
     }
 
@@ -34,15 +29,7 @@ public sealed class UsersController(UserProfileService profileService, UserSelfS
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileRequest request, CancellationToken cancellationToken)
     {
-        (var success, var error) = await selfService.UpdateProfileAsync(request, cancellationToken);
-
-        if (!success)
-        {
-            return BadRequest(new
-            {
-                message = error
-            });
-        }
+        await selfService.UpdateProfileAsync(request, cancellationToken);
 
         return NoContent();
     }
@@ -54,18 +41,10 @@ public sealed class UsersController(UserProfileService profileService, UserSelfS
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> UploadPicture(IFormFile? file, CancellationToken cancellationToken)
     {
-        if (ValidateUpload(file) is { } uploadError)
-        {
-            return uploadError;
-        }
+        ValidateUpload(file);
 
         await using var stream = file!.OpenReadStream();
-        (var success, var error) = await selfService.UpdatePictureAsync(stream, file.FileName, file.ContentType, cancellationToken);
-
-        if (!success)
-        {
-            return BadRequest(new { message = error });
-        }
+        await selfService.UpdatePictureAsync(stream, file.FileName, file.ContentType, cancellationToken);
 
         return NoContent();
     }
@@ -91,12 +70,7 @@ public sealed class UsersController(UserProfileService profileService, UserSelfS
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> DeletePicture(CancellationToken cancellationToken)
     {
-        (var success, var error) = await selfService.DeletePictureAsync(cancellationToken);
-
-        if (!success)
-        {
-            return BadRequest(new { message = error });
-        }
+        await selfService.DeletePictureAsync(cancellationToken);
 
         return NoContent();
     }
@@ -142,15 +116,7 @@ public sealed class UsersController(UserProfileService profileService, UserSelfS
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request, CancellationToken cancellationToken)
     {
-        (var success, var error) = await selfService.ChangePasswordAsync(request, cancellationToken);
-
-        if (!success)
-        {
-            return BadRequest(new
-            {
-                message = error
-            });
-        }
+        await selfService.ChangePasswordAsync(request, cancellationToken);
 
         return NoContent();
     }

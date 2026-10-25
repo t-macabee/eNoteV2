@@ -90,25 +90,25 @@ public sealed class UserSelfServiceTests
 
         public Task<int?> FindUserIdByUsernameAsync(string username, CancellationToken cancellationToken = default) => Task.FromResult<int?>(null);
 
-        public Task<(int? UserId, string? Error)> CreateUserAsync(string username, string email, string password, string? firstName, string? lastName, CancellationToken cancellationToken = default) =>
-            Task.FromResult<(int? UserId, string? Error)>((1, null));
+        public Task<int> CreateUserAsync(string username, string email, string password, string? firstName, string? lastName, CancellationToken cancellationToken = default) =>
+            Task.FromResult(1);
 
-        public Task<(bool Success, string? Error)> AssignSingleRoleAsync(int userId, string role, CancellationToken cancellationToken = default) =>
-            Task.FromResult((true, (string?)null));
+        public Task AssignSingleRoleAsync(int userId, string role, CancellationToken cancellationToken = default) =>
+            Task.CompletedTask;
 
-        public Task<(bool Success, string? Error)> UpdateExistingUserAsync(int userId, string email, string? firstName, string? lastName, DateTime? dateOfBirth = null, CancellationToken cancellationToken = default)
+        public Task UpdateExistingUserAsync(int userId, string email, string? firstName, string? lastName, DateTime? dateOfBirth = null, CancellationToken cancellationToken = default)
         {
             UpdatedUserId = userId;
             UpdatedEmail = email;
             UpdatedDateOfBirth = dateOfBirth;
-            return Task.FromResult((true, (string?)null));
+            return Task.CompletedTask;
         }
 
-        public Task<(bool Success, string? Error)> UpdatePictureAsync(int userId, Stream picture, string fileName, string contentType, CancellationToken cancellationToken = default)
+        public Task UpdatePictureAsync(int userId, Stream picture, string fileName, string contentType, CancellationToken cancellationToken = default)
         {
             PictureUpdateUserId = userId;
             Picture = picture;
-            return Task.FromResult((true, (string?)null));
+            return Task.CompletedTask;
         }
 
         public Task<(Stream? Data, string? ContentType)> GetPictureAsync(int userId, CancellationToken cancellationToken = default)
@@ -117,30 +117,30 @@ public sealed class UserSelfServiceTests
             return Task.FromResult<(Stream? Data, string? ContentType)>((null, null));
         }
 
-        public Task<(bool Success, string? Error)> DeletePictureAsync(int userId, CancellationToken cancellationToken = default)
+        public Task DeletePictureAsync(int userId, CancellationToken cancellationToken = default)
         {
             PictureDeleteUserId = userId;
-            return Task.FromResult((true, (string?)null));
+            return Task.CompletedTask;
         }
 
-        public Task<(bool Success, string? Error)> ChangePasswordAsync(int userId, string currentPassword, string newPassword, CancellationToken cancellationToken = default)
+        public Task ChangePasswordAsync(int userId, string currentPassword, string newPassword, CancellationToken cancellationToken = default)
         {
             PasswordUserId = userId;
             CurrentPassword = currentPassword;
             NewPassword = newPassword;
-            return Task.FromResult((true, (string?)null));
+            return Task.CompletedTask;
         }
 
         public Task<bool> VerifyPasswordAsync(int userId, string currentPassword, CancellationToken cancellationToken = default) =>
             Task.FromResult(true);
 
-        public Task<(bool Success, string? Error, string? PicturePath)> CloseAccountAsync(int userId, CancellationToken cancellationToken = default) =>
-            Task.FromResult((true, (string?)null, (string?)null));
+        public Task<string?> CloseAccountAsync(int userId, CancellationToken cancellationToken = default) =>
+            Task.FromResult<string?>(null);
 
-        public Task<(bool Success, string? Error)> SetActiveAsync(int userId, bool isActive, CancellationToken cancellationToken = default) =>
-            Task.FromResult((true, (string?)null));
+        public Task SetActiveAsync(int userId, bool isActive, CancellationToken cancellationToken = default) =>
+            Task.CompletedTask;
 
-        public Task<(bool Success, string? Error, string? PicturePath)> DeleteUserAsync(int userId, CancellationToken cancellationToken = default) =>
-            Task.FromResult((true, (string?)null, (string?)null));
+        public Task<string?> DeleteUserAsync(int userId, CancellationToken cancellationToken = default) =>
+            Task.FromResult<string?>(null);
     }
 }

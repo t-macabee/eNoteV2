@@ -55,31 +55,28 @@ public sealed class UserProvisioningServiceTests
         var service = CreateService(context, account);
         var request = new RegisterRequest { Username = "newstudent", Email = "new@example.com", Password = "Password1!" };
 
-        var (registration, error) = await service.RegisterStudentAsync(request);
+        var registration = await service.RegisterStudentAsync(request);
 
-        Assert.Null(error);
-        Assert.NotNull(registration);
         Assert.Equal(7, registration.UserId);
         Assert.Equal(["Student"], registration.Roles);
         Assert.True(await context.Set<Student>().AnyAsync(s => s.AppUserId == 7));
     }
 
     [Fact]
-    public async Task RegisterStudentAsync_ReturnsError_WhenCreationFails()
+    public async Task RegisterStudentAsync_ThrowsBusinessException_WhenCreationFails()
     {
         await using var context = TestDbContextFactory.CreateContext(Now);
         var account = new RecordingUserAccountService { CreateUserId = null };
         var service = CreateService(context, account);
 
-        var (registration, error) = await service.RegisterStudentAsync(new RegisterRequest
+        var exception = await Assert.ThrowsAsync<BusinessException>(() => service.RegisterStudentAsync(new RegisterRequest
         {
             Username = "newstudent",
             Email = "new@example.com",
             Password = "Password1!"
-        });
+        }));
 
-        Assert.Null(registration);
-        Assert.Equal("creation failed", error);
+        Assert.Equal("creation failed", exception.Message);
     }
 
     [Fact]
@@ -89,7 +86,7 @@ public sealed class UserProvisioningServiceTests
         var account = new RecordingUserAccountService();
         var service = CreateService(context, account);
 
-        var (userId, error) = await service.ProvisionUserAsync(new UserProvisionRequest
+        var userId = await service.ProvisionUserAsync(new UserProvisionRequest
         {
             Username = "newinstructor",
             Email = "inst@example.com",
@@ -97,48 +94,45 @@ public sealed class UserProvisioningServiceTests
             Role = AppRoles.Instructor
         });
 
-        Assert.Null(error);
         Assert.Equal(7, userId);
         Assert.True(await context.Set<Instructor>().AnyAsync(i => i.AppUserId == 7));
     }
 
     [Fact]
-    public async Task ProvisionUserAsync_ReturnsError_WhenStoreEmployeeHasNoStore()
+    public async Task ProvisionUserAsync_ThrowsBusinessException_WhenStoreEmployeeHasNoStore()
     {
         await using var context = TestDbContextFactory.CreateContext(Now);
         var account = new RecordingUserAccountService();
         var service = CreateService(context, account);
 
-        var (userId, error) = await service.ProvisionUserAsync(new UserProvisionRequest
+        var exception = await Assert.ThrowsAsync<BusinessException>(() => service.ProvisionUserAsync(new UserProvisionRequest
         {
             Username = "emp",
             Email = "emp@example.com",
             Password = "Password1!",
             Role = AppRoles.StoreEmployee
-        });
+        }));
 
-        Assert.Equal(Messages.MusicStoreRequiredForEmployee, error);
-        Assert.Equal(0, userId);
+        Assert.Equal(Messages.MusicStoreRequiredForEmployee, exception.Message);
         Assert.Null(account.AssignRoleCall);
     }
 
     [Fact]
-    public async Task ProvisionUserAsync_ReturnsUsernameTaken_WhenUsernameExists()
+    public async Task ProvisionUserAsync_ThrowsConflict_WhenUsernameExists()
     {
         await using var context = TestDbContextFactory.CreateContext(Now);
         var account = new RecordingUserAccountService { ExistingUserId = 42 };
         var service = CreateService(context, account);
 
-        var (userId, error) = await service.ProvisionUserAsync(new UserProvisionRequest
+        var exception = await Assert.ThrowsAsync<ConflictException>(() => service.ProvisionUserAsync(new UserProvisionRequest
         {
             Username = "existing",
             Email = "existing@example.com",
             Password = "Password1!",
             Role = AppRoles.Student
-        });
+        }));
 
-        Assert.Equal(0, userId);
-        Assert.Equal(Messages.UsernameTaken, error);
+        Assert.Equal(Messages.UsernameTaken, exception.Message);
         Assert.False(account.UpdatedExisting);
         Assert.Null(account.SetActiveCall);
         Assert.Null(account.AssignRoleCall);
@@ -152,16 +146,15 @@ public sealed class UserProvisioningServiceTests
         var account = new RecordingUserAccountService { ExistingUserId = 42 };
         var service = CreateService(context, account);
 
-        var (userId, error) = await service.ProvisionUserAsync(new UserProvisionRequest
+        var exception = await Assert.ThrowsAsync<ConflictException>(() => service.ProvisionUserAsync(new UserProvisionRequest
         {
             Username = "existing",
             Email = "existing@example.com",
             Password = "Password1!",
             Role = AppRoles.Student
-        });
+        }));
 
-        Assert.Equal(0, userId);
-        Assert.Equal(Messages.UsernameTaken, error);
+        Assert.Equal(Messages.UsernameTaken, exception.Message);
         Assert.False(account.UpdatedExisting);
     }
 
@@ -172,40 +165,38 @@ public sealed class UserProvisioningServiceTests
         var account = new RecordingUserAccountService { ExistingUserId = 42, IsActive = true };
         var service = CreateService(context, account);
 
-        var (userId, error) = await service.ProvisionUserAsync(new UserProvisionRequest
+        var exception = await Assert.ThrowsAsync<ConflictException>(() => service.ProvisionUserAsync(new UserProvisionRequest
         {
             Username = "existing",
             Email = "existing@example.com",
             Password = "Password1!",
             Role = AppRoles.Student
-        });
+        }));
 
-        Assert.Equal(0, userId);
-        Assert.Equal(Messages.UsernameTaken, error);
+        Assert.Equal(Messages.UsernameTaken, exception.Message);
         Assert.Null(account.SetActiveCall);
     }
 
     [Fact]
-    public async Task ProvisionUserAsync_ReturnsError_WhenRoleAssignmentFails()
+    public async Task ProvisionUserAsync_ThrowsBusinessException_WhenRoleAssignmentFails()
     {
         await using var context = TestDbContextFactory.CreateContext(Now);
         var account = new RecordingUserAccountService
         {
             CreateUserId = 7,
-            AssignRoleResult = (false, "role assignment failed")
+            AssignRoleError = "role assignment failed"
         };
         var service = CreateService(context, account);
 
-        var (userId, error) = await service.ProvisionUserAsync(new UserProvisionRequest
+        var exception = await Assert.ThrowsAsync<BusinessException>(() => service.ProvisionUserAsync(new UserProvisionRequest
         {
             Username = "newuser",
             Email = "new@example.com",
             Password = "Password1!",
             Role = AppRoles.Instructor
-        });
+        }));
 
-        Assert.Equal(0, userId);
-        Assert.Equal("role assignment failed", error);
+        Assert.Equal("role assignment failed", exception.Message);
         Assert.Equal((7, AppRoles.Instructor), account.AssignRoleCall);
         Assert.False(await context.Set<Instructor>().AnyAsync(i => i.AppUserId == 7));
     }
@@ -221,7 +212,7 @@ public sealed class UserProvisioningServiceTests
         var account = new RecordingUserAccountService { CreateUserId = 10 };
         var service = CreateService(context, account);
 
-        var (firstId, _) = await service.ProvisionUserAsync(new UserProvisionRequest
+        var firstId = await service.ProvisionUserAsync(new UserProvisionRequest
         {
             Username = "emp1",
             Email = "emp1@example.com",
@@ -234,7 +225,7 @@ public sealed class UserProvisioningServiceTests
         Assert.True(firstEmp.IsManager);
 
         account.CreateUserId = 11;
-        var (secondId, _) = await service.ProvisionUserAsync(new UserProvisionRequest
+        var secondId = await service.ProvisionUserAsync(new UserProvisionRequest
         {
             Username = "emp2",
             Email = "emp2@example.com",
@@ -254,7 +245,7 @@ public sealed class UserProvisioningServiceTests
         var account = new RecordingUserAccountService { CreateUserId = 20 };
         var service = CreateService(context, account);
 
-        var (userId, error) = await service.ProvisionStudentByInstructorAsync(new DelegatedUserCreateRequest
+        var userId = await service.ProvisionStudentByInstructorAsync(new DelegatedUserCreateRequest
         {
             Username = "delegatedstudent",
             Email = "delstudent@example.com",
@@ -263,7 +254,6 @@ public sealed class UserProvisioningServiceTests
             LastName = "Student"
         });
 
-        Assert.Null(error);
         Assert.Equal(20, userId);
         var student = await context.Set<Student>().SingleAsync(s => s.AppUserId == 20);
         Assert.NotNull(student);
@@ -285,7 +275,7 @@ public sealed class UserProvisioningServiceTests
         var account = new RecordingUserAccountService { CreateUserId = 51 };
         var service = CreateService(context, account, actor);
 
-        var (userId, error) = await service.ProvisionEmployeeByManagerAsync(new DelegatedUserCreateRequest
+        var userId = await service.ProvisionEmployeeByManagerAsync(new DelegatedUserCreateRequest
         {
             Username = "newhire",
             Email = "newhire@example.com",
@@ -294,7 +284,6 @@ public sealed class UserProvisioningServiceTests
             LastName = "Worker"
         });
 
-        Assert.Null(error);
         Assert.Equal(51, userId);
         var employee = await context.Set<MusicStoreEmployee>().SingleAsync(e => e.AppUserId == 51);
         Assert.Equal(store.Id, employee.MusicStoreId);
@@ -360,6 +349,7 @@ public sealed class UserProvisioningServiceTests
 
         await service.SetUserActiveAsync(99, false);
         Assert.Equal((99, false), account.SetActiveCall);
+        Assert.Null(account.SetActiveError);
     }
 
     [Fact]
@@ -370,10 +360,9 @@ public sealed class UserProvisioningServiceTests
         var currentUser = new StubCurrentActor(userId: 42);
         var service = CreateService(context, account, currentUser);
 
-        var (success, error) = await service.SetUserActiveAsync(42, false);
+        var exception = await Assert.ThrowsAsync<ConflictException>(() => service.SetUserActiveAsync(42, false));
 
-        Assert.False(success);
-        Assert.Equal(Messages.CannotModifyOwnAccount, error);
+        Assert.Equal(Messages.CannotModifyOwnAccount, exception.Message);
         Assert.Null(account.SetActiveCall);
     }
 
@@ -388,10 +377,8 @@ public sealed class UserProvisioningServiceTests
         var account = new RecordingUserAccountService();
         var service = CreateService(context, account);
 
-        var (success, error) = await service.DeleteUserAsync(15);
+        await service.DeleteUserAsync(15);
 
-        Assert.True(success);
-        Assert.Null(error);
         Assert.False(await context.Set<Student>().AnyAsync(s => s.AppUserId == 15));
     }
 
@@ -414,10 +401,9 @@ public sealed class UserProvisioningServiceTests
         var account = new RecordingUserAccountService();
         var service = CreateService(context, account);
 
-        var (success, error) = await service.DeleteUserAsync(15);
+        var exception = await Assert.ThrowsAsync<ConflictException>(() => service.DeleteUserAsync(15));
 
-        Assert.False(success);
-        Assert.Equal(Messages.UserDeleteBlocked, error);
+        Assert.Equal(Messages.UserDeleteBlocked, exception.Message);
         Assert.True(await context.Set<Student>().AnyAsync(s => s.AppUserId == 15));
     }
 
@@ -434,10 +420,9 @@ public sealed class UserProvisioningServiceTests
 
         var service = CreateService(context, new RecordingUserAccountService());
 
-        var (success, error) = await service.DeleteUserAsync(15);
+        var exception = await Assert.ThrowsAsync<ConflictException>(() => service.DeleteUserAsync(15));
 
-        Assert.False(success);
-        Assert.Equal(Messages.UserDeleteBlocked, error);
+        Assert.Equal(Messages.UserDeleteBlocked, exception.Message);
         Assert.True(await context.Set<Student>().AnyAsync(s => s.AppUserId == 15));
     }
 
@@ -462,10 +447,9 @@ public sealed class UserProvisioningServiceTests
         var account = new RecordingUserAccountService();
         var service = CreateService(context, account);
 
-        var (success, error) = await service.DeleteUserAsync(15);
+        var exception = await Assert.ThrowsAsync<ConflictException>(() => service.DeleteUserAsync(15));
 
-        Assert.False(success);
-        Assert.Equal(Messages.UserDeleteBlocked, error);
+        Assert.Equal(Messages.UserDeleteBlocked, exception.Message);
     }
 
     [Fact]
@@ -481,10 +465,9 @@ public sealed class UserProvisioningServiceTests
         var account = new RecordingUserAccountService();
         var service = CreateService(context, account);
 
-        var (success, error) = await service.DeleteUserAsync(55);
+        var exception = await Assert.ThrowsAsync<ConflictException>(() => service.DeleteUserAsync(55));
 
-        Assert.False(success);
-        Assert.Equal(Messages.UserDeleteBlocked, error);
+        Assert.Equal(Messages.UserDeleteBlocked, exception.Message);
     }
 
     [Fact]
@@ -499,10 +482,9 @@ public sealed class UserProvisioningServiceTests
         var account = new RecordingUserAccountService();
         var service = CreateService(context, account);
 
-        var (success, error) = await service.DeleteUserAsync(55);
+        var exception = await Assert.ThrowsAsync<ConflictException>(() => service.DeleteUserAsync(55));
 
-        Assert.False(success);
-        Assert.Equal(Messages.UserDeleteBlocked, error);
+        Assert.Equal(Messages.UserDeleteBlocked, exception.Message);
     }
 
     [Fact]
@@ -513,14 +495,12 @@ public sealed class UserProvisioningServiceTests
         context.Set<Student>().Add(student);
         await context.SaveChangesAsync();
 
-        var account = new RecordingUserAccountService { DeleteUserResult = (true, null, "/api/uploads/profile-pictures/pic.png") };
+        var account = new RecordingUserAccountService { DeleteUserPicturePath = "/api/uploads/profile-pictures/pic.png" };
         var fileStorage = new RecordingFileStorageService();
         var service = CreateService(context, account, fileStorage: fileStorage);
 
-        var (success, error) = await service.DeleteUserAsync(15);
+        await service.DeleteUserAsync(15);
 
-        Assert.True(success);
-        Assert.Null(error);
         Assert.Contains("/api/uploads/profile-pictures/pic.png", fileStorage.DeletedPaths);
     }
 
@@ -532,14 +512,13 @@ public sealed class UserProvisioningServiceTests
         context.Set<Student>().Add(student);
         await context.SaveChangesAsync();
 
-        var account = new RecordingUserAccountService { DeleteUserResult = (false, Messages.NotFound, "/api/uploads/profile-pictures/pic.png") };
+        var account = new RecordingUserAccountService { DeleteUserError = new NotFoundException(Messages.NotFound), DeleteUserPicturePath = "/api/uploads/profile-pictures/pic.png" };
         var fileStorage = new RecordingFileStorageService();
         var service = CreateService(context, account, fileStorage: fileStorage);
 
-        var (success, error) = await service.DeleteUserAsync(15);
+        var exception = await Assert.ThrowsAsync<NotFoundException>(() => service.DeleteUserAsync(15));
 
-        Assert.False(success);
-        Assert.Equal(Messages.NotFound, error);
+        Assert.Equal(Messages.NotFound, exception.Message);
         Assert.Empty(fileStorage.DeletedPaths);
     }
 
@@ -550,10 +529,9 @@ public sealed class UserProvisioningServiceTests
         var currentUser = new StubCurrentActor(userId: 42);
         var service = CreateService(context, new RecordingUserAccountService(), currentUser);
 
-        var (success, error) = await service.DeleteUserAsync(42);
+        var exception = await Assert.ThrowsAsync<ConflictException>(() => service.DeleteUserAsync(42));
 
-        Assert.False(success);
-        Assert.Equal(Messages.CannotModifyOwnAccount, error);
+        Assert.Equal(Messages.CannotModifyOwnAccount, exception.Message);
     }
 
     private static UserProvisioningService CreateService(
@@ -570,51 +548,57 @@ public sealed class UserProvisioningServiceTests
         public bool IsActive { get; set; }
         public bool UpdatedExisting { get; private set; }
         public (int UserId, bool IsActive)? SetActiveCall { get; private set; }
-        public (bool Success, string? Error) SetActiveResult { get; set; } = (true, null);
-        public (bool Success, string? Error) AssignRoleResult { get; set; } = (true, null);
+        public string? SetActiveError { get; set; }
+        public string? AssignRoleError { get; set; }
         public (int UserId, string Role)? AssignRoleCall { get; private set; }
         public string? LastEmail { get; private set; }
 
         public Task<int?> FindUserIdByUsernameAsync(string username, CancellationToken cancellationToken = default) =>
             Task.FromResult(ExistingUserId);
 
-        public Task<(int? UserId, string? Error)> CreateUserAsync(string username, string email, string password, string? firstName, string? lastName, CancellationToken cancellationToken = default) =>
-            Task.FromResult(LogCreate(email));
-
-        private (int? UserId, string? Error) LogCreate(string email)
+        public Task<int> CreateUserAsync(string username, string email, string password, string? firstName, string? lastName, CancellationToken cancellationToken = default)
         {
             LastEmail = email;
-            return (CreateUserId, CreateUserId is null ? "creation failed" : null);
+
+            return CreateUserId is null
+                ? throw new BusinessException("creation failed")
+                : Task.FromResult(CreateUserId.Value);
         }
 
-        public Task<(bool Success, string? Error)> AssignSingleRoleAsync(int userId, string role, CancellationToken cancellationToken = default)
+        public Task AssignSingleRoleAsync(int userId, string role, CancellationToken cancellationToken = default)
         {
             AssignRoleCall = (userId, role);
-            return Task.FromResult(AssignRoleResult);
+
+            return AssignRoleError is null
+                ? Task.CompletedTask
+                : throw new BusinessException(AssignRoleError);
         }
 
-        public Task<(bool Success, string? Error)> UpdateExistingUserAsync(int userId, string email, string? firstName, string? lastName, DateTime? dateOfBirth = null, CancellationToken cancellationToken = default)
+        public Task UpdateExistingUserAsync(int userId, string email, string? firstName, string? lastName, DateTime? dateOfBirth = null, CancellationToken cancellationToken = default)
         {
             UpdatedExisting = true;
-            return Task.FromResult((true, (string?)null));
+            return Task.CompletedTask;
         }
 
-        public Task<(bool Success, string? Error)> UpdatePictureAsync(int userId, Stream picture, string fileName, string contentType, CancellationToken cancellationToken = default) =>
-            Task.FromResult((true, (string?)null));
+        public Task UpdatePictureAsync(int userId, Stream picture, string fileName, string contentType, CancellationToken cancellationToken = default) =>
+            Task.CompletedTask;
 
         public Task<(Stream? Data, string? ContentType)> GetPictureAsync(int userId, CancellationToken cancellationToken = default) =>
             Task.FromResult<(Stream?, string?)>((null, null));
 
-        public Task<(bool Success, string? Error)> DeletePictureAsync(int userId, CancellationToken cancellationToken = default) =>
-            Task.FromResult((true, (string?)null));
+        public Task DeletePictureAsync(int userId, CancellationToken cancellationToken = default) =>
+            Task.CompletedTask;
 
-        public Task<(bool Success, string? Error)> ChangePasswordAsync(int userId, string currentPassword, string newPassword, CancellationToken cancellationToken = default) =>
-            Task.FromResult((true, (string?)null));
+        public Task ChangePasswordAsync(int userId, string currentPassword, string newPassword, CancellationToken cancellationToken = default) =>
+            Task.CompletedTask;
 
-        public Task<(bool Success, string? Error)> SetActiveAsync(int userId, bool isActive, CancellationToken cancellationToken = default)
+        public Task SetActiveAsync(int userId, bool isActive, CancellationToken cancellationToken = default)
         {
             SetActiveCall = (userId, isActive);
-            return Task.FromResult(SetActiveResult);
+
+            return SetActiveError is null
+                ? Task.CompletedTask
+                : throw new BusinessException(SetActiveError);
         }
 
         public bool VerifyPasswordResult { get; set; } = true;
@@ -622,12 +606,16 @@ public sealed class UserProvisioningServiceTests
         public Task<bool> VerifyPasswordAsync(int userId, string currentPassword, CancellationToken cancellationToken = default) =>
             Task.FromResult(VerifyPasswordResult);
 
-        public Task<(bool Success, string? Error, string? PicturePath)> CloseAccountAsync(int userId, CancellationToken cancellationToken = default) =>
-            Task.FromResult((true, (string?)null, (string?)null));
+        public Task<string?> CloseAccountAsync(int userId, CancellationToken cancellationToken = default) =>
+            Task.FromResult<string?>(null);
 
-        public (bool Success, string? Error, string? PicturePath) DeleteUserResult { get; set; } = (true, null, null);
+        public Exception? DeleteUserError { get; set; }
 
-        public Task<(bool Success, string? Error, string? PicturePath)> DeleteUserAsync(int userId, CancellationToken cancellationToken = default) =>
-            Task.FromResult(DeleteUserResult);
+        public string? DeleteUserPicturePath { get; set; }
+
+        public Task<string?> DeleteUserAsync(int userId, CancellationToken cancellationToken = default) =>
+            DeleteUserError is null
+                ? Task.FromResult(DeleteUserPicturePath)
+                : Task.FromException<string?>(DeleteUserError);
     }
 }

@@ -10,9 +10,9 @@ public sealed class UserProvisioningService(
     IFileStorageService fileStorage,
     ICurrentUserContext? currentUserContext = null) : IUserProvisioningService
 {
-    public async Task<(RegistrationResult? Registration, string? Error)> RegisterStudentAsync(RegisterRequest request, CancellationToken cancellationToken = default)
+    public async Task<RegistrationResult> RegisterStudentAsync(RegisterRequest request, CancellationToken cancellationToken = default)
     {
-        (var userId, var error) = await ProvisionCoreAsync(
+        var userId = await ProvisionCoreAsync(
             request.Username,
             request.Email,
             request.Password,
@@ -23,19 +23,14 @@ public sealed class UserProvisioningService(
             isManager: null,
             cancellationToken);
 
-        if (error is not null)
-        {
-            return (null, error);
-        }
-
-        return (new RegistrationResult(userId, request.Username.Trim(), [AppRoles.Student]), null);
+        return new RegistrationResult(userId, request.Username.Trim(), [AppRoles.Student]);
     }
 
-    public async Task<(int UserId, string? Error)> ProvisionUserAsync(UserProvisionRequest request, CancellationToken cancellationToken = default)
+    public async Task<int> ProvisionUserAsync(UserProvisionRequest request, CancellationToken cancellationToken = default)
     {
         if (request.Role == AppRoles.StoreEmployee && request.MusicStoreId is null)
         {
-            return (0, Messages.MusicStoreRequiredForEmployee);
+            throw new BusinessException(Messages.MusicStoreRequiredForEmployee);
         }
 
         return await ProvisionCoreAsync(
@@ -50,7 +45,7 @@ public sealed class UserProvisioningService(
             cancellationToken);
     }
 
-    public Task<(int UserId, string? Error)> ProvisionStudentByInstructorAsync(
+    public Task<int> ProvisionStudentByInstructorAsync(
         DelegatedUserCreateRequest request,
         CancellationToken cancellationToken = default) =>
         ProvisionCoreAsync(
@@ -64,7 +59,7 @@ public sealed class UserProvisioningService(
             isManager: null,
             cancellationToken);
 
-    public async Task<(int UserId, string? Error)> ProvisionEmployeeByManagerAsync(
+    public async Task<int> ProvisionEmployeeByManagerAsync(
         DelegatedUserCreateRequest request,
         CancellationToken cancellationToken = default)
     {
@@ -87,7 +82,7 @@ public sealed class UserProvisioningService(
             cancellationToken);
     }
 
-    private async Task<(int UserId, string? Error)> ProvisionCoreAsync(
+    private async Task<int> ProvisionCoreAsync(
         string username,
         string email,
         string password,
@@ -98,50 +93,30 @@ public sealed class UserProvisioningService(
         bool? isManager,
         CancellationToken cancellationToken)
     {
-        try
+        return await context.ExecuteInTransactionAsync(async () =>
         {
-            return await context.ExecuteInTransactionAsync(async () =>
+            var normalizedUsername = username.Trim();
+            var existingUserId = await accountService.FindUserIdByUsernameAsync(normalizedUsername, cancellationToken);
+
+            if (existingUserId.HasValue)
             {
-                var normalizedUsername = username.Trim();
-                var existingUserId = await accountService.FindUserIdByUsernameAsync(normalizedUsername, cancellationToken);
+                throw new ConflictException(Messages.UsernameTaken);
+            }
 
-                if (existingUserId.HasValue)
-                {
-                    return (0, Messages.UsernameTaken);
-                }
+            var userId = await accountService.CreateUserAsync(
+                normalizedUsername,
+                email.Trim(),
+                password,
+                firstName?.Trim(),
+                lastName?.Trim(),
+                cancellationToken);
 
-                (int? UserId, string? Error) createResult = await accountService.CreateUserAsync(
-                    normalizedUsername,
-                    email.Trim(),
-                    password,
-                    firstName?.Trim(),
-                    lastName?.Trim(),
-                    cancellationToken);
+            await accountService.AssignSingleRoleAsync(userId, role, cancellationToken);
+            await EnsureRoleProfileAsync(userId, role, musicStoreId, cancellationToken, isManager);
+            await context.SaveChangesAsync(cancellationToken);
 
-                if (createResult.UserId is null)
-                {
-                    return (0, createResult.Error);
-                }
-
-                var userId = createResult.UserId.Value;
-
-                (var success, var roleError) = await accountService.AssignSingleRoleAsync(userId, role, cancellationToken);
-
-                if (!success)
-                {
-                    throw new BusinessException(roleError);
-                }
-
-                await EnsureRoleProfileAsync(userId, role, musicStoreId, cancellationToken, isManager);
-                await context.SaveChangesAsync(cancellationToken);
-
-                return (userId, (string?)null);
-            }, cancellationToken);
-        }
-        catch (BusinessException exception)
-        {
-            return (0, exception.Message);
-        }
+            return userId;
+        }, cancellationToken);
     }
 
     public async Task<bool> IsStoreManagerAsync(int userId, CancellationToken cancellationToken = default)
@@ -151,26 +126,27 @@ public sealed class UserProvisioningService(
             .AnyAsync(x => x.AppUserId == userId && x.IsActive && x.IsManager, cancellationToken);
     }
 
-    public Task<(bool Success, string? Error)> SetUserActiveAsync(int userId, bool isActive, CancellationToken cancellationToken = default)
+    public async Task SetUserActiveAsync(int userId, bool isActive, CancellationToken cancellationToken = default)
     {
         if (!isActive && currentUserContext != null && currentUserContext.UserId == userId)
         {
-            return Task.FromResult<(bool, string?)>((false, Messages.CannotModifyOwnAccount));
+            throw new ConflictException(Messages.CannotModifyOwnAccount);
         }
-        return accountService.SetActiveAsync(userId, isActive, cancellationToken);
+
+        await accountService.SetActiveAsync(userId, isActive, cancellationToken);
     }
 
-    public async Task<(bool Success, string? Error)> DeleteUserAsync(int userId, CancellationToken cancellationToken = default)
+    public async Task DeleteUserAsync(int userId, CancellationToken cancellationToken = default)
     {
         if (currentUserContext != null && currentUserContext.UserId == userId)
         {
-            return (false, Messages.CannotModifyOwnAccount);
+            throw new ConflictException(Messages.CannotModifyOwnAccount);
         }
 
         var hasAuthoredHistory = await context.Set<eNote.Domain.Entities.Communication.Announcement>().IgnoreQueryFilters().AnyAsync(a => a.CreatedById == userId, cancellationToken) ||
                                   await context.Set<eNote.Domain.Entities.Communication.Event>().IgnoreQueryFilters().AnyAsync(e => e.CreatedById == userId, cancellationToken) ||
                                   await context.Set<eNote.Domain.Entities.Rentals.InstrumentRental>().IgnoreQueryFilters().AnyAsync(r => r.ApprovedById == userId || r.RejectedById == userId, cancellationToken);
-        if (hasAuthoredHistory) return (false, Messages.UserDeleteBlocked);
+        if (hasAuthoredHistory) throw new ConflictException(Messages.UserDeleteBlocked);
 
         var student = await context.Set<Student>().FirstOrDefaultAsync(s => s.AppUserId == userId, cancellationToken);
         if (student != null)
@@ -180,8 +156,7 @@ public sealed class UserProvisioningService(
                                  await context.Set<eNote.Domain.Entities.Assignments.AssignmentSubmission>().IgnoreQueryFilters().AnyAsync(s => s.StudentId == student.Id, cancellationToken) ||
                                  await context.Set<eNote.Domain.Entities.Rentals.InstrumentRental>().IgnoreQueryFilters().AnyAsync(r => r.StudentProfileId == student.Id, cancellationToken) ||
                                  await context.Set<eNote.Domain.Entities.Identity.MembershipPayment>().IgnoreQueryFilters().AnyAsync(p => p.StudentId == student.Id, cancellationToken);
-            if (hasDependents) return (false, Messages.UserDeleteBlocked);
-
+            if (hasDependents) throw new ConflictException(Messages.UserDeleteBlocked);
 
             context.Set<Student>().Remove(student);
         }
@@ -191,7 +166,7 @@ public sealed class UserProvisioningService(
         {
             var hasDependents = await context.Set<eNote.Domain.Entities.Academic.Course>().IgnoreQueryFilters().AnyAsync(c => c.InstructorId == instructor.Id, cancellationToken) ||
                                  await context.Set<eNote.Domain.Entities.Communication.Event>().IgnoreQueryFilters().AnyAsync(e => e.InstructorId == instructor.Id, cancellationToken);
-            if (hasDependents) return (false, Messages.UserDeleteBlocked);
+            if (hasDependents) throw new ConflictException(Messages.UserDeleteBlocked);
 
             context.Set<Instructor>().Remove(instructor);
         }
@@ -204,16 +179,9 @@ public sealed class UserProvisioningService(
 
         using var transaction = await context.BeginTransactionAsync(cancellationToken);
 
-
         await context.SaveChangesAsync(cancellationToken);
 
-
-        var (success, error, picturePath) = await accountService.DeleteUserAsync(userId, cancellationToken);
-        if (!success)
-        {
-            await transaction.RollbackAsync(cancellationToken);
-            return (false, error);
-        }
+        var picturePath = await accountService.DeleteUserAsync(userId, cancellationToken);
 
         await transaction.CommitAsync(cancellationToken);
 
@@ -221,8 +189,6 @@ public sealed class UserProvisioningService(
         {
             fileStorage.Delete(picturePath);
         }
-
-        return (true, null);
     }
 
     private async Task EnsureRoleProfileAsync(

@@ -63,19 +63,8 @@ internal sealed class AuthService(UserManager<AppUser> userManager, SignInManage
 
     public async Task<AuthResponse> RegisterAsync(RegisterRequest model, CancellationToken cancellationToken = default)
     {
-        (var registration, var error) = await userProvisioning.RegisterStudentAsync(model, cancellationToken);
+        var registeredUser = await userProvisioning.RegisterStudentAsync(model, cancellationToken);
 
-        if (error is not null)
-        {
-            if (ErrorMapping.IsConflict(error))
-            {
-                throw new ConflictException(error);
-            }
-
-            throw new BusinessException(error);
-        }
-
-        var registeredUser = registration ?? throw new BusinessException(Messages.InternalError);
         AppUser? registered = await userManager.FindByIdAsync(registeredUser.UserId.ToString());
         var stamp = registered is null ? null : await userManager.GetSecurityStampAsync(registered);
         var token = tokenService.GenerateToken(registeredUser.UserId, registeredUser.Username, registeredUser.Roles.ToList(), securityStamp: stamp);

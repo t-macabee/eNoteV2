@@ -46,7 +46,7 @@ public sealed class ShopEmployeeControllerTests
         await using var ctx = TestDbContextFactory.CreateContext(Now);
         var actor = new StubCurrentActor(userId: 10);
         var employeeService = new ShopEmployeeService(ctx, new StubUserIdentityService(), actor, new StubProvisioningService());
-        var stubProvisioning = new StubProvisioningService { CreateResult = (55, null) };
+        var stubProvisioning = new StubProvisioningService { CreateUserId = 55 };
         var controller = new ShopEmployeeController(employeeService, stubProvisioning);
 
         var result = await controller.Create(new DelegatedUserCreateRequest
@@ -61,23 +61,22 @@ public sealed class ShopEmployeeControllerTests
     }
 
     [Fact]
-    public async Task Create_ReturnsBadRequest_WhenErrorOccurs()
+    public async Task Create_ThrowsBusiness_WhenCreationFails()
     {
         await using var ctx = TestDbContextFactory.CreateContext(Now);
         var actor = new StubCurrentActor(userId: 10);
         var employeeService = new ShopEmployeeService(ctx, new StubUserIdentityService(), actor, new StubProvisioningService());
-        var stubProvisioning = new StubProvisioningService { CreateResult = (0, "Creation error") };
+        var stubProvisioning = new StubProvisioningService { CreateError = new BusinessException("Creation error") };
         var controller = new ShopEmployeeController(employeeService, stubProvisioning);
 
-        var result = await controller.Create(new DelegatedUserCreateRequest
+        var exception = await Assert.ThrowsAsync<BusinessException>(() => controller.Create(new DelegatedUserCreateRequest
         {
             Username = "existingemployee",
             Email = "emp@example.com",
             Password = "Password1!"
-        }, CancellationToken.None);
+        }, CancellationToken.None));
 
-        var badRequest = Assert.IsType<BadRequestObjectResult>(result);
-        Assert.NotNull(badRequest.Value);
+        Assert.Equal("Creation error", exception.Message);
     }
 
     [Fact]
@@ -116,14 +115,14 @@ public sealed class ShopEmployeeControllerTests
         await ctx.SaveChangesAsync();
 
         var actor = new StubCurrentActor(userId: 10);
-        var stubProvisioning = new StubProvisioningService { SetActiveResult = (false, Messages.CannotModifyOwnAccount) };
+        var stubProvisioning = new StubProvisioningService { SetActiveError = new ConflictException(Messages.CannotModifyOwnAccount) };
         var employeeService = new ShopEmployeeService(ctx, new StubUserIdentityService(), actor, stubProvisioning);
         var controller = new ShopEmployeeController(employeeService, stubProvisioning);
 
-        var result = await controller.SetStatus(10, new UserStatusRequest(false), CancellationToken.None);
+        var exception = await Assert.ThrowsAsync<ConflictException>(() =>
+            controller.SetStatus(10, new UserStatusRequest(false), CancellationToken.None));
 
-        var conflict = Assert.IsType<ConflictObjectResult>(result);
-        Assert.Equal(Messages.CannotModifyOwnAccount, conflict.Value!.GetType().GetProperty("message")!.GetValue(conflict.Value));
+        Assert.Equal(Messages.CannotModifyOwnAccount, exception.Message);
     }
 
     [Fact]
@@ -140,14 +139,14 @@ public sealed class ShopEmployeeControllerTests
         await ctx.SaveChangesAsync();
 
         var actor = new StubCurrentActor(userId: 10);
-        var stubProvisioning = new StubProvisioningService { SetActiveResult = (false, "Cannot deactivate user.") };
+        var stubProvisioning = new StubProvisioningService { SetActiveError = new BusinessException("Cannot deactivate user.") };
         var employeeService = new ShopEmployeeService(ctx, new StubUserIdentityService(), actor, stubProvisioning);
         var controller = new ShopEmployeeController(employeeService, stubProvisioning);
 
-        var result = await controller.SetStatus(20, new UserStatusRequest(false), CancellationToken.None);
+        var exception = await Assert.ThrowsAsync<BusinessException>(() =>
+            controller.SetStatus(20, new UserStatusRequest(false), CancellationToken.None));
 
-        var badRequest = Assert.IsType<BadRequestObjectResult>(result);
-        Assert.NotNull(badRequest.Value);
+        Assert.Equal("Cannot deactivate user.", exception.Message);
     }
 
     [Fact]
@@ -164,13 +163,14 @@ public sealed class ShopEmployeeControllerTests
         await ctx.SaveChangesAsync();
 
         var actor = new StubCurrentActor(userId: 10);
-        var stubProvisioning = new StubProvisioningService { SetActiveResult = (false, Messages.NotFound) };
+        var stubProvisioning = new StubProvisioningService { SetActiveError = new NotFoundException(Messages.NotFound) };
         var employeeService = new ShopEmployeeService(ctx, new StubUserIdentityService(), actor, stubProvisioning);
         var controller = new ShopEmployeeController(employeeService, stubProvisioning);
 
-        var result = await controller.SetStatus(30, new UserStatusRequest(false), CancellationToken.None);
+        var exception = await Assert.ThrowsAsync<NotFoundException>(() =>
+            controller.SetStatus(30, new UserStatusRequest(false), CancellationToken.None));
 
-        Assert.IsType<NotFoundObjectResult>(result);
+        Assert.Equal(Messages.NotFound, exception.Message);
     }
 
     [Fact]
@@ -200,23 +200,26 @@ public sealed class ShopEmployeeControllerTests
 
     private sealed class StubProvisioningService : IUserProvisioningService
     {
-        public (int UserId, string? Error) CreateResult { get; set; } = (1, null);
-        public (bool Success, string? Error) SetActiveResult { get; set; } = (true, null);
+        public int CreateUserId { get; set; } = 1;
+        public Exception? CreateError { get; set; }
+        public Exception? SetActiveError { get; set; }
 
-        public Task<(RegistrationResult? Registration, string? Error)> RegisterStudentAsync(RegisterRequest request, CancellationToken cancellationToken = default) =>
-            Task.FromResult<(RegistrationResult?, string?)>((null, null));
+        public Task<RegistrationResult> RegisterStudentAsync(RegisterRequest request, CancellationToken cancellationToken = default) =>
+            throw new NotSupportedException();
 
-        public Task<(int UserId, string? Error)> ProvisionUserAsync(UserProvisionRequest request, CancellationToken cancellationToken = default) =>
-            Task.FromResult((1, (string?)null));
+        public Task<int> ProvisionUserAsync(UserProvisionRequest request, CancellationToken cancellationToken = default) =>
+            Task.FromResult(1);
 
-        public Task<(bool Success, string? Error)> SetUserActiveAsync(int userId, bool isActive, CancellationToken cancellationToken = default) => Task.FromResult(SetActiveResult);
-        public Task<(bool Success, string? Error)> DeleteUserAsync(int userId, CancellationToken cancellationToken = default) => Task.FromResult((true, (string?)null));
+        public Task SetUserActiveAsync(int userId, bool isActive, CancellationToken cancellationToken = default) =>
+            SetActiveError is null ? Task.CompletedTask : Task.FromException(SetActiveError);
+
+        public Task DeleteUserAsync(int userId, CancellationToken cancellationToken = default) => Task.CompletedTask;
         public Task<bool> IsStoreManagerAsync(int userId, CancellationToken cancellationToken = default) => Task.FromResult(false);
 
-        public Task<(int UserId, string? Error)> ProvisionStudentByInstructorAsync(DelegatedUserCreateRequest request, CancellationToken cancellationToken = default) =>
-            Task.FromResult(CreateResult);
+        public Task<int> ProvisionStudentByInstructorAsync(DelegatedUserCreateRequest request, CancellationToken cancellationToken = default) =>
+            Task.FromResult(1);
 
-        public Task<(int UserId, string? Error)> ProvisionEmployeeByManagerAsync(DelegatedUserCreateRequest request, CancellationToken cancellationToken = default) =>
-            Task.FromResult(CreateResult);
+        public Task<int> ProvisionEmployeeByManagerAsync(DelegatedUserCreateRequest request, CancellationToken cancellationToken = default) =>
+            CreateError is null ? Task.FromResult(CreateUserId) : Task.FromException<int>(CreateError);
     }
 }

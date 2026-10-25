@@ -10,14 +10,12 @@ class ApiError {
   final int status;
   final String code;
   final String message;
-  final String title;
   final Map<String, List<String>> errors;
 
   ApiError({
     required this.status,
     required this.code,
     required this.message,
-    this.title = '',
     Map<String, List<String>>? errors,
   }) : errors = errors ?? const {};
 
@@ -36,7 +34,6 @@ class ApiError {
       status: json['status'] as int? ?? 0,
       code: json['code'] as String? ?? '',
       message: json['message'] as String? ?? '',
-      title: json['title'] as String? ?? '',
       errors: parsedErrors,
     );
   }
@@ -71,10 +68,6 @@ class ApiErrorMapper {
 
     if (apiError.errors.isNotEmpty) {
       return apiError.errors.values.expand((e) => e).join('\n');
-    }
-
-    if (statusCode == 400 && apiError.title.isNotEmpty) {
-      return apiError.title;
     }
 
     return _defaultMessage(statusCode);

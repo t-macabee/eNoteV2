@@ -1,6 +1,4 @@
 using eNote.API.Controllers.Base;
-using eNote.Application.Common.Exceptions;
-using eNote.Application.Common.Localization;
 using eNote.Application.Constants;
 using eNote.Application.Features.Identity.Users;
 using eNote.Application.Features.Identity.Users.Services;
@@ -22,11 +20,6 @@ public sealed class AdminUsersController(
     {
         var profile = await profileService.GetUserAsync(id, true, cancellationToken);
 
-        if (profile is null)
-        {
-            return NotFound();
-        }
-
         return Ok(profile);
     }
 
@@ -35,20 +28,7 @@ public sealed class AdminUsersController(
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult> Provision([FromBody] UserProvisionRequest request, CancellationToken cancellationToken)
     {
-        (var userId, var error) = await provisioningService.ProvisionUserAsync(request, cancellationToken);
-
-        if (error is not null)
-        {
-            if (ErrorMapping.IsConflict(error))
-            {
-                throw new ConflictException(error);
-            }
-
-            return BadRequest(new
-            {
-                message = error
-            });
-        }
+        var userId = await provisioningService.ProvisionUserAsync(request, cancellationToken);
 
         return CreatedAtAction(nameof(GetById), new
         {
@@ -66,12 +46,7 @@ public sealed class AdminUsersController(
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> SetUserStatus(int id, [FromBody] UserStatusRequest request, CancellationToken cancellationToken)
     {
-        (var success, var error) = await provisioningService.SetUserActiveAsync(id, request.IsActive, cancellationToken);
-
-        if (!success)
-        {
-            return MapError(error);
-        }
+        await provisioningService.SetUserActiveAsync(id, request.IsActive, cancellationToken);
 
         return NoContent();
     }
@@ -82,12 +57,7 @@ public sealed class AdminUsersController(
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> DeleteUser(int id, CancellationToken cancellationToken)
     {
-        (var success, var error) = await provisioningService.DeleteUserAsync(id, cancellationToken);
-
-        if (!success)
-        {
-            return MapError(error, StatusCodes.Status404NotFound);
-        }
+        await provisioningService.DeleteUserAsync(id, cancellationToken);
 
         return NoContent();
     }

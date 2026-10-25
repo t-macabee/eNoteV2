@@ -30,40 +30,23 @@ public abstract class CoreController : ControllerBase
         }
     }
 
-    protected static BadRequestObjectResult? ValidateUpload(IFormFile? file) =>
-        file is null || file.Length == 0
-            ? new BadRequestObjectResult(new { message = Messages.FileNotProvided })
-            : null;
+    protected static void ValidateUpload(IFormFile? file)
+    {
+        if (file is null || file.Length == 0)
+        {
+            throw new BusinessException(Messages.FileNotProvided);
+        }
+    }
 
     protected async Task<ActionResult<TDto>> UploadAsync<TDto>(
         IFormFile? file,
         Func<Stream, string, string, CancellationToken, Task<TDto>> upload,
         CancellationToken cancellationToken)
     {
-        if (ValidateUpload(file) is { } uploadError)
-        {
-            return uploadError;
-        }
+        ValidateUpload(file);
 
         await using Stream stream = file!.OpenReadStream();
         var result = await upload(stream, file.FileName, file.ContentType, cancellationToken);
         return new OkObjectResult(result);
-    }
-
-    protected static IActionResult MapError(string? error, int defaultStatus = StatusCodes.Status400BadRequest)
-    {
-        if (ErrorMapping.IsNotFound(error))
-        {
-            return new NotFoundObjectResult(new { message = error });
-        }
-
-        if (ErrorMapping.IsConflict(error))
-        {
-            return new ConflictObjectResult(new { message = error });
-        }
-
-        return defaultStatus == StatusCodes.Status404NotFound
-            ? new NotFoundObjectResult(new { message = error })
-            : new BadRequestObjectResult(new { message = error });
     }
 }
