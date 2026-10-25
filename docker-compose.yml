@@ -52,8 +52,7 @@ services:
   api:
     build:
       context: ./eNote
-      dockerfile: Dockerfile
-      target: api
+      dockerfile: eNote.API/Dockerfile
     container_name: enote-api
     env_file: .env
     environment:
@@ -83,8 +82,7 @@ services:
   worker:
     build:
       context: ./eNote
-      dockerfile: Dockerfile
-      target: worker
+      dockerfile: eNote.Worker/Dockerfile
     container_name: enote-worker
     env_file: .env
     environment:
