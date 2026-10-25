@@ -61,27 +61,15 @@ public class ENoteContext(DbContextOptions<ENoteContext> options, IClock clock, 
                 continue;
             }
 
-            var method = typeof(ENoteContext)
-                .GetMethod(nameof(ConfigureAuditUserForeignKeysForEntity), System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!
-                .MakeGenericMethod(entityType.ClrType);
-
-            method.Invoke(null, [modelBuilder]);
+            foreach (var column in new[] { nameof(AuditableEntity.CreatedById), nameof(AuditableEntity.UpdatedById) })
+            {
+                modelBuilder.Entity(entityType.ClrType)
+                    .HasOne(typeof(AppUser))
+                    .WithMany()
+                    .HasForeignKey(column)
+                    .OnDelete(DeleteBehavior.Restrict);
+            }
         }
-    }
-
-    private static void ConfigureAuditUserForeignKeysForEntity<TEntity>(ModelBuilder modelBuilder) where TEntity : AuditableEntity
-    {
-        modelBuilder.Entity<TEntity>()
-            .HasOne<AppUser>()
-            .WithMany()
-            .HasForeignKey(x => x.CreatedById)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        modelBuilder.Entity<TEntity>()
-            .HasOne<AppUser>()
-            .WithMany()
-            .HasForeignKey(x => x.UpdatedById)
-            .OnDelete(DeleteBehavior.Restrict);
     }
 
     private int? GetStoreId()
@@ -133,11 +121,7 @@ public class ENoteContext(DbContextOptions<ENoteContext> options, IClock clock, 
             if (entry.State == EntityState.Modified)
             {
                 entry.Entity.UpdatedAt = now;
-
-                if (userId.HasValue)
-                {
-                    entry.Entity.UpdatedById = userId.Value;
-                }
+                entry.Entity.UpdatedById = userId;
             }
         }
 

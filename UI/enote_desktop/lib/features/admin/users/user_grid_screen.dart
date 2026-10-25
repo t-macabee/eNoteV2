@@ -106,7 +106,7 @@ class _UserGridScreenState extends State<UserGridScreen> {
       },
     );
 
-    return context.read<AdminUserProvider>().getUsers(query);
+    return context.read<AdminUserProvider>().search(query);
   }
 
   @override

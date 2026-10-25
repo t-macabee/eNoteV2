@@ -25,7 +25,7 @@ class InstructorStudentDetailsDialog extends StatefulWidget {
 
 class _InstructorStudentDetailsDialogState
     extends State<InstructorStudentDetailsDialog> {
-  static const int _enrollmentPageSize = 5;
+  static const int _pageSize = 5;
 
   late StudentDto _student = widget.student;
   late DateTime? _membershipPaidUntil = widget.student.membershipPaidUntil;
@@ -59,7 +59,7 @@ class _InstructorStudentDetailsDialogState
           _studentDetailsError = false;
         });
       }
-    } catch (e) {
+    } catch (_) {
       if (mounted) {
         setState(() => _studentDetailsError = true);
       }
@@ -69,7 +69,7 @@ class _InstructorStudentDetailsDialogState
       final enrollments = await provider.getEnrollments(
         widget.student.id,
         page: 1,
-        pageSize: _enrollmentPageSize,
+        pageSize: _pageSize,
       );
       if (mounted) {
         setState(() {
@@ -90,7 +90,7 @@ class _InstructorStudentDetailsDialogState
       final lectures = await lectureProvider.search(
             pagedQuery(
               1,
-              _enrollmentPageSize,
+              _pageSize,
               '',
               filters: {'studentId': studentId},
             ),
@@ -103,7 +103,7 @@ class _InstructorStudentDetailsDialogState
           _lecturesError = false;
         });
       }
-    } catch (e) {
+    } catch (_) {
       if (mounted) {
         setState(() => _lecturesError = true);
       }
@@ -118,7 +118,7 @@ class _InstructorStudentDetailsDialogState
       final next = await context.read<LectureProvider>().search(
             pagedQuery(
               _lecturePage + 1,
-              _enrollmentPageSize,
+              _pageSize,
               '',
               filters: {'studentId': widget.student.id},
             ),
@@ -147,7 +147,7 @@ class _InstructorStudentDetailsDialogState
           .getEnrollments(
             widget.student.id,
             page: _enrollmentPage + 1,
-            pageSize: _enrollmentPageSize,
+            pageSize: _pageSize,
           );
       if (!mounted) return;
       setState(() {

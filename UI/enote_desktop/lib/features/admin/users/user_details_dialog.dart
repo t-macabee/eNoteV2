@@ -161,7 +161,7 @@ class _UserDetailsDialogState extends State<UserDetailsDialog> {
           _profileError = false;
         });
       }
-    } catch (e) {
+    } catch (_) {
       if (mounted) {
         setState(() => _profileError = true);
       }

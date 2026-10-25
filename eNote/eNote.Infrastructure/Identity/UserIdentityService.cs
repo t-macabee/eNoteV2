@@ -45,44 +45,14 @@ public sealed class UserIdentityService(UserManager<AppUser> userManager, ENoteC
 
     public async Task<IReadOnlyList<int>> FindUserIdsAsync(string? name, bool? isActive, CancellationToken cancellationToken = default)
     {
-        var query = userManager.Users.AsNoTracking();
-
-        if (!string.IsNullOrWhiteSpace(name))
-        {
-            var term = name.Trim().ToLower();
-            query = query.Where(u =>
-                (u.FirstName != null && u.FirstName.ToLower().Contains(term)) ||
-                (u.LastName != null && u.LastName.ToLower().Contains(term)) ||
-                (u.UserName != null && u.UserName.ToLower().Contains(term)) ||
-                (((u.FirstName ?? "") + " " + (u.LastName ?? "")).ToLower().Contains(term)));
-        }
-
-        if (isActive.HasValue)
-        {
-            query = query.Where(u => u.IsActive == isActive.Value);
-        }
-
-        return await query.Select(u => u.Id).ToListAsync(cancellationToken);
+        return await FilterByNameAndStatus(userManager.Users.AsNoTracking(), name, isActive)
+            .Select(u => u.Id)
+            .ToListAsync(cancellationToken);
     }
 
     public async Task<PagedResult<AdminUserListItemDto>> SearchAsync(AdminUserSearchObject search, CancellationToken cancellationToken = default)
     {
-        var query = userManager.Users.AsNoTracking();
-
-        if (!string.IsNullOrWhiteSpace(search.Name))
-        {
-            var term = search.Name.Trim().ToLower();
-            query = query.Where(u =>
-                (u.FirstName != null && u.FirstName.ToLower().Contains(term)) ||
-                (u.LastName != null && u.LastName.ToLower().Contains(term)) ||
-                (u.UserName != null && u.UserName.ToLower().Contains(term)) ||
-                (((u.FirstName ?? "") + " " + (u.LastName ?? "")).ToLower().Contains(term)));
-        }
-
-        if (search.IsActive.HasValue)
-        {
-            query = query.Where(u => u.IsActive == search.IsActive.Value);
-        }
+        var query = FilterByNameAndStatus(userManager.Users.AsNoTracking(), search.Name, search.IsActive);
 
         if (!string.IsNullOrWhiteSpace(search.Role))
         {
@@ -101,6 +71,26 @@ public sealed class UserIdentityService(UserManager<AppUser> userManager, ENoteC
                 .ThenBy(u => u.LastName)
                 .ThenBy(u => u.FirstName),
             cancellationToken);
+    }
+
+    private static IQueryable<AppUser> FilterByNameAndStatus(IQueryable<AppUser> query, string? name, bool? isActive)
+    {
+        if (!string.IsNullOrWhiteSpace(name))
+        {
+            var term = name.Trim().ToLower();
+            query = query.Where(u =>
+                (u.FirstName != null && u.FirstName.ToLower().Contains(term)) ||
+                (u.LastName != null && u.LastName.ToLower().Contains(term)) ||
+                (u.UserName != null && u.UserName.ToLower().Contains(term)) ||
+                (((u.FirstName ?? "") + " " + (u.LastName ?? "")).ToLower().Contains(term)));
+        }
+
+        if (isActive.HasValue)
+        {
+            query = query.Where(u => u.IsActive == isActive.Value);
+        }
+
+        return query;
     }
 
     private async Task<IEnumerable<AdminUserListItemDto>> MapPageAsync(List<AppUser> users, CancellationToken cancellationToken)

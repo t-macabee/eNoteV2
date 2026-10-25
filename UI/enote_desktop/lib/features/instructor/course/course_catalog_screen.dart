@@ -52,9 +52,9 @@ class _CourseCatalogScreenState extends State<CourseCatalogScreen> {
       emptyOptionLabel: 'Svi instruktori',
       value: _selectedInstructorId,
       fetcher: () async {
-        final instructorProvider = context.read<CourseCatalogProvider>();
+        final catalogProvider = context.read<CourseCatalogProvider>();
         final instructors = await fetchAllPages(
-          (query) => instructorProvider.getCatalogInstructors(params: query),
+          (query) => catalogProvider.getCatalogInstructors(params: query),
         );
         return instructors
           ..sort((a, b) => (a.name ?? '').compareTo(b.name ?? ''));

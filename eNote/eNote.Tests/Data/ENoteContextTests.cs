@@ -146,6 +146,32 @@ public sealed class ENoteContextTests
     }
 
     [Fact]
+    public async Task SaveChangesAsync_ClearsUpdatedById_WhenUnauthenticatedActorModifiesEntity()
+    {
+        var dbName = Guid.NewGuid().ToString();
+
+        await using (var arrange = CreateContextWithActor(Baseline, new StubCurrentActor(userId: 42), dbName))
+        {
+            var created = new Student(100, Baseline);
+            arrange.Set<Student>().Add(created);
+            await arrange.SaveChangesAsync();
+
+            created.UpdateMembership(Baseline.AddDays(30));
+            await arrange.SaveChangesAsync();
+        }
+
+        await using var act = CreateContextWithActor(Later, new StubCurrentActor(isAuthenticated: false), dbName);
+        var student = await act.Set<Student>().FirstAsync();
+
+        student.UpdateMembership(Later.AddDays(30));
+        await act.SaveChangesAsync();
+
+        Assert.Equal(42, student.CreatedById);
+        Assert.Null(student.UpdatedById);
+        Assert.Equal(Later, student.UpdatedAt);
+    }
+
+    [Fact]
     public async Task SaveChangesAsync_DoesNotTouchTimestamps_WhenEntityUnchanged()
     {
         var dbName = Guid.NewGuid().ToString();

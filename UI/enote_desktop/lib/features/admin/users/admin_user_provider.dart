@@ -1,20 +1,15 @@
 import 'package:enote_core/enote_core.dart';
 
-class AdminUserProvider extends CrudProvider<UserProfileResponse> {
+class AdminUserProvider extends CrudProvider<AdminUserListItemDto> {
   AdminUserProvider({required super.apiClient}) : super(endpoint: 'admin/users');
 
   @override
-  UserProfileResponse fromJson(Map<String, dynamic> json) =>
-      UserProfileResponse.fromJson(json);
+  AdminUserListItemDto fromJson(Map<String, dynamic> json) =>
+      AdminUserListItemDto.fromJson(json);
 
-  Future<UserProfileResponse> getProfile(int id) => getById(id);
-
-  Future<PagedResult<AdminUserListItemDto>> getUsers(
-    Map<String, dynamic> params,
-  ) async {
-    final response = await apiClient.get(endpoint, queryParams: params);
-    throwIfError(response);
-    return parsePage(response, AdminUserListItemDto.fromJson, params: params);
+  Future<UserProfileResponse> getProfile(int id) async {
+    final response = await apiClient.get('$endpoint/$id');
+    return UserProfileResponse.fromJson(decodeOrThrow(response));
   }
 
   Future<void> provision(UserProvisionRequest request) async {
