@@ -279,14 +279,8 @@ public sealed class CourseEnrollmentServiceTests
         Assert.Empty(context.Set<Enrollment>());
     }
 
-    private static ENoteContext CreateContext()
-    {
-        var options = new DbContextOptionsBuilder<ENoteContext>()
-            .UseInMemoryDatabase(Guid.NewGuid().ToString())
-            .Options;
-
-        return new ENoteContext(options, new FixedClock(Now), new StubCurrentActor(storeId: 1)) { ExplicitStoreId = 1 };
-    }
+    private static ENoteContext CreateContext() =>
+        new(TestDbContextFactory.CreateOptions(), new FixedClock(Now), new StubCurrentActor(storeId: 1)) { ExplicitStoreId = 1 };
 
     private static async Task<(Student Student, Course Course)> SeedStudentAndCourseAsync(ENoteContext context, bool hasActiveMembership)
     {

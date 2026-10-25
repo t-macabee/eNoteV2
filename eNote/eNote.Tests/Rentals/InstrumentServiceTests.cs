@@ -5,7 +5,6 @@ using eNote.Application.Features.Rentals.Instruments;
 using eNote.Application.Features.Rentals.Instruments.Services;
 using eNote.Tests.TestUtils;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Diagnostics;
 
 namespace eNote.Tests.Rentals;
 
@@ -298,15 +297,8 @@ public sealed class InstrumentServiceTests
         Assert.Equal(storage.SavedPaths.Single(), updated.ImagePath);
     }
 
-    private static ENoteContext CreateContext()
-    {
-        var options = new DbContextOptionsBuilder<ENoteContext>()
-            .UseInMemoryDatabase(Guid.NewGuid().ToString())
-            .ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning))
-            .Options;
-
-        return new ENoteContext(options, new FixedClock(Now), new StubCurrentActor());
-    }
+    private static ENoteContext CreateContext() =>
+        new(TestDbContextFactory.CreateOptions(), new FixedClock(Now), new StubCurrentActor());
 
     private static InstrumentService CreateInstrumentService(ENoteContext context) =>
         new(context, new StubCurrentActor(), new StubFileStorageService());

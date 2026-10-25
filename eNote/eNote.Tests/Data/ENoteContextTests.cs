@@ -3,7 +3,6 @@ using eNote.Domain.Entities.Assignments;
 using eNote.Domain.Entities.Shared;
 using eNote.Tests.TestUtils;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 
@@ -269,13 +268,6 @@ public sealed class ENoteContextTests
         Assert.Equal("\"Status\" IN (1, 3)", index.GetFilter());
     }
 
-    private static ENoteContext CreateContext(DateTime now, string? databaseName = null)
-    {
-        databaseName ??= Guid.NewGuid().ToString();
-        var options = new DbContextOptionsBuilder<ENoteContext>()
-            .UseInMemoryDatabase(databaseName)
-            .ConfigureWarnings(warnings => warnings.Ignore(InMemoryEventId.TransactionIgnoredWarning))
-            .Options;
-        return new ENoteContext(options, new FixedClock(now), new StubCurrentActor(new Student(0, now))) { ExplicitStoreId = 1 };
-    }
+    private static ENoteContext CreateContext(DateTime now, string? databaseName = null) =>
+        TestDbContextFactory.CreateContext(now, databaseName);
 }

@@ -1,18 +1,11 @@
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Diagnostics;
 
 namespace eNote.Tests.TestUtils;
 
 public static class RentalTestData
 {
-    public static ENoteContext CreateContext(DateTime now)
-    {
-        var options = new DbContextOptionsBuilder<ENoteContext>()
-            .UseInMemoryDatabase(Guid.NewGuid().ToString())
-            .ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning))
-            .Options;
-        return new ENoteContext(options, new FixedClock(now), new StubCurrentActor(storeId: 1)) { ExplicitStoreId = 1 };
-    }
+    public static ENoteContext CreateContext(DateTime now) =>
+        new(TestDbContextFactory.CreateOptions(), new FixedClock(now), new StubCurrentActor(storeId: 1)) { ExplicitStoreId = 1 };
 
     public static async Task<Instrument> SeedInstrumentAsync(ENoteContext context)
     {

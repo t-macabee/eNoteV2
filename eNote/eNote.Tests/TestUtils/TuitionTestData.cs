@@ -1,5 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Diagnostics;
 
 namespace eNote.Tests.TestUtils;
 
@@ -7,10 +6,7 @@ public static class TuitionTestData
 {
     public static async Task<(ENoteContext Context, Student Student, Course Course, Enrollment Enrollment)> SetupScenarioAsync(DateTime now, decimal price, string? databaseName = null)
     {
-        var options = new DbContextOptionsBuilder<ENoteContext>()
-            .UseInMemoryDatabase(databaseName ?? Guid.NewGuid().ToString())
-            .ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning))
-            .Options;
+        var options = TestDbContextFactory.CreateOptions(databaseName);
 
         var student = new Student(50, now);
         var instructor = new Instructor(100);

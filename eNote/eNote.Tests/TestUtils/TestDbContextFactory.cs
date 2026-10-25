@@ -1,17 +1,24 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 
 namespace eNote.Tests.TestUtils;
 
 public static class TestDbContextFactory
 {
-    public static ENoteContext CreateContext(DateTime now, string? databaseName = null)
+    public static DbContextOptions<ENoteContext> CreateOptions(string? databaseName = null)
     {
         databaseName ??= Guid.NewGuid().ToString();
-        var options = new DbContextOptionsBuilder<ENoteContext>()
+
+        return new DbContextOptionsBuilder<ENoteContext>()
             .UseInMemoryDatabase(databaseName)
             .ConfigureWarnings(warnings => warnings.Ignore(InMemoryEventId.TransactionIgnoredWarning))
+            .ReplaceService<IModelCustomizer, InMemoryRowVersionModelCustomizer>()
             .Options;
-        return new ENoteContext(options, new FixedClock(now), new StubCurrentActor(new Student(0, now))) { ExplicitStoreId = 1 };
+    }
+
+    public static ENoteContext CreateContext(DateTime now, string? databaseName = null)
+    {
+        return new ENoteContext(CreateOptions(databaseName), new FixedClock(now), new StubCurrentActor(new Student(0, now))) { ExplicitStoreId = 1 };
     }
 }

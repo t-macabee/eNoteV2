@@ -6,7 +6,6 @@ using eNote.Application.Features.Rentals.InstrumentRentals.Services;
 using eNote.Application.Features.Rentals.Payments.Services;
 using eNote.Tests.TestUtils;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace eNote.Tests.Rentals;
@@ -580,11 +579,7 @@ public sealed class RentalPaymentServiceTests
 
     private static ENoteContext CreateContext(StubCurrentActor currentUser, string? databaseName = null)
     {
-        var options = new DbContextOptionsBuilder<ENoteContext>()
-            .UseInMemoryDatabase(databaseName ?? Guid.NewGuid().ToString())
-            .ConfigureWarnings(warnings => warnings.Ignore(InMemoryEventId.TransactionIgnoredWarning))
-            .Options;
-        return new ENoteContext(options, new FixedClock(Now), currentUser) { ExplicitStoreId = 1 };
+        return new ENoteContext(TestDbContextFactory.CreateOptions(databaseName), new FixedClock(Now), currentUser) { ExplicitStoreId = 1 };
     }
 
     private static async Task<(ENoteContext Context, Student Student, StubCurrentActor CurrentUser)> CreateStudentContextAsync(int appUserId = 100, string? databaseName = null)

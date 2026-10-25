@@ -3,7 +3,6 @@ using eNote.Domain.Entities.Assignments;
 using eNote.Infrastructure.Reports;
 using eNote.Tests.TestUtils;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Diagnostics;
 using System.Text;
 
 namespace eNote.Tests.Reports;
@@ -212,14 +211,8 @@ public sealed class ReportServiceTests
         return await service.GenerateStoreRentalSummaryPdfAsync();
     }
 
-    private static ENoteContext CreatePermissiveContext()
-    {
-        var options = new DbContextOptionsBuilder<ENoteContext>()
-            .UseInMemoryDatabase(Guid.NewGuid().ToString())
-            .ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning))
-            .Options;
-        return new ENoteContext(options, new FixedClock(Now), new StubCurrentActor(storeId: 1));
-    }
+    private static ENoteContext CreatePermissiveContext() =>
+        new(TestDbContextFactory.CreateOptions(), new FixedClock(Now), new StubCurrentActor(storeId: 1));
 
     [Fact]
     public async Task LoadAttendanceRowsAsync_ReturnsOnlyAssignedStudent_ForIndividualLecture()

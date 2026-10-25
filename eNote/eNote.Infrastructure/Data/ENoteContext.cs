@@ -46,36 +46,6 @@ public class ENoteContext(DbContextOptions<ENoteContext> options, IClock clock, 
         modelBuilder.Entity<Announcement>().HasQueryFilter(a => a.IsActive && (GetStoreId() == null || a.MusicStoreId == null || a.MusicStoreId == GetStoreId()));
 
         ModelBuilderSeed.Seed(modelBuilder);
-
-        if (Database.ProviderName == "Microsoft.EntityFrameworkCore.InMemory")
-        {
-            modelBuilder.Entity<Lecture>()
-                .Property(l => l.Version)
-                .HasValueGenerator<InMemoryRowVersionGenerator>();
-
-            modelBuilder.Entity<InstrumentRental>()
-                .Property(r => r.Version)
-                .HasValueGenerator<InMemoryRowVersionGenerator>();
-
-            modelBuilder.Entity<RentalPayment>()
-                .Property(p => p.Version)
-                .HasValueGenerator<InMemoryRowVersionGenerator>();
-
-            modelBuilder.Entity<CoursePayment>()
-                .Property(p => p.Version)
-                .HasValueGenerator<InMemoryRowVersionGenerator>();
-
-            modelBuilder.Entity<Enrollment>()
-                .Property(e => e.Version)
-                .HasValueGenerator<InMemoryRowVersionGenerator>();
-        }
-    }
-
-    private sealed class InMemoryRowVersionGenerator : Microsoft.EntityFrameworkCore.ValueGeneration.ValueGenerator<byte[]>
-    {
-        public override byte[] Next(EntityEntry entry) => Guid.NewGuid().ToByteArray()[..8];
-
-        public override bool GeneratesTemporaryValues => false;
     }
 
     private int? GetStoreId()

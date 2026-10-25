@@ -5,7 +5,6 @@ using eNote.Application.Features.Rentals.InstrumentRentals;
 using eNote.Application.Features.Rentals.InstrumentRentals.Services;
 using eNote.Tests.TestUtils;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Diagnostics;
 
 namespace eNote.Tests.Rentals;
 
@@ -183,14 +182,8 @@ public sealed class RentalCommandServiceTests
         Assert.Equal(InstrumentRentalStatus.Pending, result.RentalStatus);
     }
 
-    private static ENoteContext CreateContext()
-    {
-        var options = new DbContextOptionsBuilder<ENoteContext>()
-            .UseInMemoryDatabase(Guid.NewGuid().ToString())
-            .ConfigureWarnings(warnings => warnings.Ignore(InMemoryEventId.TransactionIgnoredWarning))
-            .Options;
-        return new ENoteContext(options, new FixedClock(Now), new StubCurrentActor(new Student(0, Now))) { ExplicitStoreId = 1 };
-    }
+    private static ENoteContext CreateContext() =>
+        new(TestDbContextFactory.CreateOptions(), new FixedClock(Now), new StubCurrentActor(new Student(0, Now))) { ExplicitStoreId = 1 };
 
     private static async Task<Student> SeedStudentAsync(ENoteContext context, bool hasActiveMembership)
     {

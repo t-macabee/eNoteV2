@@ -235,6 +235,9 @@ završen najam ne može zatražiti novi dok ga ne plati.
 dotnet test
 ```
 
+`dotnet test` za testove u `eNote.Tests/Integration` zahtijeva pokrenut Docker daemon, jer Testcontainers
+podiže SQL Server kontejner.
+
 Flutter testovi:
 
 ```bash

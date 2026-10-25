@@ -9,7 +9,6 @@ using eNote.Infrastructure.Messaging;
 using eNote.Infrastructure.Payments.Stripe;
 using eNote.Tests.TestUtils;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Logging.Abstractions;
 using Stripe;
 using Event = Stripe.Event;
@@ -540,10 +539,7 @@ public sealed class RentalPaymentWebhookTests
         var student = new Student(appUserId: 100, enrollmentDate: Now.AddMonths(-1));
         student.UpdateMembership(Now.AddDays(1));
         var currentUser = new StubCurrentActor(student: student);
-        var options = new DbContextOptionsBuilder<ENoteContext>()
-            .UseInMemoryDatabase(Guid.NewGuid().ToString())
-            .ConfigureWarnings(warnings => warnings.Ignore(InMemoryEventId.TransactionIgnoredWarning))
-            .Options;
+        var options = TestDbContextFactory.CreateOptions();
         var context = new ENoteContext(options, new FixedClock(Now), currentUser) { ExplicitStoreId = 1 };
 
         context.Set<Student>().Add(student);

@@ -8,7 +8,6 @@ using eNote.Application.Features.Rentals.Recommendations.Services;
 using eNote.Domain.Entities.Communication;
 using eNote.Tests.TestUtils;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace eNote.Tests.Rentals;
@@ -146,15 +145,8 @@ public sealed class TenantIsolationTests
         Assert.DoesNotContain(result.Items, item => item.Id == store2Announcement.Id);
     }
 
-    private static ENoteContext CreateContext(int storeId, string? dbName = null)
-    {
-        var options = new DbContextOptionsBuilder<ENoteContext>()
-            .UseInMemoryDatabase(dbName ?? Guid.NewGuid().ToString())
-            .ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning))
-            .Options;
-
-        return new ENoteContext(options, new FixedClock(Now), new StubCurrentActor(storeId: storeId)) { ExplicitStoreId = storeId };
-    }
+    private static ENoteContext CreateContext(int storeId, string? dbName = null) =>
+        new(TestDbContextFactory.CreateOptions(dbName), new FixedClock(Now), new StubCurrentActor(storeId: storeId)) { ExplicitStoreId = storeId };
 
     private static async Task<(int Store1Id, int Store2Id, int Rental1Id, int Rental2Id)> SeedTwoStoresWithRentalsAsync(ENoteContext context)
     {

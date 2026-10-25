@@ -9,7 +9,6 @@ using eNote.Infrastructure.Messaging;
 using eNote.Infrastructure.Payments.Stripe;
 using eNote.Tests.TestUtils;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Logging.Abstractions;
 using Stripe;
 using Event = Stripe.Event;
@@ -348,10 +347,7 @@ public sealed class TuitionPaymentWebhookTests
 
     private static async Task<(ENoteContext Context, Enrollment Enrollment, CoursePayment Payment)> SeedRequiresActionTuitionPaymentAsync()
     {
-        var options = new DbContextOptionsBuilder<ENoteContext>()
-            .UseInMemoryDatabase(Guid.NewGuid().ToString())
-            .ConfigureWarnings(warnings => warnings.Ignore(InMemoryEventId.TransactionIgnoredWarning))
-            .Options;
+        var options = TestDbContextFactory.CreateOptions();
 
         var student = new Student(50, Now);
         var instructor = new Instructor(100);
