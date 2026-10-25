@@ -26,8 +26,6 @@ public sealed class EventServiceTests
 
         Assert.Equal("School Concert", dto.Title);
         Assert.Null(dto.AddressId);
-        Assert.Null(dto.CourseId);
-        Assert.Null(dto.InstructorId);
         Assert.NotEqual(0, dto.Id);
     }
 
@@ -74,45 +72,6 @@ public sealed class EventServiceTests
     }
 
     [Fact]
-    public async Task CreateAsync_WithCourseOnly_Succeeds()
-    {
-        var ctx = TestDbContextFactory.CreateContext(Now);
-        var harness = await AcademicTestData.SeedAsync(ctx, Now);
-        var service = new EventService(ctx);
-
-        var dto = await service.CreateAsync(new EventRequest
-        {
-            Title = "Guitar Recital",
-            Description = "Course event",
-            StartsAt = Now.AddDays(5),
-            CourseId = harness.Course.Id
-        });
-
-        Assert.Equal(harness.Course.Id, dto.CourseId);
-        Assert.Null(dto.InstructorId);
-        Assert.Null(dto.AddressId);
-    }
-
-    [Fact]
-    public async Task CreateAsync_WithInstructorOnly_Succeeds()
-    {
-        var ctx = TestDbContextFactory.CreateContext(Now);
-        var harness = await AcademicTestData.SeedAsync(ctx, Now);
-        var service = new EventService(ctx);
-
-        var dto = await service.CreateAsync(new EventRequest
-        {
-            Title = "Masterclass",
-            Description = "Instructor event",
-            StartsAt = Now.AddDays(5),
-            InstructorId = harness.Instructor.Id
-        });
-
-        Assert.Equal(harness.Instructor.Id, dto.InstructorId);
-        Assert.Null(dto.CourseId);
-    }
-
-    [Fact]
     public async Task CreateAsync_WithAddressOnly_Succeeds()
     {
         var ctx = TestDbContextFactory.CreateContext(Now);
@@ -128,51 +87,6 @@ public sealed class EventServiceTests
         });
 
         Assert.Equal(address.Id, dto.AddressId);
-    }
-
-    [Fact]
-    public async Task CreateAsync_WithAllOptionalFks_Succeeds()
-    {
-        var ctx = TestDbContextFactory.CreateContext(Now);
-        var harness = await AcademicTestData.SeedAsync(ctx, Now);
-        var address = await SeedAddressAsync(ctx);
-        var service = new EventService(ctx);
-
-        var dto = await service.CreateAsync(new EventRequest
-        {
-            Title = "Full Event",
-            Description = "All contexts",
-            StartsAt = Now.AddDays(10),
-            EndsAt = Now.AddDays(10).AddHours(3),
-            AddressId = address.Id,
-            CourseId = harness.Course.Id,
-            InstructorId = harness.Instructor.Id
-        });
-
-        Assert.Equal(address.Id, dto.AddressId);
-        Assert.Equal(harness.Course.Id, dto.CourseId);
-        Assert.Equal(harness.Instructor.Id, dto.InstructorId);
-        Assert.Equal("Full Event", dto.Title);
-    }
-
-    [Fact]
-    public async Task CreateAsync_WithBothCourseAndInstructor_Succeeds()
-    {
-        var ctx = TestDbContextFactory.CreateContext(Now);
-        var harness = await AcademicTestData.SeedAsync(ctx, Now);
-        var service = new EventService(ctx);
-
-        var dto = await service.CreateAsync(new EventRequest
-        {
-            Title = "Course + Instructor",
-            Description = "Both",
-            StartsAt = Now.AddDays(4),
-            CourseId = harness.Course.Id,
-            InstructorId = harness.Instructor.Id
-        });
-
-        Assert.Equal(harness.Course.Id, dto.CourseId);
-        Assert.Equal(harness.Instructor.Id, dto.InstructorId);
     }
 
     [Fact]
@@ -193,21 +107,6 @@ public sealed class EventServiceTests
     }
 
     [Fact]
-    public async Task CreateAsync_EndsBeforeStarts_ThrowsBusinessException()
-    {
-        var ctx = TestDbContextFactory.CreateContext(Now);
-        var service = new EventService(ctx);
-
-        await Assert.ThrowsAsync<BusinessException>(() => service.CreateAsync(new EventRequest
-        {
-            Title = "Bad Range",
-            Description = "Invalid",
-            StartsAt = Now.AddDays(2),
-            EndsAt = Now.AddDays(1)
-        }));
-    }
-
-    [Fact]
     public async Task CreateAsync_InvalidAddressId_ThrowsNotFound()
     {
         var ctx = TestDbContextFactory.CreateContext(Now);
@@ -219,36 +118,6 @@ public sealed class EventServiceTests
             Description = "Invalid FK",
             StartsAt = Now.AddDays(2),
             AddressId = 9999
-        }));
-    }
-
-    [Fact]
-    public async Task CreateAsync_InvalidCourseId_ThrowsNotFound()
-    {
-        var ctx = TestDbContextFactory.CreateContext(Now);
-        var service = new EventService(ctx);
-
-        await Assert.ThrowsAsync<NotFoundException>(() => service.CreateAsync(new EventRequest
-        {
-            Title = "Bad Course",
-            Description = "Invalid",
-            StartsAt = Now.AddDays(2),
-            CourseId = 9999
-        }));
-    }
-
-    [Fact]
-    public async Task CreateAsync_InvalidInstructorId_ThrowsNotFound()
-    {
-        var ctx = TestDbContextFactory.CreateContext(Now);
-        var service = new EventService(ctx);
-
-        await Assert.ThrowsAsync<NotFoundException>(() => service.CreateAsync(new EventRequest
-        {
-            Title = "Bad Instructor",
-            Description = "Invalid",
-            StartsAt = Now.AddDays(2),
-            InstructorId = 9999
         }));
     }
 
@@ -335,21 +204,17 @@ public sealed class EventServiceTests
     }
 
     [Fact]
-    public async Task GetPagedAsync_FiltersByTitleAndCourse()
+    public async Task GetPagedAsync_FiltersByTitle()
     {
         var ctx = TestDbContextFactory.CreateContext(Now);
-        var harness = await AcademicTestData.SeedAsync(ctx, Now);
         var service = new EventService(ctx);
 
-        await service.CreateAsync(new EventRequest { Title = "Concert A", Description = "D", StartsAt = Now.AddDays(1), CourseId = harness.Course.Id });
+        await service.CreateAsync(new EventRequest { Title = "Concert A", Description = "D", StartsAt = Now.AddDays(1) });
         await service.CreateAsync(new EventRequest { Title = "Concert B", Description = "D", StartsAt = Now.AddDays(2) });
         await service.CreateAsync(new EventRequest { Title = "Workshop", Description = "D", StartsAt = Now.AddDays(3) });
 
-        var byCourse = await service.GetPagedAsync(new EventSearchObject { CourseId = harness.Course.Id });
-        Assert.Single(byCourse.Items);
-        Assert.Equal("Concert A", byCourse.Items[0].Title);
-
         var byTitle = await service.GetPagedAsync(new EventSearchObject { Title = "Concert" });
+
         Assert.Equal(2, byTitle.Items.Count);
     }
 

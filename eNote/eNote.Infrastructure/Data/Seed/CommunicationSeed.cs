@@ -89,15 +89,6 @@ internal static class CommunicationSeed
         var now = clock.UtcNow;
         var today = now.Date;
 
-        var courses = await context.Set<Course>()
-            .OrderBy(c => c.Id)
-            .Take(2)
-            .ToListAsync();
-
-        var instructor = await context.Set<Instructor>()
-            .OrderBy(i => i.Id)
-            .FirstOrDefaultAsync();
-
         var events = new List<Event>
         {
             new(
@@ -105,30 +96,20 @@ internal static class CommunicationSeed
                 "Godišnji koncert učenika i profesora muzičke škole.",
                 today.AddDays(20).AddHours(19),
                 today.AddDays(20).AddHours(21),
-                addressId: 4,
-                courseId: null,
-                instructorId: null),
+                addressId: 4),
             new(
                 "Otvoreni čas gitare",
                 "Prezentacija tehnika sviranja gitare i radionica za sve zainteresovane.",
                 today.AddDays(9).AddHours(17),
                 today.AddDays(9).AddHours(18).AddMinutes(30),
-                addressId: 2,
-                courseId: null,
-                instructorId: null)
-        };
-
-        if (courses.Count >= 2 && instructor != null)
-        {
-            events.Add(new(
+                addressId: 2),
+            new(
                 "Radionica improvizacije",
                 "Specijalizovana radionica improvizacije za polaznike naprednog kursa.",
                 today.AddDays(15).AddHours(18),
                 today.AddDays(15).AddHours(20),
-                addressId: 3,
-                courseId: courses[1].Id,
-                instructorId: instructor.Id));
-        }
+                addressId: 3)
+        };
 
         context.Set<Event>().AddRange(events);
         await context.SaveChangesAsync();

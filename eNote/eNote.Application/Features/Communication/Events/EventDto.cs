@@ -12,9 +12,6 @@ public sealed class EventDto
     public int? AddressId { get; init; }
     public string? AddressStreet { get; init; }
     public string? AddressCity { get; init; }
-    public int? CourseId { get; init; }
-    public string? CourseName { get; init; }
-    public int? InstructorId { get; init; }
     public DateTime CreatedAt { get; init; }
     public DateTime? UpdatedAt { get; init; }
     public string ImagePath => DefaultImages.Event;

@@ -1,5 +1,4 @@
 using eNote.API.Controllers.Admin;
-using eNote.Application.Common.Localization;
 using eNote.Application.Features.Communication.Events;
 using eNote.Tests.TestUtils;
 using Microsoft.AspNetCore.Mvc;
@@ -11,43 +10,7 @@ public sealed class AdminEventControllerTests
     private static readonly DateTime Now = new(2026, 7, 1, 12, 0, 0, DateTimeKind.Utc);
 
     [Fact]
-    public async Task Create_WithCourseId_ThrowsBusinessException()
-    {
-        var ctx = TestDbContextFactory.CreateContext(Now);
-        var controller = new AdminEventController(new EventService(ctx));
-
-        var ex = await Assert.ThrowsAsync<BusinessException>(() =>
-            controller.Create(new EventRequest
-            {
-                Title = "Recital",
-                Description = "Course recital",
-                StartsAt = Now.AddDays(1),
-                CourseId = 10
-            }, CancellationToken.None));
-
-        Assert.Equal(Messages.AdminEventPlatformWideOnly, ex.Message);
-    }
-
-    [Fact]
-    public async Task Create_WithInstructorId_ThrowsBusinessException()
-    {
-        var ctx = TestDbContextFactory.CreateContext(Now);
-        var controller = new AdminEventController(new EventService(ctx));
-
-        var ex = await Assert.ThrowsAsync<BusinessException>(() =>
-            controller.Create(new EventRequest
-            {
-                Title = "Recital",
-                Description = "Instructor recital",
-                StartsAt = Now.AddDays(1),
-                InstructorId = 5
-            }, CancellationToken.None));
-
-        Assert.Equal(Messages.AdminEventPlatformWideOnly, ex.Message);
-    }
-
-    [Fact]
-    public async Task Create_PlatformWide_Succeeds()
+    public async Task Create_Succeeds()
     {
         var ctx = TestDbContextFactory.CreateContext(Now);
         var controller = new AdminEventController(new EventService(ctx));
@@ -63,84 +26,37 @@ public sealed class AdminEventControllerTests
         var created = Assert.IsType<CreatedAtActionResult>(actionResult.Result);
         var dto = Assert.IsType<EventDto>(created.Value);
         Assert.Equal("Festival", dto.Title);
-        Assert.Null(dto.CourseId);
-        Assert.Null(dto.InstructorId);
     }
 
     [Fact]
-    public async Task Update_WithCourseId_ThrowsBusinessException()
+    public async Task Update_ChangesFields()
     {
         var ctx = TestDbContextFactory.CreateContext(Now);
         var service = new EventService(ctx);
-        var existing = await service.CreateAsync(new EventRequest
+        var created = await service.CreateAsync(new EventRequest
         {
-            Title = "Existing",
+            Title = "Original",
             Description = "Desc",
             StartsAt = Now.AddDays(1)
         });
         var controller = new AdminEventController(service);
 
-        var ex = await Assert.ThrowsAsync<BusinessException>(() =>
-            controller.Update(existing.Id, new EventRequest
-            {
-                Title = "Updated",
-                Description = "Desc",
-                StartsAt = Now.AddDays(1),
-                CourseId = 2
-            }, CancellationToken.None));
-
-        Assert.Equal(Messages.AdminEventPlatformWideOnly, ex.Message);
-    }
-
-    [Fact]
-    public async Task Update_ExistingCourseTiedEvent_ThrowsBusinessException()
-    {
-        var ctx = TestDbContextFactory.CreateContext(Now);
-        var harness = await AcademicTestData.SeedAsync(ctx, Now);
-        var service = new EventService(ctx);
-        var existing = await service.CreateAsync(new EventRequest
+        var actionResult = await controller.Update(created.Id, new EventRequest
         {
-            Title = "Course Event",
-            Description = "Desc",
-            StartsAt = Now.AddDays(1),
-            CourseId = harness.Course.Id
-        });
-        var controller = new AdminEventController(service);
+            Title = "Renamed",
+            Description = "New desc",
+            StartsAt = Now.AddDays(3),
+            EndsAt = Now.AddDays(3).AddHours(2)
+        }, CancellationToken.None);
 
-        var ex = await Assert.ThrowsAsync<BusinessException>(() =>
-            controller.Update(existing.Id, new EventRequest
-            {
-                Title = "Platform update attempt",
-                Description = "Desc",
-                StartsAt = Now.AddDays(1)
-            }, CancellationToken.None));
-
-        Assert.Equal(Messages.AdminEventPlatformWideOnly, ex.Message);
+        var ok = Assert.IsType<OkObjectResult>(actionResult.Result);
+        var dto = Assert.IsType<EventDto>(ok.Value);
+        Assert.Equal("Renamed", dto.Title);
+        Assert.Equal(Now.AddDays(3), dto.StartsAt);
     }
 
     [Fact]
-    public async Task Delete_ExistingInstructorTiedEvent_ThrowsBusinessException()
-    {
-        var ctx = TestDbContextFactory.CreateContext(Now);
-        var harness = await AcademicTestData.SeedAsync(ctx, Now);
-        var service = new EventService(ctx);
-        var existing = await service.CreateAsync(new EventRequest
-        {
-            Title = "Instructor Event",
-            Description = "Desc",
-            StartsAt = Now.AddDays(1),
-            InstructorId = harness.Instructor.Id
-        });
-        var controller = new AdminEventController(service);
-
-        var ex = await Assert.ThrowsAsync<BusinessException>(() =>
-            controller.Delete(existing.Id, CancellationToken.None));
-
-        Assert.Equal(Messages.AdminEventPlatformWideOnly, ex.Message);
-    }
-
-    [Fact]
-    public async Task Delete_PlatformWideEvent_Succeeds()
+    public async Task Delete_RemovesEvent()
     {
         var ctx = TestDbContextFactory.CreateContext(Now);
         var service = new EventService(ctx);

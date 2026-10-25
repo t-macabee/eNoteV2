@@ -15,7 +15,7 @@ public sealed class StudentEventController(EventService service) : CoreControlle
     [ProducesResponseType(typeof(PagedResult<EventDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<PagedResult<EventDto>>> GetPagedForStudent([FromQuery] EventSearchObject search, CancellationToken cancellationToken)
     {
-        var result = await service.GetPagedForStudentAsync(search, cancellationToken);
+        var result = await service.GetPagedAsync(search, cancellationToken);
         return Ok(result);
     }
 }

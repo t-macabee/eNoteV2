@@ -10,35 +10,25 @@ public class Event : AuditableEntity
     public int? AddressId { get; private set; }
     public Address? Address { get; private set; }
 
-    public int? CourseId { get; private set; }
-    public Course? Course { get; private set; }
-
-    public int? InstructorId { get; private set; }
-    public Instructor? Instructor { get; private set; }
-
     protected Event()
     {
     }
 
-    public Event(string title, string description, DateTime startsAt, DateTime? endsAt, int? addressId, int? courseId, int? instructorId)
+    public Event(string title, string description, DateTime startsAt, DateTime? endsAt, int? addressId)
     {
         Title = title;
         Description = description;
         StartsAt = startsAt;
         EndsAt = endsAt;
         AddressId = addressId;
-        CourseId = courseId;
-        InstructorId = instructorId;
     }
 
-    public void UpdateDetails(string title, string description, DateTime startsAt, DateTime? endsAt, int? addressId, int? courseId, int? instructorId)
+    public void UpdateDetails(string title, string description, DateTime startsAt, DateTime? endsAt, int? addressId)
     {
         Title = title;
         Description = description;
         StartsAt = startsAt;
         EndsAt = endsAt;
         AddressId = addressId;
-        CourseId = courseId;
-        InstructorId = instructorId;
     }
 }

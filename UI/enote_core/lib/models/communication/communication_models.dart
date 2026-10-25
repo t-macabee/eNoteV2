@@ -159,9 +159,6 @@ class EventDto {
   final int? addressId;
   final String? addressStreet;
   final String? addressCity;
-  final int? courseId;
-  final String? courseName;
-  final int? instructorId;
   final DateTime? createdAt;
   final DateTime? updatedAt;
   final String? imagePath;
@@ -175,16 +172,10 @@ class EventDto {
     this.addressId,
     this.addressStreet,
     this.addressCity,
-    this.courseId,
-    this.courseName,
-    this.instructorId,
     this.createdAt,
     this.updatedAt,
     this.imagePath,
   });
-
-  bool get isPlatformWide => courseId == null && instructorId == null;
-  bool get isScoped => !isPlatformWide;
 
   factory EventDto.fromJson(Map<String, dynamic> json) {
     return EventDto(
@@ -196,9 +187,6 @@ class EventDto {
       addressId: json['addressId'] as int?,
       addressStreet: json['addressStreet'] as String?,
       addressCity: json['addressCity'] as String?,
-      courseId: json['courseId'] as int?,
-      courseName: json['courseName'] as String?,
-      instructorId: json['instructorId'] as int?,
       createdAt: parseDate(json['createdAt']),
       updatedAt: parseDate(json['updatedAt']),
       imagePath: json['imagePath'] as String?,
@@ -214,9 +202,6 @@ class EventDto {
     if (addressId != null) 'addressId': addressId,
     if (addressStreet != null) 'addressStreet': addressStreet,
     if (addressCity != null) 'addressCity': addressCity,
-    if (courseId != null) 'courseId': courseId,
-    if (courseName != null) 'courseName': courseName,
-    if (instructorId != null) 'instructorId': instructorId,
     if (createdAt != null) 'createdAt': toUtcIso(createdAt!),
     if (updatedAt != null) 'updatedAt': toUtcIso(updatedAt!),
   };
@@ -228,8 +213,6 @@ class EventRequest {
   final DateTime startsAt;
   final DateTime? endsAt;
   final int? addressId;
-  final int? courseId;
-  final int? instructorId;
 
   EventRequest({
     required this.title,
@@ -237,8 +220,6 @@ class EventRequest {
     required this.startsAt,
     this.endsAt,
     this.addressId,
-    this.courseId,
-    this.instructorId,
   });
 
   Map<String, dynamic> toJson() => {
@@ -247,8 +228,6 @@ class EventRequest {
     'startsAt': toUtcIso(startsAt),
     if (endsAt != null) 'endsAt': toUtcIso(endsAt!),
     if (addressId != null) 'addressId': addressId,
-    if (courseId != null) 'courseId': courseId,
-    if (instructorId != null) 'instructorId': instructorId,
   };
 }
 

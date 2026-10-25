@@ -710,9 +710,6 @@ namespace eNote.Infrastructure.Data.Migrations
                     b.Property<int?>("AddressId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("CourseId")
-                        .HasColumnType("int");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -726,9 +723,6 @@ namespace eNote.Infrastructure.Data.Migrations
 
                     b.Property<DateTime?>("EndsAt")
                         .HasColumnType("datetime2");
-
-                    b.Property<int?>("InstructorId")
-                        .HasColumnType("int");
 
                     b.Property<DateTime>("StartsAt")
                         .HasColumnType("datetime2");
@@ -748,11 +742,7 @@ namespace eNote.Infrastructure.Data.Migrations
 
                     b.HasIndex("AddressId");
 
-                    b.HasIndex("CourseId");
-
                     b.HasIndex("CreatedById");
-
-                    b.HasIndex("InstructorId");
 
                     b.HasIndex("StartsAt");
 
@@ -2145,19 +2135,9 @@ namespace eNote.Infrastructure.Data.Migrations
                         .HasForeignKey("AddressId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.HasOne("eNote.Domain.Entities.Academic.Course", "Course")
-                        .WithMany()
-                        .HasForeignKey("CourseId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
                     b.HasOne("eNote.Infrastructure.Identity.AppUser", null)
                         .WithMany()
                         .HasForeignKey("CreatedById")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("eNote.Domain.Entities.Identity.Instructor", "Instructor")
-                        .WithMany()
-                        .HasForeignKey("InstructorId")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("eNote.Infrastructure.Identity.AppUser", null)
@@ -2166,10 +2146,6 @@ namespace eNote.Infrastructure.Data.Migrations
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Address");
-
-                    b.Navigation("Course");
-
-                    b.Navigation("Instructor");
                 });
 
             modelBuilder.Entity("eNote.Domain.Entities.Communication.Notification", b =>

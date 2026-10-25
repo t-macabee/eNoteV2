@@ -162,7 +162,6 @@ public sealed class DevelopmentDataSeedTests
 
         var events = await ctx.Set<Event>().ToListAsync();
         Assert.Equal(3, events.Count);
-        Assert.Single(events, e => e.CourseId != null);
 
         var rentals = await ctx.Set<InstrumentRental>().IgnoreQueryFilters().ToListAsync();
         Assert.Equal(23, rentals.Count);

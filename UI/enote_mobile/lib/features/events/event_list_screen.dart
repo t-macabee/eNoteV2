@@ -104,11 +104,6 @@ class _EventListScreenState extends State<EventListScreen>
   }
 }
 
-String eventCategoryLabel(EventDto event) {
-  if (event.courseId == null) return 'Škola';
-  return event.courseName ?? '—';
-}
-
 class _EventRow extends StatelessWidget {
   final EventDto event;
 
@@ -119,9 +114,7 @@ class _EventRow extends StatelessWidget {
     return ListTile(
       leading: const Icon(Icons.event_outlined),
       title: Text(event.title),
-      subtitle: Text(
-        '${formatDateTime(event.startsAt)} · ${eventCategoryLabel(event)}',
-      ),
+      subtitle: Text(formatDateTime(event.startsAt)),
       onTap: () => Navigator.of(context).pushNamed(
         AppRouter.eventDetail,
         arguments: EventDetailArgs(event),

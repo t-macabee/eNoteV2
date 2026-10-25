@@ -2,7 +2,7 @@ using eNote.Application.Common.Crud;
 
 namespace eNote.Application.Features.Communication.Events;
 
-public sealed class EventService(IAppDbContext context, IStudentContext? students = null) : ReferenceDataCrudService<Event, EventDto, EventRequest, EventSearchObject>(context)
+public sealed class EventService(IAppDbContext context) : ReferenceDataCrudService<Event, EventDto, EventRequest, EventSearchObject>(context)
 {
     protected override EventDto Map(Event entity) => new()
     {
@@ -14,9 +14,6 @@ public sealed class EventService(IAppDbContext context, IStudentContext? student
         AddressId = entity.AddressId,
         AddressStreet = entity.Address?.Street,
         AddressCity = entity.Address?.City?.Name,
-        CourseId = entity.CourseId,
-        CourseName = entity.Course?.Name,
-        InstructorId = entity.InstructorId,
         CreatedAt = entity.CreatedAt,
         UpdatedAt = entity.UpdatedAt
     };
@@ -26,9 +23,7 @@ public sealed class EventService(IAppDbContext context, IStudentContext? student
         request.Description.Trim(),
         request.StartsAt,
         request.EndsAt,
-        request.AddressId,
-        request.CourseId,
-        request.InstructorId);
+        request.AddressId);
 
     protected override void UpdateEntity(Event entity, EventRequest request)
     {
@@ -37,18 +32,14 @@ public sealed class EventService(IAppDbContext context, IStudentContext? student
             request.Description.Trim(),
             request.StartsAt,
             request.EndsAt,
-            request.AddressId,
-            request.CourseId,
-            request.InstructorId);
+            request.AddressId);
     }
 
     public override async Task<PagedResult<EventDto>> GetPagedAsync(EventSearchObject search, CancellationToken cancellationToken = default)
     {
         IQueryable<Event> query = Db.Set<Event>()
             .AsNoTracking()
-            .Include(e => e.Address).ThenInclude(a => a!.City)
-            .Include(e => e.Course)
-            .Include(e => e.Instructor);
+            .Include(e => e.Address).ThenInclude(a => a!.City);
 
         query = ApplySearch(query, search);
         return await query.ToPagedResultAsync(search, Map, ApplyDefaultOrder, ct: cancellationToken);
@@ -59,43 +50,22 @@ public sealed class EventService(IAppDbContext context, IStudentContext? student
         var entity = await Db.Set<Event>()
             .AsNoTracking()
             .Include(e => e.Address).ThenInclude(a => a!.City)
-            .Include(e => e.Course)
-            .Include(e => e.Instructor)
             .FirstOrDefaultAsync(x => x.Id == id, cancellationToken)
             ?? throw new NotFoundException(NotFoundMessage);
 
         return Map(entity);
     }
 
-    public async Task<PagedResult<EventDto>> GetPagedForStudentAsync(EventSearchObject search, CancellationToken cancellationToken = default)
-    {
-        ArgumentNullException.ThrowIfNull(students);
-        var studentId = await students.GetCurrentStudentIdAsync(cancellationToken);
-
-        IQueryable<Event> query = Db.Set<Event>()
-            .AsNoTracking()
-            .Include(e => e.Address).ThenInclude(a => a!.City)
-            .Include(e => e.Course)
-            .Include(e => e.Instructor)
-            .Where(e => e.CourseId == null || Db.Set<Enrollment>().Any(en =>
-                en.StudentId == studentId &&
-                en.EnrollmentStatus == EnrollmentStatus.Active &&
-                en.CourseId == e.CourseId));
-
-        query = ApplySearch(query, search);
-        return await query.ToPagedResultAsync(search, Map, ApplyDefaultOrder, ct: cancellationToken);
-    }
-
     public override async Task<EventDto> CreateAsync(EventRequest request, CancellationToken cancellationToken = default)
     {
-        await ValidateRequestAsync(request, cancellationToken);
+        await ValidateForeignKeysAsync(request, cancellationToken);
 
         return await base.CreateAsync(request, cancellationToken);
     }
 
     public override async Task<EventDto> UpdateAsync(int id, EventRequest request, CancellationToken cancellationToken = default)
     {
-        await ValidateRequestAsync(request, cancellationToken);
+        await ValidateForeignKeysAsync(request, cancellationToken);
 
         var dto = await base.UpdateAsync(id, request, cancellationToken);
 
@@ -114,16 +84,6 @@ public sealed class EventService(IAppDbContext context, IStudentContext? student
 
     protected override string NotFoundMessage => Messages.EventNotFound;
 
-    private async Task ValidateRequestAsync(EventRequest request, CancellationToken cancellationToken)
-    {
-        await ValidateForeignKeysAsync(request, cancellationToken);
-
-        if (request.EndsAt.HasValue && request.EndsAt.Value <= request.StartsAt)
-        {
-            throw new BusinessException(Messages.EventEndsBeforeStarts);
-        }
-    }
-
     private async Task ValidateForeignKeysAsync(EventRequest request, CancellationToken ct)
     {
         if (request.AddressId.HasValue)
@@ -132,24 +92,6 @@ public sealed class EventService(IAppDbContext context, IStudentContext? student
             if (!exists)
             {
                 throw new NotFoundException(Messages.AddressNotFound);
-            }
-        }
-
-        if (request.CourseId.HasValue)
-        {
-            var exists = await Db.Set<Course>().AnyAsync(x => x.Id == request.CourseId.Value, ct);
-            if (!exists)
-            {
-                throw new NotFoundException(Messages.CourseNotFound);
-            }
-        }
-
-        if (request.InstructorId.HasValue)
-        {
-            var exists = await Db.Set<Instructor>().AnyAsync(x => x.Id == request.InstructorId.Value, ct);
-            if (!exists)
-            {
-                throw new NotFoundException(Messages.InstructorProfileNotFound);
             }
         }
     }

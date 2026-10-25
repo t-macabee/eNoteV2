@@ -12,10 +12,8 @@ public sealed class EventRequestValidator : AbstractValidator<EventRequest>
         RuleFor(x => x.StartsAt).NotEmpty().WithMessage("Vrijeme početka je obavezno.");
         RuleFor(x => x.EndsAt)
             .GreaterThan(x => x.StartsAt)
-            .WithMessage("Vrijeme završetka mora biti nakon vremena početka.")
+            .WithMessage(Messages.EventEndsBeforeStarts)
             .When(x => x.EndsAt.HasValue);
         RuleFor(x => x.AddressId).GreaterThan(0).When(x => x.AddressId.HasValue);
-        RuleFor(x => x.CourseId).GreaterThan(0).When(x => x.CourseId.HasValue);
-        RuleFor(x => x.InstructorId).GreaterThan(0).When(x => x.InstructorId.HasValue);
     }
 }

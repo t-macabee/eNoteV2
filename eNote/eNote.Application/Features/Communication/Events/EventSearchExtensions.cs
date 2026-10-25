@@ -9,16 +9,6 @@ public static class EventSearchExtensions
             query = query.Where(x => x.Title.Contains(search.Title!));
         }
 
-        if (search.CourseId.HasValue)
-        {
-            query = query.Where(x => x.CourseId == search.CourseId.Value);
-        }
-
-        if (search.InstructorId.HasValue)
-        {
-            query = query.Where(x => x.InstructorId == search.InstructorId.Value);
-        }
-
         if (search.AddressId.HasValue)
         {
             query = query.Where(x => x.AddressId == search.AddressId.Value);

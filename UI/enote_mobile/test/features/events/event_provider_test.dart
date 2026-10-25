@@ -1,7 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:enote_core/enote_core.dart';
-import 'package:enote_mobile/features/events/event_list_screen.dart';
 import 'package:enote_mobile/features/events/event_provider.dart';
 
 import '../../helpers.dart';
@@ -14,9 +13,6 @@ const _eventJson = {
   'endsAt': '2026-10-15T21:00:00',
   'addressStreet': 'Zmaja od Bosne 8',
   'addressCity': 'Mostar',
-  'courseId': null,
-  'courseName': null,
-  'instructorId': 3,
 };
 
 const _pageBody = {
@@ -69,26 +65,11 @@ void main() {
     expect(page.items.single.title, 'Koncert škole');
   });
 
-  test('an uncoursed event with an instructor is still labelled Škola',
-      () async {
-    final client = RecordingHttpClient(body: _eventJson);
-    final provider = _provider(client);
+  test('an event parses without a course scope', () {
+    final event = EventDto.fromJson(_eventJson);
 
-    final event = await provider.getById(6);
-
-    expect(event.courseId, isNull);
-    expect(event.instructorId, 3);
-    expect(event.isPlatformWide, isFalse);
-    expect(eventCategoryLabel(event), 'Škola');
-  });
-
-  test('a coursed event is labelled by its course name', () {
-    final event = EventDto.fromJson({
-      ..._eventJson,
-      'courseId': 2,
-      'courseName': 'Osnove teorije muzike',
-    });
-
-    expect(eventCategoryLabel(event), 'Osnove teorije muzike');
+    expect(event.id, 6);
+    expect(event.addressCity, 'Mostar');
+    expect(event.toJson().containsKey('courseId'), isFalse);
   });
 }

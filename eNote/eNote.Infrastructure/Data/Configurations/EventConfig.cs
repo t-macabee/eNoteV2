@@ -17,19 +17,7 @@ public sealed class EventConfig : IEntityTypeConfiguration<Event>
             .HasForeignKey(x => x.AddressId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasOne(x => x.Course)
-            .WithMany()
-            .HasForeignKey(x => x.CourseId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        builder.HasOne(x => x.Instructor)
-            .WithMany()
-            .HasForeignKey(x => x.InstructorId)
-            .OnDelete(DeleteBehavior.Restrict);
-
         builder.HasIndex(x => x.StartsAt);
-        builder.HasIndex(x => x.CourseId);
-        builder.HasIndex(x => x.InstructorId);
         builder.HasIndex(x => x.AddressId);
 
         builder.ToTable(t => t.HasCheckConstraint(

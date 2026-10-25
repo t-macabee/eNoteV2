@@ -7,7 +7,6 @@ import 'package:enote_desktop/features/admin/address/address_provider.dart';
 import 'package:enote_desktop/features/admin/event/event_form_screen.dart';
 import 'package:enote_desktop/features/admin/event/event_list_screen.dart';
 import 'package:enote_desktop/features/admin/event/event_provider.dart';
-import 'package:enote_desktop/features/admin/instructor/instructor_provider.dart';
 import 'package:enote_desktop/widgets/entity_grid_screen.dart';
 
 import 'helpers.dart';
@@ -15,14 +14,6 @@ import 'helpers.dart';
 ScriptedClient _client() => ScriptedClient((request) {
   final url = request.url.toString();
   if (request.method == 'GET') {
-    if (url.contains('admin/instructors')) {
-      return jsonResponse(const {
-        'items': [],
-        'page': 1,
-        'pageSize': 200,
-        'totalCount': 0,
-      }, 200);
-    }
     if (url.contains('admin/addresses')) {
       return jsonResponse(const {
         'items': [],
@@ -41,19 +32,14 @@ ScriptedClient _client() => ScriptedClient((request) {
             'startsAt': '2026-09-10T18:00:00Z',
             'endsAt': '2026-09-10T20:00:00Z',
             'addressId': null,
-            'courseId': null,
-            'instructorId': null,
           },
           {
             'id': 2,
             'title': 'Guitar Masterclass',
-            'description': 'Masterclass scoped to course and instructor',
+            'description': 'Masterclass open to every student',
             'startsAt': '2026-09-12T14:00:00Z',
             'endsAt': '2026-09-12T16:00:00Z',
             'addressId': null,
-            'courseId': 10,
-            'courseName': 'Classical Guitar I',
-            'instructorId': 5,
           },
         ],
         'page': 1,
@@ -81,9 +67,6 @@ Widget _buildTestApp(ScriptedClient mockClient) {
     providers: [
       Provider<ApiClient>.value(value: apiClient),
       ChangeNotifierProvider<AuthState>.value(value: authState),
-      ChangeNotifierProvider<InstructorProvider>(
-        create: (_) => InstructorProvider(apiClient: apiClient),
-      ),
       ChangeNotifierProvider<EventProvider>(
         create: (_) => EventProvider(apiClient: apiClient),
       ),
@@ -114,7 +97,7 @@ void main() {
   );
 
   testWidgets(
-    'EventListScreen displays both platform-wide and scoped events with read-only badge on scoped events',
+    'EventListScreen displays every event without a read-only badge',
     (WidgetTester tester) async {
       tester.view.physicalSize = const Size(1400, 1000);
       tester.view.devicePixelRatio = 1.0;
@@ -128,7 +111,7 @@ void main() {
       expect(find.text('Platform Gala'), findsOneWidget);
       expect(find.text('Guitar Masterclass'), findsOneWidget);
 
-      expect(find.text('Samo pregled'), findsOneWidget);
+      expect(find.text('Samo pregled'), findsNothing);
     },
   );
 
@@ -159,7 +142,7 @@ void main() {
   );
 
   testWidgets(
-    'Tapping a scoped event opens a read-only EventFormScreen with disabled save and delete',
+    'Tapping an event opens the editable EventFormScreen with enabled save and delete',
     (WidgetTester tester) async {
       tester.view.physicalSize = const Size(1400, 1000);
       tester.view.devicePixelRatio = 1.0;
@@ -174,40 +157,17 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(EventFormScreen), findsOneWidget);
-      expect(find.text('Pregled događaja'), findsOneWidget);
-
-      final saveButton =
-          tester.widget<FilledButton>(find.widgetWithText(FilledButton, 'Sačuvaj'));
-      expect(saveButton.onPressed, isNull);
-
-      final deleteButton =
-          tester.widget<OutlinedButton>(find.widgetWithText(OutlinedButton, 'Obriši'));
-      expect(deleteButton.onPressed, isNull);
-
-      const scopedReason =
-          'Događaj pripada kursu. Administrator može mijenjati i brisati samo događaje na nivou platforme.';
-      expect(find.byTooltip(scopedReason), findsOneWidget);
-      expect(find.text(scopedReason), findsOneWidget);
-    },
-  );
-
-  testWidgets(
-    'Tapping a platform-wide event opens EventFormScreen dialog for editing',
-    (WidgetTester tester) async {
-      tester.view.physicalSize = const Size(1400, 1000);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
-
-      final mockClient = _client();
-      await tester.pumpWidget(_buildTestApp(mockClient));
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.text('Platform Gala'));
-      await tester.pumpAndSettle();
-
-      expect(find.byType(EventFormScreen), findsOneWidget);
       expect(find.text('Uredi događaj'), findsOneWidget);
+
+      final saveButton = tester.widget<FilledButton>(
+        find.widgetWithText(FilledButton, 'Sačuvaj'),
+      );
+      expect(saveButton.onPressed, isNotNull);
+
+      final deleteButton = tester.widget<OutlinedButton>(
+        find.widgetWithText(OutlinedButton, 'Obriši'),
+      );
+      expect(deleteButton.onPressed, isNotNull);
     },
   );
 }
