@@ -10,7 +10,7 @@ public sealed class TenantInitializationMiddleware(RequestDelegate next)
 {
     public async Task InvokeAsync(HttpContext httpContext, IStoreContext storeContext)
     {
-        if (httpContext.User.Identity?.IsAuthenticated == true)
+        if (httpContext.User.IsInRole(AppRoles.StoreEmployee))
         {
             try
             {
@@ -18,7 +18,7 @@ public sealed class TenantInitializationMiddleware(RequestDelegate next)
             }
             catch (StoreNotResolvedException)
             {
-                if (httpContext.User.IsInRole(AppRoles.StoreEmployee) && !IsAuthControllerRequest(httpContext))
+                if (!IsAuthControllerRequest(httpContext))
                 {
                     throw new AuthorizationException(Messages.Forbidden);
                 }

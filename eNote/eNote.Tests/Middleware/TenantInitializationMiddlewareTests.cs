@@ -25,7 +25,7 @@ public sealed class TenantInitializationMiddlewareTests
     [InlineData(AppRoles.Student)]
     [InlineData(AppRoles.Instructor)]
     [InlineData(AppRoles.Administrator)]
-    public async Task InvokeAsync_AllowsRequest_WhenStoreNotResolved_ForNonStoreRole(string role)
+    public async Task InvokeAsync_SkipsResolution_ForNonStoreRole(string role)
     {
         var storeContext = new ThrowingStoreContext();
         var nextCalled = false;
@@ -34,7 +34,7 @@ public sealed class TenantInitializationMiddlewareTests
         await middleware.InvokeAsync(ContextFor(role), storeContext);
 
         Assert.True(nextCalled);
-        Assert.True(storeContext.Called);
+        Assert.False(storeContext.Called);
     }
 
     [Fact]
