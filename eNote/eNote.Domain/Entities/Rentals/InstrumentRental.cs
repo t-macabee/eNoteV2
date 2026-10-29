@@ -150,8 +150,14 @@ public sealed class InstrumentRental : AuditableEntity, ITenantScoped
     private static string? GuardNoInstrumentLockConflict(RentalTransitionContext context) =>
         context.HasInstrumentLockConflict ? InstrumentReservedOrRentedMessage : null;
 
+    private static string? GuardInstrumentActive(RentalTransitionContext context) =>
+        context.IsInstrumentInactive ? RentalApproveInstrumentInactiveMessage : null;
+
     private static string? GuardRejectReason(RentalTransitionContext context) =>
         string.IsNullOrWhiteSpace(context.ResponseNote) ? RentalRejectReasonRequiredMessage : null;
+
+    private static string? GuardCancelReason(RentalTransitionContext context) =>
+        string.IsNullOrWhiteSpace(context.ResponseNote) ? RentalCancelReasonRequiredMessage : null;
 
     private static string? ResolveNote(InstrumentRental rental, RentalTransitionContext context) =>
         !string.IsNullOrWhiteSpace(context.ResponseNote) ? context.ResponseNote : rental.Note;
@@ -162,7 +168,7 @@ public sealed class InstrumentRental : AuditableEntity, ITenantScoped
             From: InstrumentRentalStatus.Pending,
             Trigger: RentalTrigger.Approve,
             Actors: [RentalActor.StoreEmployee],
-            Guard: (_, context) => GuardNoInstrumentLockConflict(context),
+            Guard: (_, context) => GuardNoInstrumentLockConflict(context) ?? GuardInstrumentActive(context),
             Apply: (rental, context, now) => rental.Approve(context.MonthlyFee, context.ResponseNote, now, context.UserId),
             UsesInstrumentLock: true),
 
@@ -178,8 +184,8 @@ public sealed class InstrumentRental : AuditableEntity, ITenantScoped
             From: InstrumentRentalStatus.Pending,
             Trigger: RentalTrigger.Cancel,
             Actors: [RentalActor.Student],
-            Guard: null,
-            Apply: (rental, context, now) => rental.Cancel(ResolveNote(rental, context)),
+            Guard: (_, context) => GuardCancelReason(context),
+            Apply: (rental, context, _) => rental.Cancel(context.ResponseNote),
             UsesInstrumentLock: false),
 
         new(
@@ -194,8 +200,8 @@ public sealed class InstrumentRental : AuditableEntity, ITenantScoped
             From: InstrumentRentalStatus.Approved,
             Trigger: RentalTrigger.Cancel,
             Actors: [RentalActor.Student, RentalActor.StoreEmployee],
-            Guard: null,
-            Apply: (rental, context, now) => rental.Cancel(ResolveNote(rental, context)),
+            Guard: (_, context) => GuardCancelReason(context),
+            Apply: (rental, context, _) => rental.Cancel(context.ResponseNote),
             UsesInstrumentLock: false),
 
         new(
@@ -221,6 +227,8 @@ public sealed class InstrumentRental : AuditableEntity, ITenantScoped
     private const string RentalApprovePendingOnlyMessage = "Samo zahtjev na čekanju može biti odobren.";
     private const string RentalRejectPendingOnlyMessage = "Samo zahtjev na čekanju se može odbiti.";
     private const string RentalRejectReasonRequiredMessage = "Razlog odbijanja je obavezan.";
+    private const string RentalCancelReasonRequiredMessage = "Razlog otkazivanja je obavezan.";
+    private const string RentalApproveInstrumentInactiveMessage = "Instrument više nije aktivan pa zahtjev ne može biti odobren.";
     private const string RentalPickupApprovedOnlyMessage = "Samo odobreno iznajmljivanje se može preuzeti.";
     private const string RentalCompleteActiveOnlyMessage = "Samo aktivno iznajmljivanje se može završiti.";
     private const string RentalCancelPendingOrApprovedOnlyMessage = "Samo zahtjev na čekanju ili odobren zahtjev se može otkazati.";

@@ -52,6 +52,21 @@ public sealed class TenantIsolationTests
     }
 
     [Fact]
+    public async Task ApproveAsync_Throws_WhenRentalBelongsToOtherStore()
+    {
+        await using var context = CreateContext(storeId: 1);
+
+        var (_, _, _, store2RentalId) = await SeedTwoStoresWithRentalsAsync(context);
+        var actor = new StubCurrentActor(storeId: 1);
+        var service = new RentalCommandService(context, TestMapper.Create(), new FixedClock(Now), actor, actor, actor, new RecordingNotificationDispatcher(), new StubDisplayNameService());
+
+        await Assert.ThrowsAsync<NotFoundException>(() => service.ApproveAsync(store2RentalId, new RentalStatusRequest()));
+
+        var stored = await context.Set<InstrumentRental>().AsNoTracking().IgnoreQueryFilters().SingleAsync(x => x.Id == store2RentalId);
+        Assert.Equal(InstrumentRentalStatus.Pending, stored.RentalStatus);
+    }
+
+    [Fact]
     public async Task GetByIdAsync_Throws_WhenInstrumentBelongsToOtherStore()
     {
         await using var context = CreateContext(storeId: 1);
@@ -196,6 +211,10 @@ public sealed class TenantIsolationTests
 
     private static RentalQueryService CreateRentalQueryService(ENoteContext context, int storeId) => new(context, TestMapper.Create(), new StubCurrentActor(storeId: storeId), new FixedClock(Now), new StubDisplayNameService());
 
-    private static InstrumentService CreateInstrumentService(ENoteContext context, int storeId) =>
-        new(context, new StubCurrentActor(storeId: storeId, employee: new MusicStoreEmployee(appUserId: 1, musicStoreId: storeId, isManager: false)), new StubFileStorageService());
+    private static InstrumentService CreateInstrumentService(ENoteContext context, int storeId)
+    {
+        var actor = new StubCurrentActor(storeId: storeId, employee: new MusicStoreEmployee(appUserId: 1, musicStoreId: storeId, isManager: false));
+        var rentalCommands = new RentalCommandService(context, TestMapper.Create(), new FixedClock(Now), actor, actor, actor, new RecordingNotificationDispatcher(), new StubDisplayNameService());
+        return new(context, actor, new StubFileStorageService(), rentalCommands);
+    }
 }

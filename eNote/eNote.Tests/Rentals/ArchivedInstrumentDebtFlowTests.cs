@@ -79,7 +79,7 @@ public sealed class ArchivedInstrumentDebtFlowTests
             actor,
             actor,
             gateway,
-            new NoOpNotificationDispatcher(),
+            new RecordingNotificationDispatcher(),
             new StripeOptions { Currency = "eur" },
             NullLogger<RentalPaymentService>.Instance);
 
@@ -90,7 +90,7 @@ public sealed class ArchivedInstrumentDebtFlowTests
             actor,
             actor,
             actor,
-            new NoOpNotificationDispatcher(),
+            new RecordingNotificationDispatcher(),
             new StubDisplayNameService());
 
     private static StripeWebhookService CreateWebhookService(ENoteContext context, FakePaymentGateway gateway) =>
@@ -98,7 +98,7 @@ public sealed class ArchivedInstrumentDebtFlowTests
             new FixedClock(Now),
             new StripeOptions { Currency = "eur" },
             gateway,
-            new NoOpNotificationDispatcher(),
+            new RecordingNotificationDispatcher(),
             new EnrollmentNotificationDispatcher(context, new FixedClock(Now)),
             NullLogger<StripeWebhookService>.Instance);
 

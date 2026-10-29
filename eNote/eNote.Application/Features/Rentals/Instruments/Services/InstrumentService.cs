@@ -1,4 +1,6 @@
 using eNote.Application.Common.Files;
+using eNote.Application.Features.Rentals.InstrumentRentals;
+using eNote.Application.Features.Rentals.InstrumentRentals.Services;
 using System.Linq.Expressions;
 
 namespace eNote.Application.Features.Rentals.Instruments.Services;
@@ -6,7 +8,8 @@ namespace eNote.Application.Features.Rentals.Instruments.Services;
 public sealed class InstrumentService(
     IAppDbContext context,
     IStudentContext students,
-    IFileStorageService fileStorage)
+    IFileStorageService fileStorage,
+    RentalCommandService rentalCommands)
 {
     private static readonly Expression<Func<Instrument, InstrumentDto>> ProjectToDto = x => new InstrumentDto
     {
@@ -130,20 +133,25 @@ public sealed class InstrumentService(
 
     public async Task DeleteAsync(int id, CancellationToken cancellationToken = default)
     {
-        await EnsureStoreAccessAsync(cancellationToken);
+        var employee = await EnsureStoreAccessAsync(cancellationToken);
 
         var instrument = await context.Set<Instrument>()
             .WhereActive()
             .FirstOrDefaultAsync(x => x.Id == id, cancellationToken)
             ?? throw new NotFoundException(Messages.NotFound);
 
-        if (await context.Set<InstrumentRental>().WhereBlockingStatus().AnyAsync(r => r.InstrumentId == id, cancellationToken))
+        await context.ExecuteInTransactionAsync(async () =>
         {
-            throw new BusinessException(Messages.InstrumentDeleteBlocked);
-        }
+            if (await context.Set<InstrumentRental>().WhereBlockingStatus().AnyAsync(r => r.InstrumentId == id, cancellationToken))
+            {
+                throw new BusinessException(Messages.InstrumentDeleteBlocked);
+            }
 
-        instrument.SoftDelete();
-        await context.SaveChangesAsync(cancellationToken);
+            await rentalCommands.RejectPendingForArchivedInstrumentAsync(id, employee.AppUserId, cancellationToken);
+
+            instrument.SoftDelete();
+            await context.SaveChangesMappingConflictAsync(Messages.Conflict, cancellationToken);
+        }, cancellationToken);
 
         if (!string.IsNullOrWhiteSpace(instrument.ImagePath))
         {

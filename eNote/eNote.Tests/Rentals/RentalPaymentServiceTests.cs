@@ -500,7 +500,7 @@ public sealed class RentalPaymentServiceTests
     [Fact]
     public async Task Student_CannotCreateForOthersRental()
     {
-        var (context, studentA, currentUserA) = await CreateStudentContextAsync(appUserId: 100);
+        var (context, _, currentUserA) = await CreateStudentContextAsync(appUserId: 100);
         var studentB = await SeedStudentAsync(context, appUserId: 200);
         var instrument = await RentalTestData.SeedInstrumentAsync(context);
         var rental = RentalTestData.CreateCompletedRental(instrument, studentB.Id, Now);
@@ -508,9 +508,9 @@ public sealed class RentalPaymentServiceTests
         await context.SaveChangesAsync();
         var service = CreateService(context, currentUserA);
 
-        var ex = await Assert.ThrowsAsync<BusinessException>(() => service.CreatePaymentIntentAsync(rental.Id));
+        var ex = await Assert.ThrowsAsync<NotFoundException>(() => service.CreatePaymentIntentAsync(rental.Id));
 
-        Assert.Equal(Messages.RentalAccessDenied, ex.Message);
+        Assert.Equal(Messages.RentalNotFound, ex.Message);
     }
 
     [Fact]
@@ -523,9 +523,9 @@ public sealed class RentalPaymentServiceTests
         await context.SaveChangesAsync();
         var service = CreateService(context, CreateStoreActor());
 
-        var ex = await Assert.ThrowsAsync<BusinessException>(() => service.CreatePaymentIntentAsync(rental.Id));
+        var ex = await Assert.ThrowsAsync<NotFoundException>(() => service.CreatePaymentIntentAsync(rental.Id));
 
-        Assert.Equal(Messages.RentalAccessDenied, ex.Message);
+        Assert.Equal(Messages.RentalNotFound, ex.Message);
     }
 
     [Fact]
@@ -639,13 +639,8 @@ public sealed class RentalPaymentServiceTests
             currentUser,
             currentUser,
             gateway ?? new FakePaymentGateway(),
-            dispatcher ?? new NoOpNotificationDispatcher(),
+            dispatcher ?? new RecordingNotificationDispatcher(),
             new StripeOptions { Currency = "eur" },
             NullLogger<RentalPaymentService>.Instance);
-    }
-
-    private sealed class MutableClock(DateTime initial) : IClock
-    {
-        public DateTime UtcNow { get; set; } = initial;
     }
 }

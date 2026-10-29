@@ -35,4 +35,6 @@ public class InstrumentRentalDto
     public bool IsPaid { get; set; }
     public decimal? AmountPaid { get; set; }
     public DateTime? PaidAt { get; set; }
+
+    public int? OtherPendingRequests { get; set; }
 }

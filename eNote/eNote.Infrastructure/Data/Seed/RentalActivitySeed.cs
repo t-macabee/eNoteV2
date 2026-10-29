@@ -217,6 +217,7 @@ internal static class RentalActivitySeed
             UserId = actorUserId,
             Actor = actor,
             HasInstrumentLockConflict = false,
+            IsInstrumentInactive = false,
             MonthlyFee = monthlyFee,
             ResponseNote = responseNote
         };

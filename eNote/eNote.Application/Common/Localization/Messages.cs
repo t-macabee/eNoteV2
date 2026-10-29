@@ -75,7 +75,7 @@ public static class Messages
     public const string RentalNotFoundAfterUpdate = "Zahtjev nije pronađen nakon ažuriranja.";
     public const string RentalPendingRequired = "Već imate zahtjev na čekanju za ovaj instrument.";
     public const string RentalCancelPendingOrApprovedOnly = "Samo zahtjev na čekanju ili odobren zahtjev se može otkazati.";
-    public const string RentalAccessDenied = "Nemate pravo nad ovim zahtjevom.";
+    public const string RentalRejectedInstrumentArchived = "Zahtjev je odbijen jer je instrument arhiviran.";
 
     public const string PaymentAlreadyCompleted = "Stavka je već plaćena.";
     public const string PaymentNotPayableInStatus = "Iznajmljivanje nije u stanju koje dozvoljava plaćanje.";
@@ -185,9 +185,6 @@ public static class Messages
 
     public static string UserUpdateFailed(string username, string errors) =>
         $"Greška pri ažuriranju korisnika {username}: {errors}";
-
-    public static string UserRoleRemoveFailed(string username, string errors) =>
-        $"Greška pri uklanjanju uloga korisnika {username}: {errors}";
 
     public static string UserRoleAssignFailed(string role, string username, string errors) =>
         $"Greška pri dodjeli uloge {role} korisniku {username}: {errors}";

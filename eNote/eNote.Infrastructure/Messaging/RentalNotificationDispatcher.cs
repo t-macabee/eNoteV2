@@ -4,7 +4,6 @@ using eNote.Application.Features.Rentals.InstrumentRentals;
 using eNote.Application.Features.Rentals.InstrumentRentals.Services;
 using eNote.Contracts.Communication;
 using eNote.Contracts.Rentals;
-using eNote.Domain.Enums;
 using eNote.Infrastructure.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -57,7 +56,7 @@ public sealed class RentalNotificationDispatcher(
         await context.Set<MusicStoreEmployee>()
             .AsNoTracking()
             .IgnoreQueryFilters()
-            .Where(x => x.MusicStoreId == musicStoreId && x.IsActive)
+            .Where(x => x.MusicStoreId == musicStoreId)
             .Join(context.Set<AppUser>().Where(user => user.IsActive),
                 employee => employee.AppUserId,
                 user => user.Id,
@@ -110,8 +109,17 @@ public sealed class RentalNotificationDispatcher(
 
     private sealed record PaymentTarget(int StudentUserId, string Model, InstrumentRentalStatus RentalStatus);
 
-    private static (string Title, string Body) BuildCreatedContent(InstrumentRentalDto rental) =>
-        ("Zahtjev za iznajmljivanje poslan", $"Vaš zahtjev za instrument {rental.InstrumentModel} je poslan prodavnici {rental.StoreName} i čeka odobrenje.");
+    private static (string Title, string Body) BuildCreatedContent(InstrumentRentalDto rental)
+    {
+        var body = $"Vaš zahtjev za instrument {rental.InstrumentModel} je poslan prodavnici {rental.StoreName} i čeka odobrenje.";
+
+        if (rental.OtherPendingRequests > 0)
+        {
+            body += $" Broj zahtjeva na čekanju za isti instrument: {rental.OtherPendingRequests}.";
+        }
+
+        return ("Zahtjev za iznajmljivanje poslan", body);
+    }
 
     private static (string Title, string Body) BuildStoreCreatedContent(InstrumentRentalDto rental) =>
         ("Novi zahtjev za iznajmljivanje", $"Zaprimljen je novi zahtjev za instrument {rental.InstrumentModel} u prodavnici {rental.StoreName}.");

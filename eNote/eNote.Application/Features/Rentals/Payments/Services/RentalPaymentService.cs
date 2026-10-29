@@ -170,7 +170,7 @@ public sealed class RentalPaymentService(
 
         if (rental.StudentAppUserId != currentUser.UserId)
         {
-            throw new BusinessException(Messages.RentalAccessDenied);
+            throw new NotFoundException(Messages.RentalNotFound);
         }
     }
 
@@ -205,7 +205,7 @@ public sealed class RentalPaymentService(
 
         if (rental.StudentProfile.AppUserId != currentUser.UserId)
         {
-            throw new BusinessException(Messages.RentalAccessDenied);
+            throw new NotFoundException(Messages.RentalNotFound);
         }
 
         return rental;

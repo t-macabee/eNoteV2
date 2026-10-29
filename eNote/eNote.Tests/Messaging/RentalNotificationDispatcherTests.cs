@@ -28,6 +28,46 @@ public sealed class RentalNotificationDispatcherTests
     }
 
     [Fact]
+    public async Task DispatchCreatedAsync_MentionsOtherPendingRequests_WhenThereAreAny()
+    {
+        await using var context = TestDbContextFactory.CreateContext(Now);
+        var dispatcher = new RentalNotificationDispatcher(context, new FixedClock(Now));
+        var dto = CreateRentalDto();
+        dto.OtherPendingRequests = 3;
+
+        await dispatcher.DispatchCreatedAsync(dto, studentUserId: 5);
+        await context.SaveChangesAsync();
+
+        var payload = await ReadSingleCreatedPayloadAsync(context);
+        Assert.Contains("Broj zahtjeva na čekanju za isti instrument: 3.", payload.Body);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData(0)]
+    public async Task DispatchCreatedAsync_OmitsPendingCount_WhenNobodyElseWaits(int? otherPending)
+    {
+        await using var context = TestDbContextFactory.CreateContext(Now);
+        var dispatcher = new RentalNotificationDispatcher(context, new FixedClock(Now));
+        var dto = CreateRentalDto();
+        dto.OtherPendingRequests = otherPending;
+
+        await dispatcher.DispatchCreatedAsync(dto, studentUserId: 5);
+        await context.SaveChangesAsync();
+
+        var payload = await ReadSingleCreatedPayloadAsync(context);
+        Assert.DoesNotContain("Broj zahtjeva na čekanju", payload.Body);
+    }
+
+    private static async Task<RentalStatusChanged> ReadSingleCreatedPayloadAsync(DbContext context)
+    {
+        var row = await context.Set<NotificationOutbox>().SingleAsync();
+        var payload = JsonSerializer.Deserialize<RentalStatusChanged>(row.PayloadJson, new JsonSerializerOptions(JsonSerializerDefaults.Web));
+        Assert.NotNull(payload);
+        return payload;
+    }
+
+    [Fact]
     public async Task DispatchTransitionAsync_UsesStudentUserId_AndTriggerTitle()
     {
         await using var context = TestDbContextFactory.CreateContext(Now);

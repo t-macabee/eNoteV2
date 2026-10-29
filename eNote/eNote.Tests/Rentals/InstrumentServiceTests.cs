@@ -1,6 +1,8 @@
 using eNote.Application.Common.Files;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Persistence;
+using eNote.Application.Features.Rentals.InstrumentRentals;
+using eNote.Application.Features.Rentals.InstrumentRentals.Services;
 using eNote.Application.Features.Rentals.Instruments;
 using eNote.Application.Features.Rentals.Instruments.Services;
 using eNote.Tests.TestUtils;
@@ -238,6 +240,64 @@ public sealed class InstrumentServiceTests
         Assert.Empty(loaded.InstrumentRentals);
     }
 
+    [Theory]
+    [InlineData(InstrumentRentalStatus.Approved)]
+    [InlineData(InstrumentRentalStatus.Active)]
+    [InlineData(InstrumentRentalStatus.Pending)]
+    [InlineData(InstrumentRentalStatus.Rejected)]
+    [InlineData(InstrumentRentalStatus.Canceled)]
+    [InlineData(InstrumentRentalStatus.Completed)]
+    [InlineData(InstrumentRentalStatus.ReturnedEarly)]
+    public async Task DeleteAsync_AppliesArchiveRulesForEveryRentalStatus(InstrumentRentalStatus status)
+    {
+        var ctx = CreateContext();
+        var type = await SeedInstrumentTypeAsync(ctx, "Guitar");
+        var store = await SeedStoreAsync(ctx, "Music Shop Sarajevo");
+        var instrument = await SeedInstrumentAsync(ctx, store.Id, type.Id, "Stratocaster", "Fender");
+        var student = new Student(appUserId: 100, enrollmentDate: Now.AddMonths(-1));
+        ctx.Set<Student>().Add(student);
+        await ctx.SaveChangesAsync();
+
+        var rental = await SeedRentalInStatusAsync(ctx, instrument, student, status);
+        var noteBeforeDelete = rental.Note;
+        var recorder = new RecordingNotificationDispatcher();
+        var service = CreateStoreInstrumentService(ctx, store.Id, new StubFileStorageService(), recorder);
+
+        if (status is InstrumentRentalStatus.Approved or InstrumentRentalStatus.Active)
+        {
+            var ex = await Assert.ThrowsAsync<BusinessException>(() => service.DeleteAsync(instrument.Id));
+
+            Assert.Equal(Messages.InstrumentDeleteBlocked, ex.Message);
+            Assert.True((await ctx.Set<Instrument>().IgnoreQueryFilters().SingleAsync(x => x.Id == instrument.Id)).IsActive);
+            Assert.Equal(status, (await ctx.Set<InstrumentRental>().AsNoTracking().SingleAsync(x => x.Id == rental.Id)).RentalStatus);
+            Assert.Empty(recorder.TransitionCalls);
+            return;
+        }
+
+        await service.DeleteAsync(instrument.Id);
+
+        Assert.False((await ctx.Set<Instrument>().IgnoreQueryFilters().SingleAsync(x => x.Id == instrument.Id)).IsActive);
+        var stored = await ctx.Set<InstrumentRental>().AsNoTracking().SingleAsync(x => x.Id == rental.Id);
+
+        if (status == InstrumentRentalStatus.Pending)
+        {
+            Assert.Equal(InstrumentRentalStatus.Rejected, stored.RentalStatus);
+            Assert.Equal(Messages.RentalRejectedInstrumentArchived, stored.Note);
+            Assert.Equal(Now, stored.RejectedAt);
+
+            var notification = Assert.Single(recorder.TransitionCalls);
+            Assert.Equal(RentalTrigger.Reject, notification.Trigger);
+            Assert.Equal(rental.Id, notification.Rental.Id);
+            Assert.Equal(student.AppUserId, notification.Rental.StudentUserId);
+            Assert.Equal(InstrumentRentalStatus.Rejected, notification.Rental.RentalStatus);
+            return;
+        }
+
+        Assert.Equal(status, stored.RentalStatus);
+        Assert.Equal(noteBeforeDelete, stored.Note);
+        Assert.Empty(recorder.TransitionCalls);
+    }
+
     [Fact]
     public async Task DeleteAsync_DeletesStoredImage_AfterSoftDelete()
     {
@@ -300,11 +360,20 @@ public sealed class InstrumentServiceTests
     private static ENoteContext CreateContext() =>
         new(TestDbContextFactory.CreateOptions(), new FixedClock(Now), new StubCurrentActor());
 
-    private static InstrumentService CreateInstrumentService(ENoteContext context) =>
-        new(context, new StubCurrentActor(), new StubFileStorageService());
+    private static InstrumentService CreateInstrumentService(ENoteContext context)
+    {
+        var actor = new StubCurrentActor();
+        return new(context, actor, new StubFileStorageService(), CreateRentalCommandService(context, actor));
+    }
 
-    private static InstrumentService CreateStoreInstrumentService(IAppDbContext context, int storeId, IFileStorageService storage) =>
-        new(context, new StubCurrentActor(storeId: storeId, employee: new MusicStoreEmployee(appUserId: 1, musicStoreId: storeId, isManager: true)), storage);
+    private static InstrumentService CreateStoreInstrumentService(IAppDbContext context, int storeId, IFileStorageService storage, IRentalNotificationDispatcher? dispatcher = null)
+    {
+        var actor = new StubCurrentActor(storeId: storeId, employee: new MusicStoreEmployee(appUserId: 1, musicStoreId: storeId, isManager: true));
+        return new(context, actor, storage, CreateRentalCommandService(context, actor, dispatcher));
+    }
+
+    private static RentalCommandService CreateRentalCommandService(IAppDbContext context, StubCurrentActor actor, IRentalNotificationDispatcher? dispatcher = null) =>
+        new(context, TestMapper.Create(), new FixedClock(Now), actor, actor, actor, dispatcher ?? new RecordingNotificationDispatcher(), new StubDisplayNameService());
 
     private static async Task<MusicStore> SeedStoreAsync(ENoteContext ctx, string name)
     {
@@ -328,5 +397,45 @@ public sealed class InstrumentServiceTests
         ctx.Set<Instrument>().Add(instrument);
         await ctx.SaveChangesAsync();
         return instrument;
+    }
+
+    private static async Task<InstrumentRental> SeedRentalInStatusAsync(
+        ENoteContext ctx,
+        Instrument instrument,
+        Student student,
+        InstrumentRentalStatus status)
+    {
+        var rental = new InstrumentRental(instrument.Id, student.Id, instrument.MusicStoreId, Now, "Original request note.");
+
+        switch (status)
+        {
+            case InstrumentRentalStatus.Approved:
+                rental.Approve(50m, null, Now, 1);
+                break;
+            case InstrumentRentalStatus.Active:
+                rental.Approve(50m, null, Now, 1);
+                rental.Pickup(Now);
+                break;
+            case InstrumentRentalStatus.Completed:
+                rental.Approve(50m, null, Now, 1);
+                rental.Pickup(Now);
+                rental.Complete(Now, null);
+                break;
+            case InstrumentRentalStatus.Rejected:
+                rental.Reject(Now, "Ranije odbijen.", 1);
+                break;
+            case InstrumentRentalStatus.Canceled:
+                rental.Cancel("Ranije otkazan.");
+                break;
+            case InstrumentRentalStatus.ReturnedEarly:
+                rental.Approve(50m, null, Now, 1);
+                rental.Pickup(Now);
+                rental.ReturnEarly(Now, null);
+                break;
+        }
+
+        ctx.Set<InstrumentRental>().Add(rental);
+        await ctx.SaveChangesAsync();
+        return rental;
     }
 }
