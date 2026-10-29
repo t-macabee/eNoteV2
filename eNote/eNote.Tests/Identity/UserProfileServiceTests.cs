@@ -46,6 +46,43 @@ public sealed class UserProfileServiceTests
     }
 
     [Fact]
+    public async Task GetUserAsync_IncludeInactive_ReturnsProfile_WhenUserIsInactive()
+    {
+        var identity = Identity(new UserIdentityDto
+        {
+            Id = 1,
+            Username = "inactive",
+            IsActive = false
+        }, AppRoles.Administrator);
+
+        var service = CreateService(identity);
+
+        var result = await service.GetUserAsync(1, includeInactive: true);
+
+        Assert.Equal("inactive", result.Username);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task GetUserAsync_ReturnsPictureFlag(bool hasPicture)
+    {
+        var identity = Identity(new UserIdentityDto
+        {
+            Id = 1,
+            Username = "admin",
+            IsActive = true,
+            HasPicture = hasPicture
+        }, AppRoles.Administrator);
+
+        var service = CreateService(identity);
+
+        var result = await service.GetUserAsync(1);
+
+        Assert.Equal(hasPicture, result.HasPicture);
+    }
+
+    [Fact]
     public async Task GetUserAsync_ThrowsNotFound_WhenUserIsMissing()
     {
         var service = CreateService(Identity(ActiveUser(1), AppRoles.Administrator));
@@ -138,8 +175,9 @@ public sealed class UserProfileServiceTests
     public async Task GetUserAsync_BuildsStoreEmployeeProfile()
     {
         await using var context = TestDbContextFactory.CreateContext(Now);
+        var otherStore = new MusicStore("Other Shop", "10-18");
         var store = new MusicStore("Music Shop", "09-17");
-        context.Set<MusicStore>().Add(store);
+        context.Set<MusicStore>().AddRange(otherStore, store);
         await context.SaveChangesAsync();
         var employee = new MusicStoreEmployee(appUserId: 7, musicStoreId: store.Id, isManager: true);
         context.Set<MusicStoreEmployee>().Add(employee);
@@ -169,50 +207,6 @@ public sealed class UserProfileServiceTests
 
         var ex = await Assert.ThrowsAsync<BusinessException>(() => service.GetUserAsync(7, includeInactive: false));
         Assert.Equal(Messages.StoreNotFound, ex.Message);
-    }
-
-    [Fact]
-    public async Task GetUserAsync_IncludeInactive_ReturnsEmployeeProfile_WhenEmployeeInactive()
-    {
-        await using var context = TestDbContextFactory.CreateContext(Now);
-        var store = new MusicStore("Music Shop", "09-17");
-        context.Set<MusicStore>().Add(store);
-        await context.SaveChangesAsync();
-
-        var employee = new MusicStoreEmployee(appUserId: 7, musicStoreId: store.Id, isManager: false) { IsActive = false };
-        context.Set<MusicStoreEmployee>().Add(employee);
-        await context.SaveChangesAsync();
-
-        var identity = Identity(ActiveUser(7), AppRoles.StoreEmployee);
-
-        var service = new UserProfileService(context, identity, new UserProfileLookup(context), new StubCurrentActor(userId: 7));
-
-        var result = await service.GetUserAsync(7, includeInactive: true);
-
-        Assert.NotNull(result);
-        var profile = Assert.IsType<MusicStoreProfile>(result.Profile);
-        Assert.Equal(store.Id, profile.Id);
-        Assert.False(profile.IsManager);
-    }
-
-    [Fact]
-    public async Task GetUserAsync_ExcludeInactive_ThrowsEmployeeProfileNotFound_WhenEmployeeInactive()
-    {
-        await using var context = TestDbContextFactory.CreateContext(Now);
-        var store = new MusicStore("Music Shop", "09-17");
-        context.Set<MusicStore>().Add(store);
-        await context.SaveChangesAsync();
-
-        var employee = new MusicStoreEmployee(appUserId: 7, musicStoreId: store.Id, isManager: false) { IsActive = false };
-        context.Set<MusicStoreEmployee>().Add(employee);
-        await context.SaveChangesAsync();
-
-        var identity = Identity(ActiveUser(7), AppRoles.StoreEmployee);
-
-        var service = new UserProfileService(context, identity, new UserProfileLookup(context), new StubCurrentActor(userId: 7));
-
-        var ex = await Assert.ThrowsAsync<BusinessException>(() => service.GetUserAsync(7, includeInactive: false));
-        Assert.Equal(Messages.EmployeeProfileNotFound, ex.Message);
     }
 
     [Fact]
@@ -247,7 +241,7 @@ public sealed class UserProfileServiceTests
     {
         public Task<Student> GetStudentAsync(int userId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
         public Task<Instructor> GetInstructorAsync(int userId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
-        public Task<MusicStoreEmployee> GetActiveEmployeeAsync(int userId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+        public Task<MusicStoreEmployee> GetEmployeeAsync(int userId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
     }
 
     private sealed class ThrowingDbContext : IAppDbContext

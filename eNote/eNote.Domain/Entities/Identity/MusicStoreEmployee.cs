@@ -7,7 +7,6 @@ public class MusicStoreEmployee : AuditableEntity, ITenantScoped, IHasAppUserId
     public MusicStore MusicStore { get; private set; } = null!;
 
     public bool IsManager { get; private set; }
-    public bool IsActive { get; set; } = true;
 
     protected MusicStoreEmployee()
     {
@@ -19,6 +18,4 @@ public class MusicStoreEmployee : AuditableEntity, ITenantScoped, IHasAppUserId
         MusicStoreId = musicStoreId;
         IsManager = isManager;
     }
-
-    public void SetManager(bool isManager) => IsManager = isManager;
 }

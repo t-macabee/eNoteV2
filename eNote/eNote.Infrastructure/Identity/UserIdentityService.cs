@@ -79,8 +79,6 @@ public sealed class UserIdentityService(UserManager<AppUser> userManager, ENoteC
         {
             var term = name.Trim().ToLower();
             query = query.Where(u =>
-                (u.FirstName != null && u.FirstName.ToLower().Contains(term)) ||
-                (u.LastName != null && u.LastName.ToLower().Contains(term)) ||
                 (u.UserName != null && u.UserName.ToLower().Contains(term)) ||
                 (((u.FirstName ?? "") + " " + (u.LastName ?? "")).ToLower().Contains(term)));
         }
@@ -110,7 +108,7 @@ public sealed class UserIdentityService(UserManager<AppUser> userManager, ENoteC
 
         var employees = await context.Set<MusicStoreEmployee>()
             .AsNoTracking()
-            .Where(e => ids.Contains(e.AppUserId) && e.IsActive)
+            .Where(e => ids.Contains(e.AppUserId))
             .Select(e => new { e.AppUserId, e.IsManager, e.MusicStore.StoreName })
             .ToDictionaryAsync(e => e.AppUserId, cancellationToken);
 

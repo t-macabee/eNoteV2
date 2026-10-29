@@ -1,4 +1,3 @@
-using eNote.Domain.Entities.Shared.Base;
 using Microsoft.AspNetCore.Identity;
 using System.ComponentModel.DataAnnotations;
 

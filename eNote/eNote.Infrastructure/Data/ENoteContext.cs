@@ -89,7 +89,7 @@ public class ENoteContext(DbContextOptions<ENoteContext> options, IClock clock, 
         {
             var storeId = await Set<MusicStoreEmployee>()
                 .AsNoTracking()
-                .Where(x => x.AppUserId == currentUser.UserId && x.IsActive)
+                .Where(x => x.AppUserId == currentUser.UserId)
                 .Select(x => (int?)x.MusicStoreId)
                 .SingleOrDefaultAsync(cancellationToken);
 

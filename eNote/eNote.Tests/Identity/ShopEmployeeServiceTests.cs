@@ -1,11 +1,8 @@
-using eNote.API.Controllers.Admin;
 using eNote.Application.Common.Localization;
-using eNote.Application.Common.Paging;
 using eNote.Application.Features.Identity.Employees;
 using eNote.Application.Features.Identity.Users;
 using eNote.Application.Features.Identity.Users.Services;
 using eNote.Tests.TestUtils;
-using Microsoft.AspNetCore.Mvc;
 
 namespace eNote.Tests.Identity;
 
@@ -14,7 +11,7 @@ public sealed class ShopEmployeeServiceTests
     private static readonly DateTime Now = new(2026, 7, 1, 12, 0, 0, DateTimeKind.Utc);
 
     [Fact]
-    public async Task GetPagedForCurrentStoreAsync_ReturnsDeactivatedEmployee_WhenFilteredByInactive()
+    public async Task GetPagedForCurrentStoreAsync_ReturnsOnlyInactiveUsers_WhenFilteredByInactive()
     {
         await using var context = TestDbContextFactory.CreateContext(Now);
 
@@ -23,14 +20,16 @@ public sealed class ShopEmployeeServiceTests
         await context.SaveChangesAsync();
 
         var manager = new MusicStoreEmployee(appUserId: 10, musicStoreId: store.Id, isManager: true);
-        var deactivated = new MusicStoreEmployee(appUserId: 20, musicStoreId: store.Id, isManager: false) { IsActive = false };
-        context.Set<MusicStoreEmployee>().AddRange(manager, deactivated);
+        var activeColleague = new MusicStoreEmployee(appUserId: 30, musicStoreId: store.Id, isManager: false);
+        var inactiveUser = new MusicStoreEmployee(appUserId: 20, musicStoreId: store.Id, isManager: false);
+        context.Set<MusicStoreEmployee>().AddRange(manager, activeColleague, inactiveUser);
         await context.SaveChangesAsync();
 
         var identity = new StubUserIdentityService(new Dictionary<int, UserIdentityDto>
         {
             [10] = StubUserIdentityService.User(10, "manager", "Mia", "Manager"),
-            [20] = StubUserIdentityService.User(20, "former", "Fred", "Former")
+            [20] = new() { Id = 20, Username = "inactive_user", FirstName = "Ivan", LastName = "Inactive", IsActive = false },
+            [30] = StubUserIdentityService.User(30, "colleague", "Cora", "Colleague")
         });
 
         var service = new ShopEmployeeService(context, identity, new StubCurrentActor(userId: 10), null!);
@@ -40,35 +39,12 @@ public sealed class ShopEmployeeServiceTests
         var dto = Assert.Single(result.Items);
         Assert.Equal(20, dto.AppUserId);
         Assert.False(dto.IsActive);
-    }
 
-    [Fact]
-    public async Task GetPagedForCurrentStoreAsync_ReturnsEmployee_WhenUserInactiveAndEmployeeActive_AndFilteredByInactive()
-    {
-        await using var context = TestDbContextFactory.CreateContext(Now);
+        var activeOnly = await service.GetPagedForCurrentStoreAsync(new ShopEmployeeSearchObject { IsActive = true });
 
-        var store = new MusicStore("Store", "09-17");
-        context.Set<MusicStore>().Add(store);
-        await context.SaveChangesAsync();
-
-        var manager = new MusicStoreEmployee(appUserId: 10, musicStoreId: store.Id, isManager: true);
-        var activeEntityInactiveUser = new MusicStoreEmployee(appUserId: 20, musicStoreId: store.Id, isManager: false) { IsActive = true };
-        context.Set<MusicStoreEmployee>().AddRange(manager, activeEntityInactiveUser);
-        await context.SaveChangesAsync();
-
-        var identity = new StubUserIdentityService(new Dictionary<int, UserIdentityDto>
-        {
-            [10] = StubUserIdentityService.User(10, "manager", "Mia", "Manager"),
-            [20] = new() { Id = 20, Username = "inactive_user", FirstName = "Ivan", LastName = "Inactive", IsActive = false }
-        });
-
-        var service = new ShopEmployeeService(context, identity, new StubCurrentActor(userId: 10), null!);
-
-        var result = await service.GetPagedForCurrentStoreAsync(new ShopEmployeeSearchObject { IsActive = false });
-
-        var dto = Assert.Single(result.Items);
-        Assert.Equal(20, dto.AppUserId);
-        Assert.False(dto.IsActive);
+        var activeDto = Assert.Single(activeOnly.Items);
+        Assert.Equal(30, activeDto.AppUserId);
+        Assert.True(activeDto.IsActive);
     }
 
     [Fact]
@@ -269,41 +245,6 @@ public sealed class ShopEmployeeServiceTests
     }
 
     [Fact]
-    public async Task GetPagedAsync_ReflectsDeactivatedUser()
-    {
-        await using var context = TestDbContextFactory.CreateContext(Now);
-
-        var store = new MusicStore("Store", "09-17");
-        context.Set<MusicStore>().Add(store);
-        await context.SaveChangesAsync();
-
-        var emp = new MusicStoreEmployee(50, store.Id, false);
-        context.Set<MusicStoreEmployee>().Add(emp);
-        await context.SaveChangesAsync();
-
-        var deactivatedUser = new UserIdentityDto
-        {
-            Id = 50,
-            Username = "deactivated_user",
-            FirstName = "Inactive",
-            LastName = "Person",
-            IsActive = false
-        };
-
-        var identity = new StubUserIdentityService(new Dictionary<int, UserIdentityDto>
-        {
-            [50] = deactivatedUser
-        });
-
-        var service = new ShopEmployeeService(context, identity, new StubCurrentActor(), null!);
-
-        var result = await service.GetPagedAsync(new ShopEmployeeSearchObject());
-
-        var dto = Assert.Single(result.Items);
-        Assert.False(dto.IsActive);
-    }
-
-    [Fact]
     public async Task GetPagedAsync_FiltersByIsActive_ReflectsIdentityUserActiveState()
     {
         await using var context = TestDbContextFactory.CreateContext(Now);
@@ -332,38 +273,6 @@ public sealed class ShopEmployeeServiceTests
         var inactiveResult = await service.GetPagedAsync(new ShopEmployeeSearchObject { IsActive = false });
         Assert.Contains(inactiveResult.Items, x => x.AppUserId == 51);
         Assert.DoesNotContain(inactiveResult.Items, x => x.AppUserId == 50);
-    }
-
-    [Fact]
-    public async Task AdminEmployeeController_GetPaged_And_GetById_ReturnOk()
-    {
-        await using var context = TestDbContextFactory.CreateContext(Now);
-
-        var store = new MusicStore("Keyboard Store", "09:00-17:00");
-        context.Set<MusicStore>().Add(store);
-        await context.SaveChangesAsync();
-
-        var emp = new MusicStoreEmployee(77, store.Id, false);
-        context.Set<MusicStoreEmployee>().Add(emp);
-        await context.SaveChangesAsync();
-
-        var identity = new StubUserIdentityService(new Dictionary<int, UserIdentityDto>
-        {
-            [77] = StubUserIdentityService.User(77, "keyboardist", "Ken", "Keys")
-        });
-
-        var service = new ShopEmployeeService(context, identity, new StubCurrentActor(), null!);
-        var controller = new AdminEmployeeController(service);
-
-        var pagedResult = await controller.GetPaged(new ShopEmployeeSearchObject(), CancellationToken.None);
-        var okPaged = Assert.IsType<OkObjectResult>(pagedResult.Result);
-        var pagedData = Assert.IsType<PagedResult<ShopEmployeeDto>>(okPaged.Value);
-        Assert.Single(pagedData.Items);
-
-        var itemResult = await controller.GetById(emp.Id, CancellationToken.None);
-        var okItem = Assert.IsType<OkObjectResult>(itemResult.Result);
-        var itemData = Assert.IsType<ShopEmployeeDto>(okItem.Value);
-        Assert.Equal("Keyboard Store", itemData.StoreName);
     }
 
     [Fact]
@@ -540,17 +449,15 @@ public sealed class ShopEmployeeServiceTests
     private sealed class StubUserAccountService : IUserAccountService
     {
         public (int UserId, bool IsActive)? SetActiveCall { get; private set; }
-        public Exception? SetActiveError { get; set; }
 
         public Task SetActiveAsync(int userId, bool isActive, CancellationToken cancellationToken = default)
         {
             SetActiveCall = (userId, isActive);
-            return SetActiveError is null ? Task.CompletedTask : Task.FromException(SetActiveError);
+            return Task.CompletedTask;
         }
 
-        public Task<int?> FindUserIdByUsernameAsync(string username, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<int> CreateUserAsync(string username, string email, string password, string? firstName, string? lastName, CancellationToken cancellationToken = default) => throw new NotImplementedException();
-        public Task AssignSingleRoleAsync(int userId, string role, CancellationToken cancellationToken = default) => throw new NotImplementedException();
+        public Task AddRoleAsync(int userId, string role, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task UpdateExistingUserAsync(int userId, string email, string? firstName, string? lastName, DateTime? dateOfBirth = null, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task UpdatePictureAsync(int userId, Stream picture, string contentType, CancellationToken cancellationToken = default) => throw new NotImplementedException();
         public Task<(Stream? Data, string? ContentType)> GetPictureAsync(int userId, CancellationToken cancellationToken = default) => throw new NotImplementedException();

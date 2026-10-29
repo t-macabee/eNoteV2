@@ -11,7 +11,6 @@ public class MusicStoreEmployeeConfig : IEntityTypeConfiguration<MusicStoreEmplo
         builder.HasUniqueIndex(nameof(MusicStoreEmployee.AppUserId));
 
         builder.Property(x => x.IsManager).IsRequired();
-        builder.Property(x => x.IsActive).IsRequired();
 
         builder.HasOne(x => x.MusicStore)
                .WithMany(x => x.Employees)

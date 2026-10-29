@@ -36,7 +36,7 @@ public sealed class StubUserIdentityService : IUserIdentityService
 
         if (!string.IsNullOrWhiteSpace(name))
         {
-            query = query.Where(u => TestUserNameHelper.MatchesName(u.FirstName, u.LastName, u.Username, name));
+            query = query.Where(u => MatchesName(u, name));
         }
 
         if (isActive.HasValue)
@@ -53,7 +53,7 @@ public sealed class StubUserIdentityService : IUserIdentityService
 
         if (!string.IsNullOrWhiteSpace(search.Name))
         {
-            query = query.Where(u => TestUserNameHelper.MatchesName(u.FirstName, u.LastName, u.Username, search.Name));
+            query = query.Where(u => MatchesName(u, search.Name!));
         }
 
         if (search.IsActive.HasValue)
@@ -84,6 +84,15 @@ public sealed class StubUserIdentityService : IUserIdentityService
             TotalCount = items.Count
         });
     }
+
+    private static bool MatchesName(UserIdentityDto user, string name) =>
+        Contains(user.FirstName, name)
+        || Contains(user.LastName, name)
+        || Contains(user.Username, name)
+        || Contains($"{user.FirstName} {user.LastName}".Trim(), name);
+
+    private static bool Contains(string? value, string name) =>
+        value?.Contains(name, StringComparison.OrdinalIgnoreCase) == true;
 
     public static UserIdentityDto User(int id, string username, string? firstName = null, string? lastName = null) => new()
     {

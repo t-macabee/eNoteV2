@@ -38,8 +38,10 @@ public sealed class AuthServiceTests
         await harness.UserManager.UpdateAsync(harness.User);
         var auth = harness.CreateAuthService();
 
-        await Assert.ThrowsAsync<AuthenticationException>(() =>
+        var exception = await Assert.ThrowsAsync<AuthenticationException>(() =>
             auth.LoginAsync(new LoginRequest { Username = "jdoe", Password = "Password1!" }));
+
+        Assert.Equal(Messages.InvalidCredentials, exception.Message);
     }
 
     [Fact]
@@ -48,8 +50,186 @@ public sealed class AuthServiceTests
         var harness = await CreateHarnessAsync(withRole: "Student");
         var auth = harness.CreateAuthService();
 
-        await Assert.ThrowsAsync<AuthenticationException>(() =>
+        var exception = await Assert.ThrowsAsync<AuthenticationException>(() =>
             auth.LoginAsync(new LoginRequest { Username = "jdoe", Password = "wrong-password" }));
+
+        Assert.Equal(Messages.InvalidCredentials, exception.Message);
+    }
+
+    [Fact]
+    public async Task LoginAsync_GivesTheSameError_ForUnknownUserAndWrongPassword()
+    {
+        var harness = await CreateHarnessAsync(withRole: "Student");
+        var auth = harness.CreateAuthService();
+
+        var unknown = await Assert.ThrowsAsync<AuthenticationException>(() =>
+            auth.LoginAsync(new LoginRequest { Username = "nobody", Password = "Password1!" }));
+
+        Assert.Equal(Messages.InvalidCredentials, unknown.Message);
+    }
+
+    [Fact]
+    public async Task LoginAsync_LocksTheAccount_AfterFiveWrongPasswords()
+    {
+        var harness = await CreateHarnessAsync(withRole: "Student");
+        var auth = harness.CreateAuthService();
+
+        for (var attempt = 0; attempt < 5; attempt++)
+        {
+            await Assert.ThrowsAsync<AuthenticationException>(() =>
+                auth.LoginAsync(new LoginRequest { Username = "jdoe", Password = "wrong-password" }));
+        }
+
+        var exception = await Assert.ThrowsAsync<AuthenticationException>(() =>
+            auth.LoginAsync(new LoginRequest { Username = "jdoe", Password = "Password1!" }));
+
+        Assert.Equal(Messages.AccountLocked, exception.Message);
+    }
+
+    [Fact]
+    public async Task LoginAsync_DoesNotLockTheAccount_AfterFourWrongPasswords()
+    {
+        var harness = await CreateHarnessAsync(withRole: "Student");
+        var auth = harness.CreateAuthService();
+
+        for (var attempt = 0; attempt < 4; attempt++)
+        {
+            await Assert.ThrowsAsync<AuthenticationException>(() =>
+                auth.LoginAsync(new LoginRequest { Username = "jdoe", Password = "wrong-password" }));
+        }
+
+        var response = await auth.LoginAsync(new LoginRequest { Username = "jdoe", Password = "Password1!" });
+
+        Assert.Equal("generated-token", response.Token);
+    }
+
+    [Fact]
+    public async Task LoginAsync_TrimsTheUsername()
+    {
+        var harness = await CreateHarnessAsync(withRole: "Student");
+        var auth = harness.CreateAuthService();
+
+        var response = await auth.LoginAsync(new LoginRequest { Username = "  jdoe  ", Password = "Password1!" });
+
+        Assert.Equal("jdoe", response.Username);
+    }
+
+    [Fact]
+    public async Task LoginAsync_PutsTheSecurityStampInTheToken()
+    {
+        var harness = await CreateHarnessAsync(withRole: "Student");
+        var auth = harness.CreateAuthService();
+
+        await auth.LoginAsync(new LoginRequest { Username = "jdoe", Password = "Password1!" });
+
+        var stamp = await harness.UserManager.GetSecurityStampAsync(harness.User);
+        Assert.False(string.IsNullOrEmpty(stamp));
+        Assert.Equal(stamp, harness.Tokens.Single().SecurityStamp);
+    }
+
+    [Fact]
+    public async Task LoginAsync_MarksAStoreManager_OnlyForStoreEmployees()
+    {
+        var harness = await CreateHarnessAsync(withRole: "StoreEmployee");
+        var provisioning = new StubUserProvisioningService { ManagerUserIds = [harness.User.Id] };
+        var auth = harness.CreateAuthService(provisioning: provisioning);
+
+        await auth.LoginAsync(new LoginRequest { Username = "jdoe", Password = "Password1!" });
+
+        Assert.True(harness.Tokens.Single().IsManager);
+    }
+
+    [Fact]
+    public async Task LoginAsync_DoesNotMarkAManager_ForOtherRoles()
+    {
+        var harness = await CreateHarnessAsync(withRole: "Student");
+        var provisioning = new StubUserProvisioningService { ManagerUserIds = [harness.User.Id] };
+        var auth = harness.CreateAuthService(provisioning: provisioning);
+
+        await auth.LoginAsync(new LoginRequest { Username = "jdoe", Password = "Password1!" });
+
+        Assert.False(harness.Tokens.Single().IsManager);
+    }
+
+    [Fact]
+    public async Task LoginAsync_DoesNotMarkAManager_ForAStoreEmployeeWhoIsNotOne()
+    {
+        var harness = await CreateHarnessAsync(withRole: "StoreEmployee");
+        var auth = harness.CreateAuthService();
+
+        await auth.LoginAsync(new LoginRequest { Username = "jdoe", Password = "Password1!" });
+
+        Assert.False(harness.Tokens.Single().IsManager);
+    }
+
+    [Fact]
+    public async Task ForgotPasswordAsync_DoesNotSend_ForInactiveUser_AndAnswersTheSame()
+    {
+        var harness = await CreateHarnessAsync(withRole: "Student");
+        harness.User.IsActive = false;
+        await harness.UserManager.UpdateAsync(harness.User);
+        var auth = harness.CreateAuthService();
+
+        var response = await auth.ForgotPasswordAsync(new ForgotPasswordRequest { Email = "jdoe@example.com" });
+
+        Assert.Equal(Messages.PasswordResetEmailSent, response.Message);
+        Assert.Empty(harness.Email.PasswordResets);
+    }
+
+    [Fact]
+    public async Task ResetPasswordAsync_Throws_AndKeepsThePassword_WhenTokenInvalid()
+    {
+        var harness = await CreateHarnessAsync(withRole: "Student");
+        var auth = harness.CreateAuthService();
+
+        var exception = await Assert.ThrowsAsync<BusinessException>(() =>
+            auth.ResetPasswordAsync(new ResetPasswordRequest
+            {
+                Email = "jdoe@example.com",
+                Token = "not-a-real-token",
+                NewPassword = "Newpassword1!"
+            }));
+
+        Assert.Equal(Messages.PasswordResetFailed, exception.Message);
+        Assert.True(await harness.UserManager.CheckPasswordAsync(harness.User, "Password1!"));
+    }
+
+    [Fact]
+    public async Task ResetPasswordAsync_Throws_AndKeepsThePassword_ForInactiveUser()
+    {
+        var harness = await CreateHarnessAsync(withRole: "Student");
+        var token = await harness.UserManager.GeneratePasswordResetTokenAsync(harness.User);
+        harness.User.IsActive = false;
+        await harness.UserManager.UpdateAsync(harness.User);
+        var auth = harness.CreateAuthService();
+
+        await Assert.ThrowsAsync<BusinessException>(() =>
+            auth.ResetPasswordAsync(new ResetPasswordRequest
+            {
+                Email = "jdoe@example.com",
+                Token = token,
+                NewPassword = "Newpassword1!"
+            }));
+
+        Assert.True(await harness.UserManager.CheckPasswordAsync(harness.User, "Password1!"));
+    }
+
+    [Fact]
+    public async Task ResetPasswordAsync_Throws_WhenNewPasswordIsTooWeak()
+    {
+        var harness = await CreateHarnessAsync(withRole: "Student");
+        var auth = harness.CreateAuthService();
+        var token = await harness.UserManager.GeneratePasswordResetTokenAsync(harness.User);
+
+        await Assert.ThrowsAsync<BusinessException>(() =>
+            auth.ResetPasswordAsync(new ResetPasswordRequest
+            {
+                Email = "jdoe@example.com",
+                Token = token,
+                NewPassword = "a"
+            }));
+
+        Assert.True(await harness.UserManager.CheckPasswordAsync(harness.User, "Password1!"));
     }
 
     [Fact]
@@ -213,11 +393,12 @@ public sealed class AuthServiceTests
         public AppUser User => user;
         public RecordingEmailService Email { get; } = new();
         public List<(string Jti, DateTime ExpiresAt)> Revocations { get; } = [];
+        public List<IssuedToken> Tokens { get; } = [];
 
         public AuthService CreateAuthService(IUserProvisioningService? provisioning = null, IEmailService? email = null) =>
             new(UserManager,
                 signInManager,
-                new StubTokenService(),
+                new StubTokenService(Tokens),
                 provisioning ?? new StubUserProvisioningService(),
                 new RecordingTokenRevocationService(Revocations),
                 email ?? Email,
@@ -234,9 +415,15 @@ public sealed class AuthServiceTests
             throw new InvalidOperationException("SMTP unavailable");
     }
 
-    private sealed class StubTokenService : ITokenService
+    private sealed record IssuedToken(int UserId, bool IsManager, string? SecurityStamp);
+
+    private sealed class StubTokenService(List<IssuedToken>? issued = null) : ITokenService
     {
-        public string GenerateToken(int userId, string username, IList<string> roles, bool isManager = false, string? securityStamp = null) => "generated-token";
+        public string GenerateToken(int userId, string username, IList<string> roles, bool isManager = false, string? securityStamp = null)
+        {
+            issued?.Add(new IssuedToken(userId, isManager, securityStamp));
+            return "generated-token";
+        }
     }
 
     private sealed class RecordingTokenRevocationService(List<(string Jti, DateTime ExpiresAt)> calls) : ITokenRevocationService
@@ -254,6 +441,7 @@ public sealed class AuthServiceTests
     {
         public RegisterRequest? LastRegisterRequest { get; private set; }
         public string? RegisterError { get; init; }
+        public int[] ManagerUserIds { get; init; } = [];
 
         public Task<RegistrationResult> RegisterStudentAsync(RegisterRequest request, CancellationToken cancellationToken = default)
         {
@@ -272,7 +460,7 @@ public sealed class AuthServiceTests
 
         public Task SetUserActiveAsync(int userId, bool isActive, CancellationToken cancellationToken = default) => Task.CompletedTask;
         public Task DeleteUserAsync(int userId, CancellationToken cancellationToken = default) => Task.CompletedTask;
-        public Task<bool> IsStoreManagerAsync(int userId, CancellationToken cancellationToken = default) => Task.FromResult(false);
+        public Task<bool> IsStoreManagerAsync(int userId, CancellationToken cancellationToken = default) => Task.FromResult(ManagerUserIds.Contains(userId));
 
         public Task<int> ProvisionStudentByInstructorAsync(DelegatedUserCreateRequest request, CancellationToken cancellationToken = default) =>
             Task.FromResult(7);

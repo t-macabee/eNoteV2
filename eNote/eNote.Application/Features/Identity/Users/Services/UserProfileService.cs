@@ -1,4 +1,3 @@
-using eNote.Application.Common.Paging;
 using eNote.Application.Constants;
 using eNote.Application.Features.Identity.Users.Profiles;
 
@@ -37,7 +36,7 @@ public sealed class UserProfileService(
         {
             AppRoles.Student => await BuildStudentProfile(userId, user, cancellationToken),
             AppRoles.Instructor => await BuildInstructorProfile(userId, user, cancellationToken),
-            AppRoles.StoreEmployee => await BuildMusicStoreProfile(userId, user, includeInactive, cancellationToken),
+            AppRoles.StoreEmployee => await BuildMusicStoreProfile(userId, cancellationToken),
             AppRoles.Administrator => new AdminProfile(user.FirstName, user.LastName, user.DateOfBirth),
             _ => throw new BusinessException(Messages.UnknownRole)
         };
@@ -59,15 +58,9 @@ public sealed class UserProfileService(
         return new InstructorProfile(instructor.Id, user.FirstName, user.LastName);
     }
 
-    private async Task<MusicStoreProfile> BuildMusicStoreProfile(int userId, UserIdentityDto user, bool includeInactive, CancellationToken cancellationToken)
+    private async Task<MusicStoreProfile> BuildMusicStoreProfile(int userId, CancellationToken cancellationToken)
     {
-        var employee = includeInactive
-            ? await context.Set<MusicStoreEmployee>()
-                .IgnoreQueryFilters()
-                .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.AppUserId == userId, cancellationToken)
-                ?? throw new BusinessException(Messages.EmployeeProfileNotFound)
-            : await lookup.GetActiveEmployeeAsync(userId, cancellationToken);
+        var employee = await lookup.GetEmployeeAsync(userId, cancellationToken);
 
         var shop = await context.Set<MusicStore>()
             .AsNoTracking()

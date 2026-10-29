@@ -5,10 +5,12 @@ namespace eNote.Tests.Identity;
 
 public sealed class CurrentActorTests
 {
+    private static readonly DateTime Now = new(2026, 7, 1, 12, 0, 0, DateTimeKind.Utc);
+
     [Fact]
     public async Task GetStudentAsync_ResolvesStudentOnlyOnce()
     {
-        var lookup = new CountingProfileLookup(new Student(appUserId: 42, enrollmentDate: DateTime.UtcNow));
+        var lookup = new CountingProfileLookup(new Student(appUserId: 42, enrollmentDate: Now));
         var actor = new CurrentActor(new StubCurrentActor(userId: 42), lookup);
 
         var first = await actor.GetCurrentStudentAsync();
@@ -29,6 +31,6 @@ public sealed class CurrentActorTests
         }
 
         public Task<Instructor> GetInstructorAsync(int userId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
-        public Task<MusicStoreEmployee> GetActiveEmployeeAsync(int userId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+        public Task<MusicStoreEmployee> GetEmployeeAsync(int userId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
     }
 }

@@ -7,5 +7,5 @@ public sealed class CurrentActor(ICurrentUserContext user, IUserProfileLookup lo
 
     public async Task<Student> GetCurrentStudentAsync(CancellationToken cancellationToken = default) => _student ??= await lookup.GetStudentAsync(user.UserId, cancellationToken);
     public async Task<int> GetCurrentStudentIdAsync(CancellationToken cancellationToken = default) => (await GetCurrentStudentAsync(cancellationToken)).Id;
-    public async Task<MusicStoreEmployee> GetCurrentEmployeeAsync(CancellationToken cancellationToken = default) => _employee ??= await lookup.GetActiveEmployeeAsync(user.UserId, cancellationToken);
+    public async Task<MusicStoreEmployee> GetCurrentEmployeeAsync(CancellationToken cancellationToken = default) => _employee ??= await lookup.GetEmployeeAsync(user.UserId, cancellationToken);
 }

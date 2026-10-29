@@ -13,7 +13,7 @@ public sealed class ShopEmployeeService(
         ShopEmployeeSearchObject search,
         CancellationToken cancellationToken = default)
     {
-        var currentEmployee = await UserProfileLookup.GetActiveEmployeeAsync(context, currentUser.UserId, cancellationToken);
+        var currentEmployee = await UserProfileLookup.GetEmployeeAsync(context, currentUser.UserId, cancellationToken);
 
         var storeId = currentEmployee.MusicStoreId;
 
@@ -48,21 +48,7 @@ public sealed class ShopEmployeeService(
         ShopEmployeeSearchObject search,
         CancellationToken cancellationToken)
     {
-        if (search.IsActive == true)
-        {
-            query = query.Where(e => e.IsActive);
-            query = await query.WhereUserMatchesAsync(identityService, search.Name, true, cancellationToken);
-        }
-        else if (search.IsActive == false)
-        {
-            query = await query.WhereUserMatchesAsync(identityService, search.Name, null, cancellationToken);
-            var inactiveIds = await identityService.FindUserIdsAsync(search.Name, false, cancellationToken);
-            query = query.Where(e => !e.IsActive || inactiveIds.Contains(e.AppUserId));
-        }
-        else
-        {
-            query = await query.WhereUserMatchesAsync(identityService, search.Name, null, cancellationToken);
-        }
+        query = await query.WhereUserMatchesAsync(identityService, search.Name, search.IsActive, cancellationToken);
 
         return await query.ToPagedResultAsync(
             search,
@@ -128,6 +114,6 @@ public sealed class ShopEmployeeService(
         LastName = user?.LastName,
         Username = user?.Username,
         IsManager = entity.IsManager,
-        IsActive = entity.IsActive && (user?.IsActive ?? true)
+        IsActive = user?.IsActive ?? true
     };
 }

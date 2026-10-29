@@ -15,13 +15,6 @@ public sealed class UserAccountService(UserManager<AppUser> userManager, IFileSt
     private const string ClosedAccountLastName = "korisnik";
     private const string ClosedAccountEmailDomain = "enote.invalid";
 
-    public async Task<int?> FindUserIdByUsernameAsync(string username, CancellationToken cancellationToken = default)
-    {
-        var user = await userManager.FindByNameAsync(username.Trim());
-
-        return user?.Id;
-    }
-
     public async Task<int> CreateUserAsync(string username, string email, string password, string? firstName, string? lastName, CancellationToken cancellationToken = default)
     {
         var normalizedUsername = username.Trim();
@@ -59,14 +52,24 @@ public sealed class UserAccountService(UserManager<AppUser> userManager, IFileSt
         return user.Id;
     }
 
-    public async Task AssignSingleRoleAsync(int userId, string role, CancellationToken cancellationToken = default)
+    public async Task AddRoleAsync(int userId, string role, CancellationToken cancellationToken = default)
     {
         var user = await FindUserOrThrowAsync(userId);
 
-        var currentRoles = await userManager.GetRolesAsync(user);
+        try
+        {
+            var addResult = await userManager.AddToRoleAsync(user, role);
 
-        await RemoveOtherRolesAsync(user, currentRoles, role);
-        await AddRoleIfMissingAsync(user, currentRoles, role);
+            if (!addResult.Succeeded)
+            {
+                var errors = string.Join("; ", addResult.Errors.Select(e => e.Description));
+                throw new BusinessException(Messages.UserRoleAssignFailed(role, user.UserName!, errors));
+            }
+        }
+        catch (InvalidOperationException exception)
+        {
+            throw new BusinessException(Messages.UserRoleAssignFailed(role, user.UserName!, exception.Message));
+        }
     }
 
     public async Task ChangePasswordAsync(int userId, string currentPassword, string newPassword, CancellationToken cancellationToken = default)
@@ -85,7 +88,7 @@ public sealed class UserAccountService(UserManager<AppUser> userManager, IFileSt
     {
         var user = await userManager.FindByIdAsync(userId.ToString());
 
-        if (user is null || string.IsNullOrWhiteSpace(user.PasswordHash))
+        if (user is null)
         {
             return false;
         }
@@ -117,9 +120,7 @@ public sealed class UserAccountService(UserManager<AppUser> userManager, IFileSt
         user.FirstName = ClosedAccountFirstName;
         user.LastName = ClosedAccountLastName;
         user.UserName = anonymousUserName;
-        user.NormalizedUserName = userManager.NormalizeName(anonymousUserName);
         user.Email = $"{anonymousUserName}@{ClosedAccountEmailDomain}";
-        user.NormalizedEmail = userManager.NormalizeEmail(user.Email);
         user.PhoneNumber = null;
         user.PhoneNumberConfirmed = false;
         user.DateOfBirth = null;
@@ -143,7 +144,7 @@ public sealed class UserAccountService(UserManager<AppUser> userManager, IFileSt
 
         var normalizedEmail = email.Trim();
 
-        await ApplyEmailChangeAsync(user, normalizedEmail, userId);
+        await ApplyEmailChangeAsync(user, normalizedEmail);
 
         ApplyProfileFields(user, firstName, lastName, dateOfBirth);
 
@@ -224,41 +225,7 @@ public sealed class UserAccountService(UserManager<AppUser> userManager, IFileSt
         return user ?? throw new NotFoundException(Messages.NotFound);
     }
 
-    private async Task RemoveOtherRolesAsync(AppUser user, IList<string> currentRoles, string role)
-    {
-        string[] toRemove = [.. currentRoles.Where(r => r != role)];
-
-        if (toRemove.Length == 0)
-        {
-            return;
-        }
-
-        var removeResult = await userManager.RemoveFromRolesAsync(user, toRemove);
-
-        if (!removeResult.Succeeded)
-        {
-            var errors = string.Join("; ", removeResult.Errors.Select(e => e.Description));
-            throw new BusinessException(Messages.UserRoleRemoveFailed(user.UserName!, errors));
-        }
-    }
-
-    private async Task AddRoleIfMissingAsync(AppUser user, IList<string> currentRoles, string role)
-    {
-        if (currentRoles.Contains(role))
-        {
-            return;
-        }
-
-        var addResult = await userManager.AddToRoleAsync(user, role);
-
-        if (!addResult.Succeeded)
-        {
-            var errors = string.Join("; ", addResult.Errors.Select(e => e.Description));
-            throw new BusinessException(Messages.UserRoleAssignFailed(role, user.UserName!, errors));
-        }
-    }
-
-    private async Task ApplyEmailChangeAsync(AppUser user, string normalizedEmail, int userId)
+    private async Task ApplyEmailChangeAsync(AppUser user, string normalizedEmail)
     {
         if (string.Equals(user.Email, normalizedEmail, StringComparison.OrdinalIgnoreCase))
         {
@@ -267,13 +234,12 @@ public sealed class UserAccountService(UserManager<AppUser> userManager, IFileSt
 
         var existingWithEmail = await userManager.FindByEmailAsync(normalizedEmail);
 
-        if (existingWithEmail is not null && existingWithEmail.Id != userId)
+        if (existingWithEmail is not null)
         {
             throw new ConflictException(Messages.EmailTaken);
         }
 
         user.Email = normalizedEmail;
-        user.NormalizedEmail = userManager.NormalizeEmail(normalizedEmail);
     }
 
     private static void ApplyProfileFields(AppUser user, string? firstName, string? lastName, DateTime? dateOfBirth)

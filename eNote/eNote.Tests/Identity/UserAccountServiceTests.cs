@@ -52,27 +52,83 @@ public sealed class UserAccountServiceTests
     }
 
     [Fact]
-    public async Task AssignSingleRoleAsync_SwapsExistingRole()
+    public async Task CreateUserAsync_TrimsAllFields()
+    {
+        var harness = await CreateHarnessAsync();
+        var service = harness.Service;
+
+        var userId = await service.CreateUserAsync("  jdoe  ", "  jdoe@example.com  ", "Password1!", "  Jane  ", "  Doe  ");
+
+        var user = await harness.UserManager.FindByIdAsync(userId.ToString());
+        Assert.NotNull(user);
+        Assert.Equal("jdoe", user.UserName);
+        Assert.Equal("jdoe@example.com", user.Email);
+        Assert.Equal("Jane", user.FirstName);
+        Assert.Equal("Doe", user.LastName);
+    }
+
+    [Fact]
+    public async Task CreateUserAsync_ThrowsConflict_WhenPaddedUsernameTaken()
+    {
+        var harness = await CreateHarnessAsync();
+        var service = harness.Service;
+        await service.CreateUserAsync("jdoe", "jdoe@example.com", "Password1!", null, null);
+
+        var exception = await Assert.ThrowsAsync<ConflictException>(() =>
+            service.CreateUserAsync("  jdoe  ", "other@example.com", "Password1!", null, null));
+
+        Assert.Equal(Messages.UsernameTaken, exception.Message);
+    }
+
+    [Fact]
+    public async Task CreateUserAsync_ThrowsConflict_WhenPaddedEmailTaken()
+    {
+        var harness = await CreateHarnessAsync();
+        var service = harness.Service;
+        await service.CreateUserAsync("jdoe", "jdoe@example.com", "Password1!", null, null);
+
+        var exception = await Assert.ThrowsAsync<ConflictException>(() =>
+            service.CreateUserAsync("other", "  jdoe@example.com  ", "Password1!", null, null));
+
+        Assert.Equal(Messages.EmailTaken, exception.Message);
+    }
+
+    [Fact]
+    public async Task AddRoleAsync_AddsTheRole()
     {
         var harness = await CreateHarnessAsync();
         var service = harness.Service;
         await service.CreateUserAsync("jdoe", "jdoe@example.com", "Password1!", null, null);
         var userId = (await harness.UserManager.FindByNameAsync("jdoe"))!.Id;
-        await service.AssignSingleRoleAsync(userId, "Student");
-        await harness.RoleManager.CreateAsync(new AppRole { Name = "Instructor" });
+        await harness.RoleManager.CreateAsync(new AppRole { Name = "Student" });
 
-        await service.AssignSingleRoleAsync(userId, "Instructor");
+        await service.AddRoleAsync(userId, "Student");
 
-        var roles = await harness.UserManager.GetRolesAsync((await harness.UserManager.FindByIdAsync(userId.ToString()))!); Assert.Equal(["Instructor"], roles);
+        var roles = await harness.UserManager.GetRolesAsync((await harness.UserManager.FindByIdAsync(userId.ToString()))!);
+        Assert.Equal(["Student"], roles);
     }
 
     [Fact]
-    public async Task AssignSingleRoleAsync_ThrowsNotFound_ForMissingUser()
+    public async Task AddRoleAsync_ThrowsBusinessException_ForUnknownRole()
+    {
+        var harness = await CreateHarnessAsync();
+        var service = harness.Service;
+        await service.CreateUserAsync("jdoe", "jdoe@example.com", "Password1!", null, null);
+        var userId = (await harness.UserManager.FindByNameAsync("jdoe"))!.Id;
+
+        var exception = await Assert.ThrowsAsync<BusinessException>(() =>
+            service.AddRoleAsync(userId, "NonExistentRole"));
+
+        Assert.Contains("Greška pri dodjeli uloge NonExistentRole korisniku jdoe", exception.Message);
+    }
+
+    [Fact]
+    public async Task AddRoleAsync_ThrowsNotFound_ForMissingUser()
     {
         var harness = await CreateHarnessAsync();
 
         var exception = await Assert.ThrowsAsync<NotFoundException>(() =>
-            harness.Service.AssignSingleRoleAsync(999, "Student"));
+            harness.Service.AddRoleAsync(999, "Student"));
 
         Assert.Equal(Messages.NotFound, exception.Message);
     }
@@ -98,6 +154,79 @@ public sealed class UserAccountServiceTests
     }
 
     [Fact]
+    public async Task UpdateExistingUserAsync_KeepsNames_WhenNullPassed()
+    {
+        var harness = await CreateHarnessAsync();
+        var service = harness.Service;
+        await service.CreateUserAsync("jdoe", "jdoe@example.com", "Password1!", "Jane", "Doe");
+        var userId = (await harness.UserManager.FindByNameAsync("jdoe"))!.Id;
+
+        await service.UpdateExistingUserAsync(userId, "jdoe@example.com", null, null);
+
+        var user = (await harness.UserManager.FindByIdAsync(userId.ToString()))!;
+        Assert.Equal("Jane", user.FirstName);
+        Assert.Equal("Doe", user.LastName);
+    }
+
+    [Fact]
+    public async Task UpdateExistingUserAsync_TrimsEmail()
+    {
+        var harness = await CreateHarnessAsync();
+        var service = harness.Service;
+        await service.CreateUserAsync("jdoe", "jdoe@example.com", "Password1!", null, null);
+        var userId = (await harness.UserManager.FindByNameAsync("jdoe"))!.Id;
+
+        await service.UpdateExistingUserAsync(userId, "  new@example.com  ", null, null);
+
+        var user = (await harness.UserManager.FindByIdAsync(userId.ToString()))!;
+        Assert.Equal("new@example.com", user.Email);
+    }
+
+    [Fact]
+    public async Task UpdateExistingUserAsync_KeepsSameEmail()
+    {
+        var harness = await CreateHarnessAsync();
+        var service = harness.Service;
+        await service.CreateUserAsync("jdoe", "jdoe@example.com", "Password1!", null, null);
+        var userId = (await harness.UserManager.FindByNameAsync("jdoe"))!.Id;
+
+        await service.UpdateExistingUserAsync(userId, "jdoe@example.com", "Jane", null);
+
+        var user = (await harness.UserManager.FindByIdAsync(userId.ToString()))!;
+        Assert.Equal("jdoe@example.com", user.Email);
+        Assert.Equal("Jane", user.FirstName);
+    }
+
+    [Fact]
+    public async Task UpdateExistingUserAsync_ThrowsConflict_WhenEmailBelongsToAnotherUser()
+    {
+        var harness = await CreateHarnessAsync();
+        var service = harness.Service;
+        await service.CreateUserAsync("jdoe", "jdoe@example.com", "Password1!", null, null);
+        await service.CreateUserAsync("other", "other@example.com", "Password1!", null, null);
+        var otherId = (await harness.UserManager.FindByNameAsync("other"))!.Id;
+
+        var exception = await Assert.ThrowsAsync<ConflictException>(() =>
+            service.UpdateExistingUserAsync(otherId, "jdoe@example.com", null, null));
+
+        Assert.Equal(Messages.EmailTaken, exception.Message);
+    }
+
+    [Fact]
+    public async Task UpdateExistingUserAsync_StoresDateOfBirthAtMidnight()
+    {
+        var harness = await CreateHarnessAsync();
+        var service = harness.Service;
+        await service.CreateUserAsync("jdoe", "jdoe@example.com", "Password1!", null, null);
+        var userId = (await harness.UserManager.FindByNameAsync("jdoe"))!.Id;
+
+        await service.UpdateExistingUserAsync(userId, "jdoe@example.com", null, null, new DateTime(2001, 3, 4, 15, 30, 0));
+
+        var user = (await harness.UserManager.FindByIdAsync(userId.ToString()))!;
+        Assert.Equal(new DateTime(2001, 3, 4), user.DateOfBirth);
+    }
+
+    [Fact]
     public async Task UpdatePictureAsync_SetsPath_AndDeletesOldPicture()
     {
         var harness = await CreateHarnessAsync();
@@ -112,6 +241,17 @@ public sealed class UserAccountServiceTests
         var updated = (await harness.UserManager.FindByIdAsync(user.Id.ToString()))!;
         Assert.StartsWith("/api/v1/uploads/profile-pictures/", updated.PicturePath);
         Assert.Contains("/api/uploads/profile-pictures/old.png", harness.FileStorage.DeletedPaths);
+    }
+
+    [Fact]
+    public async Task GetPictureAsync_ReturnsNulls_ForUnknownUser()
+    {
+        var harness = await CreateHarnessAsync();
+
+        var (data, contentType) = await harness.Service.GetPictureAsync(999);
+
+        Assert.Null(data);
+        Assert.Null(contentType);
     }
 
     [Fact]
@@ -152,6 +292,28 @@ public sealed class UserAccountServiceTests
         var identity = await new UserIdentityService(harness.UserManager, harness.Context).GetUserAsync(user.Id);
         Assert.False(identity!.HasPicture);
         Assert.Null((await harness.UserManager.FindByIdAsync(user.Id.ToString()))!.PicturePath);
+    }
+
+    [Fact]
+    public async Task UpdatePictureAsync_RollsBackNewPicture_WhenUpdateFails()
+    {
+        var harness = await CreateHarnessAsync();
+        var service = harness.Service;
+        await service.CreateUserAsync("userA", "a@example.com", "Password1!", null, null);
+        await service.CreateUserAsync("userB", "b@example.com", "Password1!", null, null);
+        var userA = (await harness.UserManager.FindByNameAsync("userA"))!;
+        var userB = (await harness.UserManager.FindByNameAsync("userB"))!;
+        userA.PicturePath = "/api/uploads/profile-pictures/old.png";
+        await harness.UserManager.UpdateAsync(userA);
+
+        var trackedA = (await harness.UserManager.FindByIdAsync(userA.Id.ToString()))!;
+        trackedA.UserName = userB.UserName;
+
+        await Assert.ThrowsAsync<BusinessException>(() =>
+            service.UpdatePictureAsync(userA.Id, PngStream(), "image/png"));
+
+        Assert.Contains(harness.FileStorage.DeletedPaths, p => p.Contains("profile-pictures") && !p.Contains("old.png"));
+        Assert.DoesNotContain("/api/uploads/profile-pictures/old.png", harness.FileStorage.DeletedPaths);
     }
 
     [Fact]
@@ -218,6 +380,19 @@ public sealed class UserAccountServiceTests
     }
 
     [Fact]
+    public async Task VerifyPasswordAsync_ReturnsFalse_ForClosedAccount()
+    {
+        var harness = await CreateHarnessAsync();
+        var service = harness.Service;
+        await service.CreateUserAsync("jdoe", "jdoe@example.com", "Password1!", null, null);
+        var userId = (await harness.UserManager.FindByNameAsync("jdoe"))!.Id;
+
+        await service.CloseAccountAsync(userId);
+
+        Assert.False(await service.VerifyPasswordAsync(userId, "Password1!"));
+    }
+
+    [Fact]
     public async Task VerifyPasswordAsync_ReturnsFalse_ForMissingUser()
     {
         var harness = await CreateHarnessAsync();
@@ -254,6 +429,11 @@ public sealed class UserAccountServiceTests
         Assert.NotEqual(stampBefore, closed.SecurityStamp);
         Assert.Empty(harness.FileStorage.DeletedPaths);
         Assert.False(await harness.UserManager.CheckPasswordAsync(closed, "Password1!"));
+        Assert.Null(await harness.UserManager.FindByNameAsync("jdoe"));
+        Assert.Null(await harness.UserManager.FindByEmailAsync("jdoe@example.com"));
+
+        var newUserId = await service.CreateUserAsync("jdoe", "jdoe@example.com", "Password1!", "Jane", "Doe");
+        Assert.True(newUserId > 0);
     }
 
     [Fact]

@@ -1008,9 +1008,6 @@ namespace eNote.Infrastructure.Data.Migrations
                     b.Property<int?>("CreatedById")
                         .HasColumnType("int");
 
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
                     b.Property<bool>("IsManager")
                         .HasColumnType("bit");
 

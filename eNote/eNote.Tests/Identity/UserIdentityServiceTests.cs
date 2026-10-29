@@ -22,12 +22,15 @@ public sealed class UserIdentityServiceTests
             LastName = "Doe",
             IsActive = true
         };
+        var other = new AppUser { UserName = "other", Email = "other@example.com", IsActive = true };
+        await userManager.CreateAsync(other, "Password1!");
         await userManager.CreateAsync(user, "Password1!");
         var service = new UserIdentityService(userManager, context);
 
         var dto = await service.GetUserAsync(user.Id);
 
         Assert.NotNull(dto);
+        Assert.Equal(user.Id, dto.Id);
         Assert.Equal("jdoe", dto.Username);
         Assert.Equal("Jane", dto.FirstName);
         Assert.Equal("Doe", dto.LastName);
@@ -51,7 +54,9 @@ public sealed class UserIdentityServiceTests
         var first = new AppUser { UserName = "first", Email = "first@example.com", IsActive = true };
         var second = new AppUser { UserName = "second", Email = "second@example.com", IsActive = true };
         await userManager.CreateAsync(first, "Password1!");
+        var notRequested = new AppUser { UserName = "third", Email = "third@example.com", IsActive = true };
         await userManager.CreateAsync(second, "Password1!");
+        await userManager.CreateAsync(notRequested, "Password1!");
         var service = new UserIdentityService(userManager, context);
 
         var result = await service.GetUsersBulkAsync([first.Id, second.Id, 999]);
@@ -77,6 +82,15 @@ public sealed class UserIdentityServiceTests
         var roles = await service.GetRolesAsync(user.Id);
 
         Assert.Equal(["Student"], roles);
+    }
+
+    [Fact]
+    public async Task GetRolesAsync_ReturnsEmpty_WhenUserMissing()
+    {
+        await using var context = TestDbContextFactory.CreateContext(Now);
+        var service = new UserIdentityService(IdentityTestHarness.Create(context).UserManager, context);
+
+        Assert.Empty(await service.GetRolesAsync(999));
     }
 
     [Fact]
@@ -108,6 +122,9 @@ public sealed class UserIdentityServiceTests
 
         var fullMatch = await service.FindUserIdsAsync("Jane Doe", null);
         Assert.Equal([jane.Id], fullMatch);
+
+        var paddedMatch = await service.FindUserIdsAsync("  jane  ", null);
+        Assert.Equal([jane.Id], paddedMatch);
 
         var activeOnly = await service.FindUserIdsAsync(null, true);
         Assert.Contains(jane.Id, activeOnly);
@@ -183,6 +200,34 @@ public sealed class UserIdentityServiceTests
             Assert.Equal(userIds[role], item.AppUserId);
             Assert.Equal(role, item.Role);
         }
+    }
+
+    [Fact]
+    public async Task SearchAsync_SortsByRole_ThenLastName_ThenFirstName()
+    {
+        await using var context = TestDbContextFactory.CreateContext(Now);
+        var identity = IdentityTestHarness.Create(context);
+        var userManager = identity.UserManager;
+        await identity.RoleManager.CreateAsync(new AppRole { Name = AppRoles.Administrator });
+        await identity.RoleManager.CreateAsync(new AppRole { Name = AppRoles.Student });
+
+        async Task<int> AddAsync(string username, string firstName, string lastName, string role)
+        {
+            var user = new AppUser { UserName = username, Email = $"{username}@example.com", FirstName = firstName, LastName = lastName, IsActive = true };
+            await userManager.CreateAsync(user, "Password1!");
+            await userManager.AddToRoleAsync(user, role);
+            return user.Id;
+        }
+
+        var studentBrownZoe = await AddAsync("s1", "Zoe", "Brown", AppRoles.Student);
+        var studentAdamsYan = await AddAsync("s2", "Yan", "Adams", AppRoles.Student);
+        var studentBrownAna = await AddAsync("s3", "Ana", "Brown", AppRoles.Student);
+        var adminZulu = await AddAsync("a1", "Zed", "Zulu", AppRoles.Administrator);
+        var service = new UserIdentityService(userManager, context);
+
+        var result = await service.SearchAsync(new AdminUserSearchObject());
+
+        Assert.Equal([adminZulu, studentAdamsYan, studentBrownAna, studentBrownZoe], result.Items.Select(x => x.AppUserId));
     }
 
     [Fact]

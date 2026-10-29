@@ -10,16 +10,16 @@ public sealed class UserProfileLookup(IAppDbContext context) : IUserProfileLooku
         await context.Set<Instructor>().AsNoTracking().FirstOrDefaultAsync(x => x.AppUserId == userId, cancellationToken)
         ?? throw new BusinessException(Messages.InstructorProfileNotFound);
 
-    public Task<MusicStoreEmployee> GetActiveEmployeeAsync(int userId, CancellationToken cancellationToken = default) => GetActiveEmployeeAsync(context, userId, cancellationToken);
+    public Task<MusicStoreEmployee> GetEmployeeAsync(int userId, CancellationToken cancellationToken = default) => GetEmployeeAsync(context, userId, cancellationToken);
 
-    public static async Task<MusicStoreEmployee> GetActiveEmployeeAsync(
+    public static async Task<MusicStoreEmployee> GetEmployeeAsync(
         IAppDbContext context,
         int userId,
         CancellationToken cancellationToken = default) =>
         await context.Set<MusicStoreEmployee>()
             .IgnoreQueryFilters()
             .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.AppUserId == userId && x.IsActive, cancellationToken)
+            .FirstOrDefaultAsync(x => x.AppUserId == userId, cancellationToken)
         ?? throw new BusinessException(Messages.EmployeeProfileNotFound);
 
     public static async Task<MusicStoreEmployee> EnsureManagerAsync(
@@ -27,7 +27,7 @@ public sealed class UserProfileLookup(IAppDbContext context) : IUserProfileLooku
         int userId,
         CancellationToken cancellationToken = default)
     {
-        var employee = await GetActiveEmployeeAsync(context, userId, cancellationToken);
+        var employee = await GetEmployeeAsync(context, userId, cancellationToken);
 
         if (!employee.IsManager)
         {

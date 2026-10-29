@@ -21,6 +21,6 @@ public sealed class StubUserProfileLookup : IUserProfileLookup
     public Task<Instructor> GetInstructorAsync(int userId, CancellationToken cancellationToken = default) =>
         Task.FromResult(_instructor ?? throw new NotFoundException("Instructor profile not found."));
 
-    public Task<MusicStoreEmployee> GetActiveEmployeeAsync(int userId, CancellationToken cancellationToken = default) =>
+    public Task<MusicStoreEmployee> GetEmployeeAsync(int userId, CancellationToken cancellationToken = default) =>
         Task.FromResult(_employee ?? throw new NotFoundException("Employee profile not found."));
 }
