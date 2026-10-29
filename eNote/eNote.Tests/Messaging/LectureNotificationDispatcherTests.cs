@@ -1,4 +1,3 @@
-using eNote.Contracts.Lectures;
 using eNote.Domain.Entities.Communication;
 using eNote.Infrastructure.Messaging;
 using eNote.Tests.TestUtils;

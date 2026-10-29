@@ -19,177 +19,126 @@ public sealed class NotificationPushConsumerTests
     [Fact]
     public async Task RentalStatusChanged_PushesToTheStudentGroup()
     {
-        var harness = await StartAsync<RentalStatusChangedPushConsumer, RentalStatusChanged>();
-        try
-        {
-            await harness.Harness.Bus.Publish(new RentalStatusChanged(9, 5, null, "Active", "Stratocaster", "Status iznajmljivanja", "Iznajmljivanje je aktivirano.", Now));
-            Assert.True(await harness.Harness.Consumed.Any<RentalStatusChanged>());
-        }
-        finally
-        {
-            await harness.Harness.Stop();
-        }
+        var (group, dto, messages) = await ConsumeAsync<RentalStatusChangedPushConsumer, RentalStatusChanged>(
+            new RentalStatusChanged(9, 5, null, "Active", "Stratocaster", "Status iznajmljivanja", "Iznajmljivanje je aktivirano.", Now));
 
-        var (group, method, dto) = AssertPush(harness);
         Assert.Equal("user:5", group);
         Assert.Equal(9, dto.RentalId);
         Assert.Equal("Status iznajmljivanja", dto.Title);
         Assert.Equal("Iznajmljivanje je aktivirano.", dto.Body);
-        Assert.Contains("Pushed rental notification to SignalR group for user 5, rental 9.", harness.Messages);
+        Assert.Contains("Pushed rental notification to SignalR group for user 5, rental 9.", messages);
     }
 
     [Fact]
     public async Task RentalRefunded_PushesToTheStudentGroup()
     {
-        var harness = await StartAsync<RentalRefundedPushConsumer, RentalRefunded>();
-        try
-        {
-            await harness.Harness.Bus.Publish(new RentalRefunded(1, 5, 9, 5000, "bam", "Stratocaster", "Uplata vraćena", "Za iznajmljivanje instrumenta Stratocaster vraćeno je 50,00 KM.", Now));
-            Assert.True(await harness.Harness.Consumed.Any<RentalRefunded>());
-        }
-        finally
-        {
-            await harness.Harness.Stop();
-        }
+        var (group, dto, messages) = await ConsumeAsync<RentalRefundedPushConsumer, RentalRefunded>(
+            new RentalRefunded(1, 5, 9, 5000, "bam", "Stratocaster", "Uplata vraćena", "Za iznajmljivanje instrumenta Stratocaster vraćeno je 50,00 KM.", Now));
 
-        var (group, method, dto) = AssertPush(harness);
         Assert.Equal("user:5", group);
         Assert.Equal(1, dto.RentalId);
         Assert.Equal("Uplata vraćena", dto.Title);
-        Assert.Contains("Pushed rental notification to SignalR group for user 5, rental 1.", harness.Messages);
+        Assert.Contains("Pushed rental notification to SignalR group for user 5, rental 1.", messages);
     }
 
     [Fact]
     public async Task LectureCancelled_PushesToTheStudentGroup()
     {
-        var harness = await StartAsync<LectureCancelledPushConsumer, LectureCancelled>();
-        try
-        {
-            await harness.Harness.Bus.Publish(new LectureCancelled(3, 5, "Harmonija", "Predavanje otkazano", "Predavanje Harmonija je otkazano.", Now));
-            Assert.True(await harness.Harness.Consumed.Any<LectureCancelled>());
-        }
-        finally
-        {
-            await harness.Harness.Stop();
-        }
+        var (group, dto, messages) = await ConsumeAsync<LectureCancelledPushConsumer, LectureCancelled>(
+            new LectureCancelled(3, 5, "Harmonija", "Predavanje otkazano", "Predavanje Harmonija je otkazano.", Now));
 
-        var (group, method, dto) = AssertPush(harness);
         Assert.Equal("user:5", group);
         Assert.Equal(3, dto.LectureId);
         Assert.Equal("Predavanje otkazano", dto.Title);
-        Assert.Contains("Pushed lecture-cancelled notification to SignalR group for user 5, lecture 3.", harness.Messages);
+        Assert.Contains("Pushed lecture-cancelled notification to SignalR group for user 5, lecture 3.", messages);
     }
 
     [Fact]
     public async Task SubmissionGraded_PushesToTheStudentGroup()
     {
-        var harness = await StartAsync<SubmissionGradedPushConsumer, SubmissionGraded>();
-        try
-        {
-            await harness.Harness.Bus.Publish(new SubmissionGraded(4, 5, "Zadatak 1", 5, "Zadatak ocijenjen", "Zadatak 1 je ocijenjen ocjenom 5.", Now));
-            Assert.True(await harness.Harness.Consumed.Any<SubmissionGraded>());
-        }
-        finally
-        {
-            await harness.Harness.Stop();
-        }
+        var (group, dto, messages) = await ConsumeAsync<SubmissionGradedPushConsumer, SubmissionGraded>(
+            new SubmissionGraded(4, 5, "Zadatak 1", 5, "Zadatak ocijenjen", "Zadatak 1 je ocijenjen ocjenom 5.", Now));
 
-        var (group, method, dto) = AssertPush(harness);
         Assert.Equal("user:5", group);
         Assert.Equal(4, dto.SubmissionId);
         Assert.Equal("Zadatak ocijenjen", dto.Title);
-        Assert.Contains("Pushed submission-graded notification to SignalR group for user 5, submission 4.", harness.Messages);
+        Assert.Contains("Pushed submission-graded notification to SignalR group for user 5, submission 4.", messages);
     }
 
     [Fact]
     public async Task AnnouncementPublished_PushesToTheStudentGroup()
     {
-        var harness = await StartAsync<AnnouncementPublishedPushConsumer, AnnouncementPublished>();
-        try
-        {
-            await harness.Harness.Bus.Publish(new AnnouncementPublished(9, 5, "Nova obavijest", "Tekst obavijesti", Now));
-            Assert.True(await harness.Harness.Consumed.Any<AnnouncementPublished>());
-        }
-        finally
-        {
-            await harness.Harness.Stop();
-        }
+        var (group, dto, messages) = await ConsumeAsync<AnnouncementPublishedPushConsumer, AnnouncementPublished>(
+            new AnnouncementPublished(9, 5, "Nova obavijest", "Tekst obavijesti", Now));
 
-        var (group, method, dto) = AssertPush(harness);
         Assert.Equal("user:5", group);
         Assert.Equal(9, dto.AnnouncementId);
         Assert.Equal("Nova obavijest", dto.Title);
-        Assert.Contains("Pushed announcement-published notification to SignalR group for user 5, announcement 9.", harness.Messages);
+        Assert.Contains("Pushed announcement-published notification to SignalR group for user 5, announcement 9.", messages);
     }
 
     [Fact]
     public async Task EnrollmentStatusChanged_PushesToTheStudentGroup()
     {
-        var harness = await StartAsync<EnrollmentStatusChangedPushConsumer, EnrollmentStatusChanged>();
-        try
-        {
-            await harness.Harness.Bus.Publish(new EnrollmentStatusChanged(9, 5, "Upis odobren", "Vaš zahtjev za upis na kurs 'Guitar 101' je odobren.", Now));
-            Assert.True(await harness.Harness.Consumed.Any<EnrollmentStatusChanged>());
-        }
-        finally
-        {
-            await harness.Harness.Stop();
-        }
+        var (group, dto, messages) = await ConsumeAsync<EnrollmentStatusChangedPushConsumer, EnrollmentStatusChanged>(
+            new EnrollmentStatusChanged(9, 5, "Upis odobren", "Vaš zahtjev za upis na kurs 'Guitar 101' je odobren.", Now));
 
-        var (group, method, dto) = AssertPush(harness);
         Assert.Equal("user:5", group);
         Assert.Equal("Upis odobren", dto.Title);
-        Assert.Contains("Pushed enrollment-status-changed notification to SignalR group for user 5, enrollment 9.", harness.Messages);
+        Assert.Contains("Pushed enrollment-status-changed notification to SignalR group for user 5, enrollment 9.", messages);
     }
 
     [Fact]
     public async Task TuitionPayment_PushesToTheStudentGroup()
     {
-        var harness = await StartAsync<TuitionPaymentPushConsumer, TuitionPaymentNotification>();
-        try
-        {
-            await harness.Harness.Bus.Publish(new TuitionPaymentNotification(9, 5, "Školarina plaćena", "Školarina za kurs 'Guitar 101' je plaćena.", Now));
-            Assert.True(await harness.Harness.Consumed.Any<TuitionPaymentNotification>());
-        }
-        finally
-        {
-            await harness.Harness.Stop();
-        }
+        var (group, dto, messages) = await ConsumeAsync<TuitionPaymentPushConsumer, TuitionPaymentNotification>(
+            new TuitionPaymentNotification(9, 5, "Školarina plaćena", "Školarina za kurs 'Guitar 101' je plaćena.", Now));
 
-        var (group, method, dto) = AssertPush(harness);
         Assert.Equal("user:5", group);
         Assert.Equal("Školarina plaćena", dto.Title);
-        Assert.Contains("Pushed tuition-payment notification to SignalR group for user 5, enrollment 9.", harness.Messages);
+        Assert.Contains("Pushed tuition-payment notification to SignalR group for user 5, enrollment 9.", messages);
     }
 
     [Fact]
     public async Task MembershipWarning_PushesToTheStudentGroup()
     {
-        var harness = await StartAsync<MembershipWarningPushConsumer, MembershipWarning>();
+        var (group, dto, messages) = await ConsumeAsync<MembershipWarningPushConsumer, MembershipWarning>(
+            new MembershipWarning(5, "Upozorenje o članarini", "Vaša članarina ističe.", Now));
+
+        Assert.Equal("user:5", group);
+        Assert.Equal("Upozorenje o članarini", dto.Title);
+        Assert.Equal("Vaša članarina ističe.", dto.Body);
+        Assert.Contains("Pushed membership-warning notification to SignalR group for user 5, user 5.", messages);
+    }
+
+    private static async Task<(string Group, NotificationPushDto Dto, List<string> Messages)> ConsumeAsync<TConsumer, TMessage>(TMessage message)
+        where TConsumer : class, IConsumer<TMessage>
+        where TMessage : class
+    {
+        var harness = await StartAsync<TConsumer, TMessage>();
         try
         {
-            await harness.Harness.Bus.Publish(new MembershipWarning(5, "Upozorenje o članarini", "Vaša članarina ističe.", Now));
-            Assert.True(await harness.Harness.Consumed.Any<MembershipWarning>());
+            await harness.Harness.Bus.Publish(message);
+
+            Assert.True(await harness.Harness.Consumed.Any<TMessage>());
         }
         finally
         {
             await harness.Harness.Stop();
+            await harness.Provider.DisposeAsync();
         }
 
-        var (group, method, dto) = AssertPush(harness);
-        Assert.Equal("user:5", group);
-        Assert.Equal("Upozorenje o članarini", dto.Title);
-        Assert.Equal("Vaša članarina ističe.", dto.Body);
-        Assert.Contains("Pushed membership-warning notification to SignalR group for user 5, user 5.", harness.Messages);
+        var (group, dto) = AssertPush(harness);
+        return (group, dto, harness.Messages);
     }
 
-    private static (string Group, string Method, NotificationPushDto Dto) AssertPush(PushHarness harness)
+    private static (string Group, NotificationPushDto Dto) AssertPush(PushHarness harness)
     {
         var send = Assert.Single(harness.Hub.Sends);
         Assert.Equal(NotificationHub.ReceiveMethod, send.Method);
         var dto = Assert.IsType<NotificationPushDto>(send.Payload);
         Assert.Equal(Now, dto.CreatedAt);
-        return (send.Group, send.Method, dto);
+        return (send.Group, dto);
     }
 
     private static async Task<PushHarness> StartAsync<TConsumer, TMessage>()
@@ -210,10 +159,10 @@ public sealed class NotificationPushConsumerTests
         var testHarness = provider.GetRequiredService<ITestHarness>();
         await testHarness.Start();
 
-        return new PushHarness(testHarness, hub, messages);
+        return new PushHarness(provider, testHarness, hub, messages);
     }
 
-    private sealed record PushHarness(ITestHarness Harness, RecordingHubContext Hub, List<string> Messages);
+    private sealed record PushHarness(ServiceProvider Provider, ITestHarness Harness, RecordingHubContext Hub, List<string> Messages);
 
     private sealed class RecordingHubContext : IHubContext<NotificationHub>
     {

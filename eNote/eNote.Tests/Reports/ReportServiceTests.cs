@@ -131,42 +131,33 @@ public sealed class ReportServiceTests
         Assert.StartsWith("%PDF", Encoding.ASCII.GetString(bytes, 0, 4));
     }
 
-    [Fact]
-    public void ReportLabels_Rental_ReturnsBosnianLabelForEveryStatus()
+    [Theory]
+    [InlineData(InstrumentRentalStatus.Pending, "Na čekanju")]
+    [InlineData(InstrumentRentalStatus.Approved, "Odobreno")]
+    [InlineData(InstrumentRentalStatus.Active, "Aktivno")]
+    [InlineData(InstrumentRentalStatus.Completed, "Završeno")]
+    [InlineData(InstrumentRentalStatus.Rejected, "Odbijeno")]
+    [InlineData(InstrumentRentalStatus.Canceled, "Otkazano")]
+    [InlineData(InstrumentRentalStatus.ReturnedEarly, "Prijevremeni povrat")]
+    public void ReportLabels_Rental_MatchesTheDesktopAppWording(InstrumentRentalStatus status, string expected)
     {
-        foreach (var status in Enum.GetValues<InstrumentRentalStatus>())
-        {
-            var label = ReportLabels.Rental(status);
+        Assert.Equal(expected, ReportLabels.Rental(status));
+    }
 
-            Assert.False(string.IsNullOrWhiteSpace(label));
-            Assert.NotEqual(status.ToString(), label);
-        }
+    [Theory]
+    [InlineData(AttendanceStatus.Pending, "Na čekanju")]
+    [InlineData(AttendanceStatus.Present, "Prisutan")]
+    [InlineData(AttendanceStatus.Absent, "Odsutan")]
+    public void ReportLabels_Attendance_MatchesTheDesktopAppWording(AttendanceStatus status, string expected)
+    {
+        Assert.Equal(expected, ReportLabels.Attendance(status));
     }
 
     [Fact]
-    public void ReportLabels_Attendance_ReturnsBosnianLabelForEveryStatus()
+    public void ReportLabels_ReturnsNonEmptyLabelForEveryStatus()
     {
-        foreach (var status in Enum.GetValues<AttendanceStatus>())
-        {
-            var label = ReportLabels.Attendance(status);
-
-            Assert.False(string.IsNullOrWhiteSpace(label));
-            Assert.NotEqual(status.ToString(), label);
-        }
-    }
-
-    [Fact]
-    public void ReportLabels_Rental_MatchesTheDesktopAppWording()
-    {
-        Assert.Equal("Prijevremeni povrat", ReportLabels.Rental(InstrumentRentalStatus.ReturnedEarly));
-        Assert.Equal("Na čekanju", ReportLabels.Rental(InstrumentRentalStatus.Pending));
-    }
-
-    [Fact]
-    public void ReportLabels_Attendance_MatchesTheDesktopAppWording()
-    {
-        Assert.Equal("Prisutan", ReportLabels.Attendance(AttendanceStatus.Present));
-        Assert.Equal("Odsutan", ReportLabels.Attendance(AttendanceStatus.Absent));
+        Assert.All(Enum.GetValues<InstrumentRentalStatus>(), status => Assert.False(string.IsNullOrWhiteSpace(ReportLabels.Rental(status))));
+        Assert.All(Enum.GetValues<AttendanceStatus>(), status => Assert.False(string.IsNullOrWhiteSpace(ReportLabels.Attendance(status))));
     }
 
     [Fact]
@@ -237,7 +228,7 @@ public sealed class ReportServiceTests
 
     private static ReportService CreateService(AcademicHarness harness, Instructor instructor, IStoreContext? stores = null)
     {
-        var actor = new StubCurrentActor(instructor: instructor, student: harness.Student);
+        var actor = new StubCurrentActor(student: harness.Student);
         var clock = new FixedClock(Now);
         var instructorAccess = AcademicTestData.CreateInstructorAccess(harness.Context, instructor);
         var displayNames = new StubDisplayNameService();

@@ -3,7 +3,6 @@ using eNote.Application.Common.Persistence;
 using eNote.Application.Constants;
 using eNote.Application.Features.Identity.Instructors;
 using eNote.Application.Features.Identity.Students;
-using eNote.Application.Features.Identity.Users;
 using eNote.Tests.TestUtils;
 using Microsoft.EntityFrameworkCore;
 
@@ -258,6 +257,43 @@ public sealed class MembershipServiceTests
         var paidUntil = daysFromToday.HasValue ? Now.Date.AddDays(daysFromToday.Value) : (DateTime?)null;
 
         Assert.Equal(expected, MembershipService.IsWarningDue(paidUntil, Now));
+    }
+
+    [Fact]
+    public async Task GetPaymentsAsync_ReturnsOnlyThePaymentsOfTheRequestedStudent()
+    {
+        await using var context = TestDbContextFactory.CreateContext(Now);
+        var student = new Student(10, Now);
+        var otherStudent = new Student(20, Now);
+        context.Set<Student>().AddRange(student, otherStudent);
+        await context.SaveChangesAsync();
+        context.Set<MembershipPayment>().AddRange(
+            new MembershipPayment(student.Id, 40m, Now.Date, Now.Date, Now.Date.AddMonths(1), "CL-10", null),
+            new MembershipPayment(otherStudent.Id, 40m, Now.Date, Now.Date, Now.Date.AddMonths(1), "CL-20", null));
+        await context.SaveChangesAsync();
+        var service = CreateService(context, new RecordingMembershipWarningDispatcher(), instructor: null);
+
+        var result = await service.GetPaymentsAsync(null, student.Id, new MembershipPaymentSearchObject());
+
+        var payment = Assert.Single(result.Items);
+        Assert.Equal("CL-10", payment.ReceiptNumber);
+    }
+
+    [Fact]
+    public async Task AdminCalls_ThrowNotFound_ForAMissingStudent()
+    {
+        await using var context = TestDbContextFactory.CreateContext(Now);
+        var service = CreateService(context, new RecordingMembershipWarningDispatcher(), instructor: null);
+        const int missingStudentId = 999;
+
+        await Assert.ThrowsAsync<NotFoundException>(() => service.GetPaymentsAsync(null, missingStudentId, new MembershipPaymentSearchObject()));
+        await Assert.ThrowsAsync<NotFoundException>(() => service.RecordPaymentAsync(null, missingStudentId, new RecordMembershipPaymentRequest
+        {
+            Amount = 50m,
+            ReceiptNumber = "CL-99",
+            Months = 1
+        }));
+        await Assert.ThrowsAsync<NotFoundException>(() => service.SendWarningAsync(null, missingStudentId, new SendMembershipWarningRequest()));
     }
 
     private static MembershipService CreateService(

@@ -8,10 +8,12 @@ namespace eNote.Tests.Messaging;
 
 public sealed class OutboxHealthCheckTests
 {
+    private static readonly DateTime Now = new(2026, 7, 1, 12, 0, 0, DateTimeKind.Utc);
+
     [Fact]
     public async Task CheckHealthAsync_ReturnsHealthy_WhenNoMessages()
     {
-        await using var context = TestDbContextFactory.CreateContext(DateTime.UtcNow);
+        await using var context = TestDbContextFactory.CreateContext(Now);
         var check = new OutboxHealthCheck(context);
 
         var result = await check.CheckHealthAsync(new HealthCheckContext(), CancellationToken.None);
@@ -22,7 +24,7 @@ public sealed class OutboxHealthCheckTests
     [Fact]
     public async Task CheckHealthAsync_ReturnsHealthy_WhenOnlyPendingMessages()
     {
-        await using var context = TestDbContextFactory.CreateContext(DateTime.UtcNow);
+        await using var context = TestDbContextFactory.CreateContext(Now);
         context.Set<NotificationOutbox>().Add(new NotificationOutbox { PayloadJson = "{}" });
         await context.SaveChangesAsync();
         var check = new OutboxHealthCheck(context);
@@ -35,7 +37,7 @@ public sealed class OutboxHealthCheckTests
     [Fact]
     public async Task CheckHealthAsync_ReturnsDegraded_WhenAbandonedMessagesExist()
     {
-        await using var context = TestDbContextFactory.CreateContext(DateTime.UtcNow);
+        await using var context = TestDbContextFactory.CreateContext(Now);
         context.Set<NotificationOutbox>().Add(new NotificationOutbox
         {
             PayloadJson = "{}",

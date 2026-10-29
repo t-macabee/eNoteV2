@@ -19,7 +19,7 @@ public sealed class TokenValidationTests
     [Fact]
     public async Task OnTokenValidated_Accepts_WhenUserActiveAndStampMatches()
     {
-        var harness = await CreateHarnessAsync(isActive: true);
+        await using var harness = await CreateHarnessAsync(isActive: true);
 
         var context = await ValidateAsync(harness, harness.User.Id.ToString(), harness.User.SecurityStamp);
 
@@ -29,7 +29,7 @@ public sealed class TokenValidationTests
     [Fact]
     public async Task OnTokenValidated_Rejects_WhenUserInactive()
     {
-        var harness = await CreateHarnessAsync(isActive: false);
+        await using var harness = await CreateHarnessAsync(isActive: false);
 
         var context = await ValidateAsync(harness, harness.User.Id.ToString(), harness.User.SecurityStamp);
 
@@ -39,7 +39,7 @@ public sealed class TokenValidationTests
     [Fact]
     public async Task OnTokenValidated_Rejects_WhenSecurityStampIsStale()
     {
-        var harness = await CreateHarnessAsync(isActive: true);
+        await using var harness = await CreateHarnessAsync(isActive: true);
 
         var context = await ValidateAsync(harness, harness.User.Id.ToString(), "stale-stamp");
 
@@ -49,7 +49,7 @@ public sealed class TokenValidationTests
     [Fact]
     public async Task OnTokenValidated_Rejects_WhenStampClaimMissing()
     {
-        var harness = await CreateHarnessAsync(isActive: true);
+        await using var harness = await CreateHarnessAsync(isActive: true);
 
         var context = await ValidateAsync(harness, harness.User.Id.ToString(), stamp: null);
 
@@ -59,7 +59,7 @@ public sealed class TokenValidationTests
     [Fact]
     public async Task OnTokenValidated_Rejects_WhenUserMissing()
     {
-        var harness = await CreateHarnessAsync(isActive: true);
+        await using var harness = await CreateHarnessAsync(isActive: true);
 
         var context = await ValidateAsync(harness, "9999", "stamp");
 
@@ -69,7 +69,7 @@ public sealed class TokenValidationTests
     [Fact]
     public async Task OnTokenValidated_Rejects_WhenTokenRevoked()
     {
-        var harness = await CreateHarnessAsync(isActive: true, revoked: true);
+        await using var harness = await CreateHarnessAsync(isActive: true, revoked: true);
 
         var context = await ValidateAsync(harness, harness.User.Id.ToString(), harness.User.SecurityStamp);
 
@@ -79,7 +79,7 @@ public sealed class TokenValidationTests
     [Fact]
     public async Task OnTokenValidated_Rejects_AfterAccountIsClosed()
     {
-        var harness = await CreateHarnessAsync(isActive: true);
+        await using var harness = await CreateHarnessAsync(isActive: true);
         var stampBefore = harness.User.SecurityStamp;
         var accountService = new UserAccountService(
             harness.Services.GetRequiredService<UserManager<AppUser>>(),
@@ -95,8 +95,7 @@ public sealed class TokenValidationTests
     private static async Task<TokenValidatedContext> ValidateAsync(
         Harness harness,
         string subject,
-        string? stamp,
-        bool revoked = false)
+        string? stamp)
     {
         var httpContext = new DefaultHttpContext { RequestServices = harness.Services };
         var context = new TokenValidatedContext(
@@ -149,7 +148,12 @@ public sealed class TokenValidationTests
         return new Harness(provider, user);
     }
 
-    private sealed record Harness(IServiceProvider Services, AppUser User);
+    private sealed record Harness(IServiceProvider Services, AppUser User) : IAsyncDisposable
+    {
+        public ValueTask DisposeAsync() => Services is IAsyncDisposable disposable
+            ? disposable.DisposeAsync()
+            : ValueTask.CompletedTask;
+    }
 
     private sealed class StubRevocationService(bool revoked) : ITokenRevocationService
     {

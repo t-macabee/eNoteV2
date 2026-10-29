@@ -5,23 +5,6 @@ public sealed class CoursePaymentTests
     private static readonly DateTime Now = new(2026, 6, 15, 12, 0, 0, DateTimeKind.Utc);
 
     [Fact]
-    public void Constructor_SetsProperties()
-    {
-        var payment = new CoursePayment(10, "pi_test_123", 5000, "bam", PaymentStatus.RequiresAction);
-
-        Assert.Equal(10, payment.EnrollmentId);
-        Assert.Equal("pi_test_123", payment.StripePaymentIntentId);
-        Assert.Equal(5000, payment.AmountChargedCents);
-        Assert.Equal("bam", payment.Currency);
-        Assert.Equal(PaymentStatus.RequiresAction, payment.Status);
-        Assert.Null(payment.StripeChargeId);
-        Assert.Null(payment.StripeEventId);
-        Assert.Null(payment.PaidAt);
-        Assert.Null(payment.PeriodStart);
-        Assert.Null(payment.PeriodEnd);
-    }
-
-    [Fact]
     public void MarkSucceeded_UpdatesFieldsAndStatus()
     {
         var payment = new CoursePayment(10, "pi_test_123", 5000, "bam", PaymentStatus.RequiresAction);

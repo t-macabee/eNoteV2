@@ -66,7 +66,7 @@ public static class AcademicTestData
         ENoteContext context, Instructor instructor, StubCurrentActor? actor = null, DateTime? now = null)
         where T : class
     {
-        var currentUser = actor ?? new StubCurrentActor(instructor: instructor);
+        var currentUser = actor ?? new StubCurrentActor();
         var effectiveNow = now
             ?? context.Set<Course>().Local.FirstOrDefault()?.StartDate
             ?? context.Set<Course>().Select(c => (DateTime?)c.StartDate).FirstOrDefault()

@@ -4,12 +4,15 @@ using eNote.API.Controllers.Announcements;
 using eNote.API.Controllers.Assignments;
 using eNote.API.Controllers.Instruments;
 using eNote.API.Controllers.Shop;
+using eNote.API.Controllers.Tuition;
 using eNote.API.Controllers.Users;
 using eNote.API.Extensions;
 using eNote.Application.Common.Files;
+using eNote.Application.Constants;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.Metadata;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ActionConstraints;
 using Microsoft.AspNetCore.Mvc.ApplicationParts;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
@@ -50,6 +53,19 @@ public sealed class ControllerActionDiscoveryTests
             var action = Assert.Single(actions, a => a.ActionName == name);
             Assert.Equal(route + suffix, action.AttributeRouteInfo?.Template);
         }
+    }
+
+    [Theory]
+    [InlineData("POST", nameof(TuitionPaymentsController.CreateIntent), "api/v{version:apiVersion}/student/enrollments/{enrollmentId:int}/tuition/create-intent")]
+    [InlineData("GET", nameof(TuitionPaymentsController.GetLatest), "api/v{version:apiVersion}/student/enrollments/{enrollmentId:int}/tuition")]
+    [InlineData("GET", nameof(TuitionPaymentsController.GetHistory), "api/v{version:apiVersion}/student/enrollments/{enrollmentId:int}/tuition/history")]
+    public void TuitionPaymentActions_HaveExpectedRoutesAndHttpMethods(string httpMethod, string actionName, string template)
+    {
+        var action = Assert.Single(DiscoveredActions(), a =>
+            a.ControllerTypeInfo.AsType() == typeof(TuitionPaymentsController) && a.ActionName == actionName);
+
+        Assert.Equal(template, action.AttributeRouteInfo?.Template);
+        Assert.Equal(httpMethod, Assert.Single(action.ActionConstraints!.OfType<HttpMethodActionConstraint>().SelectMany(c => c.HttpMethods)));
     }
 
     [Fact]
@@ -111,6 +127,107 @@ public sealed class ControllerActionDiscoveryTests
             .ToArray();
 
         Assert.Equal(expected, anonymous);
+    }
+
+    [Fact]
+    public void RoleRoutePrefixes_RequireExactlyTheirRole()
+    {
+        var allRoles = $"{AppRoles.Administrator},{AppRoles.Instructor},{AppRoles.StoreEmployee},{AppRoles.Student}";
+        var expectedRoles = new Dictionary<string, string>
+        {
+            ["admin"] = AppRoles.Administrator,
+            ["instructor"] = AppRoles.Instructor,
+            ["shop"] = AppRoles.StoreEmployee,
+            ["student"] = AppRoles.Student
+        };
+        var sharedActions = new Dictionary<string, string>
+        {
+            ["StudentNotificationController"] = allRoles
+        };
+        const string prefix = "api/v{version:apiVersion}/";
+
+        var violations = new List<string>();
+        var checkedActions = 0;
+
+        foreach (var action in DiscoveredActions())
+        {
+            var template = action.AttributeRouteInfo?.Template ?? "";
+            var segment = template.StartsWith(prefix, StringComparison.Ordinal)
+                ? template[prefix.Length..].Split('/')[0]
+                : "";
+
+            if (!expectedRoles.TryGetValue(segment, out var expected))
+            {
+                continue;
+            }
+
+            if (sharedActions.TryGetValue(action.ControllerTypeInfo.Name, out var shared))
+            {
+                expected = shared;
+            }
+
+            checkedActions++;
+            var actual = EffectiveRoles(action);
+            if (actual != expected)
+            {
+                violations.Add($"{template} ({action.ControllerTypeInfo.Name}.{action.MethodInfo.Name}): expected '{expected}', found '{actual}'");
+            }
+        }
+
+        Assert.True(checkedActions > 100, "The route scan found too few role-prefixed actions.");
+        Assert.Empty(violations);
+    }
+
+    [Fact]
+    public void ActionsOutsideRolePrefixes_AreAuthenticatedOrAllowListed()
+    {
+        string[] expectedAnyAuthenticatedUser =
+        [
+            "AuthController.Logout",
+            "InstrumentController.GetPublicById",
+            "InstrumentController.GetPublicPaged",
+            "UploadsController.GetAnnouncement",
+            "UploadsController.GetAssignment",
+            "UploadsController.GetCourse",
+            "UploadsController.GetEvent",
+            "UploadsController.GetInstrument",
+            "UploadsController.GetMusicStore",
+            "UsersController.ChangePassword",
+            "UsersController.DeletePicture",
+            "UsersController.GetCurrentUser",
+            "UsersController.GetPicture",
+            "UsersController.GetUserPicture",
+            "UsersController.UpdateProfile",
+            "UsersController.UploadPicture"
+        ];
+        string[] rolePrefixes = ["admin", "instructor", "shop", "student"];
+        const string prefix = "api/v{version:apiVersion}/";
+
+        var open = DiscoveredActions()
+            .Where(a => !IsAnonymous(a))
+            .Where(a =>
+            {
+                var template = a.AttributeRouteInfo?.Template ?? "";
+                return !rolePrefixes.Contains(template[prefix.Length..].Split('/')[0]);
+            })
+            .Where(a => EffectiveRoles(a) == "")
+            .Select(a => $"{a.ControllerTypeInfo.Name}.{a.MethodInfo.Name}")
+            .Order(StringComparer.Ordinal)
+            .ToArray();
+
+        Assert.Equal(expectedAnyAuthenticatedUser, open);
+    }
+
+    private static bool IsAnonymous(ControllerActionDescriptor action) =>
+        action.MethodInfo.IsDefined(typeof(AllowAnonymousAttribute), inherit: true)
+        || action.ControllerTypeInfo.IsDefined(typeof(AllowAnonymousAttribute), inherit: true);
+
+    private static string EffectiveRoles(ControllerActionDescriptor action)
+    {
+        var attributes = action.MethodInfo.GetCustomAttributes<AuthorizeAttribute>(inherit: true)
+            .Concat(action.ControllerTypeInfo.GetCustomAttributes<AuthorizeAttribute>(inherit: true));
+
+        return attributes.FirstOrDefault(a => !string.IsNullOrEmpty(a.Roles))?.Roles ?? "";
     }
 
     private static List<ControllerActionDescriptor> DiscoveredActions()

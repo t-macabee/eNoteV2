@@ -15,7 +15,7 @@ public sealed class DefaultImageDtoTests
     public async Task CourseAndEventDtos_SerializeWithDefaultImagePath()
     {
         var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
-        var actor = new StubCurrentActor(instructor: harness.Instructor, student: harness.Student);
+        var actor = new StubCurrentActor(student: harness.Student);
         var courseService = new CourseService(
             harness.Context,
             TestMapper.Create(),

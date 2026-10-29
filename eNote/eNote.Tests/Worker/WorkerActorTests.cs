@@ -1,6 +1,5 @@
 using eNote.Domain.Entities.Communication;
 using eNote.Tests.TestUtils;
-using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Tests.Worker;
 

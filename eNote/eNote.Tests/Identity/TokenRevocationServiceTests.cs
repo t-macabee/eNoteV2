@@ -58,6 +58,28 @@ public sealed class TokenRevocationServiceTests
     }
 
     [Fact]
+    public async Task IsRevokedAsync_ReturnsFalse_ForOtherJti()
+    {
+        await using var context = TestDbContextFactory.CreateContext(Now);
+        var service = CreateService(context);
+
+        await service.RevokeAsync("jti-1", Now.AddHours(1));
+
+        Assert.False(await service.IsRevokedAsync("jti-2"));
+    }
+
+    [Fact]
+    public async Task RevokeAsync_IgnoresBlankJti()
+    {
+        await using var context = TestDbContextFactory.CreateContext(Now);
+        var service = CreateService(context);
+
+        await service.RevokeAsync("  ", Now.AddHours(1));
+
+        Assert.Equal(0, await context.Set<RevokedToken>().CountAsync());
+    }
+
+    [Fact]
     public async Task RevokeAsync_DoesNotDuplicate_WhenAlreadyRevoked()
     {
         await using var context = TestDbContextFactory.CreateContext(Now);
@@ -77,6 +99,8 @@ public sealed class TokenRevocationServiceTests
         var service = CreateService(new ThrowingSaveDbContext(context, new DbUpdateException("Unique constraint violated.", inner)));
 
         await service.RevokeAsync("jti-1", Now.AddHours(1));
+
+        Assert.True(await service.IsRevokedAsync("jti-1"));
     }
 
     [Fact]

@@ -1,5 +1,3 @@
-using Microsoft.EntityFrameworkCore;
-
 namespace eNote.Tests.TestUtils;
 
 public static class RentalTestData

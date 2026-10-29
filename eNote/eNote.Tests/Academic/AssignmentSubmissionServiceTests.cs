@@ -317,7 +317,7 @@ public sealed class AssignmentSubmissionServiceTests
             identity ?? new StubUserIdentityService(),
             AcademicTestData.CreateInstructorAccess(accessContext, instructor),
             fileStorage,
-            notificationDispatcher ?? new NoOpSubmissionNotificationDispatcher(),
+            notificationDispatcher ?? new RecordingSubmissionNotificationDispatcher(),
             TestMapper.Create());
     }
 }

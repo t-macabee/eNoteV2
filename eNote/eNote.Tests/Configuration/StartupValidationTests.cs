@@ -7,7 +7,7 @@ public sealed class StartupValidationTests
     [Fact]
     public async Task ApiStartup_StopsBeforeSeeding_WhenSmtpFromIsEmpty()
     {
-        var result = await RunAsync("eNote.API", ApiSettings(new Dictionary<string, string?>
+        var result = await RunAsync("eNote.API", ApiSettings(new Dictionary<string, string>
         {
             ["Smtp__From"] = string.Empty
         }));
@@ -21,7 +21,7 @@ public sealed class StartupValidationTests
     public async Task ApiStartup_StopsBeforeSeeding_WhenSmtpFromIsEmptyAndSeedingIsEnabled()
     {
         var result = await RunAsync("eNote.API", ApiSettings(
-            new Dictionary<string, string?>
+            new Dictionary<string, string>
             {
                 ["ASPNETCORE_ENVIRONMENT"] = "Development",
                 ["Seed__Enabled"] = "true",
@@ -36,7 +36,7 @@ public sealed class StartupValidationTests
     [Fact]
     public async Task WorkerStartup_StopsBeforeConsuming_WhenSmtpHostIsEmpty()
     {
-        var result = await RunAsync("eNote.Worker", WorkerSettings(new Dictionary<string, string?>
+        var result = await RunAsync("eNote.Worker", WorkerSettings(new Dictionary<string, string>
         {
             ["Smtp__Host"] = string.Empty
         }));
@@ -48,15 +48,17 @@ public sealed class StartupValidationTests
     [Fact]
     public async Task WorkerStartup_StopsBeforeConsuming_WhenRabbitMqIsMissing()
     {
-        var result = await RunAsync("eNote.Worker", WorkerSettings(
-            removeKeys: ["RabbitMQ__Host", "RabbitMQ__VirtualHost", "RabbitMQ__User", "RabbitMQ__Password"]));
+        var result = await RunAsync("eNote.Worker", WorkerSettings(new Dictionary<string, string>
+        {
+            ["RabbitMQ__Host"] = string.Empty
+        }));
 
         Assert.NotEqual(0, result.ExitCode);
         Assert.Contains("RabbitMQ__Host is required.", result.Output);
         Assert.DoesNotContain("MassTransit.RabbitMqConnectionException", result.Output);
     }
 
-    private static async Task<ProcessResult> RunAsync(string projectName, Dictionary<string, string?> settings)
+    private static async Task<ProcessResult> RunAsync(string projectName, Dictionary<string, string> settings)
     {
         var assemblyPath = ResolveAssemblyPath(projectName);
         var workingDirectory = Directory.CreateTempSubdirectory("enote-startup-");
@@ -75,14 +77,7 @@ public sealed class StartupValidationTests
 
             foreach (var (key, value) in settings)
             {
-                if (value is null)
-                {
-                    startInfo.Environment.Remove(key);
-                }
-                else
-                {
-                    startInfo.Environment[key] = value;
-                }
+                startInfo.Environment[key] = value;
             }
 
             using var process = Process.Start(startInfo) ?? throw new InvalidOperationException($"Could not start {projectName}.");
@@ -125,9 +120,7 @@ public sealed class StartupValidationTests
             : throw new FileNotFoundException($"Could not find {projectName}.dll next to the test build output ({path}).");
     }
 
-    private static Dictionary<string, string?> ApiSettings(
-        Dictionary<string, string?>? overrides = null,
-        params string[] removeKeys)
+    private static Dictionary<string, string> ApiSettings(Dictionary<string, string>? overrides = null)
     {
         var settings = BaseSettings();
         settings["ASPNETCORE_ENVIRONMENT"] = "Production";
@@ -144,24 +137,22 @@ public sealed class StartupValidationTests
         settings["Seed__Enabled"] = "false";
         settings["Seed__DefaultPassword"] = "test";
 
-        Apply(settings, overrides, removeKeys);
+        Apply(settings, overrides);
 
         return settings;
     }
 
-    private static Dictionary<string, string?> WorkerSettings(
-        Dictionary<string, string?>? overrides = null,
-        params string[] removeKeys)
+    private static Dictionary<string, string> WorkerSettings(Dictionary<string, string>? overrides = null)
     {
         var settings = BaseSettings();
         settings["DOTNET_ENVIRONMENT"] = "Production";
 
-        Apply(settings, overrides, removeKeys);
+        Apply(settings, overrides);
 
         return settings;
     }
 
-    private static Dictionary<string, string?> BaseSettings() => new()
+    private static Dictionary<string, string> BaseSettings() => new()
     {
         ["ConnectionStrings__DefaultConnection"] = "Server=localhost;Database=enote-startup-test;User Id=sa;Password=Placeholder1!;TrustServerCertificate=True",
         ["RabbitMQ__Host"] = "localhost",
@@ -176,15 +167,9 @@ public sealed class StartupValidationTests
     };
 
     private static void Apply(
-        Dictionary<string, string?> settings,
-        Dictionary<string, string?>? overrides,
-        string[] removeKeys)
+        Dictionary<string, string> settings,
+        Dictionary<string, string>? overrides)
     {
-        foreach (var key in removeKeys)
-        {
-            settings[key] = null;
-        }
-
         if (overrides is null)
         {
             return;

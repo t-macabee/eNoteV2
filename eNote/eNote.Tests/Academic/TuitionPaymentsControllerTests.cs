@@ -6,10 +6,6 @@ using eNote.Application.Features.Rentals.Payments.Services;
 using eNote.Tests.TestUtils;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.ActionConstraints;
-using Microsoft.AspNetCore.Mvc.Controllers;
-using Microsoft.AspNetCore.Mvc.Infrastructure;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using System.Reflection;
 
@@ -19,34 +15,6 @@ public sealed class TuitionPaymentsControllerTests
 {
     private static readonly DateTime Now = new(2026, 7, 1, 12, 0, 0, DateTimeKind.Utc);
 
-    [Fact]
-    public void Controller_ActionDescriptors_HaveExpectedRoutesAndHttpMethods()
-    {
-        var services = new ServiceCollection();
-        services.AddLogging();
-        services.AddControllers().AddApplicationPart(typeof(TuitionPaymentsController).Assembly);
-        var sp = services.BuildServiceProvider();
-        var provider = sp.GetRequiredService<IActionDescriptorCollectionProvider>();
-
-        var actions = provider.ActionDescriptors.Items
-            .OfType<ControllerActionDescriptor>()
-            .Where(a => a.ControllerTypeInfo == typeof(TuitionPaymentsController))
-            .ToList();
-
-        Assert.Equal(3, actions.Count);
-
-        var createIntent = actions.Single(a => a.ActionName == nameof(TuitionPaymentsController.CreateIntent));
-        Assert.Equal("POST", Assert.Single(createIntent.ActionConstraints?.OfType<HttpMethodActionConstraint>().SelectMany(c => c.HttpMethods) ?? ["POST"]));
-        Assert.Equal("api/v{version:apiVersion}/student/enrollments/{enrollmentId:int}/tuition/create-intent", createIntent.AttributeRouteInfo?.Template);
-
-        var getLatest = actions.Single(a => a.ActionName == nameof(TuitionPaymentsController.GetLatest));
-        Assert.Equal("GET", Assert.Single(getLatest.ActionConstraints?.OfType<HttpMethodActionConstraint>().SelectMany(c => c.HttpMethods) ?? ["GET"]));
-        Assert.Equal("api/v{version:apiVersion}/student/enrollments/{enrollmentId:int}/tuition", getLatest.AttributeRouteInfo?.Template);
-
-        var getHistory = actions.Single(a => a.ActionName == nameof(TuitionPaymentsController.GetHistory));
-        Assert.Equal("GET", Assert.Single(getHistory.ActionConstraints?.OfType<HttpMethodActionConstraint>().SelectMany(c => c.HttpMethods) ?? ["GET"]));
-        Assert.Equal("api/v{version:apiVersion}/student/enrollments/{enrollmentId:int}/tuition/history", getHistory.AttributeRouteInfo?.Template);
-    }
     [Fact]
     public void Controller_HasExpectedRouteAndAuthorizeAttributes()
     {

@@ -15,7 +15,7 @@ public sealed class StoreAnnouncementServiceTests
     public async Task CreateForStoreAsync_AddsStoreAnnouncement()
     {
         var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
-        var service = CreateService(harness.Context, harness.Instructor, storeId: 3);
+        var service = CreateService(harness.Context, storeId: 3);
 
         var dto = await service.CreateForStoreAsync(new AnnouncementRequest("Sale", "20% off"));
 
@@ -35,7 +35,7 @@ public sealed class StoreAnnouncementServiceTests
             new Announcement("Summer sale", "20% off", null, store.Id, Now),
             new Announcement("New hours", "Open late", null, store.Id, Now));
         await harness.Context.SaveChangesAsync();
-        var service = CreateService(harness.Context, harness.Instructor, storeId: store.Id);
+        var service = CreateService(harness.Context, storeId: store.Id);
 
         var result = await service.GetForStoreAsync(new AnnouncementSearchObject { Title = "Summer", Page = 1, PageSize = 10 });
 
@@ -53,7 +53,7 @@ public sealed class StoreAnnouncementServiceTests
         harness.Context.Set<Announcement>().Add(announcement);
         await harness.Context.SaveChangesAsync();
         var fileStorage = new RecordingFileStorageService();
-        var service = CreateService(harness.Context, harness.Instructor, storeId: store.Id, fileStorage: fileStorage);
+        var service = CreateService(harness.Context, storeId: store.Id, fileStorage: fileStorage);
 
         var dto = await service.UploadImageForStoreAsync(announcement.Id, new MemoryStream([1, 2, 3]), "image/png");
 
@@ -75,7 +75,7 @@ public sealed class StoreAnnouncementServiceTests
         await harness.Context.SaveChangesAsync();
         var fileStorage = new RecordingFileStorageService();
         fileStorage.FileSizes["/api/v1/uploads/announcements/old.webp"] = FileUploadLimits.MaxStoreUploadBytes;
-        var service = CreateService(harness.Context, harness.Instructor, storeId: store.Id, fileStorage: fileStorage);
+        var service = CreateService(harness.Context, storeId: store.Id, fileStorage: fileStorage);
 
         await Assert.ThrowsAsync<BusinessException>(() =>
             service.UploadImageForStoreAsync(target.Id, new MemoryStream([1]), "image/png"));
@@ -94,7 +94,7 @@ public sealed class StoreAnnouncementServiceTests
         harness.Context.Set<Announcement>().Add(announcement);
         await harness.Context.SaveChangesAsync();
         var fileStorage = new RecordingFileStorageService();
-        var service = CreateService(harness.Context, harness.Instructor, storeId: store.Id, fileStorage: fileStorage);
+        var service = CreateService(harness.Context, storeId: store.Id, fileStorage: fileStorage);
 
         await service.UploadImageForStoreAsync(announcement.Id, new MemoryStream([1, 2, 3]), "image/png");
         await service.DeleteForStoreAsync(announcement.Id);
@@ -104,13 +104,12 @@ public sealed class StoreAnnouncementServiceTests
 
     private static StoreAnnouncementService CreateService(
         ENoteContext context,
-        Instructor instructor,
         int storeId = 1,
         StubCurrentActor? actor = null,
         RecordingFileStorageService? fileStorage = null) =>
         new(context,
             new FixedClock(Now),
-            actor ?? new StubCurrentActor(instructor: instructor, storeId: storeId),
+            actor ?? new StubCurrentActor(storeId: storeId),
             TestMapper.Create(),
             fileStorage ?? new RecordingFileStorageService());
 }

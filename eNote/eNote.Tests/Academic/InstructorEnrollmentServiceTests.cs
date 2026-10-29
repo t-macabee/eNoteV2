@@ -231,7 +231,7 @@ public sealed class InstructorEnrollmentServiceTests
 
     private static InstructorEnrollmentService CreateService(IAppDbContext context, Instructor instructor)
     {
-        var currentUser = new StubCurrentActor(instructor: instructor, userId: instructor.AppUserId);
+        var currentUser = new StubCurrentActor(userId: instructor.AppUserId);
         var instructorAccess = new InstructorAccessService(context, new StubUserProfileLookup(instructor: instructor));
 
         return new(

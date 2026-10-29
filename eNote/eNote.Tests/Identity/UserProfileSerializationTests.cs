@@ -6,10 +6,12 @@ namespace eNote.Tests.Identity;
 
 public class UserProfileSerializationTests
 {
+    private static readonly DateTime Now = new(2026, 7, 1, 12, 0, 0, DateTimeKind.Utc);
+
     [Fact]
     public void UserProfileResponse_SerializesPolymorphicProfile()
     {
-        var profile = new StudentProfile(1, DateTime.UtcNow, "John", "Doe", new DateTime(2000, 1, 1), null);
+        var profile = new StudentProfile(1, Now, "John", "Doe", new DateTime(2000, 1, 1), null);
         var response = new UserProfileResponse("student", "jdoe", "jdoe@example.com", profile);
 
         var json = JsonSerializer.Serialize(response);

@@ -1,7 +1,6 @@
 using System.Reflection;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Constants;
-using eNote.Domain.Entities.Rentals;
 using eNote.Infrastructure.Identity;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
@@ -111,7 +110,7 @@ public sealed class DatabaseConstraintTests(SqlServerFixture fixture)
     {
         var database = await fixture.CreateDatabaseAsync();
 
-        var enrollmentId = 0;
+        int enrollmentId;
 
         await using (var seedContext = database.CreateContext())
         {

@@ -22,7 +22,7 @@ public sealed class InstructorAnnouncementServiceTests
         var otherInstructor = new Instructor(200);
         harness.Context.Set<Instructor>().Add(otherInstructor);
         await harness.Context.SaveChangesAsync();
-        var service = CreateService(harness.Context, harness.Instructor, new InstructorAccessService(harness.Context, new StubUserProfileLookup(instructor: otherInstructor)));
+        var service = CreateService(harness.Context, new InstructorAccessService(harness.Context, new StubUserProfileLookup(instructor: otherInstructor)));
 
         await Assert.ThrowsAsync<BusinessException>(() =>
             service.CreateForCourseAsync(harness.Course.Id, new AnnouncementRequest("Title", "Content")));
@@ -39,7 +39,7 @@ public sealed class InstructorAnnouncementServiceTests
         await harness.Context.SaveChangesAsync();
         harness.Context.Set<Enrollment>().Add(new Enrollment(droppedStudent.Id, harness.Course.Id, EnrollmentStatus.Canceled));
         await harness.Context.SaveChangesAsync();
-        var service = CreateService(harness.Context, harness.Instructor, AcademicTestData.CreateInstructorAccess(harness.Context, harness.Instructor));
+        var service = CreateService(harness.Context, AcademicTestData.CreateInstructorAccess(harness.Context, harness.Instructor));
 
         var dto = await service.CreateForCourseAsync(harness.Course.Id, new AnnouncementRequest("Welcome", "Hello everyone"));
 
@@ -57,7 +57,7 @@ public sealed class InstructorAnnouncementServiceTests
     public async Task CreateForCourseAsync_Succeeds_ForCourseOwner()
     {
         var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
-        var service = CreateService(harness.Context, harness.Instructor, AcademicTestData.CreateInstructorAccess(harness.Context, harness.Instructor));
+        var service = CreateService(harness.Context, AcademicTestData.CreateInstructorAccess(harness.Context, harness.Instructor));
 
         var dto = await service.CreateForCourseAsync(harness.Course.Id, new AnnouncementRequest("Welcome", "Hello everyone"));
 
@@ -74,7 +74,7 @@ public sealed class InstructorAnnouncementServiceTests
         var announcement = new Announcement("Welcome", "Hello", harness.Course.Id, null, Now);
         harness.Context.Set<Announcement>().Add(announcement);
         await harness.Context.SaveChangesAsync();
-        var service = CreateService(harness.Context, harness.Instructor, AcademicTestData.CreateInstructorAccess(harness.Context, harness.Instructor));
+        var service = CreateService(harness.Context, AcademicTestData.CreateInstructorAccess(harness.Context, harness.Instructor));
 
         await service.DeleteForCourseAsync(harness.Course.Id, announcement.Id);
 
@@ -90,7 +90,7 @@ public sealed class InstructorAnnouncementServiceTests
         harness.Context.Set<Announcement>().Add(announcement);
         await harness.Context.SaveChangesAsync();
         var fileStorage = new RecordingFileStorageService();
-        var service = CreateService(harness.Context, harness.Instructor, AcademicTestData.CreateInstructorAccess(harness.Context, harness.Instructor), fileStorage: fileStorage);
+        var service = CreateService(harness.Context, AcademicTestData.CreateInstructorAccess(harness.Context, harness.Instructor), fileStorage: fileStorage);
 
         await service.UploadImageForCourseAsync(harness.Course.Id, announcement.Id, new MemoryStream([1, 2, 3]), "image/png");
         var dto = await service.UploadImageForCourseAsync(harness.Course.Id, announcement.Id, new MemoryStream([1, 2, 3]), "image/png");
@@ -107,7 +107,7 @@ public sealed class InstructorAnnouncementServiceTests
         var announcement = new Announcement("Welcome", "Hello", harness.Course.Id, null, Now);
         harness.Context.Set<Announcement>().Add(announcement);
         await harness.Context.SaveChangesAsync();
-        var service = CreateService(harness.Context, harness.Instructor, AcademicTestData.CreateInstructorAccess(harness.Context, harness.Instructor));
+        var service = CreateService(harness.Context, AcademicTestData.CreateInstructorAccess(harness.Context, harness.Instructor));
 
         var dto = await service.GetByIdForCourseAsync(harness.Course.Id, announcement.Id);
 
@@ -122,7 +122,7 @@ public sealed class InstructorAnnouncementServiceTests
         harness.Context.Set<Announcement>().Add(announcement);
         await harness.Context.SaveChangesAsync();
         var fileStorage = new RecordingFileStorageService();
-        var service = CreateService(harness.Context, harness.Instructor, AcademicTestData.CreateInstructorAccess(harness.Context, harness.Instructor), fileStorage: fileStorage);
+        var service = CreateService(harness.Context, AcademicTestData.CreateInstructorAccess(harness.Context, harness.Instructor), fileStorage: fileStorage);
 
         await service.UploadImageForCourseAsync(harness.Course.Id, announcement.Id, new MemoryStream([1, 2, 3]), "image/png");
         await service.DeleteForCourseAsync(harness.Course.Id, announcement.Id);
@@ -138,7 +138,7 @@ public sealed class InstructorAnnouncementServiceTests
             new Announcement("Exam schedule", "Hello", harness.Course.Id, null, Now),
             new Announcement("Welcome", "Hello", harness.Course.Id, null, Now));
         await harness.Context.SaveChangesAsync();
-        var service = CreateService(harness.Context, harness.Instructor, AcademicTestData.CreateInstructorAccess(harness.Context, harness.Instructor));
+        var service = CreateService(harness.Context, AcademicTestData.CreateInstructorAccess(harness.Context, harness.Instructor));
 
         var result = await service.GetForCourseAsync(harness.Course.Id, new AnnouncementSearchObject { Title = "Exam", Page = 1, PageSize = 10 });
 
@@ -147,13 +147,12 @@ public sealed class InstructorAnnouncementServiceTests
 
     private static InstructorAnnouncementService CreateService(
         ENoteContext context,
-        Instructor instructor,
         InstructorAccessService instructorAccess,
         StubCurrentActor? actor = null,
         RecordingFileStorageService? fileStorage = null) =>
         new(context,
             new FixedClock(Now),
-            actor ?? new StubCurrentActor(instructor: instructor),
+            actor ?? new StubCurrentActor(),
             instructorAccess,
             TestMapper.Create(),
             new AnnouncementNotificationDispatcher(context, new FixedClock(Now)),

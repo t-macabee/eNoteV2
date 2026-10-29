@@ -76,6 +76,35 @@ public sealed class ConfigurationOptionsTests
     }
 
     [Theory]
+    [InlineData(4)]
+    [InlineData(121)]
+    public void JwtOptions_ExpirationMinutes_FailsOutsideFiveToOneHundredTwenty(int expirationMinutes)
+    {
+        var services = BuildApiServices(overrides: new Dictionary<string, string?>
+        {
+            ["Jwt:ExpirationMinutes"] = expirationMinutes.ToString()
+        });
+
+        var exception = Assert.Throws<OptionsValidationException>(() => ResolveOptions<JwtOptions>(services));
+
+        Assert.Contains(nameof(JwtOptions.ExpirationMinutes), exception.Message);
+    }
+
+    [Theory]
+    [InlineData(5)]
+    [InlineData(30)]
+    [InlineData(120)]
+    public void JwtOptions_ExpirationMinutes_PassesWithinFiveToOneHundredTwenty(int expirationMinutes)
+    {
+        var services = BuildApiServices(overrides: new Dictionary<string, string?>
+        {
+            ["Jwt:ExpirationMinutes"] = expirationMinutes.ToString()
+        });
+
+        Assert.Equal(expirationMinutes, ResolveOptions<JwtOptions>(services).ExpirationMinutes);
+    }
+
+    [Theory]
     [InlineData("Stripe:SecretKey", "Stripe__SecretKey is required.")]
     [InlineData("Stripe:WebhookSecret", "Stripe__WebhookSecret is required.")]
     [InlineData("Stripe:Currency", "Stripe__Currency is required.")]

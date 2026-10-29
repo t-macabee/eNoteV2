@@ -20,6 +20,7 @@ public sealed class NotificationOutboxPublisherTests
 {
     private static readonly DateTime Now = new(2026, 7, 1, 12, 0, 0, DateTimeKind.Utc);
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+    private static readonly TimeSpan PollTimeout = TimeSpan.FromSeconds(5);
 
     [Fact]
     public async Task ProcessBatch_PublishesPendingMessages_AndMarksPublishedAt()
@@ -40,20 +41,10 @@ public sealed class NotificationOutboxPublisherTests
     [Fact]
     public async Task ProcessBatch_PublishesValidPayloads()
     {
-        await using var context = TestDbContextFactory.CreateContext(Now);
         var message = new RentalStatusChanged(1, 5, 9, "Pending", "Stratocaster", "Title", "Body", Now);
-        context.Set<NotificationOutbox>().Add(new NotificationOutbox
-        {
-            PayloadJson = JsonSerializer.Serialize(message, JsonOptions)
-        });
-        await context.SaveChangesAsync();
-        var endpoint = new StubPublishEndpoint();
-        var publisher = CreatePublisher(context, endpoint);
 
-        await InvokeProcessBatchAsync(publisher);
+        var payload = await PublishSinglePayloadAsync(message);
 
-        var published = Assert.Single(endpoint.Published);
-        var payload = Assert.IsType<RentalStatusChanged>(published);
         Assert.Equal(1, payload.RentalId);
         Assert.Equal(5, payload.StudentUserId);
     }
@@ -61,21 +52,10 @@ public sealed class NotificationOutboxPublisherTests
     [Fact]
     public async Task ProcessBatch_PublishesLectureCancelledPayloads()
     {
-        await using var context = TestDbContextFactory.CreateContext(Now);
         var message = new LectureCancelled(1, 50, "Guitar 101", "Predavanje otkazano", "Predavanje je otkazano.", Now);
-        context.Set<NotificationOutbox>().Add(new NotificationOutbox
-        {
-            MessageType = NotificationMessageTypes.LectureCancelled,
-            PayloadJson = JsonSerializer.Serialize(message, JsonOptions)
-        });
-        await context.SaveChangesAsync();
-        var endpoint = new StubPublishEndpoint();
-        var publisher = CreatePublisher(context, endpoint);
 
-        await InvokeProcessBatchAsync(publisher);
+        var payload = await PublishSinglePayloadAsync(message, NotificationMessageTypes.LectureCancelled);
 
-        var published = Assert.Single(endpoint.Published);
-        var payload = Assert.IsType<LectureCancelled>(published);
         Assert.Equal(1, payload.LectureId);
         Assert.Equal(50, payload.StudentUserId);
     }
@@ -83,21 +63,10 @@ public sealed class NotificationOutboxPublisherTests
     [Fact]
     public async Task ProcessBatch_PublishesSubmissionGradedPayloads()
     {
-        await using var context = TestDbContextFactory.CreateContext(Now);
         var message = new SubmissionGraded(1, 50, "Homework", 85, "Zadaća ocijenjena", "Ocjena: 85.", Now);
-        context.Set<NotificationOutbox>().Add(new NotificationOutbox
-        {
-            MessageType = NotificationMessageTypes.SubmissionGraded,
-            PayloadJson = JsonSerializer.Serialize(message, JsonOptions)
-        });
-        await context.SaveChangesAsync();
-        var endpoint = new StubPublishEndpoint();
-        var publisher = CreatePublisher(context, endpoint);
 
-        await InvokeProcessBatchAsync(publisher);
+        var payload = await PublishSinglePayloadAsync(message, NotificationMessageTypes.SubmissionGraded);
 
-        var published = Assert.Single(endpoint.Published);
-        var payload = Assert.IsType<SubmissionGraded>(published);
         Assert.Equal(1, payload.SubmissionId);
         Assert.Equal(85, payload.Grade);
     }
@@ -105,21 +74,10 @@ public sealed class NotificationOutboxPublisherTests
     [Fact]
     public async Task ProcessBatch_PublishesAnnouncementPublishedPayloads()
     {
-        await using var context = TestDbContextFactory.CreateContext(Now);
         var message = new AnnouncementPublished(1, 50, "Nova obavijest", "Tekst obavijesti.", Now);
-        context.Set<NotificationOutbox>().Add(new NotificationOutbox
-        {
-            MessageType = NotificationMessageTypes.AnnouncementPublished,
-            PayloadJson = JsonSerializer.Serialize(message, JsonOptions)
-        });
-        await context.SaveChangesAsync();
-        var endpoint = new StubPublishEndpoint();
-        var publisher = CreatePublisher(context, endpoint);
 
-        await InvokeProcessBatchAsync(publisher);
+        var payload = await PublishSinglePayloadAsync(message, NotificationMessageTypes.AnnouncementPublished);
 
-        var published = Assert.Single(endpoint.Published);
-        var payload = Assert.IsType<AnnouncementPublished>(published);
         Assert.Equal(1, payload.AnnouncementId);
         Assert.Equal(50, payload.StudentUserId);
     }
@@ -127,21 +85,10 @@ public sealed class NotificationOutboxPublisherTests
     [Fact]
     public async Task ProcessBatch_PublishesEnrollmentStatusChangedPayloads()
     {
-        await using var context = TestDbContextFactory.CreateContext(Now);
         var message = new EnrollmentStatusChanged(1, 50, "Upis odobren", "Vaš zahtjev za upis na kurs 'Guitar 101' je odobren.", Now);
-        context.Set<NotificationOutbox>().Add(new NotificationOutbox
-        {
-            MessageType = NotificationMessageTypes.EnrollmentStatusChanged,
-            PayloadJson = JsonSerializer.Serialize(message, JsonOptions)
-        });
-        await context.SaveChangesAsync();
-        var endpoint = new StubPublishEndpoint();
-        var publisher = CreatePublisher(context, endpoint);
 
-        await InvokeProcessBatchAsync(publisher);
+        var payload = await PublishSinglePayloadAsync(message, NotificationMessageTypes.EnrollmentStatusChanged);
 
-        var published = Assert.Single(endpoint.Published);
-        var payload = Assert.IsType<EnrollmentStatusChanged>(published);
         Assert.Equal(1, payload.EnrollmentId);
         Assert.Equal(50, payload.StudentUserId);
     }
@@ -149,21 +96,10 @@ public sealed class NotificationOutboxPublisherTests
     [Fact]
     public async Task ProcessBatch_PublishesTuitionPaymentPayloads()
     {
-        await using var context = TestDbContextFactory.CreateContext(Now);
         var message = new TuitionPaymentNotification(1, 50, "Školarina plaćena", "Školarina za kurs 'Guitar 101' je plaćena.", Now);
-        context.Set<NotificationOutbox>().Add(new NotificationOutbox
-        {
-            MessageType = NotificationMessageTypes.TuitionPayment,
-            PayloadJson = JsonSerializer.Serialize(message, JsonOptions)
-        });
-        await context.SaveChangesAsync();
-        var endpoint = new StubPublishEndpoint();
-        var publisher = CreatePublisher(context, endpoint);
 
-        await InvokeProcessBatchAsync(publisher);
+        var payload = await PublishSinglePayloadAsync(message, NotificationMessageTypes.TuitionPayment);
 
-        var published = Assert.Single(endpoint.Published);
-        var payload = Assert.IsType<TuitionPaymentNotification>(published);
         Assert.Equal(1, payload.EnrollmentId);
         Assert.Equal(50, payload.StudentUserId);
     }
@@ -171,21 +107,10 @@ public sealed class NotificationOutboxPublisherTests
     [Fact]
     public async Task ProcessBatch_PublishesMembershipWarningPayloads()
     {
-        await using var context = TestDbContextFactory.CreateContext(Now);
         var message = new MembershipWarning(50, "Upozorenje o članarini", "Vaša članarina ističe.", Now);
-        context.Set<NotificationOutbox>().Add(new NotificationOutbox
-        {
-            MessageType = NotificationMessageTypes.MembershipWarning,
-            PayloadJson = JsonSerializer.Serialize(message, JsonOptions)
-        });
-        await context.SaveChangesAsync();
-        var endpoint = new StubPublishEndpoint();
-        var publisher = CreatePublisher(context, endpoint);
 
-        await InvokeProcessBatchAsync(publisher);
+        var payload = await PublishSinglePayloadAsync(message, NotificationMessageTypes.MembershipWarning);
 
-        var published = Assert.Single(endpoint.Published);
-        var payload = Assert.IsType<MembershipWarning>(published);
         Assert.Equal(50, payload.StudentUserId);
         Assert.Equal("Upozorenje o članarini", payload.Title);
     }
@@ -246,11 +171,7 @@ public sealed class NotificationOutboxPublisherTests
         var publisher = new NotificationOutboxPublisher(provider, NullLogger<NotificationOutboxPublisher>.Instance, TimeSpan.FromMilliseconds(10));
 
         await publisher.StartAsync(CancellationToken.None);
-        var deadline = DateTime.UtcNow.AddSeconds(5);
-        while (throwingContext.SetCalls < 2 && DateTime.UtcNow < deadline)
-        {
-            await Task.Delay(10);
-        }
+        var retried = await Task.WhenAny(throwingContext.SecondPoll, Task.Delay(PollTimeout)) == throwingContext.SecondPoll;
         await publisher.StopAsync(CancellationToken.None);
 
         var executeTask = (Task)typeof(BackgroundService)
@@ -258,7 +179,7 @@ public sealed class NotificationOutboxPublisherTests
             .GetValue(publisher)!;
         Assert.False(executeTask.IsFaulted, "ExecuteAsync faulted on a poll failure instead of retrying next tick");
         Assert.True(executeTask.IsCanceled, "the stopped publisher task is expected to be canceled");
-        Assert.True(throwingContext.SetCalls > 1, "the poll was not retried after the first failure");
+        Assert.True(retried, "the poll was not retried after the first failure");
     }
 
     private static NotificationOutboxPublisher CreatePublisher(ENoteContext context, StubPublishEndpoint? endpoint = null)
@@ -267,6 +188,25 @@ public sealed class NotificationOutboxPublisherTests
         var provider = new StubServiceProvider(context, endpoint, new FixedClock(Now));
 
         return new NotificationOutboxPublisher(provider, NullLogger<NotificationOutboxPublisher>.Instance);
+    }
+
+    private static async Task<TMessage> PublishSinglePayloadAsync<TMessage>(TMessage message, string? messageType = null)
+        where TMessage : class
+    {
+        await using var context = TestDbContextFactory.CreateContext(Now);
+        var outbox = new NotificationOutbox { PayloadJson = JsonSerializer.Serialize(message, JsonOptions) };
+        if (messageType is not null)
+        {
+            outbox.MessageType = messageType;
+        }
+
+        context.Set<NotificationOutbox>().Add(outbox);
+        await context.SaveChangesAsync();
+        var endpoint = new StubPublishEndpoint();
+
+        await InvokeProcessBatchAsync(CreatePublisher(context, endpoint));
+
+        return Assert.IsType<TMessage>(Assert.Single(endpoint.Published));
     }
 
     private static Task InvokeProcessBatchAsync(NotificationOutboxPublisher publisher) =>
@@ -302,11 +242,18 @@ public sealed class NotificationOutboxPublisherTests
 
     private sealed class ThrowingSetDbContext : IAppDbContext
     {
-        public int SetCalls { get; private set; }
+        private readonly TaskCompletionSource _secondPoll = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private int _setCalls;
+
+        public Task SecondPoll => _secondPoll.Task;
 
         public DbSet<TEntity> Set<TEntity>() where TEntity : class
         {
-            SetCalls++;
+            if (++_setCalls == 2)
+            {
+                _secondPoll.TrySetResult();
+            }
+
             throw new InvalidOperationException("outbox poll failed");
         }
 

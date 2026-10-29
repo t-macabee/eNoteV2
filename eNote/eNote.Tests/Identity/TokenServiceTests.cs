@@ -3,8 +3,10 @@ using eNote.Tests.TestUtils;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Text;
 
 namespace eNote.Tests.Identity;
 
@@ -41,18 +43,75 @@ public sealed class TokenServiceTests
     }
 
     [Fact]
-    public void GenerateToken_IsSignedWithConfiguredKey()
+    public async Task GenerateToken_IsSignedWithConfiguredKey()
     {
         var key = "test-key-that-is-longer-than-32-characters";
         var service = CreateService(expirationMinutes: 30, key: key);
 
         var token = service.GenerateToken(1, "jdoe", ["Student"]);
 
-        var handler = new JwtSecurityTokenHandler();
-        var jwt = handler.ReadJwtToken(token);
-        Assert.NotNull(jwt);
-        Assert.Equal("Issuer", jwt.Issuer);
-        Assert.Contains(jwt.Audiences, a => a == "Audience");
+        var parameters = new TokenValidationParameters
+        {
+            ValidIssuer = "Issuer",
+            ValidAudience = "Audience",
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key)),
+            ValidateLifetime = false
+        };
+        var result = await new JwtSecurityTokenHandler().ValidateTokenAsync(token, parameters);
+        Assert.True(result.IsValid, result.Exception?.Message);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void GenerateToken_AddsManagerClaim_OnlyForManagers(bool isManager)
+    {
+        var service = CreateService(expirationMinutes: 30);
+
+        var token = service.GenerateToken(1, "jdoe", ["StoreEmployee"], isManager);
+
+        var managerClaims = ReadClaims(token).Where(c => c.Type == "is_manager").ToList();
+        if (isManager)
+        {
+            Assert.Equal("true", Assert.Single(managerClaims).Value);
+        }
+        else
+        {
+            Assert.Empty(managerClaims);
+        }
+    }
+
+    [Fact]
+    public void GenerateToken_AddsSecurityStampClaim_WhenGiven()
+    {
+        var service = CreateService(expirationMinutes: 30);
+
+        var token = service.GenerateToken(1, "jdoe", ["Student"], securityStamp: "stamp-1");
+
+        Assert.Equal("stamp-1", ReadClaims(token).Single(c => c.Type == TokenService.SecurityStampClaimType).Value);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("  ")]
+    public void GenerateToken_OmitsSecurityStampClaim_WhenBlank(string? securityStamp)
+    {
+        var service = CreateService(expirationMinutes: 30);
+
+        var token = service.GenerateToken(1, "jdoe", ["Student"], securityStamp: securityStamp);
+
+        Assert.DoesNotContain(ReadClaims(token), c => c.Type == TokenService.SecurityStampClaimType);
+    }
+
+    [Fact]
+    public void GenerateToken_GivesEachTokenItsOwnJti()
+    {
+        var service = CreateService(expirationMinutes: 30);
+
+        var first = ReadClaims(service.GenerateToken(1, "jdoe", ["Student"])).Single(c => c.Type == JwtRegisteredClaimNames.Jti).Value;
+        var second = ReadClaims(service.GenerateToken(1, "jdoe", ["Student"])).Single(c => c.Type == JwtRegisteredClaimNames.Jti).Value;
+
+        Assert.NotEqual(first, second);
     }
 
     [Fact]
@@ -69,7 +128,8 @@ public sealed class TokenServiceTests
         services.AddOptions<JwtOptions>()
             .Bind(configuration.GetSection(JwtOptions.SectionName))
             .ValidateDataAnnotations();
-        var options = services.BuildServiceProvider().GetRequiredService<IOptions<JwtOptions>>();
+        using var provider = services.BuildServiceProvider();
+        var options = provider.GetRequiredService<IOptions<JwtOptions>>();
 
         var service = new TokenService(options, new FixedClock(Now));
 

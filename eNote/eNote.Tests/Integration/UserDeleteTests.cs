@@ -1,10 +1,5 @@
-using eNote.Application.Common.Exceptions;
 using eNote.Application.Common.Localization;
 using eNote.Application.Features.Identity.Users.Services;
-using eNote.Domain.Entities.Academic;
-using eNote.Domain.Entities.Identity;
-using eNote.Domain.Entities.Rentals;
-using eNote.Domain.Enums;
 using eNote.Infrastructure.Identity;
 using eNote.Tests.TestUtils;
 using Microsoft.EntityFrameworkCore;
@@ -14,6 +9,7 @@ namespace eNote.Tests.Integration;
 [Collection(SqlServerCollection.Name)]
 public sealed class UserDeleteTests(SqlServerFixture fixture)
 {
+    private const int AdminActorId = 0;
     private static readonly DateTime Now = new(2026, 10, 25, 12, 0, 0, DateTimeKind.Utc);
 
     [Fact]
@@ -174,7 +170,8 @@ public sealed class UserDeleteTests(SqlServerFixture fixture)
             context,
             new UserAccountService(identity.UserManager, new StubFileStorageService()),
             new FixedClock(Now),
-            new StubFileStorageService());
+            new StubFileStorageService(),
+            new StubCurrentActor(userId: AdminActorId));
     }
 
     private static async Task<AppUser> AddUserAsync(ENoteContext context, string userName)

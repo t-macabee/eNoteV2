@@ -2,7 +2,6 @@ namespace eNote.Tests.TestUtils;
 
 public sealed class StubCurrentActor(
     Student? student = null,
-    Instructor? instructor = null,
     MusicStoreEmployee? employee = null,
     int? storeId = null,
     bool isAuthenticated = true,
@@ -16,9 +15,6 @@ public sealed class StubCurrentActor(
 
     public Task<int> GetCurrentStudentIdAsync(CancellationToken cancellationToken = default) =>
         Task.FromResult((student ?? throw new NotSupportedException()).Id);
-
-    public Task<Instructor> GetCurrentInstructorAsync() =>
-        Task.FromResult(instructor ?? throw new NotSupportedException());
 
     public Task<MusicStoreEmployee> GetCurrentEmployeeAsync(CancellationToken cancellationToken = default) =>
         Task.FromResult(employee ?? throw new NotSupportedException());

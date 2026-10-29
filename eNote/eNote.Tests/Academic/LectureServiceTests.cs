@@ -126,7 +126,7 @@ public sealed class LectureServiceTests
     public async Task CancelAsync_StoresReasonAndCancellingUser()
     {
         var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
-        var service = CreateService(harness.Context, harness.Instructor, new StubCurrentActor(instructor: harness.Instructor, userId: harness.Instructor.AppUserId));
+        var service = CreateService(harness.Context, harness.Instructor, new StubCurrentActor(userId: harness.Instructor.AppUserId));
 
         await service.CancelAsync(harness.Lecture.Id, new LectureCancelRequest { Reason = "  Instrument je pokvaren  " });
 
@@ -635,12 +635,12 @@ public sealed class LectureServiceTests
 
     private static LectureService CreateService(ENoteContext context, Instructor instructor, StubCurrentActor? actor = null, ILectureNotificationDispatcher? notificationDispatcher = null)
     {
-        var currentUser = actor ?? new StubCurrentActor(instructor: instructor);
+        var currentUser = actor ?? new StubCurrentActor();
         return new(context,
             currentUser,
             currentUser,
             AcademicTestData.CreateInstructorAccess(context, instructor),
-            notificationDispatcher ?? new NoOpLectureNotificationDispatcher(),
+            notificationDispatcher ?? new RecordingLectureNotificationDispatcher(),
             new StubDisplayNameService(),
             NullLogger<LectureService>.Instance,
             TestMapper.Create(),

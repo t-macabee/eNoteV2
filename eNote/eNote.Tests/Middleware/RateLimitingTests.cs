@@ -245,7 +245,7 @@ public sealed class RateLimitingTests
     {
         var services = new ServiceCollection();
         services.AddApplicationRateLimiting();
-        var provider = services.BuildServiceProvider();
+        using var provider = services.BuildServiceProvider();
         return provider.GetRequiredService<IOptions<RateLimiterOptions>>().Value.GlobalLimiter!;
     }
 
