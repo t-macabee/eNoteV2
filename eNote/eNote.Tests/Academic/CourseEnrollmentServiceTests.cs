@@ -103,6 +103,22 @@ public sealed class CourseEnrollmentServiceTests
     }
 
     [Fact]
+    public async Task EnrollAsync_IsNoOp_WhenAlreadyActive()
+    {
+        await using var context = CreateContext();
+        var (student, course) = await SeedStudentAndCourseAsync(context, hasActiveMembership: true);
+        context.Set<Enrollment>().Add(new Enrollment(student.Id, course.Id, EnrollmentStatus.Active));
+        await context.SaveChangesAsync();
+        var service = CreateService(context, student);
+
+        await service.EnrollAsync(course.Id);
+
+        var enrollment = await context.Set<Enrollment>().SingleAsync(x => x.StudentId == student.Id && x.CourseId == course.Id);
+        Assert.Equal(EnrollmentStatus.Active, enrollment.EnrollmentStatus);
+        Assert.Null(enrollment.UpdatedById);
+    }
+
+    [Fact]
     public async Task EnrollAsync_Throws_WhenCourseCompleted()
     {
         await using var context = CreateContext();
@@ -164,6 +180,84 @@ public sealed class CourseEnrollmentServiceTests
     }
 
     [Fact]
+    public async Task UnenrollAsync_OnlyCancelsCurrentStudentsEnrollment()
+    {
+        await using var context = CreateContext();
+        var (student, course) = await SeedStudentAndCourseAsync(context, hasActiveMembership: true);
+        var otherStudent = new Student(appUserId: 101, enrollmentDate: Now);
+        context.Set<Student>().Add(otherStudent);
+        await context.SaveChangesAsync();
+        var otherEnrollment = new Enrollment(otherStudent.Id, course.Id, EnrollmentStatus.Active);
+        context.Set<Enrollment>().Add(otherEnrollment);
+        await context.SaveChangesAsync();
+        var enrollment = new Enrollment(student.Id, course.Id, EnrollmentStatus.Active);
+        context.Set<Enrollment>().Add(enrollment);
+        await context.SaveChangesAsync();
+        var service = CreateService(context, student);
+
+        await service.UnenrollAsync(course.Id);
+
+        var storedOther = await context.Set<Enrollment>().AsNoTracking().SingleAsync(e => e.Id == otherEnrollment.Id);
+        Assert.Equal(EnrollmentStatus.Active, storedOther.EnrollmentStatus);
+        Assert.Null(storedOther.UpdatedById);
+        var stored = await context.Set<Enrollment>().AsNoTracking().SingleAsync(e => e.Id == enrollment.Id);
+        Assert.Equal(EnrollmentStatus.Canceled, stored.EnrollmentStatus);
+    }
+
+    [Fact]
+    public async Task UnenrollAsync_DoesNotCancelAnotherEnrollmentsPayment()
+    {
+        await using var context = CreateContext();
+        var (student, course) = await SeedStudentAndCourseAsync(context, hasActiveMembership: true);
+        var enrollment = new Enrollment(student.Id, course.Id, EnrollmentStatus.Active);
+        context.Set<Enrollment>().Add(enrollment);
+        await context.SaveChangesAsync();
+        var otherStudent = new Student(appUserId: 101, enrollmentDate: Now);
+        context.Set<Student>().Add(otherStudent);
+        await context.SaveChangesAsync();
+        var otherEnrollment = new Enrollment(otherStudent.Id, course.Id, EnrollmentStatus.Active);
+        context.Set<Enrollment>().Add(otherEnrollment);
+        await context.SaveChangesAsync();
+        context.Set<CoursePayment>().Add(new CoursePayment(otherEnrollment.Id, "pi_other_enrollment", 10000, "bam", PaymentStatus.RequiresAction));
+        await context.SaveChangesAsync();
+        var gateway = new FakePaymentGateway();
+        gateway.AddIntent("pi_other_enrollment", 10000, "bam");
+        var service = CreateService(context, student, gateway);
+
+        await service.UnenrollAsync(course.Id);
+
+        Assert.Empty(gateway.CancelCalls);
+        var payment = await context.Set<CoursePayment>().AsNoTracking().SingleAsync();
+        Assert.Equal(PaymentStatus.RequiresAction, payment.Status);
+        var storedOther = await context.Set<Enrollment>().AsNoTracking().SingleAsync(e => e.Id == otherEnrollment.Id);
+        Assert.Equal(EnrollmentStatus.Active, storedOther.EnrollmentStatus);
+    }
+
+    [Fact]
+    public async Task UnenrollAsync_Blocks_WhenFailedAttemptIsProcessing()
+    {
+        await using var context = CreateContext();
+        var (student, course) = await SeedStudentAndCourseAsync(context, hasActiveMembership: true);
+        var enrollment = new Enrollment(student.Id, course.Id, EnrollmentStatus.Active);
+        context.Set<Enrollment>().Add(enrollment);
+        await context.SaveChangesAsync();
+        context.Set<CoursePayment>().Add(new CoursePayment(enrollment.Id, "pi_failed_processing", 10000, "bam", PaymentStatus.Failed));
+        await context.SaveChangesAsync();
+        var gateway = new FakePaymentGateway();
+        gateway.AddIntent("pi_failed_processing", 10000, "bam", "processing");
+        var service = CreateService(context, student, gateway);
+
+        var ex = await Assert.ThrowsAsync<BusinessException>(() => service.UnenrollAsync(course.Id));
+
+        Assert.Equal(Messages.UnenrollBlockedByPendingPayment, ex.Message);
+        Assert.Empty(gateway.CancelCalls);
+        var payment = await context.Set<CoursePayment>().AsNoTracking().SingleAsync();
+        Assert.Equal(PaymentStatus.Failed, payment.Status);
+        var stored = await context.Set<Enrollment>().AsNoTracking().SingleAsync(e => e.Id == enrollment.Id);
+        Assert.Equal(EnrollmentStatus.Active, stored.EnrollmentStatus);
+    }
+
+    [Fact]
     public async Task UnenrollAsync_CancelsOpenIntentOnStripe_ThenCancelsEnrollment()
     {
         await using var context = CreateContext();
@@ -208,6 +302,24 @@ public sealed class CourseEnrollmentServiceTests
         Assert.Empty(gateway.CancelCalls);
         var stored = await context.Set<Enrollment>().SingleAsync(x => x.StudentId == student.Id && x.CourseId == course.Id);
         Assert.Equal(EnrollmentStatus.Active, stored.EnrollmentStatus);
+    }
+
+    [Theory]
+    [InlineData(EnrollmentStatus.Canceled)]
+    [InlineData(EnrollmentStatus.Completed)]
+    public async Task UnenrollAsync_Throws_WhenEnrollmentIsAlreadyFinished(EnrollmentStatus status)
+    {
+        await using var context = CreateContext();
+        var (student, course) = await SeedStudentAndCourseAsync(context, hasActiveMembership: true);
+        context.Set<Enrollment>().Add(new Enrollment(student.Id, course.Id, status));
+        await context.SaveChangesAsync();
+        var service = CreateService(context, student);
+
+        var ex = await Assert.ThrowsAsync<BusinessException>(() => service.UnenrollAsync(course.Id));
+
+        Assert.Equal(Messages.StudentNotEnrolled, ex.Message);
+        var stored = await context.Set<Enrollment>().SingleAsync(x => x.StudentId == student.Id && x.CourseId == course.Id);
+        Assert.Equal(status, stored.EnrollmentStatus);
     }
 
     [Fact]
@@ -311,6 +423,79 @@ public sealed class CourseEnrollmentServiceTests
         var ex = await Assert.ThrowsAsync<ConflictException>(() => service.EnrollAsync(course.Id));
 
         Assert.Equal(Messages.AlreadyEnrolled, ex.Message);
+    }
+
+    [Fact]
+    public async Task EnrollAsync_TreatsConcurrencyFailure_AsConflict()
+    {
+        await using var context = CreateContext();
+        var (student, course) = await SeedStudentAndCourseAsync(context, hasActiveMembership: true);
+        var service = CreateService(new ThrowingSaveDbContext(context, new DbUpdateConcurrencyException()), student);
+
+        var ex = await Assert.ThrowsAsync<ConflictException>(() => service.EnrollAsync(course.Id));
+
+        Assert.Equal(Messages.ConcurrencyConflict, ex.Message);
+    }
+
+    [Fact]
+    public async Task EnrollAsync_DoesNotHideOtherSaveFailures_AsConflict()
+    {
+        await using var context = CreateContext();
+        var (student, course) = await SeedStudentAndCourseAsync(context, hasActiveMembership: true);
+        var service = CreateService(new ThrowingSaveDbContext(context, new DbUpdateException("Other failure.", new Exception("connection lost"))), student);
+
+        await Assert.ThrowsAsync<DbUpdateException>(() => service.EnrollAsync(course.Id));
+    }
+
+    [Fact]
+    public async Task EnrollAsync_Throws_WhenCourseDoesNotExist_EvenIfOtherCoursesArePublished()
+    {
+        await using var context = CreateContext();
+        var (student, course) = await SeedStudentAndCourseAsync(context, hasActiveMembership: true);
+        var service = CreateService(context, student);
+
+        await Assert.ThrowsAsync<NotFoundException>(() => service.EnrollAsync(course.Id + 1000));
+        Assert.Empty(context.Set<Enrollment>());
+    }
+
+    [Fact]
+    public async Task EnrollAsync_IgnoresEnrollmentOfAnotherStudent()
+    {
+        await using var context = CreateContext();
+        var (student, course) = await SeedStudentAndCourseAsync(context, hasActiveMembership: true);
+        var other = new Student(appUserId: 101, enrollmentDate: Now.AddMonths(-1));
+        context.Set<Student>().Add(other);
+        await context.SaveChangesAsync();
+        context.Set<Enrollment>().Add(new Enrollment(other.Id, course.Id, EnrollmentStatus.Active));
+        await context.SaveChangesAsync();
+        var service = CreateService(context, student);
+
+        await service.EnrollAsync(course.Id);
+
+        var own = await context.Set<Enrollment>().SingleAsync(x => x.StudentId == student.Id && x.CourseId == course.Id);
+        Assert.Equal(EnrollmentStatus.Pending, own.EnrollmentStatus);
+        var others = await context.Set<Enrollment>().SingleAsync(x => x.StudentId == other.Id && x.CourseId == course.Id);
+        Assert.Equal(EnrollmentStatus.Active, others.EnrollmentStatus);
+    }
+
+    [Fact]
+    public async Task EnrollAsync_AllowsSecondCourse_WhileActiveInFirst()
+    {
+        await using var context = CreateContext();
+        var (student, first) = await SeedStudentAndCourseAsync(context, hasActiveMembership: true);
+        var second = new Course("Practice", null, 10, null, null, first.InstructorId);
+        second.SetPublishedStatus(true);
+        context.Set<Course>().Add(second);
+        context.Set<Enrollment>().Add(new Enrollment(student.Id, first.Id, EnrollmentStatus.Active));
+        await context.SaveChangesAsync();
+        var service = CreateService(context, student);
+
+        await service.EnrollAsync(second.Id);
+
+        var enrollments = await context.Set<Enrollment>().Where(x => x.StudentId == student.Id).ToListAsync();
+        Assert.Equal(2, enrollments.Count);
+        Assert.Equal(EnrollmentStatus.Active, enrollments.Single(x => x.CourseId == first.Id).EnrollmentStatus);
+        Assert.Equal(EnrollmentStatus.Pending, enrollments.Single(x => x.CourseId == second.Id).EnrollmentStatus);
     }
 
     private static CourseEnrollmentService CreateService(IAppDbContext context, Student student, IPaymentGateway? gateway = null)

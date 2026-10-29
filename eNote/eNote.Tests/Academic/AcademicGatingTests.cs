@@ -1,4 +1,5 @@
 using eNote.Application.Common.Localization;
+using eNote.Application.Features.Academic;
 using eNote.Application.Features.Academic.Assignments;
 using eNote.Application.Features.Academic.Assignments.Services;
 using eNote.Application.Features.Academic.Courses.Services;
@@ -124,7 +125,7 @@ public sealed class AcademicGatingTests
             unpaidService.RsvpAsync(lecture.Id, new RsvpRequest { Confirm = true }));
         Assert.Equal(Messages.StudentNotEnrolled, ex.Message);
 
-        var instructorService = CreateAttendanceService(context, instructor, paidStudent, new StubCurrentActor(instructor: instructor));
+        var instructorService = CreateAttendanceService(context, instructor, paidStudent, new StubCurrentActor());
         var marked = await instructorService.MarkAttendanceAsync(lecture.Id, new MarkAttendanceRequest
         {
             StudentId = unpaidStudent.Id,
@@ -136,7 +137,7 @@ public sealed class AcademicGatingTests
     [Fact]
     public async Task AssignmentSubmissionService_OwnSubmissionAndHistory_Gated()
     {
-        var (context, instructor, paidStudent, unpaidStudent, _, lecture) = await SetupScenarioAsync();
+        var (context, instructor, _, unpaidStudent, _, lecture) = await SetupScenarioAsync();
         var assignment = new Assignment("HW", "Desc", Now.AddDays(7), lecture.Id);
         context.Set<Assignment>().Add(assignment);
         var submission = new AssignmentSubmission(assignment.Id, unpaidStudent.Id);
@@ -155,7 +156,7 @@ public sealed class AcademicGatingTests
             new StubUserIdentityService(),
             AcademicTestData.CreateInstructorAccess(context, instructor),
             new RecordingFileStorageService(),
-            new NoOpSubmissionNotificationDispatcher(),
+            new RecordingSubmissionNotificationDispatcher(),
             TestMapper.Create());
 
         await Assert.ThrowsAsync<NotFoundException>(() => service.GetOwnSubmissionAsync(assignment.Id));
@@ -177,12 +178,46 @@ public sealed class AcademicGatingTests
     {
         var (context, instructor, _, unpaidStudent, _, lecture) = await SetupScenarioAsync();
         var dispatcher = new RecordingLectureNotificationDispatcher();
-        var instructorService = CreateLectureService(context, instructor, new StubCurrentActor(instructor: instructor), dispatcher);
+        var instructorService = CreateLectureService(context, instructor, new StubCurrentActor(), dispatcher);
 
         await instructorService.CancelAsync(lecture.Id, new LectureCancelRequest { Reason = "Instrument je pokvaren" });
 
         var call = Assert.Single(dispatcher.CancelledCalls);
         Assert.Contains(unpaidStudent.AppUserId, call.EnrolledStudentUserIds);
+    }
+
+    [Theory]
+    [InlineData(EnrollmentStatus.Pending)]
+    [InlineData(EnrollmentStatus.Rejected)]
+    public async Task ContentAccess_IsDenied_WhenEnrollmentIsNotActive_EvenWithPaidTimeLeft(EnrollmentStatus status)
+    {
+        var (context, _, _, _, course, _) = await SetupScenarioAsync();
+        var student = new Student(98, Now);
+        context.Set<Student>().Add(student);
+        await context.SaveChangesAsync();
+        var enrollment = new Enrollment(student.Id, course.Id, status);
+        enrollment.ExtendPaidUntil(Now, 30);
+        context.Set<Enrollment>().Add(enrollment);
+        await context.SaveChangesAsync();
+
+        Assert.False(await context.IsEnrolledAndPaidAsync(student.Id, course.Id, Now));
+    }
+
+    [Fact]
+    public async Task ContentAccess_EndsAfterTheExactPaidUntilInstant()
+    {
+        var (context, _, _, _, course, _) = await SetupScenarioAsync();
+        var student = new Student(98, Now);
+        context.Set<Student>().Add(student);
+        await context.SaveChangesAsync();
+        var enrollment = new Enrollment(student.Id, course.Id, EnrollmentStatus.Active);
+        enrollment.ExtendPaidUntil(Now.AddDays(-30), 30);
+        context.Set<Enrollment>().Add(enrollment);
+        await context.SaveChangesAsync();
+
+        Assert.Equal(Now, enrollment.PaidUntil);
+        Assert.True(await context.IsEnrolledAndPaidAsync(student.Id, course.Id, Now));
+        Assert.False(await context.IsEnrolledAndPaidAsync(student.Id, course.Id, Now.AddTicks(1)));
     }
 
     private static async Task<(ENoteContext Context, Instructor Instructor, Student PaidStudent, Student UnpaidStudent, Course Course, Lecture Lecture)> SetupScenarioAsync()
@@ -206,7 +241,7 @@ public sealed class AcademicGatingTests
             actor,
             actor,
             AcademicTestData.CreateInstructorAccess(context, instructor),
-            dispatcher ?? new NoOpLectureNotificationDispatcher(),
+            dispatcher ?? new RecordingLectureNotificationDispatcher(),
             new StubDisplayNameService(),
             NullLogger<LectureService>.Instance,
             TestMapper.Create(),

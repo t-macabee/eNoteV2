@@ -451,11 +451,6 @@ public sealed class CourseService(IAppDbContext context, IMapper mapper, ICurren
 
     private async Task EnsureNoActivePaidAccessAsync(Course entity, CancellationToken cancellationToken)
     {
-        if (entity.Price <= 0)
-        {
-            return;
-        }
-
         var latestPaidUntil = await context.Set<Enrollment>()
             .Where(e => e.CourseId == entity.Id
                 && e.EnrollmentStatus == EnrollmentStatus.Active
