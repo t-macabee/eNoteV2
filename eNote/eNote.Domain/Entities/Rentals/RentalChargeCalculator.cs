@@ -16,11 +16,6 @@ public static class RentalChargeCalculator
         var start = pickedUpAt.Value;
         var end = returnedAt ?? now;
 
-        if (end < start)
-        {
-            end = start;
-        }
-
         var daysCharged = (int)Math.Ceiling((end - start).TotalDays);
 
         if (daysCharged < 1)
@@ -30,6 +25,9 @@ public static class RentalChargeCalculator
 
         var dailyFee = fee / DaysPerBillingCycle;
 
-        return new RentalCharges(DaysCharged: daysCharged, DailyFee: decimal.Round(dailyFee, 2), TotalFee: decimal.Round(daysCharged * dailyFee, 2));
+        return new RentalCharges(
+            DaysCharged: daysCharged,
+            DailyFee: decimal.Round(dailyFee, 2, MidpointRounding.AwayFromZero),
+            TotalFee: decimal.Round(daysCharged * dailyFee, 2, MidpointRounding.AwayFromZero));
     }
 }

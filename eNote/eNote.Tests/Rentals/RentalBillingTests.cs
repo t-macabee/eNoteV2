@@ -43,23 +43,6 @@ public sealed class RentalBillingTests
     }
 
     [Fact]
-    public void RentalChargeCalculator_Calculate_DirectInvocationMatchesCalculations()
-    {
-        var pickedUp = Now.AddDays(-45);
-        var activeCharges = RentalChargeCalculator.Calculate(pickedUp, null, InstrumentRentalStatus.Active, 50m, Now);
-        Assert.Equal(45, activeCharges.DaysCharged);
-        Assert.Equal(75m, activeCharges.TotalFee);
-
-        var earlyCharges = RentalChargeCalculator.Calculate(Now.AddDays(-10), Now.AddDays(-5), InstrumentRentalStatus.ReturnedEarly, 30m, Now);
-        Assert.Equal(5, earlyCharges.DaysCharged);
-        Assert.Equal(1m, earlyCharges.DailyFee);
-        Assert.Equal(5m, earlyCharges.TotalFee);
-
-        var ineligibleCharges = RentalChargeCalculator.Calculate(null, null, InstrumentRentalStatus.Pending, 30m, Now);
-        Assert.Null(ineligibleCharges.TotalFee);
-    }
-
-    [Fact]
     public void CalculateCharges_After89Days_CompleteAndReturnEarlyChargeTheSame()
     {
         var completed = RentalChargeCalculator.Calculate(Now.AddDays(-89), Now, InstrumentRentalStatus.Completed, 45m, Now);
@@ -81,5 +64,58 @@ public sealed class RentalBillingTests
 
         Assert.Equal(1, charges.DaysCharged);
         Assert.Equal(1m, charges.TotalFee);
+    }
+
+    [Fact]
+    public void CalculateCharges_PartialDay_RoundsUpToNextDay()
+    {
+        var pickedUpAt = Now.AddDays(-1).AddHours(-1);
+
+        var charges = RentalChargeCalculator.Calculate(pickedUpAt, Now, InstrumentRentalStatus.Completed, 30m, Now);
+
+        Assert.Equal(2, charges.DaysCharged);
+        Assert.Equal(2m, charges.TotalFee);
+    }
+
+    [Fact]
+    public void CalculateCharges_FeeNotDivisibleByCycle_RoundsTotalFromUnroundedDailyFee()
+    {
+        var charges = RentalChargeCalculator.Calculate(Now.AddDays(-10), Now, InstrumentRentalStatus.Completed, 35m, Now);
+
+        Assert.Equal(10, charges.DaysCharged);
+        Assert.Equal(1.17m, charges.DailyFee);
+        Assert.Equal(11.67m, charges.TotalFee);
+    }
+
+    [Fact]
+    public void CalculateCharges_HalfCent_RoundsAwayFromZero()
+    {
+        var charges = RentalChargeCalculator.Calculate(Now, Now, InstrumentRentalStatus.Completed, 10.35m, Now);
+
+        Assert.Equal(1, charges.DaysCharged);
+        Assert.Equal(0.35m, charges.DailyFee);
+        Assert.Equal(0.35m, charges.TotalFee);
+    }
+
+    [Fact]
+    public void CalculateCharges_ReturnedBeforePickup_ChargesOneDay()
+    {
+        var charges = RentalChargeCalculator.Calculate(Now, Now.AddDays(-1), InstrumentRentalStatus.Completed, 30m, Now);
+
+        Assert.Equal(1, charges.DaysCharged);
+        Assert.Equal(1m, charges.TotalFee);
+    }
+
+    [Theory]
+    [InlineData(InstrumentRentalStatus.Pending)]
+    [InlineData(InstrumentRentalStatus.Approved)]
+    [InlineData(InstrumentRentalStatus.Rejected)]
+    [InlineData(InstrumentRentalStatus.Canceled)]
+    public void CalculateCharges_NonBillingStatusWithPickupDate_DoesNotCharge(InstrumentRentalStatus status)
+    {
+        var charges = RentalChargeCalculator.Calculate(Now.AddDays(-5), null, status, 30m, Now);
+
+        Assert.Null(charges.TotalFee);
+        Assert.Null(charges.DaysCharged);
     }
 }
