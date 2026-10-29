@@ -48,7 +48,27 @@ public sealed class DotEnvConfigurationTests : IDisposable
 
         var found = DotEnvConfiguration.FindEnvFile(isolated);
 
-        Assert.True(found is null || !found.StartsWith(root, StringComparison.Ordinal));
+        Assert.Null(found);
+    }
+
+    [Fact]
+    public void Load_KeepsValuesThatAreAlreadySet()
+    {
+        var variable = $"ENOTE_TEST_{Guid.NewGuid():N}";
+        var envFile = Path.Combine(root, ".env");
+        File.WriteAllText(envFile, $"{variable}=fromfile");
+        Environment.SetEnvironmentVariable(variable, "fromenv");
+
+        try
+        {
+            DotEnvConfiguration.Load(envFile);
+
+            Assert.Equal("fromenv", Environment.GetEnvironmentVariable(variable));
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(variable, null);
+        }
     }
 
     private static string WriteEnv(string directory)

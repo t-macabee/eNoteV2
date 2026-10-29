@@ -10,9 +10,11 @@ public static class DotEnvConfiguration
 
         if (envFile is not null)
         {
-            Env.Load(envFile);
+            Load(envFile);
         }
     }
+
+    public static void Load(string envFile) => Env.NoClobber().Load(envFile);
 
     public static string? FindEnvFile(params string[] startDirectories)
     {
