@@ -31,6 +31,28 @@ public sealed class PagingExtensionsTests
         Assert.Equal(new[] { 1, 2, 3 }, result.Items);
     }
 
+    [Fact]
+    public async Task ToPagedResultAsync_ClampsPageSizeToMax()
+    {
+        await using var context = await CreateContextWithTiedCoursesAsync();
+
+        var result = await context.Set<Course>().AsNoTracking()
+            .ToPagedResultAsync(new CourseSearchObject { Page = 1, PageSize = 1000 }, c => c.Id);
+
+        Assert.Equal(PagingLimits.MaxPageSize, result.PageSize);
+    }
+
+    [Fact]
+    public async Task ToPagedResultAsync_WithoutTotalCount_LeavesTotalCountNull()
+    {
+        await using var context = await CreateContextWithTiedCoursesAsync();
+
+        var result = await context.Set<Course>().AsNoTracking()
+            .ToPagedResultAsync(new CourseSearchObject { IncludeTotalCount = false }, c => c.Id);
+
+        Assert.Null(result.TotalCount);
+    }
+
     private static async Task<ENoteContext> CreateContextWithTiedCoursesAsync()
     {
         var context = TestDbContextFactory.CreateContext(Now);

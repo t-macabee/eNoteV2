@@ -90,9 +90,14 @@ public sealed class TuitionPaymentServiceTests
     [Fact]
     public async Task CreateIntentAsync_WrongStudent_Throws_NotFound()
     {
-        var (context, _, _, enrollment) = await SetupScenarioAsync(price: 100m);
+        var (context, _, course, enrollment) = await SetupScenarioAsync(price: 100m);
         var otherStudent = new Student(88, Now);
         context.Set<Student>().Add(otherStudent);
+        await context.SaveChangesAsync();
+        var otherCourse = new Course("Other", null, 100m, Now.AddDays(-1), null, course.InstructorId);
+        context.Set<Course>().Add(otherCourse);
+        await context.SaveChangesAsync();
+        context.Set<Enrollment>().Add(new Enrollment(otherStudent.Id, otherCourse.Id, EnrollmentStatus.Active));
         await context.SaveChangesAsync();
 
         var service = CreateService(context, otherStudent);
@@ -421,6 +426,24 @@ public sealed class TuitionPaymentServiceTests
     }
 
     [Fact]
+    public async Task GetLatestAsync_WrongStudent_Throws_NotFound()
+    {
+        var (context, _, course, enrollment) = await SetupScenarioAsync(price: 100m);
+        context.Set<CoursePayment>().Add(new CoursePayment(enrollment.Id, "pi_1", 10000, "bam", PaymentStatus.Succeeded));
+        var otherStudent = new Student(88, Now);
+        context.Set<Student>().Add(otherStudent);
+        await context.SaveChangesAsync();
+        var otherCourse = new Course("Other", null, 100m, Now.AddDays(-1), null, course.InstructorId);
+        context.Set<Course>().Add(otherCourse);
+        await context.SaveChangesAsync();
+        context.Set<Enrollment>().Add(new Enrollment(otherStudent.Id, otherCourse.Id, EnrollmentStatus.Active));
+        await context.SaveChangesAsync();
+        var service = CreateService(context, otherStudent);
+
+        await Assert.ThrowsAsync<NotFoundException>(() => service.GetLatestAsync(enrollment.Id));
+    }
+
+    [Fact]
     public async Task GetHistoryAsync_ReturnsPaymentsNewestFirst()
     {
         var (context, student, _, enrollment) = await SetupScenarioAsync(price: 100m);
@@ -446,10 +469,15 @@ public sealed class TuitionPaymentServiceTests
     [Fact]
     public async Task GetHistoryAsync_WrongStudent_Throws_NotFound()
     {
-        var (context, _, _, enrollment) = await SetupScenarioAsync(price: 100m);
+        var (context, _, course, enrollment) = await SetupScenarioAsync(price: 100m);
         context.Set<CoursePayment>().Add(new CoursePayment(enrollment.Id, "pi_1", 10000, "bam", PaymentStatus.Succeeded));
         var otherStudent = new Student(88, Now);
         context.Set<Student>().Add(otherStudent);
+        await context.SaveChangesAsync();
+        var otherCourse = new Course("Other", null, 100m, Now.AddDays(-1), null, course.InstructorId);
+        context.Set<Course>().Add(otherCourse);
+        await context.SaveChangesAsync();
+        context.Set<Enrollment>().Add(new Enrollment(otherStudent.Id, otherCourse.Id, EnrollmentStatus.Active));
         await context.SaveChangesAsync();
         var service = CreateService(context, otherStudent);
 
