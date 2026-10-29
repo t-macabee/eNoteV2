@@ -114,8 +114,9 @@ korisnike s historijom, a uplate, iznajmljivanja, ocjene i prisustvo su školski
 i finansijski zapisi. Zato `UserAccountService.CloseAccountAsync` zatvara račun
 i anonimizira lične podatke (ime, email, telefon, datum rođenja, slika,
 lozinka), a promijenjeni security stamp i `IsActive = false` prekidaju sve
-sesije. Zahtjevi za iznajmljivanje i upisi na čekanju ili aktivni se otkazuju,
-a otvoreni PaymentIntent-i se otkazuju na Stripe-u prije transakcije. Provjere
+sesije. Zahtjevi za iznajmljivanje na čekanju i upisi na čekanju ili aktivni
+se otkazuju, dok odobreno ili aktivno iznajmljivanje blokira brisanje, a otvoreni
+PaymentIntent-i se otkazuju na Stripe-u prije transakcije. Provjere
 najma i duga idu prije Stripe poziva, pa odbijeno brisanje ne mijenja nijednu
 uplatu. Slika profila se briše iz storagea tek nakon što transakcija prođe.
 Profil briše samo student; naloge instruktora i ostalog osoblja i dalje uređuje

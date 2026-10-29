@@ -1,6 +1,7 @@
 using eNote.Application.Common.Localization;
 using eNote.Application.Features.Identity.Users;
 using eNote.Application.Features.Identity.Users.Services;
+using eNote.Application.Features.Rentals.InstrumentRentals.Services;
 using eNote.Infrastructure.Identity;
 using eNote.Tests.TestUtils;
 using eNote.Domain.Entities.Communication;
@@ -46,12 +47,15 @@ public sealed class UserSelfServiceDeleteProfileTests
         Assert.True(user!.IsActive);
     }
 
-    [Fact]
-    public async Task DeleteProfileAsync_Blocks_WhenARentalIsApprovedOrActive()
+    [Theory]
+    [InlineData(InstrumentRentalStatus.Approved)]
+    [InlineData(InstrumentRentalStatus.Active)]
+    public async Task DeleteProfileAsync_Blocks_WhenARentalIsApprovedOrActive(InstrumentRentalStatus status)
     {
         var harness = await CreateHarnessAsync();
         var rental = await SeedRentalAsync(harness, completed: false, paid: false);
-        rental.Approve(50m, null, Now.AddDays(-1), 1);
+        RentalTestData.AdvanceTo(rental, status, Now, approvedAt: Now.AddDays(-1), pickedUpAt: Now);
+
         await harness.Context.SaveChangesAsync();
         var service = CreateService(harness);
 
@@ -66,7 +70,7 @@ public sealed class UserSelfServiceDeleteProfileTests
         var harness = await CreateHarnessAsync();
         await SeedRentalAsync(harness, completed: true, paid: false);
         var approved = await SeedRentalAsync(harness, completed: false, paid: false);
-        approved.Approve(50m, null, Now.AddDays(-1), 1);
+        RentalTestData.AdvanceTo(approved, InstrumentRentalStatus.Approved, Now, approvedAt: Now.AddDays(-1));
         await harness.Context.SaveChangesAsync();
         var service = CreateService(harness);
 
@@ -271,6 +275,85 @@ public sealed class UserSelfServiceDeleteProfileTests
         Assert.Equal(1, await harness.Context.Set<Student>().CountAsync());
     }
 
+    [Fact]
+    public async Task DeleteProfileAsync_RecordsStudentCancelForPendingRental()
+    {
+        var harness = await CreateHarnessAsync();
+        var pendingRental = await SeedRentalAsync(harness, completed: false, paid: false);
+        var service = CreateService(harness);
+
+        await DeleteAsync(service);
+
+        var call = Assert.Single(harness.RentalNotifications.TransitionCalls);
+        Assert.Equal(RentalTrigger.Cancel, call.Trigger);
+        Assert.Equal(harness.Student.AppUserId, call.ActorUserId);
+        Assert.Equal(pendingRental.Id, call.Rental.Id);
+        Assert.Equal(Messages.ProfileDeletedRentalCancelNote, call.Rental.Note);
+    }
+
+    [Fact]
+    public async Task DeleteProfileAsync_IgnoresOtherStudentsData()
+    {
+        var harness = await CreateHarnessAsync();
+        var other = await SeedOtherStudentAsync(harness);
+
+        var unpaid = await SeedRentalAsync(harness, completed: true, paid: false, other.Student.Id);
+        var approved = await SeedRentalAsync(harness, completed: false, paid: false, other.Student.Id);
+        RentalTestData.AdvanceTo(approved, InstrumentRentalStatus.Approved, Now, approvedAt: Now.AddDays(-1));
+        await harness.Context.SaveChangesAsync();
+        var pending = await SeedRentalAsync(harness, completed: false, paid: false, other.Student.Id);
+        var activeEnrollment = await SeedEnrollmentAsync(harness, EnrollmentStatus.Active, other.Student.Id);
+
+        harness.Context.Set<RentalPayment>().Add(new RentalPayment(
+            unpaid.Id,
+            unpaid.MusicStoreId,
+            "pi_other_rental",
+            5000,
+            "BAM",
+            PaymentStatus.RequiresAction));
+        harness.Context.Set<CoursePayment>().Add(new CoursePayment(
+            activeEnrollment.Id,
+            "pi_other_course",
+            10000,
+            "BAM",
+            PaymentStatus.RequiresAction));
+        harness.Context.Set<Notification>().Add(new Notification(
+            other.User.Id,
+            "Naslov",
+            "Tekst",
+            Now.AddDays(-1)));
+        harness.Context.Set<InstrumentView>().Add(new InstrumentView(
+            other.User.Id,
+            pending.InstrumentId,
+            Now.AddDays(-1)));
+        await harness.Context.SaveChangesAsync();
+        harness.Gateway.AddIntent("pi_other_rental", 5000, "BAM");
+        harness.Gateway.AddIntent("pi_other_course", 10000, "BAM");
+        var service = CreateService(harness);
+
+        await DeleteAsync(service);
+
+        var rentals = await harness.Context.Set<InstrumentRental>().AsNoTracking().ToListAsync();
+        Assert.Equal(InstrumentRentalStatus.Completed, rentals.Single(x => x.Id == unpaid.Id).RentalStatus);
+        Assert.Equal(InstrumentRentalStatus.Approved, rentals.Single(x => x.Id == approved.Id).RentalStatus);
+        Assert.Equal(InstrumentRentalStatus.Pending, rentals.Single(x => x.Id == pending.Id).RentalStatus);
+        Assert.All(
+            await harness.Context.Set<RentalPayment>().AsNoTracking().ToListAsync(),
+            payment => Assert.Equal(PaymentStatus.RequiresAction, payment.Status));
+        Assert.All(
+            await harness.Context.Set<CoursePayment>().AsNoTracking().ToListAsync(),
+            payment => Assert.Equal(PaymentStatus.RequiresAction, payment.Status));
+        Assert.Equal(
+            EnrollmentStatus.Active,
+            (await harness.Context.Set<Enrollment>().AsNoTracking().SingleAsync(x => x.Id == activeEnrollment.Id)).EnrollmentStatus);
+        Assert.Equal(1, await harness.Context.Set<Notification>().CountAsync());
+        Assert.Equal(1, await harness.Context.Set<InstrumentView>().CountAsync());
+        Assert.Equal(2, await harness.Context.Set<Student>().CountAsync());
+        Assert.Empty(harness.Gateway.RetrieveCalls);
+        Assert.Empty(harness.Gateway.CancelCalls);
+        Assert.Empty(harness.RentalNotifications.TransitionCalls);
+    }
+
     private static Task DeleteAsync(UserSelfService service) =>
         service.DeleteProfileAsync(new DeleteProfileRequest { CurrentPassword = "Password1!" });
 
@@ -282,6 +365,15 @@ public sealed class UserSelfServiceDeleteProfileTests
             new FixedClock(Now),
             harness.Gateway,
             harness.FileStorage,
+            new RentalCommandService(
+                harness.Context,
+                TestMapper.Create(),
+                new FixedClock(Now),
+                harness.Actor,
+                harness.Actor,
+                harness.Actor,
+                harness.RentalNotifications,
+                new StubDisplayNameService()),
             NullLogger<UserSelfService>.Instance);
 
     private static async Task<Harness> CreateHarnessAsync()
@@ -308,13 +400,42 @@ public sealed class UserSelfServiceDeleteProfileTests
         await context.SaveChangesAsync();
 
         var actor = new StubCurrentActor(student: student);
-        return new Harness(context, identity.UserManager, fileStorage, accountService, new FakePaymentGateway(), actor, student);
+        return new Harness(
+            context,
+            identity.UserManager,
+            fileStorage,
+            accountService,
+            new FakePaymentGateway(),
+            new RecordingNotificationDispatcher(),
+            actor,
+            student);
+    }
+
+    private static async Task<(AppUser User, Student Student)> SeedOtherStudentAsync(Harness harness)
+    {
+        var user = new AppUser
+        {
+            UserName = "other",
+            Email = "other@enote.com",
+            FirstName = "Other",
+            LastName = "Student",
+            IsActive = true
+        };
+        harness.Context.Set<AppUser>().Add(user);
+        await harness.Context.SaveChangesAsync();
+
+        var student = new Student(user.Id, Now.AddMonths(-2));
+        student.UpdateMembership(Now.AddMonths(1));
+        harness.Context.Set<Student>().Add(student);
+        await harness.Context.SaveChangesAsync();
+
+        return (user, student);
     }
 
     private static async Task<Enrollment> SeedActiveEnrollmentAsync(Harness harness) =>
         await SeedEnrollmentAsync(harness, EnrollmentStatus.Active);
 
-    private static async Task<Enrollment> SeedEnrollmentAsync(Harness harness, EnrollmentStatus status)
+    private static async Task<Enrollment> SeedEnrollmentAsync(Harness harness, EnrollmentStatus status, int? studentId = null)
     {
         var instructor = new Instructor(1000 + await harness.Context.Set<Instructor>().CountAsync());
         harness.Context.Set<Instructor>().Add(instructor);
@@ -331,7 +452,7 @@ public sealed class UserSelfServiceDeleteProfileTests
         harness.Context.Set<Course>().Add(course);
         await harness.Context.SaveChangesAsync();
 
-        var enrollment = new Enrollment(harness.Student.Id, course.Id, status);
+        var enrollment = new Enrollment(studentId ?? harness.Student.Id, course.Id, status);
 
         if (status == EnrollmentStatus.Active)
         {
@@ -348,21 +469,19 @@ public sealed class UserSelfServiceDeleteProfileTests
         await harness.Context.Set<Instrument>().FirstOrDefaultAsync()
         ?? await RentalTestData.SeedInstrumentAsync(harness.Context);
 
-    private static async Task<InstrumentRental> SeedRentalAsync(Harness harness, bool completed, bool paid)
+    private static async Task<InstrumentRental> SeedRentalAsync(Harness harness, bool completed, bool paid, int? studentId = null)
     {
         var instrument = await SeedInstrumentAsync(harness);
         var rental = new InstrumentRental(
             instrument.Id,
-            harness.Student.Id,
+            studentId ?? harness.Student.Id,
             instrument.MusicStoreId,
             Now.AddDays(-10),
             null);
 
         if (completed)
         {
-            rental.Approve(50m, null, Now.AddDays(-9), 1);
-            rental.Pickup(Now.AddDays(-9));
-            rental.Complete(Now.AddDays(-3), null);
+            RentalTestData.AdvanceTo(rental, InstrumentRentalStatus.Completed, Now, approvedAt: Now.AddDays(-9), pickedUpAt: Now.AddDays(-9), finishedAt: Now.AddDays(-3));
         }
 
         if (paid)
@@ -382,6 +501,7 @@ public sealed class UserSelfServiceDeleteProfileTests
         RecordingFileStorageService FileStorage,
         UserAccountService AccountService,
         FakePaymentGateway Gateway,
+        RecordingNotificationDispatcher RentalNotifications,
         StubCurrentActor Actor,
         Student Student);
 }

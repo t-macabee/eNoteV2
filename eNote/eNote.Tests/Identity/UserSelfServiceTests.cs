@@ -1,5 +1,6 @@
 using eNote.Application.Features.Identity.Users;
 using eNote.Application.Features.Identity.Users.Services;
+using eNote.Application.Features.Rentals.InstrumentRentals.Services;
 using eNote.Tests.TestUtils;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -65,15 +66,29 @@ public sealed class UserSelfServiceTests
         Assert.Equal(11, account.PictureDeleteUserId);
     }
 
-    private static UserSelfService CreateService(RecordingUserAccountService account, int userId) =>
-        new(
+    private static UserSelfService CreateService(RecordingUserAccountService account, int userId)
+    {
+        var context = TestDbContextFactory.CreateContext(Now);
+        var actor = new StubCurrentActor(userId: userId);
+
+        return new(
             account,
-            new StubCurrentActor(userId: userId),
-            TestDbContextFactory.CreateContext(Now),
+            actor,
+            context,
             new FixedClock(Now),
             new FakePaymentGateway(),
             new StubFileStorageService(),
+            new RentalCommandService(
+                context,
+                TestMapper.Create(),
+                new FixedClock(Now),
+                actor,
+                actor,
+                actor,
+                new RecordingNotificationDispatcher(),
+                new StubDisplayNameService()),
             NullLogger<UserSelfService>.Instance);
+    }
 
     private sealed class RecordingUserAccountService : IUserAccountService
     {

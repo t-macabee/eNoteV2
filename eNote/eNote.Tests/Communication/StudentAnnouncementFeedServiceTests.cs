@@ -23,7 +23,7 @@ public sealed class StudentAnnouncementFeedServiceTests
         harness.Context.Set<Instrument>().Add(instrument);
         await harness.Context.SaveChangesAsync();
         var rental = new InstrumentRental(instrument.Id, harness.Student.Id, store.Id, Now, null);
-        rental.Approve(50m, null, Now, 1);
+        RentalTestData.AdvanceTo(rental, InstrumentRentalStatus.Approved, Now);
         harness.Context.Set<InstrumentRental>().Add(rental);
         await harness.Context.SaveChangesAsync();
 
@@ -57,9 +57,7 @@ public sealed class StudentAnnouncementFeedServiceTests
         harness.Context.Set<Instrument>().Add(instrument);
         await harness.Context.SaveChangesAsync();
         var rental = new InstrumentRental(instrument.Id, harness.Student.Id, store.Id, Now, null);
-        rental.Approve(50m, null, Now, 1);
-        rental.Pickup(Now);
-        rental.Complete(Now, null);
+        RentalTestData.AdvanceTo(rental, InstrumentRentalStatus.Completed, Now);
         harness.Context.Set<InstrumentRental>().Add(rental);
         await harness.Context.SaveChangesAsync();
 

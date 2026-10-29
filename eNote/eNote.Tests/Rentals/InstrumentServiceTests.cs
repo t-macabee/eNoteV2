@@ -159,7 +159,7 @@ public sealed class InstrumentServiceTests
         var instrumentRented = await SeedInstrumentAsync(ctx, store.Id, type.Id, "Stratocaster", "Fender");
 
         var blockingRental = new InstrumentRental(instrumentRented.Id, 100, store.Id, Now, null);
-        blockingRental.Approve(50m, null, Now, 1);
+        RentalTestData.AdvanceTo(blockingRental, InstrumentRentalStatus.Approved, Now);
         ctx.Set<InstrumentRental>().Add(blockingRental);
         await ctx.SaveChangesAsync();
 
@@ -203,7 +203,7 @@ public sealed class InstrumentServiceTests
         var instrument = await SeedInstrumentAsync(ctx, store.Id, type.Id, "Stratocaster", "Fender");
 
         var rental = new InstrumentRental(instrument.Id, 100, store.Id, Now, null);
-        rental.Approve(50m, null, Now, 1);
+        RentalTestData.AdvanceTo(rental, InstrumentRentalStatus.Approved, Now);
         ctx.Set<InstrumentRental>().Add(rental);
         await ctx.SaveChangesAsync();
 
@@ -226,7 +226,7 @@ public sealed class InstrumentServiceTests
         var instrument = await SeedInstrumentAsync(ctx, store.Id, type.Id, "Stratocaster", "Fender");
 
         var rental = new InstrumentRental(instrument.Id, 100, store.Id, Now, null);
-        rental.Approve(50m, null, Now, 1);
+        RentalTestData.AdvanceTo(rental, InstrumentRentalStatus.Approved, Now);
         ctx.Set<InstrumentRental>().Add(rental);
         await ctx.SaveChangesAsync();
 
@@ -407,32 +407,7 @@ public sealed class InstrumentServiceTests
     {
         var rental = new InstrumentRental(instrument.Id, student.Id, instrument.MusicStoreId, Now, "Original request note.");
 
-        switch (status)
-        {
-            case InstrumentRentalStatus.Approved:
-                rental.Approve(50m, null, Now, 1);
-                break;
-            case InstrumentRentalStatus.Active:
-                rental.Approve(50m, null, Now, 1);
-                rental.Pickup(Now);
-                break;
-            case InstrumentRentalStatus.Completed:
-                rental.Approve(50m, null, Now, 1);
-                rental.Pickup(Now);
-                rental.Complete(Now, null);
-                break;
-            case InstrumentRentalStatus.Rejected:
-                rental.Reject(Now, "Ranije odbijen.", 1);
-                break;
-            case InstrumentRentalStatus.Canceled:
-                rental.Cancel("Ranije otkazan.");
-                break;
-            case InstrumentRentalStatus.ReturnedEarly:
-                rental.Approve(50m, null, Now, 1);
-                rental.Pickup(Now);
-                rental.ReturnEarly(Now, null);
-                break;
-        }
+        RentalTestData.AdvanceTo(rental, status, Now);
 
         ctx.Set<InstrumentRental>().Add(rental);
         await ctx.SaveChangesAsync();

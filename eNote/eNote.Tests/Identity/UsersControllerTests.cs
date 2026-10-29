@@ -3,6 +3,7 @@ using eNote.Application.Common.Localization;
 using eNote.Application.Features.Identity.Auth.Services;
 using eNote.Application.Features.Identity.Users;
 using eNote.Application.Features.Identity.Users.Services;
+using eNote.Application.Features.Rentals.InstrumentRentals.Services;
 using eNote.Tests.TestUtils;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -69,13 +70,24 @@ public sealed class UsersControllerTests
         context.Set<Student>().Add(student);
         context.SaveChanges();
 
+        var actor = new StubCurrentActor(userId: 5);
+
         return new UserSelfService(
             new PasswordCheckingAccountService(passwordIsValid),
-            new StubCurrentActor(userId: 5),
+            actor,
             context,
             new FixedClock(Now),
             new FakePaymentGateway(),
             new StubFileStorageService(),
+            new RentalCommandService(
+                context,
+                TestMapper.Create(),
+                new FixedClock(Now),
+                actor,
+                actor,
+                actor,
+                new RecordingNotificationDispatcher(),
+                new StubDisplayNameService()),
             NullLogger<UserSelfService>.Instance);
     }
 

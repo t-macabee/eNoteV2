@@ -51,7 +51,7 @@ public sealed class InstrumentRental : AuditableEntity, ITenantScoped
         RentalStatus = InstrumentRentalStatus.Pending;
     }
 
-    public void Approve(decimal fee, string? note, DateTime approvedAt, int approvedById)
+    private void Approve(decimal fee, string? note, DateTime approvedAt, int approvedById)
     {
         Fee = fee;
         Note = note;
@@ -60,7 +60,7 @@ public sealed class InstrumentRental : AuditableEntity, ITenantScoped
         RentalStatus = InstrumentRentalStatus.Approved;
     }
 
-    public void Reject(DateTime rejectedAt, string? note, int rejectedById)
+    private void Reject(DateTime rejectedAt, string? note, int rejectedById)
     {
         Note = note;
         RejectedAt = rejectedAt;
@@ -68,13 +68,13 @@ public sealed class InstrumentRental : AuditableEntity, ITenantScoped
         RentalStatus = InstrumentRentalStatus.Rejected;
     }
 
-    public void Cancel(string? note)
+    private void Cancel(string? note)
     {
         Note = note;
         RentalStatus = InstrumentRentalStatus.Canceled;
     }
 
-    public void Pickup(DateTime pickedUpAt, string? note = null)
+    private void Pickup(DateTime pickedUpAt, string? note = null)
     {
         PickedUpAt = pickedUpAt;
         RentalStatus = InstrumentRentalStatus.Active;
@@ -84,14 +84,14 @@ public sealed class InstrumentRental : AuditableEntity, ITenantScoped
         }
     }
 
-    public void Complete(DateTime returnedAt, string? note)
+    private void Complete(DateTime returnedAt, string? note)
     {
         Note = note;
         ReturnedAt = returnedAt;
         RentalStatus = InstrumentRentalStatus.Completed;
     }
 
-    public void ReturnEarly(DateTime returnedAt, string? note)
+    private void ReturnEarly(DateTime returnedAt, string? note)
     {
         Note = note;
         ReturnedAt = returnedAt;

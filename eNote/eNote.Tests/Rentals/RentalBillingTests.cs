@@ -1,3 +1,5 @@
+using eNote.Tests.TestUtils;
+
 namespace eNote.Tests.Rentals;
 
 public sealed class RentalBillingTests
@@ -18,8 +20,7 @@ public sealed class RentalBillingTests
     public void CalculateCharges_ActiveRental_ChargesDaysSoFar()
     {
         var rental = new InstrumentRental(1, 1, 1, Now.AddDays(-10), null);
-        rental.Approve(50m, null, Now.AddDays(-5), 1);
-        rental.Pickup(Now.AddDays(-3));
+        RentalTestData.AdvanceTo(rental, InstrumentRentalStatus.Active, Now, approvedAt: Now.AddDays(-5), pickedUpAt: Now.AddDays(-3));
 
         var charges = rental.CalculateCharges(Now);
 
@@ -31,9 +32,7 @@ public sealed class RentalBillingTests
     public void CalculateCharges_ReturnedEarly_UsesProratedDailyFee()
     {
         var rental = new InstrumentRental(1, 1, 1, Now.AddDays(-20), null);
-        rental.Approve(30m, null, Now.AddDays(-10), 1);
-        rental.Pickup(Now.AddDays(-5));
-        rental.ReturnEarly(Now.AddDays(-2), null);
+        RentalTestData.AdvanceTo(rental, InstrumentRentalStatus.ReturnedEarly, Now, fee: 30m, approvedAt: Now.AddDays(-10), pickedUpAt: Now.AddDays(-5), finishedAt: Now.AddDays(-2));
 
         var charges = rental.CalculateCharges(Now);
 

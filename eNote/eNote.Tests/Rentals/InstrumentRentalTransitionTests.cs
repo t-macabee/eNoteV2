@@ -1,3 +1,5 @@
+using eNote.Tests.TestUtils;
+
 namespace eNote.Tests.Rentals;
 
 public sealed class InstrumentRentalTransitionTests
@@ -161,7 +163,7 @@ public sealed class InstrumentRentalTransitionTests
     public void Pickup_Succeeds_SetsActiveStatus()
     {
         var rental = new InstrumentRental(1, 1, 1, Now, null);
-        rental.Approve(50m, null, Now, 10);
+        RentalTestData.AdvanceTo(rental, InstrumentRentalStatus.Approved, Now, userId: 10);
         var ctx = new RentalTransitionContext { UserId = 10, Actor = RentalActor.StoreEmployee, HasInstrumentLockConflict = false, IsInstrumentInactive = false, MonthlyFee = 50m };
 
         var result = rental.Transition(RentalTrigger.Pickup, ctx, Now);
@@ -175,8 +177,7 @@ public sealed class InstrumentRentalTransitionTests
     public void Complete_Succeeds_SetsCompletedStatus()
     {
         var rental = new InstrumentRental(1, 1, 1, Now, null);
-        rental.Approve(50m, null, Now, 10);
-        rental.Pickup(Now);
+        RentalTestData.AdvanceTo(rental, InstrumentRentalStatus.Active, Now, userId: 10);
         var ctx = new RentalTransitionContext { UserId = 10, Actor = RentalActor.StoreEmployee, HasInstrumentLockConflict = false, IsInstrumentInactive = false, MonthlyFee = 50m };
 
         var result = rental.Transition(RentalTrigger.Complete, ctx, Now);
@@ -190,8 +191,7 @@ public sealed class InstrumentRentalTransitionTests
     public void ReturnEarly_Succeeds_SetsReturnedEarlyStatus()
     {
         var rental = new InstrumentRental(1, 1, 1, Now, null);
-        rental.Approve(50m, null, Now, 10);
-        rental.Pickup(Now);
+        RentalTestData.AdvanceTo(rental, InstrumentRentalStatus.Active, Now, userId: 10);
         var ctx = new RentalTransitionContext { UserId = 10, Actor = RentalActor.StoreEmployee, HasInstrumentLockConflict = false, IsInstrumentInactive = false, MonthlyFee = 50m };
 
         var result = rental.Transition(RentalTrigger.ReturnEarly, ctx, Now);
@@ -253,8 +253,7 @@ public sealed class InstrumentRentalTransitionTests
     public void Complete_WithoutNote_KeepsTheNoteFromApproval()
     {
         var rental = new InstrumentRental(1, 1, 1, Now, null);
-        rental.Approve(50m, "Dolazi u petak.", Now, 10);
-        rental.Pickup(Now);
+        RentalTestData.AdvanceTo(rental, InstrumentRentalStatus.Active, Now, note: "Dolazi u petak.", userId: 10);
         var ctx = new RentalTransitionContext { UserId = 10, Actor = RentalActor.StoreEmployee, HasInstrumentLockConflict = false, IsInstrumentInactive = false, MonthlyFee = 50m };
 
         rental.Transition(RentalTrigger.Complete, ctx, Now);
@@ -266,32 +265,7 @@ public sealed class InstrumentRentalTransitionTests
     {
         var rental = new InstrumentRental(1, 1, 1, Now, null);
 
-        switch (status)
-        {
-            case InstrumentRentalStatus.Approved:
-                rental.Approve(50m, null, Now, 10);
-                break;
-            case InstrumentRentalStatus.Active:
-                rental.Approve(50m, null, Now, 10);
-                rental.Pickup(Now);
-                break;
-            case InstrumentRentalStatus.Completed:
-                rental.Approve(50m, null, Now, 10);
-                rental.Pickup(Now);
-                rental.Complete(Now, null);
-                break;
-            case InstrumentRentalStatus.ReturnedEarly:
-                rental.Approve(50m, null, Now, 10);
-                rental.Pickup(Now);
-                rental.ReturnEarly(Now, null);
-                break;
-            case InstrumentRentalStatus.Rejected:
-                rental.Reject(Now, "Razlog.", 10);
-                break;
-            case InstrumentRentalStatus.Canceled:
-                rental.Cancel(null);
-                break;
-        }
+        RentalTestData.AdvanceTo(rental, status, Now, userId: 10);
 
         return rental;
     }

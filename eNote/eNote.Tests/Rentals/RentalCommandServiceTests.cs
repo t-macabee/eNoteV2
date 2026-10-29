@@ -32,11 +32,10 @@ public sealed class RentalCommandServiceTests
         var student = await SeedStudentAsync(context, hasActiveMembership: true);
         var instrument = await RentalTestData.SeedInstrumentAsync(context);
         var existingRental = new InstrumentRental(instrument.Id, 999, instrument.MusicStoreId, Now, null);
-        existingRental.Approve(50m, null, Now, 1);
-        if (pickedUp)
-        {
-            existingRental.Pickup(Now);
-        }
+        RentalTestData.AdvanceTo(
+            existingRental,
+            pickedUp ? InstrumentRentalStatus.Active : InstrumentRentalStatus.Approved,
+            Now);
 
         context.Set<InstrumentRental>().Add(existingRental);
         await context.SaveChangesAsync();
@@ -108,7 +107,7 @@ public sealed class RentalCommandServiceTests
         var instrument = await RentalTestData.SeedInstrumentAsync(context);
         var otherInstrument = await SeedExtraInstrumentAsync(context, instrument);
         var canceled = new InstrumentRental(instrument.Id, 997, instrument.MusicStoreId, Now, null);
-        canceled.Cancel("Nije mi više potrebno.");
+        RentalTestData.AdvanceTo(canceled, InstrumentRentalStatus.Canceled, Now, note: "Nije mi više potrebno.");
         context.Set<InstrumentRental>().AddRange(
             new InstrumentRental(instrument.Id, 998, instrument.MusicStoreId, Now, null),
             new InstrumentRental(otherInstrument.Id, 999, otherInstrument.MusicStoreId, Now, null),
@@ -141,9 +140,7 @@ public sealed class RentalCommandServiceTests
         var student = await SeedStudentAsync(context, hasActiveMembership: true);
         var instrument = await RentalTestData.SeedInstrumentAsync(context);
         var unpaid = new InstrumentRental(instrument.Id, student.Id, instrument.MusicStoreId, Now.AddDays(-20), null);
-        unpaid.Approve(50m, null, Now.AddDays(-19), 1);
-        unpaid.Pickup(Now.AddDays(-19));
-        unpaid.Complete(Now.AddDays(-5), null);
+        RentalTestData.AdvanceTo(unpaid, InstrumentRentalStatus.Completed, Now, approvedAt: Now.AddDays(-19), pickedUpAt: Now.AddDays(-19), finishedAt: Now.AddDays(-5));
         context.Set<InstrumentRental>().Add(unpaid);
         await context.SaveChangesAsync();
 
@@ -162,9 +159,7 @@ public sealed class RentalCommandServiceTests
         var student = await SeedStudentAsync(context, hasActiveMembership: true);
         var instrument = await RentalTestData.SeedInstrumentAsync(context);
         var unpaid = new InstrumentRental(instrument.Id, student.Id, instrument.MusicStoreId, Now.AddDays(-20), null);
-        unpaid.Approve(50m, null, Now.AddDays(-19), 1);
-        unpaid.Pickup(Now.AddDays(-19));
-        unpaid.ReturnEarly(Now.AddDays(-5), null);
+        RentalTestData.AdvanceTo(unpaid, InstrumentRentalStatus.ReturnedEarly, Now, approvedAt: Now.AddDays(-19), pickedUpAt: Now.AddDays(-19), finishedAt: Now.AddDays(-5));
         context.Set<InstrumentRental>().Add(unpaid);
         await context.SaveChangesAsync();
 
@@ -183,9 +178,7 @@ public sealed class RentalCommandServiceTests
         var student = await SeedStudentAsync(context, hasActiveMembership: true);
         var instrument = await RentalTestData.SeedInstrumentAsync(context);
         var unpaid = new InstrumentRental(instrument.Id, student.Id, instrument.MusicStoreId, Now.AddDays(-20), null);
-        unpaid.Approve(50m, null, Now.AddDays(-19), 1);
-        unpaid.Pickup(Now.AddDays(-19));
-        unpaid.Complete(Now.AddDays(-5), null);
+        RentalTestData.AdvanceTo(unpaid, InstrumentRentalStatus.Completed, Now, approvedAt: Now.AddDays(-19), pickedUpAt: Now.AddDays(-19), finishedAt: Now.AddDays(-5));
         context.Set<InstrumentRental>().Add(unpaid);
         await context.SaveChangesAsync();
 
@@ -207,9 +200,7 @@ public sealed class RentalCommandServiceTests
         var student = await SeedStudentAsync(context, hasActiveMembership: true);
         var instrument = await RentalTestData.SeedInstrumentAsync(context);
         var paid = new InstrumentRental(instrument.Id, student.Id, instrument.MusicStoreId, Now.AddDays(-20), null);
-        paid.Approve(50m, null, Now.AddDays(-19), 1);
-        paid.Pickup(Now.AddDays(-19));
-        paid.Complete(Now.AddDays(-5), null);
+        RentalTestData.AdvanceTo(paid, InstrumentRentalStatus.Completed, Now, approvedAt: Now.AddDays(-19), pickedUpAt: Now.AddDays(-19), finishedAt: Now.AddDays(-5));
         paid.MarkPaid(5000, Now);
         context.Set<InstrumentRental>().Add(paid);
         await context.SaveChangesAsync();
@@ -237,15 +228,13 @@ public sealed class RentalCommandServiceTests
         switch (terminalStatus)
         {
             case InstrumentRentalStatus.Canceled:
-                previous.Cancel("Nije mi više potrebno.");
+                RentalTestData.AdvanceTo(previous, InstrumentRentalStatus.Canceled, Now, note: "Nije mi više potrebno.");
                 break;
             case InstrumentRentalStatus.Rejected:
-                previous.Reject(Now.AddDays(-19), "Instrument je na servisu.", 1);
+                RentalTestData.AdvanceTo(previous, InstrumentRentalStatus.Rejected, Now.AddDays(-19), note: "Instrument je na servisu.");
                 break;
             case InstrumentRentalStatus.Completed:
-                previous.Approve(50m, null, Now.AddDays(-19), 1);
-                previous.Pickup(Now.AddDays(-19));
-                previous.Complete(Now.AddDays(-5), null);
+                RentalTestData.AdvanceTo(previous, InstrumentRentalStatus.Completed, Now, approvedAt: Now.AddDays(-19), pickedUpAt: Now.AddDays(-19), finishedAt: Now.AddDays(-5));
                 previous.MarkPaid(5000, Now);
                 break;
         }
@@ -269,9 +258,7 @@ public sealed class RentalCommandServiceTests
         await context.SaveChangesAsync();
         var instrument = await RentalTestData.SeedInstrumentAsync(context);
         var unpaid = new InstrumentRental(instrument.Id, stranger.Id, instrument.MusicStoreId, Now.AddDays(-20), null);
-        unpaid.Approve(50m, null, Now.AddDays(-19), 1);
-        unpaid.Pickup(Now.AddDays(-19));
-        unpaid.Complete(Now.AddDays(-5), null);
+        RentalTestData.AdvanceTo(unpaid, InstrumentRentalStatus.Completed, Now, approvedAt: Now.AddDays(-19), pickedUpAt: Now.AddDays(-19), finishedAt: Now.AddDays(-5));
         context.Set<InstrumentRental>().Add(unpaid);
         await context.SaveChangesAsync();
         var service = CreateService(context, student);
@@ -293,13 +280,12 @@ public sealed class RentalCommandServiceTests
 
         var approvedInstrument = await SeedExtraInstrumentAsync(context, instrument);
         var approved = new InstrumentRental(approvedInstrument.Id, student.Id, approvedInstrument.MusicStoreId, Now.AddDays(-5), null);
-        approved.Approve(50m, null, Now.AddDays(-4), 1);
+        RentalTestData.AdvanceTo(approved, InstrumentRentalStatus.Approved, Now, approvedAt: Now.AddDays(-4));
         context.Set<InstrumentRental>().Add(approved);
 
         var activeInstrument = await SeedExtraInstrumentAsync(context, instrument);
         var active = new InstrumentRental(activeInstrument.Id, student.Id, activeInstrument.MusicStoreId, Now.AddDays(-5), null);
-        active.Approve(50m, null, Now.AddDays(-4), 1);
-        active.Pickup(Now.AddDays(-4));
+        RentalTestData.AdvanceTo(active, InstrumentRentalStatus.Active, Now, approvedAt: Now.AddDays(-4), pickedUpAt: Now.AddDays(-4));
         context.Set<InstrumentRental>().Add(active);
 
         await context.SaveChangesAsync();
@@ -392,7 +378,7 @@ public sealed class RentalCommandServiceTests
         var student = await SeedStudentAsync(context, hasActiveMembership: true);
         var instrument = await RentalTestData.SeedInstrumentAsync(context);
         var rental = new InstrumentRental(instrument.Id, student.Id, instrument.MusicStoreId, Now, null);
-        rental.Approve(50m, null, Now, 1);
+        RentalTestData.AdvanceTo(rental, InstrumentRentalStatus.Approved, Now);
         context.Set<InstrumentRental>().Add(rental);
         await context.SaveChangesAsync();
         var service = CreateStoreService(context, instrument.MusicStoreId);
@@ -431,7 +417,7 @@ public sealed class RentalCommandServiceTests
         var student = await SeedStudentAsync(context, hasActiveMembership: true);
         var instrument = await RentalTestData.SeedInstrumentAsync(context);
         var first = new InstrumentRental(instrument.Id, 998, instrument.MusicStoreId, Now, null);
-        first.Approve(50m, null, Now, 1);
+        RentalTestData.AdvanceTo(first, InstrumentRentalStatus.Approved, Now);
         var second = new InstrumentRental(instrument.Id, student.Id, instrument.MusicStoreId, Now, null);
         context.Set<InstrumentRental>().AddRange(first, second);
         await context.SaveChangesAsync();
@@ -451,8 +437,7 @@ public sealed class RentalCommandServiceTests
         var instrument = await RentalTestData.SeedInstrumentAsync(context);
         var otherInstrument = await SeedExtraInstrumentAsync(context, instrument);
         var active = new InstrumentRental(otherInstrument.Id, 998, otherInstrument.MusicStoreId, Now.AddDays(-5), null);
-        active.Approve(50m, null, Now.AddDays(-4), 1);
-        active.Pickup(Now.AddDays(-4));
+        RentalTestData.AdvanceTo(active, InstrumentRentalStatus.Active, Now, approvedAt: Now.AddDays(-4), pickedUpAt: Now.AddDays(-4));
         var rental = new InstrumentRental(instrument.Id, student.Id, instrument.MusicStoreId, Now, null);
         context.Set<InstrumentRental>().AddRange(active, rental);
         await context.SaveChangesAsync();
@@ -470,8 +455,7 @@ public sealed class RentalCommandServiceTests
         var student = await SeedStudentAsync(context, hasActiveMembership: true);
         var instrument = await RentalTestData.SeedInstrumentAsync(context);
         var rental = new InstrumentRental(instrument.Id, student.Id, instrument.MusicStoreId, Now, null);
-        rental.Approve(50m, null, Now, 1);
-        rental.Pickup(Now);
+        RentalTestData.AdvanceTo(rental, InstrumentRentalStatus.Active, Now);
         context.Set<InstrumentRental>().Add(rental);
         await context.SaveChangesAsync();
         var service = CreateStoreService(context, instrument.MusicStoreId);
@@ -487,7 +471,7 @@ public sealed class RentalCommandServiceTests
         var student = await SeedStudentAsync(context, hasActiveMembership: true);
         var instrument = await RentalTestData.SeedInstrumentAsync(context);
         var rental = new InstrumentRental(instrument.Id, student.Id, instrument.MusicStoreId, Now, null);
-        rental.Approve(50m, null, Now, 1);
+        RentalTestData.AdvanceTo(rental, InstrumentRentalStatus.Approved, Now);
         context.Set<InstrumentRental>().Add(rental);
         await context.SaveChangesAsync();
         var recorder = new RecordingNotificationDispatcher();

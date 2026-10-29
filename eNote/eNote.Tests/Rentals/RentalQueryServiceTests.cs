@@ -65,8 +65,7 @@ public sealed class RentalQueryServiceTests
         var student = await SeedStudentAsync(context, appUserId: 100);
         var instrument = await RentalTestData.SeedInstrumentAsync(context);
         var rental = new InstrumentRental(instrument.Id, student.Id, instrument.MusicStoreId, Now.AddDays(-35), null);
-        rental.Approve(50m, null, Now.AddDays(-35), 1);
-        rental.Pickup(Now.AddDays(-30));
+        RentalTestData.AdvanceTo(rental, InstrumentRentalStatus.Active, Now, approvedAt: Now.AddDays(-35), pickedUpAt: Now.AddDays(-30));
         context.Set<InstrumentRental>().Add(rental);
         await context.SaveChangesAsync();
         var service = CreateService(context, student);
@@ -85,9 +84,7 @@ public sealed class RentalQueryServiceTests
         var student = await SeedStudentAsync(context, appUserId: 100);
         var instrument = await RentalTestData.SeedInstrumentAsync(context);
         var unpaid = new InstrumentRental(instrument.Id, student.Id, instrument.MusicStoreId, Now.AddDays(-20), null);
-        unpaid.Approve(50m, null, Now.AddDays(-19), 1);
-        unpaid.Pickup(Now.AddDays(-19));
-        unpaid.Complete(Now.AddDays(-5), null);
+        RentalTestData.AdvanceTo(unpaid, InstrumentRentalStatus.Completed, Now, approvedAt: Now.AddDays(-19), pickedUpAt: Now.AddDays(-19), finishedAt: Now.AddDays(-5));
         context.Set<InstrumentRental>().Add(unpaid);
         await context.SaveChangesAsync();
 

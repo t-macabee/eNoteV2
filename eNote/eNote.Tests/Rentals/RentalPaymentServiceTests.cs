@@ -35,7 +35,7 @@ public sealed class RentalPaymentServiceTests
         var (context, student, currentUser) = await CreateStudentContextAsync();
         var instrument = await RentalTestData.SeedInstrumentAsync(context);
         var rental = new InstrumentRental(instrument.Id, student.Id, instrument.MusicStoreId, Now, null);
-        rental.Approve(50m, null, Now, 1);
+        RentalTestData.AdvanceTo(rental, InstrumentRentalStatus.Approved, Now);
         context.Set<InstrumentRental>().Add(rental);
         await context.SaveChangesAsync();
         var service = CreateService(context, currentUser);
@@ -51,8 +51,7 @@ public sealed class RentalPaymentServiceTests
         var (context, student, currentUser) = await CreateStudentContextAsync();
         var instrument = await RentalTestData.SeedInstrumentAsync(context);
         var rental = new InstrumentRental(instrument.Id, student.Id, instrument.MusicStoreId, Now, null);
-        rental.Approve(50m, null, Now, 1);
-        rental.Pickup(Now);
+        RentalTestData.AdvanceTo(rental, InstrumentRentalStatus.Active, Now);
         context.Set<InstrumentRental>().Add(rental);
         await context.SaveChangesAsync();
         var service = CreateService(context, currentUser);
@@ -605,9 +604,7 @@ public sealed class RentalPaymentServiceTests
     private static InstrumentRental CreateReturnedEarlyRental(Instrument instrument, int studentId)
     {
         var rental = new InstrumentRental(instrument.Id, studentId, instrument.MusicStoreId, Now.AddDays(-10), null);
-        rental.Approve(50m, null, Now.AddDays(-9), 1);
-        rental.Pickup(Now.AddDays(-9));
-        rental.ReturnEarly(Now.AddDays(-6), null);
+        RentalTestData.AdvanceTo(rental, InstrumentRentalStatus.ReturnedEarly, Now, approvedAt: Now.AddDays(-9), pickedUpAt: Now.AddDays(-9), finishedAt: Now.AddDays(-6));
         return rental;
     }
 

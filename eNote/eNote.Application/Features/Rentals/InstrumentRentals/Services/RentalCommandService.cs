@@ -129,6 +129,21 @@ public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, 
         }
     }
 
+    public async Task CancelPendingForClosedAccountAsync(int studentId, int userId, CancellationToken cancellationToken = default)
+    {
+        var pendingRentals = await context.Set<InstrumentRental>()
+            .Where(r => r.StudentProfileId == studentId && r.RentalStatus == InstrumentRentalStatus.Pending)
+            .WithRentalDetails()
+            .ToListAsync(cancellationToken);
+
+        var request = new RentalStatusRequest { Note = Messages.ProfileDeletedRentalCancelNote };
+
+        foreach (var rental in pendingRentals)
+        {
+            await ApplyTransitionWithNotificationAsync(rental, RentalTrigger.Cancel, RentalActor.Student, userId, request, cancellationToken);
+        }
+    }
+
     private async Task<(InstrumentRentalDto Dto, bool UsesInstrumentLock)> ApplyTransitionWithNotificationAsync(InstrumentRental rental, RentalTrigger trigger, RentalActor rentalActor, int userId, RentalStatusRequest? request, CancellationToken cancellationToken)
     {
         var hasConflict = false;

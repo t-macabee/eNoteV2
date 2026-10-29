@@ -1,4 +1,5 @@
 using eNote.Application.Features.Rentals.InstrumentRentals;
+using eNote.Application.Features.Rentals.InstrumentRentals.Services;
 using eNote.Application.Features.Rentals.Payments.Services;
 using Microsoft.Extensions.Logging;
 
@@ -11,6 +12,7 @@ public sealed class UserSelfService(
     IClock clock,
     IPaymentGateway paymentGateway,
     IFileStorageService fileStorage,
+    RentalCommandService rentalCommands,
     ILogger<UserSelfService> logger)
 {
     public Task UpdateProfileAsync(UpdateProfileRequest request, CancellationToken cancellationToken = default)
@@ -50,7 +52,8 @@ public sealed class UserSelfService(
         {
             picturePath = await context.ExecuteInTransactionAsync(async () =>
             {
-                await CancelPendingRentalsAsync(student.Id, cancellationToken);
+                await EnsureNoOpenRentalsAsync(student.Id, cancellationToken);
+                await rentalCommands.CancelPendingForClosedAccountAsync(student.Id, userId, cancellationToken);
                 await CancelEnrollmentsAsync(student.Id, userId, cancellationToken);
                 await DeletePersonalDataAsync(userId, cancellationToken);
 
@@ -108,9 +111,7 @@ public sealed class UserSelfService(
             reasons.Add(Messages.ProfileDeleteBlockedByUnpaidRental);
         }
 
-        if (await context.Set<InstrumentRental>().AnyAsync(r => r.StudentProfileId == studentId
-                && (r.RentalStatus == InstrumentRentalStatus.Approved || r.RentalStatus == InstrumentRentalStatus.Active),
-            cancellationToken))
+        if (await HasOpenRentalAsync(studentId, cancellationToken))
         {
             reasons.Add(Messages.ProfileDeleteBlockedByOpenRental);
         }
@@ -121,17 +122,18 @@ public sealed class UserSelfService(
         }
     }
 
-    private async Task CancelPendingRentalsAsync(int studentId, CancellationToken cancellationToken)
+    private async Task EnsureNoOpenRentalsAsync(int studentId, CancellationToken cancellationToken)
     {
-        var rentals = await context.Set<InstrumentRental>()
-            .Where(r => r.StudentProfileId == studentId && r.RentalStatus == InstrumentRentalStatus.Pending)
-            .ToListAsync(cancellationToken);
-
-        foreach (var rental in rentals)
+        if (await HasOpenRentalAsync(studentId, cancellationToken))
         {
-            rental.Cancel(Messages.ProfileDeletedRentalCancelNote);
+            throw new BusinessException(Messages.ProfileDeleteBlockedByOpenRental);
         }
     }
+
+    private Task<bool> HasOpenRentalAsync(int studentId, CancellationToken cancellationToken) =>
+        context.Set<InstrumentRental>().AnyAsync(r => r.StudentProfileId == studentId
+            && (r.RentalStatus == InstrumentRentalStatus.Approved || r.RentalStatus == InstrumentRentalStatus.Active),
+            cancellationToken);
 
     private async Task CancelEnrollmentsAsync(int studentId, int userId, CancellationToken cancellationToken)
     {
