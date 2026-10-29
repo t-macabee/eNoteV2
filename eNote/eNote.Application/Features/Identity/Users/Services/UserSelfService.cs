@@ -74,30 +74,23 @@ public sealed class UserSelfService(
 
     private async Task ResolveOpenPaymentsAsync(int studentId, CancellationToken cancellationToken)
     {
-        var rentalAttempts = await context.Set<RentalPayment>()
+        var openAttempts = new List<StripePayment>();
+
+        openAttempts.AddRange(await context.Set<RentalPayment>()
             .Where(p => p.InstrumentRental.StudentProfileId == studentId
                 && (p.Status == PaymentStatus.RequiresAction || p.Status == PaymentStatus.Failed))
-            .ToListAsync(cancellationToken);
+            .ToListAsync(cancellationToken));
 
-        await PaymentGatewayHelpers.ResolveOpenAttemptsAsync(
-            logger,
-            context,
-            paymentGateway,
-            rentalAttempts,
-            expected: null,
-            Messages.PaymentProcessing,
-            cancellationToken);
-
-        var courseAttempts = await context.Set<CoursePayment>()
+        openAttempts.AddRange(await context.Set<CoursePayment>()
             .Where(p => p.Enrollment.StudentId == studentId
                 && (p.Status == PaymentStatus.RequiresAction || p.Status == PaymentStatus.Failed))
-            .ToListAsync(cancellationToken);
+            .ToListAsync(cancellationToken));
 
         await PaymentGatewayHelpers.ResolveOpenAttemptsAsync(
             logger,
             context,
             paymentGateway,
-            courseAttempts,
+            openAttempts,
             expected: null,
             Messages.PaymentProcessing,
             cancellationToken);

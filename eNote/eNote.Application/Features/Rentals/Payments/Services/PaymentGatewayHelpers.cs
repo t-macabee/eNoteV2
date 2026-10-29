@@ -112,8 +112,7 @@ public static class PaymentGatewayHelpers
         CancellationToken cancellationToken)
         where TPayment : StripePayment
     {
-        PaymentIntentData? reusable = null;
-        var changed = false;
+        var resolved = new List<(TPayment Row, PaymentIntentData Intent)>(openAttempts.Count);
 
         foreach (var row in openAttempts)
         {
@@ -121,11 +120,22 @@ public static class PaymentGatewayHelpers
                 logger,
                 () => paymentGateway.RetrievePaymentIntentAsync(row.StripePaymentIntentId, cancellationToken));
 
+            resolved.Add((row, intent));
+        }
+
+        foreach (var (_, intent) in resolved)
+        {
             if (intent.Status is "succeeded" or "processing")
             {
                 throw new BusinessException(blockedMessage);
             }
+        }
 
+        PaymentIntentData? reusable = null;
+        var changed = false;
+
+        foreach (var (row, intent) in resolved)
+        {
             if (intent.Status == "canceled")
             {
                 row.MarkCanceled();

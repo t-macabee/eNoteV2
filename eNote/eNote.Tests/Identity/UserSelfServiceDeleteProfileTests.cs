@@ -101,6 +101,42 @@ public sealed class UserSelfServiceDeleteProfileTests
     }
 
     [Fact]
+    public async Task DeleteProfileAsync_DoesNotCancelRentalPayment_WhenATuitionPaymentIsProcessing()
+    {
+        var harness = await CreateHarnessAsync();
+        var enrollment = await SeedActiveEnrollmentAsync(harness);
+        var rental = await SeedRentalAsync(harness, completed: true, paid: true);
+        harness.Context.Set<CoursePayment>().Add(new CoursePayment(
+            enrollment.Id,
+            "pi_tuition",
+            10000,
+            "BAM",
+            PaymentStatus.RequiresAction));
+        harness.Context.Set<RentalPayment>().Add(new RentalPayment(
+            rental.Id,
+            rental.MusicStoreId,
+            "pi_rental",
+            5000,
+            "BAM",
+            PaymentStatus.RequiresAction));
+        await harness.Context.SaveChangesAsync();
+        harness.Gateway.AddIntent("pi_tuition", 10000, "BAM", status: "processing");
+        harness.Gateway.AddIntent("pi_rental", 5000, "BAM");
+        var service = CreateService(harness);
+
+        var exception = await Assert.ThrowsAsync<BusinessException>(() => DeleteAsync(service));
+
+        Assert.Equal(Messages.PaymentProcessing, exception.Message);
+        Assert.Empty(harness.Gateway.CancelCalls);
+        Assert.All(
+            await harness.Context.Set<CoursePayment>().AsNoTracking().ToListAsync(),
+            payment => Assert.Equal(PaymentStatus.RequiresAction, payment.Status));
+        Assert.All(
+            await harness.Context.Set<RentalPayment>().AsNoTracking().ToListAsync(),
+            payment => Assert.Equal(PaymentStatus.RequiresAction, payment.Status));
+    }
+
+    [Fact]
     public async Task DeleteProfileAsync_BlockedByUnpaidRental_CancelsNoPaymentIntent()
     {
         var harness = await CreateHarnessAsync();
