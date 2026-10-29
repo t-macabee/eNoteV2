@@ -47,13 +47,11 @@ public sealed class AdminStudentService(
     {
         await EnsureStudentVisibleToInstructorAsync(instructorId, studentId, cancellationToken);
 
-        var query = context.Set<Enrollment>()
+        var query = instructorAccess.ActiveEnrollmentsFor(instructorId)
             .AsNoTracking()
             .Include(e => e.Course)
             .ThenInclude(c => c.Instructor)
-            .Where(e => e.StudentId == studentId
-                     && e.Course.InstructorId == instructorId
-                     && e.EnrollmentStatus == EnrollmentStatus.Active);
+            .Where(e => e.StudentId == studentId);
 
         return await query.ToPagedResultAsync(
             search,
@@ -87,22 +85,11 @@ public sealed class AdminStudentService(
 
     internal IQueryable<Student> StudentsVisibleTo(int instructorId)
     {
-        var instructorCourses = instructorAccess.CoursesFor(instructorId);
+        var activeEnrollments = instructorAccess.ActiveEnrollmentsFor(instructorId);
 
-        return context.Set<Enrollment>()
+        return context.Set<Student>()
             .AsNoTracking()
-            .Where(e => e.EnrollmentStatus == EnrollmentStatus.Active || e.EnrollmentStatus == EnrollmentStatus.Completed)
-            .Join(
-                instructorCourses,
-                e => e.CourseId,
-                c => c.Id,
-                (e, c) => e.StudentId)
-            .Distinct()
-            .Join(
-                context.Set<Student>().AsNoTracking(),
-                studentId => studentId,
-                s => s.Id,
-                (studentId, s) => s);
+            .Where(s => activeEnrollments.Any(e => e.StudentId == s.Id));
     }
 
     private async Task<PagedResult<StudentDto>> BuildPagedResultAsync(

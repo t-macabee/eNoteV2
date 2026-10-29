@@ -34,11 +34,8 @@ public sealed class PictureAccessService(
 
             var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId, cancellationToken);
 
-            return await context.Set<Enrollment>()
-                .AsNoTracking()
-                .AnyAsync(e => e.Student.AppUserId == targetAppUserId
-                            && e.Course.InstructorId == instructorId
-                            && e.EnrollmentStatus == EnrollmentStatus.Active, cancellationToken);
+            return await instructorAccess.ActiveEnrollmentsFor(instructorId)
+                .AnyAsync(e => e.Student.AppUserId == targetAppUserId, cancellationToken);
         }
 
         if (roles.Contains(AppRoles.StoreEmployee))

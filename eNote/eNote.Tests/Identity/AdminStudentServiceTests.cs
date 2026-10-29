@@ -463,8 +463,12 @@ public sealed class AdminStudentServiceTests
         Assert.DoesNotContain(result.Items, s => s.Id == rejectedStudent.Id);
     }
 
-    [Fact]
-    public async Task GetPagedForInstructorAsync_ExcludesCanceledEnrollments_IncludesCompletedEnrollments()
+    [Theory]
+    [InlineData(EnrollmentStatus.Completed)]
+    [InlineData(EnrollmentStatus.Canceled)]
+    [InlineData(EnrollmentStatus.Pending)]
+    [InlineData(EnrollmentStatus.Rejected)]
+    public async Task GetPagedForInstructorAsync_ListsOnlyStudentsWithActiveEnrollment(EnrollmentStatus otherStatus)
     {
         await using var context = TestDbContextFactory.CreateContext(Now);
 
@@ -477,32 +481,56 @@ public sealed class AdminStudentServiceTests
         await context.SaveChangesAsync();
 
         var activeStudent = new Student(10, Now);
-        var completedStudent = new Student(20, Now);
-        var canceledStudent = new Student(30, Now);
-        context.Set<Student>().AddRange(activeStudent, completedStudent, canceledStudent);
+        var otherStudent = new Student(20, Now);
+        context.Set<Student>().AddRange(activeStudent, otherStudent);
         await context.SaveChangesAsync();
 
         context.Set<Enrollment>().AddRange(
             new Enrollment(activeStudent.Id, course.Id, EnrollmentStatus.Active),
-            new Enrollment(completedStudent.Id, course.Id, EnrollmentStatus.Completed),
-            new Enrollment(canceledStudent.Id, course.Id, EnrollmentStatus.Canceled));
+            new Enrollment(otherStudent.Id, course.Id, otherStatus));
         await context.SaveChangesAsync();
 
-        var identity = new StubUserIdentityService(new Dictionary<int, UserIdentityDto>
-        {
-            [10] = StubUserIdentityService.User(10, "active", "Active", "Student"),
-            [20] = StubUserIdentityService.User(20, "completed", "Completed", "Student"),
-            [30] = StubUserIdentityService.User(30, "canceled", "Canceled", "Student")
-        });
-
         var instructorAccess = new InstructorAccessService(context, new StubUserProfileLookup(instructor: instructor));
-        var service = new AdminStudentService(context, identity, instructorAccess);
+        var service = new AdminStudentService(context, new StubUserIdentityService(), instructorAccess);
 
         var result = await service.GetPagedForInstructorAsync(instructor.Id, new StudentSearchObject());
 
-        Assert.Equal(2, result.Items.Count);
-        Assert.Contains(result.Items, s => s.Id == activeStudent.Id);
-        Assert.Contains(result.Items, s => s.Id == completedStudent.Id);
-        Assert.DoesNotContain(result.Items, s => s.Id == canceledStudent.Id);
+        var item = Assert.Single(result.Items);
+        Assert.Equal(activeStudent.Id, item.Id);
+        await Assert.ThrowsAsync<NotFoundException>(() => service.GetByIdForInstructorAsync(instructor.Id, otherStudent.Id));
+    }
+
+    [Fact]
+    public async Task GetEnrollmentsForInstructorAsync_ExcludesEnrollmentsOfOtherStudentsInTheSameCourse()
+    {
+        await using var context = TestDbContextFactory.CreateContext(Now);
+
+        var instructor = new Instructor(100);
+        context.Set<Instructor>().Add(instructor);
+        await context.SaveChangesAsync();
+
+        var guitar = new Course("Guitar 101", null, 100m, Now, Now.AddMonths(3), instructor.Id) { CreatedById = instructor.AppUserId };
+        var piano = new Course("Piano 101", null, 100m, Now, Now.AddMonths(3), instructor.Id) { CreatedById = instructor.AppUserId };
+        context.Set<Course>().AddRange(guitar, piano);
+        await context.SaveChangesAsync();
+
+        var student = new Student(10, Now);
+        var classmate = new Student(20, Now);
+        context.Set<Student>().AddRange(student, classmate);
+        await context.SaveChangesAsync();
+
+        context.Set<Enrollment>().AddRange(
+            new Enrollment(student.Id, guitar.Id, EnrollmentStatus.Active),
+            new Enrollment(classmate.Id, guitar.Id, EnrollmentStatus.Active),
+            new Enrollment(classmate.Id, piano.Id, EnrollmentStatus.Active));
+        await context.SaveChangesAsync();
+
+        var instructorAccess = new InstructorAccessService(context, new StubUserProfileLookup(instructor: instructor));
+        var service = new AdminStudentService(context, new StubUserIdentityService(), instructorAccess);
+
+        var enrollments = await service.GetEnrollmentsForInstructorAsync(instructor.Id, student.Id, new StudentEnrollmentSearchObject());
+
+        var single = Assert.Single(enrollments.Items);
+        Assert.Equal(guitar.Id, single.CourseId);
     }
 }

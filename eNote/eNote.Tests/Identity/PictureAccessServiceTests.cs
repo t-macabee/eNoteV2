@@ -5,6 +5,7 @@ using eNote.Application.Features.Identity.Users.Services;
 using eNote.Tests.TestUtils;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Tests.Identity;
 
@@ -73,6 +74,38 @@ public sealed class PictureAccessServiceTests
     }
 
     [Fact]
+    public async Task Instructor_CannotView_StudentEnrolledOnlyInOtherInstructorsCourse()
+    {
+        var seed = await SeedAsync();
+        var otherCourse = await AddPublishedCourseAsync(seed.Context, seed.Instructor2);
+        seed.Context.Set<Enrollment>().Add(new Enrollment(seed.StudentB.Id, otherCourse.Id, EnrollmentStatus.Active));
+        await seed.Context.SaveChangesAsync();
+
+        var service = CreateService(seed.Context, seed.Instructor1.AppUserId, new FixedStoreContext(1),
+            new Dictionary<int, IReadOnlyList<string>> { [seed.Instructor1.AppUserId] = [AppRoles.Instructor] });
+
+        Assert.False(await service.CanViewPictureAsync(seed.StudentB.AppUserId));
+    }
+
+    [Theory]
+    [InlineData(EnrollmentStatus.Pending)]
+    [InlineData(EnrollmentStatus.Completed)]
+    [InlineData(EnrollmentStatus.Canceled)]
+    [InlineData(EnrollmentStatus.Rejected)]
+    public async Task Instructor_CannotView_StudentWhoseEnrollmentIsNotActive(EnrollmentStatus status)
+    {
+        var seed = await SeedAsync();
+        var course = await seed.Context.Set<Course>().SingleAsync();
+        seed.Context.Set<Enrollment>().Add(new Enrollment(seed.StudentB.Id, course.Id, status));
+        await seed.Context.SaveChangesAsync();
+
+        var service = CreateService(seed.Context, seed.Instructor1.AppUserId, new FixedStoreContext(1),
+            new Dictionary<int, IReadOnlyList<string>> { [seed.Instructor1.AppUserId] = [AppRoles.Instructor] });
+
+        Assert.False(await service.CanViewPictureAsync(seed.StudentB.AppUserId));
+    }
+
+    [Fact]
     public async Task Instructor_CannotView_EmployeePicture()
     {
         var seed = await SeedAsync();
@@ -120,6 +153,33 @@ public sealed class PictureAccessServiceTests
             new Dictionary<int, IReadOnlyList<string>> { [seed.Employee1.AppUserId] = [AppRoles.StoreEmployee] });
 
         Assert.False(await service.CanViewPictureAsync(seed.StudentB.AppUserId));
+    }
+
+    [Fact]
+    public async Task Employee_CannotView_StudentWithRentalOnlyAtOtherStore()
+    {
+        var seed = await SeedAsync();
+        var type = await seed.Context.Set<InstrumentType>().SingleAsync();
+        var instrument = new Instrument("Cello", "Yamaha", null, null, type.Id, seed.Store2.Id);
+        seed.Context.Set<Instrument>().Add(instrument);
+        await seed.Context.SaveChangesAsync();
+        seed.Context.Set<InstrumentRental>().Add(new InstrumentRental(instrument.Id, seed.StudentB.Id, seed.Store2.Id, Now, null));
+        await seed.Context.SaveChangesAsync();
+
+        var service = CreateService(seed.Context, seed.Employee1.AppUserId, new FixedStoreContext(seed.Store1.Id),
+            new Dictionary<int, IReadOnlyList<string>> { [seed.Employee1.AppUserId] = [AppRoles.StoreEmployee] });
+
+        Assert.False(await service.CanViewPictureAsync(seed.StudentB.AppUserId));
+    }
+
+    [Fact]
+    public async Task Employee_CannotView_InstructorPicture()
+    {
+        var seed = await SeedAsync();
+        var service = CreateService(seed.Context, seed.Employee1.AppUserId, new FixedStoreContext(seed.Store1.Id),
+            new Dictionary<int, IReadOnlyList<string>> { [seed.Employee1.AppUserId] = [AppRoles.StoreEmployee] });
+
+        Assert.False(await service.CanViewPictureAsync(seed.Instructor1.AppUserId));
     }
 
     [Fact]
@@ -259,11 +319,9 @@ public sealed class PictureAccessServiceTests
 
     private sealed class PictureFixed((Stream? Data, string? ContentType) picture) : IUserAccountService
     {
-        public Task<int?> FindUserIdByUsernameAsync(string username, CancellationToken cancellationToken = default) =>
-            throw new NotSupportedException();
         public Task<int> CreateUserAsync(string username, string email, string password, string? firstName, string? lastName, CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();
-        public Task AssignSingleRoleAsync(int userId, string role, CancellationToken cancellationToken = default) =>
+        public Task AddRoleAsync(int userId, string role, CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();
         public Task UpdateExistingUserAsync(int userId, string email, string? firstName, string? lastName, DateTime? dateOfBirth = null, CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();
@@ -333,6 +391,18 @@ public sealed class PictureAccessServiceTests
         await context.SaveChangesAsync();
 
         return new PictureSeed(context, instructor1, instructor2, studentA, studentB, store1, store2, employee1, employee2, employee3);
+    }
+
+    private static async Task<Course> AddPublishedCourseAsync(ENoteContext context, Instructor instructor)
+    {
+        var course = new Course("Piano 101", null, 100m, Now, Now.AddMonths(6), instructor.Id)
+        {
+            CreatedById = instructor.AppUserId
+        };
+        course.SetPublishedStatus(true);
+        context.Set<Course>().Add(course);
+        await context.SaveChangesAsync();
+        return course;
     }
 
     private sealed record PictureSeed(
