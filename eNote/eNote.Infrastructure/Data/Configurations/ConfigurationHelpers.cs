@@ -39,9 +39,4 @@ public static class ConfigurationHelpers
     {
         return builder.HasIndex(propertyName).IsUnique();
     }
-
-    public static IndexBuilder HasUniqueIndex(this EntityTypeBuilder builder, params string[] propertyNames)
-    {
-        return builder.HasIndex(propertyNames).IsUnique();
-    }
 }

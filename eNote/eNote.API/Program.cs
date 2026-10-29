@@ -21,7 +21,7 @@ builder.Host.UseApplicationLogging();
 
 if (builder.Environment.IsDevelopment())
 {
-    builder.Host.UseDefaultServiceProvider((context, options) =>
+    builder.Host.UseDefaultServiceProvider((_, options) =>
     {
         options.ValidateScopes = true;
         options.ValidateOnBuild = true;
@@ -46,7 +46,7 @@ builder.Services
     .AddApiInfrastructure(builder.Configuration)
     .AddJwtAuthentication()
     .AddAuthorization()
-    .AddApplicationServices(builder.Configuration)
+    .AddApplicationServices()
     .AddApplicationCors(builder.Configuration)
     .AddApplicationRateLimiting()
     .AddResponseCompression(opts => opts.EnableForHttps = true)

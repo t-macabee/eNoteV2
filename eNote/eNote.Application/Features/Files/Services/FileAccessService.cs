@@ -12,18 +12,14 @@ public sealed class FileAccessService(
     IUserIdentityService identity) : IFileAccessService
 {
     private const string AssignmentApiPath = $"{UploadPaths.RoutePrefix}/assignments/";
-    private const string AssignmentLegacyPath = "/api/uploads/assignments/";
-    private const string AssignmentLegacyPathV0 = "/uploads/assignments/";
 
     public async Task<bool> CanAccessAssignmentFileAsync(int userId, string fileName, CancellationToken cancellationToken = default)
     {
         var apiPath = AssignmentApiPath + fileName;
-        var legacyPath = AssignmentLegacyPath + fileName;
-        var legacyPathV0 = AssignmentLegacyPathV0 + fileName;
 
         var authData = await context.Set<AssignmentSubmission>()
             .AsNoTracking()
-            .Where(x => x.FilePath == apiPath || x.FilePath == legacyPath || x.FilePath == legacyPathV0)
+            .Where(x => x.FilePath == apiPath)
             .Select(x => new
             {
                 x.StudentId,

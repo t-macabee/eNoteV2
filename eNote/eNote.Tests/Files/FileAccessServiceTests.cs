@@ -1,3 +1,4 @@
+using eNote.Application.Common.Files;
 using eNote.Application.Constants;
 using eNote.Application.Features.Files.Services;
 using eNote.Application.Features.Identity.Instructors;
@@ -88,6 +89,44 @@ public sealed class FileAccessServiceTests
         Assert.False(await service.CanAccessAssignmentFileAsync(222, harness.FileName));
     }
 
+    [Fact]
+    public async Task CanAccessAssignmentFileAsync_StoreEmployee_CannotAccessSubmission()
+    {
+        var harness = await SeedSubmissionAsync();
+        var identity = new StubUserIdentityService(roles: new Dictionary<int, IReadOnlyList<string>>
+        {
+            [harness.Student.AppUserId] = [AppRoles.StoreEmployee]
+        });
+        var service = CreateService(harness.Context, identity, harness.Instructor, harness.Student);
+
+        Assert.False(await service.CanAccessAssignmentFileAsync(harness.Student.AppUserId, harness.FileName));
+    }
+
+    [Fact]
+    public async Task CanAccessAssignmentFileAsync_UserWithoutRole_CannotAccessSubmission()
+    {
+        var harness = await SeedSubmissionAsync();
+        var identity = new StubUserIdentityService(roles: new Dictionary<int, IReadOnlyList<string>>
+        {
+            [77] = []
+        });
+        var service = CreateService(harness.Context, identity, harness.Instructor);
+
+        Assert.False(await service.CanAccessAssignmentFileAsync(77, harness.FileName));
+    }
+
+    [Fact]
+    public async Task CanAccessAssignmentFileAsync_ReturnsFalse_ForOtherFileName()
+    {
+        var harness = await SeedSubmissionAsync();
+        var identity = new StubUserIdentityService(roles: new Dictionary<int, IReadOnlyList<string>>
+        {
+            [99] = [AppRoles.Administrator]
+        });
+        var service = CreateService(harness.Context, identity, harness.Instructor);
+
+        Assert.False(await service.CanAccessAssignmentFileAsync(99, "other.pdf"));
+    }
     private static FileAccessService CreateService(ENoteContext context, StubUserIdentityService identity, Instructor? instructor = null, Student? student = null) =>
         new(context,
             new StubUserProfileLookup(student: student, instructor: instructor),
@@ -113,7 +152,7 @@ public sealed class FileAccessServiceTests
         context.Set<Student>().Add(student);
         await context.SaveChangesAsync();
         var submission = new AssignmentSubmission(assignment.Id, student.Id);
-        submission.Submit($"/api/uploads/assignments/{Guid.NewGuid():N}.pdf", Now);
+        submission.Submit($"{UploadPaths.RoutePrefix}/assignments/{Guid.NewGuid():N}.pdf", Now);
         context.Set<AssignmentSubmission>().Add(submission);
         await context.SaveChangesAsync();
 

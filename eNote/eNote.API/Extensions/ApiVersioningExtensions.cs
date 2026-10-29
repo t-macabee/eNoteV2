@@ -4,8 +4,6 @@ namespace eNote.API.Extensions;
 
 public static class ApiVersioningExtensions
 {
-    public const string DefaultApiVersion = "1.0";
-
     public static IServiceCollection AddApplicationApiVersioning(this IServiceCollection services)
     {
         services.AddApiVersioning(options =>

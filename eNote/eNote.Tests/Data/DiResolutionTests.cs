@@ -32,7 +32,7 @@ public sealed class DiResolutionTests
         services.AddScoped<IStoreContext>(x => x.GetRequiredService<ENoteContext>());
         services.AddScoped<ICurrentUserContext>(_ => new StubCurrentActor());
 
-        var provider = services.BuildServiceProvider();
+        using var provider = services.BuildServiceProvider();
         using var scope = provider.CreateScope();
 
         var sp = scope.ServiceProvider;
@@ -71,7 +71,7 @@ public sealed class DiResolutionTests
             .AddInfrastructureHealthChecks()
             .AddJwtAuthentication()
             .AddAuthorization()
-            .AddApplicationServices(configuration)
+            .AddApplicationServices()
             .AddMapsterMappings();
 
         await AssertAllENoteInterfacesResolvable(services);
@@ -161,7 +161,7 @@ public sealed class DiResolutionTests
 
     private static async Task AssertAllENoteInterfacesResolvable(ServiceCollection services)
     {
-        var provider = services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true });
+        await using var provider = services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true });
         using var scope = provider.CreateScope();
 
         foreach (var descriptor in services.Where(d => d.ServiceType.IsInterface))
