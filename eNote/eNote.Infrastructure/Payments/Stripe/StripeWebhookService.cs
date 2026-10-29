@@ -210,7 +210,7 @@ public sealed class StripeWebhookService(
                 return;
             }
 
-            ApplyChargeRefund(payment, charge);
+            await ApplyChargeRefundAsync(payment, charge, cancellationToken);
 
             if (payment is CoursePayment coursePayment)
             {
@@ -251,26 +251,25 @@ public sealed class StripeWebhookService(
         }, cancellationToken);
     }
 
-    private void ApplyChargeRefund(StripePayment payment, Charge charge)
+    private async Task ApplyChargeRefundAsync(StripePayment payment, Charge charge, CancellationToken cancellationToken)
     {
         if (payment.Status is not (PaymentStatus.Succeeded or PaymentStatus.PartiallyRefunded) || charge.AmountRefunded <= 0)
         {
             return;
         }
 
-        if (charge.Refunds?.Data is { Count: > 0 } refundList)
-        {
-            foreach (var refundItem in refundList)
-            {
-                payment.ApplyRefund(refundItem.Amount, refundItem.Id, clock.UtcNow);
-            }
-        }
+        // Since Stripe API version 2022-11-15 the charge webhook does not carry the refund list, so the refunds are
+        // listed for the PaymentIntent and each one is applied under its own id.
+        var refunds = await paymentGateway.ListRefundsAsync(payment.StripePaymentIntentId, cancellationToken);
 
-        var alreadyRefunded = payment.RefundedCents ?? 0;
-        if (charge.AmountRefunded > alreadyRefunded)
+        foreach (var refund in refunds)
         {
-            var refundId = charge.Refunds?.Data?.FirstOrDefault()?.Id ?? payment.StripeRefundId;
-            payment.ApplyRefund(charge.AmountRefunded - alreadyRefunded, refundId, clock.UtcNow);
+            if (refund.Status != RefundSucceeded)
+            {
+                continue;
+            }
+
+            payment.ApplyRefund(refund.AmountCents, refund.Id, clock.UtcNow);
         }
     }
 
@@ -282,17 +281,13 @@ public sealed class StripeWebhookService(
             return;
         }
 
-        var counted = IsRefundCounted(payment, refund);
-
         if (refund.Status == RefundSucceeded)
         {
-            if (counted)
+            if (!payment.ApplyRefund(refund.Amount, refund.Id, clock.UtcNow))
             {
                 logger.LogInformation("Refund {RefundId} already applied to payment {PaymentId}; skipping", refund.Id, payment.Id);
                 return;
             }
-
-            payment.ApplyRefund(refund.Amount, refund.Id, clock.UtcNow);
 
             if (payment is CoursePayment refundedCoursePayment)
             {
@@ -307,13 +302,10 @@ public sealed class StripeWebhookService(
             return;
         }
 
-        if (!counted)
+        if (!payment.ReverseRefund(refund.Id))
         {
-            logger.LogWarning("Refund {RefundId} failed for payment {PaymentId}; no refund was applied", refund.Id, payment.Id);
             return;
         }
-
-        payment.ReverseRefund(refund.Amount, refund.Id);
 
         if (payment is CoursePayment reversedCoursePayment)
         {
@@ -322,11 +314,6 @@ public sealed class StripeWebhookService(
 
         logger.LogWarning("Refund {RefundId} failed for payment {PaymentId}; the counted refund was reversed", refund.Id, payment.Id);
     }
-
-    private static bool IsRefundCounted(StripePayment payment, Refund refund) =>
-        (!string.IsNullOrWhiteSpace(refund.Id) && payment.Refunds.Any(r => r.StripeRefundId == refund.Id))
-        || payment.StripeRefundId == refund.Id
-        || (payment.StripeRefundId is null && (payment.RefundedCents ?? 0) >= refund.Amount);
 
     private async Task<StripePayment?> LoadPaymentAsync(string paymentIntentId, CancellationToken cancellationToken)
     {

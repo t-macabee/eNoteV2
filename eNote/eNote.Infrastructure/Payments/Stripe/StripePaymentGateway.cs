@@ -6,22 +6,20 @@ namespace eNote.Infrastructure.Payments.Stripe;
 
 public sealed class StripePaymentGateway : IPaymentGateway
 {
-    private readonly StripeOptions _options;
     private readonly ILogger<StripePaymentGateway> _logger;
     private readonly Lazy<StripeClient> _client;
 
     public StripePaymentGateway(StripeOptions options, ILogger<StripePaymentGateway> logger)
     {
-        _options = options;
         _logger = logger;
         _client = new Lazy<StripeClient>(() =>
         {
-            if (string.IsNullOrWhiteSpace(_options.SecretKey))
+            if (string.IsNullOrWhiteSpace(options.SecretKey))
             {
                 throw new InvalidOperationException("Stripe SecretKey is not configured.");
             }
 
-            return new StripeClient(_options.SecretKey);
+            return new StripeClient(options.SecretKey);
         });
     }
 
@@ -90,5 +88,22 @@ public sealed class StripePaymentGateway : IPaymentGateway
         _logger.LogInformation("Stripe refund {RefundId} created ({AmountCents}) for PaymentIntent {PaymentIntentId}", refund.Id, refund.Amount, paymentIntentId);
 
         return new RefundData(refund.Id, refund.Amount, refund.Status);
+    }
+
+    public async Task<IReadOnlyList<RefundData>> ListRefundsAsync(
+        string paymentIntentId,
+        CancellationToken cancellationToken = default)
+    {
+        var options = new RefundListOptions { PaymentIntent = paymentIntentId };
+        var refunds = new List<RefundData>();
+
+        await foreach (var refund in new RefundService(_client.Value).ListAutoPagingAsync(options, requestOptions: null, cancellationToken))
+        {
+            refunds.Add(new RefundData(refund.Id, refund.Amount, refund.Status));
+        }
+
+        _logger.LogInformation("Stripe listed {RefundCount} refunds for PaymentIntent {PaymentIntentId}", refunds.Count, paymentIntentId);
+
+        return refunds;
     }
 }

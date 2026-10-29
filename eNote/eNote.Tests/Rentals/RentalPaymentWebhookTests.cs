@@ -111,7 +111,9 @@ public sealed class RentalPaymentWebhookTests
     public async Task HandleWebhook_ChargeRefunded_AppliesRefundAndKeepsIsPaid()
     {
         var (context, rental, _) = await SeedSucceededPaymentAsync();
-        var service = CreateWebhookService(context);
+        var gateway = new FakePaymentGateway();
+        gateway.AddRefund("pi_test_1", "re_test_1", 5000);
+        var service = CreateWebhookService(context, gateway: gateway);
         var evt = CreateChargeRefundedEvent("evt_test_refunded_1", "pi_test_1", "ch_test_1", 5000);
 
         await service.HandleAsync(evt, "{}");
@@ -122,6 +124,25 @@ public sealed class RentalPaymentWebhookTests
         Assert.Equal(5000, payment.RefundedCents);
         Assert.NotNull(payment.StripeRefundId);
         Assert.True(reloadedRental.IsPaid);
+    }
+
+    [Fact]
+    public async Task HandleWebhook_ChargeRefunded_CountsOnlySucceededRefunds()
+    {
+        var (context, _, _) = await SeedSucceededPaymentAsync();
+        var gateway = new FakePaymentGateway();
+        gateway.AddRefund("pi_test_1", "re_test_succeeded", 2000);
+        gateway.AddRefund("pi_test_1", "re_test_failed", 3000, "failed");
+        var service = CreateWebhookService(context, gateway: gateway);
+        var evt = CreateChargeRefundedEvent("evt_test_refunded_mixed_statuses", "pi_test_1", "ch_test_1", 2000);
+
+        await service.HandleAsync(evt, "{}");
+
+        var payment = await context.Set<RentalPayment>().Include(p => p.Refunds).SingleAsync();
+        Assert.Equal(PaymentStatus.PartiallyRefunded, payment.Status);
+        Assert.Equal(2000, payment.RefundedCents);
+        var refund = Assert.Single(payment.Refunds);
+        Assert.Equal("re_test_succeeded", refund.StripeRefundId);
     }
 
     [Fact]
@@ -141,19 +162,24 @@ public sealed class RentalPaymentWebhookTests
     }
 
     [Fact]
-    public async Task HandleWebhook_ChargeRefundedWithoutRefundList_RefundsWithNullRefundId()
+    public async Task HandleWebhook_ChargeRefundedWithoutRefundList_AppliesRefundsListedByGateway()
     {
         var (context, rental, _) = await SeedSucceededPaymentAsync();
-        var service = CreateWebhookService(context);
-        var evt = CreateChargeRefundedEvent("evt_test_refunded_norefundid", "pi_test_1", "ch_test_1", 5000, includeRefunds: false);
+        var gateway = new FakePaymentGateway();
+        gateway.AddRefund("pi_test_1", "re_test_1", 5000);
+        var service = CreateWebhookService(context, gateway: gateway);
+        var evt = CreateChargeRefundedEvent("evt_test_refunded_norefundid", "pi_test_1", "ch_test_1", 5000);
 
         await service.HandleAsync(evt, "{}");
 
         var payment = await context.Set<RentalPayment>().SingleAsync();
         var reloadedRental = await context.Set<InstrumentRental>().SingleAsync(x => x.Id == rental.Id);
         Assert.Equal(PaymentStatus.Refunded, payment.Status);
-        Assert.Null(payment.StripeRefundId);
+        Assert.Equal("re_test_1", payment.StripeRefundId);
+        Assert.Equal(5000, payment.RefundedCents);
         Assert.True(reloadedRental.IsPaid);
+        var listed = Assert.Single(gateway.ListRefundCalls);
+        Assert.Equal("pi_test_1", listed.PaymentIntentId);
     }
 
     [Fact]
@@ -271,15 +297,19 @@ public sealed class RentalPaymentWebhookTests
     [Fact]
     public async Task HandleWebhook_ChargeRefunded_SecondRefund_Accumulates()
     {
-        var (context, rental, _) = await SeedSucceededPaymentAsync();
-        var service = CreateWebhookService(context);
+        var (context, _, _) = await SeedSucceededPaymentAsync();
+        var gateway = new FakePaymentGateway();
+        gateway.AddRefund("pi_test_1", "re_test_1", 2000);
+        var service = CreateWebhookService(context, gateway: gateway);
 
         await service.HandleAsync(CreateChargeRefundedEvent("evt_test_refunded_first", "pi_test_1", "ch_test_1", 2000), "{}");
+        gateway.AddRefund("pi_test_1", "re_test_2", 1500);
         await service.HandleAsync(CreateChargeRefundedEvent("evt_test_refunded_second", "pi_test_1", "ch_test_1", 3500), "{}");
 
-        var payment = await context.Set<RentalPayment>().SingleAsync();
+        var payment = await context.Set<RentalPayment>().Include(p => p.Refunds).SingleAsync();
         Assert.Equal(PaymentStatus.PartiallyRefunded, payment.Status);
         Assert.Equal(3500, payment.RefundedCents);
+        Assert.Equal(2, payment.Refunds.Count);
         Assert.Equal(2, await context.Set<StripeWebhookEvent>().CountAsync());
     }
 
@@ -304,7 +334,9 @@ public sealed class RentalPaymentWebhookTests
     public async Task HandleWebhook_RefundUpdatedAndChargeRefunded_CountRefundOnce()
     {
         var (context, _, _) = await SeedSucceededPaymentAsync();
-        var service = CreateWebhookService(context);
+        var gateway = new FakePaymentGateway();
+        gateway.AddRefund("pi_test_1", "re_test_1", 2000);
+        var service = CreateWebhookService(context, gateway: gateway);
 
         await service.HandleAsync(CreateRefundUpdatedEvent("evt_test_refund_updated_1", "pi_test_1", "re_test_1", 2000, "succeeded"), "{}");
         await service.HandleAsync(CreateChargeRefundedEvent("evt_test_refunded_1", "pi_test_1", "ch_test_1", 2000), "{}");
@@ -329,12 +361,14 @@ public sealed class RentalPaymentWebhookTests
     }
 
     [Fact]
-    public async Task HandleWebhook_ChargeRefundedWithoutRefundList_ThenRefundUpdated_CountsOnce()
+    public async Task HandleWebhook_ChargeRefundedThenRefundUpdated_CountsOnce()
     {
         var (context, _, _) = await SeedSucceededPaymentAsync();
-        var service = CreateWebhookService(context);
+        var gateway = new FakePaymentGateway();
+        gateway.AddRefund("pi_test_1", "re_test_1", 2000);
+        var service = CreateWebhookService(context, gateway: gateway);
 
-        await service.HandleAsync(CreateChargeRefundedEvent("evt_test_refunded_no_list", "pi_test_1", "ch_test_1", 2000, includeRefunds: false), "{}");
+        await service.HandleAsync(CreateChargeRefundedEvent("evt_test_refunded_no_list", "pi_test_1", "ch_test_1", 2000), "{}");
         await service.HandleAsync(CreateRefundUpdatedEvent("evt_test_refund_updated_after", "pi_test_1", "re_test_1", 2000, "succeeded"), "{}");
 
         var payment = await context.Set<RentalPayment>().SingleAsync();
@@ -358,12 +392,33 @@ public sealed class RentalPaymentWebhookTests
     }
 
     [Fact]
+    public async Task HandleWebhook_ChargeRefunded_OnRequiresActionPayment_DoesNotApply()
+    {
+        var (context, _, _) = await SeedRequiresActionPaymentAsync();
+        var gateway = new FakePaymentGateway();
+        gateway.AddRefund("pi_test_1", "re_test_1", 2000);
+        var service = CreateWebhookService(context, gateway: gateway);
+
+        await service.HandleAsync(CreateChargeRefundedEvent("evt_test_refunded_requires_action", "pi_test_1", "ch_test_1", 2000), "{}");
+
+        var payment = await context.Set<RentalPayment>().Include(p => p.Refunds).SingleAsync();
+        Assert.Equal(PaymentStatus.RequiresAction, payment.Status);
+        Assert.Null(payment.RefundedCents);
+        Assert.Empty(payment.Refunds);
+        Assert.Empty(gateway.ListRefundCalls);
+        var recorded = Assert.Single(await context.Set<StripeWebhookEvent>().ToListAsync());
+        Assert.Equal("evt_test_refunded_requires_action", recorded.StripeEventId);
+    }
+
+    [Fact]
     public async Task HandleWebhook_ChargeRefundUpdated_Failed_ReversesCountedRefund()
     {
         var (context, _, _) = await SeedSucceededPaymentAsync();
-        var service = CreateWebhookService(context);
+        var gateway = new FakePaymentGateway();
+        gateway.AddRefund("pi_test_1", "re_test_1", 2000);
+        var service = CreateWebhookService(context, gateway: gateway);
 
-        await service.HandleAsync(CreateChargeRefundedEvent("evt_test_refunded_pending", "pi_test_1", "ch_test_1", 2000, includeRefunds: false), "{}");
+        await service.HandleAsync(CreateChargeRefundedEvent("evt_test_refunded_pending", "pi_test_1", "ch_test_1", 2000), "{}");
         await service.HandleAsync(CreateRefundUpdatedEvent("evt_test_refund_updated_failed_counted", "pi_test_1", "re_test_1", 2000, "failed"), "{}");
 
         var payment = await context.Set<RentalPayment>().SingleAsync();
@@ -373,12 +428,49 @@ public sealed class RentalPaymentWebhookTests
     }
 
     [Fact]
+    public async Task HandleWebhook_ChargeRefundUpdated_Failed_OnUncountedRefund_LeavesCountedRefunds()
+    {
+        var (context, _, _) = await SeedSucceededPaymentAsync();
+        var gateway = new FakePaymentGateway();
+        gateway.AddRefund("pi_test_1", "re_test_1", 2000);
+        var service = CreateWebhookService(context, gateway: gateway);
+
+        await service.HandleAsync(CreateChargeRefundedEvent("evt_test_refunded_counted", "pi_test_1", "ch_test_1", 2000), "{}");
+        await service.HandleAsync(CreateRefundUpdatedEvent("evt_test_refund_updated_failed_uncounted", "pi_test_1", "re_test_other", 2000, "failed"), "{}");
+
+        var payment = await context.Set<RentalPayment>().Include(p => p.Refunds).SingleAsync();
+        Assert.Equal(PaymentStatus.PartiallyRefunded, payment.Status);
+        Assert.Equal(2000, payment.RefundedCents);
+        Assert.Equal("re_test_1", payment.StripeRefundId);
+        Assert.Single(payment.Refunds);
+    }
+
+    [Fact]
+    public async Task HandleWebhook_ChargeRefundUpdated_Pending_OnCountedRefund_DoesNotReverseIt()
+    {
+        var (context, _, _) = await SeedSucceededPaymentAsync();
+        var gateway = new FakePaymentGateway();
+        gateway.AddRefund("pi_test_1", "re_test_1", 2000);
+        var service = CreateWebhookService(context, gateway: gateway);
+
+        await service.HandleAsync(CreateChargeRefundedEvent("evt_test_refunded_pending_counted", "pi_test_1", "ch_test_1", 2000), "{}");
+        await service.HandleAsync(CreateRefundUpdatedEvent("evt_test_refund_updated_pending", "pi_test_1", "re_test_1", 2000, "pending"), "{}");
+
+        var payment = await context.Set<RentalPayment>().SingleAsync();
+        Assert.Equal(PaymentStatus.PartiallyRefunded, payment.Status);
+        Assert.Equal(2000, payment.RefundedCents);
+        Assert.Equal("re_test_1", payment.StripeRefundId);
+    }
+
+    [Fact]
     public async Task HandleWebhook_ChargeRefundUpdated_Failed_OnFullyRefundedPayment_ReversesToSucceeded()
     {
         var (context, _, _) = await SeedSucceededPaymentAsync();
-        var service = CreateWebhookService(context);
+        var gateway = new FakePaymentGateway();
+        gateway.AddRefund("pi_test_1", "re_test_1", 5000);
+        var service = CreateWebhookService(context, gateway: gateway);
 
-        await service.HandleAsync(CreateChargeRefundedEvent("evt_test_refunded_full_pending", "pi_test_1", "ch_test_1", 5000, includeRefunds: false), "{}");
+        await service.HandleAsync(CreateChargeRefundedEvent("evt_test_refunded_full_pending", "pi_test_1", "ch_test_1", 5000), "{}");
         Assert.Equal(PaymentStatus.Refunded, (await context.Set<RentalPayment>().SingleAsync()).Status);
 
         await service.HandleAsync(CreateRefundUpdatedEvent("evt_test_refund_updated_failed_full", "pi_test_1", "re_test_1", 5000, "failed"), "{}");
@@ -393,15 +485,19 @@ public sealed class RentalPaymentWebhookTests
     public async Task HandleWebhook_ChargeRefundUpdated_Failed_PartialReversal_LeavesPartiallyRefunded()
     {
         var (context, _, _) = await SeedSucceededPaymentAsync();
-        var service = CreateWebhookService(context);
+        var gateway = new FakePaymentGateway();
+        gateway.AddRefund("pi_test_1", "re_test_1", 2000);
+        gateway.AddRefund("pi_test_1", "re_test_2", 1500);
+        var service = CreateWebhookService(context, gateway: gateway);
 
-        await service.HandleAsync(CreateChargeRefundedEvent("evt_test_refunded_total_first", "pi_test_1", "ch_test_1", 2000, includeRefunds: false), "{}");
-        await service.HandleAsync(CreateChargeRefundedEvent("evt_test_refunded_total_second", "pi_test_1", "ch_test_1", 3500, includeRefunds: false), "{}");
-        await service.HandleAsync(CreateRefundUpdatedEvent("evt_test_refund_updated_failed_partial", "pi_test_1", "re_test_1", 1500, "failed"), "{}");
+        await service.HandleAsync(CreateChargeRefundedEvent("evt_test_refunded_total_first", "pi_test_1", "ch_test_1", 2000), "{}");
+        await service.HandleAsync(CreateChargeRefundedEvent("evt_test_refunded_total_second", "pi_test_1", "ch_test_1", 3500), "{}");
+        await service.HandleAsync(CreateRefundUpdatedEvent("evt_test_refund_updated_failed_partial", "pi_test_1", "re_test_2", 1500, "failed"), "{}");
 
         var payment = await context.Set<RentalPayment>().SingleAsync();
         Assert.Equal(PaymentStatus.PartiallyRefunded, payment.Status);
         Assert.Equal(2000, payment.RefundedCents);
+        Assert.Equal("re_test_1", payment.StripeRefundId);
     }
 
     [Fact]
@@ -440,35 +536,15 @@ public sealed class RentalPaymentWebhookTests
     }
 
     [Fact]
-    public async Task HandleWebhook_CrossEventInterleaving_DoesNotDoubleCountRefund()
+    public async Task HandleWebhook_ChargeRefunded_CrossEventInterleaving_DoesNotDoubleCountRefund()
     {
         var (context, _, _) = await SeedSucceededPaymentAsync();
-        var service = CreateWebhookService(context);
+        var gateway = new FakePaymentGateway();
+        gateway.AddRefund("pi_test_1", "re_A", 2000);
+        gateway.AddRefund("pi_test_1", "re_B", 1500);
+        var service = CreateWebhookService(context, gateway: gateway);
 
-        var chargeEvt = new Event
-        {
-            Id = "evt_charge_refunded_multi",
-            Type = "charge.refunded",
-            Data = new Stripe.EventData
-            {
-                Object = new Charge
-                {
-                    Id = "ch_test_1",
-                    PaymentIntentId = "pi_test_1",
-                    AmountRefunded = 3500,
-                    Refunds = new StripeList<Refund>
-                    {
-                        Data =
-                        [
-                            new Refund { Id = "re_A", Amount = 2000 },
-                            new Refund { Id = "re_B", Amount = 1500 }
-                        ]
-                    }
-                }
-            }
-        };
-
-        await service.HandleAsync(chargeEvt, "{}");
+        await service.HandleAsync(CreateChargeRefundedEvent("evt_charge_refunded_multi", "pi_test_1", "ch_test_1", 3500), "{}");
 
         var payment = await context.Set<RentalPayment>().Include(p => p.Refunds).SingleAsync();
         Assert.Equal(3500, payment.RefundedCents);
@@ -565,7 +641,7 @@ public sealed class RentalPaymentWebhookTests
             new FixedClock(Now),
             new StripeOptions { Currency = "eur" },
             gateway ?? new FakePaymentGateway(),
-            notifications ?? new NoOpNotificationDispatcher(),
+            notifications ?? new RecordingNotificationDispatcher(),
             new EnrollmentNotificationDispatcher(context, new FixedClock(Now)),
             NullLogger<StripeWebhookService>.Instance);
 
@@ -595,20 +671,14 @@ public sealed class RentalPaymentWebhookTests
         };
     }
 
-    private static Event CreateChargeRefundedEvent(string eventId, string? paymentIntentId, string chargeId, long amountRefunded, bool includeRefunds = true)
+    private static Event CreateChargeRefundedEvent(string eventId, string? paymentIntentId, string chargeId, long amountRefunded)
     {
-        var refunds = new StripeList<Refund>();
-        if (includeRefunds)
-        {
-            refunds.Data = [new Refund { Id = "re_test_1", Amount = amountRefunded }];
-        }
-
+        // Stripe API version 2022-11-15 and later do not send a refund list on the charge.
         var charge = new Charge
         {
             Id = chargeId,
             PaymentIntentId = paymentIntentId,
-            AmountRefunded = amountRefunded,
-            Refunds = refunds
+            AmountRefunded = amountRefunded
         };
 
         return new Event

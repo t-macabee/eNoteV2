@@ -14,7 +14,7 @@ public sealed class StripePaymentRefundTests
     {
         var payment = CreatePayment(paymentType);
 
-        payment.ApplyRefund(2000, "re_test_1", Now);
+        Assert.True(payment.ApplyRefund(2000, "re_test_1", Now));
 
         Assert.Equal(PaymentStatus.PartiallyRefunded, payment.Status);
         Assert.Equal(2000, payment.RefundedCents);
@@ -28,8 +28,8 @@ public sealed class StripePaymentRefundTests
     {
         var payment = CreatePayment(paymentType);
 
-        payment.ApplyRefund(2000, "re_test_1", Now);
-        payment.ApplyRefund(3000, "re_test_2", Now);
+        Assert.True(payment.ApplyRefund(2000, "re_test_1", Now));
+        Assert.True(payment.ApplyRefund(3000, "re_test_2", Now));
 
         Assert.Equal(PaymentStatus.Refunded, payment.Status);
         Assert.Equal(5000, payment.RefundedCents);
@@ -42,7 +42,7 @@ public sealed class StripePaymentRefundTests
     {
         var payment = CreatePayment(paymentType);
 
-        payment.ApplyRefund(5000, "re_test_1", Now);
+        Assert.True(payment.ApplyRefund(5000, "re_test_1", Now));
 
         Assert.Equal(PaymentStatus.Refunded, payment.Status);
         Assert.Equal(0, payment.AmountChargedCents - payment.RefundedCents);
@@ -54,8 +54,8 @@ public sealed class StripePaymentRefundTests
     {
         var payment = CreatePayment(paymentType);
 
-        payment.ApplyRefund(2000, "re_test_1", Now);
-        payment.ApplyRefund(2000, "re_test_1", Now);
+        Assert.True(payment.ApplyRefund(2000, "re_test_1", Now));
+        Assert.False(payment.ApplyRefund(2000, "re_test_1", Now));
 
         Assert.Equal(2000, payment.RefundedCents);
         Assert.Single(payment.Refunds);
@@ -66,9 +66,9 @@ public sealed class StripePaymentRefundTests
     public void ReverseRefund_FailedRefund_ReturnsToSucceeded(string paymentType)
     {
         var payment = CreatePayment(paymentType);
-        payment.ApplyRefund(2000, "re_test_1", Now);
+        Assert.True(payment.ApplyRefund(2000, "re_test_1", Now));
 
-        payment.ReverseRefund(2000, "re_test_1");
+        Assert.True(payment.ReverseRefund("re_test_1"));
 
         Assert.Equal(PaymentStatus.Succeeded, payment.Status);
         Assert.Null(payment.RefundedCents);
@@ -82,10 +82,10 @@ public sealed class StripePaymentRefundTests
     public void ReverseRefund_OneOfTwoRefunds_LeavesPartiallyRefunded(string paymentType)
     {
         var payment = CreatePayment(paymentType);
-        payment.ApplyRefund(2000, "re_test_1", Now);
-        payment.ApplyRefund(1000, "re_test_2", Now);
+        Assert.True(payment.ApplyRefund(2000, "re_test_1", Now));
+        Assert.True(payment.ApplyRefund(1000, "re_test_2", Now));
 
-        payment.ReverseRefund(2000, "re_test_1");
+        Assert.True(payment.ReverseRefund("re_test_1"));
 
         Assert.Equal(PaymentStatus.PartiallyRefunded, payment.Status);
         Assert.Equal(1000, payment.RefundedCents);

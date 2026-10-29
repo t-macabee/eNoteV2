@@ -36,4 +36,8 @@ public interface IPaymentGateway
         string reason,
         string idempotencyKey,
         CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<RefundData>> ListRefundsAsync(
+        string paymentIntentId,
+        CancellationToken cancellationToken = default);
 }

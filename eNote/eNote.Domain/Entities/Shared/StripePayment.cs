@@ -2,7 +2,7 @@ using eNote.Domain.Enums;
 
 namespace eNote.Domain.Entities.Shared;
 
-public abstract class StripePayment : AuditableEntity, IStripePaymentRow
+public abstract class StripePayment : AuditableEntity
 {
     public string StripePaymentIntentId { get; private set; } = null!;
     public string? StripeChargeId { get; private set; }
@@ -55,47 +55,35 @@ public abstract class StripePayment : AuditableEntity, IStripePaymentRow
         Status = PaymentStatus.Canceled;
     }
 
-    public void ApplyRefund(long refundedCents, string? stripeRefundId, DateTime refundedAt)
+    public bool ApplyRefund(long refundedCents, string stripeRefundId, DateTime refundedAt)
     {
-        if (!string.IsNullOrWhiteSpace(stripeRefundId))
+        var existing = _refunds.FirstOrDefault(r => r.StripeRefundId == stripeRefundId);
+        if (existing is not null)
         {
-            var existing = _refunds.FirstOrDefault(r => r.StripeRefundId == stripeRefundId);
-            if (existing is null)
-            {
-                _refunds.Add(CreateRefund(stripeRefundId, refundedCents, refundedAt));
-            }
-            else if (existing.AmountCents < refundedCents)
-            {
-                _refunds.Remove(existing);
-                _refunds.Add(CreateRefund(stripeRefundId, refundedCents, refundedAt));
-            }
-            else
-            {
-                return;
-            }
+            return false;
         }
 
-        RefundedCents = _refunds.Count > 0
-            ? _refunds.Sum(r => r.AmountCents)
-            : (RefundedCents ?? 0) + refundedCents;
+        _refunds.Add(CreateRefund(stripeRefundId, refundedCents, refundedAt));
 
-        StripeRefundId = stripeRefundId ?? StripeRefundId;
+        RefundedCents = _refunds.Sum(r => r.AmountCents);
+        StripeRefundId = stripeRefundId;
         RefundedAt = refundedAt;
         Status = RefundedCents >= AmountChargedCents
             ? PaymentStatus.Refunded
             : PaymentStatus.PartiallyRefunded;
+
+        return true;
     }
 
-    public void ReverseRefund(long refundedCents, string? stripeRefundId = null)
+    public bool ReverseRefund(string stripeRefundId)
     {
-        if (!string.IsNullOrWhiteSpace(stripeRefundId))
+        var existing = _refunds.FirstOrDefault(r => r.StripeRefundId == stripeRefundId);
+        if (existing is null)
         {
-            var existing = _refunds.FirstOrDefault(r => r.StripeRefundId == stripeRefundId);
-            if (existing is not null)
-            {
-                _refunds.Remove(existing);
-            }
+            return false;
         }
+
+        _refunds.Remove(existing);
 
         if (_refunds.Count > 0)
         {
@@ -105,21 +93,14 @@ public abstract class StripePayment : AuditableEntity, IStripePaymentRow
             Status = RefundedCents >= AmountChargedCents
                 ? PaymentStatus.Refunded
                 : PaymentStatus.PartiallyRefunded;
-            return;
+            return true;
         }
 
-        var remaining = Math.Max(0, (RefundedCents ?? 0) - refundedCents);
-        if (remaining == 0)
-        {
-            RefundedCents = null;
-            StripeRefundId = null;
-            RefundedAt = null;
-            Status = PaymentStatus.Succeeded;
-            return;
-        }
-
-        RefundedCents = remaining;
-        Status = PaymentStatus.PartiallyRefunded;
+        RefundedCents = null;
+        StripeRefundId = null;
+        RefundedAt = null;
+        Status = PaymentStatus.Succeeded;
+        return true;
     }
 
     protected abstract PaymentRefund CreateRefund(string stripeRefundId, long amountCents, DateTime appliedAtUtc);

@@ -98,7 +98,7 @@ public sealed class EnrollmentTests
         payment.ApplyRefund(5000, "re_test_1", Now);
         enrollment.RevokeRefundedAccessPeriod(payment);
 
-        payment.ReverseRefund(5000, "re_test_1");
+        payment.ReverseRefund("re_test_1");
         enrollment.RestoreRefundedAccessPeriod(payment);
 
         Assert.Equal(PaymentStatus.Succeeded, payment.Status);

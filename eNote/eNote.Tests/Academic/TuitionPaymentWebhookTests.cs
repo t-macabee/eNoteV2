@@ -1,8 +1,10 @@
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
+using eNote.Application.Common.Localization;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Features.Rentals.InstrumentRentals.Services;
 using eNote.Application.Features.Rentals.Payments.Services;
-using eNote.Contracts.Communication;
 using eNote.Contracts.Enrollments;
 using eNote.Domain.Entities.Communication;
 using eNote.Infrastructure.Messaging;
@@ -135,7 +137,9 @@ public sealed class TuitionPaymentWebhookTests
     public async Task HandleWebhook_Failed_DoesNotOverwriteRefundedPayment()
     {
         var (context, _, payment) = await SeedRequiresActionTuitionPaymentAsync();
-        var service = CreateWebhookService(context);
+        var gateway = new FakePaymentGateway();
+        gateway.AddRefund(payment.StripePaymentIntentId, "re_tuition_refund", payment.AmountChargedCents);
+        var service = CreateWebhookService(context, gateway);
 
         await service.HandleAsync(CreatePaymentIntentEvent("evt_tuition_refund_first", "payment_intent.succeeded", payment.StripePaymentIntentId, "succeeded", "ch_tuition_refund"), "{}");
         await service.HandleAsync(CreateChargeRefundedEvent("evt_tuition_refund_full", payment.StripePaymentIntentId, "ch_tuition_refund", payment.AmountChargedCents), "{}");
@@ -161,10 +165,30 @@ public sealed class TuitionPaymentWebhookTests
     }
 
     [Fact]
-    public async Task HandleWebhook_ChargeRefunded_FullRefund_MarksRefundedAndMovesPaidUntilBack()
+    public async Task HandleWebhook_Succeeded_SecondEventForSucceededPayment_DoesNotExtendPaidUntilAgain()
     {
         var (context, enrollment, payment) = await SeedRequiresActionTuitionPaymentAsync();
         var service = CreateWebhookService(context);
+
+        await service.HandleAsync(CreatePaymentIntentEvent("evt_tuition_succeeded_once", "payment_intent.succeeded", payment.StripePaymentIntentId, "succeeded", "ch_tuition_once"), "{}");
+        await service.HandleAsync(CreatePaymentIntentEvent("evt_tuition_succeeded_twice", "payment_intent.succeeded", payment.StripePaymentIntentId, "succeeded", "ch_tuition_once"), "{}");
+
+        var reloadedPayment = await context.Set<CoursePayment>().SingleAsync(p => p.Id == payment.Id);
+        var reloadedEnrollment = await context.Set<Enrollment>().SingleAsync(e => e.Id == enrollment.Id);
+
+        Assert.Equal(Now.AddDays(30), reloadedPayment.PeriodEnd);
+        Assert.Equal(Now.AddDays(30), reloadedEnrollment.PaidUntil);
+        Assert.Single(await ReadTuitionMessagesAsync(context));
+        Assert.Equal(2, await context.Set<StripeWebhookEvent>().CountAsync());
+    }
+
+    [Fact]
+    public async Task HandleWebhook_ChargeRefunded_FullRefund_MarksRefundedAndMovesPaidUntilBack()
+    {
+        var (context, enrollment, payment) = await SeedRequiresActionTuitionPaymentAsync();
+        var gateway = new FakePaymentGateway();
+        gateway.AddRefund(payment.StripePaymentIntentId, "re_tuition_ref", payment.AmountChargedCents);
+        var service = CreateWebhookService(context, gateway);
         await service.HandleAsync(CreatePaymentIntentEvent("evt_tuition_succeeded_ref", "payment_intent.succeeded", payment.StripePaymentIntentId, "succeeded", "ch_tuition_ref"), "{}");
 
         await service.HandleAsync(CreateChargeRefundedEvent("evt_tuition_refunded_1", payment.StripePaymentIntentId, "ch_tuition_ref", payment.AmountChargedCents), "{}");
@@ -182,7 +206,9 @@ public sealed class TuitionPaymentWebhookTests
     public async Task HandleWebhook_ChargeRefunded_PartialRefund_KeepsAccess()
     {
         var (context, enrollment, payment) = await SeedRequiresActionTuitionPaymentAsync();
-        var service = CreateWebhookService(context);
+        var gateway = new FakePaymentGateway();
+        gateway.AddRefund(payment.StripePaymentIntentId, "re_tuition_partial", 4000);
+        var service = CreateWebhookService(context, gateway);
         await service.HandleAsync(CreatePaymentIntentEvent("evt_tuition_succeeded_partial", "payment_intent.succeeded", payment.StripePaymentIntentId, "succeeded", "ch_tuition_partial"), "{}");
 
         await service.HandleAsync(CreateChargeRefundedEvent("evt_tuition_refunded_partial", payment.StripePaymentIntentId, "ch_tuition_partial", 4000), "{}");
@@ -199,7 +225,9 @@ public sealed class TuitionPaymentWebhookTests
     public async Task HandleWebhook_ChargeRefundUpdated_Failed_RestoresPaidUntil()
     {
         var (context, enrollment, payment) = await SeedRequiresActionTuitionPaymentAsync();
-        var service = CreateWebhookService(context);
+        var gateway = new FakePaymentGateway();
+        gateway.AddRefund(payment.StripePaymentIntentId, "re_tuition_1", payment.AmountChargedCents);
+        var service = CreateWebhookService(context, gateway);
         await service.HandleAsync(CreatePaymentIntentEvent("evt_tuition_succeeded_reverse", "payment_intent.succeeded", payment.StripePaymentIntentId, "succeeded", "ch_tuition_reverse"), "{}");
         await service.HandleAsync(CreateChargeRefundedEvent("evt_tuition_refunded_reverse", payment.StripePaymentIntentId, "ch_tuition_reverse", payment.AmountChargedCents), "{}");
 
@@ -211,6 +239,120 @@ public sealed class TuitionPaymentWebhookTests
         Assert.Equal(PaymentStatus.Succeeded, reloadedPayment.Status);
         Assert.Null(reloadedPayment.RefundedCents);
         Assert.Equal(Now.AddDays(30), reloadedEnrollment.PaidUntil);
+    }
+
+    [Fact]
+    public async Task HandleWebhook_ChargeRefundUpdated_FailedOneOfTwoFullRefunds_LeavesPartiallyRefundedAndRestoresPaidUntil()
+    {
+        var (context, enrollment, payment) = await SeedRequiresActionTuitionPaymentAsync();
+        var gateway = new FakePaymentGateway();
+        gateway.AddRefund(payment.StripePaymentIntentId, "re_tuition_1", 6000);
+        gateway.AddRefund(payment.StripePaymentIntentId, "re_tuition_2", 4000);
+        var service = CreateWebhookService(context, gateway);
+        await service.HandleAsync(CreatePaymentIntentEvent("evt_tuition_succeeded_two_ref", "payment_intent.succeeded", payment.StripePaymentIntentId, "succeeded", "ch_tuition_two_ref"), "{}");
+        await service.HandleAsync(CreateChargeRefundedEvent("evt_tuition_refunded_two_ref", payment.StripePaymentIntentId, "ch_tuition_two_ref", payment.AmountChargedCents), "{}");
+
+        await service.HandleAsync(CreateRefundUpdatedEvent("evt_tuition_refund_failed_two_ref", payment.StripePaymentIntentId, "re_tuition_1", 6000, "failed"), "{}");
+
+        var reloadedPayment = await context.Set<CoursePayment>().SingleAsync(p => p.Id == payment.Id);
+        var reloadedEnrollment = await context.Set<Enrollment>().SingleAsync(e => e.Id == enrollment.Id);
+
+        Assert.Equal(PaymentStatus.PartiallyRefunded, reloadedPayment.Status);
+        Assert.Equal(4000, reloadedPayment.RefundedCents);
+        Assert.Equal(Now.AddDays(30), reloadedEnrollment.PaidUntil);
+    }
+
+    [Fact]
+    public async Task HandleWebhook_ChargeRefundUpdated_FullRefundSucceeded_MovesPaidUntilBack()
+    {
+        var (context, enrollment, payment) = await SeedRequiresActionTuitionPaymentAsync();
+        var service = CreateWebhookService(context);
+        await service.HandleAsync(CreatePaymentIntentEvent("evt_tuition_succeeded_upd_full", "payment_intent.succeeded", payment.StripePaymentIntentId, "succeeded", "ch_tuition_upd_full"), "{}");
+
+        await service.HandleAsync(CreateRefundUpdatedEvent("evt_tuition_refund_upd_full", payment.StripePaymentIntentId, "re_tuition_upd_full", payment.AmountChargedCents, "succeeded"), "{}");
+
+        var reloadedPayment = await context.Set<CoursePayment>().SingleAsync(p => p.Id == payment.Id);
+        var reloadedEnrollment = await context.Set<Enrollment>().SingleAsync(e => e.Id == enrollment.Id);
+
+        Assert.Equal(PaymentStatus.Refunded, reloadedPayment.Status);
+        Assert.Equal(payment.AmountChargedCents, reloadedPayment.RefundedCents);
+        Assert.Equal(Now, reloadedEnrollment.PaidUntil);
+    }
+
+    [Fact]
+    public async Task HandleWebhook_ChargeRefundUpdated_PartialRefundSucceeded_KeepsAccess()
+    {
+        var (context, enrollment, payment) = await SeedRequiresActionTuitionPaymentAsync();
+        var service = CreateWebhookService(context);
+        await service.HandleAsync(CreatePaymentIntentEvent("evt_tuition_succeeded_upd_part", "payment_intent.succeeded", payment.StripePaymentIntentId, "succeeded", "ch_tuition_upd_part"), "{}");
+
+        await service.HandleAsync(CreateRefundUpdatedEvent("evt_tuition_refund_upd_part", payment.StripePaymentIntentId, "re_tuition_upd_part", 4000, "succeeded"), "{}");
+
+        var reloadedPayment = await context.Set<CoursePayment>().SingleAsync(p => p.Id == payment.Id);
+        var reloadedEnrollment = await context.Set<Enrollment>().SingleAsync(e => e.Id == enrollment.Id);
+
+        Assert.Equal(PaymentStatus.PartiallyRefunded, reloadedPayment.Status);
+        Assert.Equal(4000, reloadedPayment.RefundedCents);
+        Assert.Equal(Now.AddDays(30), reloadedEnrollment.PaidUntil);
+    }
+
+    [Fact]
+    public async Task HandleWebhook_WithInvalidSignature_IsRejected_AndChangesNothing()
+    {
+        var (context, enrollment, payment) = await SeedRequiresActionTuitionPaymentAsync();
+        var service = CreateWebhookService(context);
+        var rawJson = BuildSucceededEventJson("evt_tuition_sig_bad", payment.StripePaymentIntentId);
+
+        var ex = await Assert.ThrowsAsync<BusinessException>(() => service.HandleAsync(rawJson, SignatureHeader(rawJson, "whsec_other")));
+
+        Assert.Equal(Messages.StripeWebhookSignatureInvalid, ex.Message);
+        var reloadedPayment = await context.Set<CoursePayment>().SingleAsync(p => p.Id == payment.Id);
+        var reloadedEnrollment = await context.Set<Enrollment>().SingleAsync(e => e.Id == enrollment.Id);
+        Assert.Equal(PaymentStatus.RequiresAction, reloadedPayment.Status);
+        Assert.Null(reloadedEnrollment.PaidUntil);
+        Assert.Empty(await context.Set<StripeWebhookEvent>().ToListAsync());
+    }
+
+    [Fact]
+    public async Task HandleWebhook_WithValidSignature_AppliesThePayment()
+    {
+        var (context, enrollment, payment) = await SeedRequiresActionTuitionPaymentAsync();
+        var service = CreateWebhookService(context);
+        var rawJson = BuildSucceededEventJson("evt_tuition_sig_ok", payment.StripePaymentIntentId);
+
+        await service.HandleAsync(rawJson, SignatureHeader(rawJson, "whsec_test"));
+
+        var reloadedPayment = await context.Set<CoursePayment>().SingleAsync(p => p.Id == payment.Id);
+        var reloadedEnrollment = await context.Set<Enrollment>().SingleAsync(e => e.Id == enrollment.Id);
+        Assert.Equal(PaymentStatus.Succeeded, reloadedPayment.Status);
+        Assert.Equal(Now.AddDays(30), reloadedEnrollment.PaidUntil);
+    }
+
+    private static string BuildSucceededEventJson(string eventId, string paymentIntentId) =>
+        JsonSerializer.Serialize(new
+        {
+            id = eventId,
+            @object = "event",
+            type = "payment_intent.succeeded",
+            data = new
+            {
+                @object = new
+                {
+                    id = paymentIntentId,
+                    @object = "payment_intent",
+                    status = "succeeded",
+                    amount = 10000,
+                    currency = "bam",
+                    latest_charge = "ch_tuition_sig"
+                }
+            }
+        });
+
+    private static string SignatureHeader(string rawJson, string secret)
+    {
+        var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        var hash = HMACSHA256.HashData(Encoding.UTF8.GetBytes(secret), Encoding.UTF8.GetBytes($"{timestamp}.{rawJson}"));
+        return $"t={timestamp},v1={Convert.ToHexStringLower(hash)}";
     }
 
     [Fact]
@@ -240,6 +382,36 @@ public sealed class TuitionPaymentWebhookTests
         var message = Assert.Single(await ReadTuitionMessagesAsync(context));
         Assert.Equal("Školarina vraćena", message.Title);
         Assert.Single(await context.Set<StripeWebhookEvent>().Where(e => e.StripeEventId == "evt_tuition_succeeded_deactivated").ToListAsync());
+    }
+
+    [Fact]
+    public async Task HandleWebhook_Succeeded_CourseUnpublished_GrantsNoAccess_AndRefunds()
+    {
+        var (context, enrollment, payment) = await SeedRequiresActionTuitionPaymentAsync();
+        var course = await context.Set<Course>().SingleAsync(c => c.Id == enrollment.CourseId);
+        course.SetPublishedStatus(false);
+        await context.SaveChangesAsync();
+        var gateway = new FakePaymentGateway();
+        var service = CreateWebhookService(context, gateway);
+        var evt = CreatePaymentIntentEvent("evt_tuition_succeeded_unpublished", "payment_intent.succeeded", payment.StripePaymentIntentId, "succeeded", "ch_tuition_unpublished");
+
+        await service.HandleAsync(evt, "{}");
+
+        var reloadedPayment = await context.Set<CoursePayment>().SingleAsync(p => p.Id == payment.Id);
+        var reloadedEnrollment = await context.Set<Enrollment>().SingleAsync(e => e.Id == enrollment.Id);
+
+        Assert.Equal(PaymentStatus.Refunded, reloadedPayment.Status);
+        Assert.Null(reloadedPayment.PeriodStart);
+        Assert.Null(reloadedPayment.PeriodEnd);
+        Assert.Equal(payment.AmountChargedCents, reloadedPayment.RefundedCents);
+        Assert.Null(reloadedEnrollment.PaidUntil);
+
+        var refundCall = Assert.Single(gateway.RefundCalls);
+        Assert.Equal($"duplicate:{payment.StripePaymentIntentId}", refundCall.IdempotencyKey);
+
+        var message = Assert.Single(await ReadTuitionMessagesAsync(context));
+        Assert.Equal("Školarina vraćena", message.Title);
+        Assert.Single(await context.Set<StripeWebhookEvent>().Where(e => e.StripeEventId == "evt_tuition_succeeded_unpublished").ToListAsync());
     }
 
     [Fact]
@@ -380,7 +552,7 @@ public sealed class TuitionPaymentWebhookTests
             new FixedClock(Now),
             new StripeOptions { Currency = "bam", WebhookSecret = "whsec_test" },
             gateway ?? new FakePaymentGateway(),
-            notifications ?? new NoOpNotificationDispatcher(),
+            notifications ?? new RecordingNotificationDispatcher(),
             new EnrollmentNotificationDispatcher(context, new FixedClock(Now)),
             NullLogger<StripeWebhookService>.Instance);
 
@@ -412,17 +584,12 @@ public sealed class TuitionPaymentWebhookTests
 
     private static Event CreateChargeRefundedEvent(string eventId, string paymentIntentId, string chargeId, long amountRefunded)
     {
-        var refunds = new StripeList<Refund>
-        {
-            Data = [new Refund { Id = "re_tuition_1", Amount = amountRefunded }]
-        };
-
+        // Stripe API version 2022-11-15 and later do not send a refund list on the charge.
         var charge = new Charge
         {
             Id = chargeId,
             PaymentIntentId = paymentIntentId,
-            AmountRefunded = amountRefunded,
-            Refunds = refunds
+            AmountRefunded = amountRefunded
         };
 
         return new Event

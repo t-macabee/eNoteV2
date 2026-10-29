@@ -6,15 +6,17 @@ public sealed class FakePaymentGateway : IPaymentGateway
 {
     private readonly Dictionary<string, PaymentIntentData> _intents = new();
     private readonly Dictionary<string, PaymentIntentData> _intentsByIdempotencyKey = new();
+    private readonly Dictionary<string, List<RefundData>> _refundsByPaymentIntent = new();
 
     public List<FakeGatewayCreateCall> CreateCalls { get; } = [];
     public List<FakeGatewayRetrieveCall> RetrieveCalls { get; } = [];
     public List<FakeGatewayCancelCall> CancelCalls { get; } = [];
     public List<FakeGatewayRefundCall> RefundCalls { get; } = [];
+    public List<FakeGatewayListRefundsCall> ListRefundCalls { get; } = [];
 
     public string RefundStatus { get; set; } = "succeeded";
     public Exception? RefundException { get; set; }
-    public Exception? CancelException { get; set; }
+    public Func<string, Exception?>? CancelException { get; set; }
 
     private int _nextIntentNumber = 1;
     private int _nextRefundNumber = 1;
@@ -40,6 +42,17 @@ public sealed class FakePaymentGateway : IPaymentGateway
         {
             _intentsByIdempotencyKey[key] = updated;
         }
+    }
+
+    public void AddRefund(string paymentIntentId, string refundId, long amountCents, string status = "succeeded")
+    {
+        if (!_refundsByPaymentIntent.TryGetValue(paymentIntentId, out var refunds))
+        {
+            refunds = [];
+            _refundsByPaymentIntent[paymentIntentId] = refunds;
+        }
+
+        refunds.Add(new RefundData(refundId, amountCents, status));
     }
 
     public Task<PaymentIntentData> CreatePaymentIntentAsync(
@@ -85,9 +98,10 @@ public sealed class FakePaymentGateway : IPaymentGateway
         }
 
         CancelCalls.Add(new FakeGatewayCancelCall(paymentIntentId));
-        if (CancelException is not null)
+
+        if (CancelException?.Invoke(paymentIntentId) is { } exception)
         {
-            throw CancelException;
+            throw exception;
         }
 
         SetIntentStatus(paymentIntentId, "canceled");
@@ -110,6 +124,19 @@ public sealed class FakePaymentGateway : IPaymentGateway
 
         return Task.FromResult(new RefundData(id, amountCents ?? 0, RefundStatus));
     }
+
+    public Task<IReadOnlyList<RefundData>> ListRefundsAsync(
+        string paymentIntentId,
+        CancellationToken cancellationToken = default)
+    {
+        ListRefundCalls.Add(new FakeGatewayListRefundsCall(paymentIntentId));
+
+        IReadOnlyList<RefundData> refunds = _refundsByPaymentIntent.TryGetValue(paymentIntentId, out var stored)
+            ? stored.ToList()
+            : [];
+
+        return Task.FromResult(refunds);
+    }
 }
 
 public sealed record FakeGatewayCreateCall(
@@ -130,6 +157,8 @@ public sealed record FakeGatewayRefundCall(
     long? AmountCents,
     string Reason,
     string IdempotencyKey);
+
+public sealed record FakeGatewayListRefundsCall(string PaymentIntentId);
 
 public sealed class ThrowingPaymentGateway : IPaymentGateway
 {
@@ -159,6 +188,11 @@ public sealed class ThrowingPaymentGateway : IPaymentGateway
         long? amountCents,
         string reason,
         string idempotencyKey,
+        CancellationToken cancellationToken = default)
+        => throw ExceptionToThrow;
+
+    public Task<IReadOnlyList<RefundData>> ListRefundsAsync(
+        string paymentIntentId,
         CancellationToken cancellationToken = default)
         => throw ExceptionToThrow;
 }
