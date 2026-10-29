@@ -6,7 +6,6 @@ import '../../../theme/app_theme.dart';
 import '../../../widgets/dialog_shell.dart';
 import '../../../widgets/entity_filter_dropdown.dart';
 import '../../../widgets/entity_list_screen.dart';
-import '../../../widgets/reason_prompt_dialog.dart';
 import 'course_provider.dart';
 
 Color _enrollmentStatusColor(EnrollmentStatus status) => switch (status) {

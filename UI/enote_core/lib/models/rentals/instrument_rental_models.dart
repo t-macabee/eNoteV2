@@ -30,6 +30,7 @@ class InstrumentRentalDto {
   final bool isPaid;
   final double? amountPaid;
   final DateTime? paidAt;
+  final int? otherPendingRequests;
 
   InstrumentRentalDto({
     required this.id,
@@ -60,6 +61,7 @@ class InstrumentRentalDto {
     required this.isPaid,
     this.amountPaid,
     this.paidAt,
+    this.otherPendingRequests,
   });
 
   factory InstrumentRentalDto.fromJson(Map<String, dynamic> json) {
@@ -93,6 +95,7 @@ class InstrumentRentalDto {
       isPaid: json['isPaid'] as bool? ?? false,
       amountPaid: (json['amountPaid'] as num?)?.toDouble(),
       paidAt: parseDate(json['paidAt']),
+      otherPendingRequests: json['otherPendingRequests'] as int?,
     );
   }
 
@@ -125,6 +128,8 @@ class InstrumentRentalDto {
     'isPaid': isPaid,
     if (amountPaid != null) 'amountPaid': amountPaid,
     if (paidAt != null) 'paidAt': paidAt!.toIso8601String(),
+    if (otherPendingRequests != null)
+      'otherPendingRequests': otherPendingRequests,
   };
 
   String get chargeLabel {

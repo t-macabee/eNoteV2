@@ -35,6 +35,7 @@ export 'api/session_http_client.dart';
 export 'auth/auth_state.dart';
 export 'notifications/notification_controller.dart';
 export 'widgets/confirm_dialog.dart';
+export 'widgets/reason_prompt_dialog.dart';
 export 'widgets/error_banner.dart';
 export 'widgets/image_field.dart';
 export 'widgets/image_thumbnail.dart';

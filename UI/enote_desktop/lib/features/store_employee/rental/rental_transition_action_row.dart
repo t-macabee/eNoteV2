@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 
 import 'package:enote_core/enote_core.dart';
 
-import '../../../widgets/reason_prompt_dialog.dart';
-
 class RentalTransitionActionRow extends StatefulWidget {
   final InstrumentRentalStatus status;
   final Future<void> Function(RentalTrigger trigger, {String? note}) onTransition;

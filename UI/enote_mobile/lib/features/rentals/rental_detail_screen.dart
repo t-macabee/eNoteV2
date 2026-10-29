@@ -65,16 +65,15 @@ class _RentalDetailScreenState extends State<RentalDetailScreen> {
   Future<void> _cancel(InstrumentRentalDto rental) async {
     final rentals = context.read<RentalProvider>();
     final messenger = ScaffoldMessenger.of(context);
-    final confirmed = await confirmDialog(
-      context: context,
+    final reason = await promptForReason(
+      context,
       title: 'Otkazivanje zahtjeva',
-      message: 'Želite li otkazati zahtjev za ${rental.instrumentModel}?',
     );
-    if (!mounted || confirmed != true) return;
+    if (!mounted || reason == null) return;
 
     setState(() => _isCancelling = true);
     try {
-      await rentals.cancel(rental.id);
+      await rentals.cancel(rental.id, note: reason);
       await _load();
       if (!mounted) return;
       messenger.showSnackBar(

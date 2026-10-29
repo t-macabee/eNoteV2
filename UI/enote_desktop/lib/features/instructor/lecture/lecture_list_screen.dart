@@ -6,7 +6,6 @@ import 'package:enote_core/enote_core.dart' as core;
 import '../../../widgets/entity_filter_dropdown.dart';
 import '../../../widgets/entity_form_scaffold.dart';
 import '../../../widgets/entity_list_screen.dart';
-import '../../../widgets/reason_prompt_dialog.dart';
 import 'lecture_detail_dialog.dart';
 import 'lecture_form_screen.dart';
 import 'lecture_provider.dart';

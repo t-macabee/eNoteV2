@@ -8,6 +8,13 @@ import '../../theme/app_theme.dart';
 import '../../widgets/form_submit_state.dart';
 import 'rental_provider.dart';
 
+String rentalRequestSentMessage(int? otherPendingRequests) {
+  const sent = 'Zahtjev za iznajmljivanje je poslan.';
+  if (otherPendingRequests == null || otherPendingRequests <= 0) return sent;
+  return '$sent Broj zahtjeva na čekanju za isti instrument: '
+      '$otherPendingRequests.';
+}
+
 Future<void> showRentalRequestSheet(
   BuildContext context,
   InstrumentDto instrument,
@@ -61,7 +68,7 @@ class _RentalRequestSheetState extends State<RentalRequestSheet>
 
     await submit(() async {
       final note = _note.text.trim();
-      await rentals.createRequest(
+      final rental = await rentals.createRequest(
         RentalCreateRequest(
           instrumentId: widget.instrument.id,
           note: note.isEmpty ? null : note,
@@ -71,7 +78,9 @@ class _RentalRequestSheetState extends State<RentalRequestSheet>
       navigator.pop();
       RootShell.switchTab(2);
       messenger.showSnackBar(
-        const SnackBar(content: Text('Zahtjev za iznajmljivanje je poslan.')),
+        SnackBar(
+          content: Text(rentalRequestSentMessage(rental.otherPendingRequests)),
+        ),
       );
     });
   }

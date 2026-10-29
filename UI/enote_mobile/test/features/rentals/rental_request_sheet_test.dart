@@ -48,6 +48,31 @@ class _GatedRentalProvider extends RentalProvider {
 }
 
 void main() {
+  group('rentalRequestSentMessage', () {
+    test('mentions the other pending requests when there are some', () {
+      expect(
+        rentalRequestSentMessage(2),
+        'Zahtjev za iznajmljivanje je poslan. '
+        'Broj zahtjeva na čekanju za isti instrument: 2.',
+      );
+    });
+
+    test('is the plain confirmation when nobody else waits', () {
+      const plain = 'Zahtjev za iznajmljivanje je poslan.';
+      expect(rentalRequestSentMessage(0), plain);
+      expect(rentalRequestSentMessage(null), plain);
+    });
+  });
+
+  test('InstrumentRentalDto reads otherPendingRequests from the response', () {
+    expect(InstrumentRentalDto.fromJson(_rental).otherPendingRequests, isNull);
+    expect(
+      InstrumentRentalDto.fromJson({..._rental, 'otherPendingRequests': 3})
+          .otherPendingRequests,
+      3,
+    );
+  });
+
   testWidgets(
       'completing the request after the sheet is dismissed pops nothing',
       (tester) async {
