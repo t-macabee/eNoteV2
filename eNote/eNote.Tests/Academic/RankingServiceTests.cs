@@ -1,3 +1,4 @@
+using eNote.Application.Features.Academic;
 using eNote.Application.Features.Academic.Courses.Services;
 using eNote.Domain.Entities.Assignments;
 using eNote.Tests.TestUtils;
@@ -38,6 +39,38 @@ public sealed class RankingServiceTests
         Assert.Equal(2, ranking[0].GradedSubmissions);
         Assert.Equal(2, ranking[1].Rank);
         Assert.Equal(70, ranking[1].AverageGrade);
+    }
+
+    [Fact]
+    public async Task GetForInstructorAsync_RanksActiveAndCompletedStudents_ButNotCanceled()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var completedStudent = new Student(61, Now);
+        var canceledStudent = new Student(62, Now);
+        harness.Context.Set<Student>().AddRange(completedStudent, canceledStudent);
+        await harness.Context.SaveChangesAsync();
+        harness.Context.Set<Enrollment>().AddRange(
+            new Enrollment(completedStudent.Id, harness.Course.Id, EnrollmentStatus.Completed),
+            new Enrollment(canceledStudent.Id, harness.Course.Id, EnrollmentStatus.Canceled));
+        await harness.Context.SaveChangesAsync();
+
+        var assignment = new Assignment("Homework", "Do it", Now.AddDays(7), harness.Lecture.Id);
+        harness.Context.Set<Assignment>().Add(assignment);
+        await harness.Context.SaveChangesAsync();
+
+        harness.Context.Set<AssignmentSubmission>().AddRange(
+            CreateSubmission(assignment.Id, harness.Student.Id, grade: 90),
+            CreateSubmission(assignment.Id, completedStudent.Id, grade: 80),
+            CreateSubmission(assignment.Id, canceledStudent.Id, grade: 100));
+        await harness.Context.SaveChangesAsync();
+
+        var service = CreateService(harness.Context, harness.Instructor, harness.Student);
+        var ranking = await service.GetFullForInstructorAsync(harness.Course.Id);
+
+        Assert.Equal(2, ranking.Count);
+        Assert.Equal(harness.Student.Id, ranking[0].StudentId);
+        Assert.Equal(completedStudent.Id, ranking[1].StudentId);
+        Assert.DoesNotContain(ranking, e => e.StudentId == canceledStudent.Id);
     }
 
     [Fact]
@@ -211,6 +244,42 @@ public sealed class RankingServiceTests
         var entry = Assert.Single(ranking);
         Assert.Equal(classmate.Id, entry.StudentId);
         Assert.Equal(100, entry.AverageGrade);
+        Assert.Equal(1, entry.GradedSubmissions);
+    }
+
+    [Fact]
+    public async Task GetForStudentAsync_Throws_WhenPaidOnlyForAnotherCourse()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var other = await AcademicTestData.AddSecondInstructorContentAsync(harness, Now);
+        harness.Context.Set<Enrollment>().Add(new Enrollment(harness.Student.Id, other.Course.Id, EnrollmentStatus.Active));
+        await harness.Context.SaveChangesAsync();
+        var service = CreateService(harness.Context, harness.Instructor, harness.Student);
+
+        Assert.False(await harness.Context.IsEnrolledAndPaidAsync(harness.Student.Id, other.Course.Id, Now));
+        await Assert.ThrowsAsync<AuthorizationException>(() => service.GetForStudentAsync(other.Course.Id));
+    }
+
+    [Fact]
+    public async Task GetForInstructorAsync_ExcludesGradesFromOtherCourses()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var other = await AcademicTestData.AddSecondInstructorContentAsync(harness, Now);
+        harness.Context.Set<Enrollment>().Add(new Enrollment(harness.Student.Id, other.Course.Id, EnrollmentStatus.Active));
+        var assignment = new Assignment("Own homework", "Do it", Now.AddDays(7), harness.Lecture.Id);
+        harness.Context.Set<Assignment>().Add(assignment);
+        await harness.Context.SaveChangesAsync();
+        harness.Context.Set<AssignmentSubmission>().AddRange(
+            CreateSubmission(assignment.Id, harness.Student.Id, grade: 50),
+            CreateSubmission(other.Assignment.Id, harness.Student.Id, grade: 100));
+        await harness.Context.SaveChangesAsync();
+        var service = CreateService(harness.Context, harness.Instructor, harness.Student);
+
+        var ranking = await service.GetForInstructorAsync(harness.Course.Id);
+
+        var entry = Assert.Single(ranking);
+        Assert.Equal(harness.Student.Id, entry.StudentId);
+        Assert.Equal(50, entry.AverageGrade);
         Assert.Equal(1, entry.GradedSubmissions);
     }
 

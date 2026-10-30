@@ -1,4 +1,3 @@
-using eNote.Application.Common.Localization;
 using eNote.Application.Features.Academic;
 using eNote.Application.Features.Academic.Assignments;
 using eNote.Application.Features.Academic.Assignments.Services;
@@ -121,9 +120,8 @@ public sealed class AcademicGatingTests
         var paidRsvp = await paidService.RsvpAsync(lecture.Id, new RsvpRequest { Confirm = true });
         Assert.True(paidRsvp.Confirmed);
 
-        var ex = await Assert.ThrowsAsync<BusinessException>(() =>
+        await Assert.ThrowsAsync<NotFoundException>(() =>
             unpaidService.RsvpAsync(lecture.Id, new RsvpRequest { Confirm = true }));
-        Assert.Equal(Messages.StudentNotEnrolled, ex.Message);
 
         var instructorService = CreateAttendanceService(context, instructor, paidStudent, new StubCurrentActor());
         var marked = await instructorService.MarkAttendanceAsync(lecture.Id, new MarkAttendanceRequest
@@ -201,6 +199,25 @@ public sealed class AcademicGatingTests
         await context.SaveChangesAsync();
 
         Assert.False(await context.IsEnrolledAndPaidAsync(student.Id, course.Id, Now));
+    }
+
+    [Fact]
+    public async Task ContentAccess_RequiresPayment_WhenCoursePriceIsNotZero()
+    {
+        var (context, instructor, _, unpaidStudent, course, lecture) = await SetupScenarioAsync();
+        course.UpdateDetails(course.Name, course.Description, 0.5m, course.StartDate, course.EndDate);
+        var enrollment = await context.Set<Enrollment>()
+            .SingleAsync(e => e.StudentId == unpaidStudent.Id && e.CourseId == course.Id);
+        enrollment.ExtendPaidUntil(Now.AddDays(-60), 30);
+        await context.SaveChangesAsync();
+
+        Assert.Equal(Now.AddDays(-30), enrollment.PaidUntil);
+
+        var service = CreateLectureService(context, instructor, new StubCurrentActor(student: unpaidStudent));
+
+        var lectures = await service.GetPagedForStudentAsync(new LectureSearchObject());
+        Assert.Empty(lectures.Items);
+        await Assert.ThrowsAsync<NotFoundException>(() => service.GetByIdForStudentAsync(lecture.Id));
     }
 
     [Fact]

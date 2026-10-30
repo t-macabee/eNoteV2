@@ -16,26 +16,17 @@ public sealed class LectureAttendanceService(
 {
     public async Task<RsvpResponse> RsvpAsync(int lectureId, RsvpRequest request, CancellationToken cancellationToken = default)
     {
+        var studentId = await students.GetCurrentStudentIdAsync(cancellationToken);
+
         var lecture = await context.Set<Lecture>()
+            .ForEnrolledStudent(studentId, clock.UtcNow)
+            .Where(x => x.Id == lectureId && x.LectureStatus != LectureStatus.Cancelled)
             .Include(x => x.Attendances)
-            .Include(x => x.Course)
-            .FirstOrDefaultAsync(x => x.Id == lectureId && x.Course.IsPublished && x.LectureStatus != LectureStatus.Cancelled, cancellationToken) ?? throw new NotFoundException(Messages.LectureNotFound);
+            .FirstOrDefaultAsync(cancellationToken) ?? throw new NotFoundException(Messages.LectureNotFound);
 
         if (clock.UtcNow > lecture.LectureTime)
         {
             throw new BusinessException(Messages.LectureRsvpClosed);
-        }
-
-        var studentId = await students.GetCurrentStudentIdAsync(cancellationToken);
-
-        if (lecture.StudentId.HasValue && lecture.StudentId != studentId)
-        {
-            throw new NotFoundException(Messages.LectureNotFound);
-        }
-
-        if (!await context.IsEnrolledAndPaidAsync(studentId, lecture.CourseId, clock.UtcNow, cancellationToken))
-        {
-            throw new BusinessException(Messages.StudentNotEnrolled);
         }
 
         var existing = lecture.Attendances.FirstOrDefault(x => x.StudentId == studentId);
@@ -47,9 +38,7 @@ public sealed class LectureAttendanceService(
 
         if (request.Confirm)
         {
-            var confirmedCount = lecture.Attendances.Count(a => a.AttendanceStatus == AttendanceStatus.Present);
-
-            if (lecture.Capacity.HasValue && confirmedCount >= lecture.Capacity.Value && (existing is null || existing.AttendanceStatus != AttendanceStatus.Present))
+            if (lecture.IsFullFor(existing))
             {
                 throw new ConflictException(Messages.LectureFull);
             }
@@ -98,30 +87,22 @@ public sealed class LectureAttendanceService(
             .Where(x => x.LectureId == lectureId)
             .Where(x => x.Lecture.StudentId == null || x.StudentId == x.Lecture.StudentId);
 
-        var (page, pageSize) = PagingLimits.Normalize(search.Page, search.PageSize);
-        var total = search.IncludeTotalCount ? await query.CountAsync(cancellationToken) : (int?)null;
-
-        var attendances = await query
-            .OrderBy(x => x.StudentId)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .ToListAsync(cancellationToken);
-
-        var names = await displayNames.GetStudentDisplayNamesAsync(attendances.Select(a => a.Student!), cancellationToken);
-
-        return new PagedResult<AttendanceDto>
-        {
-            Items = [.. attendances.Select(a => new AttendanceDto
+        return await query.ToPagedResultAsync(
+            search,
+            async (attendances, ct) =>
             {
-                Id = a.Id,
-                StudentId = a.StudentId,
-                StudentName = names.GetValueOrDefault(a.StudentId, Messages.UnknownUserName),
-                AttendanceStatus = a.AttendanceStatus
-            })],
-            Page = page,
-            PageSize = pageSize,
-            TotalCount = total
-        };
+                var names = await displayNames.GetStudentDisplayNamesAsync(attendances.Select(a => a.Student!), ct);
+
+                return attendances.Select(a => new AttendanceDto
+                {
+                    Id = a.Id,
+                    StudentId = a.StudentId,
+                    StudentName = names.GetValueOrDefault(a.StudentId, Messages.UnknownUserName),
+                    AttendanceStatus = a.AttendanceStatus
+                });
+            },
+            q => q.OrderBy(x => x.StudentId),
+            cancellationToken);
     }
 
     public async Task<AttendanceDto> MarkAttendanceAsync(int lectureId, MarkAttendanceRequest request, CancellationToken cancellationToken = default)
@@ -148,9 +129,7 @@ public sealed class LectureAttendanceService(
 
         if (request.AttendanceStatus == AttendanceStatus.Present)
         {
-            var confirmedCount = lecture.Attendances.Count(a => a.AttendanceStatus == AttendanceStatus.Present);
-
-            if (lecture.Capacity.HasValue && confirmedCount >= lecture.Capacity.Value && (attendance is null || attendance.AttendanceStatus != AttendanceStatus.Present))
+            if (lecture.IsFullFor(attendance))
             {
                 throw new ConflictException(Messages.LectureFull);
             }

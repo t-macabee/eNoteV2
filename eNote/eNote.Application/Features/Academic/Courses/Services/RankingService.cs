@@ -52,7 +52,8 @@ public sealed class RankingService(
     {
         var enrolledStudents = await context.Set<Enrollment>()
             .AsNoTracking()
-            .Where(e => e.CourseId == courseId && e.EnrollmentStatus == EnrollmentStatus.Active)
+            .Where(e => e.CourseId == courseId
+                && (e.EnrollmentStatus == EnrollmentStatus.Active || e.EnrollmentStatus == EnrollmentStatus.Completed))
             .Include(e => e.Student)
             .Select(e => e.Student)
             .ToListAsync(cancellationToken);

@@ -1,4 +1,5 @@
 using eNote.Application.Common.Localization;
+using eNote.Application.Validation;
 using eNote.Application.Validation.Identity;
 using FluentValidation;
 using FluentValidation.AspNetCore;
@@ -12,6 +13,7 @@ public static class ValidationExtensions
     public static IServiceCollection AddApplicationValidation(this IServiceCollection services)
     {
         ValidatorOptions.Global.LanguageManager.Culture = new CultureInfo("bs");
+        ValidatorOptions.Global.DisplayNameResolver = ValidationDisplayNames.Resolve;
         services.AddFluentValidationAutoValidation();
         services.AddValidatorsFromAssemblyContaining<LoginRequestValidator>();
 

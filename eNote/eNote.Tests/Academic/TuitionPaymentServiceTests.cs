@@ -49,6 +49,20 @@ public sealed class TuitionPaymentServiceTests
     }
 
     [Fact]
+    public async Task CreateIntentAsync_FractionalPriceCourse_RequiresPayment()
+    {
+        var (context, student, _, enrollment) = await SetupScenarioAsync(price: 0.5m);
+        var gateway = new FakePaymentGateway();
+        var service = CreateService(context, student, gateway);
+
+        var result = await service.CreateIntentAsync(enrollment.Id);
+
+        Assert.Equal(50, result.AmountCents);
+        Assert.Equal(PaymentStatus.RequiresAction, result.Status);
+        Assert.Single(gateway.CreateCalls);
+    }
+
+    [Fact]
     public async Task CreateIntentAsync_UnpublishedCourse_Throws_CourseNotPayable()
     {
         var (context, student, course, enrollment) = await SetupScenarioAsync(price: 100m);

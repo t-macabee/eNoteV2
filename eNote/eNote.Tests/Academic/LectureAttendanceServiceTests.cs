@@ -88,8 +88,23 @@ public sealed class LectureAttendanceServiceTests
         await harness.Context.SaveChangesAsync();
         var service = CreateService(harness.Context, harness.Instructor, stranger);
 
-        await Assert.ThrowsAsync<BusinessException>(() =>
+        await Assert.ThrowsAsync<NotFoundException>(() =>
             service.RsvpAsync(harness.Lecture.Id, new RsvpRequest { Confirm = true }));
+    }
+
+    [Fact]
+    public async Task RsvpAsync_Succeeds_AfterCourseUnpublished_WhenEnrolledAndPaid()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        harness.Context.Set<Course>().Single(c => c.Id == harness.Course.Id).SetPublishedStatus(false);
+        await harness.Context.SaveChangesAsync();
+        var service = CreateService(harness.Context, harness.Instructor, harness.Student);
+
+        var response = await service.RsvpAsync(harness.Lecture.Id, new RsvpRequest { Confirm = true });
+
+        Assert.True(response.Confirmed);
+        var attendance = await harness.Context.Set<Attendance>().SingleAsync();
+        Assert.Equal(AttendanceStatus.Present, attendance.AttendanceStatus);
     }
 
     [Fact]
@@ -166,6 +181,26 @@ public sealed class LectureAttendanceServiceTests
 
         Assert.Equal(AttendanceStatus.Present, dto.AttendanceStatus);
         Assert.Single(await harness.Context.Set<Attendance>().ToListAsync());
+    }
+
+    [Fact]
+    public async Task GetAttendanceAsync_ReturnsOnlySelectedLecture()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var classmate = await AcademicTestData.AddEnrolledStudentAsync(harness, 60, Now);
+        var otherLecture = new Lecture("Second lesson", "Room 2", 60, Now.AddDays(1), LectureType.Theoretical, 30, harness.Course.Id);
+        harness.Context.Set<Lecture>().Add(otherLecture);
+        await harness.Context.SaveChangesAsync();
+        harness.Context.Set<Attendance>().AddRange(
+            new Attendance(harness.Student.Id, harness.Lecture.Id, AttendanceStatus.Present),
+            new Attendance(classmate.Id, otherLecture.Id, AttendanceStatus.Present));
+        await harness.Context.SaveChangesAsync();
+        var service = CreateService(harness.Context, harness.Instructor, harness.Student);
+
+        var result = await service.GetAttendanceAsync(harness.Lecture.Id, new AttendanceSearchObject { Page = 1, PageSize = 10 });
+
+        var dto = Assert.Single(result.Items);
+        Assert.Equal(harness.Student.Id, dto.StudentId);
     }
 
     [Fact]
@@ -408,6 +443,96 @@ public sealed class LectureAttendanceServiceTests
 
         var dto = Assert.Single(result.Items);
         Assert.Equal(harness.Student.Id, dto.StudentId);
+    }
+
+    [Fact]
+    public async Task RsvpAsync_Throws_WhenLectureCancelled()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        harness.Context.Set<Lecture>().Single(l => l.Id == harness.Lecture.Id).Cancel("Instrument je pokvaren", 1, Now);
+        await harness.Context.SaveChangesAsync();
+        var service = CreateService(harness.Context, harness.Instructor, harness.Student);
+
+        await Assert.ThrowsAsync<NotFoundException>(() =>
+            service.RsvpAsync(harness.Lecture.Id, new RsvpRequest { Confirm = true }));
+
+        Assert.Empty(await harness.Context.Set<Attendance>().ToListAsync());
+    }
+
+    [Fact]
+    public async Task RsvpAsync_CountsOnlyPresentAttendancesAgainstCapacity()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var classmate = await AcademicTestData.AddEnrolledStudentAsync(harness, 60, Now);
+        harness.Context.Set<Lecture>().Single(l => l.Id == harness.Lecture.Id).UpdateDetails(
+            "First lesson", "Room 1", 60, Now, capacity: 1);
+        harness.Context.Set<Attendance>().Add(new Attendance(harness.Student.Id, harness.Lecture.Id, AttendanceStatus.Absent));
+        await harness.Context.SaveChangesAsync();
+        var service = CreateService(harness.Context, harness.Instructor, classmate);
+
+        var response = await service.RsvpAsync(harness.Lecture.Id, new RsvpRequest { Confirm = true });
+
+        Assert.True(response.Confirmed);
+        var attendance = await harness.Context.Set<Attendance>().SingleAsync(a => a.StudentId == classmate.Id);
+        Assert.Equal(AttendanceStatus.Present, attendance.AttendanceStatus);
+    }
+
+    [Fact]
+    public async Task RsvpAsync_AllowsReconfirm_AtFullCapacity()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        harness.Context.Set<Lecture>().Single(l => l.Id == harness.Lecture.Id).UpdateDetails(
+            "First lesson", "Room 1", 60, Now, capacity: 1);
+        harness.Context.Set<Attendance>().Add(new Attendance(harness.Student.Id, harness.Lecture.Id, AttendanceStatus.Present));
+        await harness.Context.SaveChangesAsync();
+        var service = CreateService(harness.Context, harness.Instructor, harness.Student);
+
+        var response = await service.RsvpAsync(harness.Lecture.Id, new RsvpRequest { Confirm = true });
+
+        Assert.True(response.Confirmed);
+        var attendance = await harness.Context.Set<Attendance>().SingleAsync();
+        Assert.Equal(AttendanceStatus.Present, attendance.AttendanceStatus);
+    }
+
+    [Fact]
+    public async Task MarkAttendanceAsync_Throws_WhenLectureCancelled()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        harness.Context.Set<Lecture>().Single(l => l.Id == harness.Lecture.Id).Cancel("Instrument je pokvaren", 1, Now);
+        await harness.Context.SaveChangesAsync();
+        var service = CreateService(harness.Context, harness.Instructor, harness.Student);
+
+        var ex = await Assert.ThrowsAsync<BusinessException>(() =>
+            service.MarkAttendanceAsync(harness.Lecture.Id, new MarkAttendanceRequest
+            {
+                StudentId = harness.Student.Id,
+                AttendanceStatus = AttendanceStatus.Present
+            }));
+
+        Assert.Equal(Messages.LectureCancelled, ex.Message);
+        Assert.Empty(await harness.Context.Set<Attendance>().ToListAsync());
+    }
+
+    [Fact]
+    public async Task MarkAttendanceAsync_Throws_WhenEnrollmentCanceled()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var canceledStudent = new Student(60, Now);
+        harness.Context.Set<Student>().Add(canceledStudent);
+        await harness.Context.SaveChangesAsync();
+        harness.Context.Set<Enrollment>().Add(new Enrollment(canceledStudent.Id, harness.Course.Id, EnrollmentStatus.Canceled));
+        await harness.Context.SaveChangesAsync();
+        var service = CreateService(harness.Context, harness.Instructor, harness.Student);
+
+        var ex = await Assert.ThrowsAsync<BusinessException>(() =>
+            service.MarkAttendanceAsync(harness.Lecture.Id, new MarkAttendanceRequest
+            {
+                StudentId = canceledStudent.Id,
+                AttendanceStatus = AttendanceStatus.Present
+            }));
+
+        Assert.Equal(Messages.StudentNotEnrolled, ex.Message);
+        Assert.Empty(await harness.Context.Set<Attendance>().ToListAsync());
     }
 
     private static LectureAttendanceService CreateService(ENoteContext context, Instructor instructor, Student student) =>

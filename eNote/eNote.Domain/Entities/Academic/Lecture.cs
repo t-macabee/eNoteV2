@@ -59,6 +59,11 @@ public sealed class Lecture : AuditableEntity
 
     private static int? IndividualCapacity(int? capacity, int? studentId) => studentId.HasValue ? 1 : capacity;
 
+    public bool IsFullFor(Attendance? existing) =>
+        Capacity.HasValue
+        && Attendances.Count(a => a.AttendanceStatus == AttendanceStatus.Present) >= Capacity.Value
+        && (existing is null || existing.AttendanceStatus != AttendanceStatus.Present);
+
     public void Cancel(string reason, int userId, DateTime utcNow)
     {
         if (LectureStatus != LectureStatus.Scheduled)

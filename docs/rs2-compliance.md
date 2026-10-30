@@ -53,9 +53,10 @@ kada je opravdan, a ovdje pretraga ne bi pomogla:
 | Predaje za zadatak (desktop, instruktor) | `GET instructor/lectures/{lectureId}/assignments/{assignmentId}/submissions` | Vezana je za jedan zadatak i ima najviše jednu predaju po studentu. |
 | Historija predaja (mobilna, student) | `GET student/submissions` | Student vidi samo svoje predaje, samo iz kurseva kojima ima pristup, od najnovije, sa straničenjem. |
 
-Search objekti ovih endpointa (`AttendanceSearchObject`, `SubmissionSearchObject`,
+Search objekti liste prisustva i historije predaja (`AttendanceSearchObject` i
 `AssignmentSubmissionSearchObject`) zato nose samo straničenje iz
-`BaseSearchObject`.
+`BaseSearchObject`. `SubmissionSearchObject` dodatno ima filtere `StudentName`
+i `IsGraded`, koje `GetSubmissionsAsync` koristi.
 
 Četiri PDF izvještaja (`/report` endpointi) takođe nemaju parametre za pretragu:
 Uputstvo ih traži na listama, a izvještaj uvijek sadrži sve redove.

@@ -1,3 +1,4 @@
+using eNote.Application.Common.Localization;
 using eNote.Application.Features.Academic.Assignments;
 using eNote.Application.Features.Academic.Assignments.Services;
 using eNote.Domain.Entities.Assignments;
@@ -81,6 +82,25 @@ public sealed class AssignmentServiceTests
     }
 
     [Fact]
+    public async Task GetByIdForInstructorAsync_Throws_WhenAssignmentBelongsToAnotherLecture()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var otherLecture = new Lecture("Second lesson", "Room 2", 60, Now.AddDays(1), LectureType.Theoretical, 30, harness.Course.Id)
+        {
+            CreatedById = harness.Instructor.AppUserId
+        };
+        harness.Context.Set<Lecture>().Add(otherLecture);
+        await harness.Context.SaveChangesAsync();
+        var assignment = new Assignment("Homework", "Do it", Now.AddDays(7), otherLecture.Id);
+        harness.Context.Set<Assignment>().Add(assignment);
+        await harness.Context.SaveChangesAsync();
+        var service = AcademicTestData.CreateService<AssignmentService>(harness.Context, harness.Instructor);
+
+        var ex = await Assert.ThrowsAsync<NotFoundException>(() => service.GetByIdForInstructorAsync(harness.Lecture.Id, assignment.Id));
+        Assert.Equal(Messages.AssignmentNotFound, ex.Message);
+    }
+
+    [Fact]
     public async Task GetForStudentAsync_ReturnsOnlyEnrolledStudentsAssignments()
     {
         var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
@@ -115,6 +135,23 @@ public sealed class AssignmentServiceTests
     }
 
     [Fact]
+    public async Task GetForStudentAsync_ReturnsAssignmentsOfCancelledLecture()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var assignment = new Assignment("Homework", "Do it", Now.AddDays(7), harness.Lecture.Id);
+        harness.Context.Set<Assignment>().Add(assignment);
+        await harness.Context.SaveChangesAsync();
+        harness.Context.Set<Lecture>().Single(l => l.Id == harness.Lecture.Id).Cancel("Instrument je pokvaren", 1, Now);
+        await harness.Context.SaveChangesAsync();
+        var actor = new StubCurrentActor(student: harness.Student);
+        var service = AcademicTestData.CreateService<AssignmentService>(harness.Context, harness.Instructor, actor);
+
+        var result = await service.GetForStudentAsync(new AssignmentSearchObject { Page = 1, PageSize = 10 });
+
+        Assert.Equal(assignment.Id, Assert.Single(result.Items).Id);
+    }
+
+    [Fact]
     public async Task GetForStudentAsync_PagesTiedDueAt_WithoutDuplicateOrGap()
     {
         var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
@@ -137,6 +174,18 @@ public sealed class AssignmentServiceTests
         var ids = page1.Items.Select(a => a.Id).Concat(page2.Items.Select(a => a.Id)).ToList();
         Assert.Equal(new[] { 1, 2, 3 }, ids);
         Assert.Equal(ids.Distinct().Count(), ids.Count);
+    }
+
+    [Fact]
+    public async Task GetForLectureAsync_ReturnsEmpty_ForOtherInstructorsLecture()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var other = await AcademicTestData.AddSecondInstructorContentAsync(harness, Now);
+        var service = AcademicTestData.CreateService<AssignmentService>(harness.Context, harness.Instructor);
+
+        var result = await service.GetForLectureAsync(other.Lecture.Id, new AssignmentSearchObject { Page = 1, PageSize = 10 });
+
+        Assert.Empty(result.Items);
     }
 
 }

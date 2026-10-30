@@ -2,6 +2,7 @@ using eNote.Application.Features.Identity.Instructors;
 using eNote.Application.Features.Identity.Users.Services;
 using MapsterMapper;
 using Microsoft.Extensions.Logging;
+using System.Linq.Expressions;
 
 namespace eNote.Application.Features.Academic.Lectures.Services;
 
@@ -15,6 +16,27 @@ public sealed class LectureService(
     IMapper mapper,
     IClock clock)
 {
+    private static Expression<Func<Lecture, LectureDto>> ProjectToDto(int? studentId) => x => new LectureDto
+    {
+        Id = x.Id,
+        StudentId = x.StudentId,
+        Name = x.Name,
+        Location = x.Location,
+        LectureType = x.LectureType,
+        LectureStatus = x.LectureStatus,
+        IsCancelled = x.LectureStatus == LectureStatus.Cancelled,
+        CancellationReason = x.CancellationReason,
+        CancelledAt = x.CancelledAt,
+        LectureTime = x.LectureTime,
+        Duration = x.Duration,
+        Capacity = x.Capacity,
+        AttendeeCount = x.Attendances.Count(a => a.AttendanceStatus == AttendanceStatus.Present),
+        MyAttendanceStatus = x.Attendances
+            .Where(a => a.StudentId == studentId)
+            .Select(a => (AttendanceStatus?)a.AttendanceStatus)
+            .FirstOrDefault()
+    };
+
     public async Task<LectureDto> GetByIdForInstructorAsync(int id, CancellationToken cancellationToken = default)
     {
         var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId, cancellationToken);
@@ -22,22 +44,7 @@ public sealed class LectureService(
         var dto = await context.Set<Lecture>()
             .AsNoTracking()
             .Where(x => x.Id == id && x.Course.InstructorId == instructorId)
-            .Select(x => new LectureDto
-            {
-                Id = x.Id,
-                StudentId = x.StudentId,
-                Name = x.Name,
-                Location = x.Location,
-                LectureType = x.LectureType,
-                LectureStatus = x.LectureStatus,
-                IsCancelled = x.LectureStatus == LectureStatus.Cancelled,
-                CancellationReason = x.CancellationReason,
-                CancelledAt = x.CancelledAt,
-                LectureTime = x.LectureTime,
-                Duration = x.Duration,
-                Capacity = x.Capacity,
-                AttendeeCount = x.Attendances.Count(a => a.AttendanceStatus == AttendanceStatus.Present)
-            })
+            .Select(ProjectToDto(null))
             .FirstOrDefaultAsync(cancellationToken)
             ?? throw new NotFoundException(Messages.LectureNotFound);
 
@@ -54,26 +61,7 @@ public sealed class LectureService(
             .AsNoTracking()
             .ForEnrolledStudent(studentId, clock.UtcNow)
             .Where(x => x.Id == id)
-            .Select(x => new LectureDto
-            {
-                Id = x.Id,
-                StudentId = x.StudentId,
-                Name = x.Name,
-                Location = x.Location,
-                LectureType = x.LectureType,
-                LectureStatus = x.LectureStatus,
-                IsCancelled = x.LectureStatus == LectureStatus.Cancelled,
-                CancellationReason = x.CancellationReason,
-                CancelledAt = x.CancelledAt,
-                LectureTime = x.LectureTime,
-                Duration = x.Duration,
-                Capacity = x.Capacity,
-                AttendeeCount = x.Attendances.Count(a => a.AttendanceStatus == AttendanceStatus.Present),
-                MyAttendanceStatus = x.Attendances
-                    .Where(a => a.StudentId == studentId)
-                    .Select(a => (AttendanceStatus?)a.AttendanceStatus)
-                    .FirstOrDefault()
-            })
+            .Select(ProjectToDto(studentId))
             .FirstOrDefaultAsync(cancellationToken)
             ?? throw new NotFoundException(Messages.LectureNotFound);
 
@@ -103,22 +91,7 @@ public sealed class LectureService(
             .ThenBy(x => x.Id)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .Select(x => new LectureDto
-            {
-                Id = x.Id,
-                StudentId = x.StudentId,
-                Name = x.Name,
-                Location = x.Location,
-                LectureType = x.LectureType,
-                LectureStatus = x.LectureStatus,
-                IsCancelled = x.LectureStatus == LectureStatus.Cancelled,
-                CancellationReason = x.CancellationReason,
-                CancelledAt = x.CancelledAt,
-                LectureTime = x.LectureTime,
-                Duration = x.Duration,
-                Capacity = x.Capacity,
-                AttendeeCount = x.Attendances.Count(a => a.AttendanceStatus == AttendanceStatus.Present)
-            })
+            .Select(ProjectToDto(null))
             .ToListAsync(cancellationToken);
 
         await ApplyStudentNamesAsync(items, cancellationToken);
@@ -154,26 +127,7 @@ public sealed class LectureService(
             .ThenBy(x => x.Id)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .Select(x => new LectureDto
-            {
-                Id = x.Id,
-                StudentId = x.StudentId,
-                Name = x.Name,
-                Location = x.Location,
-                LectureType = x.LectureType,
-                LectureStatus = x.LectureStatus,
-                IsCancelled = x.LectureStatus == LectureStatus.Cancelled,
-                CancellationReason = x.CancellationReason,
-                CancelledAt = x.CancelledAt,
-                LectureTime = x.LectureTime,
-                Duration = x.Duration,
-                Capacity = x.Capacity,
-                AttendeeCount = x.Attendances.Count(a => a.AttendanceStatus == AttendanceStatus.Present),
-                MyAttendanceStatus = x.Attendances
-                    .Where(a => a.StudentId == studentId)
-                    .Select(a => (AttendanceStatus?)a.AttendanceStatus)
-                    .FirstOrDefault()
-            })
+            .Select(ProjectToDto(studentId))
             .ToListAsync(cancellationToken);
 
         await ApplyStudentNamesAsync(items, cancellationToken);
@@ -192,8 +146,7 @@ public sealed class LectureService(
         var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId, cancellationToken);
         await instructorAccess.EnsureOwnsCourseAsync(request.CourseId, instructorId, cancellationToken);
 
-        if (request.StudentId.HasValue && !await context.Set<Enrollment>()
-            .AnyAsync(e => e.StudentId == request.StudentId.Value && e.CourseId == request.CourseId && e.EnrollmentStatus == EnrollmentStatus.Active, cancellationToken))
+        if (request.StudentId.HasValue && !await context.IsEnrolledInCourseAsync(request.StudentId.Value, request.CourseId, cancellationToken))
         {
             throw new BusinessException(Messages.LectureStudentNotActiveEnrollment);
         }

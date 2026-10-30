@@ -585,6 +585,26 @@ public sealed class CourseServiceTests
     }
 
     [Fact]
+    public async Task GetByIdForStudentAsync_FractionalPriceIsNotFree_AndRequiresPayment()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var fractionalCourse = new Course("Fractional", null, 0.5m, Now, Now.AddMonths(1), harness.Instructor.Id);
+        fractionalCourse.SetPublishedStatus(true);
+        harness.Context.Set<Course>().Add(fractionalCourse);
+        await harness.Context.SaveChangesAsync();
+        harness.Context.Set<Enrollment>().Add(new Enrollment(harness.Student.Id, fractionalCourse.Id, EnrollmentStatus.Active));
+        await harness.Context.SaveChangesAsync();
+        var actor = new StubCurrentActor(student: harness.Student);
+        var service = CreateService(harness.Context, harness.Instructor, actor);
+
+        var dto = await service.GetByIdForStudentAsync(fractionalCourse.Id);
+
+        Assert.True(dto.IsEnrolled);
+        Assert.False(dto.IsFree);
+        Assert.False(dto.HasContentAccess);
+    }
+
+    [Fact]
     public async Task GetPagedForStudentAsync_MapsEnrollmentId_PaidUntil_AndIsFree()
     {
         var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);

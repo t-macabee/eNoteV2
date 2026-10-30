@@ -25,24 +25,14 @@ public sealed class InstructorEnrollmentService(
             query = query.Where(e => e.EnrollmentStatus == search.EnrollmentStatus.Value);
         }
 
-        var (page, pageSize) = PagingLimits.Normalize(search.Page, search.PageSize);
-        var total = search.IncludeTotalCount ? await query.CountAsync(ct) : (int?)null;
-
-        var enrollments = await query
-            .OrderBy(e => e.Id)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .ToListAsync(ct);
-
-        var names = await displayNames.GetStudentDisplayNamesAsync(enrollments.Select(e => e.Student!), ct);
-
-        return new PagedResult<CourseEnrollmentDto>
-        {
-            Items = [.. enrollments.Select(e => Map(e, names.GetValueOrDefault(e.StudentId, Messages.UnknownUserName)))],
-            Page = page,
-            PageSize = pageSize,
-            TotalCount = total
-        };
+        return await query.ToPagedResultAsync(
+            search,
+            async (enrollments, token) =>
+            {
+                var names = await displayNames.GetStudentDisplayNamesAsync(enrollments.Select(e => e.Student!), token);
+                return enrollments.Select(e => Map(e, names.GetValueOrDefault(e.StudentId, Messages.UnknownUserName)));
+            },
+            ct: ct);
     }
 
     public Task<CourseEnrollmentDto> ApproveAsync(int courseId, int enrollmentId, CancellationToken ct = default) =>
@@ -76,7 +66,7 @@ public sealed class InstructorEnrollmentService(
             throw new BusinessException(result.Error);
         }
 
-        await notificationDispatcher.DispatchStatusChangedAsync(enrollment.Id, enrollment.Student.AppUserId, enrollment.Course.Name, result.Value, enrollment.DecisionNote);
+        await notificationDispatcher.DispatchStatusChangedAsync(enrollment.Id, enrollment.CourseId, enrollment.Student.AppUserId, enrollment.Course.Name, result.Value, enrollment.DecisionNote);
 
         try
         {

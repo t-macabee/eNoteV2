@@ -119,24 +119,15 @@ public sealed class AssignmentSubmissionService(
             query = query.Where(x => studentUserIds.Contains(x.Student.AppUserId));
         }
 
-        var (page, pageSize) = PagingLimits.Normalize(search.Page, search.PageSize);
-        var total = search.IncludeTotalCount ? await query.CountAsync(cancellationToken) : (int?)null;
-
-        var submissions = await query
-            .OrderBy(x => x.StudentId)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .ToListAsync(cancellationToken);
-
-        var names = await displayNames.GetStudentDisplayNamesAsync(submissions.Select(x => x.Student), cancellationToken);
-
-        return new PagedResult<AssignmentSubmissionDto>
-        {
-            Items = [.. submissions.Select(x => MapSubmission(x, names.GetValueOrDefault(x.StudentId, Messages.UnknownUserName)))],
-            Page = page,
-            PageSize = pageSize,
-            TotalCount = total
-        };
+        return await query.ToPagedResultAsync(
+            search,
+            async (submissions, ct) =>
+            {
+                var names = await displayNames.GetStudentDisplayNamesAsync(submissions.Select(x => x.Student), ct);
+                return submissions.Select(x => MapSubmission(x, names.GetValueOrDefault(x.StudentId, Messages.UnknownUserName)));
+            },
+            q => q.OrderBy(x => x.StudentId),
+            cancellationToken);
     }
 
     public async Task<AssignmentSubmissionDto> GradeAsync(int lectureId, int assignmentId, int submissionId, GradeAssignmentRequest request, CancellationToken cancellationToken = default)

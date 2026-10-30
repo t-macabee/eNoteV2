@@ -96,6 +96,24 @@ public sealed class LectureNoteServiceTests
 
 
     [Fact]
+    public async Task GetForStudentAsync_ReturnsNotesOfCancelledLecture()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var note = new LectureNote("Visible", "Content", harness.Lecture.Id);
+        harness.Context.Set<LectureNote>().Add(note);
+        await harness.Context.SaveChangesAsync();
+        harness.Context.Set<Lecture>().Single(l => l.Id == harness.Lecture.Id).Cancel("Instrument je pokvaren", 1, Now);
+        await harness.Context.SaveChangesAsync();
+        var service = AcademicTestData.CreateService<LectureNoteService>(harness.Context, harness.Instructor, new StubCurrentActor(student: harness.Student));
+
+        var result = await service.GetForStudentAsync(harness.Lecture.Id, new LectureNoteSearchObject { Page = 1, PageSize = 10 });
+        var byId = await service.GetByIdForStudentAsync(harness.Lecture.Id, note.Id);
+
+        Assert.Equal(note.Id, Assert.Single(result.Items).Id);
+        Assert.Equal(note.Id, byId.Id);
+    }
+
+    [Fact]
     public async Task GetForStudentAsync_HidesNotesOfClassmatesIndividualLecture()
     {
         var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
@@ -139,5 +157,34 @@ public sealed class LectureNoteServiceTests
         var result = await service.GetForStudentAsync(ownLecture.Id, new LectureNoteSearchObject { Page = 1, PageSize = 10 });
 
         Assert.Equal("Moj plan", Assert.Single(result.Items).Title);
+    }
+
+    [Fact]
+    public async Task GetForLectureAsync_ReturnsEmpty_ForOtherInstructorsLecture()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var other = await AcademicTestData.AddSecondInstructorContentAsync(harness, Now);
+        var service = AcademicTestData.CreateService<LectureNoteService>(harness.Context, harness.Instructor);
+
+        var result = await service.GetForLectureAsync(other.Lecture.Id, new LectureNoteSearchObject { Page = 1, PageSize = 10 });
+
+        Assert.Empty(result.Items);
+    }
+
+    [Fact]
+    public async Task OtherInstructor_CannotReadUpdateOrDeleteNote()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var other = await AcademicTestData.AddSecondInstructorContentAsync(harness, Now);
+        var service = AcademicTestData.CreateService<LectureNoteService>(harness.Context, harness.Instructor);
+
+        await Assert.ThrowsAsync<NotFoundException>(() => service.GetByIdForInstructorAsync(other.Lecture.Id, other.Note.Id));
+        await Assert.ThrowsAsync<NotFoundException>(() =>
+            service.UpdateAsync(other.Lecture.Id, other.Note.Id, new LectureNoteRequest { Title = "Changed", Content = "Changed" }));
+        await Assert.ThrowsAsync<NotFoundException>(() => service.DeleteAsync(other.Lecture.Id, other.Note.Id));
+
+        var row = await harness.Context.Set<LectureNote>().AsNoTracking().SingleAsync(x => x.Id == other.Note.Id);
+        Assert.True(row.IsActive);
+        Assert.Equal(other.Note.Title, row.Title);
     }
 }

@@ -1,4 +1,5 @@
 using eNote.Application.Features.Identity.Instructors;
+using eNote.Domain.Entities.Assignments;
 
 namespace eNote.Tests.TestUtils;
 
@@ -59,6 +60,45 @@ public static class AcademicTestData
         return lecture;
     }
 
+    public static async Task<SecondInstructorContent> AddSecondInstructorContentAsync(AcademicHarness harness, DateTime now)
+    {
+        var instructor = new Instructor(200);
+        harness.Context.Set<Instructor>().Add(instructor);
+        await harness.Context.SaveChangesAsync();
+
+        var course = new Course("Piano 101", null, 100m, now, now.AddMonths(6), instructor.Id)
+        {
+            CreatedById = instructor.AppUserId
+        };
+        course.SetPublishedStatus(true);
+        harness.Context.Set<Course>().Add(course);
+        await harness.Context.SaveChangesAsync();
+
+        var lecture = new Lecture("Second instructor lesson", "Room 20", 60, now.AddDays(1), LectureType.Theoretical, 30, course.Id)
+        {
+            CreatedById = instructor.AppUserId
+        };
+        harness.Context.Set<Lecture>().Add(lecture);
+        await harness.Context.SaveChangesAsync();
+
+        var student = new Student(150, now);
+        harness.Context.Set<Student>().Add(student);
+        await harness.Context.SaveChangesAsync();
+
+        var enrollment = new Enrollment(student.Id, course.Id, EnrollmentStatus.Active);
+        enrollment.ExtendPaidUntil(now, 30);
+        harness.Context.Set<Enrollment>().Add(enrollment);
+        await harness.Context.SaveChangesAsync();
+
+        var assignment = new Assignment("Second instructor homework", "Do it", now.AddDays(7), lecture.Id);
+        var note = new LectureNote("Second instructor note", "Content", lecture.Id);
+        harness.Context.Set<Assignment>().Add(assignment);
+        harness.Context.Set<LectureNote>().Add(note);
+        await harness.Context.SaveChangesAsync();
+
+        return new SecondInstructorContent(instructor, course, lecture, assignment, note, student);
+    }
+
     public static InstructorAccessService CreateInstructorAccess(ENoteContext context, Instructor instructor) =>
         new(context, new StubUserProfileLookup(instructor: instructor));
 
@@ -87,4 +127,12 @@ public sealed record AcademicHarness(
     Instructor Instructor,
     Course Course,
     Lecture Lecture,
+    Student Student);
+
+public sealed record SecondInstructorContent(
+    Instructor Instructor,
+    Course Course,
+    Lecture Lecture,
+    Assignment Assignment,
+    LectureNote Note,
     Student Student);

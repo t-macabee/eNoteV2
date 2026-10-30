@@ -56,6 +56,7 @@ public static class Messages
     public const string LectureFull = "Predavanje je popunjeno.";
     public const string LectureRsvpConflict = "Sukob pri rezervaciji predavanja. Pokušajte ponovo.";
     public const string AttendanceAlreadyMarked = "Prisustvo za ovog studenta je već evidentirano.";
+    public const string UnknownAttendanceStatus = "Nepoznat status prisustva.";
     public const string StudentSelectionRequired = "Odaberite studenta iz liste.";
     public const string LectureTimeConflict = "Termin predavanja se preklapa s postojećim predavanjem.";
     public const string LectureCapacityBelowConfirmed = "Kapacitet ne može biti manji od broja već potvrđenih prisustava.";
