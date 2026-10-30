@@ -4,6 +4,8 @@ namespace eNote.Domain.Entities.Shared;
 
 public abstract class StripePayment : AuditableEntity
 {
+    public static readonly PaymentStatus[] OpenStatuses = [PaymentStatus.RequiresAction, PaymentStatus.Failed];
+
     public string StripePaymentIntentId { get; private set; } = null!;
     public string? StripeChargeId { get; private set; }
     public string? StripeEventId { get; private set; }
@@ -16,6 +18,8 @@ public abstract class StripePayment : AuditableEntity
     public string? StripeRefundId { get; private set; }
 
     public byte[] Version { get; private set; } = null!;
+
+    public bool IsOpen => OpenStatuses.Contains(Status);
 
     private readonly List<PaymentRefund> _refunds = [];
     public IReadOnlyCollection<PaymentRefund> Refunds => _refunds.AsReadOnly();

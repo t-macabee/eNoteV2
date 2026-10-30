@@ -37,7 +37,7 @@ public sealed class TuitionPaymentService(
 
         var openAttempts = context.Set<CoursePayment>()
             .Where(p => p.EnrollmentId == enrollment.Id
-                && (p.Status == PaymentStatus.RequiresAction || p.Status == PaymentStatus.Failed))
+                && StripePayment.OpenStatuses.Contains(p.Status))
             .OrderByDescending(p => p.CreatedAt);
 
         var result = await PaymentGatewayHelpers.ReuseOrCreatePaymentIntentAsync(

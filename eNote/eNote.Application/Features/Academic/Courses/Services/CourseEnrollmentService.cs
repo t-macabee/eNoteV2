@@ -81,7 +81,7 @@ public sealed class CourseEnrollmentService(
 
         var openAttempts = await context.Set<CoursePayment>()
             .Where(p => p.EnrollmentId == enrollment.Id
-                && (p.Status == PaymentStatus.RequiresAction || p.Status == PaymentStatus.Failed))
+                && StripePayment.OpenStatuses.Contains(p.Status))
             .OrderByDescending(p => p.CreatedAt)
             .ToListAsync(cancellationToken);
 

@@ -467,7 +467,7 @@ public sealed class CourseService(IAppDbContext context, IMapper mapper, ICurren
     {
         var openAttempts = await context.Set<CoursePayment>()
             .Where(p => p.Enrollment.CourseId == entity.Id
-                && (p.Status == PaymentStatus.RequiresAction || p.Status == PaymentStatus.Failed))
+                && StripePayment.OpenStatuses.Contains(p.Status))
             .OrderByDescending(p => p.CreatedAt)
             .ToListAsync(cancellationToken);
 

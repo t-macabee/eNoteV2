@@ -34,7 +34,7 @@ public sealed class RentalPaymentService(
 
         var openAttempts = context.Set<RentalPayment>()
             .Where(p => p.InstrumentRentalId == rental.Id
-                && (p.Status == PaymentStatus.RequiresAction || p.Status == PaymentStatus.Failed))
+                && StripePayment.OpenStatuses.Contains(p.Status))
             .OrderByDescending(p => p.CreatedAt);
 
         var result = await PaymentGatewayHelpers.ReuseOrCreatePaymentIntentAsync(

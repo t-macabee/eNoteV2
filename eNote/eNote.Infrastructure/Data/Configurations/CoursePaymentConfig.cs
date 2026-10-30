@@ -50,7 +50,7 @@ public sealed class CoursePaymentConfig : IEntityTypeConfiguration<CoursePayment
 
         builder.HasIndex(x => x.EnrollmentId)
                .IsUnique()
-               .HasFilter("\"Status\" IN (1, 3)")
+               .HasFilter($"\"Status\" IN ({string.Join(", ", StripePayment.OpenStatuses.Select(s => (int)s))})")
                .HasDatabaseName(DbConstraintNames.CoursePaymentOpenAttemptUniqueIndex);
 
         builder.Property(x => x.Version).IsRowVersion();

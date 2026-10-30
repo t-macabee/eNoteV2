@@ -81,12 +81,12 @@ public sealed class UserSelfService(
 
         openAttempts.AddRange(await context.Set<RentalPayment>()
             .Where(p => p.InstrumentRental.StudentProfileId == studentId
-                && (p.Status == PaymentStatus.RequiresAction || p.Status == PaymentStatus.Failed))
+                && StripePayment.OpenStatuses.Contains(p.Status))
             .ToListAsync(cancellationToken));
 
         openAttempts.AddRange(await context.Set<CoursePayment>()
             .Where(p => p.Enrollment.StudentId == studentId
-                && (p.Status == PaymentStatus.RequiresAction || p.Status == PaymentStatus.Failed))
+                && StripePayment.OpenStatuses.Contains(p.Status))
             .ToListAsync(cancellationToken));
 
         await PaymentGatewayHelpers.ResolveOpenAttemptsAsync(
