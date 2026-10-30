@@ -6,6 +6,7 @@ using eNote.Application.Features.Rentals.Instruments;
 using eNote.Application.Features.Rentals.Instruments.Services;
 using eNote.Application.Features.Rentals.Recommendations.Services;
 using eNote.Domain.Entities.Communication;
+using eNote.Infrastructure.Messaging;
 using eNote.Tests.TestUtils;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -152,7 +153,7 @@ public sealed class TenantIsolationTests
         context.Set<Announcement>().AddRange(store1Announcement, store2Announcement);
         await context.SaveChangesAsync();
 
-        var service = new StoreAnnouncementService(context, new FixedClock(Now), new StubCurrentActor(storeId: store1.Id), TestMapper.Create(), new RecordingFileStorageService());
+        var service = new StoreAnnouncementService(context, new FixedClock(Now), new StubCurrentActor(storeId: store1.Id), TestMapper.Create(), new RecordingFileStorageService(), new AnnouncementNotificationDispatcher(context, new FixedClock(Now)));
         var result = await service.GetForStoreAsync(new AnnouncementSearchObject { PageSize = 10 });
 
         Assert.Single(result.Items);

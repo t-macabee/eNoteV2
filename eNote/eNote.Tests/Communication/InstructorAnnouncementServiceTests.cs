@@ -50,7 +50,24 @@ public sealed class InstructorAnnouncementServiceTests
         Assert.Equal(dto.Id, payload.AnnouncementId);
         Assert.NotEqual(0, payload.AnnouncementId);
         Assert.Equal(harness.Student.AppUserId, payload.StudentUserId);
+        Assert.Equal("Nova obavijest na kursu", payload.Title);
         Assert.Equal("Welcome", payload.Body);
+    }
+
+    [Fact]
+    public async Task CreateForCourseAsync_DoesNotNotifyStudentsOfOtherCourses()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var otherCourse = await AcademicTestData.AddSecondInstructorContentAsync(harness, Now);
+        var service = CreateService(harness.Context, AcademicTestData.CreateInstructorAccess(harness.Context, harness.Instructor));
+
+        await service.CreateForCourseAsync(harness.Course.Id, new AnnouncementRequest("Welcome", "Hello everyone"));
+
+        var outbox = Assert.Single(await harness.Context.Set<NotificationOutbox>().ToListAsync());
+        var payload = JsonSerializer.Deserialize<AnnouncementPublished>(outbox.PayloadJson, JsonOptions);
+        Assert.NotNull(payload);
+        Assert.Equal(harness.Student.AppUserId, payload.StudentUserId);
+        Assert.NotEqual(otherCourse.Student.AppUserId, payload.StudentUserId);
     }
 
     [Fact]

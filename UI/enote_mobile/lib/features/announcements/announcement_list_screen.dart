@@ -83,7 +83,7 @@ class _AnnouncementRow extends StatelessWidget {
       trailing: Chip(label: Text(isCourse ? 'Kurs' : 'Prodavnica')),
       onTap: () => Navigator.of(context).pushNamed(
         AppRouter.announcementDetail,
-        arguments: AnnouncementDetailArgs(announcement),
+        arguments: AnnouncementDetailArgs(announcement.id),
       ),
     );
   }

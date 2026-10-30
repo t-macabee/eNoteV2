@@ -3,7 +3,7 @@ using MapsterMapper;
 
 namespace eNote.Application.Features.Communication.Announcements.Services;
 
-public sealed class StoreAnnouncementService(IAppDbContext context, IClock clock, IStoreContext stores, IMapper mapper, IFileStorageService fileStorage)
+public sealed class StoreAnnouncementService(IAppDbContext context, IClock clock, IStoreContext stores, IMapper mapper, IFileStorageService fileStorage, IAnnouncementNotificationDispatcher notificationDispatcher)
 {
     public async Task<AnnouncementDto> CreateForStoreAsync(AnnouncementRequest request, CancellationToken cancellationToken = default)
     {
@@ -11,10 +11,22 @@ public sealed class StoreAnnouncementService(IAppDbContext context, IClock clock
 
         var entity = AnnouncementBuilder.Build(request, null, storeId, clock);
 
-        context.Set<Announcement>().Add(entity);
-        await context.SaveChangesAsync(cancellationToken);
+        return await context.ExecuteInTransactionAsync(async () =>
+        {
+            context.Set<Announcement>().Add(entity);
+            await context.SaveChangesAsync(cancellationToken);
 
-        return mapper.Map<AnnouncementDto>(entity);
+            var recipientUserIds = await AnnouncementAudience.StoreRentals(context)
+                .Where(r => r.MusicStoreId == storeId)
+                .Select(r => r.StudentProfile.AppUserId)
+                .Distinct()
+                .ToListAsync(cancellationToken);
+
+            await notificationDispatcher.DispatchPublishedAsync(entity, recipientUserIds);
+            await context.SaveChangesAsync(cancellationToken);
+
+            return mapper.Map<AnnouncementDto>(entity);
+        }, cancellationToken);
     }
 
     public async Task<AnnouncementDto> GetByIdForStoreAsync(int announcementId, CancellationToken cancellationToken = default)

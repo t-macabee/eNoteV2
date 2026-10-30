@@ -70,4 +70,21 @@ void main() {
       '/api/v1/uploads/announcements/harmony.webp',
     );
   });
+
+  test('getById issues GET student/announcements/53 and parses the DTO',
+      () async {
+    final client = RecordingHttpClient(body: _announcementJson);
+    final provider = _provider(client);
+
+    final announcement = await provider.getById(53);
+
+    expect(client.requests, hasLength(1));
+    final sent = client.requests.single;
+    expect(sent.method, 'GET');
+    expect(sent.url.path, '/api/v1/student/announcements/53');
+    expect(announcement.id, 4);
+    expect(announcement.title, 'Dodatni čas u petak');
+    expect(announcement.scope, AnnouncementScope.course);
+    expect(announcement.courseName, 'Osnove teorije muzike');
+  });
 }

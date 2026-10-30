@@ -65,9 +65,9 @@ class RankingArgs {
 }
 
 class AnnouncementDetailArgs {
-  final AnnouncementDto announcement;
+  final int announcementId;
 
-  const AnnouncementDetailArgs(this.announcement);
+  const AnnouncementDetailArgs(this.announcementId);
 }
 
 class InstrumentDetailArgs {
@@ -184,7 +184,7 @@ class AppRouter {
         RankingScreen(courseId: a.courseId),
       ),
       (announcementDetail, AnnouncementDetailArgs a) => _route(
-        AnnouncementDetailScreen(announcement: a.announcement),
+        AnnouncementDetailScreen(announcementId: a.announcementId),
       ),
       (instrumentDetail, InstrumentDetailArgs a) => _route(
         InstrumentDetailScreen(instrumentId: a.instrumentId),

@@ -21,12 +21,12 @@ public sealed class InstructorAnnouncementService(IAppDbContext context, IClock 
             context.Set<Announcement>().Add(entity);
             await context.SaveChangesAsync(cancellationToken);
 
-            var enrolledStudentUserIds = await context.Set<Enrollment>()
-                .Where(e => e.CourseId == courseId && e.EnrollmentStatus == EnrollmentStatus.Active)
+            var enrolledStudentUserIds = await AnnouncementAudience.CourseEnrollments(context)
+                .Where(e => e.CourseId == courseId)
                 .Select(e => e.Student.AppUserId)
                 .ToListAsync(cancellationToken);
 
-            await notificationDispatcher.DispatchPublishedAsync(entity.Id, entity.Title, enrolledStudentUserIds);
+            await notificationDispatcher.DispatchPublishedAsync(entity, enrolledStudentUserIds);
             await context.SaveChangesAsync(cancellationToken);
 
             return mapper.Map<AnnouncementDto>(entity);

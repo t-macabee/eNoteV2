@@ -132,4 +132,14 @@ public sealed class AnnouncementController(
         var result = await feedService.GetFeedForStudentAsync(search, cancellationToken);
         return Ok(result);
     }
+
+    [Authorize(Roles = AppRoles.Student)]
+    [HttpGet("~/api/v{version:apiVersion}/student/announcements/{announcementId:int}")]
+    [ProducesResponseType(typeof(AnnouncementDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<AnnouncementDto>> GetByIdForStudent(int announcementId, CancellationToken ct)
+    {
+        var result = await feedService.GetByIdForStudentAsync(announcementId, ct);
+        return Ok(result);
+    }
 }

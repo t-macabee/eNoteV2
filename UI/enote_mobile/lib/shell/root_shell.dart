@@ -141,6 +141,14 @@ class RootShellState extends State<RootShell> with WidgetsBindingObserver {
       tab = 1;
       route = AppRouter.assignmentHistory;
       args = null;
+    } else if (notification.announcementId != null) {
+      tab = 1;
+      route = AppRouter.announcementDetail;
+      args = AnnouncementDetailArgs(notification.announcementId!);
+    } else if (notification.courseId != null) {
+      tab = 1;
+      route = AppRouter.courseDetail;
+      args = CourseDetailArgs(notification.courseId!);
     } else {
       return;
     }
