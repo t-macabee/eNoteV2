@@ -8,7 +8,8 @@ public static class PasswordRules
     {
         return ruleBuilder
             .NotEmpty().WithMessage("Lozinka je obavezna.")
-            .MinimumLength(8).WithMessage("Lozinka mora imati najmanje 8 znakova.")
+            .MinimumLength(IdentityPolicy.PasswordMinLength)
+            .WithMessage($"Lozinka mora imati najmanje {IdentityPolicy.PasswordMinLength} znakova.")
             .Matches(@"\d").WithMessage("Lozinka mora sadržavati najmanje jednu cifru.")
             .Matches(@"\p{Lu}").WithMessage("Lozinka mora sadržavati najmanje jedno veliko slovo.")
             .Matches(@"\p{Ll}").WithMessage("Lozinka mora sadržavati najmanje jedno malo slovo.")

@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0.301 AS build
 WORKDIR /src
 
 COPY ["eNote.Worker/eNote.Worker.csproj", "eNote.Worker/"]
@@ -15,7 +15,7 @@ COPY . .
 
 RUN dotnet publish "eNote.Worker/eNote.Worker.csproj" -c Release -o /app/worker/publish /p:UseAppHost=false
 
-FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS worker
+FROM mcr.microsoft.com/dotnet/aspnet:10.0.9 AS worker
 WORKDIR /app
 COPY --from=build /app/worker/publish .
 RUN chown -R $APP_UID:$APP_UID /app

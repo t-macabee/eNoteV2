@@ -11,6 +11,7 @@ using eNote.Application.Features.Identity.Users.Services;
 using eNote.Application.Features.Rentals.InstrumentRentals.Services;
 using eNote.Application.Features.Rentals.Payments.Services;
 using eNote.Application.Features.Reports.Services;
+using eNote.Application.Validation.Identity;
 using eNote.Infrastructure.Configuration;
 using eNote.Infrastructure.Data;
 using eNote.Infrastructure.Data.Seed;
@@ -68,10 +69,10 @@ public static class DependencyInjection
             options.Password.RequireNonAlphanumeric = true;
             options.Password.RequireUppercase = true;
             options.Password.RequireLowercase = true;
-            options.Password.RequiredLength = 8;
+            options.Password.RequiredLength = IdentityPolicy.PasswordMinLength;
             options.Lockout.AllowedForNewUsers = true;
-            options.Lockout.MaxFailedAccessAttempts = 5;
-            options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
+            options.Lockout.MaxFailedAccessAttempts = IdentityPolicy.MaxFailedAccessAttempts;
+            options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(IdentityPolicy.LockoutMinutes);
         })
         .AddRoles<AppRole>()
         .AddEntityFrameworkStores<ENoteContext>()

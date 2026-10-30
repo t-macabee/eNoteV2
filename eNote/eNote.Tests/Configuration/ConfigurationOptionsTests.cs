@@ -6,6 +6,8 @@ using eNote.Infrastructure.Data.Seed;
 using eNote.Infrastructure.Identity;
 using eNote.Infrastructure.Messaging;
 using eNote.Infrastructure.Storage;
+using Microsoft.AspNetCore.Cors.Infrastructure;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.FileProviders;
@@ -87,7 +89,17 @@ public sealed class ConfigurationOptionsTests
 
         var exception = Assert.Throws<OptionsValidationException>(() => ResolveOptions<JwtOptions>(services));
 
-        Assert.Contains(nameof(JwtOptions.ExpirationMinutes), exception.Message);
+        Assert.Contains("Jwt__ExpirationMinutes must be between 5 and 120.", exception.Message);
+    }
+
+    [Fact]
+    public void JwtOptions_MissingExpirationMinutes_Fails()
+    {
+        var services = BuildApiServices(removeKeys: "Jwt:ExpirationMinutes");
+
+        var exception = Assert.Throws<OptionsValidationException>(() => ResolveOptions<JwtOptions>(services));
+
+        Assert.Contains("Jwt__ExpirationMinutes must be between 5 and 120.", exception.Message);
     }
 
     [Theory]
@@ -274,11 +286,14 @@ public sealed class ConfigurationOptionsTests
         Assert.False(ResolveOptions<SeedOptions>(services).Enabled);
     }
 
-    [Fact]
-    public void CorsOriginsOptions_EmptyOrigins_Fails_OutsideDevelopment()
+    public static TheoryData<string> CorsEnvironments => new(Environments.Development, Environments.Production);
+
+    [Theory]
+    [MemberData(nameof(CorsEnvironments))]
+    public void CorsOriginsOptions_EmptyOrigins_Fails(string environmentName)
     {
         var services = new ServiceCollection();
-        services.AddSingleton<IHostEnvironment>(new FakeHostEnvironment(Environments.Production));
+        services.AddSingleton<IHostEnvironment>(new FakeHostEnvironment(environmentName));
         services.AddApplicationCors(CreateConfiguration(removeKeys: "Cors:AllowedOrigins:0"));
 
         var exception = Assert.Throws<OptionsValidationException>(() => ResolveOptions<CorsOriginsOptions>(services));
@@ -286,14 +301,45 @@ public sealed class ConfigurationOptionsTests
         Assert.Contains("Cors__AllowedOrigins is required.", exception.Message);
     }
 
-    [Fact]
-    public void CorsOriginsOptions_EmptyOrigins_Passes_InDevelopment()
+    [Theory]
+    [InlineData("localhost:3000")]
+    [InlineData("ftp://files.example.org")]
+    [InlineData("http://localhost:5059/api")]
+    [InlineData("http://localhost:5059?x=1")]
+    public void CorsOriginsOptions_InvalidOrigin_Fails(string origin)
     {
         var services = new ServiceCollection();
-        services.AddSingleton<IHostEnvironment>(new FakeHostEnvironment(Environments.Development));
-        services.AddApplicationCors(CreateConfiguration(removeKeys: "Cors:AllowedOrigins:0"));
+        services.AddApplicationCors(CreateConfiguration(overrides: new Dictionary<string, string?>
+        {
+            ["Cors:AllowedOrigins:0"] = origin
+        }));
 
-        Assert.Empty(ResolveOptions<CorsOriginsOptions>(services).AllowedOrigins);
+        var exception = Assert.Throws<OptionsValidationException>(() => ResolveOptions<CorsOriginsOptions>(services));
+
+        Assert.Contains("Cors__AllowedOrigins must contain absolute http or https origins without a path.", exception.Message);
+    }
+
+    [Fact]
+    public async Task CorsPolicy_UsesOnlyConfiguredOrigins()
+    {
+        var services = new ServiceCollection();
+        services.AddApplicationCors(CreateConfiguration(overrides: new Dictionary<string, string?>
+        {
+            ["Cors:AllowedOrigins:0"] = "http://desk.example.test:4100",
+            ["Cors:AllowedOrigins:1"] = "https://admin.example.test"
+        }));
+
+        using var provider = services.BuildServiceProvider();
+        var policyProvider = provider.GetRequiredService<ICorsPolicyProvider>();
+
+        var policy = await policyProvider.GetPolicyAsync(new DefaultHttpContext(), CorsExtensions.PolicyName);
+
+        Assert.NotNull(policy);
+        Assert.Equal(["http://desk.example.test:4100", "https://admin.example.test"], policy.Origins);
+        Assert.False(policy.AllowAnyOrigin);
+        Assert.True(policy.SupportsCredentials);
+        Assert.True(policy.AllowAnyHeader);
+        Assert.True(policy.AllowAnyMethod);
     }
 
     [Fact]

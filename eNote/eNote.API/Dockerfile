@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0.301 AS build
 WORKDIR /src
 
 COPY ["eNote.API/eNote.API.csproj", "eNote.API/"]
@@ -15,7 +15,7 @@ COPY . .
 
 RUN dotnet publish "eNote.API/eNote.API.csproj" -c Release -o /app/api/publish /p:UseAppHost=false
 
-FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS api
+FROM mcr.microsoft.com/dotnet/aspnet:10.0.9 AS api
 WORKDIR /app
 RUN apt-get update \
     && apt-get install -y --no-install-recommends curl \

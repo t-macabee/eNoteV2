@@ -28,7 +28,7 @@ services:
     stop_grace_period: 30s
 
   rabbitmq:
-    image: rabbitmq:3.13-management
+    image: rabbitmq:3.13.7-management
     container_name: enote-rabbit
     ports:
       - "${RABBITMQ_PORT:-5672}:5672"

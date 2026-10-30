@@ -16,6 +16,6 @@ public sealed record JwtOptions
     [Required(ErrorMessage = "Jwt__Audience is required.")]
     public string Audience { get; init; } = string.Empty;
 
-    [Range(5, 120)]
+    [Range(5, 120, ErrorMessage = "Jwt__ExpirationMinutes must be between 5 and 120.")]
     public int ExpirationMinutes { get; init; }
 }

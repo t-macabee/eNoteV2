@@ -5,35 +5,6 @@ namespace eNote.Tests.Configuration;
 public sealed class StartupValidationTests
 {
     [Fact]
-    public async Task ApiStartup_StopsBeforeSeeding_WhenSmtpFromIsEmpty()
-    {
-        var result = await RunAsync("eNote.API", ApiSettings(new Dictionary<string, string>
-        {
-            ["Smtp__From"] = string.Empty
-        }));
-
-        Assert.NotEqual(0, result.ExitCode);
-        Assert.Contains("Smtp__From is required.", result.Output);
-        Assert.DoesNotContain("Microsoft.Data.SqlClient", result.Output);
-    }
-
-    [Fact]
-    public async Task ApiStartup_StopsBeforeSeeding_WhenSmtpFromIsEmptyAndSeedingIsEnabled()
-    {
-        var result = await RunAsync("eNote.API", ApiSettings(
-            new Dictionary<string, string>
-            {
-                ["ASPNETCORE_ENVIRONMENT"] = "Development",
-                ["Seed__Enabled"] = "true",
-                ["Smtp__From"] = string.Empty
-            }));
-
-        Assert.NotEqual(0, result.ExitCode);
-        Assert.Contains("Smtp__From is required.", result.Output);
-        Assert.DoesNotContain("Microsoft.Data.SqlClient", result.Output);
-    }
-
-    [Fact]
     public async Task WorkerStartup_StopsBeforeConsuming_WhenSmtpHostIsEmpty()
     {
         var result = await RunAsync("eNote.Worker", WorkerSettings(new Dictionary<string, string>
@@ -56,6 +27,47 @@ public sealed class StartupValidationTests
         Assert.NotEqual(0, result.ExitCode);
         Assert.Contains("RabbitMQ__Host is required.", result.Output);
         Assert.DoesNotContain("MassTransit.RabbitMqConnectionException", result.Output);
+    }
+
+    [Fact]
+    public async Task ApiStartup_Stops_WhenJwtKeyIsEmpty()
+    {
+        var result = await RunAsync("eNote.API", ApiSettings(new Dictionary<string, string>
+        {
+            ["Jwt__Key"] = string.Empty
+        }));
+
+        Assert.NotEqual(0, result.ExitCode);
+        Assert.Contains("Jwt__Key is required.", result.Output);
+    }
+
+    [Fact]
+    public async Task ApiStartup_Stops_WhenStripeSecretKeyIsEmpty()
+    {
+        var result = await RunAsync("eNote.API", ApiSettings(new Dictionary<string, string>
+        {
+            ["Stripe__SecretKey"] = string.Empty
+        }));
+
+        Assert.NotEqual(0, result.ExitCode);
+        Assert.Contains("Stripe__SecretKey is required.", result.Output);
+    }
+
+    [Fact]
+    public async Task ApiStartup_ValidatesBeforeSeeding()
+    {
+        var result = await RunAsync("eNote.API", ApiSettings(new Dictionary<string, string>
+        {
+            ["ASPNETCORE_ENVIRONMENT"] = "Development",
+            ["Seed__Enabled"] = "true",
+            ["Jwt__Key"] = string.Empty,
+            ["ConnectionStrings__DefaultConnection"] =
+                "Server=127.0.0.1,1;Database=enote-order-test;User Id=sa;Password=Placeholder1!;TrustServerCertificate=True;Connect Timeout=1"
+        }));
+
+        Assert.NotEqual(0, result.ExitCode);
+        Assert.Contains("Jwt__Key is required.", result.Output);
+        Assert.DoesNotContain("SqlException", result.Output);
     }
 
     private static async Task<ProcessResult> RunAsync(string projectName, Dictionary<string, string> settings)
