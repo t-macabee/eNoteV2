@@ -67,13 +67,23 @@ public sealed class TokenValidationTests
     }
 
     [Fact]
-    public async Task OnTokenValidated_Rejects_WhenTokenRevoked()
+    public async Task OnTokenValidated_Rejects_WhenTokenJtiIsRevoked()
     {
-        await using var harness = await CreateHarnessAsync(isActive: true, revoked: true);
+        await using var harness = await CreateHarnessAsync(isActive: true, revokedJtis: ["jti-1"]);
 
         var context = await ValidateAsync(harness, harness.User.Id.ToString(), harness.User.SecurityStamp);
 
         Assert.False(context.Result!.Succeeded);
+    }
+
+    [Fact]
+    public async Task OnTokenValidated_Accepts_WhenOtherJtiIsRevoked()
+    {
+        await using var harness = await CreateHarnessAsync(isActive: true, revokedJtis: ["jti-2"]);
+
+        var context = await ValidateAsync(harness, harness.User.Id.ToString(), harness.User.SecurityStamp);
+
+        Assert.Null(context.Result);
     }
 
     [Fact]
@@ -127,7 +137,7 @@ public sealed class TokenValidationTests
         return new ClaimsPrincipal(new ClaimsIdentity(claims, "Bearer"));
     }
 
-    private static async Task<Harness> CreateHarnessAsync(bool isActive, bool revoked = false)
+    private static async Task<Harness> CreateHarnessAsync(bool isActive, params string[] revokedJtis)
     {
         var context = TestDbContextFactory.CreateContext(Now);
         var services = new ServiceCollection();
@@ -138,7 +148,7 @@ public sealed class TokenValidationTests
         services.AddIdentityCore<AppUser>()
             .AddEntityFrameworkStores<ENoteContext>()
             .AddDefaultTokenProviders();
-        services.AddSingleton<ITokenRevocationService>(new StubRevocationService(revoked));
+        services.AddSingleton<ITokenRevocationService>(new StubRevocationService(revokedJtis));
 
         var provider = services.BuildServiceProvider();
         var userManager = provider.GetRequiredService<UserManager<AppUser>>();
@@ -155,12 +165,14 @@ public sealed class TokenValidationTests
             : ValueTask.CompletedTask;
     }
 
-    private sealed class StubRevocationService(bool revoked) : ITokenRevocationService
+    private sealed class StubRevocationService(params string[] revokedJtis) : ITokenRevocationService
     {
+        private readonly HashSet<string> _revokedJtis = [.. revokedJtis];
+
         public Task RevokeAsync(string jti, DateTime expiresAt, CancellationToken cancellationToken = default) =>
             Task.CompletedTask;
 
         public Task<bool> IsRevokedAsync(string jti, CancellationToken cancellationToken = default) =>
-            Task.FromResult(revoked);
+            Task.FromResult(_revokedJtis.Contains(jti));
     }
 }

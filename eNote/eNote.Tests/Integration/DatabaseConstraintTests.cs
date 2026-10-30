@@ -1,7 +1,9 @@
 using System.Reflection;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Constants;
+using eNote.Domain.Entities.Assignments;
 using eNote.Infrastructure.Identity;
+using eNote.Tests.TestUtils;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 
@@ -13,7 +15,7 @@ public sealed class DatabaseConstraintTests(SqlServerFixture fixture)
     private static readonly DateTime Now = new(2026, 10, 25, 12, 0, 0, DateTimeKind.Utc);
 
     [Fact]
-    public async Task Migrations_LeaveNoPendingMigration()
+    public async Task Model_HasNoChangesWithoutMigration()
     {
         var database = await fixture.CreateDatabaseAsync();
         await using var context = database.CreateContext();
@@ -21,6 +23,7 @@ public sealed class DatabaseConstraintTests(SqlServerFixture fixture)
         var pending = await context.Database.GetPendingMigrationsAsync();
 
         Assert.Empty(pending);
+        Assert.False(context.Database.HasPendingModelChanges());
     }
 
     [Fact]
@@ -50,6 +53,53 @@ public sealed class DatabaseConstraintTests(SqlServerFixture fixture)
     }
 
     [Fact]
+    public async Task HistoryForeignKeys_BlockDeletesExceptProfileLinks()
+    {
+        var database = await fixture.CreateDatabaseAsync();
+        await using var context = database.CreateContext();
+
+        var foreignKeys = await context.Database
+            .SqlQueryRaw<string>(
+                """
+                SELECT CONCAT(
+                    fk.name COLLATE DATABASE_DEFAULT,
+                    N'|' COLLATE DATABASE_DEFAULT,
+                    OBJECT_NAME(fk.parent_object_id) COLLATE DATABASE_DEFAULT,
+                    N'|' COLLATE DATABASE_DEFAULT,
+                    OBJECT_NAME(fk.referenced_object_id) COLLATE DATABASE_DEFAULT,
+                    N'|' COLLATE DATABASE_DEFAULT,
+                    fk.delete_referential_action_desc COLLATE DATABASE_DEFAULT) AS Value
+                FROM sys.foreign_keys AS fk
+                WHERE OBJECT_NAME(fk.referenced_object_id) IN (N'AspNetUsers', N'Student', N'Instructor')
+                  AND OBJECT_NAME(fk.parent_object_id) NOT LIKE N'AspNetUser%'
+                """)
+            .ToListAsync();
+
+        var allowedCascades = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "FK_Student_AspNetUsers_AppUserId",
+            "FK_Instructor_AspNetUsers_AppUserId",
+            "FK_Notification_AspNetUsers_UserId",
+            "FK_InstrumentView_AspNetUsers_UserId"
+        };
+
+        Assert.NotEmpty(foreignKeys);
+
+        foreach (var foreignKey in foreignKeys)
+        {
+            var parts = foreignKey.Split('|');
+            Assert.Equal(4, parts.Length);
+
+            var (name, parentTable, referencedTable, deleteAction) = (parts[0], parts[1], parts[2], parts[3]);
+            var expectedAction = allowedCascades.Contains(name) ? "CASCADE" : "NO_ACTION";
+
+            Assert.True(
+                string.Equals(expectedAction, deleteAction, StringComparison.Ordinal),
+                $"{name} ({parentTable} -> {referencedTable}) has delete action {deleteAction}, expected {expectedAction}.");
+        }
+    }
+
+    [Fact]
     public async Task DuplicateStripeWebhookEventId_IsUniqueViolation()
     {
         var database = await fixture.CreateDatabaseAsync();
@@ -65,13 +115,20 @@ public sealed class DatabaseConstraintTests(SqlServerFixture fixture)
         Assert.True(DbErrors.IsUniqueViolation(exception, DbConstraintNames.StripeWebhookEventStripeEventIdUniqueIndex));
     }
 
-    [Fact]
-    public async Task SecondOpenCoursePaymentAttempt_IsUniqueViolation()
+    [Theory]
+    [InlineData(PaymentStatus.Succeeded)]
+    [InlineData(PaymentStatus.Canceled)]
+    [InlineData(PaymentStatus.Refunded)]
+    public async Task CoursePayment_OpenAttemptIndex_AllowsNewAttemptAfterClosed(PaymentStatus closedStatus)
     {
         var database = await fixture.CreateDatabaseAsync();
         await using var context = database.CreateContext();
 
         var (_, _, _, enrollment) = await SeedCourseEnrollmentAsync(context);
+
+        context.Set<CoursePayment>().Add(
+            new CoursePayment(enrollment.Id, "pi_closed_attempt", 10000, "bam", closedStatus));
+        await context.SaveChangesAsync();
 
         context.Set<CoursePayment>().Add(
             new CoursePayment(enrollment.Id, "pi_open_attempt_1", 10000, "bam", PaymentStatus.RequiresAction));
@@ -83,6 +140,182 @@ public sealed class DatabaseConstraintTests(SqlServerFixture fixture)
         var exception = await Assert.ThrowsAsync<DbUpdateException>(() => context.SaveChangesAsync());
 
         Assert.True(DbErrors.IsUniqueViolation(exception, DbConstraintNames.CoursePaymentOpenAttemptUniqueIndex));
+    }
+
+    [Theory]
+    [InlineData(PaymentStatus.Succeeded)]
+    [InlineData(PaymentStatus.Canceled)]
+    [InlineData(PaymentStatus.Refunded)]
+    public async Task RentalPayment_OpenAttemptIndex_AllowsNewAttemptAfterClosed(PaymentStatus closedStatus)
+    {
+        var database = await fixture.CreateDatabaseAsync();
+        await using var context = database.CreateContext();
+
+        var (student, instrument) = await SeedRentalStudentAndInstrumentAsync(context);
+        var rental = new InstrumentRental(instrument.Id, student.Id, instrument.MusicStoreId, Now, null);
+        context.Set<InstrumentRental>().Add(rental);
+        await context.SaveChangesAsync();
+
+        context.Set<RentalPayment>().Add(
+            new RentalPayment(rental.Id, rental.MusicStoreId, "pi_rental_closed", 10000, "bam", closedStatus));
+        await context.SaveChangesAsync();
+
+        context.Set<RentalPayment>().Add(
+            new RentalPayment(rental.Id, rental.MusicStoreId, "pi_rental_open_1", 10000, "bam", PaymentStatus.RequiresAction));
+        await context.SaveChangesAsync();
+
+        context.Set<RentalPayment>().Add(
+            new RentalPayment(rental.Id, rental.MusicStoreId, "pi_rental_open_2", 10000, "bam", PaymentStatus.RequiresAction));
+
+        var exception = await Assert.ThrowsAsync<DbUpdateException>(() => context.SaveChangesAsync());
+
+        Assert.True(DbErrors.IsUniqueViolation(exception, DbConstraintNames.RentalPaymentOpenAttemptUniqueIndex));
+    }
+
+    [Fact]
+    public async Task CoursePayment_OpenAttemptIndex_TreatsFailedAsOpen()
+    {
+        var database = await fixture.CreateDatabaseAsync();
+        await using var context = database.CreateContext();
+
+        var (_, _, _, enrollment) = await SeedCourseEnrollmentAsync(context);
+
+        context.Set<CoursePayment>().Add(
+            new CoursePayment(enrollment.Id, "pi_failed_attempt", 10000, "bam", PaymentStatus.Failed));
+        await context.SaveChangesAsync();
+
+        context.Set<CoursePayment>().Add(
+            new CoursePayment(enrollment.Id, "pi_requires_action", 10000, "bam", PaymentStatus.RequiresAction));
+
+        var exception = await Assert.ThrowsAsync<DbUpdateException>(() => context.SaveChangesAsync());
+
+        Assert.True(DbErrors.IsUniqueViolation(exception, DbConstraintNames.CoursePaymentOpenAttemptUniqueIndex));
+    }
+
+    [Fact]
+    public async Task RentalPayment_OpenAttemptIndex_TreatsFailedAsOpen()
+    {
+        var database = await fixture.CreateDatabaseAsync();
+        await using var context = database.CreateContext();
+
+        var (student, instrument) = await SeedRentalStudentAndInstrumentAsync(context);
+        var rental = new InstrumentRental(instrument.Id, student.Id, instrument.MusicStoreId, Now, null);
+        context.Set<InstrumentRental>().Add(rental);
+        await context.SaveChangesAsync();
+
+        context.Set<RentalPayment>().Add(
+            new RentalPayment(rental.Id, rental.MusicStoreId, "pi_rental_failed", 10000, "bam", PaymentStatus.Failed));
+        await context.SaveChangesAsync();
+
+        context.Set<RentalPayment>().Add(
+            new RentalPayment(rental.Id, rental.MusicStoreId, "pi_rental_requires_action", 10000, "bam", PaymentStatus.RequiresAction));
+
+        var exception = await Assert.ThrowsAsync<DbUpdateException>(() => context.SaveChangesAsync());
+
+        Assert.True(DbErrors.IsUniqueViolation(exception, DbConstraintNames.RentalPaymentOpenAttemptUniqueIndex));
+    }
+
+    [Theory]
+    [InlineData(InstrumentRentalStatus.Approved)]
+    [InlineData(InstrumentRentalStatus.Active)]
+    public async Task InstrumentRental_ActiveOrApprovedIndex_AllowsRentalAfterCompleted(InstrumentRentalStatus status)
+    {
+        var database = await fixture.CreateDatabaseAsync();
+        await using var context = database.CreateContext();
+
+        var (student, instrument) = await SeedRentalStudentAndInstrumentAsync(context);
+
+        var completed = new InstrumentRental(instrument.Id, student.Id, instrument.MusicStoreId, Now.AddDays(-10), null);
+        RentalTestData.AdvanceTo(
+            completed,
+            InstrumentRentalStatus.Completed,
+            Now,
+            userId: student.AppUserId,
+            approvedAt: Now.AddDays(-9),
+            pickedUpAt: Now.AddDays(-9),
+            finishedAt: Now.AddDays(-3));
+        context.Set<InstrumentRental>().Add(completed);
+        await context.SaveChangesAsync();
+
+        var rental = new InstrumentRental(instrument.Id, student.Id, instrument.MusicStoreId, Now, null);
+        RentalTestData.AdvanceTo(rental, status, Now, userId: student.AppUserId, approvedAt: Now, pickedUpAt: Now);
+        context.Set<InstrumentRental>().Add(rental);
+        await context.SaveChangesAsync();
+
+        var secondRental = new InstrumentRental(instrument.Id, student.Id, instrument.MusicStoreId, Now, null);
+        RentalTestData.AdvanceTo(secondRental, status, Now, userId: student.AppUserId, approvedAt: Now, pickedUpAt: Now);
+        context.Set<InstrumentRental>().Add(secondRental);
+
+        var exception = await Assert.ThrowsAsync<DbUpdateException>(() => context.SaveChangesAsync());
+
+        Assert.True(DbErrors.IsUniqueViolation(exception, DbConstraintNames.InstrumentRentalActiveOrApprovedUniqueIndex));
+    }
+
+    [Fact]
+    public async Task InstrumentRental_PendingIndex_AllowsNewRequestAfterCompleted()
+    {
+        var database = await fixture.CreateDatabaseAsync();
+        await using var context = database.CreateContext();
+
+        var (student, instrument) = await SeedRentalStudentAndInstrumentAsync(context);
+
+        var completed = new InstrumentRental(instrument.Id, student.Id, instrument.MusicStoreId, Now.AddDays(-10), null);
+        RentalTestData.AdvanceTo(
+            completed,
+            InstrumentRentalStatus.Completed,
+            Now,
+            userId: student.AppUserId,
+            approvedAt: Now.AddDays(-9),
+            pickedUpAt: Now.AddDays(-9),
+            finishedAt: Now.AddDays(-3));
+        context.Set<InstrumentRental>().Add(completed);
+        await context.SaveChangesAsync();
+
+        var pending = new InstrumentRental(instrument.Id, student.Id, instrument.MusicStoreId, Now, null);
+        context.Set<InstrumentRental>().Add(pending);
+        await context.SaveChangesAsync();
+
+        var secondPending = new InstrumentRental(instrument.Id, student.Id, instrument.MusicStoreId, Now, null);
+        context.Set<InstrumentRental>().Add(secondPending);
+
+        var exception = await Assert.ThrowsAsync<DbUpdateException>(() => context.SaveChangesAsync());
+
+        Assert.True(DbErrors.IsUniqueViolation(exception, DbConstraintNames.InstrumentRentalPendingUniqueIndex));
+    }
+
+    [Fact]
+    public async Task InstrumentRental_PendingIndex_AllowsPendingRequestFromAnotherStudent()
+    {
+        var database = await fixture.CreateDatabaseAsync();
+        await using var context = database.CreateContext();
+
+        var (student, instrument) = await SeedRentalStudentAndInstrumentAsync(context);
+
+        var pending = new InstrumentRental(instrument.Id, student.Id, instrument.MusicStoreId, Now, null);
+        context.Set<InstrumentRental>().Add(pending);
+        await context.SaveChangesAsync();
+
+        var otherUser = new AppUser
+        {
+            UserName = "other-renter",
+            NormalizedUserName = "OTHER-RENTER",
+            Email = "other-renter@example.com",
+            NormalizedEmail = "OTHER-RENTER@EXAMPLE.COM",
+            IsActive = true
+        };
+        context.Set<AppUser>().Add(otherUser);
+        await context.SaveChangesAsync();
+
+        var otherStudent = new Student(otherUser.Id, Now.AddMonths(-1));
+        context.Set<Student>().Add(otherStudent);
+        await context.SaveChangesAsync();
+
+        var otherPending = new InstrumentRental(instrument.Id, otherStudent.Id, instrument.MusicStoreId, Now, null);
+        context.Set<InstrumentRental>().Add(otherPending);
+        await context.SaveChangesAsync();
+
+        Assert.Equal(2, await context.Set<InstrumentRental>()
+            .CountAsync(r => r.InstrumentId == instrument.Id && r.RentalStatus == InstrumentRentalStatus.Pending));
     }
 
     [Fact]
@@ -103,6 +336,54 @@ public sealed class DatabaseConstraintTests(SqlServerFixture fixture)
         var exception = await Assert.ThrowsAsync<DbUpdateException>(() => context.SaveChangesAsync());
 
         Assert.True(DbErrors.IsUniqueViolation(exception, DbConstraintNames.MembershipPaymentReceiptNumberUniqueIndex));
+    }
+
+    [Fact]
+    public async Task DuplicateAssignmentSubmission_IsUniqueViolation()
+    {
+        var database = await fixture.CreateDatabaseAsync();
+        await using var context = database.CreateContext();
+
+        var (student, _, _, enrollment) = await SeedCourseEnrollmentAsync(context);
+
+        var lecture = new Lecture("Guitar lesson", "Room 1", 60, Now.AddDays(1), LectureType.Theoretical, 30, enrollment.CourseId);
+        context.Set<Lecture>().Add(lecture);
+        await context.SaveChangesAsync();
+
+        var assignment = new Assignment("Homework", "Do it", Now.AddDays(7), lecture.Id);
+        context.Set<Assignment>().Add(assignment);
+        await context.SaveChangesAsync();
+
+        context.Set<AssignmentSubmission>().Add(new AssignmentSubmission(assignment.Id, student.Id));
+        await context.SaveChangesAsync();
+
+        context.Set<AssignmentSubmission>().Add(new AssignmentSubmission(assignment.Id, student.Id));
+
+        var exception = await Assert.ThrowsAsync<DbUpdateException>(() => context.SaveChangesAsync());
+
+        Assert.True(DbErrors.IsUniqueViolation(exception, DbConstraintNames.AssignmentSubmissionAssignmentIdStudentIdUniqueIndex));
+    }
+
+    [Fact]
+    public async Task DuplicateAttendance_IsUniqueViolation()
+    {
+        var database = await fixture.CreateDatabaseAsync();
+        await using var context = database.CreateContext();
+
+        var (student, _, _, enrollment) = await SeedCourseEnrollmentAsync(context);
+
+        var lecture = new Lecture("Guitar lesson", "Room 1", 60, Now.AddDays(1), LectureType.Theoretical, 30, enrollment.CourseId);
+        context.Set<Lecture>().Add(lecture);
+        await context.SaveChangesAsync();
+
+        context.Set<Attendance>().Add(new Attendance(student.Id, lecture.Id, AttendanceStatus.Present));
+        await context.SaveChangesAsync();
+
+        context.Set<Attendance>().Add(new Attendance(student.Id, lecture.Id, AttendanceStatus.Absent));
+
+        var exception = await Assert.ThrowsAsync<DbUpdateException>(() => context.SaveChangesAsync());
+
+        Assert.True(DbErrors.IsUniqueViolation(exception, DbConstraintNames.AttendanceStudentIdLectureIdUniqueIndex));
     }
 
     [Fact]
@@ -147,6 +428,37 @@ public sealed class DatabaseConstraintTests(SqlServerFixture fixture)
 
         var sqlException = Assert.IsType<SqlException>(exception.InnerException);
         Assert.Equal(547, sqlException.Number);
+    }
+
+    private static async Task<(Student Student, Instrument Instrument)> SeedRentalStudentAndInstrumentAsync(ENoteContext context)
+    {
+        var user = new AppUser
+        {
+            UserName = "renter",
+            NormalizedUserName = "RENTER",
+            Email = "renter@example.com",
+            NormalizedEmail = "RENTER@EXAMPLE.COM",
+            IsActive = true
+        };
+        context.Set<AppUser>().Add(user);
+        await context.SaveChangesAsync();
+
+        var student = new Student(user.Id, Now.AddMonths(-1));
+        context.Set<Student>().Add(student);
+
+        var store = new MusicStore("Music Store", "09:00-17:00");
+        context.Set<MusicStore>().Add(store);
+        await context.SaveChangesAsync();
+
+        var type = new InstrumentType { Type = "Guitar", MonthlyFee = 50m };
+        context.Set<InstrumentType>().Add(type);
+        await context.SaveChangesAsync();
+
+        var instrument = new Instrument("Model", "Manufacturer", null, null, type.Id, store.Id);
+        context.Set<Instrument>().Add(instrument);
+        await context.SaveChangesAsync();
+
+        return (student, instrument);
     }
 
     private static async Task<(Student Student, Instructor Instructor, Course Course, Enrollment Enrollment)> SeedCourseEnrollmentAsync(

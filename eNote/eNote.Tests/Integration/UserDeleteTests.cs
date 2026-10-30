@@ -92,6 +92,37 @@ public sealed class UserDeleteTests(SqlServerFixture fixture)
     }
 
     [Fact]
+    public async Task DeleteUserAsync_RejectsStoreEmployeeWithHistory_AndKeepsTheStoreLink()
+    {
+        var database = await fixture.CreateDatabaseAsync();
+
+        var userId = await SeedAsync(database, async context =>
+        {
+            var employeeUser = await AddUserAsync(context, "employee");
+
+            var store = new MusicStore("Music Store", "09:00-17:00");
+            context.Set<MusicStore>().Add(store);
+            await context.SaveChangesAsync();
+
+            context.Set<MusicStoreEmployee>().Add(new MusicStoreEmployee(employeeUser.Id, store.Id, isManager: false));
+
+            var (_, _, instructor, _) = await SeedCourseStudentAsync(context);
+
+            context.Set<Course>().Add(
+                new Course("Piano", null, 100m, Now, Now.AddMonths(6), instructor.Id) { CreatedById = employeeUser.Id });
+            await context.SaveChangesAsync();
+
+            return employeeUser.Id;
+        });
+
+        await AssertDeleteIsBlockedAsync(database, userId);
+
+        await using var verifyContext = database.CreateContext();
+
+        Assert.True(await verifyContext.Set<MusicStoreEmployee>().AnyAsync(e => e.AppUserId == userId));
+    }
+
+    [Fact]
     public async Task DeleteUserAsync_RemovesStudentWithoutReferences()
     {
         var database = await fixture.CreateDatabaseAsync();
