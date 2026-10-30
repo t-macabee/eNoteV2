@@ -14,6 +14,7 @@ public sealed class EnrollmentStatusChangedPushConsumer(IHubContext<Notification
         {
             Title = message.Title,
             Body = message.Body,
+            CourseId = message.CourseId,
             CreatedAt = message.OccurredAtUtc
         },
         "enrollment-status-changed",

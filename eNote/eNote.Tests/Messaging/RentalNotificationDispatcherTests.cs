@@ -68,7 +68,7 @@ public sealed class RentalNotificationDispatcherTests
     }
 
     [Fact]
-    public async Task DispatchTransitionAsync_UsesStudentUserId_AndTriggerTitle()
+    public async Task DispatchTransitionAsync_UsesRecipientUserId_AndTriggerTitle()
     {
         await using var context = TestDbContextFactory.CreateContext(Now);
         var dispatcher = new RentalNotificationDispatcher(context, new FixedClock(Now));
@@ -79,7 +79,7 @@ public sealed class RentalNotificationDispatcherTests
         var row = await context.Set<NotificationOutbox>().SingleAsync();
         var payload = JsonSerializer.Deserialize<RentalStatusChanged>(row.PayloadJson, new JsonSerializerOptions(JsonSerializerDefaults.Web));
         Assert.NotNull(payload);
-        Assert.Equal(5, payload.StudentUserId);
+        Assert.Equal(5, payload.RecipientUserId);
         Assert.Equal(9, payload.ActorUserId);
         Assert.Equal("Zahtjev odobren", payload.Title);
     }
@@ -123,11 +123,11 @@ public sealed class RentalNotificationDispatcherTests
         await dispatcher.DispatchCreatedAsync(dto, studentUserId: 5);
         await context.SaveChangesAsync();
 
-        var recipients = (await context.Set<NotificationOutbox>().ToListAsync())
-            .Select(row => JsonSerializer.Deserialize<RentalStatusChanged>(row.PayloadJson, new JsonSerializerOptions(JsonSerializerDefaults.Web))!.StudentUserId)
-            .Order()
+        var messages = (await context.Set<NotificationOutbox>().ToListAsync())
+            .Select(row => JsonSerializer.Deserialize<RentalStatusChanged>(row.PayloadJson, new JsonSerializerOptions(JsonSerializerDefaults.Web))!)
             .ToList();
-        Assert.Equal([5, 11], recipients);
+        Assert.Equal([5, 11], messages.Select(m => m.RecipientUserId).Order().ToList());
+        Assert.All(messages, m => Assert.Equal(5, m.StudentUserId));
     }
 
     [Theory]
@@ -178,7 +178,8 @@ public sealed class RentalNotificationDispatcherTests
         var recipients = (await context.Set<NotificationOutbox>().ToListAsync())
             .Select(row => JsonSerializer.Deserialize<RentalStatusChanged>(row.PayloadJson, new JsonSerializerOptions(JsonSerializerDefaults.Web))!)
             .ToList();
-        Assert.Equal([11], recipients.Select(r => r.StudentUserId).Order().ToList());
+        Assert.Equal([11], recipients.Select(r => r.RecipientUserId).Order().ToList());
+        Assert.All(recipients, r => Assert.Equal(5, r.StudentUserId));
         Assert.All(recipients, r => Assert.Equal("Zahtjev otkazan", r.Title));
         Assert.All(recipients, r => Assert.Contains("Student je otkazao", r.Body));
     }
@@ -212,7 +213,7 @@ public sealed class RentalNotificationDispatcherTests
             .Select(row => JsonSerializer.Deserialize<RentalStatusChanged>(row.PayloadJson, new JsonSerializerOptions(JsonSerializerDefaults.Web))!)
             .ToList();
         var recipient = Assert.Single(recipients);
-        Assert.Equal([5], recipients.Select(r => r.StudentUserId));
+        Assert.Equal([5], recipients.Select(r => r.RecipientUserId));
         Assert.Contains("Vaš zahtjev", recipient.Body);
     }
 

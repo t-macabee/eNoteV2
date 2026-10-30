@@ -73,6 +73,7 @@ class NotificationDto {
   final int? lectureId;
   final int? submissionId;
   final int? announcementId;
+  final int? courseId;
   final String title;
   final String body;
   final bool isRead;
@@ -84,6 +85,7 @@ class NotificationDto {
     this.lectureId,
     this.submissionId,
     this.announcementId,
+    this.courseId,
     required this.title,
     required this.body,
     required this.isRead,
@@ -97,6 +99,7 @@ class NotificationDto {
       lectureId: json['lectureId'] as int?,
       submissionId: json['submissionId'] as int?,
       announcementId: json['announcementId'] as int?,
+      courseId: json['courseId'] as int?,
       title: json['title'] as String? ?? '',
       body: json['body'] as String? ?? '',
       isRead: json['isRead'] as bool? ?? false,
@@ -110,6 +113,7 @@ class NotificationDto {
     if (lectureId != null) 'lectureId': lectureId,
     if (submissionId != null) 'submissionId': submissionId,
     if (announcementId != null) 'announcementId': announcementId,
+    if (courseId != null) 'courseId': courseId,
     'title': title,
     'body': body,
     'isRead': isRead,

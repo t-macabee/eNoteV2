@@ -9,7 +9,7 @@ public sealed class TuitionPaymentConsumer(IAppDbContext dbContext, ILogger<Tuit
     : NotificationPersistenceConsumer<TuitionPaymentNotification>(dbContext, logger)
 {
     protected override NotificationWrite Map(TuitionPaymentNotification message) => new(
-        new Notification(message.StudentUserId, message.Title, message.Body, message.OccurredAtUtc, enrollmentId: message.EnrollmentId),
+        new Notification(message.StudentUserId, message.Title, message.Body, message.OccurredAtUtc, enrollmentId: message.EnrollmentId, courseId: message.CourseId),
         "tuition-payment",
         "enrollment",
         message.EnrollmentId,

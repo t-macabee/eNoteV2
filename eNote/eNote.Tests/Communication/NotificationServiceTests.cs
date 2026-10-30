@@ -47,6 +47,20 @@ public sealed class NotificationServiceTests
     }
 
     [Fact]
+    public async Task GetPagedAsync_MapsCourseId()
+    {
+        await using var context = TestDbContextFactory.CreateContext(Now);
+        var actor = new StubCurrentActor(student: null);
+        context.Set<Notification>().Add(new Notification(1, "Course", "body", Now, courseId: 47));
+        await context.SaveChangesAsync();
+        var service = new NotificationService(context, TestMapper.Create(), actor);
+
+        var result = await service.GetPagedAsync(new NotificationSearchObject { Page = 1, PageSize = 10 });
+
+        Assert.Equal(47, Assert.Single(result.Items).CourseId);
+    }
+
+    [Fact]
     public async Task MarkReadAsync_Throws_WhenNotificationBelongsToOtherUser()
     {
         await using var context = TestDbContextFactory.CreateContext(Now);
@@ -71,7 +85,46 @@ public sealed class NotificationServiceTests
         var dto = await service.MarkReadAsync(notification.Id);
 
         Assert.True(dto.IsRead);
-        var updated = await context.Set<Notification>().SingleAsync(n => n.Id == notification.Id);
+        var updated = await context.Set<Notification>().AsNoTracking().SingleAsync(n => n.Id == notification.Id);
         Assert.True(updated.IsRead);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task GetPagedAsync_FiltersByIsRead(bool isRead)
+    {
+        await using var context = TestDbContextFactory.CreateContext(Now);
+        var actor = new StubCurrentActor(student: null);
+        context.Set<Notification>().AddRange(
+            new Notification(1, "Unread one", "body", Now),
+            new Notification(1, "Unread two", "body", Now.AddMinutes(1)),
+            new Notification(1, "Read", "body", Now.AddMinutes(2)),
+            new Notification(2, "Other user unread", "body", Now.AddMinutes(3)));
+        await context.SaveChangesAsync();
+        context.Set<Notification>().Single(n => n.Title == "Read").MarkRead();
+        await context.SaveChangesAsync();
+        var service = new NotificationService(context, TestMapper.Create(), actor);
+
+        var result = await service.GetPagedAsync(new NotificationSearchObject { IsRead = isRead, Page = 1, PageSize = 10 });
+
+        Assert.Equal(isRead ? ["Read"] : ["Unread two", "Unread one"], result.Items.Select(x => x.Title));
+    }
+
+    [Fact]
+    public async Task GetPagedAsync_ReturnsNewestFirst()
+    {
+        await using var context = TestDbContextFactory.CreateContext(Now);
+        var actor = new StubCurrentActor(student: null);
+        context.Set<Notification>().AddRange(
+            new Notification(1, "Oldest", "body", Now.AddDays(-2)),
+            new Notification(1, "Newest", "body", Now),
+            new Notification(1, "Middle", "body", Now.AddDays(-1)));
+        await context.SaveChangesAsync();
+        var service = new NotificationService(context, TestMapper.Create(), actor);
+
+        var result = await service.GetPagedAsync(new NotificationSearchObject { Page = 1, PageSize = 10 });
+
+        Assert.Equal(["Newest", "Middle", "Oldest"], result.Items.Select(x => x.Title));
     }
 }

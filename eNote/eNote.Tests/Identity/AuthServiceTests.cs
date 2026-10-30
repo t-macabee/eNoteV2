@@ -3,12 +3,16 @@ using eNote.Application.Features.Identity.Auth;
 using eNote.Application.Features.Identity.Auth.Services;
 using eNote.Application.Features.Identity.Users;
 using eNote.Application.Features.Identity.Users.Services;
+using eNote.Contracts.Communication;
+using eNote.Contracts.Identity;
+using eNote.Domain.Entities.Communication;
+using eNote.Infrastructure.Data;
 using eNote.Infrastructure.Identity;
 using eNote.Tests.TestUtils;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.FileProviders;
-using Microsoft.Extensions.Hosting;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
+using System.Text.Json;
 
 namespace eNote.Tests.Identity;
 
@@ -28,6 +32,14 @@ public sealed class AuthServiceTests
         Assert.Equal("jdoe", response.Username);
         Assert.Equal(["Student"], response.Roles);
         Assert.Equal("generated-token", response.Token);
+
+        var stamp = await harness.UserManager.GetSecurityStampAsync(harness.User);
+        var issued = harness.Tokens.Single();
+        Assert.Equal(harness.User.Id, issued.UserId);
+        Assert.Equal("jdoe", issued.Username);
+        Assert.Equal(["Student"], issued.Roles);
+        Assert.False(issued.IsManager);
+        Assert.Equal(stamp, issued.SecurityStamp);
     }
 
     [Fact]
@@ -112,6 +124,7 @@ public sealed class AuthServiceTests
         var response = await auth.LoginAsync(new LoginRequest { Username = "  jdoe  ", Password = "Password1!" });
 
         Assert.Equal("jdoe", response.Username);
+        Assert.Equal("jdoe", harness.Tokens.Single().Username);
     }
 
     [Fact]
@@ -163,7 +176,7 @@ public sealed class AuthServiceTests
     }
 
     [Fact]
-    public async Task ForgotPasswordAsync_DoesNotSend_ForInactiveUser_AndAnswersTheSame()
+    public async Task ForgotPasswordAsync_DoesNotEnqueue_ForInactiveUser_AndAnswersTheSame()
     {
         var harness = await CreateHarnessAsync(withRole: "Student");
         harness.User.IsActive = false;
@@ -173,7 +186,7 @@ public sealed class AuthServiceTests
         var response = await auth.ForgotPasswordAsync(new ForgotPasswordRequest { Email = "jdoe@example.com" });
 
         Assert.Equal(Messages.PasswordResetEmailSent, response.Message);
-        Assert.Empty(harness.Email.PasswordResets);
+        Assert.Empty(harness.Context.Set<NotificationOutbox>());
     }
 
     [Fact]
@@ -203,7 +216,7 @@ public sealed class AuthServiceTests
         await harness.UserManager.UpdateAsync(harness.User);
         var auth = harness.CreateAuthService();
 
-        await Assert.ThrowsAsync<BusinessException>(() =>
+        var exception = await Assert.ThrowsAsync<BusinessException>(() =>
             auth.ResetPasswordAsync(new ResetPasswordRequest
             {
                 Email = "jdoe@example.com",
@@ -211,6 +224,7 @@ public sealed class AuthServiceTests
                 NewPassword = "Newpassword1!"
             }));
 
+        Assert.Equal(Messages.PasswordResetFailed, exception.Message);
         Assert.True(await harness.UserManager.CheckPasswordAsync(harness.User, "Password1!"));
     }
 
@@ -221,7 +235,7 @@ public sealed class AuthServiceTests
         var auth = harness.CreateAuthService();
         var token = await harness.UserManager.GeneratePasswordResetTokenAsync(harness.User);
 
-        await Assert.ThrowsAsync<BusinessException>(() =>
+        var exception = await Assert.ThrowsAsync<BusinessException>(() =>
             auth.ResetPasswordAsync(new ResetPasswordRequest
             {
                 Email = "jdoe@example.com",
@@ -229,6 +243,7 @@ public sealed class AuthServiceTests
                 NewPassword = "a"
             }));
 
+        Assert.Equal(Messages.PasswordResetFailed, exception.Message);
         Assert.True(await harness.UserManager.CheckPasswordAsync(harness.User, "Password1!"));
     }
 
@@ -252,42 +267,64 @@ public sealed class AuthServiceTests
         await harness.UserManager.AddToRoleAsync(harness.User, "Instructor");
         var auth = harness.CreateAuthService();
 
-        await Assert.ThrowsAsync<BusinessException>(() =>
+        var exception = await Assert.ThrowsAsync<BusinessException>(() =>
             auth.LoginAsync(new LoginRequest { Username = "jdoe", Password = "Password1!" }));
+
+        Assert.Equal(Messages.UserSingleRoleRequired, exception.Message);
+    }
+
+    [Fact]
+    public async Task LoginAsync_Throws_WhenUserHasNoRole()
+    {
+        var harness = await CreateHarnessAsync(withRole: null);
+        var auth = harness.CreateAuthService();
+
+        var exception = await Assert.ThrowsAsync<BusinessException>(() =>
+            auth.LoginAsync(new LoginRequest { Username = "jdoe", Password = "Password1!" }));
+
+        Assert.Equal(Messages.UserSingleRoleRequired, exception.Message);
     }
 
     [Fact]
     public async Task RegisterAsync_ReturnsTokenFromProvisioning()
     {
         var harness = await CreateHarnessAsync(withRole: "Student");
-        var provisioning = new StubUserProvisioningService();
+        var provisioning = new StubUserProvisioningService { UserId = harness.User.Id };
         var auth = harness.CreateAuthService(provisioning: provisioning);
         var request = new RegisterRequest { Username = "newstudent", Email = "new@example.com", Password = "Password1!" };
 
         var response = await auth.RegisterAsync(request);
 
-        Assert.Equal(7, response.UserId);
+        Assert.Equal(harness.User.Id, response.UserId);
         Assert.Equal("newstudent", response.Username);
         Assert.Equal("generated-token", response.Token);
         Assert.Same(request, provisioning.LastRegisterRequest);
+
+        var stamp = await harness.UserManager.GetSecurityStampAsync(harness.User);
+        Assert.Equal(stamp, harness.Tokens.Single().SecurityStamp);
     }
 
     [Fact]
-    public async Task ForgotPasswordAsync_SendsEmail_ForExistingUser()
+    public async Task ForgotPasswordAsync_EnqueuesOneRequest_ForExistingUser()
     {
         var harness = await CreateHarnessAsync(withRole: "Student");
         var auth = harness.CreateAuthService();
 
-        var response = await auth.ForgotPasswordAsync(new ForgotPasswordRequest { Email = "jdoe@example.com" });
+        var response = await auth.ForgotPasswordAsync(new ForgotPasswordRequest { Email = "  jdoe@example.com  " });
 
         Assert.Equal(Messages.PasswordResetEmailSent, response.Message);
-        Assert.Single(harness.Email.PasswordResets);
-        Assert.Equal("jdoe@example.com", harness.Email.PasswordResets[0].Email);
-        Assert.NotEmpty(harness.Email.PasswordResets[0].Token);
+        Assert.NotEqual(1, harness.User.Id);
+
+        var outbox = Assert.Single(harness.Context.Set<NotificationOutbox>());
+        Assert.Equal(NotificationMessageTypes.PasswordResetRequested, outbox.MessageType);
+
+        var payload = JsonSerializer.Deserialize<PasswordResetRequested>(outbox.PayloadJson, new JsonSerializerOptions(JsonSerializerDefaults.Web));
+        Assert.NotNull(payload);
+        Assert.Equal(harness.User.Id, payload.UserId);
     }
 
     [Fact]
-    public async Task ForgotPasswordAsync_DoesNotSend_ForUnknownUser()
+    public async Task ForgotPasswordAsync_DoesNotEnqueue_ForUnknownUser()
     {
         var harness = await CreateHarnessAsync(withRole: "Student");
         var auth = harness.CreateAuthService();
@@ -295,7 +332,7 @@ public sealed class AuthServiceTests
         var response = await auth.ForgotPasswordAsync(new ForgotPasswordRequest { Email = "nobody@example.com" });
 
         Assert.Equal(Messages.PasswordResetEmailSent, response.Message);
-        Assert.Empty(harness.Email.PasswordResets);
+        Assert.Empty(harness.Context.Set<NotificationOutbox>());
     }
 
     [Fact]
@@ -308,7 +345,7 @@ public sealed class AuthServiceTests
 
         await auth.ResetPasswordAsync(new ResetPasswordRequest
         {
-            Email = "jdoe@example.com",
+            Email = "  jdoe@example.com  ",
             Token = token,
             NewPassword = "Newpassword1!"
         });
@@ -323,13 +360,15 @@ public sealed class AuthServiceTests
         var harness = await CreateHarnessAsync(withRole: "Student");
         var auth = harness.CreateAuthService();
 
-        await Assert.ThrowsAsync<BusinessException>(() =>
+        var exception = await Assert.ThrowsAsync<BusinessException>(() =>
             auth.ResetPasswordAsync(new ResetPasswordRequest
             {
                 Email = "nobody@example.com",
                 Token = "token",
                 NewPassword = "newpassword1"
             }));
+
+        Assert.Equal(Messages.PasswordResetFailed, exception.Message);
     }
 
     [Fact]
@@ -358,70 +397,59 @@ public sealed class AuthServiceTests
         Assert.NotEqual(Messages.UsernameTaken, exception.Message);
     }
 
-    [Fact]
-    public async Task ForgotPasswordAsync_ReturnsSuccess_WhenEmailSendFails()
-    {
-        var harness = await CreateHarnessAsync(withRole: "Student");
-        var auth = harness.CreateAuthService(email: new ThrowingEmailService());
-
-        var response = await auth.ForgotPasswordAsync(new ForgotPasswordRequest { Email = "jdoe@example.com" });
-
-        Assert.Equal(Messages.PasswordResetEmailSent, response.Message);
-    }
-
-    private static async Task<Harness> CreateHarnessAsync(string withRole)
+    private static async Task<Harness> CreateHarnessAsync(string? withRole)
     {
         var context = TestDbContextFactory.CreateContext(Now);
         var identity = IdentityTestHarness.Create(context);
 
-        await identity.RoleManager.CreateAsync(new AppRole { Name = withRole });
+        await identity.UserManager.CreateAsync(
+            new AppUser { UserName = "seed", Email = "seed@example.com", IsActive = true },
+            "Password1!");
+
         var user = new AppUser { UserName = "jdoe", Email = "jdoe@example.com", IsActive = true };
         await identity.UserManager.CreateAsync(user, "Password1!");
-        await identity.UserManager.AddToRoleAsync(user, withRole);
 
-        return new Harness(identity.UserManager, identity.RoleManager, identity.SignInManager, user);
+        if (withRole is not null)
+        {
+            await identity.RoleManager.CreateAsync(new AppRole { Name = withRole });
+            await identity.UserManager.AddToRoleAsync(user, withRole);
+        }
+
+        return new Harness(identity.UserManager, identity.RoleManager, identity.SignInManager, context, user);
     }
 
     private sealed class Harness(
         UserManager<AppUser> userManager,
         RoleManager<AppRole> roleManager,
         SignInManager<AppUser> signInManager,
+        ENoteContext context,
         AppUser user)
     {
         public UserManager<AppUser> UserManager => userManager;
         public RoleManager<AppRole> RoleManager => roleManager;
+        public ENoteContext Context => context;
         public AppUser User => user;
-        public RecordingEmailService Email { get; } = new();
         public List<(string Jti, DateTime ExpiresAt)> Revocations { get; } = [];
         public List<IssuedToken> Tokens { get; } = [];
 
-        public AuthService CreateAuthService(IUserProvisioningService? provisioning = null, IEmailService? email = null) =>
+        public AuthService CreateAuthService(IUserProvisioningService? provisioning = null) =>
             new(UserManager,
                 signInManager,
                 new StubTokenService(Tokens),
                 provisioning ?? new StubUserProvisioningService(),
                 new RecordingTokenRevocationService(Revocations),
-                email ?? Email,
-                new StubHostEnvironment(),
+                Context,
+                new FixedClock(Now),
                 NullLogger<AuthService>.Instance);
     }
 
-    private sealed class ThrowingEmailService : IEmailService
-    {
-        public Task SendPasswordResetAsync(string email, string token, CancellationToken cancellationToken = default) =>
-            throw new InvalidOperationException("SMTP unavailable");
-
-        public Task SendNotificationAsync(string email, string subject, string body, CancellationToken cancellationToken = default) =>
-            throw new InvalidOperationException("SMTP unavailable");
-    }
-
-    private sealed record IssuedToken(int UserId, bool IsManager, string? SecurityStamp);
+    private sealed record IssuedToken(int UserId, string Username, IList<string> Roles, bool IsManager, string? SecurityStamp);
 
     private sealed class StubTokenService(List<IssuedToken>? issued = null) : ITokenService
     {
         public string GenerateToken(int userId, string username, IList<string> roles, bool isManager = false, string? securityStamp = null)
         {
-            issued?.Add(new IssuedToken(userId, isManager, securityStamp));
+            issued?.Add(new IssuedToken(userId, username, roles, isManager, securityStamp));
             return "generated-token";
         }
     }
@@ -441,6 +469,7 @@ public sealed class AuthServiceTests
     {
         public RegisterRequest? LastRegisterRequest { get; private set; }
         public string? RegisterError { get; init; }
+        public int UserId { get; init; } = 7;
         public int[] ManagerUserIds { get; init; } = [];
 
         public Task<RegistrationResult> RegisterStudentAsync(RegisterRequest request, CancellationToken cancellationToken = default)
@@ -452,7 +481,7 @@ public sealed class AuthServiceTests
                 throw new ConflictException(RegisterError);
             }
 
-            return Task.FromResult(new RegistrationResult(7, request.Username.Trim(), ["Student"]));
+            return Task.FromResult(new RegistrationResult(UserId, request.Username.Trim(), ["Student"]));
         }
 
         public Task<int> ProvisionUserAsync(UserProvisionRequest request, CancellationToken cancellationToken = default) =>
@@ -467,13 +496,5 @@ public sealed class AuthServiceTests
 
         public Task<int> ProvisionEmployeeByManagerAsync(DelegatedUserCreateRequest request, CancellationToken cancellationToken = default) =>
             Task.FromResult(7);
-    }
-
-    private sealed class StubHostEnvironment : IHostEnvironment
-    {
-        public string EnvironmentName { get; set; } = "Test";
-        public string ApplicationName { get; set; } = "eNote.Tests";
-        public string ContentRootPath { get; set; } = string.Empty;
-        public IFileProvider ContentRootFileProvider { get; set; } = new NullFileProvider();
     }
 }

@@ -21,6 +21,7 @@ using eNote.Infrastructure.Payments.Stripe;
 using eNote.Infrastructure.Reports;
 using eNote.Infrastructure.Storage;
 using MassTransit;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -55,7 +56,9 @@ public static class DependencyInjection
     {
         services.AddScoped<IUserIdentityService, UserIdentityService>();
 
-        services.AddDataProtection();
+        services.AddDataProtection()
+            .SetApplicationName("eNote")
+            .PersistKeysToDbContext<ENoteContext>();
 
         services.AddAuthenticationCore();
 

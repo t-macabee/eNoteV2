@@ -1,7 +1,6 @@
 using eNote.Application.Common.Persistence;
 using eNote.Application.Common.Time;
 using eNote.Application.Features.Academic.Lectures.Services;
-using eNote.Contracts.Communication;
 using eNote.Contracts.Lectures;
 
 namespace eNote.Infrastructure.Messaging;
@@ -18,7 +17,7 @@ public sealed class LectureNotificationDispatcher(
         foreach (var studentUserId in enrolledStudentUserIds)
         {
             var message = new LectureCancelled(lectureId, studentUserId, lectureName, title, body, occurredAtUtc);
-            NotificationOutboxWriter.Enqueue(context, NotificationMessageTypes.LectureCancelled, message);
+            NotificationOutboxWriter.Enqueue(context, message);
         }
 
         return Task.CompletedTask;

@@ -1,7 +1,6 @@
 using eNote.Application.Common.Persistence;
 using eNote.Application.Common.Time;
 using eNote.Application.Features.Academic.Courses.Services;
-using eNote.Contracts.Communication;
 using eNote.Contracts.Enrollments;
 
 namespace eNote.Infrastructure.Messaging;
@@ -10,7 +9,7 @@ public sealed class EnrollmentNotificationDispatcher(
     IAppDbContext context,
     IClock clock) : IEnrollmentNotificationDispatcher
 {
-    public Task DispatchStatusChangedAsync(int enrollmentId, int studentUserId, string courseName, EnrollmentStatus newStatus, string? reason)
+    public Task DispatchStatusChangedAsync(int enrollmentId, int courseId, int studentUserId, string courseName, EnrollmentStatus newStatus, string? reason)
     {
         var (title, body) = newStatus switch
         {
@@ -20,28 +19,28 @@ public sealed class EnrollmentNotificationDispatcher(
             _ => throw new ArgumentOutOfRangeException(nameof(newStatus), newStatus, null)
         };
 
-        var message = new EnrollmentStatusChanged(enrollmentId, studentUserId, title, body, clock.UtcNow);
-        NotificationOutboxWriter.Enqueue(context, NotificationMessageTypes.EnrollmentStatusChanged, message);
+        var message = new EnrollmentStatusChanged(enrollmentId, courseId, studentUserId, title, body, clock.UtcNow);
+        NotificationOutboxWriter.Enqueue(context, message);
 
         return Task.CompletedTask;
     }
 
-    public Task DispatchTuitionPaidAsync(int enrollmentId, int studentUserId, string courseName, long amountCents, string currency, DateTime paidUntil)
+    public Task DispatchTuitionPaidAsync(int enrollmentId, int courseId, int studentUserId, string courseName, long amountCents, string currency, DateTime paidUntil)
     {
         var body = $"Školarina za kurs '{courseName}' je plaćena. Iznos: {CurrencyAmount.Format(amountCents, currency)}. Pristup do {paidUntil:dd.MM.yyyy}.";
-        return EnqueueTuitionAsync(enrollmentId, studentUserId, "Školarina plaćena", body);
+        return EnqueueTuitionAsync(enrollmentId, courseId, studentUserId, "Školarina plaćena", body);
     }
 
-    public Task DispatchTuitionRefundedAsync(int enrollmentId, int studentUserId, string courseName, long amountCents, string currency)
+    public Task DispatchTuitionRefundedAsync(int enrollmentId, int courseId, int studentUserId, string courseName, long amountCents, string currency)
     {
         var body = $"Uplata školarine za kurs '{courseName}' je vraćena. Iznos: {CurrencyAmount.Format(amountCents, currency)}.";
-        return EnqueueTuitionAsync(enrollmentId, studentUserId, "Školarina vraćena", body);
+        return EnqueueTuitionAsync(enrollmentId, courseId, studentUserId, "Školarina vraćena", body);
     }
 
-    private Task EnqueueTuitionAsync(int enrollmentId, int studentUserId, string title, string body)
+    private Task EnqueueTuitionAsync(int enrollmentId, int courseId, int studentUserId, string title, string body)
     {
-        var message = new TuitionPaymentNotification(enrollmentId, studentUserId, title, body, clock.UtcNow);
-        NotificationOutboxWriter.Enqueue(context, NotificationMessageTypes.TuitionPayment, message);
+        var message = new TuitionPaymentNotification(enrollmentId, courseId, studentUserId, title, body, clock.UtcNow);
+        NotificationOutboxWriter.Enqueue(context, message);
 
         return Task.CompletedTask;
     }

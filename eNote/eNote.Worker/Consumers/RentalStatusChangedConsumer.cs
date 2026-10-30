@@ -9,7 +9,7 @@ public sealed class RentalStatusChangedConsumer(IAppDbContext dbContext, ILogger
     : NotificationPersistenceConsumer<RentalStatusChanged>(dbContext, logger)
 {
     protected override NotificationWrite Map(RentalStatusChanged message) => new(
-        new Notification(message.StudentUserId, message.Title, message.Body, message.OccurredAtUtc, message.RentalId),
+        new Notification(message.RecipientUserId, message.Title, message.Body, message.OccurredAtUtc, message.RentalId),
         "rental",
         "rental",
         message.RentalId,

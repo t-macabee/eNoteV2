@@ -1,11 +1,6 @@
 using eNote.Application.Common.Persistence;
 using eNote.Application.Common.Time;
-using eNote.Contracts.Assignments;
 using eNote.Contracts.Communication;
-using eNote.Contracts.Enrollments;
-using eNote.Contracts.Identity;
-using eNote.Contracts.Lectures;
-using eNote.Contracts.Rentals;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -62,18 +57,8 @@ public sealed class NotificationOutboxPublisher(IServiceProvider services, ILogg
         {
             try
             {
-                object payload = message.MessageType switch
-                {
-                    NotificationMessageTypes.RentalStatusChanged => JsonSerializer.Deserialize<RentalStatusChanged>(message.PayloadJson, JsonOptions)!,
-                    NotificationMessageTypes.LectureCancelled => JsonSerializer.Deserialize<LectureCancelled>(message.PayloadJson, JsonOptions)!,
-                    NotificationMessageTypes.SubmissionGraded => JsonSerializer.Deserialize<SubmissionGraded>(message.PayloadJson, JsonOptions)!,
-                    NotificationMessageTypes.PaymentRefunded => JsonSerializer.Deserialize<RentalRefunded>(message.PayloadJson, JsonOptions)!,
-                    NotificationMessageTypes.AnnouncementPublished => JsonSerializer.Deserialize<AnnouncementPublished>(message.PayloadJson, JsonOptions)!,
-                    NotificationMessageTypes.EnrollmentStatusChanged => JsonSerializer.Deserialize<EnrollmentStatusChanged>(message.PayloadJson, JsonOptions)!,
-                    NotificationMessageTypes.TuitionPayment => JsonSerializer.Deserialize<TuitionPaymentNotification>(message.PayloadJson, JsonOptions)!,
-                    NotificationMessageTypes.MembershipWarning => JsonSerializer.Deserialize<MembershipWarning>(message.PayloadJson, JsonOptions)!,
-                    _ => throw new InvalidOperationException($"Unknown notification outbox message type '{message.MessageType}'.")
-                };
+                var payloadType = NotificationMessageTypes.TypeFor(message.MessageType);
+                object payload = JsonSerializer.Deserialize(message.PayloadJson, payloadType, JsonOptions)!;
 
                 await publisher.Publish(payload, ct);
                 message.PublishedAt = clock.UtcNow;

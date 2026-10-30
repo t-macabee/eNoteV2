@@ -156,6 +156,41 @@ void main() {
     expect(c.unreadCount, 0);
   });
 
+  test('NotificationDto.fromJson reads courseId', () {
+    final dto = NotificationDto.fromJson({
+      'id': 1,
+      'courseId': 47,
+      'title': 't',
+      'body': 'b',
+      'isRead': false,
+      'createdAt': '2026-09-01T10:00:00Z',
+    });
+
+    expect(dto.courseId, 47);
+  });
+
+  test('markRead keeps courseId', () async {
+    final client = _PagedFakeClient({
+      1: [
+        {
+          'id': 1,
+          'courseId': 47,
+          'title': 't',
+          'body': 'b',
+          'isRead': false,
+          'createdAt': '2026-09-01T10:00:00Z',
+        }
+      ],
+    });
+    final c = _controller(client);
+    await c.refresh(search: NotificationSearchObject(pageSize: 2));
+
+    await c.markRead(1);
+
+    expect(c.notifications.single.courseId, 47);
+    expect(c.notifications.single.isRead, isTrue);
+  });
+
   test('refresh succeeds even when unread-count throws', () async {
     final client = _PagedFakeClient(
       {

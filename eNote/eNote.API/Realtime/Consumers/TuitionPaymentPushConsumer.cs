@@ -14,6 +14,7 @@ public sealed class TuitionPaymentPushConsumer(IHubContext<NotificationHub> hubC
         {
             Title = message.Title,
             Body = message.Body,
+            CourseId = message.CourseId,
             CreatedAt = message.OccurredAtUtc
         },
         "tuition-payment",

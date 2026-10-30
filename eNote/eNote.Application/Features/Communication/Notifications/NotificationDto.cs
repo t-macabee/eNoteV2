@@ -7,6 +7,7 @@ public class NotificationDto
     public int? LectureId { get; set; }
     public int? SubmissionId { get; set; }
     public int? AnnouncementId { get; set; }
+    public int? CourseId { get; set; }
 
     public string Title { get; set; } = null!;
     public string Body { get; set; } = null!;

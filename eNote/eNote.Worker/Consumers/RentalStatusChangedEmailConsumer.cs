@@ -27,13 +27,18 @@ public sealed class RentalStatusChangedEmailConsumer(
             return;
         }
 
-        var user = await users.GetUserAsync(message.StudentUserId, context.CancellationToken);
+        if (message.RecipientUserId != message.StudentUserId)
+        {
+            return;
+        }
+
+        var user = await users.GetUserAsync(message.RecipientUserId, context.CancellationToken);
         if (user is null || !user.IsActive || string.IsNullOrWhiteSpace(user.Email))
         {
             logger.LogInformation(
                 "Skipped rental {RentalId} e-mail: recipient {UserId} is missing, inactive or has no e-mail.",
                 message.RentalId,
-                message.StudentUserId);
+                message.RecipientUserId);
             return;
         }
 
@@ -41,6 +46,6 @@ public sealed class RentalStatusChangedEmailConsumer(
         logger.LogInformation(
             "Sent rental {RentalId} e-mail to recipient {UserId}.",
             message.RentalId,
-            message.StudentUserId);
+            message.RecipientUserId);
     }
 }

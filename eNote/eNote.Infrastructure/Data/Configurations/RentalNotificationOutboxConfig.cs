@@ -1,4 +1,3 @@
-using eNote.Contracts.Communication;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -12,7 +11,6 @@ public sealed class RentalNotificationOutboxConfig : IEntityTypeConfiguration<No
 
         builder.Property(x => x.MessageType)
             .HasMaxLength(64)
-            .HasDefaultValue(NotificationMessageTypes.RentalStatusChanged)
             .IsRequired();
 
         builder.Property(x => x.PayloadJson)

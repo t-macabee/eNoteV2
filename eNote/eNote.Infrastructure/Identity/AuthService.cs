@@ -1,17 +1,19 @@
 using eNote.Application.Common.Exceptions;
-using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Localization;
+using eNote.Application.Common.Persistence;
+using eNote.Application.Common.Time;
 using eNote.Application.Constants;
 using eNote.Application.Features.Identity.Auth;
 using eNote.Application.Features.Identity.Auth.Services;
 using eNote.Application.Features.Identity.Users.Services;
+using eNote.Contracts.Identity;
+using eNote.Infrastructure.Messaging;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 namespace eNote.Infrastructure.Identity;
 
-internal sealed class AuthService(UserManager<AppUser> userManager, SignInManager<AppUser> signInManager, ITokenService tokenService, IUserProvisioningService userProvisioning, ITokenRevocationService tokenRevocationService, IEmailService emailService, IHostEnvironment environment, ILogger<AuthService> logger) : IAuthService
+internal sealed class AuthService(UserManager<AppUser> userManager, SignInManager<AppUser> signInManager, ITokenService tokenService, IUserProvisioningService userProvisioning, ITokenRevocationService tokenRevocationService, IAppDbContext context, IClock clock, ILogger<AuthService> logger) : IAuthService
 {
     public async Task<AuthResponse> LoginAsync(LoginRequest model, CancellationToken cancellationToken = default)
     {
@@ -66,7 +68,13 @@ internal sealed class AuthService(UserManager<AppUser> userManager, SignInManage
         var registeredUser = await userProvisioning.RegisterStudentAsync(model, cancellationToken);
 
         AppUser? registered = await userManager.FindByIdAsync(registeredUser.UserId.ToString());
-        var stamp = registered is null ? null : await userManager.GetSecurityStampAsync(registered);
+
+        if (registered is null)
+        {
+            throw new InvalidOperationException($"Registered user {registeredUser.UserId} could not be loaded.");
+        }
+
+        var stamp = await userManager.GetSecurityStampAsync(registered);
         var token = tokenService.GenerateToken(registeredUser.UserId, registeredUser.Username, registeredUser.Roles.ToList(), securityStamp: stamp);
 
         return new AuthResponse
@@ -91,21 +99,8 @@ internal sealed class AuthService(UserManager<AppUser> userManager, SignInManage
             return new ForgotPasswordResponse { Message = Messages.PasswordResetEmailSent };
         }
 
-        var token = await userManager.GeneratePasswordResetTokenAsync(user);
-
-        try
-        {
-            await emailService.SendPasswordResetAsync(user.Email!, token, cancellationToken);
-        }
-        catch (Exception exception) when (exception is not OperationCanceledException)
-        {
-            logger.LogError(exception, "Failed to send password reset email for {Email}", email);
-        }
-
-        if (environment.IsDevelopment())
-        {
-            logger.LogInformation("Password reset token generated for {Email}: {Token}...", email, token[..Math.Min(8, token.Length)]);
-        }
+        NotificationOutboxWriter.Enqueue(context, new PasswordResetRequested(user.Id, clock.UtcNow));
+        await context.SaveChangesAsync(cancellationToken);
 
         return new ForgotPasswordResponse { Message = Messages.PasswordResetEmailSent };
     }

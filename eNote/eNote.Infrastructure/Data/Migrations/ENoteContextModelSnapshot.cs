@@ -22,6 +22,25 @@ namespace eNote.Infrastructure.Data.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("Microsoft.AspNetCore.DataProtection.EntityFrameworkCore.DataProtectionKey", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("FriendlyName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Xml")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("DataProtectionKeys");
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<int>", b =>
                 {
                     b.Property<int>("Id")
@@ -770,6 +789,9 @@ namespace eNote.Infrastructure.Data.Migrations
                         .HasMaxLength(2000)
                         .HasColumnType("nvarchar(2000)");
 
+                    b.Property<int?>("CourseId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -801,6 +823,8 @@ namespace eNote.Infrastructure.Data.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("AnnouncementId");
+
+                    b.HasIndex("CourseId");
 
                     b.HasIndex("CreatedAt");
 
@@ -867,10 +891,8 @@ namespace eNote.Infrastructure.Data.Migrations
 
                     b.Property<string>("MessageType")
                         .IsRequired()
-                        .ValueGeneratedOnAdd()
                         .HasMaxLength(64)
-                        .HasColumnType("nvarchar(64)")
-                        .HasDefaultValue("RentalStatusChanged");
+                        .HasColumnType("nvarchar(64)");
 
                     b.Property<string>("PayloadJson")
                         .IsRequired()
@@ -2150,6 +2172,11 @@ namespace eNote.Infrastructure.Data.Migrations
                     b.HasOne("eNote.Domain.Entities.Communication.Announcement", null)
                         .WithMany()
                         .HasForeignKey("AnnouncementId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("eNote.Domain.Entities.Academic.Course", null)
+                        .WithMany()
+                        .HasForeignKey("CourseId")
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("eNote.Domain.Entities.Academic.Enrollment", null)

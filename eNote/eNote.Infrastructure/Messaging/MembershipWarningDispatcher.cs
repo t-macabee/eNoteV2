@@ -1,7 +1,6 @@
 using eNote.Application.Common.Persistence;
 using eNote.Application.Common.Time;
 using eNote.Application.Features.Identity.Students.Services;
-using eNote.Contracts.Communication;
 using eNote.Contracts.Identity;
 
 namespace eNote.Infrastructure.Messaging;
@@ -15,11 +14,13 @@ public sealed class MembershipWarningDispatcher(
         var body = !string.IsNullOrWhiteSpace(message)
             ? message.Trim()
             : membershipPaidUntil.HasValue
-                ? $"Vaša članarina ističe {membershipPaidUntil.Value:dd.MM.yyyy}. Obnovite je da biste nastavili koristiti usluge."
+                ? membershipPaidUntil.Value.Date < clock.UtcNow.Date
+                    ? $"Vaša članarina je istekla {membershipPaidUntil.Value:dd.MM.yyyy}. Obnovite je da biste nastavili koristiti usluge."
+                    : $"Vaša članarina ističe {membershipPaidUntil.Value:dd.MM.yyyy}. Obnovite je da biste nastavili koristiti usluge."
                 : "Vaša članarina nije evidentirana. Kontaktirajte administratora.";
 
         var warning = new MembershipWarning(studentUserId, "Upozorenje o članarini", body, clock.UtcNow);
-        NotificationOutboxWriter.Enqueue(context, NotificationMessageTypes.MembershipWarning, warning);
+        NotificationOutboxWriter.Enqueue(context, warning);
 
         return Task.CompletedTask;
     }

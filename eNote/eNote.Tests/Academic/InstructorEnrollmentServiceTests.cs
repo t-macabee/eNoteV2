@@ -39,7 +39,9 @@ public sealed class InstructorEnrollmentServiceTests
         Assert.Equal(NotificationMessageTypes.EnrollmentStatusChanged, outbox.MessageType);
         var payload = JsonSerializer.Deserialize<EnrollmentStatusChanged>(outbox.PayloadJson, JsonOptions);
         Assert.NotNull(payload);
+        Assert.NotEqual(harness.Course.Id, pending.Id);
         Assert.Equal(pending.Id, payload.EnrollmentId);
+        Assert.Equal(harness.Course.Id, payload.CourseId);
         Assert.Equal(student.AppUserId, payload.StudentUserId);
         Assert.Equal("Upis odobren", payload.Title);
         Assert.Contains(harness.Course.Name, payload.Body);
@@ -139,7 +141,7 @@ public sealed class InstructorEnrollmentServiceTests
     public async Task RejectAsync_SetsRejected_AndNotificationBodyContainsReason()
     {
         var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
-        var (_, pending) = await AddPendingStudentAsync(harness);
+        var (student, pending) = await AddPendingStudentAsync(harness);
         var service = CreateService(harness.Context, harness.Instructor);
 
         var dto = await service.RejectAsync(harness.Course.Id, pending.Id, new EnrollmentRejectRequest { Reason = "  Popunjeno  " });
@@ -150,6 +152,10 @@ public sealed class InstructorEnrollmentServiceTests
         var outbox = Assert.Single(await harness.Context.Set<NotificationOutbox>().ToListAsync());
         var payload = JsonSerializer.Deserialize<EnrollmentStatusChanged>(outbox.PayloadJson, JsonOptions);
         Assert.NotNull(payload);
+        Assert.NotEqual(harness.Course.Id, pending.Id);
+        Assert.Equal(pending.Id, payload.EnrollmentId);
+        Assert.Equal(harness.Course.Id, payload.CourseId);
+        Assert.Equal(student.AppUserId, payload.StudentUserId);
         Assert.Equal("Upis odbijen", payload.Title);
         Assert.Contains("Popunjeno", payload.Body);
     }
@@ -158,11 +164,16 @@ public sealed class InstructorEnrollmentServiceTests
     public async Task CompleteAsync_SetsCompleted_ForActiveEnrollment()
     {
         var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
-        var active = await harness.Context.Set<Enrollment>()
-            .SingleAsync(e => e.StudentId == harness.Student.Id && e.CourseId == harness.Course.Id);
+        await AddPendingStudentAsync(harness);
+        var targetCourse = new Course("Violin 101", null, 50m, Now, Now.AddMonths(1), harness.Instructor.Id);
+        harness.Context.Set<Course>().Add(targetCourse);
+        await harness.Context.SaveChangesAsync();
+        var active = new Enrollment(harness.Student.Id, targetCourse.Id, EnrollmentStatus.Active);
+        harness.Context.Set<Enrollment>().Add(active);
+        await harness.Context.SaveChangesAsync();
         var service = CreateService(harness.Context, harness.Instructor);
 
-        var dto = await service.CompleteAsync(harness.Course.Id, active.Id);
+        var dto = await service.CompleteAsync(targetCourse.Id, active.Id);
 
         Assert.Equal(EnrollmentStatus.Completed, dto.EnrollmentStatus);
 
@@ -172,6 +183,10 @@ public sealed class InstructorEnrollmentServiceTests
         var outbox = Assert.Single(await harness.Context.Set<NotificationOutbox>().ToListAsync());
         var payload = JsonSerializer.Deserialize<EnrollmentStatusChanged>(outbox.PayloadJson, JsonOptions);
         Assert.NotNull(payload);
+        Assert.NotEqual(targetCourse.Id, active.Id);
+        Assert.Equal(active.Id, payload.EnrollmentId);
+        Assert.Equal(targetCourse.Id, payload.CourseId);
+        Assert.Equal(harness.Student.AppUserId, payload.StudentUserId);
         Assert.Equal("Kurs položen", payload.Title);
     }
 

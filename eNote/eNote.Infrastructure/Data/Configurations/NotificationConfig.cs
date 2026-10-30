@@ -39,6 +39,11 @@ public sealed class NotificationConfig : IEntityTypeConfiguration<Notification>
                .HasForeignKey(x => x.EnrollmentId)
                .OnDelete(DeleteBehavior.Restrict);
 
+        builder.HasOne<Course>()
+               .WithMany()
+               .HasForeignKey(x => x.CourseId)
+               .OnDelete(DeleteBehavior.Restrict);
+
         builder.Property(x => x.Title).HasMaxLength(200).IsRequired();
         builder.Property(x => x.Body).HasMaxLength(2000).IsRequired();
         builder.Property(x => x.IsRead).HasDefaultValue(false);

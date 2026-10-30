@@ -72,4 +72,32 @@ public sealed class MembershipWarningConsumerTests
 
         Assert.Single(await context.Set<Notification>().ToListAsync());
     }
+
+    [Fact]
+    public async Task Consume_StoresASecondNotification_WhenTheSameTitleArrivesLater()
+    {
+        await using var context = TestDbContextFactory.CreateContext(Now);
+        var provider = new ServiceCollection()
+            .AddSingleton<IAppDbContext>(context)
+            .AddMassTransitTestHarness(bus => bus.AddConsumer<MembershipWarningConsumer>())
+            .BuildServiceProvider(true);
+
+        var harness = provider.GetRequiredService<ITestHarness>();
+        await harness.Start();
+        try
+        {
+            await harness.Bus.Publish(new MembershipWarning(5, "Upozorenje o članarini", "Vaša članarina ističe.", Now));
+            await harness.Bus.Publish(new MembershipWarning(5, "Upozorenje o članarini", "Vaša članarina ističe.", Now.AddDays(1)));
+
+            Assert.True(await harness.Consumed.Any<MembershipWarning>());
+        }
+        finally
+        {
+            await harness.Stop();
+        }
+
+        var notifications = await context.Set<Notification>().ToListAsync();
+        Assert.Equal(2, notifications.Count);
+        Assert.Equal([Now, Now.AddDays(1)], notifications.Select(n => n.CreatedAt).Order().ToList());
+    }
 }

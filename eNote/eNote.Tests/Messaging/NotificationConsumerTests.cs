@@ -32,14 +32,30 @@ public sealed class NotificationConsumerTests
     [Fact]
     public async Task EnrollmentStatusChangedConsumer_StoresNotificationForStudent()
     {
-        var message = new EnrollmentStatusChanged(9, 5, "Upis odobren", "Vaš zahtjev za upis na kurs 'Guitar 101' je odobren.", Now);
+        var message = new EnrollmentStatusChanged(31, 47, 5, "Upis odobren", "Vaš zahtjev za upis na kurs 'Guitar 101' je odobren.", Now);
 
         var notification = await ConsumeAsync<EnrollmentStatusChangedConsumer, EnrollmentStatusChanged>(message);
 
         Assert.Equal(5, notification.UserId);
-        Assert.Equal(9, notification.EnrollmentId);
+        Assert.Equal(31, notification.EnrollmentId);
+        Assert.Equal(47, notification.CourseId);
         Assert.Equal("Upis odobren", notification.Title);
         Assert.Equal("Vaš zahtjev za upis na kurs 'Guitar 101' je odobren.", notification.Body);
+        Assert.Equal(Now, notification.CreatedAt);
+    }
+
+    [Fact]
+    public async Task TuitionPaymentConsumer_StoresNotificationForStudent()
+    {
+        var message = new TuitionPaymentNotification(31, 47, 5, "Školarina plaćena", "Školarina za kurs 'Guitar 101' je plaćena.", Now);
+
+        var notification = await ConsumeAsync<TuitionPaymentConsumer, TuitionPaymentNotification>(message);
+
+        Assert.Equal(5, notification.UserId);
+        Assert.Equal(31, notification.EnrollmentId);
+        Assert.Equal(47, notification.CourseId);
+        Assert.Equal("Školarina plaćena", notification.Title);
+        Assert.Equal("Školarina za kurs 'Guitar 101' je plaćena.", notification.Body);
         Assert.Equal(Now, notification.CreatedAt);
     }
 
@@ -72,13 +88,13 @@ public sealed class NotificationConsumerTests
     }
 
     [Fact]
-    public async Task RentalStatusChangedConsumer_StoresNotificationForStudent()
+    public async Task RentalStatusChangedConsumer_StoresNotificationForRecipient()
     {
-        var message = new RentalStatusChanged(9, 5, null, "Active", "Stratocaster", "Status iznajmljivanja", "Iznajmljivanje je aktivirano.", Now);
+        var message = new RentalStatusChanged(9, 5, 11, null, "Active", "Stratocaster", "Status iznajmljivanja", "Iznajmljivanje je aktivirano.", Now);
 
         var notification = await ConsumeAsync<RentalStatusChangedConsumer, RentalStatusChanged>(message);
 
-        Assert.Equal(5, notification.UserId);
+        Assert.Equal(11, notification.UserId);
         Assert.Equal(9, notification.RentalId);
         Assert.Equal("Status iznajmljivanja", notification.Title);
         Assert.Equal("Iznajmljivanje je aktivirano.", notification.Body);

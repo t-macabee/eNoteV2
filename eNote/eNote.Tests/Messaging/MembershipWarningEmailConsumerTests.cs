@@ -65,6 +65,31 @@ public sealed class MembershipWarningEmailConsumerTests
         Assert.Empty(email.Notifications);
     }
 
+    [Fact]
+    public async Task Consume_SendsNoMail_WhenRecipientIsInactive()
+    {
+        var email = new RecordingEmailService();
+        await using var provider = BuildProvider(email, new UserIdentityDto { Id = 5, Username = "student", Email = "student@example.com", IsActive = false });
+
+        var harness = provider.GetRequiredService<ITestHarness>();
+        await harness.Start();
+        try
+        {
+            var message = new MembershipWarning(5, "Upozorenje o članarini", "Vaša članarina ističe.", Now);
+
+            await harness.Bus.Publish(message);
+
+            Assert.True(await harness.Consumed.Any<MembershipWarning>());
+            Assert.False(await harness.Published.Any<Fault<MembershipWarning>>());
+        }
+        finally
+        {
+            await harness.Stop();
+        }
+
+        Assert.Empty(email.Notifications);
+    }
+
     private static ServiceProvider BuildProvider(RecordingEmailService email, UserIdentityDto user)
     {
         var users = new StubUserIdentityService(new Dictionary<int, UserIdentityDto> { [user.Id] = user });

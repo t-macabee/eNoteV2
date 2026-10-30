@@ -31,6 +31,24 @@ public sealed class MembershipWarningDispatcherTests
         Assert.Equal(Now, payload.OccurredAtUtc);
     }
 
+    [Theory]
+    [InlineData(-1, "Vaša članarina je istekla 09.07.2026. Obnovite je da biste nastavili koristiti usluge.")]
+    [InlineData(0, "Vaša članarina ističe 10.07.2026. Obnovite je da biste nastavili koristiti usluge.")]
+    [InlineData(5, "Vaša članarina ističe 15.07.2026. Obnovite je da biste nastavili koristiti usluge.")]
+    public async Task DispatchWarningAsync_ChoosesTheExpiredOrExpiringText(int daysFromToday, string expectedBody)
+    {
+        var clock = new FixedClock(new DateTime(2026, 7, 10, 12, 0, 0, DateTimeKind.Utc));
+        await using var context = TestDbContextFactory.CreateContext(clock.UtcNow);
+        var dispatcher = new MembershipWarningDispatcher(context, clock);
+
+        await dispatcher.DispatchWarningAsync(5, clock.UtcNow.Date.AddDays(daysFromToday), null);
+        await context.SaveChangesAsync();
+
+        var row = await context.Set<NotificationOutbox>().SingleAsync();
+        var payload = JsonSerializer.Deserialize<MembershipWarning>(row.PayloadJson, new JsonSerializerOptions(JsonSerializerDefaults.Web));
+        Assert.Equal(expectedBody, payload!.Body);
+    }
+
     [Fact]
     public async Task DispatchWarningAsync_UsesTheGivenMessage()
     {

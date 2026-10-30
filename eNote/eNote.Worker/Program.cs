@@ -1,14 +1,6 @@
 using eNote.Application.Common.Interfaces;
-using eNote.Contracts.Assignments;
-using eNote.Contracts.Communication;
-using eNote.Contracts.Enrollments;
-using eNote.Contracts.Identity;
-using eNote.Contracts.Lectures;
-using eNote.Contracts.Rentals;
 using eNote.Infrastructure;
-using eNote.Infrastructure.Messaging;
 using eNote.Worker;
-using eNote.Worker.Consumers;
 using eNote.Worker.Extensions;
 using eNote.Worker.Health;
 using Serilog;
@@ -28,27 +20,7 @@ builder.Services
     .AddPersistence(builder.Configuration)
     .AddInfrastructureIdentity()
     .AddEmail(builder.Configuration)
-    .AddMessaging(builder.Configuration, bus =>
-    {
-        bus.AddConsumer<RentalStatusChangedConsumer>();
-        bus.AddConsumer<RentalStatusChangedEmailConsumer>();
-        bus.AddConsumer<RentalRefundedConsumer>();
-        bus.AddConsumer<LectureCancelledConsumer>();
-        bus.AddConsumer<SubmissionGradedConsumer>();
-        bus.AddConsumer<AnnouncementPublishedConsumer>();
-        bus.AddConsumer<EnrollmentStatusChangedConsumer>();
-        bus.AddConsumer<TuitionPaymentConsumer>();
-        bus.AddConsumer<MembershipWarningConsumer>();
-        bus.AddConsumer<MembershipWarningEmailConsumer>();
-        bus.AddConsumer<FaultLoggingConsumer<RentalStatusChanged>>();
-        bus.AddConsumer<FaultLoggingConsumer<RentalRefunded>>();
-        bus.AddConsumer<FaultLoggingConsumer<LectureCancelled>>();
-        bus.AddConsumer<FaultLoggingConsumer<SubmissionGraded>>();
-        bus.AddConsumer<FaultLoggingConsumer<AnnouncementPublished>>();
-        bus.AddConsumer<FaultLoggingConsumer<EnrollmentStatusChanged>>();
-        bus.AddConsumer<FaultLoggingConsumer<TuitionPaymentNotification>>();
-        bus.AddConsumer<FaultLoggingConsumer<MembershipWarning>>();
-    });
+    .AddMessaging(builder.Configuration, WorkerConsumers.Add);
 builder.Services.AddInfrastructureHealthChecks();
 builder.Services.AddHostedService<DatabaseHeartbeatService>();
 

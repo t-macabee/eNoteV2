@@ -61,7 +61,6 @@ public sealed class DiResolutionTests
 
         services.AddPersistence(configuration)
             .AddInfrastructureIdentity()
-            .AddEmail(configuration)
             .AddMessaging(configuration, bus =>
             {
                 bus.AddConsumer<RentalStatusChangedPushConsumer>();

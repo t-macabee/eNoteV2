@@ -9,7 +9,7 @@ public sealed class RentalStatusChangedPushConsumer(IHubContext<NotificationHub>
     : NotificationPushConsumer<RentalStatusChanged>(hubContext, logger)
 {
     protected override NotificationPush Map(RentalStatusChanged message) => new(
-        message.StudentUserId,
+        message.RecipientUserId,
         new NotificationPushDto
         {
             RentalId = message.RentalId,

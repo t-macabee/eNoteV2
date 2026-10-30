@@ -84,7 +84,7 @@ public sealed class TuitionPaymentWebhookTests
     [Fact]
     public async Task HandleWebhook_Succeeded_EnqueuesOneTuitionPaidNotification()
     {
-        var (context, _, payment) = await SeedRequiresActionTuitionPaymentAsync();
+        var (context, enrollment, payment) = await SeedRequiresActionTuitionPaymentAsync();
         var service = CreateWebhookService(context);
         var evt = CreatePaymentIntentEvent("evt_tuition_succeeded_notify", "payment_intent.succeeded", payment.StripePaymentIntentId, "succeeded", "ch_tuition_notify");
 
@@ -92,6 +92,13 @@ public sealed class TuitionPaymentWebhookTests
         await service.HandleAsync(evt, "{}");
 
         var message = Assert.Single(await ReadTuitionMessagesAsync(context));
+        var student = await context.Set<Student>().SingleAsync(s => s.Id == enrollment.StudentId);
+        Assert.Equal(enrollment.Id, message.EnrollmentId);
+        Assert.Equal(enrollment.CourseId, message.CourseId);
+        Assert.Equal(student.AppUserId, message.StudentUserId);
+        Assert.NotEqual(enrollment.Id, enrollment.CourseId);
+        Assert.NotEqual(enrollment.Id, student.AppUserId);
+        Assert.NotEqual(enrollment.CourseId, student.AppUserId);
         Assert.Equal("Školarina plaćena", message.Title);
         Assert.Contains("Guitar", message.Body);
         Assert.Equal(Now, message.OccurredAtUtc);
@@ -380,6 +387,13 @@ public sealed class TuitionPaymentWebhookTests
         Assert.Equal($"duplicate:{payment.StripePaymentIntentId}", refundCall.IdempotencyKey);
 
         var message = Assert.Single(await ReadTuitionMessagesAsync(context));
+        var student = await context.Set<Student>().SingleAsync(s => s.Id == enrollment.StudentId);
+        Assert.Equal(enrollment.Id, message.EnrollmentId);
+        Assert.Equal(enrollment.CourseId, message.CourseId);
+        Assert.Equal(student.AppUserId, message.StudentUserId);
+        Assert.NotEqual(enrollment.Id, enrollment.CourseId);
+        Assert.NotEqual(enrollment.Id, student.AppUserId);
+        Assert.NotEqual(enrollment.CourseId, student.AppUserId);
         Assert.Equal("Školarina vraćena", message.Title);
         Assert.Single(await context.Set<StripeWebhookEvent>().Where(e => e.StripeEventId == "evt_tuition_succeeded_deactivated").ToListAsync());
     }
@@ -410,6 +424,13 @@ public sealed class TuitionPaymentWebhookTests
         Assert.Equal($"duplicate:{payment.StripePaymentIntentId}", refundCall.IdempotencyKey);
 
         var message = Assert.Single(await ReadTuitionMessagesAsync(context));
+        var student = await context.Set<Student>().SingleAsync(s => s.Id == enrollment.StudentId);
+        Assert.Equal(enrollment.Id, message.EnrollmentId);
+        Assert.Equal(enrollment.CourseId, message.CourseId);
+        Assert.Equal(student.AppUserId, message.StudentUserId);
+        Assert.NotEqual(enrollment.Id, enrollment.CourseId);
+        Assert.NotEqual(enrollment.Id, student.AppUserId);
+        Assert.NotEqual(enrollment.CourseId, student.AppUserId);
         Assert.Equal("Školarina vraćena", message.Title);
         Assert.Single(await context.Set<StripeWebhookEvent>().Where(e => e.StripeEventId == "evt_tuition_succeeded_unpublished").ToListAsync());
     }
@@ -521,11 +542,17 @@ public sealed class TuitionPaymentWebhookTests
     {
         var options = TestDbContextFactory.CreateOptions();
 
+        var extraStudent = new Student(40, Now);
         var student = new Student(50, Now);
         var instructor = new Instructor(100);
         var context = new ENoteContext(options, new FixedClock(Now), new StubCurrentActor(student: student)) { ExplicitStoreId = 1 };
-        context.Set<Student>().Add(student);
+        context.Set<Student>().AddRange(extraStudent, student);
         context.Set<Instructor>().Add(instructor);
+        await context.SaveChangesAsync();
+
+        var extraCourse = new Course("Piano", null, 100m, Now, Now.AddMonths(6), instructor.Id);
+        extraCourse.SetPublishedStatus(true);
+        context.Set<Course>().Add(extraCourse);
         await context.SaveChangesAsync();
 
         var course = new Course("Guitar", null, 100m, Now, Now.AddMonths(6), instructor.Id);

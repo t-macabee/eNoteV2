@@ -9,7 +9,7 @@ public sealed class EnrollmentStatusChangedConsumer(IAppDbContext dbContext, ILo
     : NotificationPersistenceConsumer<EnrollmentStatusChanged>(dbContext, logger)
 {
     protected override NotificationWrite Map(EnrollmentStatusChanged message) => new(
-        new Notification(message.StudentUserId, message.Title, message.Body, message.OccurredAtUtc, enrollmentId: message.EnrollmentId),
+        new Notification(message.StudentUserId, message.Title, message.Body, message.OccurredAtUtc, enrollmentId: message.EnrollmentId, courseId: message.CourseId),
         "enrollment-status-changed",
         "enrollment",
         message.EnrollmentId,

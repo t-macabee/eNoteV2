@@ -5,6 +5,7 @@ using eNote.Application.Common.Persistence;
 using eNote.Application.Common.Time;
 using eNote.Infrastructure.Data.Seed;
 using eNote.Infrastructure.Identity;
+using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
@@ -12,12 +13,14 @@ using Microsoft.EntityFrameworkCore.Storage;
 
 namespace eNote.Infrastructure.Data;
 
-public class ENoteContext(DbContextOptions<ENoteContext> options, IClock clock, ICurrentUserContext currentUser) : IdentityDbContext<AppUser, AppRole, int>(options), IAppDbContext, IStoreContext
+public class ENoteContext(DbContextOptions<ENoteContext> options, IClock clock, ICurrentUserContext currentUser) : IdentityDbContext<AppUser, AppRole, int>(options), IAppDbContext, IStoreContext, IDataProtectionKeyContext
 {
     private int? _storeId;
     private bool _storeResolved;
 
     public int? ExplicitStoreId { get; set; }
+
+    public DbSet<DataProtectionKey> DataProtectionKeys => Set<DataProtectionKey>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

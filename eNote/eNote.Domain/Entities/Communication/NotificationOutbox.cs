@@ -3,7 +3,7 @@ namespace eNote.Domain.Entities.Communication;
 public class NotificationOutbox : AuditableEntity
 {
 
-    public string MessageType { get; set; } = "RentalStatusChanged";
+    public string MessageType { get; set; } = null!;
 
     public string PayloadJson { get; set; } = null!;
     public DateTime? PublishedAt { get; set; }

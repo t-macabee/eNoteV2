@@ -22,11 +22,37 @@ public sealed class NotificationOutboxPublisherTests
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
     private static readonly TimeSpan PollTimeout = TimeSpan.FromSeconds(5);
 
+    public static IEnumerable<object[]> RegisteredMessageTypes =>
+        NotificationMessageTypes.All.Select(entry => new object[] { entry.MessageType, entry.Name });
+
+    [Theory]
+    [MemberData(nameof(RegisteredMessageTypes))]
+    public async Task ProcessBatch_PublishesEveryRegisteredMessageType(Type messageType, string expectedName)
+    {
+        var message = CreateSampleMessage(messageType);
+        await using var context = TestDbContextFactory.CreateContext(Now);
+
+        typeof(NotificationOutboxWriter)
+            .GetMethod(nameof(NotificationOutboxWriter.Enqueue), BindingFlags.Public | BindingFlags.Static)!
+            .MakeGenericMethod(messageType)
+            .Invoke(null, [context, message]);
+        await context.SaveChangesAsync();
+        var endpoint = new StubPublishEndpoint();
+
+        await InvokeProcessBatchAsync(CreatePublisher(context, endpoint));
+
+        var outbox = await context.Set<NotificationOutbox>().SingleAsync();
+        Assert.Equal(expectedName, outbox.MessageType);
+        var published = Assert.Single(endpoint.Published);
+        Assert.IsType(messageType, published);
+        AssertPublishedIds(message, published);
+    }
+
     [Fact]
     public async Task ProcessBatch_PublishesPendingMessages_AndMarksPublishedAt()
     {
         await using var context = TestDbContextFactory.CreateContext(Now);
-        var outbox = new NotificationOutbox { PayloadJson = "{}" };
+        var outbox = new NotificationOutbox { MessageType = NotificationMessageTypes.RentalStatusChanged, PayloadJson = "{}" };
         context.Set<NotificationOutbox>().Add(outbox);
         await context.SaveChangesAsync();
         var publisher = CreatePublisher(context);
@@ -41,7 +67,7 @@ public sealed class NotificationOutboxPublisherTests
     [Fact]
     public async Task ProcessBatch_PublishesValidPayloads()
     {
-        var message = new RentalStatusChanged(1, 5, 9, "Pending", "Stratocaster", "Title", "Body", Now);
+        var message = new RentalStatusChanged(1, 5, 5, 9, "Pending", "Stratocaster", "Title", "Body", Now);
 
         var payload = await PublishSinglePayloadAsync(message);
 
@@ -85,22 +111,24 @@ public sealed class NotificationOutboxPublisherTests
     [Fact]
     public async Task ProcessBatch_PublishesEnrollmentStatusChangedPayloads()
     {
-        var message = new EnrollmentStatusChanged(1, 50, "Upis odobren", "Vaš zahtjev za upis na kurs 'Guitar 101' je odobren.", Now);
+        var message = new EnrollmentStatusChanged(1, 47, 50, "Upis odobren", "Vaš zahtjev za upis na kurs 'Guitar 101' je odobren.", Now);
 
         var payload = await PublishSinglePayloadAsync(message, NotificationMessageTypes.EnrollmentStatusChanged);
 
         Assert.Equal(1, payload.EnrollmentId);
+        Assert.Equal(47, payload.CourseId);
         Assert.Equal(50, payload.StudentUserId);
     }
 
     [Fact]
     public async Task ProcessBatch_PublishesTuitionPaymentPayloads()
     {
-        var message = new TuitionPaymentNotification(1, 50, "Školarina plaćena", "Školarina za kurs 'Guitar 101' je plaćena.", Now);
+        var message = new TuitionPaymentNotification(1, 47, 50, "Školarina plaćena", "Školarina za kurs 'Guitar 101' je plaćena.", Now);
 
         var payload = await PublishSinglePayloadAsync(message, NotificationMessageTypes.TuitionPayment);
 
         Assert.Equal(1, payload.EnrollmentId);
+        Assert.Equal(47, payload.CourseId);
         Assert.Equal(50, payload.StudentUserId);
     }
 
@@ -135,7 +163,7 @@ public sealed class NotificationOutboxPublisherTests
     public async Task ProcessBatch_IncrementsAttempts_WhenPublishFails()
     {
         await using var context = TestDbContextFactory.CreateContext(Now);
-        context.Set<NotificationOutbox>().Add(new NotificationOutbox { PayloadJson = "not-json" });
+        context.Set<NotificationOutbox>().Add(new NotificationOutbox { MessageType = NotificationMessageTypes.RentalStatusChanged, PayloadJson = "not-json" });
         await context.SaveChangesAsync();
         var publisher = CreatePublisher(context);
 
@@ -151,7 +179,7 @@ public sealed class NotificationOutboxPublisherTests
     public async Task ProcessBatch_SkipsMessages_AtMaxAttempts()
     {
         await using var context = TestDbContextFactory.CreateContext(Now);
-        context.Set<NotificationOutbox>().Add(new NotificationOutbox { PayloadJson = "{}", Attempts = 5 });
+        context.Set<NotificationOutbox>().Add(new NotificationOutbox { MessageType = NotificationMessageTypes.RentalStatusChanged, PayloadJson = "{}", Attempts = 5 });
         await context.SaveChangesAsync();
         var endpoint = new StubPublishEndpoint();
         var publisher = CreatePublisher(context, endpoint);
@@ -194,11 +222,11 @@ public sealed class NotificationOutboxPublisherTests
         where TMessage : class
     {
         await using var context = TestDbContextFactory.CreateContext(Now);
-        var outbox = new NotificationOutbox { PayloadJson = JsonSerializer.Serialize(message, JsonOptions) };
-        if (messageType is not null)
+        var outbox = new NotificationOutbox
         {
-            outbox.MessageType = messageType;
-        }
+            MessageType = messageType ?? NotificationMessageTypes.NameFor(typeof(TMessage)),
+            PayloadJson = JsonSerializer.Serialize(message, JsonOptions)
+        };
 
         context.Set<NotificationOutbox>().Add(outbox);
         await context.SaveChangesAsync();
@@ -211,6 +239,72 @@ public sealed class NotificationOutboxPublisherTests
 
     private static Task InvokeProcessBatchAsync(NotificationOutboxPublisher publisher) =>
         publisher.ProcessBatchAsync(CancellationToken.None);
+
+    private static object CreateSampleMessage(Type messageType) => messageType switch
+    {
+        Type t when t == typeof(RentalStatusChanged) => new RentalStatusChanged(11, 22, 22, 33, "Pending", "Stratocaster", "Title", "Body", Now),
+        Type t when t == typeof(LectureCancelled) => new LectureCancelled(11, 22, "Guitar 101", "Title", "Body", Now),
+        Type t when t == typeof(SubmissionGraded) => new SubmissionGraded(11, 22, "Homework", 85, "Title", "Body", Now),
+        Type t when t == typeof(RentalRefunded) => new RentalRefunded(11, 22, 33, 100, "EUR", "Stratocaster", "Title", "Body", Now),
+        Type t when t == typeof(AnnouncementPublished) => new AnnouncementPublished(11, 22, "Title", "Body", Now),
+        Type t when t == typeof(EnrollmentStatusChanged) => new EnrollmentStatusChanged(11, 47, 22, "Title", "Body", Now),
+        Type t when t == typeof(TuitionPaymentNotification) => new TuitionPaymentNotification(11, 47, 22, "Title", "Body", Now),
+        Type t when t == typeof(MembershipWarning) => new MembershipWarning(22, "Title", "Body", Now),
+        Type t when t == typeof(PasswordResetRequested) => new PasswordResetRequested(22, Now),
+        _ => throw new InvalidOperationException($"No sample message for '{messageType.FullName}'.")
+    };
+
+    private static void AssertPublishedIds(object message, object published)
+    {
+        switch (message)
+        {
+            case RentalStatusChanged sent:
+                var rental = Assert.IsType<RentalStatusChanged>(published);
+                Assert.Equal(sent.RentalId, rental.RentalId);
+                Assert.Equal(sent.StudentUserId, rental.StudentUserId);
+                break;
+            case LectureCancelled sent:
+                var lecture = Assert.IsType<LectureCancelled>(published);
+                Assert.Equal(sent.LectureId, lecture.LectureId);
+                Assert.Equal(sent.StudentUserId, lecture.StudentUserId);
+                break;
+            case SubmissionGraded sent:
+                var submission = Assert.IsType<SubmissionGraded>(published);
+                Assert.Equal(sent.SubmissionId, submission.SubmissionId);
+                Assert.Equal(sent.Grade, submission.Grade);
+                break;
+            case RentalRefunded sent:
+                var refund = Assert.IsType<RentalRefunded>(published);
+                Assert.Equal(sent.RentalId, refund.RentalId);
+                Assert.Equal(sent.RefundedCents, refund.RefundedCents);
+                break;
+            case AnnouncementPublished sent:
+                var announcement = Assert.IsType<AnnouncementPublished>(published);
+                Assert.Equal(sent.AnnouncementId, announcement.AnnouncementId);
+                Assert.Equal(sent.StudentUserId, announcement.StudentUserId);
+                break;
+            case EnrollmentStatusChanged sent:
+                var enrollment = Assert.IsType<EnrollmentStatusChanged>(published);
+                Assert.Equal(sent.EnrollmentId, enrollment.EnrollmentId);
+                Assert.Equal(sent.StudentUserId, enrollment.StudentUserId);
+                break;
+            case TuitionPaymentNotification sent:
+                var tuition = Assert.IsType<TuitionPaymentNotification>(published);
+                Assert.Equal(sent.EnrollmentId, tuition.EnrollmentId);
+                Assert.Equal(sent.StudentUserId, tuition.StudentUserId);
+                break;
+            case MembershipWarning sent:
+                var warning = Assert.IsType<MembershipWarning>(published);
+                Assert.Equal(sent.StudentUserId, warning.StudentUserId);
+                break;
+            case PasswordResetRequested sent:
+                var reset = Assert.IsType<PasswordResetRequested>(published);
+                Assert.Equal(sent.UserId, reset.UserId);
+                break;
+            default:
+                throw new InvalidOperationException($"No id assertions for '{message.GetType().FullName}'.");
+        }
+    }
 
     private sealed class StubServiceProvider(IAppDbContext context, StubPublishEndpoint endpoint, IClock clock) : IServiceProvider
     {

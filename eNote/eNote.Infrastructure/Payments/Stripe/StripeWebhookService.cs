@@ -140,14 +140,14 @@ public sealed class StripeWebhookService(
             {
                 var (periodStart, periodEnd) = enrollment.ExtendPaidUntil(now, TuitionOptions.PeriodDays);
                 payment.MarkSucceeded(chargeId, eventId, now, periodStart, periodEnd);
-                await enrollmentNotifications.DispatchTuitionPaidAsync(enrollment.Id, enrollment.Student.AppUserId, enrollment.Course.Name, payment.AmountChargedCents, payment.Currency, periodEnd);
+                await enrollmentNotifications.DispatchTuitionPaidAsync(enrollment.Id, enrollment.CourseId, enrollment.Student.AppUserId, enrollment.Course.Name, payment.AmountChargedCents, payment.Currency, periodEnd);
             }
             else
             {
                 logger.LogWarning("Tuition payment {PaymentIntentId} cannot grant access; refunding it instead", payment.StripePaymentIntentId);
                 payment.MarkSucceeded(chargeId, eventId, now, periodStart: null, periodEnd: null);
                 await RefundDuplicatePaymentAsync(payment, cancellationToken);
-                await enrollmentNotifications.DispatchTuitionRefundedAsync(enrollment.Id, enrollment.Student.AppUserId, enrollment.Course.Name, payment.AmountChargedCents, payment.Currency);
+                await enrollmentNotifications.DispatchTuitionRefundedAsync(enrollment.Id, enrollment.CourseId, enrollment.Student.AppUserId, enrollment.Course.Name, payment.AmountChargedCents, payment.Currency);
             }
         }
 
@@ -177,7 +177,7 @@ public sealed class StripeWebhookService(
                 return;
             }
 
-            if (payment.Status is PaymentStatus.RequiresAction or PaymentStatus.Failed)
+            if (payment.IsOpen)
             {
                 payment.MarkFailed(eventId);
             }

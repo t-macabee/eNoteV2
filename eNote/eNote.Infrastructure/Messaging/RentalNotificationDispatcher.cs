@@ -2,7 +2,6 @@ using eNote.Application.Common.Persistence;
 using eNote.Application.Common.Time;
 using eNote.Application.Features.Rentals.InstrumentRentals;
 using eNote.Application.Features.Rentals.InstrumentRentals.Services;
-using eNote.Contracts.Communication;
 using eNote.Contracts.Rentals;
 using eNote.Infrastructure.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -16,7 +15,7 @@ public sealed class RentalNotificationDispatcher(
     public async Task DispatchCreatedAsync(InstrumentRentalDto rental, int studentUserId, CancellationToken cancellationToken = default)
     {
         var (title, body) = BuildCreatedContent(rental);
-        var message = new RentalStatusChanged(rental.Id, studentUserId, studentUserId, rental.RentalStatus.ToString(), rental.InstrumentModel, title, body, clock.UtcNow);
+        var message = new RentalStatusChanged(rental.Id, studentUserId, studentUserId, studentUserId, rental.RentalStatus.ToString(), rental.InstrumentModel, title, body, clock.UtcNow);
         EnqueueOutbox(message);
 
         var now = clock.UtcNow;
@@ -26,7 +25,7 @@ public sealed class RentalNotificationDispatcher(
         {
             if (employeeUserId == studentUserId) continue;
             var (empTitle, empBody) = BuildStoreCreatedContent(rental);
-            var empMessage = new RentalStatusChanged(rental.Id, employeeUserId, studentUserId, rental.RentalStatus.ToString(), rental.InstrumentModel, empTitle, empBody, now);
+            var empMessage = new RentalStatusChanged(rental.Id, studentUserId, employeeUserId, studentUserId, rental.RentalStatus.ToString(), rental.InstrumentModel, empTitle, empBody, now);
             EnqueueOutbox(empMessage);
         }
     }
@@ -40,7 +39,7 @@ public sealed class RentalNotificationDispatcher(
             foreach (var employeeUserId in await LoadActiveEmployeeUserIdsAsync(rental.MusicStoreId, cancellationToken))
             {
                 if (employeeUserId == rental.StudentUserId) continue;
-                var empMessage = new RentalStatusChanged(rental.Id, employeeUserId, actorUserId, rental.RentalStatus.ToString(), rental.InstrumentModel, empTitle, empBody, now);
+                var empMessage = new RentalStatusChanged(rental.Id, rental.StudentUserId, employeeUserId, actorUserId, rental.RentalStatus.ToString(), rental.InstrumentModel, empTitle, empBody, now);
                 EnqueueOutbox(empMessage);
             }
 
@@ -48,7 +47,7 @@ public sealed class RentalNotificationDispatcher(
         }
 
         var (title, body) = BuildNotificationContent(rental, trigger);
-        var message = new RentalStatusChanged(rental.Id, rental.StudentUserId, actorUserId, rental.RentalStatus.ToString(), rental.InstrumentModel, title, body, clock.UtcNow);
+        var message = new RentalStatusChanged(rental.Id, rental.StudentUserId, rental.StudentUserId, actorUserId, rental.RentalStatus.ToString(), rental.InstrumentModel, title, body, clock.UtcNow);
         EnqueueOutbox(message);
     }
 
@@ -86,7 +85,7 @@ public sealed class RentalNotificationDispatcher(
         var rental = await LoadPaymentTargetAsync(rentalId, cancellationToken);
 
         var body = $"Plaćanje za instrument {rental.Model} je uspješno. Iznos: {CurrencyAmount.Format(amountCents, currency)}.";
-        var message = new RentalStatusChanged(rentalId, rental.StudentUserId, rental.StudentUserId, rental.RentalStatus.ToString(), rental.Model, "Plaćanje uspješno", body, clock.UtcNow);
+        var message = new RentalStatusChanged(rentalId, rental.StudentUserId, rental.StudentUserId, rental.StudentUserId, rental.RentalStatus.ToString(), rental.Model, "Plaćanje uspješno", body, clock.UtcNow);
         EnqueueOutbox(message);
     }
 
@@ -95,7 +94,7 @@ public sealed class RentalNotificationDispatcher(
         var rental = await LoadPaymentTargetAsync(rentalId, cancellationToken);
 
         var body = $"Dupla uplata je automatski vraćena. Iznos: {CurrencyAmount.Format(amountCents, currency)}.";
-        var message = new RentalStatusChanged(rentalId, rental.StudentUserId, rental.StudentUserId, rental.RentalStatus.ToString(), rental.Model, "Dupla uplata vraćena", body, clock.UtcNow);
+        var message = new RentalStatusChanged(rentalId, rental.StudentUserId, rental.StudentUserId, rental.StudentUserId, rental.RentalStatus.ToString(), rental.Model, "Dupla uplata vraćena", body, clock.UtcNow);
         EnqueueOutbox(message);
     }
 
@@ -128,10 +127,10 @@ public sealed class RentalNotificationDispatcher(
         ("Zahtjev otkazan", string.IsNullOrWhiteSpace(rental.Note) ? $"Student je otkazao zahtjev za instrument {rental.InstrumentModel} u prodavnici {rental.StoreName}." : $"Student je otkazao zahtjev za instrument {rental.InstrumentModel} u prodavnici {rental.StoreName}. Razlog: {rental.Note}");
 
     private void EnqueueOutbox(RentalStatusChanged message) =>
-        NotificationOutboxWriter.Enqueue(context, NotificationMessageTypes.RentalStatusChanged, message);
+        NotificationOutboxWriter.Enqueue(context, message);
 
     private void EnqueueRefundOutbox(RentalRefunded message) =>
-        NotificationOutboxWriter.Enqueue(context, NotificationMessageTypes.PaymentRefunded, message);
+        NotificationOutboxWriter.Enqueue(context, message);
 
     private static (string Title, string Body) BuildNotificationContent(InstrumentRentalDto rental, RentalTrigger trigger) =>
         trigger switch

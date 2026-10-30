@@ -31,7 +31,6 @@ if (builder.Environment.IsDevelopment())
 builder.Services
     .AddPersistence(builder.Configuration)
     .AddInfrastructureIdentity()
-    .AddEmail(builder.Configuration)
     .AddMessaging(builder.Configuration, bus =>
     {
         bus.AddConsumer<RentalStatusChangedPushConsumer>();

@@ -17,16 +17,16 @@ public sealed class NotificationPushConsumerTests
     private static readonly DateTime Now = new(2026, 7, 1, 12, 0, 0, DateTimeKind.Utc);
 
     [Fact]
-    public async Task RentalStatusChanged_PushesToTheStudentGroup()
+    public async Task RentalStatusChanged_PushesToTheRecipientGroup()
     {
         var (group, dto, messages) = await ConsumeAsync<RentalStatusChangedPushConsumer, RentalStatusChanged>(
-            new RentalStatusChanged(9, 5, null, "Active", "Stratocaster", "Status iznajmljivanja", "Iznajmljivanje je aktivirano.", Now));
+            new RentalStatusChanged(9, 5, 11, null, "Active", "Stratocaster", "Status iznajmljivanja", "Iznajmljivanje je aktivirano.", Now));
 
-        Assert.Equal("user:5", group);
+        Assert.Equal("user:11", group);
         Assert.Equal(9, dto.RentalId);
         Assert.Equal("Status iznajmljivanja", dto.Title);
         Assert.Equal("Iznajmljivanje je aktivirano.", dto.Body);
-        Assert.Contains("Pushed rental notification to SignalR group for user 5, rental 9.", messages);
+        Assert.Contains("Pushed rental notification to SignalR group for user 11, rental 9.", messages);
     }
 
     [Fact]
@@ -81,22 +81,24 @@ public sealed class NotificationPushConsumerTests
     public async Task EnrollmentStatusChanged_PushesToTheStudentGroup()
     {
         var (group, dto, messages) = await ConsumeAsync<EnrollmentStatusChangedPushConsumer, EnrollmentStatusChanged>(
-            new EnrollmentStatusChanged(9, 5, "Upis odobren", "Vaš zahtjev za upis na kurs 'Guitar 101' je odobren.", Now));
+            new EnrollmentStatusChanged(31, 47, 5, "Upis odobren", "Vaš zahtjev za upis na kurs 'Guitar 101' je odobren.", Now));
 
         Assert.Equal("user:5", group);
+        Assert.Equal(47, dto.CourseId);
         Assert.Equal("Upis odobren", dto.Title);
-        Assert.Contains("Pushed enrollment-status-changed notification to SignalR group for user 5, enrollment 9.", messages);
+        Assert.Contains("Pushed enrollment-status-changed notification to SignalR group for user 5, enrollment 31.", messages);
     }
 
     [Fact]
     public async Task TuitionPayment_PushesToTheStudentGroup()
     {
         var (group, dto, messages) = await ConsumeAsync<TuitionPaymentPushConsumer, TuitionPaymentNotification>(
-            new TuitionPaymentNotification(9, 5, "Školarina plaćena", "Školarina za kurs 'Guitar 101' je plaćena.", Now));
+            new TuitionPaymentNotification(31, 47, 5, "Školarina plaćena", "Školarina za kurs 'Guitar 101' je plaćena.", Now));
 
         Assert.Equal("user:5", group);
+        Assert.Equal(47, dto.CourseId);
         Assert.Equal("Školarina plaćena", dto.Title);
-        Assert.Contains("Pushed tuition-payment notification to SignalR group for user 5, enrollment 9.", messages);
+        Assert.Contains("Pushed tuition-payment notification to SignalR group for user 5, enrollment 31.", messages);
     }
 
     [Fact]
