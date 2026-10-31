@@ -57,6 +57,11 @@ String orDash(String? s) {
   return s;
 }
 
+String formatAverageGrade(double? value) {
+  if (value == null) return '—';
+  return value.toStringAsFixed(2);
+}
+
 String truncate(String text, int maxLength) {
   if (text.length <= maxLength) return text;
   return '${text.substring(0, maxLength)}…';

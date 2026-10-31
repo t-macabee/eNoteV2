@@ -85,7 +85,7 @@ class _RankingScreenState extends State<RankingScreen> {
                 subtitle: Text(
                   entry.averageGrade == null
                       ? 'Bez ocjena'
-                      : 'Prosjek ${entry.averageGrade!.toStringAsFixed(2)} · '
+                      : 'Prosjek ${formatAverageGrade(entry.averageGrade)} · '
                             '${entry.gradedSubmissions} ocijenjenih',
                 ),
               );

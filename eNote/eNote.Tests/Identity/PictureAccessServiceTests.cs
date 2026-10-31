@@ -1,6 +1,5 @@
 using eNote.API.Controllers.Users;
 using eNote.Application.Constants;
-using eNote.Application.Features.Identity.Instructors;
 using eNote.Application.Features.Identity.Users.Services;
 using eNote.Tests.TestUtils;
 using Microsoft.AspNetCore.Http;
@@ -54,55 +53,13 @@ public sealed class PictureAccessServiceTests
     }
 
     [Fact]
-    public async Task Instructor_CanView_EnrolledStudentPicture()
+    public async Task Instructor_CanView_AnyStudentPicture()
     {
         var seed = await SeedAsync();
         var service = CreateService(seed.Context, seed.Instructor1.AppUserId, new FixedStoreContext(1),
             new Dictionary<int, IReadOnlyList<string>> { [seed.Instructor1.AppUserId] = [AppRoles.Instructor] });
 
-        Assert.True(await service.CanViewPictureAsync(seed.StudentA.AppUserId));
-    }
-
-    [Fact]
-    public async Task Instructor_CannotView_UnenrolledStudentPicture()
-    {
-        var seed = await SeedAsync();
-        var service = CreateService(seed.Context, seed.Instructor1.AppUserId, new FixedStoreContext(1),
-            new Dictionary<int, IReadOnlyList<string>> { [seed.Instructor1.AppUserId] = [AppRoles.Instructor] });
-
-        Assert.False(await service.CanViewPictureAsync(seed.StudentB.AppUserId));
-    }
-
-    [Fact]
-    public async Task Instructor_CannotView_StudentEnrolledOnlyInOtherInstructorsCourse()
-    {
-        var seed = await SeedAsync();
-        var otherCourse = await AddPublishedCourseAsync(seed.Context, seed.Instructor2);
-        seed.Context.Set<Enrollment>().Add(new Enrollment(seed.StudentB.Id, otherCourse.Id, EnrollmentStatus.Active));
-        await seed.Context.SaveChangesAsync();
-
-        var service = CreateService(seed.Context, seed.Instructor1.AppUserId, new FixedStoreContext(1),
-            new Dictionary<int, IReadOnlyList<string>> { [seed.Instructor1.AppUserId] = [AppRoles.Instructor] });
-
-        Assert.False(await service.CanViewPictureAsync(seed.StudentB.AppUserId));
-    }
-
-    [Theory]
-    [InlineData(EnrollmentStatus.Pending)]
-    [InlineData(EnrollmentStatus.Completed)]
-    [InlineData(EnrollmentStatus.Canceled)]
-    [InlineData(EnrollmentStatus.Rejected)]
-    public async Task Instructor_CannotView_StudentWhoseEnrollmentIsNotActive(EnrollmentStatus status)
-    {
-        var seed = await SeedAsync();
-        var course = await seed.Context.Set<Course>().SingleAsync();
-        seed.Context.Set<Enrollment>().Add(new Enrollment(seed.StudentB.Id, course.Id, status));
-        await seed.Context.SaveChangesAsync();
-
-        var service = CreateService(seed.Context, seed.Instructor1.AppUserId, new FixedStoreContext(1),
-            new Dictionary<int, IReadOnlyList<string>> { [seed.Instructor1.AppUserId] = [AppRoles.Instructor] });
-
-        Assert.False(await service.CanViewPictureAsync(seed.StudentB.AppUserId));
+        Assert.True(await service.CanViewPictureAsync(seed.StudentB.AppUserId));
     }
 
     [Fact]
@@ -287,8 +244,7 @@ public sealed class PictureAccessServiceTests
         new(context,
             new StubCurrentActor(userId: viewerUserId),
             stores,
-            new StubUserIdentityService(roles: roles),
-            new InstructorAccessService(context, new UserProfileLookup(context)));
+            new StubUserIdentityService(roles: roles));
 
     private static UsersController CreateController(bool canView, (Stream? Data, string? ContentType) picture)
     {
@@ -391,18 +347,6 @@ public sealed class PictureAccessServiceTests
         await context.SaveChangesAsync();
 
         return new PictureSeed(context, instructor1, instructor2, studentA, studentB, store1, store2, employee1, employee2, employee3);
-    }
-
-    private static async Task<Course> AddPublishedCourseAsync(ENoteContext context, Instructor instructor)
-    {
-        var course = new Course("Piano 101", null, 100m, Now, Now.AddMonths(6), instructor.Id)
-        {
-            CreatedById = instructor.AppUserId
-        };
-        course.SetPublishedStatus(true);
-        context.Set<Course>().Add(course);
-        await context.SaveChangesAsync();
-        return course;
     }
 
     private sealed record PictureSeed(

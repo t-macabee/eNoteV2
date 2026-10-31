@@ -58,6 +58,6 @@ void main() {
     expect(find.text('Student Enote'), findsOneWidget);
     expect(find.text('Drugi Student'), findsOneWidget);
     expect(find.textContaining('Prosjek: 9.50'), findsOneWidget);
-    expect(find.textContaining('Prosjek: -'), findsOneWidget);
+    expect(find.textContaining('Prosjek: —'), findsOneWidget);
   });
 }

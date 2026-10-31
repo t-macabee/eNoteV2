@@ -416,4 +416,44 @@ void main() {
       );
     });
   });
+
+  group('StudentProfileDto', () {
+    test('fromJson parses courses and a null average grade', () {
+      final dto = StudentProfileDto.fromJson({
+        'id': 5,
+        'appUserId': 50,
+        'firstName': 'Johann',
+        'lastName': 'Bach',
+        'username': 'jbach',
+        'courses': [
+          {
+            'courseId': 7,
+            'courseName': 'Guitar 101',
+            'instructorName': 'Jane Doe',
+            'enrollmentStatus': 'Active',
+            'averageGrade': 4.5,
+            'gradedSubmissions': 2,
+          },
+          {
+            'courseId': 8,
+            'courseName': 'Piano 101',
+            'instructorName': 'John Doe',
+            'enrollmentStatus': 'Completed',
+            'averageGrade': null,
+            'gradedSubmissions': 0,
+          },
+        ],
+      });
+
+      expect(dto.id, 5);
+      expect(dto.appUserId, 50);
+      expect(dto.username, 'jbach');
+      expect(dto.courses, hasLength(2));
+      expect(dto.courses[0].averageGrade, 4.5);
+      expect(dto.courses[0].enrollmentStatus, EnrollmentStatus.active);
+      expect(dto.courses[1].averageGrade, isNull);
+      expect(dto.courses[1].gradedSubmissions, 0);
+      expect(dto.courses[1].enrollmentStatus, EnrollmentStatus.completed);
+    });
+  });
 }

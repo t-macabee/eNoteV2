@@ -65,11 +65,8 @@ public sealed class RankingService(
 
         HashSet<int> studentIds = [.. enrolledStudents.Select(s => s.Id)];
 
-        Dictionary<int, StudentGradeStats> gradeData = await context.Set<AssignmentSubmission>()
-            .AsNoTracking()
-            .Where(s => s.Grade != null
-                && s.Assignment.Lecture.CourseId == courseId
-                && (s.Assignment.Lecture.StudentId == null || s.Assignment.Lecture.StudentId == s.StudentId)
+        Dictionary<int, StudentGradeStats> gradeData = await GradedSubmissionQueries.CountedGrades(context)
+            .Where(s => s.Assignment.Lecture.CourseId == courseId
                 && studentIds.Contains(s.StudentId))
             .GroupBy(s => s.StudentId)
             .Select(g =>
@@ -95,7 +92,7 @@ public sealed class RankingService(
                 Rank = i + 1,
                 StudentId = x.Student.Id,
                 StudentName = x.Name,
-                AverageGrade = x.Average.HasValue ? Math.Round(x.Average.Value, 2) : null,
+                AverageGrade = GradedSubmissionQueries.RoundAverage(x.Average),
                 GradedSubmissions = x.Count
             })];
 

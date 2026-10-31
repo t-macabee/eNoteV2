@@ -1,5 +1,4 @@
 using eNote.Application.Constants;
-using eNote.Application.Features.Identity.Instructors;
 
 namespace eNote.Application.Features.Identity.Users.Services;
 
@@ -7,8 +6,7 @@ public sealed class PictureAccessService(
     IAppDbContext context,
     ICurrentUserContext currentUser,
     IStoreContext stores,
-    IUserIdentityService identity,
-    InstructorAccessService instructorAccess) : IPictureAccessService
+    IUserIdentityService identity) : IPictureAccessService
 {
     public async Task<bool> CanViewPictureAsync(int targetAppUserId, CancellationToken cancellationToken = default)
     {
@@ -32,10 +30,9 @@ public sealed class PictureAccessService(
                 return true;
             }
 
-            var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId, cancellationToken);
-
-            return await instructorAccess.ActiveEnrollmentsFor(instructorId)
-                .AnyAsync(e => e.Student.AppUserId == targetAppUserId, cancellationToken);
+            return await context.Set<Student>()
+                .AsNoTracking()
+                .AnyAsync(s => s.AppUserId == targetAppUserId, cancellationToken);
         }
 
         if (roles.Contains(AppRoles.StoreEmployee))

@@ -10,6 +10,7 @@ import '../features/admin/users/user_grid_screen.dart';
 import '../features/instructor/course/course_list_screen.dart';
 import '../features/instructor/course/course_catalog_screen.dart';
 import '../features/instructor/student/instructor_student_list_screen.dart';
+import '../features/instructor/student_directory/student_directory_screen.dart';
 import '../features/shared/announcement/announcement_list_screen.dart';
 import '../features/shared/announcement/store_announcement_provider.dart';
 import '../features/store_employee/employee/shop_employee_list_screen.dart';
@@ -65,8 +66,14 @@ const kRoleMenuEntries = <RoleMenuEntry>[
   ),
   RoleMenuEntry(
     icon: Icons.school_outlined,
-    label: 'Studenti',
+    label: 'Moji studenti',
     screenBuilder: _buildInstructorStudentList,
+    allowedRoles: [UserRole.instructor],
+  ),
+  RoleMenuEntry(
+    icon: Icons.groups_outlined,
+    label: 'Svi studenti',
+    screenBuilder: _buildStudentDirectory,
     allowedRoles: [UserRole.instructor],
   ),
   RoleMenuEntry(
@@ -109,6 +116,10 @@ Widget _buildCourseCatalog(BuildContext context) {
 
 Widget _buildInstructorStudentList(BuildContext context) {
   return const InstructorStudentListScreen();
+}
+
+Widget _buildStudentDirectory(BuildContext context) {
+  return const StudentDirectoryScreen();
 }
 
 Widget _buildShopEmployeeList(BuildContext context) {

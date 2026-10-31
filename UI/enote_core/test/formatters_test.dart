@@ -49,6 +49,18 @@ void main() {
     });
   });
 
+  group('formatAverageGrade', () {
+    test('renders two decimals', () {
+      expect(formatAverageGrade(4.5), '4.50');
+      expect(formatAverageGrade(4.0), '4.00');
+      expect(formatAverageGrade(3.666), '3.67');
+    });
+
+    test('null renders an em dash', () {
+      expect(formatAverageGrade(null), '—');
+    });
+  });
+
   group('toUtcIso and parseDate', () {
     test('toUtcIso emits ISO-8601 string in UTC', () {
       final local = DateTime(2026, 9, 21, 14, 30);

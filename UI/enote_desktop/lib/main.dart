@@ -19,6 +19,7 @@ import 'features/instructor/course/course_catalog_provider.dart';
 import 'features/instructor/lecture/lecture_provider.dart';
 import 'features/instructor/student/instructor_student_provider.dart';
 import 'features/instructor/ranking/ranking_provider.dart';
+import 'features/instructor/student_directory/student_directory_provider.dart';
 import 'features/admin/music_store/music_store_provider.dart';
 import 'features/admin/music_store/store_instrument_provider.dart';
 import 'features/shared/announcement/store_announcement_provider.dart';
@@ -152,6 +153,9 @@ class MyApp extends StatelessWidget {
         ),
         Provider<RankingProvider>(
           create: (_) => RankingProvider(apiClient: apiClient),
+        ),
+        Provider<StudentDirectoryProvider>(
+          create: (_) => StudentDirectoryProvider(apiClient: apiClient),
         ),
         Provider<ProfileProvider>(
           create: (_) => ProfileProvider(apiClient: apiClient),

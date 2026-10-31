@@ -219,6 +219,8 @@ Bez ovog koraka webhook ne stiže do API-ja i plaćanje ostaje neplaćeno.
 | `GET /api/v1/student/enrollments/{enrollmentId}/tuition` | Student |
 | `GET /api/v1/student/enrollments/{enrollmentId}/tuition/history` | Student |
 | `GET /api/v1/instructor/students/{id}/enrollments` | Instructor |
+| `GET /api/v1/instructor/student-directory` | Instructor |
+| `GET /api/v1/instructor/student-directory/{id}` | Instructor |
 | `POST /api/v1/payments/stripe/webhook` | Stripe, potpis se provjerava |
 
 Povrat novca ne poništava status plaćenog najma. Student koji ima neplaćen

@@ -115,9 +115,7 @@ class _RankingViewState extends State<RankingView> {
                   separatorBuilder: (_, _) => const Divider(height: 1),
                   itemBuilder: (context, index) {
                     final item = _filteredItems[index];
-                    final avg = item.averageGrade != null
-                        ? item.averageGrade!.toStringAsFixed(2)
-                        : '-';
+                    final avg = formatAverageGrade(item.averageGrade);
                     return ListTile(
                       dense: true,
                       leading: Text(
