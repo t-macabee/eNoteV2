@@ -106,4 +106,4 @@ app.MapHealthChecks("/health").AllowAnonymous();
 app.MapControllers();
 app.MapHub<NotificationHub>(NotificationHub.HubPath);
 
-app.Run();
+await app.RunAsync();

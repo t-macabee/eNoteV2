@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
 
-import '../../shell/app_router.dart';
+import '../../shell/routes.dart';
 import '../../session/session_controller.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/async_state_view.dart';
@@ -110,7 +110,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 onPressed: () => Navigator.of(
                   context,
                   rootNavigator: true,
-                ).pushNamed(AppRouter.profileEdit),
+                ).pushNamed(AppRoutes.profileEdit),
                 child: const Text('Uredi profil'),
               ),
               const SizedBox(height: 8),
@@ -118,7 +118,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 onPressed: () => Navigator.of(
                   context,
                   rootNavigator: true,
-                ).pushNamed(AppRouter.profilePassword),
+                ).pushNamed(AppRoutes.profilePassword),
                 child: const Text('Promijeni lozinku'),
               ),
               const SizedBox(height: 8),

@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
 
-import '../../shell/app_router.dart';
+import '../../shell/routes.dart';
 import '../../widgets/async_state_view.dart';
 import '../../widgets/blocked_reason_banner.dart';
 import '../../widgets/labeled_value.dart';
@@ -174,7 +174,7 @@ class _LectureDetailScreenState extends State<LectureDetailScreen> {
           const SizedBox(height: 8),
           OutlinedButton(
             onPressed: () => Navigator.of(context).pushNamed(
-              AppRouter.lectureNotes,
+              AppRoutes.lectureNotes,
               arguments: LectureNotesArgs(lecture.id),
             ),
             child: const Text('Bilješke'),

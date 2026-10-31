@@ -76,7 +76,7 @@ class _RentalRequestSheetState extends State<RentalRequestSheet>
       );
       if (!mounted) return;
       navigator.pop();
-      RootShell.switchTab(2);
+      RootShell.switchTab(RootTab.rentals);
       messenger.showSnackBar(
         SnackBar(
           content: Text(rentalRequestSentMessage(rental.otherPendingRequests)),

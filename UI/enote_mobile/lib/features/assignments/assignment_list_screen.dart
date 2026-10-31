@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
 
-import '../../shell/app_router.dart';
+import '../../shell/routes.dart';
 import '../../widgets/paged_list_view.dart';
 import 'assignment_provider.dart';
 
@@ -64,7 +64,7 @@ class _AssignmentListScreenState extends State<AssignmentListScreen>
           alignment: Alignment.centerRight,
           child: TextButton(
             onPressed: () =>
-                Navigator.of(context).pushNamed(AppRouter.assignmentHistory),
+                Navigator.of(context).pushNamed(AppRoutes.assignmentHistory),
             child: const Text('Moje predaje'),
           ),
         ),
@@ -102,7 +102,7 @@ class _AssignmentRow extends StatelessWidget {
       subtitle: Text('Rok: ${formatDateTime(assignment.dueAt)}'),
       trailing: pastDue ? const Chip(label: Text('Rok istekao')) : null,
       onTap: () => Navigator.of(context).pushNamed(
-        AppRouter.assignmentDetail,
+        AppRoutes.assignmentDetail,
         arguments: AssignmentDetailArgs(assignment.id),
       ),
     );

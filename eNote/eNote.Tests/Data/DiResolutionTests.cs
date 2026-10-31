@@ -4,7 +4,7 @@ using eNote.Application;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Features.Identity.Auth.Services;
 using eNote.Application.Features.Rentals.InstrumentRentals.Services;
-using eNote.Application.Features.Rentals.Payments.Services;
+using eNote.Application.Features.Payments;
 using eNote.Infrastructure;
 using eNote.Infrastructure.Messaging;
 using eNote.Worker;

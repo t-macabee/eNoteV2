@@ -10,6 +10,7 @@ import 'package:enote_mobile/features/instruments/instrument_provider.dart';
 import 'package:enote_mobile/features/rentals/rental_provider.dart';
 import 'package:enote_mobile/session/session_controller.dart';
 import 'package:enote_mobile/shell/app_router.dart';
+import 'package:enote_mobile/shell/routes.dart';
 import 'package:enote_mobile/theme/app_theme.dart';
 
 import '../../helpers.dart';
@@ -247,7 +248,7 @@ void main() {
     await tester.pumpAndSettle();
 
     final route = harness.pushed.last;
-    expect(route.name, AppRouter.payment);
+    expect(route.name, AppRoutes.payment);
     expect((route.arguments as PaymentArgs).rentalId, 9);
   });
 

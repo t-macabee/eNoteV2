@@ -3,8 +3,8 @@ using System.Text;
 using System.Text.Json;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Persistence;
+using eNote.Application.Features.Payments.Webhooks;
 using eNote.Application.Features.Rentals.InstrumentRentals.Services;
-using eNote.Application.Features.Rentals.Payments.Services;
 using eNote.Contracts.Enrollments;
 using eNote.Domain.Entities.Communication;
 using eNote.Infrastructure.Messaging;
@@ -574,14 +574,19 @@ public sealed class TuitionPaymentWebhookTests
     private static StripeWebhookService CreateWebhookService(
         IAppDbContext context,
         FakePaymentGateway? gateway = null,
-        IRentalNotificationDispatcher? notifications = null) =>
-        new(context,
-            new FixedClock(Now),
-            new StripeOptions { Currency = "bam", WebhookSecret = "whsec_test" },
+        IRentalNotificationDispatcher? notifications = null)
+    {
+        var clock = new FixedClock(Now);
+        var handler = new PaymentWebhookHandler(
+            context,
+            clock,
             gateway ?? new FakePaymentGateway(),
             notifications ?? new RecordingNotificationDispatcher(),
-            new EnrollmentNotificationDispatcher(context, new FixedClock(Now)),
-            NullLogger<StripeWebhookService>.Instance);
+            new EnrollmentNotificationDispatcher(context, clock),
+            NullLogger<PaymentWebhookHandler>.Instance);
+
+        return new(new StripeOptions { WebhookSecret = "whsec_test" }, handler, NullLogger<StripeWebhookService>.Instance);
+    }
 
     private static async Task<List<TuitionPaymentNotification>> ReadTuitionMessagesAsync(IAppDbContext context) =>
         (await context.Set<NotificationOutbox>().ToListAsync())

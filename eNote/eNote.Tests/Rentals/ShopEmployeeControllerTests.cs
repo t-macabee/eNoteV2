@@ -1,4 +1,4 @@
-using eNote.API.Controllers.Shop;
+using eNote.API.Controllers.Identity;
 using eNote.Application.Common.Paging;
 using eNote.Application.Features.Identity.Auth;
 using eNote.Application.Features.Identity.Employees;

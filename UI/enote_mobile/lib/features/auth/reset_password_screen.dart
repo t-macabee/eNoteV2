@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
 
-import '../../shell/app_router.dart';
+import '../../shell/routes.dart';
 import '../../widgets/app_text_field.dart';
 import '../../widgets/form_submit_state.dart';
 import '../../widgets/mobile_form_scaffold.dart';
@@ -93,7 +93,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen>
             OutlinedButton(
               onPressed: () => Navigator.of(
                 context,
-              ).pushReplacementNamed(AppRouter.forgotPassword),
+              ).pushReplacementNamed(AppRoutes.forgotPassword),
               child: const Text('Zatraži novi link'),
             ),
           ],

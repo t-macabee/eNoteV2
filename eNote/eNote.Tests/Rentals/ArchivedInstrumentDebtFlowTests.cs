@@ -1,3 +1,5 @@
+using eNote.Application.Features.Payments;
+using eNote.Application.Features.Payments.Webhooks;
 using eNote.Application.Features.Rentals.InstrumentRentals;
 using eNote.Application.Features.Rentals.InstrumentRentals.Services;
 using eNote.Application.Features.Rentals.Payments.Services;
@@ -19,7 +21,7 @@ public sealed class ArchivedInstrumentDebtFlowTests
     public async Task CompletedUnpaidRental_AfterArchive_IsPayableAndUnblocksNewRequest()
     {
         await using var context = RentalTestData.CreateContext(Now);
-        var student = await SeedStudentAsync(context);
+        var student = await RentalTestData.SeedStudentAsync(context, Now);
         var instrument = await RentalTestData.SeedInstrumentAsync(context);
         var rental = RentalTestData.CreateCompletedRental(instrument, student.Id, Now);
         context.Set<InstrumentRental>().Add(rental);
@@ -60,15 +62,6 @@ public sealed class ArchivedInstrumentDebtFlowTests
         Assert.Equal(InstrumentRentalStatus.Pending, created.RentalStatus);
     }
 
-    private static async Task<Student> SeedStudentAsync(ENoteContext context)
-    {
-        var student = new Student(appUserId: 100, Now.AddMonths(-1));
-        student.UpdateMembership(Now.AddDays(1));
-        context.Set<Student>().Add(student);
-        await context.SaveChangesAsync();
-        return student;
-    }
-
     private static RentalQueryService CreateQueryService(ENoteContext context, StubCurrentActor actor) =>
         new(context, TestMapper.Create(), actor, new FixedClock(Now), new StubDisplayNameService());
 
@@ -80,7 +73,7 @@ public sealed class ArchivedInstrumentDebtFlowTests
             actor,
             gateway,
             new RecordingNotificationDispatcher(),
-            new StripeOptions { Currency = "eur" },
+            new PaymentOptions { Currency = "eur" },
             NullLogger<RentalPaymentService>.Instance);
 
     private static RentalCommandService CreateCommandService(ENoteContext context, StubCurrentActor actor) =>
@@ -94,14 +87,19 @@ public sealed class ArchivedInstrumentDebtFlowTests
             new StubDisplayNameService(),
             new RentalOptions { OverduePenaltyMultiplier = 0.5m });
 
-    private static StripeWebhookService CreateWebhookService(ENoteContext context, FakePaymentGateway gateway) =>
-        new(context,
-            new FixedClock(Now),
-            new StripeOptions { Currency = "eur" },
+    private static StripeWebhookService CreateWebhookService(ENoteContext context, FakePaymentGateway gateway)
+    {
+        var clock = new FixedClock(Now);
+        var handler = new PaymentWebhookHandler(
+            context,
+            clock,
             gateway,
             new RecordingNotificationDispatcher(),
-            new EnrollmentNotificationDispatcher(context, new FixedClock(Now)),
-            NullLogger<StripeWebhookService>.Instance);
+            new EnrollmentNotificationDispatcher(context, clock),
+            NullLogger<PaymentWebhookHandler>.Instance);
+
+        return new(new StripeOptions(), handler, NullLogger<StripeWebhookService>.Instance);
+    }
 
     private static Event CreateSucceededEvent(string paymentIntentId) => new()
     {

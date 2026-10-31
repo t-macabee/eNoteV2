@@ -1,5 +1,5 @@
 using Asp.Versioning;
-using eNote.Infrastructure.Payments.Stripe;
+using eNote.Application.Features.Payments.Webhooks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Text;
@@ -10,7 +10,7 @@ namespace eNote.API.Controllers.Payments;
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/payments/stripe/webhook")]
 [AllowAnonymous]
-public sealed class StripeWebhookController(StripeWebhookService webhookService) : ControllerBase
+public sealed class StripeWebhookController(IPaymentWebhookReceiver webhookService) : ControllerBase
 {
     [HttpPost]
     [Consumes("application/json")]

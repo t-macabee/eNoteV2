@@ -1,7 +1,6 @@
 using eNote.Application.Constants;
 using eNote.Domain.Entities.Assignments;
 using eNote.Domain.Entities.Communication;
-using eNote.Domain.Entities.Shared;
 using eNote.Tests.TestUtils;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;

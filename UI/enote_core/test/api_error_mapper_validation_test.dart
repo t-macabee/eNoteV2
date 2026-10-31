@@ -59,6 +59,18 @@ void main() {
       );
     });
 
+    test('503 body message is shown', () {
+      final body = jsonEncode({
+        'status': 503,
+        'code': 'error.payment_provider_unavailable',
+        'message': 'Plaćanje trenutno nije dostupno. Pokušajte ponovo kasnije.',
+      });
+      expect(
+        ApiErrorMapper.mapError(503, body),
+        'Plaćanje trenutno nije dostupno. Pokušajte ponovo kasnije.',
+      );
+    });
+
     test('ApiError.fromJson parses errors map', () {
       final error = ApiError.fromJson({
         'status': 400,

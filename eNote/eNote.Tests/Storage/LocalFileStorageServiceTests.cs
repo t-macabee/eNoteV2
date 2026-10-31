@@ -173,6 +173,30 @@ public sealed class LocalFileStorageServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task SaveAsync_ThrowsBusinessException_WhenContentTypeIsEmpty()
+    {
+        var service = CreateService();
+        using var stream = new MemoryStream(PngBytes);
+
+        var ex = await Assert.ThrowsAsync<BusinessException>(() =>
+            service.SaveAsync(stream, string.Empty, "profile-pictures"));
+
+        Assert.Equal(Messages.InvalidFileFormat, ex.Message);
+    }
+
+    [Fact]
+    public async Task SaveAssignmentAsync_ThrowsBusinessException_WhenContentTypeIsEmpty()
+    {
+        var service = CreateService();
+        using var stream = new MemoryStream(PngBytes);
+
+        var ex = await Assert.ThrowsAsync<BusinessException>(() =>
+            service.SaveAssignmentAsync(stream, string.Empty));
+
+        Assert.Equal(Messages.AssignmentFileTypeNotAllowed, ex.Message);
+    }
+
+    [Fact]
     public async Task SaveAsync_ThrowsArgumentException_WhenStreamIsNotSeekable()
     {
         var service = CreateService();

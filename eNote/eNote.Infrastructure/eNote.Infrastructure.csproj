@@ -14,6 +14,7 @@
     <PackageReference Include="MailKit" />
     <PackageReference Include="MassTransit" />
     <PackageReference Include="MassTransit.RabbitMQ" />
+    <PackageReference Include="RabbitMQ.Client" />
     <PackageReference Include="Microsoft.AspNetCore.DataProtection.EntityFrameworkCore" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" />
@@ -26,7 +27,6 @@
     <PackageReference Include="MimeKit" />
     <PackageReference Include="QuestPDF" />
     <PackageReference Include="Stripe.net" />
-    <PackageReference Include="System.Security.Cryptography.Pkcs" />
   </ItemGroup>
 
   <ItemGroup>

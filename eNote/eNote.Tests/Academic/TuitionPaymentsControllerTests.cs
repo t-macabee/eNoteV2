@@ -1,8 +1,8 @@
-using eNote.API.Controllers.Tuition;
+using eNote.API.Controllers.Academic;
 using eNote.Application.Common.Paging;
 using eNote.Application.Constants;
 using eNote.Application.Features.Academic.Tuition;
-using eNote.Application.Features.Rentals.Payments.Services;
+using eNote.Application.Features.Payments;
 using eNote.Tests.TestUtils;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -94,6 +94,6 @@ public sealed class TuitionPaymentsControllerTests
             new FixedClock(Now),
             new StubCurrentActor(student: student),
             new FakePaymentGateway(),
-            new StripeOptions { Currency = "bam" },
+            new PaymentOptions { Currency = "bam" },
             NullLogger<TuitionPaymentService>.Instance);
 }

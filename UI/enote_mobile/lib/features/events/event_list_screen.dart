@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
 
-import '../../shell/app_router.dart';
+import '../../shell/routes.dart';
 import '../../widgets/app_date_picker_field.dart';
 import '../../widgets/paged_list_view.dart';
 import 'event_provider.dart';
@@ -116,7 +116,7 @@ class _EventRow extends StatelessWidget {
       title: Text(event.title),
       subtitle: Text(formatDateTime(event.startsAt)),
       onTap: () => Navigator.of(context).pushNamed(
-        AppRouter.eventDetail,
+        AppRoutes.eventDetail,
         arguments: EventDetailArgs(event),
       ),
     );

@@ -27,4 +27,4 @@ builder.Services.AddInfrastructureHealthChecks();
 builder.Services.AddHostedService<DatabaseHeartbeatService>();
 
 IHost host = builder.Build();
-host.Run();
+await host.RunAsync();

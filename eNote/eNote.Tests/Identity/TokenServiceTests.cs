@@ -7,6 +7,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using System.Text.Json;
 
 namespace eNote.Tests.Identity;
 
@@ -79,6 +80,20 @@ public sealed class TokenServiceTests
         {
             Assert.Empty(managerClaims);
         }
+    }
+
+    [Fact]
+    public void GenerateToken_WritesServerClaimKeys()
+    {
+        var service = CreateService(expirationMinutes: 30);
+
+        var token = service.GenerateToken(1, "jdoe", ["Instructor"], isManager: true);
+
+        using var payload = JsonDocument.Parse(Base64UrlEncoder.Decode(token.Split('.')[1]));
+        var json = payload.RootElement;
+
+        Assert.Equal("Instructor", json.GetProperty("http://schemas.microsoft.com/ws/2008/06/identity/claims/role").GetString());
+        Assert.Equal("true", json.GetProperty("is_manager").GetString());
     }
 
     [Fact]

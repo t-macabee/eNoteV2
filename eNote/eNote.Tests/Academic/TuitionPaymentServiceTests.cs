@@ -2,7 +2,7 @@ using eNote.Application.Common.Localization;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Constants;
 using eNote.Application.Features.Academic.Tuition;
-using eNote.Application.Features.Rentals.Payments.Services;
+using eNote.Application.Features.Payments;
 using eNote.Tests.TestUtils;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -177,7 +177,7 @@ public sealed class TuitionPaymentServiceTests
         var service = CreateService(context, student, gateway, clock);
 
         var first = await service.CreateIntentAsync(enrollment.Id);
-        gateway.SetIntentStatus(first.PaymentIntentId, "canceled");
+        gateway.SetIntentStatus(first.PaymentIntentId, PaymentIntentStatus.Canceled);
 
         clock.UtcNow = Now.AddMinutes(5);
         var second = await service.CreateIntentAsync(enrollment.Id);
@@ -255,16 +255,16 @@ public sealed class TuitionPaymentServiceTests
         var second = await service.CreateIntentAsync(enrollment.Id);
 
         Assert.Equal(first.PaymentIntentId, gateway.CancelCalls[0].PaymentIntentId);
-        Assert.Equal("canceled", (await gateway.RetrievePaymentIntentAsync(first.PaymentIntentId)).Status);
+        Assert.Equal(PaymentIntentStatus.Canceled, (await gateway.RetrievePaymentIntentAsync(first.PaymentIntentId)).Status);
         Assert.Equal(12500, second.AmountCents);
         var oldPayment = await context.Set<CoursePayment>().SingleAsync(p => p.StripePaymentIntentId == first.PaymentIntentId);
         Assert.Equal(PaymentStatus.Canceled, oldPayment.Status);
     }
 
     [Theory]
-    [InlineData("processing")]
-    [InlineData("succeeded")]
-    public async Task CreateIntentAsync_Blocks_WhenStripeIsPastTheCardStep(string stripeStatus)
+    [InlineData(PaymentIntentStatus.Processing)]
+    [InlineData(PaymentIntentStatus.Succeeded)]
+    public async Task CreateIntentAsync_Blocks_WhenStripeIsPastTheCardStep(PaymentIntentStatus stripeStatus)
     {
         var (context, student, _, enrollment) = await SetupScenarioAsync(price: 100m);
         var gateway = new FakePaymentGateway();
@@ -295,7 +295,7 @@ public sealed class TuitionPaymentServiceTests
         await context.SaveChangesAsync();
         gateway.CancelException = paymentIntentId =>
         {
-            gateway.SetIntentStatus(paymentIntentId, "succeeded");
+            gateway.SetIntentStatus(paymentIntentId, PaymentIntentStatus.Succeeded);
             return new InvalidOperationException("PaymentIntent has already succeeded.");
         };
 
@@ -564,6 +564,7 @@ public sealed class TuitionPaymentServiceTests
         var service = CreateService(context, student, new ThrowingPaymentGateway());
 
         var ex = await Assert.ThrowsAsync<PaymentProviderUnavailableException>(() => service.CreateIntentAsync(enrollment.Id));
+        Assert.Equal(503, ex.StatusCode);
         Assert.Equal(Messages.PaymentProviderUnavailable, ex.Message);
     }
 
@@ -583,7 +584,7 @@ public sealed class TuitionPaymentServiceTests
             clock ?? new FixedClock(Now),
             actor,
             gateway ?? new FakePaymentGateway(),
-            new StripeOptions { Currency = "bam", RentalStatementDescriptorSuffix = "ENOTE RENT T", TuitionStatementDescriptorSuffix = "ENOTE TUIT T" },
+            new PaymentOptions { Currency = "bam", RentalStatementDescriptorSuffix = "ENOTE RENT T", TuitionStatementDescriptorSuffix = "ENOTE TUIT T" },
             NullLogger<TuitionPaymentService>.Instance);
     }
 }

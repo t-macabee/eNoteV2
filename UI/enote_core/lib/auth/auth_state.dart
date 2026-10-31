@@ -7,6 +7,7 @@ import 'package:jwt_decoder/jwt_decoder.dart';
 import '../api/api_exception.dart';
 import '../api/api_response.dart';
 import '../models/identity/auth_models.dart';
+import 'jwt_claim_keys.dart';
 
 class AuthState extends ChangeNotifier {
   final String _baseUrl;
@@ -75,24 +76,14 @@ class AuthState extends ChangeNotifier {
     }
     try {
       final decoded = JwtDecoder.decode(token);
-      _userId = _parseInt(decoded['sub']);
-      _username = decoded['unique_name'] as String?;
-      final managerClaim = decoded['is_manager'];
-      _isManager = managerClaim == true || managerClaim == 'true';
-      final roleClaim = decoded['role'];
-      final roleUri =
-          'http://schemas.microsoft.com/ws/2008/06/identity/claims/role';
+      _userId = _parseInt(decoded[JwtClaimKeys.subject]);
+      _username = decoded[JwtClaimKeys.userName] as String?;
+      _isManager = decoded[JwtClaimKeys.isManager] == 'true';
+      final roleClaim = decoded[JwtClaimKeys.role];
       if (roleClaim is List<dynamic>) {
         _roles = roleClaim.map((e) => e.toString()).toList();
       } else if (roleClaim is String) {
         _roles = [roleClaim];
-      } else if (decoded.containsKey(roleUri)) {
-        final uriClaim = decoded[roleUri];
-        if (uriClaim is List<dynamic>) {
-          _roles = uriClaim.map((e) => e.toString()).toList();
-        } else if (uriClaim is String) {
-          _roles = [uriClaim];
-        }
       }
       return true;
     } catch (_) {

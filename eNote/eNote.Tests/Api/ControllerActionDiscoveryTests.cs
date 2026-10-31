@@ -1,11 +1,9 @@
 using System.Reflection;
-using eNote.API.Controllers.Admin;
-using eNote.API.Controllers.Announcements;
-using eNote.API.Controllers.Assignments;
-using eNote.API.Controllers.Instruments;
-using eNote.API.Controllers.Shop;
-using eNote.API.Controllers.Tuition;
-using eNote.API.Controllers.Users;
+using eNote.API.Controllers.Academic;
+using eNote.API.Controllers.Communication;
+using eNote.API.Controllers.Identity;
+using eNote.API.Controllers.Rentals;
+using eNote.API.Controllers.ReferenceData;
 using eNote.API.Extensions;
 using eNote.Application.Common.Files;
 using eNote.Application.Constants;

@@ -1,4 +1,4 @@
-using eNote.API.Controllers.Admin;
+using eNote.API.Controllers.Identity;
 using eNote.Application.Common.Paging;
 using eNote.Application.Features.Identity.Students;
 using eNote.Application.Features.Identity.Instructors;

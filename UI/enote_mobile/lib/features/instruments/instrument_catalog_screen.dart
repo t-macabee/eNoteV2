@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
 
-import '../../shell/app_router.dart';
+import '../../shell/routes.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/blocked_reason_banner.dart';
 import '../../widgets/paged_list_view.dart';
@@ -24,6 +24,7 @@ class _InstrumentCatalogScreenState extends State<InstrumentCatalogScreen> {
   late final PagedFetchController<InstrumentDto> _controller;
   List<InstrumentRecommendationDto> _recommendations = const [];
   RentalDebtDto? _debt;
+  bool _debtLoadFailed = false;
   bool _onlyAvailable = true;
 
   @override
@@ -63,15 +64,25 @@ class _InstrumentCatalogScreenState extends State<InstrumentCatalogScreen> {
   Future<void> _loadDebt() async {
     try {
       final debt = await context.read<RentalProvider>().debt();
-      if (mounted) setState(() => _debt = debt);
+      if (mounted) {
+        setState(() {
+          _debt = debt;
+          _debtLoadFailed = false;
+        });
+      }
     } catch (_) {
-      if (mounted) setState(() => _debt = null);
+      if (mounted) {
+        setState(() {
+          _debt = null;
+          _debtLoadFailed = true;
+        });
+      }
     }
   }
 
   void _openInstrument(int instrumentId) {
     Navigator.of(context).pushNamed(
-      AppRouter.instrumentDetail,
+      AppRoutes.instrumentDetail,
       arguments: InstrumentDetailArgs(instrumentId),
     );
   }
@@ -79,7 +90,7 @@ class _InstrumentCatalogScreenState extends State<InstrumentCatalogScreen> {
   void _openPayment(int rentalId) {
     Navigator.of(
       context,
-    ).pushNamed(AppRouter.payment, arguments: PaymentArgs(rentalId)).then((_) {
+    ).pushNamed(AppRoutes.payment, arguments: PaymentArgs(rentalId)).then((_) {
       if (mounted) _loadDebt();
     });
   }
@@ -104,6 +115,13 @@ class _InstrumentCatalogScreenState extends State<InstrumentCatalogScreen> {
             onAction: debt.rentalId == null
                 ? null
                 : () => _openPayment(debt.rentalId!),
+          ),
+        if (_debtLoadFailed)
+          BlockedReasonBanner(
+            icon: Icons.error_outline,
+            reason: 'Stanje dugovanja trenutno nije moguće provjeriti.',
+            actionLabel: 'Pokušaj ponovo',
+            onAction: _loadDebt,
           ),
         RecommendationStrip(
           recommendations: _recommendations,

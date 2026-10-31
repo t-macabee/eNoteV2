@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
 
-import '../../shell/app_router.dart';
+import '../../shell/routes.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/async_state_view.dart';
 import '../../widgets/blocked_reason_banner.dart';
@@ -168,7 +168,7 @@ class _AssignmentDetailScreenState extends State<AssignmentDetailScreen>
             title: const Text('Predavanje'),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => Navigator.of(context).pushNamed(
-              AppRouter.lectureDetail,
+              AppRoutes.lectureDetail,
               arguments: LectureDetailArgs(assignment.lectureId),
             ),
           ),
@@ -284,7 +284,7 @@ class _AssignmentDetailScreenState extends State<AssignmentDetailScreen>
           const SizedBox(height: 8),
           TextButton(
             onPressed: () => Navigator.of(context).pushNamed(
-              AppRouter.ranking,
+              AppRoutes.ranking,
               arguments: RankingArgs(widget.courseId!),
             ),
             child: const Text('Rang lista kursa'),

@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:enote_core/enote_core.dart';
 
 import '../../session/session_controller.dart';
-import '../../shell/app_router.dart';
+import '../../shell/routes.dart';
 import '../../widgets/async_state_view.dart';
 import '../../widgets/blocked_reason_banner.dart';
 import '../../widgets/form_submit_state.dart';
@@ -174,14 +174,14 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
   void _openRanking(CourseDto course) {
     Navigator.of(
       context,
-    ).pushNamed(AppRouter.ranking, arguments: RankingArgs(course.id));
+    ).pushNamed(AppRoutes.ranking, arguments: RankingArgs(course.id));
   }
 
   Future<void> _openTuition(CourseDto course) async {
     final enrollmentId = course.enrollmentId;
     if (enrollmentId == null) return;
     await Navigator.of(context).pushNamed(
-      AppRouter.tuitionPayment,
+      AppRoutes.tuitionPayment,
       arguments: TuitionArgs(
         enrollmentId,
         courseName: course.name,
@@ -196,7 +196,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
     final enrollmentId = course.enrollmentId;
     if (enrollmentId == null) return;
     Navigator.of(context).pushNamed(
-      AppRouter.tuitionHistory,
+      AppRoutes.tuitionHistory,
       arguments: TuitionHistoryArgs(
         enrollmentId,
         courseName: course.name,
@@ -290,7 +290,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
                   lecture: lecture,
                   onTap: () async {
                     await Navigator.of(context).pushNamed(
-                      AppRouter.lectureDetail,
+                      AppRoutes.lectureDetail,
                       arguments: LectureDetailArgs(lecture.id),
                     );
                     if (!context.mounted) return;

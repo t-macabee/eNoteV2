@@ -1,4 +1,4 @@
-using eNote.Application.Features.Rentals.Payments.Services;
+using eNote.Application.Features.Payments;
 
 namespace eNote.Tests.TestUtils;
 
@@ -14,21 +14,21 @@ public sealed class FakePaymentGateway : IPaymentGateway
     public List<FakeGatewayRefundCall> RefundCalls { get; } = [];
     public List<FakeGatewayListRefundsCall> ListRefundCalls { get; } = [];
 
-    public string RefundStatus { get; set; } = "succeeded";
+    public RefundStatus RefundStatus { get; set; } = RefundStatus.Succeeded;
     public Exception? RefundException { get; set; }
     public Func<string, Exception?>? CancelException { get; set; }
 
     private int _nextIntentNumber = 1;
     private int _nextRefundNumber = 1;
 
-    public PaymentIntentData AddIntent(string paymentIntentId, long amountCents, string currency, string status = "requires_payment_method")
+    public PaymentIntentData AddIntent(string paymentIntentId, long amountCents, string currency, PaymentIntentStatus status = PaymentIntentStatus.RequiresAction)
     {
         var intent = new PaymentIntentData(paymentIntentId, $"{paymentIntentId}_secret", status, amountCents, currency);
         _intents[paymentIntentId] = intent;
         return intent;
     }
 
-    public void SetIntentStatus(string paymentIntentId, string status)
+    public void SetIntentStatus(string paymentIntentId, PaymentIntentStatus status)
     {
         if (!_intents.TryGetValue(paymentIntentId, out var intent))
         {
@@ -44,7 +44,7 @@ public sealed class FakePaymentGateway : IPaymentGateway
         }
     }
 
-    public void AddRefund(string paymentIntentId, string refundId, long amountCents, string status = "succeeded")
+    public void AddRefund(string paymentIntentId, string refundId, long amountCents, RefundStatus status = RefundStatus.Succeeded)
     {
         if (!_refundsByPaymentIntent.TryGetValue(paymentIntentId, out var refunds))
         {
@@ -66,7 +66,7 @@ public sealed class FakePaymentGateway : IPaymentGateway
         if (!_intentsByIdempotencyKey.TryGetValue(idempotencyKey, out var intent))
         {
             var id = $"pi_test_{_nextIntentNumber++}";
-            intent = new PaymentIntentData(id, $"{id}_secret", "requires_payment_method", amountCents, currency);
+            intent = new PaymentIntentData(id, $"{id}_secret", PaymentIntentStatus.RequiresAction, amountCents, currency);
             _intentsByIdempotencyKey[idempotencyKey] = intent;
             _intents[id] = intent;
         }
@@ -104,7 +104,7 @@ public sealed class FakePaymentGateway : IPaymentGateway
             throw exception;
         }
 
-        SetIntentStatus(paymentIntentId, "canceled");
+        SetIntentStatus(paymentIntentId, PaymentIntentStatus.Canceled);
         return Task.FromResult(_intents[paymentIntentId]);
     }
 

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:enote_mobile/shell/app_router.dart';
+import 'package:enote_mobile/shell/routes.dart';
 
 Widget _app() => MaterialApp(
       onGenerateRoute: AppRouter.onGenerateRoute,
@@ -18,19 +19,19 @@ Future<void> _pushNamed(WidgetTester tester, String name) async {
 
 void main() {
   const routesWithArguments = [
-    AppRouter.courseDetail,
-    AppRouter.lectureDetail,
-    AppRouter.lectureNotes,
-    AppRouter.lectureNoteDetail,
-    AppRouter.assignmentDetail,
-    AppRouter.ranking,
-    AppRouter.announcementDetail,
-    AppRouter.instrumentDetail,
-    AppRouter.rentalDetail,
-    AppRouter.payment,
-    AppRouter.tuitionPayment,
-    AppRouter.tuitionHistory,
-    AppRouter.eventDetail,
+    AppRoutes.courseDetail,
+    AppRoutes.lectureDetail,
+    AppRoutes.lectureNotes,
+    AppRoutes.lectureNoteDetail,
+    AppRoutes.assignmentDetail,
+    AppRoutes.ranking,
+    AppRoutes.announcementDetail,
+    AppRoutes.instrumentDetail,
+    AppRoutes.rentalDetail,
+    AppRoutes.payment,
+    AppRoutes.tuitionPayment,
+    AppRoutes.tuitionHistory,
+    AppRoutes.eventDetail,
   ];
 
   for (final name in routesWithArguments) {

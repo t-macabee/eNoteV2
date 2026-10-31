@@ -7,12 +7,24 @@ public sealed class UserProfileService(
     IAppDbContext context,
     IUserIdentityService identity,
     IUserProfileLookup lookup,
-    ICurrentUserContext currentUserService)
+    ICurrentUserContext currentUserService,
+    IPictureAccessService pictureAccess,
+    IUserAccountService accountService)
 {
     public Task<PagedResult<AdminUserListItemDto>> GetPagedAsync(AdminUserSearchObject search, CancellationToken cancellationToken = default) =>
         identity.SearchAsync(search, cancellationToken);
 
     public Task<UserProfileResponse> GetCurrentUserAsync(CancellationToken cancellationToken = default) => GetUserAsync(currentUserService.UserId, false, cancellationToken);
+
+    public async Task<(Stream? Data, string? ContentType)> GetUserPictureAsync(int userId, CancellationToken cancellationToken = default)
+    {
+        if (!await pictureAccess.CanViewPictureAsync(userId, cancellationToken))
+        {
+            return (null, null);
+        }
+
+        return await accountService.GetPictureAsync(userId, cancellationToken);
+    }
 
     public async Task<UserProfileResponse> GetUserAsync(int userId, bool includeInactive = false, CancellationToken cancellationToken = default)
     {

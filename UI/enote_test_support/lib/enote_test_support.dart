@@ -19,8 +19,8 @@ String fakeJwt({
     jsonEncode({
       'sub': subject,
       'unique_name': username,
-      'role': role,
-      if (isManager) 'is_manager': true,
+      'http://schemas.microsoft.com/ws/2008/06/identity/claims/role': role,
+      if (isManager) 'is_manager': 'true',
       'exp':
           DateTime.now().add(const Duration(days: 1)).millisecondsSinceEpoch ~/
           1000,

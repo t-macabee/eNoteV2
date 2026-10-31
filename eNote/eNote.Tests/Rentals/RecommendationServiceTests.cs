@@ -15,7 +15,7 @@ public sealed class RecommendationServiceTests
     public async Task GetRecommendedInstrumentsAsync_ReturnsEmpty_WhenNoCandidates()
     {
         await using var context = RentalTestData.CreateContext(Now);
-        var student = await SeedStudentAsync(context);
+        var student = await RentalTestData.SeedStudentAsync(context, Now);
         var service = CreateService(context, student);
 
         var result = await service.GetRecommendedInstrumentsAsync();
@@ -27,7 +27,7 @@ public sealed class RecommendationServiceTests
     public async Task GetRecommendedInstrumentsAsync_ExcludesInstrumentsWithActiveRentals()
     {
         await using var context = RentalTestData.CreateContext(Now);
-        var student = await SeedStudentAsync(context);
+        var student = await RentalTestData.SeedStudentAsync(context, Now);
         var instrument = await RentalTestData.SeedInstrumentAsync(context);
         var rental = new InstrumentRental(instrument.Id, student.Id, instrument.MusicStoreId, Now.AddDays(-10), null);
         RentalTestData.AdvanceTo(rental, InstrumentRentalStatus.Active, Now, approvedAt: Now.AddDays(-10), pickedUpAt: Now.AddDays(-5));
@@ -45,7 +45,7 @@ public sealed class RecommendationServiceTests
     {
 
         await using var context = RentalTestData.CreateContext(Now);
-        var student = await SeedStudentAsync(context);
+        var student = await RentalTestData.SeedStudentAsync(context, Now);
         var instrument = await RentalTestData.SeedInstrumentAsync(context);
         var rental = new InstrumentRental(instrument.Id, student.Id, instrument.MusicStoreId, Now.AddDays(-30), null);
         RentalTestData.AdvanceTo(rental, InstrumentRentalStatus.Completed, Now, approvedAt: Now.AddDays(-31), pickedUpAt: Now.AddDays(-31), finishedAt: Now.AddDays(-1));
@@ -63,7 +63,7 @@ public sealed class RecommendationServiceTests
     public async Task GetRecommendedInstrumentsAsync_HigherScoredInstrumentRanksFirst()
     {
         await using var context = RentalTestData.CreateContext(Now);
-        var student = await SeedStudentAsync(context);
+        var student = await RentalTestData.SeedStudentAsync(context, Now);
         var (typeA, typeB) = await SeedTwoTypesAsync(context);
         var store = await SeedStoreAsync(context);
 
@@ -89,7 +89,7 @@ public sealed class RecommendationServiceTests
     public async Task GetRecommendedInstrumentsAsync_ScoresManufacturerAndTypeMatches()
     {
         await using var context = RentalTestData.CreateContext(Now);
-        var student = await SeedStudentAsync(context);
+        var student = await RentalTestData.SeedStudentAsync(context, Now);
         var (typeA, _) = await SeedTwoTypesAsync(context);
         var store = await SeedStoreAsync(context);
 
@@ -132,7 +132,7 @@ public sealed class RecommendationServiceTests
     public async Task GetRecommendedInstrumentsAsync_ClampsCount(int count, int expected)
     {
         await using var context = RentalTestData.CreateContext(Now);
-        var student = await SeedStudentAsync(context);
+        var student = await RentalTestData.SeedStudentAsync(context, Now);
         var (typeA, _) = await SeedTwoTypesAsync(context);
         var store = await SeedStoreAsync(context);
 
@@ -156,7 +156,7 @@ public sealed class RecommendationServiceTests
     public async Task GetRecommendedInstrumentsAsync_ReturnsFiveByDefault()
     {
         await using var context = RentalTestData.CreateContext(Now);
-        var student = await SeedStudentAsync(context);
+        var student = await RentalTestData.SeedStudentAsync(context, Now);
         var (typeA, _) = await SeedTwoTypesAsync(context);
         var store = await SeedStoreAsync(context);
 
@@ -180,7 +180,7 @@ public sealed class RecommendationServiceTests
     public async Task GetRecommendedInstrumentsAsync_PoolGrowsWithRequestedCount()
     {
         await using var context = RentalTestData.CreateContext(Now);
-        var student = await SeedStudentAsync(context);
+        var student = await RentalTestData.SeedStudentAsync(context, Now);
         var (typeA, _) = await SeedTwoTypesAsync(context);
         var store = await SeedStoreAsync(context);
 
@@ -222,7 +222,7 @@ public sealed class RecommendationServiceTests
     public async Task GetRecommendedInstrumentsAsync_Popularity_CountsAllRentals()
     {
         await using var context = RentalTestData.CreateContext(Now);
-        var student = await SeedStudentAsync(context);
+        var student = await RentalTestData.SeedStudentAsync(context, Now);
         var (typeA, typeB) = await SeedTwoTypesAsync(context);
         var store = await SeedStoreAsync(context);
 
@@ -255,7 +255,7 @@ public sealed class RecommendationServiceTests
     public async Task GetRecommendedInstrumentsAsync_CollaborativeOrdering_RanksBySharedRentalFrequency()
     {
         await using var context = RentalTestData.CreateContext(Now);
-        var student = await SeedStudentAsync(context);
+        var student = await RentalTestData.SeedStudentAsync(context, Now);
         var (typeA, _) = await SeedTwoTypesAsync(context);
         var store = await SeedStoreAsync(context);
 
@@ -303,7 +303,7 @@ public sealed class RecommendationServiceTests
         const int fillerCount = 78;
 
         await using var context = RentalTestData.CreateContext(Now);
-        var student = await SeedStudentAsync(context);
+        var student = await RentalTestData.SeedStudentAsync(context, Now);
         var (typeA, typeB) = await SeedTwoTypesAsync(context);
         var store = await SeedStoreAsync(context);
 
@@ -365,7 +365,7 @@ public sealed class RecommendationServiceTests
     public async Task GetRecommendedInstrumentsAsync_ViewedInstrument_IsCandidateOutsidePreferredTypesCollaborativeAndPopular()
     {
         await using var context = RentalTestData.CreateContext(Now);
-        var student = await SeedStudentAsync(context);
+        var student = await RentalTestData.SeedStudentAsync(context, Now);
         var (typeA, typeB) = await SeedTwoTypesAsync(context);
         var store = await SeedStoreAsync(context);
 
@@ -416,7 +416,7 @@ public sealed class RecommendationServiceTests
     public async Task GetRecommendedInstrumentsAsync_ExcludesArchivedInstrument_EvenWhenPopular()
     {
         await using var context = RentalTestData.CreateContext(Now);
-        var student = await SeedStudentAsync(context);
+        var student = await RentalTestData.SeedStudentAsync(context, Now);
         var (typeA, typeB) = await SeedTwoTypesAsync(context);
         var store = await SeedStoreAsync(context);
 
@@ -451,15 +451,6 @@ public sealed class RecommendationServiceTests
         return rental;
     }
 
-    private static async Task<Student> SeedStudentAsync(ENoteContext context)
-    {
-        var student = new Student(appUserId: 100, Now.AddMonths(-1));
-        student.UpdateMembership(Now.AddDays(1));
-        context.Set<Student>().Add(student);
-        await context.SaveChangesAsync();
-        return student;
-    }
-
     private static async Task<(InstrumentType TypeA, InstrumentType TypeB)> SeedTwoTypesAsync(ENoteContext context)
     {
         var typeA = new InstrumentType { Type = "Guitar", MonthlyFee = 50m };
@@ -481,7 +472,7 @@ public sealed class RecommendationServiceTests
     public async Task RecordViewAsync_TreatsDuplicateViewViolation_AsSuccess()
     {
         await using var context = RentalTestData.CreateContext(Now);
-        var student = await SeedStudentAsync(context);
+        var student = await RentalTestData.SeedStudentAsync(context, Now);
         var instrument = await RentalTestData.SeedInstrumentAsync(context);
         var inner = new Exception($"duplicate key value violates unique constraint \"{DbConstraintNames.InstrumentViewUserIdInstrumentIdUniqueIndex}\"");
         var service = CreateService(new ThrowingSaveDbContext(context, new DbUpdateException("Unique constraint violated.", inner)), student);
@@ -493,7 +484,7 @@ public sealed class RecommendationServiceTests
     public async Task GetRecommendedInstrumentsAsync_InstrumentRentedByOtherStudent_HasIsAvailableFalse()
     {
         await using var context = RentalTestData.CreateContext(Now);
-        var viewingStudent = await SeedStudentAsync(context);
+        var viewingStudent = await RentalTestData.SeedStudentAsync(context, Now);
         var otherStudent = new Student(appUserId: 101, Now.AddMonths(-1));
         otherStudent.UpdateMembership(Now.AddDays(1));
         context.Set<Student>().Add(otherStudent);
@@ -517,7 +508,7 @@ public sealed class RecommendationServiceTests
     public async Task GetRecommendedInstrumentsAsync_TieBreaksByAvailability_WhenScoresAreEqual()
     {
         await using var context = RentalTestData.CreateContext(Now);
-        var viewingStudent = await SeedStudentAsync(context);
+        var viewingStudent = await RentalTestData.SeedStudentAsync(context, Now);
         var otherStudent = new Student(appUserId: 101, Now.AddMonths(-1));
         otherStudent.UpdateMembership(Now.AddDays(1));
         context.Set<Student>().Add(otherStudent);

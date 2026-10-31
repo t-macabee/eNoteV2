@@ -1,8 +1,8 @@
+using eNote.API.Filters;
 using eNote.Application.Common.Localization;
 using eNote.Application.Validation;
 using eNote.Application.Validation.Identity;
 using FluentValidation;
-using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Mvc;
 using System.Globalization;
 
@@ -14,10 +14,10 @@ public static class ValidationExtensions
     {
         ValidatorOptions.Global.LanguageManager.Culture = new CultureInfo("bs");
         ValidatorOptions.Global.DisplayNameResolver = ValidationDisplayNames.Resolve;
-        services.AddFluentValidationAutoValidation();
         services.AddValidatorsFromAssemblyContaining<LoginRequestValidator>();
+        services.Configure<MvcOptions>(options => options.Filters.Add<FluentValidationFilter>(FluentValidationFilter.FilterOrder));
 
-        services.Configure<ApiBehaviorOptions>(options =>
+        services.PostConfigure<ApiBehaviorOptions>(options =>
         {
             options.SuppressMapClientErrors = true;
             options.InvalidModelStateResponseFactory = context =>

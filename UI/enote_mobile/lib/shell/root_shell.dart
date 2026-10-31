@@ -11,20 +11,33 @@ import '../features/profile/profile_screen.dart';
 import '../features/rentals/rental_list_screen.dart';
 import '../realtime/notification_hub_client.dart';
 import '../session/session_controller.dart';
-import 'app_router.dart';
+import 'routes.dart';
+
+enum RootTab {
+  instruments('Instrumenti'),
+  learning('Učenje'),
+  rentals('Iznajmljivanja'),
+  profile('Profil');
+
+  const RootTab(this.title);
+
+  final String title;
+}
 
 class RootShell extends StatefulWidget {
   static final GlobalKey<RootShellState> shellKey =
       GlobalKey<RootShellState>();
 
-  const RootShell({super.key});
+  final RouteFactory onGenerateRoute;
+
+  const RootShell({super.key, required this.onGenerateRoute});
 
   static void routeNotification(NotificationDto notification) {
     shellKey.currentState?.routeNotification(notification);
   }
 
-  static void switchTab(int index) {
-    shellKey.currentState?.selectTab(index);
+  static void switchTab(RootTab tab) {
+    shellKey.currentState?.selectTab(tab);
   }
 
   @override
@@ -32,14 +45,7 @@ class RootShell extends StatefulWidget {
 }
 
 class RootShellState extends State<RootShell> with WidgetsBindingObserver {
-  static const _titles = [
-    'Instrumenti',
-    'Učenje',
-    'Iznajmljivanja',
-    'Profil',
-  ];
-
-  int _index = 0;
+  RootTab _tab = RootTab.instruments;
   bool _booted = false;
   late final List<GlobalKey<NavigatorState>> _navKeys;
   NotificationController? _notifications;
@@ -48,7 +54,10 @@ class RootShellState extends State<RootShell> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
-    _navKeys = List.generate(4, (_) => GlobalKey<NavigatorState>());
+    _navKeys = List.generate(
+      RootTab.values.length,
+      (_) => GlobalKey<NavigatorState>(),
+    );
     WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!_booted) {
@@ -119,59 +128,59 @@ class RootShellState extends State<RootShell> with WidgetsBindingObserver {
           onPressed: () => Navigator.of(
             context,
             rootNavigator: true,
-          ).pushNamed(AppRouter.notifications),
+          ).pushNamed(AppRoutes.notifications),
         ),
       ),
     );
   }
 
   void routeNotification(NotificationDto notification) {
-    final int tab;
+    final RootTab tab;
     final String route;
     final Object? args;
     if (notification.rentalId != null) {
-      tab = 2;
-      route = AppRouter.rentalDetail;
+      tab = RootTab.rentals;
+      route = AppRoutes.rentalDetail;
       args = RentalDetailArgs(notification.rentalId!);
     } else if (notification.lectureId != null) {
-      tab = 1;
-      route = AppRouter.lectureDetail;
+      tab = RootTab.learning;
+      route = AppRoutes.lectureDetail;
       args = LectureDetailArgs(notification.lectureId!);
     } else if (notification.submissionId != null) {
-      tab = 1;
-      route = AppRouter.assignmentHistory;
+      tab = RootTab.learning;
+      route = AppRoutes.assignmentHistory;
       args = null;
     } else if (notification.announcementId != null) {
-      tab = 1;
-      route = AppRouter.announcementDetail;
+      tab = RootTab.learning;
+      route = AppRoutes.announcementDetail;
       args = AnnouncementDetailArgs(notification.announcementId!);
     } else if (notification.courseId != null) {
-      tab = 1;
-      route = AppRouter.courseDetail;
+      tab = RootTab.learning;
+      route = AppRoutes.courseDetail;
       args = CourseDetailArgs(notification.courseId!);
     } else {
       return;
     }
-    setState(() => _index = tab);
+    setState(() => _tab = tab);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      _navKeys[tab].currentState?.pushNamed(route, arguments: args);
+      _navKeys[tab.index].currentState?.pushNamed(route, arguments: args);
     });
   }
 
-  void selectTab(int index) {
-    if (!mounted || index == _index) return;
-    setState(() => _index = index);
+  void selectTab(RootTab tab) {
+    if (!mounted || tab == _tab) return;
+    setState(() => _tab = tab);
   }
 
   Future<void> _handlePop() async {
-    final navigator = _navKeys[_index].currentState;
+    final navigator = _navKeys[_tab.index].currentState;
     if (navigator != null && navigator.canPop()) {
       navigator.pop();
       return;
     }
-    if (_index != 0) {
-      setState(() => _index = 0);
+    if (_tab != RootTab.instruments) {
+      setState(() => _tab = RootTab.instruments);
       return;
     }
     await SystemNavigator.pop();
@@ -188,25 +197,26 @@ class RootShellState extends State<RootShell> with WidgetsBindingObserver {
       },
       child: Scaffold(
         body: IndexedStack(
-          index: _index,
+          index: _tab.index,
           children: [
-            for (var i = 0; i < 4; i++)
+            for (final tab in RootTab.values)
               Navigator(
-                key: _navKeys[i],
+                key: _navKeys[tab.index],
                 onGenerateRoute: (settings) {
                   if (settings.name == null || settings.name == '/') {
                     return MaterialPageRoute(
-                      builder: (_) => _TabRoot(index: i),
+                      builder: (_) => _TabRoot(tab: tab),
                     );
                   }
-                  return AppRouter.onGenerateRoute(settings);
+                  return widget.onGenerateRoute(settings);
                 },
               ),
           ],
         ),
         bottomNavigationBar: NavigationBar(
-          selectedIndex: _index,
-          onDestinationSelected: (value) => setState(() => _index = value),
+          selectedIndex: _tab.index,
+          onDestinationSelected: (value) =>
+              setState(() => _tab = RootTab.values[value]),
           destinations: const [
             NavigationDestination(
               icon: Icon(Icons.piano_outlined),
@@ -236,31 +246,30 @@ class RootShellState extends State<RootShell> with WidgetsBindingObserver {
 }
 
 class _TabRoot extends StatelessWidget {
-  final int index;
+  final RootTab tab;
 
-  const _TabRoot({required this.index});
+  const _TabRoot({required this.tab});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(RootShellState._titles[index]),
+        title: Text(tab.title),
         actions: [
           NotificationBadge(
             controller: context.read<NotificationController>(),
             onTap: () => Navigator.of(
               context,
               rootNavigator: true,
-            ).pushNamed(AppRouter.notifications),
+            ).pushNamed(AppRoutes.notifications),
           ),
         ],
       ),
-      body: switch (index) {
-        0 => const InstrumentCatalogScreen(),
-        1 => const LearningTabsScreen(),
-        2 => const RentalListScreen(),
-        3 => const ProfileScreen(),
-        _ => Center(child: Text(RootShellState._titles[index])),
+      body: switch (tab) {
+        RootTab.instruments => const InstrumentCatalogScreen(),
+        RootTab.learning => const LearningTabsScreen(),
+        RootTab.rentals => const RentalListScreen(),
+        RootTab.profile => const ProfileScreen(),
       },
     );
   }

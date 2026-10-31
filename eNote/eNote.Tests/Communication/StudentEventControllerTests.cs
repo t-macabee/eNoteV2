@@ -1,4 +1,4 @@
-using eNote.API.Controllers.Events;
+using eNote.API.Controllers.Communication;
 using eNote.Application.Common.Paging;
 using eNote.Application.Features.Communication.Events;
 using eNote.Tests.TestUtils;

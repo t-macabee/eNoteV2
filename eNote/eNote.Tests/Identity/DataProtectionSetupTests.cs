@@ -21,7 +21,7 @@ public sealed class DataProtectionSetupTests
     public void AddInfrastructureIdentity_ConfiguresSharedDataProtection()
     {
         var services = new ServiceCollection();
-        var configuration = CreateConfiguration();
+        var configuration = TestConfiguration.Create();
         services.AddSingleton<IConfiguration>(configuration);
 
         services.AddPersistence(configuration).AddInfrastructureIdentity();
@@ -75,7 +75,7 @@ public sealed class DataProtectionSetupTests
     {
         var services = new ServiceCollection();
         services.AddLogging();
-        services.AddSingleton<IConfiguration>(CreateConfiguration());
+        services.AddSingleton<IConfiguration>(TestConfiguration.Create());
         services.AddDbContext<ENoteContext>(options => options.UseInMemoryDatabase(databaseName));
         services.AddSingleton<IClock, SystemClock>();
         services.AddScoped<IAppDbContext>(provider => provider.GetRequiredService<ENoteContext>());
@@ -101,12 +101,4 @@ public sealed class DataProtectionSetupTests
 
         public void StoreElement(XElement element, string friendlyName) => _elements.Add(element);
     }
-
-    private static IConfiguration CreateConfiguration() =>
-        new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string?>
-            {
-                ["ConnectionStrings:DefaultConnection"] = "Server=localhost;Database=x;",
-            })
-            .Build();
 }

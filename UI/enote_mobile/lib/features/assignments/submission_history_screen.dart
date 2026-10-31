@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
 
-import '../../shell/app_router.dart';
+import '../../shell/routes.dart';
 import '../../widgets/paged_list_view.dart';
 import 'assignment_provider.dart';
 import 'file_picker_field.dart';
@@ -77,7 +77,7 @@ class _SubmissionRow extends StatelessWidget {
           ? const Chip(label: Text('Neocijenjeno'))
           : Chip(label: Text('Ocjena: ${submission.grade}')),
       onTap: () => Navigator.of(context).pushNamed(
-        AppRouter.assignmentDetail,
+        AppRoutes.assignmentDetail,
         arguments: AssignmentDetailArgs(submission.assignmentId),
       ),
     );

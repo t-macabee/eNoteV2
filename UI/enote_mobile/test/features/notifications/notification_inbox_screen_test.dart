@@ -11,6 +11,7 @@ import 'package:enote_mobile/features/notifications/notification_inbox_screen.da
 import 'package:enote_mobile/realtime/notification_hub_client.dart';
 import 'package:enote_mobile/session/session_controller.dart';
 import 'package:enote_mobile/shell/app_router.dart';
+import 'package:enote_mobile/shell/routes.dart';
 import 'package:enote_mobile/shell/root_shell.dart';
 import 'package:enote_mobile/theme/app_theme.dart';
 
@@ -154,7 +155,10 @@ class _Harness {
         navigatorKey: navigatorKey,
         theme: AppTheme.dark,
         onGenerateRoute: AppRouter.onGenerateRoute,
-        home: RootShell(key: RootShell.shellKey),
+        home: RootShell(
+          key: RootShell.shellKey,
+          onGenerateRoute: AppRouter.onGenerateRoute,
+        ),
       ),
     );
   }
@@ -198,7 +202,7 @@ void main() {
     await tester.pumpWidget(harness.shellApp());
     await _settle(tester);
 
-    harness.navigatorKey.currentState!.pushNamed(AppRouter.notifications);
+    harness.navigatorKey.currentState!.pushNamed(AppRoutes.notifications);
     await _settle(tester);
     expect(find.text('Obavještenja'), findsOneWidget);
 
@@ -223,7 +227,7 @@ void main() {
     await tester.pumpWidget(harness.shellApp());
     await _settle(tester);
 
-    harness.navigatorKey.currentState!.pushNamed(AppRouter.notifications);
+    harness.navigatorKey.currentState!.pushNamed(AppRoutes.notifications);
     await _settle(tester);
 
     await tester.tap(find.text('Read lecture'));

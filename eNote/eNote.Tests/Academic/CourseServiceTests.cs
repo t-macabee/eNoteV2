@@ -5,7 +5,7 @@ using eNote.Application.Features.Academic.Courses;
 using eNote.Application.Features.Academic.Courses.Services;
 using eNote.Application.Features.Identity.Users;
 using eNote.Application.Features.Identity.Users.Services;
-using eNote.Application.Features.Rentals.Payments.Services;
+using eNote.Application.Features.Payments;
 using eNote.Infrastructure.Identity;
 using eNote.Tests.TestUtils;
 using Microsoft.AspNetCore.Identity;
@@ -1074,7 +1074,7 @@ public sealed class CourseServiceTests
         harness.Context.Set<CoursePayment>().Add(new CoursePayment(pendingEnrollment.Id, "pi_failed_processing", 10000, "bam", PaymentStatus.Failed));
         await harness.Context.SaveChangesAsync();
         var gateway = new FakePaymentGateway();
-        gateway.AddIntent("pi_failed_processing", 10000, "bam", "processing");
+        gateway.AddIntent("pi_failed_processing", 10000, "bam", PaymentIntentStatus.Processing);
         var service = CreateService(harness.Context, harness.Instructor, gateway: gateway);
 
         var ex = await Assert.ThrowsAsync<BusinessException>(() => service.DeleteAsync(harness.Course.Id));
@@ -1128,7 +1128,7 @@ public sealed class CourseServiceTests
         harness.Context.Set<CoursePayment>().Add(new CoursePayment(pendingEnrollment.Id, "pi_processing", 10000, "bam", PaymentStatus.RequiresAction));
         await harness.Context.SaveChangesAsync();
         var gateway = new FakePaymentGateway();
-        gateway.AddIntent("pi_processing", 10000, "bam", "processing");
+        gateway.AddIntent("pi_processing", 10000, "bam", PaymentIntentStatus.Processing);
         var service = CreateService(harness.Context, harness.Instructor, gateway: gateway);
 
         var ex = await Assert.ThrowsAsync<BusinessException>(() => service.DeleteAsync(harness.Course.Id));
@@ -1164,7 +1164,7 @@ public sealed class CourseServiceTests
         await harness.Context.SaveChangesAsync();
         var gateway = new FakePaymentGateway();
         gateway.AddIntent("pi_open", 10000, "bam");
-        gateway.AddIntent("pi_processing", 10000, "bam", "processing");
+        gateway.AddIntent("pi_processing", 10000, "bam", PaymentIntentStatus.Processing);
         var service = CreateService(harness.Context, harness.Instructor, gateway: gateway);
 
         var ex = await Assert.ThrowsAsync<BusinessException>(() => service.DeleteAsync(harness.Course.Id));

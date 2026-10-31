@@ -1,4 +1,5 @@
 using eNote.Application.Constants;
+using eNote.Application.Features.Payments;
 using eNote.Application.Features.Rentals.InstrumentRentals;
 using eNote.Application.Features.Rentals.InstrumentRentals.Services;
 using MapsterMapper;
@@ -14,7 +15,7 @@ public sealed class RentalPaymentService(
     IStoreContext stores,
     IPaymentGateway paymentGateway,
     IRentalNotificationDispatcher notificationDispatcher,
-    StripeOptions options,
+    PaymentOptions options,
     ILogger<RentalPaymentService> logger)
 {
     public async Task<CreatePaymentIntentResponse> CreatePaymentIntentAsync(int rentalId, CancellationToken cancellationToken = default)
@@ -125,13 +126,13 @@ public sealed class RentalPaymentService(
                 $"refund:{payment.Id}:{payment.RefundedCents ?? 0}:{centsToRefund}",
                 cancellationToken));
 
-        if (refund.Status == "pending")
+        if (refund.Status == RefundStatus.Pending)
         {
             logger.LogInformation("Refund {RefundId} for payment {PaymentId} is pending; leaving payment unchanged", refund.Id, payment.Id);
             return mapper.Map<RentalPaymentDto>(payment);
         }
 
-        if (refund.Status != "succeeded")
+        if (refund.Status != RefundStatus.Succeeded)
         {
             throw new BusinessException(Messages.RefundFailed);
         }

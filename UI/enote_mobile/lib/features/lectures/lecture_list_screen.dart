@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
 
-import '../../shell/app_router.dart';
+import '../../shell/routes.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/paged_list_view.dart';
 import '../../widgets/status_chip.dart';
@@ -112,7 +112,7 @@ class _LectureRow extends StatelessWidget {
       ),
       trailing: StatusChip.lectureStatus(lecture.lectureStatus),
       onTap: () => Navigator.of(context).pushNamed(
-        AppRouter.lectureDetail,
+        AppRoutes.lectureDetail,
         arguments: LectureDetailArgs(lecture.id),
       ),
     );

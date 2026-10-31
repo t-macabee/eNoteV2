@@ -3,7 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:enote_mobile/features/payments/stripe_redirect.dart';
 import 'package:enote_mobile/session/deep_link_handler.dart';
-import 'package:enote_mobile/shell/app_router.dart';
+import 'package:enote_mobile/shell/routes.dart';
 
 void main() {
   tearDown(() {

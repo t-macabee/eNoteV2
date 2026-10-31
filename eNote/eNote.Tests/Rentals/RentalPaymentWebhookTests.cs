@@ -2,7 +2,8 @@ using System.Text.Json;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Constants;
 using eNote.Application.Features.Rentals.InstrumentRentals.Services;
-using eNote.Application.Features.Rentals.Payments.Services;
+using eNote.Application.Features.Payments;
+using eNote.Application.Features.Payments.Webhooks;
 using eNote.Contracts.Rentals;
 using eNote.Domain.Entities.Communication;
 using eNote.Infrastructure.Messaging;
@@ -132,7 +133,7 @@ public sealed class RentalPaymentWebhookTests
         var (context, _, _) = await SeedSucceededPaymentAsync();
         var gateway = new FakePaymentGateway();
         gateway.AddRefund("pi_test_1", "re_test_succeeded", 2000);
-        gateway.AddRefund("pi_test_1", "re_test_failed", 3000, "failed");
+        gateway.AddRefund("pi_test_1", "re_test_failed", 3000, RefundStatus.Failed);
         var service = CreateWebhookService(context, gateway: gateway);
         var evt = CreateChargeRefundedEvent("evt_test_refunded_mixed_statuses", "pi_test_1", "ch_test_1", 2000);
 
@@ -428,6 +429,23 @@ public sealed class RentalPaymentWebhookTests
     }
 
     [Fact]
+    public async Task HandleWebhook_ChargeRefundUpdated_UnknownStatus_OnCountedRefund_DoesNotReverseIt()
+    {
+        var (context, _, _) = await SeedSucceededPaymentAsync();
+        var gateway = new FakePaymentGateway();
+        gateway.AddRefund("pi_test_1", "re_test_1", 2000);
+        var service = CreateWebhookService(context, gateway: gateway);
+
+        await service.HandleAsync(CreateChargeRefundedEvent("evt_test_refunded_unknown_status", "pi_test_1", "ch_test_1", 2000), "{}");
+        await service.HandleAsync(CreateRefundUpdatedEvent("evt_test_refund_updated_unknown_status", "pi_test_1", "re_test_1", 2000, "unknown_status"), "{}");
+
+        var payment = await context.Set<RentalPayment>().SingleAsync();
+        Assert.Equal(PaymentStatus.PartiallyRefunded, payment.Status);
+        Assert.Equal(2000, payment.RefundedCents);
+        Assert.Equal("re_test_1", payment.StripeRefundId);
+    }
+
+    [Fact]
     public async Task HandleWebhook_ChargeRefundUpdated_Failed_OnUncountedRefund_LeavesCountedRefunds()
     {
         var (context, _, _) = await SeedSucceededPaymentAsync();
@@ -636,14 +654,19 @@ public sealed class RentalPaymentWebhookTests
         return (context, student, instrument);
     }
 
-    private static StripeWebhookService CreateWebhookService(IAppDbContext context, IRentalNotificationDispatcher? notifications = null, FakePaymentGateway? gateway = null) =>
-        new(context,
-            new FixedClock(Now),
-            new StripeOptions { Currency = "eur" },
+    private static StripeWebhookService CreateWebhookService(IAppDbContext context, IRentalNotificationDispatcher? notifications = null, FakePaymentGateway? gateway = null)
+    {
+        var clock = new FixedClock(Now);
+        var handler = new PaymentWebhookHandler(
+            context,
+            clock,
             gateway ?? new FakePaymentGateway(),
             notifications ?? new RecordingNotificationDispatcher(),
-            new EnrollmentNotificationDispatcher(context, new FixedClock(Now)),
-            NullLogger<StripeWebhookService>.Instance);
+            new EnrollmentNotificationDispatcher(context, clock),
+            NullLogger<PaymentWebhookHandler>.Instance);
+
+        return new(new StripeOptions(), handler, NullLogger<StripeWebhookService>.Instance);
+    }
 
     private static async Task<List<RentalStatusChanged>> ReadStatusMessagesAsync(IAppDbContext context) =>
         (await context.Set<NotificationOutbox>().ToListAsync())

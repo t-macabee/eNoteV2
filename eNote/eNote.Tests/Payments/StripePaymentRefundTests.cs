@@ -1,5 +1,3 @@
-using eNote.Domain.Entities.Shared;
-
 namespace eNote.Tests.Payments;
 
 public sealed class StripePaymentRefundTests

@@ -6,7 +6,7 @@ import 'package:enote_core/enote_core.dart';
 import 'package:enote_mobile/features/rentals/payments/rental_payment_provider.dart';
 import 'package:enote_mobile/features/rentals/rental_detail_screen.dart';
 import 'package:enote_mobile/features/rentals/rental_provider.dart';
-import 'package:enote_mobile/shell/app_router.dart';
+import 'package:enote_mobile/shell/routes.dart';
 
 import '../../helpers.dart';
 
@@ -141,7 +141,7 @@ void main() {
     expect(observer.pushed, hasLength(1));
     expect(
       observer.pushed.where(
-        (route) => route.settings.name == AppRouter.instrumentDetail,
+        (route) => route.settings.name == AppRoutes.instrumentDetail,
       ),
       isEmpty,
     );
@@ -157,7 +157,7 @@ void main() {
 
     expect(
       observer.pushed.where(
-        (route) => route.settings.name == AppRouter.instrumentDetail,
+        (route) => route.settings.name == AppRoutes.instrumentDetail,
       ),
       hasLength(1),
     );

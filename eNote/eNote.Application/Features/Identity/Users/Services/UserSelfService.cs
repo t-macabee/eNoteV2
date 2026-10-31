@@ -1,6 +1,6 @@
 using eNote.Application.Features.Rentals.InstrumentRentals;
 using eNote.Application.Features.Rentals.InstrumentRentals.Services;
-using eNote.Application.Features.Rentals.Payments.Services;
+using eNote.Application.Features.Payments;
 using Microsoft.Extensions.Logging;
 
 namespace eNote.Application.Features.Identity.Users.Services;

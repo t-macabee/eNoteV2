@@ -1,0 +1,97 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+import 'package:enote_core/enote_core.dart';
+import 'package:enote_desktop/features/admin/address/address_list_screen.dart';
+import 'package:enote_desktop/features/admin/city/city_list_screen.dart';
+import 'package:enote_desktop/features/admin/instrument_type/instrument_type_list_screen.dart';
+import 'package:enote_desktop/features/admin/reference_data/reference_data_dialog.dart';
+import 'package:enote_desktop/main.dart';
+
+import '../../../helpers.dart';
+
+ScriptedClient _mockClient() => ScriptedClient(
+  (_) => jsonResponse(const {
+    'items': [],
+    'page': 1,
+    'pageSize': 10,
+    'totalCount': 0,
+  }, 200),
+);
+
+void main() {
+  testWidgets(
+      'Administrator sidebar includes Referentni podaci and routes correctly to tabbed dialog',
+      (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(1400, 900);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final mockClient = _mockClient();
+    final authState = AuthState(
+      baseUrl: 'http://localhost:5059/api/v1/',
+      httpClient: mockClient,
+      tokenReader: () => fakeJwt(role: 'Administrator'),
+    );
+    final apiClient = ApiClient(
+      baseUrl: 'http://localhost:5059/api/v1/',
+      authState: authState,
+      httpClient: mockClient,
+    );
+
+    await tester.pumpWidget(MyApp(authState: authState, apiClient: apiClient));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Referentni podaci'), findsOneWidget);
+    expect(find.text('Gradovi'), findsNothing);
+    expect(find.text('Adrese'), findsNothing);
+    expect(find.text('Tipovi instrumenata'), findsNothing);
+
+    await tester.tap(find.text('Referentni podaci'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(ReferenceDataDialog), findsOneWidget);
+    expect(find.text('Gradovi'), findsOneWidget);
+    expect(find.text('Adrese'), findsOneWidget);
+    expect(find.text('Tipovi instrumenata'), findsOneWidget);
+    expect(find.byType(CityListScreen), findsOneWidget);
+
+    await tester.tap(find.text('Adrese'));
+    await tester.pumpAndSettle();
+    expect(find.byType(AddressListScreen), findsOneWidget);
+
+    await tester.tap(find.text('Tipovi instrumenata'));
+    await tester.pumpAndSettle();
+    expect(find.byType(InstrumentTypeListScreen), findsOneWidget);
+  });
+
+  testWidgets(
+      'Non-administrator sidebar does not include reference data entries',
+      (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(1400, 900);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final mockClient = _mockClient();
+    final authState = AuthState(
+      baseUrl: 'http://localhost:5059/api/v1/',
+      httpClient: mockClient,
+      tokenReader: () => fakeJwt(role: 'Instructor'),
+    );
+    final apiClient = ApiClient(
+      baseUrl: 'http://localhost:5059/api/v1/',
+      authState: authState,
+      httpClient: mockClient,
+    );
+
+    await tester.pumpWidget(MyApp(authState: authState, apiClient: apiClient));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Referentni podaci'), findsNothing);
+    expect(find.text('Gradovi'), findsNothing);
+    expect(find.text('Adrese'), findsNothing);
+    expect(find.text('Tipovi instrumenata'), findsNothing);
+  });
+}

@@ -8,14 +8,16 @@ using eNote.Application.Features.Communication.Announcements.Services;
 using eNote.Application.Features.Identity.Auth.Services;
 using eNote.Application.Features.Identity.Students.Services;
 using eNote.Application.Features.Identity.Users.Services;
+using eNote.Application.Features.Payments;
+using eNote.Application.Features.Payments.Webhooks;
 using eNote.Application.Features.Rentals.InstrumentRentals;
 using eNote.Application.Features.Rentals.InstrumentRentals.Services;
-using eNote.Application.Features.Rentals.Payments.Services;
 using eNote.Application.Features.Reports.Services;
 using eNote.Application.Validation.Identity;
 using eNote.Infrastructure.Configuration;
 using eNote.Infrastructure.Data;
 using eNote.Infrastructure.Data.Seed;
+using eNote.Infrastructure.Email;
 using eNote.Infrastructure.Health;
 using eNote.Infrastructure.Identity;
 using eNote.Infrastructure.Messaging;
@@ -130,13 +132,18 @@ public static class DependencyInjection
             .Validate(o => !PlaceholderSecret.IsPlaceholder(o.Key), "Jwt__Key is a placeholder value and must be changed before deployment.")
             .ValidateOnStart();
 
+        services.AddOptions<PaymentOptions>()
+            .Bind(configuration.GetSection(PaymentOptions.SectionName))
+            .ValidateDataAnnotations()
+            .PostConfigure(o => o.Currency = o.Currency.Trim().ToLowerInvariant())
+            .ValidateOnStart();
+
         services.AddOptions<StripeOptions>()
             .Bind(configuration.GetSection(StripeOptions.SectionName))
             .ValidateDataAnnotations()
             .Validate(o => string.IsNullOrWhiteSpace(o.SecretKey) || o.SecretKey.StartsWith("sk_", StringComparison.Ordinal), "Stripe__SecretKey must start with sk_.")
             .Validate(o => !PlaceholderSecret.IsPlaceholder(o.SecretKey), "Stripe__SecretKey is a placeholder value and must be changed before deployment.")
             .Validate(o => !PlaceholderSecret.IsPlaceholder(o.WebhookSecret), "Stripe__WebhookSecret is a placeholder value and must be changed before deployment.")
-            .PostConfigure(o => o.Currency = o.Currency.Trim().ToLowerInvariant())
             .ValidateOnStart();
 
         services.AddOptions<StorageOptions>()
@@ -163,9 +170,10 @@ public static class DependencyInjection
         services.AddScoped<IEnrollmentNotificationDispatcher, EnrollmentNotificationDispatcher>();
         services.AddScoped<IMembershipWarningDispatcher, MembershipWarningDispatcher>();
         services.AddScoped<ISubmissionNotificationDispatcher, SubmissionNotificationDispatcher>();
+        services.AddSingleton(provider => provider.GetRequiredService<IOptions<PaymentOptions>>().Value);
         services.AddSingleton(provider => provider.GetRequiredService<IOptions<StripeOptions>>().Value);
         services.AddScoped<IPaymentGateway, StripePaymentGateway>();
-        services.AddScoped<StripeWebhookService>();
+        services.AddScoped<IPaymentWebhookReceiver, StripeWebhookService>();
         services.AddHostedService<NotificationOutboxPublisher>();
         services.AddHealthChecks().AddCheck<OutboxHealthCheck>("outbox");
 

@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
 
-import '../../shell/app_router.dart';
+import '../../shell/routes.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/async_state_view.dart';
 import '../../widgets/labeled_value.dart';
@@ -221,7 +221,7 @@ class _RentalDetailScreenState extends State<RentalDetailScreen> {
 
   void _openInstrument(InstrumentRentalDto rental) {
     Navigator.of(context).pushNamed(
-      AppRouter.instrumentDetail,
+      AppRoutes.instrumentDetail,
       arguments: InstrumentDetailArgs(rental.instrumentId),
     );
   }
@@ -327,7 +327,7 @@ class _RentalDetailScreenState extends State<RentalDetailScreen> {
           child: FilledButton(
             onPressed: () => Navigator.of(context)
                 .pushNamed(
-                  AppRouter.payment,
+                  AppRoutes.payment,
                   arguments: PaymentArgs(rental.id),
                 )
                 .then((_) {

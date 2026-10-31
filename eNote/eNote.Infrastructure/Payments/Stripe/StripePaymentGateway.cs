@@ -1,4 +1,4 @@
-using eNote.Application.Features.Rentals.Payments.Services;
+using eNote.Application.Features.Payments;
 using Microsoft.Extensions.Logging;
 using Stripe;
 
@@ -45,7 +45,7 @@ public sealed class StripePaymentGateway : IPaymentGateway
 
         _logger.LogInformation("Stripe PaymentIntent {PaymentIntentId} created ({AmountCents} {Currency})", intent.Id, intent.Amount, intent.Currency);
 
-        return new PaymentIntentData(intent.Id, intent.ClientSecret, intent.Status, intent.Amount, intent.Currency);
+        return new PaymentIntentData(intent.Id, intent.ClientSecret, MapPaymentIntentStatus(intent.Status), intent.Amount, intent.Currency);
     }
 
     public async Task<PaymentIntentData> RetrievePaymentIntentAsync(
@@ -54,7 +54,7 @@ public sealed class StripePaymentGateway : IPaymentGateway
     {
         var intent = await new PaymentIntentService(_client.Value).GetAsync(paymentIntentId, requestOptions: null, cancellationToken: cancellationToken);
 
-        return new PaymentIntentData(intent.Id, intent.ClientSecret, intent.Status, intent.Amount, intent.Currency);
+        return new PaymentIntentData(intent.Id, intent.ClientSecret, MapPaymentIntentStatus(intent.Status), intent.Amount, intent.Currency);
     }
 
     public async Task<PaymentIntentData> CancelPaymentIntentAsync(
@@ -65,7 +65,7 @@ public sealed class StripePaymentGateway : IPaymentGateway
 
         _logger.LogInformation("Stripe PaymentIntent {PaymentIntentId} canceled", intent.Id);
 
-        return new PaymentIntentData(intent.Id, intent.ClientSecret, intent.Status, intent.Amount, intent.Currency);
+        return new PaymentIntentData(intent.Id, intent.ClientSecret, MapPaymentIntentStatus(intent.Status), intent.Amount, intent.Currency);
     }
 
     public async Task<RefundData> CreateRefundAsync(
@@ -87,7 +87,7 @@ public sealed class StripePaymentGateway : IPaymentGateway
 
         _logger.LogInformation("Stripe refund {RefundId} created ({AmountCents}) for PaymentIntent {PaymentIntentId}", refund.Id, refund.Amount, paymentIntentId);
 
-        return new RefundData(refund.Id, refund.Amount, refund.Status);
+        return new RefundData(refund.Id, refund.Amount, MapRefundStatus(refund.Status));
     }
 
     public async Task<IReadOnlyList<RefundData>> ListRefundsAsync(
@@ -99,11 +99,28 @@ public sealed class StripePaymentGateway : IPaymentGateway
 
         await foreach (var refund in new RefundService(_client.Value).ListAutoPagingAsync(options, requestOptions: null, cancellationToken))
         {
-            refunds.Add(new RefundData(refund.Id, refund.Amount, refund.Status));
+            refunds.Add(new RefundData(refund.Id, refund.Amount, MapRefundStatus(refund.Status)));
         }
 
         _logger.LogInformation("Stripe listed {RefundCount} refunds for PaymentIntent {PaymentIntentId}", refunds.Count, paymentIntentId);
 
         return refunds;
     }
+
+    private static PaymentIntentStatus MapPaymentIntentStatus(string? status) => status switch
+    {
+        "succeeded" => PaymentIntentStatus.Succeeded,
+        "processing" => PaymentIntentStatus.Processing,
+        "canceled" => PaymentIntentStatus.Canceled,
+        "requires_payment_method" or "requires_action" or "requires_confirmation" or "requires_capture" => PaymentIntentStatus.RequiresAction,
+        _ => PaymentIntentStatus.Failed
+    };
+
+    internal static RefundStatus MapRefundStatus(string? status) => status switch
+    {
+        "failed" => RefundStatus.Failed,
+        "succeeded" => RefundStatus.Succeeded,
+        "canceled" => RefundStatus.Canceled,
+        _ => RefundStatus.Pending
+    };
 }

@@ -1,4 +1,4 @@
-using eNote.API.Controllers.Admin;
+using eNote.API.Controllers.Identity;
 using eNote.Application.Common.Paging;
 using eNote.Application.Constants;
 using eNote.Application.Features.Identity.Auth;
@@ -25,7 +25,7 @@ public sealed class AdminUsersControllerTests
                 [15] = [AppRoles.Administrator],
                 [16] = [AppRoles.Student]
             });
-        var profileService = new UserProfileService(null!, identity, null!, new StubCurrentActor());
+        var profileService = new UserProfileService(null!, identity, null!, new StubCurrentActor(), null!, null!);
         var controller = new AdminUsersController(profileService, new StubProvisioningService());
 
         var result = await controller.GetPaged(

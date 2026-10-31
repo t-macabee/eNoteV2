@@ -1,4 +1,4 @@
-using eNote.API.Controllers.Admin;
+using eNote.API.Controllers.Communication;
 using eNote.Application.Features.Communication.Events;
 using eNote.Tests.TestUtils;
 using Microsoft.AspNetCore.Mvc;

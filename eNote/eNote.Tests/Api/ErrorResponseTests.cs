@@ -67,6 +67,54 @@ public sealed class ErrorResponseTests
     }
 
     [Fact]
+    public async Task ErrorHandling_ReturnsInternalErrorBody_ForArgumentException()
+    {
+        await using var app = CreateApp(() => throw new ArgumentException("Invalid argument."));
+        await app.StartAsync();
+
+        try
+        {
+            using var client = new HttpClient { BaseAddress = new Uri(app.Urls.First()) };
+            using var response = await client.GetAsync("/conflict");
+
+            Assert.Equal(500, (int)response.StatusCode);
+
+            using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+            Assert.Equal(500, body.RootElement.GetProperty("status").GetInt32());
+            Assert.Equal("error.internal", body.RootElement.GetProperty("code").GetString());
+            Assert.Equal(Messages.InternalError, body.RootElement.GetProperty("message").GetString());
+        }
+        finally
+        {
+            await app.StopAsync();
+        }
+    }
+
+    [Fact]
+    public async Task ErrorHandling_ReturnsInternalErrorBody_ForArgumentOutOfRangeException()
+    {
+        await using var app = CreateApp(() => throw new ArgumentOutOfRangeException("value"));
+        await app.StartAsync();
+
+        try
+        {
+            using var client = new HttpClient { BaseAddress = new Uri(app.Urls.First()) };
+            using var response = await client.GetAsync("/conflict");
+
+            Assert.Equal(500, (int)response.StatusCode);
+
+            using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+            Assert.Equal(500, body.RootElement.GetProperty("status").GetInt32());
+            Assert.Equal("error.internal", body.RootElement.GetProperty("code").GetString());
+            Assert.Equal(Messages.InternalError, body.RootElement.GetProperty("message").GetString());
+        }
+        finally
+        {
+            await app.StopAsync();
+        }
+    }
+
+    [Fact]
     public void InvalidModelStateFactory_ReturnsStatusStatusCodeMessageAndErrors()
     {
         using var provider = CreateValidationProvider();
@@ -114,6 +162,7 @@ public sealed class ErrorResponseTests
         var services = new ServiceCollection();
         services.AddLogging();
         services.AddApplicationValidation();
+        services.AddControllers();
 
         return services.BuildServiceProvider();
     }

@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
 
-import '../../shell/app_router.dart';
+import '../../shell/routes.dart';
 import '../../widgets/paged_list_view.dart';
 import 'announcement_provider.dart';
 
@@ -82,7 +82,7 @@ class _AnnouncementRow extends StatelessWidget {
       ),
       trailing: Chip(label: Text(isCourse ? 'Kurs' : 'Prodavnica')),
       onTap: () => Navigator.of(context).pushNamed(
-        AppRouter.announcementDetail,
+        AppRoutes.announcementDetail,
         arguments: AnnouncementDetailArgs(announcement.id),
       ),
     );

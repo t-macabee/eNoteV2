@@ -1,5 +1,7 @@
 import 'package:enote_core/enote_core.dart';
 
+import '../../shared/membership/membership_payments_api.dart';
+
 class InstructorStudentProvider extends DelegatedUserProvider<StudentDto>
     with MembershipPaymentsApi<StudentDto> {
   InstructorStudentProvider({required super.apiClient})

@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
 
-import '../../shell/app_router.dart';
+import '../../shell/routes.dart';
 import '../../widgets/paged_list_view.dart';
 import 'lecture_note_provider.dart';
 
@@ -55,7 +55,7 @@ class _LectureNoteListScreenState extends State<LectureNoteListScreen> {
           title: Text(note.title),
           subtitle: Text(truncate(note.content, 80)),
           onTap: () => Navigator.of(context).pushNamed(
-            AppRouter.lectureNoteDetail,
+            AppRoutes.lectureNoteDetail,
             arguments: LectureNoteDetailArgs(widget.lectureId, note.id),
           ),
         ),

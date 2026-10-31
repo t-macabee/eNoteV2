@@ -1,6 +1,7 @@
 using eNote.Application.Common.Localization;
 using eNote.Application.Features.Identity.Users;
 using eNote.Application.Features.Identity.Users.Services;
+using eNote.Application.Features.Payments;
 using eNote.Application.Features.Rentals.InstrumentRentals.Services;
 using eNote.Infrastructure.Identity;
 using eNote.Tests.TestUtils;
@@ -93,7 +94,7 @@ public sealed class UserSelfServiceDeleteProfileTests
             "BAM",
             PaymentStatus.RequiresAction));
         await harness.Context.SaveChangesAsync();
-        harness.Gateway.AddIntent("pi_processing", 10000, "BAM", status: "processing");
+        harness.Gateway.AddIntent("pi_processing", 10000, "BAM", status: PaymentIntentStatus.Processing);
         var service = CreateService(harness);
 
         var exception = await Assert.ThrowsAsync<BusinessException>(() => DeleteAsync(service));
@@ -124,7 +125,7 @@ public sealed class UserSelfServiceDeleteProfileTests
             "BAM",
             PaymentStatus.RequiresAction));
         await harness.Context.SaveChangesAsync();
-        harness.Gateway.AddIntent("pi_tuition", 10000, "BAM", status: "processing");
+        harness.Gateway.AddIntent("pi_tuition", 10000, "BAM", status: PaymentIntentStatus.Processing);
         harness.Gateway.AddIntent("pi_rental", 5000, "BAM");
         var service = CreateService(harness);
 

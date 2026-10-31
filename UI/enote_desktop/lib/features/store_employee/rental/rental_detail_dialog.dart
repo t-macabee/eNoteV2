@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
 import '../../../widgets/dialog_shell.dart';
+import '../../../widgets/inline_error_text.dart';
 import 'rental_transition_action_row.dart';
 import 'rental_status_display.dart';
 import 'rental_refund_dialog.dart';
@@ -27,6 +28,7 @@ class RentalDetailDialog extends StatefulWidget {
 class _RentalDetailDialogState extends State<RentalDetailDialog> {
   InstrumentRentalDto? _rental;
   RentalPaymentDto? _payment;
+  bool _paymentLoadFailed = false;
   bool _isLoading = true;
   bool _isTransitioning = false;
   bool _isRefunding = false;
@@ -43,17 +45,20 @@ class _RentalDetailDialogState extends State<RentalDetailDialog> {
       final provider = context.read<RentalProvider>();
       final rental = await provider.getById(widget.rentalId);
       RentalPaymentDto? payment;
+      var paymentLoadFailed = false;
       if (rental.isPaid) {
         try {
           payment = await provider.getPaymentStatus(widget.rentalId);
         } catch (_) {
           payment = null;
+          paymentLoadFailed = true;
         }
       }
       if (!mounted) return;
       setState(() {
         _rental = rental;
         _payment = payment;
+        _paymentLoadFailed = paymentLoadFailed;
       });
     } catch (e) {
       if (mounted) {
@@ -389,6 +394,12 @@ class _RentalDetailDialogState extends State<RentalDetailDialog> {
                   ? 'Da (${rental.amountPaid != null ? formatKM(rental.amountPaid) : '-'}${rental.paidAt != null ? ' - ${formatDate(rental.paidAt!)}' : ''})'
                   : 'Ne',
             ),
+            if (_paymentLoadFailed) ...[
+              const SizedBox(height: 8),
+              const InlineErrorText(
+                'Podaci o plaćanju trenutno nisu dostupni.',
+              ),
+            ],
             if (_payment != null && (_payment!.refundedCents ?? 0) > 0) ...[
               const SizedBox(height: 8),
               _chargeRow(

@@ -1,5 +1,5 @@
 using eNote.Application.Constants;
-using eNote.Application.Features.Rentals.Payments.Services;
+using eNote.Application.Features.Payments;
 using MapsterMapper;
 using Microsoft.Extensions.Logging;
 
@@ -11,7 +11,7 @@ public sealed class TuitionPaymentService(
     IClock clock,
     IStudentContext students,
     IPaymentGateway paymentGateway,
-    StripeOptions options,
+    PaymentOptions options,
     ILogger<TuitionPaymentService> logger)
 {
     public async Task<CreateTuitionIntentResponse> CreateIntentAsync(int enrollmentId, CancellationToken cancellationToken = default)

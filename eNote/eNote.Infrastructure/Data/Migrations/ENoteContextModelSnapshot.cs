@@ -1536,56 +1536,6 @@ namespace eNote.Infrastructure.Data.Migrations
                     b.ToTable("RentalPayment");
                 });
 
-            modelBuilder.Entity("eNote.Domain.Entities.Rentals.StripeWebhookEvent", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int?>("CreatedById")
-                        .HasColumnType("int");
-
-                    b.Property<string>("PayloadJson")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("ProcessedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("StripeEventId")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("nvarchar(64)");
-
-                    b.Property<string>("Type")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("nvarchar(64)");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int?>("UpdatedById")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CreatedById");
-
-                    b.HasIndex("StripeEventId")
-                        .IsUnique()
-                        .HasDatabaseName("UX_StripeWebhookEvent_StripeEventId");
-
-                    b.HasIndex("UpdatedById");
-
-                    b.ToTable("StripeWebhookEvent");
-                });
-
             modelBuilder.Entity("eNote.Domain.Entities.Shared.Address", b =>
                 {
                     b.Property<int>("Id")
@@ -1752,6 +1702,56 @@ namespace eNote.Infrastructure.Data.Migrations
                         {
                             t.HasCheckConstraint("CK_PaymentRefund_ExactlyOnePayment", "(\"RentalPaymentId\" IS NOT NULL AND \"CoursePaymentId\" IS NULL) OR (\"RentalPaymentId\" IS NULL AND \"CoursePaymentId\" IS NOT NULL)");
                         });
+                });
+
+            modelBuilder.Entity("eNote.Domain.Entities.Shared.StripeWebhookEvent", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("CreatedById")
+                        .HasColumnType("int");
+
+                    b.Property<string>("PayloadJson")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("ProcessedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("StripeEventId")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("nvarchar(64)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("UpdatedById")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedById");
+
+                    b.HasIndex("StripeEventId")
+                        .IsUnique()
+                        .HasDatabaseName("UX_StripeWebhookEvent_StripeEventId");
+
+                    b.HasIndex("UpdatedById");
+
+                    b.ToTable("StripeWebhookEvent");
                 });
 
             modelBuilder.Entity("eNote.Infrastructure.Identity.AppRole", b =>
@@ -2439,19 +2439,6 @@ namespace eNote.Infrastructure.Data.Migrations
                     b.Navigation("InstrumentRental");
                 });
 
-            modelBuilder.Entity("eNote.Domain.Entities.Rentals.StripeWebhookEvent", b =>
-                {
-                    b.HasOne("eNote.Infrastructure.Identity.AppUser", null)
-                        .WithMany()
-                        .HasForeignKey("CreatedById")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("eNote.Infrastructure.Identity.AppUser", null)
-                        .WithMany()
-                        .HasForeignKey("UpdatedById")
-                        .OnDelete(DeleteBehavior.Restrict);
-                });
-
             modelBuilder.Entity("eNote.Domain.Entities.Shared.Address", b =>
                 {
                     b.HasOne("eNote.Domain.Entities.Shared.City", "City")
@@ -2478,6 +2465,19 @@ namespace eNote.Infrastructure.Data.Migrations
                     b.Navigation("CoursePayment");
 
                     b.Navigation("RentalPayment");
+                });
+
+            modelBuilder.Entity("eNote.Domain.Entities.Shared.StripeWebhookEvent", b =>
+                {
+                    b.HasOne("eNote.Infrastructure.Identity.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("eNote.Infrastructure.Identity.AppUser", null)
+                        .WithMany()
+                        .HasForeignKey("UpdatedById")
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("eNote.Domain.Entities.Academic.Course", b =>

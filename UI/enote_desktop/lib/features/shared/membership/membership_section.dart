@@ -5,6 +5,7 @@ import 'package:enote_core/enote_core.dart';
 import '../../../theme/app_theme.dart';
 import '../../../widgets/inline_error_text.dart';
 import 'membership_payment_dialog.dart';
+import 'membership_payments_api.dart';
 
 class MembershipSection extends StatefulWidget {
   final MembershipPaymentsApi<dynamic> api;

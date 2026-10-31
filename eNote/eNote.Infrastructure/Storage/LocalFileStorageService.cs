@@ -82,7 +82,10 @@ public sealed class LocalFileStorageService : IFileStorageService
 
     private static async Task<string> ValidateAsync(Stream stream, string contentType, string[] allowedContentTypes, string invalidFormatMessage, CancellationToken ct)
     {
-        ArgumentException.ThrowIfNullOrEmpty(contentType);
+        if (string.IsNullOrWhiteSpace(contentType))
+        {
+            throw new BusinessException(invalidFormatMessage);
+        }
 
         if (!stream.CanSeek)
         {

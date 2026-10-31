@@ -1,5 +1,7 @@
 import 'package:enote_core/enote_core.dart';
 
+import '../../shared/membership/membership_payments_api.dart';
+
 class StudentProvider extends ReadOnlyProvider<StudentDto>
     with MembershipPaymentsApi<StudentDto> {
   StudentProvider({

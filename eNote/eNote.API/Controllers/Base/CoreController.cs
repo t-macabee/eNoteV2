@@ -30,7 +30,7 @@ public abstract class CoreController : ControllerBase
         }
     }
 
-    protected static void ValidateUpload(IFormFile? file)
+    private static void ValidateUpload(IFormFile? file)
     {
         if (file is null || file.Length == 0)
         {
@@ -48,5 +48,17 @@ public abstract class CoreController : ControllerBase
         await using Stream stream = file!.OpenReadStream();
         var result = await upload(stream, file.ContentType, cancellationToken);
         return new OkObjectResult(result);
+    }
+
+    protected async Task<IActionResult> UploadAsync(
+        IFormFile? file,
+        Func<Stream, string, CancellationToken, Task> upload,
+        CancellationToken cancellationToken)
+    {
+        ValidateUpload(file);
+
+        await using Stream stream = file!.OpenReadStream();
+        await upload(stream, file.ContentType, cancellationToken);
+        return new NoContentResult();
     }
 }

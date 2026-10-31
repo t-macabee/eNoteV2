@@ -6,7 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:enote_core/enote_core.dart';
 
 import '../../session/session_controller.dart';
-import '../../shell/app_router.dart';
+import '../../shell/routes.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/async_state_view.dart';
 import '../../widgets/blocked_reason_banner.dart';
@@ -84,7 +84,7 @@ class _InstrumentDetailScreenState extends State<InstrumentDetailScreen> {
             ? null
             : () => Navigator.of(context)
                   .pushNamed(
-                    AppRouter.payment,
+                    AppRoutes.payment,
                     arguments: PaymentArgs(debt.rentalId!),
                   )
                   .then((_) {

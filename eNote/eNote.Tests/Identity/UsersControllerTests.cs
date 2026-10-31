@@ -1,4 +1,4 @@
-using eNote.API.Controllers.Users;
+using eNote.API.Controllers.Identity;
 using eNote.Application.Common.Localization;
 using eNote.Application.Features.Identity.Auth.Services;
 using eNote.Application.Features.Identity.Users;
@@ -20,11 +20,22 @@ public sealed class UsersControllerTests
     [Fact]
     public async Task UploadPicture_ThrowsBusinessException_WhenFilePartMissing()
     {
-        var controller = new UsersController(null!, null!, null!, null!, null!);
+        var controller = new UsersController(null!, null!, null!);
 
         var exception = await Assert.ThrowsAsync<BusinessException>(() => controller.UploadPicture(null, CancellationToken.None));
 
         Assert.Equal(Messages.FileNotProvided, exception.Message);
+    }
+
+    [Fact]
+    public async Task GetUserPictureAsync_ReturnsNoPicture_WhenAccessDenied()
+    {
+        var service = new UserProfileService(null!, null!, null!, null!, new DeniedPictureAccessService(), null!);
+
+        var (data, contentType) = await service.GetUserPictureAsync(50);
+
+        Assert.Null(data);
+        Assert.Null(contentType);
     }
 
     [Fact]
@@ -55,7 +66,7 @@ public sealed class UsersControllerTests
     }
 
     private static UsersController CreateController(UserSelfService selfService, RecordingTokenRevocationService revocation) =>
-        new(null!, selfService, null!, null!, revocation)
+        new(null!, selfService, revocation)
         {
             ControllerContext = new ControllerContext
             {
@@ -101,6 +112,12 @@ public sealed class UsersControllerTests
         };
 
         return new ClaimsPrincipal(new ClaimsIdentity(claims, "Bearer"));
+    }
+
+    private sealed class DeniedPictureAccessService : IPictureAccessService
+    {
+        public Task<bool> CanViewPictureAsync(int targetAppUserId, CancellationToken cancellationToken = default) =>
+            Task.FromResult(false);
     }
 
     private sealed class RecordingTokenRevocationService : ITokenRevocationService

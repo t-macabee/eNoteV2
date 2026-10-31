@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
 
-import '../../shell/app_router.dart';
+import '../../shell/routes.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/paged_list_view.dart';
 import '../../widgets/status_chip.dart';
@@ -86,7 +86,7 @@ class _RentalListScreenState extends State<RentalListScreen> {
       itemBuilder: (context, rental) => _RentalRow(
         rental: rental,
         onTap: () => Navigator.of(context).pushNamed(
-          AppRouter.rentalDetail,
+          AppRoutes.rentalDetail,
           arguments: RentalDetailArgs(rental.id),
         ),
       ),

@@ -1,5 +1,5 @@
 using eNote.Application.Constants;
-using eNote.Application.Features.Rentals.Payments.Services;
+using eNote.Application.Features.Payments;
 using Microsoft.Extensions.Logging;
 
 namespace eNote.Application.Features.Academic.Courses.Services;

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'entity_list_screen.dart';
+import 'entity_list_config.dart';
 
 class EntityRowActions extends StatelessWidget {
   final List<Widget> extraWidgets;

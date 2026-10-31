@@ -3,7 +3,7 @@ import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
 
-import '../../shell/app_router.dart';
+import '../../shell/routes.dart';
 import '../../widgets/paged_list_view.dart';
 import 'course_provider.dart';
 
@@ -95,7 +95,7 @@ class _CourseRow extends StatelessWidget {
               visualDensity: VisualDensity.compact,
             ),
       onTap: () => Navigator.of(context).pushNamed(
-        AppRouter.courseDetail,
+        AppRoutes.courseDetail,
         arguments: CourseDetailArgs(course.id),
       ),
     );

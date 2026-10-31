@@ -138,7 +138,7 @@ public sealed class UserProfileServiceTests
 
         var identity = Identity(new UserIdentityDto { Id = 4, Username = "student", FirstName = "Stu", LastName = "Dent", IsActive = true }, AppRoles.Student);
 
-        var service = new UserProfileService(context, identity, new StubUserProfileLookup(student: student), new StubCurrentActor(userId: 4));
+        var service = new UserProfileService(context, identity, new StubUserProfileLookup(student: student), new StubCurrentActor(userId: 4), null!, null!);
 
         var result = await service.GetUserAsync(4);
 
@@ -160,7 +160,7 @@ public sealed class UserProfileServiceTests
 
         var identity = Identity(new UserIdentityDto { Id = 5, Username = "instructor", FirstName = "Pro", LastName = "Fessor", IsActive = true }, AppRoles.Instructor);
 
-        var service = new UserProfileService(context, identity, new StubUserProfileLookup(instructor: instructor), new StubCurrentActor(userId: 5));
+        var service = new UserProfileService(context, identity, new StubUserProfileLookup(instructor: instructor), new StubCurrentActor(userId: 5), null!, null!);
 
         var result = await service.GetUserAsync(5);
 
@@ -185,7 +185,7 @@ public sealed class UserProfileServiceTests
 
         var identity = Identity(ActiveUser(7), AppRoles.StoreEmployee);
 
-        var service = new UserProfileService(context, identity, new UserProfileLookup(context), new StubCurrentActor(userId: 7));
+        var service = new UserProfileService(context, identity, new UserProfileLookup(context), new StubCurrentActor(userId: 7), null!, null!);
 
         var result = await service.GetUserAsync(7, includeInactive: false);
 
@@ -203,7 +203,7 @@ public sealed class UserProfileServiceTests
         var employee = new MusicStoreEmployee(appUserId: 7, musicStoreId: 999, isManager: false);
         var identity = Identity(ActiveUser(7), AppRoles.StoreEmployee);
 
-        var service = new UserProfileService(context, identity, new StubUserProfileLookup(employee: employee), new StubCurrentActor(userId: 7));
+        var service = new UserProfileService(context, identity, new StubUserProfileLookup(employee: employee), new StubCurrentActor(userId: 7), null!, null!);
 
         var ex = await Assert.ThrowsAsync<BusinessException>(() => service.GetUserAsync(7, includeInactive: false));
         Assert.Equal(Messages.StoreNotFound, ex.Message);
@@ -223,7 +223,7 @@ public sealed class UserProfileServiceTests
     }
 
     private static UserProfileService CreateService(StubUserIdentityService identity, int currentUserId = 1) =>
-        new(new ThrowingDbContext(), identity, new ThrowingUserProfileLookup(), new StubCurrentActor(userId: currentUserId));
+        new(new ThrowingDbContext(), identity, new ThrowingUserProfileLookup(), new StubCurrentActor(userId: currentUserId), null!, null!);
 
     private static StubUserIdentityService Identity(UserIdentityDto user, params string[] roles) =>
         new(

@@ -1,0 +1,2001 @@
+﻿using System;
+using Microsoft.EntityFrameworkCore.Migrations;
+
+#nullable disable
+
+#pragma warning disable CA1814 // Prefer jagged arrays over multidimensional
+
+namespace eNote.Infrastructure.Data.Migrations
+{
+    /// <inheritdoc />
+    public partial class Initial : Migration
+    {
+        /// <inheritdoc />
+        protected override void Up(MigrationBuilder migrationBuilder)
+        {
+            migrationBuilder.CreateTable(
+                name: "AspNetRoles",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Name = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
+                    NormalizedName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
+                    ConcurrencyStamp = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AspNetRoles", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "AspNetUsers",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    FirstName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
+                    LastName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
+                    DateOfBirth = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    PicturePath = table.Column<string>(type: "nvarchar(512)", maxLength: 512, nullable: true),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false),
+                    UserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
+                    NormalizedUserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
+                    Email = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
+                    NormalizedEmail = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
+                    EmailConfirmed = table.Column<bool>(type: "bit", nullable: false),
+                    PasswordHash = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    SecurityStamp = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ConcurrencyStamp = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    PhoneNumber = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    PhoneNumberConfirmed = table.Column<bool>(type: "bit", nullable: false),
+                    TwoFactorEnabled = table.Column<bool>(type: "bit", nullable: false),
+                    LockoutEnd = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    LockoutEnabled = table.Column<bool>(type: "bit", nullable: false),
+                    AccessFailedCount = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AspNetUsers", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "City",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_City", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "DataProtectionKeys",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    FriendlyName = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Xml = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_DataProtectionKeys", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "InstrumentType",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Type = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    MonthlyFee = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_InstrumentType", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "RevokedToken",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Jti = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: false),
+                    ExpiresAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    RevokedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_RevokedToken", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "AspNetRoleClaims",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    RoleId = table.Column<int>(type: "int", nullable: false),
+                    ClaimType = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ClaimValue = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AspNetRoleClaims", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_AspNetRoleClaims_AspNetRoles_RoleId",
+                        column: x => x.RoleId,
+                        principalTable: "AspNetRoles",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "AspNetUserClaims",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    UserId = table.Column<int>(type: "int", nullable: false),
+                    ClaimType = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ClaimValue = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AspNetUserClaims", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_AspNetUserClaims_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "AspNetUserLogins",
+                columns: table => new
+                {
+                    LoginProvider = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    ProviderKey = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    ProviderDisplayName = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    UserId = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AspNetUserLogins", x => new { x.LoginProvider, x.ProviderKey });
+                    table.ForeignKey(
+                        name: "FK_AspNetUserLogins_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "AspNetUserRoles",
+                columns: table => new
+                {
+                    UserId = table.Column<int>(type: "int", nullable: false),
+                    RoleId = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AspNetUserRoles", x => new { x.UserId, x.RoleId });
+                    table.ForeignKey(
+                        name: "FK_AspNetUserRoles_AspNetRoles_RoleId",
+                        column: x => x.RoleId,
+                        principalTable: "AspNetRoles",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_AspNetUserRoles_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "AspNetUserTokens",
+                columns: table => new
+                {
+                    UserId = table.Column<int>(type: "int", nullable: false),
+                    LoginProvider = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    Value = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AspNetUserTokens", x => new { x.UserId, x.LoginProvider, x.Name });
+                    table.ForeignKey(
+                        name: "FK_AspNetUserTokens_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Instructor",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    AppUserId = table.Column<int>(type: "int", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedById = table.Column<int>(type: "int", nullable: true),
+                    UpdatedById = table.Column<int>(type: "int", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Instructor", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Instructor_AspNetUsers_AppUserId",
+                        column: x => x.AppUserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Instructor_AspNetUsers_CreatedById",
+                        column: x => x.CreatedById,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Instructor_AspNetUsers_UpdatedById",
+                        column: x => x.UpdatedById,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "RentalNotificationOutbox",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    MessageType = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: false),
+                    PayloadJson = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    PublishedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    Attempts = table.Column<int>(type: "int", nullable: false),
+                    LastError = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedById = table.Column<int>(type: "int", nullable: true),
+                    UpdatedById = table.Column<int>(type: "int", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_RentalNotificationOutbox", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_RentalNotificationOutbox_AspNetUsers_CreatedById",
+                        column: x => x.CreatedById,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_RentalNotificationOutbox_AspNetUsers_UpdatedById",
+                        column: x => x.UpdatedById,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "StripeWebhookEvent",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    StripeEventId = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: false),
+                    Type = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: false),
+                    PayloadJson = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ProcessedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedById = table.Column<int>(type: "int", nullable: true),
+                    UpdatedById = table.Column<int>(type: "int", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_StripeWebhookEvent", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_StripeWebhookEvent_AspNetUsers_CreatedById",
+                        column: x => x.CreatedById,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_StripeWebhookEvent_AspNetUsers_UpdatedById",
+                        column: x => x.UpdatedById,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Student",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    AppUserId = table.Column<int>(type: "int", nullable: false),
+                    EnrollmentDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    MembershipPaidUntil = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    MembershipWarningSentAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedById = table.Column<int>(type: "int", nullable: true),
+                    UpdatedById = table.Column<int>(type: "int", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Student", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Student_AspNetUsers_AppUserId",
+                        column: x => x.AppUserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Student_AspNetUsers_CreatedById",
+                        column: x => x.CreatedById,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Student_AspNetUsers_UpdatedById",
+                        column: x => x.UpdatedById,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Address",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    CityId = table.Column<int>(type: "int", nullable: false),
+                    Street = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    Number = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Address", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Address_City_CityId",
+                        column: x => x.CityId,
+                        principalTable: "City",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Course",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    InstructorId = table.Column<int>(type: "int", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Price = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    StartDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    EndDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    IsPublished = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedById = table.Column<int>(type: "int", nullable: true),
+                    UpdatedById = table.Column<int>(type: "int", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Course", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Course_AspNetUsers_CreatedById",
+                        column: x => x.CreatedById,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Course_AspNetUsers_UpdatedById",
+                        column: x => x.UpdatedById,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Course_Instructor_InstructorId",
+                        column: x => x.InstructorId,
+                        principalTable: "Instructor",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "MembershipPayment",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    StudentId = table.Column<int>(type: "int", nullable: false),
+                    Amount = table.Column<decimal>(type: "decimal(10,2)", precision: 10, scale: 2, nullable: false),
+                    PaidAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    PeriodStart = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    PeriodEnd = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    ReceiptNumber = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    Note = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedById = table.Column<int>(type: "int", nullable: true),
+                    UpdatedById = table.Column<int>(type: "int", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_MembershipPayment", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_MembershipPayment_AspNetUsers_CreatedById",
+                        column: x => x.CreatedById,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_MembershipPayment_AspNetUsers_UpdatedById",
+                        column: x => x.UpdatedById,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_MembershipPayment_Student_StudentId",
+                        column: x => x.StudentId,
+                        principalTable: "Student",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Event",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Title = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(4000)", maxLength: 4000, nullable: false),
+                    StartsAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    EndsAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    AddressId = table.Column<int>(type: "int", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedById = table.Column<int>(type: "int", nullable: true),
+                    UpdatedById = table.Column<int>(type: "int", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Event", x => x.Id);
+                    table.CheckConstraint("CK_Event_EndsAfterStarts", "\"EndsAt\" IS NULL OR \"EndsAt\" > \"StartsAt\"");
+                    table.ForeignKey(
+                        name: "FK_Event_Address_AddressId",
+                        column: x => x.AddressId,
+                        principalTable: "Address",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Event_AspNetUsers_CreatedById",
+                        column: x => x.CreatedById,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Event_AspNetUsers_UpdatedById",
+                        column: x => x.UpdatedById,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "MusicStore",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    StoreName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    BusinessHours = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    PhoneNumber = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: true),
+                    ImagePath = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    AddressId = table.Column<int>(type: "int", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedById = table.Column<int>(type: "int", nullable: true),
+                    UpdatedById = table.Column<int>(type: "int", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_MusicStore", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_MusicStore_Address_AddressId",
+                        column: x => x.AddressId,
+                        principalTable: "Address",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_MusicStore_AspNetUsers_CreatedById",
+                        column: x => x.CreatedById,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_MusicStore_AspNetUsers_UpdatedById",
+                        column: x => x.UpdatedById,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Enrollment",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    StudentId = table.Column<int>(type: "int", nullable: false),
+                    CourseId = table.Column<int>(type: "int", nullable: false),
+                    EnrollmentStatus = table.Column<int>(type: "int", nullable: false),
+                    PaidUntil = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    DecidedById = table.Column<int>(type: "int", nullable: true),
+                    DecidedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    DecisionNote = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    Version = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedById = table.Column<int>(type: "int", nullable: true),
+                    UpdatedById = table.Column<int>(type: "int", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Enrollment", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Enrollment_AspNetUsers_CreatedById",
+                        column: x => x.CreatedById,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Enrollment_AspNetUsers_DecidedById",
+                        column: x => x.DecidedById,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Enrollment_AspNetUsers_UpdatedById",
+                        column: x => x.UpdatedById,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Enrollment_Course_CourseId",
+                        column: x => x.CourseId,
+                        principalTable: "Course",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Enrollment_Student_StudentId",
+                        column: x => x.StudentId,
+                        principalTable: "Student",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Lecture",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    CourseId = table.Column<int>(type: "int", nullable: false),
+                    StudentId = table.Column<int>(type: "int", nullable: true),
+                    Name = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    Location = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    LectureType = table.Column<int>(type: "int", nullable: false),
+                    LectureTime = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Duration = table.Column<int>(type: "int", nullable: false),
+                    Capacity = table.Column<int>(type: "int", nullable: true),
+                    LectureStatus = table.Column<int>(type: "int", nullable: false),
+                    CancellationReason = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    CancelledAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CancelledById = table.Column<int>(type: "int", nullable: true),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
+                    Version = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedById = table.Column<int>(type: "int", nullable: true),
+                    UpdatedById = table.Column<int>(type: "int", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Lecture", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Lecture_AspNetUsers_CancelledById",
+                        column: x => x.CancelledById,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Lecture_AspNetUsers_CreatedById",
+                        column: x => x.CreatedById,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Lecture_AspNetUsers_UpdatedById",
+                        column: x => x.UpdatedById,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Lecture_Course_CourseId",
+                        column: x => x.CourseId,
+                        principalTable: "Course",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Lecture_Student_StudentId",
+                        column: x => x.StudentId,
+                        principalTable: "Student",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Announcement",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    CourseId = table.Column<int>(type: "int", nullable: true),
+                    MusicStoreId = table.Column<int>(type: "int", nullable: true),
+                    Title = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: false),
+                    Content = table.Column<string>(type: "nvarchar(4000)", maxLength: 4000, nullable: false),
+                    ImagePath = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    PublishedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedById = table.Column<int>(type: "int", nullable: true),
+                    UpdatedById = table.Column<int>(type: "int", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Announcement", x => x.Id);
+                    table.CheckConstraint("CK_Announcement_Scope", "(\"CourseId\" IS NOT NULL AND \"MusicStoreId\" IS NULL) OR (\"CourseId\" IS NULL AND \"MusicStoreId\" IS NOT NULL)");
+                    table.ForeignKey(
+                        name: "FK_Announcement_AspNetUsers_CreatedById",
+                        column: x => x.CreatedById,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Announcement_AspNetUsers_UpdatedById",
+                        column: x => x.UpdatedById,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Announcement_Course_CourseId",
+                        column: x => x.CourseId,
+                        principalTable: "Course",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Announcement_MusicStore_MusicStoreId",
+                        column: x => x.MusicStoreId,
+                        principalTable: "MusicStore",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Instrument",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    InstrumentTypeId = table.Column<int>(type: "int", nullable: false),
+                    MusicStoreId = table.Column<int>(type: "int", nullable: false),
+                    Model = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    Manufacturer = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
+                    ImagePath = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedById = table.Column<int>(type: "int", nullable: true),
+                    UpdatedById = table.Column<int>(type: "int", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Instrument", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Instrument_AspNetUsers_CreatedById",
+                        column: x => x.CreatedById,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Instrument_AspNetUsers_UpdatedById",
+                        column: x => x.UpdatedById,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Instrument_InstrumentType_InstrumentTypeId",
+                        column: x => x.InstrumentTypeId,
+                        principalTable: "InstrumentType",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Instrument_MusicStore_MusicStoreId",
+                        column: x => x.MusicStoreId,
+                        principalTable: "MusicStore",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "MusicStoreEmployee",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    AppUserId = table.Column<int>(type: "int", nullable: false),
+                    MusicStoreId = table.Column<int>(type: "int", nullable: false),
+                    IsManager = table.Column<bool>(type: "bit", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedById = table.Column<int>(type: "int", nullable: true),
+                    UpdatedById = table.Column<int>(type: "int", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_MusicStoreEmployee", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_MusicStoreEmployee_AspNetUsers_AppUserId",
+                        column: x => x.AppUserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_MusicStoreEmployee_AspNetUsers_CreatedById",
+                        column: x => x.CreatedById,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_MusicStoreEmployee_AspNetUsers_UpdatedById",
+                        column: x => x.UpdatedById,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_MusicStoreEmployee_MusicStore_MusicStoreId",
+                        column: x => x.MusicStoreId,
+                        principalTable: "MusicStore",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "CoursePayment",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    EnrollmentId = table.Column<int>(type: "int", nullable: false),
+                    PeriodStart = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    PeriodEnd = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedById = table.Column<int>(type: "int", nullable: true),
+                    UpdatedById = table.Column<int>(type: "int", nullable: true),
+                    StripePaymentIntentId = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: false),
+                    StripeChargeId = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: true),
+                    StripeEventId = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: true),
+                    AmountChargedCents = table.Column<long>(type: "bigint", nullable: false),
+                    Currency = table.Column<string>(type: "nvarchar(3)", maxLength: 3, nullable: false),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    PaidAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    RefundedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    RefundedCents = table.Column<long>(type: "bigint", nullable: true),
+                    StripeRefundId = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: true),
+                    Version = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_CoursePayment", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_CoursePayment_AspNetUsers_CreatedById",
+                        column: x => x.CreatedById,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_CoursePayment_AspNetUsers_UpdatedById",
+                        column: x => x.UpdatedById,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_CoursePayment_Enrollment_EnrollmentId",
+                        column: x => x.EnrollmentId,
+                        principalTable: "Enrollment",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Assignment",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    LectureId = table.Column<int>(type: "int", nullable: false),
+                    Title = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    DueAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedById = table.Column<int>(type: "int", nullable: true),
+                    UpdatedById = table.Column<int>(type: "int", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Assignment", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Assignment_AspNetUsers_CreatedById",
+                        column: x => x.CreatedById,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Assignment_AspNetUsers_UpdatedById",
+                        column: x => x.UpdatedById,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Assignment_Lecture_LectureId",
+                        column: x => x.LectureId,
+                        principalTable: "Lecture",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Attendance",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    StudentId = table.Column<int>(type: "int", nullable: false),
+                    LectureId = table.Column<int>(type: "int", nullable: false),
+                    AttendanceStatus = table.Column<int>(type: "int", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedById = table.Column<int>(type: "int", nullable: true),
+                    UpdatedById = table.Column<int>(type: "int", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Attendance", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Attendance_AspNetUsers_CreatedById",
+                        column: x => x.CreatedById,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Attendance_AspNetUsers_UpdatedById",
+                        column: x => x.UpdatedById,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Attendance_Lecture_LectureId",
+                        column: x => x.LectureId,
+                        principalTable: "Lecture",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Attendance_Student_StudentId",
+                        column: x => x.StudentId,
+                        principalTable: "Student",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "LectureNote",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    LectureId = table.Column<int>(type: "int", nullable: false),
+                    Title = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    Content = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedById = table.Column<int>(type: "int", nullable: true),
+                    UpdatedById = table.Column<int>(type: "int", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_LectureNote", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_LectureNote_AspNetUsers_CreatedById",
+                        column: x => x.CreatedById,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_LectureNote_AspNetUsers_UpdatedById",
+                        column: x => x.UpdatedById,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_LectureNote_Lecture_LectureId",
+                        column: x => x.LectureId,
+                        principalTable: "Lecture",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "InstrumentRental",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    StudentProfileId = table.Column<int>(type: "int", nullable: false),
+                    InstrumentId = table.Column<int>(type: "int", nullable: false),
+                    MusicStoreId = table.Column<int>(type: "int", nullable: false),
+                    RentalStatus = table.Column<int>(type: "int", nullable: false),
+                    RequestNote = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    Note = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    RequestedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    ApprovedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    RejectedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    PickedUpAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    ReturnedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    DueAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    OverduePenaltyMultiplier = table.Column<decimal>(type: "decimal(4,2)", precision: 4, scale: 2, nullable: false),
+                    ApprovedById = table.Column<int>(type: "int", nullable: true),
+                    RejectedById = table.Column<int>(type: "int", nullable: true),
+                    Fee = table.Column<decimal>(type: "decimal(10,2)", precision: 10, scale: 2, nullable: false),
+                    IsPaid = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
+                    PaidAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    AmountPaid = table.Column<decimal>(type: "decimal(10,2)", precision: 10, scale: 2, nullable: true),
+                    Version = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedById = table.Column<int>(type: "int", nullable: true),
+                    UpdatedById = table.Column<int>(type: "int", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_InstrumentRental", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_InstrumentRental_AspNetUsers_ApprovedById",
+                        column: x => x.ApprovedById,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_InstrumentRental_AspNetUsers_CreatedById",
+                        column: x => x.CreatedById,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_InstrumentRental_AspNetUsers_RejectedById",
+                        column: x => x.RejectedById,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_InstrumentRental_AspNetUsers_UpdatedById",
+                        column: x => x.UpdatedById,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_InstrumentRental_Instrument_InstrumentId",
+                        column: x => x.InstrumentId,
+                        principalTable: "Instrument",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_InstrumentRental_Student_StudentProfileId",
+                        column: x => x.StudentProfileId,
+                        principalTable: "Student",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "InstrumentView",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    UserId = table.Column<int>(type: "int", nullable: false),
+                    InstrumentId = table.Column<int>(type: "int", nullable: false),
+                    ViewCount = table.Column<int>(type: "int", nullable: false),
+                    LastViewedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_InstrumentView", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_InstrumentView_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_InstrumentView_Instrument_InstrumentId",
+                        column: x => x.InstrumentId,
+                        principalTable: "Instrument",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "AssignmentSubmission",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    AssignmentId = table.Column<int>(type: "int", nullable: false),
+                    StudentId = table.Column<int>(type: "int", nullable: false),
+                    FilePath = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    SubmittedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    Grade = table.Column<int>(type: "int", nullable: true),
+                    Feedback = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedById = table.Column<int>(type: "int", nullable: true),
+                    UpdatedById = table.Column<int>(type: "int", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AssignmentSubmission", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_AssignmentSubmission_AspNetUsers_CreatedById",
+                        column: x => x.CreatedById,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_AssignmentSubmission_AspNetUsers_UpdatedById",
+                        column: x => x.UpdatedById,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_AssignmentSubmission_Assignment_AssignmentId",
+                        column: x => x.AssignmentId,
+                        principalTable: "Assignment",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_AssignmentSubmission_Student_StudentId",
+                        column: x => x.StudentId,
+                        principalTable: "Student",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "RentalPayment",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    InstrumentRentalId = table.Column<int>(type: "int", nullable: false),
+                    MusicStoreId = table.Column<int>(type: "int", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedById = table.Column<int>(type: "int", nullable: true),
+                    UpdatedById = table.Column<int>(type: "int", nullable: true),
+                    StripePaymentIntentId = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: false),
+                    StripeChargeId = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: true),
+                    StripeEventId = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: true),
+                    AmountChargedCents = table.Column<long>(type: "bigint", nullable: false),
+                    Currency = table.Column<string>(type: "nvarchar(3)", maxLength: 3, nullable: false),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    PaidAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    RefundedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    RefundedCents = table.Column<long>(type: "bigint", nullable: true),
+                    StripeRefundId = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: true),
+                    Version = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_RentalPayment", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_RentalPayment_AspNetUsers_CreatedById",
+                        column: x => x.CreatedById,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_RentalPayment_AspNetUsers_UpdatedById",
+                        column: x => x.UpdatedById,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_RentalPayment_InstrumentRental_InstrumentRentalId",
+                        column: x => x.InstrumentRentalId,
+                        principalTable: "InstrumentRental",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Notification",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    UserId = table.Column<int>(type: "int", nullable: false),
+                    RentalId = table.Column<int>(type: "int", nullable: true),
+                    LectureId = table.Column<int>(type: "int", nullable: true),
+                    SubmissionId = table.Column<int>(type: "int", nullable: true),
+                    AnnouncementId = table.Column<int>(type: "int", nullable: true),
+                    EnrollmentId = table.Column<int>(type: "int", nullable: true),
+                    CourseId = table.Column<int>(type: "int", nullable: true),
+                    Title = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    Body = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: false),
+                    IsRead = table.Column<bool>(type: "bit", nullable: false, defaultValue: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Notification", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Notification_Announcement_AnnouncementId",
+                        column: x => x.AnnouncementId,
+                        principalTable: "Announcement",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Notification_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Notification_AssignmentSubmission_SubmissionId",
+                        column: x => x.SubmissionId,
+                        principalTable: "AssignmentSubmission",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Notification_Course_CourseId",
+                        column: x => x.CourseId,
+                        principalTable: "Course",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Notification_Enrollment_EnrollmentId",
+                        column: x => x.EnrollmentId,
+                        principalTable: "Enrollment",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Notification_InstrumentRental_RentalId",
+                        column: x => x.RentalId,
+                        principalTable: "InstrumentRental",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Notification_Lecture_LectureId",
+                        column: x => x.LectureId,
+                        principalTable: "Lecture",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "PaymentRefund",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    RentalPaymentId = table.Column<int>(type: "int", nullable: true),
+                    CoursePaymentId = table.Column<int>(type: "int", nullable: true),
+                    StripeRefundId = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: false),
+                    AmountCents = table.Column<long>(type: "bigint", nullable: false),
+                    AppliedAtUtc = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PaymentRefund", x => x.Id);
+                    table.CheckConstraint("CK_PaymentRefund_ExactlyOnePayment", "(\"RentalPaymentId\" IS NOT NULL AND \"CoursePaymentId\" IS NULL) OR (\"RentalPaymentId\" IS NULL AND \"CoursePaymentId\" IS NOT NULL)");
+                    table.ForeignKey(
+                        name: "FK_PaymentRefund_CoursePayment_CoursePaymentId",
+                        column: x => x.CoursePaymentId,
+                        principalTable: "CoursePayment",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_PaymentRefund_RentalPayment_RentalPaymentId",
+                        column: x => x.RentalPaymentId,
+                        principalTable: "RentalPayment",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.InsertData(
+                table: "City",
+                columns: new[] { "Id", "Name" },
+                values: new object[,]
+                {
+                    { 1, "Sarajevo" },
+                    { 2, "Mostar" },
+                    { 3, "Banja Luka" },
+                    { 4, "Tuzla" },
+                    { 5, "Zenica" }
+                });
+
+            migrationBuilder.InsertData(
+                table: "InstrumentType",
+                columns: new[] { "Id", "MonthlyFee", "Type" },
+                values: new object[,]
+                {
+                    { 1, 45m, "Žičani" },
+                    { 2, 35m, "Udaraljke" },
+                    { 3, 55m, "Limeni" },
+                    { 4, 65m, "Tipke" },
+                    { 5, 15m, "Dodatna oprema" }
+                });
+
+            migrationBuilder.InsertData(
+                table: "Address",
+                columns: new[] { "Id", "CityId", "Number", "Street" },
+                values: new object[,]
+                {
+                    { 1, 1, "12", "Bistrik" },
+                    { 2, 1, "15", "Maršala Tita" },
+                    { 3, 1, "8", "Mula Mustafe Bašeskije" },
+                    { 4, 1, "18", "Obala Kulina bana" },
+                    { 5, 1, "14", "Veliki Alifakovac" },
+                    { 6, 2, "5", "Maršala Tita" },
+                    { 7, 3, "20", "Kralja Petra I Karađorđevića" }
+                });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Address_CityId",
+                table: "Address",
+                column: "CityId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Announcement_CourseId",
+                table: "Announcement",
+                column: "CourseId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Announcement_CreatedById",
+                table: "Announcement",
+                column: "CreatedById");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Announcement_MusicStoreId",
+                table: "Announcement",
+                column: "MusicStoreId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Announcement_PublishedAt",
+                table: "Announcement",
+                column: "PublishedAt");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Announcement_UpdatedById",
+                table: "Announcement",
+                column: "UpdatedById");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AspNetRoleClaims_RoleId",
+                table: "AspNetRoleClaims",
+                column: "RoleId");
+
+            migrationBuilder.CreateIndex(
+                name: "RoleNameIndex",
+                table: "AspNetRoles",
+                column: "NormalizedName",
+                unique: true,
+                filter: "[NormalizedName] IS NOT NULL");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AspNetUserClaims_UserId",
+                table: "AspNetUserClaims",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AspNetUserLogins_UserId",
+                table: "AspNetUserLogins",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AspNetUserRoles_RoleId",
+                table: "AspNetUserRoles",
+                column: "RoleId");
+
+            migrationBuilder.CreateIndex(
+                name: "EmailIndex",
+                table: "AspNetUsers",
+                column: "NormalizedEmail");
+
+            migrationBuilder.CreateIndex(
+                name: "UserNameIndex",
+                table: "AspNetUsers",
+                column: "NormalizedUserName",
+                unique: true,
+                filter: "[NormalizedUserName] IS NOT NULL");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Assignment_CreatedById",
+                table: "Assignment",
+                column: "CreatedById");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Assignment_LectureId",
+                table: "Assignment",
+                column: "LectureId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Assignment_UpdatedById",
+                table: "Assignment",
+                column: "UpdatedById");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AssignmentSubmission_CreatedById",
+                table: "AssignmentSubmission",
+                column: "CreatedById");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AssignmentSubmission_StudentId",
+                table: "AssignmentSubmission",
+                column: "StudentId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AssignmentSubmission_UpdatedById",
+                table: "AssignmentSubmission",
+                column: "UpdatedById");
+
+            migrationBuilder.CreateIndex(
+                name: "UX_AssignmentSubmission_AssignmentId_StudentId",
+                table: "AssignmentSubmission",
+                columns: new[] { "AssignmentId", "StudentId" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Attendance_CreatedById",
+                table: "Attendance",
+                column: "CreatedById");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Attendance_LectureId",
+                table: "Attendance",
+                column: "LectureId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Attendance_StudentId_LectureId",
+                table: "Attendance",
+                columns: new[] { "StudentId", "LectureId" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Attendance_UpdatedById",
+                table: "Attendance",
+                column: "UpdatedById");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_City_Name",
+                table: "City",
+                column: "Name",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Course_CreatedById",
+                table: "Course",
+                column: "CreatedById");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Course_InstructorId",
+                table: "Course",
+                column: "InstructorId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Course_UpdatedById",
+                table: "Course",
+                column: "UpdatedById");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_CoursePayment_CreatedById",
+                table: "CoursePayment",
+                column: "CreatedById");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_CoursePayment_EnrollmentId_Status",
+                table: "CoursePayment",
+                columns: new[] { "EnrollmentId", "Status" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_CoursePayment_UpdatedById",
+                table: "CoursePayment",
+                column: "UpdatedById");
+
+            migrationBuilder.CreateIndex(
+                name: "UX_CoursePayment_EnrollmentId_OpenAttempt",
+                table: "CoursePayment",
+                column: "EnrollmentId",
+                unique: true,
+                filter: "\"Status\" IN (1, 3)");
+
+            migrationBuilder.CreateIndex(
+                name: "UX_CoursePayment_PaymentIntentId",
+                table: "CoursePayment",
+                column: "StripePaymentIntentId",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "UX_CoursePayment_StripeEventId",
+                table: "CoursePayment",
+                column: "StripeEventId",
+                unique: true,
+                filter: "\"StripeEventId\" IS NOT NULL");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Enrollment_CourseId",
+                table: "Enrollment",
+                column: "CourseId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Enrollment_CreatedById",
+                table: "Enrollment",
+                column: "CreatedById");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Enrollment_DecidedById",
+                table: "Enrollment",
+                column: "DecidedById");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Enrollment_StudentId_CourseId",
+                table: "Enrollment",
+                columns: new[] { "StudentId", "CourseId" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Enrollment_UpdatedById",
+                table: "Enrollment",
+                column: "UpdatedById");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Event_AddressId",
+                table: "Event",
+                column: "AddressId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Event_CreatedById",
+                table: "Event",
+                column: "CreatedById");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Event_StartsAt",
+                table: "Event",
+                column: "StartsAt");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Event_UpdatedById",
+                table: "Event",
+                column: "UpdatedById");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Instructor_AppUserId",
+                table: "Instructor",
+                column: "AppUserId",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Instructor_CreatedById",
+                table: "Instructor",
+                column: "CreatedById");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Instructor_UpdatedById",
+                table: "Instructor",
+                column: "UpdatedById");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Instrument_CreatedById",
+                table: "Instrument",
+                column: "CreatedById");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Instrument_InstrumentTypeId",
+                table: "Instrument",
+                column: "InstrumentTypeId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Instrument_MusicStoreId",
+                table: "Instrument",
+                column: "MusicStoreId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Instrument_UpdatedById",
+                table: "Instrument",
+                column: "UpdatedById");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_InstrumentRental_ApprovedById",
+                table: "InstrumentRental",
+                column: "ApprovedById");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_InstrumentRental_CreatedById",
+                table: "InstrumentRental",
+                column: "CreatedById");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_InstrumentRental_RejectedById",
+                table: "InstrumentRental",
+                column: "RejectedById");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_InstrumentRental_StudentProfileId",
+                table: "InstrumentRental",
+                column: "StudentProfileId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_InstrumentRental_UpdatedById",
+                table: "InstrumentRental",
+                column: "UpdatedById");
+
+            migrationBuilder.CreateIndex(
+                name: "UX_InstrumentRental_InstrumentId_ActiveOrApproved",
+                table: "InstrumentRental",
+                column: "InstrumentId",
+                unique: true,
+                filter: "\"RentalStatus\" IN (2, 3)");
+
+            migrationBuilder.CreateIndex(
+                name: "UX_InstrumentRental_InstrumentId_StudentProfileId_Pending",
+                table: "InstrumentRental",
+                columns: new[] { "InstrumentId", "StudentProfileId" },
+                unique: true,
+                filter: "\"RentalStatus\" = 1");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_InstrumentView_InstrumentId",
+                table: "InstrumentView",
+                column: "InstrumentId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_InstrumentView_LastViewedAt",
+                table: "InstrumentView",
+                column: "LastViewedAt");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_InstrumentView_UserId_InstrumentId",
+                table: "InstrumentView",
+                columns: new[] { "UserId", "InstrumentId" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Lecture_CancelledById",
+                table: "Lecture",
+                column: "CancelledById");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Lecture_CourseId",
+                table: "Lecture",
+                column: "CourseId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Lecture_CreatedById",
+                table: "Lecture",
+                column: "CreatedById");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Lecture_StudentId",
+                table: "Lecture",
+                column: "StudentId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Lecture_UpdatedById",
+                table: "Lecture",
+                column: "UpdatedById");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_LectureNote_CreatedById",
+                table: "LectureNote",
+                column: "CreatedById");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_LectureNote_LectureId",
+                table: "LectureNote",
+                column: "LectureId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_LectureNote_UpdatedById",
+                table: "LectureNote",
+                column: "UpdatedById");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_MembershipPayment_CreatedById",
+                table: "MembershipPayment",
+                column: "CreatedById");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_MembershipPayment_StudentId_PaidAt",
+                table: "MembershipPayment",
+                columns: new[] { "StudentId", "PaidAt" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_MembershipPayment_UpdatedById",
+                table: "MembershipPayment",
+                column: "UpdatedById");
+
+            migrationBuilder.CreateIndex(
+                name: "UX_MembershipPayment_ReceiptNumber",
+                table: "MembershipPayment",
+                column: "ReceiptNumber",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_MusicStore_AddressId",
+                table: "MusicStore",
+                column: "AddressId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_MusicStore_CreatedById",
+                table: "MusicStore",
+                column: "CreatedById");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_MusicStore_UpdatedById",
+                table: "MusicStore",
+                column: "UpdatedById");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_MusicStoreEmployee_AppUserId",
+                table: "MusicStoreEmployee",
+                column: "AppUserId",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_MusicStoreEmployee_CreatedById",
+                table: "MusicStoreEmployee",
+                column: "CreatedById");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_MusicStoreEmployee_MusicStoreId",
+                table: "MusicStoreEmployee",
+                column: "MusicStoreId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_MusicStoreEmployee_UpdatedById",
+                table: "MusicStoreEmployee",
+                column: "UpdatedById");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Notification_AnnouncementId",
+                table: "Notification",
+                column: "AnnouncementId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Notification_CourseId",
+                table: "Notification",
+                column: "CourseId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Notification_CreatedAt",
+                table: "Notification",
+                column: "CreatedAt");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Notification_EnrollmentId",
+                table: "Notification",
+                column: "EnrollmentId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Notification_LectureId",
+                table: "Notification",
+                column: "LectureId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Notification_RentalId",
+                table: "Notification",
+                column: "RentalId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Notification_SubmissionId",
+                table: "Notification",
+                column: "SubmissionId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Notification_UserId_AnnouncementId_CreatedAt",
+                table: "Notification",
+                columns: new[] { "UserId", "AnnouncementId", "CreatedAt" },
+                unique: true,
+                filter: "[AnnouncementId] IS NOT NULL");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Notification_UserId_EnrollmentId_CreatedAt",
+                table: "Notification",
+                columns: new[] { "UserId", "EnrollmentId", "CreatedAt" },
+                unique: true,
+                filter: "[EnrollmentId] IS NOT NULL");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Notification_UserId_IsRead",
+                table: "Notification",
+                columns: new[] { "UserId", "IsRead" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Notification_UserId_LectureId_CreatedAt",
+                table: "Notification",
+                columns: new[] { "UserId", "LectureId", "CreatedAt" },
+                unique: true,
+                filter: "[LectureId] IS NOT NULL");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Notification_UserId_RentalId_CreatedAt",
+                table: "Notification",
+                columns: new[] { "UserId", "RentalId", "CreatedAt" },
+                unique: true,
+                filter: "[RentalId] IS NOT NULL");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Notification_UserId_RentalId_Title",
+                table: "Notification",
+                columns: new[] { "UserId", "RentalId", "Title" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Notification_UserId_SubmissionId_CreatedAt",
+                table: "Notification",
+                columns: new[] { "UserId", "SubmissionId", "CreatedAt" },
+                unique: true,
+                filter: "[SubmissionId] IS NOT NULL");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PaymentRefund_CoursePaymentId",
+                table: "PaymentRefund",
+                column: "CoursePaymentId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PaymentRefund_RentalPaymentId",
+                table: "PaymentRefund",
+                column: "RentalPaymentId");
+
+            migrationBuilder.CreateIndex(
+                name: "UX_PaymentRefund_StripeRefundId",
+                table: "PaymentRefund",
+                column: "StripeRefundId",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_RentalNotificationOutbox_CreatedById",
+                table: "RentalNotificationOutbox",
+                column: "CreatedById");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_RentalNotificationOutbox_PublishedAt",
+                table: "RentalNotificationOutbox",
+                column: "PublishedAt");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_RentalNotificationOutbox_UpdatedById",
+                table: "RentalNotificationOutbox",
+                column: "UpdatedById");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_RentalPayment_CreatedById",
+                table: "RentalPayment",
+                column: "CreatedById");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_RentalPayment_InstrumentRentalId_Status",
+                table: "RentalPayment",
+                columns: new[] { "InstrumentRentalId", "Status" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_RentalPayment_UpdatedById",
+                table: "RentalPayment",
+                column: "UpdatedById");
+
+            migrationBuilder.CreateIndex(
+                name: "UX_RentalPayment_InstrumentRentalId_OpenAttempt",
+                table: "RentalPayment",
+                column: "InstrumentRentalId",
+                unique: true,
+                filter: "\"Status\" IN (1, 3)");
+
+            migrationBuilder.CreateIndex(
+                name: "UX_RentalPayment_PaymentIntentId",
+                table: "RentalPayment",
+                column: "StripePaymentIntentId",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "UX_RentalPayment_StripeEventId",
+                table: "RentalPayment",
+                column: "StripeEventId",
+                unique: true,
+                filter: "\"StripeEventId\" IS NOT NULL");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_RevokedToken_Jti",
+                table: "RevokedToken",
+                column: "Jti",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_StripeWebhookEvent_CreatedById",
+                table: "StripeWebhookEvent",
+                column: "CreatedById");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_StripeWebhookEvent_UpdatedById",
+                table: "StripeWebhookEvent",
+                column: "UpdatedById");
+
+            migrationBuilder.CreateIndex(
+                name: "UX_StripeWebhookEvent_StripeEventId",
+                table: "StripeWebhookEvent",
+                column: "StripeEventId",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Student_AppUserId",
+                table: "Student",
+                column: "AppUserId",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Student_CreatedById",
+                table: "Student",
+                column: "CreatedById");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Student_UpdatedById",
+                table: "Student",
+                column: "UpdatedById");
+        }
+
+        /// <inheritdoc />
+        protected override void Down(MigrationBuilder migrationBuilder)
+        {
+            migrationBuilder.DropTable(
+                name: "AspNetRoleClaims");
+
+            migrationBuilder.DropTable(
+                name: "AspNetUserClaims");
+
+            migrationBuilder.DropTable(
+                name: "AspNetUserLogins");
+
+            migrationBuilder.DropTable(
+                name: "AspNetUserRoles");
+
+            migrationBuilder.DropTable(
+                name: "AspNetUserTokens");
+
+            migrationBuilder.DropTable(
+                name: "Attendance");
+
+            migrationBuilder.DropTable(
+                name: "DataProtectionKeys");
+
+            migrationBuilder.DropTable(
+                name: "Event");
+
+            migrationBuilder.DropTable(
+                name: "InstrumentView");
+
+            migrationBuilder.DropTable(
+                name: "LectureNote");
+
+            migrationBuilder.DropTable(
+                name: "MembershipPayment");
+
+            migrationBuilder.DropTable(
+                name: "MusicStoreEmployee");
+
+            migrationBuilder.DropTable(
+                name: "Notification");
+
+            migrationBuilder.DropTable(
+                name: "PaymentRefund");
+
+            migrationBuilder.DropTable(
+                name: "RentalNotificationOutbox");
+
+            migrationBuilder.DropTable(
+                name: "RevokedToken");
+
+            migrationBuilder.DropTable(
+                name: "StripeWebhookEvent");
+
+            migrationBuilder.DropTable(
+                name: "AspNetRoles");
+
+            migrationBuilder.DropTable(
+                name: "Announcement");
+
+            migrationBuilder.DropTable(
+                name: "AssignmentSubmission");
+
+            migrationBuilder.DropTable(
+                name: "CoursePayment");
+
+            migrationBuilder.DropTable(
+                name: "RentalPayment");
+
+            migrationBuilder.DropTable(
+                name: "Assignment");
+
+            migrationBuilder.DropTable(
+                name: "Enrollment");
+
+            migrationBuilder.DropTable(
+                name: "InstrumentRental");
+
+            migrationBuilder.DropTable(
+                name: "Lecture");
+
+            migrationBuilder.DropTable(
+                name: "Instrument");
+
+            migrationBuilder.DropTable(
+                name: "Course");
+
+            migrationBuilder.DropTable(
+                name: "Student");
+
+            migrationBuilder.DropTable(
+                name: "InstrumentType");
+
+            migrationBuilder.DropTable(
+                name: "MusicStore");
+
+            migrationBuilder.DropTable(
+                name: "Instructor");
+
+            migrationBuilder.DropTable(
+                name: "Address");
+
+            migrationBuilder.DropTable(
+                name: "AspNetUsers");
+
+            migrationBuilder.DropTable(
+                name: "City");
+        }
+    }
+}

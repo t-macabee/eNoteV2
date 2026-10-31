@@ -1,8 +1,5 @@
 namespace eNote.Application.Validation.Identity;
 
-/// <summary>
-/// This class holds the shared password and lockout policy values.
-/// </summary>
 public static class IdentityPolicy
 {
     public const int PasswordMinLength = 8;

@@ -1,4 +1,4 @@
-using eNote.Application.Features.Rentals.ReferenceData.Cities;
+using eNote.Application.Features.ReferenceData.Cities;
 using FluentValidation;
 
 namespace eNote.Application.Validation.Rentals;

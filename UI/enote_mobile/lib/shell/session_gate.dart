@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:enote_core/enote_core.dart';
 
 import '../features/auth/login_screen.dart';
+import 'app_router.dart';
 import 'role_blocked_screen.dart';
 import 'root_shell.dart';
 
@@ -20,7 +21,10 @@ class SessionGate extends StatelessWidget {
         if (!auth.hasRole('Student')) {
           return const RoleBlockedScreen();
         }
-        return RootShell(key: RootShell.shellKey);
+        return RootShell(
+          key: RootShell.shellKey,
+          onGenerateRoute: AppRouter.onGenerateRoute,
+        );
       },
     );
   }

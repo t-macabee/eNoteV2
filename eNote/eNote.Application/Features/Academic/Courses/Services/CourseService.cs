@@ -3,7 +3,7 @@ using eNote.Application.Common.Search;
 using eNote.Application.Features.Identity.Instructors;
 using eNote.Application.Features.Identity.Users;
 using eNote.Application.Features.Identity.Users.Services;
-using eNote.Application.Features.Rentals.Payments.Services;
+using eNote.Application.Features.Payments;
 using MapsterMapper;
 using Microsoft.Extensions.Logging;
 

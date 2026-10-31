@@ -2,7 +2,6 @@ using eNote.Application.Common.Files;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Features.Rentals.ReferenceData.MusicStores;
-using eNote.Domain.Entities.Shared;
 using eNote.Tests.TestUtils;
 
 namespace eNote.Tests.Rentals;

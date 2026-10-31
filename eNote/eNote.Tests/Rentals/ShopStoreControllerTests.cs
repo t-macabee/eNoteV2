@@ -1,7 +1,7 @@
-using eNote.API.Controllers.Shop;
+using eNote.API.Controllers.Rentals;
 using eNote.Application.Common.Localization;
 using eNote.Application.Features.Identity.Employees;
-using eNote.Application.Features.Rentals.ReferenceData.Addresses;
+using eNote.Application.Features.ReferenceData.Addresses;
 using eNote.Application.Features.Rentals.ReferenceData.MusicStores;
 using eNote.Tests.TestUtils;
 using Microsoft.AspNetCore.Http;

@@ -7,6 +7,12 @@ import 'package:enote_core/enote_core.dart';
 
 import 'helpers.dart';
 
+Map<String, dynamic> _decodePayload(String token) => jsonDecode(
+      utf8.decode(
+        base64Url.decode(base64Url.normalize(token.split('.')[1])),
+      ),
+    ) as Map<String, dynamic>;
+
 void main() {
   group('AuthState.login', () {
     test('a 200 with a valid JWT authenticates and populates roles', () async {
@@ -135,6 +141,37 @@ void main() {
 
       await authState.logout();
       expect(authState.isManager, isFalse);
+    });
+  });
+
+  group('AuthState token claims', () {
+    test('fakeJwt writes the server claim keys', () {
+      final token = fakeJwt(role: 'Instructor', isManager: true);
+      final payload = _decodePayload(token);
+
+      expect(payload, containsPair(JwtClaimKeys.role, 'Instructor'));
+      expect(payload, containsPair(JwtClaimKeys.isManager, 'true'));
+    });
+
+    test('a token with only a role key gives no roles', () {
+      final header = base64UrlSegment(jsonEncode({'alg': 'none', 'typ': 'JWT'}));
+      final payload = base64UrlSegment(
+        jsonEncode({
+          'sub': '1',
+          'unique_name': 'student',
+          'role': 'Instructor',
+          'exp': DateTime.now()
+                  .add(const Duration(days: 1))
+                  .millisecondsSinceEpoch ~/
+              1000,
+        }),
+      );
+      final authState = AuthState(
+        tokenReader: () => '$header.$payload.signature',
+      );
+
+      expect(authState.isAuthenticated, isTrue);
+      expect(authState.roles, isEmpty);
     });
   });
 

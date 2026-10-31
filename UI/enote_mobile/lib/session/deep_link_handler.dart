@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../features/payments/stripe_redirect.dart';
-import '../shell/app_router.dart';
+import '../shell/routes.dart';
 
 sealed class DeepLinkTarget {
   const DeepLinkTarget();
@@ -67,7 +67,7 @@ class DeepLinkHandler {
     switch (target) {
       case ResetPasswordTarget(:final email, :final token):
         navigatorKey.currentState?.pushNamedAndRemoveUntil(
-          AppRouter.resetPassword,
+          AppRoutes.resetPassword,
           (route) => route.isFirst,
           arguments: ResetArgs(email: email, token: token),
         );

@@ -1,4 +1,4 @@
-using eNote.API.Controllers.Users;
+using eNote.API.Controllers.Identity;
 using eNote.Application.Constants;
 using eNote.Application.Features.Identity.Users.Services;
 using eNote.Tests.TestUtils;
@@ -248,7 +248,8 @@ public sealed class PictureAccessServiceTests
 
     private static UsersController CreateController(bool canView, (Stream? Data, string? ContentType) picture)
     {
-        var controller = new UsersController(null!, null!, new AllowFixed(canView), new PictureFixed(picture), null!)
+        var profileService = new UserProfileService(null!, null!, null!, null!, new AllowFixed(canView), new PictureFixed(picture));
+        var controller = new UsersController(profileService, null!, null!)
         {
             ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }
         };

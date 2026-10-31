@@ -1,7 +1,8 @@
-using eNote.API.Controllers.InstrumentRentals;
+using eNote.API.Controllers.Rentals;
 using eNote.Application.Common.Localization;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Constants;
+using eNote.Application.Features.Payments;
 using eNote.Application.Features.Rentals.InstrumentRentals.Services;
 using eNote.Application.Features.Rentals.Payments.Services;
 using eNote.Tests.TestUtils;
@@ -185,9 +186,9 @@ public sealed class RentalPaymentServiceTests
     }
 
     [Theory]
-    [InlineData("processing")]
-    [InlineData("succeeded")]
-    public async Task CreatePaymentIntent_Blocks_WhenStripeIsPastTheCardStep(string stripeStatus)
+    [InlineData(PaymentIntentStatus.Processing)]
+    [InlineData(PaymentIntentStatus.Succeeded)]
+    public async Task CreatePaymentIntent_Blocks_WhenStripeIsPastTheCardStep(PaymentIntentStatus stripeStatus)
     {
         var (context, student, currentUser) = await CreateStudentContextAsync();
         var instrument = await RentalTestData.SeedInstrumentAsync(context);
@@ -375,7 +376,7 @@ public sealed class RentalPaymentServiceTests
 
         var ex = await Assert.ThrowsAsync<PaymentProviderUnavailableException>(() => service.RefundAsync(rental.Id, 2000));
 
-        Assert.Equal(400, ex.StatusCode);
+        Assert.Equal(503, ex.StatusCode);
         Assert.Equal("error.payment_provider_unavailable", ex.ErrorCode);
         Assert.Equal(Messages.PaymentProviderUnavailable, ex.Message);
     }
@@ -386,7 +387,7 @@ public sealed class RentalPaymentServiceTests
         var (context, student, _) = await CreateStudentContextAsync();
         var instrument = await RentalTestData.SeedInstrumentAsync(context);
         var rental = await SeedPaidRentalAsync(context, instrument, student);
-        var gateway = new FakePaymentGateway { RefundStatus = "pending" };
+        var gateway = new FakePaymentGateway { RefundStatus = RefundStatus.Pending };
         var dispatcher = new RecordingNotificationDispatcher();
         var service = CreateService(context, CreateStoreActor(), gateway, dispatcher);
 
@@ -407,7 +408,7 @@ public sealed class RentalPaymentServiceTests
         var (context, student, _) = await CreateStudentContextAsync();
         var instrument = await RentalTestData.SeedInstrumentAsync(context);
         var rental = await SeedPaidRentalAsync(context, instrument, student);
-        var gateway = new FakePaymentGateway { RefundStatus = "failed" };
+        var gateway = new FakePaymentGateway { RefundStatus = RefundStatus.Failed };
         var service = CreateService(context, CreateStoreActor(), gateway);
 
         var ex = await Assert.ThrowsAsync<BusinessException>(() => service.RefundAsync(rental.Id, 2000));
@@ -572,7 +573,7 @@ public sealed class RentalPaymentServiceTests
         var ex = await Assert.ThrowsAsync<PaymentProviderUnavailableException>(
             () => service.CreatePaymentIntentAsync(rental.Id));
 
-        Assert.Equal(400, ex.StatusCode);
+        Assert.Equal(503, ex.StatusCode);
         Assert.Equal("error.payment_provider_unavailable", ex.ErrorCode);
         Assert.Equal(Messages.PaymentProviderUnavailable, ex.Message);
     }
@@ -591,7 +592,7 @@ public sealed class RentalPaymentServiceTests
         var ex = await Assert.ThrowsAsync<PaymentProviderUnavailableException>(
             () => controller.CreateIntent(rental.Id, CancellationToken.None));
 
-        Assert.Equal(400, ex.StatusCode);
+        Assert.Equal(503, ex.StatusCode);
         Assert.Equal("error.payment_provider_unavailable", ex.ErrorCode);
     }
 
@@ -656,7 +657,7 @@ public sealed class RentalPaymentServiceTests
             currentUser,
             gateway ?? new FakePaymentGateway(),
             dispatcher ?? new RecordingNotificationDispatcher(),
-            new StripeOptions { Currency = "eur", RentalStatementDescriptorSuffix = "ENOTE RENT T", TuitionStatementDescriptorSuffix = "ENOTE TUIT T" },
+            new PaymentOptions { Currency = "eur", RentalStatementDescriptorSuffix = "ENOTE RENT T", TuitionStatementDescriptorSuffix = "ENOTE TUIT T" },
             NullLogger<RentalPaymentService>.Instance);
     }
 }

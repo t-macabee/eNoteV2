@@ -2,7 +2,7 @@ using eNote.Application.Common.Localization;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Constants;
 using eNote.Application.Features.Academic.Courses.Services;
-using eNote.Application.Features.Rentals.Payments.Services;
+using eNote.Application.Features.Payments;
 using eNote.Tests.TestUtils;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -338,7 +338,7 @@ public sealed class CourseEnrollmentServiceTests
         context.Set<CoursePayment>().Add(new CoursePayment(enrollment.Id, "pi_failed_processing", 10000, "bam", PaymentStatus.Failed));
         await context.SaveChangesAsync();
         var gateway = new FakePaymentGateway();
-        gateway.AddIntent("pi_failed_processing", 10000, "bam", "processing");
+        gateway.AddIntent("pi_failed_processing", 10000, "bam", PaymentIntentStatus.Processing);
         var service = CreateService(context, student, gateway);
 
         var ex = await Assert.ThrowsAsync<BusinessException>(() => service.UnenrollAsync(course.Id));
@@ -369,7 +369,7 @@ public sealed class CourseEnrollmentServiceTests
 
         Assert.Single(gateway.CancelCalls);
         Assert.Equal("pi_open", gateway.CancelCalls[0].PaymentIntentId);
-        Assert.Equal("canceled", (await gateway.RetrievePaymentIntentAsync("pi_open")).Status);
+        Assert.Equal(PaymentIntentStatus.Canceled, (await gateway.RetrievePaymentIntentAsync("pi_open")).Status);
         var payment = await context.Set<CoursePayment>().SingleAsync();
         Assert.Equal(PaymentStatus.Canceled, payment.Status);
         var stored = await context.Set<Enrollment>().SingleAsync(x => x.StudentId == student.Id && x.CourseId == course.Id);
@@ -387,7 +387,7 @@ public sealed class CourseEnrollmentServiceTests
         context.Set<CoursePayment>().Add(new CoursePayment(enrollment.Id, "pi_processing", 10000, "bam", PaymentStatus.RequiresAction));
         await context.SaveChangesAsync();
         var gateway = new FakePaymentGateway();
-        gateway.AddIntent("pi_processing", 10000, "bam", "processing");
+        gateway.AddIntent("pi_processing", 10000, "bam", PaymentIntentStatus.Processing);
         var service = CreateService(context, student, gateway);
 
         var ex = await Assert.ThrowsAsync<BusinessException>(() => service.UnenrollAsync(course.Id));

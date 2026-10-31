@@ -31,7 +31,7 @@ public sealed class ValidationDisplayNamesTests : IDisposable
     [MemberData(nameof(Validators))]
     public void EveryRuleProperty_HasABosnianDisplayName(Type validatorType)
     {
-        var validator = Instantiate(validatorType);
+        var validator = ValidatorFactory.Instantiate(validatorType);
 
         foreach (var rule in validator.CreateDescriptor().Rules)
         {
@@ -76,22 +76,4 @@ public sealed class ValidationDisplayNamesTests : IDisposable
 
     private static bool IsValidator(Type type) =>
         type.GetInterfaces().Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IValidator<>));
-
-    private static IValidator Instantiate(Type validatorType)
-    {
-        var constructor = validatorType
-            .GetConstructors()
-            .MinBy(c => c.GetParameters().Length)
-            ?? throw new InvalidOperationException($"Validator has no public constructor: {validatorType.FullName}");
-
-        var arguments = constructor.GetParameters()
-            .Select(p => CreateArgument(p.ParameterType))
-            .ToArray();
-
-        return (IValidator)constructor.Invoke(arguments);
-    }
-
-    private static object CreateArgument(Type type) => type == typeof(IClock)
-        ? new FixedClock(new DateTime(2026, 7, 1, 12, 0, 0, DateTimeKind.Utc))
-        : throw new InvalidOperationException($"Validator constructor dependency is not supported by the display-name test: {type.FullName}");
 }

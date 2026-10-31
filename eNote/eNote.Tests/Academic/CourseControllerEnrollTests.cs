@@ -1,4 +1,4 @@
-using eNote.API.Controllers.Courses;
+using eNote.API.Controllers.Academic;
 using eNote.Application.Features.Academic.Courses;
 using eNote.Application.Features.Academic.Courses.Services;
 using eNote.Tests.TestUtils;

@@ -1,11 +1,14 @@
+using eNote.API.Configuration;
 using eNote.API.Extensions;
 using eNote.Application.Features.Rentals.InstrumentRentals;
-using eNote.Application.Features.Rentals.Payments.Services;
+using eNote.Application.Features.Payments;
 using eNote.Infrastructure;
 using eNote.Infrastructure.Configuration;
 using eNote.Infrastructure.Data.Seed;
+using eNote.Infrastructure.Email;
 using eNote.Infrastructure.Identity;
 using eNote.Infrastructure.Messaging;
+using eNote.Infrastructure.Payments.Stripe;
 using eNote.Infrastructure.Storage;
 using Microsoft.AspNetCore.Cors.Infrastructure;
 using Microsoft.AspNetCore.Http;
@@ -120,9 +123,6 @@ public sealed class ConfigurationOptionsTests
     [Theory]
     [InlineData("Stripe:SecretKey", "Stripe__SecretKey is required.")]
     [InlineData("Stripe:WebhookSecret", "Stripe__WebhookSecret is required.")]
-    [InlineData("Stripe:Currency", "Stripe__Currency is required.")]
-    [InlineData("Stripe:RentalStatementDescriptorSuffix", "Stripe__RentalStatementDescriptorSuffix is required.")]
-    [InlineData("Stripe:TuitionStatementDescriptorSuffix", "Stripe__TuitionStatementDescriptorSuffix is required.")]
     public void StripeOptions_MissingRequiredValue_Fails(string key, string message)
     {
         var services = BuildApiServices(removeKeys: key);
@@ -135,13 +135,35 @@ public sealed class ConfigurationOptionsTests
     [Fact]
     public void StripeOptions_EmptySection_FailsForEveryRequiredValue()
     {
-        var services = BuildApiServices(removeKeys:
-            ["Stripe:SecretKey", "Stripe:WebhookSecret", "Stripe:Currency", "Stripe:RentalStatementDescriptorSuffix", "Stripe:TuitionStatementDescriptorSuffix"]);
+        var services = BuildApiServices(removeKeys: ["Stripe:SecretKey", "Stripe:WebhookSecret"]);
 
         var exception = Assert.Throws<OptionsValidationException>(() => ResolveOptions<StripeOptions>(services));
 
         Assert.Contains("Stripe__SecretKey is required.", exception.Message);
         Assert.Contains("Stripe__WebhookSecret is required.", exception.Message);
+    }
+
+    [Theory]
+    [InlineData("Stripe:Currency", "Stripe__Currency is required.")]
+    [InlineData("Stripe:RentalStatementDescriptorSuffix", "Stripe__RentalStatementDescriptorSuffix is required.")]
+    [InlineData("Stripe:TuitionStatementDescriptorSuffix", "Stripe__TuitionStatementDescriptorSuffix is required.")]
+    public void PaymentOptions_MissingRequiredValue_Fails(string key, string message)
+    {
+        var services = BuildApiServices(removeKeys: key);
+
+        var exception = Assert.Throws<OptionsValidationException>(() => ResolveOptions<PaymentOptions>(services));
+
+        Assert.Contains(message, exception.Message);
+    }
+
+    [Fact]
+    public void PaymentOptions_EmptySection_FailsForEveryRequiredValue()
+    {
+        var services = BuildApiServices(removeKeys:
+            ["Stripe:Currency", "Stripe:RentalStatementDescriptorSuffix", "Stripe:TuitionStatementDescriptorSuffix"]);
+
+        var exception = Assert.Throws<OptionsValidationException>(() => ResolveOptions<PaymentOptions>(services));
+
         Assert.Contains("Stripe__Currency is required.", exception.Message);
         Assert.Contains("Stripe__RentalStatementDescriptorSuffix is required.", exception.Message);
         Assert.Contains("Stripe__TuitionStatementDescriptorSuffix is required.", exception.Message);
@@ -158,7 +180,7 @@ public sealed class ConfigurationOptionsTests
     [InlineData("Stripe:TuitionStatementDescriptorSuffix", "12345", false)]
     [InlineData("Stripe:TuitionStatementDescriptorSuffix", "ENOTE*Rental", false)]
     [InlineData("Stripe:TuitionStatementDescriptorSuffix", "ENOTE Najam-2", true)]
-    public void StripeOptions_StatementDescriptorSuffix_Validation(string key, string value, bool expectedValid)
+    public void PaymentOptions_StatementDescriptorSuffix_Validation(string key, string value, bool expectedValid)
     {
         var services = BuildApiServices(overrides: new Dictionary<string, string?>
         {
@@ -167,7 +189,7 @@ public sealed class ConfigurationOptionsTests
 
         if (expectedValid)
         {
-            var options = ResolveOptions<StripeOptions>(services);
+            var options = ResolveOptions<PaymentOptions>(services);
             var actual = key == "Stripe:RentalStatementDescriptorSuffix"
                 ? options.RentalStatementDescriptorSuffix
                 : options.TuitionStatementDescriptorSuffix;
@@ -176,7 +198,7 @@ public sealed class ConfigurationOptionsTests
             return;
         }
 
-        var exception = Assert.Throws<OptionsValidationException>(() => ResolveOptions<StripeOptions>(services));
+        var exception = Assert.Throws<OptionsValidationException>(() => ResolveOptions<PaymentOptions>(services));
 
         Assert.Contains($"{key.Replace(":", "__")} must have at most 22 characters", exception.Message);
     }
@@ -210,11 +232,11 @@ public sealed class ConfigurationOptionsTests
     }
 
     [Fact]
-    public void StripeOptions_Currency_IsTrimmedAndLowered()
+    public void PaymentOptions_Currency_IsTrimmedAndLowered()
     {
         var services = BuildApiServices(overrides: new Dictionary<string, string?> { ["Stripe:Currency"] = " BAM " });
 
-        var options = ResolveOptions<StripeOptions>(services);
+        var options = ResolveOptions<PaymentOptions>(services);
 
         Assert.Equal("bam", options.Currency);
     }

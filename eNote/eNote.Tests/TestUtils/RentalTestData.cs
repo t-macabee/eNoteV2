@@ -5,6 +5,15 @@ public static class RentalTestData
     public static ENoteContext CreateContext(DateTime now) =>
         new(TestDbContextFactory.CreateOptions(), new FixedClock(now), new StubCurrentActor(storeId: 1)) { ExplicitStoreId = 1 };
 
+    public static async Task<Student> SeedStudentAsync(ENoteContext context, DateTime now)
+    {
+        var student = new Student(appUserId: 100, now.AddMonths(-1));
+        student.UpdateMembership(now.AddDays(1));
+        context.Set<Student>().Add(student);
+        await context.SaveChangesAsync();
+        return student;
+    }
+
     public static async Task<Instrument> SeedInstrumentAsync(ENoteContext context)
     {
         var type = new InstrumentType { Type = "Guitar", MonthlyFee = 50m };

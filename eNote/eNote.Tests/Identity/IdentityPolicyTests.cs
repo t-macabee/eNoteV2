@@ -1,6 +1,7 @@
 using eNote.Application.Features.Identity.Auth;
 using eNote.Application.Validation.Identity;
 using eNote.Infrastructure;
+using eNote.Tests.TestUtils;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,7 +15,7 @@ public sealed class IdentityPolicyTests
     public void AddInfrastructureIdentity_AppliesIdentityPolicy()
     {
         var services = new ServiceCollection();
-        var configuration = CreateConfiguration();
+        var configuration = TestConfiguration.Create();
         services.AddSingleton<IConfiguration>(configuration);
 
         services.AddPersistence(configuration).AddInfrastructureIdentity();
@@ -46,12 +47,4 @@ public sealed class IdentityPolicyTests
         Assert.Equal(expectedPasswordErrorCount, passwordErrors.Count);
         Assert.All(passwordErrors, e => Assert.Equal("Lozinka mora imati najmanje 8 znakova.", e.ErrorMessage));
     }
-
-    private static IConfiguration CreateConfiguration() =>
-        new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string?>
-            {
-                ["ConnectionStrings:DefaultConnection"] = "Server=localhost;Database=x;",
-            })
-            .Build();
 }

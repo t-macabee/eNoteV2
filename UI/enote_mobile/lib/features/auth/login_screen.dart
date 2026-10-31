@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:enote_core/enote_core.dart';
 
 import '../../session/session_controller.dart';
-import '../../shell/app_router.dart';
+import '../../shell/routes.dart';
 import '../../widgets/app_text_field.dart';
 import '../../widgets/form_submit_state.dart';
 
@@ -94,12 +94,12 @@ class _LoginScreenState extends State<LoginScreen>
             const SizedBox(height: 8),
             TextButton(
               onPressed: () =>
-                  Navigator.of(context).pushNamed(AppRouter.register),
+                  Navigator.of(context).pushNamed(AppRoutes.register),
               child: const Text('Registruj se'),
             ),
             TextButton(
               onPressed: () =>
-                  Navigator.of(context).pushNamed(AppRouter.forgotPassword),
+                  Navigator.of(context).pushNamed(AppRoutes.forgotPassword),
               child: const Text('Zaboravljena lozinka?'),
             ),
           ],

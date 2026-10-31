@@ -1,6 +1,5 @@
 using eNote.Application.Features.Communication.Events;
 using eNote.Domain.Entities.Communication;
-using eNote.Domain.Entities.Shared;
 using eNote.Tests.TestUtils;
 using Microsoft.EntityFrameworkCore;
 

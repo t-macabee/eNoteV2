@@ -1,5 +1,7 @@
+using eNote.API.Configuration;
 using eNote.API.Extensions;
-using eNote.Application.Features.Rentals.Payments.Services;
+using eNote.Application.Features.Payments;
+using eNote.Infrastructure.Payments.Stripe;
 using eNote.Infrastructure.Identity;
 using eNote.Worker.Rentals;
 using System.Reflection;
@@ -133,6 +135,7 @@ public sealed class EnvExampleTests
         var assemblies = new[]
         {
             typeof(CorsOriginsOptions).Assembly,
+            typeof(PaymentOptions).Assembly,
             typeof(StripeOptions).Assembly,
             typeof(JwtOptions).Assembly,
             typeof(RentalPickupExpiryService).Assembly
