@@ -1,4 +1,3 @@
-using eNote.Application.Common.Localization;
 using eNote.Application.Features.Academic.Assignments;
 using eNote.Application.Validation.Academic;
 
@@ -36,7 +35,7 @@ public sealed class GradeAssignmentRequestValidatorTests
 
         Assert.False(result.IsValid);
         Assert.Contains(result.Errors, e => e.PropertyName == nameof(GradeAssignmentRequest.Feedback));
-        Assert.Contains(result.Errors, e => e.ErrorMessage == Messages.AssignmentFeedbackTooLong);
+        Assert.Contains(result.Errors, e => e.ErrorMessage == "Komentar ne smije biti duži od 1000 karaktera.");
     }
 
     [Fact]

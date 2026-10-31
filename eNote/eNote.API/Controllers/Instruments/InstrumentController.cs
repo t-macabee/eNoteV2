@@ -101,7 +101,7 @@ public sealed class InstrumentController(
     [Authorize(Roles = AppRoles.Student)]
     [HttpGet("~/api/v{version:apiVersion}/student/instruments/recommended")]
     [ProducesResponseType(typeof(IReadOnlyList<InstrumentRecommendationDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<IReadOnlyList<InstrumentRecommendationDto>>> GetRecommended([FromQuery] int count = 5, CancellationToken cancellationToken = default)
+    public async Task<ActionResult<IReadOnlyList<InstrumentRecommendationDto>>> GetRecommended([FromQuery] int count = RecommendationService.DefaultCount, CancellationToken cancellationToken = default)
     {
         var result = await recommendationService.GetRecommendedInstrumentsAsync(count, cancellationToken);
         return Ok(result);

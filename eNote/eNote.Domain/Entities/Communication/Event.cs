@@ -2,6 +2,9 @@ namespace eNote.Domain.Entities.Communication;
 
 public class Event : AuditableEntity
 {
+    public const int TitleMaxLength = 150;
+    public const int DescriptionMaxLength = 4000;
+
     public string Title { get; private set; } = null!;
     public string Description { get; private set; } = null!;
     public DateTime StartsAt { get; private set; }

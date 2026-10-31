@@ -2,6 +2,8 @@ namespace eNote.Domain.Entities.Assignments;
 
 public class Assignment : AuditableEntity
 {
+    public const int TitleMaxLength = 200;
+
     public int LectureId { get; private set; }
     public Lecture Lecture { get; private set; } = null!;
 

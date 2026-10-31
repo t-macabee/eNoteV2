@@ -86,6 +86,139 @@ public sealed class RecommendationServiceTests
     }
 
     [Fact]
+    public async Task GetRecommendedInstrumentsAsync_ScoresManufacturerAndTypeMatches()
+    {
+        await using var context = RentalTestData.CreateContext(Now);
+        var student = await SeedStudentAsync(context);
+        var (typeA, _) = await SeedTwoTypesAsync(context);
+        var store = await SeedStoreAsync(context);
+
+        var instrumentA = new Instrument("InstrA", "YAM", null, null, typeA.Id, store.Id);
+        var instrumentB = new Instrument("InstrB", "ROL", null, null, typeA.Id, store.Id);
+        context.Set<Instrument>().AddRange(instrumentA, instrumentB);
+        await context.SaveChangesAsync();
+
+        context.Set<InstrumentRental>().Add(CreateCompletedRental(instrumentA.Id, student.Id, store.Id, Now.AddDays(-40)));
+        await context.SaveChangesAsync();
+
+        var service = CreateService(context, student);
+
+        var result = await service.GetRecommendedInstrumentsAsync();
+
+        Assert.Equal(2, result.Count);
+        Assert.Equal(instrumentA.Id, result[0].Instrument.Id);
+        Assert.Equal(0.805, result[0].Score);
+        Assert.Equal(instrumentB.Id, result[1].Instrument.Id);
+        Assert.Equal(0.625, result[1].Score);
+        Assert.Equal(
+            [
+                "Na osnovu vaše historije najma (Guitar).",
+                "Sličan vašim prethodnim izborima proizvođača ili vrste.",
+                "Popularan među studentima."
+            ],
+            result[0].Reasons);
+        Assert.Equal(
+            [
+                "Na osnovu vaše historije najma (Guitar).",
+                "Sličan vašim prethodnim izborima proizvođača ili vrste."
+            ],
+            result[1].Reasons);
+    }
+
+    [Theory]
+    [InlineData(0, 1)]
+    [InlineData(7, 7)]
+    [InlineData(25, 20)]
+    public async Task GetRecommendedInstrumentsAsync_ClampsCount(int count, int expected)
+    {
+        await using var context = RentalTestData.CreateContext(Now);
+        var student = await SeedStudentAsync(context);
+        var (typeA, _) = await SeedTwoTypesAsync(context);
+        var store = await SeedStoreAsync(context);
+
+        var instruments = new List<Instrument>();
+        for (var i = 0; i < 22; i++)
+        {
+            instruments.Add(new Instrument($"I{i}", "YAM", null, null, typeA.Id, store.Id));
+        }
+
+        context.Set<Instrument>().AddRange(instruments);
+        await context.SaveChangesAsync();
+
+        var service = CreateService(context, student);
+
+        var result = await service.GetRecommendedInstrumentsAsync(count);
+
+        Assert.Equal(expected, result.Count);
+    }
+
+    [Fact]
+    public async Task GetRecommendedInstrumentsAsync_ReturnsFiveByDefault()
+    {
+        await using var context = RentalTestData.CreateContext(Now);
+        var student = await SeedStudentAsync(context);
+        var (typeA, _) = await SeedTwoTypesAsync(context);
+        var store = await SeedStoreAsync(context);
+
+        var instruments = new List<Instrument>();
+        for (var i = 0; i < 8; i++)
+        {
+            instruments.Add(new Instrument($"D{i}", "YAM", null, null, typeA.Id, store.Id));
+        }
+
+        context.Set<Instrument>().AddRange(instruments);
+        await context.SaveChangesAsync();
+
+        var service = CreateService(context, student);
+
+        var result = await service.GetRecommendedInstrumentsAsync();
+
+        Assert.Equal(5, result.Count);
+    }
+
+    [Fact]
+    public async Task GetRecommendedInstrumentsAsync_PoolGrowsWithRequestedCount()
+    {
+        await using var context = RentalTestData.CreateContext(Now);
+        var student = await SeedStudentAsync(context);
+        var (typeA, _) = await SeedTwoTypesAsync(context);
+        var store = await SeedStoreAsync(context);
+
+        var rented = new Instrument("Rented", "YAM", null, null, typeA.Id, store.Id);
+        context.Set<Instrument>().Add(rented);
+        await context.SaveChangesAsync();
+
+        var rolInstruments = new List<Instrument>();
+        for (var i = 0; i < 40; i++)
+        {
+            rolInstruments.Add(new Instrument($"R{i}", "ROL", null, null, typeA.Id, store.Id));
+        }
+
+        context.Set<Instrument>().AddRange(rolInstruments);
+        await context.SaveChangesAsync();
+
+        var lateYamaha = new List<Instrument>();
+        for (var i = 0; i < 10; i++)
+        {
+            lateYamaha.Add(new Instrument($"Y{i}", "YAM", null, null, typeA.Id, store.Id));
+        }
+
+        context.Set<Instrument>().AddRange(lateYamaha);
+        await context.SaveChangesAsync();
+
+        context.Set<InstrumentRental>().Add(CreateCompletedRental(rented.Id, student.Id, store.Id, Now.AddDays(-40)));
+        await context.SaveChangesAsync();
+
+        var service = CreateService(context, student);
+
+        var result = await service.GetRecommendedInstrumentsAsync(20);
+
+        Assert.Equal(20, result.Count);
+        var resultIds = result.Select(r => r.Instrument.Id).ToHashSet();
+        Assert.All(lateYamaha, instrument => Assert.Contains(instrument.Id, resultIds));
+    }
+
+    [Fact]
     public async Task GetRecommendedInstrumentsAsync_Popularity_CountsAllRentals()
     {
         await using var context = RentalTestData.CreateContext(Now);

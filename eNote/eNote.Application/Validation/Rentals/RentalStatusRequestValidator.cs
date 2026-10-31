@@ -7,6 +7,6 @@ public sealed class RentalStatusRequestValidator : AbstractValidator<RentalStatu
 {
     public RentalStatusRequestValidator()
     {
-        RuleFor(x => x.Note).MaximumLength(500);
+        RuleFor(x => x.Note).MaximumLength(InstrumentRental.NoteMaxLength);
     }
 }

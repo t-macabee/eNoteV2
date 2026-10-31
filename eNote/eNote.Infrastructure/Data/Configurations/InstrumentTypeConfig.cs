@@ -7,7 +7,7 @@ public sealed class InstrumentTypeConfig : IEntityTypeConfiguration<InstrumentTy
 {
     public void Configure(EntityTypeBuilder<InstrumentType> builder)
     {
-        builder.Property(t => t.Type).HasStringConfig(100, true);
+        builder.Property(t => t.Type).HasStringConfig(InstrumentType.TypeMaxLength, true);
         builder.Property(t => t.MonthlyFee).HasDecimalPrecision();
     }
 }

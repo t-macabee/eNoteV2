@@ -12,6 +12,11 @@ public static class RateLimitingExtensions
     public const string AuthPolicy = "auth";
     public const string UploadsPolicy = "uploads";
 
+    public const int AuthIpPermitLimit = 60;
+    public const int AuthIdentityPermitLimit = 10;
+    public const int UploadPermitLimit = 20;
+    private static readonly TimeSpan WindowLength = TimeSpan.FromMinutes(1);
+
     public static IServiceCollection AddApplicationRateLimiting(this IServiceCollection services)
     {
         services.AddRateLimiter(options =>
@@ -27,7 +32,7 @@ public static class RateLimitingExtensions
                 }
 
                 var ip = httpContext.Connection.RemoteIpAddress?.ToString() ?? "anon";
-                return RateLimitingExtensions.Window(ip, 60);
+                return RateLimitingExtensions.Window(ip, AuthIpPermitLimit);
             });
 
             options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
@@ -42,7 +47,7 @@ public static class RateLimitingExtensions
             _ => new FixedWindowRateLimiterOptions
             {
                 PermitLimit = permitLimit,
-                Window = TimeSpan.FromMinutes(1),
+                Window = WindowLength,
                 QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
                 QueueLimit = 0
             });
@@ -64,7 +69,7 @@ public sealed class AuthRateLimiterPolicy : IRateLimiterPolicy<string>
             key = $"user:{identity.Trim().ToLowerInvariant()}";
         }
 
-        return RateLimitingExtensions.Window(key, 10);
+        return RateLimitingExtensions.Window(key, RateLimitingExtensions.AuthIdentityPermitLimit);
     }
 }
 
@@ -76,7 +81,7 @@ public sealed class UploadRateLimiterPolicy : IRateLimiterPolicy<string>
     {
         var key = httpContext.User.FindFirstValue(JwtRegisteredClaimNames.Sub) ?? "anon";
 
-        return RateLimitingExtensions.Window(key, 20);
+        return RateLimitingExtensions.Window(key, RateLimitingExtensions.UploadPermitLimit);
     }
 }
 

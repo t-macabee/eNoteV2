@@ -7,6 +7,6 @@ public sealed class CityRequestValidator : AbstractValidator<CityRequest>
 {
     public CityRequestValidator()
     {
-        RuleFor(x => x.Name).NotEmpty().WithMessage("Naziv grada je obavezan.").MaximumLength(100).WithMessage("Naziv ne smije biti duži od 100 karaktera.");
+        RuleFor(x => x.Name).NotEmpty().WithMessage("Naziv grada je obavezan.").MaximumLength(City.NameMaxLength).WithMessage($"Naziv ne smije biti duži od {City.NameMaxLength} karaktera.");
     }
 }

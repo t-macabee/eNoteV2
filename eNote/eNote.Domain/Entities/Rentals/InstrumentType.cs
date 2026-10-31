@@ -2,6 +2,7 @@ namespace eNote.Domain.Entities.Rentals;
 
 public class InstrumentType : BaseEntity
 {
+    public const int TypeMaxLength = 100;
 
     private readonly List<Instrument> _instruments = [];
 

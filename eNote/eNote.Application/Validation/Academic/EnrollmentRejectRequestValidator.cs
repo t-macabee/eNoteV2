@@ -7,6 +7,6 @@ public sealed class EnrollmentRejectRequestValidator : AbstractValidator<Enrollm
 {
     public EnrollmentRejectRequestValidator()
     {
-        RuleFor(x => x.Reason).MaximumLength(500);
+        RuleFor(x => x.Reason).MaximumLength(Enrollment.DecisionNoteMaxLength);
     }
 }

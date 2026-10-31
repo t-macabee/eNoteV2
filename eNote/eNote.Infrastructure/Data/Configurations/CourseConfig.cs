@@ -21,5 +21,7 @@ public sealed class CourseConfig : IEntityTypeConfiguration<Course>
         builder.Property(x => x.IsPublished).HasDefaultFalse();
         builder.Property(x => x.IsActive).HasDefaultValue(true);
         builder.HasQueryFilter(x => x.IsActive);
+
+        builder.Property(x => x.Name).HasStringConfig(Course.NameMaxLength, true);
     }
 }

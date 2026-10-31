@@ -52,6 +52,7 @@ public sealed class MusicStoreRequestValidatorTests
 
         Assert.False(result.IsValid);
         Assert.Contains(result.Errors, e => e.PropertyName == nameof(MusicStoreRequest.PhoneNumber) && e.ErrorMessage == Messages.PhoneNumberTooLong);
+        Assert.Contains(result.Errors, e => e.PropertyName == nameof(MusicStoreRequest.PhoneNumber) && e.ErrorMessage == "Broj telefona ne smije biti duži od 30 karaktera.");
     }
 
     private static MusicStoreRequest ValidRequest() => new()

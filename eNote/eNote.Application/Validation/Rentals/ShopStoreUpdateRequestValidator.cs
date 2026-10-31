@@ -9,7 +9,7 @@ public sealed class ShopStoreUpdateRequestValidator : AbstractValidator<ShopStor
     {
         RuleFor(x => x.BusinessHours)
             .NotEmpty().WithMessage("Radno vrijeme je obavezno (npr. 09:00-17:00).")
-            .MaximumLength(50).WithMessage("Radno vrijeme ne smije biti duže od 50 karaktera.");
+            .MaximumLength(MusicStore.BusinessHoursMaxLength).WithMessage($"Radno vrijeme ne smije biti duže od {MusicStore.BusinessHoursMaxLength} karaktera.");
 
         RuleFor(x => x.PhoneNumber)
             .PhoneNumber().When(x => !string.IsNullOrWhiteSpace(x.PhoneNumber));

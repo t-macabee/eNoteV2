@@ -6,6 +6,8 @@ namespace eNote.Domain.Entities.Rentals;
 
 public sealed class InstrumentRental : AuditableEntity, ITenantScoped
 {
+    public const int NoteMaxLength = 500;
+
     public static readonly TimeSpan PickupWindow = TimeSpan.FromDays(2);
     public static readonly TimeSpan RentalTerm = TimeSpan.FromDays(RentalChargeCalculator.DaysPerBillingCycle);
     public static readonly TimeSpan RenewalWindow = TimeSpan.FromDays(5);

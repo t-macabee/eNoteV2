@@ -31,7 +31,7 @@ public sealed class TuitionPaymentServiceTests
         var call = Assert.Single(gateway.CreateCalls);
         Assert.Equal(12050, call.AmountCents);
         Assert.Equal("bam", call.Currency);
-        Assert.Equal(TuitionOptions.StatementDescriptorSuffix, call.StatementDescriptorSuffix);
+        Assert.Equal("ENOTE TUIT T", call.StatementDescriptorSuffix);
         Assert.Equal(enrollment.Id.ToString(), call.Metadata["enrollmentId"]);
         Assert.Equal(course.Id.ToString(), call.Metadata["courseId"]);
         Assert.Equal(student.Id.ToString(), call.Metadata["studentId"]);
@@ -583,7 +583,7 @@ public sealed class TuitionPaymentServiceTests
             clock ?? new FixedClock(Now),
             actor,
             gateway ?? new FakePaymentGateway(),
-            new StripeOptions { Currency = "bam", StatementDescriptor = "ENOTE" },
+            new StripeOptions { Currency = "bam", RentalStatementDescriptorSuffix = "ENOTE RENT T", TuitionStatementDescriptorSuffix = "ENOTE TUIT T" },
             NullLogger<TuitionPaymentService>.Instance);
     }
 }

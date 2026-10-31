@@ -30,7 +30,7 @@ public static class Messages
     public const string MusicStoreRequiredForEmployee = "Prodavnica je obavezna za uposlenika radnje.";
     public const string MusicStoreSelectionRequired = "Odaberite prodavnicu iz liste.";
     public const string PhoneNumberFormat = "Unesite broj telefona sa 6 do 15 cifara, opcionalno sa + na početku; razmaci su dozvoljeni (npr. +387 61 123 456).";
-    public const string PhoneNumberTooLong = "Broj telefona ne smije biti duži od 30 karaktera.";
+    public static readonly string PhoneNumberTooLong = $"Broj telefona ne smije biti duži od {MusicStore.PhoneNumberMaxLength} karaktera.";
 
     public const string StudentProfileNotFound = "Student profil nije pronađen.";
     public const string InstructorProfileNotFound = "Instruktor profil nije pronađen.";
@@ -63,7 +63,7 @@ public static class Messages
     public const string LectureAlreadyHeld = "Održano predavanje nije moguće otkazati.";
     public const string LectureRsvpClosed = "Prijave su zatvorene jer je predavanje počelo.";
     public const string LectureCancelReasonRequired = "Razlog otkazivanja je obavezan.";
-    public const string LectureCancelReasonLength = "Razlog otkazivanja mora imati između 3 i 500 karaktera.";
+    public static readonly string LectureCancelReasonLength = $"Razlog otkazivanja mora imati između 3 i {Lecture.CancellationReasonMaxLength} karaktera.";
     public const string LectureIndividualNotForStudent = "Individualno predavanje je namijenjeno samo odabranom studentu.";
     public const string LectureStudentNotActiveEnrollment = "Učenik nije aktivno upisan na ovaj kurs.";
 
@@ -100,7 +100,7 @@ public static class Messages
     public const string AssignmentNotSubmitted = "Zadatak nije predan.";
     public const string AssignmentSubmissionNotFound = "Predaja zadatka nije pronađena.";
     public const string AssignmentInvalidGrade = "Ocjena mora biti između 0 i 100.";
-    public const string AssignmentFeedbackTooLong = "Komentar ne smije biti duži od 1000 karaktera.";
+    public static readonly string AssignmentFeedbackTooLong = $"Komentar ne smije biti duži od {AssignmentSubmission.FeedbackMaxLength} karaktera.";
     public const string LectureNoteNotFound = "Bilješka predavanja nije pronađena.";
     public const string StudentNotEnrolled = "Student nije upisan na kurs.";
     public const string AlreadyEnrolled = "Student je već upisan na kurs.";
@@ -113,14 +113,14 @@ public static class Messages
     public const string MembershipInactive = "Članarina nije aktivna. Kontaktirajte administratora.";
     public const string MembershipAmountInvalid = "Iznos članarine mora biti veći od 0 i najviše 99999999.99.";
     public const string MembershipReceiptNumberRequired = "Broj potvrde je obavezan.";
-    public const string MembershipReceiptNumberLength = "Broj potvrde ne smije biti duži od 50 karaktera.";
+    public static readonly string MembershipReceiptNumberLength = $"Broj potvrde ne smije biti duži od {MembershipPayment.ReceiptNumberMaxLength} karaktera.";
     public const string MembershipReceiptTaken = "Potvrda s ovim brojem je već evidentirana.";
     public const string MembershipPeriodSelectionRequired = "Odredite period članarine krajem perioda ili brojem mjeseci.";
     public const string MembershipMonthsRange = "Broj mjeseci mora biti između 1 i 24.";
     public const string MembershipPeriodEndRange = "Kraj perioda mora biti između današnjeg datuma i deset godina u budućnosti.";
     public const string MembershipPaidAtRange = "Datum uplate mora biti između deset godina u prošlosti i današnjeg datuma.";
     public const string MembershipPeriodEndBeforeStart = "Kraj perioda mora biti nakon početka perioda.";
-    public const string MembershipNoteTooLong = "Napomena ne smije biti duža od 500 karaktera.";
+    public static readonly string MembershipNoteTooLong = $"Napomena ne smije biti duža od {MembershipPayment.NoteMaxLength} karaktera.";
     public const string MembershipWarningNotAllowed = "Upozorenje se može poslati samo kada članarina ističe u narednih 7 dana ili je već istekla.";
     public const string MembershipWarningRecentlySent = "Upozorenje je već poslano u posljednja 24 sata.";
     public const string MembershipWarningMessageTooLong = "Poruka ne smije biti duža od 500 karaktera.";

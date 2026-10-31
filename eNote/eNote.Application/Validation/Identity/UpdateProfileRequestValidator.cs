@@ -7,9 +7,9 @@ public sealed class UpdateProfileRequestValidator : AbstractValidator<UpdateProf
 {
     public UpdateProfileRequestValidator(IClock clock)
     {
-        RuleFor(x => x.Email).NotEmpty().EmailAddress().MaximumLength(256);
-        RuleFor(x => x.FirstName).MaximumLength(256);
-        RuleFor(x => x.LastName).MaximumLength(256);
+        RuleFor(x => x.Email).NotEmpty().EmailAddress().MaximumLength(IdentityPolicy.EmailMaxLength);
+        RuleFor(x => x.FirstName).MaximumLength(IdentityPolicy.PersonNameMaxLength);
+        RuleFor(x => x.LastName).MaximumLength(IdentityPolicy.PersonNameMaxLength);
         RuleFor(x => x.DateOfBirth)
             .LessThanOrEqualTo(_ => clock.UtcNow.Date)
             .When(x => x.DateOfBirth.HasValue);

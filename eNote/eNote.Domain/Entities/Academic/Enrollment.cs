@@ -5,6 +5,8 @@ namespace eNote.Domain.Entities.Academic;
 
 public class Enrollment : AuditableEntity
 {
+    public const int DecisionNoteMaxLength = 500;
+
     public int StudentId { get; private set; }
     public Student Student { get; private set; } = null!;
     public int CourseId { get; private set; }

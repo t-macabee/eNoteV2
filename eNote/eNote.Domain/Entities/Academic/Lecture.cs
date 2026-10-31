@@ -3,6 +3,10 @@ namespace eNote.Domain.Entities.Academic;
 
 public sealed class Lecture : AuditableEntity
 {
+    public const int NameMaxLength = 200;
+    public const int LocationMaxLength = 200;
+    public const int CancellationReasonMaxLength = 500;
+
     public int CourseId { get; private set; }
     public Course Course { get; private set; } = null!;
 

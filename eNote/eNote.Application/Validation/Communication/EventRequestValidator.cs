@@ -7,8 +7,8 @@ public sealed class EventRequestValidator : AbstractValidator<EventRequest>
 {
     public EventRequestValidator()
     {
-        RuleFor(x => x.Title).NotEmpty().WithMessage("Naslov je obavezan.").MaximumLength(150).WithMessage("Naslov ne smije biti duži od 150 karaktera.");
-        RuleFor(x => x.Description).NotEmpty().WithMessage("Opis je obavezan.").MaximumLength(4000).WithMessage("Opis ne smije biti duži od 4000 karaktera.");
+        RuleFor(x => x.Title).NotEmpty().WithMessage("Naslov je obavezan.").MaximumLength(Event.TitleMaxLength).WithMessage($"Naslov ne smije biti duži od {Event.TitleMaxLength} karaktera.");
+        RuleFor(x => x.Description).NotEmpty().WithMessage("Opis je obavezan.").MaximumLength(Event.DescriptionMaxLength).WithMessage($"Opis ne smije biti duži od {Event.DescriptionMaxLength} karaktera.");
         RuleFor(x => x.StartsAt).NotEmpty().WithMessage("Vrijeme početka je obavezno.");
         RuleFor(x => x.EndsAt)
             .GreaterThan(x => x.StartsAt)

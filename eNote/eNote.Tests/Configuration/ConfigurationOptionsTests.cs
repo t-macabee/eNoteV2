@@ -121,7 +121,8 @@ public sealed class ConfigurationOptionsTests
     [InlineData("Stripe:SecretKey", "Stripe__SecretKey is required.")]
     [InlineData("Stripe:WebhookSecret", "Stripe__WebhookSecret is required.")]
     [InlineData("Stripe:Currency", "Stripe__Currency is required.")]
-    [InlineData("Stripe:StatementDescriptor", "Stripe__StatementDescriptor is required.")]
+    [InlineData("Stripe:RentalStatementDescriptorSuffix", "Stripe__RentalStatementDescriptorSuffix is required.")]
+    [InlineData("Stripe:TuitionStatementDescriptorSuffix", "Stripe__TuitionStatementDescriptorSuffix is required.")]
     public void StripeOptions_MissingRequiredValue_Fails(string key, string message)
     {
         var services = BuildApiServices(removeKeys: key);
@@ -135,14 +136,49 @@ public sealed class ConfigurationOptionsTests
     public void StripeOptions_EmptySection_FailsForEveryRequiredValue()
     {
         var services = BuildApiServices(removeKeys:
-            ["Stripe:SecretKey", "Stripe:WebhookSecret", "Stripe:Currency", "Stripe:StatementDescriptor"]);
+            ["Stripe:SecretKey", "Stripe:WebhookSecret", "Stripe:Currency", "Stripe:RentalStatementDescriptorSuffix", "Stripe:TuitionStatementDescriptorSuffix"]);
 
         var exception = Assert.Throws<OptionsValidationException>(() => ResolveOptions<StripeOptions>(services));
 
         Assert.Contains("Stripe__SecretKey is required.", exception.Message);
         Assert.Contains("Stripe__WebhookSecret is required.", exception.Message);
         Assert.Contains("Stripe__Currency is required.", exception.Message);
-        Assert.Contains("Stripe__StatementDescriptor is required.", exception.Message);
+        Assert.Contains("Stripe__RentalStatementDescriptorSuffix is required.", exception.Message);
+        Assert.Contains("Stripe__TuitionStatementDescriptorSuffix is required.", exception.Message);
+    }
+
+    [Theory]
+    [InlineData("Stripe:RentalStatementDescriptorSuffix", "ABCDEFGHIJKLMNOPQRSTUV", true)]
+    [InlineData("Stripe:RentalStatementDescriptorSuffix", "ABCDEFGHIJKLMNOPQRSTUVW", false)]
+    [InlineData("Stripe:RentalStatementDescriptorSuffix", "12345", false)]
+    [InlineData("Stripe:RentalStatementDescriptorSuffix", "ENOTE*Rental", false)]
+    [InlineData("Stripe:RentalStatementDescriptorSuffix", "ENOTE Najam-2", true)]
+    [InlineData("Stripe:TuitionStatementDescriptorSuffix", "ABCDEFGHIJKLMNOPQRSTUV", true)]
+    [InlineData("Stripe:TuitionStatementDescriptorSuffix", "ABCDEFGHIJKLMNOPQRSTUVW", false)]
+    [InlineData("Stripe:TuitionStatementDescriptorSuffix", "12345", false)]
+    [InlineData("Stripe:TuitionStatementDescriptorSuffix", "ENOTE*Rental", false)]
+    [InlineData("Stripe:TuitionStatementDescriptorSuffix", "ENOTE Najam-2", true)]
+    public void StripeOptions_StatementDescriptorSuffix_Validation(string key, string value, bool expectedValid)
+    {
+        var services = BuildApiServices(overrides: new Dictionary<string, string?>
+        {
+            [key] = value
+        });
+
+        if (expectedValid)
+        {
+            var options = ResolveOptions<StripeOptions>(services);
+            var actual = key == "Stripe:RentalStatementDescriptorSuffix"
+                ? options.RentalStatementDescriptorSuffix
+                : options.TuitionStatementDescriptorSuffix;
+
+            Assert.Equal(value, actual);
+            return;
+        }
+
+        var exception = Assert.Throws<OptionsValidationException>(() => ResolveOptions<StripeOptions>(services));
+
+        Assert.Contains($"{key.Replace(":", "__")} must have at most 22 characters", exception.Message);
     }
 
     [Theory]
@@ -435,7 +471,8 @@ public sealed class ConfigurationOptionsTests
             ["Stripe:SecretKey"] = "sk_test_123",
             ["Stripe:WebhookSecret"] = "whsec_123",
             ["Stripe:Currency"] = "bam",
-            ["Stripe:StatementDescriptor"] = "ENOTE Rental",
+            ["Stripe:RentalStatementDescriptorSuffix"] = "ENOTE Rental",
+            ["Stripe:TuitionStatementDescriptorSuffix"] = "ENOTE Skolarina",
             ["Rentals:OverduePenaltyMultiplier"] = "0.5",
             ["RabbitMQ:Host"] = "localhost",
             ["RabbitMQ:VirtualHost"] = "/",

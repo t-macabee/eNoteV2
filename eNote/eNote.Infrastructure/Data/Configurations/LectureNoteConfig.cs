@@ -12,7 +12,7 @@ public sealed class LectureNoteConfig : IEntityTypeConfiguration<LectureNote>
                .HasForeignKey(n => n.LectureId)
                .OnDelete(DeleteBehavior.Cascade);
 
-        builder.Property(n => n.Title).HasStringConfig(200, true);
+        builder.Property(n => n.Title).HasStringConfig(LectureNote.TitleMaxLength, true);
         builder.Property(n => n.Content).IsRequired();
         builder.Property(n => n.CreatedAt).IsRequired();
         builder.Property(n => n.IsActive).HasDefaultValue(true);

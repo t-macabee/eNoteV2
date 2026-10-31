@@ -60,7 +60,7 @@ public sealed class TuitionPaymentService(
                     ["studentId"] = enrollment.StudentId.ToString()
                 };
 
-                return new PaymentIntentCreation(amountCents, options.Currency, metadata, idempotencyKey, TuitionOptions.StatementDescriptorSuffix);
+                return new PaymentIntentCreation(amountCents, options.Currency, metadata, idempotencyKey, options.TuitionStatementDescriptorSuffix);
             },
             intent => new CoursePayment(
                 enrollment.Id,

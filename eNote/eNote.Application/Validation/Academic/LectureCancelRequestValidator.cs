@@ -10,6 +10,6 @@ public sealed class LectureCancelRequestValidator : AbstractValidator<LectureCan
         RuleFor(x => x.Reason)
             .Cascade(CascadeMode.Stop)
             .NotEmpty().WithMessage(Messages.LectureCancelReasonRequired)
-            .Must(reason => reason.Trim().Length is >= 3 and <= 500).WithMessage(Messages.LectureCancelReasonLength);
+            .Must(reason => reason.Trim().Length is >= 3 and <= Lecture.CancellationReasonMaxLength).WithMessage(Messages.LectureCancelReasonLength);
     }
 }

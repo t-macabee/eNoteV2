@@ -56,7 +56,7 @@ public sealed class RentalPaymentService(
                     ["studentId"] = rental.StudentProfile.AppUserId.ToString()
                 };
 
-                return new PaymentIntentCreation(cents, options.Currency, metadata, idempotencyKey, options.StatementDescriptor);
+                return new PaymentIntentCreation(cents, options.Currency, metadata, idempotencyKey, options.RentalStatementDescriptorSuffix);
             },
             intent => new RentalPayment(
                 rental.Id,

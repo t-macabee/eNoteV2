@@ -7,7 +7,7 @@ public sealed record PaymentIntentCreation(
     string Currency,
     IReadOnlyDictionary<string, string> Metadata,
     string IdempotencyKey,
-    string StatementDescriptor);
+    string StatementDescriptorSuffix);
 
 public sealed record ExpectedPayment(long AmountCents, string Currency);
 
@@ -65,7 +65,7 @@ public static class PaymentGatewayHelpers
                 creation.Currency,
                 creation.Metadata,
                 creation.IdempotencyKey,
-                creation.StatementDescriptor,
+                creation.StatementDescriptorSuffix,
                 cancellationToken));
 
         var payment = rowFactory(intent);

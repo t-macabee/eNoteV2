@@ -94,6 +94,6 @@ public sealed class TuitionPaymentsControllerTests
             new FixedClock(Now),
             new StubCurrentActor(student: student),
             new FakePaymentGateway(),
-            new StripeOptions { Currency = "bam", StatementDescriptor = "ENOTE" },
+            new StripeOptions { Currency = "bam" },
             NullLogger<TuitionPaymentService>.Instance);
 }

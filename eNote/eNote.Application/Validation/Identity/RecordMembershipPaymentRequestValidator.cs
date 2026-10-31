@@ -17,7 +17,7 @@ public sealed class RecordMembershipPaymentRequestValidator : AbstractValidator<
         RuleFor(x => x.ReceiptNumber)
             .Cascade(CascadeMode.Stop)
             .NotEmpty().WithMessage(Messages.MembershipReceiptNumberRequired)
-            .Must(receiptNumber => receiptNumber.Trim().Length <= 50).WithMessage(Messages.MembershipReceiptNumberLength);
+            .Must(receiptNumber => receiptNumber.Trim().Length <= MembershipPayment.ReceiptNumberMaxLength).WithMessage(Messages.MembershipReceiptNumberLength);
 
         RuleFor(x => x)
             .Must(x => x.PeriodEnd.HasValue ^ x.Months.HasValue)
@@ -38,6 +38,6 @@ public sealed class RecordMembershipPaymentRequestValidator : AbstractValidator<
             .When(x => x.PaidAt.HasValue);
 
         RuleFor(x => x.Note)
-            .MaximumLength(500).WithMessage(Messages.MembershipNoteTooLong);
+            .MaximumLength(MembershipPayment.NoteMaxLength).WithMessage(Messages.MembershipNoteTooLong);
     }
 }

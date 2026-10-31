@@ -14,13 +14,13 @@ public sealed class MembershipPaymentConfig : IEntityTypeConfiguration<Membershi
                .OnDelete(DeleteBehavior.Restrict);
 
         builder.Property(x => x.Amount).HasDecimalPrecision(10).IsRequired();
-        builder.Property(x => x.ReceiptNumber).HasStringConfig(maxLength: 50, isRequired: true);
+        builder.Property(x => x.ReceiptNumber).HasStringConfig(maxLength: MembershipPayment.ReceiptNumberMaxLength, isRequired: true);
 
         builder.HasIndex(x => x.ReceiptNumber)
                .IsUnique()
                .HasDatabaseName(DbConstraintNames.MembershipPaymentReceiptNumberUniqueIndex);
 
-        builder.Property(x => x.Note).HasMaxLength(500);
+        builder.Property(x => x.Note).HasMaxLength(MembershipPayment.NoteMaxLength);
 
         builder.HasIndex(x => new { x.StudentId, x.PaidAt });
     }

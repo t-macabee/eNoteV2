@@ -2,6 +2,9 @@ namespace eNote.Domain.Entities.Identity;
 
 public sealed class MembershipPayment : AuditableEntity
 {
+    public const int ReceiptNumberMaxLength = 50;
+    public const int NoteMaxLength = 500;
+
     public int StudentId { get; private set; }
     public Student Student { get; private set; } = null!;
     public decimal Amount { get; private set; }

@@ -7,7 +7,7 @@ public sealed class InstrumentTypeRequestValidator : AbstractValidator<Instrumen
 {
     public InstrumentTypeRequestValidator()
     {
-        RuleFor(x => x.Type).NotEmpty().WithMessage("Tip instrumenta je obavezan.").MaximumLength(100).WithMessage("Tip ne smije biti duži od 100 karaktera.");
+        RuleFor(x => x.Type).NotEmpty().WithMessage("Tip instrumenta je obavezan.").MaximumLength(InstrumentType.TypeMaxLength).WithMessage($"Tip ne smije biti duži od {InstrumentType.TypeMaxLength} karaktera.");
         RuleFor(x => x.MonthlyFee)
             .GreaterThanOrEqualTo(0)
             .WithMessage(Messages.InstrumentTypeFeeMustBeNonNegative)

@@ -2,6 +2,9 @@ namespace eNote.Domain.Entities.Communication;
 
 public class Announcement : AuditableEntity
 {
+    public const int TitleMaxLength = 150;
+    public const int ContentMaxLength = 4000;
+
     public int? CourseId { get; private set; }
     public Course? Course { get; private set; }
     public int? MusicStoreId { get; private set; }

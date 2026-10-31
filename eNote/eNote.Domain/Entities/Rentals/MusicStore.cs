@@ -2,6 +2,9 @@ namespace eNote.Domain.Entities.Rentals;
 
 public class MusicStore : AuditableEntity
 {
+    public const int StoreNameMaxLength = 100;
+    public const int BusinessHoursMaxLength = 50;
+    public const int PhoneNumberMaxLength = 30;
 
     private readonly List<MusicStoreEmployee> _employees = [];
 

@@ -7,9 +7,9 @@ public sealed class InstrumentCreateRequestValidator : AbstractValidator<Instrum
 {
     public InstrumentCreateRequestValidator()
     {
-        RuleFor(x => x.Model).NotEmpty().MaximumLength(100);
-        RuleFor(x => x.Manufacturer).NotEmpty().MaximumLength(100);
-        RuleFor(x => x.Description).MaximumLength(1000);
+        RuleFor(x => x.Model).NotEmpty().MaximumLength(Instrument.ModelMaxLength);
+        RuleFor(x => x.Manufacturer).NotEmpty().MaximumLength(Instrument.ManufacturerMaxLength);
+        RuleFor(x => x.Description).MaximumLength(Instrument.DescriptionMaxLength);
         RuleFor(x => x.InstrumentTypeId).GreaterThan(0);
     }
 }

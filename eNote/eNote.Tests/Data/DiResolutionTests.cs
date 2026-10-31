@@ -148,7 +148,8 @@ public sealed class DiResolutionTests
             ["Stripe:SecretKey"] = "sk_test_123",
             ["Stripe:WebhookSecret"] = "whsec_123",
             ["Stripe:Currency"] = "bam",
-            ["Stripe:StatementDescriptor"] = "ENOTE Rental",
+            ["Stripe:RentalStatementDescriptorSuffix"] = "ENOTE Rental",
+            ["Stripe:TuitionStatementDescriptorSuffix"] = "ENOTE Skolarina",
             ["Rentals:OverduePenaltyMultiplier"] = "0.5",
             ["Storage:Root"] = "wwwroot",
         };

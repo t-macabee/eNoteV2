@@ -143,7 +143,8 @@ public sealed class StartupValidationTests
         settings["Stripe__SecretKey"] = "sk_test_123";
         settings["Stripe__WebhookSecret"] = "whsec_123";
         settings["Stripe__Currency"] = "bam";
-        settings["Stripe__StatementDescriptor"] = "ENOTE";
+        settings["Stripe__RentalStatementDescriptorSuffix"] = "ENOTE Rental";
+        settings["Stripe__TuitionStatementDescriptorSuffix"] = "ENOTE Skolarina";
         settings["Storage__Root"] = "storage";
         settings["Cors__AllowedOrigins__0"] = "https://localhost";
         settings["Seed__Enabled"] = "false";

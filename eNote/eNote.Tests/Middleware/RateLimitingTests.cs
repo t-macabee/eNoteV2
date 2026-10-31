@@ -200,19 +200,25 @@ public sealed class RateLimitingTests
     }
 
     [Fact]
-    public void AuthPartition_KeepsTenPermitLimit()
+    public async Task UploadPolicy_AllowsTwentyPerMinute_PerUser()
     {
-        var partition = RateLimitingExtensions.Window("10.0.0.5", 10);
-        using var limiter = partition.Factory(partition.PartitionKey);
+        using var limiter = PartitionedRateLimiter.Create<HttpContext, string>(
+            context => new UploadRateLimiterPolicy().GetPartition(context));
 
-        for (var i = 0; i < 10; i++)
+        var first = UploadContext("42");
+        var second = UploadContext("43");
+
+        for (var i = 0; i < 20; i++)
         {
-            using var lease = limiter.AttemptAcquire(1);
+            using var lease = await limiter.AcquireAsync(first);
             Assert.True(lease.IsAcquired);
         }
 
-        using var rejected = limiter.AttemptAcquire(1);
+        using var rejected = await limiter.AcquireAsync(first);
         Assert.False(rejected.IsAcquired);
+
+        using var otherUser = await limiter.AcquireAsync(second);
+        Assert.True(otherUser.IsAcquired);
     }
 
     [Fact]
@@ -234,6 +240,25 @@ public sealed class RateLimitingTests
     {
         Assert.Equal("anon", new UploadRateLimiterPolicy().GetPartition(new DefaultHttpContext()).PartitionKey);
     }
+
+    [Fact]
+    public void Window_ReplenishesEveryMinute()
+    {
+        var partition = RateLimitingExtensions.Window("10.0.0.9", 3);
+
+        using var limiter = Assert.IsAssignableFrom<ReplenishingRateLimiter>(partition.Factory(partition.PartitionKey));
+
+        Assert.Equal(TimeSpan.FromMinutes(1), limiter.ReplenishmentPeriod);
+    }
+
+    private static DefaultHttpContext UploadContext(string subject) =>
+        new()
+        {
+            User = new ClaimsPrincipal(new ClaimsIdentity(
+            [
+                new Claim(JwtRegisteredClaimNames.Sub, subject)
+            ]))
+        };
 
     private static async Task InvokePeekAsync(HttpContext context)
     {

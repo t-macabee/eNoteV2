@@ -83,6 +83,7 @@ public sealed class RentalPaymentServiceTests
         Assert.Single(gateway.CreateCalls);
         Assert.Equal(5000, gateway.CreateCalls[0].AmountCents);
         Assert.Equal("eur", gateway.CreateCalls[0].Currency);
+        Assert.Equal("ENOTE RENT T", gateway.CreateCalls[0].StatementDescriptorSuffix);
     }
 
     [Fact]
@@ -655,7 +656,7 @@ public sealed class RentalPaymentServiceTests
             currentUser,
             gateway ?? new FakePaymentGateway(),
             dispatcher ?? new RecordingNotificationDispatcher(),
-            new StripeOptions { Currency = "eur" },
+            new StripeOptions { Currency = "eur", RentalStatementDescriptorSuffix = "ENOTE RENT T", TuitionStatementDescriptorSuffix = "ENOTE TUIT T" },
             NullLogger<RentalPaymentService>.Instance);
     }
 }

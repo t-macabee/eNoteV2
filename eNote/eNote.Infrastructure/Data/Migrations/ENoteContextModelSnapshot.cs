@@ -223,7 +223,8 @@ namespace eNote.Infrastructure.Data.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.Property<decimal>("Price")
                         .HasPrecision(18, 2)
@@ -1230,7 +1231,8 @@ namespace eNote.Infrastructure.Data.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("Note")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
                     b.Property<decimal>("OverduePenaltyMultiplier")
                         .HasPrecision(4, 2)
@@ -1252,7 +1254,8 @@ namespace eNote.Infrastructure.Data.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("RequestNote")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
                     b.Property<DateTime>("RequestedAt")
                         .HasColumnType("datetime2");

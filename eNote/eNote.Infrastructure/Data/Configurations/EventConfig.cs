@@ -7,8 +7,8 @@ public sealed class EventConfig : IEntityTypeConfiguration<Event>
 {
     public void Configure(EntityTypeBuilder<Event> builder)
     {
-        builder.Property(x => x.Title).HasStringConfig(150, true);
-        builder.Property(x => x.Description).HasStringConfig(4000, true);
+        builder.Property(x => x.Title).HasStringConfig(Event.TitleMaxLength, true);
+        builder.Property(x => x.Description).HasStringConfig(Event.DescriptionMaxLength, true);
         builder.Property(x => x.StartsAt).IsRequired();
         builder.Property(x => x.EndsAt).IsRequired(false);
 

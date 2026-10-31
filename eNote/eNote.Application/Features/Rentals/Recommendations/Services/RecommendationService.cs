@@ -16,6 +16,12 @@ public sealed class RecommendationService(IAppDbContext context, IMapper mapper,
     private const double TypeViewFallbackScore = 0.35;
     private const int CandidatePoolSize = 80;
 
+    public const int DefaultCount = 5;
+    public const int MaxCount = 20;
+    private const int PoolSizePerResult = 12;
+    private const double TypeSimilarityScore = 0.6;
+    private const double ReasonScoreThreshold = 0.5;
+
     private static readonly InstrumentRentalStatus[] CountedRentalStatuses =
     [
         InstrumentRentalStatus.Approved,
@@ -24,7 +30,7 @@ public sealed class RecommendationService(IAppDbContext context, IMapper mapper,
         InstrumentRentalStatus.ReturnedEarly
     ];
 
-    public async Task<IReadOnlyList<InstrumentRecommendationDto>> GetRecommendedInstrumentsAsync(int count = 5, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<InstrumentRecommendationDto>> GetRecommendedInstrumentsAsync(int count = DefaultCount, CancellationToken cancellationToken = default)
     {
         count = NormalizeCount(count);
 
@@ -166,7 +172,7 @@ public sealed class RecommendationService(IAppDbContext context, IMapper mapper,
 
     private async Task<List<CandidateInstrument>> LoadCandidateInstrumentsAsync(IReadOnlyList<int> preferredTypeIds, IReadOnlyList<int> collaborativeInstrumentIds, Dictionary<int, InstrumentViewSnapshot> viewMap, int count, Dictionary<int, int> globalRentalCounts, CancellationToken cancellationToken)
     {
-        var poolSize = Math.Max(count * 12, CandidatePoolSize);
+        var poolSize = Math.Max(count * PoolSizePerResult, CandidatePoolSize);
 
         var viewedIds = viewMap
             .OrderByDescending(x => x.Value.ViewCount)
@@ -332,7 +338,7 @@ public sealed class RecommendationService(IAppDbContext context, IMapper mapper,
 
         if (instrument.InstrumentTypeId == preferredTypeId)
         {
-            return 0.6;
+            return TypeSimilarityScore;
         }
 
         return 0;
@@ -342,7 +348,7 @@ public sealed class RecommendationService(IAppDbContext context, IMapper mapper,
     {
         List<string> reasons = [];
 
-        if (rentalScore >= 0.5 && preferredTypeId == instrument.InstrumentTypeId)
+        if (rentalScore >= ReasonScoreThreshold && preferredTypeId == instrument.InstrumentTypeId)
         {
             reasons.Add($"Na osnovu vaše historije najma ({instrument.InstrumentType.Type}).");
         }
@@ -352,17 +358,17 @@ public sealed class RecommendationService(IAppDbContext context, IMapper mapper,
             reasons.Add("Studenti sa sličnim izborima najma biraju ovaj instrument.");
         }
 
-        if (viewScore >= 0.5)
+        if (viewScore >= ReasonScoreThreshold)
         {
             reasons.Add("Pregledali ste ovaj instrument ili slične modele.");
         }
 
-        if (similarityScore >= 0.6)
+        if (similarityScore >= TypeSimilarityScore)
         {
             reasons.Add("Sličan vašim prethodnim izborima proizvođača ili vrste.");
         }
 
-        if (popularityScore >= 0.5)
+        if (popularityScore >= ReasonScoreThreshold)
         {
             reasons.Add("Popularan među studentima.");
         }
@@ -375,7 +381,7 @@ public sealed class RecommendationService(IAppDbContext context, IMapper mapper,
         return reasons;
     }
 
-    private static int NormalizeCount(int count) => count < 1 ? 1 : count > 20 ? 20 : count;
+    private static int NormalizeCount(int count) => Math.Clamp(count, 1, MaxCount);
 
     private sealed record UserRentalSnapshot(int InstrumentId, int InstrumentTypeId, string Manufacturer, InstrumentRentalStatus RentalStatus);
 

@@ -1,3 +1,4 @@
+using eNote.Application.Validation.Identity;
 using Microsoft.AspNetCore.Identity;
 using System.ComponentModel.DataAnnotations;
 
@@ -5,9 +6,9 @@ namespace eNote.Infrastructure.Identity;
 
 public class AppUser : IdentityUser<int>, IEntity
 {
-    [MaxLength(256)]
+    [MaxLength(IdentityPolicy.PersonNameMaxLength)]
     public string? FirstName { get; set; }
-    [MaxLength(256)]
+    [MaxLength(IdentityPolicy.PersonNameMaxLength)]
     public string? LastName { get; set; }
     public DateTime? DateOfBirth { get; set; }
     [MaxLength(512)]

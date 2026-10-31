@@ -7,8 +7,8 @@ public sealed class AnnouncementConfig : IEntityTypeConfiguration<Announcement>
 {
     public void Configure(EntityTypeBuilder<Announcement> builder)
     {
-        builder.Property(x => x.Title).HasStringConfig(150, true);
-        builder.Property(x => x.Content).HasStringConfig(4000, true);
+        builder.Property(x => x.Title).HasStringConfig(Announcement.TitleMaxLength, true);
+        builder.Property(x => x.Content).HasStringConfig(Announcement.ContentMaxLength, true);
         builder.Property(x => x.ImagePath).HasMaxLength(500);
         builder.Property(x => x.IsActive).HasDefaultValue(true);
 

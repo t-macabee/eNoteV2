@@ -11,7 +11,7 @@ public sealed class AddressConfig : IEntityTypeConfiguration<Address>
                .WithMany(c => c.Addresses)
                .HasForeignKey(a => a.CityId)
                .OnDelete(DeleteBehavior.Restrict);
-        builder.Property(a => a.Street).HasStringConfig(100, true);
-        builder.Property(a => a.Number).HasStringConfig(20, true);
+        builder.Property(a => a.Street).HasStringConfig(Address.StreetMaxLength, true);
+        builder.Property(a => a.Number).HasStringConfig(Address.NumberMaxLength, true);
     }
 }

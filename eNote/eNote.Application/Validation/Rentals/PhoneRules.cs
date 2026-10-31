@@ -10,7 +10,7 @@ public static class PhoneRules
     public static IRuleBuilderOptions<T, string?> PhoneNumber<T>(this IRuleBuilder<T, string?> ruleBuilder)
     {
         return ruleBuilder
-            .MaximumLength(30).WithMessage(Messages.PhoneNumberTooLong)
+            .MaximumLength(MusicStore.PhoneNumberMaxLength).WithMessage(Messages.PhoneNumberTooLong)
             .Must(v => v is null || Pattern.IsMatch(v.Replace(" ", ""))).WithMessage(Messages.PhoneNumberFormat);
     }
 }

@@ -24,7 +24,7 @@ Ukupni skor je zbir četiri signala sa fiksnim težinama. Konstante su na vrhu
 |---|---|---|
 | Najam | 0.40 | Vrste instrumenata koje je student već najmio, plus instrumenti koje biraju slični studenti |
 | Pregledi | 0.30 | `InstrumentView` za tog korisnika, normalizovano po najvećem broju pregleda |
-| Sličnost | 0.20 | Isti proizvođač daje 1.0, ista vrsta daje 0.6 |
+| Sličnost | 0.20 | Isti proizvođač daje 1.0, ista vrsta daje 0.6 (`TypeSimilarityScore`) |
 | Popularnost | 0.10 | Broj najmova instrumenta (odobreni, aktivni, završeni i vraćeni prije roka), normalizovan po najnajmljenijem |
 
 ```
@@ -52,8 +52,8 @@ izbacuju se iz rezultata.
 ## Kandidati za preporuku
 
 Skup kandidata se gradi u metodi `LoadCandidateInstrumentsAsync`, prije računanja
-skora. Veličina skupa je `poolSize = max(count * 12, CandidatePoolSize)`, dakle 80
-za podrazumijevanih pet preporuka.
+skora. Veličina skupa je `poolSize = max(count * PoolSizePerResult, CandidatePoolSize)`,
+dakle 80 za podrazumijevanih pet preporuka. `PoolSizePerResult` je 12.
 
 | Izvor kandidata | Odakle se uzima | Koliko ulazi |
 |---|---|---|
@@ -85,6 +85,11 @@ prag:
 | Skor sličnosti >= 0.6 | "Sličan vašim prethodnim izborima proizvođača ili vrste." |
 | Skor popularnosti >= 0.5 | "Popularan među studentima." |
 | Nijedan prag nije pređen | "Preporučeno na osnovu dostupnosti i ukupnog interesovanja." |
+
+Pragovi 0.5 su `ReasonScoreThreshold`, a prag sličnosti je `TypeSimilarityScore`.
+
+Endpoint vraća 5 preporuka po podrazumijevanju (`DefaultCount`) i najviše 20
+(`MaxCount`).
 
 ## Primjer odgovora
 

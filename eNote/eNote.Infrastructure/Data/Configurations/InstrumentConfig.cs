@@ -17,9 +17,9 @@ public sealed class InstrumentConfig : IEntityTypeConfiguration<Instrument>
                .HasForeignKey(x => x.InstrumentTypeId)
                .OnDelete(DeleteBehavior.Restrict);
 
-        builder.Property(x => x.Model).HasStringConfig(100, true);
-        builder.Property(x => x.Manufacturer).HasStringConfig(100, true);
-        builder.Property(x => x.Description).HasMaxLength(1000);
+        builder.Property(x => x.Model).HasStringConfig(Instrument.ModelMaxLength, true);
+        builder.Property(x => x.Manufacturer).HasStringConfig(Instrument.ManufacturerMaxLength, true);
+        builder.Property(x => x.Description).HasMaxLength(Instrument.DescriptionMaxLength);
 
         builder.Ignore(x => x.IsAvailable);
     }

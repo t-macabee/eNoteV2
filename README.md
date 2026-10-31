@@ -32,10 +32,12 @@ Ovo je najkraći put i pokreće bazu, RabbitMQ, API i worker odjednom.
    cp .env.docker.example .env
    ```
 
-   Zatim popunite `MSSQL_SA_PASSWORD`, `Jwt__Key` (najmanje 32 znaka), `Smtp__*`
-   uključujući `Smtp__PasswordResetUrl=enote://reset-password` (da link za
-   reset lozinke otvara mobilnu aplikaciju), `Stripe__SecretKey` i
-   `Stripe__WebhookSecret`. Svaka vrijednost se upisuje samo jednom, u `.env`;
+   Svi ključevi iz primjera su obavezni, osim `Smtp__Username` i `Smtp__Password`,
+   koji ostaju prazni za Mailhog, i zakomentarisanih vrijednosti na kraju datoteke.
+   Zamijenite placeholder vrijednosti: `MSSQL_SA_PASSWORD`, `Jwt__Key` (najmanje
+   32 znaka), `Stripe__SecretKey`, `Stripe__WebhookSecret` i
+   `STRIPE_PUBLISHABLE_KEY`. Ostale vrijednosti iz primjera rade lokalno bez izmjene.
+   Svaka vrijednost se upisuje samo jednom, u `.env`;
    `docker compose` prosljeđuje tu datoteku api i worker kontejnerima i
    zamjenjuje samo imena hostova (`sqlserver`, `rabbitmq`, `mailhog`).
 
@@ -204,7 +206,11 @@ pokreće povrat cijelog iznosa. Isto važi za drugu uplatu istog najma. Puni
 povrat uplate koja je produžila pristup vraća `PaidUntil` na početak tog
 perioda; djelimični povrat ne mijenja pristup.
 
-Obavezne varijable su `Stripe__SecretKey` i `Stripe__WebhookSecret`. Webhook
+Obavezne Stripe varijable su `Stripe__SecretKey`, `Stripe__WebhookSecret`,
+`Stripe__Currency`, `Stripe__RentalStatementDescriptorSuffix` i
+`Stripe__TuitionStatementDescriptorSuffix`. Tekst na izvodu kartice ima najviše
+22 znaka, mora imati bar jedno slovo i koristi samo slova, cifre, razmak i
+znakove `. , & / -`. Webhook
 treba usmjeriti na `POST /api/v1/payments/stripe/webhook`, lokalno preko
 `stripe listen`.
 

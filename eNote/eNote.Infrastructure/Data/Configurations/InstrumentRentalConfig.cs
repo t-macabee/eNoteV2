@@ -56,5 +56,9 @@ public sealed class InstrumentRentalConfig : IEntityTypeConfiguration<Instrument
                .HasDatabaseName(DbConstraintNames.InstrumentRentalPendingUniqueIndex);
 
         builder.Property(x => x.Version).IsRowVersion();
+
+        builder.Property(x => x.Note).HasMaxLength(InstrumentRental.NoteMaxLength);
+
+        builder.Property(x => x.RequestNote).HasMaxLength(InstrumentRental.NoteMaxLength);
     }
 }

@@ -7,7 +7,7 @@ public sealed class CourseRequestValidator : AbstractValidator<CourseRequest>
 {
     public CourseRequestValidator()
     {
-        RuleFor(x => x.Name).NotEmpty().WithMessage("Naziv kursa je obavezan.").MaximumLength(200).WithMessage("Naziv kursa ne smije biti duži od 200 karaktera.");
+        RuleFor(x => x.Name).NotEmpty().WithMessage("Naziv kursa je obavezan.").MaximumLength(Course.NameMaxLength).WithMessage($"Naziv kursa ne smije biti duži od {Course.NameMaxLength} karaktera.");
         RuleFor(x => x.Price)
             .GreaterThanOrEqualTo(0)
             .WithMessage(Messages.CoursePriceMustBeNonNegative)

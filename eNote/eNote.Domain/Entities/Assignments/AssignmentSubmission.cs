@@ -2,6 +2,8 @@ namespace eNote.Domain.Entities.Assignments;
 
 public class AssignmentSubmission : AuditableEntity
 {
+    public const int FeedbackMaxLength = 1000;
+
     public int AssignmentId { get; private set; }
     public Assignment Assignment { get; private set; } = null!;
     public int StudentId { get; private set; }

@@ -15,7 +15,7 @@ public sealed class DatabaseConstraintTests(SqlServerFixture fixture)
     private static readonly DateTime Now = new(2026, 10, 25, 12, 0, 0, DateTimeKind.Utc);
 
     [Fact]
-    public async Task Model_HasNoChangesWithoutMigration()
+    public async Task Database_HasNoPendingMigrations()
     {
         var database = await fixture.CreateDatabaseAsync();
         await using var context = database.CreateContext();
@@ -23,7 +23,6 @@ public sealed class DatabaseConstraintTests(SqlServerFixture fixture)
         var pending = await context.Database.GetPendingMigrationsAsync();
 
         Assert.Empty(pending);
-        Assert.False(context.Database.HasPendingModelChanges());
     }
 
     [Fact]

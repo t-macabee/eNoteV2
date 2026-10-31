@@ -2,6 +2,8 @@ namespace eNote.Domain.Entities.Academic;
 
 public sealed class Course : AuditableEntity
 {
+    public const int NameMaxLength = 200;
+
     public int InstructorId { get; private set; }
     public Instructor Instructor { get; private set; } = null!;
 
