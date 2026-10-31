@@ -7,8 +7,6 @@ import '../../../widgets/entity_filter_dropdown.dart';
 import '../../../widgets/entity_list_screen.dart';
 import 'submission_provider.dart';
 
-
-
 class SubmissionListScreen extends StatefulWidget {
   final int lectureId;
   final int assignmentId;
@@ -39,9 +37,7 @@ class _SubmissionListScreenState extends State<SubmissionListScreen> {
     final controller = TextEditingController(
       text: item.grade?.toString() ?? '',
     );
-    final feedbackController = TextEditingController(
-      text: item.feedback ?? '',
-    );
+    final feedbackController = TextEditingController(text: item.feedback ?? '');
     final formKey = GlobalKey<FormState>();
     bool isSaving = false;
     final provider = context.read<SubmissionProvider>();
@@ -51,9 +47,7 @@ class _SubmissionListScreenState extends State<SubmissionListScreen> {
       barrierDismissible: false,
       builder: (_) => StatefulBuilder(
         builder: (dialogCtx, setDialogState) => AlertDialog(
-          title: Text(
-            'Ocijeni — ${item.studentName ?? 'Nepoznat korisnik'}',
-          ),
+          title: Text('Ocijeni — ${item.studentName ?? 'Nepoznat korisnik'}'),
           content: Form(
             key: formKey,
             child: Column(
@@ -193,15 +187,16 @@ class _SubmissionListScreenState extends State<SubmissionListScreen> {
                 : null,
           ),
         ],
-        fetcher: (page, pageSize, search) => context.read<SubmissionProvider>().search(pagedQuery(
-          page,
-          pageSize,
-          search,
-          searchField: 'studentName',
-          filters: {
-            if (_isGraded != null) 'isGraded': _isGraded,
-          },
-        )),
+        fetcher: (page, pageSize, search) =>
+            context.read<SubmissionProvider>().search(
+              pagedQuery(
+                page,
+                pageSize,
+                search,
+                searchField: 'studentName',
+                filters: {if (_isGraded != null) 'isGraded': _isGraded},
+              ),
+            ),
         onEdit: (ctx, item) => _openGradeDialog(item),
         onDelete: null,
       ),

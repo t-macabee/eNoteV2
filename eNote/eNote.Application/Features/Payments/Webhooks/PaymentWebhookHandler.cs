@@ -124,6 +124,8 @@ public sealed class PaymentWebhookHandler(
                 return;
             }
 
+            ThrowIfPaymentOpen(payment, "refunded");
+
             await ApplyChargeRefundAsync(payment, amountRefundedCents, cancellationToken);
 
             if (payment is CoursePayment coursePayment)
@@ -170,6 +172,8 @@ public sealed class PaymentWebhookHandler(
                 return;
             }
 
+            ThrowIfPaymentOpen(payment, "refund.updated");
+
             ApplyRefundUpdate(payment, refund);
 
             await RecordEventAsync(eventId, eventType, rawJson, cancellationToken);
@@ -200,8 +204,15 @@ public sealed class PaymentWebhookHandler(
 
             if (payment.InstrumentRental.IsPaid)
             {
-                await RefundDuplicatePaymentAsync(payment, cancellationToken);
-                await notifications.DispatchDuplicatePaymentRefundedAsync(payment.InstrumentRentalId, payment.AmountChargedCents, payment.Currency, cancellationToken);
+                var refundStatus = await RefundDuplicatePaymentAsync(payment, cancellationToken);
+                if (refundStatus is RefundStatus.Succeeded or RefundStatus.Pending)
+                {
+                    await notifications.DispatchDuplicatePaymentRefundedAsync(payment.InstrumentRentalId, payment.AmountChargedCents, payment.Currency, cancellationToken);
+                }
+                else
+                {
+                    logger.LogWarning("Duplicate payment refund for {PaymentIntentId} returned status {RefundStatus}; no notification sent", payment.StripePaymentIntentId, refundStatus);
+                }
             }
             else
             {
@@ -231,8 +242,15 @@ public sealed class PaymentWebhookHandler(
             {
                 logger.LogWarning("Tuition payment {PaymentIntentId} cannot grant access; refunding it instead", payment.StripePaymentIntentId);
                 payment.MarkSucceeded(chargeId, eventId, now, periodStart: null, periodEnd: null);
-                await RefundDuplicatePaymentAsync(payment, cancellationToken);
-                await enrollmentNotifications.DispatchTuitionRefundedAsync(enrollment.Id, enrollment.CourseId, enrollment.Student.AppUserId, enrollment.Course.Name, payment.AmountChargedCents, payment.Currency);
+                var refundStatus = await RefundDuplicatePaymentAsync(payment, cancellationToken);
+                if (refundStatus is RefundStatus.Succeeded or RefundStatus.Pending)
+                {
+                    await enrollmentNotifications.DispatchTuitionRefundedAsync(enrollment.Id, enrollment.CourseId, enrollment.Student.AppUserId, enrollment.Course.Name, payment.AmountChargedCents, payment.Currency);
+                }
+                else
+                {
+                    logger.LogWarning("Duplicate tuition payment refund for {PaymentIntentId} returned status {RefundStatus}; no notification sent", payment.StripePaymentIntentId, refundStatus);
+                }
             }
         }
 
@@ -332,7 +350,7 @@ public sealed class PaymentWebhookHandler(
             .FirstOrDefaultAsync(p => p.StripePaymentIntentId == paymentIntentId, cancellationToken);
     }
 
-    private async Task RefundDuplicatePaymentAsync(StripePayment payment, CancellationToken cancellationToken)
+    private async Task<RefundStatus> RefundDuplicatePaymentAsync(StripePayment payment, CancellationToken cancellationToken)
     {
         // Stripe is called inside the webhook transaction on purpose: if the transaction fails, Stripe retries the
         // event, and the idempotency key keeps a second refund from being created.
@@ -347,6 +365,8 @@ public sealed class PaymentWebhookHandler(
         {
             payment.ApplyRefund(refund.AmountCents, refund.Id, clock.UtcNow);
         }
+
+        return refund.Status;
     }
 
     private void LogMissingChargeId(string? chargeId, string paymentIntentId)
@@ -355,6 +375,17 @@ public sealed class PaymentWebhookHandler(
         {
             logger.LogWarning("PaymentIntent {PaymentIntentId} succeeded without a charge id", paymentIntentId);
         }
+    }
+
+    private void ThrowIfPaymentOpen(StripePayment payment, string eventKind)
+    {
+        if (!payment.IsOpen)
+        {
+            return;
+        }
+
+        logger.LogWarning("PaymentIntent {PaymentIntentId} is still open for {EventKind} webhook; returning 503 for Stripe retry.", payment.StripePaymentIntentId, eventKind);
+        throw new PaymentNotYetVisibleException(Messages.PaymentNotYetVisible);
     }
 
     [DoesNotReturn]

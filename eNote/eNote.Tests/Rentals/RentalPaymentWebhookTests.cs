@@ -379,36 +379,65 @@ public sealed class RentalPaymentWebhookTests
     }
 
     [Fact]
-    public async Task HandleWebhook_ChargeRefundUpdated_OnRequiresActionPayment_DoesNotApply()
+    public async Task HandleWebhook_ChargeRefundUpdated_OnRequiresActionPayment_ThrowsForStripeRetry()
     {
         var (context, _, _) = await SeedRequiresActionPaymentAsync();
         var service = CreateWebhookService(context);
 
-        await service.HandleAsync(CreateRefundUpdatedEvent("evt_test_refund_updated_requires_action", "pi_test_1", "re_test_1", 2000, "succeeded"), "{}");
+        var exception = await Assert.ThrowsAsync<PaymentNotYetVisibleException>(() => service.HandleAsync(CreateRefundUpdatedEvent("evt_test_refund_updated_requires_action", "pi_test_1", "re_test_1", 2000, "succeeded"), "{}"));
 
-        var payment = await context.Set<RentalPayment>().SingleAsync();
-        Assert.Equal(PaymentStatus.RequiresAction, payment.Status);
-        Assert.Null(payment.RefundedCents);
-        Assert.Single(await context.Set<StripeWebhookEvent>().ToListAsync());
+        Assert.Equal(503, exception.StatusCode);
+        Assert.Empty(await context.Set<StripeWebhookEvent>().ToListAsync());
+        Assert.Equal(PaymentStatus.RequiresAction, (await context.Set<RentalPayment>().SingleAsync()).Status);
     }
 
     [Fact]
-    public async Task HandleWebhook_ChargeRefunded_OnRequiresActionPayment_DoesNotApply()
+    public async Task HandleWebhook_ChargeRefunded_OnRequiresActionPayment_ThrowsForStripeRetry()
     {
         var (context, _, _) = await SeedRequiresActionPaymentAsync();
         var gateway = new FakePaymentGateway();
         gateway.AddRefund("pi_test_1", "re_test_1", 2000);
         var service = CreateWebhookService(context, gateway: gateway);
 
-        await service.HandleAsync(CreateChargeRefundedEvent("evt_test_refunded_requires_action", "pi_test_1", "ch_test_1", 2000), "{}");
+        var exception = await Assert.ThrowsAsync<PaymentNotYetVisibleException>(() => service.HandleAsync(CreateChargeRefundedEvent("evt_test_refunded_requires_action", "pi_test_1", "ch_test_1", 2000), "{}"));
 
-        var payment = await context.Set<RentalPayment>().Include(p => p.Refunds).SingleAsync();
-        Assert.Equal(PaymentStatus.RequiresAction, payment.Status);
-        Assert.Null(payment.RefundedCents);
-        Assert.Empty(payment.Refunds);
+        Assert.Equal(503, exception.StatusCode);
+        Assert.Empty(await context.Set<StripeWebhookEvent>().ToListAsync());
+        Assert.Equal(PaymentStatus.RequiresAction, (await context.Set<RentalPayment>().SingleAsync()).Status);
         Assert.Empty(gateway.ListRefundCalls);
-        var recorded = Assert.Single(await context.Set<StripeWebhookEvent>().ToListAsync());
-        Assert.Equal("evt_test_refunded_requires_action", recorded.StripeEventId);
+    }
+
+    [Fact]
+    public async Task HandleWebhook_ChargeRefundUpdated_OnFailedPayment_ThrowsForStripeRetry()
+    {
+        var (context, _, payment) = await SeedRequiresActionPaymentAsync();
+        payment.MarkFailed("evt_seed");
+        await context.SaveChangesAsync();
+        var service = CreateWebhookService(context);
+
+        var exception = await Assert.ThrowsAsync<PaymentNotYetVisibleException>(() => service.HandleAsync(CreateRefundUpdatedEvent("evt_test_refund_updated_failed_payment", "pi_test_1", "re_test_1", 2000, "succeeded"), "{}"));
+
+        Assert.Equal(503, exception.StatusCode);
+        Assert.Empty(await context.Set<StripeWebhookEvent>().ToListAsync());
+        Assert.Equal(PaymentStatus.Failed, (await context.Set<RentalPayment>().SingleAsync()).Status);
+    }
+
+    [Fact]
+    public async Task HandleWebhook_ChargeRefunded_OnFailedPayment_ThrowsForStripeRetry()
+    {
+        var (context, _, payment) = await SeedRequiresActionPaymentAsync();
+        payment.MarkFailed("evt_seed");
+        await context.SaveChangesAsync();
+        var gateway = new FakePaymentGateway();
+        gateway.AddRefund("pi_test_1", "re_test_1", 2000);
+        var service = CreateWebhookService(context, gateway: gateway);
+
+        var exception = await Assert.ThrowsAsync<PaymentNotYetVisibleException>(() => service.HandleAsync(CreateChargeRefundedEvent("evt_test_refunded_failed_payment", "pi_test_1", "ch_test_1", 2000), "{}"));
+
+        Assert.Equal(503, exception.StatusCode);
+        Assert.Empty(await context.Set<StripeWebhookEvent>().ToListAsync());
+        Assert.Equal(PaymentStatus.Failed, (await context.Set<RentalPayment>().SingleAsync()).Status);
+        Assert.Empty(gateway.ListRefundCalls);
     }
 
     [Fact]
@@ -575,6 +604,50 @@ public sealed class RentalPaymentWebhookTests
         Assert.Equal(PaymentStatus.PartiallyRefunded, payment.Status);
         Assert.Equal(3500, payment.RefundedCents);
         Assert.Equal(2, payment.Refunds.Count);
+    }
+
+    [Fact]
+    public async Task HandleWebhook_Succeeded_WhenRentalAlreadyPaid_RefundsDuplicatePending_SendsNotification()
+    {
+        var (context, rental, _) = await SeedSucceededPaymentAsync();
+        var duplicatePayment = new RentalPayment(rental.Id, rental.MusicStoreId, "pi_test_2", 5000, "eur", PaymentStatus.RequiresAction);
+        context.Set<RentalPayment>().Add(duplicatePayment);
+        await context.SaveChangesAsync();
+
+        var gateway = new FakePaymentGateway();
+        gateway.RefundStatus = RefundStatus.Pending;
+        var dispatcher = new RecordingNotificationDispatcher();
+        var service = CreateWebhookService(context, dispatcher, gateway);
+        var evt = CreatePaymentIntentEvent("evt_test_duplicate_pending", "payment_intent.succeeded", "pi_test_2", "succeeded", "ch_test_2");
+
+        await service.HandleAsync(evt, "{}");
+
+        var reloadedPayment = await context.Set<RentalPayment>().SingleAsync(p => p.Id == duplicatePayment.Id);
+        Assert.Equal(PaymentStatus.Succeeded, reloadedPayment.Status);
+        Assert.Null(reloadedPayment.RefundedCents);
+        Assert.Single(dispatcher.DuplicateRefundCalls);
+    }
+
+    [Fact]
+    public async Task HandleWebhook_Succeeded_WhenRentalAlreadyPaid_RefundsDuplicateFailed_SendsNoNotification()
+    {
+        var (context, rental, _) = await SeedSucceededPaymentAsync();
+        var duplicatePayment = new RentalPayment(rental.Id, rental.MusicStoreId, "pi_test_2", 5000, "eur", PaymentStatus.RequiresAction);
+        context.Set<RentalPayment>().Add(duplicatePayment);
+        await context.SaveChangesAsync();
+
+        var gateway = new FakePaymentGateway();
+        gateway.RefundStatus = RefundStatus.Failed;
+        var dispatcher = new RecordingNotificationDispatcher();
+        var service = CreateWebhookService(context, dispatcher, gateway);
+        var evt = CreatePaymentIntentEvent("evt_test_duplicate_failed", "payment_intent.succeeded", "pi_test_2", "succeeded", "ch_test_2");
+
+        await service.HandleAsync(evt, "{}");
+
+        var reloadedPayment = await context.Set<RentalPayment>().SingleAsync(p => p.Id == duplicatePayment.Id);
+        Assert.Equal(PaymentStatus.Succeeded, reloadedPayment.Status);
+        Assert.Null(reloadedPayment.RefundedCents);
+        Assert.Empty(dispatcher.DuplicateRefundCalls);
     }
 
     [Fact]
