@@ -1,4 +1,3 @@
-using eNote.Application.Common.Exceptions;
 using eNote.Application.Features.Identity.Users.Services;
 using eNote.Tests.TestUtils;
 

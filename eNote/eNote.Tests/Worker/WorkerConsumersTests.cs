@@ -1,4 +1,3 @@
-using eNote.Contracts.Communication;
 using eNote.Infrastructure.Messaging;
 using eNote.Worker.Extensions;
 using MassTransit;

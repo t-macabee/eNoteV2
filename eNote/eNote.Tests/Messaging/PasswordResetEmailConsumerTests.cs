@@ -1,6 +1,4 @@
-using eNote.Application.Common.Interfaces;
 using eNote.Contracts.Identity;
-using eNote.Infrastructure.Data;
 using eNote.Infrastructure.Identity;
 using eNote.Tests.TestUtils;
 using eNote.Worker.Consumers;

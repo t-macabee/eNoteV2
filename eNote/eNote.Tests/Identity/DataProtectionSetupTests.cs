@@ -1,8 +1,5 @@
-using eNote.Application.Common.Interfaces;
 using eNote.Application.Common.Persistence;
-using eNote.Application.Common.Time;
 using eNote.Infrastructure;
-using eNote.Infrastructure.Data;
 using eNote.Infrastructure.Identity;
 using eNote.Tests.TestUtils;
 using Microsoft.AspNetCore.DataProtection;

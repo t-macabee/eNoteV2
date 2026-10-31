@@ -6,7 +6,8 @@ public sealed class DatabaseHeartbeatService(HealthCheckService healthChecks, IL
 {
     private static readonly TimeSpan Interval = TimeSpan.FromMinutes(1);
 
-    private readonly string _markerPath = configuration.GetValue<string>("Worker:HealthMarkerPath") ?? "/tmp/enote-worker-healthy";
+    private readonly string _markerPath = configuration.GetValue<string>("Worker:HealthMarkerPath")
+        ?? Path.Combine(Path.GetTempPath(), "enote-worker-healthy");
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {

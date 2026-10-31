@@ -1,5 +1,3 @@
-using eNote.Contracts.Assignments;
-using eNote.Contracts.Communication;
 using eNote.Domain.Entities.Communication;
 using eNote.Infrastructure.Messaging;
 using eNote.Tests.TestUtils;

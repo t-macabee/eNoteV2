@@ -1,5 +1,3 @@
-using eNote.Application.Common.Paging;
-
 namespace eNote.Application.Common.Search;
 
 public class BaseSearchObject

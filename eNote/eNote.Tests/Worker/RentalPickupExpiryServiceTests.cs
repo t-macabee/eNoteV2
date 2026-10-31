@@ -1,8 +1,6 @@
 using eNote.Application.Common.Persistence;
 using eNote.Application.Features.Identity.Users.Services;
-using eNote.Contracts.Communication;
 using eNote.Domain.Entities.Communication;
-using eNote.Infrastructure.Data;
 using eNote.Tests.TestUtils;
 using eNote.Worker;
 using eNote.Worker.Extensions;
@@ -10,7 +8,6 @@ using eNote.Worker.Rentals;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace eNote.Tests.Worker;

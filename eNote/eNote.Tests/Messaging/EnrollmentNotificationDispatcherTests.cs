@@ -1,6 +1,5 @@
 using eNote.Contracts.Enrollments;
 using eNote.Domain.Entities.Communication;
-using eNote.Domain.Enums;
 using eNote.Infrastructure.Messaging;
 using eNote.Tests.TestUtils;
 using Microsoft.EntityFrameworkCore;

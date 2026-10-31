@@ -29,11 +29,32 @@ public sealed class DatabaseHeartbeatServiceTests
         }
     }
 
-    private static DatabaseHeartbeatService CreateService(string markerPath) =>
+    [Fact]
+    public async Task UpdateMarkerAsync_WritesMarkerToTheTempDirectory_WhenNoPathIsConfigured()
+    {
+        var defaultMarkerPath = Path.Combine(Path.GetTempPath(), "enote-worker-healthy");
+        File.Delete(defaultMarkerPath);
+        try
+        {
+            var service = CreateService(markerPath: null);
+
+            await service.UpdateMarkerAsync(ReportWith(HealthStatus.Healthy), CancellationToken.None);
+
+            Assert.Equal("Healthy", await File.ReadAllTextAsync(defaultMarkerPath));
+        }
+        finally
+        {
+            File.Delete(defaultMarkerPath);
+        }
+    }
+
+    private static DatabaseHeartbeatService CreateService(string? markerPath) =>
         new(null!,
             NullLogger<DatabaseHeartbeatService>.Instance,
             new ConfigurationBuilder()
-                .AddInMemoryCollection(new Dictionary<string, string?> { ["Worker:HealthMarkerPath"] = markerPath })
+                .AddInMemoryCollection(markerPath is null
+                    ? []
+                    : new Dictionary<string, string?> { ["Worker:HealthMarkerPath"] = markerPath })
                 .Build());
 
     private static HealthReport ReportWith(HealthStatus status) =>

@@ -165,6 +165,13 @@ Release APK za predaju (defines su ugrađene, tuđa mašina ne treba okruženje)
 flutter build apk --release --dart-define=API_BASE_URL=http://10.0.2.2:5059/api/v1/ --dart-define=STRIPE_PUBLISHABLE_KEY=pk_test_vas_kljuc
 ```
 
+Link za reset lozinke iz e-maila (Mailhog) se na emulatoru otvara kroz `adb`.
+Token kopirajte iz linka u e-mailu:
+
+```bash
+adb shell am start -W -a android.intent.action.VIEW -d "enote://reset-password?email=student%40enote.com&token=<token>"
+```
+
 Master–details forma na mobilnom klijentu je detalj *Kurs*
 (`CourseDetailScreen`): zaglavlje kursa i njegova paginirana predavanja; zahtjev
 za upis čeka odobrenje instruktora, odobren upis prikazuje predavanja, a ispis
