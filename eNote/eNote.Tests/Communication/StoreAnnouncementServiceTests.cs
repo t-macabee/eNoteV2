@@ -156,7 +156,7 @@ public sealed class StoreAnnouncementServiceTests
         var studentContext = TestDbContextFactory.CreateContext(Now, databaseName);
         studentContext.ExplicitStoreId = null;
 
-        var feed = await new StudentAnnouncementFeedService(studentContext, new StubCurrentActor(student: student), TestMapper.Create())
+        var feed = await new StudentAnnouncementFeedService(studentContext, new StubCurrentActor(student: student), TestMapper.Create(), new FixedClock(Now))
             .GetFeedForStudentAsync(new AnnouncementSearchObject { Page = 1, PageSize = 10 });
 
         Assert.Equal(published.Count > 0, feed.Items.Any(a => a.Id == dto.Id));

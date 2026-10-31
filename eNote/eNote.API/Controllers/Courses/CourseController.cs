@@ -157,11 +157,11 @@ public sealed class CourseController(
 
     [Authorize(Roles = AppRoles.Student)]
     [HttpPost("~/api/v{version:apiVersion}/student/courses/{id:int}/enroll")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public async Task<IActionResult> Enroll(int id, CancellationToken cancellationToken)
+    [ProducesResponseType(typeof(EnrollResultDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<EnrollResultDto>> Enroll(int id, CancellationToken cancellationToken)
     {
-        await enrollmentService.EnrollAsync(id, cancellationToken);
-        return NoContent();
+        var status = await enrollmentService.EnrollAsync(id, cancellationToken);
+        return Ok(new EnrollResultDto { EnrollmentStatus = status });
     }
 
     [Authorize(Roles = AppRoles.Student)]

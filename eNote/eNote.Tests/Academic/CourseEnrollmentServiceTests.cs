@@ -49,7 +49,7 @@ public sealed class CourseEnrollmentServiceTests
         await using var context = CreateContext();
         var (student, course) = await SeedStudentAndCourseAsync(context, hasActiveMembership: true);
         var enrollment = new Enrollment(student.Id, course.Id, EnrollmentStatus.Active);
-        enrollment.ExtendPaidUntil(Now, 30);
+        enrollment.ExtendPaidUntil(Now.AddDays(-60), 30);
         context.Set<Enrollment>().Add(enrollment);
         await context.SaveChangesAsync();
         var service = CreateService(context, student);
@@ -57,12 +57,106 @@ public sealed class CourseEnrollmentServiceTests
         await service.UnenrollAsync(course.Id);
         var canceled = await context.Set<Enrollment>().SingleAsync(x => x.StudentId == student.Id && x.CourseId == course.Id);
         Assert.Equal(EnrollmentStatus.Canceled, canceled.EnrollmentStatus);
-        Assert.Equal(Now.AddDays(30), canceled.PaidUntil);
+        Assert.Equal(Now.AddDays(-30), canceled.PaidUntil);
 
         await service.EnrollAsync(course.Id);
         var reactivated = await context.Set<Enrollment>().SingleAsync(x => x.StudentId == student.Id && x.CourseId == course.Id);
         Assert.Equal(EnrollmentStatus.Pending, reactivated.EnrollmentStatus);
-        Assert.Equal(Now.AddDays(30), reactivated.PaidUntil);
+        Assert.Equal(Now.AddDays(-30), reactivated.PaidUntil);
+    }
+
+    [Fact]
+    public async Task EnrollAsync_ResumesCanceledEnrollment_WithPaidTimeLeft()
+    {
+        await using var context = CreateContext();
+        var (student, course) = await SeedStudentAndCourseAsync(context, hasActiveMembership: true);
+        var enrollment = new Enrollment(student.Id, course.Id, EnrollmentStatus.Pending);
+        enrollment.Transition(EnrollmentTrigger.Approve, userId: 77, now: Now);
+        enrollment.ExtendPaidUntil(Now, 14);
+        enrollment.Transition(EnrollmentTrigger.Cancel, userId: 77, now: Now.AddDays(1));
+        context.Set<Enrollment>().Add(enrollment);
+        await context.SaveChangesAsync();
+        var service = CreateService(context, student);
+
+        var status = await service.EnrollAsync(course.Id);
+
+        Assert.Equal(EnrollmentStatus.Active, status);
+        var stored = await context.Set<Enrollment>().SingleAsync(x => x.StudentId == student.Id && x.CourseId == course.Id);
+        Assert.Equal(EnrollmentStatus.Active, stored.EnrollmentStatus);
+        Assert.Equal(Now.AddDays(14), stored.PaidUntil);
+        Assert.Equal(77, stored.DecidedById);
+        Assert.Equal(1, await context.Set<Enrollment>().CountAsync(x => x.StudentId == student.Id && x.CourseId == course.Id));
+    }
+
+    [Fact]
+    public async Task EnrollAsync_RequestsAgain_WhenCanceledPaidTimeHasPassed()
+    {
+        await using var context = CreateContext();
+        var (student, course) = await SeedStudentAndCourseAsync(context, hasActiveMembership: true);
+        var enrollment = new Enrollment(student.Id, course.Id, EnrollmentStatus.Pending);
+        enrollment.Transition(EnrollmentTrigger.Approve, userId: 77, now: Now.AddDays(-31));
+        enrollment.ExtendPaidUntil(Now.AddDays(-31), 30);
+        enrollment.Transition(EnrollmentTrigger.Cancel, userId: 77, now: Now.AddDays(-30));
+        context.Set<Enrollment>().Add(enrollment);
+        await context.SaveChangesAsync();
+        var service = CreateService(context, student);
+
+        var status = await service.EnrollAsync(course.Id);
+
+        Assert.Equal(EnrollmentStatus.Pending, status);
+        var stored = await context.Set<Enrollment>().SingleAsync(x => x.StudentId == student.Id && x.CourseId == course.Id);
+        Assert.Equal(EnrollmentStatus.Pending, stored.EnrollmentStatus);
+        Assert.Null(stored.DecidedById);
+    }
+
+    [Fact]
+    public async Task EnrollAsync_ReturnsStatus()
+    {
+        await using (var context = CreateContext())
+        {
+            var (student, course) = await SeedStudentAndCourseAsync(context, hasActiveMembership: true);
+            var service = CreateService(context, student);
+
+            Assert.Equal(EnrollmentStatus.Pending, await service.EnrollAsync(course.Id));
+        }
+
+        await using (var context = CreateContext())
+        {
+            var (student, course) = await SeedStudentAndCourseAsync(context, hasActiveMembership: true);
+            context.Set<Enrollment>().Add(new Enrollment(student.Id, course.Id, EnrollmentStatus.Pending));
+            await context.SaveChangesAsync();
+            var service = CreateService(context, student);
+
+            Assert.Equal(EnrollmentStatus.Pending, await service.EnrollAsync(course.Id));
+        }
+
+        await using (var context = CreateContext())
+        {
+            var (student, course) = await SeedStudentAndCourseAsync(context, hasActiveMembership: true);
+            context.Set<Enrollment>().Add(new Enrollment(student.Id, course.Id, EnrollmentStatus.Active));
+            await context.SaveChangesAsync();
+            var service = CreateService(context, student);
+
+            Assert.Equal(EnrollmentStatus.Active, await service.EnrollAsync(course.Id));
+        }
+    }
+
+    [Fact]
+    public async Task EnrollAsync_DoesNotResume_WhenMembershipExpired()
+    {
+        await using var context = CreateContext();
+        var (student, course) = await SeedStudentAndCourseAsync(context, hasActiveMembership: false);
+        var enrollment = new Enrollment(student.Id, course.Id, EnrollmentStatus.Canceled);
+        enrollment.ExtendPaidUntil(Now, 14);
+        context.Set<Enrollment>().Add(enrollment);
+        await context.SaveChangesAsync();
+        var service = CreateService(context, student);
+
+        var ex = await Assert.ThrowsAsync<BusinessException>(() => service.EnrollAsync(course.Id));
+
+        Assert.Equal(Messages.MembershipInactive, ex.Message);
+        var stored = await context.Set<Enrollment>().SingleAsync(x => x.StudentId == student.Id && x.CourseId == course.Id);
+        Assert.Equal(EnrollmentStatus.Canceled, stored.EnrollmentStatus);
     }
 
     [Fact]

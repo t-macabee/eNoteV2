@@ -98,12 +98,15 @@ void main() {
     expect(course.name, 'Osnove teorije muzike');
   });
 
-  test('enroll issues POST student/courses/{id}/enroll', () async {
-    final client = RecordingHttpClient(body: const {});
+  test('enroll parses the returned enrollment status', () async {
+    final client = RecordingHttpClient(
+      body: const {'enrollmentStatus': 'Active'},
+    );
     final provider = _provider(client);
 
-    await provider.enroll(1);
+    final status = await provider.enroll(1);
 
+    expect(status, EnrollmentStatus.active);
     expect(client.requests, hasLength(1));
     expect(client.requests.single.method, 'POST');
     expect(

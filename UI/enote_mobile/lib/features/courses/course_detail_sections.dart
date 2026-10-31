@@ -44,7 +44,7 @@ class CourseMasterCard extends StatelessWidget {
         status == EnrollmentStatus.rejected;
     final lockedContent = enrolled && !course.hasContentAccess;
     final rankingButton = TextButton(
-      onPressed: lockedContent ? null : onRanking,
+      onPressed: course.hasContentAccess ? onRanking : null,
       child: const Text('Rang lista'),
     );
     return Padding(
@@ -103,6 +103,15 @@ class CourseMasterCard extends StatelessWidget {
                   '${course.enrollmentDecisionNote ?? '-'}',
             ),
           ],
+          if (status == EnrollmentStatus.canceled && course.hasContentAccess) ...[
+            const SizedBox(height: 8),
+            BlockedReasonBanner(
+              icon: Icons.event_available,
+              reason:
+                  'Ispisani ste sa kursa. Pristup traje do '
+                  '${formatDate(course.paidUntil!)}',
+            ),
+          ],
           if (status == EnrollmentStatus.completed) ...[
             const SizedBox(height: 8),
             const BlockedReasonBanner(
@@ -148,6 +157,15 @@ class CourseMasterCard extends StatelessWidget {
                   onPressed: isActing ? null : onUnenroll,
                   child: const Text('Otkaži zahtjev'),
                 )
+              else if (status == EnrollmentStatus.canceled &&
+                  course.hasContentAccess)
+                FilledButton(
+                  onPressed:
+                      (membershipBlocked || isActing || course.hasEnded)
+                      ? null
+                      : onEnroll,
+                  child: const Text('Nastavi pretplatu'),
+                )
               else
                 FilledButton(
                   onPressed:
@@ -160,9 +178,11 @@ class CourseMasterCard extends StatelessWidget {
                   child: const Text('Upiši se'),
                 ),
               const SizedBox(width: 8),
-              if (lockedContent)
+              if (!course.hasContentAccess)
                 Tooltip(
-                  message: lockedContentReason(course.lectureCount),
+                  message: lockedContent
+                      ? lockedContentReason(course.lectureCount)
+                      : 'Rang lista je dostupna polaznicima s pristupom sadržaju.',
                   child: rankingButton,
                 )
               else

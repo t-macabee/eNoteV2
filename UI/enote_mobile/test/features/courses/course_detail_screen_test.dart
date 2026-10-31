@@ -21,6 +21,7 @@ Map<String, dynamic> _courseJson({
   bool isFree = false,
   bool hasEnded = false,
   int lectureCount = 0,
+  bool? hasContentAccess,
 }) => {
   'id': 2,
   'instructorId': 3,
@@ -34,10 +35,11 @@ Map<String, dynamic> _courseJson({
   'instructorName': 'Amir Hadzic',
   'isEnrolled': enrollmentStatus == 'Active',
   'hasContentAccess':
-      enrollmentStatus == 'Active' &&
-      (isFree ||
-          (paidUntil != null &&
-              DateTime.parse(paidUntil).isAfter(DateTime.now()))),
+      hasContentAccess ??
+      ((enrollmentStatus == 'Active' || enrollmentStatus == 'Canceled') &&
+          (isFree ||
+              (paidUntil != null &&
+                  !DateTime.parse(paidUntil).isBefore(DateTime.now())))),
   'lectureCount': lectureCount,
   'enrollmentStatus': ?enrollmentStatus,
   'enrollmentDecisionNote': ?enrollmentDecisionNote,
@@ -104,6 +106,8 @@ ScriptedClient _client({
   required _CourseAccess access,
   bool hasEnded = false,
   int lectureCount = 0,
+  bool? hasContentAccess,
+  String enrollStatus = 'Pending',
 }) {
   var status = enrollmentStatus;
   return ScriptedClient((request) {
@@ -128,12 +132,13 @@ ScriptedClient _client({
           isFree: isFree,
           hasEnded: hasEnded,
           lectureCount: lectureCount,
+          hasContentAccess: hasContentAccess,
         );
       case 'GET /api/v1/student/lectures':
         body = _lecturesPage;
       case 'POST /api/v1/student/courses/2/enroll':
-        status = 'Pending';
-        body = {'message': 'OK'};
+        status = enrollStatus;
+        body = {'enrollmentStatus': enrollStatus};
       case 'POST /api/v1/student/courses/2/unenroll':
         status = 'Canceled';
         body = {'message': 'OK'};
@@ -160,6 +165,8 @@ class _Harness {
     String? coursePaidUntil,
     bool hasEnded = false,
     int lectureCount = 0,
+    bool? hasContentAccess,
+    String enrollStatus = 'Pending',
   }) async {
     access = _CourseAccess(coursePaidUntil);
     client = _client(
@@ -171,6 +178,8 @@ class _Harness {
       access: access,
       hasEnded: hasEnded,
       lectureCount: lectureCount,
+      hasContentAccess: hasContentAccess,
+      enrollStatus: enrollStatus,
     );
     authState = AuthState(
       baseUrl: 'http://10.0.2.2:5059/api/v1/',
@@ -319,7 +328,11 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Ispis sa kursa'), findsOneWidget);
     expect(
-      find.text('Želite li se ispisati sa kursa "Osnove teorije muzike"?'),
+      find.text(
+        'Želite li se ispisati sa kursa "Osnove teorije muzike"? '
+        'Pristup sadržaju ostaje do 01.01.2027. '
+        'Uplaćena školarina se ne vraća.',
+      ),
       findsOneWidget,
     );
 
@@ -333,15 +346,104 @@ void main() {
     expect(countRequests(harness.client, 'GET /api/v1/student/courses/2'), 2);
     expect(countRequests(harness.client, 'GET /api/v1/student/lectures'), 1);
     expect(
-      find.text('Upišite se da vidite predavanja ovog kursa.'),
+      find.text('Ispisani ste sa kursa. Pristup traje do 01.01.2027.'),
       findsOneWidget,
     );
+    expect(
+      find.text('Upišite se da vidite predavanja ovog kursa.'),
+      findsNothing,
+    );
+    expect(find.textContaining('Akordi I'), findsOneWidget);
     expect(
       find.text(
         'Zahtjev za upis na kurs Osnove teorije muzike je poslan. '
         'Instruktor ga treba odobriti.',
       ),
       findsNothing,
+    );
+  });
+
+  testWidgets('canceled with paid time shows the access banner and resumes', (
+    tester,
+  ) async {
+    final harness = _Harness();
+    await harness.bootstrap(
+      enrollmentStatus: 'Canceled',
+      coursePaidUntil: '2026-07-15T00:00:00Z',
+      hasContentAccess: true,
+      enrollStatus: 'Active',
+    );
+    await tester.pumpWidget(harness.app());
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('Ispisani ste sa kursa. Pristup traje do 15.07.2026.'),
+      findsOneWidget,
+    );
+    expect(
+      find.widgetWithText(FilledButton, 'Nastavi pretplatu'),
+      findsOneWidget,
+    );
+    expect(countRequests(harness.client, 'GET /api/v1/student/lectures'), 1);
+
+    await tester.tap(find.widgetWithText(FilledButton, 'Nastavi pretplatu'));
+    await tester.pumpAndSettle();
+    expect(find.text('Nastavak pretplate'), findsOneWidget);
+    expect(
+      find.text(
+        'Želite li nastaviti pretplatu na kurs "Osnove teorije muzike"?',
+      ),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.text('Potvrdi'));
+    await tester.pumpAndSettle();
+
+    expect(
+      countRequests(harness.client, 'POST /api/v1/student/courses/2/enroll'),
+      1,
+    );
+    expect(
+      find.text('Pretplata na kurs Osnove teorije muzike je nastavljena.'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('unenroll on a paid active course keeps access until paidUntil', (
+    tester,
+  ) async {
+    final harness = _Harness();
+    await harness.bootstrap(
+      enrollmentStatus: 'Active',
+      coursePaidUntil: '2027-01-01T00:00:00Z',
+    );
+    await tester.pumpWidget(harness.app());
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.widgetWithText(OutlinedButton, 'Ispiši se'));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('Pristup sadržaju ostaje do'), findsOneWidget);
+    expect(find.textContaining('Uplaćena školarina se ne vraća.'), findsOneWidget);
+  });
+
+  testWidgets('a course that is not enrolled disables Rang lista', (
+    tester,
+  ) async {
+    final harness = _Harness();
+    await harness.bootstrap();
+    await tester.pumpWidget(harness.app());
+    await tester.pumpAndSettle();
+
+    final button = tester.widget<TextButton>(
+      find.widgetWithText(TextButton, 'Rang lista'),
+    );
+    expect(button.onPressed, isNull);
+    expect(
+      find.byTooltip(
+        'Rang lista je dostupna polaznicima s pristupom sadržaju.',
+      ),
+      findsOneWidget,
     );
   });
 

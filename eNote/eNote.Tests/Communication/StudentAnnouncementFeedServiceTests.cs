@@ -37,7 +37,7 @@ public sealed class StudentAnnouncementFeedServiceTests
         await harness.Context.SaveChangesAsync();
 
         var actor = new StubCurrentActor(student: harness.Student);
-        var service = new StudentAnnouncementFeedService(harness.Context, actor, TestMapper.Create());
+        var service = new StudentAnnouncementFeedService(harness.Context, actor, TestMapper.Create(), new FixedClock(Now));
 
         var result = await service.GetFeedForStudentAsync(new AnnouncementSearchObject { Page = 1, PageSize = 10 });
 
@@ -98,7 +98,7 @@ public sealed class StudentAnnouncementFeedServiceTests
         await harness.Context.SaveChangesAsync();
 
         var actor = new StubCurrentActor(student: harness.Student);
-        var service = new StudentAnnouncementFeedService(harness.Context, actor, TestMapper.Create());
+        var service = new StudentAnnouncementFeedService(harness.Context, actor, TestMapper.Create(), new FixedClock(Now));
 
         var result = await service.GetFeedForStudentAsync(new AnnouncementSearchObject { Page = 1, PageSize = 20 });
 
@@ -130,7 +130,7 @@ public sealed class StudentAnnouncementFeedServiceTests
         await harness.Context.SaveChangesAsync();
 
         var actor = new StubCurrentActor(student: harness.Student);
-        var service = new StudentAnnouncementFeedService(harness.Context, actor, TestMapper.Create());
+        var service = new StudentAnnouncementFeedService(harness.Context, actor, TestMapper.Create(), new FixedClock(Now));
 
         var result = await service.GetFeedForStudentAsync(new AnnouncementSearchObject { Page = 1, PageSize = 10 });
 
@@ -220,6 +220,40 @@ public sealed class StudentAnnouncementFeedServiceTests
     }
 
     [Fact]
+    public async Task GetFeedForStudentAsync_IncludesCourseAnnouncement_WhenCanceledWithPaidTimeLeft()
+    {
+        var harness = await AcademicTestData.SeedAsync(CreateStudentContext(), Now);
+        var enrollment = await harness.Context.Set<Enrollment>().SingleAsync(e => e.StudentId == harness.Student.Id && e.CourseId == harness.Course.Id);
+        enrollment.Transition(EnrollmentTrigger.Cancel, userId: 1, now: Now);
+        harness.Context.Set<Announcement>().Add(new Announcement("Course note", "For the course", harness.Course.Id, null, Now) { Id = 501 });
+        await harness.Context.SaveChangesAsync();
+
+        var service = CreateService(harness);
+        var feed = await service.GetFeedForStudentAsync(new AnnouncementSearchObject { Page = 1, PageSize = 10 });
+        var byId = await service.GetByIdForStudentAsync(501);
+
+        Assert.Contains(feed.Items, a => a.Id == 501);
+        Assert.Equal(501, byId.Id);
+    }
+
+    [Fact]
+    public async Task GetFeedForStudentAsync_ExcludesCourseAnnouncement_WhenCanceledPaidTimeHasPassed()
+    {
+        var harness = await AcademicTestData.SeedAsync(CreateStudentContext(), Now.AddDays(-40));
+        var enrollment = await harness.Context.Set<Enrollment>().SingleAsync(e => e.StudentId == harness.Student.Id && e.CourseId == harness.Course.Id);
+        enrollment.Transition(EnrollmentTrigger.Cancel, userId: 1, now: Now);
+        harness.Context.Set<Announcement>().Add(new Announcement("Course note", "For the course", harness.Course.Id, null, Now) { Id = 502 });
+        await harness.Context.SaveChangesAsync();
+
+        var service = CreateService(harness);
+        var feed = await service.GetFeedForStudentAsync(new AnnouncementSearchObject { Page = 1, PageSize = 10 });
+
+        Assert.DoesNotContain(feed.Items, a => a.Id == 502);
+        var exception = await Assert.ThrowsAsync<NotFoundException>(() => service.GetByIdForStudentAsync(502));
+        Assert.Equal(Messages.AnnouncementNotFound, exception.Message);
+    }
+
+    [Fact]
     public async Task GetByIdForStudentAsync_MatchesFeedVisibility()
     {
         var harness = await AcademicTestData.SeedAsync(CreateStudentContext(), Now);
@@ -288,7 +322,7 @@ public sealed class StudentAnnouncementFeedServiceTests
     }
 
     private static StudentAnnouncementFeedService CreateService(AcademicHarness harness) =>
-        new(harness.Context, new StubCurrentActor(student: harness.Student), TestMapper.Create());
+        new(harness.Context, new StubCurrentActor(student: harness.Student), TestMapper.Create(), new FixedClock(Now));
 
     private static async Task<bool> IsFoundAsync(StudentAnnouncementFeedService service, int announcementId)
     {

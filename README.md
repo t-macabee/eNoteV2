@@ -161,8 +161,8 @@ flutter build apk --release --dart-define=API_BASE_URL=http://10.0.2.2:5059/api/
 
 Master–details forma na mobilnom klijentu je detalj *Kurs*
 (`CourseDetailScreen`): zaglavlje kursa i njegova paginirana predavanja; zahtjev
-za upis čeka odobrenje instruktora, odobren upis prikazuje predavanja, ispis ih
-skriva.
+za upis čeka odobrenje instruktora, odobren upis prikazuje predavanja, a ispis
+zadržava pristup do isteka plaćenog perioda.
 
 Student na ekranu *Profil* briše svoj nalog kroz `DELETE /api/v1/users/me`.
 Brisanje nije fizičko: uplate, iznajmljivanja, ocjene i prisustvo ostaju, a lični
@@ -180,6 +180,10 @@ kursa; student je plaća unaprijed i time dobija 30 dana pristupa sadržaju tog
 kursa. Obnova je ručna, a ponovna uplata prije isteka ne gubi dane
 (`PaidUntil = max(trenutno, PaidUntil) + 30 dana`). Kurs sa cijenom 0 je
 besplatan. Iznos i ovdje računa server.
+
+Ispis sa kursa ne vraća uplaćenu školarinu. Pristup sadržaju ostaje do
+`PaidUntil`, a ponovni upis prije isteka nastavlja pretplatu bez novog
+odobrenja instruktora i bez nove uplate.
 
 Ako uplata školarine stigne za upis koji više nije aktivan ili za objavu kursa
 koja je uklonjena, webhook je označi kao uspješnu, ne daje pristup i odmah

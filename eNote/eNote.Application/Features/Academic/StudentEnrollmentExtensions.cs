@@ -4,10 +4,14 @@ namespace eNote.Application.Features.Academic;
 
 public static class StudentEnrollmentExtensions
 {
+    public static Expression<Func<Enrollment, bool>> IsCurrentMember(DateTime utcNow) =>
+        e => e.EnrollmentStatus == EnrollmentStatus.Active
+            || (e.EnrollmentStatus == EnrollmentStatus.Canceled && e.PaidUntil >= utcNow);
+
     public static Expression<Func<Enrollment, bool>> HasContentAccess(int studentId, DateTime utcNow) =>
         e => e.StudentId == studentId
-            && e.EnrollmentStatus == EnrollmentStatus.Active
-            && (e.PaidUntil >= utcNow || e.Course.Price == 0);
+            && (e.EnrollmentStatus == EnrollmentStatus.Active || e.EnrollmentStatus == EnrollmentStatus.Canceled)
+            && (e.PaidUntil >= utcNow || (e.EnrollmentStatus == EnrollmentStatus.Active && e.Course.Price == 0));
 
     public static Task<bool> IsEnrolledInCourseAsync(this IAppDbContext context, int studentId, int courseId, CancellationToken cancellationToken = default) =>
         context.Set<Enrollment>().AnyAsync(e => e.StudentId == studentId && e.CourseId == courseId && e.EnrollmentStatus == EnrollmentStatus.Active, cancellationToken);

@@ -7,10 +7,11 @@ class CourseProvider extends ReadOnlyProvider<CourseDto> {
   @override
   CourseDto fromJson(Map<String, dynamic> json) => CourseDto.fromJson(json);
 
-  Future<void> enroll(int id) async {
+  Future<EnrollmentStatus> enroll(int id) async {
     final response = await apiClient.post('$endpoint/$id/enroll');
-    throwIfError(response);
+    final body = decodeOrThrow(response);
     notifyListeners();
+    return EnrollmentStatus.fromJson(body['enrollmentStatus'] as String?);
   }
 
   Future<void> unenroll(int id) async {

@@ -21,7 +21,7 @@ public sealed class InstructorAnnouncementService(IAppDbContext context, IClock 
             context.Set<Announcement>().Add(entity);
             await context.SaveChangesAsync(cancellationToken);
 
-            var enrolledStudentUserIds = await AnnouncementAudience.CourseEnrollments(context)
+            var enrolledStudentUserIds = await AnnouncementAudience.CourseEnrollments(context, clock.UtcNow)
                 .Where(e => e.CourseId == courseId)
                 .Select(e => e.Student.AppUserId)
                 .ToListAsync(cancellationToken);

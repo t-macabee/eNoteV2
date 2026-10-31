@@ -202,6 +202,84 @@ public sealed class AcademicGatingTests
     }
 
     [Fact]
+    public async Task ContentAccess_IsKept_WhenCanceledWithPaidTimeLeft()
+    {
+        var harnessNow = Now.AddDays(-30).AddHours(1);
+        var context = TestDbContextFactory.CreateContext(Now);
+        var harness = await AcademicTestData.SeedAsync(context, harnessNow);
+        var enrollment = await context.Set<Enrollment>()
+            .SingleAsync(e => e.StudentId == harness.Student.Id && e.CourseId == harness.Course.Id);
+        Assert.Equal(Now.AddHours(1), enrollment.PaidUntil);
+        enrollment.Transition(EnrollmentTrigger.Cancel, userId: 77, now: Now);
+        await context.SaveChangesAsync();
+
+        var assignment = new Assignment("Homework", "Do exercises", Now.AddDays(7), harness.Lecture.Id);
+        context.Set<Assignment>().Add(assignment);
+        await context.SaveChangesAsync();
+
+        var actor = new StubCurrentActor(student: harness.Student);
+        var lectureService = CreateLectureService(context, harness.Instructor, actor);
+        var lectures = await lectureService.GetPagedForStudentAsync(new LectureSearchObject());
+        Assert.Single(lectures.Items);
+
+        var assignmentService = AcademicTestData.CreateService<AssignmentService>(context, harness.Instructor, actor, Now);
+        var item = await assignmentService.GetByIdForStudentAsync(assignment.Id);
+        Assert.Equal("Homework", item.Title);
+
+        var rankingService = CreateRankingService(context, harness.Instructor, harness.Student);
+        var ranking = await rankingService.GetForStudentAsync(harness.Course.Id);
+        Assert.NotNull(ranking);
+    }
+
+    [Fact]
+    public async Task ContentAccess_Ends_WhenCanceledAndPaidUntilPassed()
+    {
+        var harnessNow = Now.AddDays(-30).AddSeconds(-1);
+        var context = TestDbContextFactory.CreateContext(Now);
+        var harness = await AcademicTestData.SeedAsync(context, harnessNow);
+        var enrollment = await context.Set<Enrollment>()
+            .SingleAsync(e => e.StudentId == harness.Student.Id && e.CourseId == harness.Course.Id);
+        Assert.Equal(Now.AddSeconds(-1), enrollment.PaidUntil);
+        enrollment.Transition(EnrollmentTrigger.Cancel, userId: 77, now: Now);
+        await context.SaveChangesAsync();
+
+        var assignment = new Assignment("Homework", "Do exercises", Now.AddDays(7), harness.Lecture.Id);
+        context.Set<Assignment>().Add(assignment);
+        await context.SaveChangesAsync();
+
+        var actor = new StubCurrentActor(student: harness.Student);
+        var lectureService = CreateLectureService(context, harness.Instructor, actor);
+        var lectures = await lectureService.GetPagedForStudentAsync(new LectureSearchObject());
+        Assert.Empty(lectures.Items);
+
+        var assignmentService = AcademicTestData.CreateService<AssignmentService>(context, harness.Instructor, actor, Now);
+        await Assert.ThrowsAsync<NotFoundException>(() => assignmentService.GetByIdForStudentAsync(assignment.Id));
+
+        var rankingService = CreateRankingService(context, harness.Instructor, harness.Student);
+        await Assert.ThrowsAsync<AuthorizationException>(() => rankingService.GetForStudentAsync(harness.Course.Id));
+    }
+
+    [Fact]
+    public async Task ContentAccess_IsDenied_ForCanceledEnrollment_OnFreeCourse()
+    {
+        var context = TestDbContextFactory.CreateContext(Now);
+        var harness = await AcademicTestData.SeedAsync(context, Now);
+        var course = await context.Set<Course>().SingleAsync(c => c.Id == harness.Course.Id);
+        course.UpdateDetails(course.Name, course.Description, 0m, course.StartDate, course.EndDate);
+        var student = new Student(98, Now);
+        context.Set<Student>().Add(student);
+        await context.SaveChangesAsync();
+        var enrollment = new Enrollment(student.Id, course.Id, EnrollmentStatus.Canceled);
+        context.Set<Enrollment>().Add(enrollment);
+        await context.SaveChangesAsync();
+
+        var lectureService = CreateLectureService(context, harness.Instructor, new StubCurrentActor(student: student));
+
+        var lectures = await lectureService.GetPagedForStudentAsync(new LectureSearchObject());
+        Assert.Empty(lectures.Items);
+    }
+
+    [Fact]
     public async Task ContentAccess_RequiresPayment_WhenCoursePriceIsNotZero()
     {
         var (context, instructor, _, unpaidStudent, course, lecture) = await SetupScenarioAsync();

@@ -11,7 +11,7 @@ public sealed class CourseEnrollmentService(
     IPaymentGateway paymentGateway,
     ILogger<CourseEnrollmentService> logger)
 {
-    public async Task EnrollAsync(int courseId, CancellationToken cancellationToken = default)
+    public async Task<EnrollmentStatus> EnrollAsync(int courseId, CancellationToken cancellationToken = default)
     {
         var student = await students.GetCurrentStudentAsync(cancellationToken);
 
@@ -33,22 +33,31 @@ public sealed class CourseEnrollmentService(
         var enrollment = await context.Set<Enrollment>()
             .FirstOrDefaultAsync(e => e.StudentId == student.Id && e.CourseId == courseId, cancellationToken);
 
+        var resumed = false;
+        var status = EnrollmentStatus.Pending;
+
         if (enrollment is null)
         {
             context.Set<Enrollment>().Add(new Enrollment(student.Id, courseId, EnrollmentStatus.Pending));
         }
         else if (enrollment.EnrollmentStatus is EnrollmentStatus.Pending or EnrollmentStatus.Active)
         {
-            return;
+            return enrollment.EnrollmentStatus;
         }
         else
         {
-            var result = enrollment.Transition(EnrollmentTrigger.Request, currentUser.UserId, clock.UtcNow);
+            var trigger = enrollment.CanResume(clock.UtcNow)
+                ? EnrollmentTrigger.Resume
+                : EnrollmentTrigger.Request;
+            var result = enrollment.Transition(trigger, currentUser.UserId, clock.UtcNow);
 
             if (!result.IsSuccess)
             {
                 throw new BusinessException(result.Error);
             }
+
+            resumed = trigger == EnrollmentTrigger.Resume;
+            status = result.Value;
         }
 
         try
@@ -64,7 +73,9 @@ public sealed class CourseEnrollmentService(
             throw new ConflictException(Messages.AlreadyEnrolled);
         }
 
-        logger.LogInformation("Student {StudentUserId} requested enrollment in course {CourseId}", currentUser.UserId, courseId);
+        logger.LogInformation("Student {StudentUserId} {EnrollmentAction} enrollment in course {CourseId}", currentUser.UserId, resumed ? "resumed" : "requested", courseId);
+
+        return status;
     }
 
     public async Task UnenrollAsync(int courseId, CancellationToken cancellationToken = default)

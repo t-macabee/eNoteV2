@@ -40,6 +40,7 @@ public class Enrollment : AuditableEntity
             [(EnrollmentStatus.Pending, EnrollmentTrigger.Cancel)] = EnrollmentStatus.Canceled,
             [(EnrollmentStatus.Active, EnrollmentTrigger.Cancel)] = EnrollmentStatus.Canceled,
             [(EnrollmentStatus.Active, EnrollmentTrigger.Complete)] = EnrollmentStatus.Completed,
+            [(EnrollmentStatus.Canceled, EnrollmentTrigger.Resume)] = EnrollmentStatus.Active,
         };
 
     public Result<EnrollmentStatus> Transition(EnrollmentTrigger trigger, int userId, DateTime now, string? reason = null)
@@ -52,6 +53,11 @@ public class Enrollment : AuditableEntity
         if (trigger == EnrollmentTrigger.Reject && string.IsNullOrWhiteSpace(reason))
         {
             return Result<EnrollmentStatus>.Failure(EnrollmentRejectReasonRequiredMessage);
+        }
+
+        if (trigger == EnrollmentTrigger.Resume && !CanResume(now))
+        {
+            return Result<EnrollmentStatus>.Failure(EnrollmentResumeRequiresPaidTimeMessage);
         }
 
         EnrollmentStatus = target;
@@ -85,8 +91,12 @@ public class Enrollment : AuditableEntity
         EnrollmentTrigger.Reject => EnrollmentRejectPendingOnlyMessage,
         EnrollmentTrigger.Cancel => EnrollmentCancelPendingOrActiveOnlyMessage,
         EnrollmentTrigger.Complete => EnrollmentCompleteActiveOnlyMessage,
+        EnrollmentTrigger.Resume => EnrollmentResumeCanceledOnlyMessage,
         _ => throw new ArgumentOutOfRangeException(nameof(trigger), trigger, null)
     };
+
+    public bool CanResume(DateTime utcNow) =>
+        EnrollmentStatus == EnrollmentStatus.Canceled && PaidUntil >= utcNow;
 
     public (DateTime Start, DateTime End) ExtendPaidUntil(DateTime utcNow, int days)
     {
@@ -138,5 +148,7 @@ public class Enrollment : AuditableEntity
     private const string EnrollmentRejectPendingOnlyMessage = "Samo zahtjev za upis na čekanju se može odbiti.";
     private const string EnrollmentCancelPendingOrActiveOnlyMessage = "Otkazati se može samo zahtjev na čekanju ili aktivan upis.";
     private const string EnrollmentCompleteActiveOnlyMessage = "Samo aktivan upis može biti označen kao položen.";
+    private const string EnrollmentResumeCanceledOnlyMessage = "Nastaviti se može samo otkazani upis.";
+    private const string EnrollmentResumeRequiresPaidTimeMessage = "Pretplata se može nastaviti samo dok plaćeni period traje.";
     private const string EnrollmentRejectReasonRequiredMessage = "Razlog odbijanja je obavezan.";
 }

@@ -2,7 +2,7 @@ using MapsterMapper;
 
 namespace eNote.Application.Features.Communication.Announcements.Services;
 
-public sealed class StudentAnnouncementFeedService(IAppDbContext context, IStudentContext students, IMapper mapper)
+public sealed class StudentAnnouncementFeedService(IAppDbContext context, IStudentContext students, IMapper mapper, IClock clock)
 {
     public async Task<PagedResult<AnnouncementDto>> GetFeedForStudentAsync(AnnouncementSearchObject search, CancellationToken cancellationToken = default)
     {
@@ -25,13 +25,14 @@ public sealed class StudentAnnouncementFeedService(IAppDbContext context, IStude
 
     private IQueryable<Announcement> VisibleTo(int studentId)
     {
+        var now = clock.UtcNow;
+
         return context.Set<Announcement>()
             .AsNoTracking()
             .Include(a => a.Course)
             .Include(a => a.MusicStore)
             .Where(a =>
-                (a.CourseId != null && context.Set<Enrollment>().Any(e =>
-                    e.EnrollmentStatus == AnnouncementAudience.CourseEnrollmentStatus &&
+                (a.CourseId != null && AnnouncementAudience.CourseEnrollments(context, now).Any(e =>
                     e.StudentId == studentId &&
                     e.CourseId == a.CourseId)) ||
                 (a.MusicStoreId != null && context.Set<InstrumentRental>().Any(r =>

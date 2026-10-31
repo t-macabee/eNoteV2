@@ -15,6 +15,7 @@ public sealed class EnrollmentTransitionTests
         (EnrollmentStatus.Pending, EnrollmentTrigger.Cancel),
         (EnrollmentStatus.Active, EnrollmentTrigger.Cancel),
         (EnrollmentStatus.Active, EnrollmentTrigger.Complete),
+        (EnrollmentStatus.Canceled, EnrollmentTrigger.Resume),
     ];
 
     public static TheoryData<EnrollmentStatus, EnrollmentTrigger, EnrollmentStatus> AllowedTransitions => new()
@@ -133,5 +134,62 @@ public sealed class EnrollmentTransitionTests
         Assert.Null(enrollment.DecidedById);
         Assert.Null(enrollment.DecidedAt);
         Assert.Null(enrollment.DecisionNote);
+    }
+
+    [Fact]
+    public void Resume_FromCanceled_WithPaidTimeLeft_SetsActive_AndKeepsDecision()
+    {
+        var enrollment = new Enrollment(studentId: 1, courseId: 1, EnrollmentStatus.Pending);
+        enrollment.Transition(EnrollmentTrigger.Approve, 77, Now.AddDays(-20));
+        enrollment.ExtendPaidUntil(Now.AddDays(-20), 30);
+        enrollment.Transition(EnrollmentTrigger.Cancel, 88, Now.AddDays(-19));
+
+        var result = enrollment.Transition(EnrollmentTrigger.Resume, 99, Now);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(EnrollmentStatus.Active, result.Value);
+        Assert.Equal(EnrollmentStatus.Active, enrollment.EnrollmentStatus);
+        Assert.Equal(Now.AddDays(10), enrollment.PaidUntil);
+        Assert.Equal(77, enrollment.DecidedById);
+    }
+
+    [Fact]
+    public void Resume_AtExactPaidUntil_Succeeds()
+    {
+        var enrollment = new Enrollment(studentId: 1, courseId: 1, EnrollmentStatus.Pending);
+        enrollment.ExtendPaidUntil(Now.AddDays(-30), 30);
+        enrollment.Transition(EnrollmentTrigger.Cancel, UserId, Now.AddDays(-1));
+
+        var result = enrollment.Transition(EnrollmentTrigger.Resume, UserId, Now);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(EnrollmentStatus.Active, enrollment.EnrollmentStatus);
+    }
+
+    [Fact]
+    public void Resume_AfterPaidUntil_Fails()
+    {
+        var enrollment = new Enrollment(studentId: 1, courseId: 1, EnrollmentStatus.Pending);
+        enrollment.ExtendPaidUntil(Now.AddDays(-30), 30);
+        enrollment.Transition(EnrollmentTrigger.Cancel, UserId, Now.AddDays(-1));
+
+        var result = enrollment.Transition(EnrollmentTrigger.Resume, UserId, Now.AddSeconds(1));
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal("Pretplata se može nastaviti samo dok plaćeni period traje.", result.Error);
+        Assert.Equal(EnrollmentStatus.Canceled, enrollment.EnrollmentStatus);
+    }
+
+    [Fact]
+    public void Resume_FromActive_Fails()
+    {
+        var enrollment = new Enrollment(studentId: 1, courseId: 1, EnrollmentStatus.Active);
+        enrollment.ExtendPaidUntil(Now, 30);
+
+        var result = enrollment.Transition(EnrollmentTrigger.Resume, UserId, Now);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal("Nastaviti se može samo otkazani upis.", result.Error);
+        Assert.Equal(EnrollmentStatus.Active, enrollment.EnrollmentStatus);
     }
 }

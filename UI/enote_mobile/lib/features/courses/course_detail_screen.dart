@@ -99,7 +99,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
   }
 
   void _loadLecturesOnceUnlocked(CourseDto course) {
-    if (_lecturesRequested || !course.isEnrolled || !course.hasContentAccess) {
+    if (_lecturesRequested || !course.hasContentAccess) {
       return;
     }
     _lecturesRequested = true;
@@ -107,23 +107,32 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
   }
 
   Future<void> _enroll(CourseDto course) async {
+    final resume =
+        course.enrollmentStatus == EnrollmentStatus.canceled &&
+        course.hasContentAccess;
     final confirmed = await confirmDialog(
       context: context,
-      title: 'Upis na kurs',
-      message: 'Želite li se upisati na kurs "${course.name}"?',
+      title: resume ? 'Nastavak pretplate' : 'Upis na kurs',
+      message: resume
+          ? 'Želite li nastaviti pretplatu na kurs "${course.name}"?'
+          : 'Želite li se upisati na kurs "${course.name}"?',
     );
     if (confirmed != true || !mounted) return;
     await submitWith(
       (busy) => _acting = busy,
       () async {
-        await context.read<CourseProvider>().enroll(course.id);
+        final status = await context.read<CourseProvider>().enroll(
+          course.id,
+        );
         await _loadCourse();
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                'Zahtjev za upis na kurs ${course.name} je poslan. '
-                'Instruktor ga treba odobriti.',
+                status == EnrollmentStatus.active
+                    ? 'Pretplata na kurs ${course.name} je nastavljena.'
+                    : 'Zahtjev za upis na kurs ${course.name} je poslan. '
+                          'Instruktor ga treba odobriti.',
               ),
             ),
           );
@@ -135,11 +144,20 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
 
   Future<void> _unenroll(CourseDto course) async {
     final pending = course.enrollmentStatus == EnrollmentStatus.pending;
+    final paidUntil = course.paidUntil;
+    final keepsAccess = course.enrollmentStatus == EnrollmentStatus.active &&
+        !course.isFree &&
+        paidUntil != null &&
+        paidUntil.isAfter(DateTime.now());
     final confirmed = await confirmDialog(
       context: context,
       title: pending ? 'Otkazivanje zahtjeva' : 'Ispis sa kursa',
       message: pending
           ? 'Želite li otkazati zahtjev za upis na kurs "${course.name}"?'
+          : keepsAccess
+          ? 'Želite li se ispisati sa kursa "${course.name}"? '
+                'Pristup sadržaju ostaje do ${formatDate(paidUntil)} '
+                'Uplaćena školarina se ne vraća.'
           : 'Želite li se ispisati sa kursa "${course.name}"?',
     );
     if (confirmed != true || !mounted) return;
@@ -226,31 +244,32 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
             onTuitionHistory: () => _openTuitionHistory(course),
           ),
         ),
-        if (!enrolled)
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Text(
-                switch (course.enrollmentStatus) {
-                  EnrollmentStatus.pending =>
-                    'Predavanja su vidljiva nakon što instruktor odobri upis.',
-                  EnrollmentStatus.completed => 'Kurs ste završili.',
-                  _ => 'Upišite se da vidite predavanja ovog kursa.',
-                },
-                textAlign: TextAlign.center,
+        if (!course.hasContentAccess) ...[
+          if (enrolled)
+            SliverToBoxAdapter(
+              child: BlockedReasonBanner(
+                icon: Icons.lock_outline,
+                reason: lockedContentReason(course.lectureCount),
+                actionLabel: 'Obnovi školarinu',
+                onAction: () => _openTuition(course),
+              ),
+            )
+          else
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Text(
+                  switch (course.enrollmentStatus) {
+                    EnrollmentStatus.pending =>
+                      'Predavanja su vidljiva nakon što instruktor odobri upis.',
+                    EnrollmentStatus.completed => 'Kurs ste završili.',
+                    _ => 'Upišite se da vidite predavanja ovog kursa.',
+                  },
+                  textAlign: TextAlign.center,
+                ),
               ),
             ),
-          )
-        else if (!course.hasContentAccess)
-          SliverToBoxAdapter(
-            child: BlockedReasonBanner(
-              icon: Icons.lock_outline,
-              reason: lockedContentReason(course.lectureCount),
-              actionLabel: 'Obnovi školarinu',
-              onAction: () => _openTuition(course),
-            ),
-          )
-        else ...[
+        ] else ...[
           SliverPersistentHeader(
             pinned: true,
             delegate: CourseLecturesHeader(

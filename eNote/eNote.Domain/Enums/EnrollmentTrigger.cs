@@ -6,5 +6,6 @@ public enum EnrollmentTrigger
     Approve,
     Reject,
     Cancel,
-    Complete
+    Complete,
+    Resume
 }

@@ -213,6 +213,59 @@ public sealed class LectureServiceTests
     }
 
     [Fact]
+    public async Task CancelAsync_NotifiesCanceledStudentsWithPaidTime_ButNotExpiredOnes()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var course = new Course("Piano 201", null, 100m, Now, Now.AddMonths(1), harness.Instructor.Id);
+        course.SetPublishedStatus(true);
+        harness.Context.Set<Course>().Add(course);
+        var active = new Student(60, Now);
+        var paidCanceled = new Student(61, Now);
+        var expiredCanceled = new Student(62, Now);
+        harness.Context.Set<Student>().AddRange(active, paidCanceled, expiredCanceled);
+        await harness.Context.SaveChangesAsync();
+        var lecture = new Lecture("Piano lesson", "Room 4", 60, Now.AddDays(1), LectureType.Theoretical, 20, course.Id);
+        harness.Context.Set<Lecture>().Add(lecture);
+        var activeEnrollment = new Enrollment(active.Id, course.Id, EnrollmentStatus.Active);
+        var paidCanceledEnrollment = new Enrollment(paidCanceled.Id, course.Id, EnrollmentStatus.Active);
+        paidCanceledEnrollment.ExtendPaidUntil(Now, 1);
+        paidCanceledEnrollment.Transition(EnrollmentTrigger.Cancel, userId: 1, now: Now);
+        var expiredCanceledEnrollment = new Enrollment(expiredCanceled.Id, course.Id, EnrollmentStatus.Active);
+        expiredCanceledEnrollment.ExtendPaidUntil(Now.AddDays(-31), 30);
+        expiredCanceledEnrollment.Transition(EnrollmentTrigger.Cancel, userId: 1, now: Now);
+        harness.Context.Set<Enrollment>().AddRange(activeEnrollment, paidCanceledEnrollment, expiredCanceledEnrollment);
+        await harness.Context.SaveChangesAsync();
+        var dispatcher = new RecordingLectureNotificationDispatcher();
+        var service = CreateService(harness.Context, harness.Instructor, notificationDispatcher: dispatcher);
+
+        await service.CancelAsync(lecture.Id, new LectureCancelRequest { Reason = "Instrument je pokvaren" });
+
+        var call = Assert.Single(dispatcher.CancelledCalls);
+        Assert.Equal([60, 61], call.EnrolledStudentUserIds.OrderBy(x => x));
+    }
+
+    [Fact]
+    public async Task CancelAsync_NotifiesCanceledStudent_AtExactPaidUntil()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var student = new Student(63, Now);
+        harness.Context.Set<Student>().Add(student);
+        await harness.Context.SaveChangesAsync();
+        var enrollment = new Enrollment(student.Id, harness.Course.Id, EnrollmentStatus.Active);
+        enrollment.ExtendPaidUntil(Now.AddDays(-30), 30);
+        enrollment.Transition(EnrollmentTrigger.Cancel, userId: 1, now: Now);
+        harness.Context.Set<Enrollment>().Add(enrollment);
+        await harness.Context.SaveChangesAsync();
+        var dispatcher = new RecordingLectureNotificationDispatcher();
+        var service = CreateService(harness.Context, harness.Instructor, notificationDispatcher: dispatcher);
+
+        await service.CancelAsync(harness.Lecture.Id, new LectureCancelRequest { Reason = "Instrument je pokvaren" });
+
+        var call = Assert.Single(dispatcher.CancelledCalls);
+        Assert.Contains(63, call.EnrolledStudentUserIds);
+    }
+
+    [Fact]
     public async Task GetByIdForStudentAsync_Throws_WhenNotEnrolled()
     {
         var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);

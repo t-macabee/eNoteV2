@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using eNote.Application.Common.Search;
 using eNote.Application.Features.Identity.Instructors;
 using eNote.Application.Features.Identity.Users;
@@ -109,39 +110,8 @@ public sealed class CourseService(IAppDbContext context, IMapper mapper, ICurren
         var dto = await context.Set<Course>()
             .AsNoTracking()
             .Where(c => c.Id == id &&
-                (c.IsPublished || c.Enrollments.Any(e => e.StudentId == studentId && e.EnrollmentStatus == EnrollmentStatus.Active)))
-            .Select(c => new CourseDto
-            {
-                Id = c.Id,
-                InstructorId = c.InstructorId,
-                Name = c.Name,
-                Description = c.Description,
-                IsPublished = c.IsPublished,
-                StartDate = c.StartDate,
-                EndDate = c.EndDate,
-                Price = c.Price,
-                EnrolledCount = c.Enrollments.Count(e => e.EnrollmentStatus == EnrollmentStatus.Active),
-                IsEnrolled = c.Enrollments.Any(e => e.StudentId == studentId && e.EnrollmentStatus == EnrollmentStatus.Active),
-                HasContentAccess = c.Enrollments.AsQueryable().Any(StudentEnrollmentExtensions.HasContentAccess(studentId, now)),
-                LectureCount = c.Lectures.Count(l => l.LectureStatus != LectureStatus.Cancelled
-                    && (l.StudentId == null || l.StudentId == studentId)),
-                EnrollmentId = c.Enrollments
-                    .Where(e => e.StudentId == studentId && e.EnrollmentStatus == EnrollmentStatus.Active)
-                    .Select(e => (int?)e.Id)
-                    .FirstOrDefault(),
-                PaidUntil = c.Enrollments
-                    .Where(e => e.StudentId == studentId && e.EnrollmentStatus == EnrollmentStatus.Active)
-                    .Select(e => e.PaidUntil)
-                    .FirstOrDefault(),
-                EnrollmentStatus = c.Enrollments
-                    .Where(e => e.StudentId == studentId)
-                    .Select(e => (EnrollmentStatus?)e.EnrollmentStatus)
-                    .FirstOrDefault(),
-                EnrollmentDecisionNote = c.Enrollments
-                    .Where(e => e.StudentId == studentId)
-                    .Select(e => e.DecisionNote)
-                    .FirstOrDefault()
-            })
+                (c.IsPublished || c.Enrollments.AsQueryable().Any(StudentEnrollmentExtensions.HasContentAccess(studentId, now))))
+            .Select(ProjectForStudent(studentId, now))
             .FirstOrDefaultAsync(cancellationToken)
             ?? throw new NotFoundException(Messages.CourseNotFound);
 
@@ -149,6 +119,40 @@ public sealed class CourseService(IAppDbContext context, IMapper mapper, ICurren
 
         return dto;
     }
+
+    private static Expression<Func<Course, CourseDto>> ProjectForStudent(int studentId, DateTime now) =>
+        c => new CourseDto
+        {
+            Id = c.Id,
+            InstructorId = c.InstructorId,
+            Name = c.Name,
+            Description = c.Description,
+            IsPublished = c.IsPublished,
+            StartDate = c.StartDate,
+            EndDate = c.EndDate,
+            Price = c.Price,
+            EnrolledCount = c.Enrollments.Count(e => e.EnrollmentStatus == EnrollmentStatus.Active),
+            IsEnrolled = c.Enrollments.Any(e => e.StudentId == studentId && e.EnrollmentStatus == EnrollmentStatus.Active),
+            HasContentAccess = c.Enrollments.AsQueryable().Any(StudentEnrollmentExtensions.HasContentAccess(studentId, now)),
+            LectureCount = c.Lectures.Count(l => l.LectureStatus != LectureStatus.Cancelled
+                && (l.StudentId == null || l.StudentId == studentId)),
+            EnrollmentId = c.Enrollments
+                .Where(e => e.StudentId == studentId)
+                .Select(e => (int?)e.Id)
+                .FirstOrDefault(),
+            PaidUntil = c.Enrollments
+                .Where(e => e.StudentId == studentId)
+                .Select(e => e.PaidUntil)
+                .FirstOrDefault(),
+            EnrollmentStatus = c.Enrollments
+                .Where(e => e.StudentId == studentId)
+                .Select(e => (EnrollmentStatus?)e.EnrollmentStatus)
+                .FirstOrDefault(),
+            EnrollmentDecisionNote = c.Enrollments
+                .Where(e => e.StudentId == studentId)
+                .Select(e => e.DecisionNote)
+                .FirstOrDefault()
+        };
 
     public async Task<PagedResult<CourseDto>> GetPagedForInstructorAsync(CourseSearchObject search, CancellationToken cancellationToken = default)
     {
@@ -205,7 +209,9 @@ public sealed class CourseService(IAppDbContext context, IMapper mapper, ICurren
 
         if (search.EnrolledOnly == true)
         {
-            query = query.Where(c => c.Enrollments.Any(e => e.StudentId == studentId && e.EnrollmentStatus == EnrollmentStatus.Active));
+            query = query.Where(c =>
+                c.Enrollments.Any(e => e.StudentId == studentId && e.EnrollmentStatus == EnrollmentStatus.Active)
+                || c.Enrollments.AsQueryable().Any(StudentEnrollmentExtensions.HasContentAccess(studentId, now)));
         }
         else
         {
@@ -225,38 +231,7 @@ public sealed class CourseService(IAppDbContext context, IMapper mapper, ICurren
             .ThenBy(x => x.Id)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .Select(c => new CourseDto
-            {
-                Id = c.Id,
-                InstructorId = c.InstructorId,
-                Name = c.Name,
-                Description = c.Description,
-                IsPublished = c.IsPublished,
-                StartDate = c.StartDate,
-                EndDate = c.EndDate,
-                Price = c.Price,
-                EnrolledCount = c.Enrollments.Count(e => e.EnrollmentStatus == EnrollmentStatus.Active),
-                IsEnrolled = c.Enrollments.Any(e => e.StudentId == studentId && e.EnrollmentStatus == EnrollmentStatus.Active),
-                HasContentAccess = c.Enrollments.AsQueryable().Any(StudentEnrollmentExtensions.HasContentAccess(studentId, now)),
-                LectureCount = c.Lectures.Count(l => l.LectureStatus != LectureStatus.Cancelled
-                    && (l.StudentId == null || l.StudentId == studentId)),
-                EnrollmentId = c.Enrollments
-                    .Where(e => e.StudentId == studentId && e.EnrollmentStatus == EnrollmentStatus.Active)
-                    .Select(e => (int?)e.Id)
-                    .FirstOrDefault(),
-                PaidUntil = c.Enrollments
-                    .Where(e => e.StudentId == studentId && e.EnrollmentStatus == EnrollmentStatus.Active)
-                    .Select(e => e.PaidUntil)
-                    .FirstOrDefault(),
-                EnrollmentStatus = c.Enrollments
-                    .Where(e => e.StudentId == studentId)
-                    .Select(e => (EnrollmentStatus?)e.EnrollmentStatus)
-                    .FirstOrDefault(),
-                EnrollmentDecisionNote = c.Enrollments
-                    .Where(e => e.StudentId == studentId)
-                    .Select(e => e.DecisionNote)
-                    .FirstOrDefault()
-            })
+            .Select(ProjectForStudent(studentId, now))
             .ToListAsync(cancellationToken);
 
         foreach (var item in items)
@@ -451,10 +426,12 @@ public sealed class CourseService(IAppDbContext context, IMapper mapper, ICurren
 
     private async Task EnsureNoActivePaidAccessAsync(Course entity, CancellationToken cancellationToken)
     {
+        var now = clock.UtcNow;
+
         var latestPaidUntil = await context.Set<Enrollment>()
-            .Where(e => e.CourseId == entity.Id
-                && e.EnrollmentStatus == EnrollmentStatus.Active
-                && e.PaidUntil >= clock.UtcNow)
+            .Where(e => e.CourseId == entity.Id)
+            .Where(StudentEnrollmentExtensions.IsCurrentMember(now))
+            .Where(e => e.PaidUntil >= now)
             .MaxAsync(e => e.PaidUntil, cancellationToken);
 
         if (latestPaidUntil.HasValue)

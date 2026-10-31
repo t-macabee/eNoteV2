@@ -249,8 +249,8 @@ public sealed class LectureService(
 
         var enrolledStudentUserIds = await context.Set<Enrollment>()
             .Where(e => e.CourseId == entity.CourseId
-                && e.EnrollmentStatus == EnrollmentStatus.Active
                 && (entity.StudentId == null || e.StudentId == entity.StudentId))
+            .Where(StudentEnrollmentExtensions.IsCurrentMember(clock.UtcNow))
             .Select(e => e.Student.AppUserId)
             .ToListAsync(cancellationToken);
 

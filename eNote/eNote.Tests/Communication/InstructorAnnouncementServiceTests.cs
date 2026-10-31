@@ -55,6 +55,39 @@ public sealed class InstructorAnnouncementServiceTests
     }
 
     [Fact]
+    public async Task CreateForCourseAsync_NotifiesCanceledStudentsWithPaidTime_ButNotExpiredOnes()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var course = new Course("Piano 201", null, 100m, Now, Now.AddMonths(1), harness.Instructor.Id);
+        course.SetPublishedStatus(true);
+        harness.Context.Set<Course>().Add(course);
+        var active = new Student(60, Now);
+        var paidCanceled = new Student(61, Now);
+        var expiredCanceled = new Student(62, Now);
+        harness.Context.Set<Student>().AddRange(active, paidCanceled, expiredCanceled);
+        await harness.Context.SaveChangesAsync();
+        var activeEnrollment = new Enrollment(active.Id, course.Id, EnrollmentStatus.Active);
+        var paidCanceledEnrollment = new Enrollment(paidCanceled.Id, course.Id, EnrollmentStatus.Active);
+        paidCanceledEnrollment.ExtendPaidUntil(Now, 1);
+        paidCanceledEnrollment.Transition(EnrollmentTrigger.Cancel, userId: 1, now: Now);
+        var expiredCanceledEnrollment = new Enrollment(expiredCanceled.Id, course.Id, EnrollmentStatus.Active);
+        expiredCanceledEnrollment.ExtendPaidUntil(Now.AddDays(-31), 30);
+        expiredCanceledEnrollment.Transition(EnrollmentTrigger.Cancel, userId: 1, now: Now);
+        harness.Context.Set<Enrollment>().AddRange(activeEnrollment, paidCanceledEnrollment, expiredCanceledEnrollment);
+        await harness.Context.SaveChangesAsync();
+        var service = CreateService(harness.Context, AcademicTestData.CreateInstructorAccess(harness.Context, harness.Instructor));
+
+        await service.CreateForCourseAsync(course.Id, new AnnouncementRequest("Welcome", "Hello everyone"));
+
+        var outbox = await harness.Context.Set<NotificationOutbox>().ToListAsync();
+        var recipients = outbox
+            .Select(o => JsonSerializer.Deserialize<AnnouncementPublished>(o.PayloadJson, JsonOptions)!.StudentUserId)
+            .OrderBy(x => x)
+            .ToList();
+        Assert.Equal([60, 61], recipients);
+    }
+
+    [Fact]
     public async Task CreateForCourseAsync_DoesNotNotifyStudentsOfOtherCourses()
     {
         var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
