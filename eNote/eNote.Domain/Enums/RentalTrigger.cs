@@ -7,5 +7,7 @@ public enum RentalTrigger
     Pickup,
     Complete,
     Cancel,
-    ReturnEarly
+    ReturnEarly,
+    ExpirePickup,
+    Renew
 }

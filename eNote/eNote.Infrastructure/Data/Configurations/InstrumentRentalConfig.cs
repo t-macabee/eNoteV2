@@ -33,6 +33,10 @@ public sealed class InstrumentRentalConfig : IEntityTypeConfiguration<Instrument
 
         builder.Property(x => x.Fee).HasDecimalPrecision(10).IsRequired();
 
+        builder.Property(x => x.DueAt);
+
+        builder.Property(x => x.OverduePenaltyMultiplier).HasDecimalPrecision(4).IsRequired();
+
         builder.Property(x => x.IsPaid).HasDefaultFalse();
 
         builder.Property(x => x.PaidAt);

@@ -78,13 +78,35 @@ public sealed class RentalQueryServiceTests
     }
 
     [Fact]
+    public async Task GetByIdForStudentAsync_ComputesTermAndOverduePenalty()
+    {
+        await using var context = RentalTestData.CreateContext(Now);
+        var student = await SeedStudentAsync(context, appUserId: 100);
+        var instrument = await RentalTestData.SeedInstrumentAsync(context);
+        var rental = new InstrumentRental(instrument.Id, student.Id, instrument.MusicStoreId, Now.AddDays(-35), null);
+        RentalTestData.AdvanceTo(rental, InstrumentRentalStatus.Active, Now, fee: 90m, approvedAt: Now.AddDays(-35), pickedUpAt: Now.AddDays(-34));
+        context.Set<InstrumentRental>().Add(rental);
+        await context.SaveChangesAsync();
+        var service = CreateService(context, student);
+
+        var dto = await service.GetByIdForStudentAsync(rental.Id);
+
+        Assert.Equal(Now.AddDays(-4), dto.DueAt);
+        Assert.Equal(Now.AddDays(-9), dto.RenewalOpensAt);
+        Assert.Equal(1.50m, dto.DailyPenaltyFee);
+        Assert.Equal(4, dto.OverdueDays);
+        Assert.Equal(6.00m, dto.PenaltyFee);
+        Assert.Equal(108.00m, dto.TotalFee);
+    }
+
+    [Fact]
     public async Task GetDebtForStudentAsync_ReturnsDebt_WhenInstrumentSoftDeleted()
     {
         await using var context = RentalTestData.CreateContext(Now);
         var student = await SeedStudentAsync(context, appUserId: 100);
         var instrument = await RentalTestData.SeedInstrumentAsync(context);
         var unpaid = new InstrumentRental(instrument.Id, student.Id, instrument.MusicStoreId, Now.AddDays(-20), null);
-        RentalTestData.AdvanceTo(unpaid, InstrumentRentalStatus.Completed, Now, approvedAt: Now.AddDays(-19), pickedUpAt: Now.AddDays(-19), finishedAt: Now.AddDays(-5));
+        RentalTestData.AdvanceTo(unpaid, InstrumentRentalStatus.Completed, Now, approvedAt: Now.AddDays(-35), pickedUpAt: Now.AddDays(-35), finishedAt: Now.AddDays(-5));
         context.Set<InstrumentRental>().Add(unpaid);
         await context.SaveChangesAsync();
 
@@ -116,6 +138,30 @@ public sealed class RentalQueryServiceTests
 
         Assert.Equal(rental.Id, dto.Id);
         Assert.False(dto.InstrumentIsActive);
+    }
+
+    [Fact]
+    public async Task GetByIdForStudentAsync_ReturnsPickupDeadline_OnlyWhileApproved()
+    {
+        await using var context = RentalTestData.CreateContext(Now);
+        var student = await SeedStudentAsync(context, appUserId: 100);
+        var instrument = await RentalTestData.SeedInstrumentAsync(context);
+        var approved = new InstrumentRental(instrument.Id, student.Id, instrument.MusicStoreId, new DateTime(2026, 6, 13, 10, 0, 0, DateTimeKind.Utc), null);
+        RentalTestData.AdvanceTo(approved, InstrumentRentalStatus.Approved, Now, approvedAt: new DateTime(2026, 6, 14, 10, 0, 0, DateTimeKind.Utc));
+        var activeInstrument = new Instrument("Second Model", "Second Manufacturer", null, null, instrument.InstrumentTypeId, instrument.MusicStoreId);
+        context.Set<Instrument>().Add(activeInstrument);
+        await context.SaveChangesAsync();
+        var active = new InstrumentRental(activeInstrument.Id, student.Id, activeInstrument.MusicStoreId, new DateTime(2026, 6, 13, 10, 0, 0, DateTimeKind.Utc), null);
+        RentalTestData.AdvanceTo(active, InstrumentRentalStatus.Active, Now, approvedAt: new DateTime(2026, 6, 14, 10, 0, 0, DateTimeKind.Utc), pickedUpAt: new DateTime(2026, 6, 14, 11, 0, 0, DateTimeKind.Utc));
+        context.Set<InstrumentRental>().AddRange(approved, active);
+        await context.SaveChangesAsync();
+        var service = CreateService(context, student);
+
+        var approvedDto = await service.GetByIdForStudentAsync(approved.Id);
+        var activeDto = await service.GetByIdForStudentAsync(active.Id);
+
+        Assert.Equal(new DateTime(2026, 6, 16, 10, 0, 0, DateTimeKind.Utc), approvedDto.PickupDeadline);
+        Assert.Null(activeDto.PickupDeadline);
     }
 
     private static async Task<Student> SeedStudentAsync(ENoteContext context, int appUserId)

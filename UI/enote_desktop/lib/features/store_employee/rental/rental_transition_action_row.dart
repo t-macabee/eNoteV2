@@ -6,12 +6,14 @@ class RentalTransitionActionRow extends StatefulWidget {
   final InstrumentRentalStatus status;
   final Future<void> Function(RentalTrigger trigger, {String? note}) onTransition;
   final bool enabled;
+  final DateTime? dueAt;
 
   const RentalTransitionActionRow({
     super.key,
     required this.status,
     required this.onTransition,
     this.enabled = true,
+    this.dueAt,
   });
 
   @override
@@ -119,7 +121,15 @@ class _RentalTransitionActionRowState extends State<RentalTransitionActionRow> {
 
   @override
   Widget build(BuildContext context) {
-    final actions = _actionsByStatus[widget.status] ?? const [];
+    var actions = _actionsByStatus[widget.status] ?? const [];
+    if (widget.status == InstrumentRentalStatus.active) {
+      final termReached =
+          widget.dueAt != null && !DateTime.now().isBefore(widget.dueAt!);
+      final allowed = termReached
+          ? RentalTrigger.complete
+          : RentalTrigger.returnEarly;
+      actions = actions.where((action) => action.trigger == allowed).toList();
+    }
     if (actions.isEmpty) return const SizedBox.shrink();
 
     return Wrap(

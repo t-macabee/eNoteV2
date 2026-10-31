@@ -7,6 +7,8 @@ public static class RentalChargesMapping
         dto.Fee = rental.Fee;
         dto.DailyFee = charges.DailyFee;
         dto.DaysCharged = charges.DaysCharged;
+        dto.OverdueDays = charges.OverdueDays;
+        dto.PenaltyFee = charges.PenaltyFee;
         dto.TotalFee = charges.TotalFee;
     }
 }

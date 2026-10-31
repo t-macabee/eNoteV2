@@ -144,7 +144,14 @@ public sealed class StoreAnnouncementServiceTests
         await context.SaveChangesAsync();
 
         var rental = new InstrumentRental(instrument.Id, student.Id, store.Id, Now, null);
-        RentalTestData.AdvanceTo(rental, status, Now);
+        var completed = status == InstrumentRentalStatus.Completed;
+        RentalTestData.AdvanceTo(
+            rental,
+            status,
+            Now,
+            approvedAt: completed ? Now.AddDays(-30) : null,
+            pickedUpAt: completed ? Now.AddDays(-30) : null,
+            finishedAt: completed ? Now : null);
         context.Set<InstrumentRental>().Add(rental);
         await context.SaveChangesAsync();
 
@@ -212,7 +219,14 @@ public sealed class StoreAnnouncementServiceTests
     private static void AddRental(ENoteContext context, Instrument instrument, Student student, int storeId, InstrumentRentalStatus status)
     {
         var rental = new InstrumentRental(instrument.Id, student.Id, storeId, Now, null);
-        RentalTestData.AdvanceTo(rental, status, Now);
+        var completed = status == InstrumentRentalStatus.Completed;
+        RentalTestData.AdvanceTo(
+            rental,
+            status,
+            Now,
+            approvedAt: completed ? Now.AddDays(-30) : null,
+            pickedUpAt: completed ? Now.AddDays(-30) : null,
+            finishedAt: completed ? Now : null);
         context.Set<InstrumentRental>().Add(rental);
     }
 

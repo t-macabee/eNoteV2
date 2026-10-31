@@ -166,6 +166,21 @@ void main() {
     expect(jsonDecode(client.requests.single.body), isEmpty);
   });
 
+  test('renew posts to student/rentals/{id}/renew and returns the dto', () async {
+    final client = RecordingHttpClient(
+      body: {..._rental, 'id': 7, 'rentalStatus': 'Active'},
+    );
+    final provider = _provider(client);
+    final renewed = await provider.renew(7);
+
+    final sent = client.requests.single;
+    expect(sent.method, 'POST');
+    expect(sent.url.path, '/api/v1/student/rentals/7/renew');
+    expect(sent.body.isEmpty || sent.body == 'null', isTrue);
+    expect(renewed.id, 7);
+    expect(renewed.rentalStatus, InstrumentRentalStatus.active);
+  });
+
   test('debt reads student/rentals/debt and decodes the rental id', () async {
     final client = RecordingHttpClient(
       body: const {'hasUnpaidDebt': true, 'rentalId': 9},

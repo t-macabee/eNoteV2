@@ -8,10 +8,11 @@ import 'package:enote_desktop/features/store_employee/instrument/instrument_prov
 import 'package:enote_desktop/features/store_employee/rental/rental_detail_dialog.dart';
 import 'package:enote_desktop/features/store_employee/rental/rental_list_screen.dart';
 import 'package:enote_desktop/features/store_employee/rental/rental_provider.dart';
+import 'package:enote_desktop/features/store_employee/rental/rental_status_display.dart';
 
 import 'helpers.dart';
 
-Map<String, dynamic> _rentalItem() => {
+Map<String, dynamic> _rentalItem([Map<String, dynamic> extra = const {}]) => {
       'id': 7,
       'instrumentId': 1,
       'musicStoreId': 1,
@@ -26,12 +27,13 @@ Map<String, dynamic> _rentalItem() => {
       'fee': 10.0,
       'totalFee': 5.0,
       'isPaid': false,
+      ...extra,
     };
 
-ScriptedClient _client() => ScriptedClient((request) {
+ScriptedClient _client([Map<String, dynamic> extra = const {}]) => ScriptedClient((request) {
   final path = request.url.path;
   if (request.method == 'GET' && path.endsWith('/shop/rentals/7')) {
-    return jsonResponse(_rentalItem(), 200);
+    return jsonResponse(_rentalItem(extra), 200);
   }
   if (request.method == 'GET' && path.contains('shop/instruments')) {
     return jsonResponse(const {
@@ -43,7 +45,7 @@ ScriptedClient _client() => ScriptedClient((request) {
   }
   if (request.method == 'GET' && path.contains('shop/rentals')) {
     return jsonResponse({
-      'items': [_rentalItem()],
+      'items': [_rentalItem(extra)],
       'page': 1,
       'pageSize': 20,
       'totalCount': 1,
@@ -175,5 +177,37 @@ void main() {
     expect(dropdown.items, hasLength(151));
     expect((dropdown.items!.first.child as Text).data, 'Svi instrumenti');
     expect((dropdown.items!.last.child as Text).data, 'Instrument 2049');
+  });
+
+  testWidgets('overdue active row appends the overdue days in red', (
+    tester,
+  ) async {
+    await _pumpList(
+      tester,
+      _client({
+        'dueAt': DateTime.now().subtract(const Duration(days: 2)).toIso8601String(),
+        'overdueDays': 4,
+      }),
+    );
+
+    expect(find.text('Aktivno · kasni 4 dana'), findsOneWidget);
+    final label = tester.widget<Text>(find.text('Aktivno · kasni 4 dana'));
+    expect(label.style?.color, Colors.red);
+  });
+
+  testWidgets('completed row with overdue days shows the plain status label', (
+    tester,
+  ) async {
+    await _pumpList(
+      tester,
+      _client({'rentalStatus': 'Completed', 'overdueDays': 2}),
+    );
+
+    expect(find.text('Završeno'), findsOneWidget);
+    expect(find.textContaining('kasni'), findsNothing);
+
+    final label = tester.widget<Text>(find.text('Završeno'));
+    expect(label.style?.color, rentalStatusColor(InstrumentRentalStatus.completed));
+    expect(label.style?.color, isNot(Colors.red));
   });
 }

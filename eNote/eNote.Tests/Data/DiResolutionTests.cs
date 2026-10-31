@@ -1,12 +1,16 @@
 using eNote.API.Realtime.Consumers;
 using eNote.API.Extensions;
+using eNote.Application;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Features.Identity.Auth.Services;
+using eNote.Application.Features.Rentals.InstrumentRentals.Services;
 using eNote.Application.Features.Rentals.Payments.Services;
 using eNote.Infrastructure;
 using eNote.Infrastructure.Messaging;
 using eNote.Worker;
 using eNote.Worker.Consumers;
+using eNote.Worker.Extensions;
+using eNote.Worker.Rentals;
 using eNote.Tests.TestUtils;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -71,7 +75,8 @@ public sealed class DiResolutionTests
             .AddJwtAuthentication()
             .AddAuthorization()
             .AddApplicationServices()
-            .AddMapsterMappings();
+            .AddMapsterMappings()
+            .AddRentalOptions(configuration);
 
         await AssertAllENoteInterfacesResolvable(services);
         Assert.True(RegistersOutboxPublisher(services), "The API must drain the notification outbox.");
@@ -103,12 +108,21 @@ public sealed class DiResolutionTests
                 bus.AddConsumer<RentalStatusChangedEmailConsumer>();
                 bus.AddConsumer<RentalRefundedConsumer>();
             })
-            .AddInfrastructureHealthChecks();
+            .AddInfrastructureHealthChecks()
+            .AddRentalOptions(configuration)
+            .AddRentalPickupExpiry();
 
         await AssertAllENoteInterfacesResolvable(services);
         Assert.False(RegistersOutboxPublisher(services), "Only the API may drain the notification outbox.");
         Assert.False(IsRegistered(services, typeof(IPaymentGateway)), "The worker does not take payments.");
         Assert.False(IsRegistered(services, typeof(ITokenService)), "The worker does not issue tokens.");
+        Assert.Contains(services, d => d.ServiceType == typeof(IHostedService) && d.ImplementationType == typeof(RentalPickupExpiryService));
+
+        await using (var provider = services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true }))
+        using (var scope = provider.CreateScope())
+        {
+            Assert.NotNull(scope.ServiceProvider.GetRequiredService<RentalCommandService>());
+        }
 
         var healthChecks = await HealthCheckRegistrationsAsync(services);
         Assert.DoesNotContain(healthChecks, registration => registration.Name == "outbox");
@@ -135,6 +149,7 @@ public sealed class DiResolutionTests
             ["Stripe:WebhookSecret"] = "whsec_123",
             ["Stripe:Currency"] = "bam",
             ["Stripe:StatementDescriptor"] = "ENOTE Rental",
+            ["Rentals:OverduePenaltyMultiplier"] = "0.5",
             ["Storage:Root"] = "wwwroot",
         };
         foreach (var pair in additional)

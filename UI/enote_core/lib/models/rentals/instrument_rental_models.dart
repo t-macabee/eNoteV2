@@ -21,11 +21,17 @@ class InstrumentRentalDto {
   final DateTime? rejectedAt;
   final DateTime? pickedUpAt;
   final DateTime? returnedAt;
+  final DateTime? pickupDeadline;
+  final DateTime? dueAt;
+  final DateTime? renewalOpensAt;
   final int? approvedById;
   final int? rejectedById;
   final double fee;
   final double? dailyFee;
+  final double dailyPenaltyFee;
   final int? daysCharged;
+  final int? overdueDays;
+  final double? penaltyFee;
   final double? totalFee;
   final bool isPaid;
   final double? amountPaid;
@@ -52,11 +58,17 @@ class InstrumentRentalDto {
     this.rejectedAt,
     this.pickedUpAt,
     this.returnedAt,
+    this.pickupDeadline,
+    this.dueAt,
+    this.renewalOpensAt,
     this.approvedById,
     this.rejectedById,
     required this.fee,
     this.dailyFee,
+    this.dailyPenaltyFee = 0.0,
     this.daysCharged,
+    this.overdueDays,
+    this.penaltyFee,
     this.totalFee,
     required this.isPaid,
     this.amountPaid,
@@ -86,11 +98,17 @@ class InstrumentRentalDto {
       rejectedAt: parseDate(json['rejectedAt']),
       pickedUpAt: parseDate(json['pickedUpAt']),
       returnedAt: parseDate(json['returnedAt']),
+      pickupDeadline: parseDate(json['pickupDeadline']),
+      dueAt: parseDate(json['dueAt']),
+      renewalOpensAt: parseDate(json['renewalOpensAt']),
       approvedById: json['approvedById'] as int?,
       rejectedById: json['rejectedById'] as int?,
       fee: (json['fee'] as num?)?.toDouble() ?? 0.0,
       dailyFee: (json['dailyFee'] as num?)?.toDouble(),
+      dailyPenaltyFee: (json['dailyPenaltyFee'] as num?)?.toDouble() ?? 0.0,
       daysCharged: json['daysCharged'] as int?,
+      overdueDays: json['overdueDays'] as int?,
+      penaltyFee: (json['penaltyFee'] as num?)?.toDouble(),
       totalFee: (json['totalFee'] as num?)?.toDouble(),
       isPaid: json['isPaid'] as bool? ?? false,
       amountPaid: (json['amountPaid'] as num?)?.toDouble(),
@@ -119,11 +137,19 @@ class InstrumentRentalDto {
     if (rejectedAt != null) 'rejectedAt': rejectedAt!.toIso8601String(),
     if (pickedUpAt != null) 'pickedUpAt': pickedUpAt!.toIso8601String(),
     if (returnedAt != null) 'returnedAt': returnedAt!.toIso8601String(),
+    if (pickupDeadline != null)
+      'pickupDeadline': pickupDeadline!.toIso8601String(),
+    if (dueAt != null) 'dueAt': dueAt!.toIso8601String(),
+    if (renewalOpensAt != null)
+      'renewalOpensAt': renewalOpensAt!.toIso8601String(),
     if (approvedById != null) 'approvedById': approvedById,
     if (rejectedById != null) 'rejectedById': rejectedById,
     'fee': fee,
     if (dailyFee != null) 'dailyFee': dailyFee,
+    'dailyPenaltyFee': dailyPenaltyFee,
     if (daysCharged != null) 'daysCharged': daysCharged,
+    if (overdueDays != null) 'overdueDays': overdueDays,
+    if (penaltyFee != null) 'penaltyFee': penaltyFee,
     if (totalFee != null) 'totalFee': totalFee,
     'isPaid': isPaid,
     if (amountPaid != null) 'amountPaid': amountPaid,
@@ -137,6 +163,24 @@ class InstrumentRentalDto {
     if (days == null) return '—';
     return '$days dana × ${formatKM(dailyFee)}';
   }
+
+  bool get hasOverdueDays => (overdueDays ?? 0) > 0;
+
+  bool get isOverdue =>
+      rentalStatus == InstrumentRentalStatus.active && hasOverdueDays;
+
+  bool get hasPenaltyTerms =>
+      rentalStatus == InstrumentRentalStatus.approved ||
+      rentalStatus == InstrumentRentalStatus.active ||
+      rentalStatus == InstrumentRentalStatus.completed ||
+      rentalStatus == InstrumentRentalStatus.returnedEarly;
+
+  bool isRenewableAt(DateTime now) =>
+      rentalStatus == InstrumentRentalStatus.active &&
+      renewalOpensAt != null &&
+      dueAt != null &&
+      !now.isBefore(renewalOpensAt!) &&
+      now.isBefore(dueAt!);
 }
 
 class RentalCreateRequest {

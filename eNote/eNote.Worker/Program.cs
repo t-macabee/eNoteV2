@@ -21,6 +21,8 @@ builder.Services
     .AddInfrastructureIdentity()
     .AddEmail(builder.Configuration)
     .AddMessaging(builder.Configuration, WorkerConsumers.Add);
+builder.Services.AddRentalOptions(builder.Configuration);
+builder.Services.AddRentalPickupExpiry();
 builder.Services.AddInfrastructureHealthChecks();
 builder.Services.AddHostedService<DatabaseHeartbeatService>();
 

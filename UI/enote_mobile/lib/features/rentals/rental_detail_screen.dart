@@ -28,6 +28,7 @@ class _RentalDetailScreenState extends State<RentalDetailScreen> {
   Object? _error;
   bool _isLoading = true;
   bool _isCancelling = false;
+  bool _isRenewing = false;
 
   @override
   void initState() {
@@ -59,6 +60,37 @@ class _RentalDetailScreenState extends State<RentalDetailScreen> {
         _error = e;
         _isLoading = false;
       });
+    }
+  }
+
+  Future<void> _renew(InstrumentRentalDto rental) async {
+    final rentals = context.read<RentalProvider>();
+    final messenger = ScaffoldMessenger.of(context);
+    final confirmed = await confirmDialog(
+      context: context,
+      title: 'Produženje iznajmljivanja',
+      message:
+          'Produžiti iznajmljivanje instrumenta ${rental.instrumentModel} za još jedan period?',
+    );
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _isRenewing = true);
+    try {
+      final updated = await rentals.renew(rental.id);
+      await _load();
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            'Iznajmljivanje je produženo do ${formatDate(updated.dueAt!)}.',
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      messenger.showSnackBar(SnackBar(content: Text(userMessage(e))));
+    } finally {
+      if (mounted) setState(() => _isRenewing = false);
     }
   }
 
@@ -203,6 +235,21 @@ class _RentalDetailScreenState extends State<RentalDetailScreen> {
           label: 'Mjesečna naknada',
           value: formatKM(rental.fee),
         ),
+        if (rental.dueAt != null)
+          LabeledValue(
+            label: 'Rok povrata',
+            value: formatDate(rental.dueAt!),
+          ),
+        if (rental.hasPenaltyTerms)
+          LabeledValue(
+            label: 'Penal po danu kašnjenja',
+            value: formatKM(rental.dailyPenaltyFee),
+          ),
+        if (rental.hasOverdueDays)
+          LabeledValue(
+            label: 'Kašnjenje',
+            value: '${rental.overdueDays} dana · ${formatKM(rental.penaltyFee)}',
+          ),
         LabeledValue(label: 'Obračun', value: rental.chargeLabel),
         LabeledValue(label: 'Ukupno', value: formatKM(rental.totalFee)),
         LabeledValue(label: 'Plaćeno', value: _paid(rental)),
@@ -248,7 +295,32 @@ class _RentalDetailScreenState extends State<RentalDetailScreen> {
       rental.rentalStatus == InstrumentRentalStatus.approved;
 
   List<Widget> _actions(InstrumentRentalDto rental) {
+    final now = DateTime.now();
+    final isRenewable = rental.isRenewableAt(now);
     return [
+      if (rental.rentalStatus == InstrumentRentalStatus.active) ...[
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: FilledButton(
+            onPressed: isRenewable && !_isRenewing
+                ? () => _renew(rental)
+                : null,
+            child: const Text('Produži iznajmljivanje'),
+          ),
+        ),
+        if (!isRenewable) ...[
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Text(
+              rental.renewalOpensAt != null && now.isBefore(rental.renewalOpensAt!)
+                  ? 'Produženje je moguće od ${formatDate(rental.renewalOpensAt!)}.'
+                  : 'Rok je istekao. Vratite instrument u prodavnicu.',
+              style: const TextStyle(color: AppTheme.error),
+            ),
+          ),
+        ],
+      ],
       if (_isPayable(rental))
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),

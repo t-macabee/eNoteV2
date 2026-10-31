@@ -8,6 +8,7 @@ using eNote.Application.Features.Communication.Announcements.Services;
 using eNote.Application.Features.Identity.Auth.Services;
 using eNote.Application.Features.Identity.Students.Services;
 using eNote.Application.Features.Identity.Users.Services;
+using eNote.Application.Features.Rentals.InstrumentRentals;
 using eNote.Application.Features.Rentals.InstrumentRentals.Services;
 using eNote.Application.Features.Rentals.Payments.Services;
 using eNote.Application.Features.Reports.Services;
@@ -49,6 +50,18 @@ public static class DependencyInjection
         services.AddScoped<IStoreContext>(provider => provider.GetRequiredService<ENoteContext>());
         services.AddScoped<IMigrationRunner, MigrationRunner>();
         services.AddScoped<IDatabaseHealthProbe, DatabaseHealthProbe>();
+
+        return services;
+    }
+
+    public static IServiceCollection AddRentalOptions(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.AddOptions<RentalOptions>()
+            .Bind(configuration.GetSection(RentalOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
+        services.AddSingleton(provider => provider.GetRequiredService<IOptions<RentalOptions>>().Value);
 
         return services;
     }
@@ -176,7 +189,8 @@ public static class DependencyInjection
         await IdentitySeed.SeedAsync(services);
         await DevelopmentDataSeed.SeedAsync(
             services.GetRequiredService<ENoteContext>(),
-            services.GetRequiredService<IClock>());
+            services.GetRequiredService<IClock>(),
+            services.GetRequiredService<RentalOptions>());
 
         return host;
     }

@@ -6,7 +6,7 @@ namespace eNote.Infrastructure.Data.Seed;
 
 internal static class RentalActivitySeed
 {
-    public static async Task SeedRentals(ENoteContext context, IClock clock)
+    public static async Task SeedRentals(ENoteContext context, IClock clock, decimal overduePenaltyMultiplier)
     {
         if (await context.Set<InstrumentRental>().IgnoreQueryFilters().AnyAsync())
         {
@@ -42,10 +42,10 @@ internal static class RentalActivitySeed
         decimal FeeOf(InstrumentRental rental) => feeByInstrumentId[rental.InstrumentId];
 
         void Store(InstrumentRental rental, RentalTrigger trigger, int daysAgo, string? note = null) =>
-            ApplyStep(rental, trigger, storeEmployeeUser.Id, RentalActor.StoreEmployee, FeeOf(rental), now.AddDays(-daysAgo), note);
+            ApplyStep(rental, trigger, storeEmployeeUser.Id, RentalActor.StoreEmployee, FeeOf(rental), overduePenaltyMultiplier, now.AddDays(-daysAgo), note);
 
         void StudentCancel(InstrumentRental rental, string username, int daysAgo, string note) =>
-            ApplyStep(rental, RentalTrigger.Cancel, students[username].AppUserId, RentalActor.Student, FeeOf(rental), now.AddDays(-daysAgo), note);
+            ApplyStep(rental, RentalTrigger.Cancel, students[username].AppUserId, RentalActor.Student, FeeOf(rental), overduePenaltyMultiplier, now.AddDays(-daysAgo), note);
 
         void Pay(InstrumentRental rental, int daysAgo) =>
             rental.MarkPaid((long)(rental.CalculateCharges(rental.ReturnedAt!.Value).TotalFee!.Value * 100), now.AddDays(-daysAgo));
@@ -53,8 +53,8 @@ internal static class RentalActivitySeed
         var r1 = Request("student", "Stratocaster", 50);
         Store(r1, RentalTrigger.Approve, 49);
         Store(r1, RentalTrigger.Pickup, 48);
-        Store(r1, RentalTrigger.Complete, 20);
-        Pay(r1, 19);
+        Store(r1, RentalTrigger.Complete, 18);
+        Pay(r1, 17);
 
         var r2 = Request("student", "Precision Bass", 40);
         Store(r2, RentalTrigger.Approve, 39);
@@ -62,9 +62,9 @@ internal static class RentalActivitySeed
         Store(r2, RentalTrigger.ReturnEarly, 30);
         Pay(r2, 29);
 
-        var r3 = Request("student", "Les Paul", 12);
-        Store(r3, RentalTrigger.Approve, 11);
-        Store(r3, RentalTrigger.Pickup, 10);
+        var r3 = Request("student", "Les Paul", 29);
+        Store(r3, RentalTrigger.Approve, 28);
+        Store(r3, RentalTrigger.Pickup, 27);
 
         Request("student", "Minilogue", 1);
 
@@ -74,9 +74,9 @@ internal static class RentalActivitySeed
         var r6 = Request("student", "YAS-280", 9);
         StudentCancel(r6, "student", 8, "Više mi ne treba.");
 
-        var r7 = Request("mobile", "Pacifica", 25);
-        Store(r7, RentalTrigger.Approve, 24);
-        Store(r7, RentalTrigger.Pickup, 23);
+        var r7 = Request("mobile", "Pacifica", 37);
+        Store(r7, RentalTrigger.Approve, 36);
+        Store(r7, RentalTrigger.Pickup, 35);
         Store(r7, RentalTrigger.Complete, 3);
 
         var r8 = Request("mobile", "Custom 24", 2);
@@ -85,23 +85,23 @@ internal static class RentalActivitySeed
         var r9 = Request("student1", "Stratocaster", 90);
         Store(r9, RentalTrigger.Approve, 89);
         Store(r9, RentalTrigger.Pickup, 88);
-        Store(r9, RentalTrigger.Complete, 60);
-        Pay(r9, 59);
+        Store(r9, RentalTrigger.Complete, 58);
+        Pay(r9, 57);
 
         var r10 = Request("student1", "Blues Junior IV", 45);
         Store(r10, RentalTrigger.Approve, 44);
         Store(r10, RentalTrigger.Pickup, 43);
-        Store(r10, RentalTrigger.Complete, 15);
-        Pay(r10, 14);
+        Store(r10, RentalTrigger.Complete, 13);
+        Pay(r10, 12);
 
-        var r11 = Request("student1", "RG", 7);
-        Store(r11, RentalTrigger.Approve, 6);
-        Store(r11, RentalTrigger.Pickup, 5);
+        var r11 = Request("student1", "RG", 35);
+        Store(r11, RentalTrigger.Approve, 34);
+        Store(r11, RentalTrigger.Pickup, 33);
 
-        var r12 = Request("student2", "Stratocaster", 18);
-        Store(r12, RentalTrigger.Approve, 17);
-        Store(r12, RentalTrigger.Pickup, 16);
-        Store(r12, RentalTrigger.Complete, 6);
+        var r12 = Request("student2", "Stratocaster", 17);
+        Store(r12, RentalTrigger.Approve, 16);
+        Store(r12, RentalTrigger.Pickup, 15);
+        Store(r12, RentalTrigger.ReturnEarly, 6);
         Pay(r12, 5);
 
         var r13 = Request("student2", "D-28", 35);
@@ -112,23 +112,23 @@ internal static class RentalActivitySeed
 
         Request("student2", "Juno-DS", 2);
 
-        var r15 = Request("student3", "Precision Bass", 70);
-        Store(r15, RentalTrigger.Approve, 69);
-        Store(r15, RentalTrigger.Pickup, 68);
-        Store(r15, RentalTrigger.Complete, 45);
-        Pay(r15, 44);
+        var r15 = Request("student3", "Precision Bass", 74);
+        Store(r15, RentalTrigger.Approve, 73);
+        Store(r15, RentalTrigger.Pickup, 72);
+        Store(r15, RentalTrigger.Complete, 41);
+        Pay(r15, 40);
 
-        var r16 = Request("student3", "Les Paul", 40);
-        Store(r16, RentalTrigger.Approve, 39);
-        Store(r16, RentalTrigger.Pickup, 38);
-        Store(r16, RentalTrigger.Complete, 14);
-        Pay(r16, 13);
+        var r16 = Request("student3", "Les Paul", 70);
+        Store(r16, RentalTrigger.Approve, 69);
+        Store(r16, RentalTrigger.Pickup, 68);
+        Store(r16, RentalTrigger.ReturnEarly, 50);
+        Pay(r16, 49);
 
         var r17 = Request("student3", "Thunderbird", 5);
         Store(r17, RentalTrigger.Reject, 4, "Instrument je na servisu.");
 
-        var r18 = Request("student4", "214ce", 3);
-        Store(r18, RentalTrigger.Approve, 2);
+        var r18 = Request("student4", "214ce", 1);
+        Store(r18, RentalTrigger.Approve, 0);
 
         var r19 = Request("student4", "StingRay", 20);
         Store(r19, RentalTrigger.Approve, 19);
@@ -137,7 +137,7 @@ internal static class RentalActivitySeed
         var r20 = Request("student5", "Imperialstar", 30);
         Store(r20, RentalTrigger.Approve, 29);
         Store(r20, RentalTrigger.Pickup, 28);
-        Store(r20, RentalTrigger.Complete, 10);
+        Store(r20, RentalTrigger.ReturnEarly, 10);
         Pay(r20, 9);
 
         Request("student5", "Minilogue", 1);
@@ -145,8 +145,8 @@ internal static class RentalActivitySeed
         var r22 = Request("student6", "Katana-100 MkII", 55);
         Store(r22, RentalTrigger.Approve, 54);
         Store(r22, RentalTrigger.Pickup, 53);
-        Store(r22, RentalTrigger.Complete, 25);
-        Pay(r22, 24);
+        Store(r22, RentalTrigger.Complete, 23);
+        Pay(r22, 22);
 
         var r23 = Request("student6", "Rocker 15", 4);
         Store(r23, RentalTrigger.Approve, 3);
@@ -209,6 +209,7 @@ internal static class RentalActivitySeed
         int actorUserId,
         RentalActor actor,
         decimal monthlyFee,
+        decimal overduePenaltyMultiplier,
         DateTime at,
         string? responseNote = null)
     {
@@ -219,6 +220,7 @@ internal static class RentalActivitySeed
             HasInstrumentLockConflict = false,
             IsInstrumentInactive = false,
             MonthlyFee = monthlyFee,
+            OverduePenaltyMultiplier = overduePenaltyMultiplier,
             ResponseNote = responseNote
         };
 

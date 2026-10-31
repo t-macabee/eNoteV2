@@ -20,6 +20,7 @@ using eNote.Application.Features.Rentals.ReferenceData.Addresses;
 using eNote.Application.Features.Rentals.ReferenceData.Cities;
 using eNote.Application.Features.Rentals.ReferenceData.InstrumentTypes;
 using eNote.Application.Features.Rentals.ReferenceData.MusicStores;
+using Mapster;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace eNote.Application;
@@ -69,6 +70,19 @@ public static class DependencyInjection
 
         services.AddScoped<IUserProfileLookup, UserProfileLookup>();
         services.AddScoped<IStudentContext, CurrentActor>();
+
+        return services;
+    }
+
+    public static IServiceCollection AddMapsterMappings(this IServiceCollection services)
+    {
+        var config = new TypeAdapterConfig();
+
+        config.Scan(typeof(DependencyInjection).Assembly);
+        config.Compile();
+
+        services.AddSingleton(config);
+        services.AddMapster();
 
         return services;
     }

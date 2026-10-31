@@ -1,5 +1,6 @@
 using System.Text;
 using eNote.Application.Common.Files;
+using eNote.Application.Features.Rentals.InstrumentRentals;
 using eNote.Domain.Entities.Assignments;
 using eNote.Domain.Entities.Communication;
 using eNote.Infrastructure.Data.Seed;
@@ -110,7 +111,7 @@ public sealed class DevelopmentDataSeedTests
         var clock = new FixedClock(Now);
 
         await IdentitySeed.SeedAsync(provider);
-        await DevelopmentDataSeed.SeedAsync(ctx, clock);
+        await DevelopmentDataSeed.SeedAsync(ctx, clock, new RentalOptions { OverduePenaltyMultiplier = 0.5m });
 
         var users = await ctx.Users.ToListAsync();
         Assert.Equal(12, users.Count);
@@ -167,8 +168,8 @@ public sealed class DevelopmentDataSeedTests
         Assert.Equal(3, rentals.Count(r => r.RentalStatus == InstrumentRentalStatus.Pending));
         Assert.Equal(2, rentals.Count(r => r.RentalStatus == InstrumentRentalStatus.Approved));
         Assert.Equal(3, rentals.Count(r => r.RentalStatus == InstrumentRentalStatus.Active));
-        Assert.Equal(9, rentals.Count(r => r.RentalStatus == InstrumentRentalStatus.Completed));
-        Assert.Equal(2, rentals.Count(r => r.RentalStatus == InstrumentRentalStatus.ReturnedEarly));
+        Assert.Equal(6, rentals.Count(r => r.RentalStatus == InstrumentRentalStatus.Completed));
+        Assert.Equal(5, rentals.Count(r => r.RentalStatus == InstrumentRentalStatus.ReturnedEarly));
         Assert.Equal(2, rentals.Count(r => r.RentalStatus == InstrumentRentalStatus.Rejected));
         Assert.Equal(2, rentals.Count(r => r.RentalStatus == InstrumentRentalStatus.Canceled));
         Assert.Equal(10, rentals.Count(r => r.IsPaid));
@@ -189,7 +190,7 @@ public sealed class DevelopmentDataSeedTests
         var clock = new FixedClock(Now);
 
         await IdentitySeed.SeedAsync(provider);
-        await DevelopmentDataSeed.SeedAsync(ctx, clock);
+        await DevelopmentDataSeed.SeedAsync(ctx, clock, new RentalOptions { OverduePenaltyMultiplier = 0.5m });
 
         var imagePaths = new List<string>();
         imagePaths.AddRange((await ctx.Set<Instrument>().Select(i => i.ImagePath).ToListAsync()).OfType<string>());
@@ -249,10 +250,10 @@ public sealed class DevelopmentDataSeedTests
         var clock = new FixedClock(Now);
 
         await IdentitySeed.SeedAsync(provider);
-        await DevelopmentDataSeed.SeedAsync(ctx, clock);
+        await DevelopmentDataSeed.SeedAsync(ctx, clock, new RentalOptions { OverduePenaltyMultiplier = 0.5m });
 
         await IdentitySeed.SeedAsync(provider);
-        await DevelopmentDataSeed.SeedAsync(ctx, clock);
+        await DevelopmentDataSeed.SeedAsync(ctx, clock, new RentalOptions { OverduePenaltyMultiplier = 0.5m });
 
         Assert.Equal(12, await ctx.Users.CountAsync());
         Assert.Equal(8, await ctx.Set<Student>().CountAsync());
@@ -280,7 +281,7 @@ public sealed class DevelopmentDataSeedTests
         var clock = new FixedClock(Now);
 
         await IdentitySeed.SeedAsync(provider);
-        await DevelopmentDataSeed.SeedAsync(ctx, clock);
+        await DevelopmentDataSeed.SeedAsync(ctx, clock, new RentalOptions { OverduePenaltyMultiplier = 0.5m });
 
         var rentals = await ctx.Set<InstrumentRental>().IgnoreQueryFilters().ToListAsync();
 
@@ -336,7 +337,7 @@ public sealed class DevelopmentDataSeedTests
         var clock = new FixedClock(Now);
 
         await IdentitySeed.SeedAsync(provider);
-        await DevelopmentDataSeed.SeedAsync(ctx, clock);
+        await DevelopmentDataSeed.SeedAsync(ctx, clock, new RentalOptions { OverduePenaltyMultiplier = 0.5m });
 
         var mobileUser = await ctx.Users.SingleAsync(u => u.UserName == "mobile");
         var studentUser = await ctx.Users.SingleAsync(u => u.UserName == "student");
@@ -352,5 +353,38 @@ public sealed class DevelopmentDataSeedTests
             (r.RentalStatus == InstrumentRentalStatus.Completed || r.RentalStatus == InstrumentRentalStatus.ReturnedEarly) &&
             !r.IsPaid).ToList();
         Assert.Empty(studentUnpaidDebt);
+    }
+
+    [Fact]
+    public async Task SeedAsync_SetsRenewalWindowAndOverduePenalties()
+    {
+        await using var ctx = TestDbContextFactory.CreateContext(Now);
+        await ctx.Database.EnsureCreatedAsync();
+        await using var provider = SeedTestHarness.BuildProvider(ctx, Now);
+        var clock = new FixedClock(Now);
+
+        await IdentitySeed.SeedAsync(provider);
+        await DevelopmentDataSeed.SeedAsync(ctx, clock, new RentalOptions { OverduePenaltyMultiplier = 0.5m });
+
+        var rentals = await ctx.Set<InstrumentRental>()
+            .IgnoreQueryFilters()
+            .Include(r => r.Instrument)
+            .Include(r => r.StudentProfile)
+            .ToListAsync();
+        var usernames = await ctx.Users.ToDictionaryAsync(u => u.Id, u => u.UserName);
+
+        var renewal = rentals.Single(r => usernames[r.StudentProfile.AppUserId] == "student" && r.Instrument.Model == "Les Paul");
+        Assert.True(renewal.RenewalOpensAt <= Now);
+        Assert.True(Now < renewal.DueAt);
+
+        var overdueActive = rentals.Single(r => usernames[r.StudentProfile.AppUserId] == "student1" && r.Instrument.Model == "RG");
+        Assert.Equal(3, overdueActive.CalculateCharges(Now).OverdueDays);
+
+        var mobileLate = rentals.Single(r => usernames[r.StudentProfile.AppUserId] == "mobile" && r.Instrument.Model == "Pacifica");
+        var charges = mobileLate.CalculateCharges(Now);
+        Assert.Equal(InstrumentRentalStatus.Completed, mobileLate.RentalStatus);
+        Assert.False(mobileLate.IsPaid);
+        Assert.Equal(2, charges.OverdueDays);
+        Assert.Equal(decimal.Round(2 * mobileLate.Fee / 30 * 0.5m, 2, MidpointRounding.AwayFromZero), charges.PenaltyFee);
     }
 }

@@ -87,6 +87,8 @@ poruke na RabbitMQ i ponavlja neuspjela slanja. Worker ih preuzima sa RabbitMQ-a
 sprema notifikacije i šalje mail kada je zahtjev za najam odobren, odbijen ili
 otkazan.
 
+Worker svakih 5 minuta odbija odobrena iznajmljivanja koja nisu preuzeta u roku od 2 dana od odobrenja. Student dobija notifikaciju i mail s razlogom.
+
 ## Prijava
 
 Svi seed nalozi koriste lozinku `test`. Lozinka se može promijeniti kroz
@@ -110,9 +112,11 @@ na prva dva objavljena kursa i imaju članarinu važeću godinu dana. Treći kur
 odobrenje, a `instructor` ga odobrava ili odbija na desktop aplikaciji
 (Kursevi → kurs → Upisi); `student1` ima odbijen zahtjev s razlogom. `mobile`
 ima jedno završeno iznajmljivanje koje nije plaćeno (prikazuje Stripe plaćanje,
-a dok se ne plati `mobile` ne može zatražiti novo iznajmljivanje); seedovana
-plaćena iznajmljivanja nemaju Stripe plaćanje, pa se povrat novca prikazuje uz
-novo testno plaćanje.
+a dok se ne plati `mobile` ne može zatražiti novo iznajmljivanje); taj najam je
+vraćen 2 dana nakon roka i njegov iznos uključuje penal. `student` ima aktivno
+iznajmljivanje unutar prozora za produženje, a `student1` aktivno iznajmljivanje
+koje kasni. Seedovana plaćena iznajmljivanja nemaju Stripe plaćanje, pa se
+povrat novca prikazuje uz novo testno plaćanje.
 
 Registracija novih korisnika kroz aplikaciju i dalje traži jaču lozinku
 (najmanje 8 znakova, veliko slovo, malo slovo, broj i specijalni znak). Seed
@@ -171,9 +175,18 @@ ima neplaćen završen najam, najam u toku ili uplatu koja se obrađuje.
 
 ## Plaćanja
 
-Najam instrumenta se naplaćuje jednom, kada najam pređe u status `Complete` ili
-`ReturnedEarly`. Iznos računa server. Podrazumijevana valuta je BAM i mijenja se
-kroz `Stripe__Currency`.
+Najam instrumenta traje 30 dana od preuzimanja (`DueAt = PickedUpAt + 30 dana`).
+
+Prodavnica povrat prije isteka roka evidentira kao prijevremeni povrat (ReturnedEarly), a povrat na dan isteka roka ili kasnije kao završetak (Completed).
+
+Student može produžiti aktivni najam u zadnjih 5 dana trenutnog roka; svako
+produženje dodaje još 30 dana i ne naplaćuje se. Za svaki dan nakon isteka roka
+obračunava se penal po danu: `(Fee / 30) × Rentals__OverduePenaltyMultiplier`.
+Multiplikator se kopira na najam pri odobrenju, pa kasnija promjena u `.env` ne
+mijenja postojeće najmove. Najam se naplaćuje jednom, kada pređe u status
+`Complete` ili `ReturnedEarly`, a uplaćeni iznos uključuje penal. Iznos računa
+server. Podrazumijevana valuta je BAM i mijenja se kroz `Stripe__Currency`;
+`Rentals__OverduePenaltyMultiplier` (0.01–10) određuje penal.
 
 Školarina se naplaćuje po kursu, mjesečno. `Course.Price` je mjesečna cijena
 kursa; student je plaća unaprijed i time dobija 30 dana pristupa sadržaju tog
@@ -212,6 +225,7 @@ Bez ovog koraka webhook ne stiže do API-ja i plaćanje ostaje neplaćeno.
 
 | Endpoint | Uloga |
 |---|---|
+| `POST /api/v1/student/rentals/{id}/renew` | Student |
 | `POST /api/v1/student/rentals/{rentalId}/payments/create-intent` | Student |
 | `GET /api/v1/student/rentals/{rentalId}/payments` | Student |
 | `POST /api/v1/shop/rentals/{rentalId}/payments/refund` | StoreEmployee |
@@ -260,7 +274,7 @@ cd UI/enote_mobile && flutter analyze && flutter test
 | `eNote.Application` | Poslovna logika i servisi |
 | `eNote.Infrastructure` | EF Core, Identity, messaging |
 | `eNote.API` | HTTP API i SignalR |
-| `eNote.Worker` | RabbitMQ konzumeri |
+| `eNote.Worker` | RabbitMQ konzumeri i automatsko odbijanje nepreuzetih iznajmljivanja |
 | `eNote.Contracts` | Ugovori poruka |
 | `eNote.Tests` | Testovi |
 | `UI/enote_core` | Zajednički Dart paket za oba klijenta |

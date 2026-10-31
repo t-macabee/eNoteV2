@@ -13,6 +13,8 @@ InstrumentRentalDto _rental({
   bool isPaid = false,
   String? requestNote = 'Trebam za kurs gitare',
   String? note,
+  DateTime? pickupDeadline,
+  DateTime? dueAt,
 }) {
   return InstrumentRentalDto.fromJson({
     'id': 12,
@@ -24,6 +26,9 @@ InstrumentRentalDto _rental({
     'instrumentType': 'Klasična gitara',
     'storeName': 'Muzika d.o.o.',
     'rentalStatus': status.toJson(),
+    if (pickupDeadline != null)
+      'pickupDeadline': pickupDeadline.toIso8601String(),
+    if (dueAt != null) 'dueAt': dueAt.toIso8601String(),
     'requestNote': ?requestNote,
     'note': ?note,
     'requestedAt': '2026-09-01T10:12:00',
@@ -99,18 +104,41 @@ void main() {
       find.text('Muzika d.o.o. · „Preuzimanje radnim danima"'),
       findsOneWidget,
     );
-    expect(find.text('Preuzimanje'), findsOneWidget);
+    expect(find.text('Preuzimanje do'), findsOneWidget);
     expect(_filledDots(tester), 2);
     expect(_hollowDots(tester), 1);
   });
 
-  testWidgets('active: pickup filled, return hollow', (tester) async {
-    await _pump(tester, _rental(status: InstrumentRentalStatus.active));
+  testWidgets('approved: the last step is the pickup deadline', (
+    tester,
+  ) async {
+    final rental = _rental(
+      status: InstrumentRentalStatus.approved,
+      pickupDeadline: DateTime(2026, 6, 17, 12),
+    );
+    await _pump(tester, rental);
+
+    final last = RentalTimeline.stepsFor(rental).last;
+    expect(last.label, 'Preuzimanje do');
+    expect(last.at, DateTime(2026, 6, 17, 12));
+    expect(last.isFilled, isFalse);
+    expect(find.text('17.06.2026. 12:00'), findsOneWidget);
+    expect(_filledDots(tester), 2);
+    expect(_hollowDots(tester), 1);
+  });
+
+  testWidgets('active: pickup filled, return due date hollow', (tester) async {
+    final dueAt = DateTime(2026, 9, 30, 16, 30);
+    await _pump(
+      tester,
+      _rental(status: InstrumentRentalStatus.active, dueAt: dueAt),
+    );
 
     expect(find.text('Preuzeto'), findsOneWidget);
     expect(find.text('03.09.2026. 16:30'), findsOneWidget);
     expect(find.text('Muzika d.o.o.'), findsNWidgets(2));
-    expect(find.text('Povrat'), findsOneWidget);
+    expect(find.text('Povrat do'), findsOneWidget);
+    expect(find.text('30.09.2026. 16:30'), findsOneWidget);
     expect(_filledDots(tester), 3);
     expect(_hollowDots(tester), 1);
   });

@@ -139,4 +139,13 @@ public sealed class RentalController(
         var dto = await commandService.CancelAsync(id, request, cancellationToken);
         return Ok(dto);
     }
+
+    [Authorize(Roles = AppRoles.Student)]
+    [HttpPost("~/api/v{version:apiVersion}/student/rentals/{id:int}/renew")]
+    [ProducesResponseType(typeof(InstrumentRentalDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<InstrumentRentalDto>> Renew(int id, CancellationToken cancellationToken)
+    {
+        var dto = await commandService.RenewAsync(id, cancellationToken);
+        return Ok(dto);
+    }
 }

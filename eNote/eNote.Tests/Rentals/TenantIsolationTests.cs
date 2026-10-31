@@ -59,7 +59,7 @@ public sealed class TenantIsolationTests
 
         var (_, _, _, store2RentalId) = await SeedTwoStoresWithRentalsAsync(context);
         var actor = new StubCurrentActor(storeId: 1);
-        var service = new RentalCommandService(context, TestMapper.Create(), new FixedClock(Now), actor, actor, actor, new RecordingNotificationDispatcher(), new StubDisplayNameService());
+        var service = new RentalCommandService(context, TestMapper.Create(), new FixedClock(Now), actor, actor, actor, new RecordingNotificationDispatcher(), new StubDisplayNameService(), new eNote.Application.Features.Rentals.InstrumentRentals.RentalOptions { OverduePenaltyMultiplier = 0.5m });
 
         await Assert.ThrowsAsync<NotFoundException>(() => service.ApproveAsync(store2RentalId, new RentalStatusRequest()));
 
@@ -215,7 +215,7 @@ public sealed class TenantIsolationTests
     private static InstrumentService CreateInstrumentService(ENoteContext context, int storeId)
     {
         var actor = new StubCurrentActor(storeId: storeId, employee: new MusicStoreEmployee(appUserId: 1, musicStoreId: storeId, isManager: false));
-        var rentalCommands = new RentalCommandService(context, TestMapper.Create(), new FixedClock(Now), actor, actor, actor, new RecordingNotificationDispatcher(), new StubDisplayNameService());
+        var rentalCommands = new RentalCommandService(context, TestMapper.Create(), new FixedClock(Now), actor, actor, actor, new RecordingNotificationDispatcher(), new StubDisplayNameService(), new eNote.Application.Features.Rentals.InstrumentRentals.RentalOptions { OverduePenaltyMultiplier = 0.5m });
         return new(context, actor, new StubFileStorageService(), rentalCommands);
     }
 }

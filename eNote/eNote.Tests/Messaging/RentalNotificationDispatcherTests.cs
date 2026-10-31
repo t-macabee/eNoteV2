@@ -73,7 +73,11 @@ public sealed class RentalNotificationDispatcherTests
         await using var context = TestDbContextFactory.CreateContext(Now);
         var dispatcher = new RentalNotificationDispatcher(context, new FixedClock(Now));
 
-        await dispatcher.DispatchTransitionAsync(CreateRentalDto(), RentalTrigger.Approve, actorUserId: 9);
+        var dto = CreateRentalDto();
+        dto.Fee = 60m;
+        dto.DailyPenaltyFee = 1.50m;
+
+        await dispatcher.DispatchTransitionAsync(dto, RentalTrigger.Approve, actorUserId: 9);
         await context.SaveChangesAsync();
 
         var row = await context.Set<NotificationOutbox>().SingleAsync();
@@ -82,6 +86,84 @@ public sealed class RentalNotificationDispatcherTests
         Assert.Equal(5, payload.RecipientUserId);
         Assert.Equal(9, payload.ActorUserId);
         Assert.Equal("Zahtjev odobren", payload.Title);
+        Assert.Equal($"Vaš zahtjev za instrument Stratocaster je odobren. Mjesečna naknada: {60m:F2} KM. Instrument preuzmite u roku od 2 dana. Za svaki dan kašnjenja nakon isteka roka plaća se penal od {1.50m:F2} KM.", payload.Body);
+    }
+
+    [Fact]
+    public async Task DispatchTransitionAsync_Pickup_IncludesTheDueDateAndRenewalWindow()
+    {
+        await using var context = TestDbContextFactory.CreateContext(Now);
+        var dispatcher = new RentalNotificationDispatcher(context, new FixedClock(Now));
+        var dto = CreateRentalDto();
+        dto.DueAt = new DateTime(2026, 3, 31, 10, 0, 0, DateTimeKind.Utc);
+
+        await dispatcher.DispatchTransitionAsync(dto, RentalTrigger.Pickup, actorUserId: 9);
+        await context.SaveChangesAsync();
+
+        var row = await context.Set<NotificationOutbox>().SingleAsync();
+        var payload = JsonSerializer.Deserialize<RentalStatusChanged>(row.PayloadJson, new JsonSerializerOptions(JsonSerializerDefaults.Web));
+        Assert.NotNull(payload);
+        Assert.Equal("Preuzeli ste instrument Stratocaster. Rok povrata je 31.03.2026. Produženje je moguće u zadnjih 5 dana roka.", payload.Body);
+    }
+
+    [Fact]
+    public async Task DispatchTransitionAsync_Renew_NotifiesActiveStoreEmployees_NotStudent()
+    {
+        await using var context = TestDbContextFactory.CreateContext(Now);
+
+        var store = new MusicStore("Store", "09-17");
+        context.Set<MusicStore>().Add(store);
+        await context.SaveChangesAsync();
+
+        context.Set<AppUser>().AddRange(
+            new AppUser { Id = 10, UserName = "former", Email = "former@example.com", IsActive = false },
+            new AppUser { Id = 11, UserName = "current", Email = "current@example.com", IsActive = true });
+        context.Set<MusicStoreEmployee>().AddRange(
+            new MusicStoreEmployee(appUserId: 10, musicStoreId: store.Id, isManager: false),
+            new MusicStoreEmployee(appUserId: 11, musicStoreId: store.Id, isManager: false));
+        await context.SaveChangesAsync();
+
+        var dispatcher = new RentalNotificationDispatcher(context, new FixedClock(Now));
+        var dto = CreateRentalDto();
+        dto.MusicStoreId = store.Id;
+        dto.RentalStatus = InstrumentRentalStatus.Active;
+        dto.StudentName = "Student Test";
+        dto.DueAt = new DateTime(2026, 4, 30, 10, 0, 0, DateTimeKind.Utc);
+
+        await dispatcher.DispatchTransitionAsync(dto, RentalTrigger.Renew, actorUserId: 5);
+        await context.SaveChangesAsync();
+
+        var messages = (await context.Set<NotificationOutbox>().ToListAsync())
+            .Select(row => JsonSerializer.Deserialize<RentalStatusChanged>(row.PayloadJson, new JsonSerializerOptions(JsonSerializerDefaults.Web))!)
+            .ToList();
+        var message = Assert.Single(messages);
+        Assert.Equal(11, message.RecipientUserId);
+        Assert.Equal(5, message.StudentUserId);
+        Assert.Equal("Iznajmljivanje produženo", message.Title);
+        Assert.Contains("do 30.04.2026", message.Body);
+    }
+
+    [Fact]
+    public async Task DispatchTransitionAsync_ExpirePickup_RejectsWithoutActor()
+    {
+        await using var context = TestDbContextFactory.CreateContext(Now);
+        var dispatcher = new RentalNotificationDispatcher(context, new FixedClock(Now));
+        var dto = CreateRentalDto();
+        dto.InstrumentModel = "Les Paul";
+        dto.RentalStatus = InstrumentRentalStatus.Rejected;
+        dto.Note = "Zahtjev je odbijen jer instrument nije preuzet u roku.";
+
+        await dispatcher.DispatchTransitionAsync(dto, RentalTrigger.ExpirePickup, actorUserId: null);
+        await context.SaveChangesAsync();
+
+        var row = await context.Set<NotificationOutbox>().SingleAsync();
+        var payload = JsonSerializer.Deserialize<RentalStatusChanged>(row.PayloadJson, new JsonSerializerOptions(JsonSerializerDefaults.Web));
+        Assert.NotNull(payload);
+        Assert.Equal("Zahtjev odbijen", payload.Title);
+        Assert.Equal("Vaš zahtjev za instrument Les Paul je odbijen. Razlog: Zahtjev je odbijen jer instrument nije preuzet u roku.", payload.Body);
+        Assert.Equal("Rejected", payload.Status);
+        Assert.Null(payload.ActorUserId);
+        Assert.Equal(payload.StudentUserId, payload.RecipientUserId);
     }
 
     [Fact]

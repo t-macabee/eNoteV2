@@ -23,14 +23,14 @@ public static class RentalTestData
 
     public static InstrumentRental CreateCompletedRental(Instrument instrument, int studentId, DateTime now)
     {
-        var rental = new InstrumentRental(instrument.Id, studentId, instrument.MusicStoreId, now.AddDays(-10), null);
+        var rental = new InstrumentRental(instrument.Id, studentId, instrument.MusicStoreId, now.AddDays(-33), null);
         AdvanceTo(
             rental,
             InstrumentRentalStatus.Completed,
             now,
-            approvedAt: now.AddDays(-9),
-            pickedUpAt: now.AddDays(-9),
-            finishedAt: now.AddDays(-3));
+            approvedAt: now.AddDays(-32),
+            pickedUpAt: now.AddDays(-31),
+            finishedAt: now.AddDays(-1));
         return rental;
     }
 
@@ -44,6 +44,7 @@ public static class RentalTestData
         InstrumentRentalStatus target,
         DateTime now,
         decimal fee = 50m,
+        decimal overduePenaltyMultiplier = 0.5m,
         string? note = null,
         int userId = 1,
         DateTime? approvedAt = null,
@@ -63,6 +64,7 @@ public static class RentalTestData
                 HasInstrumentLockConflict = false,
                 IsInstrumentInactive = rental.Instrument is { IsActive: false },
                 MonthlyFee = fee,
+                OverduePenaltyMultiplier = overduePenaltyMultiplier,
                 ResponseNote = stepNote
             };
 

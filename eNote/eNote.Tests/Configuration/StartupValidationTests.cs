@@ -175,7 +175,8 @@ public sealed class StartupValidationTests
         ["Smtp__Port"] = "1025",
         ["Smtp__EnableSsl"] = "false",
         ["Smtp__From"] = "noreply@example.com",
-        ["Smtp__PasswordResetUrl"] = "https://localhost/reset-password"
+        ["Smtp__PasswordResetUrl"] = "https://localhost/reset-password",
+        ["Rentals__OverduePenaltyMultiplier"] = "0.5"
     };
 
     private static void Apply(

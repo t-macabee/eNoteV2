@@ -76,13 +76,31 @@ public sealed class RentalPaymentServiceTests
 
         Assert.Equal(rental.Id, result.RentalId);
         Assert.Equal("pi_test_1", result.PaymentIntentId);
-        Assert.Equal(1000, result.AmountCents);
+        Assert.Equal(5000, result.AmountCents);
         Assert.Equal("eur", result.Currency);
         Assert.Equal(PaymentStatus.RequiresAction, result.Status);
         Assert.False(string.IsNullOrWhiteSpace(result.ClientSecret));
         Assert.Single(gateway.CreateCalls);
-        Assert.Equal(1000, gateway.CreateCalls[0].AmountCents);
+        Assert.Equal(5000, gateway.CreateCalls[0].AmountCents);
         Assert.Equal("eur", gateway.CreateCalls[0].Currency);
+    }
+
+    [Fact]
+    public async Task CreatePaymentIntent_IncludesTheOverduePenalty()
+    {
+        var (context, student, currentUser) = await CreateStudentContextAsync();
+        var instrument = await RentalTestData.SeedInstrumentAsync(context);
+        var rental = new InstrumentRental(instrument.Id, student.Id, instrument.MusicStoreId, Now.AddDays(-34), null);
+        RentalTestData.AdvanceTo(rental, InstrumentRentalStatus.Completed, Now, fee: 60m, approvedAt: Now.AddDays(-33), pickedUpAt: Now.AddDays(-33), finishedAt: Now.AddDays(-1));
+        context.Set<InstrumentRental>().Add(rental);
+        await context.SaveChangesAsync();
+        var gateway = new FakePaymentGateway();
+        var service = CreateService(context, currentUser, gateway);
+
+        var result = await service.CreatePaymentIntentAsync(rental.Id);
+
+        Assert.Equal(6600, result.AmountCents);
+        Assert.Equal(6600, gateway.CreateCalls[0].AmountCents);
     }
 
     [Fact]
@@ -115,9 +133,9 @@ public sealed class RentalPaymentServiceTests
 
         var result = await service.CreatePaymentIntentAsync(rental.Id);
 
-        Assert.Equal(1000, result.AmountCents);
+        Assert.Equal(5000, result.AmountCents);
         Assert.Equal("eur", result.Currency);
-        Assert.Equal(1000, gateway.CreateCalls[0].AmountCents);
+        Assert.Equal(5000, gateway.CreateCalls[0].AmountCents);
         Assert.Equal("eur", gateway.CreateCalls[0].Currency);
     }
 

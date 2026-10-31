@@ -175,6 +175,7 @@ class _RentalDetailDialogState extends State<RentalDetailDialog> {
           RentalTransitionActionRow(
             status: rental.rentalStatus,
             enabled: !_isTransitioning,
+            dueAt: rental.dueAt,
             onTransition: _onTransition,
           ),
         ],
@@ -367,6 +368,14 @@ class _RentalDetailDialogState extends State<RentalDetailDialog> {
             Text('Naknade', style: Theme.of(context).textTheme.titleSmall),
             const SizedBox(height: 8),
             _chargeRow('Mjesečna naknada', formatKM(rental.fee)),
+            if (rental.dueAt != null)
+              _chargeRow('Rok povrata', formatDate(rental.dueAt!)),
+            if (rental.hasPenaltyTerms)
+              _chargeRow('Penal po danu', formatKM(rental.dailyPenaltyFee)),
+            if (rental.hasOverdueDays) ...[
+              _chargeRow('Kašnjenje', '${rental.overdueDays} dana'),
+              _chargeRow('Penal', formatKM(rental.penaltyFee)),
+            ],
             if (rental.totalFee != null) ...[
               _chargeRow('Ukupno', formatKM(rental.totalFee)),
               if (rental.daysCharged != null)

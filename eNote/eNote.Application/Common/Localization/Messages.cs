@@ -77,6 +77,7 @@ public static class Messages
     public const string RentalPendingRequired = "Već imate zahtjev na čekanju za ovaj instrument.";
     public const string RentalCancelPendingOrApprovedOnly = "Samo zahtjev na čekanju ili odobren zahtjev se može otkazati.";
     public const string RentalRejectedInstrumentArchived = "Zahtjev je odbijen jer je instrument arhiviran.";
+    public const string RentalRejectedPickupExpired = "Zahtjev je odbijen jer instrument nije preuzet u roku.";
 
     public const string PaymentAlreadyCompleted = "Stavka je već plaćena.";
     public const string PaymentNotPayableInStatus = "Iznajmljivanje nije u stanju koje dozvoljava plaćanje.";
@@ -159,6 +160,7 @@ public static class Messages
     public const string ReportColumnStatus = "Status";
     public const string ReportColumnPeriod = "Period";
     public const string ReportColumnFee = "Naknada";
+    public const string ReportColumnPenalty = "Penal";
     public const string ReportColumnTotal = "Ukupno";
     public const string ReportColumnName = "Naziv";
     public const string ReportColumnBusinessHours = "Radno vrijeme";

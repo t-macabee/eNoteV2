@@ -6,6 +6,10 @@ namespace eNote.Domain.Entities.Rentals;
 
 public sealed class InstrumentRental : AuditableEntity, ITenantScoped
 {
+    public static readonly TimeSpan PickupWindow = TimeSpan.FromDays(2);
+    public static readonly TimeSpan RentalTerm = TimeSpan.FromDays(RentalChargeCalculator.DaysPerBillingCycle);
+    public static readonly TimeSpan RenewalWindow = TimeSpan.FromDays(5);
+
     public int StudentProfileId { get; private set; }
     public Student StudentProfile { get; private set; } = null!;
     public int InstrumentId { get; private set; }
@@ -21,6 +25,13 @@ public sealed class InstrumentRental : AuditableEntity, ITenantScoped
     public DateTime? RejectedAt { get; private set; }
     public DateTime? PickedUpAt { get; private set; }
     public DateTime? ReturnedAt { get; private set; }
+    public DateTime? DueAt { get; private set; }
+
+    public decimal OverduePenaltyMultiplier { get; private set; }
+
+    public DateTime? PickupDeadline => RentalStatus == InstrumentRentalStatus.Approved ? ApprovedAt + PickupWindow : null;
+    public DateTime? RenewalOpensAt => RentalStatus == InstrumentRentalStatus.Active ? DueAt - RenewalWindow : null;
+    public decimal DailyPenaltyFee => RentalChargeCalculator.DailyPenaltyFee(Fee, OverduePenaltyMultiplier);
 
     public int? ApprovedById { get; private set; }
     public int? RejectedById { get; private set; }
@@ -35,7 +46,7 @@ public sealed class InstrumentRental : AuditableEntity, ITenantScoped
     public ICollection<RentalPayment> Payments { get; private set; } = [];
 
     public RentalCharges CalculateCharges(DateTime now) =>
-        RentalChargeCalculator.Calculate(PickedUpAt, ReturnedAt, RentalStatus, Fee, now);
+        RentalChargeCalculator.Calculate(PickedUpAt, ReturnedAt, DueAt, RentalStatus, Fee, OverduePenaltyMultiplier, now);
 
     private InstrumentRental()
     {
@@ -51,16 +62,17 @@ public sealed class InstrumentRental : AuditableEntity, ITenantScoped
         RentalStatus = InstrumentRentalStatus.Pending;
     }
 
-    private void Approve(decimal fee, string? note, DateTime approvedAt, int approvedById)
+    private void Approve(decimal fee, decimal overduePenaltyMultiplier, string? note, DateTime approvedAt, int? approvedById)
     {
         Fee = fee;
+        OverduePenaltyMultiplier = overduePenaltyMultiplier;
         Note = note;
         ApprovedAt = approvedAt;
         ApprovedById = approvedById;
         RentalStatus = InstrumentRentalStatus.Approved;
     }
 
-    private void Reject(DateTime rejectedAt, string? note, int rejectedById)
+    private void Reject(DateTime rejectedAt, string? note, int? rejectedById)
     {
         Note = note;
         RejectedAt = rejectedAt;
@@ -77,11 +89,17 @@ public sealed class InstrumentRental : AuditableEntity, ITenantScoped
     private void Pickup(DateTime pickedUpAt, string? note = null)
     {
         PickedUpAt = pickedUpAt;
+        DueAt = pickedUpAt + RentalTerm;
         RentalStatus = InstrumentRentalStatus.Active;
         if (note != null)
         {
             Note = note;
         }
+    }
+
+    private void Renew()
+    {
+        DueAt = DueAt + RentalTerm;
     }
 
     private void Complete(DateTime returnedAt, string? note)
@@ -113,7 +131,7 @@ public sealed class InstrumentRental : AuditableEntity, ITenantScoped
             return Result<RentalTransitionResult>.Failure(GetInvalidTransitionMessage(trigger, context.Actor));
         }
 
-        var guardError = transition.Guard?.Invoke(this, context);
+        var guardError = transition.Guard?.Invoke(this, context, now);
         if (guardError is not null)
         {
             return Result<RentalTransitionResult>.Failure(guardError);
@@ -144,6 +162,8 @@ public sealed class InstrumentRental : AuditableEntity, ITenantScoped
         RentalTrigger.Complete => RentalCompleteActiveOnlyMessage,
         RentalTrigger.Cancel => RentalCancelPendingOrApprovedOnlyMessage,
         RentalTrigger.ReturnEarly => RentalEarlyReturnActiveOnlyMessage,
+        RentalTrigger.ExpirePickup => RentalExpirePickupApprovedOnlyMessage,
+        RentalTrigger.Renew => RentalRenewActiveOnlyMessage,
         _ => BadRequestMessage
     };
 
@@ -159,6 +179,25 @@ public sealed class InstrumentRental : AuditableEntity, ITenantScoped
     private static string? GuardCancelReason(RentalTransitionContext context) =>
         string.IsNullOrWhiteSpace(context.ResponseNote) ? RentalCancelReasonRequiredMessage : null;
 
+    private static string? GuardPickupWindowExpired(InstrumentRental rental, DateTime now) =>
+        rental.PickupDeadline > now ? RentalPickupWindowOpenMessage : null;
+
+    private static string? GuardRenewalWindow(InstrumentRental rental, DateTime now)
+    {
+        if (now >= rental.DueAt)
+        {
+            return RentalRenewTermExpiredMessage;
+        }
+
+        return now < rental.RenewalOpensAt ? RentalRenewWindowNotOpenMessage : null;
+    }
+
+    private static string? GuardTermReached(InstrumentRental rental, DateTime now) =>
+        now < rental.DueAt ? RentalCompleteBeforeDueMessage : null;
+
+    private static string? GuardTermNotReached(InstrumentRental rental, DateTime now) =>
+        now >= rental.DueAt ? RentalReturnEarlyAfterDueMessage : null;
+
     private static string? ResolveNote(InstrumentRental rental, RentalTransitionContext context) =>
         !string.IsNullOrWhiteSpace(context.ResponseNote) ? context.ResponseNote : rental.Note;
 
@@ -168,15 +207,15 @@ public sealed class InstrumentRental : AuditableEntity, ITenantScoped
             From: InstrumentRentalStatus.Pending,
             Trigger: RentalTrigger.Approve,
             Actors: [RentalActor.StoreEmployee],
-            Guard: (_, context) => GuardNoInstrumentLockConflict(context) ?? GuardInstrumentActive(context),
-            Apply: (rental, context, now) => rental.Approve(context.MonthlyFee, context.ResponseNote, now, context.UserId),
+            Guard: (_, context, _) => GuardNoInstrumentLockConflict(context) ?? GuardInstrumentActive(context),
+            Apply: (rental, context, now) => rental.Approve(context.MonthlyFee, context.OverduePenaltyMultiplier, context.ResponseNote, now, context.UserId),
             UsesInstrumentLock: true),
 
         new(
             From: InstrumentRentalStatus.Pending,
             Trigger: RentalTrigger.Reject,
             Actors: [RentalActor.StoreEmployee],
-            Guard: (_, context) => GuardRejectReason(context),
+            Guard: (_, context, _) => GuardRejectReason(context),
             Apply: (rental, context, now) => rental.Reject(now, context.ResponseNote, context.UserId),
             UsesInstrumentLock: false),
 
@@ -184,7 +223,7 @@ public sealed class InstrumentRental : AuditableEntity, ITenantScoped
             From: InstrumentRentalStatus.Pending,
             Trigger: RentalTrigger.Cancel,
             Actors: [RentalActor.Student],
-            Guard: (_, context) => GuardCancelReason(context),
+            Guard: (_, context, _) => GuardCancelReason(context),
             Apply: (rental, context, _) => rental.Cancel(context.ResponseNote),
             UsesInstrumentLock: false),
 
@@ -200,15 +239,23 @@ public sealed class InstrumentRental : AuditableEntity, ITenantScoped
             From: InstrumentRentalStatus.Approved,
             Trigger: RentalTrigger.Cancel,
             Actors: [RentalActor.Student, RentalActor.StoreEmployee],
-            Guard: (_, context) => GuardCancelReason(context),
+            Guard: (_, context, _) => GuardCancelReason(context),
             Apply: (rental, context, _) => rental.Cancel(context.ResponseNote),
+            UsesInstrumentLock: false),
+
+        new(
+            From: InstrumentRentalStatus.Approved,
+            Trigger: RentalTrigger.ExpirePickup,
+            Actors: [RentalActor.System],
+            Guard: (rental, context, now) => GuardPickupWindowExpired(rental, now) ?? GuardRejectReason(context),
+            Apply: (rental, context, now) => rental.Reject(now, context.ResponseNote, context.UserId),
             UsesInstrumentLock: false),
 
         new(
             From: InstrumentRentalStatus.Active,
             Trigger: RentalTrigger.Complete,
             Actors: [RentalActor.StoreEmployee],
-            Guard: null,
+            Guard: (rental, _, now) => GuardTermReached(rental, now),
             Apply: (rental, context, now) => rental.Complete(now, ResolveNote(rental, context)),
             UsesInstrumentLock: false),
 
@@ -216,8 +263,16 @@ public sealed class InstrumentRental : AuditableEntity, ITenantScoped
             From: InstrumentRentalStatus.Active,
             Trigger: RentalTrigger.ReturnEarly,
             Actors: [RentalActor.StoreEmployee],
-            Guard: null,
+            Guard: (rental, _, now) => GuardTermNotReached(rental, now),
             Apply: (rental, context, now) => rental.ReturnEarly(now, ResolveNote(rental, context)),
+            UsesInstrumentLock: false),
+
+        new(
+            From: InstrumentRentalStatus.Active,
+            Trigger: RentalTrigger.Renew,
+            Actors: [RentalActor.Student],
+            Guard: (rental, _, now) => GuardRenewalWindow(rental, now),
+            Apply: (rental, _, _) => rental.Renew(),
             UsesInstrumentLock: false),
     ];
 
@@ -233,6 +288,13 @@ public sealed class InstrumentRental : AuditableEntity, ITenantScoped
     private const string RentalCompleteActiveOnlyMessage = "Samo aktivno iznajmljivanje se može završiti.";
     private const string RentalCancelPendingOrApprovedOnlyMessage = "Samo zahtjev na čekanju ili odobren zahtjev se može otkazati.";
     private const string RentalEarlyReturnActiveOnlyMessage = "Samo aktivno iznajmljivanje se može prijevremeno završiti.";
+    private const string RentalExpirePickupApprovedOnlyMessage = "Samo odobreno iznajmljivanje može isteći.";
+    private const string RentalRenewActiveOnlyMessage = "Samo aktivno iznajmljivanje se može produžiti.";
+    private const string RentalRenewWindowNotOpenMessage = "Produženje je moguće samo u zadnjih 5 dana trenutnog roka.";
+    private const string RentalRenewTermExpiredMessage = "Rok iznajmljivanja je istekao pa produženje više nije moguće.";
+    private const string RentalCompleteBeforeDueMessage = "Rok iznajmljivanja još nije istekao. Raniji povrat evidentirajte kao prijevremeni povrat.";
+    private const string RentalReturnEarlyAfterDueMessage = "Rok iznajmljivanja je istekao. Povrat evidentirajte kao završetak iznajmljivanja.";
+    private const string RentalPickupWindowOpenMessage = "Rok za preuzimanje instrumenta još nije istekao.";
     private const string BadRequestMessage = "Neispravan zahtjev.";
     private const string InstrumentReservedOrRentedMessage = "Instrument je rezervisan ili već iznajmljen.";
 
@@ -240,7 +302,7 @@ public sealed class InstrumentRental : AuditableEntity, ITenantScoped
         InstrumentRentalStatus From,
         RentalTrigger Trigger,
         RentalActor[] Actors,
-        Func<InstrumentRental, RentalTransitionContext, string?>? Guard,
+        Func<InstrumentRental, RentalTransitionContext, DateTime, string?>? Guard,
         Action<InstrumentRental, RentalTransitionContext, DateTime> Apply,
         bool UsesInstrumentLock);
 }

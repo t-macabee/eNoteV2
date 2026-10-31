@@ -4,7 +4,7 @@ using MapsterMapper;
 
 namespace eNote.Application.Features.Rentals.InstrumentRentals.Services;
 
-public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, IClock clock, ICurrentUserContext currentUser, IStudentContext students, IStoreContext stores, IRentalNotificationDispatcher notificationDispatcher, IStudentDisplayNameService displayNames)
+public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, IClock clock, ICurrentUserContext currentUser, IStudentContext students, IStoreContext stores, IRentalNotificationDispatcher notificationDispatcher, IStudentDisplayNameService displayNames, RentalOptions rentalOptions)
 {
     public async Task<InstrumentRentalDto> CreateRequestAsync(RentalCreateRequest request, CancellationToken cancellationToken = default)
     {
@@ -90,6 +90,13 @@ public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, 
             return await ExecuteTransitionWithNotificationAsync(rental, RentalTrigger.Cancel, RentalActor.Student, currentUser.UserId, request, cancellationToken);
         }, cancellationToken);
 
+    public Task<InstrumentRentalDto> RenewAsync(int rentalId, CancellationToken cancellationToken = default) =>
+        context.ExecuteInTransactionAsync(async () =>
+        {
+            var rental = await LoadForStudentAsync(rentalId, currentUser.UserId, cancellationToken);
+            return await ExecuteTransitionWithNotificationAsync(rental, RentalTrigger.Renew, RentalActor.Student, currentUser.UserId, null, cancellationToken);
+        }, cancellationToken);
+
     private Task<InstrumentRentalDto> ExecuteStoreTransitionAsync(int rentalId, RentalTrigger trigger, RentalStatusRequest? request, CancellationToken cancellationToken) =>
         context.ExecuteInTransactionAsync(async () =>
         {
@@ -129,6 +136,25 @@ public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, 
         }
     }
 
+    public async Task<int> ExpireUnclaimedApprovalsAsync(CancellationToken cancellationToken = default)
+    {
+        var cutoff = clock.UtcNow - InstrumentRental.PickupWindow;
+        var expiredRentals = await context.Set<InstrumentRental>()
+            .Where(r => r.RentalStatus == InstrumentRentalStatus.Approved && r.ApprovedAt <= cutoff)
+            .WithRentalDetails()
+            .ToListAsync(cancellationToken);
+
+        var request = new RentalStatusRequest { Note = Messages.RentalRejectedPickupExpired };
+
+        foreach (var rental in expiredRentals)
+        {
+            await ApplyTransitionWithNotificationAsync(rental, RentalTrigger.ExpirePickup, RentalActor.System, null, request, cancellationToken);
+        }
+
+        await context.SaveChangesAsync(cancellationToken);
+        return expiredRentals.Count;
+    }
+
     public async Task CancelPendingForClosedAccountAsync(int studentId, int userId, CancellationToken cancellationToken = default)
     {
         var pendingRentals = await context.Set<InstrumentRental>()
@@ -144,7 +170,7 @@ public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, 
         }
     }
 
-    private async Task<(InstrumentRentalDto Dto, bool UsesInstrumentLock)> ApplyTransitionWithNotificationAsync(InstrumentRental rental, RentalTrigger trigger, RentalActor rentalActor, int userId, RentalStatusRequest? request, CancellationToken cancellationToken)
+    private async Task<(InstrumentRentalDto Dto, bool UsesInstrumentLock)> ApplyTransitionWithNotificationAsync(InstrumentRental rental, RentalTrigger trigger, RentalActor rentalActor, int? userId, RentalStatusRequest? request, CancellationToken cancellationToken)
     {
         var hasConflict = false;
 
@@ -163,6 +189,7 @@ public sealed class RentalCommandService(IAppDbContext context, IMapper mapper, 
             HasInstrumentLockConflict = hasConflict,
             IsInstrumentInactive = !rental.Instrument.IsActive,
             MonthlyFee = rental.Instrument.InstrumentType.MonthlyFee,
+            OverduePenaltyMultiplier = rentalOptions.OverduePenaltyMultiplier,
             ResponseNote = request?.Note
         };
 

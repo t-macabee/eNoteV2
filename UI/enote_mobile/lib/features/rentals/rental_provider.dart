@@ -47,6 +47,13 @@ class RentalProvider extends ReadOnlyProvider<InstrumentRentalDto> {
     notifyListeners();
   }
 
+  Future<InstrumentRentalDto> renew(int id) async {
+    final response = await apiClient.post('student/rentals/$id/renew');
+    final data = decodeOrThrow(response);
+    notifyListeners();
+    return fromJson(data);
+  }
+
   Future<RentalDebtDto> debt() async {
     final response = await apiClient.get('student/rentals/debt');
     return RentalDebtDto.fromJson(decodeOrThrow(response));

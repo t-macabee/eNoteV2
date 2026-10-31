@@ -6,7 +6,7 @@ namespace eNote.Tests.TestUtils;
 public sealed class RecordingNotificationDispatcher : IRentalNotificationDispatcher
 {
     public List<(InstrumentRentalDto Rental, int StudentUserId)> CreatedCalls { get; } = [];
-    public List<(InstrumentRentalDto Rental, RentalTrigger Trigger, int ActorUserId)> TransitionCalls { get; } = [];
+    public List<(InstrumentRentalDto Rental, RentalTrigger Trigger, int? ActorUserId)> TransitionCalls { get; } = [];
     public List<(InstrumentRentalDto Rental, long RefundedCents, string Currency, int ActorUserId)> RefundCalls { get; } = [];
     public List<(int RentalId, long AmountCents, string Currency)> DuplicateRefundCalls { get; } = [];
     public List<(int RentalId, long AmountCents, string Currency)> SucceededCalls { get; } = [];
@@ -17,7 +17,7 @@ public sealed class RecordingNotificationDispatcher : IRentalNotificationDispatc
         return Task.CompletedTask;
     }
 
-    public Task DispatchTransitionAsync(InstrumentRentalDto rental, RentalTrigger trigger, int actorUserId, CancellationToken cancellationToken = default)
+    public Task DispatchTransitionAsync(InstrumentRentalDto rental, RentalTrigger trigger, int? actorUserId, CancellationToken cancellationToken = default)
     {
         TransitionCalls.Add((rental, trigger, actorUserId));
         return Task.CompletedTask;

@@ -231,8 +231,8 @@ public sealed class DatabaseConstraintTests(SqlServerFixture fixture)
             InstrumentRentalStatus.Completed,
             Now,
             userId: student.AppUserId,
-            approvedAt: Now.AddDays(-9),
-            pickedUpAt: Now.AddDays(-9),
+            approvedAt: Now.AddDays(-33),
+            pickedUpAt: Now.AddDays(-33),
             finishedAt: Now.AddDays(-3));
         context.Set<InstrumentRental>().Add(completed);
         await context.SaveChangesAsync();
@@ -265,8 +265,8 @@ public sealed class DatabaseConstraintTests(SqlServerFixture fixture)
             InstrumentRentalStatus.Completed,
             Now,
             userId: student.AppUserId,
-            approvedAt: Now.AddDays(-9),
-            pickedUpAt: Now.AddDays(-9),
+            approvedAt: Now.AddDays(-33),
+            pickedUpAt: Now.AddDays(-33),
             finishedAt: Now.AddDays(-3));
         context.Set<InstrumentRental>().Add(completed);
         await context.SaveChangesAsync();

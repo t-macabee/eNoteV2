@@ -91,7 +91,8 @@ public sealed class ArchivedInstrumentDebtFlowTests
             actor,
             actor,
             new RecordingNotificationDispatcher(),
-            new StubDisplayNameService());
+            new StubDisplayNameService(),
+            new RentalOptions { OverduePenaltyMultiplier = 0.5m });
 
     private static StripeWebhookService CreateWebhookService(ENoteContext context, FakePaymentGateway gateway) =>
         new(context,

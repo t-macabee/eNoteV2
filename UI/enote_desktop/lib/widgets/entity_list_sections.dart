@@ -161,44 +161,47 @@ class EntityListTable<T> extends StatelessWidget {
         config.extraActions != null;
 
     return SingleChildScrollView(
-      child: DataTable(
-        columns: [
-          ...config.columns.map((c) => DataColumn(label: Text(c.label))),
-          if (hasActions) const DataColumn(label: Text('Akcije')),
-        ],
-        rows: items.map((item) {
-          final extraWidgets =
-              config.extraActions?.call(context, item) ?? const <Widget>[];
-          return DataRow(
-            cells: [
-              ...config.columns.map(
-                (col) => DataCell(
-                  col.cellBuilder != null
-                      ? col.cellBuilder!(context, item)
-                      : Text(
-                          col.value(item)?.toString() ?? '-',
-                          style: col.style?.call(item),
-                        ),
-                  onTap: config.onEdit != null
-                      ? () => config.onEdit!(context, item)
-                      : null,
-                ),
-              ),
-              if (hasActions)
-                DataCell(
-                  EntityRowActions(
-                    extraWidgets: extraWidgets,
-                    onEdit: config.onEdit != null
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: DataTable(
+          columns: [
+            ...config.columns.map((c) => DataColumn(label: Text(c.label))),
+            if (hasActions) const DataColumn(label: Text('Akcije')),
+          ],
+          rows: items.map((item) {
+            final extraWidgets =
+                config.extraActions?.call(context, item) ?? const <Widget>[];
+            return DataRow(
+              cells: [
+                ...config.columns.map(
+                  (col) => DataCell(
+                    col.cellBuilder != null
+                        ? col.cellBuilder!(context, item)
+                        : Text(
+                            col.value(item)?.toString() ?? '-',
+                            style: col.style?.call(item),
+                          ),
+                    onTap: config.onEdit != null
                         ? () => config.onEdit!(context, item)
-                        : null,
-                    onDelete: config.onDelete != null
-                        ? () => onDelete(item)
                         : null,
                   ),
                 ),
-            ],
-          );
-        }).toList(),
+                if (hasActions)
+                  DataCell(
+                    EntityRowActions(
+                      extraWidgets: extraWidgets,
+                      onEdit: config.onEdit != null
+                          ? () => config.onEdit!(context, item)
+                          : null,
+                      onDelete: config.onDelete != null
+                          ? () => onDelete(item)
+                          : null,
+                    ),
+                  ),
+              ],
+            );
+          }).toList(),
+        ),
       ),
     );
   }

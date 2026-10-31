@@ -96,9 +96,13 @@ class _RentalListScreenState extends State<RentalListScreen> {
           ),
           ColumnSpec<InstrumentRentalDto>(
             label: 'Status',
-            value: (item) => rentalStatusLabel(item.rentalStatus),
+            value: (item) => item.isOverdue
+                ? '${rentalStatusLabel(item.rentalStatus)} · kasni ${item.overdueDays} dana'
+                : rentalStatusLabel(item.rentalStatus),
             style: (item) => TextStyle(
-              color: rentalStatusColor(item.rentalStatus),
+              color: item.isOverdue
+                  ? Colors.red
+                  : rentalStatusColor(item.rentalStatus),
               fontWeight: FontWeight.w600,
             ),
           ),

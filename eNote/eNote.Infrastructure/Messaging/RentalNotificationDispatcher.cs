@@ -30,25 +30,40 @@ public sealed class RentalNotificationDispatcher(
         }
     }
 
-    public async Task DispatchTransitionAsync(InstrumentRentalDto rental, RentalTrigger trigger, int actorUserId, CancellationToken cancellationToken = default)
+    public async Task DispatchTransitionAsync(InstrumentRentalDto rental, RentalTrigger trigger, int? actorUserId, CancellationToken cancellationToken = default)
     {
+        if (trigger == RentalTrigger.Renew)
+        {
+            await DispatchToStoreEmployeesAsync(
+                rental,
+                actorUserId,
+                "Iznajmljivanje produženo",
+                $"Iznajmljivanje instrumenta {rental.InstrumentModel} ({rental.StudentName}) je produženo do {rental.DueAt:dd.MM.yyyy}.",
+                cancellationToken);
+            return;
+        }
+
         if (trigger == RentalTrigger.Cancel && actorUserId == rental.StudentUserId)
         {
-            var now = clock.UtcNow;
             var (empTitle, empBody) = BuildStoreCancelledContent(rental);
-            foreach (var employeeUserId in await LoadActiveEmployeeUserIdsAsync(rental.MusicStoreId, cancellationToken))
-            {
-                if (employeeUserId == rental.StudentUserId) continue;
-                var empMessage = new RentalStatusChanged(rental.Id, rental.StudentUserId, employeeUserId, actorUserId, rental.RentalStatus.ToString(), rental.InstrumentModel, empTitle, empBody, now);
-                EnqueueOutbox(empMessage);
-            }
-
+            await DispatchToStoreEmployeesAsync(rental, actorUserId, empTitle, empBody, cancellationToken);
             return;
         }
 
         var (title, body) = BuildNotificationContent(rental, trigger);
         var message = new RentalStatusChanged(rental.Id, rental.StudentUserId, rental.StudentUserId, actorUserId, rental.RentalStatus.ToString(), rental.InstrumentModel, title, body, clock.UtcNow);
         EnqueueOutbox(message);
+    }
+
+    private async Task DispatchToStoreEmployeesAsync(InstrumentRentalDto rental, int? actorUserId, string title, string body, CancellationToken cancellationToken)
+    {
+        var now = clock.UtcNow;
+        foreach (var employeeUserId in await LoadActiveEmployeeUserIdsAsync(rental.MusicStoreId, cancellationToken))
+        {
+            if (employeeUserId == rental.StudentUserId) continue;
+            var empMessage = new RentalStatusChanged(rental.Id, rental.StudentUserId, employeeUserId, actorUserId, rental.RentalStatus.ToString(), rental.InstrumentModel, title, body, now);
+            EnqueueOutbox(empMessage);
+        }
     }
 
     private async Task<List<int>> LoadActiveEmployeeUserIdsAsync(int musicStoreId, CancellationToken cancellationToken) =>
@@ -136,11 +151,11 @@ public sealed class RentalNotificationDispatcher(
         trigger switch
         {
             RentalTrigger.Approve =>
-                ("Zahtjev odobren", $"Vaš zahtjev za instrument {rental.InstrumentModel} je odobren. Mjesečna naknada: {CurrencyAmount.Local(rental.Fee)}."),
-            RentalTrigger.Reject =>
+                ("Zahtjev odobren", $"Vaš zahtjev za instrument {rental.InstrumentModel} je odobren. Mjesečna naknada: {CurrencyAmount.Local(rental.Fee)}. Instrument preuzmite u roku od {InstrumentRental.PickupWindow.Days} dana. Za svaki dan kašnjenja nakon isteka roka plaća se penal od {CurrencyAmount.Local(rental.DailyPenaltyFee)}."),
+            RentalTrigger.Reject or RentalTrigger.ExpirePickup =>
                 ("Zahtjev odbijen", string.IsNullOrWhiteSpace(rental.Note) ? $"Vaš zahtjev za instrument {rental.InstrumentModel} je odbijen." : $"Vaš zahtjev za instrument {rental.InstrumentModel} je odbijen. Razlog: {rental.Note}"),
             RentalTrigger.Pickup =>
-                ("Instrument preuzet", $"Preuzeli ste instrument {rental.InstrumentModel}."),
+                ("Instrument preuzet", $"Preuzeli ste instrument {rental.InstrumentModel}. Rok povrata je {rental.DueAt:dd.MM.yyyy}. Produženje je moguće u zadnjih {InstrumentRental.RenewalWindow.Days} dana roka."),
             RentalTrigger.Complete =>
                 ("Iznajmljivanje završeno", $"Iznajmljivanje instrumenta {rental.InstrumentModel} je uspješno završeno."),
             RentalTrigger.Cancel =>

@@ -1,13 +1,14 @@
 using eNote.Application.Common.Files;
 using eNote.Application.Common.Time;
 using eNote.Application.Features.Academic.Tuition;
+using eNote.Application.Features.Rentals.InstrumentRentals;
 using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Infrastructure.Data.Seed;
 
 public static class DevelopmentDataSeed
 {
-    public static async Task SeedAsync(ENoteContext context, IClock clock)
+    public static async Task SeedAsync(ENoteContext context, IClock clock, RentalOptions rentalOptions)
     {
         await MusicStoreSeed.SeedStores(context);
         await CourseSeed.SeedCourses(context, clock);
@@ -21,7 +22,7 @@ public static class DevelopmentDataSeed
         await LectureSeed.SeedIndividualLectures(context, clock);
         await CommunicationSeed.SeedAnnouncements(context, clock);
         await CommunicationSeed.SeedEvents(context, clock);
-        await RentalActivitySeed.SeedRentals(context, clock);
+        await RentalActivitySeed.SeedRentals(context, clock, rentalOptions.OverduePenaltyMultiplier);
         await RentalActivitySeed.SeedInstrumentViews(context, clock);
         await CommunicationSeed.SeedNotifications(context, clock);
     }

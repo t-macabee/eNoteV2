@@ -86,7 +86,7 @@ public sealed class UserSelfServiceTests
                 actor,
                 actor,
                 new RecordingNotificationDispatcher(),
-                new StubDisplayNameService()),
+                new StubDisplayNameService(), new eNote.Application.Features.Rentals.InstrumentRentals.RentalOptions { OverduePenaltyMultiplier = 0.5m }),
             NullLogger<UserSelfService>.Instance);
     }
 

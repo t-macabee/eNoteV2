@@ -1,4 +1,5 @@
 using eNote.API.Extensions;
+using eNote.Application.Features.Rentals.InstrumentRentals;
 using eNote.Application.Features.Rentals.Payments.Services;
 using eNote.Infrastructure;
 using eNote.Infrastructure.Configuration;
@@ -182,6 +183,44 @@ public sealed class ConfigurationOptionsTests
         Assert.Equal("bam", options.Currency);
     }
 
+    [Theory]
+    [InlineData("0")]
+    [InlineData("10.01")]
+    public void RentalOptions_MultiplierOutsideRange_Fails(string value)
+    {
+        var services = BuildApiServices(overrides: new Dictionary<string, string?>
+        {
+            ["Rentals:OverduePenaltyMultiplier"] = value
+        });
+
+        var exception = Assert.Throws<OptionsValidationException>(() => ResolveOptions<RentalOptions>(services));
+
+        Assert.Contains("Rentals__OverduePenaltyMultiplier must be between 0.01 and 10.", exception.Message);
+    }
+
+    [Fact]
+    public void RentalOptions_MissingMultiplier_Fails()
+    {
+        var services = BuildApiServices(removeKeys: "Rentals:OverduePenaltyMultiplier");
+
+        var exception = Assert.Throws<OptionsValidationException>(() => ResolveOptions<RentalOptions>(services));
+
+        Assert.Contains("Rentals__OverduePenaltyMultiplier must be between 0.01 and 10.", exception.Message);
+    }
+
+    [Theory]
+    [InlineData("0.01", 0.01)]
+    [InlineData("10", 10)]
+    public void RentalOptions_MultiplierWithinRange_Passes(string value, double expected)
+    {
+        var services = BuildApiServices(overrides: new Dictionary<string, string?>
+        {
+            ["Rentals:OverduePenaltyMultiplier"] = value
+        });
+
+        Assert.Equal((decimal)expected, ResolveOptions<RentalOptions>(services).OverduePenaltyMultiplier);
+    }
+
     [Fact]
     public void StorageOptions_MissingRoot_Fails()
     {
@@ -360,7 +399,9 @@ public sealed class ConfigurationOptionsTests
         var services = new ServiceCollection();
         services.AddLogging();
         services.AddSingleton<IHostEnvironment>(new FakeHostEnvironment(environmentName ?? Environments.Production));
-        services.AddApiInfrastructure(CreateConfiguration(overrides, removeKeys));
+        var configuration = CreateConfiguration(overrides, removeKeys);
+        services.AddApiInfrastructure(configuration);
+        services.AddRentalOptions(configuration);
 
         return services;
     }
@@ -395,6 +436,7 @@ public sealed class ConfigurationOptionsTests
             ["Stripe:WebhookSecret"] = "whsec_123",
             ["Stripe:Currency"] = "bam",
             ["Stripe:StatementDescriptor"] = "ENOTE Rental",
+            ["Rentals:OverduePenaltyMultiplier"] = "0.5",
             ["RabbitMQ:Host"] = "localhost",
             ["RabbitMQ:VirtualHost"] = "/",
             ["RabbitMQ:User"] = "guest",

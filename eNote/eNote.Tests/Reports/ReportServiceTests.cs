@@ -95,7 +95,26 @@ public sealed class ReportServiceTests
 
         var row = Assert.Single(rows);
         Assert.Equal("Stradivarius", row.InstrumentModel);
-        Assert.Equal(10.00m, row.CalculateCharges(Now).TotalFee);
+        Assert.Equal(50.00m, row.CalculateCharges(Now).TotalFee);
+    }
+
+    [Fact]
+    public async Task LoadRentalSummaryRowsAsync_IncludesTheOverduePenaltyInTheTotal()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var instrument = await RentalTestData.SeedInstrumentAsync(harness.Context);
+        var rental = new InstrumentRental(instrument.Id, harness.Student.Id, instrument.MusicStoreId, Now.AddDays(-34), null);
+        RentalTestData.AdvanceTo(rental, InstrumentRentalStatus.Completed, Now, fee: 60m, approvedAt: Now.AddDays(-34), pickedUpAt: Now.AddDays(-33), finishedAt: Now);
+        harness.Context.Set<InstrumentRental>().Add(rental);
+        await harness.Context.SaveChangesAsync();
+        var service = CreateService(harness, harness.Instructor, new StubCurrentActor(storeId: instrument.MusicStoreId));
+
+        var rows = await service.LoadRentalSummaryRowsAsync(instrument.MusicStoreId, CancellationToken.None);
+
+        var row = Assert.Single(rows);
+        var charges = row.CalculateCharges(Now);
+        Assert.Equal(3.00m, charges.PenaltyFee);
+        Assert.Equal(69.00m, charges.TotalFee);
     }
 
     [Fact]

@@ -184,4 +184,79 @@ void main() {
 
     expect(find.text('Zahtjev za iznajmljivanje je odobren.'), findsOneWidget);
   });
+
+  testWidgets('overdue rental shows due date, delay and penalty', (tester) async {
+    await _pumpDialog(tester, {
+      'id': 5,
+      'instrumentId': 1,
+      'musicStoreId': 1,
+      'studentProfileId': 1,
+      'studentUserId': 1,
+      'instrumentModel': 'Fender',
+      'instrumentType': 'Gitara',
+      'storeName': 'Shop',
+      'rentalStatus': 'Active',
+      'requestedAt': DateTime.now()
+          .subtract(const Duration(days: 34))
+          .toIso8601String(),
+      'pickedUpAt': DateTime.now()
+          .subtract(const Duration(days: 33))
+          .toIso8601String(),
+      'dueAt': DateTime.now()
+          .subtract(const Duration(days: 2))
+          .toIso8601String(),
+      'fee': 90.0,
+      'dailyPenaltyFee': 1.5,
+      'overdueDays': 4,
+      'penaltyFee': 6.0,
+      'totalFee': 114.0,
+      'isPaid': false,
+    });
+
+    expect(find.text('Rok povrata'), findsOneWidget);
+    expect(find.text('Penal po danu'), findsOneWidget);
+    expect(find.text('Kašnjenje'), findsOneWidget);
+    expect(find.text('4 dana'), findsOneWidget);
+    expect(find.text('Penal'), findsOneWidget);
+    expect(find.text('6.00 KM'), findsOneWidget);
+  });
+
+  testWidgets('completed late rental still shows delay and penalty', (
+    tester,
+  ) async {
+    await _pumpDialog(tester, {
+      'id': 5,
+      'instrumentId': 1,
+      'musicStoreId': 1,
+      'studentProfileId': 1,
+      'studentUserId': 1,
+      'instrumentModel': 'Fender',
+      'instrumentType': 'Gitara',
+      'storeName': 'Shop',
+      'rentalStatus': 'Completed',
+      'requestedAt': DateTime.now()
+          .subtract(const Duration(days: 36))
+          .toIso8601String(),
+      'pickedUpAt': DateTime.now()
+          .subtract(const Duration(days: 33))
+          .toIso8601String(),
+      'returnedAt': DateTime.now()
+          .subtract(const Duration(days: 1))
+          .toIso8601String(),
+      'dueAt': DateTime.now()
+          .subtract(const Duration(days: 3))
+          .toIso8601String(),
+      'fee': 90.0,
+      'dailyPenaltyFee': 1.0,
+      'overdueDays': 2,
+      'penaltyFee': 2.0,
+      'totalFee': 92.0,
+      'isPaid': false,
+    });
+
+    expect(find.text('Kašnjenje'), findsOneWidget);
+    expect(find.text('2 dana'), findsOneWidget);
+    expect(find.text('Penal'), findsOneWidget);
+    expect(find.text('2.00 KM'), findsOneWidget);
+  });
 }

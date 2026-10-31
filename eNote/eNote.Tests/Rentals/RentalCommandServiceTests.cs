@@ -4,6 +4,7 @@ using eNote.Application.Constants;
 using eNote.Application.Features.Rentals.InstrumentRentals;
 using eNote.Application.Features.Rentals.InstrumentRentals.Services;
 using eNote.Tests.TestUtils;
+using eNote.Worker;
 using Microsoft.EntityFrameworkCore;
 
 namespace eNote.Tests.Rentals;
@@ -140,7 +141,7 @@ public sealed class RentalCommandServiceTests
         var student = await SeedStudentAsync(context, hasActiveMembership: true);
         var instrument = await RentalTestData.SeedInstrumentAsync(context);
         var unpaid = new InstrumentRental(instrument.Id, student.Id, instrument.MusicStoreId, Now.AddDays(-20), null);
-        RentalTestData.AdvanceTo(unpaid, InstrumentRentalStatus.Completed, Now, approvedAt: Now.AddDays(-19), pickedUpAt: Now.AddDays(-19), finishedAt: Now.AddDays(-5));
+        RentalTestData.AdvanceTo(unpaid, InstrumentRentalStatus.Completed, Now, approvedAt: Now.AddDays(-35), pickedUpAt: Now.AddDays(-35), finishedAt: Now.AddDays(-5));
         context.Set<InstrumentRental>().Add(unpaid);
         await context.SaveChangesAsync();
 
@@ -178,7 +179,7 @@ public sealed class RentalCommandServiceTests
         var student = await SeedStudentAsync(context, hasActiveMembership: true);
         var instrument = await RentalTestData.SeedInstrumentAsync(context);
         var unpaid = new InstrumentRental(instrument.Id, student.Id, instrument.MusicStoreId, Now.AddDays(-20), null);
-        RentalTestData.AdvanceTo(unpaid, InstrumentRentalStatus.Completed, Now, approvedAt: Now.AddDays(-19), pickedUpAt: Now.AddDays(-19), finishedAt: Now.AddDays(-5));
+        RentalTestData.AdvanceTo(unpaid, InstrumentRentalStatus.Completed, Now, approvedAt: Now.AddDays(-35), pickedUpAt: Now.AddDays(-35), finishedAt: Now.AddDays(-5));
         context.Set<InstrumentRental>().Add(unpaid);
         await context.SaveChangesAsync();
 
@@ -200,7 +201,7 @@ public sealed class RentalCommandServiceTests
         var student = await SeedStudentAsync(context, hasActiveMembership: true);
         var instrument = await RentalTestData.SeedInstrumentAsync(context);
         var paid = new InstrumentRental(instrument.Id, student.Id, instrument.MusicStoreId, Now.AddDays(-20), null);
-        RentalTestData.AdvanceTo(paid, InstrumentRentalStatus.Completed, Now, approvedAt: Now.AddDays(-19), pickedUpAt: Now.AddDays(-19), finishedAt: Now.AddDays(-5));
+        RentalTestData.AdvanceTo(paid, InstrumentRentalStatus.Completed, Now, approvedAt: Now.AddDays(-35), pickedUpAt: Now.AddDays(-35), finishedAt: Now.AddDays(-5));
         paid.MarkPaid(5000, Now);
         context.Set<InstrumentRental>().Add(paid);
         await context.SaveChangesAsync();
@@ -234,7 +235,7 @@ public sealed class RentalCommandServiceTests
                 RentalTestData.AdvanceTo(previous, InstrumentRentalStatus.Rejected, Now.AddDays(-19), note: "Instrument je na servisu.");
                 break;
             case InstrumentRentalStatus.Completed:
-                RentalTestData.AdvanceTo(previous, InstrumentRentalStatus.Completed, Now, approvedAt: Now.AddDays(-19), pickedUpAt: Now.AddDays(-19), finishedAt: Now.AddDays(-5));
+                RentalTestData.AdvanceTo(previous, InstrumentRentalStatus.Completed, Now, approvedAt: Now.AddDays(-35), pickedUpAt: Now.AddDays(-35), finishedAt: Now.AddDays(-5));
                 previous.MarkPaid(5000, Now);
                 break;
         }
@@ -258,7 +259,7 @@ public sealed class RentalCommandServiceTests
         await context.SaveChangesAsync();
         var instrument = await RentalTestData.SeedInstrumentAsync(context);
         var unpaid = new InstrumentRental(instrument.Id, stranger.Id, instrument.MusicStoreId, Now.AddDays(-20), null);
-        RentalTestData.AdvanceTo(unpaid, InstrumentRentalStatus.Completed, Now, approvedAt: Now.AddDays(-19), pickedUpAt: Now.AddDays(-19), finishedAt: Now.AddDays(-5));
+        RentalTestData.AdvanceTo(unpaid, InstrumentRentalStatus.Completed, Now, approvedAt: Now.AddDays(-35), pickedUpAt: Now.AddDays(-35), finishedAt: Now.AddDays(-5));
         context.Set<InstrumentRental>().Add(unpaid);
         await context.SaveChangesAsync();
         var service = CreateService(context, student);
@@ -297,6 +298,201 @@ public sealed class RentalCommandServiceTests
 
         Assert.NotNull(result);
         Assert.Equal(InstrumentRentalStatus.Pending, result.RentalStatus);
+    }
+
+    [Fact]
+    public async Task ExpireUnclaimedApprovalsAsync_RejectsOnlyApprovalsPastTheDeadline()
+    {
+        var dbName = Guid.NewGuid().ToString();
+        int dueId;
+        int notDueId;
+        int activeId;
+        int pendingId;
+
+        await using (var context = CreateWorkerContext(dbName))
+        {
+            var student = new Student(appUserId: 100, enrollmentDate: Now.AddMonths(-1));
+            context.Set<Student>().Add(student);
+            await context.SaveChangesAsync();
+
+            dueId = await SeedRentalAsync(context, student, status: InstrumentRentalStatus.Approved, approvedAt: Now.AddDays(-2));
+            notDueId = await SeedRentalAsync(context, student, status: InstrumentRentalStatus.Approved, approvedAt: Now.AddDays(-2).AddMinutes(1));
+            activeId = await SeedRentalAsync(context, student, status: InstrumentRentalStatus.Active, approvedAt: Now.AddDays(-5), pickedUpAt: Now.AddDays(-4));
+            pendingId = await SeedRentalAsync(context, student, status: InstrumentRentalStatus.Pending);
+        }
+
+        var recorder = new RecordingNotificationDispatcher();
+
+        await using (var context = CreateWorkerContext(dbName))
+        {
+            var service = CreateWorkerService(context, recorder);
+
+            var count = await service.ExpireUnclaimedApprovalsAsync();
+
+            Assert.Equal(1, count);
+        }
+
+        await using (var context = CreateWorkerContext(dbName))
+        {
+            var due = await context.Set<InstrumentRental>().AsNoTracking().SingleAsync(x => x.Id == dueId);
+            Assert.Equal(InstrumentRentalStatus.Rejected, due.RentalStatus);
+            Assert.Equal(Now, due.RejectedAt);
+            Assert.Null(due.RejectedById);
+            Assert.Equal(Messages.RentalRejectedPickupExpired, due.Note);
+
+            var notDue = await context.Set<InstrumentRental>().AsNoTracking().SingleAsync(x => x.Id == notDueId);
+            Assert.Equal(InstrumentRentalStatus.Approved, notDue.RentalStatus);
+
+            var active = await context.Set<InstrumentRental>().AsNoTracking().SingleAsync(x => x.Id == activeId);
+            Assert.Equal(InstrumentRentalStatus.Active, active.RentalStatus);
+
+            var pending = await context.Set<InstrumentRental>().AsNoTracking().SingleAsync(x => x.Id == pendingId);
+            Assert.Equal(InstrumentRentalStatus.Pending, pending.RentalStatus);
+        }
+
+        var transitionCall = Assert.Single(recorder.TransitionCalls);
+        Assert.Equal(dueId, transitionCall.Rental.Id);
+        Assert.Equal(RentalTrigger.ExpirePickup, transitionCall.Trigger);
+        Assert.Null(transitionCall.ActorUserId);
+    }
+
+    [Fact]
+    public async Task ExpireUnclaimedApprovalsAsync_ReturnsZero_WhenNothingIsDue()
+    {
+        var dbName = Guid.NewGuid().ToString();
+        int rentalId;
+
+        await using (var context = CreateWorkerContext(dbName))
+        {
+            var student = new Student(appUserId: 100, enrollmentDate: Now.AddMonths(-1));
+            context.Set<Student>().Add(student);
+            await context.SaveChangesAsync();
+
+            rentalId = await SeedRentalAsync(context, student, status: InstrumentRentalStatus.Approved, approvedAt: Now.AddHours(-47));
+        }
+
+        var recorder = new RecordingNotificationDispatcher();
+
+        await using (var context = CreateWorkerContext(dbName))
+        {
+            var service = CreateWorkerService(context, recorder);
+
+            var count = await service.ExpireUnclaimedApprovalsAsync();
+
+            Assert.Equal(0, count);
+        }
+
+        await using (var context = CreateWorkerContext(dbName))
+        {
+            var stored = await context.Set<InstrumentRental>().AsNoTracking().SingleAsync(x => x.Id == rentalId);
+            Assert.Equal(InstrumentRentalStatus.Approved, stored.RentalStatus);
+        }
+
+        Assert.Empty(recorder.TransitionCalls);
+    }
+
+    [Fact]
+    public async Task RenewAsync_ByOwner_AddsOneTerm_AndDispatchesRenew()
+    {
+        await using var context = CreateContext();
+        var student = await SeedStudentAsync(context, hasActiveMembership: true);
+        var instrument = await RentalTestData.SeedInstrumentAsync(context);
+        var rental = new InstrumentRental(instrument.Id, student.Id, instrument.MusicStoreId, Now.AddDays(-28), null);
+        RentalTestData.AdvanceTo(rental, InstrumentRentalStatus.Active, Now, approvedAt: Now.AddDays(-28), pickedUpAt: Now.AddDays(-27));
+        context.Set<InstrumentRental>().Add(rental);
+        await context.SaveChangesAsync();
+        var recorder = new RecordingNotificationDispatcher();
+        var service = CreateService(context, student, recorder);
+
+        var dueBefore = rental.DueAt;
+        var result = await service.RenewAsync(rental.Id);
+
+        Assert.Equal(dueBefore!.Value.AddDays(30), result.DueAt);
+        var stored = await context.Set<InstrumentRental>().AsNoTracking().SingleAsync(x => x.Id == rental.Id);
+        Assert.Equal(dueBefore.Value.AddDays(30), stored.DueAt);
+        var transition = Assert.Single(recorder.TransitionCalls);
+        Assert.Equal(RentalTrigger.Renew, transition.Trigger);
+    }
+
+    [Fact]
+    public async Task RenewAsync_ByAnotherStudent_ThrowsNotFound()
+    {
+        await using var context = CreateContext();
+        var owner = await SeedStudentAsync(context, hasActiveMembership: true);
+        var stranger = new Student(appUserId: 101, enrollmentDate: Now.AddMonths(-1));
+        context.Set<Student>().Add(stranger);
+        var instrument = await RentalTestData.SeedInstrumentAsync(context);
+        var rental = new InstrumentRental(instrument.Id, owner.Id, instrument.MusicStoreId, Now.AddDays(-28), null);
+        RentalTestData.AdvanceTo(rental, InstrumentRentalStatus.Active, Now, approvedAt: Now.AddDays(-28), pickedUpAt: Now.AddDays(-27));
+        context.Set<InstrumentRental>().Add(rental);
+        await context.SaveChangesAsync();
+        var service = CreateService(context, stranger);
+
+        var ex = await Assert.ThrowsAsync<NotFoundException>(() => service.RenewAsync(rental.Id));
+
+        Assert.Equal(Messages.RentalNotFound, ex.Message);
+    }
+
+    [Fact]
+    public async Task RenewAsync_BeforeWindow_ThrowsBusinessException_AndLeavesDueAt()
+    {
+        await using var context = CreateContext();
+        var student = await SeedStudentAsync(context, hasActiveMembership: true);
+        var instrument = await RentalTestData.SeedInstrumentAsync(context);
+        var rental = new InstrumentRental(instrument.Id, student.Id, instrument.MusicStoreId, Now.AddDays(-11), null);
+        RentalTestData.AdvanceTo(rental, InstrumentRentalStatus.Active, Now, approvedAt: Now.AddDays(-11), pickedUpAt: Now.AddDays(-10));
+        context.Set<InstrumentRental>().Add(rental);
+        await context.SaveChangesAsync();
+        var dueBefore = rental.DueAt;
+        var service = CreateService(context, student);
+
+        var ex = await Assert.ThrowsAsync<BusinessException>(() => service.RenewAsync(rental.Id));
+
+        Assert.Equal("Produženje je moguće samo u zadnjih 5 dana trenutnog roka.", ex.Message);
+        var stored = await context.Set<InstrumentRental>().AsNoTracking().SingleAsync(x => x.Id == rental.Id);
+        Assert.Equal(dueBefore, stored.DueAt);
+    }
+
+    [Fact]
+    public async Task ApproveAsync_CopiesTheConfiguredPenaltyMultiplier()
+    {
+        await using var context = CreateContext();
+        var student = await SeedStudentAsync(context, hasActiveMembership: true);
+        var instrument = await RentalTestData.SeedInstrumentAsync(context);
+        var rental = new InstrumentRental(instrument.Id, student.Id, instrument.MusicStoreId, Now, null);
+        context.Set<InstrumentRental>().Add(rental);
+        await context.SaveChangesAsync();
+        var service = CreateStoreService(context, instrument.MusicStoreId, rentalOptions: new RentalOptions { OverduePenaltyMultiplier = 0.75m });
+
+        await service.ApproveAsync(rental.Id, new RentalStatusRequest());
+
+        var stored = await context.Set<InstrumentRental>().AsNoTracking().SingleAsync(x => x.Id == rental.Id);
+        Assert.Equal(0.75m, stored.OverduePenaltyMultiplier);
+    }
+
+    private static ENoteContext CreateWorkerContext(string dbName) =>
+        new(TestDbContextFactory.CreateOptions(dbName), new FixedClock(Now), new WorkerActor());
+
+    private static RentalCommandService CreateWorkerService(IAppDbContext context, IRentalNotificationDispatcher dispatcher)
+    {
+        var actor = new WorkerActor();
+        var students = new StubCurrentActor(new Student(0, Now));
+        return new(context, TestMapper.Create(), new FixedClock(Now), actor, students, students, dispatcher, new StubDisplayNameService(), new RentalOptions { OverduePenaltyMultiplier = 0.5m });
+    }
+
+    private static async Task<int> SeedRentalAsync(
+        ENoteContext context,
+        Student student,
+        InstrumentRentalStatus status,
+        DateTime? approvedAt = null,
+        DateTime? pickedUpAt = null)
+    {
+        var instrument = await RentalTestData.SeedInstrumentAsync(context);
+        var rental = new InstrumentRental(instrument.Id, student.Id, instrument.MusicStoreId, Now.AddDays(-5), null);
+        RentalTestData.AdvanceTo(rental, status, Now, approvedAt: approvedAt, pickedUpAt: pickedUpAt);
+        context.Set<InstrumentRental>().Add(rental);
+        await context.SaveChangesAsync();
+        return rental.Id;
     }
 
     private static ENoteContext CreateContext() =>
@@ -564,17 +760,17 @@ public sealed class RentalCommandServiceTests
             service.CreateRequestAsync(new RentalCreateRequest { InstrumentId = instrument.Id }));
     }
 
-    private static RentalCommandService CreateService(IAppDbContext context, Student student, IRentalNotificationDispatcher? dispatcher = null)
+    private static RentalCommandService CreateService(IAppDbContext context, Student student, IRentalNotificationDispatcher? dispatcher = null, RentalOptions? rentalOptions = null)
     {
         var currentUser = new StubCurrentActor(student: student);
         return new(context, TestMapper.Create(), new FixedClock(Now), currentUser, currentUser, currentUser,
-            dispatcher ?? new RecordingNotificationDispatcher(), new StubDisplayNameService());
+            dispatcher ?? new RecordingNotificationDispatcher(), new StubDisplayNameService(), rentalOptions ?? new RentalOptions { OverduePenaltyMultiplier = 0.5m });
     }
 
-    private static RentalCommandService CreateStoreService(IAppDbContext context, int storeId, IRentalNotificationDispatcher? dispatcher = null)
+    private static RentalCommandService CreateStoreService(IAppDbContext context, int storeId, IRentalNotificationDispatcher? dispatcher = null, RentalOptions? rentalOptions = null)
     {
         var currentUser = new StubCurrentActor(storeId: storeId);
         return new(context, TestMapper.Create(), new FixedClock(Now), currentUser, currentUser, currentUser,
-            dispatcher ?? new RecordingNotificationDispatcher(), new StubDisplayNameService());
+            dispatcher ?? new RecordingNotificationDispatcher(), new StubDisplayNameService(), rentalOptions ?? new RentalOptions { OverduePenaltyMultiplier = 0.5m });
     }
 }

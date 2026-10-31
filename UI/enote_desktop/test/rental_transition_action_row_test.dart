@@ -51,9 +51,43 @@ void main() {
         ),
       );
 
-      expect(find.widgetWithText(ElevatedButton, 'Završi'), findsOneWidget);
       expect(find.widgetWithText(ElevatedButton, 'Prijevremeni povrat'), findsOneWidget);
+      expect(find.widgetWithText(ElevatedButton, 'Završi'), findsNothing);
       expect(find.widgetWithText(ElevatedButton, 'Otkaži'), findsNothing);
+    });
+
+    testWidgets('active before due shows only Prijevremeni povrat', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: RentalTransitionActionRow(
+              status: InstrumentRentalStatus.active,
+              dueAt: DateTime.now().add(const Duration(days: 2)),
+              onTransition: (trigger, {note}) async {},
+            ),
+          ),
+        ),
+      );
+
+      expect(find.widgetWithText(ElevatedButton, 'Prijevremeni povrat'), findsOneWidget);
+      expect(find.widgetWithText(ElevatedButton, 'Završi'), findsNothing);
+    });
+
+    testWidgets('active after due shows only Završi', (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: RentalTransitionActionRow(
+              status: InstrumentRentalStatus.active,
+              dueAt: DateTime.now().subtract(const Duration(days: 1)),
+              onTransition: (trigger, {note}) async {},
+            ),
+          ),
+        ),
+      );
+
+      expect(find.widgetWithText(ElevatedButton, 'Završi'), findsOneWidget);
+      expect(find.widgetWithText(ElevatedButton, 'Prijevremeni povrat'), findsNothing);
     });
 
     for (final terminalStatus in [

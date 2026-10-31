@@ -48,7 +48,7 @@ public sealed class RecommendationServiceTests
         var student = await SeedStudentAsync(context);
         var instrument = await RentalTestData.SeedInstrumentAsync(context);
         var rental = new InstrumentRental(instrument.Id, student.Id, instrument.MusicStoreId, Now.AddDays(-30), null);
-        RentalTestData.AdvanceTo(rental, InstrumentRentalStatus.Completed, Now, approvedAt: Now.AddDays(-30), pickedUpAt: Now.AddDays(-25), finishedAt: Now.AddDays(-1));
+        RentalTestData.AdvanceTo(rental, InstrumentRentalStatus.Completed, Now, approvedAt: Now.AddDays(-31), pickedUpAt: Now.AddDays(-31), finishedAt: Now.AddDays(-1));
         context.Set<InstrumentRental>().Add(rental);
         await context.SaveChangesAsync();
         var service = CreateService(context, student);
@@ -73,7 +73,7 @@ public sealed class RecommendationServiceTests
         await context.SaveChangesAsync();
 
         var r1 = new InstrumentRental(instrumentA.Id, student.Id, store.Id, Now.AddDays(-60), null);
-        RentalTestData.AdvanceTo(r1, InstrumentRentalStatus.Completed, Now, approvedAt: Now.AddDays(-60), pickedUpAt: Now.AddDays(-55), finishedAt: Now.AddDays(-30));
+        RentalTestData.AdvanceTo(r1, InstrumentRentalStatus.Completed, Now, approvedAt: Now.AddDays(-60), pickedUpAt: Now.AddDays(-60), finishedAt: Now.AddDays(-30));
         context.Set<InstrumentRental>().Add(r1);
         await context.SaveChangesAsync();
 
@@ -133,22 +133,22 @@ public sealed class RecommendationServiceTests
         await context.SaveChangesAsync();
 
         var rStudent = new InstrumentRental(commonInstrument.Id, student.Id, store.Id, Now.AddDays(-60), null);
-        RentalTestData.AdvanceTo(rStudent, InstrumentRentalStatus.Completed, Now, approvedAt: Now.AddDays(-60), pickedUpAt: Now.AddDays(-55), finishedAt: Now.AddDays(-30));
+        RentalTestData.AdvanceTo(rStudent, InstrumentRentalStatus.Completed, Now, approvedAt: Now.AddDays(-60), pickedUpAt: Now.AddDays(-60), finishedAt: Now.AddDays(-30));
 
         var rSim1_1 = new InstrumentRental(commonInstrument.Id, 201, store.Id, Now.AddDays(-50), null);
-        RentalTestData.AdvanceTo(rSim1_1, InstrumentRentalStatus.Completed, Now, approvedAt: Now.AddDays(-50), pickedUpAt: Now.AddDays(-49), finishedAt: Now.AddDays(-20));
+        RentalTestData.AdvanceTo(rSim1_1, InstrumentRentalStatus.Completed, Now, approvedAt: Now.AddDays(-50), pickedUpAt: Now.AddDays(-50), finishedAt: Now.AddDays(-20));
 
         var rSim1_2 = new InstrumentRental(collabFrequent.Id, 201, store.Id, Now.AddDays(-50), null);
-        RentalTestData.AdvanceTo(rSim1_2, InstrumentRentalStatus.Completed, Now, approvedAt: Now.AddDays(-50), pickedUpAt: Now.AddDays(-49), finishedAt: Now.AddDays(-20));
+        RentalTestData.AdvanceTo(rSim1_2, InstrumentRentalStatus.Completed, Now, approvedAt: Now.AddDays(-50), pickedUpAt: Now.AddDays(-50), finishedAt: Now.AddDays(-20));
 
         var rSim2_1 = new InstrumentRental(commonInstrument.Id, 202, store.Id, Now.AddDays(-45), null);
-        RentalTestData.AdvanceTo(rSim2_1, InstrumentRentalStatus.Completed, Now, approvedAt: Now.AddDays(-45), pickedUpAt: Now.AddDays(-44), finishedAt: Now.AddDays(-15));
+        RentalTestData.AdvanceTo(rSim2_1, InstrumentRentalStatus.Completed, Now, approvedAt: Now.AddDays(-45), pickedUpAt: Now.AddDays(-45), finishedAt: Now.AddDays(-15));
 
         var rSim2_2 = new InstrumentRental(collabFrequent.Id, 202, store.Id, Now.AddDays(-45), null);
-        RentalTestData.AdvanceTo(rSim2_2, InstrumentRentalStatus.Completed, Now, approvedAt: Now.AddDays(-45), pickedUpAt: Now.AddDays(-44), finishedAt: Now.AddDays(-15));
+        RentalTestData.AdvanceTo(rSim2_2, InstrumentRentalStatus.Completed, Now, approvedAt: Now.AddDays(-45), pickedUpAt: Now.AddDays(-45), finishedAt: Now.AddDays(-15));
 
         var rSim2_3 = new InstrumentRental(collabLessFrequent.Id, 202, store.Id, Now.AddDays(-45), null);
-        RentalTestData.AdvanceTo(rSim2_3, InstrumentRentalStatus.Completed, Now, approvedAt: Now.AddDays(-45), pickedUpAt: Now.AddDays(-44), finishedAt: Now.AddDays(-15));
+        RentalTestData.AdvanceTo(rSim2_3, InstrumentRentalStatus.Completed, Now, approvedAt: Now.AddDays(-45), pickedUpAt: Now.AddDays(-45), finishedAt: Now.AddDays(-15));
 
         context.Set<InstrumentRental>().AddRange(rStudent, rSim1_1, rSim1_2, rSim2_1, rSim2_2, rSim2_3);
         await context.SaveChangesAsync();
@@ -314,7 +314,7 @@ public sealed class RecommendationServiceTests
     private static InstrumentRental CreateCompletedRental(int instrumentId, int studentProfileId, int storeId, DateTime requestedAt)
     {
         var rental = new InstrumentRental(instrumentId, studentProfileId, storeId, requestedAt, null);
-        RentalTestData.AdvanceTo(rental, InstrumentRentalStatus.Completed, requestedAt, approvedAt: requestedAt, pickedUpAt: requestedAt.AddDays(1), finishedAt: requestedAt.AddDays(5));
+        RentalTestData.AdvanceTo(rental, InstrumentRentalStatus.Completed, requestedAt, approvedAt: requestedAt.AddDays(-25), pickedUpAt: requestedAt.AddDays(-25), finishedAt: requestedAt.AddDays(5));
         return rental;
     }
 
@@ -398,7 +398,7 @@ public sealed class RecommendationServiceTests
         await context.SaveChangesAsync();
 
         var completedRental = new InstrumentRental(instrumentAvailable.Id, otherStudent.Id, store.Id, Now.AddDays(-5), null);
-        RentalTestData.AdvanceTo(completedRental, InstrumentRentalStatus.Completed, Now, approvedAt: Now.AddDays(-5), pickedUpAt: Now.AddDays(-4), finishedAt: Now.AddDays(-3));
+        RentalTestData.AdvanceTo(completedRental, InstrumentRentalStatus.Completed, Now, approvedAt: Now.AddDays(-33), pickedUpAt: Now.AddDays(-33), finishedAt: Now.AddDays(-3));
 
         var activeRental = new InstrumentRental(instrumentRented.Id, otherStudent.Id, store.Id, Now.AddDays(-5), null);
         RentalTestData.AdvanceTo(activeRental, InstrumentRentalStatus.Active, Now, approvedAt: Now.AddDays(-5), pickedUpAt: Now.AddDays(-4));

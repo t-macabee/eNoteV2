@@ -1211,6 +1211,9 @@ namespace eNote.Infrastructure.Data.Migrations
                     b.Property<int?>("CreatedById")
                         .HasColumnType("int");
 
+                    b.Property<DateTime?>("DueAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<decimal>("Fee")
                         .HasPrecision(10, 2)
                         .HasColumnType("decimal(10,2)");
@@ -1228,6 +1231,10 @@ namespace eNote.Infrastructure.Data.Migrations
 
                     b.Property<string>("Note")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("OverduePenaltyMultiplier")
+                        .HasPrecision(4, 2)
+                        .HasColumnType("decimal(4,2)");
 
                     b.Property<DateTime?>("PaidAt")
                         .HasColumnType("datetime2");

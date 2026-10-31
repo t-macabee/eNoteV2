@@ -77,13 +77,17 @@ class RentalTimeline extends StatelessWidget {
       InstrumentRentalStatus.approved => [
         requested,
         approved,
-        const RentalTimelineStep(label: 'Preuzimanje', isFilled: false),
+        RentalTimelineStep(
+          label: 'Preuzimanje do',
+          at: rental.pickupDeadline,
+          isFilled: false,
+        ),
       ],
       InstrumentRentalStatus.active => [
         requested,
         approved,
         pickedUp,
-        const RentalTimelineStep(label: 'Povrat', isFilled: false),
+        RentalTimelineStep(label: 'Povrat do', at: rental.dueAt, isFilled: false),
       ],
       InstrumentRentalStatus.completed => [
         requested,

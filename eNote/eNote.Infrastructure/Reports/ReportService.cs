@@ -56,9 +56,9 @@ internal sealed class ReportService(IAppDbContext context, IClock clock, Ranking
                 if (rentals.Count == 0) { content.Text(Messages.ReportNoData).FontSize(11); return; }
                 content.Table(table =>
                 {
-                    table.ColumnsDefinition(columns => { columns.RelativeColumn(3); columns.RelativeColumn(2); columns.RelativeColumn(3); columns.RelativeColumn(2); columns.RelativeColumn(2); });
-                    table.Header(header => { header.Cell().Element(CellStyle).Text(Messages.ReportColumnInstrument); header.Cell().Element(CellStyle).Text(Messages.ReportColumnStatus); header.Cell().Element(CellStyle).Text(Messages.ReportColumnPeriod); header.Cell().Element(CellStyle).Text(Messages.ReportColumnFee); header.Cell().Element(CellStyle).Text(Messages.ReportColumnTotal); });
-                    foreach (var rental in rentals) { var charges = rental.CalculateCharges(clock.UtcNow); table.Cell().Element(CellStyle).Text(rental.InstrumentModel); table.Cell().Element(CellStyle).Text(ReportLabels.Rental(rental.RentalStatus)); table.Cell().Element(CellStyle).Text(FormatPeriod(rental.PickedUpAt, rental.ReturnedAt)); table.Cell().Element(CellStyle).Text(rental.Fee.ToString("F2", ReportCulture)); table.Cell().Element(CellStyle).Text(charges.TotalFee?.ToString("F2", ReportCulture) ?? "-"); }
+                    table.ColumnsDefinition(columns => { columns.RelativeColumn(3); columns.RelativeColumn(2); columns.RelativeColumn(3); columns.RelativeColumn(2); columns.RelativeColumn(2); columns.RelativeColumn(2); });
+                    table.Header(header => { header.Cell().Element(CellStyle).Text(Messages.ReportColumnInstrument); header.Cell().Element(CellStyle).Text(Messages.ReportColumnStatus); header.Cell().Element(CellStyle).Text(Messages.ReportColumnPeriod); header.Cell().Element(CellStyle).Text(Messages.ReportColumnFee); header.Cell().Element(CellStyle).Text(Messages.ReportColumnPenalty); header.Cell().Element(CellStyle).Text(Messages.ReportColumnTotal); });
+                    foreach (var rental in rentals) { var charges = rental.CalculateCharges(clock.UtcNow); table.Cell().Element(CellStyle).Text(rental.InstrumentModel); table.Cell().Element(CellStyle).Text(ReportLabels.Rental(rental.RentalStatus)); table.Cell().Element(CellStyle).Text(FormatPeriod(rental.PickedUpAt, rental.ReturnedAt)); table.Cell().Element(CellStyle).Text(rental.Fee.ToString("F2", ReportCulture)); table.Cell().Element(CellStyle).Text(charges.PenaltyFee?.ToString("F2", ReportCulture) ?? "-"); table.Cell().Element(CellStyle).Text(charges.TotalFee?.ToString("F2", ReportCulture) ?? "-"); }
                 });
             });
             page.Footer().AlignRight().Text($"{Messages.ReportGeneratedLabel}: {clock.UtcNow:dd.MM.yyyy HH:mm} UTC").FontSize(9);
@@ -140,7 +140,9 @@ internal sealed class ReportService(IAppDbContext context, IClock clock, Ranking
                 RentalStatus = x.RentalStatus,
                 Fee = x.Fee,
                 PickedUpAt = x.PickedUpAt,
-                ReturnedAt = x.ReturnedAt
+                ReturnedAt = x.ReturnedAt,
+                DueAt = x.DueAt,
+                OverduePenaltyMultiplier = x.OverduePenaltyMultiplier
             })
             .ToListAsync(cancellationToken);
 
@@ -151,8 +153,10 @@ internal sealed class ReportService(IAppDbContext context, IClock clock, Ranking
         public decimal Fee { get; init; }
         public DateTime? PickedUpAt { get; init; }
         public DateTime? ReturnedAt { get; init; }
+        public DateTime? DueAt { get; init; }
+        public decimal OverduePenaltyMultiplier { get; init; }
 
         public RentalCharges CalculateCharges(DateTime now) =>
-            RentalChargeCalculator.Calculate(PickedUpAt, ReturnedAt, RentalStatus, Fee, now);
+            RentalChargeCalculator.Calculate(PickedUpAt, ReturnedAt, DueAt, RentalStatus, Fee, OverduePenaltyMultiplier, now);
     }
 }

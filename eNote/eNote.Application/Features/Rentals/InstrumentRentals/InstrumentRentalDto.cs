@@ -23,13 +23,19 @@ public class InstrumentRentalDto
     public DateTime? RejectedAt { get; set; }
     public DateTime? PickedUpAt { get; set; }
     public DateTime? ReturnedAt { get; set; }
+    public DateTime? PickupDeadline { get; set; }
+    public DateTime? DueAt { get; set; }
+    public DateTime? RenewalOpensAt { get; set; }
 
     public int? ApprovedById { get; set; }
     public int? RejectedById { get; set; }
 
     public decimal Fee { get; set; }
     public decimal? DailyFee { get; set; }
+    public decimal DailyPenaltyFee { get; set; }
     public int? DaysCharged { get; set; }
+    public int? OverdueDays { get; set; }
+    public decimal? PenaltyFee { get; set; }
     public decimal? TotalFee { get; set; }
 
     public bool IsPaid { get; set; }

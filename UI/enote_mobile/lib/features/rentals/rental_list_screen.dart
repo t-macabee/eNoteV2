@@ -146,6 +146,14 @@ class _RentalRow extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     StatusChip.rental(rental.rentalStatus),
+                    if (rental.isOverdue)
+                      Text(
+                        'Kasni ${rental.overdueDays} dana',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: AppTheme.error,
+                        ),
+                      ),
                     if (_showsPaidMark)
                       Text(
                         rental.isPaid ? 'Plaćeno' : 'Nije plaćeno',

@@ -2,6 +2,7 @@ using eNote.API.Realtime.Consumers;
 using eNote.API.Converters;
 using eNote.API.Extensions;
 using eNote.API.Hubs;
+using eNote.Application;
 using eNote.Infrastructure;
 using eNote.Infrastructure.Data.Seed;
 using Microsoft.Extensions.Options;
@@ -9,7 +10,7 @@ using Scalar.AspNetCore;
 using Serilog;
 using System.Text.Json.Serialization;
 
-DependencyInjection.LoadEnvironment();
+eNote.Infrastructure.DependencyInjection.LoadEnvironment();
 
 Log.Logger = new LoggerConfiguration()
     .WriteTo.Console()
@@ -43,6 +44,7 @@ builder.Services
         bus.AddConsumer<MembershipWarningPushConsumer>();
     })
     .AddApiInfrastructure(builder.Configuration)
+    .AddRentalOptions(builder.Configuration)
     .AddJwtAuthentication()
     .AddAuthorization()
     .AddApplicationServices()

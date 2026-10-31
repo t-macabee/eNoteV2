@@ -373,7 +373,7 @@ public sealed class InstrumentServiceTests
     }
 
     private static RentalCommandService CreateRentalCommandService(IAppDbContext context, StubCurrentActor actor, IRentalNotificationDispatcher? dispatcher = null) =>
-        new(context, TestMapper.Create(), new FixedClock(Now), actor, actor, actor, dispatcher ?? new RecordingNotificationDispatcher(), new StubDisplayNameService());
+        new(context, TestMapper.Create(), new FixedClock(Now), actor, actor, actor, dispatcher ?? new RecordingNotificationDispatcher(), new StubDisplayNameService(), new RentalOptions { OverduePenaltyMultiplier = 0.5m });
 
     private static async Task<MusicStore> SeedStoreAsync(ENoteContext ctx, string name)
     {
@@ -406,8 +406,15 @@ public sealed class InstrumentServiceTests
         InstrumentRentalStatus status)
     {
         var rental = new InstrumentRental(instrument.Id, student.Id, instrument.MusicStoreId, Now, "Original request note.");
+        var completed = status == InstrumentRentalStatus.Completed;
 
-        RentalTestData.AdvanceTo(rental, status, Now);
+        RentalTestData.AdvanceTo(
+            rental,
+            status,
+            Now,
+            approvedAt: completed ? Now.AddDays(-30) : null,
+            pickedUpAt: completed ? Now.AddDays(-30) : null,
+            finishedAt: completed ? Now : null);
 
         ctx.Set<InstrumentRental>().Add(rental);
         await ctx.SaveChangesAsync();

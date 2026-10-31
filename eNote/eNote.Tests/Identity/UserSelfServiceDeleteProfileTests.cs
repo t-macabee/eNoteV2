@@ -373,7 +373,7 @@ public sealed class UserSelfServiceDeleteProfileTests
                 harness.Actor,
                 harness.Actor,
                 harness.RentalNotifications,
-                new StubDisplayNameService()),
+                new StubDisplayNameService(), new eNote.Application.Features.Rentals.InstrumentRentals.RentalOptions { OverduePenaltyMultiplier = 0.5m }),
             NullLogger<UserSelfService>.Instance);
 
     private static async Task<Harness> CreateHarnessAsync()
@@ -481,7 +481,7 @@ public sealed class UserSelfServiceDeleteProfileTests
 
         if (completed)
         {
-            RentalTestData.AdvanceTo(rental, InstrumentRentalStatus.Completed, Now, approvedAt: Now.AddDays(-9), pickedUpAt: Now.AddDays(-9), finishedAt: Now.AddDays(-3));
+            RentalTestData.AdvanceTo(rental, InstrumentRentalStatus.Completed, Now, approvedAt: Now.AddDays(-33), pickedUpAt: Now.AddDays(-33), finishedAt: Now.AddDays(-3));
         }
 
         if (paid)

@@ -63,7 +63,7 @@ public sealed class StudentAnnouncementFeedServiceTests
         harness.Context.Set<Instrument>().Add(instrumentB);
         await harness.Context.SaveChangesAsync();
         var completedRental = new InstrumentRental(instrumentB.Id, secondStudent.Student.Id, storeB.Id, Now, null);
-        RentalTestData.AdvanceTo(completedRental, InstrumentRentalStatus.Completed, Now);
+        RentalTestData.AdvanceTo(completedRental, InstrumentRentalStatus.Completed, Now, approvedAt: Now.AddDays(-30), pickedUpAt: Now.AddDays(-30), finishedAt: Now);
         harness.Context.Set<InstrumentRental>().Add(completedRental);
         await harness.Context.SaveChangesAsync();
 
@@ -119,7 +119,7 @@ public sealed class StudentAnnouncementFeedServiceTests
         harness.Context.Set<Instrument>().Add(instrument);
         await harness.Context.SaveChangesAsync();
         var rental = new InstrumentRental(instrument.Id, harness.Student.Id, store.Id, Now, null);
-        RentalTestData.AdvanceTo(rental, InstrumentRentalStatus.Completed, Now);
+        RentalTestData.AdvanceTo(rental, InstrumentRentalStatus.Completed, Now, approvedAt: Now.AddDays(-30), pickedUpAt: Now.AddDays(-30), finishedAt: Now);
         harness.Context.Set<InstrumentRental>().Add(rental);
         await harness.Context.SaveChangesAsync();
 
@@ -351,8 +351,15 @@ public sealed class StudentAnnouncementFeedServiceTests
         harness.Context.Set<Instrument>().Add(instrument);
         await harness.Context.SaveChangesAsync();
 
+        var completed = status == InstrumentRentalStatus.Completed;
         var rental = new InstrumentRental(instrument.Id, studentId, store.Id, Now, null);
-        RentalTestData.AdvanceTo(rental, status, Now);
+        RentalTestData.AdvanceTo(
+            rental,
+            status,
+            Now,
+            approvedAt: completed ? Now.AddDays(-30) : null,
+            pickedUpAt: completed ? Now.AddDays(-30) : null,
+            finishedAt: completed ? Now : null);
         harness.Context.Set<InstrumentRental>().Add(rental);
         await harness.Context.SaveChangesAsync();
 
