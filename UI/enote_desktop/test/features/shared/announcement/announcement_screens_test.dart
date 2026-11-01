@@ -65,7 +65,7 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    expect(find.text('Objave — Kurs 1'), findsOneWidget);
+    expect(find.text('Objave — Kurs 1'), findsNothing);
     expect(find.text('Dodaj'), findsOneWidget);
     expect(find.text('Test objava'), findsOneWidget);
     expect(fetchCalled, isTrue);

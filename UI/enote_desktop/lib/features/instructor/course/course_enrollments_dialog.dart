@@ -7,6 +7,7 @@ import '../../../theme/app_theme.dart';
 import '../../../widgets/dialog_shell.dart';
 import '../../../widgets/entity_filter_dropdown.dart';
 import '../../../widgets/entity_list_screen.dart';
+import '../../../widgets/status_chip.dart';
 import 'course_provider.dart';
 
 class CourseEnrollmentsDialog extends StatefulWidget {
@@ -170,23 +171,9 @@ class _CourseEnrollmentsDialogState extends State<CourseEnrollmentsDialog> {
               label: 'Status',
               value: (item) => enrollmentStatusLabel(item.enrollmentStatus),
               cellBuilder: (context, item) {
-                final tone = enrollmentStatusTone(item.enrollmentStatus);
-                return Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: tone.background,
-                    borderRadius: BorderRadius.circular(AppRadius.sm),
-                  ),
-                  child: Text(
-                    enrollmentStatusLabel(item.enrollmentStatus),
-                    style: TextStyle(
-                      color: tone.color,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
+                return StatusChip(
+                  label: enrollmentStatusLabel(item.enrollmentStatus),
+                  tone: enrollmentStatusTone(item.enrollmentStatus),
                 );
               },
             ),

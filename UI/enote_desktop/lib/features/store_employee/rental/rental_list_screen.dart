@@ -2,14 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
+
 import '../../../widgets/async_dropdown.dart';
 import '../../../widgets/entity_filter_dropdown.dart';
 import '../../../widgets/entity_list_screen.dart';
 import '../../../widgets/pdf_report_button.dart';
+import '../../../widgets/status_chip.dart';
 import '../instrument/instrument_provider.dart';
 import 'rental_detail_dialog.dart';
 import 'rental_provider.dart';
-import 'rental_status_display.dart';
 
 class RentalListScreen extends StatefulWidget {
   final EntityListPresentation presentation;
@@ -28,6 +29,10 @@ class _RentalListScreenState extends State<RentalListScreen> {
   InstrumentRentalStatus? _selectedStatus;
   int? _selectedInstrumentId;
 
+  String _rentalStatusText(InstrumentRentalDto item) => item.isOverdue
+      ? '${rentalStatusLabel(item.rentalStatus)} · kasni ${item.overdueDays} dana'
+      : rentalStatusLabel(item.rentalStatus);
+
   Widget _buildFilterBar() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -41,7 +46,10 @@ class _RentalListScreenState extends State<RentalListScreen> {
             items: [
               const DropdownMenuItem(value: null, child: Text('Svi statusi')),
               for (final status in InstrumentRentalStatus.values)
-                DropdownMenuItem(value: status, child: Text(rentalStatusLabel(status))),
+                DropdownMenuItem(
+                  value: status,
+                  child: Text(rentalStatusLabel(status)),
+                ),
             ],
             onChanged: (value) {
               setState(() => _selectedStatus = value);
@@ -96,14 +104,12 @@ class _RentalListScreenState extends State<RentalListScreen> {
           ),
           ColumnSpec<InstrumentRentalDto>(
             label: 'Status',
-            value: (item) => item.isOverdue
-                ? '${rentalStatusLabel(item.rentalStatus)} · kasni ${item.overdueDays} dana'
-                : rentalStatusLabel(item.rentalStatus),
-            style: (item) => TextStyle(
-              color: item.isOverdue
-                  ? Colors.red
-                  : rentalStatusColor(item.rentalStatus),
-              fontWeight: FontWeight.w600,
+            value: _rentalStatusText,
+            cellBuilder: (context, item) => StatusChip(
+              label: _rentalStatusText(item),
+              tone: item.isOverdue
+                  ? StatusTone.danger
+                  : rentalStatusTone(item.rentalStatus),
             ),
           ),
           ColumnSpec<InstrumentRentalDto>(
@@ -118,12 +124,20 @@ class _RentalListScreenState extends State<RentalListScreen> {
         ],
         showSearchBar: false,
         filterBar: _buildFilterBar(),
-        fetcher: (page, pageSize, search) => context.read<RentalProvider>().search(pagedQuery(page, pageSize, search, filters: {
-          if (_selectedStatus != null)
-            'rentalStatus': _selectedStatus!.toJson(),
-          if (_selectedInstrumentId != null)
-            'instrumentId': _selectedInstrumentId,
-})),
+        fetcher: (page, pageSize, search) =>
+            context.read<RentalProvider>().search(
+              pagedQuery(
+                page,
+                pageSize,
+                search,
+                filters: {
+                  if (_selectedStatus != null)
+                    'rentalStatus': _selectedStatus!.toJson(),
+                  if (_selectedInstrumentId != null)
+                    'instrumentId': _selectedInstrumentId,
+                },
+              ),
+            ),
         onEdit: (context, item) async {
           await RentalDetailDialog.show(context, item.id);
           _listKey.currentState?.refresh();
@@ -138,5 +152,4 @@ class _RentalListScreenState extends State<RentalListScreen> {
       ),
     );
   }
-
 }

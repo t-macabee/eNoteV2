@@ -1,10 +1,10 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
 import 'package:enote_desktop/features/store_employee/instrument/instrument_provider.dart';
+import 'package:enote_desktop/theme/app_theme.dart';
 import 'package:enote_desktop/features/store_employee/rental/rental_detail_dialog.dart';
 import 'package:enote_desktop/features/store_employee/rental/rental_list_screen.dart';
 import 'package:enote_desktop/features/store_employee/rental/rental_provider.dart';
@@ -13,46 +13,47 @@ import 'package:enote_desktop/features/store_employee/rental/rental_status_displ
 import '../../../helpers.dart';
 
 Map<String, dynamic> _rentalItem([Map<String, dynamic> extra = const {}]) => {
-      'id': 7,
-      'instrumentId': 1,
-      'musicStoreId': 1,
-      'studentProfileId': 1,
-      'studentUserId': 2,
-      'studentName': 'Student Test',
-      'instrumentModel': 'Stratocaster',
-      'instrumentType': 'Gitara',
-      'storeName': 'Shop',
-      'rentalStatus': 'Active',
-      'requestedAt': DateTime(2026, 1, 5).toIso8601String(),
-      'fee': 10.0,
-      'totalFee': 5.0,
-      'isPaid': false,
-      ...extra,
-    };
+  'id': 7,
+  'instrumentId': 1,
+  'musicStoreId': 1,
+  'studentProfileId': 1,
+  'studentUserId': 2,
+  'studentName': 'Student Test',
+  'instrumentModel': 'Stratocaster',
+  'instrumentType': 'Gitara',
+  'storeName': 'Shop',
+  'rentalStatus': 'Active',
+  'requestedAt': DateTime(2026, 1, 5).toIso8601String(),
+  'fee': 10.0,
+  'totalFee': 5.0,
+  'isPaid': false,
+  ...extra,
+};
 
-ScriptedClient _client([Map<String, dynamic> extra = const {}]) => ScriptedClient((request) {
-  final path = request.url.path;
-  if (request.method == 'GET' && path.endsWith('/shop/rentals/7')) {
-    return jsonResponse(_rentalItem(extra), 200);
-  }
-  if (request.method == 'GET' && path.contains('shop/instruments')) {
-    return jsonResponse(const {
-      'items': [],
-      'page': 1,
-      'pageSize': 100,
-      'totalCount': 0,
-    }, 200);
-  }
-  if (request.method == 'GET' && path.contains('shop/rentals')) {
-    return jsonResponse({
-      'items': [_rentalItem(extra)],
-      'page': 1,
-      'pageSize': 20,
-      'totalCount': 1,
-    }, 200);
-  }
-  return jsonResponse(const {}, 200);
-});
+ScriptedClient _client([Map<String, dynamic> extra = const {}]) =>
+    ScriptedClient((request) {
+      final path = request.url.path;
+      if (request.method == 'GET' && path.endsWith('/shop/rentals/7')) {
+        return jsonResponse(_rentalItem(extra), 200);
+      }
+      if (request.method == 'GET' && path.contains('shop/instruments')) {
+        return jsonResponse(const {
+          'items': [],
+          'page': 1,
+          'pageSize': 100,
+          'totalCount': 0,
+        }, 200);
+      }
+      if (request.method == 'GET' && path.contains('shop/rentals')) {
+        return jsonResponse({
+          'items': [_rentalItem(extra)],
+          'page': 1,
+          'pageSize': 20,
+          'totalCount': 1,
+        }, 200);
+      }
+      return jsonResponse(const {}, 200);
+    });
 
 Future<void> _pumpList(WidgetTester tester, ScriptedClient client) async {
   tester.view.physicalSize = const Size(1400, 1000);
@@ -82,9 +83,7 @@ Future<void> _pumpList(WidgetTester tester, ScriptedClient client) async {
           value: RentalProvider(apiClient: apiClient),
         ),
       ],
-      child: const MaterialApp(
-        home: Scaffold(body: RentalListScreen()),
-      ),
+      child: const MaterialApp(home: Scaffold(body: RentalListScreen())),
     ),
   );
   await tester.pump();
@@ -94,29 +93,34 @@ Future<void> _pumpList(WidgetTester tester, ScriptedClient client) async {
 
 void main() {
   testWidgets(
-      'F4-04: instrument filter query matches pagedQuery(1, 100) output',
-      (tester) async {
-    final client = _client();
-    await _pumpList(tester, client);
+    'F4-04: instrument filter query matches pagedQuery(1, 100) output',
+    (tester) async {
+      final client = _client();
+      await _pumpList(tester, client);
 
-    final instrumentUrls =
-        client.getUrls.where((u) => u.contains('shop/instruments')).toList();
-    expect(instrumentUrls, isNotEmpty);
-    final expected = pagedQuery(1, 100, '')
-        .map((k, v) => MapEntry(k, v.toString()));
-    expect(Uri.parse(instrumentUrls.first).queryParameters, equals(expected));
-  });
+      final instrumentUrls = client.getUrls
+          .where((u) => u.contains('shop/instruments'))
+          .toList();
+      expect(instrumentUrls, isNotEmpty);
+      final expected = pagedQuery(
+        1,
+        100,
+        '',
+      ).map((k, v) => MapEntry(k, v.toString()));
+      expect(Uri.parse(instrumentUrls.first).queryParameters, equals(expected));
+    },
+  );
 
-  testWidgets('F4-05: fee column renders with the KM suffix',
-      (tester) async {
+  testWidgets('F4-05: fee column renders with the KM suffix', (tester) async {
     final client = _client();
     await _pumpList(tester, client);
 
     expect(find.text('10.00 KM / 5.00 KM'), findsOneWidget);
   });
 
-  testWidgets('opening a rental row shows a dialog, not a new page',
-      (tester) async {
+  testWidgets('opening a rental row shows a dialog, not a new page', (
+    tester,
+  ) async {
     final client = _client();
     await _pumpList(tester, client);
 
@@ -165,8 +169,9 @@ void main() {
 
     await _pumpList(tester, client);
 
-    final instrumentUrls =
-        client.getUrls.where((u) => u.contains('shop/instruments')).toList();
+    final instrumentUrls = client.getUrls
+        .where((u) => u.contains('shop/instruments'))
+        .toList();
     expect(instrumentUrls, hasLength(2));
     expect(instrumentUrls.first, contains('page=1'));
     expect(instrumentUrls.last, contains('page=2'));
@@ -179,21 +184,24 @@ void main() {
     expect((dropdown.items!.last.child as Text).data, 'Instrument 2049');
   });
 
-  testWidgets('overdue active row appends the overdue days in red', (
-    tester,
-  ) async {
-    await _pumpList(
-      tester,
-      _client({
-        'dueAt': DateTime.now().subtract(const Duration(days: 2)).toIso8601String(),
-        'overdueDays': 4,
-      }),
-    );
+  testWidgets(
+    'overdue active row appends the overdue days in the danger chip',
+    (tester) async {
+      await _pumpList(
+        tester,
+        _client({
+          'dueAt': DateTime.now()
+              .subtract(const Duration(days: 2))
+              .toIso8601String(),
+          'overdueDays': 4,
+        }),
+      );
 
-    expect(find.text('Aktivno · kasni 4 dana'), findsOneWidget);
-    final label = tester.widget<Text>(find.text('Aktivno · kasni 4 dana'));
-    expect(label.style?.color, Colors.red);
-  });
+      expect(find.text('Aktivno · kasni 4 dana'), findsOneWidget);
+      final label = tester.widget<Text>(find.text('Aktivno · kasni 4 dana'));
+      expect(label.style?.color, AppTheme.error);
+    },
+  );
 
   testWidgets('completed row with overdue days shows the plain status label', (
     tester,
@@ -207,7 +215,10 @@ void main() {
     expect(find.textContaining('kasni'), findsNothing);
 
     final label = tester.widget<Text>(find.text('Završeno'));
-    expect(label.style?.color, rentalStatusColor(InstrumentRentalStatus.completed));
+    expect(
+      label.style?.color,
+      rentalStatusColor(InstrumentRentalStatus.completed),
+    );
     expect(label.style?.color, isNot(Colors.red));
   });
 }

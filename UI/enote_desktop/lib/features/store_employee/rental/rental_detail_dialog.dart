@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
+
 import '../../../widgets/dialog_shell.dart';
 import '../../../widgets/inline_error_text.dart';
+import '../../../widgets/status_chip.dart';
 import 'rental_transition_action_row.dart';
 import 'rental_status_display.dart';
 import 'rental_refund_dialog.dart';
@@ -92,9 +94,8 @@ class _RentalDetailDialogState extends State<RentalDetailDialog> {
       );
       if (!mounted) return;
       setState(() => _payment = result);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Povrat obrađen.')),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Povrat obrađen.')));
     } catch (e) {
       if (mounted) {
         ErrorBanner.show(context, message: userMessage(e));
@@ -103,7 +104,6 @@ class _RentalDetailDialogState extends State<RentalDetailDialog> {
       if (mounted) setState(() => _isRefunding = false);
     }
   }
-
 
   Future<void> _onTransition(RentalTrigger trigger, {String? note}) async {
     setState(() => _isTransitioning = true);
@@ -114,7 +114,10 @@ class _RentalDetailDialogState extends State<RentalDetailDialog> {
         RentalTrigger.reject => await p.reject(_rental!.id, note: note),
         RentalTrigger.pickup => await p.pickup(_rental!.id, note: note),
         RentalTrigger.complete => await p.complete(_rental!.id, note: note),
-        RentalTrigger.returnEarly => await p.returnEarly(_rental!.id, note: note),
+        RentalTrigger.returnEarly => await p.returnEarly(
+          _rental!.id,
+          note: note,
+        ),
         RentalTrigger.cancel => await p.cancel(_rental!.id, note: note),
       };
       if (!mounted) return;
@@ -140,23 +143,23 @@ class _RentalDetailDialogState extends State<RentalDetailDialog> {
               child: Center(child: CircularProgressIndicator()),
             )
           : _rental == null
-              ? SizedBox(
-                  height: 200,
-                  child: Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Text('Greška pri učitavanju.'),
-                        const SizedBox(height: 16),
-                        ElevatedButton(
-                          onPressed: _load,
-                          child: const Text('Pokušaj ponovo'),
-                        ),
-                      ],
+          ? SizedBox(
+              height: 200,
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text('Greška pri učitavanju.'),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: _load,
+                      child: const Text('Pokušaj ponovo'),
                     ),
-                  ),
-                )
-              : _buildBody(),
+                  ],
+                ),
+              ),
+            )
+          : _buildBody(),
     );
   }
 
@@ -167,7 +170,10 @@ class _RentalDetailDialogState extends State<RentalDetailDialog> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildStatusChip(rental.rentalStatus),
+          StatusChip(
+            label: rentalStatusLabel(rental.rentalStatus),
+            tone: rentalStatusTone(rental.rentalStatus),
+          ),
           const SizedBox(height: 16),
           _buildInstrumentBlock(rental),
           const SizedBox(height: 16),
@@ -184,25 +190,6 @@ class _RentalDetailDialogState extends State<RentalDetailDialog> {
             onTransition: _onTransition,
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildStatusChip(InstrumentRentalStatus status) {
-    final label = rentalStatusLabel(status);
-    final color = rentalStatusColor(status);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          color: color,
-          fontWeight: FontWeight.w600,
-        ),
       ),
     );
   }
@@ -243,9 +230,15 @@ class _RentalDetailDialogState extends State<RentalDetailDialog> {
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   const SizedBox(height: 4),
-                  Text(rental.instrumentType, style: const TextStyle(color: Colors.grey)),
+                  Text(
+                    rental.instrumentType,
+                    style: const TextStyle(color: Colors.grey),
+                  ),
                   const SizedBox(height: 4),
-                  Text(rental.storeName, style: const TextStyle(color: Colors.grey)),
+                  Text(
+                    rental.storeName,
+                    style: const TextStyle(color: Colors.grey),
+                  ),
                 ],
               ),
             ),
@@ -285,7 +278,10 @@ class _RentalDetailDialogState extends State<RentalDetailDialog> {
               ],
             ),
             const Divider(height: 24),
-            Text('Vremenska linija', style: Theme.of(context).textTheme.titleSmall),
+            Text(
+              'Vremenska linija',
+              style: Theme.of(context).textTheme.titleSmall,
+            ),
             const SizedBox(height: 8),
             _timelineRow('Zatraženo', rental.requestedAt),
             if (rental.approvedAt != null)
@@ -309,12 +305,12 @@ class _RentalDetailDialogState extends State<RentalDetailDialog> {
         children: [
           SizedBox(
             width: 100,
-            child: Text(label, style: const TextStyle(color: Colors.grey, fontSize: 13)),
+            child: Text(
+              label,
+              style: const TextStyle(color: Colors.grey, fontSize: 13),
+            ),
           ),
-          Text(
-            formatDateTime(date),
-            style: const TextStyle(fontSize: 13),
-          ),
+          Text(formatDateTime(date), style: const TextStyle(fontSize: 13)),
         ],
       ),
     );
@@ -327,8 +323,12 @@ class _RentalDetailDialogState extends State<RentalDetailDialog> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (rental.requestNote != null && rental.requestNote!.isNotEmpty) ...[
-              Text('Zahtjev (student)', style: Theme.of(context).textTheme.titleSmall),
+            if (rental.requestNote != null &&
+                rental.requestNote!.isNotEmpty) ...[
+              Text(
+                'Zahtjev (student)',
+                style: Theme.of(context).textTheme.titleSmall,
+              ),
               const SizedBox(height: 4),
               Container(
                 width: double.infinity,
@@ -356,7 +356,10 @@ class _RentalDetailDialogState extends State<RentalDetailDialog> {
             ],
             if ((rental.requestNote == null || rental.requestNote!.isEmpty) &&
                 (rental.note == null || rental.note!.isEmpty))
-              const Text('Nema napomena.', style: TextStyle(color: Colors.grey)),
+              const Text(
+                'Nema napomena.',
+                style: TextStyle(color: Colors.grey),
+              ),
           ],
         ),
       ),
@@ -404,7 +407,10 @@ class _RentalDetailDialogState extends State<RentalDetailDialog> {
               const SizedBox(height: 8),
               _chargeRow(
                 'Povrađeno',
-                formatKM(((_payment!.refundedCents ?? 0) / 100), currency: _payment!.currency),
+                formatKM(
+                  ((_payment!.refundedCents ?? 0) / 100),
+                  currency: _payment!.currency,
+                ),
               ),
               _chargeRow(
                 'Datum povraćaja',
@@ -419,8 +425,10 @@ class _RentalDetailDialogState extends State<RentalDetailDialog> {
             ],
             if (rental.isPaid &&
                 (_payment == null
-                    ? 0
-                    : _payment!.amountCents - (_payment!.refundedCents ?? 0)) > 0) ...[
+                        ? 0
+                        : _payment!.amountCents -
+                              (_payment!.refundedCents ?? 0)) >
+                    0) ...[
               const SizedBox(height: 16),
               SizedBox(
                 width: double.infinity,
@@ -455,5 +463,4 @@ class _RentalDetailDialogState extends State<RentalDetailDialog> {
       ),
     );
   }
-
 }

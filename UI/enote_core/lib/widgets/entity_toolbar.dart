@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../theme/app_tokens.dart';
+
 class EntityToolbar extends StatelessWidget {
   const EntityToolbar({
     super.key,
@@ -28,8 +30,20 @@ class EntityToolbar extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
+    final searchField = TextField(
+      controller: searchController,
+      decoration: InputDecoration(
+        hintText: searchHint,
+        prefixIcon: const Icon(Icons.search),
+        isDense: true,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppRadius.md),
+        ),
+      ),
+    );
+
     return Padding(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       child: IntrinsicHeight(
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -41,37 +55,20 @@ class EntityToolbar extends StatelessWidget {
                   if (showSearch)
                     Flexible(
                       child: filterBar != null
-                          ? ConstrainedBox(
-                              constraints:
-                                  const BoxConstraints(maxWidth: 420),
-                              child: TextField(
-                                controller: searchController,
-                                decoration: InputDecoration(
-                                  hintText: searchHint,
-                                  prefixIcon: const Icon(Icons.search),
-                                  border: const OutlineInputBorder(),
-                                ),
-                              ),
-                            )
-                          : TextField(
-                              controller: searchController,
-                              decoration: InputDecoration(
-                                hintText: searchHint,
-                                prefixIcon: const Icon(Icons.search),
-                                border: const OutlineInputBorder(),
-                              ),
-                            ),
+                          ? SizedBox(width: 320, child: searchField)
+                          : searchField,
                     ),
                   if (showSearch && filterBar != null)
-                    const SizedBox(width: 12),
+                    const SizedBox(width: AppSpacing.md),
                   ?filterBar,
                 ],
               ),
             ),
-            if (showAdd || trailing != null) const SizedBox(width: 12),
+            if (showAdd || trailing != null)
+              const SizedBox(width: AppSpacing.md),
             if (trailing != null) ...[
               trailing!,
-              const SizedBox(width: 12),
+              const SizedBox(width: AppSpacing.md),
             ],
             if (showAdd)
               ElevatedButton.icon(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../theme/app_theme.dart';
 import 'entity_list_config.dart';
 
 class EntityRowActions extends StatelessWidget {
@@ -23,18 +24,17 @@ class EntityRowActions extends StatelessWidget {
       children: [
         ...extraWidgets,
         if (extraWidgets.isNotEmpty && hasEditDelete)
-          const SizedBox(
-            height: 20,
-            child: VerticalDivider(width: 12),
-          ),
+          const SizedBox(height: 20, child: VerticalDivider(width: 12)),
         if (onEdit != null)
           IconButton(
             icon: const Icon(Icons.edit, size: 18),
+            visualDensity: VisualDensity.compact,
             onPressed: onEdit,
           ),
         if (onDelete != null)
           IconButton(
-            icon: const Icon(Icons.delete, size: 18, color: Colors.red),
+            icon: const Icon(Icons.delete, size: 18, color: AppTheme.error),
+            visualDensity: VisualDensity.compact,
             onPressed: onDelete,
           ),
       ],
@@ -122,7 +122,8 @@ class EntityListTiles<T> extends StatelessWidget {
             title,
             style: columns.isNotEmpty ? columns.first.style?.call(item) : null,
           ),
-          subtitle: subtitleWidget ?? (subtitle != null ? Text(subtitle) : null),
+          subtitle:
+              subtitleWidget ?? (subtitle != null ? Text(subtitle) : null),
           onTap: onRowTap != null ? () => onRowTap(context, item) : null,
           trailing: hasActions
               ? EntityRowActions(
@@ -141,7 +142,7 @@ class EntityListTiles<T> extends StatelessWidget {
   }
 }
 
-class EntityListTable<T> extends StatelessWidget {
+class EntityListTable<T> extends StatefulWidget {
   final EntityListConfig<T> config;
   final List<T> items;
   final void Function(T item) onDelete;
@@ -154,85 +155,95 @@ class EntityListTable<T> extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    final hasActions =
-        config.onEdit != null ||
-        config.onDelete != null ||
-        config.extraActions != null;
+  State<EntityListTable<T>> createState() => _EntityListTableState<T>();
+}
 
+class _EntityListTableState<T> extends State<EntityListTable<T>> {
+  static const double _restingActionOpacity = 0.45;
+
+  int? _hoveredIndex;
+
+  void _setHoveredIndex(int? index) {
+    if (_hoveredIndex == index) return;
+    setState(() => _hoveredIndex = index);
+  }
+
+  Widget _trackRowHover(int index, Widget child) => MouseRegion(
+    onEnter: (_) => _setHoveredIndex(index),
+    onExit: (_) => _setHoveredIndex(null),
+    child: child,
+  );
+
+  DataRow _buildRow(BuildContext context, int index) {
+    final config = widget.config;
+    final item = widget.items[index];
+    final extraWidgets =
+        config.extraActions?.call(context, item) ?? const <Widget>[];
+
+    return DataRow(
+      cells: [
+        for (final col in config.columns)
+          DataCell(
+            _trackRowHover(
+              index,
+              col.cellBuilder != null
+                  ? col.cellBuilder!(context, item)
+                  : Text(
+                      col.value(item)?.toString() ?? '-',
+                      style: col.style?.call(item),
+                    ),
+            ),
+            onTap: config.onEdit != null
+                ? () => config.onEdit!(context, item)
+                : null,
+          ),
+        if (_hasActions)
+          DataCell(
+            _trackRowHover(
+              index,
+              Opacity(
+                opacity: _hoveredIndex == index ? 1 : _restingActionOpacity,
+                child: EntityRowActions(
+                  extraWidgets: extraWidgets,
+                  onEdit: config.onEdit != null
+                      ? () => config.onEdit!(context, item)
+                      : null,
+                  onDelete: config.onDelete != null
+                      ? () => widget.onDelete(item)
+                      : null,
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  bool get _hasActions =>
+      widget.config.onEdit != null ||
+      widget.config.onDelete != null ||
+      widget.config.extraActions != null;
+
+  @override
+  Widget build(BuildContext context) {
     return SingleChildScrollView(
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: DataTable(
-          columns: [
-            ...config.columns.map((c) => DataColumn(label: Text(c.label))),
-            if (hasActions) const DataColumn(label: Text('Akcije')),
-          ],
-          rows: items.map((item) {
-            final extraWidgets =
-                config.extraActions?.call(context, item) ?? const <Widget>[];
-            return DataRow(
-              cells: [
-                ...config.columns.map(
-                  (col) => DataCell(
-                    col.cellBuilder != null
-                        ? col.cellBuilder!(context, item)
-                        : Text(
-                            col.value(item)?.toString() ?? '-',
-                            style: col.style?.call(item),
-                          ),
-                    onTap: config.onEdit != null
-                        ? () => config.onEdit!(context, item)
-                        : null,
-                  ),
-                ),
-                if (hasActions)
-                  DataCell(
-                    EntityRowActions(
-                      extraWidgets: extraWidgets,
-                      onEdit: config.onEdit != null
-                          ? () => config.onEdit!(context, item)
-                          : null,
-                      onDelete: config.onDelete != null
-                          ? () => onDelete(item)
-                          : null,
-                    ),
-                  ),
-              ],
-            );
-          }).toList(),
-        ),
-      ),
-    );
-  }
-}
-
-class EntityListSearchBar extends StatelessWidget {
-  final TextEditingController controller;
-  final String hint;
-
-  const EntityListSearchBar({
-    super.key,
-    required this.controller,
-    required this.hint,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Align(
-        alignment: Alignment.centerLeft,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 420),
-          child: TextField(
-            controller: controller,
-            decoration: InputDecoration(
-              hintText: hint,
-              prefixIcon: const Icon(Icons.search),
-              border: const OutlineInputBorder(),
-            ),
+          dividerThickness: 1,
+          headingRowColor: const WidgetStatePropertyAll(
+            AppTheme.surfaceContainer,
           ),
+          columns: [
+            ...widget.config.columns.map(
+              (c) => DataColumn(label: Text(c.label)),
+            ),
+            if (_hasActions) const DataColumn(label: Text('Akcije')),
+          ],
+          rows: [
+            for (var index = 0; index < widget.items.length; index++)
+              _buildRow(context, index),
+          ],
         ),
       ),
     );

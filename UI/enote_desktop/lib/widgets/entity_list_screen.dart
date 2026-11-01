@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:enote_core/enote_core.dart';
 
+import '../theme/app_theme.dart';
+import 'entity_empty_state.dart';
 import 'entity_list_config.dart';
 import 'entity_list_sections.dart';
 
@@ -56,7 +58,8 @@ class EntityListScreenState<T> extends State<EntityListScreen<T>> {
       final confirmed = await confirmDialog(
         context: context,
         title: 'Potvrdite brisanje',
-        message: widget.config.deleteConfirmMessageOf?.call(item) ??
+        message:
+            widget.config.deleteConfirmMessageOf?.call(item) ??
             'Da li ste sigurni da želite da obrišete ovaj zapis?',
       );
       if (confirmed != true) return;
@@ -82,14 +85,15 @@ class EntityListScreenState<T> extends State<EntityListScreen<T>> {
 
   @override
   Widget build(BuildContext context) {
-    final useInlineToolbar = widget.config.presentation == EntityListPresentation.embedded;
     final isEmbedded =
         widget.config.presentation == EntityListPresentation.embedded;
 
     final listBody = _controller.isLoading
         ? const Center(child: CircularProgressIndicator())
         : _controller.items.isEmpty
-        ? const Center(child: Text('Nema podataka.'))
+        ? EntityEmptyState(
+            searching: _controller.searchController.text.trim().isNotEmpty,
+          )
         : (widget.config.listStyle == EntityListStyle.tiles
               ? EntityListTiles<T>(
                   config: widget.config,
@@ -105,70 +109,52 @@ class EntityListScreenState<T> extends State<EntityListScreen<T>> {
     final content = Column(
       mainAxisSize: isEmbedded ? MainAxisSize.min : MainAxisSize.max,
       children: [
-        if (useInlineToolbar)
-          EntityToolbar(
-            searchController: _controller.searchController,
-            showSearch: widget.config.showSearchBar,
-            searchHint: widget.config.searchHint,
-            filterBar: widget.config.filterBar,
-            trailing: widget.config.trailing,
-            showAdd:
-                widget.config.showAddButton && widget.config.onAdd != null,
-            onAdd: widget.config.onAdd,
-            addLabel: widget.config.addLabel,
-          )
-        else ...[
-          if (widget.config.showSearchBar)
-            EntityListSearchBar(
-              controller: _controller.searchController,
-              hint: widget.config.searchHint,
-            ),
-          if (widget.config.filterBar != null) widget.config.filterBar!,
-        ],
-        if (isEmbedded) Flexible(child: listBody) else Expanded(child: listBody),
-        const SizedBox(height: 12),
-        _buildPagination(),
+        EntityToolbar(
+          searchController: _controller.searchController,
+          showSearch: widget.config.showSearchBar,
+          searchHint: widget.config.searchHint,
+          filterBar: widget.config.filterBar,
+          trailing: widget.config.trailing,
+          showAdd: widget.config.showAddButton && widget.config.onAdd != null,
+          onAdd: widget.config.onAdd,
+          addLabel: widget.config.addLabel,
+        ),
+        if (isEmbedded)
+          Flexible(child: listBody)
+        else
+          Expanded(child: listBody),
+        Container(
+          decoration: const BoxDecoration(
+            border: Border(top: BorderSide(color: AppTheme.outline, width: 1)),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+          child: PagedPaginationBar(controller: _controller),
+        ),
       ],
     );
 
-    if (widget.config.presentation == EntityListPresentation.embedded) {
-      return content;
-    }
+    if (isEmbedded) return content;
 
+    final canClose = Navigator.of(context).canPop();
     return Scaffold(
-      appBar: AppBar(
-        title: widget.config.title != null ? Text(widget.config.title!) : null,
-        leading: Navigator.of(context).canPop()
-            ? IconButton(
+      appBar: canClose
+          ? AppBar(
+              title: widget.config.title != null
+                  ? Text(widget.config.title!)
+                  : null,
+              leading: IconButton(
                 icon: const Icon(Icons.close),
                 tooltip: 'Zatvori',
                 onPressed: () => Navigator.of(context).pop(),
-              )
-            : null,
-        actions: [
-          if (!useInlineToolbar) ...[
-            if (widget.config.trailing != null) ...[
-              widget.config.trailing!,
-              const SizedBox(width: 12),
-            ],
-            if (widget.config.showAddButton && widget.config.onAdd != null) ...[
-              ElevatedButton.icon(
-                onPressed: widget.config.onAdd,
-                icon: const Icon(Icons.add),
-                label: Text(widget.config.addLabel ?? 'Dodaj'),
               ),
-              const SizedBox(width: 16),
-            ] else if (widget.config.trailing != null)
-              const SizedBox(width: 4),
-          ],
-        ],
+            )
+          : null,
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: AppSize.contentMaxWidth),
+          child: content,
+        ),
       ),
-      body: content,
     );
   }
-
-  Widget _buildPagination() {
-    return PagedPaginationBar(controller: _controller);
-  }
 }
-
