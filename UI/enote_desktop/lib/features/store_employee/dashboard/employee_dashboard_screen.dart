@@ -4,8 +4,8 @@ import 'package:provider/provider.dart';
 import 'package:enote_core/enote_core.dart';
 
 import '../../../shell/shell_navigation.dart';
+import '../../../widgets/dashboard_count.dart';
 import '../../../widgets/dashboard_page.dart';
-import '../../../widgets/dashboard_stat_card.dart';
 import '../employee/shop_employee_provider.dart';
 import '../rental/rental_provider.dart';
 import '../store/shop_store_provider.dart';
@@ -19,26 +19,14 @@ class EmployeeDashboardScreen extends StatefulWidget {
 }
 
 class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
-  int? _pendingRentalsCount;
-  int? _employeesCount;
+  final _pendingRentalsCount = DashboardCount();
+  final _employeesCount = DashboardCount();
   String? _storeName;
-
-  bool _pendingRentalsLoading = true;
-  bool _employeesLoading = true;
-
-  bool _pendingRentalsFailed = false;
-  bool _employeesFailed = false;
 
   @override
   void initState() {
     super.initState();
-    _loadPendingRentals();
-    _loadEmployees();
-    _loadStore();
-  }
-
-  Future<void> _loadPendingRentals() async {
-    try {
+    _pendingRentalsCount.load(() async {
       final page = await context.read<RentalProvider>().getPage(
         params: pagedQuery(
           1,
@@ -47,37 +35,22 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
           filters: {'rentalStatus': InstrumentRentalStatus.pending.toJson()},
         ),
       );
-      if (!mounted) return;
-      setState(() {
-        _pendingRentalsCount = page.totalCount;
-        _pendingRentalsLoading = false;
-      });
-    } catch (_) {
-      if (!mounted) return;
-      setState(() {
-        _pendingRentalsFailed = true;
-        _pendingRentalsLoading = false;
-      });
-    }
-  }
-
-  Future<void> _loadEmployees() async {
-    try {
+      return page.totalCount;
+    });
+    _employeesCount.load(() async {
       final page = await context.read<ShopEmployeeProvider>().getPage(
         params: pagedQuery(1, 1, ''),
       );
-      if (!mounted) return;
-      setState(() {
-        _employeesCount = page.totalCount;
-        _employeesLoading = false;
-      });
-    } catch (_) {
-      if (!mounted) return;
-      setState(() {
-        _employeesFailed = true;
-        _employeesLoading = false;
-      });
-    }
+      return page.totalCount;
+    });
+    _loadStore();
+  }
+
+  @override
+  void dispose() {
+    _pendingRentalsCount.dispose();
+    _employeesCount.dispose();
+    super.dispose();
   }
 
   Future<void> _loadStore() async {
@@ -88,7 +61,7 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
         _storeName = store.storeName;
       });
     } catch (_) {
-      if (!mounted) return;
+      return;
     }
   }
 
@@ -101,21 +74,17 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
     return DashboardPage(
       storeName: _storeName,
       cards: [
-        DashboardStatCard(
+        DashboardCountCard(
+          count: _pendingRentalsCount,
           icon: Icons.assignment_outlined,
           label: 'Zahtjevi na čekanju',
-          value: _pendingRentalsCount,
-          isLoading: _pendingRentalsLoading,
-          hasError: _pendingRentalsFailed,
           tone: StatusTone.warning,
           onTap: () => _openEntry('Zahtjevi'),
         ),
-        DashboardStatCard(
+        DashboardCountCard(
+          count: _employeesCount,
           icon: Icons.badge_outlined,
           label: 'Zaposlenici',
-          value: _employeesCount,
-          isLoading: _employeesLoading,
-          hasError: _employeesFailed,
           tone: StatusTone.info,
           onTap: () => _openEntry('Zaposlenici'),
         ),
