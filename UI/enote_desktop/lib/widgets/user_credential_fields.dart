@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:enote_core/enote_core.dart';
 
+import '../theme/app_theme.dart';
+import 'entity_form_sections.dart';
+
 class UserCredentialFieldsController {
   final usernameController = TextEditingController();
   final emailController = TextEditingController();
@@ -42,49 +45,63 @@ class UserCredentialFieldsController {
 class UserCredentialFields extends StatelessWidget {
   final UserCredentialFieldsController controller;
 
-  const UserCredentialFields({
-    super.key,
-    required this.controller,
-  });
+  const UserCredentialFields({super.key, required this.controller});
 
   @override
   Widget build(BuildContext context) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: AppSpacing.lg,
       children: [
-        TextFormField(
-          controller: controller.usernameController,
-          decoration: const InputDecoration(labelText: 'Korisničko ime'),
-          validator: Validators.required('Korisničko ime'),
-          maxLength: 256,
+        FormSection(
+          title: 'Pristupni podaci',
+          children: [
+            FormFieldRow(
+              children: [
+                TextFormField(
+                  controller: controller.usernameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Korisničko ime',
+                  ),
+                  validator: Validators.required('Korisničko ime'),
+                  maxLength: 256,
+                ),
+                TextFormField(
+                  controller: controller.emailController,
+                  decoration: const InputDecoration(labelText: 'Email'),
+                  keyboardType: TextInputType.emailAddress,
+                  validator: Validators.email,
+                  maxLength: 256,
+                ),
+              ],
+            ),
+            TextFormField(
+              controller: controller.passwordController,
+              decoration: const InputDecoration(labelText: 'Lozinka'),
+              obscureText: true,
+              validator: Validators.password,
+            ),
+          ],
         ),
-        const SizedBox(height: 16),
-        TextFormField(
-          controller: controller.emailController,
-          decoration: const InputDecoration(labelText: 'Email'),
-          keyboardType: TextInputType.emailAddress,
-          validator: Validators.email,
-          maxLength: 256,
-        ),
-        const SizedBox(height: 16),
-        TextFormField(
-          controller: controller.passwordController,
-          decoration: const InputDecoration(labelText: 'Lozinka'),
-          obscureText: true,
-          validator: Validators.password,
-        ),
-        const SizedBox(height: 16),
-        TextFormField(
-          controller: controller.firstNameController,
-          decoration: const InputDecoration(labelText: 'Ime'),
-          maxLength: 256,
-        ),
-        const SizedBox(height: 16),
-        TextFormField(
-          controller: controller.lastNameController,
-          decoration: const InputDecoration(labelText: 'Prezime'),
-          maxLength: 256,
+        FormSection(
+          title: 'Lični podaci',
+          children: [
+            FormFieldRow(
+              children: [
+                TextFormField(
+                  controller: controller.firstNameController,
+                  decoration: const InputDecoration(labelText: 'Ime'),
+                  maxLength: 256,
+                ),
+                TextFormField(
+                  controller: controller.lastNameController,
+                  decoration: const InputDecoration(labelText: 'Prezime'),
+                  maxLength: 256,
+                ),
+              ],
+            ),
+          ],
         ),
       ],
     );

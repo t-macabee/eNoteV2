@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-
 import '../../../widgets/entity_form_scaffold.dart';
 import '../../../widgets/user_credential_fields.dart';
 import 'instructor_student_provider.dart';

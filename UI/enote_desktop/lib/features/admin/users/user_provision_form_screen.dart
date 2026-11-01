@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
+
 import '../../../widgets/entity_form_scaffold.dart';
 import '../../../widgets/async_dropdown.dart';
+import '../../../widgets/entity_form_sections.dart';
 import '../../../widgets/user_credential_fields.dart';
 import '../music_store/music_store_provider.dart';
 import 'admin_user_provider.dart';
@@ -61,47 +63,56 @@ class _UserProvisionFormScreenState extends State<UserProvisionFormScreen> {
       presentation: widget.presentation,
       fieldsBuilder: (context) => [
         UserCredentialFields(controller: _credentialController),
-        DropdownButtonFormField<UserRole>(
-          initialValue: _role,
-          decoration: const InputDecoration(labelText: 'Uloga'),
-          items: UserRole.values
-              .map((role) => DropdownMenuItem(
-                    value: role,
-                    child: Text(userRoleLabel(role)),
-                  ))
-              .toList(),
-          onChanged: (role) => setState(() {
-            _role = role;
-            if (role != UserRole.storeEmployee) {
-              _musicStoreId = null;
-              _isManager = false;
-            }
-          }),
-          validator: (value) =>
-              value == null ? 'Uloga je obavezna.' : null,
-        ),
-        if (_role == UserRole.storeEmployee) ...[
-          AsyncDropdown<MusicStoreDto>(
-            label: 'Prodavnica',
-            fetcher: () => fetchAllPages(
-              (query) => context.read<MusicStoreProvider>().search(query),
+        FormSection(
+          title: 'Uloga',
+          children: [
+            DropdownButtonFormField<UserRole>(
+              initialValue: _role,
+              decoration: const InputDecoration(labelText: 'Uloga'),
+              items: UserRole.values
+                  .map(
+                    (role) => DropdownMenuItem(
+                      value: role,
+                      child: Text(userRoleLabel(role)),
+                    ),
+                  )
+                  .toList(),
+              onChanged: (role) => setState(() {
+                _role = role;
+                if (role != UserRole.storeEmployee) {
+                  _musicStoreId = null;
+                  _isManager = false;
+                }
+              }),
+              validator: (value) => value == null ? 'Uloga je obavezna.' : null,
             ),
-            itemLabel: (store) => store.storeName,
-            itemId: (store) => store.id,
-            value: _musicStoreId,
-            onChanged: (id, _) => setState(() => _musicStoreId = id as int?),
-            validator: (value) => value == null
-                ? 'Prodavnica je obavezna za StoreEmployee.'
-                : null,
-          ),
-          CheckboxListTile(
-            title: const Text('Menadžer'),
-            value: _isManager,
-            onChanged: (value) => setState(() => _isManager = value ?? false),
-            controlAffinity: ListTileControlAffinity.leading,
-            contentPadding: EdgeInsets.zero,
-          ),
-        ],
+            if (_role == UserRole.storeEmployee) ...[
+              AsyncDropdown<MusicStoreDto>(
+                label: 'Prodavnica',
+                fetcher: () => fetchAllPages(
+                  (query) => context.read<MusicStoreProvider>().search(query),
+                ),
+                itemLabel: (store) => store.storeName,
+                itemId: (store) => store.id,
+                value: _musicStoreId,
+                onChanged: (id, _) =>
+                    setState(() => _musicStoreId = id as int?),
+                validator: (value) => value == null
+                    ? 'Prodavnica je obavezna za StoreEmployee.'
+                    : null,
+              ),
+              Material(
+                type: MaterialType.transparency,
+                child: SwitchListTile(
+                  title: const Text('Menadžer'),
+                  value: _isManager,
+                  onChanged: (value) => setState(() => _isManager = value),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+            ],
+          ],
+        ),
       ],
       onSave: _save,
       onReset: () {

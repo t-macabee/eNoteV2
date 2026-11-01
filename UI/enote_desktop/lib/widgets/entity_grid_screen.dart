@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
+
 import '../theme/app_theme.dart';
+import 'entity_empty_state.dart';
 
 typedef EntityGridFetcher<T> = Future<PagedResult<T>> Function(
   int page,
@@ -33,11 +35,9 @@ class EntityGridConfig<T> {
 
   final Widget? filterBar;
 
-
   final double maxCrossAxisExtent;
   final double childAspectRatio;
   final int pageSize;
-  final String emptyMessage;
 
   final String Function(T item)? groupKeyOf;
 
@@ -62,7 +62,6 @@ class EntityGridConfig<T> {
     this.maxCrossAxisExtent = 220,
     this.childAspectRatio = 0.85,
     this.pageSize = 24,
-    this.emptyMessage = 'Nema podataka.',
     this.groupKeyOf,
   });
 }
@@ -116,11 +115,26 @@ class EntityGridScreenState<T> extends State<EntityGridScreen<T>> {
     if (widget.config.embedded) {
       return content;
     }
+    final canClose = Navigator.of(context).canPop();
     return Scaffold(
-      appBar: widget.config.title != null
-          ? AppBar(title: Text(widget.config.title!))
+      appBar: canClose
+          ? AppBar(
+              title: widget.config.title != null
+                  ? Text(widget.config.title!)
+                  : null,
+              leading: IconButton(
+                icon: const Icon(Icons.close),
+                tooltip: 'Zatvori',
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+            )
           : null,
-      body: content,
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: AppSize.contentMaxWidth),
+          child: content,
+        ),
+      ),
     );
   }
 
@@ -133,8 +147,7 @@ class EntityGridScreenState<T> extends State<EntityGridScreen<T>> {
           searchHint: widget.config.searchHint,
           filterBar: widget.config.filterBar,
           trailing: widget.config.trailing,
-          showAdd:
-              widget.config.showAddButton && widget.config.onAdd != null,
+          showAdd: widget.config.showAddButton && widget.config.onAdd != null,
           onAdd: widget.config.onAdd,
           addLabel: widget.config.addLabel,
         ),
@@ -142,13 +155,12 @@ class EntityGridScreenState<T> extends State<EntityGridScreen<T>> {
           child: _controller.isLoading
               ? const Center(child: CircularProgressIndicator())
               : _controller.items.isEmpty
-                  ? Center(
-                      child: Text(
-                        widget.config.emptyMessage,
-                        style: const TextStyle(color: AppTheme.textSecondary),
-                      ),
-                    )
-                  : _buildBody(),
+              ? EntityEmptyState(
+                  searching: _controller.searchController.text
+                      .trim()
+                      .isNotEmpty,
+                )
+              : _buildBody(),
         ),
         _buildPagination(),
       ],
@@ -162,16 +174,13 @@ class EntityGridScreenState<T> extends State<EntityGridScreen<T>> {
       gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
         maxCrossAxisExtent: widget.config.maxCrossAxisExtent,
         childAspectRatio: widget.config.childAspectRatio,
-        mainAxisSpacing: 24,
-        crossAxisSpacing: 24,
+        mainAxisSpacing: AppSpacing.xl,
+        crossAxisSpacing: AppSpacing.xl,
       ),
       itemCount: items.length,
       itemBuilder: (context, index) {
         final item = items[index];
-        return _EntityGridCard<T>(
-          item: item,
-          config: widget.config,
-        );
+        return _EntityGridCard<T>(item: item, config: widget.config);
       },
     );
   }
@@ -182,19 +191,15 @@ class EntityGridScreenState<T> extends State<EntityGridScreen<T>> {
       groups.putIfAbsent(groupKeyOf(item), () => []).add(item);
     }
 
-    final sortedKeys =
-        groups.keys.toList()..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+    final sortedKeys = groups.keys.toList()
+      ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
 
     final children = <Widget>[];
     for (var i = 0; i < sortedKeys.length; i++) {
       final key = sortedKeys[i];
-      children.addAll([
-        EntitySectionLabel(key),
-        const SizedBox(height: 12),
-        _buildGridView(groups[key]!),
-      ]);
+      children.addAll([EntitySectionLabel(key), _buildGridView(groups[key]!)]);
       if (i != sortedKeys.length - 1) {
-        children.add(const SizedBox(height: 24));
+        children.add(const SizedBox(height: AppSpacing.xl));
       }
     }
     return children;
@@ -203,7 +208,12 @@ class EntityGridScreenState<T> extends State<EntityGridScreen<T>> {
   Widget _buildBody() {
     final groupKeyOf = widget.config.groupKeyOf;
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        0,
+        AppSpacing.lg,
+        AppSpacing.lg,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -218,7 +228,13 @@ class EntityGridScreenState<T> extends State<EntityGridScreen<T>> {
   }
 
   Widget _buildPagination() {
-    return PagedPaginationBar(controller: _controller);
+    return Container(
+      decoration: const BoxDecoration(
+        border: Border(top: BorderSide(color: AppTheme.outline, width: 1)),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+      child: PagedPaginationBar(controller: _controller),
+    );
   }
 }
 
@@ -226,10 +242,7 @@ class _EntityGridCard<T> extends StatefulWidget {
   final T item;
   final EntityGridConfig<T> config;
 
-  const _EntityGridCard({
-    required this.item,
-    required this.config,
-  });
+  const _EntityGridCard({required this.item, required this.config});
 
   @override
   State<_EntityGridCard<T>> createState() => _EntityGridCardState<T>();
@@ -258,9 +271,9 @@ class _EntityGridCardState<T> extends State<_EntityGridCard<T>> {
         onTap: config.onTap != null ? () => config.onTap!(context, item) : null,
         child: Card(
           color: AppTheme.surfaceContainer,
-          margin: const EdgeInsets.all(8),
+          margin: const EdgeInsets.all(AppSpacing.sm),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(AppRadius.lg),
             side: const BorderSide(color: AppTheme.outline),
           ),
           clipBehavior: Clip.antiAlias,
@@ -287,7 +300,7 @@ class _EntityGridCardState<T> extends State<_EntityGridCard<T>> {
                   duration: const Duration(milliseconds: 200),
                   child: Container(
                     color: Colors.black54,
-                    padding: const EdgeInsets.all(12),
+                    padding: const EdgeInsets.all(AppSpacing.md),
                     child: Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -305,7 +318,7 @@ class _EntityGridCardState<T> extends State<_EntityGridCard<T>> {
                             overflow: TextOverflow.ellipsis,
                           ),
                           if (subtitle != null && subtitle.isNotEmpty) ...[
-                            const SizedBox(height: 4),
+                            const SizedBox(height: AppSpacing.xs),
                             Text(
                               subtitle,
                               style: const TextStyle(
@@ -318,7 +331,7 @@ class _EntityGridCardState<T> extends State<_EntityGridCard<T>> {
                             ),
                           ],
                           if (config.cardActions != null) ...[
-                            const SizedBox(height: 8),
+                            const SizedBox(height: AppSpacing.sm),
                             ...config.cardActions!(context, item),
                           ],
                         ],
@@ -333,12 +346,12 @@ class _EntityGridCardState<T> extends State<_EntityGridCard<T>> {
                   right: 8,
                   child: Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
+                      horizontal: AppSpacing.sm,
                       vertical: 3,
                     ),
                     decoration: BoxDecoration(
                       color: Colors.black.withValues(alpha: 0.75),
-                      borderRadius: BorderRadius.circular(6),
+                      borderRadius: BorderRadius.circular(AppRadius.md),
                       border: Border.all(color: AppTheme.outline),
                     ),
                     child: Row(
@@ -378,7 +391,7 @@ class EntitySectionLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.only(bottom: AppSpacing.md),
       child: Row(
         children: [
           Text(
@@ -389,7 +402,7 @@ class EntitySectionLabel extends StatelessWidget {
               fontWeight: FontWeight.w600,
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: AppSpacing.md),
           const Expanded(child: Divider(color: AppTheme.outline)),
         ],
       ),

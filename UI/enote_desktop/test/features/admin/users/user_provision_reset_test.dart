@@ -12,18 +12,121 @@ import 'package:enote_desktop/features/admin/users/user_provision_form_screen.da
 import '../../../helpers.dart';
 
 void main() {
+  testWidgets('provisioning a second StoreEmployee without touching the store '
+      "dropdown does not resend the first employee's store", (
+    WidgetTester tester,
+  ) async {
+    tester.view.physicalSize = const Size(800, 1600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final authState = AuthState(baseUrl: 'http://localhost:5059/api/v1/');
+    final postedBodies = <String?>[];
+    var nextUserId = 1;
+    const storesJson =
+        '{"items":[{"id":1,"storeName":"Trgovina A","businessHours":"09-20"}],'
+        '"page":1,"pageSize":100,"totalCount":1}';
+    final httpClient = ScriptedClient((request) {
+      if (request.method == 'GET') {
+        return jsonResponse(storesJson, 200);
+      }
+      postedBodies.add(request.body);
+      return jsonResponse({'userId': nextUserId++}, 200);
+    });
+    final apiClient = ApiClient(
+      baseUrl: 'http://localhost:5059/api/v1/',
+      authState: authState,
+      httpClient: httpClient,
+    );
+
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider<AdminUserProvider>.value(
+            value: AdminUserProvider(apiClient: apiClient),
+          ),
+          ChangeNotifierProvider<MusicStoreProvider>.value(
+            value: MusicStoreProvider(apiClient: apiClient),
+          ),
+        ],
+        child: const MaterialApp(home: UserProvisionFormScreen()),
+      ),
+    );
+
+    Future<void> fillBasicFields(String username) async {
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Korisničko ime'),
+        username,
+      );
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Email'),
+        '$username@mail.com',
+      );
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Lozinka'),
+        'Lozinka123!',
+      );
+    }
+
+    Future<void> pickRole(UserRole role) async {
+      await tester.tap(find.byType(DropdownButtonFormField<UserRole>));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(userRoleLabel(role)).last);
+      await tester.pumpAndSettle();
+    }
+
+    Future<void> pickStore(String storeName) async {
+      await tester.tap(find.byType(DropdownButtonFormField<Object>));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(storeName).last);
+      await tester.pumpAndSettle();
+    }
+
+    Future<void> save() async {
+      await tester.tap(find.widgetWithText(FilledButton, 'Sačuvaj'));
+      await tester.pumpAndSettle();
+    }
+
+    await fillBasicFields('prvi');
+    await pickRole(UserRole.storeEmployee);
+    await pickStore('Trgovina A');
+    await save();
+
+    expect(postedBodies, hasLength(1));
+    final firstBody = jsonDecode(postedBodies[0]!) as Map<String, dynamic>;
+    expect(firstBody['role'], 'StoreEmployee');
+    expect(
+      firstBody['musicStoreId'],
+      1,
+      reason: 'the first provision must send the selected store',
+    );
+
+    await fillBasicFields('drugi');
+    await pickRole(UserRole.storeEmployee);
+    await save();
+
+    expect(
+      find.text('Prodavnica je obavezna za StoreEmployee.'),
+      findsOneWidget,
+      reason: 'the reset store dropdown must block the second submit',
+    );
+    expect(
+      postedBodies,
+      hasLength(1),
+      reason: 'no stale musicStoreId may reach a second POST',
+    );
+  });
+
   testWidgets(
-    'provisioning a second StoreEmployee without touching the store '
-    "dropdown does not resend the first employee's store",
+    'shows the Uloga section and the manager switch for StoreEmployee',
     (WidgetTester tester) async {
-      tester.view.physicalSize = const Size(800, 1600);
+      tester.view.physicalSize = const Size(1280, 800);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
 
       final authState = AuthState(baseUrl: 'http://localhost:5059/api/v1/');
-      final postedBodies = <String?>[];
-      var nextUserId = 1;
       const storesJson =
           '{"items":[{"id":1,"storeName":"Trgovina A","businessHours":"09-20"}],'
           '"page":1,"pageSize":100,"totalCount":1}';
@@ -31,8 +134,7 @@ void main() {
         if (request.method == 'GET') {
           return jsonResponse(storesJson, 200);
         }
-        postedBodies.add(request.body);
-        return jsonResponse({'userId': nextUserId++}, 200);
+        return jsonResponse({'userId': 1}, 200);
       });
       final apiClient = ApiClient(
         baseUrl: 'http://localhost:5059/api/v1/',
@@ -53,21 +155,9 @@ void main() {
           child: const MaterialApp(home: UserProvisionFormScreen()),
         ),
       );
+      await tester.pumpAndSettle();
 
-      Future<void> fillBasicFields(String username) async {
-        await tester.enterText(
-          find.widgetWithText(TextFormField, 'Korisničko ime'),
-          username,
-        );
-        await tester.enterText(
-          find.widgetWithText(TextFormField, 'Email'),
-          '$username@mail.com',
-        );
-        await tester.enterText(
-          find.widgetWithText(TextFormField, 'Lozinka'),
-          'Lozinka123!',
-        );
-      }
+      expect(find.text('Uloga'), findsWidgets);
 
       Future<void> pickRole(UserRole role) async {
         await tester.tap(find.byType(DropdownButtonFormField<UserRole>));
@@ -76,41 +166,12 @@ void main() {
         await tester.pumpAndSettle();
       }
 
-      Future<void> pickStore(String storeName) async {
-        await tester.tap(find.byType(DropdownButtonFormField<Object>));
-        await tester.pumpAndSettle();
-        await tester.tap(find.text(storeName).last);
-        await tester.pumpAndSettle();
-      }
-
-      Future<void> save() async {
-        await tester.tap(find.widgetWithText(FilledButton, 'Sačuvaj'));
-        await tester.pumpAndSettle();
-      }
-
-      await fillBasicFields('prvi');
       await pickRole(UserRole.storeEmployee);
-      await pickStore('Trgovina A');
-      await save();
+      expect(find.byType(SwitchListTile), findsOneWidget);
+      expect(find.text('Menadžer'), findsOneWidget);
 
-      expect(postedBodies, hasLength(1));
-      final firstBody =
-          jsonDecode(postedBodies[0]!) as Map<String, dynamic>;
-      expect(firstBody['role'], 'StoreEmployee');
-      expect(firstBody['musicStoreId'], 1,
-          reason: 'the first provision must send the selected store');
-
-      await fillBasicFields('drugi');
-      await pickRole(UserRole.storeEmployee);
-      await save();
-
-      expect(
-        find.text('Prodavnica je obavezna za StoreEmployee.'),
-        findsOneWidget,
-        reason: 'the reset store dropdown must block the second submit',
-      );
-      expect(postedBodies, hasLength(1),
-          reason: 'no stale musicStoreId may reach a second POST');
+      await pickRole(UserRole.instructor);
+      expect(find.byType(SwitchListTile), findsNothing);
     },
   );
 }
