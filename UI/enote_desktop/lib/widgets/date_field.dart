@@ -2,6 +2,11 @@ import 'package:flutter/material.dart';
 
 import 'package:enote_core/enote_core.dart';
 
+const _compactIconButtonConstraints = BoxConstraints(
+  minWidth: 32,
+  minHeight: 32,
+);
+
 Widget buildSharedDateField({
   required FormFieldState<DateTime?> state,
   required String labelText,
@@ -10,14 +15,21 @@ Widget buildSharedDateField({
   required ValueChanged<DateTime?>? onChanged,
   required DateTime? firstDate,
   required DateTime? lastDate,
-  required Future<DateTime?> Function(BuildContext, DateTime, DateTime, DateTime) pickCallback,
+  required Future<DateTime?> Function(
+    BuildContext,
+    DateTime,
+    DateTime,
+    DateTime,
+  )
+  pickCallback,
   required IconData suffixIcon,
   required String tooltip,
   required String defaultHint,
   required String Function(DateTime) formatFunction,
 }) {
   final value = state.value;
-  final text = value != null ? formatFunction(value) : '';
+  final theme = Theme.of(state.context);
+  final valueStyle = theme.textTheme.bodyLarge;
 
   Future<void> handlePick() async {
     final context = state.context;
@@ -42,15 +54,25 @@ Widget buildSharedDateField({
     isEmpty: value == null,
     decoration: InputDecoration(
       labelText: labelText,
-      hintText: hintText ?? defaultHint,
       border: const OutlineInputBorder(),
+      floatingLabelBehavior: FloatingLabelBehavior.always,
       errorText: state.errorText,
+      isDense: true,
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.md,
+      ),
+      suffixIconConstraints: const BoxConstraints(minHeight: 32),
       suffixIcon: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           if (value != null && enabled)
             IconButton(
-              icon: const Icon(Icons.clear, size: 18),
+              icon: const Icon(Icons.clear),
+              iconSize: 18,
+              padding: EdgeInsets.zero,
+              visualDensity: VisualDensity.compact,
+              constraints: _compactIconButtonConstraints,
               tooltip: 'Obriši',
               onPressed: () {
                 state.didChange(null);
@@ -58,7 +80,11 @@ Widget buildSharedDateField({
               },
             ),
           IconButton(
-            icon: Icon(suffixIcon, size: 18),
+            icon: Icon(suffixIcon),
+            iconSize: 18,
+            padding: EdgeInsets.zero,
+            visualDensity: VisualDensity.compact,
+            constraints: _compactIconButtonConstraints,
             tooltip: tooltip,
             onPressed: enabled ? handlePick : null,
           ),
@@ -68,10 +94,12 @@ Widget buildSharedDateField({
     child: InkWell(
       onTap: enabled ? handlePick : null,
       child: Text(
-        text.isEmpty ? '' : text,
-        style: TextStyle(
-          color: text.isEmpty ? Theme.of(state.context).hintColor : null,
-        ),
+        value != null ? formatFunction(value) : hintText ?? defaultHint,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: value != null
+            ? valueStyle
+            : valueStyle?.copyWith(color: theme.hintColor),
       ),
     ),
   );
