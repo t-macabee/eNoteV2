@@ -255,7 +255,7 @@ class _StoreOverview extends StatelessWidget {
       child: LayoutBuilder(
         builder: (context, constraints) {
           final image = SizedBox(
-            width: 320,
+            width: AppSize.detailImageWidth,
             child: AspectRatio(
               aspectRatio: 1,
               child: ClipRRect(

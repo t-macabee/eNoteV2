@@ -467,6 +467,32 @@ void main() {
     expect(find.text('-'), findsNWidgets(3));
   });
 
+  testWidgets('overview image box uses the detail image width', (
+    WidgetTester tester,
+  ) async {
+    await _pumpStore(tester, const {
+      'id': 1,
+      'storeName': 'Muzička Kuća Sarajevo',
+      'businessHours': '09:00 - 19:00',
+      'imagePath': '/uploads/stores/store1.jpg',
+      'addressStreet': 'Titova 10',
+      'addressCity': 'Sarajevo',
+    });
+
+    expect(find.byType(AspectRatio), findsOneWidget);
+
+    final imageBox = tester.widget<SizedBox>(
+      find
+          .ancestor(
+            of: find.byType(AspectRatio),
+            matching: find.byType(SizedBox),
+          )
+          .first,
+    );
+
+    expect(imageBox.width, AppSize.detailImageWidth);
+  });
+
   testWidgets('overview is not vertically centered', (
     WidgetTester tester,
   ) async {
