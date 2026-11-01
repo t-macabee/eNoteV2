@@ -26,17 +26,9 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
   @override
   void initState() {
     super.initState();
-    _pendingRentalsCount.load(() async {
-      final page = await context.read<RentalProvider>().getPage(
-        params: pagedQuery(
-          1,
-          1,
-          '',
-          filters: {'rentalStatus': InstrumentRentalStatus.pending.toJson()},
-        ),
-      );
-      return page.totalCount;
-    });
+    _pendingRentalsCount.load(
+      () => context.read<RentalProvider>().countPending(),
+    );
     _employeesCount.load(() async {
       final page = await context.read<ShopEmployeeProvider>().getPage(
         params: pagedQuery(1, 1, ''),

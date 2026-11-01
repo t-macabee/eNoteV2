@@ -9,12 +9,14 @@ class ColumnSpec<T> {
   final ColumnValueBuilder<T> value;
   final TextStyle? Function(T item)? style;
   final ColumnCellBuilder<T>? cellBuilder;
+  final double? maxWidth;
 
   ColumnSpec({
     required this.label,
     required this.value,
     this.style,
     this.cellBuilder,
+    this.maxWidth,
   });
 }
 
@@ -46,6 +48,8 @@ class EntityListConfig<T> {
   final bool showSearchBar;
   final Widget? filterBar;
 
+  final Widget? statusTabs;
+
   final EntityListPresentation presentation;
 
   final EntityListStyle listStyle;
@@ -55,6 +59,8 @@ class EntityListConfig<T> {
   final List<int>? tileSubtitleColumns;
 
   final void Function(BuildContext context, T item)? onRowTap;
+
+  final Color? Function(T item)? rowColor;
 
   const EntityListConfig({
     this.title,
@@ -73,10 +79,12 @@ class EntityListConfig<T> {
     this.deletedMessage,
     this.showSearchBar = true,
     this.filterBar,
+    this.statusTabs,
     this.presentation = EntityListPresentation.page,
     this.listStyle = EntityListStyle.table,
     this.rowIcon,
     this.tileSubtitleColumns,
     this.onRowTap,
+    this.rowColor,
   });
 }

@@ -2,11 +2,91 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:enote_core/enote_core.dart';
 import 'package:enote_desktop/features/store_employee/rental/rental_status_display.dart';
-import 'package:enote_desktop/theme/app_theme.dart';
 
 void main() {
-  test('rentalStatusColor maps active rentals to the success color', () {
-    expect(rentalStatusColor(InstrumentRentalStatus.active), AppTheme.success);
+  group('rentalTransitionActions', () {
+    final cases =
+        <
+          String,
+          ({
+            InstrumentRentalStatus status,
+            DateTime? dueAt,
+            List<String> labels,
+          })
+        >{
+          'pending': (
+            status: InstrumentRentalStatus.pending,
+            dueAt: null,
+            labels: ['Odobri', 'Odbij'],
+          ),
+          'approved': (
+            status: InstrumentRentalStatus.approved,
+            dueAt: null,
+            labels: ['Preuzeto', 'Otkaži'],
+          ),
+          'active before due': (
+            status: InstrumentRentalStatus.active,
+            dueAt: DateTime.now().add(const Duration(days: 2)),
+            labels: ['Prijevremeni povrat'],
+          ),
+          'active after due': (
+            status: InstrumentRentalStatus.active,
+            dueAt: DateTime.now().subtract(const Duration(days: 1)),
+            labels: ['Završi'],
+          ),
+          'active without a due date': (
+            status: InstrumentRentalStatus.active,
+            dueAt: null,
+            labels: ['Prijevremeni povrat'],
+          ),
+          'completed': (
+            status: InstrumentRentalStatus.completed,
+            dueAt: null,
+            labels: <String>[],
+          ),
+          'rejected': (
+            status: InstrumentRentalStatus.rejected,
+            dueAt: null,
+            labels: <String>[],
+          ),
+          'canceled': (
+            status: InstrumentRentalStatus.canceled,
+            dueAt: null,
+            labels: <String>[],
+          ),
+          'returnedEarly': (
+            status: InstrumentRentalStatus.returnedEarly,
+            dueAt: null,
+            labels: <String>[],
+          ),
+        };
+
+    for (final entry in cases.entries) {
+      test('${entry.key} offers ${entry.value.labels}', () {
+        final actions = rentalTransitionActions(
+          entry.value.status,
+          dueAt: entry.value.dueAt,
+        );
+
+        expect(
+          actions.map((action) => action.label).toList(),
+          entry.value.labels,
+        );
+      });
+    }
+
+    test('reject and cancel require a note and use the danger tone', () {
+      final reject = rentalTransitionActions(InstrumentRentalStatus.pending)
+          .singleWhere((action) => action.trigger == RentalTrigger.reject);
+      final cancel = rentalTransitionActions(InstrumentRentalStatus.approved)
+          .singleWhere((action) => action.trigger == RentalTrigger.cancel);
+
+      for (final action in [reject, cancel]) {
+        expect(action.requiresNote, isTrue);
+        expect(action.tone, StatusTone.danger);
+        expect(action.confirmMessage, isNull);
+      }
+    });
   });
 
   test('rentalTransitionSuccessMessage describes every trigger', () {

@@ -7,23 +7,38 @@ class RentalProvider extends CrudProvider<InstrumentRentalDto> {
   InstrumentRentalDto fromJson(Map<String, dynamic> json) =>
       InstrumentRentalDto.fromJson(json);
 
-  Future<InstrumentRentalDto> approve(int id, {String? note}) =>
-      _transition(id, 'approve', note);
+  Future<int?> countPending({int? instrumentId}) async {
+    final page = await getPage(
+      params: pagedQuery(
+        1,
+        1,
+        '',
+        filters: {
+          'rentalStatus': InstrumentRentalStatus.pending.toJson(),
+          'instrumentId': ?instrumentId,
+        },
+      ),
+    );
+    return page.totalCount;
+  }
 
-  Future<InstrumentRentalDto> reject(int id, {String? note}) =>
-      _transition(id, 'reject', note);
+  Future<InstrumentRentalDto> transition(
+    int id,
+    RentalTrigger trigger, {
+    String? note,
+  }) async {
+    final response = await apiClient.post(
+      '$endpoint/$id/${_transitionPath(trigger)}',
+      body: (note == null || note.trim().isEmpty)
+          ? null
+          : RentalStatusRequest(note: note).toJson(),
+    );
 
-  Future<InstrumentRentalDto> pickup(int id, {String? note}) =>
-      _transition(id, 'pickup', note);
-
-  Future<InstrumentRentalDto> complete(int id, {String? note}) =>
-      _transition(id, 'complete', note);
-
-  Future<InstrumentRentalDto> returnEarly(int id, {String? note}) =>
-      _transition(id, 'return-early', note);
-
-  Future<InstrumentRentalDto> cancel(int id, {String? note}) =>
-      _transition(id, 'cancel', note);
+    final data = decodeOrThrow(response);
+    final updated = fromJson(data);
+    notifyListeners();
+    return updated;
+  }
 
   Future<RentalPaymentDto> refund(int rentalId, {int? amountCents}) async {
     final response = await apiClient.post(
@@ -47,21 +62,12 @@ class RentalProvider extends CrudProvider<InstrumentRentalDto> {
     return RentalPaymentDto.fromJson(data);
   }
 
-  Future<InstrumentRentalDto> _transition(
-    int id,
-    String action,
-    String? note,
-  ) async {
-    final response = await apiClient.post(
-      '$endpoint/$id/$action',
-      body: (note == null || note.trim().isEmpty)
-          ? null
-          : RentalStatusRequest(note: note).toJson(),
-    );
-
-    final data = decodeOrThrow(response);
-    final updated = fromJson(data);
-    notifyListeners();
-    return updated;
-  }
+  static String _transitionPath(RentalTrigger trigger) => switch (trigger) {
+    RentalTrigger.approve => 'approve',
+    RentalTrigger.reject => 'reject',
+    RentalTrigger.pickup => 'pickup',
+    RentalTrigger.complete => 'complete',
+    RentalTrigger.returnEarly => 'return-early',
+    RentalTrigger.cancel => 'cancel',
+  };
 }

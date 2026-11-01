@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'package:enote_core/enote_core.dart';
+
 import '../theme/app_theme.dart';
 import 'entity_list_config.dart';
 
@@ -28,12 +30,14 @@ class EntityRowActions extends StatelessWidget {
         if (onEdit != null)
           IconButton(
             icon: const Icon(Icons.edit, size: 18),
+            tooltip: 'Uredi',
             visualDensity: VisualDensity.compact,
             onPressed: onEdit,
           ),
         if (onDelete != null)
           IconButton(
             icon: const Icon(Icons.delete, size: 18, color: AppTheme.error),
+            tooltip: 'Obriši',
             visualDensity: VisualDensity.compact,
             onPressed: onDelete,
           ),
@@ -174,28 +178,44 @@ class _EntityListTableState<T> extends State<EntityListTable<T>> {
     child: child,
   );
 
+  Widget _cellContent(BuildContext context, ColumnSpec<T> col, T item) {
+    final maxWidth = col.maxWidth;
+    final Widget content;
+    if (col.cellBuilder != null) {
+      content = col.cellBuilder!(context, item);
+    } else {
+      final text = col.value(item)?.toString() ?? '-';
+      final label = Text(
+        text,
+        style: col.style?.call(item),
+        maxLines: maxWidth != null ? 1 : null,
+        overflow: maxWidth != null ? TextOverflow.ellipsis : null,
+      );
+      content = maxWidth != null ? Tooltip(message: text, child: label) : label;
+    }
+    if (maxWidth == null) return content;
+    return ConstrainedBox(
+      constraints: BoxConstraints(maxWidth: maxWidth),
+      child: content,
+    );
+  }
+
   DataRow _buildRow(BuildContext context, int index) {
     final config = widget.config;
     final item = widget.items[index];
     final extraWidgets =
         config.extraActions?.call(context, item) ?? const <Widget>[];
+    final onRowTap = config.onRowTap ?? config.onEdit;
 
     return DataRow(
+      color: config.rowColor != null
+          ? WidgetStatePropertyAll(config.rowColor!(item))
+          : null,
       cells: [
         for (final col in config.columns)
           DataCell(
-            _trackRowHover(
-              index,
-              col.cellBuilder != null
-                  ? col.cellBuilder!(context, item)
-                  : Text(
-                      col.value(item)?.toString() ?? '-',
-                      style: col.style?.call(item),
-                    ),
-            ),
-            onTap: config.onEdit != null
-                ? () => config.onEdit!(context, item)
-                : null,
+            _trackRowHover(index, _cellContent(context, col, item)),
+            onTap: onRowTap != null ? () => onRowTap(context, item) : null,
           ),
         if (_hasActions)
           DataCell(
@@ -226,26 +246,38 @@ class _EntityListTableState<T> extends State<EntityListTable<T>> {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: DataTable(
-          dividerThickness: 1,
-          headingRowColor: const WidgetStatePropertyAll(
-            AppTheme.surfaceContainer,
-          ),
-          columns: [
-            ...widget.config.columns.map(
-              (c) => DataColumn(label: Text(c.label)),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final availableWidth = constraints.maxWidth.isFinite
+            ? constraints.maxWidth
+            : 0.0;
+        return SingleChildScrollView(
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minWidth: availableWidth),
+              child: DataTable(
+                columnSpacing: AppSpacing.xl,
+                horizontalMargin: AppSpacing.lg,
+                dividerThickness: 1,
+                headingRowColor: const WidgetStatePropertyAll(
+                  AppTheme.surfaceContainer,
+                ),
+                columns: [
+                  ...widget.config.columns.map(
+                    (c) => DataColumn(label: Text(c.label)),
+                  ),
+                  if (_hasActions) const DataColumn(label: Text('Akcije')),
+                ],
+                rows: [
+                  for (var index = 0; index < widget.items.length; index++)
+                    _buildRow(context, index),
+                ],
+              ),
             ),
-            if (_hasActions) const DataColumn(label: Text('Akcije')),
-          ],
-          rows: [
-            for (var index = 0; index < widget.items.length; index++)
-              _buildRow(context, index),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }

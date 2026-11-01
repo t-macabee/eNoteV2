@@ -10,6 +10,7 @@ class EntityToolbar extends StatelessWidget {
     required this.searchHint,
     required this.showAdd,
     this.filterBar,
+    this.statusTabs,
     this.trailing,
     this.onAdd,
     this.addLabel,
@@ -20,13 +21,18 @@ class EntityToolbar extends StatelessWidget {
   final String searchHint;
   final bool showAdd;
   final Widget? filterBar;
+  final Widget? statusTabs;
   final Widget? trailing;
   final VoidCallback? onAdd;
   final String? addLabel;
 
   @override
   Widget build(BuildContext context) {
-    if (!showSearch && filterBar == null && !showAdd && trailing == null) {
+    if (!showSearch &&
+        filterBar == null &&
+        statusTabs == null &&
+        !showAdd &&
+        trailing == null) {
       return const SizedBox.shrink();
     }
 
@@ -42,42 +48,55 @@ class EntityToolbar extends StatelessWidget {
       ),
     );
 
+    final hasTopRow =
+        showSearch || filterBar != null || showAdd || trailing != null;
+
     return Padding(
       padding: const EdgeInsets.all(AppSpacing.lg),
-      child: IntrinsicHeight(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Expanded(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (hasTopRow)
+            IntrinsicHeight(
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  if (showSearch)
-                    Flexible(
-                      child: filterBar != null
-                          ? SizedBox(width: 320, child: searchField)
-                          : searchField,
+                  Expanded(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        if (showSearch)
+                          Flexible(
+                            child: filterBar != null
+                                ? SizedBox(width: 320, child: searchField)
+                                : searchField,
+                          ),
+                        if (showSearch && filterBar != null)
+                          const SizedBox(width: AppSpacing.md),
+                        ?filterBar,
+                      ],
                     ),
-                  if (showSearch && filterBar != null)
+                  ),
+                  if (showAdd || trailing != null)
                     const SizedBox(width: AppSpacing.md),
-                  ?filterBar,
+                  if (trailing != null) ...[
+                    trailing!,
+                    const SizedBox(width: AppSpacing.md),
+                  ],
+                  if (showAdd)
+                    ElevatedButton.icon(
+                      onPressed: onAdd,
+                      icon: const Icon(Icons.add),
+                      label: Text(addLabel ?? 'Dodaj'),
+                    ),
                 ],
               ),
             ),
-            if (showAdd || trailing != null)
-              const SizedBox(width: AppSpacing.md),
-            if (trailing != null) ...[
-              trailing!,
-              const SizedBox(width: AppSpacing.md),
-            ],
-            if (showAdd)
-              ElevatedButton.icon(
-                onPressed: onAdd,
-                icon: const Icon(Icons.add),
-                label: Text(addLabel ?? 'Dodaj'),
-              ),
-          ],
-        ),
+          if (hasTopRow && statusTabs != null)
+            const SizedBox(height: AppSpacing.md),
+          ?statusTabs,
+        ],
       ),
     );
   }

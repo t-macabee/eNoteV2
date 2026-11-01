@@ -4,13 +4,16 @@ import 'package:provider/provider.dart';
 import 'package:enote_core/enote_core.dart';
 
 import '../../../widgets/async_dropdown.dart';
-import '../../../widgets/entity_filter_dropdown.dart';
+import '../../../widgets/dashboard_count.dart';
 import '../../../widgets/entity_list_screen.dart';
 import '../../../widgets/pdf_report_button.dart';
 import '../../../widgets/status_chip.dart';
+import '../../../widgets/status_filter_tabs.dart';
+import '../../../widgets/workflow_actions.dart';
 import '../instrument/instrument_provider.dart';
 import 'rental_detail_dialog.dart';
 import 'rental_provider.dart';
+import 'rental_status_display.dart';
 
 class RentalListScreen extends StatefulWidget {
   final EntityListPresentation presentation;
@@ -25,55 +28,101 @@ class RentalListScreen extends StatefulWidget {
 }
 
 class _RentalListScreenState extends State<RentalListScreen> {
+  static const double _instrumentFilterWidth = 220;
+
   final _listKey = GlobalKey<EntityListScreenState<InstrumentRentalDto>>();
-  InstrumentRentalStatus? _selectedStatus;
+  final _pendingCount = DashboardCount();
+  InstrumentRentalStatus? _selectedStatus = InstrumentRentalStatus.pending;
   int? _selectedInstrumentId;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPendingCount();
+  }
+
+  @override
+  void dispose() {
+    _pendingCount.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadPendingCount() async {
+    if (!mounted) return;
+    await _pendingCount.load(
+      () => context.read<RentalProvider>().countPending(
+        instrumentId: _selectedInstrumentId,
+      ),
+    );
+  }
 
   String _rentalStatusText(InstrumentRentalDto item) => item.isOverdue
       ? '${rentalStatusLabel(item.rentalStatus)} · kasni ${item.overdueDays} dana'
       : rentalStatusLabel(item.rentalStatus);
 
-  Widget _buildFilterBar() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Row(
-        children: [
-          EntityFilterDropdown<InstrumentRentalStatus?>(
-            label: 'Status',
-            width: 220,
-            outlined: true,
-            value: _selectedStatus,
-            items: [
-              const DropdownMenuItem(value: null, child: Text('Svi statusi')),
-              for (final status in InstrumentRentalStatus.values)
-                DropdownMenuItem(
-                  value: status,
-                  child: Text(rentalStatusLabel(status)),
-                ),
-            ],
-            onChanged: (value) {
-              setState(() => _selectedStatus = value);
-              _listKey.currentState?.refresh();
-            },
-          ),
-          const SizedBox(width: 16),
-          AsyncDropdown<InstrumentDto>(
-            label: 'Instrument',
-            width: 220,
-            emptyOptionLabel: 'Svi instrumenti',
-            value: _selectedInstrumentId,
-            fetcher: () => fetchAllPages(
-              (query) => context.read<InstrumentProvider>().search(query),
+  void _onStatusChanged(InstrumentRentalStatus? value) {
+    setState(() => _selectedStatus = value);
+    _listKey.currentState?.refresh(resetPage: true);
+  }
+
+  void _onInstrumentChanged(int? value) {
+    setState(() => _selectedInstrumentId = value);
+    _listKey.currentState?.refresh(resetPage: true);
+    _loadPendingCount();
+  }
+
+  Future<void> _runTransition(
+    InstrumentRentalDto item,
+    RentalTrigger trigger, {
+    String? note,
+  }) async {
+    await context.read<RentalProvider>().transition(
+      item.id,
+      trigger,
+      note: note,
+    );
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(rentalTransitionSuccessMessage(trigger))),
+    );
+    _listKey.currentState?.refresh();
+    await _loadPendingCount();
+  }
+
+  Widget _buildStatusTabs() {
+    return ListenableBuilder(
+      listenable: _pendingCount,
+      builder: (context, _) => StatusFilterTabs<InstrumentRentalStatus?>(
+        selected: _selectedStatus,
+        options: [
+          for (final status in InstrumentRentalStatus.values)
+            StatusFilterOption(
+              label: rentalStatusLabel(status),
+              value: status,
+              count: status == InstrumentRentalStatus.pending
+                  ? _pendingCount.value
+                  : null,
             ),
-            itemLabel: (instrument) => instrument.model,
-            itemId: (instrument) => instrument.id,
-            onChanged: (value, _) {
-              setState(() => _selectedInstrumentId = value as int?);
-              _listKey.currentState?.refresh();
-            },
-          ),
+          const StatusFilterOption(label: 'Svi', value: null),
         ],
+        onChanged: _onStatusChanged,
       ),
+    );
+  }
+
+  Widget _buildFilterBar() {
+    return AsyncDropdown<InstrumentDto>(
+      label: 'Instrument',
+      width: _instrumentFilterWidth,
+      emptyOptionLabel: 'Svi instrumenti',
+      value: _selectedInstrumentId,
+      fetcher: () => fetchAllPages(
+        (query) => context.read<InstrumentProvider>().search(query),
+      ),
+      itemLabel: (instrument) => instrument.model,
+      itemId: (instrument) => instrument.id,
+      onChanged: (value, _) => _onInstrumentChanged(value as int?),
     );
   }
 
@@ -87,20 +136,32 @@ class _RentalListScreenState extends State<RentalListScreen> {
           ColumnSpec<InstrumentRentalDto>(
             label: 'Instrument',
             value: (item) => item.instrumentModel,
+            maxWidth: 200,
             cellBuilder: (context, item) => Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
                 ImageThumbnail(
                   imageUrl: item.instrumentImagePath,
                   apiClient: context.read<ApiClient>(),
                 ),
-                const SizedBox(width: 8),
-                Text(item.instrumentModel),
+                const SizedBox(width: AppSpacing.sm),
+                Flexible(
+                  child: Tooltip(
+                    message: item.instrumentModel,
+                    child: Text(
+                      item.instrumentModel,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
           ColumnSpec<InstrumentRentalDto>(
             label: 'Student',
             value: (item) => item.studentName ?? 'Nepoznat korisnik',
+            maxWidth: 180,
           ),
           ColumnSpec<InstrumentRentalDto>(
             label: 'Status',
@@ -123,6 +184,7 @@ class _RentalListScreenState extends State<RentalListScreen> {
           ),
         ],
         showSearchBar: false,
+        statusTabs: _buildStatusTabs(),
         filterBar: _buildFilterBar(),
         fetcher: (page, pageSize, search) =>
             context.read<RentalProvider>().search(
@@ -138,10 +200,27 @@ class _RentalListScreenState extends State<RentalListScreen> {
                 },
               ),
             ),
-        onEdit: (context, item) async {
+        onRowTap: (context, item) async {
           await RentalDetailDialog.show(context, item.id);
           _listKey.currentState?.refresh();
+          _loadPendingCount();
         },
+        extraActions: (context, item) =>
+            item.rentalStatus == InstrumentRentalStatus.pending
+            ? [
+                WorkflowActionButtons<RentalTrigger>(
+                  actions: rentalTransitionActions(
+                    item.rentalStatus,
+                    dueAt: item.dueAt,
+                  ),
+                  compact: true,
+                  onRun: (trigger, {note}) =>
+                      _runTransition(item, trigger, note: note),
+                ),
+              ]
+            : const <Widget>[],
+        rowColor: (item) =>
+            item.isOverdue ? StatusTone.danger.background : null,
         showAddButton: false,
         showDeleteConfirmation: false,
         trailing: PdfReportButton(

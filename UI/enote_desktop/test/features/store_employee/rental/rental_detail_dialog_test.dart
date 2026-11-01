@@ -297,4 +297,42 @@ void main() {
     expect(find.text('Penal'), findsOneWidget);
     expect(find.text('2.00 KM'), findsOneWidget);
   });
+
+  testWidgets('a transition updates the status chip from the returned rental', (
+    tester,
+  ) async {
+    await _pumpDialog(tester, {
+      'id': 5,
+      'instrumentId': 1,
+      'musicStoreId': 1,
+      'studentProfileId': 1,
+      'studentUserId': 1,
+      'instrumentModel': 'Fender',
+      'instrumentType': 'Gitara',
+      'storeName': 'Shop',
+      'rentalStatus': 'Pending',
+      'requestedAt': DateTime.now().toIso8601String(),
+      'fee': 10.0,
+      'isPaid': false,
+    }, onApprove: (rental) => rental['rentalStatus'] = 'Approved');
+
+    expect(
+      find.text(rentalStatusLabel(InstrumentRentalStatus.pending)),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Odobri'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Potvrdi'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text(rentalStatusLabel(InstrumentRentalStatus.approved)),
+      findsOneWidget,
+    );
+    expect(
+      find.text(rentalStatusLabel(InstrumentRentalStatus.pending)),
+      findsNothing,
+    );
+  });
 }

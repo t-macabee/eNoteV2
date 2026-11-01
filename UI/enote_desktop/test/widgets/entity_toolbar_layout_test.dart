@@ -171,6 +171,69 @@ void main() {
     });
   });
 
+  group('status tabs slot', () {
+    EntityListConfig<String> statusConfig(
+      _Recorder recorder, {
+      bool withSearchRow = true,
+    }) {
+      return EntityListConfig<String>(
+        columns: [ColumnSpec<String>(label: 'Naziv', value: (item) => item)],
+        fetcher: recorder.fetch,
+        showSearchBar: withSearchRow,
+        showAddButton: false,
+        statusTabs: const SizedBox(
+          key: Key('status-tabs'),
+          height: 32,
+          child: Text('Tabovi'),
+        ),
+      );
+    }
+
+    testWidgets('status tabs render under the search row at full width', (
+      tester,
+    ) async {
+      _useDesktopView(tester);
+      final recorder = _Recorder();
+
+      await tester.pumpWidget(
+        _wrap(
+          Scaffold(
+            body: EntityListScreen<String>(config: statusConfig(recorder)),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final search = tester.getRect(find.byType(TextField));
+      final tabs = tester.getRect(find.byKey(const Key('status-tabs')));
+      final toolbar = tester.getRect(find.byType(EntityToolbar));
+
+      expect(tabs.top, greaterThan(search.bottom));
+      expect(tabs.left, search.left);
+      expect(tabs.width, toolbar.width - AppSpacing.lg * 2);
+    });
+
+    testWidgets('toolbar with only status tabs is not empty', (tester) async {
+      _useDesktopView(tester);
+      final recorder = _Recorder();
+
+      await tester.pumpWidget(
+        _wrap(
+          Scaffold(
+            body: EntityListScreen<String>(
+              config: statusConfig(recorder, withSearchRow: false),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(TextField), findsNothing);
+      expect(find.byKey(const Key('status-tabs')), findsOneWidget);
+      expect(tester.getSize(find.byType(EntityToolbar)).height, greaterThan(0));
+    });
+  });
+
   group('page size', () {
     testWidgets('the list requests 20 rows a page', (tester) async {
       final recorder = _Recorder();

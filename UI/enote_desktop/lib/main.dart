@@ -168,7 +168,7 @@ class MyApp extends StatelessWidget {
       child: MaterialApp(
         navigatorKey: navigatorKey,
         title: 'eNote V2',
-        theme: AppTheme.dark,
+        theme: desktopTheme,
         home: Consumer<AuthState>(
           builder: (context, authState, _) {
             if (!authState.isAuthenticated) {

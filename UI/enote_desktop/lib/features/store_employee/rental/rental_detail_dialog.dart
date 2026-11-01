@@ -6,7 +6,7 @@ import 'package:enote_core/enote_core.dart';
 import '../../../widgets/dialog_shell.dart';
 import '../../../widgets/inline_error_text.dart';
 import '../../../widgets/status_chip.dart';
-import 'rental_transition_action_row.dart';
+import '../../../widgets/workflow_actions.dart';
 import 'rental_status_display.dart';
 import 'rental_refund_dialog.dart';
 import 'rental_provider.dart';
@@ -32,7 +32,6 @@ class _RentalDetailDialogState extends State<RentalDetailDialog> {
   RentalPaymentDto? _payment;
   bool _paymentLoadFailed = false;
   bool _isLoading = true;
-  bool _isTransitioning = false;
   bool _isRefunding = false;
 
   @override
@@ -106,28 +105,16 @@ class _RentalDetailDialogState extends State<RentalDetailDialog> {
   }
 
   Future<void> _onTransition(RentalTrigger trigger, {String? note}) async {
-    setState(() => _isTransitioning = true);
-    try {
-      final p = context.read<RentalProvider>();
-      final updated = switch (trigger) {
-        RentalTrigger.approve => await p.approve(_rental!.id, note: note),
-        RentalTrigger.reject => await p.reject(_rental!.id, note: note),
-        RentalTrigger.pickup => await p.pickup(_rental!.id, note: note),
-        RentalTrigger.complete => await p.complete(_rental!.id, note: note),
-        RentalTrigger.returnEarly => await p.returnEarly(
-          _rental!.id,
-          note: note,
-        ),
-        RentalTrigger.cancel => await p.cancel(_rental!.id, note: note),
-      };
-      if (!mounted) return;
-      setState(() => _rental = updated);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(rentalTransitionSuccessMessage(trigger))),
-      );
-    } finally {
-      if (mounted) setState(() => _isTransitioning = false);
-    }
+    final updated = await context.read<RentalProvider>().transition(
+      _rental!.id,
+      trigger,
+      note: note,
+    );
+    if (!mounted) return;
+    setState(() => _rental = updated);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(rentalTransitionSuccessMessage(trigger))),
+    );
   }
 
   @override
@@ -183,11 +170,12 @@ class _RentalDetailDialogState extends State<RentalDetailDialog> {
           const SizedBox(height: 16),
           _buildChargesBlock(rental),
           const SizedBox(height: 24),
-          RentalTransitionActionRow(
-            status: rental.rentalStatus,
-            enabled: !_isTransitioning,
-            dueAt: rental.dueAt,
-            onTransition: _onTransition,
+          WorkflowActionButtons<RentalTrigger>(
+            actions: rentalTransitionActions(
+              rental.rentalStatus,
+              dueAt: rental.dueAt,
+            ),
+            onRun: _onTransition,
           ),
         ],
       ),

@@ -114,6 +114,7 @@ class EntityListScreenState<T> extends State<EntityListScreen<T>> {
           showSearch: widget.config.showSearchBar,
           searchHint: widget.config.searchHint,
           filterBar: widget.config.filterBar,
+          statusTabs: widget.config.statusTabs,
           trailing: widget.config.trailing,
           showAdd: widget.config.showAddButton && widget.config.onAdd != null,
           onAdd: widget.config.onAdd,
@@ -124,6 +125,7 @@ class EntityListScreenState<T> extends State<EntityListScreen<T>> {
         else
           Expanded(child: listBody),
         Container(
+          width: double.infinity,
           decoration: const BoxDecoration(
             border: Border(top: BorderSide(color: AppTheme.outline, width: 1)),
           ),
@@ -133,7 +135,16 @@ class EntityListScreenState<T> extends State<EntityListScreen<T>> {
       ],
     );
 
-    if (isEmbedded) return content;
+    if (isEmbedded) {
+      return Align(
+        alignment: Alignment.topCenter,
+        heightFactor: 1,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: AppSize.contentMaxWidth),
+          child: content,
+        ),
+      );
+    }
 
     final canClose = Navigator.of(context).canPop();
     return Scaffold(
@@ -149,7 +160,8 @@ class EntityListScreenState<T> extends State<EntityListScreen<T>> {
               ),
             )
           : null,
-      body: Center(
+      body: Align(
+        alignment: Alignment.topCenter,
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: AppSize.contentMaxWidth),
           child: content,

@@ -35,6 +35,8 @@ class EntityGridConfig<T> {
 
   final Widget? filterBar;
 
+  final Widget? statusTabs;
+
   final double maxCrossAxisExtent;
   final double childAspectRatio;
   final int pageSize;
@@ -59,6 +61,7 @@ class EntityGridConfig<T> {
     this.embedded = false,
     this.trailing,
     this.filterBar,
+    this.statusTabs,
     this.maxCrossAxisExtent = 220,
     this.childAspectRatio = 0.85,
     this.pageSize = 24,
@@ -129,7 +132,8 @@ class EntityGridScreenState<T> extends State<EntityGridScreen<T>> {
               ),
             )
           : null,
-      body: Center(
+      body: Align(
+        alignment: Alignment.topCenter,
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: AppSize.contentMaxWidth),
           child: content,
@@ -146,6 +150,7 @@ class EntityGridScreenState<T> extends State<EntityGridScreen<T>> {
           showSearch: widget.config.showSearchBar,
           searchHint: widget.config.searchHint,
           filterBar: widget.config.filterBar,
+          statusTabs: widget.config.statusTabs,
           trailing: widget.config.trailing,
           showAdd: widget.config.showAddButton && widget.config.onAdd != null,
           onAdd: widget.config.onAdd,
