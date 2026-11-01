@@ -73,8 +73,9 @@ class _ShopEmployeeListScreenState extends State<ShopEmployeeListScreen> {
                   );
                   _gridKey.currentState?.refresh();
                 } catch (e) {
-                  if (context.mounted)
+                  if (context.mounted) {
                     ErrorBanner.show(context, message: userMessage(e));
+                  }
                 }
               },
             ),

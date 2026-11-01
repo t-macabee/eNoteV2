@@ -8,7 +8,7 @@ import '../../../widgets/entity_form_scaffold.dart';
 import '../../../widgets/entity_grid_screen.dart';
 import '../../../widgets/pdf_report_button.dart';
 import '../city/city_provider.dart';
-import 'music_store_detail_dialog.dart';
+import 'music_store_detail_screen.dart';
 import 'music_store_form_screen.dart';
 import 'music_store_provider.dart';
 
@@ -50,7 +50,7 @@ class _MusicStoreListScreenState extends State<MusicStoreListScreen> {
         titleOf: (item) => item.storeName,
         imageUrlOf: (store) => store.imagePath,
         onTap: (context, item) async {
-          await MusicStoreDetailDialog.show(context, item.id);
+          await MusicStoreDetailScreen.open(context, item.id);
           _gridKey.currentState?.refresh();
         },
         filterBar: AsyncDropdown<CityDto>(

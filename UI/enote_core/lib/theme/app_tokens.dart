@@ -28,6 +28,8 @@ final class AppSize {
   static const double sidebarWidth = 256;
   static const double contentMaxWidth = 1100;
   static const double formMaxWidth = 720;
+  static const double dialogMaxWidth = 640;
+  static const double dialogContentWidth = 520;
   static const double tableRowHeight = 48;
   static const double toolbarHeight = 56;
 }

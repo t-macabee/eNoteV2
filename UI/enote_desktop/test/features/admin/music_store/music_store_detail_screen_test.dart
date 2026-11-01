@@ -5,7 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:enote_core/enote_core.dart';
 import 'package:enote_desktop/features/admin/address/address_provider.dart';
 import 'package:enote_desktop/features/admin/instrument_type/instrument_type_provider.dart';
-import 'package:enote_desktop/features/admin/music_store/music_store_detail_dialog.dart';
+import 'package:enote_desktop/features/admin/music_store/music_store_detail_screen.dart';
 import 'package:enote_desktop/features/admin/music_store/music_store_provider.dart';
 import 'package:enote_desktop/features/admin/music_store/store_instrument_provider.dart';
 import 'package:enote_desktop/widgets/entity_grid_screen.dart';
@@ -102,7 +102,7 @@ Future<void> _pumpDialog(WidgetTester tester, ApiClient apiClient) async {
         home: Scaffold(
           body: Builder(
             builder: (context) => TextButton(
-              onPressed: () => MusicStoreDetailDialog.show(context, 1),
+              onPressed: () => MusicStoreDetailScreen.open(context, 1),
               child: const Text('Otvori prodavnicu'),
             ),
           ),
@@ -115,9 +115,41 @@ Future<void> _pumpDialog(WidgetTester tester, ApiClient apiClient) async {
   await tester.pumpAndSettle();
 }
 
+Future<void> _pumpStore(WidgetTester tester, Map<String, dynamic> store) async {
+  tester.view.physicalSize = const Size(1280, 800);
+  tester.view.devicePixelRatio = 1.0;
+  addTearDown(() {
+    tester.view.resetPhysicalSize();
+    tester.view.resetDevicePixelRatio();
+  });
+
+  final httpClient = ScriptedClient((request) {
+    final url = request.url.toString();
+
+    if (url.contains('admin/music-stores/1')) {
+      return jsonResponse(store, 200);
+    }
+
+    return jsonResponse(const {
+      'items': [],
+      'page': 1,
+      'pageSize': 20,
+      'totalCount': 0,
+    }, 200);
+  });
+
+  final apiClient = ApiClient(
+    baseUrl: 'http://localhost:5059/api/v1/',
+    authState: AuthState(baseUrl: 'http://localhost:5059/api/v1/'),
+    httpClient: httpClient,
+  );
+
+  await _pumpDialog(tester, apiClient);
+}
+
 void main() {
   testWidgets(
-    'MusicStoreDetailDialog loads store details on left and instruments grid on right with dual-purpose grouping',
+    'MusicStoreDetailScreen shows the overview and the grouped instruments grid',
     (WidgetTester tester) async {
       tester.view.physicalSize = const Size(1280, 800);
       tester.view.devicePixelRatio = 1.0;
@@ -135,14 +167,17 @@ void main() {
 
       await _pumpDialog(tester, apiClient);
 
-      expect(find.byType(MusicStoreDetailDialog), findsOneWidget);
+      expect(find.byType(MusicStoreDetailScreen), findsOneWidget);
       expect(find.byType(Scaffold), findsOneWidget);
 
       expect(find.text('Muzička Kuća Sarajevo'), findsWidgets);
       expect(find.text('Titova 10, Sarajevo'), findsOneWidget);
       expect(find.text('+387 33 555 777'), findsOneWidget);
       expect(find.text('09:00 - 19:00'), findsOneWidget);
-      expect(find.widgetWithText(OutlinedButton, 'Uredi'), findsOneWidget);
+      expect(find.widgetWithText(TextButton, 'Uredi'), findsOneWidget);
+
+      await tester.tap(find.text('Instrumenti'));
+      await tester.pumpAndSettle();
 
       expect(find.text('Stratocaster Player'), findsOneWidget);
       expect(find.text('Fender'), findsOneWidget);
@@ -257,6 +292,9 @@ void main() {
 
       await _pumpDialog(tester, apiClient);
 
+      await tester.tap(find.text('Instrumenti'));
+      await tester.pumpAndSettle();
+
       expect(find.text('Neuspjelo učitavanje.'), findsOneWidget);
 
       await tester.tap(find.byTooltip('Pokušaj ponovo'));
@@ -289,13 +327,13 @@ void main() {
 
     await _pumpDialog(tester, apiClient);
 
-    expect(find.byType(MusicStoreDetailDialog), findsOneWidget);
+    expect(find.byType(MusicStoreDetailScreen), findsOneWidget);
     expect(find.byTooltip('Zatvori'), findsOneWidget);
 
     await tester.tap(find.byTooltip('Zatvori'));
     await tester.pumpAndSettle();
 
-    expect(find.byType(MusicStoreDetailDialog), findsNothing);
+    expect(find.byType(MusicStoreDetailScreen), findsNothing);
   });
 
   testWidgets(
@@ -353,6 +391,9 @@ void main() {
 
       await _pumpDialog(tester, apiClient);
 
+      await tester.tap(find.text('Instrumenti'));
+      await tester.pumpAndSettle();
+
       final typeUrls = httpClient.getUrls
           .where((url) => url.contains('admin/instrument-types'))
           .toList();
@@ -368,4 +409,161 @@ void main() {
       expect(dropdown.items!.last.value, 2049);
     },
   );
+
+  testWidgets('Uredi and Obriši are in the app bar', (
+    WidgetTester tester,
+  ) async {
+    tester.view.physicalSize = const Size(1280, 800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final apiClient = ApiClient(
+      baseUrl: 'http://localhost:5059/api/v1/',
+      authState: AuthState(baseUrl: 'http://localhost:5059/api/v1/'),
+      httpClient: _client(),
+    );
+
+    await _pumpDialog(tester, apiClient);
+
+    expect(
+      find.descendant(of: find.byType(AppBar), matching: find.text('Uredi')),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: find.byType(AppBar), matching: find.text('Obriši')),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('overview shows address, phone and hours', (
+    WidgetTester tester,
+  ) async {
+    await _pumpStore(tester, const {
+      'id': 1,
+      'storeName': 'Muzička Kuća Sarajevo',
+      'businessHours': '09:00 - 19:00',
+      'phoneNumber': '+387 33 555 777',
+      'addressStreet': 'Titova 10',
+      'addressCity': 'Sarajevo',
+    });
+
+    expect(find.text('Titova 10, Sarajevo'), findsOneWidget);
+    expect(find.text('+387 33 555 777'), findsOneWidget);
+    expect(find.text('09:00 - 19:00'), findsOneWidget);
+  });
+
+  testWidgets('overview shows dashes for empty values', (
+    WidgetTester tester,
+  ) async {
+    await _pumpStore(tester, const {
+      'id': 1,
+      'storeName': 'Prazna prodavnica',
+      'businessHours': '',
+    });
+
+    expect(find.text('-'), findsNWidgets(3));
+  });
+
+  testWidgets('overview is not vertically centered', (
+    WidgetTester tester,
+  ) async {
+    tester.view.physicalSize = const Size(1280, 800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final apiClient = ApiClient(
+      baseUrl: 'http://localhost:5059/api/v1/',
+      authState: AuthState(baseUrl: 'http://localhost:5059/api/v1/'),
+      httpClient: _client(),
+    );
+
+    await _pumpDialog(tester, apiClient);
+
+    final top = tester.getTopLeft(find.text('Podaci o prodavnici')).dy;
+    expect(top, lessThan(200));
+  });
+
+  testWidgets(
+    'music store detail screen shows two tabs Pregled and Instrumenti',
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1280, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      final apiClient = ApiClient(
+        baseUrl: 'http://localhost:5059/api/v1/',
+        authState: AuthState(baseUrl: 'http://localhost:5059/api/v1/'),
+        httpClient: _client(),
+      );
+
+      await _pumpDialog(tester, apiClient);
+
+      expect(find.text('Pregled'), findsOneWidget);
+      expect(find.text('Instrumenti'), findsOneWidget);
+    },
+  );
+
+  testWidgets('delete closes the screen and refreshes the list', (
+    WidgetTester tester,
+  ) async {
+    tester.view.physicalSize = const Size(1280, 800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final httpClient = ScriptedClient((request) {
+      final url = request.url.toString();
+      if (request.method == 'DELETE' && url.contains('admin/music-stores/1')) {
+        return jsonResponse(const {}, 200);
+      }
+      if (url.contains('admin/music-stores/1')) {
+        return jsonResponse(const {
+          'id': 1,
+          'storeName': 'Muzička Kuća Sarajevo',
+          'businessHours': '09:00 - 19:00',
+          'phoneNumber': '+387 33 555 777',
+          'imagePath': '/uploads/stores/store1.jpg',
+          'addressId': 2,
+          'addressStreet': 'Titova 10',
+          'addressCity': 'Sarajevo',
+        }, 200);
+      }
+      return jsonResponse(const {
+        'items': [],
+        'page': 1,
+        'pageSize': 20,
+        'totalCount': 0,
+      }, 200);
+    });
+
+    final apiClient = ApiClient(
+      baseUrl: 'http://localhost:5059/api/v1/',
+      authState: AuthState(baseUrl: 'http://localhost:5059/api/v1/'),
+      httpClient: httpClient,
+    );
+
+    await _pumpDialog(tester, apiClient);
+
+    await tester.ensureVisible(find.text('Obriši'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Obriši'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Potvrdi'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Prodavnica je obrisana.'), findsOneWidget);
+    expect(find.byType(MusicStoreDetailScreen), findsNothing);
+  });
 }

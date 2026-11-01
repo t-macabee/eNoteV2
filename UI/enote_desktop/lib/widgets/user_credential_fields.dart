@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:enote_core/enote_core.dart';
 
-import '../theme/app_theme.dart';
 import 'entity_form_sections.dart';
 
 class UserCredentialFieldsController {

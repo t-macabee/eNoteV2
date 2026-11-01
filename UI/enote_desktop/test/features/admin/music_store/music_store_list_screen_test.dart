@@ -5,7 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:enote_core/enote_core.dart';
 import 'package:enote_desktop/features/admin/city/city_provider.dart';
 import 'package:enote_desktop/features/admin/instrument_type/instrument_type_provider.dart';
-import 'package:enote_desktop/features/admin/music_store/music_store_detail_dialog.dart';
+import 'package:enote_desktop/features/admin/music_store/music_store_detail_screen.dart';
 import 'package:enote_desktop/features/admin/music_store/music_store_list_screen.dart';
 import 'package:enote_desktop/features/admin/music_store/music_store_provider.dart';
 import 'package:enote_desktop/features/admin/music_store/store_instrument_provider.dart';
@@ -220,7 +220,6 @@ void main() {
     await tester.tap(find.byType(Card));
     await tester.pumpAndSettle();
 
-    expect(find.byType(Dialog), findsOneWidget);
-    expect(find.byType(MusicStoreDetailDialog), findsOneWidget);
+    expect(find.byType(MusicStoreDetailScreen), findsOneWidget);
   });
 }
