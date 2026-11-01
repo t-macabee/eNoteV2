@@ -72,6 +72,21 @@ class EntityDeleteButton extends StatelessWidget {
   }
 }
 
+class FormSectionScope extends InheritedWidget {
+  final bool flat;
+
+  const FormSectionScope({super.key, required this.flat, required super.child});
+
+  static bool flatOf(BuildContext context) {
+    final scope = context
+        .dependOnInheritedWidgetOfExactType<FormSectionScope>();
+    return scope?.flat ?? false;
+  }
+
+  @override
+  bool updateShouldNotify(FormSectionScope oldWidget) => oldWidget.flat != flat;
+}
+
 class FormSection extends StatelessWidget {
   static const double _accentWidth = 3;
 
@@ -88,6 +103,62 @@ class FormSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final flat = FormSectionScope.flatOf(context);
+
+    final titleBlock = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      spacing: AppSpacing.xs,
+      children: [
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Container(
+                key: const ValueKey('form_section_accent'),
+                width: _accentWidth,
+                color: AppTheme.primary,
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Flexible(
+                child: Text(
+                  title,
+                  style: Theme.of(context).textTheme.titleMedium
+                      ?.copyWith(fontWeight: FontWeight.w600),
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (description != null)
+          Padding(
+            padding: const EdgeInsets.only(left: _accentWidth + AppSpacing.sm),
+            child: Text(
+              description!,
+              style: const TextStyle(
+                fontSize: 12,
+                color: AppTheme.textSecondary,
+              ),
+            ),
+          ),
+      ],
+    );
+
+    final body = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        titleBlock,
+        const SizedBox(height: AppSpacing.lg),
+        for (var i = 0; i < children.length; i++) ...[
+          if (i > 0) const SizedBox(height: AppSpacing.lg),
+          children[i],
+        ],
+      ],
+    );
+
+    if (flat) {
+      return body;
+    }
+
     return Container(
       decoration: BoxDecoration(
         color: AppTheme.surfaceContainer,
@@ -95,55 +166,7 @@ class FormSection extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppRadius.lg),
       ),
       padding: const EdgeInsets.all(AppSpacing.xl),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            spacing: AppSpacing.xs,
-            children: [
-              IntrinsicHeight(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Container(
-                      key: const ValueKey('form_section_accent'),
-                      width: _accentWidth,
-                      color: AppTheme.primary,
-                    ),
-                    const SizedBox(width: AppSpacing.sm),
-                    Flexible(
-                      child: Text(
-                        title,
-                        style: Theme.of(context).textTheme.titleMedium
-                            ?.copyWith(fontWeight: FontWeight.w600),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              if (description != null)
-                Padding(
-                  padding: const EdgeInsets.only(
-                    left: _accentWidth + AppSpacing.sm,
-                  ),
-                  child: Text(
-                    description!,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: AppTheme.textSecondary,
-                    ),
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.lg),
-          for (var i = 0; i < children.length; i++) ...[
-            if (i > 0) const SizedBox(height: AppSpacing.lg),
-            children[i],
-          ],
-        ],
-      ),
+      child: body,
     );
   }
 }

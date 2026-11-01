@@ -95,4 +95,51 @@ void main() {
       tester.getSize(find.text('Osnovni podaci')).height,
     );
   });
+
+  testWidgets('FormSection is flat inside a flat FormSectionScope', (
+    tester,
+  ) async {
+    await _pumpInWidth(
+      tester,
+      600,
+      const FormSectionScope(
+        flat: true,
+        child: FormSection(
+          title: 'Osnovni podaci',
+          children: [Text('Polje A')],
+        ),
+      ),
+    );
+
+    expect(find.text('Osnovni podaci'), findsOneWidget);
+    expect(find.byKey(const ValueKey('form_section_accent')), findsOneWidget);
+
+    final containers = find.descendant(
+      of: find.byType(FormSection),
+      matching: find.byType(Container),
+    );
+    final hasBordered = tester.widgetList<Container>(containers).any((c) {
+      final d = c.decoration;
+      return d is BoxDecoration && d.border != null;
+    });
+    expect(hasBordered, isFalse);
+  });
+
+  testWidgets('FormSection keeps the card outside a scope', (tester) async {
+    await _pumpInWidth(
+      tester,
+      600,
+      const FormSection(title: 'Osnovni podaci', children: [Text('Polje A')]),
+    );
+
+    final containers = find.descendant(
+      of: find.byType(FormSection),
+      matching: find.byType(Container),
+    );
+    final hasBordered = tester.widgetList<Container>(containers).any((c) {
+      final d = c.decoration;
+      return d is BoxDecoration && d.border != null;
+    });
+    expect(hasBordered, isTrue);
+  });
 }

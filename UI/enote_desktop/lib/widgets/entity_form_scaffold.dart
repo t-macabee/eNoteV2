@@ -228,11 +228,25 @@ class _EntityFormScaffoldState extends State<EntityFormScaffold>
         (widget.onDelete != null || widget.deleteDisabledReason != null);
 
     return AlertDialog(
-      constraints: BoxConstraints(maxWidth: 640, maxHeight: maxHeight),
-      titlePadding: const EdgeInsets.fromLTRB(24, 20, 8, 0),
+      constraints: BoxConstraints(
+        maxWidth: AppSize.dialogMaxWidth,
+        maxHeight: maxHeight,
+      ),
+      titlePadding: const EdgeInsets.fromLTRB(
+        AppSpacing.xl,
+        AppSpacing.lg,
+        AppSpacing.sm,
+        0,
+      ),
       title: Row(
         children: [
-          Expanded(child: Text(widget.title)),
+          Expanded(
+            child: Text(
+              widget.title,
+              style: Theme.of(context).textTheme.titleLarge
+                  ?.copyWith(fontWeight: FontWeight.w600),
+            ),
+          ),
           IconButton(
             icon: const Icon(Icons.close),
             tooltip: 'Zatvori',
@@ -240,50 +254,61 @@ class _EntityFormScaffoldState extends State<EntityFormScaffold>
           ),
         ],
       ),
-      contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
+      contentPadding: const EdgeInsets.fromLTRB(
+        AppSpacing.xl,
+        AppSpacing.lg,
+        AppSpacing.xl,
+        0,
+      ),
       content: SizedBox(
-        width: 520,
+        width: AppSize.dialogContentWidth,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.only(bottom: AppSpacing.md),
           child: Form(
             key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              spacing: 16,
-              children: widget.fieldsBuilder(context),
+            child: FormSectionScope(
+              flat: true,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                spacing: AppSpacing.xl,
+                children: widget.fieldsBuilder(context),
+              ),
             ),
           ),
         ),
       ),
-      actionsPadding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+      actionsPadding: const EdgeInsets.fromLTRB(
+        AppSpacing.xl,
+        0,
+        AppSpacing.xl,
+        AppSpacing.lg,
+      ),
       actions: [
-        Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const Divider(),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                if (showDelete) ...[_deleteButton(), const Spacer()],
-                if (!showDelete) const Spacer(),
-                TextButton(
-                  onPressed: (_isSaving || _isDeleting)
-                      ? null
-                      : () => Navigator.of(context).pop(_didSave),
-                  child: const Text('Otkaži'),
-                ),
-                const SizedBox(width: 12),
-                EntitySaveButton(
-                  isSaving: _isSaving,
-                  isDeleting: _isDeleting,
-                  enabled: widget.saveEnabled,
-                  onPressed: _save,
-                  label: widget.saveLabel,
-                ),
-              ],
-            ),
-          ],
+        Container(
+          decoration: const BoxDecoration(
+            border: Border(top: BorderSide(color: AppTheme.outline)),
+          ),
+          padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+          child: Row(
+            children: [
+              if (showDelete) ...[_deleteButton(), const Spacer()],
+              if (!showDelete) const Spacer(),
+              TextButton(
+                onPressed: (_isSaving || _isDeleting)
+                    ? null
+                    : () => Navigator.of(context).pop(_didSave),
+                child: const Text('Otkaži'),
+              ),
+              const SizedBox(width: AppSpacing.md),
+              EntitySaveButton(
+                isSaving: _isSaving,
+                isDeleting: _isDeleting,
+                enabled: widget.saveEnabled,
+                onPressed: _save,
+                label: widget.saveLabel,
+              ),
+            ],
+          ),
         ),
       ],
     );
