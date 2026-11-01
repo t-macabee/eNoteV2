@@ -4,16 +4,19 @@ import 'package:provider/provider.dart';
 import 'package:enote_core/enote_core.dart';
 
 import '../features/admin/course/admin_course_list_screen.dart';
+import '../features/admin/dashboard/admin_dashboard_screen.dart';
 import '../features/admin/event/event_list_screen.dart';
 import '../features/admin/music_store/music_store_list_screen.dart';
 import '../features/admin/reference_data/reference_data_dialog.dart';
 import '../features/admin/users/user_grid_screen.dart';
 import '../features/instructor/course/course_list_screen.dart';
 import '../features/instructor/course/course_catalog_screen.dart';
+import '../features/instructor/dashboard/instructor_dashboard_screen.dart';
 import '../features/instructor/student/instructor_student_list_screen.dart';
 import '../features/instructor/student_directory/student_directory_screen.dart';
 import '../features/shared/announcement/announcement_list_screen.dart';
 import '../features/shared/announcement/store_announcement_provider.dart';
+import '../features/store_employee/dashboard/employee_dashboard_screen.dart';
 import '../features/store_employee/employee/shop_employee_list_screen.dart';
 import '../features/store_employee/rental/rental_list_screen.dart';
 import '../features/store_employee/store/shop_store_screen.dart';
@@ -21,6 +24,12 @@ import '../widgets/entity_list_screen.dart';
 import 'role_menu.dart';
 
 const kRoleMenuEntries = <RoleMenuEntry>[
+  RoleMenuEntry(
+    icon: Icons.dashboard_outlined,
+    label: 'Početna',
+    screenBuilder: _buildAdminDashboard,
+    allowedRoles: [UserRole.administrator],
+  ),
   RoleMenuEntry(
     icon: Icons.people_outline,
     label: 'Korisnici',
@@ -54,6 +63,12 @@ const kRoleMenuEntries = <RoleMenuEntry>[
     dividerBefore: true,
   ),
   RoleMenuEntry(
+    icon: Icons.dashboard_outlined,
+    label: 'Početna',
+    screenBuilder: _buildInstructorDashboard,
+    allowedRoles: [UserRole.instructor],
+  ),
+  RoleMenuEntry(
     icon: Icons.class_outlined,
     label: 'Kursevi',
     screenBuilder: _buildCourseList,
@@ -76,6 +91,12 @@ const kRoleMenuEntries = <RoleMenuEntry>[
     label: 'Svi studenti',
     screenBuilder: _buildStudentDirectory,
     allowedRoles: [UserRole.instructor],
+  ),
+  RoleMenuEntry(
+    icon: Icons.dashboard_outlined,
+    label: 'Početna',
+    screenBuilder: _buildEmployeeDashboard,
+    allowedRoles: [UserRole.storeEmployee],
   ),
   RoleMenuEntry(
     icon: Icons.storefront_outlined,
@@ -102,6 +123,18 @@ const kRoleMenuEntries = <RoleMenuEntry>[
     allowedRoles: [UserRole.storeEmployee],
   ),
 ];
+
+Widget _buildAdminDashboard(BuildContext context) {
+  return const AdminDashboardScreen();
+}
+
+Widget _buildInstructorDashboard(BuildContext context) {
+  return const InstructorDashboardScreen();
+}
+
+Widget _buildEmployeeDashboard(BuildContext context) {
+  return const EmployeeDashboardScreen();
+}
 
 Widget _buildMusicStoreList(BuildContext context) {
   return const MusicStoreListScreen();

@@ -11,6 +11,7 @@ import '../widgets/dialog_shell.dart';
 import '../widgets/entity_form_scaffold.dart';
 import 'role_menu.dart';
 import 'role_menu_entries.dart';
+import 'shell_navigation.dart';
 
 class MasterScreen extends StatefulWidget {
   const MasterScreen({super.key});
@@ -102,6 +103,16 @@ class _MasterScreenState extends State<MasterScreen> {
 
   bool get _isOnHome => identical(_selectedEntry, _homeEntry);
 
+  void _openEntry(String label) {
+    final roles = _currentRoles();
+    for (final entry in kRoleMenuEntries) {
+      if (entry.isDialog || entry.label != label) continue;
+      if (!entry.allowedRoles.any(roles.contains)) continue;
+      _onEntrySelected(entry);
+      return;
+    }
+  }
+
   void _goBack() {
     setState(() {
       _selectedEntry = _homeEntry;
@@ -184,54 +195,57 @@ class _MasterScreenState extends State<MasterScreen> {
             onEditStore: (isStoreEmployee && isManager) ? _openEditStore : null,
           ),
           Expanded(
-            child: Column(
-              children: [
-                Container(
-                  height: 56,
-                  decoration: const BoxDecoration(
-                    border: Border(
-                      bottom: BorderSide(color: AppTheme.outline, width: 1),
+            child: ShellNavigation(
+              openEntry: _openEntry,
+              child: Column(
+                children: [
+                  Container(
+                    height: 56,
+                    decoration: const BoxDecoration(
+                      border: Border(
+                        bottom: BorderSide(color: AppTheme.outline, width: 1),
+                      ),
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: Row(
+                      children: [
+                        Tooltip(
+                          message: _isOnHome
+                              ? 'Ovo je početni ekran'
+                              : 'Nazad na početni ekran',
+                          child: IconButton(
+                            icon: const BackButtonIcon(),
+                            onPressed: _isOnHome ? null : _goBack,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        if (_selectedEntry != null)
+                          Expanded(
+                            child: Text(
+                              _selectedEntry!.label,
+                              style: Theme.of(context).textTheme.titleLarge,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          )
+                        else
+                          const Spacer(),
+                        NotificationBadge(
+                          controller: context.read<NotificationController>(),
+                          onTap: _openNotifications,
+                        ),
+                      ],
                     ),
                   ),
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  child: Row(
-                    children: [
-                      Tooltip(
-                        message: _isOnHome
-                            ? 'Ovo je početni ekran'
-                            : 'Nazad na početni ekran',
-                        child: IconButton(
-                          icon: const BackButtonIcon(),
-                          onPressed: _isOnHome ? null : _goBack,
+                  Expanded(
+                    child:
+                        _selectedEntry?.screenBuilder(context) ??
+                        const Center(
+                          child: Text('Molimo odaberite opciju iz izbornika.'),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      if (_selectedEntry != null)
-                        Expanded(
-                          child: Text(
-                            _selectedEntry!.label,
-                            style: Theme.of(context).textTheme.titleLarge,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        )
-                      else
-                        const Spacer(),
-                      NotificationBadge(
-                        controller: context.read<NotificationController>(),
-                        onTap: _openNotifications,
-                      ),
-                    ],
                   ),
-                ),
-                Expanded(
-                  child:
-                      _selectedEntry?.screenBuilder(context) ??
-                      const Center(
-                        child: Text('Molimo odaberite opciju iz izbornika.'),
-                      ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ],

@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:enote_core/enote_core.dart';
+import 'package:enote_desktop/features/store_employee/dashboard/employee_dashboard_screen.dart';
 import 'package:enote_desktop/features/store_employee/employee/shop_employee_list_screen.dart';
-import 'package:enote_desktop/features/store_employee/store/shop_store_screen.dart';
 import 'package:enote_desktop/shell/role_menu.dart';
 
 import '../store_employee_shell.dart';
@@ -38,6 +38,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    expect(find.byType(EmployeeDashboardScreen), findsOneWidget);
     expect(tester.widget<IconButton>(_backButton()).onPressed, isNull);
     expect(find.byTooltip('Ovo je početni ekran'), findsOneWidget);
   });
@@ -64,7 +65,7 @@ void main() {
 
     await tester.tap(_backButton());
     await tester.pumpAndSettle();
-    expect(find.byType(ShopStoreScreen), findsOneWidget);
+    expect(find.byType(EmployeeDashboardScreen), findsOneWidget);
     expect(find.byType(ShopEmployeeListScreen), findsNothing);
     expect(tester.widget<IconButton>(_backButton()).onPressed, isNull);
   });
@@ -85,7 +86,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(tester.widget<IconButton>(_backButton()).onPressed, isNotNull);
 
-      await tester.tap(_menuEntry('Moja prodavnica'));
+      await tester.tap(_menuEntry('Početna'));
       await tester.pumpAndSettle();
 
       expect(tester.widget<IconButton>(_backButton()).onPressed, isNull);
@@ -112,7 +113,7 @@ void main() {
         .first;
 
     expect(
-      find.descendant(of: topBar, matching: find.text('Moja prodavnica')),
+      find.descendant(of: topBar, matching: find.text('Početna')),
       findsOneWidget,
     );
 
