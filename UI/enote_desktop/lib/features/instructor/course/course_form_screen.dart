@@ -3,8 +3,10 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
+
 import '../../../widgets/date_field.dart';
 import '../../../widgets/entity_form_scaffold.dart';
+import '../../../widgets/entity_form_sections.dart';
 import '../../../widgets/entity_text_field.dart';
 import '../../../widgets/form_controller_lifecycle.dart';
 import 'course_provider.dart';
@@ -47,7 +49,9 @@ class _CourseFormScreenState extends State<CourseFormScreen>
   }
 
   Future<bool> _save() async {
-    if (_startDate != null && _endDate != null && _endDate!.isBefore(_startDate!)) {
+    if (_startDate != null &&
+        _endDate != null &&
+        _endDate!.isBefore(_startDate!)) {
       ErrorBanner.show(
         context,
         message: 'Datum završetka ne može biti prije datuma početka.',
@@ -86,33 +90,53 @@ class _CourseFormScreenState extends State<CourseFormScreen>
       isEditMode: widget.existing != null,
       closeAfterAdd: true,
       fieldsBuilder: (_) => [
-        EntityTextField(controller: _nameController, label: 'Naziv', maxLength: 200),
-        EntityTextField(
-          controller: _descriptionController,
-          label: 'Opis',
-          required: false,
-          maxLines: 3,
-        ),
-        EntityTextField(
-          controller: _priceController,
-          label: 'Mjesečna cijena',
-          hintText: 'npr. 25.00',
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          inputFormatters: [
-            FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
+        FormSection(
+          title: 'Osnovni podaci',
+          children: [
+            EntityTextField(
+              controller: _nameController,
+              label: 'Naziv',
+              maxLength: 200,
+            ),
+            EntityTextField(
+              controller: _descriptionController,
+              label: 'Opis',
+              required: false,
+              maxLines: 3,
+            ),
+            EntityTextField(
+              controller: _priceController,
+              label: 'Mjesečna cijena',
+              hintText: 'npr. 25.00',
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
+              ],
+              validator: (value) =>
+                  Validators.nonNegativeDecimal(value, max: 10000),
+            ),
           ],
-          validator: (value) =>
-              Validators.nonNegativeDecimal(value, max: 10000),
         ),
-        DateField(
-          labelText: 'Datum početka',
-          initialValue: _startDate,
-          onChanged: (value) => _startDate = value,
-        ),
-        DateField(
-          labelText: 'Datum završetka',
-          initialValue: _endDate,
-          onChanged: (value) => _endDate = value,
+        FormSection(
+          title: 'Trajanje',
+          children: [
+            FormFieldRow(
+              children: [
+                DateField(
+                  labelText: 'Datum početka',
+                  initialValue: _startDate,
+                  onChanged: (value) => _startDate = value,
+                ),
+                DateField(
+                  labelText: 'Datum završetka',
+                  initialValue: _endDate,
+                  onChanged: (value) => _endDate = value,
+                ),
+              ],
+            ),
+          ],
         ),
       ],
       onSave: _save,

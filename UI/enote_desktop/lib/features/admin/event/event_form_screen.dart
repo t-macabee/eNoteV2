@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
+
 import '../../../widgets/async_dropdown.dart';
 import '../../../widgets/date_time_field.dart';
 import '../../../widgets/entity_form_scaffold.dart';
+import '../../../widgets/entity_form_sections.dart';
 import '../../../widgets/entity_text_field.dart';
 import '../../../widgets/form_controller_lifecycle.dart';
 import '../address/address_provider.dart';
@@ -49,7 +51,10 @@ class _EventFormScreenState extends State<EventFormScreen>
 
   Future<bool> _save() async {
     if (_startsAt == null) {
-      ErrorBanner.show(context, message: 'Datum i vrijeme početka su obavezni.');
+      ErrorBanner.show(
+        context,
+        message: 'Datum i vrijeme početka su obavezni.',
+      );
       return false;
     }
     if (_endsAt != null && _endsAt!.isBefore(_startsAt!)) {
@@ -92,38 +97,53 @@ class _EventFormScreenState extends State<EventFormScreen>
             }
           : null,
       fieldsBuilder: (_) => [
-        EntityTextField(
-          controller: _titleController,
-          label: 'Naziv',
-          maxLength: 150,
+        FormSection(
+          title: 'Osnovni podaci',
+          children: [
+            EntityTextField(
+              controller: _titleController,
+              label: 'Naziv',
+              maxLength: 150,
+            ),
+            EntityTextField(
+              controller: _descriptionController,
+              label: 'Opis',
+              maxLines: 3,
+              maxLength: 4000,
+            ),
+          ],
         ),
-        EntityTextField(
-          controller: _descriptionController,
-          label: 'Opis',
-          maxLines: 3,
-          maxLength: 4000,
-        ),
-        DateTimeField(
-          labelText: 'Početak',
-          initialValue: _startsAt,
-          onChanged: (value) => _startsAt = value,
-          validator: (value) => value == null ? 'Početak je obavezan.' : null,
-        ),
-        DateTimeField(
-          labelText: 'Kraj',
-          initialValue: _endsAt,
-          onChanged: (value) => _endsAt = value,
-        ),
-        AsyncDropdown<AddressReferenceDto>(
-          label: 'Adresa',
-          fetcher: () => fetchAllPages(
-            (query) => context.read<AddressProvider>().search(query),
-          ),
-          itemLabel: (address) =>
-              '${address.street} ${address.number}, ${address.city}',
-          itemId: (address) => address.id,
-          value: _addressId,
-          onChanged: (id, _) => setState(() => _addressId = id as int?),
+        FormSection(
+          title: 'Termin i lokacija',
+          children: [
+            FormFieldRow(
+              children: [
+                DateTimeField(
+                  labelText: 'Početak',
+                  initialValue: _startsAt,
+                  onChanged: (value) => _startsAt = value,
+                  validator: (value) =>
+                      value == null ? 'Početak je obavezan.' : null,
+                ),
+                DateTimeField(
+                  labelText: 'Kraj',
+                  initialValue: _endsAt,
+                  onChanged: (value) => _endsAt = value,
+                ),
+              ],
+            ),
+            AsyncDropdown<AddressReferenceDto>(
+              label: 'Adresa',
+              fetcher: () => fetchAllPages(
+                (query) => context.read<AddressProvider>().search(query),
+              ),
+              itemLabel: (address) =>
+                  '${address.street} ${address.number}, ${address.city}',
+              itemId: (address) => address.id,
+              value: _addressId,
+              onChanged: (id, _) => setState(() => _addressId = id as int?),
+            ),
+          ],
         ),
       ],
       onSave: _save,

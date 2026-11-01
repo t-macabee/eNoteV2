@@ -3,8 +3,10 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
+
 import '../../../widgets/date_time_field.dart';
 import '../../../widgets/entity_form_scaffold.dart';
+import '../../../widgets/entity_form_sections.dart';
 import '../../../widgets/entity_text_field.dart';
 import '../../../widgets/form_controller_lifecycle.dart';
 import '../course/course_provider.dart';
@@ -69,9 +71,10 @@ class _LectureFormScreenState extends State<LectureFormScreen>
     try {
       final courseId = widget.courseId;
       final students = await fetchAllPages(
-        (query) => context
-            .read<CourseProvider>()
-            .getEnrollments(courseId, params: query),
+        (query) => context.read<CourseProvider>().getEnrollments(
+          courseId,
+          params: query,
+        ),
         filters: {'enrollmentStatus': EnrollmentStatus.active.toJson()},
       );
       if (mounted) {
@@ -104,7 +107,10 @@ class _LectureFormScreenState extends State<LectureFormScreen>
     final durationText = _durationController.text.trim();
     final duration = int.tryParse(durationText);
     if (duration == null || duration <= 0) {
-      ErrorBanner.show(context, message: 'Trajanje mora biti pozitivan broj (minute).');
+      ErrorBanner.show(
+        context,
+        message: 'Trajanje mora biti pozitivan broj (minute).',
+      );
       return false;
     }
 
@@ -113,7 +119,10 @@ class _LectureFormScreenState extends State<LectureFormScreen>
     if (capacityText.isNotEmpty) {
       capacity = int.tryParse(capacityText);
       if (capacity == null || capacity < 0) {
-        ErrorBanner.show(context, message: 'Kapacitet mora biti nenegativan broj.');
+        ErrorBanner.show(
+          context,
+          message: 'Kapacitet mora biti nenegativan broj.',
+        );
         return false;
       }
     }
@@ -156,129 +165,155 @@ class _LectureFormScreenState extends State<LectureFormScreen>
       closeAfterAdd: true,
       saveEnabled: enabled,
       fieldsBuilder: (_) => [
-        if (_isCancelled) ...[
+        if (_isCancelled)
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(AppSpacing.md),
             decoration: BoxDecoration(
-              color: Colors.orange.shade50,
-              border: Border.all(color: Colors.orange.shade200),
-              borderRadius: BorderRadius.circular(8),
+              color: StatusTone.warning.background,
+              border: Border.all(color: StatusTone.warning.color),
+              borderRadius: BorderRadius.circular(AppRadius.md),
             ),
-            child: const Row(
+            child: Row(
               children: [
-                Icon(Icons.warning_amber, color: Colors.orange),
-                SizedBox(width: 8),
+                Icon(Icons.warning_amber, color: StatusTone.warning.color),
+                const SizedBox(width: AppSpacing.sm),
                 Expanded(
                   child: Text(
                     'Ovo predavanje je otkazano i ne može se uređivati.',
-                    style: TextStyle(color: Colors.orange),
+                    style: TextStyle(color: StatusTone.warning.color),
                   ),
                 ),
               ],
             ),
           ),
-        ],
-        EntityTextField(
-          controller: _nameController,
-          label: 'Naziv',
-          enabled: enabled,
-          required: enabled,
-          maxLength: 200,
-        ),
-        EntityTextField(
-          controller: _locationController,
-          label: 'Lokacija',
-          enabled: enabled,
-          required: enabled,
-          maxLength: 200,
-        ),
-        DropdownButtonFormField<LectureType>(
-          initialValue: _lectureType,
-          decoration: const InputDecoration(
-            labelText: 'Tip predavanja',
-            border: OutlineInputBorder(),
-          ),
-          items: LectureType.values
-              .map((t) => DropdownMenuItem(
-                    value: t,
-                    child: Text(lectureTypeLabel(t)),
-                  ))
-              .toList(),
-          onChanged: enabled && !_isEditMode
-              ? (value) {
-                  if (value != null) setState(() => _lectureType = value);
-                }
-              : null,
-          validator: enabled
-              ? (value) => value == null ? 'Tip je obavezan.' : null
-              : null,
-        ),
-        SegmentedButton<bool>(
-          segments: const [
-            ButtonSegment(value: false, label: Text('Grupno')),
-            ButtonSegment(value: true, label: Text('Individualno')),
-          ],
-          selected: {_isIndividual},
-          onSelectionChanged: enabled && !_isEditMode
-              ? (selection) => _setIndividual(selection.first)
-              : null,
-        ),
-        if (_isIndividual)
-          _isEditMode
-              ? EntityTextField(
-                  controller: _studentNameController,
-                  label: 'Student',
-                  required: false,
-                  enabled: false,
-                )
-              : DropdownButtonFormField<int>(
-                  initialValue: _studentId,
+        FormSection(
+          title: 'Osnovni podaci',
+          children: [
+            EntityTextField(
+              controller: _nameController,
+              label: 'Naziv',
+              enabled: enabled,
+              required: enabled,
+              maxLength: 200,
+            ),
+            EntityTextField(
+              controller: _locationController,
+              label: 'Lokacija',
+              enabled: enabled,
+              required: enabled,
+              maxLength: 200,
+            ),
+            FormFieldRow(
+              children: [
+                DropdownButtonFormField<LectureType>(
+                  initialValue: _lectureType,
                   decoration: const InputDecoration(
-                    labelText: 'Student',
+                    labelText: 'Tip predavanja',
                     border: OutlineInputBorder(),
                   ),
-                  items: [
-                    for (final enrollment
-                        in _courseStudents ?? <CourseEnrollmentDto>[])
-                      DropdownMenuItem(
-                        value: enrollment.studentId,
-                        child: Text(enrollment.studentName),
-                      ),
-                  ],
-                  onChanged: enabled
-                      ? (value) => setState(() => _studentId = value)
+                  items: LectureType.values
+                      .map(
+                        (t) => DropdownMenuItem(
+                          value: t,
+                          child: Text(lectureTypeLabel(t)),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: enabled && !_isEditMode
+                      ? (value) {
+                          if (value != null) {
+                            setState(() => _lectureType = value);
+                          }
+                        }
                       : null,
                   validator: enabled
-                      ? (value) =>
-                          value == null ? 'Student je obavezan.' : null
+                      ? (value) => value == null ? 'Tip je obavezan.' : null
                       : null,
                 ),
-        DateTimeField(
-          labelText: 'Vrijeme predavanja',
-          initialValue: _lectureTime,
-          enabled: enabled,
-          onChanged: enabled ? (value) => _lectureTime = value : null,
-          validator: enabled
-              ? (value) => value == null ? 'Vrijeme je obavezno.' : null
-              : null,
+                SegmentedButton<bool>(
+                  segments: const [
+                    ButtonSegment(value: false, label: Text('Grupno')),
+                    ButtonSegment(value: true, label: Text('Individualno')),
+                  ],
+                  selected: {_isIndividual},
+                  onSelectionChanged: enabled && !_isEditMode
+                      ? (selection) => _setIndividual(selection.first)
+                      : null,
+                ),
+              ],
+            ),
+          ],
         ),
-        EntityTextField(
-          controller: _durationController,
-          label: 'Trajanje (minute)',
-          hintText: 'npr. 90',
-          enabled: enabled,
-          keyboardType: TextInputType.number,
-          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-          validator: enabled ? _validateDuration : null,
-        ),
-        EntityTextField(
-          controller: _capacityController,
-          label: 'Kapacitet (opcionalno)',
-          hintText: 'ostavite prazno za neograničeno',
-          enabled: enabled && !_isIndividual,
-          keyboardType: TextInputType.number,
-          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-          validator: enabled ? _validateCapacity : null,
+        if (_isIndividual)
+          FormSection(
+            title: 'Učesnik',
+            children: [
+              _isEditMode
+                  ? EntityTextField(
+                      controller: _studentNameController,
+                      label: 'Student',
+                      required: false,
+                      enabled: false,
+                    )
+                  : DropdownButtonFormField<int>(
+                      initialValue: _studentId,
+                      decoration: const InputDecoration(
+                        labelText: 'Student',
+                        border: OutlineInputBorder(),
+                      ),
+                      items: [
+                        for (final enrollment
+                            in _courseStudents ?? <CourseEnrollmentDto>[])
+                          DropdownMenuItem(
+                            value: enrollment.studentId,
+                            child: Text(enrollment.studentName),
+                          ),
+                      ],
+                      onChanged: enabled
+                          ? (value) => setState(() => _studentId = value)
+                          : null,
+                      validator: enabled
+                          ? (value) =>
+                                value == null ? 'Student je obavezan.' : null
+                          : null,
+                    ),
+            ],
+          ),
+        FormSection(
+          title: 'Termin',
+          children: [
+            DateTimeField(
+              labelText: 'Vrijeme predavanja',
+              initialValue: _lectureTime,
+              enabled: enabled,
+              onChanged: enabled ? (value) => _lectureTime = value : null,
+              validator: enabled
+                  ? (value) => value == null ? 'Vrijeme je obavezno.' : null
+                  : null,
+            ),
+            FormFieldRow(
+              children: [
+                EntityTextField(
+                  controller: _durationController,
+                  label: 'Trajanje (minute)',
+                  hintText: 'npr. 90',
+                  enabled: enabled,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  validator: enabled ? _validateDuration : null,
+                ),
+                EntityTextField(
+                  controller: _capacityController,
+                  label: 'Kapacitet (opcionalno)',
+                  hintText: 'ostavite prazno za neograničeno',
+                  enabled: enabled && !_isIndividual,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  validator: enabled ? _validateCapacity : null,
+                ),
+              ],
+            ),
+          ],
         ),
       ],
       onSave: _save,
@@ -308,4 +343,3 @@ class _LectureFormScreenState extends State<LectureFormScreen>
     return null;
   }
 }
-
