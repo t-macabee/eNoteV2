@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:enote_core/enote_core.dart';
 
 import '../theme/app_theme.dart';
 
@@ -32,19 +33,27 @@ class DialogShellHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final leading = this.leading;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.sm,
+        AppSpacing.xs,
+        AppSpacing.sm,
+        AppSpacing.xs,
+      ),
       child: Row(
         children: [
           ?leading,
           Expanded(
             child: Padding(
               padding: leading == null
-                  ? const EdgeInsets.only(left: 16)
+                  ? const EdgeInsets.only(left: AppSpacing.lg)
                   : EdgeInsets.zero,
               child: label,
             ),
           ),
-          if (action != null) ...[action!, const SizedBox(width: 8)],
+          if (action != null) ...[
+            action!,
+            const SizedBox(width: AppSpacing.sm),
+          ],
           IconButton(
             icon: const Icon(Icons.close),
             tooltip: 'Zatvori',
@@ -84,7 +93,7 @@ class DialogShell extends StatelessWidget {
       backgroundColor: AppTheme.surfaceContainer,
       clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         side: const BorderSide(color: AppTheme.outline),
       ),
       child: ConstrainedBox(
@@ -100,12 +109,17 @@ class DialogShell extends StatelessWidget {
               header!
             else
               Padding(
-                padding: const EdgeInsets.fromLTRB(24, 16, 16, 16),
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.xl,
+                  AppSpacing.lg,
+                  AppSpacing.lg,
+                  AppSpacing.lg,
+                ),
                 child: Row(
                   children: [
                     if (leading != null) ...[
                       leading!,
-                      const SizedBox(width: 8),
+                      const SizedBox(width: AppSpacing.sm),
                     ],
                     Expanded(
                       child: Text(
@@ -116,7 +130,7 @@ class DialogShell extends StatelessWidget {
                     ),
                     if (headerAction != null) ...[
                       headerAction!,
-                      const SizedBox(width: 8),
+                      const SizedBox(width: AppSpacing.sm),
                     ],
                     IconButton(
                       icon: const Icon(Icons.close),
