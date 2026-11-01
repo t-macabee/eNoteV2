@@ -73,6 +73,8 @@ class EntityDeleteButton extends StatelessWidget {
 }
 
 class FormSection extends StatelessWidget {
+  static const double _accentWidth = 3;
+
   final String title;
   final String? description;
   final List<Widget> children;
@@ -100,13 +102,37 @@ class FormSection extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             spacing: AppSpacing.xs,
             children: [
-              Text(title, style: Theme.of(context).textTheme.titleMedium),
+              IntrinsicHeight(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Container(
+                      key: const ValueKey('form_section_accent'),
+                      width: _accentWidth,
+                      color: AppTheme.primary,
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    Flexible(
+                      child: Text(
+                        title,
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
               if (description != null)
-                Text(
-                  description!,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: AppTheme.textSecondary,
+                Padding(
+                  padding: const EdgeInsets.only(
+                    left: _accentWidth + AppSpacing.sm,
+                  ),
+                  child: Text(
+                    description!,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppTheme.textSecondary,
+                    ),
                   ),
                 ),
             ],

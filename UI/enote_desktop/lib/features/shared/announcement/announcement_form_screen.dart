@@ -3,8 +3,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../../theme/app_theme.dart';
 import '../../../widgets/entity_form_scaffold.dart';
+import '../../../widgets/entity_form_sections.dart';
 import '../../../widgets/entity_text_field.dart';
 import '../../../widgets/form_controller_lifecycle.dart';
 import '../../../widgets/image_upload_helper.dart';
@@ -46,7 +46,10 @@ class _AnnouncementFormScreenState extends State<AnnouncementFormScreen>
   }
 
   Future<String?> _uploadImage(
-      Uint8List bytes, String fileName, String contentType) {
+    Uint8List bytes,
+    String fileName,
+    String contentType,
+  ) {
     return uploadImageFor(
       widget.provider,
       widget.existing!.id,
@@ -87,33 +90,39 @@ class _AnnouncementFormScreenState extends State<AnnouncementFormScreen>
       isEditMode: _isEditMode,
       closeAfterAdd: true,
       fieldsBuilder: (_) => [
-        EntityTextField(controller: _titleController, label: 'Naslov', maxLength: 150),
-        EntityTextField(
-          controller: _contentController,
-          label: 'Sadržaj',
-          maxLines: 8,
-          minLines: 4,
-          maxLength: 4000,
+        FormSection(
+          title: 'Sadržaj',
+          children: [
+            EntityTextField(
+              controller: _titleController,
+              label: 'Naslov',
+              maxLength: 150,
+            ),
+            EntityTextField(
+              controller: _contentController,
+              label: 'Sadržaj',
+              maxLines: 8,
+              minLines: 4,
+              maxLength: 4000,
+            ),
+          ],
         ),
-        if (_isEditMode) ...[
-          const Text('Slika', style: TextStyle(fontWeight: FontWeight.bold)),
-          const Text(
-            'Slika se automatski sprema prilikom odabira.',
-            style: TextStyle(
-              fontSize: 12,
-              color: AppTheme.textSecondary,
-            ),
+        if (_isEditMode)
+          FormSection(
+            title: 'Slika',
+            description: 'Slika se automatski sprema prilikom odabira.',
+            children: [
+              Align(
+                alignment: Alignment.centerLeft,
+                child: ImageField(
+                  imageUrl: _currentImagePath,
+                  imagePicker: pickImageBytes,
+                  onUpload: _uploadImage,
+                  apiClient: context.read<ApiClient>(),
+                ),
+              ),
+            ],
           ),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: ImageField(
-              imageUrl: _currentImagePath,
-              imagePicker: pickImageBytes,
-              onUpload: _uploadImage,
-              apiClient: context.read<ApiClient>(),
-            ),
-          ),
-        ],
       ],
       onSave: _save,
       onReset: clearTextControllers,

@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
+
 import '../../../widgets/entity_form_scaffold.dart';
+import '../../../widgets/entity_form_sections.dart';
 import '../../../widgets/entity_text_field.dart';
 import '../../../widgets/form_controller_lifecycle.dart';
 import 'lecture_note_provider.dart';
@@ -60,12 +62,21 @@ class _LectureNoteFormScreenState extends State<LectureNoteFormScreen>
       title: _isEditMode ? 'Uredi bilješku' : 'Dodaj bilješku',
       isEditMode: _isEditMode,
       fieldsBuilder: (_) => [
-        EntityTextField(controller: _titleController, label: 'Naslov', maxLength: 200),
-        EntityTextField(
-          controller: _contentController,
-          label: 'Sadržaj',
-          maxLines: 8,
-          minLines: 4,
+        FormSection(
+          title: 'Bilješka',
+          children: [
+            EntityTextField(
+              controller: _titleController,
+              label: 'Naslov',
+              maxLength: 200,
+            ),
+            EntityTextField(
+              controller: _contentController,
+              label: 'Sadržaj',
+              maxLines: 8,
+              minLines: 4,
+            ),
+          ],
         ),
       ],
       onSave: _save,

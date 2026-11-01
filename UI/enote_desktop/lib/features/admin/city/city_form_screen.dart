@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
+
 import '../../../widgets/entity_form_scaffold.dart';
+import '../../../widgets/entity_form_sections.dart';
 import '../../../widgets/entity_text_field.dart';
 import '../../../widgets/form_controller_lifecycle.dart';
 import 'city_provider.dart';
@@ -52,7 +54,16 @@ class _CityFormScreenState extends State<CityFormScreen>
       isEditMode: widget.existing != null,
       onReset: clearTextControllers,
       fieldsBuilder: (_) => [
-        EntityTextField(controller: _nameController, label: 'Naziv grada', maxLength: 100),
+        FormSection(
+          title: 'Osnovni podaci',
+          children: [
+            EntityTextField(
+              controller: _nameController,
+              label: 'Naziv grada',
+              maxLength: 100,
+            ),
+          ],
+        ),
       ],
       onSave: _save,
     );

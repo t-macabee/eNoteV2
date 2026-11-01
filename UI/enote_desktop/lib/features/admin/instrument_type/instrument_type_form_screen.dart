@@ -3,7 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
+
 import '../../../widgets/entity_form_scaffold.dart';
+import '../../../widgets/entity_form_sections.dart';
 import '../../../widgets/entity_text_field.dart';
 import '../../../widgets/form_controller_lifecycle.dart';
 import 'instrument_type_provider.dart';
@@ -63,16 +65,32 @@ class _InstrumentTypeFormScreenState extends State<InstrumentTypeFormScreen>
       isEditMode: widget.existing != null,
       onReset: clearTextControllers,
       fieldsBuilder: (_) => [
-        EntityTextField(controller: _typeController, label: 'Tip', maxLength: 100),
-        EntityTextField(
-          controller: _monthlyFeeController,
-          label: 'Mjesečna naknada',
-          hintText: 'npr. 25.00',
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          inputFormatters: [
-            FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
+        FormSection(
+          title: 'Osnovni podaci',
+          children: [
+            FormFieldRow(
+              children: [
+                EntityTextField(
+                  controller: _typeController,
+                  label: 'Tip',
+                  maxLength: 100,
+                ),
+                EntityTextField(
+                  controller: _monthlyFeeController,
+                  label: 'Mjesečna naknada',
+                  hintText: 'npr. 25.00',
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
+                  ],
+                  validator: (value) =>
+                      Validators.nonNegativeDecimal(value, max: 99999999.99),
+                ),
+              ],
+            ),
           ],
-          validator: (value) => Validators.nonNegativeDecimal(value, max: 99999999.99),
         ),
       ],
       onSave: _save,

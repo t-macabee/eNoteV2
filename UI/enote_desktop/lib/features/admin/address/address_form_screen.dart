@@ -4,6 +4,7 @@ import 'package:enote_core/enote_core.dart';
 
 import '../../../widgets/async_dropdown.dart';
 import '../../../widgets/entity_form_scaffold.dart';
+import '../../../widgets/entity_form_sections.dart';
 import '../../../widgets/entity_text_field.dart';
 import '../../../widgets/form_controller_lifecycle.dart';
 import '../city/city_provider.dart';
@@ -64,26 +65,43 @@ class _AddressFormScreenState extends State<AddressFormScreen>
         setState(() => _selectedCityId = null);
       },
       fieldsBuilder: (_) => [
-        AsyncDropdown<CityDto>(
-          label: 'Grad',
-          value: _selectedCityId,
-          fetcher: () => fetchAllPages(
-            (query) => context.read<CityProvider>().search(query),
-          ),
-          itemLabel: (item) => item.name,
-          itemId: (item) => item.id,
-          onChanged: (id, item) {
-            setState(() {
-              _selectedCityId = id as int?;
-            });
-          },
-          validator: (value) {
-            if (value == null) return 'Grad je obavezan';
-            return null;
-          },
+        FormSection(
+          title: 'Adresa',
+          children: [
+            AsyncDropdown<CityDto>(
+              label: 'Grad',
+              value: _selectedCityId,
+              fetcher: () => fetchAllPages(
+                (query) => context.read<CityProvider>().search(query),
+              ),
+              itemLabel: (item) => item.name,
+              itemId: (item) => item.id,
+              onChanged: (id, item) {
+                setState(() {
+                  _selectedCityId = id as int?;
+                });
+              },
+              validator: (value) {
+                if (value == null) return 'Grad je obavezan';
+                return null;
+              },
+            ),
+            FormFieldRow(
+              children: [
+                EntityTextField(
+                  controller: _streetController,
+                  label: 'Ulica',
+                  maxLength: 100,
+                ),
+                EntityTextField(
+                  controller: _numberController,
+                  label: 'Broj',
+                  maxLength: 20,
+                ),
+              ],
+            ),
+          ],
         ),
-        EntityTextField(controller: _streetController, label: 'Ulica', maxLength: 100),
-        EntityTextField(controller: _numberController, label: 'Broj', maxLength: 20),
       ],
       onSave: _save,
     );

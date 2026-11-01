@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
+
 import '../../../widgets/date_time_field.dart';
 import '../../../widgets/entity_form_scaffold.dart';
+import '../../../widgets/entity_form_sections.dart';
 import '../../../widgets/entity_text_field.dart';
 import '../../../widgets/form_controller_lifecycle.dart';
 import 'assignment_provider.dart';
@@ -80,30 +82,44 @@ class _AssignmentFormScreenState extends State<AssignmentFormScreen>
       isEditMode: _isEditMode,
       closeAfterAdd: true,
       fieldsBuilder: (_) => [
-        EntityTextField(controller: _titleController, label: 'Naslov', maxLength: 200),
-        EntityTextField(
-          controller: _descriptionController,
-          label: 'Opis',
-          maxLines: 6,
-          minLines: 3,
+        FormSection(
+          title: 'Osnovni podaci',
+          children: [
+            EntityTextField(
+              controller: _titleController,
+              label: 'Naslov',
+              maxLength: 200,
+            ),
+            EntityTextField(
+              controller: _descriptionController,
+              label: 'Opis',
+              maxLines: 6,
+              minLines: 3,
+            ),
+          ],
         ),
-        DateTimeField(
-          key: _dueAtFieldKey,
-          labelText: 'Rok',
-          initialValue: _dueAt,
-          firstDate: _isEditMode ? null : DateTime.now(),
-          autovalidateMode: AutovalidateMode.onUserInteraction,
-          validator: (value) {
-            if (value == null) return 'Rok je obavezan.';
-            if (!_isEditMode && !value.isAfter(DateTime.now())) {
-              return 'Rok za predaju mora biti u budućnosti.';
-            }
-            return _dueAtError;
-          },
-          onChanged: (value) => setState(() {
-            _dueAt = value;
-            _dueAtError = null;
-          }),
+        FormSection(
+          title: 'Rok predaje',
+          children: [
+            DateTimeField(
+              key: _dueAtFieldKey,
+              labelText: 'Rok',
+              initialValue: _dueAt,
+              firstDate: _isEditMode ? null : DateTime.now(),
+              autovalidateMode: AutovalidateMode.onUserInteraction,
+              validator: (value) {
+                if (value == null) return 'Rok je obavezan.';
+                if (!_isEditMode && !value.isAfter(DateTime.now())) {
+                  return 'Rok za predaju mora biti u budućnosti.';
+                }
+                return _dueAtError;
+              },
+              onChanged: (value) => setState(() {
+                _dueAt = value;
+                _dueAtError = null;
+              }),
+            ),
+          ],
         ),
       ],
       onSave: _save,

@@ -6,8 +6,8 @@ class AppTheme {
   AppTheme._();
 
   static const Color background = Color(0xFF0B0B0D);
-  static const Color surfaceContainer = Color(0xFF141416);
-  static const Color outline = Color(0xFF232327);
+  static const Color surfaceContainer = Color(0xFF1F1F24);
+  static const Color outline = Color(0xFF2E2E34);
   static const Color primary = Color(0xFFE8863F);
   static const Color onPrimary = Colors.white;
   static const Color textPrimary = Color(0xFFF5F5F6);

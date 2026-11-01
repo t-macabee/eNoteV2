@@ -77,4 +77,22 @@ void main() {
     expect(find.text('Polje A'), findsOneWidget);
     expect(find.text('Polje B'), findsOneWidget);
   });
+
+  testWidgets('FormSection draws an accent bar as tall as its title', (
+    tester,
+  ) async {
+    await _pumpInWidth(
+      tester,
+      600,
+      const FormSection(title: 'Osnovni podaci', children: [Text('Polje A')]),
+    );
+
+    final accent = find.byKey(const ValueKey('form_section_accent'));
+    expect(accent, findsOneWidget);
+    expect(tester.getSize(accent).width, 3);
+    expect(
+      tester.getSize(accent).height,
+      tester.getSize(find.text('Osnovni podaci')).height,
+    );
+  });
 }
