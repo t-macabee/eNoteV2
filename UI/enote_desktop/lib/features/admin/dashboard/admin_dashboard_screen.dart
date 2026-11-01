@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
 
-import '../../../shell/shell_navigation.dart';
 import '../../../widgets/dashboard_count.dart';
 import '../../../widgets/dashboard_page.dart';
 import '../course/admin_course_provider.dart';
@@ -62,10 +61,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     super.dispose();
   }
 
-  void _openEntry(String label) {
-    ShellNavigation.of(context).openEntry(label);
-  }
-
   @override
   Widget build(BuildContext context) {
     return DashboardPage(
@@ -75,45 +70,24 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           icon: Icons.people_outline,
           label: 'Korisnici',
           tone: StatusTone.info,
-          onTap: () => _openEntry('Korisnici'),
         ),
         DashboardCountCard(
           count: _storesCount,
           icon: Icons.store_outlined,
           label: 'Trgovina muzičke opreme',
           tone: StatusTone.accent,
-          onTap: () => _openEntry('Trgovina muzičke opreme'),
         ),
         DashboardCountCard(
           count: _coursesCount,
           icon: Icons.class_outlined,
           label: 'Kursevi',
           tone: StatusTone.success,
-          onTap: () => _openEntry('Kursevi'),
         ),
         DashboardCountCard(
           count: _eventsCount,
           icon: Icons.event_outlined,
           label: 'Događaji',
           tone: StatusTone.warning,
-          onTap: () => _openEntry('Događaji'),
-        ),
-      ],
-      shortcuts: [
-        DashboardShortcut(
-          label: 'Korisnici',
-          icon: Icons.people_outline,
-          onTap: () => _openEntry('Korisnici'),
-        ),
-        DashboardShortcut(
-          label: 'Kursevi',
-          icon: Icons.class_outlined,
-          onTap: () => _openEntry('Kursevi'),
-        ),
-        DashboardShortcut(
-          label: 'Događaji',
-          icon: Icons.event_outlined,
-          onTap: () => _openEntry('Događaji'),
         ),
       ],
     );

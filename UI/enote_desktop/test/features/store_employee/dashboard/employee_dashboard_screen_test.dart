@@ -9,6 +9,7 @@ import 'package:enote_desktop/features/store_employee/employee/shop_employee_pro
 import 'package:enote_desktop/features/store_employee/rental/rental_provider.dart';
 import 'package:enote_desktop/features/store_employee/store/shop_store_provider.dart';
 import 'package:enote_desktop/shell/shell_navigation.dart';
+import 'package:enote_desktop/widgets/dashboard_stat_card.dart';
 
 import '../../../helpers.dart';
 
@@ -117,5 +118,43 @@ void main() {
 
     expect(find.text('–'), findsOneWidget);
     expect(find.text('2'), findsOneWidget);
+  });
+
+  testWidgets('employees card is not tappable', (WidgetTester tester) async {
+    _useDesktopView(tester);
+    String? opened;
+    await tester.pumpWidget(
+      _buildApp(httpClient: _client(), openEntry: (label) => opened = label),
+    );
+    await tester.pumpAndSettle();
+
+    final card = tester.widget<DashboardStatCard>(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is DashboardStatCard && widget.label == 'Zaposlenici',
+      ),
+    );
+    expect(card.onTap, isNull);
+
+    await tester.tap(find.text('Zaposlenici'));
+    await tester.pump();
+
+    expect(opened, isNull);
+  });
+
+  testWidgets('tapping the pending requests card opens the Zahtjevi entry', (
+    WidgetTester tester,
+  ) async {
+    _useDesktopView(tester);
+    String? opened;
+    await tester.pumpWidget(
+      _buildApp(httpClient: _client(), openEntry: (label) => opened = label),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Zahtjevi na čekanju'));
+    await tester.pump();
+
+    expect(opened, 'Zahtjevi');
   });
 }

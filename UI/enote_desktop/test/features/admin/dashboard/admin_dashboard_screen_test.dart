@@ -126,9 +126,7 @@ void main() {
     expect(find.text('5'), findsOneWidget);
   });
 
-  testWidgets('tapping the courses card opens the Kursevi entry', (
-    WidgetTester tester,
-  ) async {
+  testWidgets('admin cards are not tappable', (WidgetTester tester) async {
     _useDesktopView(tester);
     String? opened;
     await tester.pumpWidget(
@@ -136,11 +134,17 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    for (final card in tester.widgetList<DashboardStatCard>(
+      find.byType(DashboardStatCard),
+    )) {
+      expect(card.onTap, isNull);
+    }
+
     await tester.tap(
       find.descendant(of: _card('Kursevi'), matching: find.text('Kursevi')),
     );
     await tester.pump();
 
-    expect(opened, 'Kursevi');
+    expect(opened, isNull);
   });
 }

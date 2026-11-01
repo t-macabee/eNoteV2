@@ -8,6 +8,7 @@ import 'package:enote_desktop/features/instructor/course/course_provider.dart';
 import 'package:enote_desktop/features/instructor/dashboard/instructor_dashboard_screen.dart';
 import 'package:enote_desktop/features/instructor/student/instructor_student_provider.dart';
 import 'package:enote_desktop/shell/shell_navigation.dart';
+import 'package:enote_desktop/widgets/dashboard_stat_card.dart';
 
 import '../../../helpers.dart';
 
@@ -101,5 +102,25 @@ void main() {
 
     expect(find.text('–'), findsOneWidget);
     expect(find.text('8'), findsOneWidget);
+  });
+
+  testWidgets('instructor cards are not tappable', (WidgetTester tester) async {
+    _useDesktopView(tester);
+    String? opened;
+    await tester.pumpWidget(
+      _buildApp(httpClient: _client(), openEntry: (label) => opened = label),
+    );
+    await tester.pumpAndSettle();
+
+    for (final card in tester.widgetList<DashboardStatCard>(
+      find.byType(DashboardStatCard),
+    )) {
+      expect(card.onTap, isNull);
+    }
+
+    await tester.tap(find.text('Moji kursevi'));
+    await tester.pump();
+
+    expect(opened, isNull);
   });
 }

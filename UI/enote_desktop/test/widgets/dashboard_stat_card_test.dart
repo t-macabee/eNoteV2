@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:enote_core/enote_core.dart';
 import 'package:enote_desktop/widgets/dashboard_stat_card.dart';
 
 void main() {
@@ -78,5 +79,42 @@ void main() {
     await tester.pump();
 
     expect(tapped, 1);
+  });
+
+  testWidgets('card has the stat card width token', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: DashboardStatCard(
+            icon: Icons.people_outline,
+            label: 'Korisnici',
+            value: 42,
+          ),
+        ),
+      ),
+    );
+
+    expect(
+      tester.getSize(find.byType(DashboardStatCard)).width,
+      AppSize.statCardWidth,
+    );
+  });
+
+  testWidgets('card without onTap has no InkWell', (WidgetTester tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: DashboardStatCard(
+            icon: Icons.people_outline,
+            label: 'Korisnici',
+            value: 42,
+          ),
+        ),
+      ),
+    );
+
+    expect(find.byType(InkWell), findsNothing);
   });
 }

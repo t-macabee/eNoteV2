@@ -15,7 +15,7 @@ void _useDesktopView(WidgetTester tester) {
   addTearDown(tester.view.resetDevicePixelRatio);
 }
 
-Widget _buildApp({required List<DashboardShortcut> shortcuts}) {
+Widget _buildApp({List<Widget> cards = const []}) {
   final authState = AuthState(
     baseUrl: 'http://localhost:5059/api/v1/',
     tokenReader: () => fakeJwt(username: 'admin'),
@@ -24,18 +24,7 @@ Widget _buildApp({required List<DashboardShortcut> shortcuts}) {
   return MultiProvider(
     providers: [ChangeNotifierProvider<AuthState>.value(value: authState)],
     child: MaterialApp(
-      home: Scaffold(
-        body: DashboardPage(
-          cards: const [
-            DashboardStatCard(
-              icon: Icons.people_outline,
-              label: 'Korisnici',
-              value: 4,
-            ),
-          ],
-          shortcuts: shortcuts,
-        ),
-      ),
+      home: Scaffold(body: DashboardPage(cards: cards)),
     ),
   );
 }
@@ -45,7 +34,7 @@ void main() {
     WidgetTester tester,
   ) async {
     _useDesktopView(tester);
-    await tester.pumpWidget(_buildApp(shortcuts: const []));
+    await tester.pumpWidget(_buildApp());
 
     final content = find.byWidgetPredicate(
       (widget) =>
@@ -65,31 +54,66 @@ void main() {
     WidgetTester tester,
   ) async {
     _useDesktopView(tester);
-    await tester.pumpWidget(_buildApp(shortcuts: const []));
+    await tester.pumpWidget(_buildApp());
 
     expect(find.textContaining('admin'), findsOneWidget);
   });
 
-  testWidgets('shortcut button calls the navigation callback with its label', (
-    WidgetTester tester,
-  ) async {
+  testWidgets('page shows no shortcut section', (WidgetTester tester) async {
     _useDesktopView(tester);
-    String? opened;
     await tester.pumpWidget(
       _buildApp(
-        shortcuts: [
-          DashboardShortcut(
-            label: 'Kursevi',
-            icon: Icons.class_outlined,
-            onTap: () => opened = 'Kursevi',
+        cards: const [
+          DashboardStatCard(
+            icon: Icons.people_outline,
+            label: 'Korisnici',
+            value: 4,
           ),
         ],
       ),
     );
 
-    await tester.tap(find.widgetWithText(OutlinedButton, 'Kursevi'));
-    await tester.pump();
+    expect(find.text('Prečice'), findsNothing);
+    expect(find.byType(OutlinedButton), findsNothing);
+  });
 
-    expect(opened, 'Kursevi');
+  testWidgets('cards sit in one row when the content width allows it', (
+    WidgetTester tester,
+  ) async {
+    _useDesktopView(tester);
+    await tester.pumpWidget(
+      _buildApp(
+        cards: const [
+          DashboardStatCard(
+            icon: Icons.people_outline,
+            label: 'Korisnici',
+            value: 4,
+          ),
+          DashboardStatCard(
+            icon: Icons.store_outlined,
+            label: 'Trgovina muzičke opreme',
+            value: 3,
+          ),
+          DashboardStatCard(
+            icon: Icons.class_outlined,
+            label: 'Kursevi',
+            value: 7,
+          ),
+          DashboardStatCard(
+            icon: Icons.event_outlined,
+            label: 'Događaji',
+            value: 5,
+          ),
+        ],
+      ),
+    );
+
+    final cards = find.byType(DashboardStatCard);
+    expect(cards, findsNWidgets(4));
+
+    final top = tester.getTopLeft(cards.first).dy;
+    for (var i = 1; i < 4; i++) {
+      expect(tester.getTopLeft(cards.at(i)).dy, top);
+    }
   });
 }

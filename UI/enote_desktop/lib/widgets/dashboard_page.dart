@@ -3,29 +3,11 @@ import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
 
-class DashboardShortcut {
-  final String label;
-  final IconData icon;
-  final VoidCallback onTap;
-
-  const DashboardShortcut({
-    required this.label,
-    required this.icon,
-    required this.onTap,
-  });
-}
-
 class DashboardPage extends StatelessWidget {
   final List<Widget> cards;
-  final List<DashboardShortcut> shortcuts;
   final String? storeName;
 
-  const DashboardPage({
-    super.key,
-    required this.cards,
-    required this.shortcuts,
-    this.storeName,
-  });
+  const DashboardPage({super.key, required this.cards, this.storeName});
 
   @override
   Widget build(BuildContext context) {
@@ -54,21 +36,6 @@ class DashboardPage extends StatelessWidget {
                 spacing: AppSpacing.lg,
                 runSpacing: AppSpacing.lg,
                 children: cards,
-              ),
-              const SizedBox(height: AppSpacing.xxl),
-              Text('Prečice', style: Theme.of(context).textTheme.titleMedium),
-              const SizedBox(height: AppSpacing.md),
-              Wrap(
-                spacing: AppSpacing.md,
-                runSpacing: AppSpacing.md,
-                children: [
-                  for (final shortcut in shortcuts)
-                    OutlinedButton.icon(
-                      onPressed: shortcut.onTap,
-                      icon: Icon(shortcut.icon, size: AppSize.spinnerSm),
-                      label: Text(shortcut.label),
-                    ),
-                ],
               ),
             ],
           ),

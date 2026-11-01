@@ -86,24 +86,6 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
           icon: Icons.badge_outlined,
           label: 'Zaposlenici',
           tone: StatusTone.info,
-          onTap: () => _openEntry('Zaposlenici'),
-        ),
-      ],
-      shortcuts: [
-        DashboardShortcut(
-          label: 'Zahtjevi',
-          icon: Icons.assignment_outlined,
-          onTap: () => _openEntry('Zahtjevi'),
-        ),
-        DashboardShortcut(
-          label: 'Zaposlenici',
-          icon: Icons.badge_outlined,
-          onTap: () => _openEntry('Zaposlenici'),
-        ),
-        DashboardShortcut(
-          label: 'Objave',
-          icon: Icons.campaign_outlined,
-          onTap: () => _openEntry('Objave'),
         ),
       ],
     );

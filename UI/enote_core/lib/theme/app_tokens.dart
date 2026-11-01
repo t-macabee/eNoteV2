@@ -33,6 +33,7 @@ final class AppSize {
   static const double tableRowHeight = 48;
   static const double toolbarHeight = 56;
   static const double detailImageWidth = 320;
+  static const double statCardWidth = 240;
   static const double spinnerSm = 16;
   static const double spinnerMd = 20;
 }
