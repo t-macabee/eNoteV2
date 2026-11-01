@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'app_tokens.dart';
+
 class AppTheme {
   AppTheme._();
 
@@ -133,6 +135,20 @@ class AppTheme {
       ),
       iconTheme: const IconThemeData(color: textSecondary),
       progressIndicatorTheme: const ProgressIndicatorThemeData(color: primary),
+      chipTheme: ChipThemeData(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.pill),
+        ),
+      ),
+      dataTableTheme: const DataTableThemeData(
+        headingRowHeight: AppSize.tableRowHeight,
+        dataRowMinHeight: AppSize.tableRowHeight,
+        dataRowMaxHeight: AppSize.tableRowHeight,
+        headingTextStyle: TextStyle(
+          color: textSecondary,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
     );
   }
 }

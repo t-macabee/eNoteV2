@@ -1,4 +1,41 @@
+import '../../theme/app_tokens.dart';
 import 'enums.dart';
+
+StatusTone rentalStatusTone(InstrumentRentalStatus status) => switch (status) {
+  InstrumentRentalStatus.pending => StatusTone.warning,
+  InstrumentRentalStatus.approved => StatusTone.info,
+  InstrumentRentalStatus.active => StatusTone.success,
+  InstrumentRentalStatus.completed => StatusTone.neutral,
+  InstrumentRentalStatus.rejected => StatusTone.danger,
+  InstrumentRentalStatus.canceled => StatusTone.neutral,
+  InstrumentRentalStatus.returnedEarly => StatusTone.accent,
+};
+
+StatusTone enrollmentStatusTone(EnrollmentStatus status) => switch (status) {
+  EnrollmentStatus.pending => StatusTone.warning,
+  EnrollmentStatus.active => StatusTone.success,
+  EnrollmentStatus.completed => StatusTone.info,
+  EnrollmentStatus.rejected => StatusTone.danger,
+  EnrollmentStatus.canceled => StatusTone.neutral,
+};
+
+StatusTone paymentStatusTone(PaymentStatus status) => switch (status) {
+  PaymentStatus.requiresAction => StatusTone.warning,
+  PaymentStatus.succeeded => StatusTone.success,
+  PaymentStatus.failed => StatusTone.danger,
+  PaymentStatus.canceled => StatusTone.neutral,
+  PaymentStatus.refunded => StatusTone.accent,
+  PaymentStatus.partiallyRefunded => StatusTone.accent,
+};
+
+String paymentStatusLabel(PaymentStatus status) => switch (status) {
+  PaymentStatus.requiresAction => 'Čeka uplatu',
+  PaymentStatus.succeeded => 'Plaćeno',
+  PaymentStatus.failed => 'Neuspjelo',
+  PaymentStatus.canceled => 'Otkazano',
+  PaymentStatus.refunded => 'Vraćeno',
+  PaymentStatus.partiallyRefunded => 'Djelimično vraćeno',
+};
 
 String rentalStatusLabel(InstrumentRentalStatus status) => switch (status) {
   InstrumentRentalStatus.pending => 'Na čekanju',

@@ -2,19 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
+
 import '../../../theme/app_theme.dart';
 import '../../../widgets/dialog_shell.dart';
 import '../../../widgets/entity_filter_dropdown.dart';
 import '../../../widgets/entity_list_screen.dart';
 import 'course_provider.dart';
-
-Color _enrollmentStatusColor(EnrollmentStatus status) => switch (status) {
-  EnrollmentStatus.pending => Colors.orange,
-  EnrollmentStatus.active => Colors.green,
-  EnrollmentStatus.completed => Colors.blue,
-  EnrollmentStatus.rejected => Colors.red,
-  EnrollmentStatus.canceled => Colors.grey,
-};
 
 class CourseEnrollmentsDialog extends StatefulWidget {
   final int courseId;
@@ -33,10 +26,8 @@ class CourseEnrollmentsDialog extends StatefulWidget {
   }) {
     return showDialog<bool>(
       context: context,
-      builder: (_) => CourseEnrollmentsDialog(
-        courseId: courseId,
-        courseName: courseName,
-      ),
+      builder: (_) =>
+          CourseEnrollmentsDialog(courseId: courseId, courseName: courseName),
     );
   }
 
@@ -104,9 +95,8 @@ class _CourseEnrollmentsDialogState extends State<CourseEnrollmentsDialog> {
       await action();
       if (!mounted) return;
       _changed = true;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message)),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(message)));
       _listKey.currentState?.refresh();
     } catch (e) {
       if (mounted) {
@@ -179,24 +169,26 @@ class _CourseEnrollmentsDialogState extends State<CourseEnrollmentsDialog> {
             ColumnSpec<CourseEnrollmentDto>(
               label: 'Status',
               value: (item) => enrollmentStatusLabel(item.enrollmentStatus),
-              cellBuilder: (context, item) => Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 8,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  color: _enrollmentStatusColor(item.enrollmentStatus)
-                      .withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  enrollmentStatusLabel(item.enrollmentStatus),
-                  style: TextStyle(
-                    color: _enrollmentStatusColor(item.enrollmentStatus),
-                    fontWeight: FontWeight.w500,
+              cellBuilder: (context, item) {
+                final tone = enrollmentStatusTone(item.enrollmentStatus);
+                return Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
                   ),
-                ),
-              ),
+                  decoration: BoxDecoration(
+                    color: tone.background,
+                    borderRadius: BorderRadius.circular(AppRadius.sm),
+                  ),
+                  child: Text(
+                    enrollmentStatusLabel(item.enrollmentStatus),
+                    style: TextStyle(
+                      color: tone.color,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                );
+              },
             ),
             ColumnSpec<CourseEnrollmentDto>(
               label: 'Plaćeno do',

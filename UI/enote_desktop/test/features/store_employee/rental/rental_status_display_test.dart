@@ -2,8 +2,13 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:enote_core/enote_core.dart';
 import 'package:enote_desktop/features/store_employee/rental/rental_status_display.dart';
+import 'package:enote_desktop/theme/app_theme.dart';
 
 void main() {
+  test('rentalStatusColor maps active rentals to the success color', () {
+    expect(rentalStatusColor(InstrumentRentalStatus.active), AppTheme.success);
+  });
+
   test('rentalTransitionSuccessMessage describes every trigger', () {
     expect(
       rentalTransitionSuccessMessage(RentalTrigger.approve),
