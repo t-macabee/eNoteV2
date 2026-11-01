@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
+
 import '../../../widgets/dialog_shell.dart';
 import '../../../widgets/entity_form_scaffold.dart';
 import '../../../widgets/form_submit_state.dart';
@@ -17,10 +18,7 @@ import 'course_ranking_dialog.dart';
 class CourseDetailDialog extends StatefulWidget {
   final CourseDto course;
 
-  const CourseDetailDialog({
-    super.key,
-    required this.course,
-  });
+  const CourseDetailDialog({super.key, required this.course});
 
   static Future<bool?> show(BuildContext context, CourseDto course) {
     return showDialog<bool>(
@@ -64,8 +62,7 @@ class _CourseDetailDialogState extends State<CourseDetailDialog>
       final confirmed = await confirmDialog(
         context: context,
         title: 'Potvrdite povlačenje kursa',
-        message:
-            'Da li ste sigurni da želite da povučete ovaj kurs? Kurs nestaje iz kataloga i novi studenti ga ne mogu upisati. Postojeći studenti zadržavaju pristup.',
+        message: 'Da li ste sigurni da želite da povučete ovaj kurs? Kurs nestaje iz kataloga i novi studenti ga ne mogu upisati. Postojeći studenti zadržavaju pristup.',
       );
       if (confirmed != true || !mounted) return;
     }
@@ -79,9 +76,9 @@ class _CourseDetailDialogState extends State<CourseDetailDialog>
         isPublished: newValue,
       );
       final updated = await context.read<CourseProvider>().update(
-            _course.id,
-            request.toJson(),
-          );
+        _course.id,
+        request.toJson(),
+      );
       if (mounted) {
         setState(() {
           _course = updated;
@@ -128,9 +125,8 @@ class _CourseDetailDialogState extends State<CourseDetailDialog>
     await submitWith((busy) => _isDeleting = busy, () async {
       await context.read<CourseProvider>().remove(_course.id);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Kurs je obrisan.')),
-        );
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('Kurs je obrisan.')));
         _popDialog(true);
       }
     });
@@ -173,8 +169,9 @@ class _CourseDetailDialogState extends State<CourseDetailDialog>
     await CourseRankingDialog.show(
       context,
       courseId: _course.id,
-      reportEndpoint:
-          context.read<RankingProvider>().reportEndpoint(_course.id),
+      reportEndpoint: context.read<RankingProvider>().reportEndpoint(
+        _course.id,
+      ),
     );
   }
 

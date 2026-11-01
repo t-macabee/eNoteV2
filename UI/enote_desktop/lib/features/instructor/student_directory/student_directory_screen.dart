@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
+
 import '../../../widgets/entity_grid_screen.dart';
 import 'student_directory_provider.dart';
 import 'student_profile_dialog.dart';
@@ -20,7 +21,8 @@ class StudentDirectoryScreen extends StatelessWidget {
         ),
         titleOf: (item) =>
             formatDisplayName(item.firstName, item.lastName, item.username),
-        subtitleOf: (item) => item.username != null ? '@${item.username}' : null,
+        subtitleOf: (item) =>
+            item.username != null ? '@${item.username}' : null,
         placeholderIcon: Icons.person_outline,
         imageUrlOf: (item) =>
             userPictureUrl(context.read<ApiClient>(), item.appUserId),

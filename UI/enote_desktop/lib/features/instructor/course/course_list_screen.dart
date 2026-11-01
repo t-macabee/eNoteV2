@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
+
 import '../../../widgets/entity_form_scaffold.dart';
 import '../../../widgets/entity_grid_screen.dart';
 import 'course_detail_dialog.dart';
@@ -21,9 +22,8 @@ class _CourseListScreenState extends State<CourseListScreen> {
   Future<void> _openForm() async {
     final saved = await EntityFormScaffold.showAsDialog(
       context,
-      builder: (_) => const CourseFormScreen(
-        presentation: EntityFormPresentation.dialog,
-      ),
+      builder: (_) =>
+          const CourseFormScreen(presentation: EntityFormPresentation.dialog),
     );
     if (saved == true) {
       _gridKey.currentState?.refresh();

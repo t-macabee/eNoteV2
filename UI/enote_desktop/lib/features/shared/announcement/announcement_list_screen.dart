@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
+
 import '../../../widgets/entity_form_scaffold.dart';
 import '../../../widgets/entity_list_screen.dart';
 import 'announcement_detail_dialog.dart';
@@ -70,9 +71,12 @@ class _AnnouncementListScreenState extends State<AnnouncementListScreen> {
             value: (item) => formatDate(item.publishedAt),
           ),
         ],
-        fetcher: (page, pageSize, search) => widget.provider.search(pagedQuery(page, pageSize, search, searchField: 'title')),
+        fetcher: (page, pageSize, search) => widget.provider.search(
+          pagedQuery(page, pageSize, search, searchField: 'title'),
+        ),
         onAdd: () => _openForm(),
-        onRowTap: (context, item) => AnnouncementDetailDialog.show(context, item),
+        onRowTap: (context, item) =>
+            AnnouncementDetailDialog.show(context, item),
         onEdit: (context, item) => _openForm(item),
         deleteConfirmMessageOf: (item) =>
             'Da li ste sigurni da želite da obrišete objavu "${item.title}"?',

@@ -65,10 +65,7 @@ class _AsyncDropdownState<T> extends State<AsyncDropdown<T>> {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: widget.width,
-      child: _buildField(context),
-    );
+    return SizedBox(width: widget.width, child: _buildField(context));
   }
 
   Widget _buildField(BuildContext context) {

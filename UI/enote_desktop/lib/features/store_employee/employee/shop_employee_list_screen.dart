@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
+
 import '../../../widgets/entity_form_scaffold.dart';
 import '../../../widgets/entity_grid_screen.dart';
 import 'shop_employee_form_screen.dart';
@@ -36,11 +37,12 @@ class _ShopEmployeeListScreenState extends State<ShopEmployeeListScreen> {
       key: _gridKey,
       config: EntityGridConfig<ShopEmployeeDto>(
         fetcher: (page, pageSize, search) => provider.search(
-          pagedQuery(page, pageSize, search, searchField: 'name')
+          pagedQuery(page, pageSize, search, searchField: 'name'),
         ),
         titleOf: (item) =>
             formatDisplayName(item.firstName, item.lastName, item.username),
-        subtitleOf: (item) => item.isManager ? 'Voditelj radnje' : 'Uposlenik radnje',
+        subtitleOf: (item) =>
+            item.isManager ? 'Voditelj radnje' : 'Uposlenik radnje',
         placeholderIcon: Icons.badge_outlined,
         imageUrlOf: (item) =>
             userPictureUrl(context.read<ApiClient>(), item.appUserId),
@@ -55,7 +57,9 @@ class _ShopEmployeeListScreenState extends State<ShopEmployeeListScreen> {
               onPressed: () async {
                 final confirmed = await confirmDialog(
                   context: context,
-                  title: item.isActive ? 'Potvrdite deaktivaciju' : 'Potvrdite aktivaciju',
+                  title: item.isActive
+                      ? 'Potvrdite deaktivaciju'
+                      : 'Potvrdite aktivaciju',
                   message: item.isActive
                       ? 'Da li ste sigurni da želite da deaktivirate ovog korisnika?'
                       : 'Da li ste sigurni da želite da aktivirate ovog korisnika?',
@@ -63,10 +67,14 @@ class _ShopEmployeeListScreenState extends State<ShopEmployeeListScreen> {
                 if (confirmed != true) return;
                 if (!context.mounted) return;
                 try {
-                  await context.read<ShopEmployeeProvider>().setActive(item.appUserId, !item.isActive);
+                  await context.read<ShopEmployeeProvider>().setActive(
+                    item.appUserId,
+                    !item.isActive,
+                  );
                   _gridKey.currentState?.refresh();
                 } catch (e) {
-                  if (context.mounted) ErrorBanner.show(context, message: userMessage(e));
+                  if (context.mounted)
+                    ErrorBanner.show(context, message: userMessage(e));
                 }
               },
             ),

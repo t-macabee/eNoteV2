@@ -6,8 +6,9 @@ import 'package:enote_desktop/widgets/entity_list_screen.dart';
 import 'package:enote_desktop/widgets/entity_list_sections.dart';
 
 void main() {
-  testWidgets('EntityListTable scrolls horizontally for a wide row',
-      (WidgetTester tester) async {
+  testWidgets('EntityListTable scrolls horizontally for a wide row', (
+    WidgetTester tester,
+  ) async {
     tester.view.physicalSize = const Size(800, 600);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
@@ -15,9 +16,7 @@ void main() {
 
     final longText = 'A' * 400;
     final config = EntityListConfig<String>(
-      columns: [
-        ColumnSpec<String>(label: 'Naziv', value: (item) => item),
-      ],
+      columns: [ColumnSpec<String>(label: 'Naziv', value: (item) => item)],
       fetcher: (page, pageSize, search) async => PagedResult<String>(
         items: const <String>[],
         page: page,

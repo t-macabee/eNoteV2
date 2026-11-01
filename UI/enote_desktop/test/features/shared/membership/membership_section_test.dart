@@ -63,8 +63,9 @@ Future<StudentProvider> _pumpSection(
 }
 
 void main() {
-  testWidgets('E1-10: shows the membership status, history and buttons',
-      (tester) async {
+  testWidgets('E1-10: shows the membership status, history and buttons', (
+    tester,
+  ) async {
     await _pumpSection(
       tester,
       membershipPaidUntil: DateTime.now().add(const Duration(days: 60)),
@@ -88,38 +89,38 @@ void main() {
     );
   });
 
-  testWidgets('E1-10: the warning button is enabled when membership expires soon',
-      (tester) async {
-    await _pumpSection(
-      tester,
-      membershipPaidUntil: DateTime.now().add(const Duration(days: 3)),
-      client: _client(),
-    );
+  testWidgets(
+    'E1-10: the warning button is enabled when membership expires soon',
+    (tester) async {
+      await _pumpSection(
+        tester,
+        membershipPaidUntil: DateTime.now().add(const Duration(days: 3)),
+        client: _client(),
+      );
 
-    final warningButton = tester.widget<OutlinedButton>(
-      find.widgetWithText(OutlinedButton, 'Pošalji upozorenje'),
-    );
-    expect(warningButton.onPressed, isNotNull);
-  });
+      final warningButton = tester.widget<OutlinedButton>(
+        find.widgetWithText(OutlinedButton, 'Pošalji upozorenje'),
+      );
+      expect(warningButton.onPressed, isNotNull);
+    },
+  );
 
-  testWidgets('E1-10: the receipt dialog validates every field under the field',
-      (tester) async {
-    await _pumpSection(
-      tester,
-      membershipPaidUntil: null,
-      client: _client(),
-    );
+  testWidgets(
+    'E1-10: the receipt dialog validates every field under the field',
+    (tester) async {
+      await _pumpSection(tester, membershipPaidUntil: null, client: _client());
 
-    await tester.tap(find.text('Unesi potvrdu'));
-    await tester.pumpAndSettle();
+      await tester.tap(find.text('Unesi potvrdu'));
+      await tester.pumpAndSettle();
 
-    expect(find.text('Unesi potvrdu o članarini'), findsOneWidget);
+      expect(find.text('Unesi potvrdu o članarini'), findsOneWidget);
 
-    await tester.tap(find.text('Evidentiraj'));
-    await tester.pumpAndSettle();
+      await tester.tap(find.text('Evidentiraj'));
+      await tester.pumpAndSettle();
 
-    expect(find.text('Unesite iznos, npr. 50.00.'), findsOneWidget);
-    expect(find.text('Broj potvrde je obavezan.'), findsOneWidget);
-    expect(find.text('Kraj perioda je obavezan.'), findsOneWidget);
-  });
+      expect(find.text('Unesite iznos, npr. 50.00.'), findsOneWidget);
+      expect(find.text('Broj potvrde je obavezan.'), findsOneWidget);
+      expect(find.text('Kraj perioda je obavezan.'), findsOneWidget);
+    },
+  );
 }

@@ -8,10 +8,7 @@ import 'ranking_provider.dart';
 class RankingView extends StatefulWidget {
   final int courseId;
 
-  const RankingView({
-    super.key,
-    required this.courseId,
-  });
+  const RankingView({super.key, required this.courseId});
 
   @override
   State<RankingView> createState() => _RankingViewState();

@@ -42,17 +42,22 @@ class RentalProvider extends CrudProvider<InstrumentRentalDto> {
     if (response.statusCode == 404) {
       return null;
     }
-    
+
     final data = decodeOrThrow(response);
     return RentalPaymentDto.fromJson(data);
   }
 
   Future<InstrumentRentalDto> _transition(
-      int id, String action, String? note) async {
-    final response = await apiClient.post('$endpoint/$id/$action',
-        body: (note == null || note.trim().isEmpty)
-            ? null
-            : RentalStatusRequest(note: note).toJson());
+    int id,
+    String action,
+    String? note,
+  ) async {
+    final response = await apiClient.post(
+      '$endpoint/$id/$action',
+      body: (note == null || note.trim().isEmpty)
+          ? null
+          : RentalStatusRequest(note: note).toJson(),
+    );
 
     final data = decodeOrThrow(response);
     final updated = fromJson(data);

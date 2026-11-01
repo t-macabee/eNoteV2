@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
+
 import '../../../theme/app_theme.dart';
 import '../../../widgets/detail_row.dart';
 import '../../../widgets/dialog_shell.dart';
@@ -88,13 +89,8 @@ class _InstructorStudentDetailsDialogState
     final studentId = widget.student.id;
     try {
       final lectures = await lectureProvider.search(
-            pagedQuery(
-              1,
-              _pageSize,
-              '',
-              filters: {'studentId': studentId},
-            ),
-          );
+        pagedQuery(1, _pageSize, '', filters: {'studentId': studentId}),
+      );
       if (mounted) {
         setState(() {
           _individualLectures = lectures.items.toList();
@@ -116,13 +112,13 @@ class _InstructorStudentDetailsDialogState
     setState(() => _lecturesLoading = true);
     try {
       final next = await context.read<LectureProvider>().search(
-            pagedQuery(
-              _lecturePage + 1,
-              _pageSize,
-              '',
-              filters: {'studentId': widget.student.id},
-            ),
-          );
+        pagedQuery(
+          _lecturePage + 1,
+          _pageSize,
+          '',
+          filters: {'studentId': widget.student.id},
+        ),
+      );
       if (!mounted) return;
       setState(() {
         _individualLectures = [...?_individualLectures, ...next.items];
@@ -143,7 +139,8 @@ class _InstructorStudentDetailsDialogState
 
     setState(() => _enrollmentsLoading = true);
     try {
-      final next = await context.read<InstructorStudentProvider>()
+      final next = await context
+          .read<InstructorStudentProvider>()
           .getEnrollments(
             widget.student.id,
             page: _enrollmentPage + 1,
@@ -169,10 +166,8 @@ class _InstructorStudentDetailsDialogState
     await showDialog<void>(
       context: context,
       builder: (_) => ChangeNotifierProvider<LectureNoteProvider>(
-        create: (_) => LectureNoteProvider(
-          apiClient: apiClient,
-          lectureId: lecture.id,
-        ),
+        create: (_) =>
+            LectureNoteProvider(apiClient: apiClient, lectureId: lecture.id),
         child: DialogShell(
           title: 'Bilješke — ${lecture.name}',
           width: DialogShellWidth.md,
@@ -201,7 +196,9 @@ class _InstructorStudentDetailsDialogState
             if (_studentDetailsError)
               const Padding(
                 padding: EdgeInsets.only(bottom: 12),
-                child: InlineErrorText('Greška pri učitavanju detalja studenta.'),
+                child: InlineErrorText(
+                  'Greška pri učitavanju detalja studenta.',
+                ),
               ),
             InfoRow(
               icon: Icons.person_outline,
@@ -256,10 +253,7 @@ class _InstructorStudentDetailsDialogState
             else if (_enrollments!.isEmpty)
               const Text(
                 'Nema aktivnih upisa.',
-                style: TextStyle(
-                  fontSize: 13,
-                  color: AppTheme.textSecondary,
-                ),
+                style: TextStyle(fontSize: 13, color: AppTheme.textSecondary),
               )
             else
               ..._enrollments!.map(
@@ -273,9 +267,7 @@ class _InstructorStudentDetailsDialogState
               Align(
                 alignment: Alignment.centerLeft,
                 child: TextButton(
-                  onPressed: _enrollmentsLoading
-                      ? null
-                      : _loadMoreEnrollments,
+                  onPressed: _enrollmentsLoading ? null : _loadMoreEnrollments,
                   child: const Text('Učitaj još'),
                 ),
               ),
@@ -291,7 +283,8 @@ class _InstructorStudentDetailsDialogState
             const SizedBox(height: 8),
             if (_lecturesError)
               const InlineErrorText(
-                  'Greška pri učitavanju individualnih predavanja.')
+                'Greška pri učitavanju individualnih predavanja.',
+              )
             else if (_individualLectures == null)
               const SizedBox(
                 height: 24,
@@ -306,10 +299,7 @@ class _InstructorStudentDetailsDialogState
             else if (_individualLectures!.isEmpty)
               const Text(
                 'Nema individualnih predavanja.',
-                style: TextStyle(
-                  fontSize: 13,
-                  color: AppTheme.textSecondary,
-                ),
+                style: TextStyle(fontSize: 13, color: AppTheme.textSecondary),
               )
             else
               ..._individualLectures!.map(

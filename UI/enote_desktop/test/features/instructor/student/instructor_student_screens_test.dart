@@ -10,8 +10,9 @@ import 'package:enote_desktop/features/instructor/student/instructor_student_pro
 import '../../../helpers.dart';
 
 void main() {
-  testWidgets('InstructorStudentListScreen displays student and opens form',
-      (WidgetTester tester) async {
+  testWidgets('InstructorStudentListScreen displays student and opens form', (
+    WidgetTester tester,
+  ) async {
     tester.view.physicalSize = const Size(1200, 900);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
@@ -53,23 +54,27 @@ void main() {
     expect(find.byType(InstructorStudentFormScreen), findsOneWidget);
 
     await tester.enterText(find.byType(TextFormField).at(0), 'newstudent');
-    await tester.enterText(find.byType(TextFormField).at(1), 'student@example.com');
+    await tester.enterText(
+      find.byType(TextFormField).at(1),
+      'student@example.com',
+    );
     await tester.enterText(find.byType(TextFormField).at(2), 'Pass123!');
     await tester.enterText(find.byType(TextFormField).at(3), 'New');
     await tester.enterText(find.byType(TextFormField).at(4), 'Student');
-    
+
     await tester.tap(find.text('Kreiraj'));
     await tester.pumpAndSettle();
 
     expect(mockClient.postUrls.single, endsWith('instructor/students'));
     expect(mockClient.postBodies.single, contains('"username":"newstudent"'));
-    
+
     expect(find.text('Student je kreiran.'), findsOneWidget);
     expect(find.byType(InstructorStudentFormScreen), findsOneWidget);
   });
 
-  testWidgets('400 response produces mapped Bosnian message',
-      (WidgetTester tester) async {
+  testWidgets('400 response produces mapped Bosnian message', (
+    WidgetTester tester,
+  ) async {
     tester.view.physicalSize = const Size(1200, 900);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
@@ -77,7 +82,7 @@ void main() {
 
     final mockClient = DelegatedUserHttpClient();
     mockClient.simulate400 = true;
-    
+
     final authState = AuthState(
       baseUrl: 'http://localhost:5059/api/v1/',
       httpClient: mockClient,
@@ -107,15 +112,16 @@ void main() {
     await tester.enterText(find.byType(TextFormField).at(0), 'badstudent');
     await tester.enterText(find.byType(TextFormField).at(1), 'bad@example.com');
     await tester.enterText(find.byType(TextFormField).at(2), 'Pass123!');
-    
+
     await tester.tap(find.text('Kreiraj'));
     await tester.pumpAndSettle();
 
     expect(find.text('Neispravan zahtjev.'), findsOneWidget);
   });
 
-  testWidgets('Fetcher query map includes includeTotalCount for pagination',
-      (WidgetTester tester) async {
+  testWidgets('Fetcher query map includes includeTotalCount for pagination', (
+    WidgetTester tester,
+  ) async {
     tester.view.physicalSize = const Size(1200, 900);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
@@ -148,6 +154,9 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    expect(mockClient.getUrls.any((url) => url.contains('includeTotalCount=true')), isTrue);
+    expect(
+      mockClient.getUrls.any((url) => url.contains('includeTotalCount=true')),
+      isTrue,
+    );
   });
 }

@@ -9,8 +9,9 @@ import 'package:enote_desktop/features/instructor/student/instructor_student_pro
 import '../../../helpers.dart';
 
 void main() {
-  testWidgets('F3-10: cancelling the student create form does not refresh',
-      (tester) async {
+  testWidgets('F3-10: cancelling the student create form does not refresh', (
+    tester,
+  ) async {
     tester.view.physicalSize = const Size(1400, 1000);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);

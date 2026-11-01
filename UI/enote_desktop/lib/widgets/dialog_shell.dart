@@ -44,10 +44,7 @@ class DialogShellHeader extends StatelessWidget {
               child: label,
             ),
           ),
-          if (action != null) ...[
-            action!,
-            const SizedBox(width: 8),
-          ],
+          if (action != null) ...[action!, const SizedBox(width: 8)],
           IconButton(
             icon: const Icon(Icons.close),
             tooltip: 'Zatvori',

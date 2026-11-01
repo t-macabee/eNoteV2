@@ -191,10 +191,7 @@ class _MembershipSectionState extends State<MembershipSection> {
           const SizedBox(width: 8),
           Text(
             'do ${formatDate(paidUntil)}',
-            style: const TextStyle(
-              fontSize: 13,
-              color: AppTheme.textPrimary,
-            ),
+            style: const TextStyle(fontSize: 13, color: AppTheme.textPrimary),
           ),
         ],
       ],
@@ -218,8 +215,7 @@ class _MembershipSectionState extends State<MembershipSection> {
     if (allowed) return button;
 
     return Tooltip(
-      message:
-          'Upozorenje je moguće poslati kada članarina ističe u narednih 7 dana ili je već istekla.',
+      message: 'Upozorenje je moguće poslati kada članarina ističe u narednih 7 dana ili je već istekla.',
       child: button,
     );
   }

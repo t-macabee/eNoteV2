@@ -39,31 +39,38 @@ Future<ScriptedClient> _pumpList(WidgetTester tester) async {
     assignmentId: 2,
   );
 
-  await tester.pumpWidget(MaterialApp(
-    home: ChangeNotifierProvider<SubmissionProvider>.value(
-      value: provider,
-      child: const SubmissionListScreen(
-        lectureId: 1,
-        assignmentId: 2,
-        assignmentTitle: 'Test zadatak',
+  await tester.pumpWidget(
+    MaterialApp(
+      home: ChangeNotifierProvider<SubmissionProvider>.value(
+        value: provider,
+        child: const SubmissionListScreen(
+          lectureId: 1,
+          assignmentId: 2,
+          assignmentTitle: 'Test zadatak',
+        ),
       ),
     ),
-  ));
+  );
 
   await tester.pumpAndSettle();
   return client;
 }
 
 void main() {
-  testWidgets('SubmissionListScreen shows the student name search and grade filter', (tester) async {
-    await _pumpList(tester);
+  testWidgets(
+    'SubmissionListScreen shows the student name search and grade filter',
+    (tester) async {
+      await _pumpList(tester);
 
-    expect(find.byType(TextField), findsOneWidget);
-    expect(find.text('Pretraži po imenu studenta...'), findsOneWidget);
-    expect(find.byType(DropdownButtonFormField<bool?>), findsOneWidget);
-  });
+      expect(find.byType(TextField), findsOneWidget);
+      expect(find.text('Pretraži po imenu studenta...'), findsOneWidget);
+      expect(find.byType(DropdownButtonFormField<bool?>), findsOneWidget);
+    },
+  );
 
-  testWidgets('SubmissionListScreen sends the student name and graded filter', (tester) async {
+  testWidgets('SubmissionListScreen sends the student name and graded filter', (
+    tester,
+  ) async {
     final client = await _pumpList(tester);
 
     await tester.tap(find.byType(DropdownButtonFormField<bool?>));
@@ -71,10 +78,7 @@ void main() {
     await tester.tap(find.text('Neocijenjeno').last);
     await tester.pumpAndSettle();
 
-    expect(
-      Uri.parse(client.getUrls.last).queryParameters['isGraded'],
-      'false',
-    );
+    expect(Uri.parse(client.getUrls.last).queryParameters['isGraded'], 'false');
 
     await tester.enterText(find.byType(TextField), 'Jana');
     await pumpPastDebounce(tester);

@@ -7,8 +7,10 @@ import 'package:enote_desktop/features/store_employee/employee/shop_employee_pro
 
 import '../../../helpers.dart';
 
-ScriptedClient _mockClient({int statusCode = 200, String responseBody = '{}'}) =>
-    ScriptedClient((_) => jsonResponse(responseBody, statusCode));
+ScriptedClient _mockClient({
+  int statusCode = 200,
+  String responseBody = '{}',
+}) => ScriptedClient((_) => jsonResponse(responseBody, statusCode));
 
 ShopEmployeeProvider _buildProvider(ScriptedClient mockClient) {
   final apiClient = ApiClient(
@@ -28,14 +30,19 @@ void main() {
       await provider.setActive(42, false);
 
       expect(mockClient.recorded.single.method, 'PUT');
-      expect(mockClient.recorded.single.url, endsWith('shop/employees/42/status'));
+      expect(
+        mockClient.recorded.single.url,
+        endsWith('shop/employees/42/status'),
+      );
       expect(mockClient.recorded.single.body, {'isActive': false});
     });
 
     test('400 throws ApiException with mapped message', () async {
       final mockClient = _mockClient(
         statusCode: 400,
-        responseBody: jsonEncode({'message': 'Cannot deactivate your own account.'}),
+        responseBody: jsonEncode({
+          'message': 'Cannot deactivate your own account.',
+        }),
       );
       final provider = _buildProvider(mockClient);
 
@@ -52,4 +59,3 @@ void main() {
     });
   });
 }
-

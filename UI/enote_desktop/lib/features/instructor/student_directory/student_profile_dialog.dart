@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
+
 import '../../../theme/app_theme.dart';
 import '../../../widgets/dialog_shell.dart';
 import '../../../widgets/inline_error_text.dart';
@@ -28,10 +29,9 @@ class _StudentProfileDialogState extends State<StudentProfileDialog> {
 
   Future<void> _load() async {
     try {
-      final profile =
-          await context.read<StudentDirectoryProvider>().getProfile(
-                widget.student.id,
-              );
+      final profile = await context.read<StudentDirectoryProvider>().getProfile(
+        widget.student.id,
+      );
       if (mounted) {
         setState(() {
           _profile = profile;
@@ -92,10 +92,7 @@ class _StudentProfileDialogState extends State<StudentProfileDialog> {
               if (profile.courses.isEmpty)
                 const Text(
                   'Student nema kurseva.',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: AppTheme.textSecondary,
-                  ),
+                  style: TextStyle(fontSize: 13, color: AppTheme.textSecondary),
                 )
               else
                 SingleChildScrollView(
@@ -110,17 +107,21 @@ class _StudentProfileDialogState extends State<StudentProfileDialog> {
                     ],
                     rows: [
                       for (final course in profile.courses)
-                        DataRow(cells: [
-                          DataCell(Text(course.courseName)),
-                          DataCell(Text(orDash(course.instructorName))),
-                          DataCell(
-                            Text(enrollmentStatusLabel(
-                              course.enrollmentStatus,
-                            )),
-                          ),
-                          DataCell(Text(formatAverageGrade(course.averageGrade))),
-                          DataCell(Text(course.gradedSubmissions.toString())),
-                        ]),
+                        DataRow(
+                          cells: [
+                            DataCell(Text(course.courseName)),
+                            DataCell(Text(orDash(course.instructorName))),
+                            DataCell(
+                              Text(
+                                enrollmentStatusLabel(course.enrollmentStatus),
+                              ),
+                            ),
+                            DataCell(
+                              Text(formatAverageGrade(course.averageGrade)),
+                            ),
+                            DataCell(Text(course.gradedSubmissions.toString())),
+                          ],
+                        ),
                     ],
                   ),
                 ),

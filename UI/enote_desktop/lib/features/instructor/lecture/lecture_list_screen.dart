@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart' hide lectureStatusLabel;
 import 'package:enote_core/enote_core.dart' as core;
+
 import '../../../widgets/entity_filter_dropdown.dart';
 import '../../../widgets/entity_form_scaffold.dart';
 import '../../../widgets/entity_list_screen.dart';
@@ -11,11 +12,7 @@ import 'lecture_form_screen.dart';
 import 'lecture_provider.dart';
 import 'lecture_type_label.dart';
 
-enum LectureSubView {
-  attendance,
-  notes,
-  assignments,
-}
+enum LectureSubView { attendance, notes, assignments }
 
 class LectureListScreen extends StatefulWidget {
   final int courseId;
@@ -23,7 +20,8 @@ class LectureListScreen extends StatefulWidget {
 
   final EntityListPresentation presentation;
   final EntityListStyle listStyle;
-  final void Function(LectureDto lecture, LectureSubView subView)? onOpenSubView;
+  final void Function(LectureDto lecture, LectureSubView subView)?
+  onOpenSubView;
   final VoidCallback? onMutation;
 
   const LectureListScreen({
@@ -73,9 +71,8 @@ class _LectureListScreenState extends State<LectureListScreen> {
       await context.read<LectureProvider>().cancel(lecture.id, reason);
       if (!mounted) return;
       widget.onMutation?.call();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Predavanje otkazano.')),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Predavanje otkazano.')));
       _listKey.currentState?.refresh();
     } catch (e) {
       if (!mounted) return;
@@ -131,10 +128,7 @@ class _LectureListScreenState extends State<LectureListScreen> {
         tileSubtitleColumns: const [3, 4, 8],
         onRowTap: (context, item) => LectureDetailDialog.show(context, item),
         columns: [
-          ColumnSpec<LectureDto>(
-            label: 'Naziv',
-            value: (item) => item.name,
-          ),
+          ColumnSpec<LectureDto>(label: 'Naziv', value: (item) => item.name),
           ColumnSpec<LectureDto>(
             label: 'Tip',
             value: (item) => lectureTypeLabel(item.lectureType),
@@ -170,7 +164,10 @@ class _LectureListScreenState extends State<LectureListScreen> {
             value: (item) => lectureStatusLabel(item),
             style: (item) {
               if (item.isCancelled) {
-                return const TextStyle(color: Colors.red, fontWeight: FontWeight.bold);
+                return const TextStyle(
+                  color: Colors.red,
+                  fontWeight: FontWeight.bold,
+                );
               }
               if (item.lectureStatus == LectureStatus.held) {
                 return const TextStyle(color: Colors.green);
@@ -180,11 +177,20 @@ class _LectureListScreenState extends State<LectureListScreen> {
           ),
         ],
         filterBar: _buildFilterBar(),
-        fetcher: (page, pageSize, search) => context.read<LectureProvider>().search(pagedQuery(page, pageSize, search, searchField: 'name', filters: {
-          'courseId': widget.courseId,
-          if (_selectedStatus != null)
-            'lectureStatus': _selectedStatus!.toJson(),
-})),
+        fetcher: (page, pageSize, search) =>
+            context.read<LectureProvider>().search(
+              pagedQuery(
+                page,
+                pageSize,
+                search,
+                searchField: 'name',
+                filters: {
+                  'courseId': widget.courseId,
+                  if (_selectedStatus != null)
+                    'lectureStatus': _selectedStatus!.toJson(),
+                },
+              ),
+            ),
         onAdd: () => _openForm(),
         onEdit: (context, item) => _openForm(item),
         deleteConfirmMessageOf: (item) =>

@@ -40,15 +40,15 @@ ScriptedClient _client({String? failMessage}) => ScriptedClient((request) {
 
 void main() {
   CourseDto course({bool published = true}) => CourseDto(
-        id: 1,
-        instructorId: 10,
-        name: 'Gitara',
-        isPublished: published,
-        price: 100,
-        enrolledCount: 3,
-        startDate: DateTime(2026, 9, 1),
-        endDate: DateTime(2026, 12, 1),
-      );
+    id: 1,
+    instructorId: 10,
+    name: 'Gitara',
+    isPublished: published,
+    price: 100,
+    enrolledCount: 3,
+    startDate: DateTime(2026, 9, 1),
+    endDate: DateTime(2026, 12, 1),
+  );
 
   Future<void> pumpDialog(
     WidgetTester tester,
@@ -85,32 +85,36 @@ void main() {
   }
 
   testWidgets(
-      'unpublishing shows confirm dialog and does not PUT until confirmed',
-      (tester) async {
-    final httpClient = _client();
-    await pumpDialog(tester, httpClient, course(published: true));
+    'unpublishing shows confirm dialog and does not PUT until confirmed',
+    (tester) async {
+      final httpClient = _client();
+      await pumpDialog(tester, httpClient, course(published: true));
 
-    await tester.tap(find.byType(Switch));
-    await tester.pumpAndSettle();
+      await tester.tap(find.byType(Switch));
+      await tester.pumpAndSettle();
 
-    expect(find.byType(AlertDialog), findsOneWidget);
-    expect(find.text('Potvrdite povlačenje kursa'), findsOneWidget);
-    expect(find.text('Potvrdi'), findsOneWidget);
-    expect(httpClient.putUrls, isEmpty,
-        reason: 'no request may leave before the dialog is confirmed');
+      expect(find.byType(AlertDialog), findsOneWidget);
+      expect(find.text('Potvrdite povlačenje kursa'), findsOneWidget);
+      expect(find.text('Potvrdi'), findsOneWidget);
+      expect(
+        httpClient.putUrls,
+        isEmpty,
+        reason: 'no request may leave before the dialog is confirmed',
+      );
 
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Potvrdi'));
-    await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(ElevatedButton, 'Potvrdi'));
+      await tester.pumpAndSettle();
 
-    expect(httpClient.putUrls.length, 1);
-    final body =
-        jsonDecode(httpClient.putBodies.single)
-            as Map<String, dynamic>;
-    expect(body['isPublished'], isFalse);
-  });
+      expect(httpClient.putUrls.length, 1);
+      final body =
+          jsonDecode(httpClient.putBodies.single) as Map<String, dynamic>;
+      expect(body['isPublished'], isFalse);
+    },
+  );
 
-  testWidgets('cancelling the unpublish confirm dialog does not PUT',
-      (tester) async {
+  testWidgets('cancelling the unpublish confirm dialog does not PUT', (
+    tester,
+  ) async {
     final httpClient = _client();
     await pumpDialog(tester, httpClient, course(published: true));
 
@@ -124,8 +128,9 @@ void main() {
     expect(httpClient.putUrls, isEmpty);
   });
 
-  testWidgets('publishing an unpublished course PUTs without confirmation',
-      (tester) async {
+  testWidgets('publishing an unpublished course PUTs without confirmation', (
+    tester,
+  ) async {
     final httpClient = _client();
     await pumpDialog(tester, httpClient, course(published: false));
 
@@ -135,13 +140,13 @@ void main() {
     expect(find.byType(AlertDialog), findsNothing);
     expect(httpClient.putUrls.length, 1);
     final body =
-        jsonDecode(httpClient.putBodies.single)
-            as Map<String, dynamic>;
+        jsonDecode(httpClient.putBodies.single) as Map<String, dynamic>;
     expect(body['isPublished'], isTrue);
   });
 
-  testWidgets('a failed publish shows the banner and re-enables the switch',
-      (tester) async {
+  testWidgets('a failed publish shows the banner and re-enables the switch', (
+    tester,
+  ) async {
     final httpClient = _client(failMessage: 'Izmjena kursa nije uspjela.');
     await pumpDialog(tester, httpClient, course(published: false));
 
@@ -155,27 +160,29 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('a blocked delete shows the server message and keeps the dialog open',
-      (tester) async {
-    const blockedMessage =
-        'Kurs ima studente s plaćenim pristupom do 31.07.2026. Uklonite objavu kursa da ga sakrijete iz ponude; brisanje je moguće nakon isteka.';
-    final httpClient = _client(failMessage: blockedMessage);
-    await pumpDialog(tester, httpClient, course());
+  testWidgets(
+    'a blocked delete shows the server message and keeps the dialog open',
+    (tester) async {
+      const blockedMessage =
+          'Kurs ima studente s plaćenim pristupom do 31.07.2026. Uklonite objavu kursa da ga sakrijete iz ponude; brisanje je moguće nakon isteka.';
+      final httpClient = _client(failMessage: blockedMessage);
+      await pumpDialog(tester, httpClient, course());
 
-    await tester.tap(find.widgetWithText(OutlinedButton, 'Obriši'));
-    await tester.pumpAndSettle();
-    expect(find.text('Potvrdite brisanje'), findsOneWidget);
+      await tester.tap(find.widgetWithText(OutlinedButton, 'Obriši'));
+      await tester.pumpAndSettle();
+      expect(find.text('Potvrdite brisanje'), findsOneWidget);
 
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Potvrdi'));
-    await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(ElevatedButton, 'Potvrdi'));
+      await tester.pumpAndSettle();
 
-    expect(httpClient.deletedUrls.length, 1);
-    expect(find.text(blockedMessage), findsOneWidget);
-    expect(find.byType(CourseDetailDialog), findsOneWidget);
-    final deleteButton = tester.widget<OutlinedButton>(
-      find.widgetWithText(OutlinedButton, 'Obriši'),
-    );
-    expect(deleteButton.onPressed, isNotNull);
-    expect(tester.takeException(), isNull);
-  });
+      expect(httpClient.deletedUrls.length, 1);
+      expect(find.text(blockedMessage), findsOneWidget);
+      expect(find.byType(CourseDetailDialog), findsOneWidget);
+      final deleteButton = tester.widget<OutlinedButton>(
+        find.widgetWithText(OutlinedButton, 'Obriši'),
+      );
+      expect(deleteButton.onPressed, isNotNull);
+      expect(tester.takeException(), isNull);
+    },
+  );
 }

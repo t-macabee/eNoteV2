@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:enote_core/enote_core.dart';
+
 import '../../../theme/app_theme.dart';
 import '../../../widgets/detail_row.dart';
 
@@ -55,10 +56,7 @@ class CourseDetailActionBar extends StatelessWidget {
 class CourseDetailRows extends StatelessWidget {
   final CourseDto course;
 
-  const CourseDetailRows({
-    super.key,
-    required this.course,
-  });
+  const CourseDetailRows({super.key, required this.course});
 
   @override
   Widget build(BuildContext context) {

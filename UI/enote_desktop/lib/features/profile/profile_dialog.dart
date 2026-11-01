@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:enote_core/enote_core.dart';
+
 import '../../theme/app_theme.dart';
 import '../../widgets/entity_form_scaffold.dart';
 import 'change_password_dialog.dart';
@@ -90,8 +91,9 @@ class _ProfileDialogState extends State<ProfileDialog> {
     final lastName = profile.profile.lastName ?? ' - ';
     final email = profile.email ?? ' - ';
     final dateOfBirthValue = profile.profile.dateOfBirth;
-    final dateOfBirth =
-        dateOfBirthValue != null ? formatDate(dateOfBirthValue) : ' - ';
+    final dateOfBirth = dateOfBirthValue != null
+        ? formatDate(dateOfBirthValue)
+        : ' - ';
     final username = profile.username.isNotEmpty
         ? profile.username
         : (context.read<AuthState>().username ?? '');
@@ -131,12 +133,20 @@ class _ProfileDialogState extends State<ProfileDialog> {
               const SizedBox(height: 8),
               Center(child: _buildAvatar(context, profile)),
               const SizedBox(height: 12),
-              InfoRow(label: 'Korisničko ime', value: username, labelWidth: 120),
+              InfoRow(
+                label: 'Korisničko ime',
+                value: username,
+                labelWidth: 120,
+              ),
               InfoRow(label: 'Uloga', value: roleLabel, labelWidth: 120),
               InfoRow(label: 'Ime', value: firstName, labelWidth: 120),
               InfoRow(label: 'Prezime', value: lastName, labelWidth: 120),
               InfoRow(label: 'Email', value: email, labelWidth: 120),
-              InfoRow(label: 'Datum rođenja', value: dateOfBirth, labelWidth: 120),
+              InfoRow(
+                label: 'Datum rođenja',
+                value: dateOfBirth,
+                labelWidth: 120,
+              ),
               const SizedBox(height: 24),
               Wrap(
                 alignment: WrapAlignment.end,

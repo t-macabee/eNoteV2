@@ -2,7 +2,7 @@ import 'package:enote_core/enote_core.dart';
 
 class ShopEmployeeProvider extends DelegatedUserProvider<ShopEmployeeDto> {
   ShopEmployeeProvider({required super.apiClient})
-      : super(endpoint: 'shop/employees');
+    : super(endpoint: 'shop/employees');
 
   @override
   ShopEmployeeDto fromJson(Map<String, dynamic> json) =>

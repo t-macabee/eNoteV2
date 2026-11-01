@@ -39,7 +39,9 @@ class _UserDetailsDialogState extends State<UserDetailsDialog> {
     final confirmed = await confirmDialog(
       context: context,
       title: nextStatus ? 'Potvrdite aktivaciju' : 'Potvrdite deaktivaciju',
-      message: nextStatus ? 'Da li ste sigurni da želite da aktivirate korisnika "${widget.item.displayName}"?' : 'Da li ste sigurni da želite da deaktivirate korisnika "${widget.item.displayName}"?',
+      message: nextStatus
+          ? 'Da li ste sigurni da želite da aktivirate korisnika "${widget.item.displayName}"?'
+          : 'Da li ste sigurni da želite da deaktivirate korisnika "${widget.item.displayName}"?',
     );
     if (confirmed != true) return;
     if (!mounted) return;
@@ -52,7 +54,9 @@ class _UserDetailsDialogState extends State<UserDetailsDialog> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              nextStatus ? 'Korisnik je aktiviran.' : 'Korisnik je deaktiviran.',
+              nextStatus
+                  ? 'Korisnik je aktiviran.'
+                  : 'Korisnik je deaktiviran.',
             ),
           ),
         );
@@ -70,7 +74,8 @@ class _UserDetailsDialogState extends State<UserDetailsDialog> {
     final confirmed = await confirmDialog(
       context: context,
       title: 'Trajno brisanje',
-      message: 'Da li ste sigurni da želite trajno obrisati korisnika "${widget.item.displayName}"? Ovo se razlikuje od deaktivacije i ne može se poništiti.',
+      message:
+          'Da li ste sigurni da želite trajno obrisati korisnika "${widget.item.displayName}"? Ovo se razlikuje od deaktivacije i ne može se poništiti.',
     );
     if (confirmed != true) return;
     if (!mounted) return;
@@ -79,9 +84,9 @@ class _UserDetailsDialogState extends State<UserDetailsDialog> {
     try {
       final success = await widget.onDelete();
       if (success && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Korisnik je obrisan.')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Korisnik je obrisan.')));
         Navigator.of(context).pop();
       }
     } finally {
@@ -96,8 +101,9 @@ class _UserDetailsDialogState extends State<UserDetailsDialog> {
       mainAxisSize: MainAxisSize.min,
       children: [
         OutlinedButton.icon(
-          onPressed:
-              _isStatusChanging || _isLoadingProfile || _isDeleting ? null : _handleStatusChange,
+          onPressed: _isStatusChanging || _isLoadingProfile || _isDeleting
+              ? null
+              : _handleStatusChange,
           icon: _isStatusChanging
               ? SizedBox(
                   width: 16,
@@ -121,7 +127,9 @@ class _UserDetailsDialogState extends State<UserDetailsDialog> {
         ),
         const SizedBox(width: 8),
         IconButton(
-          onPressed: _isDeleting || _isLoadingProfile || _isStatusChanging ? null : _handleDelete,
+          onPressed: _isDeleting || _isLoadingProfile || _isStatusChanging
+              ? null
+              : _handleDelete,
           icon: _isDeleting
               ? const SizedBox(
                   width: 16,
@@ -298,8 +306,7 @@ class _UserDetailsDialogState extends State<UserDetailsDialog> {
                             icon: Icons.calendar_today_outlined,
                             label: 'Datum upisa',
                             value: formatDate(
-                              item.enrollmentDate ??
-                                  _profile!.enrollmentDate!,
+                              item.enrollmentDate ?? _profile!.enrollmentDate!,
                             ),
                           ),
                         const SizedBox(height: 8),

@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
@@ -83,8 +82,9 @@ Future<ScriptedClient> _pumpForm(WidgetTester tester) async {
 }
 
 void main() {
-  testWidgets('F4-13: malformed phone shows the validator text',
-      (tester) async {
+  testWidgets('F4-13: malformed phone shows the validator text', (
+    tester,
+  ) async {
     final client = await _pumpForm(tester);
 
     await tester.enterText(

@@ -5,7 +5,7 @@ import '../../shared/membership/membership_payments_api.dart';
 class InstructorStudentProvider extends DelegatedUserProvider<StudentDto>
     with MembershipPaymentsApi<StudentDto> {
   InstructorStudentProvider({required super.apiClient})
-      : super(endpoint: 'instructor/students');
+    : super(endpoint: 'instructor/students');
 
   @override
   StudentDto fromJson(Map<String, dynamic> json) => StudentDto.fromJson(json);

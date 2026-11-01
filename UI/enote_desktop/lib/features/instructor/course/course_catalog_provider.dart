@@ -1,9 +1,8 @@
 import 'package:enote_core/enote_core.dart';
 
 class CourseCatalogProvider extends ReadOnlyProvider<CourseDto> {
-  CourseCatalogProvider({
-    required super.apiClient,
-  }) : super(endpoint: 'instructor/courses/catalog');
+  CourseCatalogProvider({required super.apiClient})
+    : super(endpoint: 'instructor/courses/catalog');
 
   @override
   CourseDto fromJson(Map<String, dynamic> json) => CourseDto.fromJson(json);

@@ -6,7 +6,9 @@ import 'package:enote_desktop/features/store_employee/rental/rental_transition_a
 
 void main() {
   group('RentalTransitionActionRow', () {
-    testWidgets('Cancel button renders when status is approved', (tester) async {
+    testWidgets('Cancel button renders when status is approved', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -22,7 +24,9 @@ void main() {
       expect(find.widgetWithText(ElevatedButton, 'Otkaži'), findsOneWidget);
     });
 
-    testWidgets('Cancel button does NOT render when status is pending', (tester) async {
+    testWidgets('Cancel button does NOT render when status is pending', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -39,7 +43,9 @@ void main() {
       expect(find.widgetWithText(ElevatedButton, 'Otkaži'), findsNothing);
     });
 
-    testWidgets('Cancel button does NOT render when status is active', (tester) async {
+    testWidgets('Cancel button does NOT render when status is active', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -51,12 +57,17 @@ void main() {
         ),
       );
 
-      expect(find.widgetWithText(ElevatedButton, 'Prijevremeni povrat'), findsOneWidget);
+      expect(
+        find.widgetWithText(ElevatedButton, 'Prijevremeni povrat'),
+        findsOneWidget,
+      );
       expect(find.widgetWithText(ElevatedButton, 'Završi'), findsNothing);
       expect(find.widgetWithText(ElevatedButton, 'Otkaži'), findsNothing);
     });
 
-    testWidgets('active before due shows only Prijevremeni povrat', (tester) async {
+    testWidgets('active before due shows only Prijevremeni povrat', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
@@ -69,7 +80,10 @@ void main() {
         ),
       );
 
-      expect(find.widgetWithText(ElevatedButton, 'Prijevremeni povrat'), findsOneWidget);
+      expect(
+        find.widgetWithText(ElevatedButton, 'Prijevremeni povrat'),
+        findsOneWidget,
+      );
       expect(find.widgetWithText(ElevatedButton, 'Završi'), findsNothing);
     });
 
@@ -87,7 +101,10 @@ void main() {
       );
 
       expect(find.widgetWithText(ElevatedButton, 'Završi'), findsOneWidget);
-      expect(find.widgetWithText(ElevatedButton, 'Prijevremeni povrat'), findsNothing);
+      expect(
+        find.widgetWithText(ElevatedButton, 'Prijevremeni povrat'),
+        findsNothing,
+      );
     });
 
     for (final terminalStatus in [
@@ -96,57 +113,68 @@ void main() {
       InstrumentRentalStatus.rejected,
       InstrumentRentalStatus.returnedEarly,
     ]) {
-      testWidgets('Cancel button does NOT render when status is $terminalStatus', (tester) async {
+      testWidgets(
+        'Cancel button does NOT render when status is $terminalStatus',
+        (tester) async {
+          await tester.pumpWidget(
+            MaterialApp(
+              home: Scaffold(
+                body: RentalTransitionActionRow(
+                  status: terminalStatus,
+                  onTransition: (trigger, {note}) async {},
+                ),
+              ),
+            ),
+          );
+
+          expect(find.widgetWithText(ElevatedButton, 'Otkaži'), findsNothing);
+        },
+      );
+    }
+
+    testWidgets(
+      'Tapping Cancel prompts for mandatory note before calling onTransition',
+      (tester) async {
+        RentalTrigger? calledTrigger;
+        String? calledNote;
+
         await tester.pumpWidget(
           MaterialApp(
             home: Scaffold(
               body: RentalTransitionActionRow(
-                status: terminalStatus,
-                onTransition: (trigger, {note}) async {},
+                status: InstrumentRentalStatus.approved,
+                onTransition: (trigger, {note}) async {
+                  calledTrigger = trigger;
+                  calledNote = note;
+                },
               ),
             ),
           ),
         );
 
-        expect(find.widgetWithText(ElevatedButton, 'Otkaži'), findsNothing);
-      });
-    }
+        await tester.tap(find.widgetWithText(ElevatedButton, 'Otkaži'));
+        await tester.pumpAndSettle();
 
-    testWidgets('Tapping Cancel prompts for mandatory note before calling onTransition', (tester) async {
-      RentalTrigger? calledTrigger;
-      String? calledNote;
+        expect(find.byType(AlertDialog), findsOneWidget);
+        expect(find.text('Razlog *'), findsOneWidget);
 
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: RentalTransitionActionRow(
-              status: InstrumentRentalStatus.approved,
-              onTransition: (trigger, {note}) async {
-                calledTrigger = trigger;
-                calledNote = note;
-              },
-            ),
-          ),
-        ),
-      );
+        final confirmButton = tester.widget<ElevatedButton>(
+          find.widgetWithText(ElevatedButton, 'Potvrdi'),
+        );
+        expect(confirmButton.onPressed, isNull);
 
-      await tester.tap(find.widgetWithText(ElevatedButton, 'Otkaži'));
-      await tester.pumpAndSettle();
+        await tester.enterText(
+          find.byType(TextField),
+          'Student se nije pojavio',
+        );
+        await tester.pumpAndSettle();
 
-      expect(find.byType(AlertDialog), findsOneWidget);
-      expect(find.text('Razlog *'), findsOneWidget);
+        await tester.tap(find.widgetWithText(ElevatedButton, 'Potvrdi'));
+        await tester.pumpAndSettle();
 
-      final confirmButton = tester.widget<ElevatedButton>(find.widgetWithText(ElevatedButton, 'Potvrdi'));
-      expect(confirmButton.onPressed, isNull);
-
-      await tester.enterText(find.byType(TextField), 'Student se nije pojavio');
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.widgetWithText(ElevatedButton, 'Potvrdi'));
-      await tester.pumpAndSettle();
-
-      expect(calledTrigger, RentalTrigger.cancel);
-      expect(calledNote, 'Student se nije pojavio');
-    });
+        expect(calledTrigger, RentalTrigger.cancel);
+        expect(calledNote, 'Student se nije pojavio');
+      },
+    );
   });
 }

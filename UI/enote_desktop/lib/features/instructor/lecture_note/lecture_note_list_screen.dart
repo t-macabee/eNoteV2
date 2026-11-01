@@ -2,12 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
+
 import '../../../widgets/entity_form_scaffold.dart';
 import '../../../widgets/entity_list_screen.dart';
 import 'lecture_note_form_screen.dart';
 import 'lecture_note_provider.dart';
-
-
 
 class LectureNoteListScreen extends StatefulWidget {
   final int lectureId;
@@ -69,7 +68,9 @@ class _LectureNoteListScreenState extends State<LectureNoteListScreen> {
             value: (item) => truncate(item.content, 80),
           ),
         ],
-        fetcher: (page, pageSize, search) => context.read<LectureNoteProvider>().search(pagedQuery(page, pageSize, search, searchField: 'title')),
+        fetcher: (page, pageSize, search) => context
+            .read<LectureNoteProvider>()
+            .search(pagedQuery(page, pageSize, search, searchField: 'title')),
         onAdd: () => _openForm(),
         onEdit: (context, item) => _openForm(item),
         deleteConfirmMessageOf: (item) =>

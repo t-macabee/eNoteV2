@@ -51,11 +51,13 @@ void main() {
         httpClient: sessionHttp,
       );
 
-      await tester.pumpWidget(MyApp(
-        authState: authState,
-        apiClient: apiClient,
-        navigatorKey: navigatorKey,
-      ));
+      await tester.pumpWidget(
+        MyApp(
+          authState: authState,
+          apiClient: apiClient,
+          navigatorKey: navigatorKey,
+        ),
+      );
       await tester.pumpAndSettle();
 
       expect(find.byType(MasterScreen), findsOneWidget);

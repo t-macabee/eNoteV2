@@ -12,9 +12,6 @@ void main() {
       ),
     );
 
-    expect(
-      provider.reportEndpoint(7),
-      'instructor/courses/7/ranking/report',
-    );
+    expect(provider.reportEndpoint(7), 'instructor/courses/7/ranking/report');
   });
 }

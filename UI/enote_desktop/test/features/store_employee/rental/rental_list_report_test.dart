@@ -11,11 +11,11 @@ import 'package:enote_desktop/features/store_employee/rental/rental_provider.dar
 import '../../../helpers.dart';
 
 Map<String, Object?> _emptyPage() => const {
-      'items': [],
-      'page': 1,
-      'pageSize': 100,
-      'totalCount': 0,
-    };
+  'items': [],
+  'page': 1,
+  'pageSize': 100,
+  'totalCount': 0,
+};
 
 void main() {
   late FakeSaveFilePicker picker;
@@ -25,8 +25,9 @@ void main() {
     FilePicker.platform = picker;
   });
 
-  testWidgets('rental list reports the store rentals under a dated name',
-      (tester) async {
+  testWidgets('rental list reports the store rentals under a dated name', (
+    tester,
+  ) async {
     final client = ScriptedClient((request) {
       final path = request.url.path;
       if (path.endsWith('/shop/rentals/report')) {
@@ -52,9 +53,7 @@ void main() {
             value: RentalProvider(apiClient: apiClient),
           ),
         ],
-        child: const MaterialApp(
-          home: Scaffold(body: RentalListScreen()),
-        ),
+        child: const MaterialApp(home: Scaffold(body: RentalListScreen())),
       ),
     );
     await pumpPastDebounce(tester);

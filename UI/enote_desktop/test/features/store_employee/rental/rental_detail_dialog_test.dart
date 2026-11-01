@@ -110,26 +110,22 @@ void main() {
   testWidgets(
     'RentalDetailDialog shows a payment error when the status call fails',
     (tester) async {
-      await _pumpDialog(
-        tester,
-        {
-          'id': 5,
-          'instrumentId': 1,
-          'musicStoreId': 1,
-          'studentProfileId': 1,
-          'studentUserId': 1,
-          'instrumentModel': 'Fender',
-          'instrumentType': 'Gitara',
-          'storeName': 'Shop',
-          'rentalStatus': 'Active',
-          'requestedAt': DateTime.now().toIso8601String(),
-          'fee': 10.0,
-          'isPaid': true,
-          'amountPaid': 10.0,
-          'paidAt': DateTime.now().toIso8601String(),
-        },
-        paymentFails: true,
-      );
+      await _pumpDialog(tester, {
+        'id': 5,
+        'instrumentId': 1,
+        'musicStoreId': 1,
+        'studentProfileId': 1,
+        'studentUserId': 1,
+        'instrumentModel': 'Fender',
+        'instrumentType': 'Gitara',
+        'storeName': 'Shop',
+        'rentalStatus': 'Active',
+        'requestedAt': DateTime.now().toIso8601String(),
+        'fee': 10.0,
+        'isPaid': true,
+        'amountPaid': 10.0,
+        'paidAt': DateTime.now().toIso8601String(),
+      }, paymentFails: true);
 
       expect(
         find.text('Podaci o plaćanju trenutno nisu dostupni.'),
@@ -225,7 +221,9 @@ void main() {
     expect(find.text('Zahtjev za iznajmljivanje je odobren.'), findsOneWidget);
   });
 
-  testWidgets('overdue rental shows due date, delay and penalty', (tester) async {
+  testWidgets('overdue rental shows due date, delay and penalty', (
+    tester,
+  ) async {
     await _pumpDialog(tester, {
       'id': 5,
       'instrumentId': 1,

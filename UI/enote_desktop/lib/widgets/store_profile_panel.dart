@@ -37,11 +37,12 @@ class StoreProfilePanel extends StatelessWidget {
 
     final phoneText =
         (store.phoneNumber != null && store.phoneNumber!.isNotEmpty)
-            ? store.phoneNumber!
-            : '-';
+        ? store.phoneNumber!
+        : '-';
 
-    final workHoursText =
-        store.businessHours.isNotEmpty ? store.businessHours : '-';
+    final workHoursText = store.businessHours.isNotEmpty
+        ? store.businessHours
+        : '-';
 
     return Container(
       color: AppTheme.surfaceContainer,
@@ -75,9 +76,8 @@ class StoreProfilePanel extends StatelessWidget {
             const SizedBox(height: 16),
             Text(
               store.storeName,
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+              style: Theme.of(context).textTheme.titleLarge
+                  ?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
             const Divider(),

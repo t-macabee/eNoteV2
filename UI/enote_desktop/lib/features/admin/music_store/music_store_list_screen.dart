@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
+
 import '../../../widgets/async_dropdown.dart';
 import '../../../widgets/entity_form_scaffold.dart';
 import '../../../widgets/entity_grid_screen.dart';
@@ -67,9 +68,16 @@ class _MusicStoreListScreenState extends State<MusicStoreListScreen> {
             _applyFilters();
           },
         ),
-        fetcher: (page, pageSize, search) => context.read<MusicStoreProvider>().search(pagedQuery(page, pageSize, search, searchField: 'storeName', filters: {
-          if (_cityId != null) 'cityId': _cityId,
-})),
+        fetcher: (page, pageSize, search) =>
+            context.read<MusicStoreProvider>().search(
+              pagedQuery(
+                page,
+                pageSize,
+                search,
+                searchField: 'storeName',
+                filters: {if (_cityId != null) 'cityId': _cityId},
+              ),
+            ),
         onAdd: () => _openForm(),
         groupKeyOf: _cityId == null
             ? (store) => store.addressCity ?? 'Nepoznat grad'

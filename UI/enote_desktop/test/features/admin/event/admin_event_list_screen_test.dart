@@ -115,31 +115,30 @@ void main() {
     },
   );
 
-  testWidgets(
-    'the admin event grid passes each event imagePath',
-    (WidgetTester tester) async {
-      tester.view.physicalSize = const Size(1400, 1000);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
+  testWidgets('the admin event grid passes each event imagePath', (
+    WidgetTester tester,
+  ) async {
+    tester.view.physicalSize = const Size(1400, 1000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
 
-      final mockClient = _client();
-      await tester.pumpWidget(_buildTestApp(mockClient));
-      await tester.pumpAndSettle();
+    final mockClient = _client();
+    await tester.pumpWidget(_buildTestApp(mockClient));
+    await tester.pumpAndSettle();
 
-      final grid = tester.widget<EntityGridScreen<EventDto>>(
-        find.byType(EntityGridScreen<EventDto>),
-      );
-      final event = EventDto(
-        id: 3,
-        title: 'Orchestra Night',
-        description: 'Default image',
-        startsAt: DateTime.utc(2026, 9, 20),
-        imagePath: '/api/v1/uploads/events/default.webp',
-      );
-      expect(grid.config.imageUrlOf!(event), event.imagePath);
-    },
-  );
+    final grid = tester.widget<EntityGridScreen<EventDto>>(
+      find.byType(EntityGridScreen<EventDto>),
+    );
+    final event = EventDto(
+      id: 3,
+      title: 'Orchestra Night',
+      description: 'Default image',
+      startsAt: DateTime.utc(2026, 9, 20),
+      imagePath: '/api/v1/uploads/events/default.webp',
+    );
+    expect(grid.config.imageUrlOf!(event), event.imagePath);
+  });
 
   testWidgets(
     'Tapping an event opens the editable EventFormScreen with enabled save and delete',

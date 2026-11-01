@@ -18,8 +18,7 @@ class UserGridScreen extends StatefulWidget {
 }
 
 class _UserGridScreenState extends State<UserGridScreen> {
-  final _gridKey =
-      GlobalKey<EntityGridScreenState<AdminUserListItemDto>>();
+  final _gridKey = GlobalKey<EntityGridScreenState<AdminUserListItemDto>>();
 
   UserRole? _role;
 
@@ -41,9 +40,10 @@ class _UserGridScreenState extends State<UserGridScreen> {
     bool isActive,
   ) async {
     try {
-      await context
-          .read<AdminUserProvider>()
-          .setStatus(item.appUserId, isActive);
+      await context.read<AdminUserProvider>().setStatus(
+        item.appUserId,
+        isActive,
+      );
       _gridKey.currentState?.refresh();
       return true;
     } catch (e) {
@@ -120,9 +120,10 @@ class _UserGridScreenState extends State<UserGridScreen> {
             userPictureUrl(context.read<ApiClient>(), item.appUserId),
         titleOf: (item) => item.displayName,
         subtitleOf: (item) => switch (item.role) {
-          UserRole.student => item.membershipPaidUntil == null
-              ? (item.username != null ? '@${item.username}' : 'Student')
-              : null,
+          UserRole.student =>
+            item.membershipPaidUntil == null
+                ? (item.username != null ? '@${item.username}' : 'Student')
+                : null,
           UserRole.storeEmployee =>
             item.storeName != null && item.storeName!.isNotEmpty
                 ? item.storeName
@@ -131,8 +132,7 @@ class _UserGridScreenState extends State<UserGridScreen> {
         },
         onTap: (context, item) => _showUserDetailsDialog(context, item),
         groupKeyOf: _role == null
-            ? (item) =>
-                item.role == null ? 'Ostalo' : userRoleLabel(item.role!)
+            ? (item) => item.role == null ? 'Ostalo' : userRoleLabel(item.role!)
             : null,
         filterBar: Row(
           mainAxisSize: MainAxisSize.min,

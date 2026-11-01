@@ -55,8 +55,9 @@ Future<void> _save(WidgetTester tester) async {
 }
 
 void main() {
-  testWidgets('F4-10: malformed email shows the format validator text',
-      (tester) async {
+  testWidgets('F4-10: malformed email shows the format validator text', (
+    tester,
+  ) async {
     final client = await _pumpDialog(tester);
 
     await tester.enterText(
@@ -70,8 +71,9 @@ void main() {
     expect(client.requests.where((r) => r.method == 'PUT'), isEmpty);
   });
 
-  testWidgets('F4-11: future date of birth shows the validator text',
-      (tester) async {
+  testWidgets('F4-11: future date of birth shows the validator text', (
+    tester,
+  ) async {
     final client = await _pumpDialog(tester);
 
     final state = tester.state<FormFieldState<DateTime?>>(
@@ -88,8 +90,9 @@ void main() {
     expect(client.requests.where((r) => r.method == 'PUT'), isEmpty);
   });
 
-  testWidgets('a failed save shows the banner and keeps the dialog open',
-      (tester) async {
+  testWidgets('a failed save shows the banner and keeps the dialog open', (
+    tester,
+  ) async {
     await _pumpDialog(
       tester,
       status: 500,

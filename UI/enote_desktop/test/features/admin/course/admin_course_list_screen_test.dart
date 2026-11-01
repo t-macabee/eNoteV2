@@ -10,34 +10,34 @@ import 'package:enote_desktop/widgets/entity_grid_screen.dart';
 import '../../../helpers.dart';
 
 ScriptedClient _client() => ScriptedClient((request) {
-      final url = request.url.toString();
+  final url = request.url.toString();
 
-      if (url.contains('admin/courses')) {
-        return jsonResponse(const {
-          'items': [
-            {
-              'id': 1,
-              'instructorId': 10,
-              'name': 'Guitar 101',
-              'price': 100.0,
-              'isPublished': true,
-              'enrolledCount': 3,
-              'imagePath': '/api/v1/uploads/courses/default.webp',
-            },
-          ],
-          'page': 1,
-          'pageSize': 24,
-          'totalCount': 1,
-        }, 200);
-      }
+  if (url.contains('admin/courses')) {
+    return jsonResponse(const {
+      'items': [
+        {
+          'id': 1,
+          'instructorId': 10,
+          'name': 'Guitar 101',
+          'price': 100.0,
+          'isPublished': true,
+          'enrolledCount': 3,
+          'imagePath': '/api/v1/uploads/courses/default.webp',
+        },
+      ],
+      'page': 1,
+      'pageSize': 24,
+      'totalCount': 1,
+    }, 200);
+  }
 
-      return jsonResponse(const {
-        'items': [],
-        'page': 1,
-        'pageSize': 24,
-        'totalCount': 0,
-      }, 200);
-    });
+  return jsonResponse(const {
+    'items': [],
+    'page': 1,
+    'pageSize': 24,
+    'totalCount': 0,
+  }, 200);
+});
 
 void main() {
   testWidgets('the admin course grid passes each course imagePath', (

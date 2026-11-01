@@ -4,7 +4,8 @@ import 'package:enote_core/enote_core.dart';
 
 class RentalTransitionActionRow extends StatefulWidget {
   final InstrumentRentalStatus status;
-  final Future<void> Function(RentalTrigger trigger, {String? note}) onTransition;
+  final Future<void> Function(RentalTrigger trigger, {String? note})
+  onTransition;
   final bool enabled;
   final DateTime? dueAt;
 
@@ -17,7 +18,8 @@ class RentalTransitionActionRow extends StatefulWidget {
   });
 
   @override
-  State<RentalTransitionActionRow> createState() => _RentalTransitionActionRowState();
+  State<RentalTransitionActionRow> createState() =>
+      _RentalTransitionActionRowState();
 }
 
 class _TransitionAction {
@@ -138,7 +140,9 @@ class _RentalTransitionActionRowState extends State<RentalTransitionActionRow> {
       children: actions.map((action) {
         final isBusy = _busyTrigger == action.trigger;
         return ElevatedButton.icon(
-          onPressed: widget.enabled && _busyTrigger == null ? () => _run(action) : null,
+          onPressed: widget.enabled && _busyTrigger == null
+              ? () => _run(action)
+              : null,
           style: action.color != null
               ? ElevatedButton.styleFrom(foregroundColor: action.color)
               : null,

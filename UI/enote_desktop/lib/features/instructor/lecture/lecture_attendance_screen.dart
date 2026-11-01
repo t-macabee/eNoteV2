@@ -2,20 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
+
 import '../../../widgets/entity_list_screen.dart';
 import 'lecture_provider.dart';
 
 String _attendanceLabel(AttendanceStatus status) => switch (status) {
-      AttendanceStatus.pending => 'Na čekanju',
-      AttendanceStatus.present => 'Prisutan',
-      AttendanceStatus.absent => 'Odsutan',
-    };
+  AttendanceStatus.pending => 'Na čekanju',
+  AttendanceStatus.present => 'Prisutan',
+  AttendanceStatus.absent => 'Odsutan',
+};
 
 Color _attendanceColor(AttendanceStatus status) => switch (status) {
-      AttendanceStatus.pending => Colors.orange,
-      AttendanceStatus.present => Colors.green,
-      AttendanceStatus.absent => Colors.red,
-    };
+  AttendanceStatus.pending => Colors.orange,
+  AttendanceStatus.present => Colors.green,
+  AttendanceStatus.absent => Colors.red,
+};
 
 class LectureAttendanceView extends StatefulWidget {
   final int lectureId;
@@ -34,7 +35,10 @@ class LectureAttendanceView extends StatefulWidget {
 class _LectureAttendanceViewState extends State<LectureAttendanceView> {
   final _listKey = GlobalKey<EntityListScreenState<AttendanceDto>>();
 
-  Future<void> _markAttendance(AttendanceDto item, AttendanceStatus newStatus) async {
+  Future<void> _markAttendance(
+    AttendanceDto item,
+    AttendanceStatus newStatus,
+  ) async {
     try {
       final provider = context.read<LectureProvider>();
       await provider.markAttendance(
@@ -47,7 +51,9 @@ class _LectureAttendanceViewState extends State<LectureAttendanceView> {
       if (!mounted) return;
       widget.onMutation?.call();
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Prisustvo ažurirano: ${_attendanceLabel(newStatus)}')),
+        SnackBar(
+          content: Text('Prisustvo ažurirano: ${_attendanceLabel(newStatus)}'),
+        ),
       );
       _listKey.currentState?.refresh();
     } catch (e) {
@@ -62,13 +68,18 @@ class _LectureAttendanceViewState extends State<LectureAttendanceView> {
       builder: (context) => SimpleDialog(
         title: Text('Prisustvo — ${item.studentName}'),
         children: [
-          for (final status in [AttendanceStatus.present, AttendanceStatus.absent])
+          for (final status in [
+            AttendanceStatus.present,
+            AttendanceStatus.absent,
+          ])
             SimpleDialogOption(
               onPressed: () => Navigator.pop(context, status),
               child: Row(
                 children: [
                   Icon(
-                    status == AttendanceStatus.present ? Icons.check_circle : Icons.cancel,
+                    status == AttendanceStatus.present
+                        ? Icons.check_circle
+                        : Icons.cancel,
                     color: _attendanceColor(status),
                     size: 18,
                   ),
@@ -107,7 +118,8 @@ class _LectureAttendanceViewState extends State<LectureAttendanceView> {
             cellBuilder: (context, item) => Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
-                color: _attendanceColor(item.attendanceStatus).withValues(alpha: 0.15),
+                color: _attendanceColor(item.attendanceStatus)
+                    .withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Text(
@@ -127,9 +139,8 @@ class _LectureAttendanceViewState extends State<LectureAttendanceView> {
             onPressed: () => _showStatusPicker(item),
           ),
         ],
-        fetcher: (page, pageSize, search) => context
-            .read<LectureProvider>()
-            .getAttendance(
+        fetcher: (page, pageSize, search) =>
+            context.read<LectureProvider>().getAttendance(
               widget.lectureId,
               params: pagedQuery(page, pageSize, search),
             ),

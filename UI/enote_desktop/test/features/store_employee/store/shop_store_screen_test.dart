@@ -34,7 +34,9 @@ Widget _buildTestApp({
   final storeProvider = ShopStoreProvider(apiClient: apiClient);
   final addressProvider = AddressProvider(apiClient: apiClient);
   final instrumentProvider = InstrumentProvider(apiClient: apiClient);
-  final instrumentTypeProvider = ShopInstrumentTypeProvider(apiClient: apiClient);
+  final instrumentTypeProvider = ShopInstrumentTypeProvider(
+    apiClient: apiClient,
+  );
 
   return MultiProvider(
     providers: [
@@ -42,180 +44,199 @@ Widget _buildTestApp({
       Provider<ApiClient>.value(value: apiClient),
       ChangeNotifierProvider<ShopStoreProvider>.value(value: storeProvider),
       ChangeNotifierProvider<AddressProvider>.value(value: addressProvider),
-      ChangeNotifierProvider<InstrumentProvider>.value(value: instrumentProvider),
-      ChangeNotifierProvider<ShopInstrumentTypeProvider>.value(value: instrumentTypeProvider),
-    ],
-    child: const MaterialApp(
-      home: Scaffold(
-        body: ShopStoreScreen(),
+      ChangeNotifierProvider<InstrumentProvider>.value(
+        value: instrumentProvider,
       ),
-    ),
+      ChangeNotifierProvider<ShopInstrumentTypeProvider>.value(
+        value: instrumentTypeProvider,
+      ),
+    ],
+    child: const MaterialApp(home: Scaffold(body: ShopStoreScreen())),
   );
 }
 
 void main() {
-  testWidgets('ShopStoreScreen renders read-only left panel for non-managers and instruments grid',
-      (WidgetTester tester) async {
-    tester.view.physicalSize = const Size(1280, 800);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(() {
-      tester.view.resetPhysicalSize();
-      tester.view.resetDevicePixelRatio();
-    });
+  testWidgets(
+    'ShopStoreScreen renders read-only left panel for non-managers and instruments grid',
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1280, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
 
-    final httpClient = storeEmployeeShellClient();
-    await tester.pumpWidget(_buildTestApp(isManager: false, httpClient: httpClient));
-    await tester.pumpAndSettle();
+      final httpClient = storeEmployeeShellClient();
+      await tester.pumpWidget(
+        _buildTestApp(isManager: false, httpClient: httpClient),
+      );
+      await tester.pumpAndSettle();
 
-    expect(find.text('Muzička Prodavnica'), findsOneWidget);
-    expect(find.text('08:00 - 16:00'), findsOneWidget);
-    expect(find.text('+387 61 111 222'), findsOneWidget);
-    expect(find.text('Ferhadija 15, Sarajevo'), findsOneWidget);
+      expect(find.text('Muzička Prodavnica'), findsOneWidget);
+      expect(find.text('08:00 - 16:00'), findsOneWidget);
+      expect(find.text('+387 61 111 222'), findsOneWidget);
+      expect(find.text('Ferhadija 15, Sarajevo'), findsOneWidget);
 
-    expect(find.widgetWithText(ElevatedButton, 'Uredi'), findsNothing);
+      expect(find.widgetWithText(ElevatedButton, 'Uredi'), findsNothing);
 
-    expect(find.byType(EntityGridScreen<InstrumentDto>), findsOneWidget);
-    expect(find.text('Stratocaster'), findsOneWidget);
-    expect(find.text('Fender'), findsOneWidget);
-  });
+      expect(find.byType(EntityGridScreen<InstrumentDto>), findsOneWidget);
+      expect(find.text('Stratocaster'), findsOneWidget);
+      expect(find.text('Fender'), findsOneWidget);
+    },
+  );
 
   testWidgets(
-      'ShopStoreScreen does not render Uredi button in left panel for managers',
-      (WidgetTester tester) async {
-    tester.view.physicalSize = const Size(1280, 800);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(() {
-      tester.view.resetPhysicalSize();
-      tester.view.resetDevicePixelRatio();
-    });
+    'ShopStoreScreen does not render Uredi button in left panel for managers',
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1280, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
 
-    final httpClient = storeEmployeeShellClient();
-    await tester.pumpWidget(_buildTestApp(isManager: true, httpClient: httpClient));
-    await tester.pumpAndSettle();
+      final httpClient = storeEmployeeShellClient();
+      await tester.pumpWidget(
+        _buildTestApp(isManager: true, httpClient: httpClient),
+      );
+      await tester.pumpAndSettle();
 
-    expect(find.widgetWithText(ElevatedButton, 'Uredi'), findsNothing);
+      expect(find.widgetWithText(ElevatedButton, 'Uredi'), findsNothing);
 
-    expect(find.byType(EntityGridScreen<InstrumentDto>), findsOneWidget);
-  });
-
-  testWidgets(
-      'MasterScreen renders Uredi prodavnicu in RoleMenu for managers and saves changes via dialog',
-      (WidgetTester tester) async {
-    tester.view.physicalSize = const Size(1280, 800);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(() {
-      tester.view.resetPhysicalSize();
-      tester.view.resetDevicePixelRatio();
-    });
-
-    final httpClient = storeEmployeeShellClient();
-    await tester.pumpWidget(buildStoreEmployeeShell(isManager: true, httpClient: httpClient));
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.byTooltip('Postavke'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Uredi prodavnicu'), findsOneWidget);
-
-    await tester.tap(find.text('Uredi prodavnicu'));
-    await tester.pumpAndSettle();
-
-    expect(find.byType(ShopStoreFormScreen), findsOneWidget);
-    expect(find.widgetWithText(TextFormField, 'Naziv'), findsOneWidget);
-
-    await tester.enterText(
-        find.widgetWithText(TextFormField, 'Naziv'), 'Ažurirana Prodavnica');
-    await tester.tap(find.widgetWithText(FilledButton, 'Sačuvaj'));
-    await tester.pumpAndSettle();
-
-    expect(httpClient.putUrls, hasLength(1));
-    expect(httpClient.putUrls.first, endsWith('shop/store'));
-    final body = jsonDecode(httpClient.putBodies.first) as Map<String, dynamic>;
-    expect(body['storeName'], equals('Ažurirana Prodavnica'));
-
-    expect(find.byType(ShopStoreFormScreen), findsNothing);
-  });
+      expect(find.byType(EntityGridScreen<InstrumentDto>), findsOneWidget);
+    },
+  );
 
   testWidgets(
-      'MasterScreen does not render Uredi prodavnicu in RoleMenu for non-managers',
-      (WidgetTester tester) async {
-    tester.view.physicalSize = const Size(1280, 800);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(() {
-      tester.view.resetPhysicalSize();
-      tester.view.resetDevicePixelRatio();
-    });
+    'MasterScreen renders Uredi prodavnicu in RoleMenu for managers and saves changes via dialog',
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1280, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
 
-    final httpClient = storeEmployeeShellClient();
-    await tester.pumpWidget(buildStoreEmployeeShell(isManager: false, httpClient: httpClient));
-    await tester.pumpAndSettle();
+      final httpClient = storeEmployeeShellClient();
+      await tester.pumpWidget(
+        buildStoreEmployeeShell(isManager: true, httpClient: httpClient),
+      );
+      await tester.pumpAndSettle();
 
-    await tester.tap(find.byTooltip('Postavke'));
-    await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Postavke'));
+      await tester.pumpAndSettle();
 
-    expect(find.text('Uredi prodavnicu'), findsNothing);
-  });
+      expect(find.text('Uredi prodavnicu'), findsOneWidget);
 
-  testWidgets(
-      'ShopStoreScreen: tapping an instrument card opens InstrumentDetailDialog, '
-      'supports edit, then delete',
-      (WidgetTester tester) async {
-    tester.view.physicalSize = const Size(1280, 800);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(() {
-      tester.view.resetPhysicalSize();
-      tester.view.resetDevicePixelRatio();
-    });
+      await tester.tap(find.text('Uredi prodavnicu'));
+      await tester.pumpAndSettle();
 
-    final httpClient = storeEmployeeShellClient();
-    await tester.pumpWidget(_buildTestApp(isManager: true, httpClient: httpClient));
-    await tester.pumpAndSettle();
+      expect(find.byType(ShopStoreFormScreen), findsOneWidget);
+      expect(find.widgetWithText(TextFormField, 'Naziv'), findsOneWidget);
 
-    await tester.tap(find.text('Stratocaster'));
-    await tester.pumpAndSettle();
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Naziv'),
+        'Ažurirana Prodavnica',
+      );
+      await tester.tap(find.widgetWithText(FilledButton, 'Sačuvaj'));
+      await tester.pumpAndSettle();
 
-    expect(find.byType(InstrumentDetailDialog), findsOneWidget);
-    expect(
-      find.descendant(
-        of: find.byType(InstrumentDetailDialog),
-        matching: find.text('Gitara'),
-      ),
-      findsOneWidget,
-    );
-    expect(find.text('Dostupan'), findsOneWidget);
-    expect(find.widgetWithText(OutlinedButton, 'Uredi'), findsOneWidget);
-    expect(find.widgetWithText(OutlinedButton, 'Obriši'), findsOneWidget);
+      expect(httpClient.putUrls, hasLength(1));
+      expect(httpClient.putUrls.first, endsWith('shop/store'));
+      final body =
+          jsonDecode(httpClient.putBodies.first) as Map<String, dynamic>;
+      expect(body['storeName'], equals('Ažurirana Prodavnica'));
 
-    await tester.tap(find.widgetWithText(OutlinedButton, 'Uredi'));
-    await tester.pumpAndSettle();
-
-    expect(find.byType(InstrumentFormScreen), findsOneWidget);
-
-    await tester.tap(
-      find.descendant(
-        of: find.byType(InstrumentFormScreen),
-        matching: find.byTooltip('Zatvori'),
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    expect(find.byType(InstrumentDetailDialog), findsOneWidget);
-
-    await tester.tap(find.widgetWithText(OutlinedButton, 'Obriši'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Potvrdite brisanje'), findsOneWidget);
-    await tester.tap(find.text('Potvrdi'));
-    await tester.pumpAndSettle();
-
-    expect(httpClient.deletedUrls, hasLength(1));
-    expect(httpClient.deletedUrls.first, endsWith('shop/instruments/1'));
-    expect(find.byType(InstrumentDetailDialog), findsNothing);
-  });
+      expect(find.byType(ShopStoreFormScreen), findsNothing);
+    },
+  );
 
   testWidgets(
-      'a new instrument lands on the visible first page after a save',
-      (WidgetTester tester) async {
+    'MasterScreen does not render Uredi prodavnicu in RoleMenu for non-managers',
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1280, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      final httpClient = storeEmployeeShellClient();
+      await tester.pumpWidget(
+        buildStoreEmployeeShell(isManager: false, httpClient: httpClient),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byTooltip('Postavke'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Uredi prodavnicu'), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'ShopStoreScreen: tapping an instrument card opens InstrumentDetailDialog, '
+    'supports edit, then delete',
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1280, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      final httpClient = storeEmployeeShellClient();
+      await tester.pumpWidget(
+        _buildTestApp(isManager: true, httpClient: httpClient),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Stratocaster'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(InstrumentDetailDialog), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byType(InstrumentDetailDialog),
+          matching: find.text('Gitara'),
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Dostupan'), findsOneWidget);
+      expect(find.widgetWithText(OutlinedButton, 'Uredi'), findsOneWidget);
+      expect(find.widgetWithText(OutlinedButton, 'Obriši'), findsOneWidget);
+
+      await tester.tap(find.widgetWithText(OutlinedButton, 'Uredi'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(InstrumentFormScreen), findsOneWidget);
+
+      await tester.tap(
+        find.descendant(
+          of: find.byType(InstrumentFormScreen),
+          matching: find.byTooltip('Zatvori'),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(InstrumentDetailDialog), findsOneWidget);
+
+      await tester.tap(find.widgetWithText(OutlinedButton, 'Obriši'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Potvrdite brisanje'), findsOneWidget);
+      await tester.tap(find.text('Potvrdi'));
+      await tester.pumpAndSettle();
+
+      expect(httpClient.deletedUrls, hasLength(1));
+      expect(httpClient.deletedUrls.first, endsWith('shop/instruments/1'));
+      expect(find.byType(InstrumentDetailDialog), findsNothing);
+    },
+  );
+
+  testWidgets('a new instrument lands on the visible first page after a save', (
+    WidgetTester tester,
+  ) async {
     tester.view.physicalSize = const Size(1280, 800);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(() {
@@ -294,16 +315,22 @@ void main() {
       }, 200);
     });
 
-    await tester.pumpWidget(_buildTestApp(isManager: true, httpClient: httpClient));
+    await tester.pumpWidget(
+      _buildTestApp(isManager: true, httpClient: httpClient),
+    );
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Dodaj instrument'));
     await tester.pumpAndSettle();
 
     await tester.enterText(
-        find.widgetWithText(TextFormField, 'Model'), 'Nova gitara');
+      find.widgetWithText(TextFormField, 'Model'),
+      'Nova gitara',
+    );
     await tester.enterText(
-        find.widgetWithText(TextFormField, 'Proizvođač'), 'Novi proizvođač');
+      find.widgetWithText(TextFormField, 'Proizvođač'),
+      'Novi proizvođač',
+    );
     await tester.tap(
       find.descendant(
         of: find.byType(Dialog),
@@ -323,69 +350,71 @@ void main() {
     expect(find.text('Instrument 1'), findsNothing);
   });
 
-  testWidgets('the instrument-type filter loads every page of instrument types', (
-      WidgetTester tester) async {
-    tester.view.physicalSize = const Size(1280, 800);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(() {
-      tester.view.resetPhysicalSize();
-      tester.view.resetDevicePixelRatio();
-    });
+  testWidgets(
+    'the instrument-type filter loads every page of instrument types',
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1280, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
 
-    final httpClient = ScriptedClient((request) {
-      final url = request.url.toString();
+      final httpClient = ScriptedClient((request) {
+        final url = request.url.toString();
 
-      if (url.contains('shop/store')) {
+        if (url.contains('shop/store')) {
+          return jsonResponse(const {
+            'id': 10,
+            'storeName': 'Muzička Prodavnica',
+            'businessHours': '08:00 - 16:00',
+            'addressCity': 'Sarajevo',
+          }, 200);
+        }
+
+        if (url.contains('shop/instrument-types')) {
+          final page = int.parse(request.url.queryParameters['page'] ?? '1');
+          return jsonResponse({
+            'items': [
+              for (var i = 0; i < (page == 1 ? 100 : 50); i++)
+                {
+                  'id': page * 1000 + i,
+                  'type': 'Tip ${page * 1000 + i}',
+                  'monthlyFee': 50.0,
+                },
+            ],
+            'page': page,
+            'pageSize': 100,
+            'totalCount': 150,
+          }, 200);
+        }
+
         return jsonResponse(const {
-          'id': 10,
-          'storeName': 'Muzička Prodavnica',
-          'businessHours': '08:00 - 16:00',
-          'addressCity': 'Sarajevo',
+          'items': [],
+          'page': 1,
+          'pageSize': 20,
+          'totalCount': 0,
         }, 200);
-      }
+      });
 
-      if (url.contains('shop/instrument-types')) {
-        final page = int.parse(request.url.queryParameters['page'] ?? '1');
-        return jsonResponse({
-          'items': [
-            for (var i = 0; i < (page == 1 ? 100 : 50); i++)
-              {
-                'id': page * 1000 + i,
-                'type': 'Tip ${page * 1000 + i}',
-                'monthlyFee': 50.0,
-              },
-          ],
-          'page': page,
-          'pageSize': 100,
-          'totalCount': 150,
-        }, 200);
-      }
+      await tester.pumpWidget(
+        _buildTestApp(isManager: false, httpClient: httpClient),
+      );
+      await tester.pumpAndSettle();
 
-      return jsonResponse(const {
-        'items': [],
-        'page': 1,
-        'pageSize': 20,
-        'totalCount': 0,
-      }, 200);
-    });
+      final typeUrls = httpClient.getUrls
+          .where((url) => url.contains('shop/instrument-types'))
+          .toList();
+      expect(typeUrls, hasLength(2));
+      expect(typeUrls.first, contains('page=1'));
+      expect(typeUrls.last, contains('page=2'));
 
-    await tester.pumpWidget(
-      _buildTestApp(isManager: false, httpClient: httpClient),
-    );
-    await tester.pumpAndSettle();
-
-    final typeUrls = httpClient.getUrls
-        .where((url) => url.contains('shop/instrument-types'))
-        .toList();
-    expect(typeUrls, hasLength(2));
-    expect(typeUrls.first, contains('page=1'));
-    expect(typeUrls.last, contains('page=2'));
-
-    final dropdown = tester.widget<DropdownButton<Object>>(
-      find.byType(DropdownButton<Object>),
-    );
-    expect(dropdown.items, hasLength(151));
-    expect((dropdown.items!.first.child as Text).data, 'Svi instrumenti');
-    expect((dropdown.items!.last.child as Text).data, 'Tip 2049');
-  });
+      final dropdown = tester.widget<DropdownButton<Object>>(
+        find.byType(DropdownButton<Object>),
+      );
+      expect(dropdown.items, hasLength(151));
+      expect((dropdown.items!.first.child as Text).data, 'Svi instrumenti');
+      expect((dropdown.items!.last.child as Text).data, 'Tip 2049');
+    },
+  );
 }

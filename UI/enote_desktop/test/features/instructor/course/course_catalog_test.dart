@@ -52,94 +52,104 @@ void main() {
       expect(instructors.items[1].name, 'Maestro Guitar');
     });
 
-    test('getCatalogSummary fetches from instructor/courses/catalog/summary', () async {      final mockClient = ScriptedClient((req) async {
-        expect(req.url.path, '/api/v1/instructor/courses/catalog/summary');
-        expect(req.method, 'GET');
-        return http.Response(
-          jsonEncode({
-            'totalCourses': 15,
-            'totalStudents': 120,
-          }),
-          200,
+    test(
+      'getCatalogSummary fetches from instructor/courses/catalog/summary',
+      () async {
+        final mockClient = ScriptedClient((req) async {
+          expect(req.url.path, '/api/v1/instructor/courses/catalog/summary');
+          expect(req.method, 'GET');
+          return http.Response(
+            jsonEncode({'totalCourses': 15, 'totalStudents': 120}),
+            200,
+          );
+        });
+
+        final apiClient = ApiClient(
+          baseUrl: 'http://localhost:5059/api/v1/',
+          authState: AuthState(),
+          httpClient: mockClient,
         );
-      });
+        final provider = CourseCatalogProvider(apiClient: apiClient);
 
-      final apiClient = ApiClient(
-        baseUrl: 'http://localhost:5059/api/v1/',
-        authState: AuthState(),
-        httpClient: mockClient,
-      );
-      final provider = CourseCatalogProvider(apiClient: apiClient);
+        final summary = await provider.getCatalogSummary();
 
-      final summary = await provider.getCatalogSummary();
+        expect(summary.totalCourses, 15);
+        expect(summary.totalStudents, 120);
+      },
+    );
 
-      expect(summary.totalCourses, 15);
-      expect(summary.totalStudents, 120);
-    });
+    test(
+      'F3-05: malformed 200 maps to ApiException, not FormatException',
+      () async {
+        final mockClient = ScriptedClient((req) async {
+          return http.Response('not-json{{{', 200);
+        });
 
-    test('F3-05: malformed 200 maps to ApiException, not FormatException',
-        () async {
-      final mockClient = ScriptedClient((req) async {
-        return http.Response('not-json{{{', 200);
-      });
+        final apiClient = ApiClient(
+          baseUrl: 'http://localhost:5059/api/v1/',
+          authState: AuthState(),
+          httpClient: mockClient,
+        );
+        final provider = CourseCatalogProvider(apiClient: apiClient);
 
-      final apiClient = ApiClient(
-        baseUrl: 'http://localhost:5059/api/v1/',
-        authState: AuthState(),
-        httpClient: mockClient,
-      );
-      final provider = CourseCatalogProvider(apiClient: apiClient);
-
-      expect(
-        () => provider.getCatalogInstructors(),
-        throwsA(isA<ApiException>()),
-      );
-    });
+        expect(
+          () => provider.getCatalogInstructors(),
+          throwsA(isA<ApiException>()),
+        );
+      },
+    );
   });
 
   group('InstructorStudentProvider.getEnrollments', () {
-    test('getEnrollments fetches a page from instructor/students/{id}/enrollments', () async {
-      final mockClient = ScriptedClient((req) async {
-        expect(req.url.path, '/api/v1/instructor/students/42/enrollments');
-        expect(req.method, 'GET');
-        expect(req.url.queryParameters['page'], '2');
-        expect(req.url.queryParameters['pageSize'], '5');
-        expect(req.url.queryParameters['includeTotalCount'], 'true');
-        return http.Response(
-          jsonEncode({
-            'items': [
-              {
-                'courseId': 101,
-                'courseName': 'Cello Basics',
-                'instructorId': 5,
-                'instructorName': 'Ana Novak',
-              },
-            ],
-            'page': 2,
-            'pageSize': 5,
-            'totalCount': 6,
-          }),
-          200,
+    test(
+      'getEnrollments fetches a page from instructor/students/{id}/enrollments',
+      () async {
+        final mockClient = ScriptedClient((req) async {
+          expect(req.url.path, '/api/v1/instructor/students/42/enrollments');
+          expect(req.method, 'GET');
+          expect(req.url.queryParameters['page'], '2');
+          expect(req.url.queryParameters['pageSize'], '5');
+          expect(req.url.queryParameters['includeTotalCount'], 'true');
+          return http.Response(
+            jsonEncode({
+              'items': [
+                {
+                  'courseId': 101,
+                  'courseName': 'Cello Basics',
+                  'instructorId': 5,
+                  'instructorName': 'Ana Novak',
+                },
+              ],
+              'page': 2,
+              'pageSize': 5,
+              'totalCount': 6,
+            }),
+            200,
+          );
+        });
+
+        final apiClient = ApiClient(
+          baseUrl: 'http://localhost:5059/api/v1/',
+          authState: AuthState(),
+          httpClient: mockClient,
         );
-      });
+        final provider = InstructorStudentProvider(apiClient: apiClient);
 
-      final apiClient = ApiClient(
-        baseUrl: 'http://localhost:5059/api/v1/',
-        authState: AuthState(),
-        httpClient: mockClient,
-      );
-      final provider = InstructorStudentProvider(apiClient: apiClient);
+        final enrollments = await provider.getEnrollments(
+          42,
+          page: 2,
+          pageSize: 5,
+        );
 
-      final enrollments = await provider.getEnrollments(42, page: 2, pageSize: 5);
-
-      expect(enrollments.items.length, 1);
-      expect(enrollments.page, 2);
-      expect(enrollments.pageSize, 5);
-      expect(enrollments.totalCount, 6);
-      expect(enrollments.items[0].courseId, 101);
-      expect(enrollments.items[0].courseName, 'Cello Basics');
-      expect(enrollments.items[0].instructorId, 5);
-      expect(enrollments.items[0].instructorName, 'Ana Novak');
-    });
+        expect(enrollments.items.length, 1);
+        expect(enrollments.page, 2);
+        expect(enrollments.pageSize, 5);
+        expect(enrollments.totalCount, 6);
+        expect(enrollments.items[0].courseId, 101);
+        expect(enrollments.items[0].courseName, 'Cello Basics');
+        expect(enrollments.items[0].instructorId, 5);
+        expect(enrollments.items[0].instructorName, 'Ana Novak');
+      },
+    );
   });
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:enote_core/enote_core.dart' hide lectureStatusLabel;
+
 import '../../../widgets/detail_row.dart';
 import '../../../widgets/dialog_shell.dart';
 import 'lecture_type_label.dart';
@@ -8,10 +9,7 @@ import 'lecture_type_label.dart';
 class LectureDetailDialog extends StatelessWidget {
   final LectureDto lecture;
 
-  const LectureDetailDialog({
-    super.key,
-    required this.lecture,
-  });
+  const LectureDetailDialog({super.key, required this.lecture});
 
   static Future<void> show(BuildContext context, LectureDto lecture) {
     return showDialog<void>(

@@ -18,7 +18,11 @@ String fakeJwt({
   String role = 'Administrator',
   bool isManager = false,
 }) => core.fakeJwt(
-      subject: subject, username: username, role: role, isManager: isManager);
+  subject: subject,
+  username: username,
+  role: role,
+  isManager: isManager,
+);
 
 class FakeSaveFilePicker extends FilePicker {
   FakeSaveFilePicker({this.path});
@@ -42,9 +46,9 @@ class FakeSaveFilePicker extends FilePicker {
 }
 
 Future<void> pumpPastDebounce(WidgetTester tester) => tester.pump(
-      PagedFetchController.defaultSearchDebounce +
-          const Duration(milliseconds: 100),
-    );
+  PagedFetchController.defaultSearchDebounce +
+      const Duration(milliseconds: 100),
+);
 
 Future<void> pumpReportScreen(WidgetTester tester, Widget app) async {
   tester.view.physicalSize = const Size(1400, 1000);
@@ -90,7 +94,9 @@ class DelegatedUserHttpClient extends http.BaseClient {
       }
       if (simulate400) {
         return http.StreamedResponse(
-          Stream.value(utf8.encode(jsonEncode({'message': 'Neispravan zahtjev.'}))),
+          Stream.value(
+            utf8.encode(jsonEncode({'message': 'Neispravan zahtjev.'})),
+          ),
           400,
           headers: {'content-type': 'application/json'},
         );
@@ -123,7 +129,7 @@ class DelegatedUserHttpClient extends http.BaseClient {
             'firstName': 'Edin',
             'lastName': 'Dzeko',
             'username': 'edzeko',
-          }
+          },
         ],
         'page': 1,
         'pageSize': 10,
@@ -137,18 +143,20 @@ class DelegatedUserHttpClient extends http.BaseClient {
     }
 
     if (request.method == 'GET' && url.contains('shop/employees')) {
-      final items = shopEmployees ?? [
-        {
-          'id': 1,
-          'appUserId': 20,
-          'musicStoreId': 1,
-          'firstName': 'Miralem',
-          'lastName': 'Pjanic',
-          'username': 'mpjanic',
-          'isManager': true,
-          'isActive': true,
-        }
-      ];
+      final items =
+          shopEmployees ??
+          [
+            {
+              'id': 1,
+              'appUserId': 20,
+              'musicStoreId': 1,
+              'firstName': 'Miralem',
+              'lastName': 'Pjanic',
+              'username': 'mpjanic',
+              'isManager': true,
+              'isActive': true,
+            },
+          ];
       final json = jsonEncode({
         'items': items,
         'page': 1,
@@ -170,40 +178,55 @@ class DelegatedUserHttpClient extends http.BaseClient {
   }
 }
 
-typedef RecordedRequest = ({String method, String url, Map<String, dynamic>? body});
+typedef RecordedRequest = ({
+  String method,
+  String url,
+  Map<String, dynamic>? body,
+});
 
 extension ScriptedClientRecords on ScriptedClient {
   List<RecordedRequest> get recorded => [
-        for (final r in requests)
-          (
-            method: r.method,
-            url: r.url.toString(),
-            body: r.body.isEmpty
-                ? null
-                : jsonDecode(r.body) as Map<String, dynamic>,
-          ),
-      ];
+    for (final r in requests)
+      (
+        method: r.method,
+        url: r.url.toString(),
+        body: r.body.isEmpty
+            ? null
+            : jsonDecode(r.body) as Map<String, dynamic>,
+      ),
+  ];
 
-  List<String> get requestedUrls => [for (final r in requests) r.url.toString()];
+  List<String> get requestedUrls => [
+    for (final r in requests) r.url.toString(),
+  ];
 
-  List<String> get getUrls =>
-      [for (final r in requests) if (r.method == 'GET') r.url.toString()];
+  List<String> get getUrls => [
+    for (final r in requests)
+      if (r.method == 'GET') r.url.toString(),
+  ];
 
-  List<String> get postUrls =>
-      [for (final r in requests) if (r.method == 'POST') r.url.toString()];
+  List<String> get postUrls => [
+    for (final r in requests)
+      if (r.method == 'POST') r.url.toString(),
+  ];
 
-  List<String> get putUrls =>
-      [for (final r in requests) if (r.method == 'PUT') r.url.toString()];
+  List<String> get putUrls => [
+    for (final r in requests)
+      if (r.method == 'PUT') r.url.toString(),
+  ];
 
-  List<String> get deletedUrls =>
-      [for (final r in requests) if (r.method == 'DELETE') r.url.toString()];
+  List<String> get deletedUrls => [
+    for (final r in requests)
+      if (r.method == 'DELETE') r.url.toString(),
+  ];
 
+  List<String> get postedBodies => [
+    for (final r in requests)
+      if (r.method == 'POST') r.body,
+  ];
 
-  List<String> get postedBodies =>
-      [for (final r in requests) if (r.method == 'POST') r.body];
-
-  List<String> get putBodies =>
-      [for (final r in requests) if (r.method == 'PUT') r.body];
-
-
+  List<String> get putBodies => [
+    for (final r in requests)
+      if (r.method == 'PUT') r.body,
+  ];
 }

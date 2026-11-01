@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
+
 import '../../../theme/app_theme.dart';
 import '../../../widgets/dialog_shell.dart';
 import '../../../widgets/entity_list_screen.dart';
@@ -100,66 +101,51 @@ class _LectureWorkspaceDialogState extends State<LectureWorkspaceDialog> {
   }
 
   String _crumbLabel(_WorkspaceView view) => switch (view) {
-        _LecturesView() => 'Predavanja',
-        _AttendanceView() => 'Prisustvo',
-        _NotesView() => 'Bilješke',
-        _AssignmentsView() => 'Zadaci',
-        _SubmissionsView() => 'Predaje',
-      };
+    _LecturesView() => 'Predavanja',
+    _AttendanceView() => 'Prisustvo',
+    _NotesView() => 'Bilješke',
+    _AssignmentsView() => 'Zadaci',
+    _SubmissionsView() => 'Predaje',
+  };
 
   Widget? _getHeaderAction(_WorkspaceView top) => switch (top) {
-        _AttendanceView(:final lecture) => PdfReportButton(
-            label: 'Izvještaj',
-            fileName: reportFileName('lecture-${lecture.id}-attendance'),
-            endpoint: context
-                .read<LectureProvider>()
-                .attendanceReportEndpoint(lecture.id),
-          ),
-        _ => null,
-      };
+    _AttendanceView(:final lecture) => PdfReportButton(
+      label: 'Izvještaj',
+      fileName: reportFileName('lecture-${lecture.id}-attendance'),
+      endpoint: context.read<LectureProvider>().attendanceReportEndpoint(
+        lecture.id,
+      ),
+    ),
+    _ => null,
+  };
 
   Widget _buildBreadcrumbs() {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
         children: [
-            for (int i = 0; i < _stack.length; i++) ...[
-              if (i > 0)
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 6),
-                  child: Text(
-                    '›',
-                    style: TextStyle(
-                      color: AppTheme.textTertiary,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
+          for (int i = 0; i < _stack.length; i++) ...[
+            if (i > 0)
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 6),
+                child: Text(
+                  '›',
+                  style: TextStyle(
+                    color: AppTheme.textTertiary,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-              if (i < _stack.length - 1)
-                InkWell(
-                  borderRadius: BorderRadius.circular(4),
-                  onTap: () {
-                    setState(() {
-                      _stack.removeRange(i + 1, _stack.length);
-                    });
-                  },
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 4,
-                      vertical: 2,
-                    ),
-                    child: Text(
-                      _crumbLabel(_stack[i]),
-                      style: const TextStyle(
-                        color: AppTheme.primary,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                )
-              else
-                Padding(
+              ),
+            if (i < _stack.length - 1)
+              InkWell(
+                borderRadius: BorderRadius.circular(4),
+                onTap: () {
+                  setState(() {
+                    _stack.removeRange(i + 1, _stack.length);
+                  });
+                },
+                child: Padding(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 4,
                     vertical: 2,
@@ -167,58 +153,70 @@ class _LectureWorkspaceDialogState extends State<LectureWorkspaceDialog> {
                   child: Text(
                     _crumbLabel(_stack[i]),
                     style: const TextStyle(
-                      color: AppTheme.textPrimary,
-                      fontWeight: FontWeight.w600,
+                      color: AppTheme.primary,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
                 ),
-            ],
+              )
+            else
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                child: Text(
+                  _crumbLabel(_stack[i]),
+                  style: const TextStyle(
+                    color: AppTheme.textPrimary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
           ],
-        ),
-      );
-    }
+        ],
+      ),
+    );
+  }
 
   Widget _buildCurrentView() {
     final top = _stack.last;
     return switch (top) {
       _LecturesView() => LectureListScreen(
-          key: const ValueKey('workspace_lectures'),
-          courseId: widget.courseId,
-          courseName: widget.courseName,
-          presentation: EntityListPresentation.embedded,
-          listStyle: EntityListStyle.tiles,
-          onOpenSubView: (lecture, subView) {
-            setState(() {
-              switch (subView) {
-                case LectureSubView.attendance:
-                  _stack.add(_AttendanceView(lecture));
-                case LectureSubView.notes:
-                  _stack.add(_NotesView(lecture));
-                case LectureSubView.assignments:
-                  _stack.add(_AssignmentsView(lecture));
-              }
-            });
-          },
-          onMutation: _markDirty,
-        ),
+        key: const ValueKey('workspace_lectures'),
+        courseId: widget.courseId,
+        courseName: widget.courseName,
+        presentation: EntityListPresentation.embedded,
+        listStyle: EntityListStyle.tiles,
+        onOpenSubView: (lecture, subView) {
+          setState(() {
+            switch (subView) {
+              case LectureSubView.attendance:
+                _stack.add(_AttendanceView(lecture));
+              case LectureSubView.notes:
+                _stack.add(_NotesView(lecture));
+              case LectureSubView.assignments:
+                _stack.add(_AssignmentsView(lecture));
+            }
+          });
+        },
+        onMutation: _markDirty,
+      ),
       _AttendanceView(:final lecture) => LectureAttendanceView(
-          key: ValueKey('workspace_attendance_${lecture.id}'),
+        key: ValueKey('workspace_attendance_${lecture.id}'),
+        lectureId: lecture.id,
+        onMutation: _markDirty,
+      ),
+      _NotesView(:final lecture) => ChangeNotifierProvider<LectureNoteProvider>(
+        key: ValueKey('workspace_notes_${lecture.id}'),
+        create: (_) => LectureNoteProvider(
+          apiClient: widget.apiClient,
           lectureId: lecture.id,
+        ),
+        child: LectureNoteListScreen(
+          lectureId: lecture.id,
+          lectureName: lecture.name,
+          presentation: EntityListPresentation.embedded,
           onMutation: _markDirty,
         ),
-      _NotesView(:final lecture) => ChangeNotifierProvider<LectureNoteProvider>(
-          key: ValueKey('workspace_notes_${lecture.id}'),
-          create: (_) => LectureNoteProvider(
-            apiClient: widget.apiClient,
-            lectureId: lecture.id,
-          ),
-          child: LectureNoteListScreen(
-            lectureId: lecture.id,
-            lectureName: lecture.name,
-            presentation: EntityListPresentation.embedded,
-            onMutation: _markDirty,
-          ),
-        ),
+      ),
       _AssignmentsView(:final lecture) =>
         ChangeNotifierProvider<AssignmentProvider>(
           key: ValueKey('workspace_assignments_${lecture.id}'),

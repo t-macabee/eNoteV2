@@ -26,43 +26,44 @@ ScriptedClient _cityClient({
 
 void main() {
   testWidgets(
-      'CityListScreen pagination row does not overflow at wide, uncapped widths',
-      (WidgetTester tester) async {
-    tester.view.physicalSize = const Size(1400, 900);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
+    'CityListScreen pagination row does not overflow at wide, uncapped widths',
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1400, 900);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
 
-    final httpClient = _cityClient();
-    final authState = AuthState(baseUrl: 'http://localhost:5059/api/v1/');
-    final apiClient = ApiClient(
-      baseUrl: 'http://localhost:5059/api/v1/',
-      authState: authState,
-      httpClient: httpClient,
-    );
-    final cityProvider = CityProvider(apiClient: apiClient);
+      final httpClient = _cityClient();
+      final authState = AuthState(baseUrl: 'http://localhost:5059/api/v1/');
+      final apiClient = ApiClient(
+        baseUrl: 'http://localhost:5059/api/v1/',
+        authState: authState,
+        httpClient: httpClient,
+      );
+      final cityProvider = CityProvider(apiClient: apiClient);
 
-    await tester.pumpWidget(
-      ChangeNotifierProvider<CityProvider>.value(
-        value: cityProvider,
-        child: const MaterialApp(
-          home: Scaffold(
-            body: CityListScreen(
-              presentation: EntityListPresentation.embedded,
+      await tester.pumpWidget(
+        ChangeNotifierProvider<CityProvider>.value(
+          value: cityProvider,
+          child: const MaterialApp(
+            home: Scaffold(
+              body: CityListScreen(
+                presentation: EntityListPresentation.embedded,
+              ),
             ),
           ),
         ),
-      ),
-    );
-    await tester.pumpAndSettle();
+      );
+      await tester.pumpAndSettle();
 
-    expect(tester.takeException(), isNull);
-    expect(find.textContaining('Stranica'), findsOneWidget);
-  });
+      expect(tester.takeException(), isNull);
+      expect(find.textContaining('Stranica'), findsOneWidget);
+    },
+  );
 
-  testWidgets(
-      'CityListScreen renders Stranica 1 od 1 on empty result set',
-      (WidgetTester tester) async {
+  testWidgets('CityListScreen renders Stranica 1 od 1 on empty result set', (
+    WidgetTester tester,
+  ) async {
     final httpClient = _cityClient(items: [], totalCount: 0);
     final authState = AuthState(baseUrl: 'http://localhost:5059/api/v1/');
     final apiClient = ApiClient(
@@ -77,9 +78,7 @@ void main() {
         value: cityProvider,
         child: const MaterialApp(
           home: Scaffold(
-            body: CityListScreen(
-              presentation: EntityListPresentation.embedded,
-            ),
+            body: CityListScreen(presentation: EntityListPresentation.embedded),
           ),
         ),
       ),

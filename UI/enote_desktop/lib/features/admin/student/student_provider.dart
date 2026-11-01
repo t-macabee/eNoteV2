@@ -4,11 +4,9 @@ import '../../shared/membership/membership_payments_api.dart';
 
 class StudentProvider extends ReadOnlyProvider<StudentDto>
     with MembershipPaymentsApi<StudentDto> {
-  StudentProvider({
-    required super.apiClient,
-  }) : super(endpoint: 'admin/students');
+  StudentProvider({required super.apiClient})
+    : super(endpoint: 'admin/students');
 
   @override
-  StudentDto fromJson(Map<String, dynamic> json) =>
-      StudentDto.fromJson(json);
+  StudentDto fromJson(Map<String, dynamic> json) => StudentDto.fromJson(json);
 }

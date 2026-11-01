@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
+
 import '../../../widgets/async_dropdown.dart';
 import '../../../widgets/dialog_shell.dart';
 import '../../../widgets/entity_form_scaffold.dart';
@@ -50,8 +51,9 @@ class _MusicStoreDetailDialogState extends State<MusicStoreDetailDialog> {
   Future<void> _loadStore() async {
     setState(() => _isLoading = true);
     try {
-      final store =
-          await context.read<MusicStoreProvider>().getById(widget.storeId);
+      final store = await context.read<MusicStoreProvider>().getById(
+        widget.storeId,
+      );
       if (!mounted) return;
       setState(() {
         _store = store;
@@ -94,9 +96,9 @@ class _MusicStoreDetailDialogState extends State<MusicStoreDetailDialog> {
     try {
       await context.read<MusicStoreProvider>().remove(widget.storeId);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Prodavnica je obrisana.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Prodavnica je obrisana.')));
       Navigator.of(context).pop();
     } catch (e) {
       if (mounted) {
@@ -115,74 +117,70 @@ class _MusicStoreDetailDialogState extends State<MusicStoreDetailDialog> {
         child: _isLoading
             ? const Center(child: CircularProgressIndicator())
             : _store == null
-                ? Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Text('Greška pri učitavanju prodavnice.'),
-                        const SizedBox(height: 16),
-                        ElevatedButton(
-                          onPressed: _loadStore,
-                          child: const Text('Pokušaj ponovo'),
-                        ),
-                      ],
+            ? Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text('Greška pri učitavanju prodavnice.'),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: _loadStore,
+                      child: const Text('Pokušaj ponovo'),
                     ),
-                  )
-                : Row(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      SizedBox(
-                        width: 280,
-                        child: _buildLeftPanel(),
-                      ),
-                      const VerticalDivider(width: 1),
-                      Expanded(
-                        child: EntityGridScreen<InstrumentDto>(
-                          key: _gridKey,
-                          config: EntityGridConfig<InstrumentDto>(
-                            embedded: true,
-                            searchHint: 'Pretraži instrumente...',
-                            placeholderIcon: Icons.music_note,
-                            titleOf: (i) => i.model,
-                            subtitleOf: (i) => i.manufacturer,
-                            imageUrlOf: (i) => i.imagePath,
-                            showAddButton: false,
-                            filterBar: AsyncDropdown<InstrumentTypeDto>(
-                              label: 'Tip instrumenta',
-                              width: 220,
-                              emptyOptionLabel: 'Svi instrumenti',
-                              value: _instrumentTypeId,
-                              fetcher: () => fetchAllPages(
-                                (query) => context
-                                    .read<InstrumentTypeProvider>()
-                                    .search(query),
-                              ),
-                              itemLabel: (type) => type.type,
-                              itemId: (type) => type.id,
-                              onChanged: (typeId, _) {
-                                _instrumentTypeId = typeId as int?;
-                                _applyFilters();
-                              },
-                            ),
-                            groupKeyOf: _instrumentTypeId == null
-                                ? (i) => i.instrumentType.isNotEmpty
-                                    ? i.instrumentType
-                                    : 'Ostalo'
-                                : null,
-                            fetcher: (page, pageSize, search) => context
-                                .read<StoreInstrumentProvider>()
-                                .fetchPage(
-                                  page,
-                                  pageSize,
-                                  search,
-                                  musicStoreId: widget.storeId,
-                                  instrumentTypeId: _instrumentTypeId,
-                                ),
+                  ],
+                ),
+              )
+            : Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  SizedBox(width: 280, child: _buildLeftPanel()),
+                  const VerticalDivider(width: 1),
+                  Expanded(
+                    child: EntityGridScreen<InstrumentDto>(
+                      key: _gridKey,
+                      config: EntityGridConfig<InstrumentDto>(
+                        embedded: true,
+                        searchHint: 'Pretraži instrumente...',
+                        placeholderIcon: Icons.music_note,
+                        titleOf: (i) => i.model,
+                        subtitleOf: (i) => i.manufacturer,
+                        imageUrlOf: (i) => i.imagePath,
+                        showAddButton: false,
+                        filterBar: AsyncDropdown<InstrumentTypeDto>(
+                          label: 'Tip instrumenta',
+                          width: 220,
+                          emptyOptionLabel: 'Svi instrumenti',
+                          value: _instrumentTypeId,
+                          fetcher: () => fetchAllPages(
+                            (query) => context
+                                .read<InstrumentTypeProvider>()
+                                .search(query),
                           ),
+                          itemLabel: (type) => type.type,
+                          itemId: (type) => type.id,
+                          onChanged: (typeId, _) {
+                            _instrumentTypeId = typeId as int?;
+                            _applyFilters();
+                          },
                         ),
+                        groupKeyOf: _instrumentTypeId == null
+                            ? (i) => i.instrumentType.isNotEmpty
+                                  ? i.instrumentType
+                                  : 'Ostalo'
+                            : null,
+                        fetcher: (page, pageSize, search) =>
+                            context.read<StoreInstrumentProvider>().fetchPage(
+                              page,
+                              pageSize,
+                              search,
+                              musicStoreId: widget.storeId,
+                              instrumentTypeId: _instrumentTypeId,
+                            ),
                       ),
-                    ],
+                    ),
                   ),
+                ],
+              ),
       ),
     );
   }
@@ -196,5 +194,4 @@ class _MusicStoreDetailDialogState extends State<MusicStoreDetailDialog> {
       onDelete: _deleteStore,
     );
   }
-
 }

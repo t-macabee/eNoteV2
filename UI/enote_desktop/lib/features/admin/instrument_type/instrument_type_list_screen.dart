@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
+
 import '../../../widgets/entity_form_scaffold.dart';
 import '../../../widgets/entity_list_screen.dart';
 import 'instrument_type_form_screen.dart';
@@ -57,7 +58,9 @@ class _InstrumentTypeListScreenState extends State<InstrumentTypeListScreen> {
             value: (item) => item.monthlyFee.toStringAsFixed(2),
           ),
         ],
-        fetcher: (page, pageSize, search) => context.read<InstrumentTypeProvider>().search(pagedQuery(page, pageSize, search, searchField: 'type')),
+        fetcher: (page, pageSize, search) => context
+            .read<InstrumentTypeProvider>()
+            .search(pagedQuery(page, pageSize, search, searchField: 'type')),
         onAdd: () => _openForm(),
         onEdit: (context, item) => _openForm(item),
         deleteConfirmMessageOf: (item) =>

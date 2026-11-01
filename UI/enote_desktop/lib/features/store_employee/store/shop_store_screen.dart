@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
+
 import '../../../theme/app_theme.dart';
 import '../../../widgets/async_dropdown.dart';
 import '../../../widgets/entity_form_scaffold.dart';
@@ -16,10 +17,7 @@ import 'shop_store_provider.dart';
 class ShopStoreScreen extends StatefulWidget {
   final MusicStoreDto? initialStore;
 
-  const ShopStoreScreen({
-    super.key,
-    this.initialStore,
-  });
+  const ShopStoreScreen({super.key, this.initialStore});
 
   @override
   State<ShopStoreScreen> createState() => _ShopStoreScreenState();
@@ -107,8 +105,7 @@ class _ShopStoreScreenState extends State<ShopStoreScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(_errorMessage!,
-                style: const TextStyle(color: AppTheme.error)),
+            Text(_errorMessage!, style: const TextStyle(color: AppTheme.error)),
             const SizedBox(height: 12),
             FilledButton.icon(
               onPressed: _loadStore,
@@ -127,10 +124,7 @@ class _ShopStoreScreenState extends State<ShopStoreScreen> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        SizedBox(
-          width: 280,
-          child: _buildLeftPanel(store),
-        ),
+        SizedBox(width: 280, child: _buildLeftPanel(store)),
         const VerticalDivider(width: 1),
         Expanded(
           child: EntityGridScreen<InstrumentDto>(
@@ -146,8 +140,10 @@ class _ShopStoreScreenState extends State<ShopStoreScreen> {
               addLabel: 'Dodaj instrument',
               onAdd: () => _openInstrumentForm(),
               onTap: (context, item) async {
-                final changed =
-                    await InstrumentDetailDialog.show(context, item);
+                final changed = await InstrumentDetailDialog.show(
+                  context,
+                  item,
+                );
                 if (changed == true) {
                   _gridKey.currentState?.refresh();
                 }
@@ -158,7 +154,8 @@ class _ShopStoreScreenState extends State<ShopStoreScreen> {
                 emptyOptionLabel: 'Svi instrumenti',
                 value: _instrumentTypeId,
                 fetcher: () => fetchAllPages(
-                  (query) => context.read<ShopInstrumentTypeProvider>().search(query),
+                  (query) =>
+                      context.read<ShopInstrumentTypeProvider>().search(query),
                 ),
                 itemLabel: (type) => type.type,
                 itemId: (type) => type.id,
@@ -169,21 +166,22 @@ class _ShopStoreScreenState extends State<ShopStoreScreen> {
               ),
               groupKeyOf: _instrumentTypeId == null
                   ? (i) => i.instrumentType.isNotEmpty
-                      ? i.instrumentType
-                      : 'Ostalo'
+                        ? i.instrumentType
+                        : 'Ostalo'
                   : null,
-              fetcher: (page, pageSize, search) => context
-                  .read<InstrumentProvider>()
-                  .search(pagedQuery(
-                    page,
-                    pageSize,
-                    search,
-                    searchField: 'model',
-                    filters: {
-                      if (_instrumentTypeId != null)
-                        'instrumentTypeId': _instrumentTypeId,
-                    },
-                  )),
+              fetcher: (page, pageSize, search) =>
+                  context.read<InstrumentProvider>().search(
+                    pagedQuery(
+                      page,
+                      pageSize,
+                      search,
+                      searchField: 'model',
+                      filters: {
+                        if (_instrumentTypeId != null)
+                          'instrumentTypeId': _instrumentTypeId,
+                      },
+                    ),
+                  ),
             ),
           ),
         ),

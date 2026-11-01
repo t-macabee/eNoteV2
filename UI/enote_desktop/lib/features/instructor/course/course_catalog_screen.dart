@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
+
 import '../../../widgets/async_dropdown.dart';
 import '../../../widgets/entity_grid_screen.dart';
 import '../../../widgets/inline_error_text.dart';
@@ -30,8 +31,9 @@ class _CourseCatalogScreenState extends State<CourseCatalogScreen> {
 
   Future<void> _loadSummary() async {
     try {
-      final summary =
-          await context.read<CourseCatalogProvider>().getCatalogSummary();
+      final summary = await context
+          .read<CourseCatalogProvider>()
+          .getCatalogSummary();
       if (!mounted) return;
       setState(() {
         _summary = summary;
@@ -91,26 +93,27 @@ class _CourseCatalogScreenState extends State<CourseCatalogScreen> {
                 ),
               )
             : _summaryError != null
-                ? Center(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: InlineErrorText(_summaryError!),
-                    ),
-                  )
-                : null,
+            ? Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: InlineErrorText(_summaryError!),
+                ),
+              )
+            : null,
         onTap: (context, item) => CourseCatalogDetailDialog.show(context, item),
-        fetcher: (page, pageSize, search) => context
-            .read<CourseCatalogProvider>()
-            .search(pagedQuery(
-              page,
-              pageSize,
-              search,
-              searchField: 'name',
-              filters: {
-                if (_selectedInstructorId != null)
-                  'instructorId': _selectedInstructorId,
-              },
-            )),
+        fetcher: (page, pageSize, search) =>
+            context.read<CourseCatalogProvider>().search(
+              pagedQuery(
+                page,
+                pageSize,
+                search,
+                searchField: 'name',
+                filters: {
+                  if (_selectedInstructorId != null)
+                    'instructorId': _selectedInstructorId,
+                },
+              ),
+            ),
       ),
     );
   }

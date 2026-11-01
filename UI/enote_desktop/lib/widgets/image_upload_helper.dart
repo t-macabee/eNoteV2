@@ -40,10 +40,7 @@ Future<String?> uploadImageFor<T>(
   String contentType, {
   required BuildContext context,
   required String? Function(T updated) onSuccess,
-}) =>
-    uploadImageWith(
-      () => provider
-          .uploadImage(id, bytes, fileName, contentType)
-          .then(onSuccess),
-      context: context,
-    );
+}) => uploadImageWith(
+  () => provider.uploadImage(id, bytes, fileName, contentType).then(onSuccess),
+  context: context,
+);

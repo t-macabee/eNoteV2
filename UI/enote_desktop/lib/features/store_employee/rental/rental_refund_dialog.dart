@@ -5,12 +5,11 @@ import 'package:enote_core/enote_core.dart';
 Future<double?> showRefundAmountDialog(
   BuildContext context, {
   int? maxAmountCents,
-}) =>
-    showDialog<double>(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => _RefundAmountDialog(maxAmountCents: maxAmountCents),
-    );
+}) => showDialog<double>(
+  context: context,
+  barrierDismissible: false,
+  builder: (_) => _RefundAmountDialog(maxAmountCents: maxAmountCents),
+);
 
 class _RefundAmountDialog extends StatefulWidget {
   final int? maxAmountCents;
@@ -36,7 +35,8 @@ class _RefundAmountDialogState extends State<_RefundAmountDialog> {
     final text = _controller.text.trim();
     final hasValue = text.isNotEmpty;
     final parsed = hasValue ? double.tryParse(text.replaceAll(',', '.')) : null;
-    final overLimit = maxAmountCents != null &&
+    final overLimit =
+        maxAmountCents != null &&
         parsed != null &&
         parsed > 0 &&
         (parsed * 100).round() > maxAmountCents;
@@ -44,15 +44,17 @@ class _RefundAmountDialogState extends State<_RefundAmountDialog> {
     final errorText = !invalid
         ? null
         : overLimit
-            ? 'Preostali iznos za povrat je ${formatKM(maxAmountCents / 100)}.'
-            : 'Unesite važeći iznos.';
+        ? 'Preostali iznos za povrat je ${formatKM(maxAmountCents / 100)}.'
+        : 'Unesite važeći iznos.';
     return AlertDialog(
       title: const Text('Refundiraj'),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Text('Unesite iznos za djelomični povrat. '
-              'Ostavite prazno za puni povrat.'),
+          const Text(
+            'Unesite iznos za djelomični povrat. '
+            'Ostavite prazno za puni povrat.',
+          ),
           const SizedBox(height: 12),
           TextField(
             controller: _controller,
@@ -74,8 +76,9 @@ class _RefundAmountDialogState extends State<_RefundAmountDialog> {
           child: const Text('Otkaži'),
         ),
         ElevatedButton(
-          onPressed:
-              invalid ? null : () => Navigator.pop(context, parsed ?? 0.0),
+          onPressed: invalid
+              ? null
+              : () => Navigator.pop(context, parsed ?? 0.0),
           child: const Text('Potvrdi'),
         ),
       ],

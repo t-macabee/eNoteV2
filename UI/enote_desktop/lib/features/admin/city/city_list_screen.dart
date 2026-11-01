@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
+
 import '../../../widgets/entity_form_scaffold.dart';
 import '../../../widgets/entity_list_screen.dart';
 import 'city_form_screen.dart';
@@ -47,12 +48,11 @@ class _CityListScreenState extends State<CityListScreen> {
         listStyle: widget.listStyle,
         rowIcon: widget.rowIcon,
         columns: [
-          ColumnSpec<CityDto>(
-            label: 'Naziv',
-            value: (item) => item.name,
-          ),
+          ColumnSpec<CityDto>(label: 'Naziv', value: (item) => item.name),
         ],
-        fetcher: (page, pageSize, search) => context.read<CityProvider>().search(pagedQuery(page, pageSize, search, searchField: 'name')),
+        fetcher: (page, pageSize, search) => context
+            .read<CityProvider>()
+            .search(pagedQuery(page, pageSize, search, searchField: 'name')),
         onAdd: () => _openForm(),
         onEdit: (context, item) => _openForm(item),
         deleteConfirmMessageOf: (item) =>

@@ -11,11 +11,11 @@ import 'package:enote_desktop/features/admin/music_store/music_store_provider.da
 import '../../../helpers.dart';
 
 Map<String, Object?> _emptyPage() => const {
-      'items': [],
-      'page': 1,
-      'pageSize': 100,
-      'totalCount': 0,
-    };
+  'items': [],
+  'page': 1,
+  'pageSize': 100,
+  'totalCount': 0,
+};
 
 void main() {
   late FakeSaveFilePicker picker;
@@ -25,8 +25,9 @@ void main() {
     FilePicker.platform = picker;
   });
 
-  testWidgets('music store list reports every store under a dated name',
-      (tester) async {
+  testWidgets('music store list reports every store under a dated name', (
+    tester,
+  ) async {
     final client = ScriptedClient((request) {
       final path = request.url.path;
       if (path.endsWith('/admin/music-stores/report')) {
@@ -52,9 +53,7 @@ void main() {
             value: CityProvider(apiClient: apiClient),
           ),
         ],
-        child: const MaterialApp(
-          home: Scaffold(body: MusicStoreListScreen()),
-        ),
+        child: const MaterialApp(home: Scaffold(body: MusicStoreListScreen())),
       ),
     );
     await pumpPastDebounce(tester);

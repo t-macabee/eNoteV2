@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'config.dart';
+
 import 'package:enote_core/enote_core.dart';
+
 import 'theme/app_theme.dart';
 import 'features/admin/address/address_provider.dart';
 import 'features/admin/city/city_provider.dart';
@@ -54,11 +56,13 @@ void main() {
     httpClient: sessionHttp,
   );
 
-  runApp(MyApp(
-    authState: authState,
-    apiClient: apiClient,
-    navigatorKey: navigatorKey,
-  ));
+  runApp(
+    MyApp(
+      authState: authState,
+      apiClient: apiClient,
+      navigatorKey: navigatorKey,
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {

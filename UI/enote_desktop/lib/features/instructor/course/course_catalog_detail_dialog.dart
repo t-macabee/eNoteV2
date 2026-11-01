@@ -1,16 +1,14 @@
 import 'package:flutter/material.dart';
 
 import 'package:enote_core/enote_core.dart';
+
 import '../../../widgets/detail_row.dart';
 import '../../../widgets/dialog_shell.dart';
 
 class CourseCatalogDetailDialog extends StatelessWidget {
   final CourseDto course;
 
-  const CourseCatalogDetailDialog({
-    super.key,
-    required this.course,
-  });
+  const CourseCatalogDetailDialog({super.key, required this.course});
 
   static Future<void> show(BuildContext context, CourseDto course) {
     return showDialog<void>(
@@ -32,7 +30,8 @@ class CourseCatalogDetailDialog extends StatelessWidget {
             DetailRow(
               icon: Icons.person_outline,
               label: 'Instruktor',
-              value: (course.instructorName != null &&
+              value:
+                  (course.instructorName != null &&
                       course.instructorName!.isNotEmpty)
                   ? course.instructorName!
                   : '-',

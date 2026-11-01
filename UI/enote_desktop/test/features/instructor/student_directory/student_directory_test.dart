@@ -43,17 +43,16 @@ Future<void> _pumpScreen(WidgetTester tester, ScriptedClient client) async {
           create: (_) => StudentDirectoryProvider(apiClient: apiClient),
         ),
       ],
-      child: const MaterialApp(
-        home: Scaffold(body: StudentDirectoryScreen()),
-      ),
+      child: const MaterialApp(home: Scaffold(body: StudentDirectoryScreen())),
     ),
   );
   await tester.pumpAndSettle();
 }
 
 void main() {
-  testWidgets('the directory sends the name query parameter after a search',
-      (tester) async {
+  testWidgets('the directory sends the name query parameter after a search', (
+    tester,
+  ) async {
     final client = ScriptedClient((_) => jsonResponse(_studentsPage, 200));
     await _pumpScreen(tester, client);
 
@@ -70,8 +69,9 @@ void main() {
     expect(searchUrl, contains('name=bach'));
   });
 
-  testWidgets('a tap on a row opens the profile dialog with course grades',
-      (tester) async {
+  testWidgets('a tap on a row opens the profile dialog with course grades', (
+    tester,
+  ) async {
     final client = ScriptedClient((request) {
       if (request.url.path.endsWith('/5')) {
         return jsonResponse(const {

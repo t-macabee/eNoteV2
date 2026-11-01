@@ -9,7 +9,8 @@ import 'package:provider/provider.dart';
 
 String reportFileName(String report) {
   final now = DateTime.now();
-  final stamp = '${now.year}'
+  final stamp =
+      '${now.year}'
       '${now.month.toString().padLeft(2, '0')}'
       '${now.day.toString().padLeft(2, '0')}';
   return '$report-$stamp.pdf';
@@ -87,9 +88,8 @@ class _PdfReportButtonState extends State<PdfReportButton> {
     try {
       final path = await (widget.savePdf ?? _save)(bytes, widget.fileName);
       if (path == null || !mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Izvještaj sačuvan: $path')),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Izvještaj sačuvan: $path')));
     } catch (e) {
       _showError(e);
     }

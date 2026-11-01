@@ -113,8 +113,9 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final cityUrls =
-        client.getUrls.where((u) => u.contains('admin/cities')).toList();
+    final cityUrls = client.getUrls
+        .where((u) => u.contains('admin/cities'))
+        .toList();
     expect(cityUrls, hasLength(2));
     expect(cityUrls[0], contains('page=1'));
     expect(cityUrls[0], contains('pageSize=100'));

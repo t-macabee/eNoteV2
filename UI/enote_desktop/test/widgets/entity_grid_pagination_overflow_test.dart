@@ -9,49 +9,51 @@ import '../helpers.dart';
 
 void main() {
   testWidgets(
-      'EntityGridScreen pagination row does not overflow at wide, uncapped widths',
-      (WidgetTester tester) async {
-    tester.view.physicalSize = const Size(1400, 900);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
+    'EntityGridScreen pagination row does not overflow at wide, uncapped widths',
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1400, 900);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
 
-    final authState = AuthState(baseUrl: 'http://localhost:5059/api/v1/');
-    final apiClient = ApiClient(
-      baseUrl: 'http://localhost:5059/api/v1/',
-      authState: authState,
-      httpClient: ScriptedClient((_) => jsonResponse('', 200)),
-    );
+      final authState = AuthState(baseUrl: 'http://localhost:5059/api/v1/');
+      final apiClient = ApiClient(
+        baseUrl: 'http://localhost:5059/api/v1/',
+        authState: authState,
+        httpClient: ScriptedClient((_) => jsonResponse('', 200)),
+      );
 
-    await tester.pumpWidget(
-      Provider<ApiClient>.value(
-        value: apiClient,
-        child: MaterialApp(
-          home: Scaffold(
-            body: EntityGridScreen<String>(
-              config: EntityGridConfig<String>(
-                fetcher: (page, pageSize, search) async => PagedResult<String>(
-                  items: const ['Item 1', 'Item 2'],
-                  page: 1,
-                  pageSize: 24,
-                  totalCount: 2,
+      await tester.pumpWidget(
+        Provider<ApiClient>.value(
+          value: apiClient,
+          child: MaterialApp(
+            home: Scaffold(
+              body: EntityGridScreen<String>(
+                config: EntityGridConfig<String>(
+                  fetcher: (page, pageSize, search) async =>
+                      PagedResult<String>(
+                        items: const ['Item 1', 'Item 2'],
+                        page: 1,
+                        pageSize: 24,
+                        totalCount: 2,
+                      ),
+                  titleOf: (item) => item,
                 ),
-                titleOf: (item) => item,
               ),
             ),
           ),
         ),
-      ),
-    );
-    await tester.pumpAndSettle();
+      );
+      await tester.pumpAndSettle();
 
-    expect(tester.takeException(), isNull);
-    expect(find.textContaining('Stranica'), findsOneWidget);
-  });
+      expect(tester.takeException(), isNull);
+      expect(find.textContaining('Stranica'), findsOneWidget);
+    },
+  );
 
-  testWidgets(
-      'EntityGridScreen renders Stranica 1 od 1 on empty result set',
-      (WidgetTester tester) async {
+  testWidgets('EntityGridScreen renders Stranica 1 od 1 on empty result set', (
+    WidgetTester tester,
+  ) async {
     final authState = AuthState(baseUrl: 'http://localhost:5059/api/v1/');
     final apiClient = ApiClient(
       baseUrl: 'http://localhost:5059/api/v1/',

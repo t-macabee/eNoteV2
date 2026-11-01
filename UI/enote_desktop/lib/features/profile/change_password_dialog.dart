@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
+
 import '../../widgets/entity_form_scaffold.dart';
 import 'profile_provider.dart';
 
@@ -73,8 +74,9 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
           controller: _confirmPasswordController,
           decoration: const InputDecoration(labelText: 'Potvrdi novu lozinku'),
           obscureText: true,
-          validator:
-              Validators.confirmPassword(() => _newPasswordController.text),
+          validator: Validators.confirmPassword(
+            () => _newPasswordController.text,
+          ),
         ),
       ],
     );

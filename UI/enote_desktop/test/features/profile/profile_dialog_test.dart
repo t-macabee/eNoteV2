@@ -1,4 +1,5 @@
 import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
@@ -12,17 +13,14 @@ ScriptedClient _client(Map<String, dynamic> responseMap) =>
     ScriptedClient((_) => jsonResponse(responseMap, 200));
 
 void main() {
-  testWidgets('ProfileDialog renders username from UserProfileResponse',
-      (tester) async {
+  testWidgets('ProfileDialog renders username from UserProfileResponse', (
+    tester,
+  ) async {
     final client = _client({
       'role': 'Administrator',
       'username': 'admin',
       'email': 'admin@enote.com',
-      'profile': {
-        r'$type': 'admin',
-        'firstName': 'Ad',
-        'lastName': 'Min',
-      },
+      'profile': {r'$type': 'admin', 'firstName': 'Ad', 'lastName': 'Min'},
     });
 
     final authState = AuthState(
@@ -44,11 +42,7 @@ void main() {
             create: (_) => ProfileProvider(apiClient: apiClient),
           ),
         ],
-        child: const MaterialApp(
-          home: Scaffold(
-            body: ProfileDialog(),
-          ),
-        ),
+        child: const MaterialApp(home: Scaffold(body: ProfileDialog())),
       ),
     );
 
@@ -61,158 +55,138 @@ void main() {
   });
 
   testWidgets(
-      'ProfileDialog falls back to AuthState.username if response username is empty',
-      (tester) async {
-    final client = _client({
-      'role': 'Administrator',
-      'profile': {
-        r'$type': 'admin',
-        'firstName': null,
-        'lastName': null,
-      },
-    });
+    'ProfileDialog falls back to AuthState.username if response username is empty',
+    (tester) async {
+      final client = _client({
+        'role': 'Administrator',
+        'profile': {r'$type': 'admin', 'firstName': null, 'lastName': null},
+      });
 
-    final authState = AuthState(
-      tokenReader: () => fakeJwt(username: 'admin'),
-      httpClient: client,
-    );
-    final apiClient = ApiClient(
-      baseUrl: 'http://test/api/v1/',
-      authState: authState,
-      httpClient: client,
-    );
+      final authState = AuthState(
+        tokenReader: () => fakeJwt(username: 'admin'),
+        httpClient: client,
+      );
+      final apiClient = ApiClient(
+        baseUrl: 'http://test/api/v1/',
+        authState: authState,
+        httpClient: client,
+      );
 
-    await tester.pumpWidget(
-      MultiProvider(
-        providers: [
-          ChangeNotifierProvider<AuthState>.value(value: authState),
-          Provider<ApiClient>.value(value: apiClient),
-          Provider<ProfileProvider>(
-            create: (_) => ProfileProvider(apiClient: apiClient),
-          ),
-        ],
-        child: const MaterialApp(
-          home: Scaffold(
-            body: ProfileDialog(),
-          ),
+      await tester.pumpWidget(
+        MultiProvider(
+          providers: [
+            ChangeNotifierProvider<AuthState>.value(value: authState),
+            Provider<ApiClient>.value(value: apiClient),
+            Provider<ProfileProvider>(
+              create: (_) => ProfileProvider(apiClient: apiClient),
+            ),
+          ],
+          child: const MaterialApp(home: Scaffold(body: ProfileDialog())),
         ),
-      ),
-    );
+      );
 
-    await tester.pumpAndSettle();
+      await tester.pumpAndSettle();
 
-    expect(find.text('Korisničko ime'), findsOneWidget);
-    expect(find.text('admin'), findsOneWidget);
-    expect(find.text('Uloga'), findsOneWidget);
-    expect(find.text('Administrator'), findsOneWidget);
-  });
+      expect(find.text('Korisničko ime'), findsOneWidget);
+      expect(find.text('admin'), findsOneWidget);
+      expect(find.text('Uloga'), findsOneWidget);
+      expect(find.text('Administrator'), findsOneWidget);
+    },
+  );
 
   testWidgets(
-      'ProfileDialog requests the picture URL when hasPicture is false and '
-      'shows initials only when the request fails', (tester) async {
-    final client = _client({
-      'role': 'Administrator',
-      'username': 'admin',
-      'email': 'admin@enote.com',
-      'hasPicture': false,
-      'profile': {
-        r'$type': 'admin',
-        'firstName': 'Ad',
-        'lastName': 'Min',
-      },
-    });
+    'ProfileDialog requests the picture URL when hasPicture is false and '
+    'shows initials only when the request fails',
+    (tester) async {
+      final client = _client({
+        'role': 'Administrator',
+        'username': 'admin',
+        'email': 'admin@enote.com',
+        'hasPicture': false,
+        'profile': {r'$type': 'admin', 'firstName': 'Ad', 'lastName': 'Min'},
+      });
 
-    final authState = AuthState(
-      tokenReader: () => fakeJwt(),
-      httpClient: client,
-    );
-    final apiClient = ApiClient(
-      baseUrl: 'http://test/api/v1/',
-      authState: authState,
-      httpClient: client,
-    );
+      final authState = AuthState(
+        tokenReader: () => fakeJwt(),
+        httpClient: client,
+      );
+      final apiClient = ApiClient(
+        baseUrl: 'http://test/api/v1/',
+        authState: authState,
+        httpClient: client,
+      );
 
-    await tester.pumpWidget(
-      MultiProvider(
-        providers: [
-          ChangeNotifierProvider<AuthState>.value(value: authState),
-          Provider<ApiClient>.value(value: apiClient),
-          Provider<ProfileProvider>(
-            create: (_) => ProfileProvider(apiClient: apiClient),
-          ),
-        ],
-        child: const MaterialApp(
-          home: Scaffold(
-            body: ProfileDialog(),
-          ),
+      await tester.pumpWidget(
+        MultiProvider(
+          providers: [
+            ChangeNotifierProvider<AuthState>.value(value: authState),
+            Provider<ApiClient>.value(value: apiClient),
+            Provider<ProfileProvider>(
+              create: (_) => ProfileProvider(apiClient: apiClient),
+            ),
+          ],
+          child: const MaterialApp(home: Scaffold(body: ProfileDialog())),
         ),
-      ),
-    );
+      );
 
-    await tester.pumpAndSettle();
+      await tester.pumpAndSettle();
 
-    final image = tester.widget<Image>(find.byType(Image));
-    expect(
-      (image.image as NetworkImage).url,
-      'http://test/api/v1/users/me/picture?v=1',
-    );
+      final image = tester.widget<Image>(find.byType(Image));
+      expect(
+        (image.image as NetworkImage).url,
+        'http://test/api/v1/users/me/picture?v=1',
+      );
 
-    expect(find.text('AM'), findsOneWidget);
-  });
+      expect(find.text('AM'), findsOneWidget);
+    },
+  );
 
   testWidgets(
-      'save the profile dialog with a blanked first name -> request body has no firstName key',
-      (tester) async {
-    final client = _client({
-      'role': 'Administrator',
-      'username': 'admin',
-      'email': 'admin@enote.com',
-      'profile': {
-        r'$type': 'admin',
-        'firstName': 'Ad',
-        'lastName': 'Min',
-      },
-    });
+    'save the profile dialog with a blanked first name -> request body has no firstName key',
+    (tester) async {
+      final client = _client({
+        'role': 'Administrator',
+        'username': 'admin',
+        'email': 'admin@enote.com',
+        'profile': {r'$type': 'admin', 'firstName': 'Ad', 'lastName': 'Min'},
+      });
 
-    final authState = AuthState(
-      tokenReader: () => fakeJwt(),
-      httpClient: client,
-    );
-    final apiClient = ApiClient(
-      baseUrl: 'http://test/api/v1/',
-      authState: authState,
-      httpClient: client,
-    );
+      final authState = AuthState(
+        tokenReader: () => fakeJwt(),
+        httpClient: client,
+      );
+      final apiClient = ApiClient(
+        baseUrl: 'http://test/api/v1/',
+        authState: authState,
+        httpClient: client,
+      );
 
-    await tester.pumpWidget(
-      MultiProvider(
-        providers: [
-          ChangeNotifierProvider<AuthState>.value(value: authState),
-          Provider<ApiClient>.value(value: apiClient),
-          Provider<ProfileProvider>(
-            create: (_) => ProfileProvider(apiClient: apiClient),
-          ),
-        ],
-        child: const MaterialApp(
-          home: Scaffold(
-            body: ProfileDialog(),
-          ),
+      await tester.pumpWidget(
+        MultiProvider(
+          providers: [
+            ChangeNotifierProvider<AuthState>.value(value: authState),
+            Provider<ApiClient>.value(value: apiClient),
+            Provider<ProfileProvider>(
+              create: (_) => ProfileProvider(apiClient: apiClient),
+            ),
+          ],
+          child: const MaterialApp(home: Scaffold(body: ProfileDialog())),
         ),
-      ),
-    );
+      );
 
-    await tester.pumpAndSettle();
+      await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Uredi'));
-    await tester.pumpAndSettle();
+      await tester.tap(find.text('Uredi'));
+      await tester.pumpAndSettle();
 
-    await tester.enterText(find.widgetWithText(TextFormField, 'Ime'), '');
-    await tester.tap(find.widgetWithText(FilledButton, 'Sačuvaj'));
-    await tester.pumpAndSettle();
+      await tester.enterText(find.widgetWithText(TextFormField, 'Ime'), '');
+      await tester.tap(find.widgetWithText(FilledButton, 'Sačuvaj'));
+      await tester.pumpAndSettle();
 
-    expect(client.putBodies, isNotEmpty);
-    final putBody = jsonDecode(client.putBodies.last) as Map<String, dynamic>;
-    expect(putBody.containsKey('firstName'), isFalse);
-    expect(putBody['email'], 'admin@enote.com');
-  });
+      expect(client.putBodies, isNotEmpty);
+      final putBody = jsonDecode(client.putBodies.last) as Map<String, dynamic>;
+      expect(putBody.containsKey('firstName'), isFalse);
+      expect(putBody['email'], 'admin@enote.com');
+    },
+  );
 }

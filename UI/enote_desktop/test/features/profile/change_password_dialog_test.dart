@@ -9,16 +9,15 @@ import 'package:enote_desktop/features/profile/profile_provider.dart';
 import '../../helpers.dart';
 
 void main() {
-  testWidgets('a successful change logs out with the re-login snack',
-      (tester) async {
+  testWidgets('a successful change logs out with the re-login snack', (
+    tester,
+  ) async {
     tester.view.physicalSize = const Size(1400, 900);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    final client = ScriptedClient(
-      (_) => jsonResponse({'message': 'OK'}, 200),
-    );
+    final client = ScriptedClient((_) => jsonResponse({'message': 'OK'}, 200));
     final authState = AuthState(
       baseUrl: 'http://localhost:5059/api/v1/',
       tokenReader: () => fakeJwt(),

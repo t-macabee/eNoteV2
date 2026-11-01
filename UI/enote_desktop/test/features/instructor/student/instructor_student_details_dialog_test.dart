@@ -36,9 +36,7 @@ Future<void> _pumpDialog(WidgetTester tester, ScriptedClient client) async {
         ),
       ],
       child: MaterialApp(
-        home: Scaffold(
-          body: InstructorStudentDetailsDialog(student: student),
-        ),
+        home: Scaffold(body: InstructorStudentDetailsDialog(student: student)),
       ),
     ),
   );
@@ -54,16 +52,12 @@ const _studentJson = {
   'membershipPaidUntil': '2027-01-01T00:00:00Z',
 };
 
-const _emptyPage = {
-  'items': [],
-  'page': 1,
-  'pageSize': 5,
-  'totalCount': 0,
-};
+const _emptyPage = {'items': [], 'page': 1, 'pageSize': 5, 'totalCount': 0};
 
 void main() {
-  testWidgets('F3-11: failed enrollments fetch shows an inline error',
-      (tester) async {
+  testWidgets('F3-11: failed enrollments fetch shows an inline error', (
+    tester,
+  ) async {
     final apiClient = ApiClient(
       baseUrl: 'http://localhost:5059/api/v1/',
       authState: AuthState(),
@@ -162,82 +156,85 @@ void main() {
     expect(find.text('Unesi potvrdu'), findsOneWidget);
   });
 
-  testWidgets('E1-10: the warning button is disabled when membership lasts longer than a week',
-      (tester) async {
-    final apiClient = ApiClient(
-      baseUrl: 'http://localhost:5059/api/v1/',
-      authState: AuthState(),
-      httpClient: ScriptedClient((request) {
-        if (request.url.path.endsWith('/membership-payments')) {
+  testWidgets(
+    'E1-10: the warning button is disabled when membership lasts longer than a week',
+    (tester) async {
+      final apiClient = ApiClient(
+        baseUrl: 'http://localhost:5059/api/v1/',
+        authState: AuthState(),
+        httpClient: ScriptedClient((request) {
+          if (request.url.path.endsWith('/membership-payments')) {
+            return jsonResponse({
+              'items': [],
+              'page': 1,
+              'pageSize': 5,
+              'totalCount': 0,
+            }, 200);
+          }
+          if (request.url.path.endsWith('/enrollments')) {
+            return jsonResponse({
+              'items': [],
+              'page': 1,
+              'pageSize': 5,
+              'totalCount': 0,
+            }, 200);
+          }
+          if (request.url.path.endsWith('/lectures')) {
+            return jsonResponse({
+              'items': [],
+              'page': 1,
+              'pageSize': 100,
+              'totalCount': 0,
+            }, 200);
+          }
           return jsonResponse({
-            'items': [],
-            'page': 1,
-            'pageSize': 5,
-            'totalCount': 0,
+            'id': 5,
+            'appUserId': 50,
+            'firstName': 'Johann',
+            'lastName': 'Bach',
+            'username': 'jbach',
+            'membershipPaidUntil': DateTime.now()
+                .add(const Duration(days: 60))
+                .toIso8601String(),
           }, 200);
-        }
-        if (request.url.path.endsWith('/enrollments')) {
-          return jsonResponse({
-            'items': [],
-            'page': 1,
-            'pageSize': 5,
-            'totalCount': 0,
-          }, 200);
-        }
-        if (request.url.path.endsWith('/lectures')) {
-          return jsonResponse({
-            'items': [],
-            'page': 1,
-            'pageSize': 100,
-            'totalCount': 0,
-          }, 200);
-        }
-        return jsonResponse({
-          'id': 5,
-          'appUserId': 50,
-          'firstName': 'Johann',
-          'lastName': 'Bach',
-          'username': 'jbach',
-          'membershipPaidUntil':
-              DateTime.now().add(const Duration(days: 60)).toIso8601String(),
-        }, 200);
-      }),
-    );
+        }),
+      );
 
-    final student = StudentDto(
-      id: 5,
-      appUserId: 50,
-      firstName: 'Johann',
-      lastName: 'Bach',
-      username: 'jbach',
-    );
+      final student = StudentDto(
+        id: 5,
+        appUserId: 50,
+        firstName: 'Johann',
+        lastName: 'Bach',
+        username: 'jbach',
+      );
 
-    await tester.pumpWidget(
-      MultiProvider(
-        providers: [
-          Provider<ApiClient>.value(value: apiClient),
-          ChangeNotifierProvider(
-            create: (_) => InstructorStudentProvider(apiClient: apiClient),
-          ),
-          ChangeNotifierProvider(
-            create: (_) => LectureProvider(apiClient: apiClient),
-          ),
-        ],
-        child: MaterialApp(
-          home: Scaffold(
-            body: InstructorStudentDetailsDialog(student: student),
+      await tester.pumpWidget(
+        MultiProvider(
+          providers: [
+            Provider<ApiClient>.value(value: apiClient),
+            ChangeNotifierProvider(
+              create: (_) => InstructorStudentProvider(apiClient: apiClient),
+            ),
+            ChangeNotifierProvider(
+              create: (_) => LectureProvider(apiClient: apiClient),
+            ),
+          ],
+          child: MaterialApp(
+            home: Scaffold(
+              body: InstructorStudentDetailsDialog(student: student),
+            ),
           ),
         ),
-      ),
-    );
-    await tester.pumpAndSettle();
+      );
+      await tester.pumpAndSettle();
 
-    final warningButton = tester.widget<OutlinedButton>(
-      find.widgetWithText(OutlinedButton, 'Pošalji upozorenje'),
-    );
-    expect(warningButton.onPressed, isNull);
-    expect(find.text('Nema evidentiranih potvrda.'), findsOneWidget);
-  });
+      final warningButton = tester.widget<OutlinedButton>(
+        find.widgetWithText(OutlinedButton, 'Pošalji upozorenje'),
+      );
+      expect(warningButton.onPressed, isNull);
+      expect(find.text('Nema evidentiranih potvrda.'), findsOneWidget);
+    },
+  );
 
   testWidgets('F3-16: enrollments load one page at a time', (tester) async {
     final requestedPages = <String?>[];
@@ -257,7 +254,13 @@ void main() {
           final page = int.parse(request.url.queryParameters['page'] ?? '1');
           requestedPages.add(request.url.queryParameters['page']);
           final names = page == 1
-              ? ['Cello 101', 'Flute 101', 'Guitar 101', 'Piano 101', 'Violin 101']
+              ? [
+                  'Cello 101',
+                  'Flute 101',
+                  'Guitar 101',
+                  'Piano 101',
+                  'Violin 101',
+                ]
               : ['Drums 101'];
           return jsonResponse({
             'items': [
@@ -335,9 +338,7 @@ void main() {
     expect(find.text('Učitaj još'), findsNothing);
   });
 
-  testWidgets('individual lectures load one page at a time', (
-    tester,
-  ) async {
+  testWidgets('individual lectures load one page at a time', (tester) async {
     final requestedPages = <String?>[];
     final apiClient = ApiClient(
       baseUrl: 'http://localhost:5059/api/v1/',
@@ -467,28 +468,29 @@ void main() {
   });
 
   testWidgets(
-      'a failed individual plan fetch shows an error text, not an empty list',
-      (tester) async {
-    final client = ScriptedClient((request) {
-      if (request.url.path.endsWith('/membership-payments')) {
-        return jsonResponse(_emptyPage, 200);
-      }
-      if (request.url.path.endsWith('/enrollments')) {
-        return jsonResponse(_emptyPage, 200);
-      }
-      if (request.url.path.endsWith('/lectures')) {
-        return jsonResponse({'message': 'boom'}, 500);
-      }
-      return jsonResponse(_studentJson, 200);
-    });
+    'a failed individual plan fetch shows an error text, not an empty list',
+    (tester) async {
+      final client = ScriptedClient((request) {
+        if (request.url.path.endsWith('/membership-payments')) {
+          return jsonResponse(_emptyPage, 200);
+        }
+        if (request.url.path.endsWith('/enrollments')) {
+          return jsonResponse(_emptyPage, 200);
+        }
+        if (request.url.path.endsWith('/lectures')) {
+          return jsonResponse({'message': 'boom'}, 500);
+        }
+        return jsonResponse(_studentJson, 200);
+      });
 
-    await _pumpDialog(tester, client);
+      await _pumpDialog(tester, client);
 
-    expect(find.text('Individualni plan'), findsOneWidget);
-    expect(
-      find.text('Greška pri učitavanju individualnih predavanja.'),
-      findsOneWidget,
-    );
-    expect(find.text('Nema individualnih predavanja.'), findsNothing);
-  });
+      expect(find.text('Individualni plan'), findsOneWidget);
+      expect(
+        find.text('Greška pri učitavanju individualnih predavanja.'),
+        findsOneWidget,
+      );
+      expect(find.text('Nema individualnih predavanja.'), findsNothing);
+    },
+  );
 }

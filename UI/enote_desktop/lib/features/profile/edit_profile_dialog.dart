@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
+
 import '../../theme/app_theme.dart';
 import '../../widgets/date_field.dart';
 import '../../widgets/entity_form_scaffold.dart';
@@ -71,21 +72,21 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
   }
 
   Future<String?> _uploadImage(
-      Uint8List bytes, String fileName, String contentType) {
+    Uint8List bytes,
+    String fileName,
+    String contentType,
+  ) {
     final provider = context.read<ProfileProvider>();
-    return uploadImageWith(
-      () async {
-        await provider.uploadPicture(bytes, fileName, contentType);
-        if (mounted) {
-          setState(() {
-            _hasPicture = true;
-            _pictureVersion++;
-          });
-        }
-        return provider.pictureUrl(cacheBuster: _pictureVersion);
-      },
-      context: context,
-    );
+    return uploadImageWith(() async {
+      await provider.uploadPicture(bytes, fileName, contentType);
+      if (mounted) {
+        setState(() {
+          _hasPicture = true;
+          _pictureVersion++;
+        });
+      }
+      return provider.pictureUrl(cacheBuster: _pictureVersion);
+    }, context: context);
   }
 
   Future<void> _removePicture() async {
@@ -102,9 +103,8 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
           _hasPicture = false;
           _pictureVersion++;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Slika uklonjena.')),
-        );
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('Slika uklonjena.')));
       }
     } catch (e) {
       if (mounted) ErrorBanner.show(context, message: userMessage(e));
@@ -122,18 +122,15 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
         const Text('Slika', style: TextStyle(fontWeight: FontWeight.bold)),
         const Text(
           'Slika se automatski sprema prilikom odabira.',
-          style: TextStyle(
-            fontSize: 12,
-            color: AppTheme.textSecondary,
-          ),
+          style: TextStyle(fontSize: 12, color: AppTheme.textSecondary),
         ),
         Align(
           alignment: Alignment.centerLeft,
           child: ImageField(
             key: ValueKey('profile-picture-$_pictureVersion-$_hasPicture'),
-            imageUrl: context
-                .read<ProfileProvider>()
-                .pictureUrl(cacheBuster: _pictureVersion),
+            imageUrl: context.read<ProfileProvider>().pictureUrl(
+              cacheBuster: _pictureVersion,
+            ),
             imagePicker: pickImageBytes,
             onUpload: _uploadImage,
             apiClient: context.read<ApiClient>(),

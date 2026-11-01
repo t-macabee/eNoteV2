@@ -59,12 +59,15 @@ void main() {
     );
   }
 
-  testWidgets('download saves the fetched report under the given file name',
-      (tester) async {
+  testWidgets('download saves the fetched report under the given file name', (
+    tester,
+  ) async {
     final client = ScriptedClient(
-      (request) => jsonResponse(_pdfBody, 200, headers: const {
-        'content-type': 'application/pdf',
-      }),
+      (request) => jsonResponse(
+        _pdfBody,
+        200,
+        headers: const {'content-type': 'application/pdf'},
+      ),
     );
     String? savedName;
     Uint8List? savedBytes;
@@ -91,50 +94,55 @@ void main() {
     expect(find.text('Izvještaj sačuvan: $savedPath'), findsOneWidget);
   });
 
-  testWidgets('cancelling the save dialog writes no file and shows no message',
-      (tester) async {
-    final client = ScriptedClient((_) => jsonResponse(_pdfBody, 200));
-    picker.path = null;
-    await pumpButton(tester, client);
+  testWidgets(
+    'cancelling the save dialog writes no file and shows no message',
+    (tester) async {
+      final client = ScriptedClient((_) => jsonResponse(_pdfBody, 200));
+      picker.path = null;
+      await pumpButton(tester, client);
 
-    await tester.tap(find.byIcon(Icons.download));
-    await tester.pumpAndSettle();
+      await tester.tap(find.byIcon(Icons.download));
+      await tester.pumpAndSettle();
 
-    expect(client.getUrls, hasLength(1));
-    expect(picker.savedFileName, _fileName);
-    expect(tempDir.listSync(), isEmpty);
-    expect(find.textContaining('Izvještaj sačuvan'), findsNothing);
-    expect(tester.takeException(), isNull);
-  });
+      expect(client.getUrls, hasLength(1));
+      expect(picker.savedFileName, _fileName);
+      expect(tempDir.listSync(), isEmpty);
+      expect(find.textContaining('Izvještaj sačuvan'), findsNothing);
+      expect(tester.takeException(), isNull);
+    },
+  );
 
-  testWidgets('a 403 fetch shows the Bosnian error and keeps the icons usable',
-      (tester) async {
-    final client = ScriptedClient((_) => jsonResponse(const {}, 403));
-    await pumpButton(tester, client);
+  testWidgets(
+    'a 403 fetch shows the Bosnian error and keeps the icons usable',
+    (tester) async {
+      final client = ScriptedClient((_) => jsonResponse(const {}, 403));
+      await pumpButton(tester, client);
 
-    await tester.tap(find.byIcon(Icons.download));
-    await tester.pumpAndSettle();
+      await tester.tap(find.byIcon(Icons.download));
+      await tester.pumpAndSettle();
 
-    expect(find.text('Nemate pristup ovom resursu.'), findsOneWidget);
-    expect(picker.savedFileName, isNull);
-    expect(
-      tester
-          .widget<IconButton>(find.widgetWithIcon(IconButton, Icons.download))
-          .onPressed,
-      isNotNull,
-    );
-    expect(
-      tester
-          .widget<IconButton>(find.widgetWithIcon(IconButton, Icons.print))
-          .onPressed,
-      isNotNull,
-    );
-    expect(tester.takeException(), isNull);
-  });
+      expect(find.text('Nemate pristup ovom resursu.'), findsOneWidget);
+      expect(picker.savedFileName, isNull);
+      expect(
+        tester
+            .widget<IconButton>(find.widgetWithIcon(IconButton, Icons.download))
+            .onPressed,
+        isNotNull,
+      );
+      expect(
+        tester
+            .widget<IconButton>(find.widgetWithIcon(IconButton, Icons.print))
+            .onPressed,
+        isNotNull,
+      );
+      expect(tester.takeException(), isNull);
+    },
+  );
 
   testWidgets('reportFileName stamps the name with yyyyMMdd', (tester) async {
     final now = DateTime.now();
-    final stamp = '${now.year}'
+    final stamp =
+        '${now.year}'
         '${now.month.toString().padLeft(2, '0')}'
         '${now.day.toString().padLeft(2, '0')}';
 

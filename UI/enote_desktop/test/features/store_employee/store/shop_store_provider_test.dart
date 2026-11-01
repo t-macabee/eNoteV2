@@ -21,28 +21,31 @@ ShopStoreProvider _buildProvider(ScriptedClient mockClient) {
 
 void main() {
   group('ShopStoreProvider', () {
-    test('getOwnStore sends GET to shop/store and returns MusicStoreDto', () async {
-      final storeJson = jsonEncode({
-        'id': 1,
-        'storeName': 'My Store',
-        'businessHours': '08:00 - 16:00',
-        'phoneNumber': '+387 61 111 222',
-        'addressId': 2,
-        'addressStreet': 'Main Street 1',
-        'addressCity': 'Sarajevo',
-      });
+    test(
+      'getOwnStore sends GET to shop/store and returns MusicStoreDto',
+      () async {
+        final storeJson = jsonEncode({
+          'id': 1,
+          'storeName': 'My Store',
+          'businessHours': '08:00 - 16:00',
+          'phoneNumber': '+387 61 111 222',
+          'addressId': 2,
+          'addressStreet': 'Main Street 1',
+          'addressCity': 'Sarajevo',
+        });
 
-      final mockClient = _mockClient(responseBody: storeJson);
-      final provider = _buildProvider(mockClient);
+        final mockClient = _mockClient(responseBody: storeJson);
+        final provider = _buildProvider(mockClient);
 
-      final store = await provider.getOwnStore();
+        final store = await provider.getOwnStore();
 
-      expect(mockClient.recorded.single.method, 'GET');
-      expect(mockClient.recorded.single.url, endsWith('shop/store'));
-      expect(store.id, 1);
-      expect(store.storeName, 'My Store');
-      expect(store.businessHours, '08:00 - 16:00');
-    });
+        expect(mockClient.recorded.single.method, 'GET');
+        expect(mockClient.recorded.single.url, endsWith('shop/store'));
+        expect(store.id, 1);
+        expect(store.storeName, 'My Store');
+        expect(store.businessHours, '08:00 - 16:00');
+      },
+    );
 
     test('updateOwnStore sends PUT to shop/store and returns updated MusicStoreDto', () async {
       final storeJson = jsonEncode({

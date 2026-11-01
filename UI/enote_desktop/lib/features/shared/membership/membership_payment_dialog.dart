@@ -155,8 +155,9 @@ class _MembershipPaymentDialogState extends State<_MembershipPaymentDialog> {
                 TextFormField(
                   controller: _amountController,
                   autofocus: true,
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
                   decoration: const InputDecoration(
                     labelText: 'Iznos (KM) *',
                     border: OutlineInputBorder(),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
+
 import '../../../widgets/entity_form_scaffold.dart';
 import '../../../widgets/entity_list_screen.dart';
 import 'address_form_screen.dart';
@@ -60,7 +61,9 @@ class _AddressListScreenState extends State<AddressListScreen> {
             value: (item) => item.number,
           ),
         ],
-        fetcher: (page, pageSize, search) => context.read<AddressProvider>().search(pagedQuery(page, pageSize, search, searchField: 'city')),
+        fetcher: (page, pageSize, search) => context
+            .read<AddressProvider>()
+            .search(pagedQuery(page, pageSize, search, searchField: 'city')),
         onAdd: () => _openForm(),
         onEdit: (context, item) => _openForm(item),
         deleteConfirmMessageOf: (item) =>

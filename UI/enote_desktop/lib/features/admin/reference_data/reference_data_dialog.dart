@@ -16,10 +16,7 @@ class ReferenceDataDialog extends StatelessWidget {
       insetPadding: const EdgeInsets.symmetric(horizontal: 48, vertical: 36),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: ConstrainedBox(
-        constraints: const BoxConstraints(
-          maxWidth: 960,
-          maxHeight: 720,
-        ),
+        constraints: const BoxConstraints(maxWidth: 960, maxHeight: 720),
         child: DefaultTabController(
           length: 3,
           child: Column(
@@ -27,10 +24,7 @@ class ReferenceDataDialog extends StatelessWidget {
               Container(
                 decoration: const BoxDecoration(
                   border: Border(
-                    bottom: BorderSide(
-                      color: AppTheme.outline,
-                      width: 1,
-                    ),
+                    bottom: BorderSide(color: AppTheme.outline, width: 1),
                   ),
                 ),
                 padding: const EdgeInsets.symmetric(horizontal: 16),

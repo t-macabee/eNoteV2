@@ -1,7 +1,8 @@
 import 'package:enote_core/enote_core.dart';
 
 class AdminUserProvider extends CrudProvider<AdminUserListItemDto> {
-  AdminUserProvider({required super.apiClient}) : super(endpoint: 'admin/users');
+  AdminUserProvider({required super.apiClient})
+    : super(endpoint: 'admin/users');
 
   @override
   AdminUserListItemDto fromJson(Map<String, dynamic> json) =>

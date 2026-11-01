@@ -42,9 +42,7 @@ Future<ScriptedClient> _pumpForm(
   await tester.pumpWidget(
     ChangeNotifierProvider<AssignmentProvider>.value(
       value: AssignmentProvider(apiClient: apiClient, lectureId: 1),
-      child: const MaterialApp(
-        home: AssignmentFormScreen(lectureId: 1),
-      ),
+      child: const MaterialApp(home: AssignmentFormScreen(lectureId: 1)),
     ),
   );
   await tester.pumpAndSettle();
@@ -52,7 +50,10 @@ Future<ScriptedClient> _pumpForm(
 }
 
 Future<void> _enterText(WidgetTester tester) async {
-  await tester.enterText(find.widgetWithText(TextFormField, 'Naslov'), 'Domaći');
+  await tester.enterText(
+    find.widgetWithText(TextFormField, 'Naslov'),
+    'Domaći',
+  );
   await tester.enterText(find.widgetWithText(TextFormField, 'Opis'), 'Opis');
 }
 
@@ -85,38 +86,48 @@ Future<void> _fillForm(WidgetTester tester) async {
   await _pickNextMonthDay(tester);
 }
 
-Finder _dueAtFieldText(String text) => find.descendant(
-      of: find.byType(DateTimeField),
-      matching: find.text(text),
-    );
+Finder _dueAtFieldText(String text) =>
+    find.descendant(of: find.byType(DateTimeField), matching: find.text(text));
 
 void main() {
-  testWidgets('F1-14: server due date message shows under the date field',
-      (tester) async {
-    final client = await _pumpForm(tester, statusCode: 400, body: const {
-      'status': 400,
-      'errors': {
-        'DueAt': ['Rok za predaju mora biti u budućnosti.'],
+  testWidgets('F1-14: server due date message shows under the date field', (
+    tester,
+  ) async {
+    final client = await _pumpForm(
+      tester,
+      statusCode: 400,
+      body: const {
+        'status': 400,
+        'errors': {
+          'DueAt': ['Rok za predaju mora biti u budućnosti.'],
+        },
       },
-    });
+    );
 
     await _fillForm(tester);
     await tester.tap(find.widgetWithText(FilledButton, 'Sačuvaj'));
     await tester.pumpAndSettle();
 
     expect(client.postUrls.length, equals(1));
-    expect(_dueAtFieldText('Rok za predaju mora biti u budućnosti.'),
-        findsOneWidget);
+    expect(
+      _dueAtFieldText('Rok za predaju mora biti u budućnosti.'),
+      findsOneWidget,
+    );
     expect(find.byType(SnackBar), findsNothing);
   });
 
-  testWidgets('F1-14: a server error without a due date field stays a banner',
-      (tester) async {
-    final client = await _pumpForm(tester, statusCode: 500, body: const {
-      'status': 500,
-      'code': 'error.internal',
-      'message': 'Greška na serveru.',
-    });
+  testWidgets('F1-14: a server error without a due date field stays a banner', (
+    tester,
+  ) async {
+    final client = await _pumpForm(
+      tester,
+      statusCode: 500,
+      body: const {
+        'status': 500,
+        'code': 'error.internal',
+        'message': 'Greška na serveru.',
+      },
+    );
 
     await _fillForm(tester);
     await tester.tap(find.widgetWithText(FilledButton, 'Sačuvaj'));
@@ -134,14 +145,19 @@ void main() {
     expect(_dueAtFieldText('Greška na serveru.'), findsNothing);
   });
 
-  testWidgets('F1-14: a validation error on another field stays a banner',
-      (tester) async {
-    final client = await _pumpForm(tester, statusCode: 400, body: const {
-      'status': 400,
-      'errors': {
-        'Description': ['Opis je obavezan.'],
+  testWidgets('F1-14: a validation error on another field stays a banner', (
+    tester,
+  ) async {
+    final client = await _pumpForm(
+      tester,
+      statusCode: 400,
+      body: const {
+        'status': 400,
+        'errors': {
+          'Description': ['Opis je obavezan.'],
+        },
       },
-    });
+    );
 
     await _fillForm(tester);
     await tester.tap(find.widgetWithText(FilledButton, 'Sačuvaj'));
@@ -152,22 +168,26 @@ void main() {
     expect(_dueAtFieldText('Opis je obavezan.'), findsNothing);
   });
 
-  testWidgets('F1-14: a new assignment date cannot start in the past',
-      (tester) async {
+  testWidgets('F1-14: a new assignment date cannot start in the past', (
+    tester,
+  ) async {
     await _pumpForm(tester);
 
     await tester.tap(find.byType(DateTimeField));
     await tester.pumpAndSettle();
 
-    final picker = tester.widget<DatePickerDialog>(find.byType(DatePickerDialog));
+    final picker = tester.widget<DatePickerDialog>(
+      find.byType(DatePickerDialog),
+    );
     expect(
       DateUtils.dateOnly(picker.firstDate),
       DateUtils.dateOnly(DateTime.now()),
     );
   });
 
-  testWidgets('F1-14: a time earlier today never reaches the server',
-      (tester) async {
+  testWidgets('F1-14: a time earlier today never reaches the server', (
+    tester,
+  ) async {
     final client = await _pumpForm(tester);
 
     await _enterText(tester);
@@ -176,7 +196,9 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(client.postUrls, isEmpty);
-    expect(_dueAtFieldText('Rok za predaju mora biti u budućnosti.'),
-        findsOneWidget);
+    expect(
+      _dueAtFieldText('Rok za predaju mora biti u budućnosti.'),
+      findsOneWidget,
+    );
   });
 }

@@ -7,8 +7,10 @@ import 'package:enote_desktop/features/admin/users/admin_user_provider.dart';
 
 import '../../../helpers.dart';
 
-ScriptedClient _mockClient({int statusCode = 200, String responseBody = '{}'}) =>
-    ScriptedClient((_) => jsonResponse(responseBody, statusCode));
+ScriptedClient _mockClient({
+  int statusCode = 200,
+  String responseBody = '{}',
+}) => ScriptedClient((_) => jsonResponse(responseBody, statusCode));
 
 AdminUserProvider _buildProvider(ScriptedClient mockClient) {
   final apiClient = ApiClient(
@@ -28,11 +30,7 @@ void main() {
           'role': 'Student',
           'username': 'lbeethoven',
           'email': 'l@example.com',
-          'profile': {
-            'id': 22,
-            'firstName': 'Ludwig',
-            'lastName': 'Beethoven',
-          },
+          'profile': {'id': 22, 'firstName': 'Ludwig', 'lastName': 'Beethoven'},
         }),
       );
       final provider = _buildProvider(mockClient);

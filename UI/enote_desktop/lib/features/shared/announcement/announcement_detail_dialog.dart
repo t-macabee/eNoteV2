@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
+
 import '../../../theme/app_theme.dart';
 import '../../../widgets/detail_row.dart';
 import '../../../widgets/dialog_shell.dart';
@@ -9,10 +10,7 @@ import '../../../widgets/dialog_shell.dart';
 class AnnouncementDetailDialog extends StatelessWidget {
   final AnnouncementDto announcement;
 
-  const AnnouncementDetailDialog({
-    super.key,
-    required this.announcement,
-  });
+  const AnnouncementDetailDialog({super.key, required this.announcement});
 
   static Future<void> show(BuildContext context, AnnouncementDto announcement) {
     return showDialog<void>(
@@ -65,7 +63,9 @@ class AnnouncementDetailDialog extends StatelessWidget {
             DetailRow(
               icon: Icons.description_outlined,
               label: 'Sadržaj',
-              value: announcement.content.isNotEmpty ? announcement.content : '-',
+              value: announcement.content.isNotEmpty
+                  ? announcement.content
+                  : '-',
             ),
             DetailRow(
               icon: Icons.event_outlined,

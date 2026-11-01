@@ -24,17 +24,9 @@ typedef EntityFetcher<T> = Future<PagedResult<T>> Function(
   String search,
 );
 
-enum EntityListPresentation {
-  page,
+enum EntityListPresentation { page, embedded }
 
-  embedded,
-}
-
-enum EntityListStyle {
-  table,
-
-  tiles,
-}
+enum EntityListStyle { table, tiles }
 
 class EntityListConfig<T> {
   final String? title;

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
+
 import '../../../theme/app_theme.dart';
 import '../../../widgets/entity_form_scaffold.dart';
 import '../../../widgets/detail_row.dart';
@@ -11,10 +12,7 @@ import 'instrument_provider.dart';
 class InstrumentDetailDialog extends StatefulWidget {
   final InstrumentDto instrument;
 
-  const InstrumentDetailDialog({
-    super.key,
-    required this.instrument,
-  });
+  const InstrumentDetailDialog({super.key, required this.instrument});
 
   static Future<bool?> show(BuildContext context, InstrumentDto instrument) {
     return showDialog<bool>(
@@ -87,10 +85,7 @@ class _InstrumentDetailDialogState extends State<InstrumentDetailDialog> {
       title: Row(
         children: [
           Expanded(
-            child: Text(
-              _instrument.model,
-              overflow: TextOverflow.ellipsis,
-            ),
+            child: Text(_instrument.model, overflow: TextOverflow.ellipsis),
           ),
           IconButton(
             icon: const Icon(Icons.close),
@@ -151,7 +146,8 @@ class _InstrumentDetailDialogState extends State<InstrumentDetailDialog> {
               DetailRow(
                 icon: Icons.description_outlined,
                 label: 'Opis',
-                value: (_instrument.description != null &&
+                value:
+                    (_instrument.description != null &&
                         _instrument.description!.isNotEmpty)
                     ? _instrument.description!
                     : '-',
@@ -195,8 +191,9 @@ class _InstrumentDetailDialogState extends State<InstrumentDetailDialog> {
                 ),
                 const Spacer(),
                 TextButton(
-                  onPressed:
-                      _isDeleting ? null : () => Navigator.of(context).pop(false),
+                  onPressed: _isDeleting
+                      ? null
+                      : () => Navigator.of(context).pop(false),
                   child: const Text('Zatvori'),
                 ),
                 const SizedBox(width: 12),

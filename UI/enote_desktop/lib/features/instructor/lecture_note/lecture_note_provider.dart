@@ -2,7 +2,7 @@ import 'package:enote_core/enote_core.dart';
 
 class LectureNoteProvider extends CrudProvider<LectureNoteDto> {
   LectureNoteProvider({required super.apiClient, required int lectureId})
-      : super(endpoint: 'instructor/lectures/$lectureId/notes');
+    : super(endpoint: 'instructor/lectures/$lectureId/notes');
 
   @override
   LectureNoteDto fromJson(Map<String, dynamic> json) =>

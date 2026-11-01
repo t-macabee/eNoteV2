@@ -11,8 +11,7 @@ import '../../../helpers.dart';
 ScriptedClient _mockClient({
   int statusCode = 200,
   String responseBody = '{}',
-}) =>
-    ScriptedClient((_) => jsonResponse(responseBody, statusCode));
+}) => ScriptedClient((_) => jsonResponse(responseBody, statusCode));
 
 ApiClient _buildApiClient(ScriptedClient mockClient) => ApiClient(
   baseUrl: 'http://localhost:5059/api/v1/',
@@ -33,54 +32,60 @@ Map<String, dynamic> _paymentJson() => {
 
 void main() {
   group('getMembershipPayments', () {
-    test('requests the paged payments of the admin students endpoint',
-        () async {
-      final mockClient = _mockClient(
-        responseBody: jsonEncode({
-          'items': [_paymentJson()],
-          'page': 1,
-          'pageSize': 5,
-          'totalCount': 1,
-        }),
-      );
-      final provider = StudentProvider(apiClient: _buildApiClient(mockClient));
+    test(
+      'requests the paged payments of the admin students endpoint',
+      () async {
+        final mockClient = _mockClient(
+          responseBody: jsonEncode({
+            'items': [_paymentJson()],
+            'page': 1,
+            'pageSize': 5,
+            'totalCount': 1,
+          }),
+        );
+        final provider = StudentProvider(
+          apiClient: _buildApiClient(mockClient),
+        );
 
-      final result = await provider.getMembershipPayments(5, pageSize: 5);
+        final result = await provider.getMembershipPayments(5, pageSize: 5);
 
-      expect(mockClient.recorded.single.method, 'GET');
-      expect(
-        mockClient.recorded.single.url,
-        endsWith(
-          'admin/students/5/membership-payments?page=1&pageSize=5&includeTotalCount=true',
-        ),
-      );
-      final payment = result.items.single;
-      expect(payment.receiptNumber, 'CL-7');
-      expect(payment.amount, 40.0);
-      expect(payment.note, 'Gotovina');
-    });
+        expect(mockClient.recorded.single.method, 'GET');
+        expect(
+          mockClient.recorded.single.url,
+          endsWith(
+            'admin/students/5/membership-payments?page=1&pageSize=5&includeTotalCount=true',
+          ),
+        );
+        final payment = result.items.single;
+        expect(payment.receiptNumber, 'CL-7');
+        expect(payment.amount, 40.0);
+        expect(payment.note, 'Gotovina');
+      },
+    );
 
-    test('uses the instructor students endpoint for the instructor provider',
-        () async {
-      final mockClient = _mockClient(
-        responseBody: jsonEncode({
-          'items': [],
-          'page': 1,
-          'pageSize': 5,
-          'totalCount': 0,
-        }),
-      );
-      final provider = InstructorStudentProvider(
-        apiClient: _buildApiClient(mockClient),
-      );
+    test(
+      'uses the instructor students endpoint for the instructor provider',
+      () async {
+        final mockClient = _mockClient(
+          responseBody: jsonEncode({
+            'items': [],
+            'page': 1,
+            'pageSize': 5,
+            'totalCount': 0,
+          }),
+        );
+        final provider = InstructorStudentProvider(
+          apiClient: _buildApiClient(mockClient),
+        );
 
-      await provider.getMembershipPayments(5);
+        await provider.getMembershipPayments(5);
 
-      expect(
-        mockClient.recorded.single.url,
-        contains('instructor/students/5/membership-payments'),
-      );
-    });
+        expect(
+          mockClient.recorded.single.url,
+          contains('instructor/students/5/membership-payments'),
+        );
+      },
+    );
   });
 
   group('recordMembershipPayment', () {
@@ -127,7 +132,11 @@ void main() {
       expect(
         () => provider.recordMembershipPayment(
           5,
-          RecordMembershipPaymentRequest(amount: 40, months: 1, receiptNumber: 'CL-7'),
+          RecordMembershipPaymentRequest(
+            amount: 40,
+            months: 1,
+            receiptNumber: 'CL-7',
+          ),
         ),
         throwsA(
           isA<ApiException>().having(

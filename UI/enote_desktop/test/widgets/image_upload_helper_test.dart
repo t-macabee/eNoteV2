@@ -9,13 +9,13 @@ class _FakeCrud extends CrudProvider<InstrumentDto> {
   int uploadCalls = 0;
 
   _FakeCrud()
-      : super(
-          endpoint: 'shop/instruments',
-          apiClient: ApiClient(
-            baseUrl: 'http://localhost/',
-            authState: AuthState(baseUrl: 'http://localhost/'),
-          ),
-        );
+    : super(
+        endpoint: 'shop/instruments',
+        apiClient: ApiClient(
+          baseUrl: 'http://localhost/',
+          authState: AuthState(baseUrl: 'http://localhost/'),
+        ),
+      );
 
   @override
   InstrumentDto fromJson(Map<String, dynamic> json) =>
@@ -66,8 +66,9 @@ Future<BuildContext> _pumpHarness(WidgetTester tester) async {
 }
 
 void main() {
-  testWidgets('F4-06: uploadImageWith shows snackbar and returns path',
-      (tester) async {
+  testWidgets('F4-06: uploadImageWith shows snackbar and returns path', (
+    tester,
+  ) async {
     final context = await _pumpHarness(tester);
 
     final result = await uploadImageWith(
@@ -77,14 +78,12 @@ void main() {
     await tester.pump();
 
     expect(result, equals('/images/store.jpg'));
-    expect(
-      find.text('Slika uspješno postavljena.'),
-      findsOneWidget,
-    );
+    expect(find.text('Slika uspješno postavljena.'), findsOneWidget);
   });
 
-  testWidgets('F4-06: uploadImageWith shows banner and returns null',
-      (tester) async {
+  testWidgets('F4-06: uploadImageWith shows banner and returns null', (
+    tester,
+  ) async {
     final context = await _pumpHarness(tester);
 
     final result = await uploadImageWith(
@@ -97,8 +96,9 @@ void main() {
     expect(find.text('Greška.'), findsOneWidget);
   });
 
-  testWidgets('F4-06: uploadImageFor delegates to the shared flow',
-      (tester) async {
+  testWidgets('F4-06: uploadImageFor delegates to the shared flow', (
+    tester,
+  ) async {
     final context = await _pumpHarness(tester);
     final provider = _FakeCrud();
 
@@ -115,9 +115,6 @@ void main() {
 
     expect(provider.uploadCalls, equals(1));
     expect(result, equals('/images/7.jpg'));
-    expect(
-      find.text('Slika uspješno postavljena.'),
-      findsOneWidget,
-    );
+    expect(find.text('Slika uspješno postavljena.'), findsOneWidget);
   });
 }

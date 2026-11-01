@@ -43,7 +43,7 @@ ScriptedClient storeEmployeeShellClient() => ScriptedClient((request) {
             'instrumentType': 'Gitara',
             'musicStore': 'Muzička Prodavnica',
             'isAvailable': true,
-          }
+          },
         ],
         'page': 1,
         'pageSize': 20,
@@ -68,14 +68,14 @@ ScriptedClient storeEmployeeShellClient() => ScriptedClient((request) {
             'cityId': 1,
             'city': 'Sarajevo',
             'street': 'Maršala Tita',
-            'number': '1'
+            'number': '1',
           },
           {
             'id': 2,
             'cityId': 1,
             'city': 'Sarajevo',
             'street': 'Ferhadija',
-            'number': '15'
+            'number': '15',
           },
         ],
         'page': 1,
@@ -128,7 +128,9 @@ Widget buildStoreEmployeeShell({
   final storeProvider = ShopStoreProvider(apiClient: apiClient);
   final addressProvider = AddressProvider(apiClient: apiClient);
   final instrumentProvider = InstrumentProvider(apiClient: apiClient);
-  final instrumentTypeProvider = ShopInstrumentTypeProvider(apiClient: apiClient);
+  final instrumentTypeProvider = ShopInstrumentTypeProvider(
+    apiClient: apiClient,
+  );
   final notificationController = NotificationController(
     apiClient: apiClient,
     endpoint: 'notifications',
@@ -141,17 +143,25 @@ Widget buildStoreEmployeeShell({
     providers: [
       ChangeNotifierProvider<AuthState>.value(value: authState),
       Provider<ApiClient>.value(value: apiClient),
-      ChangeNotifierProvider<NotificationController>.value(value: notificationController),
+      ChangeNotifierProvider<NotificationController>.value(
+        value: notificationController,
+      ),
       ChangeNotifierProvider<ShopStoreProvider>.value(value: storeProvider),
       ChangeNotifierProvider<AddressProvider>.value(value: addressProvider),
-      ChangeNotifierProvider<InstrumentProvider>.value(value: instrumentProvider),
-      ChangeNotifierProvider<ShopInstrumentTypeProvider>.value(value: instrumentTypeProvider),
-      ChangeNotifierProvider<ShopEmployeeProvider>.value(value: employeeProvider),
+      ChangeNotifierProvider<InstrumentProvider>.value(
+        value: instrumentProvider,
+      ),
+      ChangeNotifierProvider<ShopInstrumentTypeProvider>.value(
+        value: instrumentTypeProvider,
+      ),
+      ChangeNotifierProvider<ShopEmployeeProvider>.value(
+        value: employeeProvider,
+      ),
       ChangeNotifierProvider<RentalProvider>.value(value: rentalProvider),
-      ChangeNotifierProvider<StoreAnnouncementProvider>.value(value: announcementProvider),
+      ChangeNotifierProvider<StoreAnnouncementProvider>.value(
+        value: announcementProvider,
+      ),
     ],
-    child: const MaterialApp(
-      home: MasterScreen(),
-    ),
+    child: const MaterialApp(home: MasterScreen()),
   );
 }

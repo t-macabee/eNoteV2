@@ -2,12 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
+
 import '../../../widgets/entity_form_scaffold.dart';
 import '../../../widgets/entity_list_screen.dart';
 import 'assignment_form_screen.dart';
 import 'assignment_provider.dart';
-
-
 
 class AssignmentListScreen extends StatefulWidget {
   final int lectureId;
@@ -79,7 +78,9 @@ class _AssignmentListScreenState extends State<AssignmentListScreen> {
             value: (item) => formatDateTime(item.dueAt),
           ),
         ],
-        fetcher: (page, pageSize, search) => context.read<AssignmentProvider>().search(pagedQuery(page, pageSize, search, searchField: 'title')),
+        fetcher: (page, pageSize, search) => context
+            .read<AssignmentProvider>()
+            .search(pagedQuery(page, pageSize, search, searchField: 'title')),
         onAdd: () => _openForm(),
         onEdit: (context, item) => _openForm(item),
         deleteConfirmMessageOf: (item) =>

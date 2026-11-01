@@ -126,8 +126,10 @@ void main() {
     );
     expect(_button(tester, 'Položio').onPressed, isNotNull);
     expect(
-      _button(tester, 'Samo aktivan upis može biti označen kao položen.')
-          .onPressed,
+      _button(
+        tester,
+        'Samo aktivan upis može biti označen kao položen.',
+      ).onPressed,
       isNull,
     );
     expect(_button(tester, 'Odbij').color, Colors.red);
