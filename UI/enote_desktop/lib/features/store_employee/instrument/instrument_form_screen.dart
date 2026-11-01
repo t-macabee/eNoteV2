@@ -3,9 +3,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../../theme/app_theme.dart';
 import '../../../widgets/async_dropdown.dart';
 import '../../../widgets/entity_form_scaffold.dart';
+import '../../../widgets/entity_form_sections.dart';
 import '../../../widgets/entity_text_field.dart';
 import '../../../widgets/form_controller_lifecycle.dart';
 import '../../../widgets/image_upload_helper.dart';
@@ -52,7 +52,10 @@ class _InstrumentFormScreenState extends State<InstrumentFormScreen>
   }
 
   Future<String?> _uploadImage(
-      Uint8List bytes, String fileName, String contentType) {
+    Uint8List bytes,
+    String fileName,
+    String contentType,
+  ) {
     final provider = context.read<InstrumentProvider>();
     return uploadImageFor(
       provider,
@@ -106,57 +109,68 @@ class _InstrumentFormScreenState extends State<InstrumentFormScreen>
       title: _isEditMode ? 'Uredi instrument' : 'Dodaj instrument',
       isEditMode: _isEditMode,
       fieldsBuilder: (_) => [
-        EntityTextField(controller: _modelController, label: 'Model', maxLength: 100),
-        EntityTextField(
-          controller: _manufacturerController,
-          label: 'Proizvođač',
-          maxLength: 100,
-        ),
-        EntityTextField(
-          controller: _descriptionController,
-          label: 'Opis',
-          required: false,
-          maxLines: 3,
-          minLines: 1,
-          maxLength: 1000,
-        ),
-        AsyncDropdown<InstrumentTypeDto>(
-          label: 'Tip instrumenta',
-          value: _selectedInstrumentTypeId,
-          fetcher: () => fetchAllPages(
-            (query) => context.read<ShopInstrumentTypeProvider>().search(query),
-          ),
-          itemLabel: (item) => item.type,
-          itemId: (item) => item.id,
-          onChanged: (id, item) {
-            setState(() {
-              _selectedInstrumentTypeId = id as int?;
-            });
-          },
-          validator: (value) {
-            if (value == null) return 'Tip instrumenta je obavezan';
-            return null;
-          },
-        ),
-        if (_isEditMode) ...[
-          const Text('Slika', style: TextStyle(fontWeight: FontWeight.bold)),
-          const Text(
-            'Slika se automatski sprema prilikom odabira.',
-            style: TextStyle(
-              fontSize: 12,
-              color: AppTheme.textSecondary,
+        FormSection(
+          title: 'Osnovni podaci',
+          children: [
+            FormFieldRow(
+              children: [
+                EntityTextField(
+                  controller: _modelController,
+                  label: 'Model',
+                  maxLength: 100,
+                ),
+                EntityTextField(
+                  controller: _manufacturerController,
+                  label: 'Proizvođač',
+                  maxLength: 100,
+                ),
+              ],
             ),
-          ),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: ImageField(
-              imageUrl: _currentImagePath,
-              imagePicker: pickImageBytes,
-              onUpload: _uploadImage,
-              apiClient: context.read<ApiClient>(),
+            EntityTextField(
+              controller: _descriptionController,
+              label: 'Opis',
+              required: false,
+              maxLines: 3,
+              minLines: 1,
+              maxLength: 1000,
             ),
+            AsyncDropdown<InstrumentTypeDto>(
+              label: 'Tip instrumenta',
+              value: _selectedInstrumentTypeId,
+              fetcher: () => fetchAllPages(
+                (query) =>
+                    context.read<ShopInstrumentTypeProvider>().search(query),
+              ),
+              itemLabel: (item) => item.type,
+              itemId: (item) => item.id,
+              onChanged: (id, item) {
+                setState(() {
+                  _selectedInstrumentTypeId = id as int?;
+                });
+              },
+              validator: (value) {
+                if (value == null) return 'Tip instrumenta je obavezan';
+                return null;
+              },
+            ),
+          ],
+        ),
+        if (_isEditMode)
+          FormSection(
+            title: 'Slika',
+            description: 'Slika se automatski sprema prilikom odabira.',
+            children: [
+              Align(
+                alignment: Alignment.centerLeft,
+                child: ImageField(
+                  imageUrl: _currentImagePath,
+                  imagePicker: pickImageBytes,
+                  onUpload: _uploadImage,
+                  apiClient: context.read<ApiClient>(),
+                ),
+              ),
+            ],
           ),
-        ],
       ],
       onSave: _save,
       onReset: () {

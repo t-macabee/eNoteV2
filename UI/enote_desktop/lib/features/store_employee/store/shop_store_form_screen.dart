@@ -3,9 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
-import '../../../theme/app_theme.dart';
+
 import '../../../widgets/async_dropdown.dart';
 import '../../../widgets/entity_form_scaffold.dart';
+import '../../../widgets/entity_form_sections.dart';
 import '../../../widgets/entity_text_field.dart';
 import '../../../widgets/form_controller_lifecycle.dart';
 import '../../../widgets/image_upload_helper.dart';
@@ -52,9 +53,9 @@ class _ShopStoreFormScreenState extends State<ShopStoreFormScreen>
   ) {
     final provider = context.read<ShopStoreProvider>();
     return uploadImageWith(
-      () => provider
-          .uploadOwnStoreImage(bytes, fileName, contentType)
-          .then((updated) {
+      () => provider.uploadOwnStoreImage(bytes, fileName, contentType).then((
+        updated,
+      ) {
         if (mounted) {
           setState(() {
             _currentImagePath = updated.imagePath;
@@ -88,50 +89,67 @@ class _ShopStoreFormScreenState extends State<ShopStoreFormScreen>
       title: 'Uredi prodavnicu',
       isEditMode: true,
       fieldsBuilder: (_) => [
-        EntityTextField(controller: _storeNameController, label: 'Naziv', maxLength: 100),
-        EntityTextField(
-          controller: _businessHoursController,
-          label: 'Radno vrijeme',
-          maxLength: 50,
+        FormSection(
+          title: 'Osnovni podaci',
+          children: [
+            EntityTextField(
+              controller: _storeNameController,
+              label: 'Naziv',
+              maxLength: 100,
+            ),
+            FormFieldRow(
+              children: [
+                EntityTextField(
+                  controller: _businessHoursController,
+                  label: 'Radno vrijeme',
+                  maxLength: 50,
+                ),
+                EntityTextField(
+                  controller: _phoneNumberController,
+                  label: 'Broj telefona',
+                  required: false,
+                  validator: Validators.optionalPhone,
+                  maxLength: 30,
+                ),
+              ],
+            ),
+          ],
         ),
-        EntityTextField(
-          controller: _phoneNumberController,
-          label: 'Broj telefona',
-          required: false,
-          validator: Validators.optionalPhone,
-          maxLength: 30,
+        FormSection(
+          title: 'Adresa',
+          children: [
+            AsyncDropdown<AddressReferenceDto>(
+              label: 'Adresa',
+              value: _selectedAddressId,
+              fetcher: () => fetchAllPages(
+                (query) => context.read<ShopAddressProvider>().search(query),
+              ),
+              itemLabel: (item) =>
+                  '${item.street} ${item.number}, ${item.city}',
+              itemId: (item) => item.id,
+              onChanged: (id, item) {
+                setState(() {
+                  _selectedAddressId = id as int?;
+                });
+              },
+            ),
+          ],
         ),
-        AsyncDropdown<AddressReferenceDto>(
-          label: 'Adresa',
-          value: _selectedAddressId,
-          fetcher: () => fetchAllPages(
-            (query) => context.read<ShopAddressProvider>().search(query),
-          ),
-          itemLabel: (item) => '${item.street} ${item.number}, ${item.city}',
-          itemId: (item) => item.id,
-          onChanged: (id, item) {
-            setState(() {
-              _selectedAddressId = id as int?;
-            });
-          },
-        ),
-        const Text('Slika', style: TextStyle(fontWeight: FontWeight.bold)),
-        const Text(
-          'Slika se automatski sprema prilikom odabira.',
-          style: TextStyle(
-            fontSize: 12,
-            color: AppTheme.textSecondary,
-          ),
-        ),
-        Align(
-          alignment: Alignment.centerLeft,
-          child: ImageField(
-            imageUrl: _currentImagePath,
-            imagePicker: pickImageBytes,
-            onUpload: _uploadImage,
-            editable: true,
-            apiClient: context.read<ApiClient>(),
-          ),
+        FormSection(
+          title: 'Slika',
+          description: 'Slika se automatski sprema prilikom odabira.',
+          children: [
+            Align(
+              alignment: Alignment.centerLeft,
+              child: ImageField(
+                imageUrl: _currentImagePath,
+                imagePicker: pickImageBytes,
+                onUpload: _uploadImage,
+                editable: true,
+                apiClient: context.read<ApiClient>(),
+              ),
+            ),
+          ],
         ),
       ],
       onSave: _save,

@@ -1,3 +1,4 @@
+import 'package:enote_core/enote_core.dart';
 import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
@@ -67,6 +68,88 @@ class EntityDeleteButton extends StatelessWidget {
             )
           : const Icon(Icons.delete_outline),
       label: Text(label),
+    );
+  }
+}
+
+class FormSection extends StatelessWidget {
+  final String title;
+  final String? description;
+  final List<Widget> children;
+
+  const FormSection({
+    super.key,
+    required this.title,
+    this.description,
+    required this.children,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceContainer,
+        border: Border.all(color: AppTheme.outline),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+      ),
+      padding: const EdgeInsets.all(AppSpacing.xl),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            spacing: AppSpacing.xs,
+            children: [
+              Text(title, style: Theme.of(context).textTheme.titleMedium),
+              if (description != null)
+                Text(
+                  description!,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppTheme.textSecondary,
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          for (var i = 0; i < children.length; i++) ...[
+            if (i > 0) const SizedBox(height: AppSpacing.lg),
+            children[i],
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class FormFieldRow extends StatelessWidget {
+  static const double _breakpoint = 560;
+
+  final List<Widget> children;
+
+  const FormFieldRow({super.key, required this.children});
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth >= _breakpoint) {
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              for (var i = 0; i < children.length; i++) ...[
+                if (i > 0) const SizedBox(width: AppSpacing.lg),
+                Expanded(child: children[i]),
+              ],
+            ],
+          );
+        }
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          spacing: AppSpacing.lg,
+          children: children,
+        );
+      },
     );
   }
 }

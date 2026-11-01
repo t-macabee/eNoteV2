@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:enote_core/enote_core.dart';
+
+import '../theme/app_theme.dart';
 import 'entity_form_sections.dart';
 import 'form_submit_state.dart';
 
-enum EntityFormPresentation {
-  page,
-
-  dialog,
-}
+enum EntityFormPresentation { page, dialog }
 
 class EntityFormScaffold extends StatefulWidget {
   final String title;
@@ -129,16 +127,6 @@ class _EntityFormScaffoldState extends State<EntityFormScaffold>
     };
   }
 
-  List<Widget> _withSpacing(List<Widget> fields, double spacing) {
-    if (fields.length <= 1) return fields;
-    final spaced = <Widget>[];
-    for (var i = 0; i < fields.length; i++) {
-      spaced.add(fields[i]);
-      if (i < fields.length - 1) spaced.add(SizedBox(height: spacing));
-    }
-    return spaced;
-  }
-
   Widget _deleteButton() {
     final button = EntityDeleteButton(
       isSaving: _isSaving,
@@ -147,10 +135,7 @@ class _EntityFormScaffoldState extends State<EntityFormScaffold>
       label: widget.deleteLabel,
     );
     if (widget.onDelete == null && widget.deleteDisabledReason != null) {
-      return Tooltip(
-        message: widget.deleteDisabledReason!,
-        child: button,
-      );
+      return Tooltip(message: widget.deleteDisabledReason!, child: button);
     }
     return button;
   }
@@ -173,26 +158,55 @@ class _EntityFormScaffoldState extends State<EntityFormScaffold>
       ),
       body: Form(
         key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(24),
-          children: [
-            ..._withSpacing(widget.fieldsBuilder(context), 16),
-            const SizedBox(height: 24),
-            if (showDelete)
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  _deleteButton(),
-                  EntitySaveButton(
-                    isSaving: _isSaving,
-                    isDeleting: _isDeleting,
-                    enabled: widget.saveEnabled,
-                    onPressed: _save,
-                    label: widget.saveLabel,
-                  ),
-                ],
-              )
-            else
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: AppSize.formMaxWidth),
+            child: ListView(
+              padding: const EdgeInsets.all(AppSpacing.xl),
+              children: _spacedFields(widget.fieldsBuilder(context)),
+            ),
+          ),
+        ),
+      ),
+      bottomNavigationBar: _buildPageActions(context, showDelete),
+    );
+  }
+
+  List<Widget> _spacedFields(List<Widget> fields) {
+    final spaced = <Widget>[];
+    for (var i = 0; i < fields.length; i++) {
+      if (i > 0) spaced.add(const SizedBox(height: AppSpacing.lg));
+      spaced.add(fields[i]);
+    }
+    return spaced;
+  }
+
+  Widget _buildPageActions(BuildContext context, bool showDelete) {
+    final actionsBusy = _isSaving || _isDeleting;
+    return Container(
+      decoration: const BoxDecoration(
+        color: AppTheme.background,
+        border: Border(top: BorderSide(color: AppTheme.outline)),
+      ),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.xl,
+        vertical: AppSpacing.md,
+      ),
+      child: Center(
+        heightFactor: 1,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: AppSize.formMaxWidth),
+          child: Row(
+            children: [
+              if (showDelete) _deleteButton(),
+              const Spacer(),
+              TextButton(
+                onPressed: actionsBusy
+                    ? null
+                    : () => Navigator.of(context).pop(_didSave),
+                child: const Text('Otkaži'),
+              ),
+              const SizedBox(width: AppSpacing.md),
               EntitySaveButton(
                 isSaving: _isSaving,
                 isDeleting: _isDeleting,
@@ -200,7 +214,8 @@ class _EntityFormScaffoldState extends State<EntityFormScaffold>
                 onPressed: _save,
                 label: widget.saveLabel,
               ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -250,10 +265,7 @@ class _EntityFormScaffoldState extends State<EntityFormScaffold>
             const SizedBox(height: 12),
             Row(
               children: [
-                if (showDelete) ...[
-                  _deleteButton(),
-                  const Spacer(),
-                ],
+                if (showDelete) ...[_deleteButton(), const Spacer()],
                 if (!showDelete) const Spacer(),
                 TextButton(
                   onPressed: (_isSaving || _isDeleting)
