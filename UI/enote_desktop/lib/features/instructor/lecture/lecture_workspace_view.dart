@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 import 'package:enote_core/enote_core.dart';
 
 import '../../../theme/app_theme.dart';
-import '../../../widgets/dialog_shell.dart';
 import '../../../widgets/entity_list_screen.dart';
 import '../../../widgets/pdf_report_button.dart';
 import '../assignment/assignment_list_screen.dart';
@@ -46,57 +45,30 @@ class _SubmissionsView extends _WorkspaceView {
   const _SubmissionsView(this.lecture, this.assignment);
 }
 
-class LectureWorkspaceDialog extends StatefulWidget {
+class LectureWorkspaceView extends StatefulWidget {
   final ApiClient apiClient;
   final int courseId;
   final String courseName;
+  final VoidCallback onMutation;
 
-  const LectureWorkspaceDialog({
+  const LectureWorkspaceView({
     super.key,
     required this.apiClient,
     required this.courseId,
     required this.courseName,
+    required this.onMutation,
   });
 
-  static Future<bool?> show(
-    BuildContext context, {
-    required int courseId,
-    required String courseName,
-  }) {
-    final apiClient = context.read<ApiClient>();
-    return showDialog<bool>(
-      context: context,
-      builder: (_) => LectureWorkspaceDialog(
-        apiClient: apiClient,
-        courseId: courseId,
-        courseName: courseName,
-      ),
-    );
-  }
-
   @override
-  State<LectureWorkspaceDialog> createState() => _LectureWorkspaceDialogState();
+  State<LectureWorkspaceView> createState() => _LectureWorkspaceViewState();
 }
 
-class _LectureWorkspaceDialogState extends State<LectureWorkspaceDialog> {
+class _LectureWorkspaceViewState extends State<LectureWorkspaceView> {
   final List<_WorkspaceView> _stack = [const _LecturesView()];
-  bool _dirty = false;
-  bool _canPop = false;
-
-  void _markDirty() {
-    _dirty = true;
-  }
-
-  void _close() {
-    _canPop = true;
-    Navigator.of(context).pop(_dirty);
-  }
 
   void _popView() {
     if (_stack.length > 1) {
       setState(() => _stack.removeLast());
-    } else {
-      _close();
     }
   }
 
@@ -197,12 +169,12 @@ class _LectureWorkspaceDialogState extends State<LectureWorkspaceDialog> {
             }
           });
         },
-        onMutation: _markDirty,
+        onMutation: widget.onMutation,
       ),
       _AttendanceView(:final lecture) => LectureAttendanceView(
         key: ValueKey('workspace_attendance_${lecture.id}'),
         lectureId: lecture.id,
-        onMutation: _markDirty,
+        onMutation: widget.onMutation,
       ),
       _NotesView(:final lecture) => ChangeNotifierProvider<LectureNoteProvider>(
         key: ValueKey('workspace_notes_${lecture.id}'),
@@ -214,7 +186,7 @@ class _LectureWorkspaceDialogState extends State<LectureWorkspaceDialog> {
           lectureId: lecture.id,
           lectureName: lecture.name,
           presentation: EntityListPresentation.embedded,
-          onMutation: _markDirty,
+          onMutation: widget.onMutation,
         ),
       ),
       _AssignmentsView(:final lecture) =>
@@ -233,7 +205,7 @@ class _LectureWorkspaceDialogState extends State<LectureWorkspaceDialog> {
                 _stack.add(_SubmissionsView(lecture, assignment));
               });
             },
-            onMutation: _markDirty,
+            onMutation: widget.onMutation,
           ),
         ),
       _SubmissionsView(:final lecture, :final assignment) =>
@@ -249,52 +221,41 @@ class _LectureWorkspaceDialogState extends State<LectureWorkspaceDialog> {
             assignmentId: assignment.id,
             assignmentTitle: assignment.title,
             presentation: EntityListPresentation.embedded,
-            onMutation: _markDirty,
+            onMutation: widget.onMutation,
           ),
         ),
     };
   }
 
-  Widget _buildHeader(_WorkspaceView top) {
-    final headerAction = _getHeaderAction(top);
-    return DialogShellHeader(
-      leading: _stack.length > 1
-          ? IconButton(
-              icon: const Icon(Icons.arrow_back),
-              tooltip: 'Nazad',
-              onPressed: _popView,
-            )
-          : null,
-      label: _buildBreadcrumbs(),
-      action: headerAction,
-      onClose: _close,
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final top = _stack.last;
+    final headerAction = _getHeaderAction(top);
 
-    return PopScope(
-      canPop: _canPop,
-      onPopInvokedWithResult: (didPop, result) {
-        if (didPop) return;
-        if (_stack.length > 1) {
-          _popView();
-        } else {
-          _canPop = true;
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) {
-              Navigator.of(context).pop(_dirty);
-            }
-          });
-        }
-      },
-      child: DialogShell(
-        width: DialogShellWidth.lg,
-        header: _buildHeader(top),
-        body: _buildCurrentView(),
-      ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.lg,
+            vertical: AppSpacing.sm,
+          ),
+          child: Row(
+            children: [
+              if (_stack.length > 1)
+                IconButton(
+                  icon: const Icon(Icons.arrow_back),
+                  tooltip: 'Nazad',
+                  onPressed: _popView,
+                ),
+              Expanded(child: _buildBreadcrumbs()),
+              ?headerAction,
+            ],
+          ),
+        ),
+        const Divider(height: 1),
+        Expanded(child: _buildCurrentView()),
+      ],
     );
   }
 }

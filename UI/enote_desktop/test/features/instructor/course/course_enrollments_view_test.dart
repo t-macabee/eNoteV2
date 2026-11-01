@@ -5,7 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
-import 'package:enote_desktop/features/instructor/course/course_enrollments_dialog.dart';
+import 'package:enote_desktop/features/instructor/course/course_enrollments_view.dart';
 import 'package:enote_desktop/features/instructor/course/course_provider.dart';
 
 import '../../../helpers.dart';
@@ -75,7 +75,11 @@ IconButton _button(WidgetTester tester, String tooltip) =>
       ),
     );
 
-Future<void> pumpDialog(WidgetTester tester, ScriptedClient httpClient) async {
+Future<void> pumpView(
+  WidgetTester tester,
+  ScriptedClient httpClient, {
+  VoidCallback? onMutation,
+}) async {
   tester.view.physicalSize = const Size(1280, 800);
   tester.view.devicePixelRatio = 1.0;
   addTearDown(() {
@@ -97,9 +101,12 @@ Future<void> pumpDialog(WidgetTester tester, ScriptedClient httpClient) async {
           value: CourseProvider(apiClient: apiClient),
         ),
       ],
-      child: const MaterialApp(
+      child: MaterialApp(
         home: Scaffold(
-          body: CourseEnrollmentsDialog(courseId: 1, courseName: 'Gitara'),
+          body: CourseEnrollmentsView(
+            courseId: 1,
+            onMutation: onMutation ?? () {},
+          ),
         ),
       ),
     ),
@@ -112,7 +119,7 @@ void main() {
     tester,
   ) async {
     final httpClient = _client();
-    await pumpDialog(tester, httpClient);
+    await pumpView(tester, httpClient);
 
     expect(_button(tester, 'Odobri').onPressed, isNotNull);
     expect(
@@ -150,7 +157,7 @@ void main() {
     tester,
   ) async {
     final httpClient = _client();
-    await pumpDialog(tester, httpClient);
+    await pumpView(tester, httpClient);
     final listGetsBefore = httpClient.getUrls.length;
 
     await tester.tap(find.byTooltip('Odobri'));
@@ -175,11 +182,24 @@ void main() {
     expect(find.text('Upis odobren.'), findsOneWidget);
   });
 
+  testWidgets('a successful approve calls onMutation', (tester) async {
+    final httpClient = _client();
+    var mutations = 0;
+    await pumpView(tester, httpClient, onMutation: () => mutations++);
+
+    await tester.tap(find.byTooltip('Odobri'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Potvrdi'));
+    await tester.pumpAndSettle();
+
+    expect(mutations, 1);
+  });
+
   testWidgets('Odbij requires a reason and POSTs it in the body', (
     tester,
   ) async {
     final httpClient = _client();
-    await pumpDialog(tester, httpClient);
+    await pumpView(tester, httpClient);
 
     await tester.tap(find.byTooltip('Odbij'));
     await tester.pumpAndSettle();
@@ -210,7 +230,7 @@ void main() {
 
   testWidgets('the first list request filters by Pending', (tester) async {
     final httpClient = _client();
-    await pumpDialog(tester, httpClient);
+    await pumpView(tester, httpClient);
 
     expect(httpClient.requests.first.method, 'GET');
     expect(
@@ -223,7 +243,7 @@ void main() {
     tester,
   ) async {
     final httpClient = _client();
-    await pumpDialog(tester, httpClient);
+    await pumpView(tester, httpClient);
 
     expect(find.text('Odlučeno: 20.09.2026.'), findsOneWidget);
     expect(find.text('Odlučeno: -'), findsOneWidget);

@@ -5,7 +5,7 @@ import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
 import 'package:enote_desktop/features/instructor/lecture/lecture_provider.dart';
-import 'package:enote_desktop/features/instructor/lecture/lecture_workspace_dialog.dart';
+import 'package:enote_desktop/features/instructor/lecture/lecture_workspace_view.dart';
 
 import '../../../helpers.dart';
 
@@ -75,10 +75,11 @@ void main() {
         ],
         child: MaterialApp(
           home: Scaffold(
-            body: LectureWorkspaceDialog(
+            body: LectureWorkspaceView(
               apiClient: apiClient,
               courseId: 3,
               courseName: 'Gitara',
+              onMutation: () {},
             ),
           ),
         ),
@@ -100,5 +101,41 @@ void main() {
       picker.savedFileName,
       matches(RegExp(r'^lecture-9-attendance-\d{8}\.pdf$')),
     );
+  });
+
+  testWidgets('workspace root shows the Predavanja crumb and no back button', (
+    tester,
+  ) async {
+    final client = ScriptedClient((request) => jsonResponse(_emptyPage(), 200));
+    final apiClient = ApiClient(
+      baseUrl: 'http://localhost:5059/api/v1/',
+      authState: AuthState(),
+      httpClient: client,
+    );
+
+    await pumpReportScreen(
+      tester,
+      MultiProvider(
+        providers: [
+          Provider<ApiClient>.value(value: apiClient),
+          ChangeNotifierProvider<LectureProvider>.value(
+            value: LectureProvider(apiClient: apiClient),
+          ),
+        ],
+        child: MaterialApp(
+          home: Scaffold(
+            body: LectureWorkspaceView(
+              apiClient: apiClient,
+              courseId: 3,
+              courseName: 'Gitara',
+              onMutation: () {},
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('Predavanja'), findsWidgets);
+    expect(find.byTooltip('Nazad'), findsNothing);
   });
 }

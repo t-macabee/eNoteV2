@@ -5,7 +5,7 @@ import 'package:enote_core/enote_core.dart';
 
 import '../../../widgets/entity_form_scaffold.dart';
 import '../../../widgets/entity_grid_screen.dart';
-import 'course_detail_dialog.dart';
+import 'course_detail_screen.dart';
 import 'course_form_screen.dart';
 import 'course_provider.dart';
 
@@ -31,7 +31,7 @@ class _CourseListScreenState extends State<CourseListScreen> {
   }
 
   Future<void> _openDetail(CourseDto course) async {
-    final changed = await CourseDetailDialog.show(context, course);
+    final changed = await CourseDetailScreen.open(context, course);
     if (changed == true) {
       _gridKey.currentState?.refresh();
     }

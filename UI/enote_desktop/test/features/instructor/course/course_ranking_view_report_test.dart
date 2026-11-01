@@ -4,7 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
-import 'package:enote_desktop/features/instructor/course/course_ranking_dialog.dart';
+import 'package:enote_desktop/features/instructor/course/course_ranking_view.dart';
 import 'package:enote_desktop/features/instructor/ranking/ranking_provider.dart';
 
 import '../../../helpers.dart';
@@ -24,7 +24,7 @@ void main() {
     FilePicker.platform = picker;
   });
 
-  testWidgets('ranking dialog reports the course ranking under a dated name', (
+  testWidgets('ranking view reports the course ranking under a dated name', (
     tester,
   ) async {
     final client = ScriptedClient((request) {
@@ -61,7 +61,7 @@ void main() {
         ],
         child: MaterialApp(
           home: Scaffold(
-            body: CourseRankingDialog(
+            body: CourseRankingView(
               courseId: 5,
               reportEndpoint: rankingProvider.reportEndpoint(5),
             ),
