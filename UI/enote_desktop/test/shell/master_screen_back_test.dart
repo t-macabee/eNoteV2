@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:enote_core/enote_core.dart';
 import 'package:enote_desktop/features/store_employee/employee/shop_employee_list_screen.dart';
 import 'package:enote_desktop/features/store_employee/store/shop_store_screen.dart';
 import 'package:enote_desktop/shell/role_menu.dart';
@@ -16,37 +17,41 @@ void _useDesktopView(WidgetTester tester) {
   });
 }
 
-Finder _menuEntry(String label) => find.descendant(
-      of: find.byType(RoleMenu),
-      matching: find.text(label),
-    );
+Finder _menuEntry(String label) =>
+    find.descendant(of: find.byType(RoleMenu), matching: find.text(label));
 
 Finder _backButton() => find.ancestor(
-      of: find.byType(BackButtonIcon),
-      matching: find.byType(IconButton),
-    );
+  of: find.byType(BackButtonIcon),
+  matching: find.byType(IconButton),
+);
 
 void main() {
-  testWidgets('Back is disabled on the start screen and explains why',
-      (WidgetTester tester) async {
+  testWidgets('Back is disabled on the start screen and explains why', (
+    WidgetTester tester,
+  ) async {
     _useDesktopView(tester);
-    await tester.pumpWidget(buildStoreEmployeeShell(
-      isManager: false,
-      httpClient: storeEmployeeShellClient(),
-    ));
+    await tester.pumpWidget(
+      buildStoreEmployeeShell(
+        isManager: false,
+        httpClient: storeEmployeeShellClient(),
+      ),
+    );
     await tester.pumpAndSettle();
 
     expect(tester.widget<IconButton>(_backButton()).onPressed, isNull);
     expect(find.byTooltip('Ovo je početni ekran'), findsOneWidget);
   });
 
-  testWidgets('Back returns to the start screen, not the previous one',
-      (WidgetTester tester) async {
+  testWidgets('Back returns to the start screen, not the previous one', (
+    WidgetTester tester,
+  ) async {
     _useDesktopView(tester);
-    await tester.pumpWidget(buildStoreEmployeeShell(
-      isManager: false,
-      httpClient: storeEmployeeShellClient(),
-    ));
+    await tester.pumpWidget(
+      buildStoreEmployeeShell(
+        isManager: false,
+        httpClient: storeEmployeeShellClient(),
+      ),
+    );
     await tester.pumpAndSettle();
 
     await tester.tap(_menuEntry('Zaposlenici'));
@@ -64,22 +69,119 @@ void main() {
     expect(tester.widget<IconButton>(_backButton()).onPressed, isNull);
   });
 
-  testWidgets('Back is disabled again after returning to the start entry from the menu',
-      (WidgetTester tester) async {
+  testWidgets(
+    'Back is disabled again after returning to the start entry from the menu',
+    (WidgetTester tester) async {
+      _useDesktopView(tester);
+      await tester.pumpWidget(
+        buildStoreEmployeeShell(
+          isManager: false,
+          httpClient: storeEmployeeShellClient(),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(_menuEntry('Zaposlenici'));
+      await tester.pumpAndSettle();
+      expect(tester.widget<IconButton>(_backButton()).onPressed, isNotNull);
+
+      await tester.tap(_menuEntry('Moja prodavnica'));
+      await tester.pumpAndSettle();
+
+      expect(tester.widget<IconButton>(_backButton()).onPressed, isNull);
+    },
+  );
+
+  testWidgets('Top bar shows label of selected entry', (
+    WidgetTester tester,
+  ) async {
     _useDesktopView(tester);
-    await tester.pumpWidget(buildStoreEmployeeShell(
-      isManager: false,
-      httpClient: storeEmployeeShellClient(),
-    ));
+    await tester.pumpWidget(
+      buildStoreEmployeeShell(
+        isManager: false,
+        httpClient: storeEmployeeShellClient(),
+      ),
+    );
     await tester.pumpAndSettle();
+
+    final topBar = find
+        .ancestor(
+          of: find.byType(BackButtonIcon),
+          matching: find.byType(Container),
+        )
+        .first;
+
+    expect(
+      find.descendant(of: topBar, matching: find.text('Moja prodavnica')),
+      findsOneWidget,
+    );
 
     await tester.tap(_menuEntry('Zaposlenici'));
     await tester.pumpAndSettle();
-    expect(tester.widget<IconButton>(_backButton()).onPressed, isNotNull);
 
-    await tester.tap(_menuEntry('Moja prodavnica'));
+    expect(
+      find.descendant(of: topBar, matching: find.text('Zaposlenici')),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('Notification bell is in top bar and not in RoleMenu', (
+    WidgetTester tester,
+  ) async {
+    _useDesktopView(tester);
+    await tester.pumpWidget(
+      buildStoreEmployeeShell(
+        isManager: false,
+        httpClient: storeEmployeeShellClient(),
+      ),
+    );
     await tester.pumpAndSettle();
 
-    expect(tester.widget<IconButton>(_backButton()).onPressed, isNull);
+    expect(find.byType(NotificationBadge), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(RoleMenu),
+        matching: find.byType(NotificationBadge),
+      ),
+      findsNothing,
+    );
+  });
+
+  testWidgets('User block menu for non-manager contains Profil and Odjava', (
+    WidgetTester tester,
+  ) async {
+    _useDesktopView(tester);
+    await tester.pumpWidget(
+      buildStoreEmployeeShell(
+        isManager: false,
+        httpClient: storeEmployeeShellClient(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.unfold_more));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Profil'), findsOneWidget);
+    expect(find.text('Odjava'), findsOneWidget);
+    expect(find.text('Uredi prodavnicu'), findsNothing);
+  });
+
+  testWidgets('User block menu for manager contains Uredi prodavnicu', (
+    WidgetTester tester,
+  ) async {
+    _useDesktopView(tester);
+    await tester.pumpWidget(
+      buildStoreEmployeeShell(
+        isManager: true,
+        httpClient: storeEmployeeShellClient(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.unfold_more));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Uredi prodavnicu'), findsOneWidget);
   });
 }

@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
+
 import '../features/profile/profile_dialog.dart' as enote_desktop_profile;
 import '../features/store_employee/store/shop_store_form_screen.dart';
 import '../features/store_employee/store/shop_store_provider.dart';
+import '../theme/app_theme.dart';
 import '../widgets/dialog_shell.dart';
 import '../widgets/entity_form_scaffold.dart';
 import 'role_menu.dart';
@@ -115,10 +117,7 @@ class _MasterScreenState extends State<MasterScreen> {
         header: DialogShellHeader(
           label: const Text(
             'Obavještenja',
-            style: TextStyle(
-              fontWeight: FontWeight.w600,
-              fontSize: 16,
-            ),
+            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
           ),
           action: TextButton(
             onPressed: controller.markAllRead,
@@ -182,29 +181,52 @@ class _MasterScreenState extends State<MasterScreen> {
             onSelect: _onEntrySelected,
             onOpenProfile: _openProfile,
             onLogout: _logout,
-            onNotificationsTap: _openNotifications,
             onEditStore: (isStoreEmployee && isManager) ? _openEditStore : null,
           ),
           Expanded(
             child: Column(
               children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: Tooltip(
-                      message: _isOnHome
-                          ? 'Ovo je početni ekran'
-                          : 'Nazad na početni ekran',
-                      child: IconButton(
-                        icon: const BackButtonIcon(),
-                        onPressed: _isOnHome ? null : _goBack,
-                      ),
+                Container(
+                  height: 56,
+                  decoration: const BoxDecoration(
+                    border: Border(
+                      bottom: BorderSide(color: AppTheme.outline, width: 1),
                     ),
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: Row(
+                    children: [
+                      Tooltip(
+                        message: _isOnHome
+                            ? 'Ovo je početni ekran'
+                            : 'Nazad na početni ekran',
+                        child: IconButton(
+                          icon: const BackButtonIcon(),
+                          onPressed: _isOnHome ? null : _goBack,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      if (_selectedEntry != null)
+                        Expanded(
+                          child: Text(
+                            _selectedEntry!.label,
+                            style: Theme.of(context).textTheme.titleLarge,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        )
+                      else
+                        const Spacer(),
+                      NotificationBadge(
+                        controller: context.read<NotificationController>(),
+                        onTap: _openNotifications,
+                      ),
+                    ],
                   ),
                 ),
                 Expanded(
-                  child: _selectedEntry?.screenBuilder(context) ??
+                  child:
+                      _selectedEntry?.screenBuilder(context) ??
                       const Center(
                         child: Text('Molimo odaberite opciju iz izbornika.'),
                       ),

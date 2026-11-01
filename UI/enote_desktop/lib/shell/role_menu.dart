@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
+
 import '../theme/app_theme.dart';
 
-const _kSidebarWidth = 280.0;
+enum _UserAction { profile, logout, editStore }
 
 class RoleMenuEntry {
   final IconData icon;
@@ -31,7 +32,6 @@ class RoleMenu extends StatelessWidget {
   final ValueChanged<RoleMenuEntry> onSelect;
   final VoidCallback? onOpenProfile;
   final VoidCallback? onLogout;
-  final VoidCallback? onNotificationsTap;
   final VoidCallback? onEditStore;
 
   const RoleMenu({
@@ -42,7 +42,6 @@ class RoleMenu extends StatelessWidget {
     this.selected,
     this.onOpenProfile,
     this.onLogout,
-    this.onNotificationsTap,
     this.onEditStore,
   });
 
@@ -55,53 +54,17 @@ class RoleMenu extends StatelessWidget {
     final authState = context.watch<AuthState>();
     final username = authState.username;
     final topRole = authState.topRole;
-    final notificationController = context.watch<NotificationController>();
 
     return Container(
-      width: _kSidebarWidth,
-      color: AppTheme.background,
+      width: 256,
+      decoration: const BoxDecoration(
+        color: AppTheme.background,
+        border: Border(right: BorderSide(color: AppTheme.outline, width: 1)),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 24, 16, 20),
-            child: Row(
-              children: [
-                Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: AppTheme.primary,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(
-                    Icons.bar_chart,
-                    size: 20,
-                    color: AppTheme.onPrimary,
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
-                      Text(
-                        'eNote',
-                        style: TextStyle(
-                          color: AppTheme.textPrimary,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          fontStyle: FontStyle.italic,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
+          const _SidebarHeader(),
           Expanded(
             child: ListView(
               padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -126,106 +89,16 @@ class RoleMenu extends StatelessWidget {
             Container(
               decoration: const BoxDecoration(
                 border: Border(
-                  top: BorderSide(
-                    color: AppTheme.outline,
-                    width: 1,
-                  ),
+                  top: BorderSide(color: AppTheme.outline, width: 1),
                 ),
               ),
               padding: const EdgeInsets.fromLTRB(16, 12, 12, 12),
-              child: Row(
-                children: [
-                  CircleAvatar(
-                    radius: 16,
-                    backgroundColor: AppTheme.primary,
-                    child: Text(
-                      _initialsFromEmail(username),
-                      style: const TextStyle(
-                        color: AppTheme.onPrimary,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          username ?? '',
-                          style: const TextStyle(
-                            color: AppTheme.textPrimary,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        if (topRole != null)
-                          Text(
-                            topRole,
-                            style: const TextStyle(
-                              color: AppTheme.textSecondary,
-                              fontSize: 11,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                      ],
-                    ),
-                  ),
-                  if (onNotificationsTap != null)
-                    NotificationBadge(
-                      controller: notificationController,
-                      onTap: onNotificationsTap!,
-                    ),
-                  if (onLogout != null || onOpenProfile != null || onEditStore != null)
-                    PopupMenuButton<int>(
-                      icon: const Icon(Icons.settings, size: 18),
-                      tooltip: 'Postavke',
-                      itemBuilder: (context) => [
-                        if (onOpenProfile != null)
-                          const PopupMenuItem(
-                            value: 1,
-                            child: Row(
-                              children: [
-                                Icon(Icons.person_outline, size: 18),
-                                SizedBox(width: 8),
-                                Text('Profil'),
-                              ],
-                            ),
-                          ),
-                        if (onEditStore != null)
-                          const PopupMenuItem(
-                            value: 3,
-                            child: Row(
-                              children: [
-                                Icon(Icons.storefront_outlined, size: 18),
-                                SizedBox(width: 8),
-                                Text('Uredi prodavnicu'),
-                              ],
-                            ),
-                          ),
-                        if (onLogout != null)
-                          const PopupMenuItem(
-                            value: 2,
-                            child: Row(
-                              children: [
-                                Icon(Icons.logout, size: 18),
-                                SizedBox(width: 8),
-                                Text('Odjava'),
-                              ],
-                            ),
-                          ),
-                      ],
-                      onSelected: (value) {
-                        if (value == 1) onOpenProfile?.call();
-                        if (value == 2) onLogout?.call();
-                        if (value == 3) onEditStore?.call();
-                      },
-                    ),
-                ],
+              child: _UserMenu(
+                username: username,
+                topRole: topRole,
+                onOpenProfile: onOpenProfile,
+                onLogout: onLogout,
+                onEditStore: onEditStore,
               ),
             ),
         ],
@@ -243,6 +116,159 @@ class RoleMenu extends StatelessWidget {
         .map((p) => p.substring(0, 1).toUpperCase())
         .toList();
     return chars.join();
+  }
+}
+
+class _SidebarHeader extends StatelessWidget {
+  const _SidebarHeader();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 24, 16, 20),
+      child: Row(
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: AppTheme.primary,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Icon(
+              Icons.library_music_rounded,
+              size: 20,
+              color: AppTheme.onPrimary,
+            ),
+          ),
+          const SizedBox(width: 10),
+          const Expanded(
+            child: Text(
+              'eNote',
+              style: TextStyle(
+                color: AppTheme.textPrimary,
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _UserMenu extends StatelessWidget {
+  final String? username;
+  final String? topRole;
+  final VoidCallback? onOpenProfile;
+  final VoidCallback? onLogout;
+  final VoidCallback? onEditStore;
+
+  const _UserMenu({
+    required this.username,
+    required this.topRole,
+    this.onOpenProfile,
+    this.onLogout,
+    this.onEditStore,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return PopupMenuButton<_UserAction>(
+      tooltip: 'Postavke',
+      onSelected: (value) {
+        if (value == _UserAction.profile) onOpenProfile?.call();
+        if (value == _UserAction.logout) onLogout?.call();
+        if (value == _UserAction.editStore) onEditStore?.call();
+      },
+      itemBuilder: (context) => [
+        if (onOpenProfile != null)
+          const PopupMenuItem<_UserAction>(
+            value: _UserAction.profile,
+            child: Row(
+              children: [
+                Icon(Icons.person_outline, size: 18),
+                SizedBox(width: 8),
+                Text('Profil'),
+              ],
+            ),
+          ),
+        if (onEditStore != null)
+          const PopupMenuItem<_UserAction>(
+            value: _UserAction.editStore,
+            child: Row(
+              children: [
+                Icon(Icons.storefront_outlined, size: 18),
+                SizedBox(width: 8),
+                Text('Uredi prodavnicu'),
+              ],
+            ),
+          ),
+        if (onLogout != null)
+          const PopupMenuItem<_UserAction>(
+            value: _UserAction.logout,
+            child: Row(
+              children: [
+                Icon(Icons.logout, size: 18),
+                SizedBox(width: 8),
+                Text('Odjava'),
+              ],
+            ),
+          ),
+      ],
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 16,
+            backgroundColor: AppTheme.primary,
+            child: Text(
+              RoleMenu._initialsFromEmail(username),
+              style: const TextStyle(
+                color: AppTheme.onPrimary,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  username ?? '',
+                  style: const TextStyle(
+                    color: AppTheme.textPrimary,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                if (topRole != null)
+                  Text(
+                    topRole!,
+                    style: const TextStyle(
+                      color: AppTheme.textSecondary,
+                      fontSize: 11,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+              ],
+            ),
+          ),
+          const Icon(
+            Icons.unfold_more,
+            size: 18,
+            color: AppTheme.textSecondary,
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -273,26 +299,48 @@ class _NavRow extends StatelessWidget {
         child: InkWell(
           borderRadius: BorderRadius.circular(8),
           onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            child: Row(
-              children: [
-                Icon(icon, size: 20, color: color),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    label,
-                    style: TextStyle(
-                      color: color,
-                      fontSize: 13.5,
-                      fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+          child: Stack(
+            children: [
+              if (selected)
+                Positioned(
+                  left: 0,
+                  top: 0,
+                  bottom: 0,
+                  child: Container(
+                    width: 3,
+                    decoration: BoxDecoration(
+                      color: AppTheme.primary,
+                      borderRadius: BorderRadius.circular(1.5),
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
-              ],
-            ),
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
+                child: Row(
+                  children: [
+                    Icon(icon, size: 20, color: color),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        label,
+                        style: TextStyle(
+                          color: color,
+                          fontSize: 13.5,
+                          fontWeight: selected
+                              ? FontWeight.w600
+                              : FontWeight.w400,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
       ),

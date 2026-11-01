@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
+
 import '../features/admin/course/admin_course_list_screen.dart';
 import '../features/admin/event/event_list_screen.dart';
 import '../features/admin/music_store/music_store_list_screen.dart';
@@ -27,19 +28,19 @@ const kRoleMenuEntries = <RoleMenuEntry>[
     allowedRoles: [UserRole.administrator],
   ),
   RoleMenuEntry(
-    icon: Icons.store,
+    icon: Icons.store_outlined,
     label: 'Trgovina muzičke opreme',
     screenBuilder: _buildMusicStoreList,
     allowedRoles: [UserRole.administrator],
   ),
   RoleMenuEntry(
-    icon: Icons.class_,
+    icon: Icons.class_outlined,
     label: 'Kursevi',
     screenBuilder: _buildAdminCourseList,
     allowedRoles: [UserRole.administrator],
   ),
   RoleMenuEntry(
-    icon: Icons.event,
+    icon: Icons.event_outlined,
     label: 'Događaji',
     screenBuilder: _buildEventList,
     allowedRoles: [UserRole.administrator],
@@ -53,7 +54,7 @@ const kRoleMenuEntries = <RoleMenuEntry>[
     dividerBefore: true,
   ),
   RoleMenuEntry(
-    icon: Icons.class_,
+    icon: Icons.class_outlined,
     label: 'Kursevi',
     screenBuilder: _buildCourseList,
     allowedRoles: [UserRole.instructor],
@@ -89,13 +90,13 @@ const kRoleMenuEntries = <RoleMenuEntry>[
     allowedRoles: [UserRole.storeEmployee],
   ),
   RoleMenuEntry(
-    icon: Icons.assignment,
+    icon: Icons.assignment_outlined,
     label: 'Zahtjevi',
     screenBuilder: _buildRentalList,
     allowedRoles: [UserRole.storeEmployee],
   ),
   RoleMenuEntry(
-    icon: Icons.campaign,
+    icon: Icons.campaign_outlined,
     label: 'Objave',
     screenBuilder: _buildAnnouncementList,
     allowedRoles: [UserRole.storeEmployee],
@@ -143,9 +144,7 @@ Widget _buildReferenceDataDialog(BuildContext context) {
 }
 
 Widget _buildRentalList(BuildContext context) {
-  return const RentalListScreen(
-    presentation: EntityListPresentation.embedded,
-  );
+  return const RentalListScreen(presentation: EntityListPresentation.embedded);
 }
 
 Widget _buildAnnouncementList(BuildContext context) {
