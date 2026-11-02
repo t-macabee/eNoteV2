@@ -6,6 +6,7 @@ import 'package:enote_core/enote_core.dart';
 import '../../../widgets/entity_filter_dropdown.dart';
 import '../../../widgets/entity_form_scaffold.dart';
 import '../../../widgets/entity_grid_screen.dart';
+import '../../../widgets/status_filter_tabs.dart';
 import 'admin_user_provider.dart';
 import 'user_details_dialog.dart';
 import 'user_provision_form_screen.dart';
@@ -22,7 +23,7 @@ class _UserGridScreenState extends State<UserGridScreen> {
 
   UserRole? _role;
 
-  bool _showActive = true;
+  bool? _isActive = true;
 
   Future<void> _openProvisionForm() async {
     await EntityFormScaffold.showAsDialog(
@@ -101,7 +102,7 @@ class _UserGridScreenState extends State<UserGridScreen> {
       search,
       searchField: 'name',
       filters: {
-        'isActive': _showActive,
+        if (_isActive != null) 'isActive': _isActive,
         if (_role != null) 'role': _role!.label,
       },
     );
@@ -134,57 +135,42 @@ class _UserGridScreenState extends State<UserGridScreen> {
         groupKeyOf: _role == null
             ? (item) => item.role == null ? 'Ostalo' : userRoleLabel(item.role!)
             : null,
-        filterBar: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            EntityFilterDropdown<UserRole?>(
-              label: 'Uloga',
-              width: 220,
-              value: _role,
-              items: [
-                const DropdownMenuItem(
-                  value: null,
-                  child: Text('Svi korisnici'),
-                ),
-                DropdownMenuItem(
-                  value: UserRole.administrator,
-                  child: Text(userRoleLabel(UserRole.administrator)),
-                ),
-                DropdownMenuItem(
-                  value: UserRole.instructor,
-                  child: Text(userRoleLabel(UserRole.instructor)),
-                ),
-                DropdownMenuItem(
-                  value: UserRole.student,
-                  child: Text(userRoleLabel(UserRole.student)),
-                ),
-                DropdownMenuItem(
-                  value: UserRole.storeEmployee,
-                  child: Text(userRoleLabel(UserRole.storeEmployee)),
-                ),
-              ],
-              onChanged: (role) {
-                _role = role;
-                _applyFilters();
-              },
+        filterBar: EntityFilterDropdown<UserRole?>(
+          label: 'Uloga',
+          value: _role,
+          items: [
+            const DropdownMenuItem(value: null, child: Text('Svi korisnici')),
+            DropdownMenuItem(
+              value: UserRole.administrator,
+              child: Text(userRoleLabel(UserRole.administrator)),
             ),
-            const SizedBox(width: 12),
-            SizedBox(
-              height: 48,
-              child: SegmentedButton<bool>(
-                segments: const [
-                  ButtonSegment(value: true, label: Text('Aktivni')),
-                  ButtonSegment(value: false, label: Text('Neaktivni')),
-                ],
-                selected: {_showActive},
-                onSelectionChanged: (newSelection) {
-                  _showActive = newSelection.first;
-                  _applyFilters();
-                },
-              ),
+            DropdownMenuItem(
+              value: UserRole.instructor,
+              child: Text(userRoleLabel(UserRole.instructor)),
+            ),
+            DropdownMenuItem(
+              value: UserRole.student,
+              child: Text(userRoleLabel(UserRole.student)),
+            ),
+            DropdownMenuItem(
+              value: UserRole.storeEmployee,
+              child: Text(userRoleLabel(UserRole.storeEmployee)),
             ),
           ],
+          onChanged: (role) {
+            _role = role;
+            _applyFilters();
+          },
         ),
+        statusTabs: StatusFilterTabs<bool?>(
+          selected: _isActive,
+          options: activeFilterOptions,
+          onChanged: (isActive) {
+            _isActive = isActive;
+            _applyFilters();
+          },
+        ),
+        statusOf: (item) => inactiveStatus(item.isActive),
         fetcher: _fetchUsers,
         onAdd: () => _openProvisionForm(),
       ),

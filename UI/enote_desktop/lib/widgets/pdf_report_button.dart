@@ -106,7 +106,7 @@ class _PdfReportButtonState extends State<PdfReportButton> {
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(widget.label),
-        const SizedBox(width: 8),
+        const SizedBox(width: AppSpacing.sm),
         IconButton(
           icon: const Icon(Icons.print),
           tooltip: 'Ispis',
@@ -119,10 +119,10 @@ class _PdfReportButtonState extends State<PdfReportButton> {
         ),
         if (_isLoading)
           const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 8),
+            padding: EdgeInsets.symmetric(horizontal: AppSpacing.sm),
             child: SizedBox(
-              width: 16,
-              height: 16,
+              width: AppSize.spinnerSm,
+              height: AppSize.spinnerSm,
               child: CircularProgressIndicator(strokeWidth: 2),
             ),
           ),

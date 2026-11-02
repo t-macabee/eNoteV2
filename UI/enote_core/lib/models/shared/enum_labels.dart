@@ -61,6 +61,24 @@ String lectureStatusLabel(LectureStatus status) => switch (status) {
   LectureStatus.cancelled => 'Otkazano',
 };
 
+StatusTone lectureStatusTone(LectureStatus status) => switch (status) {
+  LectureStatus.scheduled => StatusTone.info,
+  LectureStatus.held => StatusTone.success,
+  LectureStatus.cancelled => StatusTone.danger,
+};
+
+String attendanceStatusLabel(AttendanceStatus status) => switch (status) {
+  AttendanceStatus.pending => 'Na čekanju',
+  AttendanceStatus.present => 'Prisutan',
+  AttendanceStatus.absent => 'Odsutan',
+};
+
+StatusTone attendanceStatusTone(AttendanceStatus status) => switch (status) {
+  AttendanceStatus.pending => StatusTone.warning,
+  AttendanceStatus.present => StatusTone.success,
+  AttendanceStatus.absent => StatusTone.danger,
+};
+
 String lectureTypeLabel(LectureType type) => switch (type) {
   LectureType.theoretical => 'Teorijsko',
   LectureType.practical => 'Praktično',

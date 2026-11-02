@@ -98,15 +98,12 @@ class _LectureWorkspaceViewState extends State<LectureWorkspaceView> {
         children: [
           for (int i = 0; i < _stack.length; i++) ...[
             if (i > 0)
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 6),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 6),
                 child: Text(
                   '›',
-                  style: TextStyle(
-                    color: AppTheme.textTertiary,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: Theme.of(context).textTheme.titleMedium
+                      ?.copyWith(color: AppTheme.textTertiary),
                 ),
               ),
             if (i < _stack.length - 1)
@@ -119,7 +116,7 @@ class _LectureWorkspaceViewState extends State<LectureWorkspaceView> {
                 },
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 4,
+                    horizontal: AppSpacing.xs,
                     vertical: 2,
                   ),
                   child: Text(
@@ -133,7 +130,10 @@ class _LectureWorkspaceViewState extends State<LectureWorkspaceView> {
               )
             else
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.xs,
+                  vertical: 2,
+                ),
                 child: Text(
                   _crumbLabel(_stack[i]),
                   style: const TextStyle(

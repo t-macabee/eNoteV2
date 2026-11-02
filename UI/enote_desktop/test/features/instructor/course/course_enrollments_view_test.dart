@@ -6,7 +6,7 @@ import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
 import 'package:enote_desktop/features/instructor/course/course_enrollments_view.dart';
-import 'package:enote_desktop/features/instructor/course/course_provider.dart';
+import 'package:enote_desktop/features/instructor/enrollment/instructor_enrollment_provider.dart';
 
 import '../../../helpers.dart';
 
@@ -21,13 +21,15 @@ Map<String, dynamic> _enrollmentJson({
   'id': id,
   'studentId': id,
   'studentName': studentName,
+  'courseId': 1,
+  'courseName': 'Gitara',
   'enrollmentStatus': enrollmentStatus,
   'paidUntil': paidUntil,
   'decidedAt': decidedAt,
   'decisionNote': decisionNote,
 };
 
-final _defaultRows = [
+List<Map<String, dynamic>> _defaultRows() => [
   _enrollmentJson(
     id: 11,
     studentName: 'Student Enote',
@@ -42,43 +44,43 @@ final _defaultRows = [
   ),
 ];
 
-ScriptedClient _client({List<Map<String, dynamic>>? items}) =>
+ScriptedClient _client(List<Map<String, dynamic>> rows) =>
     ScriptedClient((request) {
       final path = request.url.path;
       if (request.method == 'GET' && path.endsWith('/enrollments')) {
-        final rows = items ?? _defaultRows;
+        final filter = request.url.queryParameters['enrollmentStatus'];
+        final matching = filter == null
+            ? rows
+            : rows.where((row) => row['enrollmentStatus'] == filter).toList();
+        final pageSize = request.url.queryParameters['pageSize'];
+        final items = pageSize == '1' ? matching.take(1).toList() : matching;
         return jsonResponse({
-          'items': rows,
+          'items': items,
           'page': 1,
-          'pageSize': 20,
-          'totalCount': rows.length,
+          'pageSize': int.parse(pageSize ?? '20'),
+          'totalCount': matching.length,
         }, 200);
       }
       if (request.method == 'POST') {
-        return jsonResponse(
-          _enrollmentJson(
-            id: 11,
-            studentName: 'Student Enote',
-            enrollmentStatus: path.endsWith('/approve') ? 'Active' : 'Rejected',
-          ),
-          200,
-        );
+        final segments = request.url.pathSegments;
+        final id = int.parse(segments[segments.indexOf('enrollments') + 1]);
+        final newStatus = switch (segments.last) {
+          'approve' => 'Active',
+          'reject' => 'Rejected',
+          _ => 'Completed',
+        };
+        final row = rows.firstWhere((row) => row['id'] == id);
+        row['enrollmentStatus'] = newStatus;
+        return jsonResponse(row, 200);
       }
       return jsonResponse(const {}, 404);
     });
-
-IconButton _button(WidgetTester tester, String tooltip) =>
-    tester.widget<IconButton>(
-      find.descendant(
-        of: find.byTooltip(tooltip),
-        matching: find.byType(IconButton),
-      ),
-    );
 
 Future<void> pumpView(
   WidgetTester tester,
   ScriptedClient httpClient, {
   VoidCallback? onMutation,
+  int? pendingCount = 1,
 }) async {
   tester.view.physicalSize = const Size(1280, 800);
   tester.view.devicePixelRatio = 1.0;
@@ -97,14 +99,15 @@ Future<void> pumpView(
     MultiProvider(
       providers: [
         Provider<ApiClient>.value(value: apiClient),
-        ChangeNotifierProvider<CourseProvider>.value(
-          value: CourseProvider(apiClient: apiClient),
+        ChangeNotifierProvider<InstructorEnrollmentProvider>.value(
+          value: InstructorEnrollmentProvider(apiClient: apiClient),
         ),
       ],
       child: MaterialApp(
         home: Scaffold(
           body: CourseEnrollmentsView(
             courseId: 1,
+            pendingCount: pendingCount,
             onMutation: onMutation ?? () {},
           ),
         ),
@@ -114,60 +117,93 @@ Future<void> pumpView(
   await tester.pumpAndSettle();
 }
 
+List<RecordedRequest> _listRequests(ScriptedClient client) => [
+  for (final request in client.recorded)
+    if (request.method == 'GET' &&
+        Uri.parse(request.url).queryParameters['pageSize'] != '1')
+      request,
+];
+
+Finder _actionButton(String label) => find.widgetWithText(TextButton, label);
+
 void main() {
-  testWidgets('row actions are enabled only for the status they apply to', (
+  testWidgets('opens on the pending tab with the pending filter', (
     tester,
   ) async {
-    final httpClient = _client();
+    final httpClient = _client(_defaultRows());
     await pumpView(tester, httpClient);
 
-    expect(_button(tester, 'Odobri').onPressed, isNotNull);
-    expect(
-      _button(tester, 'Samo zahtjev na čekanju se može odobriti.').onPressed,
-      isNull,
-    );
-    expect(_button(tester, 'Odbij').onPressed, isNotNull);
-    expect(
-      _button(tester, 'Samo zahtjev na čekanju se može odbiti.').onPressed,
-      isNull,
-    );
-    expect(_button(tester, 'Položio').onPressed, isNotNull);
-    expect(
-      _button(
-        tester,
-        'Samo aktivan upis može biti označen kao položen.',
-      ).onPressed,
-      isNull,
-    );
-    expect(_button(tester, 'Odbij').color, Colors.red);
-    expect(
-      tester
-          .widget<Icon>(
-            find.descendant(
-              of: find.byTooltip('Samo zahtjev na čekanju se može odbiti.'),
-              matching: find.byType(Icon),
-            ),
-          )
-          .color,
-      isNull,
-    );
+    final firstList = Uri.parse(_listRequests(httpClient).first.url);
+    expect(firstList.queryParameters['enrollmentStatus'], 'Pending');
+    expect(find.text('Na čekanju (1)'), findsOneWidget);
   });
+
+  testWidgets('pending tab shows the count', (tester) async {
+    await pumpView(tester, _client(_defaultRows()), pendingCount: 1);
+
+    expect(find.text('Na čekanju (1)'), findsOneWidget);
+    expect(find.text('Svi'), findsOneWidget);
+  });
+
+  testWidgets('pending row shows Odobri and Odbij', (tester) async {
+    await pumpView(tester, _client(_defaultRows()));
+
+    expect(_actionButton('Odobri'), findsOneWidget);
+    expect(_actionButton('Odbij'), findsOneWidget);
+    expect(_actionButton('Položio'), findsNothing);
+  });
+
+  testWidgets('active row shows only Položio', (tester) async {
+    await pumpView(tester, _client([_defaultRows()[1]]));
+    await tester.tap(find.text('Svi'));
+    await tester.pumpAndSettle();
+
+    expect(_actionButton('Položio'), findsOneWidget);
+    expect(_actionButton('Odobri'), findsNothing);
+    expect(_actionButton('Odbij'), findsNothing);
+  });
+
+  testWidgets('rejected row shows no actions', (tester) async {
+    final rejected = _enrollmentJson(
+      id: 13,
+      studentName: 'Odbijeni Student',
+      enrollmentStatus: 'Rejected',
+    );
+    await pumpView(tester, _client([rejected]));
+    await tester.tap(find.text('Svi'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Odbijeni Student'), findsOneWidget);
+    expect(_actionButton('Odobri'), findsNothing);
+    expect(_actionButton('Odbij'), findsNothing);
+    expect(_actionButton('Položio'), findsNothing);
+  });
+
+  testWidgets(
+    'Odobri dialog shows the title Odobri upis and the student name',
+    (tester) async {
+      await pumpView(tester, _client(_defaultRows()));
+
+      await tester.tap(_actionButton('Odobri'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Odobri upis'), findsOneWidget);
+      expect(
+        find.text('Odobriti upis za studenta Student Enote?'),
+        findsOneWidget,
+      );
+    },
+  );
 
   testWidgets('Odobri confirms and POSTs approve, then reloads the list', (
     tester,
   ) async {
-    final httpClient = _client();
+    final httpClient = _client(_defaultRows());
     await pumpView(tester, httpClient);
-    final listGetsBefore = httpClient.getUrls.length;
+    final listGetsBefore = _listRequests(httpClient).length;
 
-    await tester.tap(find.byTooltip('Odobri'));
+    await tester.tap(_actionButton('Odobri'));
     await tester.pumpAndSettle();
-    expect(find.text('Odobri upis'), findsOneWidget);
-    expect(
-      find.text('Odobriti upis za studenta Student Enote?'),
-      findsOneWidget,
-    );
-
     await tester.tap(find.widgetWithText(ElevatedButton, 'Potvrdi'));
     await tester.pumpAndSettle();
 
@@ -178,16 +214,37 @@ void main() {
       ),
       isTrue,
     );
-    expect(httpClient.getUrls.length, listGetsBefore + 1);
+    expect(_listRequests(httpClient).length, listGetsBefore + 1);
     expect(find.text('Upis odobren.'), findsOneWidget);
   });
 
-  testWidgets('a successful approve calls onMutation', (tester) async {
-    final httpClient = _client();
+  testWidgets('count reloads after approve', (tester) async {
     var mutations = 0;
-    await pumpView(tester, httpClient, onMutation: () => mutations++);
+    final httpClient = _client(_defaultRows());
+    await pumpView(
+      tester,
+      httpClient,
+      pendingCount: 1,
+      onMutation: () => mutations++,
+    );
 
-    await tester.tap(find.byTooltip('Odobri'));
+    await tester.tap(_actionButton('Odobri'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Potvrdi'));
+    await tester.pumpAndSettle();
+
+    expect(mutations, 1);
+  });
+
+  testWidgets('a successful approve calls onMutation', (tester) async {
+    var mutations = 0;
+    await pumpView(
+      tester,
+      _client(_defaultRows()),
+      onMutation: () => mutations++,
+    );
+
+    await tester.tap(_actionButton('Odobri'));
     await tester.pumpAndSettle();
     await tester.tap(find.widgetWithText(ElevatedButton, 'Potvrdi'));
     await tester.pumpAndSettle();
@@ -198,10 +255,10 @@ void main() {
   testWidgets('Odbij requires a reason and POSTs it in the body', (
     tester,
   ) async {
-    final httpClient = _client();
+    final httpClient = _client(_defaultRows());
     await pumpView(tester, httpClient);
 
-    await tester.tap(find.byTooltip('Odbij'));
+    await tester.tap(_actionButton('Odbij'));
     await tester.pumpAndSettle();
     expect(find.text('Razlog *'), findsOneWidget);
     final confirmButton = tester.widget<ElevatedButton>(
@@ -228,22 +285,25 @@ void main() {
     expect(find.text('Upis odbijen.'), findsOneWidget);
   });
 
-  testWidgets('the first list request filters by Pending', (tester) async {
-    final httpClient = _client();
+  testWidgets('changing the tab resets to page 1', (tester) async {
+    final httpClient = _client(_defaultRows());
     await pumpView(tester, httpClient);
 
-    expect(httpClient.requests.first.method, 'GET');
-    expect(
-      httpClient.requests.first.url.queryParameters['enrollmentStatus'],
-      'Pending',
-    );
+    await tester.tap(find.text('Svi'));
+    await tester.pumpAndSettle();
+
+    final lastList = Uri.parse(_listRequests(httpClient).last.url);
+    expect(lastList.queryParameters['page'], '1');
+    expect(lastList.queryParameters.containsKey('enrollmentStatus'), isFalse);
   });
 
   testWidgets('Odlučeno formats decidedAt and shows - when it is null', (
     tester,
   ) async {
-    final httpClient = _client();
+    final httpClient = _client(_defaultRows());
     await pumpView(tester, httpClient);
+    await tester.tap(find.text('Svi'));
+    await tester.pumpAndSettle();
 
     expect(find.text('Odlučeno: 20.09.2026.'), findsOneWidget);
     expect(find.text('Odlučeno: -'), findsOneWidget);

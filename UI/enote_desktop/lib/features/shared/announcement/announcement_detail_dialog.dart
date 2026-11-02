@@ -25,7 +25,12 @@ class AnnouncementDetailDialog extends StatelessWidget {
       title: announcement.title,
       width: DialogShellWidth.sm,
       body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.xl,
+          AppSpacing.lg,
+          AppSpacing.xl,
+          AppSpacing.lg,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -53,7 +58,7 @@ class AnnouncementDetailDialog extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.md),
             ],
             DetailRow(
               icon: Icons.title_outlined,

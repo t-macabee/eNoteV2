@@ -1,8 +1,4 @@
-import 'package:enote_core/enote_core.dart' as core;
+import 'package:enote_core/enote_core.dart';
 
-String lectureStatusLabel(core.LectureDto lecture) {
-  if (lecture.isCancelled) {
-    return core.lectureStatusLabel(core.LectureStatus.cancelled);
-  }
-  return core.lectureStatusLabel(lecture.lectureStatus);
-}
+LectureStatus displayLectureStatus(LectureDto lecture) =>
+    lecture.isCancelled ? LectureStatus.cancelled : lecture.lectureStatus;

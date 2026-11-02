@@ -6,8 +6,6 @@ class EntityFilterDropdown<T> extends StatelessWidget {
   final T? value;
   final ValueChanged<T?>? onChanged;
   final double width;
-  final bool isExpanded;
-  final bool outlined;
 
   const EntityFilterDropdown({
     super.key,
@@ -16,8 +14,6 @@ class EntityFilterDropdown<T> extends StatelessWidget {
     required this.value,
     required this.onChanged,
     this.width = 220,
-    this.isExpanded = true,
-    this.outlined = false,
   });
 
   @override
@@ -26,12 +22,9 @@ class EntityFilterDropdown<T> extends StatelessWidget {
       width: width,
       child: DropdownButtonFormField<T>(
         key: ValueKey(value),
-        isExpanded: isExpanded,
+        isExpanded: true,
         initialValue: value,
-        decoration: InputDecoration(
-          labelText: label,
-          border: outlined ? const OutlineInputBorder() : null,
-        ),
+        decoration: InputDecoration(labelText: label),
         items: items,
         onChanged: onChanged,
       ),

@@ -46,6 +46,14 @@ const _users = [
     'storeName': 'Sarajevo Guitar House',
     'isManager': true,
   },
+  {
+    'appUserId': 44,
+    'username': 'ntesla',
+    'firstName': 'Nikola',
+    'lastName': 'Tesla',
+    'role': 'Instructor',
+    'isActive': false,
+  },
 ];
 
 ScriptedClient _client({
@@ -196,6 +204,53 @@ void main() {
       expect(find.text('Stranica 2 od 6'), findsOneWidget);
     },
   );
+
+  testWidgets('UserGridScreen opens on Aktivni and sends isActive true', (
+    WidgetTester tester,
+  ) async {
+    final mockClient = _client();
+    await _pumpGrid(tester, mockClient);
+
+    final chip = tester.widget<ChoiceChip>(
+      find.widgetWithText(ChoiceChip, 'Aktivni'),
+    );
+    expect(chip.selected, isTrue);
+
+    final requests = _adminUserRequests(mockClient);
+    expect(requests, hasLength(1));
+    expect(requests.single.queryParameters['isActive'], 'true');
+    expect(find.text('Nikola Tesla'), findsNothing);
+  });
+
+  testWidgets('UserGridScreen Svi tab sends no isActive', (
+    WidgetTester tester,
+  ) async {
+    final mockClient = _client();
+    await _pumpGrid(tester, mockClient);
+
+    mockClient.requests.clear();
+
+    await tester.tap(find.widgetWithText(ChoiceChip, 'Svi'));
+    await tester.pumpAndSettle();
+
+    final requests = _adminUserRequests(mockClient);
+    expect(requests, hasLength(1));
+    expect(requests.single.queryParameters.containsKey('isActive'), isFalse);
+  });
+
+  testWidgets('UserGridScreen inactive user card shows Neaktivan', (
+    WidgetTester tester,
+  ) async {
+    final mockClient = _client();
+    await _pumpGrid(tester, mockClient);
+
+    await tester.tap(find.widgetWithText(ChoiceChip, 'Neaktivni'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Nikola Tesla'), findsOneWidget);
+    expect(find.text('Neaktivan'), findsOneWidget);
+    expect(find.text('Ada Admin'), findsNothing);
+  });
 
   testWidgets(
     'UserGridScreen filters by Administrator role with the server role filter',

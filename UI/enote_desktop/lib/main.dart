@@ -18,6 +18,7 @@ import 'features/admin/instrument_type/instrument_type_provider.dart';
 import 'features/profile/profile_provider.dart';
 import 'features/instructor/course/course_provider.dart';
 import 'features/instructor/course/course_catalog_provider.dart';
+import 'features/instructor/enrollment/instructor_enrollment_provider.dart';
 import 'features/instructor/lecture/lecture_provider.dart';
 import 'features/instructor/student/instructor_student_provider.dart';
 import 'features/instructor/ranking/ranking_provider.dart';
@@ -115,6 +116,9 @@ class MyApp extends StatelessWidget {
         ),
         ChangeNotifierProvider<CourseProvider>(
           create: (_) => CourseProvider(apiClient: apiClient),
+        ),
+        ChangeNotifierProvider<InstructorEnrollmentProvider>(
+          create: (_) => InstructorEnrollmentProvider(apiClient: apiClient),
         ),
         ChangeNotifierProvider<CourseCatalogProvider>(
           create: (_) => CourseCatalogProvider(apiClient: apiClient),

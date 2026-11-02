@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'package:enote_core/enote_core.dart' hide lectureStatusLabel;
+import 'package:enote_core/enote_core.dart';
 
 import '../../../widgets/detail_row.dart';
 import '../../../widgets/dialog_shell.dart';
@@ -24,7 +24,12 @@ class LectureDetailDialog extends StatelessWidget {
       title: lecture.name,
       width: DialogShellWidth.sm,
       body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.xl,
+          AppSpacing.lg,
+          AppSpacing.xl,
+          AppSpacing.lg,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -61,7 +66,7 @@ class LectureDetailDialog extends StatelessWidget {
             DetailRow(
               icon: Icons.info_outlined,
               label: 'Status',
-              value: lectureStatusLabel(lecture),
+              value: lectureStatusLabel(displayLectureStatus(lecture)),
             ),
             if (lecture.cancellationReason != null)
               DetailRow(

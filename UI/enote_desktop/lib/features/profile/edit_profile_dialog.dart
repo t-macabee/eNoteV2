@@ -120,9 +120,10 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
       onSave: _save,
       fieldsBuilder: (context) => [
         const Text('Slika', style: TextStyle(fontWeight: FontWeight.bold)),
-        const Text(
+        Text(
           'Slika se automatski sprema prilikom odabira.',
-          style: TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+          style: Theme.of(context).textTheme.labelMedium
+              ?.copyWith(color: AppTheme.textSecondary),
         ),
         Align(
           alignment: Alignment.centerLeft,

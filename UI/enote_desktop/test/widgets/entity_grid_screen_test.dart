@@ -5,10 +5,79 @@ import 'package:provider/provider.dart';
 import 'package:enote_core/enote_core.dart';
 import 'package:enote_desktop/widgets/entity_empty_state.dart';
 import 'package:enote_desktop/widgets/entity_grid_screen.dart';
+import 'package:enote_desktop/widgets/status_chip.dart';
 
 import '../helpers.dart';
 
+Future<void> _pumpGrid(
+  WidgetTester tester, {
+  required List<String> items,
+  ({String label, StatusTone tone})? Function(String item)? statusOf,
+}) async {
+  tester.view.physicalSize = const Size(1280, 800);
+  tester.view.devicePixelRatio = 1.0;
+  addTearDown(tester.view.resetPhysicalSize);
+  addTearDown(tester.view.resetDevicePixelRatio);
+
+  final authState = AuthState(baseUrl: 'http://localhost:5059/api/v1/');
+  final apiClient = ApiClient(
+    baseUrl: 'http://localhost:5059/api/v1/',
+    authState: authState,
+    httpClient: ScriptedClient((_) => jsonResponse('', 200)),
+  );
+
+  await tester.pumpWidget(
+    Provider<ApiClient>.value(
+      value: apiClient,
+      child: MaterialApp(
+        home: Scaffold(
+          body: EntityGridScreen<String>(
+            config: EntityGridConfig<String>(
+              fetcher: (page, pageSize, search) async => PagedResult<String>(
+                items: items,
+                page: 1,
+                pageSize: 24,
+                totalCount: items.length,
+              ),
+              titleOf: (item) => item,
+              statusOf: statusOf,
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+  await tester.pumpAndSettle();
+}
+
 void main() {
+  testWidgets('card shows the title without hover', (
+    WidgetTester tester,
+  ) async {
+    await _pumpGrid(tester, items: const ['Sarajevo']);
+
+    expect(find.text('Sarajevo'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(AnimatedOpacity),
+        matching: find.text('Sarajevo'),
+      ),
+      findsNothing,
+    );
+  });
+
+  testWidgets('card shows the status chip from statusOf', (
+    WidgetTester tester,
+  ) async {
+    await _pumpGrid(
+      tester,
+      items: const ['Sarajevo'],
+      statusOf: (item) => (label: 'Neaktivan', tone: StatusTone.neutral),
+    );
+
+    expect(find.byType(StatusChip), findsOneWidget);
+    expect(find.text('Neaktivan'), findsOneWidget);
+  });
   testWidgets(
     'shows EntityEmptyState with the no-data text on an empty result',
     (WidgetTester tester) async {

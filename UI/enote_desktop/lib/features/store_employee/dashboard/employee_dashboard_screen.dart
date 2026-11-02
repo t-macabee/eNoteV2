@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
 
+import '../../../shell/role_menu_entries.dart';
 import '../../../shell/shell_navigation.dart';
 import '../../../widgets/dashboard_count.dart';
 import '../../../widgets/dashboard_page.dart';
@@ -71,7 +72,7 @@ class _EmployeeDashboardScreenState extends State<EmployeeDashboardScreen> {
           icon: Icons.assignment_outlined,
           label: 'Zahtjevi na čekanju',
           tone: StatusTone.warning,
-          onTap: () => _openEntry('Zahtjevi'),
+          onTap: () => _openEntry(kRequestsEntryLabel),
         ),
         DashboardCountCard(
           count: _employeesCount,

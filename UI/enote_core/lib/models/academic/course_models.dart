@@ -1,6 +1,7 @@
 import '../../api/api_response.dart';
 import '../../formatting/formatters.dart';
 import '../shared/enums.dart';
+
 class CourseDto {
   final int id;
   final int instructorId;
@@ -90,7 +91,8 @@ class CourseDto {
     if (hasEnded) 'hasEnded': hasEnded,
     if (enrollmentId != null) 'enrollmentId': enrollmentId,
     if (paidUntil != null) 'paidUntil': paidUntil!.toIso8601String(),
-    if (enrollmentStatus != null) 'enrollmentStatus': enrollmentStatus!.toJson(),
+    if (enrollmentStatus != null)
+      'enrollmentStatus': enrollmentStatus!.toJson(),
     if (enrollmentDecisionNote != null)
       'enrollmentDecisionNote': enrollmentDecisionNote,
     if (isFree) 'isFree': isFree,
@@ -101,6 +103,8 @@ class CourseEnrollmentDto {
   final int id;
   final int studentId;
   final String studentName;
+  final int courseId;
+  final String courseName;
   final EnrollmentStatus enrollmentStatus;
   final DateTime? paidUntil;
   final DateTime? decidedAt;
@@ -110,6 +114,8 @@ class CourseEnrollmentDto {
     required this.id,
     required this.studentId,
     required this.studentName,
+    required this.courseId,
+    required this.courseName,
     required this.enrollmentStatus,
     this.paidUntil,
     this.decidedAt,
@@ -121,8 +127,11 @@ class CourseEnrollmentDto {
       id: json['id'] as int? ?? 0,
       studentId: json['studentId'] as int? ?? 0,
       studentName: json['studentName'] as String? ?? '',
-      enrollmentStatus:
-          EnrollmentStatus.fromJson(json['enrollmentStatus'] as String?),
+      courseId: json['courseId'] as int? ?? 0,
+      courseName: json['courseName'] as String? ?? '',
+      enrollmentStatus: EnrollmentStatus.fromJson(
+        json['enrollmentStatus'] as String?,
+      ),
       paidUntil: parseDate(json['paidUntil']),
       decidedAt: parseDate(json['decidedAt']),
       decisionNote: json['decisionNote'] as String?,
@@ -196,10 +205,7 @@ class CourseCatalogInstructorDto {
   final int id;
   final String? name;
 
-  CourseCatalogInstructorDto({
-    required this.id,
-    this.name,
-  });
+  CourseCatalogInstructorDto({required this.id, this.name});
 
   factory CourseCatalogInstructorDto.fromJson(Map<String, dynamic> json) {
     return CourseCatalogInstructorDto(
@@ -208,10 +214,7 @@ class CourseCatalogInstructorDto {
     );
   }
 
-  Map<String, dynamic> toJson() => {
-    'id': id,
-    if (name != null) 'name': name,
-  };
+  Map<String, dynamic> toJson() => {'id': id, if (name != null) 'name': name};
 }
 
 class CourseCatalogSummaryDto {
@@ -235,4 +238,3 @@ class CourseCatalogSummaryDto {
     'totalStudents': totalStudents,
   };
 }
-

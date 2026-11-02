@@ -45,6 +45,42 @@ void main() {
     }
   });
 
+  test('lectureStatusTone maps every lecture status', () {
+    const expected = {
+      LectureStatus.scheduled: StatusTone.info,
+      LectureStatus.held: StatusTone.success,
+      LectureStatus.cancelled: StatusTone.danger,
+    };
+    for (final status in LectureStatus.values) {
+      expect(lectureStatusTone(status), expected[status], reason: '$status');
+    }
+  });
+
+  test('attendanceStatusLabel and attendanceStatusTone map every status', () {
+    const expectedLabels = {
+      AttendanceStatus.pending: 'Na čekanju',
+      AttendanceStatus.present: 'Prisutan',
+      AttendanceStatus.absent: 'Odsutan',
+    };
+    const expectedTones = {
+      AttendanceStatus.pending: StatusTone.warning,
+      AttendanceStatus.present: StatusTone.success,
+      AttendanceStatus.absent: StatusTone.danger,
+    };
+    for (final status in AttendanceStatus.values) {
+      expect(
+        attendanceStatusLabel(status),
+        expectedLabels[status],
+        reason: '$status',
+      );
+      expect(
+        attendanceStatusTone(status),
+        expectedTones[status],
+        reason: '$status',
+      );
+    }
+  });
+
   test(
     'paymentStatusLabel gives a non-empty label for every payment status',
     () {

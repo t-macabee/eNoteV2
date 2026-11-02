@@ -3,7 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
-import 'package:enote_desktop/features/instructor/course/course_provider.dart';
+import 'package:enote_desktop/features/instructor/enrollment/instructor_enrollment_provider.dart';
 import 'package:enote_desktop/features/instructor/lecture/lecture_form_screen.dart';
 import 'package:enote_desktop/features/instructor/lecture/lecture_provider.dart';
 import 'package:enote_desktop/widgets/entity_form_scaffold.dart';
@@ -109,8 +109,8 @@ void main() {
           ChangeNotifierProvider<LectureProvider>(
             create: (_) => LectureProvider(apiClient: apiClient),
           ),
-          ChangeNotifierProvider<CourseProvider>(
-            create: (_) => CourseProvider(apiClient: apiClient),
+          ChangeNotifierProvider<InstructorEnrollmentProvider>(
+            create: (_) => InstructorEnrollmentProvider(apiClient: apiClient),
           ),
         ],
         child: MaterialApp(
@@ -194,8 +194,8 @@ void main() {
           ChangeNotifierProvider<LectureProvider>(
             create: (_) => LectureProvider(apiClient: apiClient),
           ),
-          ChangeNotifierProvider<CourseProvider>(
-            create: (_) => CourseProvider(apiClient: apiClient),
+          ChangeNotifierProvider<InstructorEnrollmentProvider>(
+            create: (_) => InstructorEnrollmentProvider(apiClient: apiClient),
           ),
         ],
         child: MaterialApp(
@@ -278,8 +278,8 @@ void main() {
           ChangeNotifierProvider<LectureProvider>(
             create: (_) => LectureProvider(apiClient: apiClient),
           ),
-          ChangeNotifierProvider<CourseProvider>(
-            create: (_) => CourseProvider(apiClient: apiClient),
+          ChangeNotifierProvider<InstructorEnrollmentProvider>(
+            create: (_) => InstructorEnrollmentProvider(apiClient: apiClient),
           ),
         ],
         child: MaterialApp(

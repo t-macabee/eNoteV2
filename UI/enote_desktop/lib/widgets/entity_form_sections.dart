@@ -25,8 +25,8 @@ class EntitySaveButton extends StatelessWidget {
       onPressed: (isSaving || isDeleting || !enabled) ? null : onPressed,
       icon: isSaving
           ? const SizedBox(
-              width: 16,
-              height: 16,
+              width: AppSize.spinnerSm,
+              height: AppSize.spinnerSm,
               child: CircularProgressIndicator(strokeWidth: 2),
             )
           : const Icon(Icons.save),
@@ -59,8 +59,8 @@ class EntityDeleteButton extends StatelessWidget {
       ),
       icon: isDeleting
           ? const SizedBox(
-              width: 16,
-              height: 16,
+              width: AppSize.spinnerSm,
+              height: AppSize.spinnerSm,
               child: CircularProgressIndicator(
                 strokeWidth: 2,
                 color: AppTheme.error,
@@ -134,10 +134,8 @@ class FormSection extends StatelessWidget {
             padding: const EdgeInsets.only(left: _accentWidth + AppSpacing.sm),
             child: Text(
               description!,
-              style: const TextStyle(
-                fontSize: 12,
-                color: AppTheme.textSecondary,
-              ),
+              style: Theme.of(context).textTheme.labelMedium
+                  ?.copyWith(color: AppTheme.textSecondary),
             ),
           ),
       ],

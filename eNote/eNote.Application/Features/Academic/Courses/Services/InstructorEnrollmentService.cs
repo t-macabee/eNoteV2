@@ -1,3 +1,5 @@
+using eNote.Application.Common.Paging;
+using eNote.Application.Common.Search;
 using eNote.Application.Features.Identity.Instructors;
 using eNote.Application.Features.Identity.Users.Services;
 
@@ -18,6 +20,7 @@ public sealed class InstructorEnrollmentService(
         var query = context.Set<Enrollment>()
             .AsNoTracking()
             .Include(e => e.Student)
+            .Include(e => e.Course)
             .Where(e => e.CourseId == courseId);
 
         if (search.EnrollmentStatus.HasValue)
@@ -25,14 +28,29 @@ public sealed class InstructorEnrollmentService(
             query = query.Where(e => e.EnrollmentStatus == search.EnrollmentStatus.Value);
         }
 
-        return await query.ToPagedResultAsync(
-            search,
-            async (enrollments, token) =>
-            {
-                var names = await displayNames.GetStudentDisplayNamesAsync(enrollments.Select(e => e.Student!), token);
-                return enrollments.Select(e => Map(e, names.GetValueOrDefault(e.StudentId, Messages.UnknownUserName)));
-            },
-            ct: ct);
+        return await PageAsync(query, search, ct);
+    }
+
+    public async Task<PagedResult<CourseEnrollmentDto>> GetForInstructorAsync(InstructorEnrollmentSearchObject search, CancellationToken ct = default)
+    {
+        var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId, ct);
+
+        IQueryable<Enrollment> query = instructorAccess.EnrollmentsFor(instructorId)
+            .AsNoTracking()
+            .Include(e => e.Student)
+            .Include(e => e.Course);
+
+        if (search.EnrollmentStatus.HasValue)
+        {
+            query = query.Where(e => e.EnrollmentStatus == search.EnrollmentStatus.Value);
+        }
+
+        if (search.CourseId.HasValue)
+        {
+            query = query.Where(e => e.CourseId == search.CourseId.Value);
+        }
+
+        return await PageAsync(query, search, ct);
     }
 
     public Task<CourseEnrollmentDto> ApproveAsync(int courseId, int enrollmentId, CancellationToken ct = default) =>
@@ -80,6 +98,18 @@ public sealed class InstructorEnrollmentService(
         return Map(enrollment, await displayNames.GetStudentDisplayNameAsync(enrollment.Student, ct));
     }
 
+    private async Task<PagedResult<CourseEnrollmentDto>> PageAsync(IQueryable<Enrollment> query, BaseSearchObject search, CancellationToken ct)
+    {
+        return await query.ToPagedResultAsync(
+            search,
+            async (enrollments, token) =>
+            {
+                var names = await displayNames.GetStudentDisplayNamesAsync(enrollments.Select(e => e.Student!), token);
+                return enrollments.Select(e => Map(e, names.GetValueOrDefault(e.StudentId, Messages.UnknownUserName)));
+            },
+            ct: ct);
+    }
+
     private async Task EnsureOwnsCourseAsync(int courseId, CancellationToken ct)
     {
         var instructorId = await instructorAccess.GetCurrentInstructorIdAsync(currentUser.UserId, ct);
@@ -91,6 +121,8 @@ public sealed class InstructorEnrollmentService(
         Id = e.Id,
         StudentId = e.StudentId,
         StudentName = studentName,
+        CourseId = e.CourseId,
+        CourseName = e.Course.Name,
         EnrollmentStatus = e.EnrollmentStatus,
         PaidUntil = e.PaidUntil,
         DecidedAt = e.DecidedAt,

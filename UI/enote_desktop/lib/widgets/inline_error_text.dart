@@ -11,7 +11,8 @@ class InlineErrorText extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       message,
-      style: const TextStyle(fontSize: 13, color: AppTheme.error),
+      style: Theme.of(context).textTheme.bodySmall
+          ?.copyWith(color: AppTheme.error),
     );
   }
 }

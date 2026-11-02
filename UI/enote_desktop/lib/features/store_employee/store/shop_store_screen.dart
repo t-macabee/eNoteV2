@@ -106,7 +106,7 @@ class _ShopStoreScreenState extends State<ShopStoreScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(_errorMessage!, style: const TextStyle(color: AppTheme.error)),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.md),
             FilledButton.icon(
               onPressed: _loadStore,
               icon: const Icon(Icons.refresh),

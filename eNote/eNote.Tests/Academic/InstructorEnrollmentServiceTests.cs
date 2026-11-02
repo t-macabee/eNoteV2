@@ -231,9 +231,129 @@ public sealed class InstructorEnrollmentServiceTests
         Assert.Equal(Messages.ConcurrencyConflict, ex.Message);
     }
 
-    private static async Task<(Student Student, Enrollment Enrollment)> AddPendingStudentAsync(AcademicHarness harness, int? courseId = null)
+    [Fact]
+    public async Task GetForInstructorAsync_ReturnsOnlyEnrollmentsOfOwnCourses()
     {
-        var student = new Student(60, Now);
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var (_, ownEnrollment) = await AddPendingStudentAsync(harness, appUserId: 61);
+        var otherInstructor = new Instructor(200);
+        harness.Context.Set<Instructor>().Add(otherInstructor);
+        await harness.Context.SaveChangesAsync();
+        var otherCourse = new Course("Violin 101", null, 50m, Now, Now.AddMonths(1), otherInstructor.Id);
+        harness.Context.Set<Course>().Add(otherCourse);
+        await harness.Context.SaveChangesAsync();
+        var (_, otherEnrollment) = await AddPendingStudentAsync(harness, otherCourse.Id, appUserId: 62);
+        var service = CreateService(harness.Context, harness.Instructor);
+
+        var result = await service.GetForInstructorAsync(new InstructorEnrollmentSearchObject());
+
+        var ids = result.Items.Select(i => i.Id).ToList();
+        Assert.Contains(ownEnrollment.Id, ids);
+        Assert.DoesNotContain(otherEnrollment.Id, ids);
+        Assert.All(result.Items, item => Assert.Equal(harness.Course.Id, item.CourseId));
+    }
+
+    [Fact]
+    public async Task GetForInstructorAsync_FiltersByStatus()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var (_, pending) = await AddPendingStudentAsync(harness, appUserId: 61);
+        var service = CreateService(harness.Context, harness.Instructor);
+
+        var pendingResult = await service.GetForInstructorAsync(new InstructorEnrollmentSearchObject { EnrollmentStatus = EnrollmentStatus.Pending });
+        var activeResult = await service.GetForInstructorAsync(new InstructorEnrollmentSearchObject { EnrollmentStatus = EnrollmentStatus.Active });
+
+        var item = Assert.Single(pendingResult.Items);
+        Assert.Equal(pending.Id, item.Id);
+        Assert.NotEmpty(activeResult.Items);
+        Assert.All(activeResult.Items, i => Assert.Equal(EnrollmentStatus.Active, i.EnrollmentStatus));
+    }
+
+    [Fact]
+    public async Task GetForInstructorAsync_FiltersByCourse()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        await AddPendingStudentAsync(harness, appUserId: 61);
+        var secondCourse = new Course("Violin 101", null, 50m, Now, Now.AddMonths(1), harness.Instructor.Id);
+        harness.Context.Set<Course>().Add(secondCourse);
+        await harness.Context.SaveChangesAsync();
+        var (_, secondEnrollment) = await AddPendingStudentAsync(harness, secondCourse.Id, appUserId: 62);
+        var service = CreateService(harness.Context, harness.Instructor);
+
+        var result = await service.GetForInstructorAsync(new InstructorEnrollmentSearchObject { CourseId = secondCourse.Id });
+
+        var item = Assert.Single(result.Items);
+        Assert.Equal(secondEnrollment.Id, item.Id);
+        Assert.Equal(secondCourse.Id, item.CourseId);
+    }
+
+    [Fact]
+    public async Task GetForInstructorAsync_WithAnotherInstructorsCourseId_ReturnsNothing()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var otherInstructor = new Instructor(200);
+        harness.Context.Set<Instructor>().Add(otherInstructor);
+        await harness.Context.SaveChangesAsync();
+        var otherCourse = new Course("Violin 101", null, 50m, Now, Now.AddMonths(1), otherInstructor.Id);
+        harness.Context.Set<Course>().Add(otherCourse);
+        await harness.Context.SaveChangesAsync();
+        await AddPendingStudentAsync(harness, otherCourse.Id, appUserId: 61);
+        var service = CreateService(harness.Context, harness.Instructor);
+
+        var result = await service.GetForInstructorAsync(new InstructorEnrollmentSearchObject { CourseId = otherCourse.Id });
+
+        Assert.Empty(result.Items);
+        Assert.Equal(0, result.TotalCount);
+    }
+
+    [Fact]
+    public async Task GetForInstructorAsync_OrdersById()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var first = await AddPendingStudentAsync(harness, appUserId: 61);
+        var second = await AddPendingStudentAsync(harness, appUserId: 62);
+        var service = CreateService(harness.Context, harness.Instructor);
+
+        var result = await service.GetForInstructorAsync(new InstructorEnrollmentSearchObject { EnrollmentStatus = EnrollmentStatus.Pending });
+
+        Assert.Equal(new[] { first.Enrollment.Id, second.Enrollment.Id }, result.Items.Select(i => i.Id));
+    }
+
+    [Fact]
+    public async Task GetForInstructorAsync_MapsCourseIdAndCourseName()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var (_, pending) = await AddPendingStudentAsync(harness, appUserId: 61);
+        var service = CreateService(harness.Context, harness.Instructor);
+
+        var result = await service.GetForInstructorAsync(new InstructorEnrollmentSearchObject { EnrollmentStatus = EnrollmentStatus.Pending });
+
+        var item = Assert.Single(result.Items);
+        Assert.Equal(pending.Id, item.Id);
+        Assert.Equal(harness.Course.Id, item.CourseId);
+        Assert.Equal(harness.Course.Name, item.CourseName);
+    }
+
+    [Fact]
+    public async Task GetForCourseAsync_MapsCourseName()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        await AddPendingStudentAsync(harness, appUserId: 61);
+        var service = CreateService(harness.Context, harness.Instructor);
+
+        var result = await service.GetForCourseAsync(harness.Course.Id, new CourseEnrollmentSearchObject());
+
+        Assert.NotEmpty(result.Items);
+        Assert.All(result.Items, item =>
+        {
+            Assert.Equal(harness.Course.Id, item.CourseId);
+            Assert.Equal(harness.Course.Name, item.CourseName);
+        });
+    }
+
+    private static async Task<(Student Student, Enrollment Enrollment)> AddPendingStudentAsync(AcademicHarness harness, int? courseId = null, int appUserId = 60)
+    {
+        var student = new Student(appUserId, Now);
         harness.Context.Set<Student>().Add(student);
         await harness.Context.SaveChangesAsync();
 

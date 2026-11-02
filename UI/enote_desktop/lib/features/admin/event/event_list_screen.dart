@@ -62,7 +62,7 @@ class _EventListScreenState extends State<EventListScreen> {
                 },
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: AppSpacing.md),
             SizedBox(
               width: 180,
               child: DateField(
@@ -74,7 +74,7 @@ class _EventListScreenState extends State<EventListScreen> {
                 },
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: AppSpacing.md),
           ],
         ),
         fetcher: (page, pageSize, search) =>

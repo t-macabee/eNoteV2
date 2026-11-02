@@ -48,14 +48,6 @@ public sealed class CourseControllerEnrollTests
             new FakePaymentGateway(),
             clock);
 
-        var instructorEnrollmentService = new InstructorEnrollmentService(
-            context,
-            clock,
-            actor,
-            instructorAccess,
-            new StubDisplayNameService(),
-            new StubEnrollmentNotificationDispatcher());
-
         var enrollmentService = new CourseEnrollmentService(
             context,
             clock,
@@ -64,18 +56,6 @@ public sealed class CourseControllerEnrollTests
             new FakePaymentGateway(),
             NullLogger<CourseEnrollmentService>.Instance);
 
-        return new CourseController(courseService, enrollmentService, instructorEnrollmentService);
-    }
-
-    private sealed class StubEnrollmentNotificationDispatcher : IEnrollmentNotificationDispatcher
-    {
-        public Task DispatchStatusChangedAsync(int enrollmentId, int courseId, int studentUserId, string courseName, EnrollmentStatus newStatus, string? reason) =>
-            Task.CompletedTask;
-
-        public Task DispatchTuitionPaidAsync(int enrollmentId, int courseId, int studentUserId, string courseName, long amountCents, string currency, DateTime paidUntil) =>
-            Task.CompletedTask;
-
-        public Task DispatchTuitionRefundedAsync(int enrollmentId, int courseId, int studentUserId, string courseName, long amountCents, string currency) =>
-            Task.CompletedTask;
+        return new CourseController(courseService, enrollmentService);
     }
 }

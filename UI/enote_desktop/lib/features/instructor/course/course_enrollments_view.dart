@@ -3,18 +3,22 @@ import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
 
-import '../../../widgets/entity_filter_dropdown.dart';
 import '../../../widgets/entity_list_screen.dart';
 import '../../../widgets/status_chip.dart';
-import 'course_provider.dart';
+import '../../../widgets/status_filter_tabs.dart';
+import '../../../widgets/workflow_actions.dart';
+import '../enrollment/enrollment_actions.dart';
+import '../enrollment/instructor_enrollment_provider.dart';
 
 class CourseEnrollmentsView extends StatefulWidget {
   final int courseId;
+  final int? pendingCount;
   final VoidCallback onMutation;
 
   const CourseEnrollmentsView({
     super.key,
     required this.courseId,
+    required this.pendingCount,
     required this.onMutation,
   });
 
@@ -25,100 +29,32 @@ class CourseEnrollmentsView extends StatefulWidget {
 class _CourseEnrollmentsViewState extends State<CourseEnrollmentsView> {
   final _listKey = GlobalKey<EntityListScreenState<CourseEnrollmentDto>>();
   EnrollmentStatus? _selectedStatus = EnrollmentStatus.pending;
-  bool _busy = false;
 
-  Future<void> _approve(CourseEnrollmentDto item) async {
-    final confirmed = await confirmDialog(
-      context: context,
-      title: 'Odobri upis',
-      message: 'Odobriti upis za studenta ${item.studentName}?',
-    );
-    if (confirmed != true || !mounted) return;
-    await _run(
-      () => context.read<CourseProvider>().approveEnrollment(
-        widget.courseId,
-        item.id,
-      ),
-      'Upis odobren.',
-    );
+  void _onStatusChanged(EnrollmentStatus? value) {
+    setState(() => _selectedStatus = value);
+    _listKey.currentState?.refresh(resetPage: true);
   }
 
-  Future<void> _reject(CourseEnrollmentDto item) async {
-    final reason = await promptForReason(context, title: 'Odbij upis');
-    if (reason == null || !mounted) return;
-    await _run(
-      () => context.read<CourseProvider>().rejectEnrollment(
-        widget.courseId,
-        item.id,
-        reason,
-      ),
-      'Upis odbijen.',
-    );
+  Future<void> _run(
+    CourseEnrollmentDto item,
+    EnrollmentAction action,
+    String? note,
+  ) async {
+    final provider = context.read<InstructorEnrollmentProvider>();
+    await runEnrollmentAction(provider, item, action, note);
+    if (!mounted) return;
+    widget.onMutation();
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(enrollmentSuccessMessage(action))));
+    _listKey.currentState?.refresh();
   }
 
-  Future<void> _complete(CourseEnrollmentDto item) async {
-    final confirmed = await confirmDialog(
-      context: context,
-      title: 'Označi kao položen',
-      message:
-          'Označiti da je student ${item.studentName} položio kurs? '
-          'Student time gubi pristup sadržaju kursa.',
-    );
-    if (confirmed != true || !mounted) return;
-    await _run(
-      () => context.read<CourseProvider>().completeEnrollment(
-        widget.courseId,
-        item.id,
-      ),
-      'Upis označen kao položen.',
-    );
-  }
-
-  Future<void> _run(Future<void> Function() action, String message) async {
-    setState(() => _busy = true);
-    try {
-      await action();
-      if (!mounted) return;
-      widget.onMutation();
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(message)));
-      _listKey.currentState?.refresh();
-    } catch (e) {
-      if (mounted) {
-        ErrorBanner.show(context, message: userMessage(e));
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _busy = false);
-      }
-    }
-  }
-
-  Widget _buildFilterBar() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Row(
-        children: [
-          EntityFilterDropdown<EnrollmentStatus?>(
-            label: 'Status',
-            width: 220,
-            outlined: true,
-            value: _selectedStatus,
-            items: [
-              const DropdownMenuItem(value: null, child: Text('Svi statusi')),
-              for (final status in EnrollmentStatus.values)
-                DropdownMenuItem(
-                  value: status,
-                  child: Text(enrollmentStatusLabel(status)),
-                ),
-            ],
-            onChanged: (value) {
-              setState(() => _selectedStatus = value);
-              _listKey.currentState?.refresh();
-            },
-          ),
-        ],
-      ),
+  Widget _buildStatusTabs() {
+    return StatusFilterTabs<EnrollmentStatus?>(
+      selected: _selectedStatus,
+      options: enrollmentStatusFilterOptions(pendingCount: widget.pendingCount),
+      onChanged: _onStatusChanged,
     );
   }
 
@@ -131,8 +67,6 @@ class _CourseEnrollmentsViewState extends State<CourseEnrollmentsView> {
         listStyle: EntityListStyle.tiles,
         showSearchBar: false,
         showAddButton: false,
-        onEdit: null,
-        onDelete: null,
         columns: [
           ColumnSpec<CourseEnrollmentDto>(
             label: 'Student',
@@ -161,48 +95,16 @@ class _CourseEnrollmentsViewState extends State<CourseEnrollmentsView> {
             value: (item) => item.decisionNote ?? '-',
           ),
         ],
-        filterBar: _buildFilterBar(),
+        statusTabs: _buildStatusTabs(),
         extraActions: (context, item) => [
-          Tooltip(
-            message: item.enrollmentStatus == EnrollmentStatus.pending
-                ? 'Odobri'
-                : 'Samo zahtjev na čekanju se može odobriti.',
-            child: IconButton(
-              icon: const Icon(Icons.check_circle_outline, size: 18),
-              onPressed:
-                  item.enrollmentStatus == EnrollmentStatus.pending && !_busy
-                  ? () => _approve(item)
-                  : null,
-            ),
-          ),
-          Tooltip(
-            message: item.enrollmentStatus == EnrollmentStatus.pending
-                ? 'Odbij'
-                : 'Samo zahtjev na čekanju se može odbiti.',
-            child: IconButton(
-              color: Colors.red,
-              icon: const Icon(Icons.cancel_outlined, size: 18),
-              onPressed:
-                  item.enrollmentStatus == EnrollmentStatus.pending && !_busy
-                  ? () => _reject(item)
-                  : null,
-            ),
-          ),
-          Tooltip(
-            message: item.enrollmentStatus == EnrollmentStatus.active
-                ? 'Položio'
-                : 'Samo aktivan upis može biti označen kao položen.',
-            child: IconButton(
-              icon: const Icon(Icons.school_outlined, size: 18),
-              onPressed:
-                  item.enrollmentStatus == EnrollmentStatus.active && !_busy
-                  ? () => _complete(item)
-                  : null,
-            ),
+          WorkflowActionButtons<EnrollmentAction>(
+            actions: enrollmentActions(item),
+            compact: true,
+            onRun: (trigger, {note}) => _run(item, trigger, note),
           ),
         ],
         fetcher: (page, pageSize, search) =>
-            context.read<CourseProvider>().getEnrollments(
+            context.read<InstructorEnrollmentProvider>().getForCourse(
               widget.courseId,
               params: pagedQuery(
                 page,

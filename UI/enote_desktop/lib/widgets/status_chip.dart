@@ -20,11 +20,8 @@ class StatusChip extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: TextStyle(
-          color: tone.color,
-          fontWeight: FontWeight.w600,
-          fontSize: 12,
-        ),
+        style: Theme.of(context).textTheme.labelMedium
+            ?.copyWith(color: tone.color, fontWeight: FontWeight.w600),
       ),
     );
   }

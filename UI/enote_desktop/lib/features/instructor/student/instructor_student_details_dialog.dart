@@ -189,13 +189,18 @@ class _InstructorStudentDetailsDialogState
       title: 'Detalji studenta',
       width: DialogShellWidth.sm,
       body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.xl,
+          AppSpacing.lg,
+          AppSpacing.xl,
+          AppSpacing.lg,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (_studentDetailsError)
               const Padding(
-                padding: EdgeInsets.only(bottom: 12),
+                padding: EdgeInsets.only(bottom: AppSpacing.md),
                 child: InlineErrorText(
                   'Greška pri učitavanju detalja studenta.',
                 ),
@@ -219,7 +224,7 @@ class _InstructorStudentDetailsDialogState
               label: 'Datum upisa',
               value: formatDateNullable(student.enrollmentDate),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.sm),
             MembershipSection(
               api: context.read<InstructorStudentProvider>(),
               studentId: student.id,
@@ -227,16 +232,13 @@ class _InstructorStudentDetailsDialogState
               onMembershipChanged: (paidUntil) =>
                   setState(() => _membershipPaidUntil = paidUntil),
             ),
-            const SizedBox(height: 16),
-            const Text(
+            const SizedBox(height: AppSpacing.lg),
+            Text(
               'Upisani kursevi',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: AppTheme.textPrimary,
-              ),
+              style: Theme.of(context).textTheme.titleSmall
+                  ?.copyWith(color: AppTheme.textPrimary),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.sm),
             if (_enrollmentsError)
               const InlineErrorText('Greška pri učitavanju upisa.')
             else if (_enrollments == null)
@@ -244,16 +246,17 @@ class _InstructorStudentDetailsDialogState
                 height: 24,
                 child: Center(
                   child: SizedBox(
-                    width: 20,
-                    height: 20,
+                    width: AppSize.spinnerMd,
+                    height: AppSize.spinnerMd,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   ),
                 ),
               )
             else if (_enrollments!.isEmpty)
-              const Text(
+              Text(
                 'Nema aktivnih upisa.',
-                style: TextStyle(fontSize: 13, color: AppTheme.textSecondary),
+                style: Theme.of(context).textTheme.bodySmall
+                    ?.copyWith(color: AppTheme.textSecondary),
               )
             else
               ..._enrollments!.map(
@@ -271,16 +274,13 @@ class _InstructorStudentDetailsDialogState
                   child: const Text('Učitaj još'),
                 ),
               ),
-            const SizedBox(height: 16),
-            const Text(
+            const SizedBox(height: AppSpacing.lg),
+            Text(
               'Individualni plan',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: AppTheme.textPrimary,
-              ),
+              style: Theme.of(context).textTheme.titleSmall
+                  ?.copyWith(color: AppTheme.textPrimary),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.sm),
             if (_lecturesError)
               const InlineErrorText(
                 'Greška pri učitavanju individualnih predavanja.',
@@ -290,16 +290,17 @@ class _InstructorStudentDetailsDialogState
                 height: 24,
                 child: Center(
                   child: SizedBox(
-                    width: 20,
-                    height: 20,
+                    width: AppSize.spinnerMd,
+                    height: AppSize.spinnerMd,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   ),
                 ),
               )
             else if (_individualLectures!.isEmpty)
-              const Text(
+              Text(
                 'Nema individualnih predavanja.',
-                style: TextStyle(fontSize: 13, color: AppTheme.textSecondary),
+                style: Theme.of(context).textTheme.bodySmall
+                    ?.copyWith(color: AppTheme.textSecondary),
               )
             else
               ..._individualLectures!.map(
@@ -309,10 +310,8 @@ class _InstructorStudentDetailsDialogState
                   title: Text(lecture.name),
                   subtitle: Text(
                     '${formatDateTime(lecture.lectureTime)} · ${lecture.location}',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: AppTheme.textSecondary,
-                    ),
+                    style: Theme.of(context).textTheme.labelMedium
+                        ?.copyWith(color: AppTheme.textSecondary),
                   ),
                   trailing: TextButton(
                     onPressed: () => _openNotes(lecture),

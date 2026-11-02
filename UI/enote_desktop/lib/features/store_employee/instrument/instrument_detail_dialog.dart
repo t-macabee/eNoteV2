@@ -81,7 +81,12 @@ class _InstrumentDetailDialogState extends State<InstrumentDetailDialog> {
 
     return AlertDialog(
       constraints: BoxConstraints(maxWidth: 640, maxHeight: maxHeight),
-      titlePadding: const EdgeInsets.fromLTRB(24, 20, 8, 0),
+      titlePadding: const EdgeInsets.fromLTRB(
+        AppSpacing.xl,
+        20,
+        AppSpacing.sm,
+        0,
+      ),
       title: Row(
         children: [
           Expanded(
@@ -94,11 +99,16 @@ class _InstrumentDetailDialogState extends State<InstrumentDetailDialog> {
           ),
         ],
       ),
-      contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
+      contentPadding: const EdgeInsets.fromLTRB(
+        AppSpacing.xl,
+        20,
+        AppSpacing.xl,
+        0,
+      ),
       content: SizedBox(
         width: 520,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.only(bottom: AppSpacing.md),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -126,7 +136,7 @@ class _InstrumentDetailDialogState extends State<InstrumentDetailDialog> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: AppSpacing.lg),
               ],
               DetailRow(
                 icon: Icons.music_note_outlined,
@@ -161,14 +171,19 @@ class _InstrumentDetailDialogState extends State<InstrumentDetailDialog> {
           ),
         ),
       ),
-      actionsPadding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+      actionsPadding: const EdgeInsets.fromLTRB(
+        AppSpacing.xl,
+        0,
+        AppSpacing.xl,
+        AppSpacing.lg,
+      ),
       actions: [
         Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const Divider(),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.md),
             Row(
               children: [
                 OutlinedButton.icon(
@@ -179,8 +194,8 @@ class _InstrumentDetailDialogState extends State<InstrumentDetailDialog> {
                   ),
                   icon: _isDeleting
                       ? const SizedBox(
-                          width: 16,
-                          height: 16,
+                          width: AppSize.spinnerSm,
+                          height: AppSize.spinnerSm,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
                             color: AppTheme.error,
@@ -196,7 +211,7 @@ class _InstrumentDetailDialogState extends State<InstrumentDetailDialog> {
                       : () => Navigator.of(context).pop(false),
                   child: const Text('Zatvori'),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: AppSpacing.md),
                 OutlinedButton.icon(
                   onPressed: _isDeleting ? null : _openEdit,
                   icon: const Icon(Icons.edit_outlined),

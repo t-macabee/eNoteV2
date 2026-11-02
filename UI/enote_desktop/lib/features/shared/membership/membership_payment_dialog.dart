@@ -150,7 +150,7 @@ class _MembershipPaymentDialogState extends State<_MembershipPaymentDialog> {
               children: [
                 Text(
                   'Period počinje ${formatDate(_periodStart)}.',
-                  style: const TextStyle(fontSize: 12),
+                  style: Theme.of(context).textTheme.labelMedium,
                 ),
                 TextFormField(
                   controller: _amountController,
@@ -208,8 +208,8 @@ class _MembershipPaymentDialogState extends State<_MembershipPaymentDialog> {
           onPressed: _isSaving ? null : _save,
           child: _isSaving
               ? const SizedBox(
-                  width: 16,
-                  height: 16,
+                  width: AppSize.spinnerSm,
+                  height: AppSize.spinnerSm,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
               : const Text('Evidentiraj'),

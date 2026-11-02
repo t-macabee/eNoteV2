@@ -4,6 +4,7 @@ import 'package:enote_core/enote_core.dart';
 
 import '../../theme/app_theme.dart';
 import '../../widgets/entity_form_scaffold.dart';
+import '../../widgets/initials_avatar.dart';
 import 'change_password_dialog.dart';
 import 'edit_profile_dialog.dart';
 import 'profile_provider.dart';
@@ -106,7 +107,7 @@ class _ProfileDialogState extends State<ProfileDialog> {
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 440),
         child: Padding(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(AppSpacing.xl),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -116,11 +117,8 @@ class _ProfileDialogState extends State<ProfileDialog> {
                   Expanded(
                     child: Text(
                       'Moj Profil',
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        color: AppTheme.textPrimary,
-                      ),
+                      style: Theme.of(context).textTheme.titleLarge
+                          ?.copyWith(color: AppTheme.textPrimary),
                     ),
                   ),
                   IconButton(
@@ -130,9 +128,9 @@ class _ProfileDialogState extends State<ProfileDialog> {
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpacing.sm),
               Center(child: _buildAvatar(context, profile)),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.md),
               InfoRow(
                 label: 'Korisničko ime',
                 value: username,
@@ -147,7 +145,7 @@ class _ProfileDialogState extends State<ProfileDialog> {
                 value: dateOfBirth,
                 labelWidth: 120,
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: AppSpacing.xl),
               Wrap(
                 alignment: WrapAlignment.end,
                 spacing: 12,
@@ -174,21 +172,13 @@ class _ProfileDialogState extends State<ProfileDialog> {
 
   Widget _buildAvatar(BuildContext context, UserProfileResponse profile) {
     Widget initialsAvatar() {
-      return CircleAvatar(
-        radius: 40,
-        backgroundColor: AppTheme.primary,
-        child: Text(
-          _initials(
-            profile.profile.firstName,
-            profile.profile.lastName,
-            profile.username,
-          ),
-          style: const TextStyle(
-            fontSize: 28,
-            fontWeight: FontWeight.w600,
-            color: Colors.white,
-          ),
+      return InitialsAvatar(
+        text: formatDisplayName(
+          profile.profile.firstName,
+          profile.profile.lastName,
+          profile.username,
         ),
+        radius: 40,
       );
     }
 
@@ -201,22 +191,5 @@ class _ProfileDialogState extends State<ProfileDialog> {
       borderRadius: 40,
       placeholder: initialsAvatar,
     );
-  }
-
-  static String _initials(
-    String? firstName,
-    String? lastName,
-    String username,
-  ) {
-    final parts = [
-      if (firstName != null && firstName.trim().isNotEmpty)
-        firstName.trim()[0].toUpperCase(),
-      if (lastName != null && lastName.trim().isNotEmpty)
-        lastName.trim()[0].toUpperCase(),
-    ];
-    if (parts.isNotEmpty) return parts.take(2).join();
-    final clean = username.trim();
-    if (clean.isEmpty) return '?';
-    return clean[0].toUpperCase();
   }
 }

@@ -6,7 +6,9 @@ import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
 import 'package:enote_desktop/features/instructor/course/course_detail_screen.dart';
+import 'package:enote_desktop/features/instructor/course/course_enrollments_view.dart';
 import 'package:enote_desktop/features/instructor/course/course_provider.dart';
+import 'package:enote_desktop/features/instructor/enrollment/instructor_enrollment_provider.dart';
 import 'package:enote_desktop/features/instructor/ranking/ranking_provider.dart';
 
 import '../../../helpers.dart';
@@ -50,6 +52,9 @@ Widget _app(ApiClient apiClient, Widget home) => MultiProvider(
     Provider<ApiClient>.value(value: apiClient),
     ChangeNotifierProvider<CourseProvider>.value(
       value: CourseProvider(apiClient: apiClient),
+    ),
+    ChangeNotifierProvider<InstructorEnrollmentProvider>.value(
+      value: InstructorEnrollmentProvider(apiClient: apiClient),
     ),
     Provider<RankingProvider>.value(
       value: RankingProvider(apiClient: apiClient),
@@ -369,5 +374,64 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(result, isTrue);
+  });
+
+  ScriptedClient enrollmentCountClient(int pendingCount) =>
+      ScriptedClient((request) {
+        if (request.url.path.endsWith('/enrollments')) {
+          return jsonResponse({
+            'items': [],
+            'page': 1,
+            'pageSize': 1,
+            'totalCount': pendingCount,
+          }, 200);
+        }
+        return jsonResponse(const {
+          'items': [],
+          'page': 1,
+          'pageSize': 20,
+          'totalCount': 0,
+        }, 200);
+      });
+
+  testWidgets('Upisi tab shows the pending count', (tester) async {
+    await pumpScreen(tester, enrollmentCountClient(2), course());
+    await tester.pumpAndSettle();
+
+    expect(find.text('Upisi (2)'), findsOneWidget);
+  });
+
+  testWidgets('Upisi tab shows no count when nothing is pending', (
+    tester,
+  ) async {
+    await pumpScreen(tester, enrollmentCountClient(0), course());
+    await tester.pumpAndSettle();
+
+    expect(find.text('Upisi'), findsOneWidget);
+    expect(find.textContaining('Upisi ('), findsNothing);
+  });
+
+  testWidgets('CourseDetailScreen opens on the tab from initialTab', (
+    tester,
+  ) async {
+    _resizeSurface(tester);
+    await tester.pumpWidget(
+      _app(
+        _apiClient(_client()),
+        MaterialApp(
+          home: CourseDetailScreen(
+            course: course(),
+            initialTab: CourseDetailTab.enrollments,
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byType(CourseEnrollmentsView), findsOneWidget);
+    final controller = DefaultTabController.of(
+      tester.element(find.byType(TabBar)),
+    );
+    expect(controller.index, CourseDetailTab.enrollments.index);
   });
 }

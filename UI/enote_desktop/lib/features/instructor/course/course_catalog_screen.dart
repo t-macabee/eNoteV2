@@ -85,7 +85,9 @@ class _CourseCatalogScreenState extends State<CourseCatalogScreen> {
         trailing: _summary != null
             ? Center(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.lg,
+                  ),
                   child: Text(
                     '${_summary!.totalCourses} kurseva · ${_summary!.totalStudents} studenata',
                     style: Theme.of(context).textTheme.bodyMedium,
@@ -95,7 +97,9 @@ class _CourseCatalogScreenState extends State<CourseCatalogScreen> {
             : _summaryError != null
             ? Center(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.lg,
+                  ),
                   child: InlineErrorText(_summaryError!),
                 ),
               )

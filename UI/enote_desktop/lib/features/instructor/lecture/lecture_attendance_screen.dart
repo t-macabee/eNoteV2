@@ -4,19 +4,9 @@ import 'package:provider/provider.dart';
 import 'package:enote_core/enote_core.dart';
 
 import '../../../widgets/entity_list_screen.dart';
+import '../../../widgets/status_chip.dart';
+import '../../../widgets/workflow_actions.dart';
 import 'lecture_provider.dart';
-
-String _attendanceLabel(AttendanceStatus status) => switch (status) {
-  AttendanceStatus.pending => 'Na čekanju',
-  AttendanceStatus.present => 'Prisutan',
-  AttendanceStatus.absent => 'Odsutan',
-};
-
-Color _attendanceColor(AttendanceStatus status) => switch (status) {
-  AttendanceStatus.pending => Colors.orange,
-  AttendanceStatus.present => Colors.green,
-  AttendanceStatus.absent => Colors.red,
-};
 
 class LectureAttendanceView extends StatefulWidget {
   final int lectureId;
@@ -39,62 +29,43 @@ class _LectureAttendanceViewState extends State<LectureAttendanceView> {
     AttendanceDto item,
     AttendanceStatus newStatus,
   ) async {
-    try {
-      final provider = context.read<LectureProvider>();
-      await provider.markAttendance(
-        widget.lectureId,
-        MarkAttendanceRequest(
-          studentId: item.studentId,
-          attendanceStatus: newStatus,
-        ),
-      );
-      if (!mounted) return;
-      widget.onMutation?.call();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Prisustvo ažurirano: ${_attendanceLabel(newStatus)}'),
-        ),
-      );
-      _listKey.currentState?.refresh();
-    } catch (e) {
-      if (!mounted) return;
-      ErrorBanner.show(context, message: userMessage(e));
-    }
-  }
-
-  Future<void> _showStatusPicker(AttendanceDto item) async {
-    final selected = await showDialog<AttendanceStatus>(
-      context: context,
-      builder: (context) => SimpleDialog(
-        title: Text('Prisustvo — ${item.studentName}'),
-        children: [
-          for (final status in [
-            AttendanceStatus.present,
-            AttendanceStatus.absent,
-          ])
-            SimpleDialogOption(
-              onPressed: () => Navigator.pop(context, status),
-              child: Row(
-                children: [
-                  Icon(
-                    status == AttendanceStatus.present
-                        ? Icons.check_circle
-                        : Icons.cancel,
-                    color: _attendanceColor(status),
-                    size: 18,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(_attendanceLabel(status)),
-                ],
-              ),
-            ),
-        ],
+    await context.read<LectureProvider>().markAttendance(
+      widget.lectureId,
+      MarkAttendanceRequest(
+        studentId: item.studentId,
+        attendanceStatus: newStatus,
       ),
     );
-    if (selected != null) {
-      await _markAttendance(item, selected);
-    }
+    if (!mounted) return;
+    widget.onMutation?.call();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          'Prisustvo ažurirano: ${attendanceStatusLabel(newStatus)}',
+        ),
+      ),
+    );
+    _listKey.currentState?.refresh();
   }
+
+  List<WorkflowAction<AttendanceStatus>> _attendanceActions(
+    AttendanceDto item,
+  ) => [
+    if (item.attendanceStatus != AttendanceStatus.present)
+      const WorkflowAction(
+        trigger: AttendanceStatus.present,
+        label: 'Prisutan',
+        icon: Icons.check_circle_outline,
+        tone: StatusTone.success,
+      ),
+    if (item.attendanceStatus != AttendanceStatus.absent)
+      const WorkflowAction(
+        trigger: AttendanceStatus.absent,
+        label: 'Odsutan',
+        icon: Icons.cancel_outlined,
+        tone: StatusTone.danger,
+      ),
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -105,8 +76,6 @@ class _LectureAttendanceViewState extends State<LectureAttendanceView> {
         listStyle: EntityListStyle.tiles,
         showSearchBar: false,
         showAddButton: false,
-        onEdit: null,
-        onDelete: null,
         columns: [
           ColumnSpec<AttendanceDto>(
             label: 'Student',
@@ -114,29 +83,18 @@ class _LectureAttendanceViewState extends State<LectureAttendanceView> {
           ),
           ColumnSpec<AttendanceDto>(
             label: 'Status',
-            value: (item) => _attendanceLabel(item.attendanceStatus),
-            cellBuilder: (context, item) => Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: _attendanceColor(item.attendanceStatus)
-                    .withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Text(
-                _attendanceLabel(item.attendanceStatus),
-                style: TextStyle(
-                  color: _attendanceColor(item.attendanceStatus),
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
+            value: (item) => attendanceStatusLabel(item.attendanceStatus),
+            cellBuilder: (context, item) => StatusChip(
+              label: attendanceStatusLabel(item.attendanceStatus),
+              tone: attendanceStatusTone(item.attendanceStatus),
             ),
           ),
         ],
         extraActions: (context, item) => [
-          IconButton(
-            icon: const Icon(Icons.edit, size: 18),
-            tooltip: 'Promijeni status',
-            onPressed: () => _showStatusPicker(item),
+          WorkflowActionButtons<AttendanceStatus>(
+            actions: _attendanceActions(item),
+            compact: true,
+            onRun: (trigger, {note}) => _markAttendance(item, trigger),
           ),
         ],
         fetcher: (page, pageSize, search) =>

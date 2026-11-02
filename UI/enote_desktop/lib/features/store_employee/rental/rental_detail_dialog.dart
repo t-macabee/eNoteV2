@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
 
+import '../../../theme/app_theme.dart';
 import '../../../widgets/dialog_shell.dart';
 import '../../../widgets/inline_error_text.dart';
 import '../../../widgets/status_chip.dart';
@@ -137,7 +138,7 @@ class _RentalDetailDialogState extends State<RentalDetailDialog> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     const Text('Greška pri učitavanju.'),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: AppSpacing.lg),
                     ElevatedButton(
                       onPressed: _load,
                       child: const Text('Pokušaj ponovo'),
@@ -153,7 +154,7 @@ class _RentalDetailDialogState extends State<RentalDetailDialog> {
   Widget _buildBody() {
     final rental = _rental!;
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -161,15 +162,15 @@ class _RentalDetailDialogState extends State<RentalDetailDialog> {
             label: rentalStatusLabel(rental.rentalStatus),
             tone: rentalStatusTone(rental.rentalStatus),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.lg),
           _buildInstrumentBlock(rental),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.lg),
           _buildStudentBlock(rental),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.lg),
           _buildNotesBlock(rental),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.lg),
           _buildChargesBlock(rental),
-          const SizedBox(height: 24),
+          const SizedBox(height: AppSpacing.xl),
           WorkflowActionButtons<RentalTrigger>(
             actions: rentalTransitionActions(
               rental.rentalStatus,
@@ -185,30 +186,31 @@ class _RentalDetailDialogState extends State<RentalDetailDialog> {
   Widget _buildInstrumentBlock(InstrumentRentalDto rental) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Row(
           children: [
-            if (rental.instrumentImagePath != null)
-              ClipRRect(
+            SizedBox(
+              width: 100,
+              height: 100,
+              child: ClipRRect(
                 borderRadius: BorderRadius.circular(8),
-                child: ImageField(
-                  imageUrl: rental.instrumentImagePath,
-                  apiClient: context.read<ApiClient>(),
-                  editable: false,
-                  size: 100,
+                child: networkImageOrPlaceholder(
+                  rental.instrumentImagePath,
+                  context.read<ApiClient>(),
+                  size: double.infinity,
+                  borderRadius: 0,
+                  placeholder: () => Container(
+                    color: AppTheme.background,
+                    child: const Icon(
+                      Icons.piano,
+                      size: 40,
+                      color: AppTheme.textTertiary,
+                    ),
+                  ),
                 ),
-              )
-            else
-              Container(
-                width: 100,
-                height: 100,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade200,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(Icons.piano, size: 40, color: Colors.grey),
               ),
-            const SizedBox(width: 16),
+            ),
+            const SizedBox(width: AppSpacing.lg),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -217,15 +219,15 @@ class _RentalDetailDialogState extends State<RentalDetailDialog> {
                     rental.instrumentModel,
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: AppSpacing.xs),
                   Text(
                     rental.instrumentType,
-                    style: const TextStyle(color: Colors.grey),
+                    style: const TextStyle(color: AppTheme.textSecondary),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: AppSpacing.xs),
                   Text(
                     rental.storeName,
-                    style: const TextStyle(color: Colors.grey),
+                    style: const TextStyle(color: AppTheme.textSecondary),
                   ),
                 ],
               ),
@@ -239,12 +241,12 @@ class _RentalDetailDialogState extends State<RentalDetailDialog> {
   Widget _buildStudentBlock(InstrumentRentalDto rental) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('Student', style: Theme.of(context).textTheme.titleSmall),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.sm),
             Row(
               children: [
                 UserAvatar(
@@ -256,7 +258,7 @@ class _RentalDetailDialogState extends State<RentalDetailDialog> {
                     child: Icon(Icons.person_outline, size: 20),
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: AppSpacing.md),
                 Expanded(
                   child: Text(
                     rental.studentName ?? 'Nepoznat korisnik',
@@ -270,7 +272,7 @@ class _RentalDetailDialogState extends State<RentalDetailDialog> {
               'Vremenska linija',
               style: Theme.of(context).textTheme.titleSmall,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.sm),
             _timelineRow('Zatraženo', rental.requestedAt),
             if (rental.approvedAt != null)
               _timelineRow('Odobreno', rental.approvedAt!),
@@ -288,17 +290,21 @@ class _RentalDetailDialogState extends State<RentalDetailDialog> {
 
   Widget _timelineRow(String label, DateTime date) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 4),
+      padding: const EdgeInsets.only(bottom: AppSpacing.xs),
       child: Row(
         children: [
           SizedBox(
             width: 100,
             child: Text(
               label,
-              style: const TextStyle(color: Colors.grey, fontSize: 13),
+              style: Theme.of(context).textTheme.bodySmall
+                  ?.copyWith(color: AppTheme.textSecondary),
             ),
           ),
-          Text(formatDateTime(date), style: const TextStyle(fontSize: 13)),
+          Text(
+            formatDateTime(date),
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
         ],
       ),
     );
@@ -307,7 +313,7 @@ class _RentalDetailDialogState extends State<RentalDetailDialog> {
   Widget _buildNotesBlock(InstrumentRentalDto rental) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -317,26 +323,26 @@ class _RentalDetailDialogState extends State<RentalDetailDialog> {
                 'Zahtjev (student)',
                 style: Theme.of(context).textTheme.titleSmall,
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: AppSpacing.xs),
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(AppSpacing.md),
                 decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey.shade300),
+                  border: Border.all(color: AppTheme.outline),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(rental.requestNote!),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.md),
             ],
             if (rental.note != null && rental.note!.isNotEmpty) ...[
               Text('Odgovor', style: Theme.of(context).textTheme.titleSmall),
-              const SizedBox(height: 4),
+              const SizedBox(height: AppSpacing.xs),
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(AppSpacing.md),
                 decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey.shade300),
+                  border: Border.all(color: AppTheme.outline),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(rental.note!),
@@ -346,7 +352,7 @@ class _RentalDetailDialogState extends State<RentalDetailDialog> {
                 (rental.note == null || rental.note!.isEmpty))
               const Text(
                 'Nema napomena.',
-                style: TextStyle(color: Colors.grey),
+                style: TextStyle(color: AppTheme.textSecondary),
               ),
           ],
         ),
@@ -357,12 +363,12 @@ class _RentalDetailDialogState extends State<RentalDetailDialog> {
   Widget _buildChargesBlock(InstrumentRentalDto rental) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('Naknade', style: Theme.of(context).textTheme.titleSmall),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.sm),
             _chargeRow('Mjesečna naknada', formatKM(rental.fee)),
             if (rental.dueAt != null)
               _chargeRow('Rok povrata', formatDate(rental.dueAt!)),
@@ -386,13 +392,13 @@ class _RentalDetailDialogState extends State<RentalDetailDialog> {
                   : 'Ne',
             ),
             if (_paymentLoadFailed) ...[
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpacing.sm),
               const InlineErrorText(
                 'Podaci o plaćanju trenutno nisu dostupni.',
               ),
             ],
             if (_payment != null && (_payment!.refundedCents ?? 0) > 0) ...[
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpacing.sm),
               _chargeRow(
                 'Povrađeno',
                 formatKM(
@@ -417,15 +423,15 @@ class _RentalDetailDialogState extends State<RentalDetailDialog> {
                         : _payment!.amountCents -
                               (_payment!.refundedCents ?? 0)) >
                     0) ...[
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.lg),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
                   onPressed: _isRefunding ? null : _onRefund,
                   icon: _isRefunding
                       ? const SizedBox(
-                          width: 16,
-                          height: 16,
+                          width: AppSize.spinnerSm,
+                          height: AppSize.spinnerSm,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : const Icon(Icons.payment_outlined),
@@ -441,11 +447,11 @@ class _RentalDetailDialogState extends State<RentalDetailDialog> {
 
   Widget _chargeRow(String label, String value) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 4),
+      padding: const EdgeInsets.only(bottom: AppSpacing.xs),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: const TextStyle(color: Colors.grey)),
+          Text(label, style: const TextStyle(color: AppTheme.textSecondary)),
           Text(value, style: const TextStyle(fontWeight: FontWeight.w500)),
         ],
       ),

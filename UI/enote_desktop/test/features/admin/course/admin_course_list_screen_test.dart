@@ -84,4 +84,49 @@ void main() {
     );
     expect(grid.config.imageUrlOf!(course), course.imagePath);
   });
+
+  testWidgets('admin course Neobjavljeni tab sends isPublished false', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1280, 800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final mockClient = _client();
+    final apiClient = ApiClient(
+      baseUrl: 'http://localhost:5059/api/v1/',
+      authState: AuthState(baseUrl: 'http://localhost:5059/api/v1/'),
+      httpClient: mockClient,
+    );
+
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          Provider<ApiClient>.value(value: apiClient),
+          ChangeNotifierProvider<AdminCourseProvider>.value(
+            value: AdminCourseProvider(apiClient: apiClient),
+          ),
+        ],
+        child: const MaterialApp(home: AdminCourseListScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      mockClient.requests.last.url.queryParameters.containsKey('isPublished'),
+      isFalse,
+    );
+
+    mockClient.requests.clear();
+
+    await tester.tap(find.widgetWithText(ChoiceChip, 'Neobjavljeni'));
+    await tester.pumpAndSettle();
+
+    expect(mockClient.requests, hasLength(1));
+    expect(
+      mockClient.requests.single.url.queryParameters['isPublished'],
+      'false',
+    );
+  });
 }

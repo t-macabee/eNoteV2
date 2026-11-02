@@ -71,7 +71,11 @@ class _LoginScreenState extends State<LoginScreen>
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [const _BrandMark(), const SizedBox(height: 32), form],
+              children: [
+                const _BrandMark(),
+                const SizedBox(height: AppSpacing.xxl),
+                form,
+              ],
             ),
           );
         },
@@ -89,7 +93,7 @@ class _FormScroll extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(AppSpacing.xl),
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 400),
           child: child,
@@ -117,7 +121,7 @@ class _BrandPanel extends StatelessWidget {
       ),
       child: Center(
         child: Padding(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(AppSpacing.xl),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -126,7 +130,7 @@ class _BrandPanel extends StatelessWidget {
                 size: 64,
                 color: colorScheme.primary,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.lg),
               Text(
                 'eNote',
                 textAlign: TextAlign.center,
@@ -134,7 +138,7 @@ class _BrandPanel extends StatelessWidget {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpacing.sm),
               Text(
                 'Kursevi i iznajmljivanje instrumenata na jednom mjestu.',
                 textAlign: TextAlign.center,
@@ -162,7 +166,7 @@ class _BrandMark extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Icon(Icons.library_music_rounded, size: 40, color: colorScheme.primary),
-        const SizedBox(width: 12),
+        const SizedBox(width: AppSpacing.md),
         Text(
           'eNote',
           style: textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
@@ -203,14 +207,14 @@ class _LoginForm extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text('Prijava', style: textTheme.headlineSmall),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.sm),
           Text(
             'Prijavite se na svoj eNote račun.',
             style: textTheme.bodyMedium?.copyWith(
               color: colorScheme.onSurfaceVariant,
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: AppSpacing.xl),
           AutofillGroup(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -227,7 +231,7 @@ class _LoginForm extends StatelessWidget {
                   ),
                   validator: Validators.required('Korisničko ime'),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: AppSpacing.lg),
                 TextFormField(
                   controller: passwordController,
                   obscureText: obscurePassword,
@@ -254,7 +258,7 @@ class _LoginForm extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: AppSpacing.xl),
           SizedBox(
             width: double.infinity,
             height: 48,
@@ -262,8 +266,8 @@ class _LoginForm extends StatelessWidget {
               onPressed: isSubmitting ? null : onSubmit,
               child: isSubmitting
                   ? SizedBox(
-                      height: 20,
-                      width: 20,
+                      width: AppSize.spinnerMd,
+                      height: AppSize.spinnerMd,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
                         color: colorScheme.onPrimary,

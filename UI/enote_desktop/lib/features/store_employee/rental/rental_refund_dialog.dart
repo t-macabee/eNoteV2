@@ -55,7 +55,7 @@ class _RefundAmountDialogState extends State<_RefundAmountDialog> {
             'Unesite iznos za djelomični povrat. '
             'Ostavite prazno za puni povrat.',
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.md),
           TextField(
             controller: _controller,
             autofocus: true,

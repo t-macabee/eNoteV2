@@ -90,7 +90,7 @@ class _RankingViewState extends State<RankingView> {
       mainAxisSize: MainAxisSize.min,
       children: [
         Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(AppSpacing.lg),
           child: TextField(
             controller: _searchController,
             decoration: const InputDecoration(

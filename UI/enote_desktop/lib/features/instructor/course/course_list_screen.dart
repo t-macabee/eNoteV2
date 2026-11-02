@@ -5,6 +5,7 @@ import 'package:enote_core/enote_core.dart';
 
 import '../../../widgets/entity_form_scaffold.dart';
 import '../../../widgets/entity_grid_screen.dart';
+import '../../../widgets/status_filter_tabs.dart';
 import 'course_detail_screen.dart';
 import 'course_form_screen.dart';
 import 'course_provider.dart';
@@ -18,6 +19,13 @@ class CourseListScreen extends StatefulWidget {
 
 class _CourseListScreenState extends State<CourseListScreen> {
   final _gridKey = GlobalKey<EntityGridScreenState<CourseDto>>();
+
+  bool? _isPublished;
+
+  void _applyFilters() {
+    setState(() {});
+    _gridKey.currentState?.refresh(resetPage: true);
+  }
 
   Future<void> _openForm() async {
     final saved = await EntityFormScaffold.showAsDialog(
@@ -45,13 +53,31 @@ class _CourseListScreenState extends State<CourseListScreen> {
         placeholderIcon: Icons.class_,
         titleOf: (item) => item.name,
         imageUrlOf: (item) => item.imagePath,
-        subtitleOf: (item) => item.isPublished ? 'Objavljen' : 'Neobjavljen',
+        subtitleOf: (item) => formatDateNullable(item.startDate),
+        statusOf: (item) => unpublishedStatus(item.isPublished),
+        statusTabs: StatusFilterTabs<bool?>(
+          selected: _isPublished,
+          options: publishedFilterOptions,
+          onChanged: (isPublished) {
+            _isPublished = isPublished;
+            _applyFilters();
+          },
+        ),
         searchHint: 'Pretraži po nazivu...',
         onAdd: _openForm,
         onTap: (context, item) => _openDetail(item),
-        fetcher: (page, pageSize, search) => context
-            .read<CourseProvider>()
-            .search(pagedQuery(page, pageSize, search, searchField: 'name')),
+        fetcher: (page, pageSize, search) =>
+            context.read<CourseProvider>().search(
+              pagedQuery(
+                page,
+                pageSize,
+                search,
+                searchField: 'name',
+                filters: {
+                  if (_isPublished != null) 'isPublished': _isPublished,
+                },
+              ),
+            ),
       ),
     );
   }

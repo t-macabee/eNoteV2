@@ -14,6 +14,18 @@ class StatusFilterOption<T> {
   });
 }
 
+const List<StatusFilterOption<bool?>> activeFilterOptions = [
+  StatusFilterOption(label: 'Aktivni', value: true),
+  StatusFilterOption(label: 'Neaktivni', value: false),
+  StatusFilterOption(label: 'Svi', value: null),
+];
+
+const List<StatusFilterOption<bool?>> publishedFilterOptions = [
+  StatusFilterOption(label: 'Objavljeni', value: true),
+  StatusFilterOption(label: 'Neobjavljeni', value: false),
+  StatusFilterOption(label: 'Svi', value: null),
+];
+
 class StatusFilterTabs<T> extends StatelessWidget {
   final List<StatusFilterOption<T>> options;
   final T selected;

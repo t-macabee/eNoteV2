@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import 'package:enote_core/enote_core.dart' hide lectureStatusLabel;
-import 'package:enote_core/enote_core.dart' as core;
+import 'package:enote_core/enote_core.dart';
 
-import '../../../widgets/entity_filter_dropdown.dart';
 import '../../../widgets/entity_form_scaffold.dart';
 import '../../../widgets/entity_list_screen.dart';
+import '../../../widgets/status_chip.dart';
+import '../../../widgets/status_filter_tabs.dart';
 import 'lecture_detail_dialog.dart';
 import 'lecture_form_screen.dart';
 import 'lecture_provider.dart';
@@ -88,31 +88,20 @@ class _LectureListScreenState extends State<LectureListScreen> {
     return null;
   }
 
-  Widget _buildFilterBar() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Row(
-        children: [
-          EntityFilterDropdown<LectureStatus?>(
-            label: 'Status',
-            width: 220,
-            outlined: true,
-            value: _selectedStatus,
-            items: [
-              const DropdownMenuItem(value: null, child: Text('Sve')),
-              for (final status in LectureStatus.values)
-                DropdownMenuItem(
-                  value: status,
-                  child: Text(core.lectureStatusLabel(status)),
-                ),
-            ],
-            onChanged: (value) {
-              setState(() => _selectedStatus = value);
-              _listKey.currentState?.refresh(resetPage: true);
-            },
-          ),
-        ],
-      ),
+  void _onStatusChanged(LectureStatus? value) {
+    setState(() => _selectedStatus = value);
+    _listKey.currentState?.refresh(resetPage: true);
+  }
+
+  Widget _buildStatusTabs() {
+    return StatusFilterTabs<LectureStatus?>(
+      selected: _selectedStatus,
+      options: [
+        for (final status in LectureStatus.values)
+          StatusFilterOption(label: lectureStatusLabel(status), value: status),
+        const StatusFilterOption(label: 'Sve', value: null),
+      ],
+      onChanged: _onStatusChanged,
     );
   }
 
@@ -161,22 +150,14 @@ class _LectureListScreenState extends State<LectureListScreen> {
           ),
           ColumnSpec<LectureDto>(
             label: 'Status',
-            value: (item) => lectureStatusLabel(item),
-            style: (item) {
-              if (item.isCancelled) {
-                return const TextStyle(
-                  color: Colors.red,
-                  fontWeight: FontWeight.bold,
-                );
-              }
-              if (item.lectureStatus == LectureStatus.held) {
-                return const TextStyle(color: Colors.green);
-              }
-              return null;
-            },
+            value: (item) => lectureStatusLabel(displayLectureStatus(item)),
+            cellBuilder: (context, item) => StatusChip(
+              label: lectureStatusLabel(displayLectureStatus(item)),
+              tone: lectureStatusTone(displayLectureStatus(item)),
+            ),
           ),
         ],
-        filterBar: _buildFilterBar(),
+        statusTabs: _buildStatusTabs(),
         fetcher: (page, pageSize, search) =>
             context.read<LectureProvider>().search(
               pagedQuery(
@@ -229,8 +210,8 @@ class _LectureListScreenState extends State<LectureListScreen> {
               Icons.cancel,
               size: 18,
               color: _cancelBlockedReason(item) != null
-                  ? Colors.grey
-                  : Colors.orange,
+                  ? Theme.of(context).disabledColor
+                  : StatusTone.warning.color,
             ),
             tooltip: _cancelBlockedReason(item) ?? 'Otkaži',
             onPressed: _cancelBlockedReason(item) != null

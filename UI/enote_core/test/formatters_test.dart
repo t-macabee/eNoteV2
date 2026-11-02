@@ -49,6 +49,35 @@ void main() {
     });
   });
 
+  group('initialsOf', () {
+    test('initialsOf takes two initials', () {
+      expect(initialsOf('Ana Kovač'), 'AK');
+    });
+
+    test('initialsOf uses the part before @', () {
+      expect(initialsOf('john.doe@enote.ba'), 'JD');
+    });
+
+    test('initialsOf splits a username on dot, underscore and dash', () {
+      expect(initialsOf('john.doe'), 'JD');
+      expect(initialsOf('john_doe'), 'JD');
+      expect(initialsOf('john-doe'), 'JD');
+    });
+
+    test('initialsOf keeps a hyphenated first name as one part', () {
+      expect(initialsOf('Ana-Marija Kovač'), 'AK');
+    });
+
+    test('initialsOf returns ? for empty text', () {
+      expect(initialsOf(''), '?');
+      expect(initialsOf('   '), '?');
+    });
+
+    test('initialsOf returns ? for a dash', () {
+      expect(initialsOf('-'), '?');
+    });
+  });
+
   group('formatAverageGrade', () {
     test('renders two decimals', () {
       expect(formatAverageGrade(4.5), '4.50');

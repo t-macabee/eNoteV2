@@ -1,3 +1,4 @@
+import 'package:enote_core/enote_core.dart';
 import 'package:flutter/material.dart';
 
 class AsyncDropdown<T> extends StatefulWidget {
@@ -82,8 +83,8 @@ class _AsyncDropdownState<T> extends State<AsyncDropdown<T>> {
               height: 20,
               child: Center(
                 child: SizedBox(
-                  width: 16,
-                  height: 16,
+                  width: AppSize.spinnerSm,
+                  height: AppSize.spinnerSm,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 ),
               ),

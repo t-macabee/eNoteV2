@@ -9,7 +9,7 @@ import '../../../widgets/entity_form_scaffold.dart';
 import '../../../widgets/entity_form_sections.dart';
 import '../../../widgets/entity_text_field.dart';
 import '../../../widgets/form_controller_lifecycle.dart';
-import '../course/course_provider.dart';
+import '../enrollment/instructor_enrollment_provider.dart';
 import 'lecture_provider.dart';
 
 class LectureFormScreen extends StatefulWidget {
@@ -71,7 +71,7 @@ class _LectureFormScreenState extends State<LectureFormScreen>
     try {
       final courseId = widget.courseId;
       final students = await fetchAllPages(
-        (query) => context.read<CourseProvider>().getEnrollments(
+        (query) => context.read<InstructorEnrollmentProvider>().getForCourse(
           courseId,
           params: query,
         ),

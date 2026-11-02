@@ -3,8 +3,8 @@ import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
 
-import '../../../widgets/entity_filter_dropdown.dart';
 import '../../../widgets/entity_grid_screen.dart';
+import '../../../widgets/status_filter_tabs.dart';
 import 'admin_course_provider.dart';
 
 class AdminCourseListScreen extends StatefulWidget {
@@ -33,16 +33,10 @@ class _AdminCourseListScreenState extends State<AdminCourseListScreen> {
         placeholderIcon: Icons.class_,
         titleOf: (item) => item.name,
         imageUrlOf: (item) => item.imagePath,
-        filterBar: EntityFilterDropdown<bool?>(
-          label: 'Objavljen',
-          width: 220,
-          isExpanded: false,
-          value: _isPublished,
-          items: const [
-            DropdownMenuItem(value: null, child: Text('Svi')),
-            DropdownMenuItem(value: false, child: Text('Ne')),
-            DropdownMenuItem(value: true, child: Text('Da')),
-          ],
+        statusOf: (item) => unpublishedStatus(item.isPublished),
+        statusTabs: StatusFilterTabs<bool?>(
+          selected: _isPublished,
+          options: publishedFilterOptions,
           onChanged: (isPublished) {
             _isPublished = isPublished;
             _applyFilters();

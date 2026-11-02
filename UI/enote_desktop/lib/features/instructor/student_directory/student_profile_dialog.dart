@@ -53,7 +53,12 @@ class _StudentProfileDialogState extends State<StudentProfileDialog> {
       title: 'Profil studenta',
       width: DialogShellWidth.md,
       body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.xl,
+          AppSpacing.lg,
+          AppSpacing.xl,
+          AppSpacing.lg,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -79,20 +84,18 @@ class _StudentProfileDialogState extends State<StudentProfileDialog> {
                 label: 'Korisničko ime',
                 value: profile.username != null ? '@${profile.username}' : '-',
               ),
-              const SizedBox(height: 16),
-              const Text(
+              const SizedBox(height: AppSpacing.lg),
+              Text(
                 'Kursevi',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: AppTheme.textPrimary,
-                ),
+                style: Theme.of(context).textTheme.titleSmall
+                    ?.copyWith(color: AppTheme.textPrimary),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpacing.sm),
               if (profile.courses.isEmpty)
-                const Text(
+                Text(
                   'Student nema kurseva.',
-                  style: TextStyle(fontSize: 13, color: AppTheme.textSecondary),
+                  style: Theme.of(context).textTheme.bodySmall
+                      ?.copyWith(color: AppTheme.textSecondary),
                 )
               else
                 SingleChildScrollView(

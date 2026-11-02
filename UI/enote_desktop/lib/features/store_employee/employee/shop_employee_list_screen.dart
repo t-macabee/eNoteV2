@@ -5,6 +5,7 @@ import 'package:enote_core/enote_core.dart';
 
 import '../../../widgets/entity_form_scaffold.dart';
 import '../../../widgets/entity_grid_screen.dart';
+import '../../../widgets/status_filter_tabs.dart';
 import 'shop_employee_form_screen.dart';
 import 'shop_employee_provider.dart';
 
@@ -17,6 +18,13 @@ class ShopEmployeeListScreen extends StatefulWidget {
 
 class _ShopEmployeeListScreenState extends State<ShopEmployeeListScreen> {
   final _gridKey = GlobalKey<EntityGridScreenState<ShopEmployeeDto>>();
+
+  bool? _isActive = true;
+
+  void _applyFilters() {
+    setState(() {});
+    _gridKey.currentState?.refresh(resetPage: true);
+  }
 
   Future<void> _openCreateForm() async {
     await EntityFormScaffold.showAsDialog(
@@ -37,12 +45,27 @@ class _ShopEmployeeListScreenState extends State<ShopEmployeeListScreen> {
       key: _gridKey,
       config: EntityGridConfig<ShopEmployeeDto>(
         fetcher: (page, pageSize, search) => provider.search(
-          pagedQuery(page, pageSize, search, searchField: 'name'),
+          pagedQuery(
+            page,
+            pageSize,
+            search,
+            searchField: 'name',
+            filters: {if (_isActive != null) 'isActive': _isActive},
+          ),
         ),
         titleOf: (item) =>
             formatDisplayName(item.firstName, item.lastName, item.username),
         subtitleOf: (item) =>
             item.isManager ? 'Voditelj radnje' : 'Uposlenik radnje',
+        statusOf: (item) => inactiveStatus(item.isActive),
+        statusTabs: StatusFilterTabs<bool?>(
+          selected: _isActive,
+          options: activeFilterOptions,
+          onChanged: (isActive) {
+            _isActive = isActive;
+            _applyFilters();
+          },
+        ),
         placeholderIcon: Icons.badge_outlined,
         imageUrlOf: (item) =>
             userPictureUrl(context.read<ApiClient>(), item.appUserId),

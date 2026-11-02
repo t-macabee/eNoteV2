@@ -6,7 +6,9 @@ import 'package:provider/provider.dart';
 import 'package:enote_core/enote_core.dart';
 import 'package:enote_desktop/features/instructor/course/course_provider.dart';
 import 'package:enote_desktop/features/instructor/dashboard/instructor_dashboard_screen.dart';
+import 'package:enote_desktop/features/instructor/enrollment/instructor_enrollment_provider.dart';
 import 'package:enote_desktop/features/instructor/student/instructor_student_provider.dart';
+import 'package:enote_desktop/shell/role_menu_entries.dart';
 import 'package:enote_desktop/shell/shell_navigation.dart';
 import 'package:enote_desktop/widgets/dashboard_stat_card.dart';
 
@@ -26,11 +28,17 @@ http.Response _page(int totalCount) => jsonResponse({
   'totalCount': totalCount,
 }, 200);
 
-ScriptedClient _client({bool failStudents = false}) {
+ScriptedClient _client({
+  bool failStudents = false,
+  int pendingEnrollments = 0,
+}) {
   return ScriptedClient((request) {
     final url = request.url.toString();
     if (request.method == 'GET' && url.contains('instructor/courses')) {
       return _page(8);
+    }
+    if (request.method == 'GET' && url.contains('instructor/enrollments')) {
+      return _page(pendingEnrollments);
     }
     if (request.method == 'GET' && url.contains('instructor/students')) {
       if (failStudents) {
@@ -65,6 +73,9 @@ Widget _buildApp({
       ),
       ChangeNotifierProvider<InstructorStudentProvider>(
         create: (_) => InstructorStudentProvider(apiClient: apiClient),
+      ),
+      ChangeNotifierProvider<InstructorEnrollmentProvider>(
+        create: (_) => InstructorEnrollmentProvider(apiClient: apiClient),
       ),
     ],
     child: MaterialApp(
@@ -104,7 +115,27 @@ void main() {
     expect(find.text('8'), findsOneWidget);
   });
 
-  testWidgets('instructor cards are not tappable', (WidgetTester tester) async {
+  testWidgets('shows Zahtjevi na čekanju first with the pending count', (
+    WidgetTester tester,
+  ) async {
+    _useDesktopView(tester);
+    await tester.pumpWidget(
+      _buildApp(httpClient: _client(pendingEnrollments: 3), openEntry: (_) {}),
+    );
+    await tester.pumpAndSettle();
+
+    final cards = tester
+        .widgetList<DashboardStatCard>(find.byType(DashboardStatCard))
+        .toList();
+    expect(cards.first.label, 'Zahtjevi na čekanju');
+    expect(cards.first.icon, Icons.assignment_outlined);
+    expect(cards.first.tone, StatusTone.warning);
+    expect(find.text('3'), findsOneWidget);
+  });
+
+  testWidgets('tapping the Zahtjevi card opens the Zahtjevi entry', (
+    WidgetTester tester,
+  ) async {
     _useDesktopView(tester);
     String? opened;
     await tester.pumpWidget(
@@ -112,9 +143,26 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    for (final card in tester.widgetList<DashboardStatCard>(
-      find.byType(DashboardStatCard),
-    )) {
+    await tester.tap(find.text('Zahtjevi na čekanju'));
+    await tester.pump();
+
+    expect(opened, kRequestsEntryLabel);
+  });
+
+  testWidgets('the other instructor cards are not tappable', (
+    WidgetTester tester,
+  ) async {
+    _useDesktopView(tester);
+    String? opened;
+    await tester.pumpWidget(
+      _buildApp(httpClient: _client(), openEntry: (label) => opened = label),
+    );
+    await tester.pumpAndSettle();
+
+    final cards = tester
+        .widgetList<DashboardStatCard>(find.byType(DashboardStatCard))
+        .where((card) => card.label != 'Zahtjevi na čekanju');
+    for (final card in cards) {
       expect(card.onTap, isNull);
     }
 

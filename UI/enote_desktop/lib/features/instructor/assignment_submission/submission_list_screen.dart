@@ -3,8 +3,10 @@ import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
 
-import '../../../widgets/entity_filter_dropdown.dart';
+import '../../../widgets/dashboard_count.dart';
 import '../../../widgets/entity_list_screen.dart';
+import '../../../widgets/status_chip.dart';
+import '../../../widgets/status_filter_tabs.dart';
 import 'submission_provider.dart';
 
 class SubmissionListScreen extends StatefulWidget {
@@ -31,7 +33,32 @@ class SubmissionListScreen extends StatefulWidget {
 class _SubmissionListScreenState extends State<SubmissionListScreen> {
   final _listKey = GlobalKey<EntityListScreenState<AssignmentSubmissionDto>>();
 
-  bool? _isGraded;
+  final _ungradedCount = DashboardCount();
+  bool? _isGraded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUngradedCount();
+  }
+
+  @override
+  void dispose() {
+    _ungradedCount.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadUngradedCount() async {
+    if (!mounted) return;
+    await _ungradedCount.load(
+      () => context.read<SubmissionProvider>().countUngraded(),
+    );
+  }
+
+  void _onGradedChanged(bool? value) {
+    setState(() => _isGraded = value);
+    _listKey.currentState?.refresh(resetPage: true);
+  }
 
   Future<void> _openGradeDialog(AssignmentSubmissionDto item) async {
     final controller = TextEditingController(
@@ -63,7 +90,7 @@ class _SubmissionListScreenState extends State<SubmissionListScreen> {
                   ),
                   validator: Validators.grade(0, 100),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: AppSpacing.md),
                 TextFormField(
                   controller: feedbackController,
                   maxLines: 4,
@@ -107,8 +134,8 @@ class _SubmissionListScreenState extends State<SubmissionListScreen> {
                     },
               child: isSaving
                   ? const SizedBox(
-                      width: 16,
-                      height: 16,
+                      width: AppSize.spinnerSm,
+                      height: AppSize.spinnerSm,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
                   : const Text('Sačuvaj'),
@@ -126,30 +153,25 @@ class _SubmissionListScreenState extends State<SubmissionListScreen> {
       ScaffoldMessenger.of(context)
           .showSnackBar(const SnackBar(content: Text('Ocjena sačuvana.')));
       _listKey.currentState?.refresh();
+      await _loadUngradedCount();
     }
   }
 
-  Widget _buildFilterBar() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Row(
-        children: [
-          EntityFilterDropdown<bool?>(
-            label: 'Ocjenjivanje',
-            width: 220,
-            outlined: true,
-            value: _isGraded,
-            items: const [
-              DropdownMenuItem(value: null, child: Text('Sve')),
-              DropdownMenuItem(value: true, child: Text('Ocijenjeno')),
-              DropdownMenuItem(value: false, child: Text('Neocijenjeno')),
-            ],
-            onChanged: (value) {
-              setState(() => _isGraded = value);
-              _listKey.currentState?.refresh(resetPage: true);
-            },
+  Widget _buildStatusTabs() {
+    return ListenableBuilder(
+      listenable: _ungradedCount,
+      builder: (context, _) => StatusFilterTabs<bool?>(
+        selected: _isGraded,
+        options: [
+          StatusFilterOption(
+            label: 'Neocijenjeno',
+            value: false,
+            count: _ungradedCount.value,
           ),
+          const StatusFilterOption(label: 'Ocijenjeno', value: true),
+          const StatusFilterOption(label: 'Sve', value: null),
         ],
+        onChanged: _onGradedChanged,
       ),
     );
   }
@@ -164,7 +186,7 @@ class _SubmissionListScreenState extends State<SubmissionListScreen> {
         showAddButton: false,
         showSearchBar: true,
         searchHint: 'Pretraži po imenu studenta...',
-        filterBar: _buildFilterBar(),
+        statusTabs: _buildStatusTabs(),
         columns: [
           ColumnSpec<AssignmentSubmissionDto>(
             label: 'Student',
@@ -179,12 +201,12 @@ class _SubmissionListScreenState extends State<SubmissionListScreen> {
           ColumnSpec<AssignmentSubmissionDto>(
             label: 'Ocjena',
             value: (item) => item.grade?.toString() ?? 'Neocijenjeno',
-            style: (item) => item.grade == null
-                ? TextStyle(
-                    color: Colors.grey.shade600,
-                    fontStyle: FontStyle.italic,
+            cellBuilder: (context, item) => item.grade == null
+                ? const StatusChip(
+                    label: 'Neocijenjeno',
+                    tone: StatusTone.warning,
                   )
-                : null,
+                : Text(item.grade.toString()),
           ),
         ],
         fetcher: (page, pageSize, search) =>
@@ -198,7 +220,6 @@ class _SubmissionListScreenState extends State<SubmissionListScreen> {
               ),
             ),
         onEdit: (ctx, item) => _openGradeDialog(item),
-        onDelete: null,
       ),
     );
   }

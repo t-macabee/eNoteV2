@@ -67,8 +67,11 @@ public sealed class InstructorAccessService(IAppDbContext context, IUserProfileL
     public IQueryable<Course> CoursesFor(int instructorId) =>
         context.Set<Course>().Where(c => c.InstructorId == instructorId);
 
+    public IQueryable<Enrollment> EnrollmentsFor(int instructorId) =>
+        context.Set<Enrollment>().Where(e => e.Course.InstructorId == instructorId);
+
     public IQueryable<Enrollment> ActiveEnrollmentsFor(int instructorId) =>
-        context.Set<Enrollment>().Where(e => e.Course.InstructorId == instructorId && e.EnrollmentStatus == EnrollmentStatus.Active);
+        EnrollmentsFor(instructorId).Where(e => e.EnrollmentStatus == EnrollmentStatus.Active);
 
     public IQueryable<Lecture> LecturesFor(int instructorId) =>
         context.Set<Lecture>().Where(x => x.Course.InstructorId == instructorId);

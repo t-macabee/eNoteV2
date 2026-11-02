@@ -126,9 +126,9 @@ class _MasterScreenState extends State<MasterScreen> {
       builder: (dialogContext) => DialogShell(
         width: DialogShellWidth.sm,
         header: DialogShellHeader(
-          label: const Text(
+          label: Text(
             'Obavještenja',
-            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+            style: Theme.of(context).textTheme.titleMedium,
           ),
           action: TextButton(
             onPressed: controller.markAllRead,
@@ -206,7 +206,9 @@ class _MasterScreenState extends State<MasterScreen> {
                         bottom: BorderSide(color: AppTheme.outline, width: 1),
                       ),
                     ),
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.md,
+                    ),
                     child: Row(
                       children: [
                         Tooltip(
@@ -218,7 +220,7 @@ class _MasterScreenState extends State<MasterScreen> {
                             onPressed: _isOnHome ? null : _goBack,
                           ),
                         ),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: AppSpacing.sm),
                         if (_selectedEntry != null)
                           Expanded(
                             child: Text(

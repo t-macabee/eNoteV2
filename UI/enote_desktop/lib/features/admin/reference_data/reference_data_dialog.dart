@@ -1,3 +1,4 @@
+import 'package:enote_core/enote_core.dart';
 import 'package:flutter/material.dart';
 
 import '../../../theme/app_theme.dart';
@@ -27,7 +28,7 @@ class ReferenceDataDialog extends StatelessWidget {
                     bottom: BorderSide(color: AppTheme.outline, width: 1),
                   ),
                 ),
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
                 child: Row(
                   children: [
                     const Expanded(

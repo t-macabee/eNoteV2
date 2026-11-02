@@ -14,6 +14,13 @@ class SubmissionProvider extends CrudProvider<AssignmentSubmissionDto> {
   AssignmentSubmissionDto fromJson(Map<String, dynamic> json) =>
       AssignmentSubmissionDto.fromJson(json);
 
+  Future<int?> countUngraded() async {
+    final page = await getPage(
+      params: pagedQuery(1, 1, '', filters: {'isGraded': false}),
+    );
+    return page.totalCount;
+  }
+
   Future<AssignmentSubmissionDto> grade(
     int submissionId,
     int grade, {

@@ -132,7 +132,7 @@ class _MusicStoreDetailScreenState extends State<MusicStoreDetailScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     const Text('Greška pri učitavanju prodavnice.'),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: AppSpacing.lg),
                     ElevatedButton(
                       onPressed: _loadStore,
                       child: const Text('Pokušaj ponovo'),

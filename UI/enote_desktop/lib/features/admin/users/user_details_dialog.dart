@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:enote_core/enote_core.dart';
 
 import '../../../theme/app_theme.dart';
+import '../../../widgets/initials_avatar.dart';
 import '../../../widgets/inline_error_text.dart';
 import '../../shared/membership/membership_section.dart';
 import '../student/student_provider.dart';
@@ -106,8 +107,8 @@ class _UserDetailsDialogState extends State<UserDetailsDialog> {
               : _handleStatusChange,
           icon: _isStatusChanging
               ? SizedBox(
-                  width: 16,
-                  height: 16,
+                  width: AppSize.spinnerSm,
+                  height: AppSize.spinnerSm,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
                     color: _isActive ? AppTheme.error : AppTheme.success,
@@ -125,15 +126,15 @@ class _UserDetailsDialogState extends State<UserDetailsDialog> {
             ),
           ),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: AppSpacing.sm),
         IconButton(
           onPressed: _isDeleting || _isLoadingProfile || _isStatusChanging
               ? null
               : _handleDelete,
           icon: _isDeleting
               ? const SizedBox(
-                  width: 16,
-                  height: 16,
+                  width: AppSize.spinnerSm,
+                  height: AppSize.spinnerSm,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
               : const Icon(Icons.delete_outline),
@@ -193,7 +194,7 @@ class _UserDetailsDialogState extends State<UserDetailsDialog> {
           maxHeight: MediaQuery.sizeOf(context).height * 0.85,
         ),
         child: Padding(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(AppSpacing.xl),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -205,56 +206,38 @@ class _UserDetailsDialogState extends State<UserDetailsDialog> {
                     userId: item.appUserId,
                     apiClient: context.read<ApiClient>(),
                     radius: 28,
-                    placeholder: () => CircleAvatar(
-                      radius: 28,
-                      backgroundColor: AppTheme.primary,
-                      child: Text(
-                        _initialsFromName(item.displayName),
-                        style: const TextStyle(
-                          color: AppTheme.onPrimary,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
+                    placeholder: () => InitialsAvatar(text: item.displayName),
                   ),
-                  const SizedBox(width: 16),
+                  const SizedBox(width: AppSpacing.lg),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           item.displayName,
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                            color: AppTheme.textPrimary,
-                          ),
+                          style: Theme.of(context).textTheme.titleLarge
+                              ?.copyWith(color: AppTheme.textPrimary),
                         ),
                         if (item.username != null &&
                             item.username!.isNotEmpty) ...[
                           const SizedBox(height: 2),
                           Text(
                             '@${item.username}',
-                            style: const TextStyle(
-                              fontSize: 13,
-                              color: AppTheme.textSecondary,
-                            ),
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(color: AppTheme.textSecondary),
                           ),
                         ],
                       ],
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: AppSpacing.md),
                   Chip(
                     label: Text(
                       item.role == null
                           ? 'Nepoznata uloga'
                           : userRoleLabel(item.role!),
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                      ),
+                      style: Theme.of(context).textTheme.labelMedium
+                          ?.copyWith(color: AppTheme.textPrimary),
                     ),
                     backgroundColor: AppTheme.primary.withValues(alpha: 0.12),
                     side: BorderSide.none,
@@ -266,7 +249,7 @@ class _UserDetailsDialogState extends State<UserDetailsDialog> {
               ),
               const SizedBox(height: 20),
               const Divider(height: 1),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.lg),
               Flexible(
                 child: SingleChildScrollView(
                   child: Column(
@@ -309,27 +292,27 @@ class _UserDetailsDialogState extends State<UserDetailsDialog> {
                               item.enrollmentDate ?? _profile!.enrollmentDate!,
                             ),
                           ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: AppSpacing.sm),
                         _buildMembershipSection(item),
                       ],
                       if (_isLoadingProfile) ...[
-                        const SizedBox(height: 12),
+                        const SizedBox(height: AppSpacing.md),
                         const Center(
                           child: SizedBox(
-                            width: 20,
-                            height: 20,
+                            width: AppSize.spinnerMd,
+                            height: AppSize.spinnerMd,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           ),
                         ),
                       ] else if (_profileError) ...[
-                        const SizedBox(height: 12),
+                        const SizedBox(height: AppSpacing.md),
                         const InlineErrorText('Greška pri učitavanju profila.'),
                       ],
                     ],
                   ),
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: AppSpacing.xl),
               Row(
                 children: [
                   _buildDeactivateControl(),
@@ -358,12 +341,5 @@ class _UserDetailsDialogState extends State<UserDetailsDialog> {
       onMembershipChanged: (paidUntil) =>
           setState(() => _membershipPaidUntil = paidUntil),
     );
-  }
-
-  static String _initialsFromName(String name) {
-    final parts = name.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty);
-    if (parts.isEmpty) return '?';
-    final chars = parts.take(2).map((p) => p[0].toUpperCase()).toList();
-    return chars.join();
   }
 }

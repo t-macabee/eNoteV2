@@ -5,6 +5,8 @@ public class CourseEnrollmentDto
     public int Id { get; set; }
     public int StudentId { get; set; }
     public string StudentName { get; set; } = null!;
+    public int CourseId { get; set; }
+    public string CourseName { get; set; } = null!;
     public EnrollmentStatus EnrollmentStatus { get; set; }
     public DateTime? PaidUntil { get; set; }
     public DateTime? DecidedAt { get; set; }

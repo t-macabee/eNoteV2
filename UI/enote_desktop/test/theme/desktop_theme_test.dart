@@ -21,6 +21,25 @@ void main() {
     expect(desktopTheme.primaryTextTheme.bodyMedium?.fontFamily, 'Roboto');
   });
 
+  test('desktop type scale matches the table', () {
+    final textTheme = desktopTheme.textTheme;
+
+    void expectRole(TextStyle? style, double fontSize, FontWeight weight) {
+      expect(style?.fontSize, fontSize);
+      expect(style?.fontWeight, weight);
+      expect(style?.fontFamily, 'Roboto');
+    }
+
+    expectRole(textTheme.headlineMedium, 28, FontWeight.w600);
+    expectRole(textTheme.titleLarge, 18, FontWeight.w600);
+    expectRole(textTheme.titleMedium, 16, FontWeight.w600);
+    expectRole(textTheme.titleSmall, 14, FontWeight.w600);
+    expectRole(textTheme.bodyMedium, 14, FontWeight.w400);
+    expectRole(textTheme.bodySmall, 13, FontWeight.w400);
+    expectRole(textTheme.labelMedium, 12, FontWeight.w500);
+    expectRole(textTheme.labelSmall, 11, FontWeight.w500);
+  });
+
   test('w600 text resolves to the SemiBold face', () {
     final semiBold = _textWidth(FontWeight.w600);
     final bold = _textWidth(FontWeight.w700);

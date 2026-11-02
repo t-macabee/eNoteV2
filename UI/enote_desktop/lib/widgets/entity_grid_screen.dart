@@ -5,6 +5,7 @@ import 'package:enote_core/enote_core.dart';
 
 import '../theme/app_theme.dart';
 import 'entity_empty_state.dart';
+import 'status_chip.dart';
 
 typedef EntityGridFetcher<T> = Future<PagedResult<T>> Function(
   int page,
@@ -19,7 +20,7 @@ class EntityGridConfig<T> {
   final String? Function(T item)? subtitleOf;
   final String? Function(T item)? imageUrlOf;
   final IconData placeholderIcon;
-  final String? Function(T item)? badgeOf;
+  final ({String label, StatusTone tone})? Function(T item)? statusOf;
   final void Function(BuildContext context, T item)? onTap;
 
   final List<Widget> Function(BuildContext context, T item)? cardActions;
@@ -50,7 +51,7 @@ class EntityGridConfig<T> {
     this.subtitleOf,
     this.imageUrlOf,
     this.placeholderIcon = Icons.image_outlined,
-    this.badgeOf,
+    this.statusOf,
     this.onTap,
     this.cardActions,
     this.onAdd,
@@ -263,7 +264,7 @@ class _EntityGridCardState<T> extends State<_EntityGridCard<T>> {
     final title = config.titleOf(item);
     final subtitle = config.subtitleOf?.call(item);
     final imageUrl = config.imageUrlOf?.call(item);
-    final badge = config.badgeOf?.call(item);
+    final status = config.statusOf?.call(item);
     final apiClient = context.read<ApiClient>();
 
     return MouseRegion(
@@ -299,86 +300,70 @@ class _EntityGridCardState<T> extends State<_EntityGridCard<T>> {
                   ),
                 ),
               ),
-              Positioned.fill(
-                child: AnimatedOpacity(
-                  opacity: _isHovered ? 1.0 : 0.0,
-                  duration: const Duration(milliseconds: 200),
-                  child: Container(
-                    color: Colors.black54,
-                    padding: const EdgeInsets.all(AppSpacing.md),
-                    child: Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Text(
-                            title,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                            ),
-                            textAlign: TextAlign.center,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          if (subtitle != null && subtitle.isNotEmpty) ...[
-                            const SizedBox(height: AppSpacing.xs),
-                            Text(
-                              subtitle,
-                              style: const TextStyle(
-                                color: Colors.white70,
-                                fontSize: 12.5,
-                              ),
-                              textAlign: TextAlign.center,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
-                          if (config.cardActions != null) ...[
-                            const SizedBox(height: AppSpacing.sm),
-                            ...config.cardActions!(context, item),
-                          ],
-                        ],
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: Container(
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.transparent,
+                        AppTheme.background.withValues(alpha: 0.85),
+                      ],
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        title,
+                        style: Theme.of(context).textTheme.titleSmall
+                            ?.copyWith(color: AppTheme.textPrimary),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      if (subtitle != null && subtitle.isNotEmpty) ...[
+                        const SizedBox(height: AppSpacing.xs),
+                        Text(
+                          subtitle,
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(color: AppTheme.textSecondary),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+              if (config.cardActions != null)
+                Positioned.fill(
+                  child: AnimatedOpacity(
+                    opacity: _isHovered ? 1.0 : 0.0,
+                    duration: const Duration(milliseconds: 200),
+                    child: Container(
+                      color: AppTheme.background.withValues(alpha: 0.6),
+                      padding: const EdgeInsets.all(AppSpacing.md),
+                      child: Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [...config.cardActions!(context, item)],
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
-              if (badge != null && badge.isNotEmpty)
+              if (status != null)
                 Positioned(
                   top: 8,
                   right: 8,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.sm,
-                      vertical: 3,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.75),
-                      borderRadius: BorderRadius.circular(AppRadius.md),
-                      border: Border.all(color: AppTheme.outline),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(
-                          Icons.visibility_outlined,
-                          size: 12,
-                          color: AppTheme.textSecondary,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          badge,
-                          style: const TextStyle(
-                            color: AppTheme.textSecondary,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                  child: StatusChip(label: status.label, tone: status.tone),
                 ),
             ],
           ),
@@ -387,6 +372,12 @@ class _EntityGridCardState<T> extends State<_EntityGridCard<T>> {
     );
   }
 }
+
+({String label, StatusTone tone})? inactiveStatus(bool isActive) =>
+    isActive ? null : (label: 'Neaktivan', tone: StatusTone.neutral);
+
+({String label, StatusTone tone})? unpublishedStatus(bool isPublished) =>
+    isPublished ? null : (label: 'Neobjavljen', tone: StatusTone.warning);
 
 class EntitySectionLabel extends StatelessWidget {
   final String label;
@@ -401,11 +392,8 @@ class EntitySectionLabel extends StatelessWidget {
         children: [
           Text(
             label,
-            style: const TextStyle(
-              color: AppTheme.textPrimary,
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-            ),
+            style: Theme.of(context).textTheme.titleSmall
+                ?.copyWith(color: AppTheme.textPrimary),
           ),
           const SizedBox(width: AppSpacing.md),
           const Expanded(child: Divider(color: AppTheme.outline)),

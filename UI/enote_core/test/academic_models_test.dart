@@ -81,8 +81,11 @@ void main() {
     });
 
     test('true parses as true', () {
-      final dto =
-          CourseDto.fromJson({'id': 1, 'name': 'n', 'isEnrolled': true});
+      final dto = CourseDto.fromJson({
+        'id': 1,
+        'name': 'n',
+        'isEnrolled': true,
+      });
       expect(dto.isEnrolled, isTrue);
     });
   });
@@ -94,8 +97,7 @@ void main() {
     });
 
     test('true parses as true', () {
-      final dto =
-          CourseDto.fromJson({'id': 1, 'name': 'n', 'hasEnded': true});
+      final dto = CourseDto.fromJson({'id': 1, 'name': 'n', 'hasEnded': true});
       expect(dto.hasEnded, isTrue);
     });
   });
@@ -155,8 +157,7 @@ void main() {
     });
 
     test('free course parses isFree true', () {
-      final dto =
-          CourseDto.fromJson({'id': 1, 'name': 'n', 'isFree': true});
+      final dto = CourseDto.fromJson({'id': 1, 'name': 'n', 'isFree': true});
       expect(dto.isFree, isTrue);
     });
   });
@@ -205,6 +206,8 @@ void main() {
         'id': 4,
         'studentId': 8,
         'studentName': 'Drugi Student',
+        'courseId': 2,
+        'courseName': 'Gitara',
         'enrollmentStatus': 'Active',
         'paidUntil': null,
         'decidedAt': null,
@@ -213,6 +216,19 @@ void main() {
       expect(dto.paidUntil, isNull);
       expect(dto.decidedAt, isNull);
       expect(dto.decisionNote, isNull);
+    });
+
+    test('parses courseId and courseName', () {
+      final dto = CourseEnrollmentDto.fromJson({
+        'id': 5,
+        'studentId': 9,
+        'studentName': 'Treći Student',
+        'courseId': 12,
+        'courseName': 'Klavir',
+        'enrollmentStatus': 'Pending',
+      });
+      expect(dto.courseId, 12);
+      expect(dto.courseName, 'Klavir');
     });
   });
 
@@ -223,14 +239,20 @@ void main() {
     });
 
     test('null value defaults to null', () {
-      final dto = LectureDto.fromJson(
-          {'id': 1, 'name': 'n', 'myAttendanceStatus': null});
+      final dto = LectureDto.fromJson({
+        'id': 1,
+        'name': 'n',
+        'myAttendanceStatus': null,
+      });
       expect(dto.myAttendanceStatus, isNull);
     });
 
     test('string value parses', () {
-      final dto = LectureDto.fromJson(
-          {'id': 1, 'name': 'n', 'myAttendanceStatus': 'Present'});
+      final dto = LectureDto.fromJson({
+        'id': 1,
+        'name': 'n',
+        'myAttendanceStatus': 'Present',
+      });
       expect(dto.myAttendanceStatus, AttendanceStatus.present);
     });
   });
@@ -318,22 +340,24 @@ void main() {
 
   group('parseCourseRanking', () {
     test('parses a bare JSON list', () {
-      final entries = parseCourseRanking(jsonEncode([
-        {
-          'rank': 1,
-          'studentId': 7,
-          'studentName': 'Student Enote',
-          'averageGrade': 9.5,
-          'gradedSubmissions': 3,
-        },
-        {
-          'rank': 2,
-          'studentId': 9,
-          'studentName': 'Drugi Student',
-          'averageGrade': null,
-          'gradedSubmissions': 0,
-        },
-      ]));
+      final entries = parseCourseRanking(
+        jsonEncode([
+          {
+            'rank': 1,
+            'studentId': 7,
+            'studentName': 'Student Enote',
+            'averageGrade': 9.5,
+            'gradedSubmissions': 3,
+          },
+          {
+            'rank': 2,
+            'studentId': 9,
+            'studentName': 'Drugi Student',
+            'averageGrade': null,
+            'gradedSubmissions': 0,
+          },
+        ]),
+      );
 
       expect(entries, hasLength(2));
       expect(entries.first.rank, 1);
@@ -348,15 +372,17 @@ void main() {
     });
 
     test('preserves non-ASCII student names', () {
-      final entries = parseCourseRanking(jsonEncode([
-        {
-          'rank': 1,
-          'studentId': 3,
-          'studentName': 'Čedomir Šešić',
-          'averageGrade': 8.0,
-          'gradedSubmissions': 1,
-        },
-      ]));
+      final entries = parseCourseRanking(
+        jsonEncode([
+          {
+            'rank': 1,
+            'studentId': 3,
+            'studentName': 'Čedomir Šešić',
+            'averageGrade': 8.0,
+            'gradedSubmissions': 1,
+          },
+        ]),
+      );
 
       expect(entries.single.studentName, 'Čedomir Šešić');
     });
@@ -408,8 +434,10 @@ void main() {
       expect(requestWithoutFeedback.toJson(), equals({'grade': 85}));
       expect(requestWithoutFeedback.toJson().containsKey('feedback'), isFalse);
 
-      final requestWithFeedback =
-          GradeAssignmentRequest(grade: 85, feedback: 'Odlično');
+      final requestWithFeedback = GradeAssignmentRequest(
+        grade: 85,
+        feedback: 'Odlično',
+      );
       expect(
         requestWithFeedback.toJson(),
         equals({'grade': 85, 'feedback': 'Odlično'}),

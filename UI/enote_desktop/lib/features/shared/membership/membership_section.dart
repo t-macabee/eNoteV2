@@ -129,17 +129,14 @@ class _MembershipSectionState extends State<MembershipSection> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Članarina',
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: AppTheme.textPrimary,
-          ),
+          style: Theme.of(context).textTheme.titleSmall
+              ?.copyWith(color: AppTheme.textPrimary),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: AppSpacing.sm),
         _statusRow(),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppSpacing.md),
         Wrap(
           spacing: 8,
           runSpacing: 8,
@@ -152,7 +149,7 @@ class _MembershipSectionState extends State<MembershipSection> {
             _warningButton(),
           ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppSpacing.md),
         _history(),
       ],
     );
@@ -169,9 +166,12 @@ class _MembershipSectionState extends State<MembershipSection> {
           size: 20,
           color: isActive ? AppTheme.success : AppTheme.error,
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: AppSpacing.md),
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.sm,
+            vertical: 2,
+          ),
           decoration: BoxDecoration(
             color: (isActive ? AppTheme.success : AppTheme.error).withValues(
               alpha: 0.15,
@@ -180,18 +180,18 @@ class _MembershipSectionState extends State<MembershipSection> {
           ),
           child: Text(
             isActive ? 'Aktivna' : 'Istekla / Nema',
-            style: TextStyle(
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(
               color: isActive ? AppTheme.success : AppTheme.error,
               fontWeight: FontWeight.w600,
-              fontSize: 12,
             ),
           ),
         ),
         if (paidUntil != null) ...[
-          const SizedBox(width: 8),
+          const SizedBox(width: AppSpacing.sm),
           Text(
             'do ${formatDate(paidUntil)}',
-            style: const TextStyle(fontSize: 13, color: AppTheme.textPrimary),
+            style: Theme.of(context).textTheme.bodySmall
+                ?.copyWith(color: AppTheme.textPrimary),
           ),
         ],
       ],
@@ -204,8 +204,8 @@ class _MembershipSectionState extends State<MembershipSection> {
       onPressed: !allowed || _isSendingWarning ? null : _sendWarning,
       icon: _isSendingWarning
           ? const SizedBox(
-              width: 16,
-              height: 16,
+              width: AppSize.spinnerSm,
+              height: AppSize.spinnerSm,
               child: CircularProgressIndicator(strokeWidth: 2),
             )
           : const Icon(Icons.notifications_active_outlined, size: 18),
@@ -230,8 +230,8 @@ class _MembershipSectionState extends State<MembershipSection> {
         height: 24,
         child: Center(
           child: SizedBox(
-            width: 20,
-            height: 20,
+            width: AppSize.spinnerMd,
+            height: AppSize.spinnerMd,
             child: CircularProgressIndicator(strokeWidth: 2),
           ),
         ),
@@ -239,9 +239,10 @@ class _MembershipSectionState extends State<MembershipSection> {
     }
 
     if (_payments.isEmpty) {
-      return const Text(
+      return Text(
         'Nema evidentiranih potvrda.',
-        style: TextStyle(fontSize: 13, color: AppTheme.textSecondary),
+        style: Theme.of(context).textTheme.bodySmall
+            ?.copyWith(color: AppTheme.textSecondary),
       );
     }
 
@@ -262,10 +263,8 @@ class _MembershipSectionState extends State<MembershipSection> {
                 'Potvrda ${payment.receiptNumber}',
                 if (payment.note != null) payment.note!,
               ].join(' · '),
-              style: const TextStyle(
-                fontSize: 12,
-                color: AppTheme.textSecondary,
-              ),
+              style: Theme.of(context).textTheme.labelMedium
+                  ?.copyWith(color: AppTheme.textSecondary),
             ),
           ),
         if (_hasMore)

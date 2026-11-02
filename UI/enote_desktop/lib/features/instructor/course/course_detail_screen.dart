@@ -9,6 +9,7 @@ import '../../../widgets/entity_form_scaffold.dart';
 import '../../../widgets/entity_form_sections.dart';
 import '../../../widgets/form_submit_state.dart';
 import '../lecture/lecture_workspace_view.dart';
+import '../enrollment/instructor_enrollment_provider.dart';
 import '../ranking/ranking_provider.dart';
 import 'course_announcements_view.dart';
 import 'course_detail_sections.dart';
@@ -17,14 +18,28 @@ import 'course_form_screen.dart';
 import 'course_provider.dart';
 import 'course_ranking_view.dart';
 
+enum CourseDetailTab { overview, lectures, announcements, enrollments, ranking }
+
 class CourseDetailScreen extends StatefulWidget {
   final CourseDto course;
+  final CourseDetailTab initialTab;
 
-  const CourseDetailScreen({super.key, required this.course});
+  const CourseDetailScreen({
+    super.key,
+    required this.course,
+    this.initialTab = CourseDetailTab.overview,
+  });
 
-  static Future<bool?> open(BuildContext context, CourseDto course) {
+  static Future<bool?> open(
+    BuildContext context,
+    CourseDto course, {
+    CourseDetailTab initialTab = CourseDetailTab.overview,
+  }) {
     return Navigator.of(context).push<bool>(
-      MaterialPageRoute(builder: (_) => CourseDetailScreen(course: course)),
+      MaterialPageRoute(
+        builder: (_) =>
+            CourseDetailScreen(course: course, initialTab: initialTab),
+      ),
     );
   }
 
@@ -39,11 +54,34 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
   bool _isDeleting = false;
   bool _dirty = false;
   bool _popped = false;
+  int? _pendingEnrollments;
 
   @override
   void initState() {
     super.initState();
     _course = widget.course;
+    _loadPendingEnrollments();
+  }
+
+  Future<void> _loadPendingEnrollments() async {
+    try {
+      final count = await context
+          .read<InstructorEnrollmentProvider>()
+          .countPending(courseId: _course.id);
+      if (mounted) setState(() => _pendingEnrollments = count);
+    } catch (_) {
+      if (mounted) setState(() => _pendingEnrollments = null);
+    }
+  }
+
+  void _onEnrollmentMutation() {
+    _refreshCourse();
+    _loadPendingEnrollments();
+  }
+
+  String get _enrollmentsTabLabel {
+    final count = _pendingEnrollments;
+    return count == null || count == 0 ? 'Upisi' : 'Upisi ($count)';
   }
 
   void _pop(bool result) {
@@ -192,6 +230,54 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
     ];
   }
 
+  List<EntityDetailTab> _buildTabs() => [
+    for (final tab in CourseDetailTab.values)
+      switch (tab) {
+        CourseDetailTab.overview => EntityDetailTab(
+          label: 'Pregled',
+          icon: Icons.class_,
+          builder: (_) => _CourseOverview(course: _course),
+        ),
+        CourseDetailTab.lectures => EntityDetailTab(
+          label: 'Predavanja',
+          icon: Icons.event_note,
+          builder: (_) => LectureWorkspaceView(
+            courseId: _course.id,
+            courseName: _course.name,
+            apiClient: context.read<ApiClient>(),
+            onMutation: _refreshCourse,
+          ),
+        ),
+        CourseDetailTab.announcements => EntityDetailTab(
+          label: 'Objave',
+          icon: Icons.campaign,
+          builder: (_) => CourseAnnouncementsView(
+            courseId: _course.id,
+            apiClient: context.read<ApiClient>(),
+          ),
+        ),
+        CourseDetailTab.enrollments => EntityDetailTab(
+          label: _enrollmentsTabLabel,
+          icon: Icons.how_to_reg,
+          builder: (_) => CourseEnrollmentsView(
+            courseId: _course.id,
+            pendingCount: _pendingEnrollments,
+            onMutation: _onEnrollmentMutation,
+          ),
+        ),
+        CourseDetailTab.ranking => EntityDetailTab(
+          label: 'Rangiranje',
+          icon: Icons.leaderboard,
+          builder: (_) => CourseRankingView(
+            courseId: _course.id,
+            reportEndpoint: context.read<RankingProvider>().reportEndpoint(
+              _course.id,
+            ),
+          ),
+        ),
+      },
+  ];
+
   @override
   Widget build(BuildContext context) {
     return PopScope(
@@ -206,51 +292,10 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
       },
       child: EntityDetailPage(
         title: _course.name,
+        initialIndex: widget.initialTab.index,
         onClose: _close,
         actions: _buildActions(),
-        tabs: [
-          EntityDetailTab(
-            label: 'Pregled',
-            icon: Icons.class_,
-            builder: (_) => _CourseOverview(course: _course),
-          ),
-          EntityDetailTab(
-            label: 'Predavanja',
-            icon: Icons.event_note,
-            builder: (_) => LectureWorkspaceView(
-              courseId: _course.id,
-              courseName: _course.name,
-              apiClient: context.read<ApiClient>(),
-              onMutation: _refreshCourse,
-            ),
-          ),
-          EntityDetailTab(
-            label: 'Objave',
-            icon: Icons.campaign,
-            builder: (_) => CourseAnnouncementsView(
-              courseId: _course.id,
-              apiClient: context.read<ApiClient>(),
-            ),
-          ),
-          EntityDetailTab(
-            label: 'Upisi',
-            icon: Icons.how_to_reg,
-            builder: (_) => CourseEnrollmentsView(
-              courseId: _course.id,
-              onMutation: _refreshCourse,
-            ),
-          ),
-          EntityDetailTab(
-            label: 'Rangiranje',
-            icon: Icons.leaderboard,
-            builder: (_) => CourseRankingView(
-              courseId: _course.id,
-              reportEndpoint: context.read<RankingProvider>().reportEndpoint(
-                _course.id,
-              ),
-            ),
-          ),
-        ],
+        tabs: _buildTabs(),
       ),
     );
   }

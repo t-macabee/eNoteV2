@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:enote_core/enote_core.dart';
 
 import '../theme/app_theme.dart';
+import '../widgets/initials_avatar.dart';
 
 enum _UserAction { profile, logout, editStore }
 
@@ -67,12 +68,15 @@ class RoleMenu extends StatelessWidget {
           const _SidebarHeader(),
           Expanded(
             child: ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
               children: [
                 for (final entry in visibleEntries) ...[
                   if (entry.dividerBefore)
                     const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+                      padding: EdgeInsets.symmetric(
+                        vertical: AppSpacing.sm,
+                        horizontal: AppSpacing.sm,
+                      ),
                       child: Divider(color: AppTheme.outline, height: 1),
                     ),
                   _NavRow(
@@ -92,7 +96,12 @@ class RoleMenu extends StatelessWidget {
                   top: BorderSide(color: AppTheme.outline, width: 1),
                 ),
               ),
-              padding: const EdgeInsets.fromLTRB(16, 12, 12, 12),
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.lg,
+                AppSpacing.md,
+                AppSpacing.md,
+                AppSpacing.md,
+              ),
               child: _UserMenu(
                 username: username,
                 topRole: topRole,
@@ -105,18 +114,6 @@ class RoleMenu extends StatelessWidget {
       ),
     );
   }
-
-  static String _initialsFromEmail(String? username) {
-    if (username == null || username.isEmpty) return '?';
-    final name = username.split('@').first;
-    final parts = name.split(RegExp(r'[._\s-]+')).where((p) => p.isNotEmpty);
-    if (parts.isEmpty) return '?';
-    final chars = parts
-        .take(2)
-        .map((p) => p.substring(0, 1).toUpperCase())
-        .toList();
-    return chars.join();
-  }
 }
 
 class _SidebarHeader extends StatelessWidget {
@@ -125,7 +122,12 @@ class _SidebarHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 24, 16, 20),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.xl,
+        AppSpacing.lg,
+        20,
+      ),
       child: Row(
         children: [
           Container(
@@ -142,14 +144,11 @@ class _SidebarHeader extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 10),
-          const Expanded(
+          Expanded(
             child: Text(
               'eNote',
-              style: TextStyle(
-                color: AppTheme.textPrimary,
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-              ),
+              style: Theme.of(context).textTheme.titleMedium
+                  ?.copyWith(color: AppTheme.textPrimary),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
@@ -191,7 +190,7 @@ class _UserMenu extends StatelessWidget {
             child: Row(
               children: [
                 Icon(Icons.person_outline, size: 18),
-                SizedBox(width: 8),
+                SizedBox(width: AppSpacing.sm),
                 Text('Profil'),
               ],
             ),
@@ -202,7 +201,7 @@ class _UserMenu extends StatelessWidget {
             child: Row(
               children: [
                 Icon(Icons.storefront_outlined, size: 18),
-                SizedBox(width: 8),
+                SizedBox(width: AppSpacing.sm),
                 Text('Uredi prodavnicu'),
               ],
             ),
@@ -213,7 +212,7 @@ class _UserMenu extends StatelessWidget {
             child: Row(
               children: [
                 Icon(Icons.logout, size: 18),
-                SizedBox(width: 8),
+                SizedBox(width: AppSpacing.sm),
                 Text('Odjava'),
               ],
             ),
@@ -221,18 +220,7 @@ class _UserMenu extends StatelessWidget {
       ],
       child: Row(
         children: [
-          CircleAvatar(
-            radius: 16,
-            backgroundColor: AppTheme.primary,
-            child: Text(
-              RoleMenu._initialsFromEmail(username),
-              style: const TextStyle(
-                color: AppTheme.onPrimary,
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
+          InitialsAvatar(text: username ?? '', radius: 16),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
@@ -240,21 +228,16 @@ class _UserMenu extends StatelessWidget {
               children: [
                 Text(
                   username ?? '',
-                  style: const TextStyle(
-                    color: AppTheme.textPrimary,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                  ),
+                  style: Theme.of(context).textTheme.bodySmall
+                      ?.copyWith(color: AppTheme.textPrimary),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
                 if (topRole != null)
                   Text(
                     topRole!,
-                    style: const TextStyle(
-                      color: AppTheme.textSecondary,
-                      fontSize: 11,
-                    ),
+                    style: Theme.of(context).textTheme.labelMedium
+                        ?.copyWith(color: AppTheme.textSecondary),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -290,7 +273,7 @@ class _NavRow extends StatelessWidget {
     final color = selected ? AppTheme.primary : AppTheme.textSecondary;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
       child: Material(
         color: selected
             ? AppTheme.primary.withValues(alpha: 0.12)
@@ -316,19 +299,18 @@ class _NavRow extends StatelessWidget {
                 ),
               Padding(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
+                  horizontal: AppSpacing.md,
                   vertical: 10,
                 ),
                 child: Row(
                   children: [
                     Icon(icon, size: 20, color: color),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: AppSpacing.md),
                     Expanded(
                       child: Text(
                         label,
-                        style: TextStyle(
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: color,
-                          fontSize: 13.5,
                           fontWeight: selected
                               ? FontWeight.w600
                               : FontWeight.w400,

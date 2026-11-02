@@ -12,6 +12,7 @@ import '../features/admin/users/user_grid_screen.dart';
 import '../features/instructor/course/course_list_screen.dart';
 import '../features/instructor/course/course_catalog_screen.dart';
 import '../features/instructor/dashboard/instructor_dashboard_screen.dart';
+import '../features/instructor/enrollment/instructor_enrollment_list_screen.dart';
 import '../features/instructor/student/instructor_student_list_screen.dart';
 import '../features/instructor/student_directory/student_directory_screen.dart';
 import '../features/shared/announcement/announcement_list_screen.dart';
@@ -22,6 +23,8 @@ import '../features/store_employee/rental/rental_list_screen.dart';
 import '../features/store_employee/store/shop_store_screen.dart';
 import '../widgets/entity_list_screen.dart';
 import 'role_menu.dart';
+
+const kRequestsEntryLabel = 'Zahtjevi';
 
 const kRoleMenuEntries = <RoleMenuEntry>[
   RoleMenuEntry(
@@ -75,6 +78,12 @@ const kRoleMenuEntries = <RoleMenuEntry>[
     allowedRoles: [UserRole.instructor],
   ),
   RoleMenuEntry(
+    icon: Icons.assignment_outlined,
+    label: kRequestsEntryLabel,
+    screenBuilder: _buildInstructorEnrollmentList,
+    allowedRoles: [UserRole.instructor],
+  ),
+  RoleMenuEntry(
     icon: Icons.menu_book_outlined,
     label: 'Katalog kurseva',
     screenBuilder: _buildCourseCatalog,
@@ -112,7 +121,7 @@ const kRoleMenuEntries = <RoleMenuEntry>[
   ),
   RoleMenuEntry(
     icon: Icons.assignment_outlined,
-    label: 'Zahtjevi',
+    label: kRequestsEntryLabel,
     screenBuilder: _buildRentalList,
     allowedRoles: [UserRole.storeEmployee],
   ),
@@ -146,6 +155,10 @@ Widget _buildCourseList(BuildContext context) {
 
 Widget _buildCourseCatalog(BuildContext context) {
   return const CourseCatalogScreen();
+}
+
+Widget _buildInstructorEnrollmentList(BuildContext context) {
+  return const InstructorEnrollmentListScreen();
 }
 
 Widget _buildInstructorStudentList(BuildContext context) {

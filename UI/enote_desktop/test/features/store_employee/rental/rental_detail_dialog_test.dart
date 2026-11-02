@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:enote_core/enote_core.dart';
 import 'package:enote_desktop/features/store_employee/rental/rental_detail_dialog.dart';
 import 'package:enote_desktop/features/store_employee/rental/rental_provider.dart';
+import 'package:enote_desktop/theme/app_theme.dart';
 
 import '../../../helpers.dart';
 
@@ -164,6 +165,39 @@ void main() {
     expect(find.textContaining('#'), findsNothing);
     expect(find.text('Odobreno'), findsOneWidget);
     expect(find.text('Odbijeno'), findsOneWidget);
+  });
+
+  testWidgets('rental detail placeholder uses the dark theme colors', (
+    tester,
+  ) async {
+    await _pumpDialog(tester, {
+      'id': 5,
+      'instrumentId': 1,
+      'instrumentModel': 'Fender',
+      'instrumentType': 'Gitara',
+      'storeName': 'Shop',
+      'rentalStatus': 'Active',
+      'requestedAt': DateTime.now().toIso8601String(),
+      'fee': 10.0,
+      'isPaid': false,
+    });
+
+    final placeholder = find.byWidgetPredicate(
+      (widget) => widget is Container && widget.color == AppTheme.background,
+    );
+
+    expect(placeholder, findsOneWidget);
+    expect(
+      tester
+          .widget<Icon>(
+            find.descendant(
+              of: placeholder,
+              matching: find.byIcon(Icons.piano),
+            ),
+          )
+          .color,
+      AppTheme.textTertiary,
+    );
   });
 
   testWidgets('the close button closes the dialog', (tester) async {

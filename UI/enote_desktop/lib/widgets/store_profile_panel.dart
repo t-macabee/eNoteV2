@@ -47,7 +47,7 @@ class StoreProfilePanel extends StatelessWidget {
     return Container(
       color: AppTheme.surfaceContainer,
       child: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -73,15 +73,15 @@ class StoreProfilePanel extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.lg),
             Text(
               store.storeName,
               style: Theme.of(context).textTheme.titleLarge
                   ?.copyWith(fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.lg),
             const Divider(),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.sm),
             DetailRow(
               icon: Icons.location_on_outlined,
               label: 'Adresa',
@@ -98,7 +98,7 @@ class StoreProfilePanel extends StatelessWidget {
               value: workHoursText,
             ),
             if (showActions) ...[
-              const SizedBox(height: 24),
+              const SizedBox(height: AppSpacing.xl),
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton.icon(
@@ -107,7 +107,7 @@ class StoreProfilePanel extends StatelessWidget {
                   label: const Text('Uredi'),
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.lg),
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton.icon(

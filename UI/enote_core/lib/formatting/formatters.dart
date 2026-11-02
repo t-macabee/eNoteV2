@@ -31,10 +31,29 @@ String formatDayTime(DateTime date) {
   return '$day.$month. $hour:$minute';
 }
 
-String formatDisplayName(String? firstName, String? lastName, String? username) {
+String formatDisplayName(
+  String? firstName,
+  String? lastName,
+  String? username,
+) {
   final name = '${firstName ?? ''} ${lastName ?? ''}'.trim();
   if (name.isNotEmpty) return name;
   return username ?? '-';
+}
+
+String initialsOf(String text) {
+  final value = text.split('@').first.trim();
+  if (value.isEmpty) return '?';
+  final parts = value.contains(RegExp(r'\s'))
+      ? value.split(RegExp(r'\s+'))
+      : value.split(RegExp(r'[._-]+'));
+  final letters = parts
+      .where((part) => part.isNotEmpty)
+      .take(2)
+      .map((part) => part[0].toUpperCase())
+      .toList();
+  if (letters.isEmpty) return '?';
+  return letters.join();
 }
 
 String formatKM(double? value, {String currency = 'KM'}) {
@@ -67,7 +86,11 @@ String truncate(String text, int maxLength) {
   return '${text.substring(0, maxLength)}…';
 }
 
-String formatPaymentDetail(int amountCents, DateTime? paidAt, {String currency = 'KM'}) {
+String formatPaymentDetail(
+  int amountCents,
+  DateTime? paidAt, {
+  String currency = 'KM',
+}) {
   final parts = <String>[formatKM(amountCents / 100, currency: currency)];
   if (paidAt != null) parts.add(formatDateTime(paidAt));
   return parts.join(' · ');
