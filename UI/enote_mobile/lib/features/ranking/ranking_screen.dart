@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 import 'package:enote_core/enote_core.dart';
 
 import '../../session/session_controller.dart';
-import '../../theme/app_theme.dart';
 import '../../widgets/async_state_view.dart';
 import 'ranking_provider.dart';
 
@@ -30,11 +29,7 @@ class _RankingScreenState extends State<RankingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final profileId = context
-        .watch<SessionController>()
-        .profile
-        ?.profile
-        .id;
+    final profileId = context.watch<SessionController>().profile?.profile.id;
     return Scaffold(
       appBar: AppBar(title: const Text('Rang lista – 15 najboljih')),
       body: FutureBuilder<List<CourseRankingEntryDto>>(
@@ -47,36 +42,31 @@ class _RankingScreenState extends State<RankingScreen> {
             return AsyncStateView(
               error: snapshot.error,
               onRetry: () => setState(() {
-                _rankingFuture = context
-                    .read<RankingProvider>()
-                    .getForCourse(widget.courseId);
+                _rankingFuture = context.read<RankingProvider>().getForCourse(
+                  widget.courseId,
+                );
               }),
               child: const SizedBox.shrink(),
             );
           }
           final ranking = snapshot.data ?? [];
           if (ranking.isEmpty) {
-            return const Center(
-              child: Text('Još nema rangiranih studenata.'),
-            );
+            return const Center(child: Text('Još nema rangiranih studenata.'));
           }
           return ListView.separated(
             itemCount: ranking.length,
             separatorBuilder: (_, index) =>
                 ranking[index + 1].rank > ranking[index].rank + 1
-                    ? const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 4),
-                        child: Center(child: Text('…')),
-                      )
-                    : const Divider(height: 1),
+                ? const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 4),
+                    child: Center(child: Text('…')),
+                  )
+                : const Divider(height: 1),
             itemBuilder: (context, index) {
               final entry = ranking[index];
-              final isMine =
-                  profileId != null && entry.studentId == profileId;
+              final isMine = profileId != null && entry.studentId == profileId;
               return ListTile(
-                tileColor: isMine
-                    ? AppTheme.primary.withValues(alpha: 0.15)
-                    : null,
+                tileColor: isMine ? StatusTone.accent.background : null,
                 leading: Text(
                   '${entry.rank}',
                   style: const TextStyle(fontWeight: FontWeight.bold),

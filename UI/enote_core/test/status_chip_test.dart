@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:enote_core/enote_core.dart';
-import 'package:enote_desktop/theme/app_theme.dart';
-import 'package:enote_desktop/widgets/status_chip.dart';
+import 'package:enote_core/theme/app_theme.dart';
 
 void main() {
   testWidgets('StatusChip shows its label', (tester) async {
@@ -34,7 +33,7 @@ void main() {
   testWidgets('StatusChip text uses the labelMedium size', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
-        theme: desktopTheme,
+        theme: AppTheme.dark,
         home: const Scaffold(
           body: StatusChip(label: 'Aktivno', tone: StatusTone.success),
         ),
@@ -42,6 +41,10 @@ void main() {
     );
 
     final label = tester.widget<Text>(find.text('Aktivno'));
-    expect(label.style?.fontSize, desktopTheme.textTheme.labelMedium?.fontSize);
+    final context = tester.element(find.byType(StatusChip));
+    expect(
+      label.style?.fontSize,
+      Theme.of(context).textTheme.labelMedium?.fontSize,
+    );
   });
 }

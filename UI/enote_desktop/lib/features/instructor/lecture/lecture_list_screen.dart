@@ -5,8 +5,6 @@ import 'package:enote_core/enote_core.dart';
 
 import '../../../widgets/entity_form_scaffold.dart';
 import '../../../widgets/entity_list_screen.dart';
-import '../../../widgets/status_chip.dart';
-import '../../../widgets/status_filter_tabs.dart';
 import 'lecture_detail_dialog.dart';
 import 'lecture_form_screen.dart';
 import 'lecture_provider.dart';

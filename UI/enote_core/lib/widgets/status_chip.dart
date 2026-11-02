@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:enote_core/enote_core.dart';
+
+import '../theme/app_tokens.dart';
 
 class StatusChip extends StatelessWidget {
   final String label;

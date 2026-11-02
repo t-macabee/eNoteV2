@@ -219,7 +219,7 @@ class _Harness {
         ),
       ],
       child: MaterialApp(
-        theme: AppTheme.dark,
+        theme: mobileTheme,
         onGenerateRoute: AppRouter.onGenerateRoute,
         home: const CourseDetailScreen(courseId: 2),
       ),
@@ -424,7 +424,10 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.textContaining('Pristup sadržaju ostaje do'), findsOneWidget);
-    expect(find.textContaining('Uplaćena školarina se ne vraća.'), findsOneWidget);
+    expect(
+      find.textContaining('Uplaćena školarina se ne vraća.'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('a course that is not enrolled disables Rang lista', (
@@ -474,9 +477,7 @@ void main() {
     tester,
   ) async {
     final harness = _Harness();
-    await harness.bootstrap(
-      paidUntil: DateTime.utc(2026, 9, 8),
-    );
+    await harness.bootstrap(paidUntil: DateTime.utc(2026, 9, 8));
     await tester.pumpWidget(harness.app());
     await tester.pumpAndSettle();
 
@@ -516,10 +517,7 @@ void main() {
     await tester.pumpWidget(harness.app());
     await tester.pumpAndSettle();
 
-    expect(
-      find.text('Školarina je istekla 01.01.2020.'),
-      findsOneWidget,
-    );
+    expect(find.text('Školarina je istekla 01.01.2020.'), findsOneWidget);
     expect(find.widgetWithText(TextButton, 'Obnovi'), findsOneWidget);
   });
 
@@ -540,9 +538,7 @@ void main() {
     expect(find.text('Školarina nije plaćena.'), findsNothing);
   });
 
-  testWidgets('a free enrolled course shows no tuition banner', (
-    tester,
-  ) async {
+  testWidgets('a free enrolled course shows no tuition banner', (tester) async {
     final harness = _Harness();
     await harness.bootstrap(
       enrollmentStatus: 'Active',
@@ -583,7 +579,7 @@ void main() {
       ),
       1,
     );
-    expect(find.text('Puni povrat'), findsOneWidget);
+    expect(find.text('Vraćeno'), findsOneWidget);
     expect(find.textContaining('Povrat: 800.00 KM'), findsOneWidget);
     expect(
       find.textContaining('Pristup: 09.09.2026. – 09.10.2026.'),
@@ -649,6 +645,21 @@ void main() {
     expect(button.onPressed, isNull);
   });
 
+  testWidgets('completed course banner uses the success tone', (tester) async {
+    final harness = _Harness();
+    await harness.bootstrap(enrollmentStatus: 'Completed');
+    await tester.pumpWidget(harness.app());
+    await tester.pumpAndSettle();
+
+    final banner = tester.widget<StatusBanner>(
+      find.ancestor(
+        of: find.text('Kurs ste završili. Ponovni upis nije moguć.'),
+        matching: find.byType(StatusBanner),
+      ),
+    );
+    expect(banner.tone, StatusTone.success);
+  });
+
   testWidgets('an ended course shows the reason and disables Upiši se', (
     tester,
   ) async {
@@ -657,10 +668,7 @@ void main() {
     await tester.pumpWidget(harness.app());
     await tester.pumpAndSettle();
 
-    expect(
-      find.text('Kurs je završen. Upis više nije moguć.'),
-      findsOneWidget,
-    );
+    expect(find.text('Kurs je završen. Upis više nije moguć.'), findsOneWidget);
     final button = tester.widget<FilledButton>(
       find.widgetWithText(FilledButton, 'Upiši se'),
     );

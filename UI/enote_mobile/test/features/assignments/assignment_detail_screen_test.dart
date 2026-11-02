@@ -93,7 +93,7 @@ class _Harness {
         ),
       ],
       child: MaterialApp(
-        theme: AppTheme.dark,
+        theme: mobileTheme,
         home: AssignmentDetailScreen(
           assignmentId: 5,
           courseId: 2,
@@ -112,7 +112,7 @@ class _Harness {
         ),
       ],
       child: MaterialApp(
-        theme: AppTheme.dark,
+        theme: mobileTheme,
         home: const AssignmentDetailScreen(assignmentId: 5),
       ),
     );
@@ -139,10 +139,7 @@ void main() {
 
     expect(find.text('Akordi — vježba 1'), findsOneWidget);
     expect(find.text('Odaberi datoteku'), findsOneWidget);
-    expect(
-      find.text('PDF, JPG ili PNG · do 5 MB'),
-      findsOneWidget,
-    );
+    expect(find.text('PDF, JPG ili PNG · do 5 MB'), findsOneWidget);
     final button = tester.widget<FilledButton>(
       find.widgetWithText(FilledButton, 'Predaj zadatak'),
     );
@@ -157,10 +154,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Rok istekao'), findsOneWidget);
-    expect(
-      find.text('Rok za predaju zadatka je istekao.'),
-      findsOneWidget,
-    );
+    expect(find.text('Rok za predaju zadatka je istekao.'), findsOneWidget);
     expect(find.text('Odaberi datoteku'), findsNothing);
     final button = tester.widget<FilledButton>(
       find.widgetWithText(FilledButton, 'Predaj zadatak'),
@@ -185,10 +179,7 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('Odaberi datoteku'), findsNothing);
-    expect(
-      find.widgetWithText(FilledButton, 'Predaj zadatak'),
-      findsNothing,
-    );
+    expect(find.widgetWithText(FilledButton, 'Predaj zadatak'), findsNothing);
   });
 
   testWidgets('state C shows the numeral and the ranking shortcut', (
@@ -207,9 +198,7 @@ void main() {
     expect(find.text('Komentar instruktora'), findsNothing);
   });
 
-  testWidgets('state C shows the instructor comment', (
-    tester,
-  ) async {
+  testWidgets('state C shows the instructor comment', (tester) async {
     final harness = _Harness(
       dueAt: _futureDueAt,
       submission: _submissionJson(grade: 87, feedback: 'Odlično'),
@@ -251,7 +240,10 @@ void main() {
     );
     expect(button.onPressed, isNull);
     expect(
-      countRequests(harness.client, 'POST /api/v1/student/assignments/5/submit'),
+      countRequests(
+        harness.client,
+        'POST /api/v1/student/assignments/5/submit',
+      ),
       0,
     );
   });
@@ -266,10 +258,7 @@ void main() {
     await tester.tap(find.text('Odaberi datoteku'));
     await tester.pumpAndSettle();
 
-    expect(
-      find.text('Dozvoljeni formati: PDF, JPG, PNG.'),
-      findsOneWidget,
-    );
+    expect(find.text('Dozvoljeni formati: PDF, JPG, PNG.'), findsOneWidget);
     final button = tester.widget<FilledButton>(
       find.widgetWithText(FilledButton, 'Predaj zadatak'),
     );
@@ -280,9 +269,7 @@ void main() {
     tester,
   ) async {
     final harness = _Harness(dueAt: _futureDueAt);
-    await tester.pumpWidget(
-      harness.app(pickFiles: () => _pdfOf(1024)),
-    );
+    await tester.pumpWidget(harness.app(pickFiles: () => _pdfOf(1024)));
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Odaberi datoteku'));
@@ -306,7 +293,10 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(
-      countRequests(harness.client, 'POST /api/v1/student/assignments/5/submit'),
+      countRequests(
+        harness.client,
+        'POST /api/v1/student/assignments/5/submit',
+      ),
       1,
     );
     expect(find.text('Zadatak je predan.'), findsOneWidget);

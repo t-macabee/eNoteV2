@@ -139,7 +139,7 @@ class _Harness {
         ),
       ],
       child: MaterialApp(
-        theme: AppTheme.dark,
+        theme: mobileTheme,
         onGenerateRoute: AppRouter.onGenerateRoute,
         home: RootShell(
           key: RootShell.shellKey,

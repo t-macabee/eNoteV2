@@ -7,7 +7,6 @@ import 'package:enote_desktop/features/instructor/lecture/lecture_detail_dialog.
 import 'package:enote_desktop/features/instructor/lecture/lecture_list_screen.dart';
 import 'package:enote_desktop/features/instructor/lecture/lecture_provider.dart';
 import 'package:enote_desktop/widgets/entity_list_config.dart';
-import 'package:enote_desktop/widgets/status_chip.dart';
 
 import '../../../helpers.dart';
 

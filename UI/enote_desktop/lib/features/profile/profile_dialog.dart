@@ -4,7 +4,6 @@ import 'package:enote_core/enote_core.dart';
 
 import '../../theme/app_theme.dart';
 import '../../widgets/entity_form_scaffold.dart';
-import '../../widgets/initials_avatar.dart';
 import 'change_password_dialog.dart';
 import 'edit_profile_dialog.dart';
 import 'profile_provider.dart';

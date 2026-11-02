@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 import 'package:enote_core/enote_core.dart';
 
 import '../../../widgets/entity_list_screen.dart';
-import '../../../widgets/status_chip.dart';
 import '../../../widgets/workflow_actions.dart';
 import 'lecture_provider.dart';
 

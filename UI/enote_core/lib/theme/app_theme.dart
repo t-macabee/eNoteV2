@@ -10,6 +10,7 @@ class AppTheme {
   static const Color outline = Color(0xFF2E2E34);
   static const Color primary = Color(0xFFE8863F);
   static const Color onPrimary = Colors.white;
+  static const Color onError = Colors.white;
   static const Color textPrimary = Color(0xFFF5F5F6);
   static const Color textSecondary = Color(0xFF9CA3AF);
   static const Color textTertiary = Color(0xFF6B7280);
@@ -36,6 +37,7 @@ class AppTheme {
           surfaceContainerHigh: surfaceContainer,
           surfaceContainerHighest: surfaceContainer,
           error: error,
+          onError: onError,
         );
 
     final baseTextTheme = ThemeData(

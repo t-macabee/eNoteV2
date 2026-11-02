@@ -143,7 +143,7 @@ class _Harness {
   Widget inboxApp() {
     return providers(
       MaterialApp(
-        theme: AppTheme.dark,
+        theme: mobileTheme,
         home: const NotificationInboxScreen(),
       ),
     );
@@ -153,7 +153,7 @@ class _Harness {
     return providers(
       MaterialApp(
         navigatorKey: navigatorKey,
-        theme: AppTheme.dark,
+        theme: mobileTheme,
         onGenerateRoute: AppRouter.onGenerateRoute,
         home: RootShell(
           key: RootShell.shellKey,

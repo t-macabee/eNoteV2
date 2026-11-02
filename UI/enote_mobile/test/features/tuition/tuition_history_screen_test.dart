@@ -72,7 +72,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Djelomični povrat'), findsOneWidget);
+    expect(find.text('Djelimično vraćeno'), findsOneWidget);
     expect(find.textContaining('Povrat: 300.00 KM'), findsOneWidget);
     expect(find.text('Stranica 1 od 2'), findsOneWidget);
 
@@ -83,9 +83,7 @@ void main() {
     expect(find.text('800.00 KM'), findsOneWidget);
     expect(
       client.requests
-          .where(
-            (r) => r.url.path.endsWith('/tuition/history'),
-          )
+          .where((r) => r.url.path.endsWith('/tuition/history'))
           .map((r) => r.url.queryParameters['page']),
       ['1', '2'],
     );

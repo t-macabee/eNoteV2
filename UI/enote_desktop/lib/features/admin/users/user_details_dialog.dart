@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 import 'package:enote_core/enote_core.dart';
 
 import '../../../theme/app_theme.dart';
-import '../../../widgets/initials_avatar.dart';
 import '../../../widgets/inline_error_text.dart';
 import '../../shared/membership/membership_section.dart';
 import '../student/student_provider.dart';

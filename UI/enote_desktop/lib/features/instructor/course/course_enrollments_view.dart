@@ -4,8 +4,6 @@ import 'package:provider/provider.dart';
 import 'package:enote_core/enote_core.dart';
 
 import '../../../widgets/entity_list_screen.dart';
-import '../../../widgets/status_chip.dart';
-import '../../../widgets/status_filter_tabs.dart';
 import '../../../widgets/workflow_actions.dart';
 import '../enrollment/enrollment_actions.dart';
 import '../enrollment/instructor_enrollment_provider.dart';

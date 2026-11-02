@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:enote_desktop/widgets/initials_avatar.dart';
+import 'package:enote_core/enote_core.dart';
 
 void main() {
   testWidgets('InitialsAvatar scales the font with the radius', (tester) async {

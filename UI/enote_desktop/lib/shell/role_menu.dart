@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 import 'package:enote_core/enote_core.dart';
 
 import '../theme/app_theme.dart';
-import '../widgets/initials_avatar.dart';
 
 enum _UserAction { profile, logout, editStore }
 

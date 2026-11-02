@@ -5,6 +5,7 @@ import 'app_theme.dart';
 final class AppSpacing {
   const AppSpacing._();
 
+  static const double xxs = 2;
   static const double xs = 4;
   static const double sm = 8;
   static const double md = 12;
@@ -19,6 +20,7 @@ final class AppRadius {
   static const double sm = 4;
   static const double md = 8;
   static const double lg = 12;
+  static const double xl = 16;
   static const double pill = 999;
 }
 
@@ -36,6 +38,11 @@ final class AppSize {
   static const double statCardWidth = 240;
   static const double spinnerSm = 16;
   static const double spinnerMd = 20;
+  static const double listThumbnail = 56;
+  static const double headerThumbnail = 72;
+  static const double stateIcon = 48;
+  static const double placeholderIcon = 32;
+  static const double avatarRadiusLg = 48;
 }
 
 enum StatusTone { neutral, info, success, warning, danger, accent }

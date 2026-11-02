@@ -5,8 +5,6 @@ import 'package:enote_core/enote_core.dart';
 
 import '../../../widgets/dashboard_count.dart';
 import '../../../widgets/entity_list_screen.dart';
-import '../../../widgets/status_chip.dart';
-import '../../../widgets/status_filter_tabs.dart';
 import 'submission_provider.dart';
 
 class SubmissionListScreen extends StatefulWidget {

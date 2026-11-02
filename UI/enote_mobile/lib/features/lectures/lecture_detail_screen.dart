@@ -5,7 +5,6 @@ import 'package:enote_core/enote_core.dart';
 
 import '../../shell/routes.dart';
 import '../../widgets/async_state_view.dart';
-import '../../widgets/blocked_reason_banner.dart';
 import '../../widgets/labeled_value.dart';
 import 'lecture_labels.dart';
 import 'lecture_provider.dart';
@@ -88,9 +87,7 @@ class _LectureDetailScreenState extends State<LectureDetailScreen> {
         isLoading: _loading && lecture == null,
         error: lecture == null ? _error : null,
         onRetry: _load,
-        child: lecture == null
-            ? const SizedBox.shrink()
-            : _body(lecture),
+        child: lecture == null ? const SizedBox.shrink() : _body(lecture),
       ),
     );
   }
@@ -103,19 +100,13 @@ class _LectureDetailScreenState extends State<LectureDetailScreen> {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.all(16),
         children: [
-          Text(
-            lecture.name,
-            style: Theme.of(context).textTheme.headlineSmall,
-          ),
+          Text(lecture.name, style: Theme.of(context).textTheme.headlineSmall),
           const SizedBox(height: 12),
           LabeledValue(
             label: 'Vrijeme',
             value: formatDateTime(lecture.lectureTime),
           ),
-          LabeledValue(
-            label: 'Trajanje',
-            value: '${lecture.duration} min',
-          ),
+          LabeledValue(label: 'Trajanje', value: '${lecture.duration} min'),
           LabeledValue(label: 'Lokacija', value: lecture.location),
           LabeledValue(
             label: 'Tip',
@@ -138,15 +129,16 @@ class _LectureDetailScreenState extends State<LectureDetailScreen> {
                 '${lecture.attendeeCount}/${lecture.capacity?.toString() ?? '∞'}',
           ),
           const SizedBox(height: 16),
-          Text(
-            rsvpStateLabel(lecture.myAttendanceStatus),
-            style: Theme.of(context).textTheme.titleMedium,
+          StatusChip(
+            label: rsvpStateLabel(lecture.myAttendanceStatus),
+            tone: rsvpStateTone(lecture.myAttendanceStatus),
           ),
           if (blockedReason != null) ...[
             const SizedBox(height: 8),
-            BlockedReasonBanner(
+            StatusBanner(
               icon: Icons.info_outline,
-              reason: blockedReason,
+              message: blockedReason,
+              tone: StatusTone.neutral,
             ),
           ],
           const SizedBox(height: 8),
@@ -196,8 +188,7 @@ class _LectureDetailScreenState extends State<LectureDetailScreen> {
       return 'Prijave su zatvorene jer je predavanje počelo.';
     }
     final capacity = lecture.capacity;
-    final confirmed =
-        lecture.myAttendanceStatus == AttendanceStatus.present;
+    final confirmed = lecture.myAttendanceStatus == AttendanceStatus.present;
     if (capacity != null && lecture.attendeeCount >= capacity && !confirmed) {
       return 'Predavanje je popunjeno.';
     }

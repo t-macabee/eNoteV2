@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 
 import '../api/api_error_mapper.dart';
-import '../formatting/formatters.dart';
 import '../models/communication/communication_models.dart';
 import '../notifications/notification_controller.dart';
+import '../theme/app_tokens.dart';
 import 'error_banner.dart';
+import 'notification_tile.dart';
+
 class NotificationListView extends StatefulWidget {
   final NotificationController controller;
 
@@ -15,6 +17,8 @@ class NotificationListView extends StatefulWidget {
 }
 
 class _NotificationListViewState extends State<NotificationListView> {
+  static const double _stateHeight = 160;
+
   @override
   void initState() {
     super.initState();
@@ -38,19 +42,19 @@ class _NotificationListViewState extends State<NotificationListView> {
 
         if (controller.isLoading && controller.notifications.isEmpty) {
           return const SizedBox(
-            height: 160,
+            height: _stateHeight,
             child: Center(child: CircularProgressIndicator()),
           );
         }
         if (controller.error != null && controller.notifications.isEmpty) {
           return SizedBox(
-            height: 160,
+            height: _stateHeight,
             child: Center(child: ErrorBanner(message: controller.error!)),
           );
         }
         if (controller.notifications.isEmpty) {
           return const SizedBox(
-            height: 160,
+            height: _stateHeight,
             child: Center(child: Text('Nema obavještenja.')),
           );
         }
@@ -60,13 +64,13 @@ class _NotificationListViewState extends State<NotificationListView> {
           child: ListView.separated(
             shrinkWrap: true,
             physics: const AlwaysScrollableScrollPhysics(),
-            itemCount: controller.notifications.length +
-                (controller.hasMore ? 1 : 0),
+            itemCount:
+                controller.notifications.length + (controller.hasMore ? 1 : 0),
             separatorBuilder: (_, _) => const Divider(height: 1),
             itemBuilder: (context, index) {
               if (index >= controller.notifications.length) {
                 return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
                   child: Center(
                     child: OutlinedButton(
                       onPressed: () => _loadMore(controller),
@@ -84,17 +88,8 @@ class _NotificationListViewState extends State<NotificationListView> {
   }
 
   Widget _buildTile(NotificationDto item) {
-    return ListTile(
-      leading: Icon(
-        item.isRead ? Icons.notifications_none : Icons.notifications_active,
-        color: item.isRead ? null : Theme.of(context).colorScheme.primary,
-      ),
-      title: Text(
-        item.title,
-        style: TextStyle(fontWeight: item.isRead ? FontWeight.normal : FontWeight.bold),
-      ),
-      subtitle: Text(item.body),
-      trailing: Text(formatDayTime(item.createdAt)),
+    return NotificationTile(
+      notification: item,
       onTap: item.isRead ? null : () => widget.controller.markRead(item.id),
     );
   }

@@ -5,6 +5,8 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+export 'app_fonts.dart';
+
 String base64UrlSegment(String input) =>
     base64Url.encode(utf8.encode(input)).replaceAll('=', '');
 
@@ -73,6 +75,8 @@ class ScriptedClient extends http.BaseClient {
 }
 
 class RecordingHttpClient extends ScriptedClient {
-  RecordingHttpClient({int statusCode = 200, Map<String, dynamic> body = const {}})
-      : super((_) => jsonResponse(body, statusCode));
+  RecordingHttpClient({
+    int statusCode = 200,
+    Map<String, dynamic> body = const {},
+  }) : super((_) => jsonResponse(body, statusCode));
 }

@@ -5,7 +5,6 @@ import 'package:provider/provider.dart';
 import 'package:enote_core/enote_core.dart';
 import 'package:enote_desktop/features/instructor/assignment_submission/submission_list_screen.dart';
 import 'package:enote_desktop/features/instructor/assignment_submission/submission_provider.dart';
-import 'package:enote_desktop/widgets/status_chip.dart';
 
 import '../../../helpers.dart';
 

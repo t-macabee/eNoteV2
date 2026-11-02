@@ -69,7 +69,7 @@ class _Harness {
           create: (_) => ProfileProvider(apiClient: apiClient),
         ),
       ],
-      child: MaterialApp(theme: AppTheme.dark, home: home),
+      child: MaterialApp(theme: mobileTheme, home: home),
     );
   }
 }

@@ -87,7 +87,10 @@ Future<void> _pumpList(
           value: RentalProvider(apiClient: apiClient),
         ),
       ],
-      child: const MaterialApp(home: Scaffold(body: RentalListScreen())),
+      child: MaterialApp(
+        theme: desktopTheme,
+        home: const Scaffold(body: RentalListScreen()),
+      ),
     ),
   );
   await tester.pump();

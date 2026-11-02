@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'package:enote_core/enote_core.dart';
-
+import '../formatting/formatters.dart';
 import '../theme/app_theme.dart';
 
 class InitialsAvatar extends StatelessWidget {

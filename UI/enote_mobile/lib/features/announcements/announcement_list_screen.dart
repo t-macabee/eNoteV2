@@ -71,16 +71,18 @@ class _AnnouncementRow extends StatelessWidget {
         context.read<ApiClient>(),
         size: 48,
         borderRadius: 8,
-        placeholder: () => Icon(
-          isCourse ? Icons.school_outlined : Icons.storefront_outlined,
-        ),
+        placeholder: () =>
+            Icon(isCourse ? Icons.school_outlined : Icons.storefront_outlined),
       ),
       title: Text(announcement.title),
       subtitle: Text(
         '${orDash(announcement.courseName ?? announcement.storeName)} · '
         '${formatDate(announcement.publishedAt)}',
       ),
-      trailing: Chip(label: Text(isCourse ? 'Kurs' : 'Prodavnica')),
+      trailing: StatusChip(
+        label: isCourse ? 'Kurs' : 'Prodavnica',
+        tone: StatusTone.neutral,
+      ),
       onTap: () => Navigator.of(context).pushNamed(
         AppRoutes.announcementDetail,
         arguments: AnnouncementDetailArgs(announcement.id),

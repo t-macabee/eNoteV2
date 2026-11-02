@@ -5,7 +5,6 @@ import 'package:provider/provider.dart';
 import 'package:enote_core/enote_core.dart';
 import 'package:enote_desktop/widgets/entity_empty_state.dart';
 import 'package:enote_desktop/widgets/entity_grid_screen.dart';
-import 'package:enote_desktop/widgets/status_chip.dart';
 
 import '../helpers.dart';
 

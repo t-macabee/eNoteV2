@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 import 'package:enote_core/enote_core.dart';
 
 import '../../../widgets/entity_grid_screen.dart';
-import '../../../widgets/status_filter_tabs.dart';
 import 'admin_course_provider.dart';
 
 class AdminCourseListScreen extends StatefulWidget {

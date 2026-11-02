@@ -6,7 +6,6 @@ import 'package:enote_core/enote_core.dart';
 import '../../shell/routes.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/paged_list_view.dart';
-import '../../widgets/status_chip.dart';
 import 'lecture_provider.dart';
 
 class LectureListScreen extends StatefulWidget {
@@ -44,9 +43,7 @@ class _LectureListScreenState extends State<LectureListScreen>
         pageSize,
         search,
         searchField: 'name',
-        filters: {
-          if (_upcomingOnly) 'from': DateTime.now().toIso8601String(),
-        },
+        filters: {if (_upcomingOnly) 'from': DateTime.now().toIso8601String()},
       ),
     );
   }
@@ -95,13 +92,11 @@ class _LectureRow extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            '${formatDateTime(lecture.lectureTime)} · ${lecture.location}',
-          ),
+          Text('${formatDateTime(lecture.lectureTime)} · ${lecture.location}'),
           if (lecture.isIndividual)
-            const Text(
-              'Individualni čas',
-              style: TextStyle(color: AppTheme.primary),
+            const StatusChip(
+              label: 'Individualni čas',
+              tone: StatusTone.accent,
             ),
           if (lecture.cancellationReason != null)
             Text(
@@ -110,7 +105,10 @@ class _LectureRow extends StatelessWidget {
             ),
         ],
       ),
-      trailing: StatusChip.lectureStatus(lecture.lectureStatus),
+      trailing: StatusChip(
+        label: lectureStatusLabel(lecture.lectureStatus),
+        tone: lectureStatusTone(lecture.lectureStatus),
+      ),
       onTap: () => Navigator.of(context).pushNamed(
         AppRoutes.lectureDetail,
         arguments: LectureDetailArgs(lecture.id),

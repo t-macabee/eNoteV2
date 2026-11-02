@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../api/api_client.dart';
+import '../theme/app_theme.dart';
+import '../theme/app_tokens.dart';
 
 Widget networkImageOrPlaceholder(
   String? url,
@@ -49,4 +51,37 @@ Widget _networkImage(
       errorBuilder: (_, _, _) => placeholder(),
     ),
   );
+}
+
+class ImagePlaceholder extends StatelessWidget {
+  final double width;
+  final double height;
+  final double borderRadius;
+  final double? iconSize;
+
+  const ImagePlaceholder({
+    super.key,
+    required this.width,
+    required this.height,
+    this.borderRadius = 0,
+    this.iconSize,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: width,
+      height: height,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceContainer,
+        borderRadius: BorderRadius.circular(borderRadius),
+      ),
+      child: Icon(
+        Icons.image_outlined,
+        size: iconSize ?? AppSize.placeholderIcon,
+        color: AppTheme.textTertiary,
+      ),
+    );
+  }
 }

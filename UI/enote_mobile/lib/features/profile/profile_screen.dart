@@ -9,7 +9,6 @@ import '../../theme/app_theme.dart';
 import '../../widgets/async_state_view.dart';
 import '../../widgets/labeled_value.dart';
 import 'delete_profile_dialog.dart';
-import 'membership_card.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -48,9 +47,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final deleted = await showDeleteProfileDialog(context);
     if (deleted != true || !mounted) return;
     await controller.endSession();
-    messenger.showSnackBar(
-      const SnackBar(content: Text('Profil je obrisan.')),
-    );
+    messenger.showSnackBar(const SnackBar(content: Text('Profil je obrisan.')));
   }
 
   @override
@@ -99,10 +96,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ),
               const SizedBox(height: 20),
-              MembershipCard(
-                paidUntil: controller.membershipPaidUntil,
-                isMembershipActive: controller.isMembershipActive,
-              ),
+              _membershipBanner(controller),
               const SizedBox(height: 24),
               _values(profile),
               const SizedBox(height: 28),
@@ -172,19 +166,38 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  Widget _membershipBanner(SessionController controller) {
+    final paidUntil = controller.membershipPaidUntil;
+    if (paidUntil == null) {
+      return const StatusBanner(
+        icon: Icons.info_outline,
+        message: 'Članarina nije aktivna.',
+        tone: StatusTone.warning,
+      );
+    }
+    if (controller.isMembershipActive) {
+      return StatusBanner(
+        icon: Icons.check_circle_outline,
+        message: 'Aktivna do ${formatDate(paidUntil)}',
+        tone: StatusTone.success,
+      );
+    }
+    return StatusBanner(
+      icon: Icons.cancel_outlined,
+      message:
+          'Članarina je istekla ${formatDate(paidUntil)}. '
+          'Obratite se školi za obnovu.',
+      tone: StatusTone.danger,
+    );
+  }
+
   Widget _values(UserProfileResponse profile) {
     final p = profile.profile;
     return Column(
       children: [
         LabeledValue(label: 'Email', value: orDash(profile.email)),
-        LabeledValue(
-          label: 'Datum rođenja',
-          value: _dateOrDash(p.dateOfBirth),
-        ),
-        LabeledValue(
-          label: 'Upisan od',
-          value: _dateOrDash(p.enrollmentDate),
-        ),
+        LabeledValue(label: 'Datum rođenja', value: _dateOrDash(p.dateOfBirth)),
+        LabeledValue(label: 'Upisan od', value: _dateOrDash(p.enrollmentDate)),
       ],
     );
   }

@@ -5,7 +5,7 @@ import 'package:enote_core/theme/app_theme.dart';
 export 'package:enote_core/theme/app_theme.dart';
 
 TextTheme _desktopTextTheme(TextTheme base) {
-  final roboto = base.apply(fontFamily: 'Roboto');
+  final roboto = base.apply(fontFamily: 'Roboto', package: 'enote_core');
   return roboto.copyWith(
     headlineMedium: roboto.headlineMedium?.copyWith(
       fontSize: 28,

@@ -6,10 +6,10 @@ import 'package:enote_core/enote_core.dart';
 import '../../shell/routes.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/async_state_view.dart';
-import '../../widgets/blocked_reason_banner.dart';
 import '../../widgets/form_submit_state.dart';
 import '../../widgets/labeled_value.dart';
 import '../../widgets/section_header.dart';
+import 'assignment_labels.dart';
 import 'assignment_provider.dart';
 import 'file_picker_field.dart';
 
@@ -76,8 +76,7 @@ class _AssignmentDetailScreenState extends State<AssignmentDetailScreen>
     final confirmed = await confirmDialog(
       context: context,
       title: 'Predaja zadatka',
-      message:
-          'Predati "${picked.fileName}"? Predaju nije moguće izmijeniti.',
+      message: 'Predati "${picked.fileName}"? Predaju nije moguće izmijeniti.',
     );
     if (confirmed != true || !mounted) return;
     final provider = context.read<AssignmentProvider>();
@@ -141,7 +140,9 @@ class _AssignmentDetailScreenState extends State<AssignmentDetailScreen>
   }
 
   Widget _header(AssignmentDto assignment) {
-    final pastDue = DateTime.now().isAfter(assignment.dueAt);
+    final now = DateTime.now();
+    final pastDue = now.isAfter(assignment.dueAt);
+    final deadline = assignmentDeadlineStatus(assignment.dueAt, now);
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -160,7 +161,8 @@ class _AssignmentDetailScreenState extends State<AssignmentDetailScreen>
                   value: formatDateTime(assignment.dueAt),
                 ),
               ),
-              if (pastDue) const Chip(label: Text('Rok istekao')),
+              if (pastDue)
+                StatusChip(label: deadline.label, tone: deadline.tone),
             ],
           ),
           ListTile(
@@ -226,9 +228,10 @@ class _AssignmentDetailScreenState extends State<AssignmentDetailScreen>
     return const Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        BlockedReasonBanner(
+        StatusBanner(
           icon: Icons.info_outline,
-          reason: 'Rok za predaju zadatka je istekao.',
+          message: 'Rok za predaju zadatka je istekao.',
+          tone: StatusTone.neutral,
         ),
         SizedBox(height: 8),
         FilledButton(onPressed: null, child: Text('Predaj zadatak')),
@@ -246,9 +249,10 @@ class _AssignmentDetailScreenState extends State<AssignmentDetailScreen>
         const SizedBox(height: 8),
         const LabeledValue(label: 'Ocjena', value: '— · Još nije ocijenjeno'),
         const SizedBox(height: 8),
-        const BlockedReasonBanner(
+        const StatusBanner(
           icon: Icons.info_outline,
-          reason: 'Zadatak je već predan. Ponovna predaja nije moguća.',
+          message: 'Zadatak je već predan. Ponovna predaja nije moguća.',
+          tone: StatusTone.info,
         ),
       ],
     );
@@ -270,13 +274,13 @@ class _AssignmentDetailScreenState extends State<AssignmentDetailScreen>
             color: AppTheme.primary,
           ),
         ),
-        Text(
-          'Ocjena (od 100)',
-          style: Theme.of(context).textTheme.bodyMedium,
-        ),
+        Text('Ocjena (od 100)', style: Theme.of(context).textTheme.bodyMedium),
         if (submission.feedback != null) ...[
           const SizedBox(height: 12),
-          Text('Komentar instruktora', style: Theme.of(context).textTheme.titleSmall),
+          Text(
+            'Komentar instruktora',
+            style: Theme.of(context).textTheme.titleSmall,
+          ),
           const SizedBox(height: 4),
           Text(submission.feedback!),
         ],

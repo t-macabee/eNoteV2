@@ -2,9 +2,14 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../api/api_client.dart';
+import '../theme/app_theme.dart';
 import 'network_image.dart';
 
-typedef ImageUploadCallback = Future<String?> Function(Uint8List bytes, String fileName, String contentType);
+typedef ImageUploadCallback = Future<String?> Function(
+  Uint8List bytes,
+  String fileName,
+  String contentType,
+);
 
 class ImageField extends StatefulWidget {
   final String? imageUrl;
@@ -49,10 +54,10 @@ class _ImageFieldState extends State<ImageField> {
           width: widget.size,
           height: widget.size,
           decoration: BoxDecoration(
-            color: Colors.grey.shade300,
+            color: AppTheme.surfaceContainer,
             borderRadius: BorderRadius.circular(widget.borderRadius),
             border: widget.editable
-                ? Border.all(color: Colors.grey.shade400, width: 2)
+                ? Border.all(color: AppTheme.outline, width: 2)
                 : null,
           ),
           child: _buildContent(),
@@ -88,10 +93,11 @@ class _ImageFieldState extends State<ImageField> {
   }
 
   Widget _placeholder() {
-    return Icon(
-      Icons.image,
-      size: widget.size * 0.4,
-      color: Colors.grey.shade600,
+    return ImagePlaceholder(
+      width: widget.size,
+      height: widget.size,
+      borderRadius: widget.borderRadius,
+      iconSize: widget.size * 0.4,
     );
   }
 

@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 import 'package:enote_core/enote_core.dart';
 
 import '../../widgets/paged_list_view.dart';
-import '../../widgets/status_chip.dart';
 import 'tuition_payment_provider.dart';
 
 class TuitionHistoryScreen extends StatefulWidget {
@@ -93,13 +92,13 @@ class _PaymentRow extends StatelessWidget {
           children: [
             Expanded(
               child: Text(
-                formatKM(
-                  payment.amountCents / 100,
-                  currency: payment.currency,
-                ),
+                formatKM(payment.amountCents / 100, currency: payment.currency),
               ),
             ),
-            StatusChip.payment(payment.status),
+            StatusChip(
+              label: paymentStatusLabel(payment.status),
+              tone: paymentStatusTone(payment.status),
+            ),
           ],
         ),
         subtitle: Column(

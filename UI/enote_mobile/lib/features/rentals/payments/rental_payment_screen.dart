@@ -7,7 +7,6 @@ import '../../../config.dart';
 import '../../../theme/app_theme.dart';
 import '../../../widgets/async_state_view.dart';
 import '../../../widgets/labeled_value.dart';
-import '../../../widgets/status_chip.dart';
 import '../rental_provider.dart';
 import '../../payments/payment_flow_body.dart';
 import '../../payments/payment_flow_controller.dart';
@@ -147,7 +146,8 @@ class _RentalPaymentScreenState extends State<RentalPaymentScreen> {
   }
 
   Widget _review(InstrumentRentalDto rental) {
-    final amountLabel = _flow.prepared?.amountLabel ?? formatKM(rental.totalFee);
+    final amountLabel =
+        _flow.prepared?.amountLabel ?? formatKM(rental.totalFee);
     return PaymentReview(
       amountLabel: amountLabel,
       onPay: _pay,
@@ -174,7 +174,7 @@ class _RentalPaymentScreenState extends State<RentalPaymentScreen> {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    '${rental.storeName} · ${StatusChip.rental(rental.rentalStatus).label}',
+                    '${rental.storeName} · ${rentalStatusLabel(rental.rentalStatus)}',
                     style: const TextStyle(color: AppTheme.textSecondary),
                   ),
                 ],

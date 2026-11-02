@@ -8,7 +8,6 @@ import '../../theme/app_theme.dart';
 import '../../widgets/async_state_view.dart';
 import '../../widgets/labeled_value.dart';
 import '../../widgets/section_header.dart';
-import '../../widgets/status_chip.dart';
 import 'payments/rental_payment_provider.dart';
 import 'rental_provider.dart';
 import 'rental_timeline.dart';
@@ -201,13 +200,23 @@ class _RentalDetailScreenState extends State<RentalDetailScreen> {
                     spacing: 8,
                     runSpacing: 4,
                     children: [
-                      StatusChip.rental(rental.rentalStatus),
+                      StatusChip(
+                        label: rentalStatusLabel(rental.rentalStatus),
+                        tone: rentalStatusTone(rental.rentalStatus),
+                      ),
                       if (rental.isPaid)
-                        StatusChip.payment(PaymentStatus.succeeded),
+                        StatusChip(
+                          label: paymentStatusLabel(PaymentStatus.succeeded),
+                          tone: paymentStatusTone(PaymentStatus.succeeded),
+                        ),
                       if (payment != null &&
                           (payment.status == PaymentStatus.refunded ||
-                              payment.status == PaymentStatus.partiallyRefunded))
-                        StatusChip.payment(payment.status),
+                              payment.status ==
+                                  PaymentStatus.partiallyRefunded))
+                        StatusChip(
+                          label: paymentStatusLabel(payment.status),
+                          tone: paymentStatusTone(payment.status),
+                        ),
                     ],
                   ),
                 ],
@@ -231,15 +240,9 @@ class _RentalDetailScreenState extends State<RentalDetailScreen> {
     final refundedCents = payment?.refundedCents ?? 0;
     return Column(
       children: [
-        LabeledValue(
-          label: 'Mjesečna naknada',
-          value: formatKM(rental.fee),
-        ),
+        LabeledValue(label: 'Mjesečna naknada', value: formatKM(rental.fee)),
         if (rental.dueAt != null)
-          LabeledValue(
-            label: 'Rok povrata',
-            value: formatDate(rental.dueAt!),
-          ),
+          LabeledValue(label: 'Rok povrata', value: formatDate(rental.dueAt!)),
         if (rental.hasPenaltyTerms)
           LabeledValue(
             label: 'Penal po danu kašnjenja',
@@ -248,7 +251,8 @@ class _RentalDetailScreenState extends State<RentalDetailScreen> {
         if (rental.hasOverdueDays)
           LabeledValue(
             label: 'Kašnjenje',
-            value: '${rental.overdueDays} dana · ${formatKM(rental.penaltyFee)}',
+            value:
+                '${rental.overdueDays} dana · ${formatKM(rental.penaltyFee)}',
           ),
         LabeledValue(label: 'Obračun', value: rental.chargeLabel),
         LabeledValue(label: 'Ukupno', value: formatKM(rental.totalFee)),
@@ -275,7 +279,7 @@ class _RentalDetailScreenState extends State<RentalDetailScreen> {
       if (payment.refundedAt != null) formatDate(payment.refundedAt!),
       if (payment.status == PaymentStatus.refunded ||
           payment.status == PaymentStatus.partiallyRefunded)
-        StatusChip.payment(payment.status).label,
+        paymentStatusLabel(payment.status),
     ];
     return parts.join(' · ');
   }
@@ -313,7 +317,8 @@ class _RentalDetailScreenState extends State<RentalDetailScreen> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Text(
-              rental.renewalOpensAt != null && now.isBefore(rental.renewalOpensAt!)
+              rental.renewalOpensAt != null &&
+                      now.isBefore(rental.renewalOpensAt!)
                   ? 'Produženje je moguće od ${formatDate(rental.renewalOpensAt!)}.'
                   : 'Rok je istekao. Vratite instrument u prodavnicu.',
               style: const TextStyle(color: AppTheme.error),
@@ -326,10 +331,7 @@ class _RentalDetailScreenState extends State<RentalDetailScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: FilledButton(
             onPressed: () => Navigator.of(context)
-                .pushNamed(
-                  AppRoutes.payment,
-                  arguments: PaymentArgs(rental.id),
-                )
+                .pushNamed(AppRoutes.payment, arguments: PaymentArgs(rental.id))
                 .then((_) {
                   if (mounted) _load();
                 }),

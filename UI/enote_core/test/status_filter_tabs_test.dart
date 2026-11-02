@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:enote_desktop/theme/app_theme.dart';
-import 'package:enote_desktop/widgets/status_filter_tabs.dart';
+import 'package:enote_core/enote_core.dart';
+import 'package:enote_core/theme/app_theme.dart';
 
 void main() {
   const options = [
@@ -76,5 +76,52 @@ void main() {
 
     expect(selected.selected, isTrue);
     expect(unselected.selected, isFalse);
+  });
+
+  testWidgets('scrollable status tabs render in one horizontal row', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    const eightOptions = [
+      StatusFilterOption<String>(label: 'Prvi filter', value: 'a'),
+      StatusFilterOption<String>(label: 'Drugi filter', value: 'b'),
+      StatusFilterOption<String>(label: 'Treći filter', value: 'c'),
+      StatusFilterOption<String>(label: 'Četvrti filter', value: 'd'),
+      StatusFilterOption<String>(label: 'Peti filter', value: 'e'),
+      StatusFilterOption<String>(label: 'Šesti filter', value: 'f'),
+      StatusFilterOption<String>(label: 'Sedmi filter', value: 'g'),
+      StatusFilterOption<String>(label: 'Svi', value: 'all'),
+    ];
+
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.dark,
+        home: Scaffold(
+          body: StatusFilterTabs<String>(
+            options: eightOptions,
+            selected: 'all',
+            onChanged: (_) {},
+            scrollable: true,
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final tops = eightOptions
+        .map(
+          (option) => tester
+              .getTopLeft(find.widgetWithText(ChoiceChip, option.label))
+              .dy,
+        )
+        .toSet();
+    expect(tops, hasLength(1));
+
+    final scrollable = tester.state<ScrollableState>(find.byType(Scrollable));
+    expect(scrollable.position.maxScrollExtent, greaterThan(0));
   });
 }

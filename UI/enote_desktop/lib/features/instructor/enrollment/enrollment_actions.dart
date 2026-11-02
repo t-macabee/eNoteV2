@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import 'package:enote_core/enote_core.dart';
 
-import '../../../widgets/status_filter_tabs.dart';
 import '../../../widgets/workflow_actions.dart';
 
 import 'instructor_enrollment_provider.dart';

@@ -6,7 +6,6 @@ import 'package:enote_core/enote_core.dart';
 import '../../../theme/app_theme.dart';
 import '../../../widgets/dialog_shell.dart';
 import '../../../widgets/inline_error_text.dart';
-import '../../../widgets/status_chip.dart';
 import '../../../widgets/workflow_actions.dart';
 import 'rental_status_display.dart';
 import 'rental_refund_dialog.dart';

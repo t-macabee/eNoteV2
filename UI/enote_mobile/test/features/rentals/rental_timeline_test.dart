@@ -53,7 +53,7 @@ Future<void> _pump(WidgetTester tester, InstrumentRentalDto rental) async {
   addTearDown(tester.view.resetPhysicalSize);
   await tester.pumpWidget(
     MaterialApp(
-      theme: AppTheme.dark,
+      theme: mobileTheme,
       home: Scaffold(
         body: SingleChildScrollView(
           child: RentalTimeline(rental: rental),

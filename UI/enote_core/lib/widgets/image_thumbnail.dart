@@ -30,14 +30,11 @@ class ImageThumbnail extends StatelessWidget {
   }
 
   Widget _placeholder() {
-    return Container(
+    return ImagePlaceholder(
       width: size,
       height: size,
-      decoration: BoxDecoration(
-        color: Colors.grey.shade300,
-        borderRadius: BorderRadius.circular(borderRadius),
-      ),
-      child: Icon(Icons.image, size: size * 0.5, color: Colors.grey.shade600),
+      borderRadius: borderRadius,
+      iconSize: size * 0.5,
     );
   }
 }

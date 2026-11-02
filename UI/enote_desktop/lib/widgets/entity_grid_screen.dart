@@ -5,7 +5,6 @@ import 'package:enote_core/enote_core.dart';
 
 import '../theme/app_theme.dart';
 import 'entity_empty_state.dart';
-import 'status_chip.dart';
 
 typedef EntityGridFetcher<T> = Future<PagedResult<T>> Function(
   int page,

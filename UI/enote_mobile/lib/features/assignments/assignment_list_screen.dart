@@ -5,6 +5,7 @@ import 'package:enote_core/enote_core.dart';
 
 import '../../shell/routes.dart';
 import '../../widgets/paged_list_view.dart';
+import 'assignment_labels.dart';
 import 'assignment_provider.dart';
 
 class AssignmentListScreen extends StatefulWidget {
@@ -95,12 +96,15 @@ class _AssignmentRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final pastDue = DateTime.now().isAfter(assignment.dueAt);
+    final now = DateTime.now();
+    final deadline = assignmentDeadlineStatus(assignment.dueAt, now);
     return ListTile(
       leading: const Icon(Icons.assignment_outlined),
       title: Text(assignment.title),
       subtitle: Text('Rok: ${formatDateTime(assignment.dueAt)}'),
-      trailing: pastDue ? const Chip(label: Text('Rok istekao')) : null,
+      trailing: now.isAfter(assignment.dueAt)
+          ? StatusChip(label: deadline.label, tone: deadline.tone)
+          : null,
       onTap: () => Navigator.of(context).pushNamed(
         AppRoutes.assignmentDetail,
         arguments: AssignmentDetailArgs(assignment.id),

@@ -6,7 +6,6 @@ import 'package:enote_core/enote_core.dart';
 import '../../shell/routes.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/paged_list_view.dart';
-import '../../widgets/status_chip.dart';
 import 'rental_provider.dart';
 
 class RentalListScreen extends StatefulWidget {
@@ -77,7 +76,7 @@ class _RentalListScreenState extends State<RentalListScreen> {
             for (final status in InstrumentRentalStatus.values)
               DropdownMenuItem<InstrumentRentalStatus?>(
                 value: status,
-                child: Text(StatusChip.rental(status).label),
+                child: Text(rentalStatusLabel(status)),
               ),
           ],
           onChanged: _selectStatus,
@@ -145,25 +144,27 @@ class _RentalRow extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    StatusChip.rental(rental.rentalStatus),
+                    StatusChip(
+                      label: rentalStatusLabel(rental.rentalStatus),
+                      tone: rentalStatusTone(rental.rentalStatus),
+                    ),
                     if (rental.isOverdue)
-                      Text(
-                        'Kasni ${rental.overdueDays} dana',
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: AppTheme.error,
-                        ),
+                      StatusChip(
+                        label: 'Kasni ${rental.overdueDays} dana',
+                        tone: StatusTone.danger,
                       ),
                     if (_showsPaidMark)
-                      Text(
-                        rental.isPaid ? 'Plaćeno' : 'Nije plaćeno',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: rental.isPaid
-                              ? AppTheme.success
-                              : AppTheme.textSecondary,
-                        ),
-                      ),
+                      rental.isPaid
+                          ? StatusChip(
+                              label: paymentStatusLabel(
+                                PaymentStatus.succeeded,
+                              ),
+                              tone: paymentStatusTone(PaymentStatus.succeeded),
+                            )
+                          : const StatusChip(
+                              label: 'Nije plaćeno',
+                              tone: StatusTone.warning,
+                            ),
                   ],
                 ),
               ],

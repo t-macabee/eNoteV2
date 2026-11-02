@@ -18,35 +18,14 @@ class NotificationBadge extends StatelessWidget {
       animation: controller,
       builder: (context, _) {
         final count = controller.unreadCount;
-        return Stack(
-          clipBehavior: Clip.none,
-          children: [
-            IconButton(
-              tooltip: 'Obavještenja',
-              onPressed: onTap,
-              icon: const Icon(Icons.notifications_outlined),
-            ),
-            if (count > 0)
-              Positioned(
-                right: 4,
-                top: 4,
-                child: IgnorePointer(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                    constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
-                    decoration: BoxDecoration(
-                      color: Colors.red.shade700,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      count > 99 ? '99+' : '$count',
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(color: Colors.white, fontSize: 10),
-                    ),
-                  ),
-                ),
-              ),
-          ],
+        return IconButton(
+          tooltip: 'Obavještenja',
+          onPressed: onTap,
+          icon: Badge(
+            isLabelVisible: count > 0,
+            label: Text(count > 99 ? '99+' : '$count'),
+            child: const Icon(Icons.notifications_outlined),
+          ),
         );
       },
     );

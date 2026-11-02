@@ -5,10 +5,9 @@ import 'package:enote_core/enote_core.dart';
 
 import '../../shell/routes.dart';
 import '../../theme/app_theme.dart';
-import '../../widgets/blocked_reason_banner.dart';
 import '../../widgets/paged_list_view.dart';
-import '../../widgets/status_chip.dart';
 import '../rentals/rental_provider.dart';
+import 'instrument_labels.dart';
 import 'instrument_provider.dart';
 import 'recommendation_strip.dart';
 
@@ -21,6 +20,13 @@ class InstrumentCatalogScreen extends StatefulWidget {
 }
 
 class _InstrumentCatalogScreenState extends State<InstrumentCatalogScreen> {
+  static const _bannerPadding = EdgeInsets.fromLTRB(
+    AppSpacing.lg,
+    AppSpacing.sm,
+    AppSpacing.lg,
+    0,
+  );
+
   late final PagedFetchController<InstrumentDto> _controller;
   List<InstrumentRecommendationDto> _recommendations = const [];
   RentalDebtDto? _debt;
@@ -88,11 +94,11 @@ class _InstrumentCatalogScreenState extends State<InstrumentCatalogScreen> {
   }
 
   void _openPayment(int rentalId) {
-    Navigator.of(
-      context,
-    ).pushNamed(AppRoutes.payment, arguments: PaymentArgs(rentalId)).then((_) {
-      if (mounted) _loadDebt();
-    });
+    Navigator.of(context)
+        .pushNamed(AppRoutes.payment, arguments: PaymentArgs(rentalId))
+        .then((_) {
+          if (mounted) _loadDebt();
+        });
   }
 
   void _toggleAvailable(bool value) {
@@ -106,22 +112,30 @@ class _InstrumentCatalogScreenState extends State<InstrumentCatalogScreen> {
     return Column(
       children: [
         if (debt != null && debt.hasUnpaidDebt)
-          BlockedReasonBanner(
-            icon: Icons.warning_amber_outlined,
-            reason:
-                'Imate neizmireno dugovanje od prethodnog iznajmljivanja. '
-                'Izmirite ga prije novog zahtjeva.',
-            actionLabel: 'Plati sada',
-            onAction: debt.rentalId == null
-                ? null
-                : () => _openPayment(debt.rentalId!),
+          Padding(
+            padding: _bannerPadding,
+            child: StatusBanner(
+              icon: Icons.warning_amber_outlined,
+              message:
+                  'Imate neizmireno dugovanje od prethodnog iznajmljivanja. '
+                  'Izmirite ga prije novog zahtjeva.',
+              tone: StatusTone.danger,
+              actionLabel: 'Plati sada',
+              onAction: debt.rentalId == null
+                  ? null
+                  : () => _openPayment(debt.rentalId!),
+            ),
           ),
         if (_debtLoadFailed)
-          BlockedReasonBanner(
-            icon: Icons.error_outline,
-            reason: 'Stanje dugovanja trenutno nije moguće provjeriti.',
-            actionLabel: 'Pokušaj ponovo',
-            onAction: _loadDebt,
+          Padding(
+            padding: _bannerPadding,
+            child: StatusBanner(
+              icon: Icons.error_outline,
+              message: 'Stanje dugovanja trenutno nije moguće provjeriti.',
+              tone: StatusTone.warning,
+              actionLabel: 'Pokušaj ponovo',
+              onAction: _loadDebt,
+            ),
           ),
         RecommendationStrip(
           recommendations: _recommendations,
@@ -174,12 +188,7 @@ class _InstrumentRow extends StatelessWidget {
             '${instrument.instrumentType} · ${instrument.musicStore}',
             style: const TextStyle(color: AppTheme.textSecondary),
           ),
-          trailing: instrument.isAvailable
-              ? const StatusChip(label: 'Dostupno', color: AppTheme.success)
-              : const StatusChip(
-                  label: 'Nedostupno',
-                  color: AppTheme.textSecondary,
-                ),
+          trailing: instrumentAvailabilityChip(instrument.isAvailable),
         ),
         const Divider(height: 1),
       ],

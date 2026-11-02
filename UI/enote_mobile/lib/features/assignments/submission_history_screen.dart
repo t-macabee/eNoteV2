@@ -12,7 +12,8 @@ class SubmissionHistoryScreen extends StatefulWidget {
   const SubmissionHistoryScreen({super.key});
 
   @override
-  State<SubmissionHistoryScreen> createState() => _SubmissionHistoryScreenState();
+  State<SubmissionHistoryScreen> createState() =>
+      _SubmissionHistoryScreenState();
 }
 
 class _SubmissionHistoryScreenState extends State<SubmissionHistoryScreen> {
@@ -32,9 +33,10 @@ class _SubmissionHistoryScreenState extends State<SubmissionHistoryScreen> {
     int pageSize,
     String search,
   ) async {
-    return context
-        .read<AssignmentProvider>()
-        .myHistory(page: page, pageSize: pageSize);
+    return context.read<AssignmentProvider>().myHistory(
+      page: page,
+      pageSize: pageSize,
+    );
   }
 
   @override
@@ -67,15 +69,14 @@ class _SubmissionRow extends StatelessWidget {
     final submittedAt = submission.submittedAt;
     return ListTile(
       leading: const Icon(Icons.upload_file_outlined),
-      title: Text(
-        submittedAt == null ? '—' : formatDateTime(submittedAt),
-      ),
-      subtitle: Text(
-        assignmentFileName(submission.filePath),
-      ),
+      title: Text(submittedAt == null ? '—' : formatDateTime(submittedAt)),
+      subtitle: Text(assignmentFileName(submission.filePath)),
       trailing: submission.grade == null
-          ? const Chip(label: Text('Neocijenjeno'))
-          : Chip(label: Text('Ocjena: ${submission.grade}')),
+          ? const StatusChip(label: 'Neocijenjeno', tone: StatusTone.warning)
+          : StatusChip(
+              label: 'Ocjena: ${submission.grade}',
+              tone: StatusTone.success,
+            ),
       onTap: () => Navigator.of(context).pushNamed(
         AppRoutes.assignmentDetail,
         arguments: AssignmentDetailArgs(submission.assignmentId),

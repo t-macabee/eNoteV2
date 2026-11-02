@@ -129,7 +129,7 @@ class _Harness {
         ),
       ],
       child: MaterialApp(
-        theme: AppTheme.dark,
+        theme: mobileTheme,
         home: Builder(
           builder: (context) => Scaffold(
             body: Center(

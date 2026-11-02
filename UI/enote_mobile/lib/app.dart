@@ -142,7 +142,7 @@ class _EnoteMobileAppState extends State<EnoteMobileApp> {
       ],
       child: MaterialApp(
         navigatorKey: appNavigatorKey,
-        theme: AppTheme.dark,
+        theme: mobileTheme,
         onGenerateRoute: AppRouter.onGenerateRoute,
         home: const SessionGate(),
       ),

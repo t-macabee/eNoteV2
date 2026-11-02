@@ -9,19 +9,19 @@ import '../../session/session_controller.dart';
 import '../../shell/routes.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/async_state_view.dart';
-import '../../widgets/blocked_reason_banner.dart';
-import '../../widgets/status_chip.dart';
 import '../../widgets/wide_image.dart';
 import '../rentals/rental_provider.dart';
 import '../rentals/rental_request_sheet.dart';
+import 'instrument_labels.dart';
 import 'instrument_provider.dart';
 
 class _BlockedReason {
   final String copy;
+  final StatusTone tone;
   final String? actionLabel;
   final VoidCallback? onAction;
 
-  const _BlockedReason(this.copy, {this.actionLabel, this.onAction});
+  const _BlockedReason(this.copy, this.tone, {this.actionLabel, this.onAction});
 }
 
 class InstrumentDetailScreen extends StatefulWidget {
@@ -42,7 +42,9 @@ class _InstrumentDetailScreenState extends State<InstrumentDetailScreen> {
   @override
   void initState() {
     super.initState();
-    unawaited(context.read<InstrumentProvider>().recordView(widget.instrumentId));
+    unawaited(
+      context.read<InstrumentProvider>().recordView(widget.instrumentId),
+    );
     _load();
   }
 
@@ -79,6 +81,7 @@ class _InstrumentDetailScreenState extends State<InstrumentDetailScreen> {
       return _BlockedReason(
         'Imate neizmireno dugovanje od prethodnog iznajmljivanja. '
         'Izmirite ga prije novog zahtjeva.',
+        StatusTone.danger,
         actionLabel: 'Plati sada',
         onAction: debt.rentalId == null
             ? null
@@ -100,10 +103,14 @@ class _InstrumentDetailScreenState extends State<InstrumentDetailScreen> {
             ? 'Članarina nije aktivna.'
             : 'Članarina je istekla ${formatDate(until)} '
                   'Obratite se školi za obnovu.',
+        StatusTone.danger,
       );
     }
     if (!instrument.isAvailable) {
-      return const _BlockedReason('Instrument trenutno nije dostupan.');
+      return const _BlockedReason(
+        'Instrument trenutno nije dostupan.',
+        StatusTone.neutral,
+      );
     }
     return null;
   }
@@ -156,15 +163,7 @@ class _InstrumentDetailScreenState extends State<InstrumentDetailScreen> {
                   style: const TextStyle(color: AppTheme.textSecondary),
                 ),
               ),
-              instrument.isAvailable
-                  ? const StatusChip(
-                      label: 'Dostupno',
-                      color: AppTheme.success,
-                    )
-                  : const StatusChip(
-                      label: 'Nedostupno',
-                      color: AppTheme.textSecondary,
-                    ),
+              instrumentAvailabilityChip(instrument.isAvailable),
             ],
           ),
           if (description != null && description.trim().isNotEmpty) ...[
@@ -173,9 +172,10 @@ class _InstrumentDetailScreenState extends State<InstrumentDetailScreen> {
           ],
           const SizedBox(height: 24),
           if (blocked != null)
-            BlockedReasonBanner(
+            StatusBanner(
               icon: Icons.warning_amber_outlined,
-              reason: blocked.copy,
+              message: blocked.copy,
+              tone: blocked.tone,
               actionLabel: blocked.actionLabel,
               onAction: blocked.onAction,
             ),

@@ -7,8 +7,6 @@ import '../../../widgets/async_dropdown.dart';
 import '../../../widgets/dashboard_count.dart';
 import '../../../widgets/entity_list_screen.dart';
 import '../../../widgets/pdf_report_button.dart';
-import '../../../widgets/status_chip.dart';
-import '../../../widgets/status_filter_tabs.dart';
 import '../../../widgets/workflow_actions.dart';
 import '../instrument/instrument_provider.dart';
 import 'rental_detail_dialog.dart';

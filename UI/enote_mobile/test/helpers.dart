@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:enote_core/enote_core.dart';
 import 'package:enote_test_support/enote_test_support.dart';
@@ -27,6 +28,12 @@ int countRequests(ScriptedClient client, String marker) =>
 Future<void> pumpPastDebounce(WidgetTester tester) => tester.pump(
   PagedFetchController.defaultSearchDebounce + const Duration(milliseconds: 100),
 );
+
+void setPhoneSurface(WidgetTester tester) {
+  tester.view.physicalSize = const Size(390, 844);
+  tester.view.devicePixelRatio = 1;
+  addTearDown(tester.view.reset);
+}
 
 class FakeHubConnection implements HubConnection {
   HubConnectionState _state = HubConnectionState.Disconnected;

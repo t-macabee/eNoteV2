@@ -46,10 +46,7 @@ ScriptedClient _client({
         'isAvailable': isAvailable,
       };
     } else if (path.endsWith('/student/rentals/debt')) {
-      body = {
-        'hasUnpaidDebt': hasDebt,
-        'rentalId': ?debtRentalId,
-      };
+      body = {'hasUnpaidDebt': hasDebt, 'rentalId': ?debtRentalId};
     } else if (path.endsWith('/users/me')) {
       body = {
         'role': 'Student',
@@ -114,7 +111,7 @@ class _Harness {
         ),
       ],
       child: MaterialApp(
-        theme: AppTheme.dark,
+        theme: mobileTheme,
         onGenerateRoute: (settings) {
           pushed.add(settings);
           return AppRouter.onGenerateRoute(settings);
@@ -125,10 +122,7 @@ class _Harness {
   }
 }
 
-Future<_Harness> _pumpDetail(
-  WidgetTester tester,
-  ScriptedClient client,
-) async {
+Future<_Harness> _pumpDetail(WidgetTester tester, ScriptedClient client) async {
   tester.view.physicalSize = const Size(400, 1600);
   tester.view.devicePixelRatio = 1.0;
   addTearDown(tester.view.resetDevicePixelRatio);
@@ -159,10 +153,7 @@ void main() {
   testWidgets('no blocking reason leaves the request button enabled', (
     tester,
   ) async {
-    await _pumpDetail(
-      tester,
-      _client(membershipPaidUntil: _future()),
-    );
+    await _pumpDetail(tester, _client(membershipPaidUntil: _future()));
 
     expect(find.text('Yamaha C40'), findsOneWidget);
     expect(find.text('Yamaha · Klasična gitara'), findsOneWidget);
@@ -232,16 +223,23 @@ void main() {
     expect(_requestButtonEnabled(tester), isFalse);
   });
 
+  testWidgets('the blocked banner is not indented twice', (tester) async {
+    await _pumpDetail(
+      tester,
+      _client(isAvailable: false, membershipPaidUntil: _future()),
+    );
+
+    final bannerLeft = tester.getTopLeft(find.byType(StatusBanner)).dx;
+    final titleLeft = tester.getTopLeft(find.text('Yamaha C40')).dx;
+    expect(bannerLeft, titleLeft);
+  });
+
   testWidgets('Plati sada pushes the payment route with the debt rental id', (
     tester,
   ) async {
     final harness = await _pumpDetail(
       tester,
-      _client(
-        hasDebt: true,
-        debtRentalId: 9,
-        membershipPaidUntil: _future(),
-      ),
+      _client(hasDebt: true, debtRentalId: 9, membershipPaidUntil: _future()),
     );
 
     await tester.tap(find.text('Plati sada'));

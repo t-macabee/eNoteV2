@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import 'package:enote_core/enote_core.dart';
 
-import '../../widgets/blocked_reason_banner.dart';
 import '../../widgets/labeled_value.dart';
 import '../lectures/lecture_labels.dart';
 
@@ -39,7 +38,8 @@ class CourseMasterCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final status = course.enrollmentStatus;
-    final canRequest = status == null ||
+    final canRequest =
+        status == null ||
         status == EnrollmentStatus.canceled ||
         status == EnrollmentStatus.rejected;
     final lockedContent = enrolled && !course.hasContentAccess;
@@ -61,7 +61,10 @@ class CourseMasterCard extends StatelessWidget {
                 ),
               ),
               if (status != null && status != EnrollmentStatus.canceled)
-                Chip(label: Text(enrollmentStatusLabel(status))),
+                StatusChip(
+                  label: enrollmentStatusLabel(status),
+                  tone: enrollmentStatusTone(status),
+                ),
             ],
           ),
           const SizedBox(height: 12),
@@ -89,51 +92,58 @@ class CourseMasterCard extends StatelessWidget {
           ],
           if (status == EnrollmentStatus.pending) ...[
             const SizedBox(height: 8),
-            const BlockedReasonBanner(
+            const StatusBanner(
               icon: Icons.hourglass_empty,
-              reason: 'Zahtjev za upis čeka odobrenje instruktora.',
+              message: 'Zahtjev za upis čeka odobrenje instruktora.',
+              tone: StatusTone.warning,
             ),
           ],
           if (status == EnrollmentStatus.rejected) ...[
             const SizedBox(height: 8),
-            BlockedReasonBanner(
+            StatusBanner(
               icon: Icons.info_outline,
-              reason:
+              message:
                   'Zahtjev za upis je odbijen: '
                   '${course.enrollmentDecisionNote ?? '-'}',
+              tone: StatusTone.danger,
             ),
           ],
-          if (status == EnrollmentStatus.canceled && course.hasContentAccess) ...[
+          if (status == EnrollmentStatus.canceled &&
+              course.hasContentAccess) ...[
             const SizedBox(height: 8),
-            BlockedReasonBanner(
+            StatusBanner(
               icon: Icons.event_available,
-              reason:
+              message:
                   'Ispisani ste sa kursa. Pristup traje do '
                   '${formatDate(course.paidUntil!)}',
+              tone: StatusTone.info,
             ),
           ],
           if (status == EnrollmentStatus.completed) ...[
             const SizedBox(height: 8),
-            const BlockedReasonBanner(
+            const StatusBanner(
               icon: Icons.check_circle_outline,
-              reason: 'Kurs ste završili. Ponovni upis nije moguć.',
+              message: 'Kurs ste završili. Ponovni upis nije moguć.',
+              tone: StatusTone.success,
             ),
           ],
           if (course.hasEnded && canRequest) ...[
             const SizedBox(height: 8),
-            const BlockedReasonBanner(
+            const StatusBanner(
               icon: Icons.event_busy,
-              reason: 'Kurs je završen. Upis više nije moguć.',
+              message: 'Kurs je završen. Upis više nije moguć.',
+              tone: StatusTone.neutral,
             ),
           ],
           if (membershipBlocked && canRequest) ...[
             const SizedBox(height: 8),
-            BlockedReasonBanner(
+            StatusBanner(
               icon: Icons.info_outline,
-              reason: membershipPaidUntil == null
+              message: membershipPaidUntil == null
                   ? 'Članarina nije aktivna.'
                   : 'Članarina je istekla ${formatDate(membershipPaidUntil!)} '
                         'Obratite se školi za obnovu.',
+              tone: StatusTone.danger,
             ),
           ],
           if (enrolled && !course.isFree) ...[
@@ -160,8 +170,7 @@ class CourseMasterCard extends StatelessWidget {
               else if (status == EnrollmentStatus.canceled &&
                   course.hasContentAccess)
                 FilledButton(
-                  onPressed:
-                      (membershipBlocked || isActing || course.hasEnded)
+                  onPressed: (membershipBlocked || isActing || course.hasEnded)
                       ? null
                       : onEnroll,
                   child: const Text('Nastavi pretplatu'),
@@ -228,25 +237,24 @@ class _TuitionBanner extends StatelessWidget {
   Widget _status() {
     final paidUntil = course.paidUntil;
     if (paidUntil == null) {
-      return BlockedReasonBanner(
+      return StatusBanner(
         icon: Icons.info_outline,
-        reason: 'Školarina nije plaćena.',
+        message: 'Školarina nije plaćena.',
+        tone: StatusTone.warning,
         actionLabel: 'Plati',
         onAction: onTuition,
       );
     }
     if (paidUntil.isBefore(DateTime.now())) {
-      return BlockedReasonBanner(
+      return StatusBanner(
         icon: Icons.warning_amber_outlined,
-        reason: 'Školarina je istekla ${formatDate(paidUntil)}',
+        message: 'Školarina je istekla ${formatDate(paidUntil)}',
+        tone: StatusTone.danger,
         actionLabel: 'Obnovi',
         onAction: onTuition,
       );
     }
-    return LabeledValue(
-      label: 'Plaćeno do',
-      value: formatDate(paidUntil),
-    );
+    return LabeledValue(label: 'Plaćeno do', value: formatDate(paidUntil));
   }
 }
 
@@ -290,9 +298,7 @@ class CourseLecturesHeader extends SliverPersistentHeaderDelegate {
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Row(
                 children: [
-                  Expanded(
-                    child: Text(title.toUpperCase(), style: textStyle),
-                  ),
+                  Expanded(child: Text(title.toUpperCase(), style: textStyle)),
                   IconButton(
                     icon: const Icon(Icons.search_outlined),
                     onPressed: onToggleSearch,
@@ -349,21 +355,27 @@ class CourseLectureRow extends StatelessWidget {
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
             ),
-            Text(
-              lectureStatusLabel(lecture.lectureStatus),
-              style: TextStyle(
-                color: lecture.lectureStatus == LectureStatus.cancelled
-                    ? Theme.of(context).colorScheme.error
-                    : Theme.of(context).textTheme.bodyMedium?.color,
-              ),
+            StatusChip(
+              label: lectureStatusLabel(lecture.lectureStatus),
+              tone: lectureStatusTone(lecture.lectureStatus),
             ),
           ],
         ),
-        subtitle: Text(
-          '${lecture.name} · '
-          '${lectureTypeLabel(lecture.lectureType)} · '
-          '${lecture.location}\n'
-          '${rsvpStateLabel(lecture.myAttendanceStatus)}',
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              '${lecture.name} · '
+              '${lectureTypeLabel(lecture.lectureType)} · '
+              '${lecture.location}',
+            ),
+            const SizedBox(height: 4),
+            StatusChip(
+              label: rsvpStateLabel(lecture.myAttendanceStatus),
+              tone: rsvpStateTone(lecture.myAttendanceStatus),
+            ),
+          ],
         ),
         isThreeLine: true,
         trailing: const Icon(Icons.chevron_right),

@@ -5,3 +5,9 @@ String rsvpStateLabel(AttendanceStatus? status) => switch (status) {
   AttendanceStatus.absent => 'Prisustvo odbijeno',
   _ => 'Niste odgovorili',
 };
+
+StatusTone rsvpStateTone(AttendanceStatus? status) => switch (status) {
+  AttendanceStatus.present => StatusTone.success,
+  AttendanceStatus.absent => StatusTone.neutral,
+  _ => StatusTone.warning,
+};

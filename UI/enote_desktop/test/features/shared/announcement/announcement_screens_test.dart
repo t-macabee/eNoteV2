@@ -307,7 +307,7 @@ void main() {
       expect(
         find.descendant(
           of: find.byWidget(withoutImage),
-          matching: find.byIcon(Icons.image),
+          matching: find.byIcon(Icons.image_outlined),
         ),
         findsOneWidget,
       );

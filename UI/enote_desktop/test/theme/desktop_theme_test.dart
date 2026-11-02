@@ -7,7 +7,11 @@ double _textWidth(FontWeight weight) {
   final painter = TextPainter(
     text: TextSpan(
       text: 'Odobri upis studenta',
-      style: TextStyle(fontFamily: 'Roboto', fontSize: 16, fontWeight: weight),
+      style: TextStyle(
+        fontFamily: 'packages/enote_core/Roboto',
+        fontSize: 16,
+        fontWeight: weight,
+      ),
     ),
     textDirection: TextDirection.ltr,
   )..layout();
@@ -16,9 +20,18 @@ double _textWidth(FontWeight weight) {
 
 void main() {
   test('desktop theme uses the Roboto family', () {
-    expect(desktopTheme.textTheme.bodyMedium?.fontFamily, 'Roboto');
-    expect(desktopTheme.textTheme.titleLarge?.fontFamily, 'Roboto');
-    expect(desktopTheme.primaryTextTheme.bodyMedium?.fontFamily, 'Roboto');
+    expect(
+      desktopTheme.textTheme.bodyMedium?.fontFamily,
+      'packages/enote_core/Roboto',
+    );
+    expect(
+      desktopTheme.textTheme.titleLarge?.fontFamily,
+      'packages/enote_core/Roboto',
+    );
+    expect(
+      desktopTheme.primaryTextTheme.bodyMedium?.fontFamily,
+      'packages/enote_core/Roboto',
+    );
   });
 
   test('desktop type scale matches the table', () {
@@ -27,7 +40,7 @@ void main() {
     void expectRole(TextStyle? style, double fontSize, FontWeight weight) {
       expect(style?.fontSize, fontSize);
       expect(style?.fontWeight, weight);
-      expect(style?.fontFamily, 'Roboto');
+      expect(style?.fontFamily, 'packages/enote_core/Roboto');
     }
 
     expectRole(textTheme.headlineMedium, 28, FontWeight.w600);

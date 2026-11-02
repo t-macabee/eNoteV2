@@ -16,16 +16,13 @@ const _meBody = {
   'role': 'Student',
   'username': 'student',
   'email': 'student@enote.com',
-  'profile': {
-    'id': 7,
-    'firstName': 'Student',
-    'lastName': 'Enote',
-  },
+  'profile': {'id': 7, 'firstName': 'Student', 'lastName': 'Enote'},
   'hasPicture': false,
 };
 
 class _Harness {
   int meStatus;
+  Map<String, dynamic> meBody = _meBody;
   late final ScriptedClient client;
   late final AuthState authState;
   late final ApiClient apiClient;
@@ -44,7 +41,7 @@ class _Harness {
       if (path.endsWith('users/me')) {
         return meStatus >= 400
             ? jsonResponse('{"message":"Greška"}', meStatus)
-            : jsonResponse(_meBody, 200);
+            : jsonResponse(meBody, 200);
       }
       if (path.endsWith('notifications/unread-count')) {
         return jsonResponse('{"unreadCount":0}', 200);
@@ -85,9 +82,7 @@ class _Harness {
         ),
         ChangeNotifierProvider<SessionController>.value(value: session),
       ],
-      child: const MaterialApp(
-        home: Scaffold(body: ProfileScreen()),
-      ),
+      child: const MaterialApp(home: Scaffold(body: ProfileScreen())),
     );
   }
 }
@@ -111,6 +106,24 @@ int _deleteRequests(ScriptedClient client) => client.requests
     .length;
 
 void main() {
+  testWidgets('membership banner is danger when expired', (tester) async {
+    setPhoneSurface(tester);
+    final harness = _Harness()
+      ..meBody = {
+        ..._meBody,
+        'profile': {
+          ..._meBody['profile'] as Map<String, dynamic>,
+          'membershipPaidUntil': '2020-01-01T00:00:00',
+        },
+      };
+    await tester.pumpWidget(await harness.app());
+    await tester.pumpAndSettle();
+
+    final banner = tester.widget<StatusBanner>(find.byType(StatusBanner));
+    expect(banner.tone, StatusTone.danger);
+    expect(find.textContaining('Članarina je istekla'), findsOneWidget);
+  });
+
   testWidgets(
     'users/me returns 500 at boot shows AsyncStateView error with retry, retry succeeds shows content',
     (tester) async {
@@ -179,14 +192,16 @@ void main() {
     expect(_deleteRequests(harness.client), 1);
   });
 
-  testWidgets('a blocking reason from the server is shown in the dialog',
-      (tester) async {
+  testWidgets('a blocking reason from the server is shown in the dialog', (
+    tester,
+  ) async {
     final harness = _Harness(
       deleteStatus: 400,
       deleteBody: {
         'status': 400,
         'code': 'error.business',
-        'message': 'Profil se ne može obrisati jer imate neizmireno dugovanje '
+        'message':
+            'Profil se ne može obrisati jer imate neizmireno dugovanje '
             'za iznajmljivanje.',
       },
     );
@@ -200,10 +215,7 @@ void main() {
     await tester.tap(find.widgetWithText(ElevatedButton, 'Obriši profil'));
     await tester.pumpAndSettle();
 
-    expect(
-      find.textContaining('Profil se ne može obrisati'),
-      findsOneWidget,
-    );
+    expect(find.textContaining('Profil se ne može obrisati'), findsOneWidget);
     expect(harness.authState.isAuthenticated, isTrue);
   });
 
@@ -223,10 +235,7 @@ void main() {
     final delete = harness.client.requests.lastWhere(
       (r) => r.method == 'DELETE' && r.url.path.endsWith('users/me'),
     );
-    expect(
-      jsonDecode(delete.body),
-      {'currentPassword': 'Password1!'},
-    );
+    expect(jsonDecode(delete.body), {'currentPassword': 'Password1!'});
     expect(harness.authState.isAuthenticated, isFalse);
     expect(harness.session.profile, isNull);
     expect(find.text('Profil je obrisan.'), findsOneWidget);

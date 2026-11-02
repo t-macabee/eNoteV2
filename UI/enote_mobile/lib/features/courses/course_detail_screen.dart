@@ -6,7 +6,6 @@ import 'package:enote_core/enote_core.dart';
 import '../../session/session_controller.dart';
 import '../../shell/routes.dart';
 import '../../widgets/async_state_view.dart';
-import '../../widgets/blocked_reason_banner.dart';
 import '../../widgets/form_submit_state.dart';
 import '../lectures/lecture_provider.dart';
 import 'course_detail_sections.dart';
@@ -118,34 +117,29 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
           : 'Želite li se upisati na kurs "${course.name}"?',
     );
     if (confirmed != true || !mounted) return;
-    await submitWith(
-      (busy) => _acting = busy,
-      () async {
-        final status = await context.read<CourseProvider>().enroll(
-          course.id,
-        );
-        await _loadCourse();
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                status == EnrollmentStatus.active
-                    ? 'Pretplata na kurs ${course.name} je nastavljena.'
-                    : 'Zahtjev za upis na kurs ${course.name} je poslan. '
-                          'Instruktor ga treba odobriti.',
-              ),
+    await submitWith((busy) => _acting = busy, () async {
+      final status = await context.read<CourseProvider>().enroll(course.id);
+      await _loadCourse();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              status == EnrollmentStatus.active
+                  ? 'Pretplata na kurs ${course.name} je nastavljena.'
+                  : 'Zahtjev za upis na kurs ${course.name} je poslan. '
+                        'Instruktor ga treba odobriti.',
             ),
-          );
-        }
-      },
-      showBanner: true,
-    );
+          ),
+        );
+      }
+    }, showBanner: true);
   }
 
   Future<void> _unenroll(CourseDto course) async {
     final pending = course.enrollmentStatus == EnrollmentStatus.pending;
     final paidUntil = course.paidUntil;
-    final keepsAccess = course.enrollmentStatus == EnrollmentStatus.active &&
+    final keepsAccess =
+        course.enrollmentStatus == EnrollmentStatus.active &&
         !course.isFree &&
         paidUntil != null &&
         paidUntil.isAfter(DateTime.now());
@@ -161,20 +155,15 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
           : 'Želite li se ispisati sa kursa "${course.name}"?',
     );
     if (confirmed != true || !mounted) return;
-    await submitWith(
-      (busy) => _acting = busy,
-      () async {
-        await context.read<CourseProvider>().unenroll(course.id);
-        await _loadCourse();
-      },
-      showBanner: true,
-    );
+    await submitWith((busy) => _acting = busy, () async {
+      await context.read<CourseProvider>().unenroll(course.id);
+      await _loadCourse();
+    }, showBanner: true);
   }
 
   void _openRanking(CourseDto course) {
-    Navigator.of(
-      context,
-    ).pushNamed(AppRoutes.ranking, arguments: RankingArgs(course.id));
+    Navigator.of(context)
+        .pushNamed(AppRoutes.ranking, arguments: RankingArgs(course.id));
   }
 
   Future<void> _openTuition(CourseDto course) async {
@@ -197,10 +186,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
     if (enrollmentId == null) return;
     Navigator.of(context).pushNamed(
       AppRoutes.tuitionHistory,
-      arguments: TuitionHistoryArgs(
-        enrollmentId,
-        courseName: course.name,
-      ),
+      arguments: TuitionHistoryArgs(enrollmentId, courseName: course.name),
     );
   }
 
@@ -247,26 +233,32 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
         if (!course.hasContentAccess) ...[
           if (enrolled)
             SliverToBoxAdapter(
-              child: BlockedReasonBanner(
-                icon: Icons.lock_outline,
-                reason: lockedContentReason(course.lectureCount),
-                actionLabel: 'Obnovi školarinu',
-                onAction: () => _openTuition(course),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.lg,
+                  AppSpacing.sm,
+                  AppSpacing.lg,
+                  0,
+                ),
+                child: StatusBanner(
+                  icon: Icons.lock_outline,
+                  message: lockedContentReason(course.lectureCount),
+                  tone: StatusTone.warning,
+                  actionLabel: 'Obnovi školarinu',
+                  onAction: () => _openTuition(course),
+                ),
               ),
             )
           else
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.all(24),
-                child: Text(
-                  switch (course.enrollmentStatus) {
-                    EnrollmentStatus.pending =>
-                      'Predavanja su vidljiva nakon što instruktor odobri upis.',
-                    EnrollmentStatus.completed => 'Kurs ste završili.',
-                    _ => 'Upišite se da vidite predavanja ovog kursa.',
-                  },
-                  textAlign: TextAlign.center,
-                ),
+                child: Text(switch (course.enrollmentStatus) {
+                  EnrollmentStatus.pending =>
+                    'Predavanja su vidljiva nakon što instruktor odobri upis.',
+                  EnrollmentStatus.completed => 'Kurs ste završili.',
+                  _ => 'Upišite se da vidite predavanja ovog kursa.',
+                }, textAlign: TextAlign.center),
               ),
             ),
         ] else ...[
@@ -275,33 +267,29 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
             delegate: CourseLecturesHeader(
               title: 'Predavanja · ${totalCount ?? lectures.length}',
               showSearch: _showSearch,
-              onToggleSearch: () =>
-                  setState(() => _showSearch = !_showSearch),
+              onToggleSearch: () => setState(() => _showSearch = !_showSearch),
               searchController: _lecturesController.searchController,
               backgroundColor: Theme.of(context).scaffoldBackgroundColor,
               textStyle: Theme.of(context).textTheme.labelSmall,
             ),
           ),
           SliverList(
-            delegate: SliverChildBuilderDelegate(
-              (context, index) {
-                final lecture = lectures[index];
-                return CourseLectureRow(
-                  lecture: lecture,
-                  onTap: () async {
-                    await Navigator.of(context).pushNamed(
-                      AppRoutes.lectureDetail,
-                      arguments: LectureDetailArgs(lecture.id),
-                    );
-                    if (!context.mounted) return;
-                    if (_course?.isEnrolled ?? false) {
-                      _lecturesController.refresh();
-                    }
-                  },
-                );
-              },
-              childCount: lectures.length,
-            ),
+            delegate: SliverChildBuilderDelegate((context, index) {
+              final lecture = lectures[index];
+              return CourseLectureRow(
+                lecture: lecture,
+                onTap: () async {
+                  await Navigator.of(context).pushNamed(
+                    AppRoutes.lectureDetail,
+                    arguments: LectureDetailArgs(lecture.id),
+                  );
+                  if (!context.mounted) return;
+                  if (_course?.isEnrolled ?? false) {
+                    _lecturesController.refresh();
+                  }
+                },
+              );
+            }, childCount: lectures.length),
           ),
           SliverToBoxAdapter(
             child: PagedPaginationBar(controller: _lecturesController),

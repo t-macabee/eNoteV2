@@ -1,47 +1,20 @@
 import 'package:flutter/material.dart';
 
-class ErrorBanner extends StatelessWidget implements PreferredSizeWidget {
-  final String message;
-  final VoidCallback? onDismissed;
-  final Color? backgroundColor;
-  final TextStyle? textStyle;
+import '../theme/app_theme.dart';
+import '../theme/app_tokens.dart';
+import 'status_banner.dart';
 
-  const ErrorBanner({
-    super.key,
-    required this.message,
-    this.onDismissed,
-    this.backgroundColor,
-    this.textStyle,
-  });
+class ErrorBanner extends StatelessWidget {
+  final String message;
+
+  const ErrorBanner({super.key, required this.message});
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: backgroundColor ?? Colors.red.shade100,
-      child: SizedBox(
-        width: double.infinity,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: Row(
-            children: [
-              const Icon(Icons.error_outline, color: Colors.red),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  message,
-                  style: textStyle ??
-                      TextStyle(color: Colors.red.shade900, fontSize: 14),
-                ),
-              ),
-              if (onDismissed != null)
-                IconButton(
-                  icon: const Icon(Icons.close, size: 20),
-                  onPressed: onDismissed,
-                ),
-            ],
-          ),
-        ),
-      ),
+    return StatusBanner(
+      icon: Icons.error_outline,
+      message: message,
+      tone: StatusTone.danger,
     );
   }
 
@@ -59,19 +32,22 @@ class ErrorBanner extends StatelessWidget implements PreferredSizeWidget {
         key: key,
         content: Row(
           children: [
-            const Icon(Icons.error_outline, color: Colors.white),
-            const SizedBox(width: 8),
+            const Icon(Icons.error_outline, color: AppTheme.onError),
+            const SizedBox(width: AppSpacing.sm),
             Expanded(child: Text(message)),
           ],
         ),
-        backgroundColor: Colors.red.shade700,
-        duration: duration ??
-            (autoDismiss ? const Duration(seconds: 4) : const Duration(days: 365)),
+        backgroundColor: AppTheme.error,
+        duration:
+            duration ??
+            (autoDismiss
+                ? const Duration(seconds: 4)
+                : const Duration(days: 365)),
         action: autoDismiss
             ? null
             : SnackBarAction(
                 label: 'Zatvori',
-                textColor: Colors.white,
+                textColor: AppTheme.onError,
                 onPressed: () {
                   if (onDismissed != null) {
                     onDismissed();
@@ -83,7 +59,4 @@ class ErrorBanner extends StatelessWidget implements PreferredSizeWidget {
       ),
     );
   }
-
-  @override
-  Size get preferredSize => const Size.fromHeight(56);
 }

@@ -5,7 +5,6 @@ import 'package:enote_core/enote_core.dart';
 
 import '../../../widgets/entity_form_scaffold.dart';
 import '../../../widgets/entity_grid_screen.dart';
-import '../../../widgets/status_filter_tabs.dart';
 import 'shop_employee_form_screen.dart';
 import 'shop_employee_provider.dart';
 
