@@ -103,8 +103,9 @@ class _EditProfileScreenState extends State<EditProfileScreen>
     if (bytes == null) return null;
     final fileName = file.name;
     final dot = fileName.lastIndexOf('.');
-    final extension =
-        dot == -1 ? '' : fileName.substring(dot + 1).toLowerCase();
+    final extension = dot == -1
+        ? ''
+        : fileName.substring(dot + 1).toLowerCase();
     final extensionOk = _allowedPictureExtensions.contains(extension);
     if (!extensionOk || bytes.length > _pictureSizeLimit) {
       if (mounted) {
@@ -130,17 +131,14 @@ class _EditProfileScreenState extends State<EditProfileScreen>
   Future<void> _uploadPicked(_PickedImage picked) async {
     final provider = context.read<ProfileProvider>();
     final session = context.read<SessionController>();
-    await submitWith(
-      (busy) => _pictureBusy = busy,
-      () async {
-        await provider.uploadPicture(
-          picked.bytes,
-          picked.fileName,
-          picked.contentType,
-        );
-        await session.reloadProfile();
-      },
-    );
+    await submitWith((busy) => _pictureBusy = busy, () async {
+      await provider.uploadPicture(
+        picked.bytes,
+        picked.fileName,
+        picked.contentType,
+      );
+      await session.reloadProfile();
+    }, showBanner: true);
   }
 
   Future<void> _changePicture() async {
@@ -149,8 +147,7 @@ class _EditProfileScreenState extends State<EditProfileScreen>
     await _uploadPicked(picked);
   }
 
-  Future<Uint8List?> _imagePickerBytes() async =>
-      (await _pickImage())?.bytes;
+  Future<Uint8List?> _imagePickerBytes() async => (await _pickImage())?.bytes;
 
   Future<String?> _imageFieldUpload(
     Uint8List bytes,
@@ -163,11 +160,7 @@ class _EditProfileScreenState extends State<EditProfileScreen>
       _PickedImage(bytes: bytes, fileName: fileName, contentType: contentType),
     );
     if (!mounted) return null;
-    return userPictureUrl(
-      apiClient,
-      'me',
-      cacheBuster: session.pictureVersion,
-    );
+    return userPictureUrl(apiClient, 'me', cacheBuster: session.pictureVersion);
   }
 
   Future<void> _removePicture() async {
@@ -179,13 +172,10 @@ class _EditProfileScreenState extends State<EditProfileScreen>
     if (confirmed != true || !mounted) return;
     final provider = context.read<ProfileProvider>();
     final session = context.read<SessionController>();
-    await submitWith(
-      (busy) => _pictureBusy = busy,
-      () async {
-        await provider.deletePicture();
-        await session.reloadProfile();
-      },
-    );
+    await submitWith((busy) => _pictureBusy = busy, () async {
+      await provider.deletePicture();
+      await session.reloadProfile();
+    }, showBanner: true);
   }
 
   @override
@@ -217,18 +207,18 @@ class _EditProfileScreenState extends State<EditProfileScreen>
           imagePicker: _imagePickerBytes,
           onUpload: _imageFieldUpload,
           onChangePicture: _pictureBusy ? null : _changePicture,
-          onRemovePicture:
-              (!hasPicture || _pictureBusy) ? null : _removePicture,
+          onRemovePicture: (!hasPicture || _pictureBusy)
+              ? null
+              : _removePicture,
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: AppSpacing.xl),
         EditProfileFields(
           formKey: _formKey,
           firstNameController: _firstNameController,
           lastNameController: _lastNameController,
           emailController: _emailController,
           dateOfBirth: _dateOfBirth,
-          onDateOfBirthChanged: (value) =>
-              setState(() => _dateOfBirth = value),
+          onDateOfBirthChanged: (value) => setState(() => _dateOfBirth = value),
         ),
       ],
     );

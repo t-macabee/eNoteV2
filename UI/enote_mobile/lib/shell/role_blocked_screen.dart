@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'package:enote_core/enote_core.dart';
+
 import '../session/session_controller.dart';
 
 class RoleBlockedScreen extends StatelessWidget {
@@ -11,17 +13,17 @@ class RoleBlockedScreen extends StatelessWidget {
     return Scaffold(
       body: Center(
         child: Padding(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(AppSpacing.xl),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.block_outlined, size: 64),
-              const SizedBox(height: 16),
+              const Icon(Icons.block_outlined, size: AppSize.heroIcon),
+              const SizedBox(height: AppSpacing.lg),
               const Text(
                 'Ova aplikacija je namijenjena studentima. Prijavite se na desktop aplikaciju.',
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: AppSpacing.xl),
               FilledButton(
                 onPressed: () =>
                     context.read<SessionController>().logoutAndRevoke(),

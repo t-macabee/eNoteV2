@@ -6,8 +6,12 @@ import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
+import 'package:enote_mobile/features/assignments/assignment_provider.dart';
 import 'package:enote_mobile/features/auth/auth_provider.dart';
+import 'package:enote_mobile/features/courses/course_provider.dart';
+import 'package:enote_mobile/features/home/home_provider.dart';
 import 'package:enote_mobile/features/instruments/instrument_provider.dart';
+import 'package:enote_mobile/features/lectures/lecture_provider.dart';
 import 'package:enote_mobile/features/rentals/payments/rental_payment_provider.dart';
 import 'package:enote_mobile/features/rentals/rental_provider.dart';
 import 'package:enote_mobile/realtime/notification_hub_client.dart';
@@ -29,10 +33,7 @@ Map<String, dynamic> _gateBody(http.Request request) {
     case '/api/v1/student/notifications/unread-count':
       return {'unreadCount': 0};
     case '/api/v1/student/notifications':
-      return {
-        'items': [],
-        'totalCount': 0,
-      };
+      return {'items': [], 'totalCount': 0};
     default:
       return {'message': 'OK'};
   }
@@ -81,9 +82,7 @@ Widget _gate({String? token}) {
         ),
         lazy: false,
       ),
-      Provider<AuthProvider>(
-        create: (_) => AuthProvider(apiClient: apiClient),
-      ),
+      Provider<AuthProvider>(create: (_) => AuthProvider(apiClient: apiClient)),
       ChangeNotifierProvider<InstrumentProvider>(
         create: (_) => InstrumentProvider(apiClient: apiClient),
       ),
@@ -93,6 +92,16 @@ Widget _gate({String? token}) {
       Provider<RentalPaymentProvider>(
         create: (_) => RentalPaymentProvider(apiClient: apiClient),
       ),
+      ChangeNotifierProvider<CourseProvider>(
+        create: (_) => CourseProvider(apiClient: apiClient),
+      ),
+      ChangeNotifierProvider<LectureProvider>(
+        create: (_) => LectureProvider(apiClient: apiClient),
+      ),
+      ChangeNotifierProvider<AssignmentProvider>(
+        create: (_) => AssignmentProvider(apiClient: apiClient),
+      ),
+      Provider<HomeProvider>(create: (_) => HomeProvider(apiClient: apiClient)),
     ],
     child: const MaterialApp(home: SessionGate()),
   );
@@ -103,7 +112,7 @@ void main() {
     await tester.pumpWidget(_gate());
     await tester.pumpAndSettle();
     expect(find.text('Prijava'), findsWidgets);
-    expect(find.text('Korisničko ime'), findsOneWidget);
+    expect(find.text('Korisničko ime *'), findsOneWidget);
   });
 
   testWidgets('a student token shows the root shell', (tester) async {
@@ -126,6 +135,6 @@ void main() {
     );
     await tester.tap(find.text('Odjavi se'));
     await tester.pumpAndSettle();
-    expect(find.text('Korisničko ime'), findsOneWidget);
+    expect(find.text('Korisničko ime *'), findsOneWidget);
   });
 }

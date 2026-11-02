@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'package:enote_core/enote_core.dart';
+
 class SectionHeader extends StatelessWidget {
   final String title;
   final Widget? trailing;
@@ -9,7 +11,10 @@ class SectionHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+        vertical: AppSpacing.sm,
+      ),
       child: Row(
         children: [
           Expanded(

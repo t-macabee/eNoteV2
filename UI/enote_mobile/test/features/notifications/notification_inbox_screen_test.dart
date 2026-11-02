@@ -4,7 +4,11 @@ import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
+import 'package:enote_mobile/features/assignments/assignment_provider.dart';
+import 'package:enote_mobile/features/courses/course_provider.dart';
+import 'package:enote_mobile/features/home/home_provider.dart';
 import 'package:enote_mobile/features/instruments/instrument_provider.dart';
+import 'package:enote_mobile/features/lectures/lecture_provider.dart';
 import 'package:enote_mobile/features/rentals/payments/rental_payment_provider.dart';
 import 'package:enote_mobile/features/rentals/rental_provider.dart';
 import 'package:enote_mobile/features/notifications/notification_inbox_screen.dart';
@@ -62,7 +66,9 @@ ScriptedClient _client({required List<Map<String, dynamic>> items}) {
         return jsonResponse({'items': [], 'totalCount': items.length}, 200);
       }
       final rendered = allRead
-          ? [for (final item in items) {...item, 'isRead': true}]
+          ? [
+              for (final item in items) {...item, 'isRead': true},
+            ]
           : items;
       return jsonResponse({'items': rendered, 'totalCount': items.length}, 200);
     }
@@ -71,9 +77,8 @@ ScriptedClient _client({required List<Map<String, dynamic>> items}) {
 }
 
 extension on ScriptedClient {
-  List<http.Request> where(String method, String path) => requests
-      .where((r) => r.method == method && r.url.path == path)
-      .toList();
+  List<http.Request> where(String method, String path) =>
+      requests.where((r) => r.method == method && r.url.path == path).toList();
 }
 
 class _Harness {
@@ -135,6 +140,18 @@ class _Harness {
         Provider<RentalPaymentProvider>(
           create: (_) => RentalPaymentProvider(apiClient: apiClient),
         ),
+        ChangeNotifierProvider<CourseProvider>(
+          create: (_) => CourseProvider(apiClient: apiClient),
+        ),
+        ChangeNotifierProvider<LectureProvider>(
+          create: (_) => LectureProvider(apiClient: apiClient),
+        ),
+        ChangeNotifierProvider<AssignmentProvider>(
+          create: (_) => AssignmentProvider(apiClient: apiClient),
+        ),
+        Provider<HomeProvider>(
+          create: (_) => HomeProvider(apiClient: apiClient),
+        ),
       ],
       child: child,
     );
@@ -142,10 +159,7 @@ class _Harness {
 
   Widget inboxApp() {
     return providers(
-      MaterialApp(
-        theme: mobileTheme,
-        home: const NotificationInboxScreen(),
-      ),
+      MaterialApp(theme: mobileTheme, home: const NotificationInboxScreen()),
     );
   }
 
@@ -169,15 +183,17 @@ Future<void> _settle(WidgetTester tester) => tester.pumpAndSettle();
 void main() {
   testWidgets('unread rows are bold with a primary dot; read rows are '
       'normal with a hollow dot', (tester) async {
-    final harness = _Harness(items: [
-      _item(id: 1, rentalId: 11, title: 'Unread rental', isRead: false),
-      _item(id: 2, lectureId: 22, title: 'Read lecture', isRead: true),
-    ]);
+    final harness = _Harness(
+      items: [
+        _item(id: 1, rentalId: 11, title: 'Unread rental', isRead: false),
+        _item(id: 2, lectureId: 22, title: 'Read lecture', isRead: true),
+      ],
+    );
     await tester.pumpWidget(harness.inboxApp());
     await _settle(tester);
 
     final unreadTitle = tester.widget<Text>(find.text('Unread rental'));
-    expect(unreadTitle.style?.fontWeight, FontWeight.bold);
+    expect(unreadTitle.style?.fontWeight, FontWeight.w600);
     final readTitle = tester.widget<Text>(find.text('Read lecture'));
     expect(readTitle.style?.fontWeight, FontWeight.normal);
     expect(readTitle.style?.color, AppTheme.textSecondary);
@@ -191,14 +207,16 @@ void main() {
       ),
       findsOneWidget,
     );
-    expect(find.text('Učitaj još'), findsNothing);
   });
 
-  testWidgets('tap unread PATCHes read then navigates to the rental detail',
-      (tester) async {
-    final harness = _Harness(items: [
-      _item(id: 1, rentalId: 11, title: 'Unread rental', isRead: false),
-    ]);
+  testWidgets('tap unread PATCHes read then navigates to the rental detail', (
+    tester,
+  ) async {
+    final harness = _Harness(
+      items: [
+        _item(id: 1, rentalId: 11, title: 'Unread rental', isRead: false),
+      ],
+    );
     await tester.pumpWidget(harness.shellApp());
     await _settle(tester);
 
@@ -210,10 +228,7 @@ void main() {
     await _settle(tester);
 
     expect(
-      harness.client.where(
-        'PATCH',
-        '/api/v1/student/notifications/1/read',
-      ),
+      harness.client.where('PATCH', '/api/v1/student/notifications/1/read'),
       hasLength(1),
     );
     expect(find.text('Obavještenja'), findsNothing);
@@ -221,9 +236,9 @@ void main() {
   });
 
   testWidgets('tap read navigates without PATCH', (tester) async {
-    final harness = _Harness(items: [
-      _item(id: 2, lectureId: 22, title: 'Read lecture', isRead: true),
-    ]);
+    final harness = _Harness(
+      items: [_item(id: 2, lectureId: 22, title: 'Read lecture', isRead: true)],
+    );
     await tester.pumpWidget(harness.shellApp());
     await _settle(tester);
 
@@ -234,21 +249,21 @@ void main() {
     await _settle(tester);
 
     expect(
-      harness.client.where(
-        'PATCH',
-        '/api/v1/student/notifications/2/read',
-      ),
+      harness.client.where('PATCH', '/api/v1/student/notifications/2/read'),
       isEmpty,
     );
     expect(find.text('Obavještenja'), findsNothing);
     expect(find.text('Predavanje'), findsWidgets);
   });
 
-  testWidgets('mark all PATCHes read-all and disables with tooltip at 0',
-      (tester) async {
-    final harness = _Harness(items: [
-      _item(id: 1, rentalId: 11, title: 'Unread rental', isRead: false),
-    ]);
+  testWidgets('mark all PATCHes read-all and then hides the action', (
+    tester,
+  ) async {
+    final harness = _Harness(
+      items: [
+        _item(id: 1, rentalId: 11, title: 'Unread rental', isRead: false),
+      ],
+    );
     await tester.pumpWidget(harness.inboxApp());
     await _settle(tester);
 
@@ -256,53 +271,29 @@ void main() {
     await _settle(tester);
 
     expect(
-      harness.client.where(
-        'PATCH',
-        '/api/v1/student/notifications/read-all',
-      ),
+      harness.client.where('PATCH', '/api/v1/student/notifications/read-all'),
       hasLength(1),
     );
-    expect(
-      find.byWidgetPredicate(
-        (w) => w is Tooltip && w.message == 'Nema nepročitanih',
-      ),
-      findsOneWidget,
-    );
-    final button = tester.widget<TextButton>(
-      find.widgetWithText(TextButton, 'Označi sve kao pročitano'),
-    );
-    expect(button.onPressed, isNull);
+    expect(find.text('Označi sve kao pročitano'), findsNothing);
   });
 
-  testWidgets('mark all is disabled with tooltip when nothing is unread',
-      (tester) async {
-    final harness = _Harness(items: [
-      _item(id: 2, lectureId: 22, title: 'Read lecture', isRead: true),
-    ]);
+  testWidgets('mark all is hidden when nothing is unread', (tester) async {
+    final harness = _Harness(
+      items: [_item(id: 2, lectureId: 22, title: 'Read lecture', isRead: true)],
+    );
     await tester.pumpWidget(harness.inboxApp());
     await _settle(tester);
 
-    final button = tester.widget<TextButton>(
-      find.widgetWithText(TextButton, 'Označi sve kao pročitano'),
-    );
-    expect(button.onPressed, isNull);
+    expect(find.text('Označi sve kao pročitano'), findsNothing);
     expect(
-      find.byWidgetPredicate(
-        (w) => w is Tooltip && w.message == 'Nema nepročitanih',
-      ),
-      findsOneWidget,
-    );
-    expect(
-      harness.client.where(
-        'PATCH',
-        '/api/v1/student/notifications/read-all',
-      ),
+      harness.client.where('PATCH', '/api/v1/student/notifications/read-all'),
       isEmpty,
     );
   });
 
-  testWidgets('load more is visible iff hasMore and requests page 2',
-      (tester) async {
+  testWidgets('scrolling to the end loads the next page of notifications', (
+    tester,
+  ) async {
     final items = List.generate(
       50,
       (i) => _item(id: i + 1, title: 'Item ${i + 1}', isRead: true),
@@ -311,16 +302,12 @@ void main() {
     await tester.pumpWidget(harness.inboxApp());
     await _settle(tester);
 
-    await tester.scrollUntilVisible(
-      find.text('Učitaj još'),
-      2000,
-      scrollable: find.byType(Scrollable).first,
+    final pageTwoBefore = harness.client.requests.where(
+      (r) => r.url.queryParameters['page'] == '2',
     );
-    await tester.pumpAndSettle();
-    await tester.drag(find.byType(ListView), const Offset(0, -300));
-    await tester.pumpAndSettle();
-    expect(find.text('Učitaj još'), findsOneWidget);
-    await tester.tap(find.text('Učitaj još'));
+    expect(pageTwoBefore, isEmpty);
+
+    await tester.drag(find.byType(ListView), const Offset(0, -20000));
     await _settle(tester);
 
     final pageTwos = harness.client.requests.where(
@@ -330,64 +317,65 @@ void main() {
           r.url.queryParameters['page'] == '2',
     );
     expect(pageTwos, hasLength(1));
-    expect(find.text('Učitaj još'), findsNothing);
+    expect(find.text('Učitavanje nije uspjelo.'), findsNothing);
   });
 
   testWidgets(
-      'push notification snackbar is floating, has persist false, and auto-dismisses',
-      (tester) async {
-    final harness = _Harness(items: []);
-    await tester.pumpWidget(harness.shellApp());
-    await _settle(tester);
+    'push notification snackbar is floating, has persist false, and auto-dismisses',
+    (tester) async {
+      final harness = _Harness(items: []);
+      await tester.pumpWidget(harness.shellApp());
+      await _settle(tester);
 
-    harness.hub.onPush(
-      NotificationPushDto(
-        title: 'Nova obavijest',
-        body: 'Body text',
-        createdAt: DateTime(2026, 9, 10),
-      ),
-    );
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 750));
+      harness.hub.onPush(
+        NotificationPushDto(
+          title: 'Nova obavijest',
+          body: 'Body text',
+          createdAt: DateTime(2026, 9, 10),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 750));
 
-    expect(find.text('Nova obavijest'), findsOneWidget);
-    final snackBar = tester.widget<SnackBar>(find.byType(SnackBar));
-    expect(snackBar.persist, isFalse);
-    expect(snackBar.behavior, SnackBarBehavior.floating);
-    expect(snackBar.duration, const Duration(seconds: 4));
+      expect(find.text('Nova obavijest'), findsOneWidget);
+      final snackBar = tester.widget<SnackBar>(find.byType(SnackBar));
+      expect(snackBar.persist, isFalse);
+      expect(snackBar.behavior, SnackBarBehavior.floating);
+      expect(snackBar.duration, const Duration(seconds: 4));
 
-    await tester.pump(const Duration(seconds: 4));
-    await tester.pumpAndSettle();
-    expect(find.text('Nova obavijest'), findsNothing);
-  });
+      await tester.pump(const Duration(seconds: 4));
+      await tester.pumpAndSettle();
+      expect(find.text('Nova obavijest'), findsNothing);
+    },
+  );
 
   testWidgets(
-      'consecutive push notifications clear previous snackbars without queuing',
-      (tester) async {
-    final harness = _Harness(items: []);
-    await tester.pumpWidget(harness.shellApp());
-    await _settle(tester);
+    'consecutive push notifications clear previous snackbars without queuing',
+    (tester) async {
+      final harness = _Harness(items: []);
+      await tester.pumpWidget(harness.shellApp());
+      await _settle(tester);
 
-    harness.hub.onPush(
-      NotificationPushDto(
-        title: 'First push',
-        body: 'Body 1',
-        createdAt: DateTime(2026, 9, 10),
-      ),
-    );
-    await tester.pump();
-    expect(find.text('First push'), findsOneWidget);
+      harness.hub.onPush(
+        NotificationPushDto(
+          title: 'First push',
+          body: 'Body 1',
+          createdAt: DateTime(2026, 9, 10),
+        ),
+      );
+      await tester.pump();
+      expect(find.text('First push'), findsOneWidget);
 
-    harness.hub.onPush(
-      NotificationPushDto(
-        title: 'Second push',
-        body: 'Body 2',
-        createdAt: DateTime(2026, 9, 10),
-      ),
-    );
-    await tester.pump();
-    expect(find.text('Second push'), findsOneWidget);
-    expect(find.text('First push'), findsNothing);
-  });
+      harness.hub.onPush(
+        NotificationPushDto(
+          title: 'Second push',
+          body: 'Body 2',
+          createdAt: DateTime(2026, 9, 10),
+        ),
+      );
+      await tester.pump();
+      expect(find.text('Second push'), findsOneWidget);
+      expect(find.text('First push'), findsNothing);
+    },
+  );
 }
-

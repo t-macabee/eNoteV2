@@ -5,10 +5,13 @@ import 'package:enote_core/enote_core.dart';
 
 import '../../shell/routes.dart';
 import '../../widgets/async_state_view.dart';
+import '../../widgets/detail_actions.dart';
+import '../../widgets/detail_header.dart';
+import '../../widgets/detail_section.dart';
 import '../../widgets/labeled_value.dart';
+import '../../widgets/submit_button.dart';
 import 'lecture_labels.dart';
 import 'lecture_provider.dart';
-import 'rsvp_sheet.dart';
 
 class LectureDetailScreen extends StatefulWidget {
   final int lectureId;
@@ -23,6 +26,7 @@ class _LectureDetailScreenState extends State<LectureDetailScreen> {
   LectureDto? _lecture;
   Object? _error;
   bool _loading = true;
+  bool? _pendingConfirm;
 
   @override
   void initState() {
@@ -55,27 +59,28 @@ class _LectureDetailScreenState extends State<LectureDetailScreen> {
     }
   }
 
-  void _openRsvp(bool confirm) {
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      builder: (sheetContext) => RsvpSheet(
-        lectureId: widget.lectureId,
-        confirm: confirm,
-        onSuccess: () {
-          if (!mounted) return;
-          Navigator.of(sheetContext).pop();
-          _load();
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                confirm ? 'Prisustvo je potvrđeno.' : 'Prisustvo je odbijeno.',
-              ),
-            ),
-          );
-        },
-      ),
-    );
+  Future<void> _rsvp(bool confirm) async {
+    if (_pendingConfirm != null) return;
+    setState(() => _pendingConfirm = confirm);
+    try {
+      await context.read<LectureProvider>().rsvp(
+        widget.lectureId,
+        RsvpRequest(confirm: confirm),
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            confirm ? 'Prisustvo je potvrđeno.' : 'Prisustvo je odbijeno.',
+          ),
+        ),
+      );
+      await _load();
+    } catch (e) {
+      if (mounted) ErrorBanner.show(context, message: userMessage(e));
+    } finally {
+      if (mounted) setState(() => _pendingConfirm = null);
+    }
   }
 
   @override
@@ -93,100 +98,123 @@ class _LectureDetailScreenState extends State<LectureDetailScreen> {
   }
 
   Widget _body(LectureDto lecture) {
+    final closedMessage = _closedBannerMessage(lecture);
     final blockedReason = _blockedReason(lecture);
+    final reason = closedMessage ?? blockedReason;
+    final rsvpHidden = _isClosed(lecture);
+    final attendance = lecture.myAttendanceStatus;
+    final isBusy = _pendingConfirm != null;
+    final canAct = !rsvpHidden && blockedReason == null && !isBusy;
     return RefreshIndicator(
       onRefresh: _load,
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.only(bottom: AppSpacing.lg),
         children: [
-          Text(lecture.name, style: Theme.of(context).textTheme.headlineSmall),
-          const SizedBox(height: 12),
-          LabeledValue(
-            label: 'Vrijeme',
-            value: formatDateTime(lecture.lectureTime),
-          ),
-          LabeledValue(label: 'Trajanje', value: '${lecture.duration} min'),
-          LabeledValue(label: 'Lokacija', value: lecture.location),
-          LabeledValue(
-            label: 'Tip',
-            value: lectureTypeLabel(lecture.lectureType),
-          ),
-          if (lecture.isIndividual)
-            LabeledValue(label: 'Čas', value: 'Individualni čas'),
-          LabeledValue(
-            label: 'Status',
-            value: lectureStatusLabel(lecture.lectureStatus),
-          ),
-          if (lecture.cancellationReason != null)
-            LabeledValue(
-              label: 'Razlog otkazivanja',
-              value: lecture.cancellationReason!,
-            ),
-          LabeledValue(
-            label: 'Prijavljeno',
-            value:
-                '${lecture.attendeeCount}/${lecture.capacity?.toString() ?? '∞'}',
-          ),
-          const SizedBox(height: 16),
-          StatusChip(
-            label: rsvpStateLabel(lecture.myAttendanceStatus),
-            tone: rsvpStateTone(lecture.myAttendanceStatus),
-          ),
-          if (blockedReason != null) ...[
-            const SizedBox(height: 8),
-            StatusBanner(
-              icon: Icons.info_outline,
-              message: blockedReason,
-              tone: StatusTone.neutral,
-            ),
-          ],
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                child: FilledButton(
-                  onPressed: blockedReason == null
-                      ? () => _openRsvp(true)
-                      : null,
-                  child: const Text('Dolazim'),
-                ),
+          DetailHeader(
+            title: lecture.name,
+            subtitle: formatDateTime(lecture.lectureTime),
+            chips: [
+              StatusChip(
+                label: lectureStatusLabel(lecture.lectureStatus),
+                tone: lectureStatusTone(lecture.lectureStatus),
               ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: blockedReason == null
-                      ? () => _openRsvp(false)
-                      : null,
-                  child: const Text('Ne dolazim'),
-                ),
-              ),
+              ...lectureStateChips(lecture),
             ],
           ),
-          const SizedBox(height: 8),
-          OutlinedButton(
-            onPressed: () => Navigator.of(context).pushNamed(
-              AppRoutes.lectureNotes,
-              arguments: LectureNotesArgs(lecture.id),
+          DetailSection(
+            title: 'Detalji',
+            child: Column(
+              children: [
+                LabeledValue(
+                  label: 'Trajanje',
+                  value: '${lecture.duration} min',
+                ),
+                LabeledValue(label: 'Lokacija', value: lecture.location),
+                LabeledValue(
+                  label: 'Tip',
+                  value: lectureTypeLabel(lecture.lectureType),
+                ),
+                if (lecture.cancellationReason != null)
+                  LabeledValue(
+                    label: 'Razlog otkazivanja',
+                    value: lecture.cancellationReason!,
+                  ),
+                LabeledValue(
+                  label: 'Prijavljeno',
+                  value:
+                      '${lecture.attendeeCount}/${lecture.capacity?.toString() ?? '∞'}',
+                ),
+              ],
             ),
-            child: const Text('Bilješke'),
+          ),
+          DetailActions(
+            banner: reason == null
+                ? null
+                : StatusBanner(
+                    icon: Icons.info_outline,
+                    message: reason,
+                    tone: StatusTone.neutral,
+                  ),
+            actions: [
+              if (!rsvpHidden && attendance != AttendanceStatus.present)
+                SubmitButton(
+                  label: 'Dolazim',
+                  onPressed: canAct ? () => _rsvp(true) : null,
+                  isBusy: _pendingConfirm == true,
+                ),
+              if (!rsvpHidden && attendance != AttendanceStatus.absent)
+                OutlinedButton(
+                  onPressed: canAct ? () => _rsvp(false) : null,
+                  child: _pendingConfirm == false
+                      ? const SizedBox.square(
+                          dimension: AppSize.spinnerMd,
+                          child: CircularProgressIndicator(
+                            strokeWidth: AppSize.spinnerStroke,
+                          ),
+                        )
+                      : const Text('Ne dolazim'),
+                ),
+              OutlinedButton(
+                onPressed: () => Navigator.of(context).pushNamed(
+                  AppRoutes.lectureNotes,
+                  arguments: LectureNotesArgs(lecture.id),
+                ),
+                child: const Text('Bilješke'),
+              ),
+            ],
           ),
         ],
       ),
     );
   }
 
-  String? _blockedReason(LectureDto lecture) {
+  bool _isClosed(LectureDto lecture) {
     if (lecture.isCancelled ||
         lecture.lectureStatus == LectureStatus.cancelled) {
-      return 'Predavanje je otkazano.';
+      return true;
     }
     if (lecture.lectureStatus == LectureStatus.held) {
-      return 'Predavanje je održano.';
+      return true;
+    }
+    return DateTime.now().isAfter(lecture.lectureTime);
+  }
+
+  String? _closedBannerMessage(LectureDto lecture) {
+    if (lecture.isCancelled ||
+        lecture.lectureStatus == LectureStatus.cancelled) {
+      return null;
+    }
+    if (lecture.lectureStatus == LectureStatus.held) {
+      return null;
     }
     if (DateTime.now().isAfter(lecture.lectureTime)) {
       return 'Prijave su zatvorene jer je predavanje počelo.';
     }
+    return null;
+  }
+
+  String? _blockedReason(LectureDto lecture) {
     final capacity = lecture.capacity;
     final confirmed = lecture.myAttendanceStatus == AttendanceStatus.present;
     if (capacity != null && lecture.attendeeCount >= capacity && !confirmed) {

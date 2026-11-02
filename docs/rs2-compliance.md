@@ -44,18 +44,16 @@ zaključne ocjene.
 Filter radi nad već dohvaćenim podacima rangiranja, pa nema dodatnog poziva prema
 API-ju.
 
-Tri liste namjerno nemaju parametar za pretragu. Uputstvo dozvoljava izuzetak
+Dvije liste namjerno nemaju parametar za pretragu. Uputstvo dozvoljava izuzetak
 kada je opravdan, a ovdje pretraga ne bi pomogla:
 
 | Lista | Endpoint | Razlog |
 |---|---|---|
 | Prisustvo na predavanju (desktop, instruktor) | `GET instructor/lectures/{id}/attendance` | Vezana je za jedno predavanje i ima po jedan red za svakog studenta na njemu. |
 | Predaje za zadatak (desktop, instruktor) | `GET instructor/lectures/{lectureId}/assignments/{assignmentId}/submissions` | Vezana je za jedan zadatak i ima najviše jednu predaju po studentu. |
-| Historija predaja (mobilna, student) | `GET student/submissions` | Student vidi samo svoje predaje, samo iz kurseva kojima ima pristup, od najnovije, sa straničenjem. |
 
-Search objekti liste prisustva i historije predaja (`AttendanceSearchObject` i
-`AssignmentSubmissionSearchObject`) zato nose samo straničenje iz
-`BaseSearchObject`. `SubmissionSearchObject` dodatno ima filtere `StudentName`
+Search objekat liste prisustva (`AttendanceSearchObject`) zato nosi samo
+straničenje iz `BaseSearchObject`. `SubmissionSearchObject` dodatno ima filtere `StudentName`
 i `IsGraded`, koje `GetSubmissionsAsync` koristi.
 
 Četiri PDF izvještaja (`/report` endpointi) takođe nemaju parametre za pretragu:

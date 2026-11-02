@@ -8,4 +8,6 @@ public class AssignmentSearchObject : BaseSearchObject
 
     public DateTime? DueAfter { get; set; }
     public DateTime? DueBefore { get; set; }
+
+    public bool? IsSubmitted { get; set; }
 }

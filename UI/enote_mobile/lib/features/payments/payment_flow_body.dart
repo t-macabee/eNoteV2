@@ -17,12 +17,6 @@ class PaymentFlowScaffold extends StatelessWidget {
     required this.body,
   });
 
-  static const _closable = {
-    PaymentView.review,
-    PaymentView.failed,
-    PaymentView.pending,
-  };
-
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
@@ -32,13 +26,8 @@ class PaymentFlowScaffold extends StatelessWidget {
         child: Scaffold(
           appBar: AppBar(
             title: Text(title),
-            actions: [
-              if (_closable.contains(controller.view))
-                IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: () => Navigator.of(context).maybePop(),
-                ),
-            ],
+            automaticallyImplyLeading:
+                controller.view != PaymentView.processing,
           ),
           body: body(context),
         ),
@@ -51,7 +40,7 @@ class PaymentFlowBody extends StatelessWidget {
   final PaymentFlowController controller;
   final Widget reviewChild;
 
-  final String? successNote;
+  final String successNote;
 
   final String successCancelLabel;
   final VoidCallback onSuccessBack;
@@ -62,7 +51,7 @@ class PaymentFlowBody extends StatelessWidget {
     required this.reviewChild,
     required this.successCancelLabel,
     required this.onSuccessBack,
-    this.successNote,
+    required this.successNote,
   });
 
   @override

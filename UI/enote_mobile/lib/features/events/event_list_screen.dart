@@ -27,10 +27,7 @@ class _EventListScreenState extends State<EventListScreen>
   @override
   void initState() {
     super.initState();
-    _controller = PagedFetchController<EventDto>(
-      fetcher: _fetch,
-      pageSize: 20,
-    );
+    _controller = PagedFetchController<EventDto>(fetcher: _fetch, pageSize: 20);
   }
 
   Future<PagedResult<EventDto>> _fetch(
@@ -44,10 +41,11 @@ class _EventListScreenState extends State<EventListScreen>
         pageSize,
         search,
         filters: {
-          if (_from != null) 'from': _from!.toIso8601String(),
+          if (_from != null) 'from': toUtcIso(_from!),
           if (_to != null)
-            'to': DateTime(_to!.year, _to!.month, _to!.day, 23, 59, 59)
-                .toIso8601String(),
+            'to': toUtcIso(
+              DateTime(_to!.year, _to!.month, _to!.day, 23, 59, 59),
+            ),
         },
       ),
     );
@@ -62,44 +60,35 @@ class _EventListScreenState extends State<EventListScreen>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-          child: Row(
-            children: [
-              Expanded(
-                child: AppDatePickerField(
-                  label: 'Od',
-                  value: _from,
-                  onChanged: (value) {
-                    setState(() => _from = value);
-                    _controller.refresh(resetPage: true);
-                  },
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: AppDatePickerField(
-                  label: 'Do',
-                  value: _to,
-                  onChanged: (value) {
-                    setState(() => _to = value);
-                    _controller.refresh(resetPage: true);
-                  },
-                ),
-              ),
-            ],
+    return PagedListView<EventDto>(
+      controller: _controller,
+      showSearch: false,
+      filterRow: Row(
+        children: [
+          Expanded(
+            child: AppDatePickerField(
+              label: 'Od',
+              value: _from,
+              onChanged: (value) {
+                setState(() => _from = value);
+                _controller.refresh(resetPage: true);
+              },
+            ),
           ),
-        ),
-        Expanded(
-          child: PagedListView<EventDto>(
-            controller: _controller,
-            showSearch: false,
-            itemBuilder: (context, event) => _EventRow(event: event),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: AppDatePickerField(
+              label: 'Do',
+              value: _to,
+              onChanged: (value) {
+                setState(() => _to = value);
+                _controller.refresh(resetPage: true);
+              },
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
+      itemBuilder: (context, event) => _EventRow(event: event),
     );
   }
 }
@@ -115,10 +104,8 @@ class _EventRow extends StatelessWidget {
       leading: const Icon(Icons.event_outlined),
       title: Text(event.title),
       subtitle: Text(formatDateTime(event.startsAt)),
-      onTap: () => Navigator.of(context).pushNamed(
-        AppRoutes.eventDetail,
-        arguments: EventDetailArgs(event),
-      ),
+      onTap: () => Navigator.of(context)
+          .pushNamed(AppRoutes.eventDetail, arguments: EventDetailArgs(event)),
     );
   }
 }

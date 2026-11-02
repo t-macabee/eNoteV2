@@ -63,11 +63,8 @@ class RentalTimeline extends StatelessWidget {
       isFilled: rental.isPaid,
     );
 
-    RentalTimelineStep returned(String label) => RentalTimelineStep(
-      label: label,
-      at: rental.returnedAt,
-      actor: store,
-    );
+    RentalTimelineStep returned(String label) =>
+        RentalTimelineStep(label: label, at: rental.returnedAt, actor: store);
 
     return switch (rental.rentalStatus) {
       InstrumentRentalStatus.pending => [
@@ -87,7 +84,11 @@ class RentalTimeline extends StatelessWidget {
         requested,
         approved,
         pickedUp,
-        RentalTimelineStep(label: 'Povrat do', at: rental.dueAt, isFilled: false),
+        RentalTimelineStep(
+          label: 'Povrat do',
+          at: rental.dueAt,
+          isFilled: false,
+        ),
       ],
       InstrumentRentalStatus.completed => [
         requested,
@@ -139,6 +140,9 @@ class RentalTimeline extends StatelessWidget {
 }
 
 class _StepRow extends StatelessWidget {
+  static const double _dotSize = 12;
+  static const double _lineWidth = 1;
+
   final RentalTimelineStep step;
   final bool isLast;
 
@@ -152,6 +156,7 @@ class _StepRow extends StatelessWidget {
         ? AppTheme.primary
         : AppTheme.textTertiary;
     final actorLine = step.actorLine;
+    final textTheme = Theme.of(context).textTheme;
 
     return IntrinsicHeight(
       child: Row(
@@ -160,27 +165,29 @@ class _StepRow extends StatelessWidget {
           Column(
             children: [
               Padding(
-                padding: const EdgeInsets.only(top: 2),
+                padding: const EdgeInsets.only(top: AppSpacing.xxs),
                 child: Icon(
                   step.isFilled ? Icons.circle : Icons.circle_outlined,
-                  size: 12,
+                  size: _dotSize,
                   color: color,
                 ),
               ),
               if (!isLast)
                 Expanded(
                   child: Container(
-                    width: 1,
-                    margin: const EdgeInsets.symmetric(vertical: 2),
+                    width: _lineWidth,
+                    margin: const EdgeInsets.symmetric(
+                      vertical: AppSpacing.xxs,
+                    ),
                     color: AppTheme.outline,
                   ),
                 ),
             ],
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Padding(
-              padding: EdgeInsets.only(bottom: isLast ? 0 : 12),
+              padding: EdgeInsets.only(bottom: isLast ? 0 : AppSpacing.md),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -190,32 +197,29 @@ class _StepRow extends StatelessWidget {
                       Expanded(
                         child: Text(
                           step.label,
-                          style: TextStyle(
+                          style: textTheme.labelLarge?.copyWith(
                             color: step.isTerminalFailure
                                 ? AppTheme.error
                                 : step.isFilled
                                 ? AppTheme.textPrimary
                                 : AppTheme.textTertiary,
-                            fontWeight: FontWeight.w500,
                           ),
                         ),
                       ),
                       Text(
                         step.at == null ? '—' : formatDateTime(step.at!),
-                        style: const TextStyle(
+                        style: textTheme.bodySmall?.copyWith(
                           color: AppTheme.textSecondary,
-                          fontSize: 12,
                         ),
                       ),
                     ],
                   ),
                   if (actorLine != null) ...[
-                    const SizedBox(height: 2),
+                    const SizedBox(height: AppSpacing.xxs),
                     Text(
                       actorLine,
-                      style: const TextStyle(
+                      style: textTheme.bodySmall?.copyWith(
                         color: AppTheme.textSecondary,
-                        fontSize: 12,
                       ),
                     ),
                   ],

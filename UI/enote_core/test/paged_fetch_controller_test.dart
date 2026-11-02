@@ -37,8 +37,10 @@ void main() {
       final fetcher = _RecordingFetcher()
         ..responder = (page) =>
             PagedResult<String>(items: ['a', 'b'], totalCount: 7);
-      final controller =
-          PagedFetchController<String>(fetcher: fetcher.call, pageSize: 20);
+      final controller = PagedFetchController<String>(
+        fetcher: fetcher.call,
+        pageSize: 20,
+      );
       addTearDown(controller.dispose);
 
       await controller.load();
@@ -51,8 +53,10 @@ void main() {
 
     test('passes its configured pageSize through unchanged', () async {
       final fetcher = _RecordingFetcher();
-      final controller =
-          PagedFetchController<String>(fetcher: fetcher.call, pageSize: 24);
+      final controller = PagedFetchController<String>(
+        fetcher: fetcher.call,
+        pageSize: 24,
+      );
       addTearDown(controller.dispose);
 
       await controller.load();
@@ -62,8 +66,10 @@ void main() {
 
     test('coalesces rapid typing into a single debounced fetch', () async {
       final fetcher = _RecordingFetcher();
-      final controller =
-          PagedFetchController<String>(fetcher: fetcher.call, pageSize: 20);
+      final controller = PagedFetchController<String>(
+        fetcher: fetcher.call,
+        pageSize: 20,
+      );
       addTearDown(controller.dispose);
 
       await controller.load();
@@ -84,8 +90,10 @@ void main() {
       final fetcher = _RecordingFetcher()
         ..responder = (page) =>
             PagedResult<String>(items: ['x'], totalCount: 100);
-      final controller =
-          PagedFetchController<String>(fetcher: fetcher.call, pageSize: 20);
+      final controller = PagedFetchController<String>(
+        fetcher: fetcher.call,
+        pageSize: 20,
+      );
       addTearDown(controller.dispose);
 
       await controller.load();
@@ -100,33 +108,39 @@ void main() {
       expect(fetcher.calls.last, (1, 20, 'violina'));
     });
 
-    test('discards a stale response when a newer request is in flight',
-        () async {
-      final fetcher = _RecordingFetcher()..manual = true;
-      final controller =
-          PagedFetchController<String>(fetcher: fetcher.call, pageSize: 20);
-      addTearDown(controller.dispose);
+    test(
+      'discards a stale response when a newer request is in flight',
+      () async {
+        final fetcher = _RecordingFetcher()..manual = true;
+        final controller = PagedFetchController<String>(
+          fetcher: fetcher.call,
+          pageSize: 20,
+        );
+        addTearDown(controller.dispose);
 
-      final first = controller.load();
-      final second = controller.load();
-      expect(fetcher.pending.length, 2);
+        final first = controller.load();
+        final second = controller.load();
+        expect(fetcher.pending.length, 2);
 
-      fetcher.pending[1].complete(
-        PagedResult<String>(items: ['newest'], totalCount: 1),
-      );
-      fetcher.pending[0].complete(
-        PagedResult<String>(items: ['stale'], totalCount: 999),
-      );
-      await Future.wait([first, second]);
+        fetcher.pending[1].complete(
+          PagedResult<String>(items: ['newest'], totalCount: 1),
+        );
+        fetcher.pending[0].complete(
+          PagedResult<String>(items: ['stale'], totalCount: 999),
+        );
+        await Future.wait([first, second]);
 
-      expect(controller.items, ['newest']);
-      expect(controller.totalCount, 1);
-    });
+        expect(controller.items, ['newest']);
+        expect(controller.totalCount, 1);
+      },
+    );
 
     test('a stale response does not clear the loading flag', () async {
       final fetcher = _RecordingFetcher()..manual = true;
-      final controller =
-          PagedFetchController<String>(fetcher: fetcher.call, pageSize: 20);
+      final controller = PagedFetchController<String>(
+        fetcher: fetcher.call,
+        pageSize: 20,
+      );
       addTearDown(controller.dispose);
 
       final first = controller.load();
@@ -160,8 +174,10 @@ void main() {
 
     test('an error is cleared by the next successful load', () async {
       final fetcher = _RecordingFetcher()..throwsWith = ApiException('pao');
-      final controller =
-          PagedFetchController<String>(fetcher: fetcher.call, pageSize: 20);
+      final controller = PagedFetchController<String>(
+        fetcher: fetcher.call,
+        pageSize: 20,
+      );
       addTearDown(controller.dispose);
 
       await controller.load();
@@ -177,8 +193,10 @@ void main() {
     test('clamps totalPages to at least 1 on an empty result set', () async {
       final fetcher = _RecordingFetcher()
         ..responder = (page) => PagedResult<String>(items: [], totalCount: 0);
-      final controller =
-          PagedFetchController<String>(fetcher: fetcher.call, pageSize: 20);
+      final controller = PagedFetchController<String>(
+        fetcher: fetcher.call,
+        pageSize: 20,
+      );
       addTearDown(controller.dispose);
 
       expect(controller.totalPages, isNull, reason: 'nothing fetched yet');
@@ -194,8 +212,10 @@ void main() {
       final fetcher = _RecordingFetcher()
         ..responder = (page) =>
             PagedResult<String>(items: ['p$page'], totalCount: 45);
-      final controller =
-          PagedFetchController<String>(fetcher: fetcher.call, pageSize: 20);
+      final controller = PagedFetchController<String>(
+        fetcher: fetcher.call,
+        pageSize: 20,
+      );
       addTearDown(controller.dispose);
 
       await controller.load();
@@ -214,33 +234,124 @@ void main() {
       expect(controller.currentPage, 3, reason: 'already on the last page');
     });
 
-    test('refresh(resetPage: true) returns to page 1, plain refresh does not',
-        () async {
+    test(
+      'refresh(resetPage: true) returns to page 1, plain refresh does not',
+      () async {
+        final fetcher = _RecordingFetcher()
+          ..responder = (page) =>
+              PagedResult<String>(items: ['p$page'], totalCount: 100);
+        final controller = PagedFetchController<String>(
+          fetcher: fetcher.call,
+          pageSize: 20,
+        );
+        addTearDown(controller.dispose);
+
+        await controller.load();
+        controller.nextPage();
+        await Future<void>.value();
+        expect(controller.currentPage, 2);
+
+        controller.refresh();
+        await Future<void>.value();
+        expect(controller.currentPage, 2, reason: 'refresh() holds the page');
+
+        controller.refresh(resetPage: true);
+        await Future<void>.value();
+        expect(controller.currentPage, 1);
+      },
+    );
+
+    test('loadMore appends the next page', () async {
       final fetcher = _RecordingFetcher()
         ..responder = (page) =>
-            PagedResult<String>(items: ['p$page'], totalCount: 100);
-      final controller =
-          PagedFetchController<String>(fetcher: fetcher.call, pageSize: 20);
+            PagedResult<String>(items: ['p$page'], totalCount: 45);
+      final controller = PagedFetchController<String>(
+        fetcher: fetcher.call,
+        pageSize: 20,
+      );
       addTearDown(controller.dispose);
 
       await controller.load();
-      controller.nextPage();
-      await Future<void>.value();
+      await controller.loadMore();
+
+      expect(fetcher.calls.last, (2, 20, ''));
+      expect(controller.items, ['p1', 'p2']);
       expect(controller.currentPage, 2);
+      expect(controller.isLoadingMore, isFalse);
+    });
 
-      controller.refresh();
-      await Future<void>.value();
-      expect(controller.currentPage, 2, reason: 'refresh() holds the page');
+    test('loadMore does nothing on the last page', () async {
+      final fetcher = _RecordingFetcher()
+        ..responder = (page) =>
+            PagedResult<String>(items: ['p$page'], totalCount: 20);
+      final controller = PagedFetchController<String>(
+        fetcher: fetcher.call,
+        pageSize: 20,
+      );
+      addTearDown(controller.dispose);
 
-      controller.refresh(resetPage: true);
-      await Future<void>.value();
+      await controller.load();
+      await controller.loadMore();
+
+      expect(fetcher.calls.length, 1);
+      expect(controller.items, ['p1']);
       expect(controller.currentPage, 1);
+    });
+
+    test('loadMore failure keeps the items and sets loadMoreError', () async {
+      final fetcher = _RecordingFetcher()
+        ..responder = (page) =>
+            PagedResult<String>(items: ['p$page'], totalCount: 45);
+      final controller = PagedFetchController<String>(
+        fetcher: fetcher.call,
+        pageSize: 20,
+      );
+      addTearDown(controller.dispose);
+
+      await controller.load();
+      fetcher.throwsWith = ApiException('pao');
+      await controller.loadMore();
+
+      expect(controller.items, ['p1']);
+      expect(controller.currentPage, 1);
+      expect(controller.loadMoreError, isA<ApiException>());
+      expect(controller.error, isNull);
+      expect(controller.isLoadingMore, isFalse);
+
+      fetcher.throwsWith = null;
+      await controller.loadMore();
+
+      expect(controller.loadMoreError, isNull);
+      expect(controller.items, ['p1', 'p2']);
+    });
+
+    test('refresh with resetPage replaces appended items', () async {
+      final fetcher = _RecordingFetcher()
+        ..responder = (page) =>
+            PagedResult<String>(items: ['p$page'], totalCount: 45);
+      final controller = PagedFetchController<String>(
+        fetcher: fetcher.call,
+        pageSize: 20,
+      );
+      addTearDown(controller.dispose);
+
+      await controller.load();
+      await controller.loadMore();
+      expect(controller.items, ['p1', 'p2']);
+
+      await controller.refresh(resetPage: true);
+
+      expect(controller.currentPage, 1);
+      expect(controller.items, ['p1']);
+      expect(controller.loadMoreError, isNull);
     });
 
     test('a fetch that outlives disposal does not notify', () async {
       final fetcher = _RecordingFetcher()..manual = true;
-      final controller =
-          PagedFetchController<String>(fetcher: fetcher.call, pageSize: 20);
+      final controller = PagedFetchController<String>(
+        fetcher: fetcher.call,
+        pageSize: 20,
+      );
 
       var notifications = 0;
       controller.addListener(() => notifications++);

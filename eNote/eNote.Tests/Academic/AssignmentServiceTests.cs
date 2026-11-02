@@ -177,6 +177,88 @@ public sealed class AssignmentServiceTests
     }
 
     [Fact]
+    public async Task GetForStudentAsync_SetsMySubmittedAtAndMyGrade_FromOwnSubmission()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var assignment = new Assignment("Homework", "Do it", Now.AddDays(7), harness.Lecture.Id);
+        harness.Context.Set<Assignment>().Add(assignment);
+        await harness.Context.SaveChangesAsync();
+        await SubmitAsync(harness, assignment, harness.Student, grade: 85);
+        var service = AcademicTestData.CreateService<AssignmentService>(harness.Context, harness.Instructor, new StubCurrentActor(student: harness.Student));
+
+        var result = await service.GetForStudentAsync(new AssignmentSearchObject { Page = 1, PageSize = 10 });
+
+        var dto = Assert.Single(result.Items);
+        Assert.Equal(Now.AddDays(-1), dto.MySubmittedAt);
+        Assert.Equal(85, dto.MyGrade);
+    }
+
+    [Fact]
+    public async Task GetForStudentAsync_DoesNotUse_AnotherStudentsSubmission()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var classmate = await AcademicTestData.AddEnrolledStudentAsync(harness, 60, Now);
+        var assignment = new Assignment("Homework", "Do it", Now.AddDays(7), harness.Lecture.Id);
+        harness.Context.Set<Assignment>().Add(assignment);
+        await harness.Context.SaveChangesAsync();
+        await SubmitAsync(harness, assignment, classmate, grade: 40);
+        var service = AcademicTestData.CreateService<AssignmentService>(harness.Context, harness.Instructor, new StubCurrentActor(student: harness.Student));
+
+        var result = await service.GetForStudentAsync(new AssignmentSearchObject { Page = 1, PageSize = 10 });
+
+        var dto = Assert.Single(result.Items);
+        Assert.Null(dto.MySubmittedAt);
+        Assert.Null(dto.MyGrade);
+    }
+
+    [Fact]
+    public async Task GetForStudentAsync_WithIsSubmittedFalse_ReturnsOnlyOpenAssignments()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var open = new Assignment("Open", "Do it", Now.AddDays(7), harness.Lecture.Id);
+        var submitted = new Assignment("Submitted", "Do it", Now.AddDays(8), harness.Lecture.Id);
+        harness.Context.Set<Assignment>().AddRange(open, submitted);
+        await harness.Context.SaveChangesAsync();
+        await SubmitAsync(harness, submitted, harness.Student);
+        var service = AcademicTestData.CreateService<AssignmentService>(harness.Context, harness.Instructor, new StubCurrentActor(student: harness.Student));
+
+        var result = await service.GetForStudentAsync(new AssignmentSearchObject { IsSubmitted = false, Page = 1, PageSize = 10 });
+
+        Assert.Equal(open.Id, Assert.Single(result.Items).Id);
+    }
+
+    [Fact]
+    public async Task GetForStudentAsync_WithIsSubmittedTrue_ReturnsOnlySubmittedAssignments()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var open = new Assignment("Open", "Do it", Now.AddDays(7), harness.Lecture.Id);
+        var submitted = new Assignment("Submitted", "Do it", Now.AddDays(8), harness.Lecture.Id);
+        harness.Context.Set<Assignment>().AddRange(open, submitted);
+        await harness.Context.SaveChangesAsync();
+        await SubmitAsync(harness, submitted, harness.Student);
+        var service = AcademicTestData.CreateService<AssignmentService>(harness.Context, harness.Instructor, new StubCurrentActor(student: harness.Student));
+
+        var result = await service.GetForStudentAsync(new AssignmentSearchObject { IsSubmitted = true, Page = 1, PageSize = 10 });
+
+        Assert.Equal(submitted.Id, Assert.Single(result.Items).Id);
+    }
+
+    [Fact]
+    public async Task GetByIdForStudentAsync_SetsMyGrade()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var assignment = new Assignment("Homework", "Do it", Now.AddDays(7), harness.Lecture.Id);
+        harness.Context.Set<Assignment>().Add(assignment);
+        await harness.Context.SaveChangesAsync();
+        await SubmitAsync(harness, assignment, harness.Student, grade: 70);
+        var service = AcademicTestData.CreateService<AssignmentService>(harness.Context, harness.Instructor, new StubCurrentActor(student: harness.Student));
+
+        var dto = await service.GetByIdForStudentAsync(assignment.Id);
+
+        Assert.Equal(70, dto.MyGrade);
+    }
+
+    [Fact]
     public async Task GetForLectureAsync_ReturnsEmpty_ForOtherInstructorsLecture()
     {
         var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
@@ -188,4 +270,16 @@ public sealed class AssignmentServiceTests
         Assert.Empty(result.Items);
     }
 
+    private static async Task SubmitAsync(AcademicHarness harness, Assignment assignment, Student student, int? grade = null)
+    {
+        var submission = new AssignmentSubmission(assignment.Id, student.Id);
+        submission.Submit("submission.pdf", Now.AddDays(-1));
+        if (grade.HasValue)
+        {
+            submission.SetGrade(grade.Value);
+        }
+
+        harness.Context.Set<AssignmentSubmission>().Add(submission);
+        await harness.Context.SaveChangesAsync();
+    }
 }

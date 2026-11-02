@@ -1,6 +1,7 @@
 export 'models/shared/enums.dart';
 export 'models/shared/payment_intent_draft.dart';
 export 'models/shared/payment_record.dart';
+export 'models/shared/student_home_dto.dart';
 export 'models/shared/enum_labels.dart';
 export 'theme/app_tokens.dart';
 export 'models/identity/auth_models.dart';

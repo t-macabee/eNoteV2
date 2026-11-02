@@ -66,7 +66,21 @@ public sealed class AssignmentService(
             .ForEnrolledStudent(studentId, clock.UtcNow)
             .ApplySearch(search);
 
-        return await query.ToPagedResultAsync(search, mapper.Map<AssignmentDto>, q => q.OrderBy(x => x.DueAt), cancellationToken);
+        if (search.IsSubmitted is { } isSubmitted)
+        {
+            query = query.Where(x => x.AssignmentSubmissions.Any(s => s.StudentId == studentId && s.SubmittedAt != null) == isSubmitted);
+        }
+
+        return await query.ToPagedResultAsync<Assignment, AssignmentSearchObject, AssignmentDto>(
+            search,
+            async (assignments, ct) =>
+            {
+                var dtos = assignments.Select(mapper.Map<AssignmentDto>).ToList();
+                await ApplyOwnSubmissionAsync(studentId, dtos, ct);
+                return dtos;
+            },
+            q => q.OrderBy(x => x.DueAt),
+            cancellationToken);
     }
 
     public async Task<AssignmentDto> GetByIdForStudentAsync(int assignmentId, CancellationToken cancellationToken = default)
@@ -79,7 +93,31 @@ public sealed class AssignmentService(
             .FirstOrDefaultAsync(cancellationToken)
             ?? throw new NotFoundException(Messages.AssignmentNotFound);
 
-        return mapper.Map<AssignmentDto>(entity);
+        var dto = mapper.Map<AssignmentDto>(entity);
+        await ApplyOwnSubmissionAsync(studentId, [dto], cancellationToken);
+
+        return dto;
+    }
+
+    private async Task ApplyOwnSubmissionAsync(int studentId, IReadOnlyCollection<AssignmentDto> dtos, CancellationToken cancellationToken)
+    {
+        var assignmentIds = dtos.Select(x => x.Id).ToList();
+
+        var submissions = await context.Set<AssignmentSubmission>()
+            .AsNoTracking()
+            .Where(x => x.StudentId == studentId && assignmentIds.Contains(x.AssignmentId))
+            .ToListAsync(cancellationToken);
+
+        var byAssignment = submissions.ToDictionary(x => x.AssignmentId);
+
+        foreach (var dto in dtos)
+        {
+            if (byAssignment.TryGetValue(dto.Id, out var submission))
+            {
+                dto.MySubmittedAt = submission.SubmittedAt;
+                dto.MyGrade = submission.Grade;
+            }
+        }
     }
 
     private async Task<Assignment> GetOwnedAssignmentAsync(int lectureId, int assignmentId, bool track = false, CancellationToken cancellationToken = default)

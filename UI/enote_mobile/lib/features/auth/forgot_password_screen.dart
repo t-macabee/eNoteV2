@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
 
+import '../../widgets/app_text_field.dart';
 import '../../widgets/form_submit_state.dart';
 import '../../widgets/mobile_form_scaffold.dart';
 import 'auth_provider.dart';
@@ -44,22 +45,14 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
   Widget build(BuildContext context) {
     if (_sent) {
       return Scaffold(
-        appBar: AppBar(
-          title: const Text('Zaboravljena lozinka'),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.close),
-              onPressed: () => Navigator.of(context).maybePop(),
-            ),
-          ],
-        ),
+        appBar: AppBar(title: const Text('Zaboravljena lozinka')),
         body: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(AppSpacing.lg),
           children: [
             const Text(
               'Ako postoji račun s ovom adresom, poslali smo link za reset lozinke.',
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.lg),
             OutlinedButton(
               onPressed: () => Navigator.of(context).maybePop(),
               child: const Text('Nazad na prijavu'),
@@ -77,9 +70,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen>
       children: [
         Form(
           key: _formKey,
-          child: TextFormField(
+          child: AppTextField(
             controller: _emailController,
-            decoration: const InputDecoration(labelText: 'Email *'),
+            label: 'Email *',
             keyboardType: TextInputType.emailAddress,
             textInputAction: TextInputAction.done,
             onFieldSubmitted: (_) => _submit(),

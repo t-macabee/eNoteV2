@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
 
+import '../../widgets/app_text_field.dart';
 import '../../widgets/form_submit_state.dart';
 import '../../widgets/mobile_form_scaffold.dart';
 import 'profile_provider.dart';
@@ -20,9 +21,6 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen>
   final _currentController = TextEditingController();
   final _newController = TextEditingController();
   final _confirmController = TextEditingController();
-  bool _currentObscured = true;
-  bool _newObscured = true;
-  bool _confirmObscured = true;
 
   @override
   void dispose() {
@@ -57,16 +55,6 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen>
     });
   }
 
-  InputDecoration _decoration(String label, bool obscured, VoidCallback toggle) {
-    return InputDecoration(
-      labelText: label,
-      suffixIcon: IconButton(
-        icon: Icon(obscured ? Icons.visibility : Icons.visibility_off),
-        onPressed: toggle,
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return MobileFormScaffold(
@@ -81,42 +69,28 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen>
           autovalidateMode: AutovalidateMode.onUserInteraction,
           child: Column(
             children: [
-              TextFormField(
+              AppTextField(
                 controller: _currentController,
-                decoration: _decoration(
-                  'Trenutna lozinka *',
-                  _currentObscured,
-                  () => setState(() => _currentObscured = !_currentObscured),
-                ),
-                obscureText: _currentObscured,
-                textInputAction: TextInputAction.next,
+                label: 'Trenutna lozinka *',
+                obscure: true,
                 validator: Validators.required('Trenutna lozinka'),
               ),
-              const SizedBox(height: 16),
-              TextFormField(
+              const SizedBox(height: AppSpacing.lg),
+              AppTextField(
                 controller: _newController,
-                decoration: _decoration(
-                  'Nova lozinka *',
-                  _newObscured,
-                  () => setState(() => _newObscured = !_newObscured),
-                ),
-                obscureText: _newObscured,
-                textInputAction: TextInputAction.next,
+                label: 'Nova lozinka *',
+                obscure: true,
                 validator: Validators.password,
               ),
-              const SizedBox(height: 16),
-              TextFormField(
+              const SizedBox(height: AppSpacing.lg),
+              AppTextField(
                 controller: _confirmController,
-                decoration: _decoration(
-                  'Potvrdi novu lozinku *',
-                  _confirmObscured,
-                  () =>
-                      setState(() => _confirmObscured = !_confirmObscured),
-                ),
-                obscureText: _confirmObscured,
+                label: 'Potvrdi novu lozinku *',
+                obscure: true,
                 textInputAction: TextInputAction.done,
-                validator:
-                    Validators.confirmPassword(() => _newController.text),
+                validator: Validators.confirmPassword(
+                  () => _newController.text,
+                ),
               ),
             ],
           ),

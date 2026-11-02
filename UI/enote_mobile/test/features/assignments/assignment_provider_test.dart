@@ -33,13 +33,6 @@ const _pageBody = {
   'totalCount': 1,
 };
 
-const _historyBody = {
-  'items': [_submissionJson],
-  'page': 1,
-  'pageSize': 20,
-  'totalCount': 1,
-};
-
 class _MultipartStubClient extends http.BaseClient {
   final List<http.BaseRequest> sent = [];
 
@@ -70,36 +63,38 @@ AssignmentProvider _provider(http.Client client) {
 }
 
 void main() {
-  test('getPage issues GET student/assignments with the filter query',
-      () async {
-    final client = RecordingHttpClient(body: _pageBody);
-    final provider = _provider(client);
+  test(
+    'getPage issues GET student/assignments with the filter query',
+    () async {
+      final client = RecordingHttpClient(body: _pageBody);
+      final provider = _provider(client);
 
-    final page = await provider.getPage(
-      params: {
-        'page': 1,
-        'pageSize': 20,
-        'includeTotalCount': true,
-        'title': 'akordi',
-        'dueAfter': '2026-09-01T00:00:00.000',
-        'dueBefore': '2026-09-30T00:00:00.000',
-      },
-    );
+      final page = await provider.getPage(
+        params: {
+          'page': 1,
+          'pageSize': 20,
+          'includeTotalCount': true,
+          'title': 'akordi',
+          'dueAfter': '2026-09-01T00:00:00.000',
+          'dueBefore': '2026-09-30T00:00:00.000',
+        },
+      );
 
-    expect(client.requests, hasLength(1));
-    final sent = client.requests.single;
-    expect(sent.method, 'GET');
-    expect(sent.url.path, '/api/v1/student/assignments');
-    expect(sent.url.queryParameters['page'], '1');
-    expect(sent.url.queryParameters['pageSize'], '20');
-    expect(sent.url.queryParameters['includeTotalCount'], 'true');
-    expect(sent.url.queryParameters['title'], 'akordi');
-    expect(sent.url.queryParameters['dueAfter'], '2026-09-01T00:00:00.000');
-    expect(sent.url.queryParameters['dueBefore'], '2026-09-30T00:00:00.000');
-    expect(page.items, hasLength(1));
-    expect(page.items.single.title, 'Akordi — vježba 1');
-    expect(page.items.single.lectureId, 11);
-  });
+      expect(client.requests, hasLength(1));
+      final sent = client.requests.single;
+      expect(sent.method, 'GET');
+      expect(sent.url.path, '/api/v1/student/assignments');
+      expect(sent.url.queryParameters['page'], '1');
+      expect(sent.url.queryParameters['pageSize'], '20');
+      expect(sent.url.queryParameters['includeTotalCount'], 'true');
+      expect(sent.url.queryParameters['title'], 'akordi');
+      expect(sent.url.queryParameters['dueAfter'], '2026-09-01T00:00:00.000');
+      expect(sent.url.queryParameters['dueBefore'], '2026-09-30T00:00:00.000');
+      expect(page.items, hasLength(1));
+      expect(page.items.single.title, 'Akordi — vježba 1');
+      expect(page.items.single.lectureId, 11);
+    },
+  );
 
   test('getById issues GET student/assignments/{id}', () async {
     final client = RecordingHttpClient(body: _assignmentJson);
@@ -111,8 +106,7 @@ void main() {
     expect(assignment.title, 'Akordi — vježba 1');
   });
 
-  test('mySubmission issues GET student/assignments/{id}/submission',
-      () async {
+  test('mySubmission issues GET student/assignments/{id}/submission', () async {
     final client = RecordingHttpClient(body: _submissionJson);
     final provider = _provider(client);
 
@@ -164,20 +158,55 @@ void main() {
     expect(submission.assignmentId, 5);
   });
 
-  test('myHistory issues GET student/submissions with paging', () async {
-    final client = RecordingHttpClient(body: _historyBody);
+  test('countOpen requests open assignments with page size 1 and returns the total', () async {
+    final client = RecordingHttpClient(
+      body: {'items': [], 'page': 1, 'pageSize': 1, 'totalCount': 4},
+    );
     final provider = _provider(client);
 
-    final page = await provider.myHistory(page: 2);
+    final count = await provider.countOpen();
 
+    expect(count, 4);
     expect(client.requests, hasLength(1));
     final sent = client.requests.single;
     expect(sent.method, 'GET');
-    expect(sent.url.path, '/api/v1/student/submissions');
-    expect(sent.url.queryParameters['page'], '2');
-    expect(sent.url.queryParameters['pageSize'], '20');
-    expect(sent.url.queryParameters['includeTotalCount'], 'true');
-    expect(page.items, hasLength(1));
-    expect(page.items.single.assignmentId, 5);
+    expect(sent.url.path, '/api/v1/student/assignments');
+    expect(sent.url.queryParameters['pageSize'], '1');
+    expect(sent.url.queryParameters['isSubmitted'], 'false');
+    expect(sent.url.queryParameters['dueAfter'], isNotNull);
+    expect(sent.url.queryParameters, isNot(contains('dueBefore')));
+  });
+
+  test('open filter sends dueAfter in UTC', () async {
+    final client = RecordingHttpClient(body: _pageBody);
+    final provider = _provider(client);
+    final now = DateTime.now();
+
+    await provider.getPage(
+      params: pagedQuery(1, 20, '', filters: AssignmentFilter.open.query(now)),
+    );
+
+    final dueAfter = client.requests.single.url.queryParameters['dueAfter'];
+    expect(dueAfter, endsWith('Z'));
+    expect(dueAfter, toUtcIso(now));
+  });
+
+  test('past due filter sends dueBefore in UTC', () async {
+    final client = RecordingHttpClient(body: _pageBody);
+    final provider = _provider(client);
+    final now = DateTime.now();
+
+    await provider.getPage(
+      params: pagedQuery(
+        1,
+        20,
+        '',
+        filters: AssignmentFilter.pastDue.query(now),
+      ),
+    );
+
+    final dueBefore = client.requests.single.url.queryParameters['dueBefore'];
+    expect(dueBefore, endsWith('Z'));
+    expect(dueBefore, toUtcIso(now));
   });
 }

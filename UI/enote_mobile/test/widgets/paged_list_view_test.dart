@@ -7,22 +7,35 @@ import 'package:enote_mobile/widgets/paged_list_view.dart';
 
 import '../helpers.dart';
 
+const _pageSize = 20;
+
+PagedResult<int> _page(int page, {int totalCount = 60}) {
+  return PagedResult<int>(
+    items: [for (var i = 0; i < _pageSize; i++) (page - 1) * _pageSize + i + 1],
+    page: page,
+    pageSize: _pageSize,
+    totalCount: totalCount,
+  );
+}
+
 PagedFetchController<int> _controller(
   Future<PagedResult<int>> Function(int page, int pageSize, String search)
   fetcher,
 ) {
-  return PagedFetchController<int>(fetcher: fetcher, pageSize: 20);
+  return PagedFetchController<int>(fetcher: fetcher, pageSize: _pageSize);
 }
 
 Future<void> _pumpList(
   WidgetTester tester,
-  PagedFetchController<int> controller,
-) async {
+  PagedFetchController<int> controller, {
+  Widget? statusTabs,
+}) async {
   await tester.pumpWidget(
     MaterialApp(
       home: Scaffold(
         body: PagedListView<int>(
           controller: controller,
+          statusTabs: statusTabs,
           itemBuilder: (context, item) => ListTile(title: Text('Item $item')),
         ),
       ),
@@ -58,32 +71,47 @@ void main() {
     expect(calls.first['search'], 'abc');
   });
 
-  testWidgets('page bar moves between pages', (tester) async {
+  testWidgets('scrolling to the end loads the next page', (tester) async {
+    final requestedPages = <int>[];
     final controller = _controller((page, pageSize, search) async {
-      return PagedResult<int>(
-        items: [page],
-        page: page,
-        pageSize: pageSize,
-        totalCount: 60,
-      );
+      requestedPages.add(page);
+      return _page(page);
+    });
+    addTearDown(controller.dispose);
+    await _pumpList(tester, controller);
+    expect(find.text('Item 21'), findsNothing);
+
+    await tester.drag(find.byType(ListView), const Offset(0, -5000));
+    await tester.pumpAndSettle();
+
+    expect(requestedPages, containsAllInOrder([1, 2]));
+    expect(find.text('Item 21'), findsOneWidget);
+  });
+
+  testWidgets('footer shows a retry row after a failed loadMore', (
+    tester,
+  ) async {
+    var fail = false;
+    final controller = _controller((page, pageSize, search) async {
+      if (fail) throw Exception('boom');
+      return _page(page);
     });
     addTearDown(controller.dispose);
     await _pumpList(tester, controller);
 
-    expect(find.text('Stranica 1 od 3'), findsOneWidget);
-    expect(find.text('Item 1'), findsOneWidget);
-    await tester.tap(find.text('Sljedeća'));
-    await tester.pump();
-    await tester.pump();
-    expect(find.text('Stranica 2 od 3'), findsOneWidget);
-    expect(find.text('Item 2'), findsOneWidget);
-    await tester.tap(find.text('Prethodna'));
-    await tester.pump();
-    await tester.pump();
-    expect(find.text('Stranica 1 od 3'), findsOneWidget);
+    fail = true;
+    await tester.drag(find.byType(ListView), const Offset(0, -5000));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Učitavanje nije uspjelo.'), findsOneWidget);
+    expect(find.text('Pokušaj ponovo'), findsOneWidget);
+    expect(find.text('Item 1'), findsNothing, reason: 'scrolled to the end');
+    expect(controller.items.length, _pageSize);
   });
 
-  testWidgets('empty state shows the default copy', (tester) async {
+  testWidgets('empty message mentions the search only when searching', (
+    tester,
+  ) async {
     final controller = _controller((page, pageSize, search) async {
       return PagedResult<int>(
         items: const [],
@@ -94,7 +122,43 @@ void main() {
     });
     addTearDown(controller.dispose);
     await _pumpList(tester, controller);
+    expect(find.text('Nema podataka.'), findsOneWidget);
+    expect(find.text('Nema rezultata za pretragu.'), findsNothing);
+
+    await tester.enterText(find.byType(TextField), 'abc');
+    await pumpPastDebounce(tester);
+    await tester.pumpAndSettle();
+
     expect(find.text('Nema rezultata za pretragu.'), findsOneWidget);
+    expect(find.text('Nema podataka.'), findsNothing);
+  });
+
+  testWidgets('status tabs sit between the search field and the rows', (
+    tester,
+  ) async {
+    final controller = _controller((page, pageSize, search) async {
+      return _page(page, totalCount: 2);
+    });
+    addTearDown(controller.dispose);
+    await _pumpList(tester, controller, statusTabs: const Text('Tabs'));
+
+    final searchBottom = tester.getBottomLeft(find.byType(TextField)).dy;
+    final tabsTop = tester.getTopLeft(find.text('Tabs')).dy;
+    final tabsBottom = tester.getBottomLeft(find.text('Tabs')).dy;
+    final firstRowTop = tester.getTopLeft(find.text('Item 1')).dy;
+    expect(tabsTop, greaterThanOrEqualTo(searchBottom));
+    expect(firstRowTop, greaterThanOrEqualTo(tabsBottom));
+  });
+
+  testWidgets('list has no pagination bar', (tester) async {
+    final controller = _controller((page, pageSize, search) async {
+      return _page(page);
+    });
+    addTearDown(controller.dispose);
+    await _pumpList(tester, controller);
+
+    expect(find.byType(PagedPaginationBar), findsNothing);
+    expect(find.text('Sljedeća'), findsNothing);
   });
 
   testWidgets('a failed load shows retry and the retry refetches', (

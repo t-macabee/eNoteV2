@@ -3,15 +3,18 @@ import 'package:flutter/material.dart';
 import 'package:enote_core/enote_core.dart';
 
 import 'async_state_view.dart';
+import 'load_more_footer.dart';
 
 class PagedListView<T> extends StatefulWidget {
   final PagedFetchController<T> controller;
   final Widget Function(BuildContext context, T item) itemBuilder;
   final bool showSearch;
   final String searchHint;
+  final Widget? statusTabs;
   final Widget? filterRow;
   final String emptyMessage;
   final Widget? emptyAction;
+  final Future<void> Function()? onRefresh;
 
   const PagedListView({
     super.key,
@@ -19,9 +22,11 @@ class PagedListView<T> extends StatefulWidget {
     required this.itemBuilder,
     this.showSearch = true,
     this.searchHint = 'Pretraži…',
+    this.statusTabs,
     this.filterRow,
-    this.emptyMessage = 'Nema rezultata za pretragu.',
+    this.emptyMessage = 'Nema podataka.',
     this.emptyAction,
+    this.onRefresh,
   });
 
   @override
@@ -29,6 +34,13 @@ class PagedListView<T> extends StatefulWidget {
 }
 
 class _PagedListViewState<T> extends State<PagedListView<T>> {
+  static const _headerPadding = EdgeInsets.fromLTRB(
+    AppSpacing.lg,
+    AppSpacing.md,
+    AppSpacing.lg,
+    AppSpacing.sm,
+  );
+
   @override
   void initState() {
     super.initState();
@@ -48,50 +60,89 @@ class _PagedListViewState<T> extends State<PagedListView<T>> {
     }
   }
 
+  Future<void> _refresh() async {
+    await Future.wait([
+      widget.controller.refresh(resetPage: true),
+      if (widget.onRefresh != null) widget.onRefresh!(),
+    ]);
+  }
+
+  String get _emptyMessage => widget.controller.search.isEmpty
+      ? widget.emptyMessage
+      : 'Nema rezultata za pretragu.';
+
+  Widget _header() {
+    final parts = [
+      if (widget.showSearch)
+        TextField(
+          controller: widget.controller.searchController,
+          decoration: InputDecoration(
+            hintText: widget.searchHint,
+            prefixIcon: const Icon(Icons.search_outlined),
+          ),
+        ),
+      if (widget.statusTabs != null) widget.statusTabs!,
+      if (widget.filterRow != null) widget.filterRow!,
+    ];
+    if (parts.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: _headerPadding,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (var i = 0; i < parts.length; i++) ...[
+            if (i > 0) const SizedBox(height: AppSpacing.sm),
+            parts[i],
+          ],
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final items = widget.controller.items;
-    final isLoading = widget.controller.isLoading && items.isEmpty;
+    final controller = widget.controller;
+    final items = controller.items;
     return Column(
       children: [
-        if (widget.showSearch)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-            child: TextField(
-              controller: widget.controller.searchController,
-              decoration: InputDecoration(
-                hintText: widget.searchHint,
-                prefixIcon: const Icon(Icons.search_outlined),
-              ),
-            ),
-          ),
-        if (widget.filterRow != null) widget.filterRow!,
+        _header(),
         Expanded(
           child: RefreshIndicator(
-            onRefresh: () => widget.controller.load(),
-            child: isLoading || items.isEmpty
+            onRefresh: _refresh,
+            child: items.isEmpty
                 ? ListView(
                     physics: const AlwaysScrollableScrollPhysics(),
                     children: [
                       AsyncStateView(
-                        isLoading: isLoading,
-                        error: widget.controller.error,
-                        isEmpty: items.isEmpty,
-                        emptyMessage: widget.emptyMessage,
+                        isLoading: controller.isLoading,
+                        error: controller.error,
+                        isEmpty: true,
+                        emptyMessage: _emptyMessage,
                         emptyAction: widget.emptyAction,
-                        onRetry: () => widget.controller.load(),
+                        onRetry: () => controller.load(),
                         child: const SizedBox.shrink(),
                       ),
                     ],
                   )
-                : ListView.builder(
-                    itemCount: items.length,
-                    itemBuilder: (context, index) =>
-                        widget.itemBuilder(context, items[index]),
+                : ListView.separated(
+                    itemCount: items.length + 1,
+                    separatorBuilder: (_, index) => index < items.length - 1
+                        ? const Divider(height: 1)
+                        : const SizedBox.shrink(),
+                    itemBuilder: (context, index) {
+                      if (index == items.length) {
+                        return LoadMoreFooter(
+                          hasMore: controller.hasNextPage,
+                          isLoading: controller.isLoadingMore,
+                          error: controller.loadMoreError,
+                          onLoadMore: () => controller.loadMore(),
+                        );
+                      }
+                      return widget.itemBuilder(context, items[index]);
+                    },
                   ),
           ),
         ),
-        PagedPaginationBar(controller: widget.controller),
       ],
     );
   }

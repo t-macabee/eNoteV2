@@ -6,6 +6,7 @@ import 'package:enote_core/enote_core.dart';
 import '../../shell/routes.dart';
 import '../../widgets/paged_list_view.dart';
 import 'course_provider.dart';
+import 'course_tile.dart';
 
 class CourseListScreen extends StatefulWidget {
   const CourseListScreen({super.key});
@@ -47,6 +48,11 @@ class _CourseListScreenState extends State<CourseListScreen>
     );
   }
 
+  void _selectEnrolledOnly(bool enrolledOnly) {
+    setState(() => _enrolledOnly = enrolledOnly);
+    _controller.refresh(resetPage: true);
+  }
+
   @override
   void dispose() {
     _controller.dispose();
@@ -58,44 +64,21 @@ class _CourseListScreenState extends State<CourseListScreen>
     super.build(context);
     return PagedListView<CourseDto>(
       controller: _controller,
-      filterRow: SwitchListTile(
-        title: const Text('Moji kursevi'),
-        value: _enrolledOnly,
-        onChanged: (value) {
-          setState(() => _enrolledOnly = value);
-          _controller.refresh(resetPage: true);
-        },
+      statusTabs: StatusFilterTabs<bool>(
+        scrollable: true,
+        selected: _enrolledOnly,
+        onChanged: _selectEnrolledOnly,
+        options: const [
+          StatusFilterOption<bool>(label: 'Moji', value: true),
+          StatusFilterOption<bool>(label: 'Svi', value: false),
+        ],
       ),
-      itemBuilder: (context, course) => _CourseRow(course: course),
-    );
-  }
-}
-
-class _CourseRow extends StatelessWidget {
-  final CourseDto course;
-
-  const _CourseRow({required this.course});
-
-  @override
-  Widget build(BuildContext context) {
-    return ListTile(
-      leading: const Icon(Icons.school_outlined),
-      title: Text(course.name),
-      subtitle: Text(
-        '${orDash(course.instructorName)} · '
-        '${formatDateNullable(course.startDate)}–'
-        '${formatDateNullable(course.endDate)}',
-      ),
-      trailing: switch (course.enrollmentStatus) {
-        null || EnrollmentStatus.canceled => null,
-        final status => StatusChip(
-          label: enrollmentStatusLabel(status),
-          tone: enrollmentStatusTone(status),
+      itemBuilder: (context, course) => CourseTile(
+        course: course,
+        onTap: () => Navigator.of(context).pushNamed(
+          AppRoutes.courseDetail,
+          arguments: CourseDetailArgs(course.id),
         ),
-      },
-      onTap: () => Navigator.of(context).pushNamed(
-        AppRoutes.courseDetail,
-        arguments: CourseDetailArgs(course.id),
       ),
     );
   }

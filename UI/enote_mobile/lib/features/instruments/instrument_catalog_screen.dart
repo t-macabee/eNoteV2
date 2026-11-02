@@ -4,11 +4,11 @@ import 'package:provider/provider.dart';
 import 'package:enote_core/enote_core.dart';
 
 import '../../shell/routes.dart';
-import '../../theme/app_theme.dart';
 import '../../widgets/paged_list_view.dart';
 import '../rentals/rental_provider.dart';
-import 'instrument_labels.dart';
+import '../student_notices.dart';
 import 'instrument_provider.dart';
+import 'instrument_tile.dart';
 import 'recommendation_strip.dart';
 
 class InstrumentCatalogScreen extends StatefulWidget {
@@ -101,8 +101,8 @@ class _InstrumentCatalogScreenState extends State<InstrumentCatalogScreen> {
         });
   }
 
-  void _toggleAvailable(bool value) {
-    setState(() => _onlyAvailable = value);
+  void _selectAvailability(bool onlyAvailable) {
+    setState(() => _onlyAvailable = onlyAvailable);
     _controller.refresh(resetPage: true);
   }
 
@@ -116,9 +116,7 @@ class _InstrumentCatalogScreenState extends State<InstrumentCatalogScreen> {
             padding: _bannerPadding,
             child: StatusBanner(
               icon: Icons.warning_amber_outlined,
-              message:
-                  'Imate neizmireno dugovanje od prethodnog iznajmljivanja. '
-                  'Izmirite ga prije novog zahtjeva.',
+              message: rentalDebtNotice,
               tone: StatusTone.danger,
               actionLabel: 'Plati sada',
               onAction: debt.rentalId == null
@@ -144,53 +142,21 @@ class _InstrumentCatalogScreenState extends State<InstrumentCatalogScreen> {
         Expanded(
           child: PagedListView<InstrumentDto>(
             controller: _controller,
-            filterRow: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
-              child: Row(
-                children: [
-                  Switch(value: _onlyAvailable, onChanged: _toggleAvailable),
-                  const SizedBox(width: 8),
-                  const Text('Samo dostupni'),
-                ],
-              ),
+            statusTabs: StatusFilterTabs<bool>(
+              scrollable: true,
+              selected: _onlyAvailable,
+              onChanged: _selectAvailability,
+              options: const [
+                StatusFilterOption<bool>(label: 'Dostupni', value: true),
+                StatusFilterOption<bool>(label: 'Svi', value: false),
+              ],
             ),
-            itemBuilder: (context, instrument) => _InstrumentRow(
+            itemBuilder: (context, instrument) => InstrumentTile(
               instrument: instrument,
               onTap: () => _openInstrument(instrument.id),
             ),
           ),
         ),
-      ],
-    );
-  }
-}
-
-class _InstrumentRow extends StatelessWidget {
-  final InstrumentDto instrument;
-  final VoidCallback onTap;
-
-  const _InstrumentRow({required this.instrument, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        ListTile(
-          onTap: onTap,
-          leading: ImageThumbnail(
-            imageUrl: instrument.imagePath,
-            apiClient: context.read<ApiClient>(),
-            size: 56,
-            borderRadius: 8,
-          ),
-          title: Text('${instrument.manufacturer} ${instrument.model}'),
-          subtitle: Text(
-            '${instrument.instrumentType} · ${instrument.musicStore}',
-            style: const TextStyle(color: AppTheme.textSecondary),
-          ),
-          trailing: instrumentAvailabilityChip(instrument.isAvailable),
-        ),
-        const Divider(height: 1),
       ],
     );
   }

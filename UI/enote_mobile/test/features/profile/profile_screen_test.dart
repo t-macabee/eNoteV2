@@ -95,8 +95,8 @@ Future<void> _openDeleteDialog(WidgetTester tester) async {
 }
 
 bool _confirmEnabled(WidgetTester tester) {
-  final button = tester.widget<ElevatedButton>(
-    find.widgetWithText(ElevatedButton, 'Obriši profil'),
+  final button = tester.widget<FilledButton>(
+    find.widgetWithText(FilledButton, 'Obriši profil'),
   );
   return button.onPressed != null;
 }
@@ -183,7 +183,7 @@ void main() {
     await tester.enterText(find.byType(TextFormField), 'Pogresna1!');
     await tester.tap(find.text('Potvrđujem trajno brisanje profila'));
     await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Obriši profil'));
+    await tester.tap(find.widgetWithText(FilledButton, 'Obriši profil'));
     await tester.pumpAndSettle();
 
     expect(find.text('Trenutna lozinka nije ispravna.'), findsOneWidget);
@@ -212,7 +212,7 @@ void main() {
     await tester.enterText(find.byType(TextFormField), 'Password1!');
     await tester.tap(find.text('Potvrđujem trajno brisanje profila'));
     await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Obriši profil'));
+    await tester.tap(find.widgetWithText(FilledButton, 'Obriši profil'));
     await tester.pumpAndSettle();
 
     expect(find.textContaining('Profil se ne može obrisati'), findsOneWidget);
@@ -229,7 +229,7 @@ void main() {
     await tester.enterText(find.byType(TextFormField), 'Password1!');
     await tester.tap(find.text('Potvrđujem trajno brisanje profila'));
     await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(ElevatedButton, 'Obriši profil'));
+    await tester.tap(find.widgetWithText(FilledButton, 'Obriši profil'));
     await tester.pumpAndSettle();
 
     final delete = harness.client.requests.lastWhere(

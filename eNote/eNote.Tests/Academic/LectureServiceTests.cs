@@ -648,6 +648,32 @@ public sealed class LectureServiceTests
     }
 
     [Fact]
+    public async Task GetPagedForStudentAsync_WithFrom_OrdersUpcomingLecturesByTimeAscending()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var later = await AcademicTestData.AddIndividualLectureAsync(harness, harness.Student, Now.AddDays(3));
+        var sooner = await AcademicTestData.AddIndividualLectureAsync(harness, harness.Student, Now.AddDays(2));
+        var service = CreateService(harness.Context, harness.Instructor, new StubCurrentActor(student: harness.Student));
+
+        var result = await service.GetPagedForStudentAsync(new LectureSearchObject { From = Now });
+
+        Assert.Equal(new[] { harness.Lecture.Id, sooner.Id, later.Id }, result.Items.Select(x => x.Id));
+    }
+
+    [Fact]
+    public async Task GetPagedForStudentAsync_WithoutFrom_KeepsDescendingOrder()
+    {
+        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
+        var later = await AcademicTestData.AddIndividualLectureAsync(harness, harness.Student, Now.AddDays(3));
+        var sooner = await AcademicTestData.AddIndividualLectureAsync(harness, harness.Student, Now.AddDays(2));
+        var service = CreateService(harness.Context, harness.Instructor, new StubCurrentActor(student: harness.Student));
+
+        var result = await service.GetPagedForStudentAsync(new LectureSearchObject());
+
+        Assert.Equal(new[] { later.Id, sooner.Id, harness.Lecture.Id }, result.Items.Select(x => x.Id));
+    }
+
+    [Fact]
     public async Task GetByIdForStudentAsync_Throws_ForIndividualLectureOfAnotherStudent()
     {
         var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);

@@ -4,8 +4,8 @@ import 'package:provider/provider.dart';
 import 'package:enote_core/enote_core.dart';
 
 import '../../shell/root_shell.dart';
-import '../../theme/app_theme.dart';
 import '../../widgets/async_state_view.dart';
+import '../../widgets/load_more_footer.dart';
 
 class NotificationInboxScreen extends StatefulWidget {
   const NotificationInboxScreen({super.key});
@@ -16,6 +16,9 @@ class NotificationInboxScreen extends StatefulWidget {
 }
 
 class _NotificationInboxScreenState extends State<NotificationInboxScreen> {
+  bool _loadingMore = false;
+  Object? _loadMoreError;
+
   @override
   void initState() {
     super.initState();
@@ -24,18 +27,30 @@ class _NotificationInboxScreenState extends State<NotificationInboxScreen> {
     });
   }
 
+  Future<void> _refresh(NotificationController controller) async {
+    setState(() => _loadMoreError = null);
+    await controller.refresh();
+  }
+
+  Future<void> _loadMore(NotificationController controller) async {
+    if (_loadingMore) return;
+    setState(() {
+      _loadingMore = true;
+      _loadMoreError = null;
+    });
+    try {
+      await controller.loadMore();
+    } catch (e) {
+      if (mounted) setState(() => _loadMoreError = e);
+    } finally {
+      if (mounted) setState(() => _loadingMore = false);
+    }
+  }
+
   Future<void> _markAllRead(NotificationController controller) async {
     try {
       await controller.markAllRead();
       await controller.refresh();
-    } catch (e) {
-      if (mounted) ErrorBanner.show(context, message: userMessage(e));
-    }
-  }
-
-  Future<void> _loadMore(NotificationController controller) async {
-    try {
-      await controller.loadMore();
     } catch (e) {
       if (mounted) ErrorBanner.show(context, message: userMessage(e));
     }
@@ -69,15 +84,7 @@ class _NotificationInboxScreenState extends State<NotificationInboxScreen> {
         actions: [
           Consumer<NotificationController>(
             builder: (context, controller, _) {
-              if (controller.unreadCount == 0) {
-                return const Tooltip(
-                  message: 'Nema nepročitanih',
-                  child: TextButton(
-                    onPressed: null,
-                    child: Text('Označi sve kao pročitano'),
-                  ),
-                );
-              }
+              if (controller.unreadCount == 0) return const SizedBox.shrink();
               return TextButton(
                 onPressed: () => _markAllRead(controller),
                 child: const Text('Označi sve kao pročitano'),
@@ -88,126 +95,49 @@ class _NotificationInboxScreenState extends State<NotificationInboxScreen> {
       ),
       body: Consumer<NotificationController>(
         builder: (context, controller, _) {
-          if (controller.error != null && controller.notifications.isEmpty) {
-            return AsyncStateView(
-              isLoading: false,
-              error: controller.error,
-              onRetry: controller.refresh,
-              child: const SizedBox.shrink(),
-            );
-          }
-          if (controller.isLoading && controller.notifications.isEmpty) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (!controller.isLoading && controller.notifications.isEmpty) {
-            return const Center(
-              child: Padding(
-                padding: EdgeInsets.all(24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.notifications_outlined,
-                      size: 48,
-                      color: AppTheme.textTertiary,
-                    ),
-                    SizedBox(height: 12),
-                    Text(
-                      'Nema obavještenja.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(color: AppTheme.textSecondary),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }
+          final notifications = controller.notifications;
           return RefreshIndicator(
-            onRefresh: controller.refresh,
-            child: ListView.separated(
-              physics: const AlwaysScrollableScrollPhysics(),
-              itemCount: controller.notifications.length +
-                  (controller.hasMore ? 1 : 0),
-              separatorBuilder: (_, _) => const Divider(height: 1),
-              itemBuilder: (context, index) {
-                if (index >= controller.notifications.length) {
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    child: Center(
-                      child: OutlinedButton(
-                        onPressed: () => _loadMore(controller),
-                        child: const Text('Učitaj još'),
+            onRefresh: () => _refresh(controller),
+            child: notifications.isEmpty
+                ? ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    children: [
+                      AsyncStateView(
+                        isLoading: controller.isLoading,
+                        error: controller.error,
+                        isEmpty: true,
+                        emptyMessage: 'Nema obavještenja.',
+                        emptyIcon: Icons.notifications_outlined,
+                        onRetry: () => _refresh(controller),
+                        child: const SizedBox.shrink(),
                       ),
-                    ),
-                  );
-                }
-                final notification = controller.notifications[index];
-                return _NotificationTile(
-                  notification: notification,
-                  onTap: () => _onTap(context, controller, notification),
-                );
-              },
-            ),
+                    ],
+                  )
+                : ListView.separated(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    itemCount: notifications.length + 1,
+                    separatorBuilder: (_, index) =>
+                        index < notifications.length - 1
+                        ? const Divider(height: 1)
+                        : const SizedBox.shrink(),
+                    itemBuilder: (context, index) {
+                      if (index == notifications.length) {
+                        return LoadMoreFooter(
+                          hasMore: controller.hasMore,
+                          isLoading: _loadingMore,
+                          error: _loadMoreError,
+                          onLoadMore: () => _loadMore(controller),
+                        );
+                      }
+                      final notification = notifications[index];
+                      return NotificationTile(
+                        notification: notification,
+                        onTap: () => _onTap(context, controller, notification),
+                      );
+                    },
+                  ),
           );
         },
-      ),
-    );
-  }
-}
-
-class _NotificationTile extends StatelessWidget {
-  final NotificationDto notification;
-  final VoidCallback onTap;
-
-  const _NotificationTile({required this.notification, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final unread = !notification.isRead;
-    return ListTile(
-      onTap: onTap,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      leading: Container(
-        width: 8,
-        height: 8,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: unread ? AppTheme.primary : Colors.transparent,
-          border: unread
-              ? null
-              : Border.all(color: AppTheme.textSecondary, width: 1.5),
-        ),
-      ),
-      title: Row(
-        children: [
-          Expanded(
-            child: Text(
-              notification.title,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontWeight: unread ? FontWeight.bold : FontWeight.normal,
-                color: unread ? AppTheme.textPrimary : AppTheme.textSecondary,
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            formatDayTime(notification.createdAt),
-            style: TextStyle(
-              fontSize: 12,
-              color: unread ? AppTheme.textSecondary : AppTheme.textTertiary,
-            ),
-          ),
-        ],
-      ),
-      subtitle: Text(
-        notification.body,
-        maxLines: 2,
-        overflow: TextOverflow.ellipsis,
-        style: TextStyle(
-          color: unread ? AppTheme.textPrimary : AppTheme.textSecondary,
-        ),
       ),
     );
   }

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
@@ -7,6 +9,8 @@ import 'package:enote_mobile/features/rentals/payments/rental_payment_provider.d
 import 'package:enote_mobile/features/rentals/rental_detail_screen.dart';
 import 'package:enote_mobile/features/rentals/rental_provider.dart';
 import 'package:enote_mobile/shell/routes.dart';
+import 'package:enote_mobile/theme/app_theme.dart';
+import 'package:enote_mobile/widgets/submit_button.dart';
 
 import '../../helpers.dart';
 
@@ -36,10 +40,16 @@ Map<String, dynamic> _rentalJson({
 
 class _FixedRentalProvider extends RentalProvider {
   final InstrumentRentalDto rental;
+  final bool renewFails;
   final List<String?> cancelNotes = [];
   final List<int> renewCalls = [];
+  Completer<InstrumentRentalDto>? renewGate;
 
-  _FixedRentalProvider({required super.apiClient, required this.rental});
+  _FixedRentalProvider({
+    required super.apiClient,
+    required this.rental,
+    this.renewFails = false,
+  });
 
   @override
   Future<InstrumentRentalDto> getById(int id) async => rental;
@@ -52,6 +62,8 @@ class _FixedRentalProvider extends RentalProvider {
   @override
   Future<InstrumentRentalDto> renew(int id) async {
     renewCalls.add(id);
+    if (renewGate != null) return renewGate!.future;
+    if (renewFails) throw ApiException('Produženje nije moguće.');
     return rental;
   }
 }
@@ -79,6 +91,7 @@ void main() {
     required bool instrumentIsActive,
     String rentalStatus = 'Completed',
     Map<String, dynamic> extra = const {},
+    bool renewFails = false,
   }) async {
     tester.view.physicalSize = const Size(400, 1600);
     tester.view.devicePixelRatio = 1.0;
@@ -103,7 +116,11 @@ void main() {
         extra: extra,
       ),
     );
-    final provider = _FixedRentalProvider(apiClient: apiClient, rental: rental);
+    final provider = _FixedRentalProvider(
+      apiClient: apiClient,
+      rental: rental,
+      renewFails: renewFails,
+    );
     final observer = _NavigatorSpy();
 
     await tester.pumpWidget(
@@ -129,23 +146,25 @@ void main() {
     return (observer, provider);
   }
 
-  testWidgets('archived instrument is announced and does not open the catalog',
-      (tester) async {
-    final (observer, _) = await pumpDetail(tester, instrumentIsActive: false);
+  testWidgets(
+    'archived instrument is announced and does not open the catalog',
+    (tester) async {
+      final (observer, _) = await pumpDetail(tester, instrumentIsActive: false);
 
-    expect(find.text('Instrument više nije u ponudi'), findsOneWidget);
+      expect(find.text('Instrument više nije u ponudi'), findsOneWidget);
 
-    await tester.tap(find.text('Stratocaster'));
-    await tester.pumpAndSettle();
+      await tester.tap(find.text('Stratocaster'));
+      await tester.pumpAndSettle();
 
-    expect(observer.pushed, hasLength(1));
-    expect(
-      observer.pushed.where(
-        (route) => route.settings.name == AppRoutes.instrumentDetail,
-      ),
-      isEmpty,
-    );
-  });
+      expect(observer.pushed, hasLength(1));
+      expect(
+        observer.pushed.where(
+          (route) => route.settings.name == AppRoutes.instrumentDetail,
+        ),
+        isEmpty,
+      );
+    },
+  );
 
   testWidgets('active instrument opens the catalog page', (tester) async {
     final (observer, _) = await pumpDetail(tester, instrumentIsActive: true);
@@ -228,6 +247,99 @@ void main() {
     );
   });
 
+  testWidgets('renew shows a spinner while busy', (tester) async {
+    final now = DateTime.now();
+    final (_, provider) = await pumpDetail(
+      tester,
+      instrumentIsActive: true,
+      rentalStatus: 'Active',
+      extra: {
+        'dueAt': now.add(const Duration(days: 2)).toUtc().toIso8601String(),
+        'renewalOpensAt': now
+            .subtract(const Duration(days: 3))
+            .toUtc()
+            .toIso8601String(),
+      },
+    );
+    provider.renewGate = Completer<InstrumentRentalDto>();
+
+    final button = find.byType(SubmitButton);
+    await tester.ensureVisible(button);
+    await tester.pumpAndSettle();
+    await tester.tap(button);
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Potvrdi'));
+    await tester.pump();
+    await tester.pump();
+
+    expect(
+      find.descendant(
+        of: button,
+        matching: find.byType(CircularProgressIndicator),
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('Produži iznajmljivanje'), findsNothing);
+    expect(
+      tester.widget<FilledButton>(find.byType(FilledButton)).onPressed,
+      isNull,
+    );
+
+    provider.renewGate!.complete(provider.rental);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+    expect(find.text('Produži iznajmljivanje'), findsOneWidget);
+  });
+
+  testWidgets('cancel button uses the danger style', (tester) async {
+    await pumpDetail(
+      tester,
+      instrumentIsActive: true,
+      rentalStatus: 'Approved',
+    );
+
+    final cancelButton = find.widgetWithText(OutlinedButton, 'Otkaži zahtjev');
+    await tester.ensureVisible(cancelButton);
+    await tester.pumpAndSettle();
+    final style = tester.widget<OutlinedButton>(cancelButton).style;
+    expect(style?.foregroundColor?.resolve({}), AppTheme.error);
+    expect(style?.side?.resolve({})?.color, AppTheme.error);
+  });
+
+  testWidgets('renew error shows ErrorBanner.show', (tester) async {
+    final now = DateTime.now();
+    await pumpDetail(
+      tester,
+      instrumentIsActive: true,
+      rentalStatus: 'Active',
+      renewFails: true,
+      extra: {
+        'dueAt': now.add(const Duration(days: 2)).toUtc().toIso8601String(),
+        'renewalOpensAt': now
+            .subtract(const Duration(days: 3))
+            .toUtc()
+            .toIso8601String(),
+      },
+    );
+
+    final button = find.widgetWithText(FilledButton, 'Produži iznajmljivanje');
+    await tester.ensureVisible(button);
+    await tester.pumpAndSettle();
+    await tester.tap(button);
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Potvrdi'));
+    await tester.pumpAndSettle();
+
+    final snackBar = find.byType(SnackBar);
+    expect(snackBar, findsOneWidget);
+    expect(
+      find.descendant(of: snackBar, matching: find.byIcon(Icons.error_outline)),
+      findsOneWidget,
+    );
+    expect(find.text('Produženje nije moguće.'), findsOneWidget);
+  });
+
   testWidgets('renewal before the window shows the opening date', (
     tester,
   ) async {
@@ -294,12 +406,18 @@ void main() {
       instrumentIsActive: true,
       rentalStatus: 'Completed',
       extra: {
-        'pickedUpAt':
-            now.subtract(const Duration(days: 35)).toUtc().toIso8601String(),
-        'returnedAt':
-            now.subtract(const Duration(days: 3)).toUtc().toIso8601String(),
-        'dueAt':
-            now.subtract(const Duration(days: 5)).toUtc().toIso8601String(),
+        'pickedUpAt': now
+            .subtract(const Duration(days: 35))
+            .toUtc()
+            .toIso8601String(),
+        'returnedAt': now
+            .subtract(const Duration(days: 3))
+            .toUtc()
+            .toIso8601String(),
+        'dueAt': now
+            .subtract(const Duration(days: 5))
+            .toUtc()
+            .toIso8601String(),
         'overdueDays': 2,
         'penaltyFee': 2.0,
         'isPaid': false,

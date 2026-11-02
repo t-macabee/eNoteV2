@@ -137,10 +137,7 @@ void main() {
     );
     final provider = _provider(client);
 
-    final result = await provider.rsvp(
-      11,
-      RsvpRequest(confirm: true),
-    );
+    final result = await provider.rsvp(11, RsvpRequest(confirm: true));
 
     expect(client.requests, hasLength(1));
     final sent = client.requests.single;
@@ -163,5 +160,19 @@ void main() {
     final body =
         jsonDecode(client.requests.single.body) as Map<String, dynamic>;
     expect(body, {'confirm': false});
+  });
+
+  test('upcoming filter sends from in UTC', () async {
+    final client = RecordingHttpClient(body: _pageBody);
+    final provider = _provider(client);
+    final now = DateTime.now();
+
+    await provider.getPage(
+      params: pagedQuery(1, 20, '', filters: LectureFilter.upcoming.query(now)),
+    );
+
+    final from = client.requests.single.url.queryParameters['from'];
+    expect(from, endsWith('Z'));
+    expect(from, toUtcIso(now));
   });
 }

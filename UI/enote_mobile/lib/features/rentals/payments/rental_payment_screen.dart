@@ -4,8 +4,9 @@ import 'package:provider/provider.dart';
 import 'package:enote_core/enote_core.dart';
 
 import '../../../config.dart';
-import '../../../theme/app_theme.dart';
 import '../../../widgets/async_state_view.dart';
+import '../../../widgets/detail_actions.dart';
+import '../../../widgets/detail_header.dart';
 import '../../../widgets/labeled_value.dart';
 import '../rental_provider.dart';
 import '../../payments/payment_flow_body.dart';
@@ -97,7 +98,7 @@ class _RentalPaymentScreenState extends State<RentalPaymentScreen> {
   }
 
   void _backToRental() {
-    if (mounted) Navigator.of(context).pop(true);
+    if (mounted) Navigator.of(context).pop();
   }
 
   @override
@@ -105,7 +106,7 @@ class _RentalPaymentScreenState extends State<RentalPaymentScreen> {
     final rental = _rental;
     return PaymentFlowScaffold(
       controller: _flow,
-      title: 'Plaćanje',
+      title: 'Plaćanje iznajmljivanja',
       body: (_) => rental == null
           ? AsyncStateView(
               isLoading: _isLoading,
@@ -119,27 +120,36 @@ class _RentalPaymentScreenState extends State<RentalPaymentScreen> {
 
   Widget _body(InstrumentRentalDto rental) {
     if (rental.isPaid) {
-      return _refusal('Ovo iznajmljivanje je već plaćeno.');
+      return _refusal();
     }
     return PaymentFlowBody(
       controller: _flow,
       reviewChild: _review(rental),
+      successNote: 'Iznajmljivanje je izmireno.',
       successCancelLabel: 'Nazad na iznajmljivanje',
       onSuccessBack: _backToRental,
     );
   }
 
-  Widget _refusal(String message) {
+  Widget _refusal() {
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.all(24),
       children: [
-        const SizedBox(height: 48),
-        Text(message, textAlign: TextAlign.center),
-        const SizedBox(height: 24),
-        OutlinedButton(
-          onPressed: () => Navigator.of(context).maybePop(),
-          child: const Text('Nazad'),
+        const Padding(
+          padding: EdgeInsets.all(AppSpacing.lg),
+          child: StatusBanner(
+            icon: Icons.check_circle_outline,
+            message: 'Ovo iznajmljivanje je već plaćeno.',
+            tone: StatusTone.success,
+          ),
+        ),
+        DetailActions(
+          actions: [
+            OutlinedButton(
+              onPressed: () => Navigator.of(context).maybePop(),
+              child: const Text('Nazad'),
+            ),
+          ],
         ),
       ],
     );
@@ -149,40 +159,22 @@ class _RentalPaymentScreenState extends State<RentalPaymentScreen> {
     final amountLabel =
         _flow.prepared?.amountLabel ?? formatKM(rental.totalFee);
     return PaymentReview(
+      header: DetailHeader(
+        leading: ImageThumbnail(
+          imageUrl: rental.instrumentImagePath,
+          apiClient: context.read<ApiClient>(),
+          size: AppSize.headerThumbnail,
+          borderRadius: AppRadius.md,
+        ),
+        title: rental.instrumentModel,
+        subtitle:
+            '${rental.storeName} · ${rentalStatusLabel(rental.rentalStatus)}',
+      ),
       amountLabel: amountLabel,
       onPay: _pay,
       isBusy: _flow.isBusy,
       isConfigured: _flow.isConfigured,
-      children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            ImageThumbnail(
-              imageUrl: rental.instrumentImagePath,
-              apiClient: context.read<ApiClient>(),
-              size: 56,
-              borderRadius: 8,
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    rental.instrumentModel,
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    '${rental.storeName} · ${rentalStatusLabel(rental.rentalStatus)}',
-                    style: const TextStyle(color: AppTheme.textSecondary),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
+      rows: [
         LabeledValue(label: 'Iznos', value: amountLabel),
         LabeledValue(label: 'Obračun', value: rental.chargeLabel),
       ],

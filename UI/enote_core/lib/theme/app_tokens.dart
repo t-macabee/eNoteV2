@@ -38,9 +38,11 @@ final class AppSize {
   static const double statCardWidth = 240;
   static const double spinnerSm = 16;
   static const double spinnerMd = 20;
+  static const double spinnerStroke = 2;
   static const double listThumbnail = 56;
   static const double headerThumbnail = 72;
   static const double stateIcon = 48;
+  static const double heroIcon = 64;
   static const double placeholderIcon = 32;
   static const double avatarRadiusLg = 48;
 }

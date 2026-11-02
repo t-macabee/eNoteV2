@@ -122,8 +122,11 @@ public sealed class LectureService(
 
         var (page, pageSize) = PagingLimits.Normalize(search.Page, search.PageSize);
 
-        var items = await query
-            .OrderByDescending(x => x.LectureTime)
+        var ordered = search.From.HasValue
+            ? query.OrderBy(x => x.LectureTime)
+            : query.OrderByDescending(x => x.LectureTime);
+
+        var items = await ordered
             .ThenBy(x => x.Id)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)

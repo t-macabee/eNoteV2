@@ -35,15 +35,18 @@ Map<String, dynamic> _rental({
   'overdueDays': overdueDays,
 };
 
-Future<void> _pumpList(WidgetTester tester, Map<String, dynamic> rental) async {
+Future<ScriptedClient> _pumpRentals(
+  WidgetTester tester, {
+  Map<String, dynamic>? rental,
+}) async {
   setPhoneSurface(tester);
   final client = ScriptedClient(
     (_) => jsonResponse(
       jsonEncode({
-        'items': [rental],
+        'items': [?rental],
         'page': 1,
         'pageSize': 20,
-        'totalCount': 1,
+        'totalCount': rental == null ? 0 : 1,
       }),
       200,
     ),
@@ -75,11 +78,15 @@ Future<void> _pumpList(WidgetTester tester, Map<String, dynamic> rental) async {
     ),
   );
   await tester.pumpAndSettle();
+  return client;
 }
 
 void main() {
   testWidgets('rental row shows the overdue chip', (tester) async {
-    await _pumpList(tester, _rental(status: 'Active', overdueDays: 3));
+    await _pumpRentals(
+      tester,
+      rental: _rental(status: 'Active', overdueDays: 3),
+    );
 
     expect(find.text('Kasni 3 dana'), findsOneWidget);
     final overdue = tester.widget<StatusChip>(
@@ -89,12 +96,60 @@ void main() {
   });
 
   testWidgets('returned unpaid rental shows Nije plaćeno', (tester) async {
-    await _pumpList(tester, _rental(status: 'Completed'));
+    await _pumpRentals(tester, rental: _rental(status: 'Completed'));
 
     expect(find.text('Nije plaćeno'), findsOneWidget);
     final unpaid = tester.widget<StatusChip>(
       find.widgetWithText(StatusChip, 'Nije plaćeno'),
     );
     expect(unpaid.tone, StatusTone.warning);
+  });
+
+  testWidgets('opens on Sva and sends no rentalStatus', (tester) async {
+    final client = await _pumpRentals(tester);
+
+    final sva = tester.widget<ChoiceChip>(
+      find.widgetWithText(ChoiceChip, 'Sva'),
+    );
+    expect(sva.selected, isTrue);
+    expect(
+      client.requests.first.url.queryParameters,
+      isNot(contains('rentalStatus')),
+    );
+  });
+
+  testWidgets('a status tab sends rentalStatus', (tester) async {
+    final client = await _pumpRentals(
+      tester,
+      rental: _rental(status: 'Completed'),
+    );
+
+    await tester.tap(
+      find.text(rentalStatusLabel(InstrumentRentalStatus.active)),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      client.requests.last.url.queryParameters['rentalStatus'],
+      InstrumentRentalStatus.active.toJson(),
+    );
+  });
+
+  testWidgets('status tabs fit in one horizontally scrollable row', (
+    tester,
+  ) async {
+    await _pumpRentals(tester);
+
+    expect(
+      find.byWidgetPredicate(
+        (w) =>
+            w is SingleChildScrollView && w.scrollDirection == Axis.horizontal,
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.byType(DropdownButtonFormField<InstrumentRentalStatus?>),
+      findsNothing,
+    );
   });
 }

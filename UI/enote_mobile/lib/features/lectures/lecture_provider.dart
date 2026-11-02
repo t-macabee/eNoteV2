@@ -1,5 +1,15 @@
 import 'package:enote_core/enote_core.dart';
 
+enum LectureFilter {
+  upcoming,
+  all;
+
+  Map<String, dynamic> query(DateTime now) => switch (this) {
+    LectureFilter.upcoming => {'from': toUtcIso(now)},
+    LectureFilter.all => const <String, dynamic>{},
+  };
+}
+
 class LectureProvider extends ReadOnlyProvider<LectureDto> {
   LectureProvider({required super.apiClient})
     : super(endpoint: 'student/lectures');
@@ -12,6 +22,20 @@ class LectureProvider extends ReadOnlyProvider<LectureDto> {
       '$endpoint/$id/rsvp',
       body: request.toJson(),
     );
-    return RsvpResponse.fromJson(decodeOrThrow(response));
+    final result = RsvpResponse.fromJson(decodeOrThrow(response));
+    notifyListeners();
+    return result;
+  }
+
+  Future<int?> countUpcoming() async {
+    final result = await getPage(
+      params: pagedQuery(
+        1,
+        1,
+        '',
+        filters: LectureFilter.upcoming.query(DateTime.now()),
+      ),
+    );
+    return result.totalCount;
   }
 }

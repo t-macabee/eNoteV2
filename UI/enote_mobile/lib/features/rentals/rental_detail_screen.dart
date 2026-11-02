@@ -6,8 +6,11 @@ import 'package:enote_core/enote_core.dart';
 import '../../shell/routes.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/async_state_view.dart';
+import '../../widgets/detail_actions.dart';
+import '../../widgets/detail_header.dart';
+import '../../widgets/detail_section.dart';
 import '../../widgets/labeled_value.dart';
-import '../../widgets/section_header.dart';
+import '../../widgets/submit_button.dart';
 import 'payments/rental_payment_provider.dart';
 import 'rental_provider.dart';
 import 'rental_timeline.dart';
@@ -87,7 +90,7 @@ class _RentalDetailScreenState extends State<RentalDetailScreen> {
       );
     } catch (e) {
       if (!mounted) return;
-      messenger.showSnackBar(SnackBar(content: Text(userMessage(e))));
+      ErrorBanner.show(context, message: userMessage(e));
     } finally {
       if (mounted) setState(() => _isRenewing = false);
     }
@@ -112,7 +115,7 @@ class _RentalDetailScreenState extends State<RentalDetailScreen> {
       );
     } catch (e) {
       if (!mounted) return;
-      messenger.showSnackBar(SnackBar(content: Text(userMessage(e))));
+      ErrorBanner.show(context, message: userMessage(e));
     } finally {
       if (mounted) setState(() => _isCancelling = false);
     }
@@ -134,23 +137,15 @@ class _RentalDetailScreenState extends State<RentalDetailScreen> {
               onRefresh: _load,
               child: ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.only(bottom: 24),
+                padding: const EdgeInsets.only(bottom: AppSpacing.lg),
                 children: [
                   _header(rental),
-                  const Divider(height: 1),
-                  const SectionHeader(title: 'Vremenska linija'),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+                  DetailSection(
+                    title: 'Vremenska linija',
                     child: RentalTimeline(rental: rental),
                   ),
-                  const Divider(height: 1),
-                  const SectionHeader(title: 'Naknade'),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: _fees(rental),
-                  ),
-                  const SizedBox(height: 24),
-                  ..._actions(rental),
+                  DetailSection(title: 'Naknade', child: _fees(rental)),
+                  _actions(rental),
                 ],
               ),
             ),
@@ -159,72 +154,39 @@ class _RentalDetailScreenState extends State<RentalDetailScreen> {
 
   Widget _header(InstrumentRentalDto rental) {
     final payment = _payment;
-    return InkWell(
-      onTap: rental.instrumentIsActive ? () => _openInstrument(rental) : null,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            ImageThumbnail(
-              imageUrl: rental.instrumentImagePath,
-              apiClient: context.read<ApiClient>(),
-              size: 72,
-              borderRadius: 8,
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    rental.instrumentModel,
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    rental.instrumentType,
-                    style: const TextStyle(color: AppTheme.textSecondary),
-                  ),
-                  Text(
-                    rental.storeName,
-                    style: const TextStyle(color: AppTheme.textSecondary),
-                  ),
-                  if (!rental.instrumentIsActive)
-                    const Text(
-                      'Instrument više nije u ponudi',
-                      style: TextStyle(color: AppTheme.error),
-                    ),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 4,
-                    children: [
-                      StatusChip(
-                        label: rentalStatusLabel(rental.rentalStatus),
-                        tone: rentalStatusTone(rental.rentalStatus),
-                      ),
-                      if (rental.isPaid)
-                        StatusChip(
-                          label: paymentStatusLabel(PaymentStatus.succeeded),
-                          tone: paymentStatusTone(PaymentStatus.succeeded),
-                        ),
-                      if (payment != null &&
-                          (payment.status == PaymentStatus.refunded ||
-                              payment.status ==
-                                  PaymentStatus.partiallyRefunded))
-                        StatusChip(
-                          label: paymentStatusLabel(payment.status),
-                          tone: paymentStatusTone(payment.status),
-                        ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+    return DetailHeader(
+      leading: ImageThumbnail(
+        imageUrl: rental.instrumentImagePath,
+        apiClient: context.read<ApiClient>(),
+        size: AppSize.headerThumbnail,
+        borderRadius: AppRadius.md,
       ),
+      title: rental.instrumentModel,
+      subtitle: '${rental.instrumentType} · ${rental.storeName}',
+      chips: [
+        StatusChip(
+          label: rentalStatusLabel(rental.rentalStatus),
+          tone: rentalStatusTone(rental.rentalStatus),
+        ),
+        if (rental.isPaid)
+          StatusChip(
+            label: paymentStatusLabel(PaymentStatus.succeeded),
+            tone: paymentStatusTone(PaymentStatus.succeeded),
+          ),
+        if (payment != null &&
+            (payment.status == PaymentStatus.refunded ||
+                payment.status == PaymentStatus.partiallyRefunded))
+          StatusChip(
+            label: paymentStatusLabel(payment.status),
+            tone: paymentStatusTone(payment.status),
+          ),
+        if (!rental.instrumentIsActive)
+          const StatusChip(
+            label: 'Instrument više nije u ponudi',
+            tone: StatusTone.danger,
+          ),
+      ],
+      onTap: rental.instrumentIsActive ? () => _openInstrument(rental) : null,
     );
   }
 
@@ -298,38 +260,31 @@ class _RentalDetailScreenState extends State<RentalDetailScreen> {
       rental.rentalStatus == InstrumentRentalStatus.pending ||
       rental.rentalStatus == InstrumentRentalStatus.approved;
 
-  List<Widget> _actions(InstrumentRentalDto rental) {
+  Widget _actions(InstrumentRentalDto rental) {
     final now = DateTime.now();
     final isRenewable = rental.isRenewableAt(now);
-    return [
-      if (rental.rentalStatus == InstrumentRentalStatus.active) ...[
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: FilledButton(
-            onPressed: isRenewable && !_isRenewing
-                ? () => _renew(rental)
-                : null,
-            child: const Text('Produži iznajmljivanje'),
-          ),
-        ),
-        if (!isRenewable) ...[
-          const SizedBox(height: 8),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Text(
-              rental.renewalOpensAt != null &&
+    final isActive = rental.rentalStatus == InstrumentRentalStatus.active;
+    return DetailActions(
+      banner: isActive && !isRenewable
+          ? StatusBanner(
+              icon: Icons.info_outline,
+              message:
+                  rental.renewalOpensAt != null &&
                       now.isBefore(rental.renewalOpensAt!)
                   ? 'Produženje je moguće od ${formatDate(rental.renewalOpensAt!)}.'
                   : 'Rok je istekao. Vratite instrument u prodavnicu.',
-              style: const TextStyle(color: AppTheme.error),
-            ),
+              tone: StatusTone.warning,
+            )
+          : null,
+      actions: [
+        if (isActive)
+          SubmitButton(
+            label: 'Produži iznajmljivanje',
+            onPressed: isRenewable ? () => _renew(rental) : null,
+            isBusy: _isRenewing,
           ),
-        ],
-      ],
-      if (_isPayable(rental))
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: FilledButton(
+        if (_isPayable(rental))
+          FilledButton(
             onPressed: () => Navigator.of(context)
                 .pushNamed(AppRoutes.payment, arguments: PaymentArgs(rental.id))
                 .then((_) {
@@ -337,21 +292,13 @@ class _RentalDetailScreenState extends State<RentalDetailScreen> {
                 }),
             child: Text('Plati ${formatKM(rental.totalFee)}'),
           ),
-        ),
-      if (_isCancellable(rental)) ...[
-        const SizedBox(height: 8),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: OutlinedButton(
+        if (_isCancellable(rental))
+          OutlinedButton(
             onPressed: _isCancelling ? null : () => _cancel(rental),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: AppTheme.error,
-              side: const BorderSide(color: AppTheme.error),
-            ),
+            style: dangerOutlinedButtonStyle,
             child: const Text('Otkaži zahtjev'),
           ),
-        ),
       ],
-    ];
+    );
   }
 }

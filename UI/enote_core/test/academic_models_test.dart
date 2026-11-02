@@ -484,4 +484,114 @@ void main() {
       expect(dto.courses[1].enrollmentStatus, EnrollmentStatus.completed);
     });
   });
+
+  group('AssignmentDto submission fields', () {
+    test('parses mySubmittedAt and myGrade', () {
+      final dto = AssignmentDto.fromJson({
+        'id': 21,
+        'lectureId': 11,
+        'title': 'Homework',
+        'description': 'Do it',
+        'dueAt': '2026-07-05T12:00:00Z',
+        'mySubmittedAt': '2026-07-01T10:00:00Z',
+        'myGrade': 85,
+      });
+
+      expect(dto.myGrade, 85);
+      expect(
+        dto.mySubmittedAt?.isAtSameMomentAs(DateTime.utc(2026, 7, 1, 10)),
+        isTrue,
+      );
+    });
+
+    test('without submission fields has nulls', () {
+      final dto = AssignmentDto.fromJson({
+        'id': 21,
+        'lectureId': 11,
+        'title': 'Homework',
+        'description': 'Do it',
+        'dueAt': '2026-07-05T12:00:00Z',
+      });
+
+      expect(dto.mySubmittedAt, isNull);
+      expect(dto.myGrade, isNull);
+    });
+  });
+
+  group('StudentHomeDto', () {
+    test('parses all fields', () {
+      final dto = StudentHomeDto.fromJson({
+        'nextLecture': {
+          'id': 11,
+          'name': 'Individual lesson',
+          'location': 'Room 3',
+          'lectureType': 'Theoretical',
+          'lectureStatus': 'Scheduled',
+          'lectureTime': '2026-07-03T12:00:00Z',
+          'duration': 60,
+          'attendeeCount': 0,
+        },
+        'openAssignments': [
+          {
+            'id': 21,
+            'lectureId': 11,
+            'title': 'Homework',
+            'description': 'Do it',
+            'dueAt': '2026-07-05T12:00:00Z',
+          },
+        ],
+        'currentRentals': [
+          {
+            'id': 31,
+            'instrumentId': 1,
+            'musicStoreId': 2,
+            'studentProfileId': 3,
+            'studentUserId': 4,
+            'instrumentModel': 'Stradivarius',
+            'instrumentType': 'Guitar',
+            'storeName': 'Music Shop',
+            'rentalStatus': 'Approved',
+            'requestedAt': '2026-06-20T10:00:00Z',
+            'fee': 50.0,
+            'isPaid': false,
+          },
+        ],
+        'tuitionDueCourses': [
+          {
+            'id': 41,
+            'instructorId': 5,
+            'name': 'Guitar 101',
+            'isPublished': true,
+            'price': 100,
+            'enrolledCount': 3,
+            'isEnrolled': true,
+            'enrollmentStatus': 'Active',
+            'isFree': false,
+          },
+        ],
+        'debt': {'hasUnpaidDebt': true, 'rentalId': 31},
+      });
+
+      expect(dto.nextLecture?.id, 11);
+      expect(dto.openAssignments.single.id, 21);
+      expect(dto.currentRentals.single.id, 31);
+      expect(dto.tuitionDueCourses.single.id, 41);
+      expect(dto.debt.hasUnpaidDebt, isTrue);
+      expect(dto.debt.rentalId, 31);
+    });
+
+    test('parses a null next lecture', () {
+      final dto = StudentHomeDto.fromJson({
+        'nextLecture': null,
+        'openAssignments': <dynamic>[],
+        'currentRentals': <dynamic>[],
+        'tuitionDueCourses': <dynamic>[],
+        'debt': {'hasUnpaidDebt': false, 'rentalId': null},
+      });
+
+      expect(dto.nextLecture, isNull);
+      expect(dto.openAssignments, isEmpty);
+      expect(dto.debt.hasUnpaidDebt, isFalse);
+    });
+  });
 }

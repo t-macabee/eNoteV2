@@ -70,9 +70,7 @@ Future<ScriptedClient> _pumpCatalog(
           create: (_) => RentalProvider(apiClient: apiClient),
         ),
       ],
-      child: const MaterialApp(
-        home: Scaffold(body: InstrumentCatalogScreen()),
-      ),
+      child: const MaterialApp(home: Scaffold(body: InstrumentCatalogScreen())),
     ),
   );
   await tester.pumpAndSettle();
@@ -102,5 +100,36 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text(_debtErrorCopy), findsNothing);
+  });
+
+  testWidgets('opens on Dostupni and sends IsAvailable', (tester) async {
+    final client = await _pumpCatalog(tester, debtFails: () => false);
+
+    final dostupni = tester.widget<ChoiceChip>(
+      find.widgetWithText(ChoiceChip, 'Dostupni'),
+    );
+    expect(dostupni.selected, isTrue);
+    final catalogRequests = client.requests.where(
+      (r) => r.url.path.endsWith('/instruments/public'),
+    );
+    expect(
+      catalogRequests.last.url.queryParameters['search.IsAvailable'],
+      'true',
+    );
+  });
+
+  testWidgets('the Svi tab sends no IsAvailable', (tester) async {
+    final client = await _pumpCatalog(tester, debtFails: () => false);
+
+    await tester.tap(find.text('Svi'));
+    await tester.pumpAndSettle();
+
+    final catalogRequests = client.requests.where(
+      (r) => r.url.path.endsWith('/instruments/public'),
+    );
+    expect(
+      catalogRequests.last.url.queryParameters,
+      isNot(contains('search.IsAvailable')),
+    );
   });
 }

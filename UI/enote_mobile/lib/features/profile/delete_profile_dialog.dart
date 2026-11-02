@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
 
+import '../../widgets/app_text_field.dart';
+import '../../widgets/submit_button.dart';
 import 'profile_provider.dart';
 
 const _passwordErrorCode = 'error.current_password_invalid';
@@ -76,23 +78,22 @@ class _DeleteProfileDialogState extends State<DeleteProfileDialog> {
               'datum rođenja, broj telefona i profilna slika. Račun se zatvara '
               'i sve sesije se odjavljuju.',
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.md),
             const Text(
               'Evidencije o uplatama, iznajmljivanjima, ocjenama i prisustvu '
               'ostaju sačuvane. Zahtjevi za iznajmljivanje i upisi na kurs koji '
               'su na čekanju ili aktivni se otkazuju.',
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.lg),
             Form(
               key: _formKey,
-              child: TextFormField(
+              child: AppTextField(
                 controller: _passwordController,
-                obscureText: true,
+                label: 'Trenutna lozinka *',
+                obscure: true,
                 autofocus: true,
-                decoration: InputDecoration(
-                  labelText: 'Trenutna lozinka *',
-                  errorText: _passwordError,
-                ),
+                textInputAction: TextInputAction.done,
+                errorText: _passwordError,
                 validator: Validators.required('Trenutna lozinka'),
                 onChanged: (_) {
                   if (_passwordError != null) {
@@ -101,7 +102,7 @@ class _DeleteProfileDialogState extends State<DeleteProfileDialog> {
                 },
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.sm),
             CheckboxListTile(
               value: _confirmed,
               onChanged: _isBusy
@@ -112,7 +113,7 @@ class _DeleteProfileDialogState extends State<DeleteProfileDialog> {
               title: const Text('Potvrđujem trajno brisanje profila'),
             ),
             if (_error != null) ...[
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpacing.sm),
               ErrorBanner(message: _error!),
             ],
           ],
@@ -123,15 +124,10 @@ class _DeleteProfileDialogState extends State<DeleteProfileDialog> {
           onPressed: _isBusy ? null : () => Navigator.of(context).pop(false),
           child: const Text('Otkaži'),
         ),
-        ElevatedButton(
-          onPressed: (!_confirmed || _isBusy) ? null : _submit,
-          child: _isBusy
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Text('Obriši profil'),
+        SubmitButton(
+          label: 'Obriši profil',
+          onPressed: _confirmed ? _submit : null,
+          isBusy: _isBusy,
         ),
       ],
     );

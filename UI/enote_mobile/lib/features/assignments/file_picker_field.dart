@@ -2,6 +2,10 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import 'package:enote_core/enote_core.dart';
+
+import '../../theme/app_theme.dart';
+
 class PickedAssignmentFile {
   final Uint8List bytes;
   final String fileName;
@@ -19,9 +23,7 @@ const _assignmentSizeLimit = 5 * 1024 * 1024;
 
 String? validateAssignmentFile(String fileName, int byteLength) {
   final dot = fileName.lastIndexOf('.');
-  final extension = dot == -1
-      ? ''
-      : fileName.substring(dot + 1).toLowerCase();
+  final extension = dot == -1 ? '' : fileName.substring(dot + 1).toLowerCase();
   if (!_allowedAssignmentExtensions.contains(extension)) {
     return 'Dozvoljeni formati: PDF, JPG, PNG.';
   }
@@ -33,9 +35,7 @@ String? validateAssignmentFile(String fileName, int byteLength) {
 
 String assignmentContentType(String fileName) {
   final dot = fileName.lastIndexOf('.');
-  final extension = dot == -1
-      ? ''
-      : fileName.substring(dot + 1).toLowerCase();
+  final extension = dot == -1 ? '' : fileName.substring(dot + 1).toLowerCase();
   return switch (extension) {
     'pdf' => 'application/pdf',
     'jpg' || 'jpeg' => 'image/jpeg',
@@ -125,8 +125,8 @@ class _FilePickerFieldState extends State<FilePickerField> {
 
   @override
   Widget build(BuildContext context) {
-    final errorColor = Theme.of(context).colorScheme.error;
-    final secondaryColor = Theme.of(context).textTheme.bodySmall?.color;
+    final hintStyle = Theme.of(context).textTheme.bodySmall
+        ?.copyWith(color: AppTheme.textSecondary);
     final picked = _picked;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -136,18 +136,18 @@ class _FilePickerFieldState extends State<FilePickerField> {
           icon: const Icon(Icons.attach_file_outlined),
           label: const Text('Odaberi datoteku'),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: AppSpacing.xs),
         Text(
           'PDF, JPG ili PNG · do 5 MB',
           textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 12, color: secondaryColor),
+          style: hintStyle,
         ),
         if (picked != null) ...[
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.sm),
           Row(
             children: [
               const Icon(Icons.description_outlined),
-              const SizedBox(width: 8),
+              const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: Text(
                   '${picked.fileName} · ${formatFileSize(picked.bytes.length)}',
@@ -162,10 +162,11 @@ class _FilePickerFieldState extends State<FilePickerField> {
           ),
         ],
         if (_error != null) ...[
-          const SizedBox(height: 4),
+          const SizedBox(height: AppSpacing.xs),
           Text(
             _error!,
-            style: TextStyle(fontSize: 12, color: errorColor),
+            style: Theme.of(context).textTheme.bodySmall
+                ?.copyWith(color: AppTheme.error),
           ),
         ],
       ],

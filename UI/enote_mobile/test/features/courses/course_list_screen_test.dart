@@ -109,4 +109,47 @@ void main() {
       expect(find.text('Upisan'), findsOneWidget);
     },
   );
+
+  testWidgets('the Moji tab sends enrolledOnly', (tester) async {
+    final client = ScriptedClient(
+      (_) => jsonResponse(
+        jsonEncode(const {
+          'items': [],
+          'page': 1,
+          'pageSize': 20,
+          'totalCount': 0,
+        }),
+        200,
+      ),
+    );
+    final authState = AuthState(
+      baseUrl: 'http://10.0.2.2:5059/api/v1/',
+      tokenReader: () => fakeJwt(),
+      httpClient: client,
+    );
+    final apiClient = ApiClient(
+      baseUrl: 'http://10.0.2.2:5059/api/v1/',
+      authState: authState,
+      httpClient: client,
+    );
+
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider<AuthState>.value(value: authState),
+          Provider<ApiClient>.value(value: apiClient),
+          ChangeNotifierProvider<CourseProvider>(
+            create: (_) => CourseProvider(apiClient: apiClient),
+          ),
+        ],
+        child: const MaterialApp(home: Scaffold(body: CourseListScreen())),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Moji'));
+    await tester.pumpAndSettle();
+
+    expect(client.requests.last.url.queryParameters['enrolledOnly'], 'true');
+  });
 }

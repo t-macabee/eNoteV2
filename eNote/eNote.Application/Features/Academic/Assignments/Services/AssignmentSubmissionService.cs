@@ -64,39 +64,6 @@ public sealed class AssignmentSubmissionService(
         return MapSubmission(submission, await displayNames.GetStudentDisplayNameAsync(submission.Student, cancellationToken));
     }
 
-    public async Task<PagedResult<AssignmentSubmissionDto>> GetHistoryForStudentAsync(AssignmentSubmissionSearchObject search, CancellationToken cancellationToken = default)
-    {
-        var student = await students.GetCurrentStudentAsync(cancellationToken);
-
-        var accessibleAssignments = context.Set<Assignment>()
-            .ForEnrolledStudent(student.Id, clock.UtcNow);
-
-        var query = context.Set<AssignmentSubmission>()
-            .AsNoTracking()
-            .Include(x => x.Student)
-            .Where(x => x.StudentId == student.Id && accessibleAssignments.Any(a => a.Id == x.AssignmentId));
-
-        var (page, pageSize) = PagingLimits.Normalize(search.Page, search.PageSize);
-        var total = search.IncludeTotalCount ? await query.CountAsync(cancellationToken) : (int?)null;
-
-        var submissions = await query
-            .OrderByDescending(x => x.SubmittedAt)
-            .ThenByDescending(x => x.Id)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .ToListAsync(cancellationToken);
-
-        var names = await displayNames.GetStudentDisplayNamesAsync(submissions.Select(x => x.Student), cancellationToken);
-
-        return new PagedResult<AssignmentSubmissionDto>
-        {
-            Items = [.. submissions.Select(x => MapSubmission(x, names.GetValueOrDefault(x.StudentId, Messages.UnknownUserName)))],
-            Page = page,
-            PageSize = pageSize,
-            TotalCount = total
-        };
-    }
-
     public async Task<PagedResult<AssignmentSubmissionDto>> GetSubmissionsAsync(int lectureId, int assignmentId, SubmissionSearchObject search, CancellationToken cancellationToken = default)
     {
         _ = await GetOwnedAssignmentAsync(lectureId, assignmentId, cancellationToken);

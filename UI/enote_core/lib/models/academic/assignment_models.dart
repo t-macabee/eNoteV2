@@ -1,10 +1,13 @@
 import '../../formatting/formatters.dart';
+
 class AssignmentDto {
   final int id;
   final int lectureId;
   final String title;
   final String description;
   final DateTime dueAt;
+  final DateTime? mySubmittedAt;
+  final int? myGrade;
 
   AssignmentDto({
     required this.id,
@@ -12,6 +15,8 @@ class AssignmentDto {
     required this.title,
     required this.description,
     required this.dueAt,
+    this.mySubmittedAt,
+    this.myGrade,
   });
 
   factory AssignmentDto.fromJson(Map<String, dynamic> json) {
@@ -21,6 +26,8 @@ class AssignmentDto {
       title: json['title'] as String? ?? '',
       description: json['description'] as String? ?? '',
       dueAt: parseDate(json['dueAt']) ?? DateTime.now(),
+      mySubmittedAt: parseDate(json['mySubmittedAt']),
+      myGrade: json['myGrade'] as int?,
     );
   }
 
@@ -30,6 +37,8 @@ class AssignmentDto {
     'title': title,
     'description': description,
     'dueAt': toUtcIso(dueAt),
+    if (mySubmittedAt != null) 'mySubmittedAt': toUtcIso(mySubmittedAt!),
+    if (myGrade != null) 'myGrade': myGrade,
   };
 }
 
@@ -108,4 +117,3 @@ class GradeAssignmentRequest {
     if (feedback != null) 'feedback': feedback,
   };
 }
-

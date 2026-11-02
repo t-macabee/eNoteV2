@@ -7,7 +7,9 @@ import '../../session/session_controller.dart';
 import '../../shell/routes.dart';
 import '../../widgets/async_state_view.dart';
 import '../../widgets/form_submit_state.dart';
+import '../../widgets/load_more_footer.dart';
 import '../lectures/lecture_provider.dart';
+import '../lectures/lecture_tile.dart';
 import 'course_detail_sections.dart';
 import 'course_provider.dart';
 
@@ -190,6 +192,17 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
     );
   }
 
+  Future<void> _openLecture(LectureDto lecture) async {
+    await Navigator.of(context).pushNamed(
+      AppRoutes.lectureDetail,
+      arguments: LectureDetailArgs(lecture.id),
+    );
+    if (!mounted) return;
+    if (_course?.isEnrolled ?? false) {
+      _lecturesController.refresh(resetPage: true);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final course = _course;
@@ -217,7 +230,7 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
     return CustomScrollView(
       slivers: [
         SliverToBoxAdapter(
-          child: CourseMasterCard(
+          child: CourseDetailSummary(
             course: course,
             enrolled: enrolled,
             membershipBlocked: !session.isMembershipActive,
@@ -231,28 +244,10 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
           ),
         ),
         if (!course.hasContentAccess) ...[
-          if (enrolled)
+          if (!enrolled)
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.lg,
-                  AppSpacing.sm,
-                  AppSpacing.lg,
-                  0,
-                ),
-                child: StatusBanner(
-                  icon: Icons.lock_outline,
-                  message: lockedContentReason(course.lectureCount),
-                  tone: StatusTone.warning,
-                  actionLabel: 'Obnovi školarinu',
-                  onAction: () => _openTuition(course),
-                ),
-              ),
-            )
-          else
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
+                padding: const EdgeInsets.all(AppSpacing.xl),
                 child: Text(switch (course.enrollmentStatus) {
                   EnrollmentStatus.pending =>
                     'Predavanja su vidljiva nakon što instruktor odobri upis.',
@@ -275,24 +270,26 @@ class _CourseDetailScreenState extends State<CourseDetailScreen>
           ),
           SliverList(
             delegate: SliverChildBuilderDelegate((context, index) {
+              if (index == lectures.length) {
+                return LoadMoreFooter(
+                  hasMore: _lecturesController.hasNextPage,
+                  isLoading: _lecturesController.isLoadingMore,
+                  error: _lecturesController.loadMoreError,
+                  onLoadMore: () => _lecturesController.loadMore(),
+                );
+              }
               final lecture = lectures[index];
-              return CourseLectureRow(
-                lecture: lecture,
-                onTap: () async {
-                  await Navigator.of(context).pushNamed(
-                    AppRoutes.lectureDetail,
-                    arguments: LectureDetailArgs(lecture.id),
-                  );
-                  if (!context.mounted) return;
-                  if (_course?.isEnrolled ?? false) {
-                    _lecturesController.refresh();
-                  }
-                },
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  LectureTile(
+                    lecture: lecture,
+                    onTap: () => _openLecture(lecture),
+                  ),
+                  const Divider(height: 1),
+                ],
               );
-            }, childCount: lectures.length),
-          ),
-          SliverToBoxAdapter(
-            child: PagedPaginationBar(controller: _lecturesController),
+            }, childCount: lectures.length + 1),
           ),
         ],
       ],

@@ -4,9 +4,9 @@ import 'package:provider/provider.dart';
 import 'package:enote_core/enote_core.dart';
 
 import '../../shell/routes.dart';
-import '../../theme/app_theme.dart';
 import '../../widgets/paged_list_view.dart';
 import 'rental_provider.dart';
+import 'rental_tile.dart';
 
 class RentalListScreen extends StatefulWidget {
   const RentalListScreen({super.key});
@@ -63,116 +63,29 @@ class _RentalListScreenState extends State<RentalListScreen> {
       controller: _controller,
       showSearch: false,
       emptyMessage: 'Još nemate iznajmljivanja.',
-      filterRow: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-        child: DropdownButtonFormField<InstrumentRentalStatus?>(
-          initialValue: _status,
-          decoration: const InputDecoration(labelText: 'Status'),
-          items: [
-            const DropdownMenuItem<InstrumentRentalStatus?>(
-              value: null,
-              child: Text('—'),
+      statusTabs: StatusFilterTabs<InstrumentRentalStatus?>(
+        scrollable: true,
+        selected: _status,
+        onChanged: _selectStatus,
+        options: [
+          for (final status in InstrumentRentalStatus.values)
+            StatusFilterOption<InstrumentRentalStatus?>(
+              label: rentalStatusLabel(status),
+              value: status,
             ),
-            for (final status in InstrumentRentalStatus.values)
-              DropdownMenuItem<InstrumentRentalStatus?>(
-                value: status,
-                child: Text(rentalStatusLabel(status)),
-              ),
-          ],
-          onChanged: _selectStatus,
-        ),
+          const StatusFilterOption<InstrumentRentalStatus?>(
+            label: 'Sva',
+            value: null,
+          ),
+        ],
       ),
-      itemBuilder: (context, rental) => _RentalRow(
+      itemBuilder: (context, rental) => RentalTile(
         rental: rental,
         onTap: () => Navigator.of(context).pushNamed(
           AppRoutes.rentalDetail,
           arguments: RentalDetailArgs(rental.id),
         ),
       ),
-    );
-  }
-}
-
-class _RentalRow extends StatelessWidget {
-  final InstrumentRentalDto rental;
-  final VoidCallback onTap;
-
-  const _RentalRow({required this.rental, required this.onTap});
-
-  bool get _showsPaidMark =>
-      rental.rentalStatus == InstrumentRentalStatus.completed ||
-      rental.rentalStatus == InstrumentRentalStatus.returnedEarly;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        InkWell(
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            child: Row(
-              children: [
-                ImageThumbnail(
-                  imageUrl: rental.instrumentImagePath,
-                  apiClient: context.read<ApiClient>(),
-                  size: 56,
-                  borderRadius: 8,
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        rental.instrumentModel,
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        '${rental.storeName} · ${formatDate(rental.requestedAt)}',
-                        style: const TextStyle(
-                          color: AppTheme.textSecondary,
-                          fontSize: 13,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    StatusChip(
-                      label: rentalStatusLabel(rental.rentalStatus),
-                      tone: rentalStatusTone(rental.rentalStatus),
-                    ),
-                    if (rental.isOverdue)
-                      StatusChip(
-                        label: 'Kasni ${rental.overdueDays} dana',
-                        tone: StatusTone.danger,
-                      ),
-                    if (_showsPaidMark)
-                      rental.isPaid
-                          ? StatusChip(
-                              label: paymentStatusLabel(
-                                PaymentStatus.succeeded,
-                              ),
-                              tone: paymentStatusTone(PaymentStatus.succeeded),
-                            )
-                          : const StatusChip(
-                              label: 'Nije plaćeno',
-                              tone: StatusTone.warning,
-                            ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-        const Divider(height: 1),
-      ],
     );
   }
 }

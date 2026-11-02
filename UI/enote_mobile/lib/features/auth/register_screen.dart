@@ -80,7 +80,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                 validator: Validators.required('Korisničko ime'),
                 maxLength: 256,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.lg),
               AppTextField(
                 controller: _emailController,
                 label: 'Email *',
@@ -88,24 +88,29 @@ class _RegisterScreenState extends State<RegisterScreen>
                 validator: Validators.email,
                 maxLength: 256,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.lg),
               AppTextField(
                 controller: _passwordController,
                 label: 'Lozinka *',
                 obscure: true,
                 validator: Validators.password,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.lg),
               AppTextField(
                 controller: _confirmController,
                 label: 'Potvrda lozinke *',
                 obscure: true,
-                validator:
-                    Validators.confirmPassword(() => _passwordController.text),
+                validator: Validators.confirmPassword(
+                  () => _passwordController.text,
+                ),
               ),
-              const SizedBox(height: 16),
-              AppTextField(controller: _firstNameController, label: 'Ime', maxLength: 256),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.lg),
+              AppTextField(
+                controller: _firstNameController,
+                label: 'Ime',
+                maxLength: 256,
+              ),
+              const SizedBox(height: AppSpacing.lg),
               AppTextField(
                 controller: _lastNameController,
                 label: 'Prezime',

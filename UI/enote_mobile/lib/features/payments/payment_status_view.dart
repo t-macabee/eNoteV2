@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 
+import 'package:enote_core/enote_core.dart';
+
 import '../../theme/app_theme.dart';
+import '../../widgets/submit_button.dart';
 
 enum PaymentFlowState { processing, succeeded, failed, pending }
 
@@ -34,41 +37,33 @@ class PaymentStatusView extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(AppSpacing.xl),
       children: [
-        const SizedBox(height: 48),
+        const SizedBox(height: AppSpacing.xxl),
         _icon(),
-        const SizedBox(height: 16),
+        const SizedBox(height: AppSpacing.lg),
         Text(
           _title,
           style: Theme.of(context).textTheme.headlineSmall,
           textAlign: TextAlign.center,
         ),
         if (detail != null) ...[
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.sm),
           Text(detail!, textAlign: TextAlign.center),
         ],
         if (_note != null) ...[
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.sm),
           Text(
             _note!,
-            style: const TextStyle(color: AppTheme.textSecondary),
+            style: Theme.of(context).textTheme.bodyMedium
+                ?.copyWith(color: AppTheme.textSecondary),
             textAlign: TextAlign.center,
           ),
         ],
-        const SizedBox(height: 24),
+        const SizedBox(height: AppSpacing.xl),
         if (retryLabel != null)
-          FilledButton(
-            onPressed: isBusy ? null : onRetry,
-            child: isBusy
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : Text(retryLabel!),
-          ),
-        if (retryLabel != null) const SizedBox(height: 8),
+          SubmitButton(label: retryLabel!, onPressed: onRetry, isBusy: isBusy),
+        if (retryLabel != null) const SizedBox(height: AppSpacing.sm),
         OutlinedButton(
           onPressed: isBusy ? null : onCancel,
           child: Text(cancelLabel),
@@ -84,17 +79,17 @@ class PaymentStatusView extends StatelessWidget {
       ),
       PaymentFlowState.succeeded => const Icon(
         Icons.check_circle_outline,
-        size: 64,
+        size: AppSize.heroIcon,
         color: AppTheme.success,
       ),
       PaymentFlowState.failed => const Icon(
         Icons.error_outline,
-        size: 64,
+        size: AppSize.heroIcon,
         color: AppTheme.error,
       ),
       PaymentFlowState.pending => const Icon(
         Icons.hourglass_empty_outlined,
-        size: 64,
+        size: AppSize.heroIcon,
         color: AppTheme.warning,
       ),
     };
@@ -108,8 +103,9 @@ class PaymentStatusView extends StatelessWidget {
   };
 
   String? get _note => switch (state) {
-    PaymentFlowState.processing => 'Ne zatvarajte ekran, provjeravamo plaćanje.',
-    PaymentFlowState.succeeded => successNote ?? 'Iznajmljivanje je izmireno.',
+    PaymentFlowState.processing =>
+      'Ne zatvarajte ekran, provjeravamo plaćanje.',
+    PaymentFlowState.succeeded => successNote,
     PaymentFlowState.pending => 'Provjerite ponovo za nekoliko sekundi.',
     _ => null,
   };

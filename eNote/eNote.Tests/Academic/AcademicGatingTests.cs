@@ -133,7 +133,7 @@ public sealed class AcademicGatingTests
     }
 
     [Fact]
-    public async Task AssignmentSubmissionService_OwnSubmissionAndHistory_Gated()
+    public async Task AssignmentSubmissionService_OwnSubmission_Gated()
     {
         var (context, instructor, _, unpaidStudent, _, lecture) = await SetupScenarioAsync();
         var assignment = new Assignment("HW", "Desc", Now.AddDays(7), lecture.Id);
@@ -158,8 +158,6 @@ public sealed class AcademicGatingTests
             TestMapper.Create());
 
         await Assert.ThrowsAsync<NotFoundException>(() => service.GetOwnSubmissionAsync(assignment.Id));
-        var history = await service.GetHistoryForStudentAsync(new AssignmentSubmissionSearchObject());
-        Assert.Empty(history.Items);
 
         var enrollment = await context.Set<Enrollment>().SingleAsync(e => e.StudentId == unpaidStudent.Id && e.CourseId == lecture.CourseId);
         enrollment.ExtendPaidUntil(Now, 30);
@@ -167,8 +165,6 @@ public sealed class AcademicGatingTests
 
         var own = await service.GetOwnSubmissionAsync(assignment.Id);
         Assert.Equal(80, own.Grade);
-        history = await service.GetHistoryForStudentAsync(new AssignmentSubmissionSearchObject());
-        Assert.Single(history.Items);
     }
 
     [Fact]

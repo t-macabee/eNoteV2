@@ -75,7 +75,8 @@ class _PayStubClient extends http.BaseClient {
     final path = request.url.path;
     late int status;
     late String body;
-    if (request.method == 'GET' && path.endsWith('/student/rentals/$_rentalId')) {
+    if (request.method == 'GET' &&
+        path.endsWith('/student/rentals/$_rentalId')) {
       rentalGets++;
       status = 200;
       body = jsonEncode(rental);
@@ -86,7 +87,8 @@ class _PayStubClient extends http.BaseClient {
           : (status: 200, body: _intent);
       status = next.status;
       body = jsonEncode(next.body);
-    } else if (request.method == 'GET' && path.endsWith('/student/rentals/$_rentalId/payments')) {
+    } else if (request.method == 'GET' &&
+        path.endsWith('/student/rentals/$_rentalId/payments')) {
       statusCalls++;
       final next = payments.isNotEmpty
           ? payments.removeAt(0)
@@ -112,11 +114,7 @@ class _Harness {
 
   _Harness({required this.client, required this.gateway});
 
-  Widget app(
-    AuthState authState,
-    ApiClient apiClient,
-    String publishableKey,
-  ) {
+  Widget app(AuthState authState, ApiClient apiClient, String publishableKey) {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider<AuthState>.value(value: authState),
@@ -195,10 +193,7 @@ Future<_PayStubClient> _pushSecondScreen(
   FakePaymentSheetGateway gatewayB, {
   List<({int status, Map<String, dynamic> body})>? payments,
 }) async {
-  final clientB = _PayStubClient(
-    rental: _rental(),
-    payments: payments,
-  );
+  final clientB = _PayStubClient(rental: _rental(), payments: payments);
   final authStateB = AuthState(
     baseUrl: _baseUrl,
     tokenReader: () => fakeJwt(),
@@ -251,10 +246,7 @@ void main() {
     expect(find.text('Stratocaster'), findsOneWidget);
     expect(find.text('Muzika d.o.o. · Završeno'), findsOneWidget);
     expect(find.text('8.00 KM'), findsWidgets);
-    expect(
-      find.text('6 dana × 1.33 KM'),
-      findsOneWidget,
-    );
+    expect(find.text('6 dana × 1.33 KM'), findsOneWidget);
     expect(
       find.text(
         'Plaćanje se obavlja putem Stripe-a. '
@@ -266,13 +258,34 @@ void main() {
     expect(find.textContaining('pi_test_123'), findsNothing);
   });
 
-  testWidgets('happy path runs A to C to D', (tester) async {
-    final gateway = FakePaymentSheetGateway();
+  testWidgets('review puts the rental header above the amount', (tester) async {
     await _pumpPay(
       tester,
       _PayStubClient(rental: _rental()),
-      gateway,
+      FakePaymentSheetGateway(),
     );
+
+    final model = tester.getTopLeft(find.text('Stratocaster')).dy;
+    final amount = tester.getTopLeft(find.text('Iznos')).dy;
+    expect(model, lessThan(amount));
+  });
+
+  testWidgets('processing view hides the back arrow', (tester) async {
+    final gateway = FakePaymentSheetGateway();
+    await _pumpPay(tester, _PayStubClient(rental: _rental()), gateway);
+
+    await _confirmPay(tester);
+    expect(find.text('Provjeravamo status plaćanja…'), findsOneWidget);
+    expect(find.byType(BackButton), findsNothing);
+    expect(find.byIcon(Icons.arrow_back), findsNothing);
+
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('happy path runs A to C to D', (tester) async {
+    final gateway = FakePaymentSheetGateway();
+    await _pumpPay(tester, _PayStubClient(rental: _rental()), gateway);
 
     await _confirmPay(tester);
     expect(gateway.initCalls, 1);
@@ -289,9 +302,7 @@ void main() {
     expect(find.text('Nazad na iznajmljivanje'), findsOneWidget);
   });
 
-  testWidgets('leaving through D pops true', (
-    tester,
-  ) async {
+  testWidgets('leaving through D pops without a result', (tester) async {
     final client = _PayStubClient(rental: _rental());
     final harness = await _pumpPay(tester, client, FakePaymentSheetGateway());
 
@@ -302,7 +313,8 @@ void main() {
     await tester.tap(find.text('Nazad na iznajmljivanje'));
     await tester.pumpAndSettle();
 
-    expect(harness.popped, isTrue);
+    expect(find.text('Open pay'), findsOneWidget);
+    expect(harness.popped, isNull);
     expect(client.rentalGets, 1);
   });
 
@@ -311,11 +323,7 @@ void main() {
   ) async {
     final gateway = FakePaymentSheetGateway()
       ..queuePresent(PaymentSheetCancelled());
-    await _pumpPay(
-      tester,
-      _PayStubClient(rental: _rental()),
-      gateway,
-    );
+    await _pumpPay(tester, _PayStubClient(rental: _rental()), gateway);
 
     await _confirmPay(tester);
 
@@ -344,9 +352,7 @@ void main() {
     expect(client.statusCalls, 1);
   });
 
-  testWidgets('a decline-then-dismiss shows the declined copy', (
-    tester,
-  ) async {
+  testWidgets('a decline-then-dismiss shows the declined copy', (tester) async {
     final client = _PayStubClient(
       rental: _rental(),
       payments: [(status: 200, body: _payment('Failed'))],
@@ -364,16 +370,10 @@ void main() {
     expect(client.statusCalls, 1);
   });
 
-  testWidgets('a failed sheet shows E with the Stripe message', (
-    tester,
-  ) async {
+  testWidgets('a failed sheet shows E with the Stripe message', (tester) async {
     final gateway = FakePaymentSheetGateway()
       ..queuePresent(PaymentSheetFailure('Your card was declined.'));
-    await _pumpPay(
-      tester,
-      _PayStubClient(rental: _rental()),
-      gateway,
-    );
+    await _pumpPay(tester, _PayStubClient(rental: _rental()), gateway);
 
     await _confirmPay(tester);
 
@@ -388,10 +388,7 @@ void main() {
       rental: _rental(),
       intents: [
         (status: 200, body: _intent),
-        (
-          status: 200,
-          body: {..._intent, 'amountCents': 900},
-        ),
+        (status: 200, body: {..._intent, 'amountCents': 900}),
       ],
     );
     final gateway = FakePaymentSheetGateway()
@@ -440,10 +437,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Plaćanje se obrađuje'), findsOneWidget);
-    expect(
-      find.text('Provjerite ponovo za nekoliko sekundi.'),
-      findsOneWidget,
-    );
+    expect(find.text('Provjerite ponovo za nekoliko sekundi.'), findsOneWidget);
     expect(find.text('Provjeri ponovo'), findsOneWidget);
     expect(find.text('Nazad'), findsOneWidget);
     expect(client.statusCalls, 5);
@@ -511,10 +505,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(clientA.statusCalls, 5);
 
-    final clientB = await _pushSecondScreen(
-      tester,
-      FakePaymentSheetGateway(),
-    );
+    final clientB = await _pushSecondScreen(tester, FakePaymentSheetGateway());
     expect(find.text('Plati 8.00 KM'), findsOneWidget);
     expect(StripeRedirect.handler, isNotNull);
 
@@ -580,42 +571,37 @@ void main() {
       FakePaymentSheetGateway(),
     );
 
-    expect(
-      find.text('Ovo iznajmljivanje je već plaćeno.'),
-      findsOneWidget,
-    );
+    expect(find.text('Ovo iznajmljivanje je već plaćeno.'), findsOneWidget);
     expect(find.textContaining('Plati'), findsNothing);
   });
 
-  testWidgets('the review, the confirmation and the button use the intent amount', (
-    tester,
-  ) async {
-    final client = _PayStubClient(
-      rental: _rental(),
-      intents: [
-        (
-          status: 200,
-          body: {..._intent, 'amountCents': 900},
-        ),
-      ],
-    );
-    final gateway = FakePaymentSheetGateway();
-    await _pumpPay(tester, client, gateway);
+  testWidgets(
+    'the review, the confirmation and the button use the intent amount',
+    (tester) async {
+      final client = _PayStubClient(
+        rental: _rental(),
+        intents: [
+          (status: 200, body: {..._intent, 'amountCents': 900}),
+        ],
+      );
+      final gateway = FakePaymentSheetGateway();
+      await _pumpPay(tester, client, gateway);
 
-    expect(find.text('Plati 8.00 KM'), findsOneWidget);
+      expect(find.text('Plati 8.00 KM'), findsOneWidget);
 
-    await _tapPay(tester);
+      await _tapPay(tester);
 
-    expect(client.createCalls, 1);
-    expect(gateway.presentCalls, 0);
-    expect(find.text('Plati 9.00 KM'), findsOneWidget);
-    expect(find.text('9.00 KM'), findsWidgets);
-    expect(find.text('8.00 KM'), findsNothing);
-    expect(
-      find.text('Platiti 9.00 KM za Stratocaster putem Stripe-a?'),
-      findsOneWidget,
-    );
-  });
+      expect(client.createCalls, 1);
+      expect(gateway.presentCalls, 0);
+      expect(find.text('Plati 9.00 KM'), findsOneWidget);
+      expect(find.text('9.00 KM'), findsWidgets);
+      expect(find.text('8.00 KM'), findsNothing);
+      expect(
+        find.text('Platiti 9.00 KM za Stratocaster putem Stripe-a?'),
+        findsOneWidget,
+      );
+    },
+  );
 
   testWidgets('a server refusal renders verbatim in E', (tester) async {
     final gateway = FakePaymentSheetGateway();
@@ -624,10 +610,7 @@ void main() {
       _PayStubClient(
         rental: _rental(),
         intents: [
-          (
-            status: 400,
-            body: {'message': 'Stavka je već plaćena.'},
-          ),
+          (status: 400, body: {'message': 'Stavka je već plaćena.'}),
         ],
       ),
       gateway,
@@ -665,8 +648,10 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.textContaining('Potvrda plaćanja'), findsNothing);
-    expect(find.text('Plaćanje trenutno nije dostupno. Pokušajte ponovo kasnije.'),
-        findsNothing);
+    expect(
+      find.text('Plaćanje trenutno nije dostupno. Pokušajte ponovo kasnije.'),
+      findsNothing,
+    );
     expect(gateway.presentCalls, 0);
   });
 }

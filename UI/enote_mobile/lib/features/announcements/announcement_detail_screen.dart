@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:enote_core/enote_core.dart';
 
 import '../../widgets/async_state_view.dart';
+import '../../widgets/detail_header.dart';
 import '../../widgets/wide_image.dart';
 import 'announcement_provider.dart';
 
@@ -74,37 +75,39 @@ class _AnnouncementDetailScreenState extends State<AnnouncementDetailScreen> {
     final source = isCourse
         ? 'Kurs · ${orDash(announcement.courseName)}'
         : 'Prodavnica · ${orDash(announcement.storeName)}';
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        if (announcement.imagePath != null &&
-            announcement.imagePath!.isNotEmpty) ...[
-          HeroImage(
-            imageUrl: announcement.imagePath,
-            apiClient: context.read<ApiClient>(),
+    final imagePath = announcement.imagePath;
+    return RefreshIndicator(
+      onRefresh: _load,
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.only(bottom: AppSpacing.lg),
+        children: [
+          if (imagePath != null && imagePath.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.lg,
+                AppSpacing.lg,
+                AppSpacing.lg,
+                0,
+              ),
+              child: HeroImage(
+                imageUrl: imagePath,
+                apiClient: context.read<ApiClient>(),
+              ),
+            ),
+          DetailHeader(
+            title: announcement.title,
+            subtitle: '$source · ${formatDateTime(announcement.publishedAt)}',
           ),
-          const SizedBox(height: 16),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+            child: Text(
+              announcement.content,
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+          ),
         ],
-        Text(
-          announcement.title,
-          style: Theme.of(context).textTheme.headlineSmall,
-        ),
-        const SizedBox(height: 8),
-        Text(
-          source,
-          style: Theme.of(context).textTheme.titleMedium,
-        ),
-        const SizedBox(height: 4),
-        Text(
-          formatDateTime(announcement.publishedAt),
-          style: Theme.of(context).textTheme.labelMedium,
-        ),
-        const SizedBox(height: 12),
-        Text(
-          announcement.content,
-          style: Theme.of(context).textTheme.bodyMedium,
-        ),
-      ],
+      ),
     );
   }
 }

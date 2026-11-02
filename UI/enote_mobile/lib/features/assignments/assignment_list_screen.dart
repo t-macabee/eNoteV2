@@ -5,11 +5,16 @@ import 'package:enote_core/enote_core.dart';
 
 import '../../shell/routes.dart';
 import '../../widgets/paged_list_view.dart';
-import 'assignment_labels.dart';
 import 'assignment_provider.dart';
+import 'assignment_tile.dart';
 
 class AssignmentListScreen extends StatefulWidget {
-  const AssignmentListScreen({super.key});
+  final AssignmentFilter initialFilter;
+
+  const AssignmentListScreen({
+    super.key,
+    this.initialFilter = AssignmentFilter.open,
+  });
 
   @override
   State<AssignmentListScreen> createState() => _AssignmentListScreenState();
@@ -18,7 +23,8 @@ class AssignmentListScreen extends StatefulWidget {
 class _AssignmentListScreenState extends State<AssignmentListScreen>
     with AutomaticKeepAliveClientMixin {
   late final PagedFetchController<AssignmentDto> _controller;
-  bool _pastDueOnly = false;
+  late AssignmentFilter _filter;
+  int? _openCount;
 
   @override
   bool get wantKeepAlive => true;
@@ -26,10 +32,12 @@ class _AssignmentListScreenState extends State<AssignmentListScreen>
   @override
   void initState() {
     super.initState();
+    _filter = widget.initialFilter;
     _controller = PagedFetchController<AssignmentDto>(
       fetcher: _fetch,
       pageSize: 20,
     );
+    _loadOpenCount();
   }
 
   Future<PagedResult<AssignmentDto>> _fetch(
@@ -43,11 +51,33 @@ class _AssignmentListScreenState extends State<AssignmentListScreen>
         pageSize,
         search,
         searchField: 'title',
-        filters: {
-          if (_pastDueOnly) 'dueBefore': DateTime.now().toIso8601String(),
-        },
+        filters: _filter.query(DateTime.now()),
       ),
     );
+  }
+
+  Future<void> _loadOpenCount() async {
+    try {
+      final count = await context.read<AssignmentProvider>().countOpen();
+      if (mounted) setState(() => _openCount = count);
+    } catch (_) {
+      if (mounted) setState(() => _openCount = null);
+    }
+  }
+
+  void _select(AssignmentFilter filter) {
+    setState(() => _filter = filter);
+    _controller.refresh(resetPage: true);
+  }
+
+  Future<void> _openDetail(AssignmentDto assignment) async {
+    await Navigator.of(context).pushNamed(
+      AppRoutes.assignmentDetail,
+      arguments: AssignmentDetailArgs(assignment.id),
+    );
+    if (!mounted) return;
+    _controller.refresh(resetPage: true);
+    _loadOpenCount();
   }
 
   @override
@@ -59,55 +89,36 @@ class _AssignmentListScreenState extends State<AssignmentListScreen>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    return Column(
-      children: [
-        Align(
-          alignment: Alignment.centerRight,
-          child: TextButton(
-            onPressed: () =>
-                Navigator.of(context).pushNamed(AppRoutes.assignmentHistory),
-            child: const Text('Moje predaje'),
+    return PagedListView<AssignmentDto>(
+      controller: _controller,
+      onRefresh: _loadOpenCount,
+      statusTabs: StatusFilterTabs<AssignmentFilter>(
+        scrollable: true,
+        selected: _filter,
+        onChanged: _select,
+        options: [
+          StatusFilterOption<AssignmentFilter>(
+            label: 'Otvoreni',
+            value: AssignmentFilter.open,
+            count: _openCount,
           ),
-        ),
-        Expanded(
-          child: PagedListView<AssignmentDto>(
-            controller: _controller,
-            filterRow: SwitchListTile(
-              title: const Text('Rok istekao'),
-              value: _pastDueOnly,
-              onChanged: (value) {
-                setState(() => _pastDueOnly = value);
-                _controller.refresh(resetPage: true);
-              },
-            ),
-            itemBuilder: (context, assignment) =>
-                _AssignmentRow(assignment: assignment),
+          const StatusFilterOption<AssignmentFilter>(
+            label: 'Predani',
+            value: AssignmentFilter.submitted,
           ),
-        ),
-      ],
-    );
-  }
-}
-
-class _AssignmentRow extends StatelessWidget {
-  final AssignmentDto assignment;
-
-  const _AssignmentRow({required this.assignment});
-
-  @override
-  Widget build(BuildContext context) {
-    final now = DateTime.now();
-    final deadline = assignmentDeadlineStatus(assignment.dueAt, now);
-    return ListTile(
-      leading: const Icon(Icons.assignment_outlined),
-      title: Text(assignment.title),
-      subtitle: Text('Rok: ${formatDateTime(assignment.dueAt)}'),
-      trailing: now.isAfter(assignment.dueAt)
-          ? StatusChip(label: deadline.label, tone: deadline.tone)
-          : null,
-      onTap: () => Navigator.of(context).pushNamed(
-        AppRoutes.assignmentDetail,
-        arguments: AssignmentDetailArgs(assignment.id),
+          const StatusFilterOption<AssignmentFilter>(
+            label: 'Rok istekao',
+            value: AssignmentFilter.pastDue,
+          ),
+          const StatusFilterOption<AssignmentFilter>(
+            label: 'Svi',
+            value: AssignmentFilter.all,
+          ),
+        ],
+      ),
+      itemBuilder: (context, assignment) => AssignmentTile(
+        assignment: assignment,
+        onTap: () => _openDetail(assignment),
       ),
     );
   }

@@ -156,8 +156,8 @@ void main() {
     await _pumpDetail(tester, _client(membershipPaidUntil: _future()));
 
     expect(find.text('Yamaha C40'), findsOneWidget);
-    expect(find.text('Yamaha · Klasična gitara'), findsOneWidget);
-    expect(find.text('Muzika d.o.o.'), findsOneWidget);
+    expect(find.text('Klasična gitara · Muzika d.o.o.'), findsOneWidget);
+    expect(find.text('Yamaha · Klasična gitara'), findsNothing);
     expect(find.text('Dostupno'), findsOneWidget);
     expect(_requestButtonEnabled(tester), isTrue);
     expect(find.text(_debtCopy), findsNothing);
@@ -270,11 +270,8 @@ void main() {
 
     await tester.tap(find.text('Pošalji zahtjev'));
     await tester.pumpAndSettle();
-    expect(find.text('Poslati zahtjev za Yamaha C40?'), findsOneWidget);
 
-    await tester.tap(find.text('Potvrdi'));
-    await tester.pumpAndSettle();
-
+    expect(find.text('Potvrdi'), findsNothing);
     expect(
       find.text('Već imate zahtjev na čekanju za ovaj instrument.'),
       findsOneWidget,

@@ -198,6 +198,34 @@ void main() {
     expect(find.text('Komentar instruktora'), findsNothing);
   });
 
+  testWidgets('graded submission shows the grade in displaySmall', (
+    tester,
+  ) async {
+    final harness = _Harness(
+      dueAt: _futureDueAt,
+      submission: _submissionJson(grade: 87),
+    );
+    await tester.pumpWidget(harness.app());
+    await tester.pumpAndSettle();
+
+    final grade = tester.widget<Text>(find.text('87'));
+    expect(grade.style?.fontSize, 36);
+    expect(grade.style?.color, AppTheme.primary);
+    expect(grade.style?.fontWeight, FontWeight.w600);
+  });
+
+  testWidgets('header shows the assignment status chip', (tester) async {
+    final harness = _Harness(
+      dueAt: _futureDueAt,
+      submission: _submissionJson(grade: 87),
+    );
+    await tester.pumpWidget(harness.app());
+    await tester.pumpAndSettle();
+
+    expect(find.text('Ocjena: 87'), findsOneWidget);
+    expect(find.text('Rok: 15.06.2099. 14:30'), findsOneWidget);
+  });
+
   testWidgets('state C shows the instructor comment', (tester) async {
     final harness = _Harness(
       dueAt: _futureDueAt,

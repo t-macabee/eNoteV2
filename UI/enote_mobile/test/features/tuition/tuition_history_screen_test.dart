@@ -25,7 +25,7 @@ Map<String, dynamic> _payment(int id, String status, {int? refundedCents}) => {
 };
 
 void main() {
-  testWidgets('shows refunded amounts and pages to the next result page', (
+  testWidgets('shows refunded amounts and loads the next page at the end', (
     tester,
   ) async {
     final client = ScriptedClient((request) {
@@ -74,13 +74,7 @@ void main() {
 
     expect(find.text('Djelimično vraćeno'), findsOneWidget);
     expect(find.textContaining('Povrat: 300.00 KM'), findsOneWidget);
-    expect(find.text('Stranica 1 od 2'), findsOneWidget);
-
-    await tester.tap(find.text('Sljedeća'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Stranica 2 od 2'), findsOneWidget);
-    expect(find.text('800.00 KM'), findsOneWidget);
+    expect(find.text('800.00 KM'), findsNWidgets(3));
     expect(
       client.requests
           .where((r) => r.url.path.endsWith('/tuition/history'))

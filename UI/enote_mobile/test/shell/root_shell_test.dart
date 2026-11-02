@@ -5,11 +5,16 @@ import 'package:provider/provider.dart';
 import 'package:enote_core/enote_core.dart';
 import 'package:enote_mobile/features/announcements/announcement_detail_screen.dart';
 import 'package:enote_mobile/features/announcements/announcement_provider.dart';
+import 'package:enote_mobile/features/assignments/assignment_list_screen.dart';
+import 'package:enote_mobile/features/assignments/assignment_provider.dart';
 import 'package:enote_mobile/features/courses/course_detail_screen.dart';
 import 'package:enote_mobile/features/courses/course_provider.dart';
+import 'package:enote_mobile/features/home/home_provider.dart';
+import 'package:enote_mobile/features/home/home_screen.dart';
 import 'package:enote_mobile/features/instruments/instrument_provider.dart';
 import 'package:enote_mobile/features/lectures/lecture_provider.dart';
 import 'package:enote_mobile/features/rentals/payments/rental_payment_provider.dart';
+import 'package:enote_mobile/features/rentals/rental_detail_screen.dart';
 import 'package:enote_mobile/features/rentals/rental_provider.dart';
 import 'package:enote_mobile/features/tuition/tuition_payment_provider.dart';
 import 'package:enote_mobile/realtime/notification_hub_client.dart';
@@ -19,6 +24,9 @@ import 'package:enote_mobile/shell/root_shell.dart';
 import 'package:enote_mobile/theme/app_theme.dart';
 
 import '../helpers.dart';
+
+Finder _navLabel(String label) =>
+    find.descendant(of: find.byType(NavigationBar), matching: find.text(label));
 
 class _FakeHub extends NotificationHubClient {
   int startCalls = 0;
@@ -64,8 +72,7 @@ class _Harness {
       } else if (request.method == 'GET' &&
           path == '/api/v1/student/instruments') {
         body = {'items': [], 'totalCount': 0};
-      } else if (request.method == 'GET' &&
-          path == '/api/v1/student/rentals') {
+      } else if (request.method == 'GET' && path == '/api/v1/student/rentals') {
         body = {'items': [], 'totalCount': 0};
       } else if (request.method == 'GET' &&
           path == '/api/v1/student/announcements/53') {
@@ -134,6 +141,12 @@ class _Harness {
         ChangeNotifierProvider<LectureProvider>(
           create: (_) => LectureProvider(apiClient: apiClient),
         ),
+        ChangeNotifierProvider<AssignmentProvider>(
+          create: (_) => AssignmentProvider(apiClient: apiClient),
+        ),
+        Provider<HomeProvider>(
+          create: (_) => HomeProvider(apiClient: apiClient),
+        ),
         Provider<TuitionPaymentProvider>(
           create: (_) => TuitionPaymentProvider(apiClient: apiClient),
         ),
@@ -164,68 +177,79 @@ void main() {
     expect(harness.hub.stopCalls, 1);
   });
 
-  testWidgets('a notification with only courseId opens the course on tab 1',
-      (tester) async {
+  testWidgets('a notification with only courseId opens the course on tab 1', (
+    tester,
+  ) async {
     final harness = _Harness();
     await tester.pumpWidget(harness.shellApp());
     await tester.pumpAndSettle();
 
-    RootShell.routeNotification(NotificationDto(
-      id: 1,
-      courseId: 47,
-      title: 'Nova obavijest na kursu',
-      body: 'Obavijest',
-      isRead: false,
-      createdAt: DateTime.utc(2026, 9, 1, 10),
-    ));
+    RootShell.routeNotification(
+      NotificationDto(
+        id: 1,
+        courseId: 47,
+        title: 'Nova obavijest na kursu',
+        body: 'Obavijest',
+        isRead: false,
+        createdAt: DateTime.utc(2026, 9, 1, 10),
+      ),
+    );
     await tester.pumpAndSettle();
 
     final nav = tester.widget<NavigationBar>(find.byType(NavigationBar));
     expect(nav.selectedIndex, 1);
-    final screen =
-        tester.widget<CourseDetailScreen>(find.byType(CourseDetailScreen));
+    final screen = tester.widget<CourseDetailScreen>(
+      find.byType(CourseDetailScreen),
+    );
     expect(screen.courseId, 47);
   });
 
-  testWidgets('a notification with only announcementId opens the announcement on tab 1',
-      (tester) async {
+  testWidgets(
+    'a notification with only announcementId opens the announcement on tab 1',
+    (tester) async {
+      final harness = _Harness();
+      await tester.pumpWidget(harness.shellApp());
+      await tester.pumpAndSettle();
+
+      RootShell.routeNotification(
+        NotificationDto(
+          id: 2,
+          announcementId: 53,
+          title: 'Nova objava',
+          body: 'Objava',
+          isRead: false,
+          createdAt: DateTime.utc(2026, 9, 1, 10),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final nav = tester.widget<NavigationBar>(find.byType(NavigationBar));
+      expect(nav.selectedIndex, 1);
+      final screen = tester.widget<AnnouncementDetailScreen>(
+        find.byType(AnnouncementDetailScreen),
+      );
+      expect(screen.announcementId, 53);
+    },
+  );
+
+  testWidgets('an announcement notification wins over its courseId', (
+    tester,
+  ) async {
     final harness = _Harness();
     await tester.pumpWidget(harness.shellApp());
     await tester.pumpAndSettle();
 
-    RootShell.routeNotification(NotificationDto(
-      id: 2,
-      announcementId: 53,
-      title: 'Nova objava',
-      body: 'Objava',
-      isRead: false,
-      createdAt: DateTime.utc(2026, 9, 1, 10),
-    ));
-    await tester.pumpAndSettle();
-
-    final nav = tester.widget<NavigationBar>(find.byType(NavigationBar));
-    expect(nav.selectedIndex, 1);
-    final screen = tester.widget<AnnouncementDetailScreen>(
-      find.byType(AnnouncementDetailScreen),
+    RootShell.routeNotification(
+      NotificationDto(
+        id: 3,
+        announcementId: 53,
+        courseId: 47,
+        title: 'Nova objava na kursu',
+        body: 'Objava',
+        isRead: false,
+        createdAt: DateTime.utc(2026, 9, 1, 10),
+      ),
     );
-    expect(screen.announcementId, 53);
-  });
-
-  testWidgets('an announcement notification wins over its courseId',
-      (tester) async {
-    final harness = _Harness();
-    await tester.pumpWidget(harness.shellApp());
-    await tester.pumpAndSettle();
-
-    RootShell.routeNotification(NotificationDto(
-      id: 3,
-      announcementId: 53,
-      courseId: 47,
-      title: 'Nova objava na kursu',
-      body: 'Objava',
-      isRead: false,
-      createdAt: DateTime.utc(2026, 9, 1, 10),
-    ));
     await tester.pumpAndSettle();
 
     final nav = tester.widget<NavigationBar>(find.byType(NavigationBar));
@@ -235,5 +259,137 @@ void main() {
     );
     expect(screen.announcementId, 53);
     expect(find.byType(CourseDetailScreen), findsNothing);
+  });
+
+  testWidgets('app opens on Početna', (tester) async {
+    setPhoneSurface(tester);
+    final harness = _Harness();
+    await tester.pumpWidget(harness.shellApp());
+    await tester.pumpAndSettle();
+
+    final nav = tester.widget<NavigationBar>(find.byType(NavigationBar));
+    expect(nav.selectedIndex, 0);
+    expect(find.byType(HomeScreen), findsOneWidget);
+  });
+
+  testWidgets('bottom bar shows four tabs with the labels of RootTab', (
+    tester,
+  ) async {
+    setPhoneSurface(tester);
+    final harness = _Harness();
+    await tester.pumpWidget(harness.shellApp());
+    await tester.pumpAndSettle();
+
+    final nav = tester.widget<NavigationBar>(find.byType(NavigationBar));
+    final labels = [
+      for (final destination in nav.destinations)
+        (destination as NavigationDestination).label,
+    ];
+    expect(labels, [for (final tab in RootTab.values) tab.title]);
+    expect(labels, hasLength(4));
+  });
+
+  testWidgets('all four labels fit without overflow at 360 px width', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(360, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final harness = _Harness();
+    await tester.pumpWidget(harness.shellApp());
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(_navLabel('Instrumenti'), findsOneWidget);
+  });
+
+  testWidgets('back on the Instrumenti root selects Početna', (tester) async {
+    setPhoneSurface(tester);
+    final harness = _Harness();
+    await tester.pumpWidget(harness.shellApp());
+    await tester.pumpAndSettle();
+
+    await tester.tap(_navLabel('Instrumenti'));
+    await tester.pumpAndSettle();
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+
+    final nav = tester.widget<NavigationBar>(find.byType(NavigationBar));
+    expect(nav.selectedIndex, 0);
+  });
+
+  testWidgets('tapping the selected tab pops to its root', (tester) async {
+    setPhoneSurface(tester);
+    final harness = _Harness();
+    await tester.pumpWidget(harness.shellApp());
+    await tester.pumpAndSettle();
+
+    RootShell.routeNotification(
+      NotificationDto(
+        id: 1,
+        courseId: 47,
+        title: 'Nova obavijest na kursu',
+        body: 'Obavijest',
+        isRead: false,
+        createdAt: DateTime.utc(2026, 9, 1, 10),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byType(CourseDetailScreen), findsOneWidget);
+
+    await tester.tap(_navLabel('Učenje'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(CourseDetailScreen), findsNothing);
+  });
+
+  testWidgets(
+    'rental notification opens the Iznajmljivanja detail in the Instrumenti tab',
+    (tester) async {
+      setPhoneSurface(tester);
+      final harness = _Harness();
+      await tester.pumpWidget(harness.shellApp());
+      await tester.pumpAndSettle();
+
+      RootShell.routeNotification(
+        NotificationDto(
+          id: 4,
+          rentalId: 5,
+          title: 'Promjena statusa iznajmljivanja',
+          body: 'Iznajmljivanje je odobreno',
+          isRead: false,
+          createdAt: DateTime.utc(2026, 9, 1, 10),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final nav = tester.widget<NavigationBar>(find.byType(NavigationBar));
+      expect(nav.selectedIndex, 2);
+      expect(find.byType(RentalDetailScreen), findsOneWidget);
+    },
+  );
+
+  testWidgets('submission notification opens Predani zadaci', (tester) async {
+    setPhoneSurface(tester);
+    final harness = _Harness();
+    await tester.pumpWidget(harness.shellApp());
+    await tester.pumpAndSettle();
+
+    RootShell.routeNotification(
+      NotificationDto(
+        id: 5,
+        submissionId: 9,
+        title: 'Ocjena zadatka',
+        body: 'Zadatak je ocijenjen',
+        isRead: false,
+        createdAt: DateTime.utc(2026, 9, 1, 10),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final nav = tester.widget<NavigationBar>(find.byType(NavigationBar));
+    expect(nav.selectedIndex, 1);
+    expect(find.byType(AssignmentListScreen), findsOneWidget);
+    expect(find.text('Predani zadaci'), findsOneWidget);
   });
 }

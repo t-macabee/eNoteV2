@@ -1,5 +1,22 @@
 import 'package:enote_core/enote_core.dart';
 
+enum AssignmentFilter {
+  open,
+  submitted,
+  pastDue,
+  all;
+
+  Map<String, dynamic> query(DateTime now) => switch (this) {
+    AssignmentFilter.open => {'isSubmitted': false, 'dueAfter': toUtcIso(now)},
+    AssignmentFilter.submitted => {'isSubmitted': true},
+    AssignmentFilter.pastDue => {
+      'isSubmitted': false,
+      'dueBefore': toUtcIso(now),
+    },
+    AssignmentFilter.all => const <String, dynamic>{},
+  };
+}
+
 class AssignmentProvider extends ReadOnlyProvider<AssignmentDto> {
   AssignmentProvider({required super.apiClient})
     : super(endpoint: 'student/assignments');
@@ -26,23 +43,22 @@ class AssignmentProvider extends ReadOnlyProvider<AssignmentDto> {
       fileName: fileName,
       contentType: contentType,
     );
-    return AssignmentSubmissionDto.fromJson(decodeOrThrow(response));
+    final submission = AssignmentSubmissionDto.fromJson(
+      decodeOrThrow(response),
+    );
+    notifyListeners();
+    return submission;
   }
 
-  Future<PagedResult<AssignmentSubmissionDto>> myHistory({
-    int page = 1,
-    int pageSize = 20,
-  }) async {
-    final params = pagedQuery(page, pageSize, '');
-    final response = await apiClient.get(
-      'student/submissions',
-      queryParams: params,
+  Future<int?> countOpen() async {
+    final result = await getPage(
+      params: pagedQuery(
+        1,
+        1,
+        '',
+        filters: AssignmentFilter.open.query(DateTime.now()),
+      ),
     );
-    throwIfError(response);
-    return parsePage<AssignmentSubmissionDto>(
-      response,
-      AssignmentSubmissionDto.fromJson,
-      params: params,
-    );
+    return result.totalCount;
   }
 }

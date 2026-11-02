@@ -438,48 +438,6 @@ public sealed class AssignmentSubmissionServiceTests
         Assert.Single(fileStorage.DeletedPaths);
     }
 
-    [Fact]
-    public async Task GetHistoryForStudentAsync_ReturnsNewestSubmissionFirst()
-    {
-        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
-        var olderAssignment = new Assignment("Older homework", "Do it", Now.AddDays(7), harness.Lecture.Id);
-        var newerAssignment = new Assignment("Newer homework", "Do it", Now.AddDays(7), harness.Lecture.Id);
-        harness.Context.Set<Assignment>().AddRange(olderAssignment, newerAssignment);
-        await harness.Context.SaveChangesAsync();
-        var older = new AssignmentSubmission(olderAssignment.Id, harness.Student.Id);
-        older.Submit("/older.pdf", Now.AddDays(-2));
-        var newer = new AssignmentSubmission(newerAssignment.Id, harness.Student.Id);
-        newer.Submit("/newer.pdf", Now.AddDays(-1));
-        harness.Context.Set<AssignmentSubmission>().AddRange(older, newer);
-        await harness.Context.SaveChangesAsync();
-        var service = CreateService(harness.Context, harness.Instructor, new RecordingFileStorageService(), harness.Student);
-
-        var result = await service.GetHistoryForStudentAsync(new AssignmentSubmissionSearchObject());
-
-        Assert.Equal(new[] { newer.Id, older.Id }, result.Items.Select(x => x.Id));
-    }
-
-    [Fact]
-    public async Task GetHistoryForStudentAsync_ReturnsSubmissionOfCancelledLecture()
-    {
-        var harness = await AcademicTestData.SeedAsync(TestDbContextFactory.CreateContext(Now), Now);
-        var assignment = new Assignment("Homework", "Do it", Now.AddDays(7), harness.Lecture.Id);
-        harness.Context.Set<Assignment>().Add(assignment);
-        await harness.Context.SaveChangesAsync();
-        var submission = new AssignmentSubmission(assignment.Id, harness.Student.Id);
-        submission.Submit("/hw.pdf", Now);
-        submission.SetGrade(90);
-        harness.Context.Set<AssignmentSubmission>().Add(submission);
-        await harness.Context.SaveChangesAsync();
-        harness.Context.Set<Lecture>().Single(l => l.Id == harness.Lecture.Id).Cancel("Instrument je pokvaren", 1, Now);
-        await harness.Context.SaveChangesAsync();
-        var service = CreateService(harness.Context, harness.Instructor, new RecordingFileStorageService(), harness.Student);
-
-        var result = await service.GetHistoryForStudentAsync(new AssignmentSubmissionSearchObject());
-
-        Assert.Equal(submission.Id, Assert.Single(result.Items).Id);
-    }
-
     private static AssignmentSubmissionService CreateService(IAppDbContext context, Instructor instructor, IFileStorageService fileStorage, Student student, ISubmissionNotificationDispatcher? notificationDispatcher = null, IUserIdentityService? identity = null) =>
         CreateService(context, (ENoteContext)context, instructor, fileStorage, student, notificationDispatcher, identity);
 

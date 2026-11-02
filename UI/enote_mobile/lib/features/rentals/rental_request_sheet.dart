@@ -3,9 +3,11 @@ import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
 
-import '../../shell/root_shell.dart';
-import '../../theme/app_theme.dart';
+import '../../shell/routes.dart';
+import '../../widgets/app_sheet_body.dart';
+import '../../widgets/app_text_field.dart';
 import '../../widgets/form_submit_state.dart';
+import '../../widgets/submit_button.dart';
 import 'rental_provider.dart';
 
 String rentalRequestSentMessage(int? otherPendingRequests) {
@@ -22,10 +24,6 @@ Future<void> showRentalRequestSheet(
   return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
-    showDragHandle: true,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-    ),
     builder: (context) => RentalRequestSheet(instrument: instrument),
   );
 }
@@ -59,13 +57,6 @@ class _RentalRequestSheetState extends State<RentalRequestSheet>
     final navigator = Navigator.of(context);
     final messenger = ScaffoldMessenger.of(context);
 
-    final confirmed = await confirmDialog(
-      context: context,
-      title: 'Zahtjev za iznajmljivanje',
-      message: 'Poslati zahtjev za $_instrumentName?',
-    );
-    if (confirmed != true) return;
-
     await submit(() async {
       final note = _note.text.trim();
       final rental = await rentals.createRequest(
@@ -76,7 +67,10 @@ class _RentalRequestSheetState extends State<RentalRequestSheet>
       );
       if (!mounted) return;
       navigator.pop();
-      RootShell.switchTab(RootTab.rentals);
+      navigator.pushNamed(
+        AppRoutes.rentalDetail,
+        arguments: RentalDetailArgs(rental.id),
+      );
       messenger.showSnackBar(
         SnackBar(
           content: Text(rentalRequestSentMessage(rental.otherPendingRequests)),
@@ -88,53 +82,29 @@ class _RentalRequestSheetState extends State<RentalRequestSheet>
   @override
   Widget build(BuildContext context) {
     final error = submitError;
-    return Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.viewInsetsOf(context).bottom,
-      ),
-      child: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Zahtjev za iznajmljivanje',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              const SizedBox(height: 4),
-              Text(
-                _instrumentName,
-                style: const TextStyle(color: AppTheme.textSecondary),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _note,
-                minLines: 3,
-                maxLines: 5,
-                maxLength: RentalRequestSheet.noteMaxLength,
-                decoration: const InputDecoration(labelText: 'Napomena'),
-              ),
-              const SizedBox(height: 8),
-              FilledButton(
-                onPressed: isSubmitting ? null : _submit,
-                child: isSubmitting
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Text('Pošalji zahtjev'),
-              ),
-              if (error != null) ...[
-                const SizedBox(height: 12),
-                ErrorBanner(message: error),
-              ],
-            ],
-          ),
+    return AppSheetBody(
+      title: 'Zahtjev za iznajmljivanje',
+      subtitle: _instrumentName,
+      children: [
+        AppTextField(
+          controller: _note,
+          label: 'Napomena',
+          minLines: 3,
+          maxLines: 5,
+          maxLength: RentalRequestSheet.noteMaxLength,
+          textInputAction: TextInputAction.newline,
         ),
-      ),
+        const SizedBox(height: AppSpacing.sm),
+        SubmitButton(
+          label: 'Pošalji zahtjev',
+          onPressed: _submit,
+          isBusy: isSubmitting,
+        ),
+        if (error != null) ...[
+          const SizedBox(height: AppSpacing.md),
+          ErrorBanner(message: error),
+        ],
+      ],
     );
   }
 }

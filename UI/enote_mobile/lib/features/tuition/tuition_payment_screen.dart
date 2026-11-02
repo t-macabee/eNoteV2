@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:enote_core/enote_core.dart';
 
 import '../../config.dart';
+import '../../widgets/detail_header.dart';
 import '../../widgets/labeled_value.dart';
 import '../payments/payment_flow_body.dart';
 import '../payments/payment_flow_controller.dart';
@@ -94,13 +95,12 @@ class _TuitionPaymentScreenState extends State<TuitionPaymentScreen> {
   Widget _review() {
     final amountLabel = _flow.prepared?.amountLabel ?? formatKM(widget.price);
     return PaymentReview(
+      header: DetailHeader(title: widget.courseName),
       amountLabel: amountLabel,
       onPay: _pay,
       isBusy: _flow.isBusy,
       isConfigured: _flow.isConfigured,
-      children: [
-        Text(widget.courseName, style: Theme.of(context).textTheme.titleLarge),
-        const SizedBox(height: 16),
+      rows: [
         LabeledValue(label: 'Iznos', value: amountLabel),
         const LabeledValue(label: 'Trajanje pristupa', value: '30 dana'),
       ],

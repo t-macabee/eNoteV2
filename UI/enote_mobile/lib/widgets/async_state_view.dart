@@ -2,11 +2,14 @@ import 'package:flutter/material.dart';
 
 import 'package:enote_core/enote_core.dart';
 
+import '../theme/app_theme.dart';
+
 class AsyncStateView extends StatelessWidget {
   final bool isLoading;
   final Object? error;
   final bool isEmpty;
   final String emptyMessage;
+  final IconData emptyIcon;
   final Widget? emptyAction;
   final VoidCallback onRetry;
   final Widget child;
@@ -16,7 +19,8 @@ class AsyncStateView extends StatelessWidget {
     this.isLoading = false,
     this.error,
     this.isEmpty = false,
-    this.emptyMessage = 'Nema rezultata za pretragu.',
+    this.emptyMessage = 'Nema podataka.',
+    this.emptyIcon = Icons.inbox_outlined,
     this.emptyAction,
     required this.onRetry,
     required this.child,
@@ -28,44 +32,56 @@ class AsyncStateView extends StatelessWidget {
       return const Center(child: CircularProgressIndicator());
     }
     if (error != null) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.warning_amber_outlined, size: 48),
-              const SizedBox(height: 12),
-              Text(userMessage(error!), textAlign: TextAlign.center),
-              const SizedBox(height: 16),
-              OutlinedButton(
-                onPressed: onRetry,
-                child: const Text('Pokušaj ponovo'),
-              ),
-            ],
-          ),
+      return _StateMessage(
+        icon: Icons.warning_amber_outlined,
+        message: userMessage(error!),
+        action: OutlinedButton(
+          onPressed: onRetry,
+          child: const Text('Pokušaj ponovo'),
         ),
       );
     }
     if (isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.inbox_outlined, size: 48),
-              const SizedBox(height: 12),
-              Text(emptyMessage, textAlign: TextAlign.center),
-              if (emptyAction != null) ...[
-                const SizedBox(height: 16),
-                emptyAction!,
-              ],
-            ],
-          ),
-        ),
+      return _StateMessage(
+        icon: emptyIcon,
+        message: emptyMessage,
+        action: emptyAction,
       );
     }
     return child;
+  }
+}
+
+class _StateMessage extends StatelessWidget {
+  final IconData icon;
+  final String message;
+  final Widget? action;
+
+  const _StateMessage({required this.icon, required this.message, this.action});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.xl),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: AppSize.stateIcon, color: AppTheme.textTertiary),
+            const SizedBox(height: AppSpacing.md),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyMedium
+                  ?.copyWith(color: AppTheme.textSecondary),
+            ),
+            if (action != null) ...[
+              const SizedBox(height: AppSpacing.lg),
+              action!,
+            ],
+          ],
+        ),
+      ),
+    );
   }
 }

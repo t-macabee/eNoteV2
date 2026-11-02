@@ -4,9 +4,9 @@ import 'package:provider/provider.dart';
 import 'package:enote_core/enote_core.dart';
 
 import '../../shell/routes.dart';
-import '../../theme/app_theme.dart';
 import '../../widgets/paged_list_view.dart';
 import 'lecture_provider.dart';
+import 'lecture_tile.dart';
 
 class LectureListScreen extends StatefulWidget {
   const LectureListScreen({super.key});
@@ -18,7 +18,8 @@ class LectureListScreen extends StatefulWidget {
 class _LectureListScreenState extends State<LectureListScreen>
     with AutomaticKeepAliveClientMixin {
   late final PagedFetchController<LectureDto> _controller;
-  bool _upcomingOnly = false;
+  LectureFilter _filter = LectureFilter.upcoming;
+  int? _upcomingCount;
 
   @override
   bool get wantKeepAlive => true;
@@ -30,6 +31,7 @@ class _LectureListScreenState extends State<LectureListScreen>
       fetcher: _fetch,
       pageSize: 20,
     );
+    _loadUpcomingCount();
   }
 
   Future<PagedResult<LectureDto>> _fetch(
@@ -43,9 +45,33 @@ class _LectureListScreenState extends State<LectureListScreen>
         pageSize,
         search,
         searchField: 'name',
-        filters: {if (_upcomingOnly) 'from': DateTime.now().toIso8601String()},
+        filters: _filter.query(DateTime.now()),
       ),
     );
+  }
+
+  Future<void> _loadUpcomingCount() async {
+    try {
+      final count = await context.read<LectureProvider>().countUpcoming();
+      if (mounted) setState(() => _upcomingCount = count);
+    } catch (_) {
+      if (mounted) setState(() => _upcomingCount = null);
+    }
+  }
+
+  void _select(LectureFilter filter) {
+    setState(() => _filter = filter);
+    _controller.refresh(resetPage: true);
+  }
+
+  Future<void> _openDetail(LectureDto lecture) async {
+    await Navigator.of(context).pushNamed(
+      AppRoutes.lectureDetail,
+      arguments: LectureDetailArgs(lecture.id),
+    );
+    if (!mounted) return;
+    _controller.refresh(resetPage: true);
+    _loadUpcomingCount();
   }
 
   @override
@@ -59,60 +85,25 @@ class _LectureListScreenState extends State<LectureListScreen>
     super.build(context);
     return PagedListView<LectureDto>(
       controller: _controller,
-      filterRow: SwitchListTile(
-        title: const Text('Predstojeća'),
-        value: _upcomingOnly,
-        onChanged: (value) {
-          setState(() => _upcomingOnly = value);
-          _controller.refresh(resetPage: true);
-        },
-      ),
-      itemBuilder: (context, lecture) => _LectureRow(lecture: lecture),
-    );
-  }
-}
-
-class _LectureRow extends StatelessWidget {
-  final LectureDto lecture;
-
-  const _LectureRow({required this.lecture});
-
-  static IconData _iconFor(LectureType type) => switch (type) {
-    LectureType.theoretical => Icons.school_outlined,
-    LectureType.practical => Icons.music_note_outlined,
-    LectureType.combined => Icons.event_note_outlined,
-  };
-
-  @override
-  Widget build(BuildContext context) {
-    return ListTile(
-      leading: Icon(_iconFor(lecture.lectureType)),
-      title: Text(lecture.name),
-      subtitle: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text('${formatDateTime(lecture.lectureTime)} · ${lecture.location}'),
-          if (lecture.isIndividual)
-            const StatusChip(
-              label: 'Individualni čas',
-              tone: StatusTone.accent,
-            ),
-          if (lecture.cancellationReason != null)
-            Text(
-              'Razlog: ${lecture.cancellationReason}',
-              style: const TextStyle(color: AppTheme.error),
-            ),
+      onRefresh: _loadUpcomingCount,
+      statusTabs: StatusFilterTabs<LectureFilter>(
+        scrollable: true,
+        selected: _filter,
+        onChanged: _select,
+        options: [
+          StatusFilterOption<LectureFilter>(
+            label: 'Predstojeća',
+            value: LectureFilter.upcoming,
+            count: _upcomingCount,
+          ),
+          const StatusFilterOption<LectureFilter>(
+            label: 'Sva',
+            value: LectureFilter.all,
+          ),
         ],
       ),
-      trailing: StatusChip(
-        label: lectureStatusLabel(lecture.lectureStatus),
-        tone: lectureStatusTone(lecture.lectureStatus),
-      ),
-      onTap: () => Navigator.of(context).pushNamed(
-        AppRoutes.lectureDetail,
-        arguments: LectureDetailArgs(lecture.id),
-      ),
+      itemBuilder: (context, lecture) =>
+          LectureTile(lecture: lecture, onTap: () => _openDetail(lecture)),
     );
   }
 }

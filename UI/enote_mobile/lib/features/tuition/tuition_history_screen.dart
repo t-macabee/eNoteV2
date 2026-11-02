@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
 
+import '../../theme/app_theme.dart';
 import '../../widgets/paged_list_view.dart';
 import 'tuition_payment_provider.dart';
 
@@ -62,7 +63,8 @@ class _TuitionHistoryScreenState extends State<TuitionHistoryScreen> {
               widget.courseName,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.labelSmall,
+              style: Theme.of(context).textTheme.bodySmall
+                  ?.copyWith(color: AppTheme.textSecondary),
             ),
           ],
         ),
@@ -85,33 +87,30 @@ class _PaymentRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final refundedCents = payment.refundedCents ?? 0;
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      child: ListTile(
-        title: Row(
-          children: [
-            Expanded(
-              child: Text(
-                formatKM(payment.amountCents / 100, currency: payment.currency),
-              ),
+    return ListTile(
+      title: Row(
+        children: [
+          Expanded(
+            child: Text(
+              formatKM(payment.amountCents / 100, currency: payment.currency),
             ),
-            StatusChip(
-              label: paymentStatusLabel(payment.status),
-              tone: paymentStatusTone(payment.status),
+          ),
+          StatusChip(
+            label: paymentStatusLabel(payment.status),
+            tone: paymentStatusTone(payment.status),
+          ),
+        ],
+      ),
+      subtitle: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(_period(payment)),
+          if (refundedCents > 0)
+            Text(
+              _refund(payment),
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
             ),
-          ],
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(_period(payment)),
-            if (refundedCents > 0)
-              Text(
-                _refund(payment),
-                style: TextStyle(color: Theme.of(context).colorScheme.error),
-              ),
-          ],
-        ),
+        ],
       ),
     );
   }

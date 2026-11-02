@@ -2,14 +2,18 @@ import 'package:flutter/material.dart';
 
 import 'package:enote_core/enote_core.dart';
 
+import '../../theme/app_theme.dart';
+import '../../widgets/detail_actions.dart';
+import '../../widgets/detail_header.dart';
+import '../../widgets/detail_section.dart';
 import '../../widgets/labeled_value.dart';
-import '../lectures/lecture_labels.dart';
+import '../student_notices.dart';
 
 String lockedContentReason(int lectureCount) =>
     'Predavanja ($lectureCount) su privremeno nedostupna. '
     'Obnovite školarinu da biste nastavili.';
 
-class CourseMasterCard extends StatelessWidget {
+class CourseDetailSummary extends StatelessWidget {
   final CourseDto course;
   final bool enrolled;
   final bool membershipBlocked;
@@ -21,7 +25,7 @@ class CourseMasterCard extends StatelessWidget {
   final VoidCallback onTuition;
   final VoidCallback onTuitionHistory;
 
-  const CourseMasterCard({
+  const CourseDetailSummary({
     super.key,
     required this.course,
     required this.enrolled,
@@ -42,223 +46,217 @@ class CourseMasterCard extends StatelessWidget {
         status == null ||
         status == EnrollmentStatus.canceled ||
         status == EnrollmentStatus.rejected;
+    final paidUntil = course.paidUntil;
+    final tuitionUnpaid = enrolled && !course.isFree && paidUntil == null;
+    final tuitionExpired =
+        enrolled &&
+        !course.isFree &&
+        paidUntil != null &&
+        paidUntil.isBefore(DateTime.now());
+    final tuitionPaid =
+        enrolled && !course.isFree && !tuitionExpired && paidUntil != null;
     final lockedContent = enrolled && !course.hasContentAccess;
-    final rankingButton = TextButton(
-      onPressed: course.hasContentAccess ? onRanking : null,
-      child: const Text('Rang lista'),
-    );
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  course.name,
-                  style: Theme.of(context).textTheme.headlineSmall,
-                ),
-              ),
-              if (status != null && status != EnrollmentStatus.canceled)
-                StatusChip(
-                  label: enrollmentStatusLabel(status),
-                  tone: enrollmentStatusTone(status),
-                ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          LabeledValue(
-            label: 'Instruktor',
-            value: orDash(course.instructorName),
-          ),
-          LabeledValue(
-            label: 'Trajanje',
-            value:
-                '${formatDateNullable(course.startDate)} – '
-                '${formatDateNullable(course.endDate)}',
-          ),
-          LabeledValue(label: 'Mjesečna cijena', value: formatKM(course.price)),
-          LabeledValue(
-            label: 'Polaznika',
-            value: course.enrolledCount.toString(),
-          ),
-          if (course.description != null) ...[
-            const SizedBox(height: 8),
-            Text(
-              course.description!,
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-          ],
-          if (status == EnrollmentStatus.pending) ...[
-            const SizedBox(height: 8),
-            const StatusBanner(
-              icon: Icons.hourglass_empty,
-              message: 'Zahtjev za upis čeka odobrenje instruktora.',
-              tone: StatusTone.warning,
-            ),
-          ],
-          if (status == EnrollmentStatus.rejected) ...[
-            const SizedBox(height: 8),
-            StatusBanner(
-              icon: Icons.info_outline,
-              message:
-                  'Zahtjev za upis je odbijen: '
-                  '${course.enrollmentDecisionNote ?? '-'}',
-              tone: StatusTone.danger,
-            ),
-          ],
-          if (status == EnrollmentStatus.canceled &&
-              course.hasContentAccess) ...[
-            const SizedBox(height: 8),
-            StatusBanner(
-              icon: Icons.event_available,
-              message:
-                  'Ispisani ste sa kursa. Pristup traje do '
-                  '${formatDate(course.paidUntil!)}',
-              tone: StatusTone.info,
-            ),
-          ],
-          if (status == EnrollmentStatus.completed) ...[
-            const SizedBox(height: 8),
-            const StatusBanner(
-              icon: Icons.check_circle_outline,
-              message: 'Kurs ste završili. Ponovni upis nije moguć.',
-              tone: StatusTone.success,
-            ),
-          ],
-          if (course.hasEnded && canRequest) ...[
-            const SizedBox(height: 8),
-            const StatusBanner(
-              icon: Icons.event_busy,
-              message: 'Kurs je završen. Upis više nije moguć.',
-              tone: StatusTone.neutral,
-            ),
-          ],
-          if (membershipBlocked && canRequest) ...[
-            const SizedBox(height: 8),
-            StatusBanner(
-              icon: Icons.info_outline,
-              message: membershipPaidUntil == null
-                  ? 'Članarina nije aktivna.'
-                  : 'Članarina je istekla ${formatDate(membershipPaidUntil!)} '
-                        'Obratite se školi za obnovu.',
-              tone: StatusTone.danger,
-            ),
-          ],
-          if (enrolled && !course.isFree) ...[
-            const SizedBox(height: 8),
-            _TuitionBanner(
-              course: course,
-              onTuition: onTuition,
-              onHistory: course.enrollmentId == null ? null : onTuitionHistory,
-            ),
-          ],
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              if (status == EnrollmentStatus.active)
-                OutlinedButton(
-                  onPressed: isActing ? null : onUnenroll,
-                  child: const Text('Ispiši se'),
-                )
-              else if (status == EnrollmentStatus.pending)
-                OutlinedButton(
-                  onPressed: isActing ? null : onUnenroll,
-                  child: const Text('Otkaži zahtjev'),
-                )
-              else if (status == EnrollmentStatus.canceled &&
-                  course.hasContentAccess)
-                FilledButton(
-                  onPressed: (membershipBlocked || isActing || course.hasEnded)
-                      ? null
-                      : onEnroll,
-                  child: const Text('Nastavi pretplatu'),
-                )
-              else
-                FilledButton(
-                  onPressed:
-                      (membershipBlocked ||
-                          isActing ||
-                          course.hasEnded ||
-                          status == EnrollmentStatus.completed)
-                      ? null
-                      : onEnroll,
-                  child: const Text('Upiši se'),
-                ),
-              const SizedBox(width: 8),
-              if (!course.hasContentAccess)
-                Tooltip(
-                  message: lockedContent
-                      ? lockedContentReason(course.lectureCount)
-                      : 'Rang lista je dostupna polaznicima s pristupom sadržaju.',
-                  child: rankingButton,
-                )
-              else
-                rankingButton,
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _TuitionBanner extends StatelessWidget {
-  final CourseDto course;
-  final VoidCallback onTuition;
-  final VoidCallback? onHistory;
-
-  const _TuitionBanner({
-    required this.course,
-    required this.onTuition,
-    required this.onHistory,
-  });
-
-  @override
-  Widget build(BuildContext context) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _status(),
-        if (onHistory != null)
-          Align(
-            alignment: Alignment.centerLeft,
-            child: TextButton.icon(
-              onPressed: onHistory,
-              icon: const Icon(Icons.receipt_long_outlined, size: 18),
-              label: const Text('Historija uplata'),
-            ),
+        DetailHeader(
+          title: course.name,
+          subtitle: orDash(course.instructorName),
+          chips: [
+            if (status != null && status != EnrollmentStatus.canceled)
+              StatusChip(
+                label: enrollmentStatusLabel(status),
+                tone: enrollmentStatusTone(status),
+              ),
+          ],
+        ),
+        DetailSection(
+          title: 'Detalji',
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              LabeledValue(
+                label: 'Trajanje',
+                value:
+                    '${formatDateNullable(course.startDate)} – '
+                    '${formatDateNullable(course.endDate)}',
+              ),
+              LabeledValue(
+                label: 'Mjesečna cijena',
+                value: formatKM(course.price),
+              ),
+              LabeledValue(
+                label: 'Polaznika',
+                value: course.enrolledCount.toString(),
+              ),
+              if (tuitionPaid)
+                LabeledValue(label: 'Plaćeno do', value: formatDate(paidUntil)),
+              if (course.description != null) ...[
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  course.description!,
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+              ],
+            ],
           ),
+        ),
+        DetailActions(
+          banner: _banners(
+            status: status,
+            canRequest: canRequest,
+            lockedContent: lockedContent,
+            tuitionExpired: tuitionExpired,
+            tuitionUnpaid: tuitionUnpaid,
+          ),
+          actions: [
+            ?_enrollAction(
+              status: status,
+              membershipBlocked: membershipBlocked,
+            ),
+            if (tuitionUnpaid || tuitionExpired || lockedContent)
+              FilledButton(
+                onPressed: onTuition,
+                child: Text(tuitionExpired ? 'Obnovi' : 'Plati'),
+              ),
+            if (course.hasContentAccess)
+              OutlinedButton(
+                onPressed: onRanking,
+                child: const Text('Rang lista'),
+              ),
+            if (enrolled && !course.isFree && course.enrollmentId != null)
+              OutlinedButton(
+                onPressed: onTuitionHistory,
+                child: const Text('Historija uplata'),
+              ),
+            ?_destructiveAction(status),
+          ],
+        ),
       ],
     );
   }
 
-  Widget _status() {
-    final paidUntil = course.paidUntil;
-    if (paidUntil == null) {
-      return StatusBanner(
-        icon: Icons.info_outline,
-        message: 'Školarina nije plaćena.',
-        tone: StatusTone.warning,
-        actionLabel: 'Plati',
-        onAction: onTuition,
+  Widget? _enrollAction({
+    required EnrollmentStatus? status,
+    required bool membershipBlocked,
+  }) {
+    if (course.hasEnded) return null;
+    if (status == EnrollmentStatus.canceled && course.hasContentAccess) {
+      return FilledButton(
+        onPressed: (membershipBlocked || isActing) ? null : onEnroll,
+        child: const Text('Nastavi pretplatu'),
       );
     }
-    if (paidUntil.isBefore(DateTime.now())) {
-      return StatusBanner(
-        icon: Icons.warning_amber_outlined,
-        message: 'Školarina je istekla ${formatDate(paidUntil)}',
-        tone: StatusTone.danger,
-        actionLabel: 'Obnovi',
-        onAction: onTuition,
+    if (status == EnrollmentStatus.active ||
+        status == EnrollmentStatus.pending ||
+        status == EnrollmentStatus.completed) {
+      return null;
+    }
+    return FilledButton(
+      onPressed: (membershipBlocked || isActing) ? null : onEnroll,
+      child: const Text('Upiši se'),
+    );
+  }
+
+  Widget? _destructiveAction(EnrollmentStatus? status) {
+    if (status == EnrollmentStatus.active) {
+      return OutlinedButton(
+        onPressed: isActing ? null : onUnenroll,
+        style: dangerOutlinedButtonStyle,
+        child: const Text('Ispiši se'),
       );
     }
-    return LabeledValue(label: 'Plaćeno do', value: formatDate(paidUntil));
+    if (status == EnrollmentStatus.pending) {
+      return OutlinedButton(
+        onPressed: isActing ? null : onUnenroll,
+        style: dangerOutlinedButtonStyle,
+        child: const Text('Otkaži zahtjev'),
+      );
+    }
+    return null;
+  }
+
+  Widget? _banners({
+    required EnrollmentStatus? status,
+    required bool canRequest,
+    required bool lockedContent,
+    required bool tuitionExpired,
+    required bool tuitionUnpaid,
+  }) {
+    final banners = <Widget>[
+      if (status == EnrollmentStatus.pending)
+        const StatusBanner(
+          icon: Icons.hourglass_empty,
+          message: 'Zahtjev za upis čeka odobrenje instruktora.',
+          tone: StatusTone.warning,
+        ),
+      if (status == EnrollmentStatus.rejected)
+        StatusBanner(
+          icon: Icons.info_outline,
+          message:
+              'Zahtjev za upis je odbijen: '
+              '${course.enrollmentDecisionNote ?? '-'}',
+          tone: StatusTone.danger,
+        ),
+      if (status == EnrollmentStatus.canceled && course.hasContentAccess)
+        StatusBanner(
+          icon: Icons.event_available,
+          message:
+              'Ispisani ste sa kursa. Pristup traje do '
+              '${formatDate(course.paidUntil!)}',
+          tone: StatusTone.info,
+        ),
+      if (status == EnrollmentStatus.completed)
+        const StatusBanner(
+          icon: Icons.check_circle_outline,
+          message: 'Kurs ste završili. Ponovni upis nije moguć.',
+          tone: StatusTone.success,
+        ),
+      if (course.hasEnded && canRequest)
+        const StatusBanner(
+          icon: Icons.event_busy,
+          message: 'Kurs je završen. Upis više nije moguć.',
+          tone: StatusTone.neutral,
+        ),
+      if (membershipBlocked && canRequest)
+        StatusBanner(
+          icon: Icons.info_outline,
+          message: membershipNotice(membershipPaidUntil),
+          tone: StatusTone.danger,
+        ),
+      if (tuitionUnpaid)
+        StatusBanner(
+          icon: Icons.info_outline,
+          message: tuitionDueNotice(course.paidUntil),
+          tone: StatusTone.warning,
+        ),
+      if (tuitionExpired)
+        StatusBanner(
+          icon: Icons.warning_amber_outlined,
+          message: tuitionDueNotice(course.paidUntil),
+          tone: StatusTone.danger,
+        ),
+      if (lockedContent)
+        StatusBanner(
+          icon: Icons.lock_outline,
+          message: lockedContentReason(course.lectureCount),
+          tone: StatusTone.warning,
+        ),
+    ];
+    if (banners.isEmpty) return null;
+    if (banners.length == 1) return banners.single;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: AppSpacing.sm,
+      children: banners,
+    );
   }
 }
 
 class CourseLecturesHeader extends SliverPersistentHeaderDelegate {
+  static const double collapsedExtent = 48;
+  static const double expandedExtent = 112;
+
   final String title;
   final bool showSearch;
   final VoidCallback onToggleSearch;
@@ -276,10 +274,10 @@ class CourseLecturesHeader extends SliverPersistentHeaderDelegate {
   });
 
   @override
-  double get minExtent => showSearch ? 112 : 48;
+  double get minExtent => showSearch ? expandedExtent : collapsedExtent;
 
   @override
-  double get maxExtent => showSearch ? 112 : 48;
+  double get maxExtent => showSearch ? expandedExtent : collapsedExtent;
 
   @override
   Widget build(
@@ -293,9 +291,9 @@ class CourseLecturesHeader extends SliverPersistentHeaderDelegate {
         mainAxisSize: MainAxisSize.min,
         children: [
           SizedBox(
-            height: 48,
+            height: collapsedExtent,
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
               child: Row(
                 children: [
                   Expanded(child: Text(title.toUpperCase(), style: textStyle)),
@@ -309,7 +307,12 @@ class CourseLecturesHeader extends SliverPersistentHeaderDelegate {
           ),
           if (showSearch)
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.lg,
+                0,
+                AppSpacing.lg,
+                AppSpacing.sm,
+              ),
               child: TextField(
                 controller: searchController,
                 decoration: const InputDecoration(
@@ -330,57 +333,4 @@ class CourseLecturesHeader extends SliverPersistentHeaderDelegate {
       backgroundColor != oldDelegate.backgroundColor ||
       textStyle != oldDelegate.textStyle ||
       searchController != oldDelegate.searchController;
-}
-
-class CourseLectureRow extends StatelessWidget {
-  final LectureDto lecture;
-  final Future<void> Function() onTap;
-
-  const CourseLectureRow({
-    super.key,
-    required this.lecture,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      child: ListTile(
-        title: Row(
-          children: [
-            Expanded(
-              child: Text(
-                formatDateTime(lecture.lectureTime),
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-            ),
-            StatusChip(
-              label: lectureStatusLabel(lecture.lectureStatus),
-              tone: lectureStatusTone(lecture.lectureStatus),
-            ),
-          ],
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              '${lecture.name} · '
-              '${lectureTypeLabel(lecture.lectureType)} · '
-              '${lecture.location}',
-            ),
-            const SizedBox(height: 4),
-            StatusChip(
-              label: rsvpStateLabel(lecture.myAttendanceStatus),
-              tone: rsvpStateTone(lecture.myAttendanceStatus),
-            ),
-          ],
-        ),
-        isThreeLine: true,
-        trailing: const Icon(Icons.chevron_right),
-        onTap: () => onTap(),
-      ),
-    );
-  }
 }

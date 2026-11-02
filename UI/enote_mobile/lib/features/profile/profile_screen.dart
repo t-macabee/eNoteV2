@@ -7,7 +7,9 @@ import '../../shell/routes.dart';
 import '../../session/session_controller.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/async_state_view.dart';
+import '../../widgets/detail_actions.dart';
 import '../../widgets/labeled_value.dart';
+import '../student_notices.dart';
 import 'delete_profile_dialog.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -68,11 +70,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
           onRefresh: _reload,
           child: ListView(
             physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.only(bottom: AppSpacing.lg),
             children: [
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpacing.lg),
               Center(child: _avatar(controller, profile)),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.lg),
               Text(
                 formatDisplayName(
                   profile.profile.firstName,
@@ -80,55 +82,51 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   profile.username,
                 ),
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: AppTheme.textPrimary,
-                  fontSize: 22,
-                  fontWeight: FontWeight.w600,
-                ),
+                style: Theme.of(context).textTheme.headlineSmall,
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: AppSpacing.xxs),
               Text(
                 '@${profile.username}',
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: AppTheme.textSecondary,
-                  fontSize: 14,
-                ),
+                style: Theme.of(context).textTheme.bodyMedium
+                    ?.copyWith(color: AppTheme.textSecondary),
               ),
-              const SizedBox(height: 20),
-              _membershipBanner(controller),
-              const SizedBox(height: 24),
-              _values(profile),
-              const SizedBox(height: 28),
-              FilledButton(
-                onPressed: () => Navigator.of(
-                  context,
-                  rootNavigator: true,
-                ).pushNamed(AppRoutes.profileEdit),
-                child: const Text('Uredi profil'),
+              const SizedBox(height: AppSpacing.xl),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                child: _membershipBanner(controller),
               ),
-              const SizedBox(height: 8),
-              OutlinedButton(
-                onPressed: () => Navigator.of(
-                  context,
-                  rootNavigator: true,
-                ).pushNamed(AppRoutes.profilePassword),
-                child: const Text('Promijeni lozinku'),
+              const SizedBox(height: AppSpacing.xl),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                child: _values(profile),
               ),
-              const SizedBox(height: 8),
-              OutlinedButton(
-                onPressed: _confirmLogout,
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppTheme.error,
-                  side: const BorderSide(color: AppTheme.error),
-                ),
-                child: const Text('Odjavi se'),
-              ),
-              const SizedBox(height: 24),
-              TextButton(
-                onPressed: _deleteProfile,
-                style: TextButton.styleFrom(foregroundColor: AppTheme.error),
-                child: const Text('Obriši profil'),
+              DetailActions(
+                actions: [
+                  FilledButton(
+                    onPressed: () => Navigator.of(
+                      context,
+                      rootNavigator: true,
+                    ).pushNamed(AppRoutes.profileEdit),
+                    child: const Text('Uredi profil'),
+                  ),
+                  OutlinedButton(
+                    onPressed: () => Navigator.of(
+                      context,
+                      rootNavigator: true,
+                    ).pushNamed(AppRoutes.profilePassword),
+                    child: const Text('Promijeni lozinku'),
+                  ),
+                  OutlinedButton(
+                    onPressed: _confirmLogout,
+                    child: const Text('Odjavi se'),
+                  ),
+                  OutlinedButton(
+                    onPressed: _deleteProfile,
+                    style: dangerOutlinedButtonStyle,
+                    child: const Text('Obriši profil'),
+                  ),
+                ],
               ),
             ],
           ),
@@ -138,31 +136,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _avatar(SessionController controller, UserProfileResponse profile) {
-    Widget initialsAvatar() {
-      return CircleAvatar(
-        radius: 48,
-        backgroundColor: AppTheme.primary,
-        child: Text(
-          _initials(profile.profile.firstName, profile.profile.lastName),
-          style: const TextStyle(
-            fontSize: 32,
-            fontWeight: FontWeight.w600,
-            color: Colors.white,
-          ),
-        ),
-      );
-    }
-
+    final apiClient = context.read<ApiClient>();
     return networkImageOrPlaceholder(
-      userPictureUrl(
-        context.read<ApiClient>(),
-        'me',
-        cacheBuster: controller.pictureVersion,
+      userPictureUrl(apiClient, 'me', cacheBuster: controller.pictureVersion),
+      apiClient,
+      size: AppSize.avatarRadiusLg * 2,
+      borderRadius: AppSize.avatarRadiusLg,
+      placeholder: () => InitialsAvatar(
+        text: formatDisplayName(
+          profile.profile.firstName,
+          profile.profile.lastName,
+          profile.username,
+        ),
+        radius: AppSize.avatarRadiusLg,
       ),
-      context.read<ApiClient>(),
-      size: 96,
-      borderRadius: 48,
-      placeholder: initialsAvatar,
     );
   }
 
@@ -184,9 +171,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
     return StatusBanner(
       icon: Icons.cancel_outlined,
-      message:
-          'Članarina je istekla ${formatDate(paidUntil)}. '
-          'Obratite se školi za obnovu.',
+      message: membershipNotice(paidUntil),
       tone: StatusTone.danger,
     );
   }
@@ -204,15 +189,4 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   String _dateOrDash(DateTime? value) =>
       value == null ? '—' : formatDate(value);
-
-  static String _initials(String? firstName, String? lastName) {
-    final parts = [
-      if (firstName != null && firstName.trim().isNotEmpty)
-        firstName.trim()[0].toUpperCase(),
-      if (lastName != null && lastName.trim().isNotEmpty)
-        lastName.trim()[0].toUpperCase(),
-    ];
-    if (parts.isNotEmpty) return parts.take(2).join();
-    return '?';
-  }
 }

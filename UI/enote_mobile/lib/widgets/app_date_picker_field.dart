@@ -26,6 +26,8 @@ class AppDatePickerField extends StatefulWidget {
 }
 
 class _AppDatePickerFieldState extends State<AppDatePickerField> {
+  static const double _iconSize = 18;
+
   late final TextEditingController _controller;
 
   @override
@@ -74,12 +76,12 @@ class _AppDatePickerFieldState extends State<AppDatePickerField> {
           children: [
             if (widget.value != null && widget.allowClear)
               IconButton(
-                icon: const Icon(Icons.clear, size: 18),
+                icon: const Icon(Icons.clear, size: _iconSize),
                 tooltip: 'Obriši',
                 onPressed: () => widget.onChanged(null),
               ),
             IconButton(
-              icon: const Icon(Icons.calendar_today_outlined, size: 18),
+              icon: const Icon(Icons.calendar_today_outlined, size: _iconSize),
               tooltip: 'Odaberi datum',
               onPressed: _pick,
             ),

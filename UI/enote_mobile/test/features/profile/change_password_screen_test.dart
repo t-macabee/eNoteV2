@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
 import 'package:enote_mobile/features/profile/change_password_screen.dart';
+import 'package:enote_mobile/widgets/app_text_field.dart';
 import 'package:enote_mobile/features/profile/profile_provider.dart';
 import 'package:enote_mobile/theme/app_theme.dart';
 
@@ -90,18 +91,14 @@ Future<void> _fill(
 }
 
 void main() {
-  testWidgets('an empty current password shows its own message only',
-      (tester) async {
+  testWidgets('an empty current password shows its own message only', (
+    tester,
+  ) async {
     final harness = _Harness();
     await tester.pumpWidget(harness.app(_host()));
     await _openScreen(tester);
 
-    await _fill(
-      tester,
-      current: '',
-      next: 'Test1234!',
-      confirm: 'Test1234!',
-    );
+    await _fill(tester, current: '', next: 'Test1234!', confirm: 'Test1234!');
 
     expect(find.text('Trenutna lozinka je obavezan.'), findsOneWidget);
     expect(find.text('Lozinke se ne podudaraju.'), findsNothing);
@@ -114,16 +111,14 @@ void main() {
 
     await _fill(tester, current: 'Stara1!', next: 'abc', confirm: 'abc');
 
-    expect(
-      find.text('Lozinka mora imati najmanje 8 znakova.'),
-      findsOneWidget,
-    );
+    expect(find.text('Lozinka mora imati najmanje 8 znakova.'), findsOneWidget);
     expect(find.text('Trenutna lozinka je obavezan.'), findsNothing);
     expect(find.text('Lozinke se ne podudaraju.'), findsNothing);
   });
 
-  testWidgets('a mismatched confirmation shows its own message only',
-      (tester) async {
+  testWidgets('a mismatched confirmation shows its own message only', (
+    tester,
+  ) async {
     final harness = _Harness();
     await tester.pumpWidget(harness.app(_host()));
     await _openScreen(tester);
@@ -135,10 +130,7 @@ void main() {
       confirm: 'Nesto9999',
     );
 
-    expect(
-      find.text('Lozinke se ne podudaraju.'),
-      findsOneWidget,
-    );
+    expect(find.text('Lozinke se ne podudaraju.'), findsOneWidget);
     expect(find.text('Trenutna lozinka je obavezna.'), findsNothing);
   });
 
@@ -181,14 +173,18 @@ void main() {
       'newPassword': 'Test1234!',
       'confirmNewPassword': 'Test1234!',
     });
-    expect(find.text('Lozinka je promijenjena. Prijavite se ponovo.'), findsOneWidget);
+    expect(
+      find.text('Lozinka je promijenjena. Prijavite se ponovo.'),
+      findsOneWidget,
+    );
 
     await tester.pump(const Duration(seconds: 5));
     await tester.pumpAndSettle();
   });
 
-  testWidgets('a 400 from the server renders verbatim under the button',
-      (tester) async {
+  testWidgets('a 400 from the server renders verbatim under the button', (
+    tester,
+  ) async {
     final harness = _Harness(failWithWrongPassword: true);
     await tester.pumpWidget(harness.app(_host()));
     await _openScreen(tester);
@@ -206,8 +202,9 @@ void main() {
     expect(find.text('Promjena lozinke'), findsOneWidget);
   });
 
-  testWidgets('a successful change logs out with the re-login snack',
-      (tester) async {
+  testWidgets('a successful change logs out with the re-login snack', (
+    tester,
+  ) async {
     final harness = _Harness();
     await tester.pumpWidget(harness.app(_host()));
     await _openScreen(tester);
@@ -227,5 +224,30 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('otvori'), findsOneWidget);
+  });
+
+  testWidgets('form scaffold has no close icon', (tester) async {
+    final harness = _Harness();
+    await tester.pumpWidget(harness.app(_host()));
+    await _openScreen(tester);
+
+    expect(find.byIcon(Icons.close), findsNothing);
+    expect(find.byType(BackButton), findsOneWidget);
+  });
+
+  testWidgets('change password uses AppTextField with tooltips', (
+    tester,
+  ) async {
+    final harness = _Harness();
+    await tester.pumpWidget(harness.app(_host()));
+    await _openScreen(tester);
+
+    expect(find.byType(AppTextField), findsNWidgets(3));
+    expect(find.byType(TextFormField), findsNWidgets(3));
+    expect(find.byTooltip('Prikaži lozinku'), findsNWidgets(3));
+
+    await tester.tap(find.byTooltip('Prikaži lozinku').first);
+    await tester.pump();
+    expect(find.byTooltip('Sakrij lozinku'), findsOneWidget);
   });
 }

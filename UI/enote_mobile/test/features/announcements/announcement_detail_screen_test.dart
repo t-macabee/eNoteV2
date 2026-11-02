@@ -46,21 +46,27 @@ Widget _app(ScriptedClient client) {
 
 void main() {
   testWidgets('loads the announcement by id and shows it', (tester) async {
-    final client = ScriptedClient((_) => jsonResponse(_announcement53Json, 200));
+    final client = ScriptedClient(
+      (_) => jsonResponse(_announcement53Json, 200),
+    );
 
     await tester.pumpWidget(_app(client));
     await tester.pumpAndSettle();
 
     expect(client.requests, hasLength(1));
-    expect(
-      client.requests.single.url.path,
-      '/api/v1/student/announcements/53',
-    );
+    expect(client.requests.single.url.path, '/api/v1/student/announcements/53');
     expect(find.text('Koncert u petak'), findsOneWidget);
-    expect(find.text('Kurs · Gitara 1'), findsOneWidget);
+    expect(
+      find.text(
+        'Kurs · Gitara 1 · ${formatDateTime(DateTime(2026, 9, 12, 10))}',
+      ),
+      findsOneWidget,
+    );
   });
 
-  testWidgets('a failed load shows the error and retry reloads', (tester) async {
+  testWidgets('a failed load shows the error and retry reloads', (
+    tester,
+  ) async {
     var calls = 0;
     final client = ScriptedClient((_) {
       calls++;

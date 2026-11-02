@@ -9,4 +9,7 @@ public class AssignmentDto
     public string Description { get; set; } = null!;
 
     public DateTime DueAt { get; set; }
+
+    public DateTime? MySubmittedAt { get; set; }
+    public int? MyGrade { get; set; }
 }

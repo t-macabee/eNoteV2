@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:enote_core/enote_core.dart';
 
 import '../../theme/app_theme.dart';
+import '../../widgets/app_sheet_body.dart';
 import '../../widgets/section_header.dart';
 import '../../widgets/wide_image.dart';
 
@@ -32,20 +33,23 @@ class RecommendationStrip extends StatelessWidget {
           height: cardHeight,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
             itemCount: recommendations.length,
-            separatorBuilder: (_, _) => const SizedBox(width: 12),
+            separatorBuilder: (_, _) => const SizedBox(width: AppSpacing.md),
             itemBuilder: (context, index) =>
                 _Card(recommendation: recommendations[index], onOpen: onOpen),
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: AppSpacing.sm),
       ],
     );
   }
 }
 
 class _Card extends StatelessWidget {
+  static const double reasonIconSize = 18;
+  static const double reasonButtonHeight = 32;
+
   final InstrumentRecommendationDto recommendation;
   final void Function(InstrumentDto instrument) onOpen;
 
@@ -76,7 +80,12 @@ class _Card extends StatelessWidget {
               ),
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.sm,
+                    AppSpacing.sm,
+                    AppSpacing.sm,
+                    0,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -87,15 +96,13 @@ class _Card extends StatelessWidget {
                         style: Theme.of(context).textTheme.titleSmall,
                       ),
                       if (reasons.isNotEmpty) ...[
-                        const SizedBox(height: 2),
+                        const SizedBox(height: AppSpacing.xxs),
                         Text(
                           reasons.first,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: AppTheme.textSecondary,
-                            fontSize: 12,
-                          ),
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(color: AppTheme.textSecondary),
                         ),
                       ],
                     ],
@@ -108,8 +115,10 @@ class _Card extends StatelessWidget {
                   child: TextButton(
                     onPressed: () => _showReasons(context),
                     style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                      minimumSize: const Size(0, 32),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.sm,
+                      ),
+                      minimumSize: const Size(0, _Card.reasonButtonHeight),
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
                     child: Text('+$extraReasons razloga'),
@@ -126,41 +135,26 @@ class _Card extends StatelessWidget {
     final instrument = recommendation.instrument;
     showModalBottomSheet<void>(
       context: context,
-      showDragHandle: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (context) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '${instrument.manufacturer} ${instrument.model}',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              const SizedBox(height: 12),
-              for (final reason in recommendation.reasons)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Icon(
-                        Icons.check_circle_outline,
-                        size: 18,
-                        color: AppTheme.primary,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(child: Text(reason)),
-                    ],
+      builder: (context) => AppSheetBody(
+        title: '${instrument.manufacturer} ${instrument.model}',
+        children: [
+          for (final reason in recommendation.reasons)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(
+                    Icons.check_circle_outline,
+                    size: _Card.reasonIconSize,
+                    color: AppTheme.primary,
                   ),
-                ),
-            ],
-          ),
-        ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(child: Text(reason)),
+                ],
+              ),
+            ),
+        ],
       ),
     );
   }

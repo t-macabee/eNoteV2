@@ -2,14 +2,12 @@ import 'package:flutter/material.dart';
 
 import 'package:enote_core/enote_core.dart';
 
-import '../theme/app_theme.dart';
-
 Widget wideNetworkImage(
   String? url,
   ApiClient? apiClient, {
   required double width,
   required double height,
-  double borderRadius = 8,
+  double borderRadius = AppRadius.md,
 }) {
   return ClipRRect(
     borderRadius: BorderRadius.circular(borderRadius),
@@ -22,7 +20,7 @@ Widget wideNetworkImage(
           apiClient,
           size: width,
           borderRadius: 0,
-          placeholder: () => _placeholder(width),
+          placeholder: () => ImagePlaceholder(width: width, height: width),
         ),
       ),
     ),
@@ -43,21 +41,8 @@ class HeroImage extends StatelessWidget {
         apiClient,
         width: constraints.maxWidth,
         height: constraints.maxWidth * 9 / 16,
-        borderRadius: 12,
+        borderRadius: AppRadius.lg,
       ),
     );
   }
-}
-
-Widget _placeholder(double size) {
-  return Container(
-    width: size,
-    height: size,
-    color: AppTheme.surfaceContainer,
-    child: Icon(
-      Icons.image_outlined,
-      size: 32,
-      color: AppTheme.textTertiary,
-    ),
-  );
 }

@@ -1,63 +1,79 @@
 import 'package:flutter/material.dart';
 
+import 'package:enote_core/enote_core.dart';
+
 import '../../theme/app_theme.dart';
+import '../../widgets/detail_actions.dart';
+import '../../widgets/submit_button.dart';
 
 class PaymentReview extends StatelessWidget {
+  final Widget header;
   final String amountLabel;
   final VoidCallback onPay;
   final bool isBusy;
-
   final bool isConfigured;
-  final List<Widget> children;
+  final List<Widget> rows;
 
   const PaymentReview({
     super.key,
+    required this.header,
     required this.amountLabel,
     required this.onPay,
     required this.isBusy,
     required this.isConfigured,
-    required this.children,
+    required this.rows,
   });
 
   @override
   Widget build(BuildContext context) {
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.only(bottom: AppSpacing.lg),
       children: [
-        ...children,
-        const SizedBox(height: 16),
-        const Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(Icons.info_outline, color: AppTheme.textSecondary),
-            SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                'Plaćanje se obavlja putem Stripe-a. '
-                'Podaci o kartici se ne pohranjuju u aplikaciji.',
-                style: TextStyle(color: AppTheme.textSecondary),
+        header,
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: rows,
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            AppSpacing.lg,
+            AppSpacing.lg,
+            0,
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(Icons.info_outline, color: AppTheme.textSecondary),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Text(
+                  'Plaćanje se obavlja putem Stripe-a. '
+                  'Podaci o kartici se ne pohranjuju u aplikaciji.',
+                  style: Theme.of(context).textTheme.bodyMedium
+                      ?.copyWith(color: AppTheme.textSecondary),
+                ),
               ),
+            ],
+          ),
+        ),
+        DetailActions(
+          banner: isConfigured
+              ? null
+              : const ErrorBanner(
+                  message: 'Plaćanje nije podešeno u ovoj verziji aplikacije.',
+                ),
+          actions: [
+            SubmitButton(
+              label: 'Plati $amountLabel',
+              onPressed: isConfigured ? onPay : null,
+              isBusy: isBusy,
             ),
           ],
-        ),
-        const SizedBox(height: 24),
-        if (!isConfigured) ...[
-          const Text(
-            'Plaćanje nije podešeno u ovoj verziji aplikacije.',
-            style: TextStyle(color: AppTheme.error),
-          ),
-          const SizedBox(height: 12),
-        ],
-        FilledButton(
-          onPressed: isBusy || !isConfigured ? null : onPay,
-          child: isBusy
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : Text('Plati $amountLabel'),
         ),
       ],
     );

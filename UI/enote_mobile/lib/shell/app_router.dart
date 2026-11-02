@@ -5,7 +5,8 @@ import 'package:enote_core/enote_core.dart';
 
 import '../features/announcements/announcement_detail_screen.dart';
 import '../features/assignments/assignment_detail_screen.dart';
-import '../features/assignments/submission_history_screen.dart';
+import '../features/assignments/assignment_list_screen.dart';
+import '../features/assignments/assignment_provider.dart';
 import '../features/auth/forgot_password_screen.dart';
 import '../features/auth/register_screen.dart';
 import '../features/auth/reset_password_screen.dart';
@@ -62,7 +63,12 @@ class AppRouter {
         ),
       ),
       (AppRoutes.assignmentHistory, _) => _route(
-        const SubmissionHistoryScreen(),
+        Scaffold(
+          appBar: AppBar(title: const Text('Predani zadaci')),
+          body: const AssignmentListScreen(
+            initialFilter: AssignmentFilter.submitted,
+          ),
+        ),
       ),
       (AppRoutes.ranking, RankingArgs a) => _route(
         RankingScreen(courseId: a.courseId),

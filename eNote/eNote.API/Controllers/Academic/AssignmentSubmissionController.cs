@@ -42,15 +42,6 @@ public sealed class AssignmentSubmissionController(AssignmentSubmissionService s
     }
 
     [Authorize(Roles = AppRoles.Student)]
-    [HttpGet("~/api/v{version:apiVersion}/student/submissions")]
-    [ProducesResponseType(typeof(PagedResult<AssignmentSubmissionDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<PagedResult<AssignmentSubmissionDto>>> GetHistoryForStudent([FromQuery] AssignmentSubmissionSearchObject search, CancellationToken cancellationToken)
-    {
-        var result = await submissionService.GetHistoryForStudentAsync(search, cancellationToken);
-        return Ok(result);
-    }
-
-    [Authorize(Roles = AppRoles.Student)]
     [HttpPost("~/api/v{version:apiVersion}/student/assignments/{id:int}/submit")]
     [RequestSizeLimit(FileUploadLimits.MaxRequestBytes)]
     [EnableRateLimiting(RateLimitingExtensions.UploadsPolicy)]

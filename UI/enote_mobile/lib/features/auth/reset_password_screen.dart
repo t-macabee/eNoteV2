@@ -74,26 +74,16 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen>
   Widget build(BuildContext context) {
     if (!_hasParams) {
       return Scaffold(
-        appBar: AppBar(
-          title: const Text('Reset lozinke'),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.close),
-              onPressed: () => Navigator.of(context).maybePop(),
-            ),
-          ],
-        ),
+        appBar: AppBar(title: const Text('Reset lozinke')),
         body: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(AppSpacing.lg),
           children: [
-            const Text(
-              'Link za reset lozinke nije ispravan. Zatražite novi.',
-            ),
-            const SizedBox(height: 16),
+            const Text('Link za reset lozinke nije ispravan. Zatražite novi.'),
+            const SizedBox(height: AppSpacing.lg),
             OutlinedButton(
-              onPressed: () => Navigator.of(
-                context,
-              ).pushReplacementNamed(AppRoutes.forgotPassword),
+              onPressed: () =>
+                  Navigator.of(context)
+                      .pushReplacementNamed(AppRoutes.forgotPassword),
               child: const Text('Zatraži novi link'),
             ),
           ],
@@ -116,22 +106,23 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen>
                 label: 'Email',
                 readOnly: true,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.lg),
               AppTextField(
                 controller: _passwordController,
                 label: 'Nova lozinka *',
                 obscure: true,
                 validator: Validators.password,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.lg),
               AppTextField(
                 controller: _confirmController,
                 label: 'Potvrda nove lozinke *',
                 obscure: true,
                 textInputAction: TextInputAction.done,
                 onFieldSubmitted: (_) => _submit(),
-                validator:
-                    Validators.confirmPassword(() => _passwordController.text),
+                validator: Validators.confirmPassword(
+                  () => _passwordController.text,
+                ),
               ),
             ],
           ),

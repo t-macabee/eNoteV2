@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -7,6 +8,8 @@ import 'package:provider/provider.dart';
 import 'package:enote_core/enote_core.dart';
 import 'package:enote_mobile/features/rentals/rental_provider.dart';
 import 'package:enote_mobile/features/rentals/rental_request_sheet.dart';
+import 'package:enote_mobile/shell/routes.dart';
+import 'package:enote_mobile/widgets/app_text_field.dart';
 
 import '../../helpers.dart';
 
@@ -74,63 +77,151 @@ void main() {
   });
 
   testWidgets(
-      'completing the request after the sheet is dismissed pops nothing',
-      (tester) async {
-    final noop = ScriptedClient((_) => throw UnimplementedError());
-    final authState = AuthState(
-      baseUrl: 'http://10.0.2.2:5059/api/v1/',
-      tokenReader: () => fakeJwt(),
-      httpClient: noop,
-    );
-    final apiClient = ApiClient(
-      baseUrl: 'http://10.0.2.2:5059/api/v1/',
-      authState: authState,
-      httpClient: noop,
-    );
-    final rentals = _GatedRentalProvider(apiClient: apiClient);
+    'completing the request after the sheet is dismissed pops nothing',
+    (tester) async {
+      final noop = ScriptedClient((_) => throw UnimplementedError());
+      final authState = AuthState(
+        baseUrl: 'http://10.0.2.2:5059/api/v1/',
+        tokenReader: () => fakeJwt(),
+        httpClient: noop,
+      );
+      final apiClient = ApiClient(
+        baseUrl: 'http://10.0.2.2:5059/api/v1/',
+        authState: authState,
+        httpClient: noop,
+      );
+      final rentals = _GatedRentalProvider(apiClient: apiClient);
 
-    await tester.pumpWidget(
-      MultiProvider(
-        providers: [
-          ChangeNotifierProvider<AuthState>.value(value: authState),
-          Provider<ApiClient>.value(value: apiClient),
-          ChangeNotifierProvider<RentalProvider>.value(value: rentals),
-        ],
-        child: MaterialApp(
-          home: Scaffold(
-            body: Builder(
-              builder: (context) => Center(
-                child: FilledButton(
-                  onPressed: () =>
-                      showRentalRequestSheet(context, _instrument),
-                  child: const Text('Open sheet'),
+      await tester.pumpWidget(
+        MultiProvider(
+          providers: [
+            ChangeNotifierProvider<AuthState>.value(value: authState),
+            Provider<ApiClient>.value(value: apiClient),
+            ChangeNotifierProvider<RentalProvider>.value(value: rentals),
+          ],
+          child: MaterialApp(
+            home: Scaffold(
+              body: Builder(
+                builder: (context) => Center(
+                  child: FilledButton(
+                    onPressed: () =>
+                        showRentalRequestSheet(context, _instrument),
+                    child: const Text('Open sheet'),
+                  ),
                 ),
               ),
             ),
           ),
         ),
+      );
+
+      await tester.tap(find.text('Open sheet'));
+      await tester.pumpAndSettle();
+      expect(find.byType(RentalRequestSheet), findsOneWidget);
+
+      await tester.tap(find.text('Pošalji zahtjev'));
+      await tester.pump();
+      await tester.pump();
+
+      Navigator.of(tester.element(find.byType(RentalRequestSheet))).pop();
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(find.byType(RentalRequestSheet), findsNothing);
+
+      rentals.requestGate!.complete(InstrumentRentalDto.fromJson(_rental));
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump(const Duration(milliseconds: 500));
+
+      expect(find.text('Open sheet'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'request sheet sends without a second dialog and opens the rental detail',
+    (tester) async {
+      final client = ScriptedClient((request) {
+        if (request.method == 'POST') {
+          return jsonResponse(jsonEncode(_rental), 201);
+        }
+        throw UnimplementedError();
+      });
+      final authState = AuthState(
+        baseUrl: 'http://10.0.2.2:5059/api/v1/',
+        tokenReader: () => fakeJwt(),
+        httpClient: client,
+      );
+      final apiClient = ApiClient(
+        baseUrl: 'http://10.0.2.2:5059/api/v1/',
+        authState: authState,
+        httpClient: client,
+      );
+      final pushed = <RouteSettings>[];
+
+      await tester.pumpWidget(
+        MultiProvider(
+          providers: [
+            ChangeNotifierProvider<AuthState>.value(value: authState),
+            Provider<ApiClient>.value(value: apiClient),
+            ChangeNotifierProvider<RentalProvider>(
+              create: (_) => RentalProvider(apiClient: apiClient),
+            ),
+          ],
+          child: MaterialApp(
+            onGenerateRoute: (settings) {
+              pushed.add(settings);
+              return MaterialPageRoute<void>(
+                settings: settings,
+                builder: (_) => const Scaffold(body: Text('Rental detail')),
+              );
+            },
+            home: Scaffold(
+              body: Builder(
+                builder: (context) => Center(
+                  child: FilledButton(
+                    onPressed: () =>
+                        showRentalRequestSheet(context, _instrument),
+                    child: const Text('Open sheet'),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Open sheet'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Pošalji zahtjev'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Potvrdi'), findsNothing);
+      expect(find.byType(RentalRequestSheet), findsNothing);
+      expect(find.text('Rental detail'), findsOneWidget);
+      expect(pushed.last.name, AppRoutes.rentalDetail);
+      expect((pushed.last.arguments as RentalDetailArgs).rentalId, 12);
+    },
+  );
+
+  testWidgets('note field is an AppTextField with a 500 character limit', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(body: RentalRequestSheet(instrument: _instrument)),
       ),
     );
 
-    await tester.tap(find.text('Open sheet'));
-    await tester.pumpAndSettle();
-    expect(find.byType(RentalRequestSheet), findsOneWidget);
+    final field = tester.widget<AppTextField>(find.byType(AppTextField));
+    expect(field.label, 'Napomena');
+    expect(field.maxLength, RentalRequestSheet.noteMaxLength);
+    expect(field.minLines, 3);
+    expect(field.maxLines, 5);
+    expect(find.byType(TextFormField), findsOneWidget);
 
-    await tester.tap(find.text('Pošalji zahtjev'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Potvrdi'));
+    await tester.enterText(find.byType(TextFormField), 'Potreban za nastavu.');
     await tester.pump();
-    await tester.pump();
-
-    Navigator.of(tester.element(find.byType(RentalRequestSheet))).pop();
-    await tester.pump(const Duration(milliseconds: 500));
-    await tester.pump(const Duration(milliseconds: 500));
-    expect(find.byType(RentalRequestSheet), findsNothing);
-
-    rentals.requestGate!.complete(InstrumentRentalDto.fromJson(_rental));
-    await tester.pump(const Duration(milliseconds: 500));
-    await tester.pump(const Duration(milliseconds: 500));
-
-    expect(find.text('Open sheet'), findsOneWidget);
+    expect(find.text('Potreban za nastavu.'), findsOneWidget);
+    expect(find.text('0/500'), findsNothing);
+    expect(find.text('20/500'), findsOneWidget);
   });
 }

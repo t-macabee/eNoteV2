@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import 'package:enote_core/enote_core.dart';
 
+import 'submit_button.dart';
+
 class MobileFormScaffold extends StatelessWidget {
   final String title;
   final List<Widget> children;
@@ -9,7 +11,6 @@ class MobileFormScaffold extends StatelessWidget {
   final VoidCallback? onSubmit;
   final bool isBusy;
   final String? errorMessage;
-  final bool showClose;
 
   const MobileFormScaffold({
     super.key,
@@ -19,39 +20,20 @@ class MobileFormScaffold extends StatelessWidget {
     required this.onSubmit,
     this.isBusy = false,
     this.errorMessage,
-    this.showClose = true,
   });
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(title),
-        actions: [
-          if (showClose)
-            IconButton(
-              icon: const Icon(Icons.close),
-              onPressed: () => Navigator.of(context).maybePop(),
-            ),
-        ],
-      ),
+      appBar: AppBar(title: Text(title)),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         children: [
           ...children,
-          const SizedBox(height: 24),
-          FilledButton(
-            onPressed: isBusy ? null : onSubmit,
-            child: isBusy
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : Text(submitLabel),
-          ),
+          const SizedBox(height: AppSpacing.xl),
+          SubmitButton(label: submitLabel, onPressed: onSubmit, isBusy: isBusy),
           if (errorMessage != null) ...[
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.md),
             ErrorBanner(message: errorMessage!),
           ],
         ],

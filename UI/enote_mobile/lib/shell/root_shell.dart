@@ -1,32 +1,34 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
 
-import '../features/instruments/instrument_catalog_screen.dart';
+import '../features/home/home_screen.dart';
+import '../features/instruments/instruments_tabs_screen.dart';
 import '../features/learning/learning_tabs_screen.dart';
 import '../features/profile/profile_screen.dart';
-import '../features/rentals/rental_list_screen.dart';
 import '../realtime/notification_hub_client.dart';
 import '../session/session_controller.dart';
 import 'routes.dart';
 
 enum RootTab {
-  instruments('Instrumenti'),
-  learning('Učenje'),
-  rentals('Iznajmljivanja'),
-  profile('Profil');
+  home('Početna', Icons.home_outlined, Icons.home),
+  learning('Učenje', Icons.school_outlined, Icons.school),
+  instruments('Instrumenti', Icons.piano_outlined, Icons.piano),
+  profile('Profil', Icons.person_outline, Icons.person);
 
-  const RootTab(this.title);
+  const RootTab(this.title, this.icon, this.selectedIcon);
 
   final String title;
+  final IconData icon;
+  final IconData selectedIcon;
 }
 
 class RootShell extends StatefulWidget {
-  static final GlobalKey<RootShellState> shellKey =
-      GlobalKey<RootShellState>();
+  static final GlobalKey<RootShellState> shellKey = GlobalKey<RootShellState>();
 
   final RouteFactory onGenerateRoute;
 
@@ -36,16 +38,12 @@ class RootShell extends StatefulWidget {
     shellKey.currentState?.routeNotification(notification);
   }
 
-  static void switchTab(RootTab tab) {
-    shellKey.currentState?.selectTab(tab);
-  }
-
   @override
   State<RootShell> createState() => RootShellState();
 }
 
 class RootShellState extends State<RootShell> with WidgetsBindingObserver {
-  RootTab _tab = RootTab.instruments;
+  RootTab _tab = RootTab.home;
   bool _booted = false;
   late final List<GlobalKey<NavigatorState>> _navKeys;
   NotificationController? _notifications;
@@ -139,7 +137,7 @@ class RootShellState extends State<RootShell> with WidgetsBindingObserver {
     final String route;
     final Object? args;
     if (notification.rentalId != null) {
-      tab = RootTab.rentals;
+      tab = RootTab.instruments;
       route = AppRoutes.rentalDetail;
       args = RentalDetailArgs(notification.rentalId!);
     } else if (notification.lectureId != null) {
@@ -168,8 +166,11 @@ class RootShellState extends State<RootShell> with WidgetsBindingObserver {
     });
   }
 
-  void selectTab(RootTab tab) {
-    if (!mounted || tab == _tab) return;
+  void _selectDestination(RootTab tab) {
+    if (tab == _tab) {
+      _navKeys[tab.index].currentState?.popUntil((route) => route.isFirst);
+      return;
+    }
     setState(() => _tab = tab);
   }
 
@@ -179,8 +180,8 @@ class RootShellState extends State<RootShell> with WidgetsBindingObserver {
       navigator.pop();
       return;
     }
-    if (_tab != RootTab.instruments) {
-      setState(() => _tab = RootTab.instruments);
+    if (_tab != RootTab.home) {
+      setState(() => _tab = RootTab.home);
       return;
     }
     await SystemNavigator.pop();
@@ -216,28 +217,14 @@ class RootShellState extends State<RootShell> with WidgetsBindingObserver {
         bottomNavigationBar: NavigationBar(
           selectedIndex: _tab.index,
           onDestinationSelected: (value) =>
-              setState(() => _tab = RootTab.values[value]),
-          destinations: const [
-            NavigationDestination(
-              icon: Icon(Icons.piano_outlined),
-              selectedIcon: Icon(Icons.piano),
-              label: 'Instrumenti',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.school_outlined),
-              selectedIcon: Icon(Icons.school),
-              label: 'Učenje',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.receipt_long_outlined),
-              selectedIcon: Icon(Icons.receipt_long),
-              label: 'Iznajmljivanja',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.person_outline),
-              selectedIcon: Icon(Icons.person),
-              label: 'Profil',
-            ),
+              _selectDestination(RootTab.values[value]),
+          destinations: [
+            for (final tab in RootTab.values)
+              NavigationDestination(
+                icon: Icon(tab.icon),
+                selectedIcon: Icon(tab.selectedIcon),
+                label: tab.title,
+              ),
           ],
         ),
       ),
@@ -266,9 +253,9 @@ class _TabRoot extends StatelessWidget {
         ],
       ),
       body: switch (tab) {
-        RootTab.instruments => const InstrumentCatalogScreen(),
+        RootTab.home => const HomeScreen(),
         RootTab.learning => const LearningTabsScreen(),
-        RootTab.rentals => const RentalListScreen(),
+        RootTab.instruments => const InstrumentsTabsScreen(),
         RootTab.profile => const ProfileScreen(),
       },
     );

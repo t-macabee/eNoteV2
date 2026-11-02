@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:enote_core/theme/app_theme.dart';
+import 'package:enote_core/theme/app_tokens.dart';
 
 export 'package:enote_core/theme/app_theme.dart';
 
@@ -54,7 +55,18 @@ TextTheme _mobileTextTheme(TextTheme base) {
   );
 }
 
+final ButtonStyle dangerOutlinedButtonStyle = OutlinedButton.styleFrom(
+  foregroundColor: AppTheme.error,
+  side: const BorderSide(color: AppTheme.error),
+);
+
 final ThemeData mobileTheme = AppTheme.dark.copyWith(
   textTheme: _mobileTextTheme(AppTheme.dark.textTheme),
   primaryTextTheme: _mobileTextTheme(AppTheme.dark.primaryTextTheme),
+  bottomSheetTheme: BottomSheetThemeData(
+    showDragHandle: true,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
+    ),
+  ),
 );

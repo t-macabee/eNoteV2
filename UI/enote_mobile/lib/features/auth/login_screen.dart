@@ -7,6 +7,7 @@ import '../../session/session_controller.dart';
 import '../../shell/routes.dart';
 import '../../widgets/app_text_field.dart';
 import '../../widgets/form_submit_state.dart';
+import '../../widgets/submit_button.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -41,9 +42,9 @@ class _LoginScreenState extends State<LoginScreen>
     }
     await submit(
       () => context.read<AuthState>().login(
-            _usernameController.text.trim(),
-            _passwordController.text,
-          ),
+        _usernameController.text.trim(),
+        _passwordController.text,
+      ),
     );
   }
 
@@ -54,44 +55,39 @@ class _LoginScreenState extends State<LoginScreen>
       body: Form(
         key: _formKey,
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(AppSpacing.lg),
           children: [
             if (_sessionExpired) ...[
               const ErrorBanner(
                 message: 'Vaša sesija je istekla. Prijavite se ponovo.',
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.lg),
             ],
             AppTextField(
               controller: _usernameController,
-              label: 'Korisničko ime',
+              label: 'Korisničko ime *',
               validator: Validators.required('Korisničko ime'),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.lg),
             AppTextField(
               controller: _passwordController,
-              label: 'Lozinka',
+              label: 'Lozinka *',
               obscure: true,
               textInputAction: TextInputAction.done,
               onFieldSubmitted: (_) => _submit(),
               validator: Validators.required('Lozinka'),
             ),
-            const SizedBox(height: 24),
-            FilledButton(
-              onPressed: isSubmitting ? null : _submit,
-              child: isSubmitting
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Text('Prijava'),
+            const SizedBox(height: AppSpacing.xl),
+            SubmitButton(
+              label: 'Prijava',
+              onPressed: _submit,
+              isBusy: isSubmitting,
             ),
             if (submitError != null) ...[
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.md),
               ErrorBanner(message: submitError!),
             ],
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.sm),
             TextButton(
               onPressed: () =>
                   Navigator.of(context).pushNamed(AppRoutes.register),

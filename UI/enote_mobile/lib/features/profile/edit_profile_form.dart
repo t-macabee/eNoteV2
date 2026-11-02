@@ -37,13 +37,13 @@ class EditProfilePictureSection extends StatelessWidget {
           child: ImageField(
             imageUrl: pictureUrl,
             apiClient: apiClient,
-            size: 96,
-            borderRadius: 48,
+            size: AppSize.avatarRadiusLg * 2,
+            borderRadius: AppSize.avatarRadiusLg,
             imagePicker: imagePicker,
             onUpload: onUpload,
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: AppSpacing.lg),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -52,7 +52,7 @@ class EditProfilePictureSection extends StatelessWidget {
               icon: const Icon(Icons.upload_outlined),
               label: const Text('Promijeni sliku'),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: AppSpacing.md),
             OutlinedButton.icon(
               onPressed: onRemovePicture,
               icon: const Icon(Icons.delete_outline),
@@ -61,19 +61,21 @@ class EditProfilePictureSection extends StatelessWidget {
           ],
         ),
         if (!hasPicture) ...[
-          const SizedBox(height: 4),
-          const Text(
+          const SizedBox(height: AppSpacing.xs),
+          Text(
             'Nema profilne slike',
             textAlign: TextAlign.center,
-            style: TextStyle(color: AppTheme.textTertiary, fontSize: 12),
+            style: Theme.of(context).textTheme.bodySmall
+                ?.copyWith(color: AppTheme.textTertiary),
           ),
         ],
         if (pictureError != null) ...[
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.sm),
           Text(
             pictureError!,
             textAlign: TextAlign.center,
-            style: const TextStyle(color: AppTheme.error, fontSize: 13),
+            style: Theme.of(context).textTheme.bodySmall
+                ?.copyWith(color: AppTheme.error),
           ),
         ],
       ],
@@ -106,10 +108,18 @@ class EditProfileFields extends StatelessWidget {
       autovalidateMode: AutovalidateMode.onUserInteraction,
       child: Column(
         children: [
-          AppTextField(controller: firstNameController, label: 'Ime', maxLength: 256),
-          const SizedBox(height: 16),
-          AppTextField(controller: lastNameController, label: 'Prezime', maxLength: 256),
-          const SizedBox(height: 16),
+          AppTextField(
+            controller: firstNameController,
+            label: 'Ime',
+            maxLength: 256,
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          AppTextField(
+            controller: lastNameController,
+            label: 'Prezime',
+            maxLength: 256,
+          ),
+          const SizedBox(height: AppSpacing.lg),
           AppTextField(
             controller: emailController,
             label: 'Email *',
@@ -117,7 +127,7 @@ class EditProfileFields extends StatelessWidget {
             validator: Validators.email,
             maxLength: 256,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.lg),
           AppDatePickerField(
             label: 'Datum rođenja',
             value: dateOfBirth,

@@ -17,71 +17,90 @@ class RankingScreen extends StatefulWidget {
 }
 
 class _RankingScreenState extends State<RankingScreen> {
-  late Future<List<CourseRankingEntryDto>> _rankingFuture;
+  List<CourseRankingEntryDto>? _ranking;
+  Object? _error;
+  bool _loading = true;
 
   @override
   void initState() {
     super.initState();
-    _rankingFuture = context.read<RankingProvider>().getForCourse(
-      widget.courseId,
-    );
+    _load();
+  }
+
+  Future<void> _load() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final ranking = await context.read<RankingProvider>().getForCourse(
+        widget.courseId,
+      );
+      if (mounted) {
+        setState(() {
+          _ranking = ranking;
+          _loading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e;
+          _loading = false;
+        });
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final profileId = context.watch<SessionController>().profile?.profile.id;
+    final ranking = _ranking;
     return Scaffold(
       appBar: AppBar(title: const Text('Rang lista – 15 najboljih')),
-      body: FutureBuilder<List<CourseRankingEntryDto>>(
-        future: _rankingFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return AsyncStateView(
-              error: snapshot.error,
-              onRetry: () => setState(() {
-                _rankingFuture = context.read<RankingProvider>().getForCourse(
-                  widget.courseId,
-                );
-              }),
-              child: const SizedBox.shrink(),
-            );
-          }
-          final ranking = snapshot.data ?? [];
-          if (ranking.isEmpty) {
-            return const Center(child: Text('Još nema rangiranih studenata.'));
-          }
-          return ListView.separated(
-            itemCount: ranking.length,
-            separatorBuilder: (_, index) =>
-                ranking[index + 1].rank > ranking[index].rank + 1
-                ? const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 4),
-                    child: Center(child: Text('…')),
-                  )
-                : const Divider(height: 1),
-            itemBuilder: (context, index) {
-              final entry = ranking[index];
-              final isMine = profileId != null && entry.studentId == profileId;
-              return ListTile(
-                tileColor: isMine ? StatusTone.accent.background : null,
-                leading: Text(
-                  '${entry.rank}',
-                  style: const TextStyle(fontWeight: FontWeight.bold),
+      body: AsyncStateView(
+        isLoading: _loading && ranking == null,
+        error: ranking == null ? _error : null,
+        isEmpty: ranking != null && ranking.isEmpty,
+        emptyMessage: 'Još nema rangiranih studenata.',
+        onRetry: _load,
+        child: ranking == null
+            ? const SizedBox.shrink()
+            : RefreshIndicator(
+                onRefresh: _load,
+                child: ListView.separated(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  itemCount: ranking.length,
+                  separatorBuilder: (_, index) =>
+                      ranking[index + 1].rank > ranking[index].rank + 1
+                      ? const Padding(
+                          padding: EdgeInsets.symmetric(
+                            vertical: AppSpacing.xs,
+                          ),
+                          child: Center(child: Text('…')),
+                        )
+                      : const Divider(height: 1),
+                  itemBuilder: (context, index) {
+                    final entry = ranking[index];
+                    final isMine =
+                        profileId != null && entry.studentId == profileId;
+                    return ListTile(
+                      tileColor: isMine ? StatusTone.accent.background : null,
+                      leading: Text(
+                        '${entry.rank}',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      title: Text(entry.studentName),
+                      subtitle: Text(
+                        entry.averageGrade == null
+                            ? 'Bez ocjena'
+                            : 'Prosjek ${formatAverageGrade(entry.averageGrade)} · '
+                                  '${entry.gradedSubmissions} ocijenjenih',
+                      ),
+                    );
+                  },
                 ),
-                title: Text(entry.studentName),
-                subtitle: Text(
-                  entry.averageGrade == null
-                      ? 'Bez ocjena'
-                      : 'Prosjek ${formatAverageGrade(entry.averageGrade)} · '
-                            '${entry.gradedSubmissions} ocijenjenih',
-                ),
-              );
-            },
-          );
-        },
+              ),
       ),
     );
   }

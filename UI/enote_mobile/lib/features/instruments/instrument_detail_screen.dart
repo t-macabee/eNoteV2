@@ -7,11 +7,14 @@ import 'package:enote_core/enote_core.dart';
 
 import '../../session/session_controller.dart';
 import '../../shell/routes.dart';
-import '../../theme/app_theme.dart';
 import '../../widgets/async_state_view.dart';
+import '../../widgets/detail_actions.dart';
+import '../../widgets/detail_header.dart';
+import '../../widgets/detail_section.dart';
 import '../../widgets/wide_image.dart';
 import '../rentals/rental_provider.dart';
 import '../rentals/rental_request_sheet.dart';
+import '../student_notices.dart';
 import 'instrument_labels.dart';
 import 'instrument_provider.dart';
 
@@ -79,8 +82,7 @@ class _InstrumentDetailScreenState extends State<InstrumentDetailScreen> {
     final debt = _debt;
     if (debt != null && debt.hasUnpaidDebt) {
       return _BlockedReason(
-        'Imate neizmireno dugovanje od prethodnog iznajmljivanja. '
-        'Izmirite ga prije novog zahtjeva.',
+        rentalDebtNotice,
         StatusTone.danger,
         actionLabel: 'Plati sada',
         onAction: debt.rentalId == null
@@ -97,12 +99,8 @@ class _InstrumentDetailScreenState extends State<InstrumentDetailScreen> {
     }
     final session = context.read<SessionController>();
     if (!session.isMembershipActive) {
-      final until = session.membershipPaidUntil;
       return _BlockedReason(
-        until == null
-            ? 'Članarina nije aktivna.'
-            : 'Članarina je istekla ${formatDate(until)} '
-                  'Obratite se školi za obnovu.',
+        membershipNotice(session.membershipPaidUntil),
         StatusTone.danger,
       );
     }
@@ -138,53 +136,45 @@ class _InstrumentDetailScreenState extends State<InstrumentDetailScreen> {
       onRefresh: _load,
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.only(bottom: AppSpacing.lg),
         children: [
-          HeroImage(
-            imageUrl: instrument.imagePath,
-            apiClient: context.read<ApiClient>(),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            '${instrument.manufacturer} ${instrument.model}',
-            style: Theme.of(context).textTheme.headlineSmall,
-          ),
-          const SizedBox(height: 4),
-          Text(
-            '${instrument.manufacturer} · ${instrument.instrumentType}',
-            style: const TextStyle(color: AppTheme.textSecondary),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  instrument.musicStore,
-                  style: const TextStyle(color: AppTheme.textSecondary),
-                ),
-              ),
-              instrumentAvailabilityChip(instrument.isAvailable),
-            ],
-          ),
-          if (description != null && description.trim().isNotEmpty) ...[
-            const SizedBox(height: 16),
-            Text(description),
-          ],
-          const SizedBox(height: 24),
-          if (blocked != null)
-            StatusBanner(
-              icon: Icons.warning_amber_outlined,
-              message: blocked.copy,
-              tone: blocked.tone,
-              actionLabel: blocked.actionLabel,
-              onAction: blocked.onAction,
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.lg,
+              AppSpacing.lg,
+              AppSpacing.lg,
+              0,
             ),
-          const SizedBox(height: 8),
-          FilledButton(
-            onPressed: blocked != null
+            child: HeroImage(
+              imageUrl: instrument.imagePath,
+              apiClient: context.read<ApiClient>(),
+            ),
+          ),
+          DetailHeader(
+            title: '${instrument.manufacturer} ${instrument.model}',
+            subtitle: '${instrument.instrumentType} · ${instrument.musicStore}',
+            chips: [instrumentAvailabilityChip(instrument.isAvailable)],
+          ),
+          if (description != null && description.trim().isNotEmpty)
+            DetailSection(title: 'Opis', child: Text(description)),
+          DetailActions(
+            banner: blocked == null
                 ? null
-                : () => showRentalRequestSheet(context, instrument),
-            child: const Text('Zatraži iznajmljivanje'),
+                : StatusBanner(
+                    icon: Icons.warning_amber_outlined,
+                    message: blocked.copy,
+                    tone: blocked.tone,
+                    actionLabel: blocked.actionLabel,
+                    onAction: blocked.onAction,
+                  ),
+            actions: [
+              FilledButton(
+                onPressed: blocked != null
+                    ? null
+                    : () => showRentalRequestSheet(context, instrument),
+                child: const Text('Zatraži iznajmljivanje'),
+              ),
+            ],
           ),
         ],
       ),

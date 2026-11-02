@@ -16,6 +16,7 @@ import 'features/assignments/assignment_provider.dart';
 import 'features/auth/auth_provider.dart';
 import 'features/courses/course_provider.dart';
 import 'features/events/event_provider.dart';
+import 'features/home/home_provider.dart';
 import 'features/instruments/instrument_provider.dart';
 import 'features/lectures/lecture_provider.dart';
 import 'features/profile/profile_provider.dart';
@@ -138,6 +139,9 @@ class _EnoteMobileAppState extends State<EnoteMobileApp> {
         ),
         Provider<RankingProvider>(
           create: (_) => RankingProvider(apiClient: widget.apiClient),
+        ),
+        Provider<HomeProvider>(
+          create: (_) => HomeProvider(apiClient: widget.apiClient),
         ),
       ],
       child: MaterialApp(

@@ -88,11 +88,7 @@ class _Harness {
   final FakePaymentSheetGateway gateway;
   _Harness({required this.client, required this.gateway});
 
-  Widget app(
-    AuthState authState,
-    ApiClient apiClient,
-    String publishableKey,
-  ) {
+  Widget app(AuthState authState, ApiClient apiClient, String publishableKey) {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider<AuthState>.value(value: authState),
@@ -166,6 +162,14 @@ Future<void> _confirmPay(WidgetTester tester) async {
 void main() {
   tearDown(() {
     StripeRedirect.handler = null;
+  });
+
+  testWidgets('review puts the course header above the amount', (tester) async {
+    await _pumpPay(tester, _TuitionStubClient(), FakePaymentSheetGateway());
+
+    final course = tester.getTopLeft(find.text('Osnove teorije muzike')).dy;
+    final amount = tester.getTopLeft(find.text('Iznos')).dy;
+    expect(course, lessThan(amount));
   });
 
   testWidgets('review shows the course, amount, period and Stripe note', (
@@ -314,36 +318,34 @@ void main() {
     expect(StripeRedirect.handler, isNull);
   });
 
-  testWidgets('the review, the confirmation and the button use the intent amount', (
-    tester,
-  ) async {
-    final client = _TuitionStubClient(
-      intents: [
-        (
-          status: 200,
-          body: {..._intent, 'amountCents': 90000},
+  testWidgets(
+    'the review, the confirmation and the button use the intent amount',
+    (tester) async {
+      final client = _TuitionStubClient(
+        intents: [
+          (status: 200, body: {..._intent, 'amountCents': 90000}),
+        ],
+      );
+      final gateway = FakePaymentSheetGateway();
+      await _pumpPay(tester, client, gateway);
+
+      expect(find.text('Plati 800.00 KM'), findsOneWidget);
+
+      await _tapPay(tester);
+
+      expect(client.createCalls, 1);
+      expect(gateway.presentCalls, 0);
+      expect(find.text('Plati 900.00 KM'), findsOneWidget);
+      expect(find.text('900.00 KM'), findsWidgets);
+      expect(find.text('800.00 KM'), findsNothing);
+      expect(
+        find.text(
+          'Platiti 900.00 KM za kurs "Osnove teorije muzike" putem Stripe-a?',
         ),
-      ],
-    );
-    final gateway = FakePaymentSheetGateway();
-    await _pumpPay(tester, client, gateway);
-
-    expect(find.text('Plati 800.00 KM'), findsOneWidget);
-
-    await _tapPay(tester);
-
-    expect(client.createCalls, 1);
-    expect(gateway.presentCalls, 0);
-    expect(find.text('Plati 900.00 KM'), findsOneWidget);
-    expect(find.text('900.00 KM'), findsWidgets);
-    expect(find.text('800.00 KM'), findsNothing);
-    expect(
-      find.text(
-        'Platiti 900.00 KM za kurs "Osnove teorije muzike" putem Stripe-a?',
-      ),
-      findsOneWidget,
-    );
-  });
+        findsOneWidget,
+      );
+    },
+  );
 
   testWidgets('a failure sends the student back through the review', (
     tester,
@@ -351,10 +353,7 @@ void main() {
     final client = _TuitionStubClient(
       intents: [
         (status: 200, body: _intent),
-        (
-          status: 200,
-          body: {..._intent, 'amountCents': 90000},
-        ),
+        (status: 200, body: {..._intent, 'amountCents': 90000}),
       ],
       payments: [(status: 200, body: _payment('Failed'))],
     );
@@ -430,8 +429,10 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.textContaining('Potvrda plaćanja'), findsNothing);
-    expect(find.text('Plaćanje trenutno nije dostupno. Pokušajte ponovo kasnije.'),
-        findsNothing);
+    expect(
+      find.text('Plaćanje trenutno nije dostupno. Pokušajte ponovo kasnije.'),
+      findsNothing,
+    );
     expect(gateway.presentCalls, 0);
   });
 }

@@ -69,8 +69,8 @@ class _AnnouncementRow extends StatelessWidget {
       leading: networkImageOrPlaceholder(
         announcement.imagePath,
         context.read<ApiClient>(),
-        size: 48,
-        borderRadius: 8,
+        size: AppSize.listThumbnail,
+        borderRadius: AppRadius.md,
         placeholder: () =>
             Icon(isCourse ? Icons.school_outlined : Icons.storefront_outlined),
       ),

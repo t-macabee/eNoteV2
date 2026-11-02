@@ -8,6 +8,7 @@ using eNote.Application.Features.Communication.Announcements.Services;
 using eNote.Application.Features.Communication.Events;
 using eNote.Application.Features.Communication.Notifications.Services;
 using eNote.Application.Features.Files.Services;
+using eNote.Application.Features.Home.Services;
 using eNote.Application.Features.Identity.Employees;
 using eNote.Application.Features.Identity.Instructors;
 using eNote.Application.Features.Identity.Students;
@@ -67,6 +68,7 @@ public static class DependencyInjection
         services.AddScoped<TuitionPaymentService>();
         services.AddScoped<PaymentWebhookHandler>();
         services.AddScoped<RecommendationService>();
+        services.AddScoped<StudentHomeService>();
         services.AddScoped<UserProfileService>();
         services.AddScoped<UserSelfService>();
 

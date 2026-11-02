@@ -8,8 +8,13 @@ class AppTextField extends StatefulWidget {
   final TextInputType? keyboardType;
   final bool obscure;
   final bool readOnly;
+  final bool autofocus;
+  final String? errorText;
+  final ValueChanged<String>? onChanged;
   final ValueChanged<String>? onFieldSubmitted;
   final int? maxLength;
+  final int? minLines;
+  final int? maxLines;
 
   const AppTextField({
     super.key,
@@ -20,8 +25,13 @@ class AppTextField extends StatefulWidget {
     this.keyboardType,
     this.obscure = false,
     this.readOnly = false,
+    this.autofocus = false,
+    this.errorText,
+    this.onChanged,
     this.onFieldSubmitted,
     this.maxLength,
+    this.minLines,
+    this.maxLines = 1,
   });
 
   @override
@@ -37,22 +47,26 @@ class _AppTextFieldState extends State<AppTextField> {
       controller: widget.controller,
       decoration: InputDecoration(
         labelText: widget.label,
+        errorText: widget.errorText,
         suffixIcon: widget.obscure
             ? IconButton(
-                icon: Icon(
-                  _obscured ? Icons.visibility : Icons.visibility_off,
-                ),
+                tooltip: _obscured ? 'Prikaži lozinku' : 'Sakrij lozinku',
+                icon: Icon(_obscured ? Icons.visibility : Icons.visibility_off),
                 onPressed: () => setState(() => _obscured = !_obscured),
               )
             : null,
       ),
       obscureText: widget.obscure && _obscured,
+      autofocus: widget.autofocus,
       keyboardType: widget.keyboardType,
       textInputAction: widget.textInputAction,
       readOnly: widget.readOnly,
+      onChanged: widget.onChanged,
       onFieldSubmitted: widget.onFieldSubmitted,
       validator: widget.validator,
       maxLength: widget.maxLength,
+      minLines: widget.minLines,
+      maxLines: widget.maxLines,
     );
   }
 }

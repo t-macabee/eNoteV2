@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+
 import 'paged_result.dart';
 
 typedef PagedFetcher<T> = Future<PagedResult<T>> Function(
@@ -35,7 +36,9 @@ class PagedFetchController<T> extends ChangeNotifier {
   int _currentPage = 1;
   int? _totalCount;
   bool _isLoading = false;
+  bool _isLoadingMore = false;
   Object? _error;
+  Object? _loadMoreError;
   String _currentSearch = '';
   Timer? _searchDebounce;
   int _requestId = 0;
@@ -45,8 +48,10 @@ class PagedFetchController<T> extends ChangeNotifier {
   int get currentPage => _currentPage;
   int? get totalCount => _totalCount;
   bool get isLoading => _isLoading;
+  bool get isLoadingMore => _isLoadingMore;
 
   Object? get error => _error;
+  Object? get loadMoreError => _loadMoreError;
 
   String get search => _currentSearch;
 
@@ -76,6 +81,8 @@ class PagedFetchController<T> extends ChangeNotifier {
   Future<void> load() async {
     final requestId = ++_requestId;
     _isLoading = true;
+    _isLoadingMore = false;
+    _loadMoreError = null;
     _notify();
 
     try {
@@ -97,9 +104,36 @@ class PagedFetchController<T> extends ChangeNotifier {
     }
   }
 
-  void refresh({bool resetPage = false}) {
+  Future<void> loadMore() async {
+    if (_isLoading || _isLoadingMore || !hasNextPage) return;
+
+    final requestId = ++_requestId;
+    final nextPage = _currentPage + 1;
+    _isLoadingMore = true;
+    _loadMoreError = null;
+    _notify();
+
+    try {
+      final result = await fetcher(nextPage, pageSize, _currentSearch);
+      if (requestId != _requestId) return;
+      _items = [..._items, ...result.items];
+      _totalCount = result.totalCount;
+      _currentPage = nextPage;
+      _notify();
+    } catch (e) {
+      if (requestId != _requestId) return;
+      _loadMoreError = e;
+    } finally {
+      if (requestId == _requestId && !_disposed) {
+        _isLoadingMore = false;
+        _notify();
+      }
+    }
+  }
+
+  Future<void> refresh({bool resetPage = false}) {
     if (resetPage) _currentPage = 1;
-    load();
+    return load();
   }
 
   void previousPage() {
