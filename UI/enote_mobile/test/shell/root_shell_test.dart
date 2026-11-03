@@ -337,7 +337,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(CourseDetailScreen), findsOneWidget);
 
-    await tester.tap(_navLabel('Učenje'));
+    await tester.tap(_navLabel('Nastava'));
     await tester.pumpAndSettle();
 
     expect(find.byType(CourseDetailScreen), findsNothing);

@@ -20,6 +20,18 @@ subprojects {
 }
 
 subprojects {
+    tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+        val javaTaskName = name.replace("Kotlin", "JavaWithJavac")
+        compilerOptions.jvmTarget.set(
+            project.provider {
+                val javaTask = project.tasks.findByName(javaTaskName) as? JavaCompile
+                org.jetbrains.kotlin.gradle.dsl.JvmTarget.fromTarget(javaTask?.targetCompatibility ?: "17")
+            },
+        )
+    }
+}
+
+subprojects {
     tasks.configureEach {
         if (name.startsWith("lintVital")) {
             enabled = false

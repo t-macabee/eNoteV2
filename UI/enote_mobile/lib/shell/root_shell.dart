@@ -16,7 +16,7 @@ import 'routes.dart';
 
 enum RootTab {
   home('Početna', Icons.home_outlined, Icons.home),
-  learning('Učenje', Icons.school_outlined, Icons.school),
+  learning('Nastava', Icons.school_outlined, Icons.school),
   instruments('Instrumenti', Icons.piano_outlined, Icons.piano),
   profile('Profil', Icons.person_outline, Icons.person);
 
