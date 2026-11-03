@@ -48,16 +48,15 @@ class Validators {
 
   static String? Function(String?) confirmPassword(
     String? Function() password,
-  ) =>
-      (String? value) {
-        if (value == null || value.isEmpty) {
-          return 'Potvrdite lozinku.';
-        }
-        if (value != password()) {
-          return 'Lozinke se ne podudaraju.';
-        }
-        return null;
-      };
+  ) => (String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Potvrdite lozinku.';
+    }
+    if (value != password()) {
+      return 'Lozinke se ne podudaraju.';
+    }
+    return null;
+  };
 
   static String? optionalPhone(String? value) {
     final digits = value?.replaceAll(' ', '') ?? '';
@@ -69,13 +68,17 @@ class Validators {
     return null;
   }
 
-  static String? nonNegativeDecimal(String? value, {double? max}) {
+  static String? nonNegativeDecimal(
+    String? value, {
+    required String requiredMessage,
+    double? max,
+  }) {
     if (value == null || value.trim().isEmpty) {
-      return 'Vrijednost je obavezna.';
+      return requiredMessage;
     }
     final parsed = double.tryParse(value.trim().replaceAll(',', '.'));
     if (parsed == null) {
-      return 'Unesite važeći broj.';
+      return 'Unesite važeći broj, npr. 25.00.';
     }
     if (parsed < 0) {
       return 'Vrijednost ne smije biti negativna.';
@@ -99,5 +102,4 @@ class Validators {
     }
     return null;
   };
-
 }

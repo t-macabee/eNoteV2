@@ -62,7 +62,7 @@ class _CourseFormScreenState extends State<CourseFormScreen>
     final rawPrice = _priceController.text.trim().replaceAll(',', '.');
     final price = double.tryParse(rawPrice);
     if (price == null) {
-      ErrorBanner.show(context, message: 'Unesite važeći broj.');
+      ErrorBanner.show(context, message: 'Unesite važeći broj, npr. 25.00.');
       return false;
     }
 
@@ -114,8 +114,13 @@ class _CourseFormScreenState extends State<CourseFormScreen>
               inputFormatters: [
                 FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
               ],
-              validator: (value) =>
-                  Validators.nonNegativeDecimal(value, max: 10000),
+              validator: (value) => Validators.nonNegativeDecimal(
+                value,
+                requiredMessage:
+                    'Unesite mjesečnu cijenu kursa (npr. 25.00). Cijena 0 '
+                    'znači besplatan kurs.',
+                max: 10000,
+              ),
             ),
           ],
         ),

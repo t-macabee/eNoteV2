@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
@@ -180,7 +181,89 @@ class _Harness {
 
 Future<void> _settle(WidgetTester tester) => tester.pumpAndSettle();
 
+void _setPhoneSurface(WidgetTester tester) {
+  tester.view.physicalSize = const Size(375, 812);
+  tester.view.devicePixelRatio = 1.0;
+  addTearDown(tester.view.resetPhysicalSize);
+  addTearDown(tester.view.resetDevicePixelRatio);
+}
+
 void main() {
+  testWidgets('title is fully visible when there are unread notifications', (
+    tester,
+  ) async {
+    _setPhoneSurface(tester);
+    final harness = _Harness(
+      items: [
+        _item(id: 1, rentalId: 11, title: 'Unread rental', isRead: false),
+      ],
+    );
+    await tester.pumpWidget(harness.shellApp());
+    await _settle(tester);
+
+    harness.navigatorKey.currentState!.pushNamed(AppRoutes.notifications);
+    await _settle(tester);
+
+    final title = find.text('Obavještenja');
+    expect(title, findsOneWidget);
+
+    final titleRect = tester.getRect(title);
+    final appBarRect = tester.getRect(find.byType(AppBar));
+    expect(appBarRect.contains(titleRect.topLeft), isTrue);
+    expect(appBarRect.contains(titleRect.bottomRight), isTrue);
+
+    final paragraph = tester.renderObject<RenderParagraph>(title);
+    expect(
+      paragraph.size.width,
+      greaterThanOrEqualTo(paragraph.getMaxIntrinsicWidth(double.infinity)),
+    );
+  });
+
+  testWidgets('mark all read button is in the list and calls mark all read', (
+    tester,
+  ) async {
+    _setPhoneSurface(tester);
+    final harness = _Harness(
+      items: [
+        _item(id: 1, rentalId: 11, title: 'Unread rental', isRead: false),
+      ],
+    );
+    await tester.pumpWidget(harness.inboxApp());
+    await _settle(tester);
+
+    final button = find.text('Označi sve kao pročitano');
+    expect(button, findsOneWidget);
+    expect(
+      find.descendant(of: find.byType(AppBar), matching: button),
+      findsNothing,
+    );
+    expect(
+      find.descendant(of: find.byType(ListView), matching: button),
+      findsOneWidget,
+    );
+
+    await tester.tap(button);
+    await _settle(tester);
+
+    expect(
+      harness.client.where('PATCH', '/api/v1/student/notifications/read-all'),
+      hasLength(1),
+    );
+  });
+
+  testWidgets('mark all read button is hidden when nothing is unread', (
+    tester,
+  ) async {
+    _setPhoneSurface(tester);
+    final harness = _Harness(
+      items: [_item(id: 2, lectureId: 22, title: 'Read lecture', isRead: true)],
+    );
+    await tester.pumpWidget(harness.inboxApp());
+    await _settle(tester);
+
+    expect(find.text('Označi sve kao pročitano'), findsNothing);
+  });
+
   testWidgets('unread rows are bold with a primary dot; read rows are '
       'normal with a hollow dot', (tester) async {
     final harness = _Harness(

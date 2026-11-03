@@ -4,18 +4,14 @@ import 'package:enote_core/validators/validators.dart';
 
 void main() {
   group('confirmPassword live getter', () {
-    test('F4-09: reads the current password on every call, not a snapshot',
-        () {
+    test('F4-09: reads the current password on every call, not a snapshot', () {
       var current = 'Test1234!';
       final validate = Validators.confirmPassword(() => current);
 
       expect(validate('Test1234!'), isNull);
 
       current = 'Drugacij1!';
-      expect(
-        validate('Test1234!'),
-        equals('Lozinke se ne podudaraju.'),
-      );
+      expect(validate('Test1234!'), equals('Lozinke se ne podudaraju.'));
       expect(validate('Drugacij1!'), isNull);
     });
 
@@ -63,10 +59,7 @@ void main() {
     });
 
     test('rejects an empty top-level domain', () {
-      expect(
-        Validators.email('a@b.'),
-        equals('Unesite važeću email adresu.'),
-      );
+      expect(Validators.email('a@b.'), equals('Unesite važeću email adresu.'));
     });
 
     test('rejects whitespace inside the address', () {
@@ -83,16 +76,27 @@ void main() {
   });
 
   group('nonNegativeDecimal', () {
-    test('empty value says Vrijednost je obavezna.', () {
+    test('nonNegativeDecimal returns the supplied requiredMessage for an '
+        'empty value', () {
       expect(
-        Validators.nonNegativeDecimal(''),
-        equals('Vrijednost je obavezna.'),
+        Validators.nonNegativeDecimal(
+          '',
+          requiredMessage: 'Cijena je obavezna.',
+        ),
+        equals('Cijena je obavezna.'),
+      );
+    });
+
+    test('nonNegativeDecimal non-numeric message names an example', () {
+      expect(
+        Validators.nonNegativeDecimal('abc', requiredMessage: 'Obavezno.'),
+        equals('Unesite važeći broj, npr. 25.00.'),
       );
     });
 
     test('negative value says Vrijednost ne smije biti negativna.', () {
       expect(
-        Validators.nonNegativeDecimal('-1'),
+        Validators.nonNegativeDecimal('-1', requiredMessage: 'Obavezno.'),
         equals('Vrijednost ne smije biti negativna.'),
       );
     });

@@ -85,6 +85,45 @@ void main() {
     expect(dialogResult, isTrue);
   });
 
+  testWidgets('empty price shows the course price message', (
+    WidgetTester tester,
+  ) async {
+    tester.view.physicalSize = const Size(1280, 800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final apiClient = ApiClient(
+      baseUrl: 'http://localhost:5059/api/v1/',
+      authState: AuthState(baseUrl: 'http://localhost:5059/api/v1/'),
+      httpClient: ScriptedClient((_) => jsonResponse('', 200)),
+    );
+
+    await tester.pumpWidget(
+      ChangeNotifierProvider<CourseProvider>(
+        create: (_) => CourseProvider(apiClient: apiClient),
+        child: const MaterialApp(home: CourseFormScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Naziv'),
+      'Test kurs',
+    );
+
+    await tester.tap(find.widgetWithText(FilledButton, 'Sačuvaj'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text(
+        'Unesite mjesečnu cijenu kursa (npr. 25.00). Cijena 0 znači '
+        'besplatan kurs.',
+      ),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('course form shows its sections and saves a valid form once', (
     WidgetTester tester,
   ) async {

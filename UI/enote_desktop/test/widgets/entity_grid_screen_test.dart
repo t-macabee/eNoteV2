@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
@@ -12,6 +13,8 @@ Future<void> _pumpGrid(
   WidgetTester tester, {
   required List<String> items,
   ({String label, StatusTone tone})? Function(String item)? statusOf,
+  String? Function(String item)? subtitleOf,
+  List<Widget> Function(BuildContext context, String item)? cardActions,
 }) async {
   tester.view.physicalSize = const Size(1280, 800);
   tester.view.devicePixelRatio = 1.0;
@@ -39,7 +42,9 @@ Future<void> _pumpGrid(
                 totalCount: items.length,
               ),
               titleOf: (item) => item,
+              subtitleOf: subtitleOf,
               statusOf: statusOf,
+              cardActions: cardActions,
             ),
           ),
         ),
@@ -49,7 +54,67 @@ Future<void> _pumpGrid(
   await tester.pumpAndSettle();
 }
 
+Future<void> _hoverGridCard(WidgetTester tester) async {
+  final gesture = await tester.createGesture(kind: PointerDeviceKind.mouse);
+  addTearDown(gesture.removePointer);
+  await gesture.addPointer(location: Offset.zero);
+  await gesture.moveTo(
+    tester.getCenter(find.byKey(const ValueKey('entityGridCardImage'))),
+  );
+  await tester.pumpAndSettle();
+}
+
 void main() {
+  testWidgets('card title is below the image and never over it', (
+    WidgetTester tester,
+  ) async {
+    await _pumpGrid(
+      tester,
+      items: const ['Sarajevo'],
+      subtitleOf: (item) => 'Bosna i Hercegovina',
+    );
+
+    final imageRect = tester.getRect(
+      find.byKey(const ValueKey('entityGridCardImage')),
+    );
+    final textRect = tester.getRect(
+      find.byKey(const ValueKey('entityGridCardText')),
+    );
+    expect(textRect.top, greaterThanOrEqualTo(imageRect.bottom));
+  });
+
+  testWidgets('card with a long title and a subtitle does not overflow', (
+    WidgetTester tester,
+  ) async {
+    await _pumpGrid(
+      tester,
+      items: const ['Muzička oprema za napredne korisnike i profesionalce'],
+      subtitleOf: (item) => 'Trgovina muzičke opreme u Sarajevu',
+    );
+
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('card actions still show over the image on hover', (
+    WidgetTester tester,
+  ) async {
+    await _pumpGrid(
+      tester,
+      items: const ['Sarajevo'],
+      cardActions: (context, item) => [
+        IconButton(onPressed: () {}, icon: const Icon(Icons.edit)),
+      ],
+    );
+    await _hoverGridCard(tester);
+
+    final imageRect = tester.getRect(
+      find.byKey(const ValueKey('entityGridCardImage')),
+    );
+    final actionRect = tester.getRect(find.byIcon(Icons.edit));
+    expect(imageRect.contains(actionRect.topLeft), isTrue);
+    expect(imageRect.contains(actionRect.bottomRight), isTrue);
+  });
+
   testWidgets('card shows the title without hover', (
     WidgetTester tester,
   ) async {

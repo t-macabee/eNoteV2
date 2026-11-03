@@ -285,83 +285,88 @@ class _EntityGridCardState<T> extends State<_EntityGridCard<T>> {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              networkImageOrPlaceholder(
-                imageUrl,
-                apiClient,
-                size: double.infinity,
-                borderRadius: 0,
-                placeholder: () => Container(
-                  color: AppTheme.background,
-                  child: Icon(
-                    config.placeholderIcon,
-                    size: 40,
-                    color: AppTheme.textTertiary,
-                  ),
-                ),
-              ),
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: 0,
-                child: Container(
-                  padding: const EdgeInsets.all(AppSpacing.md),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Colors.transparent,
-                        AppTheme.background.withValues(alpha: 0.85),
+              Column(
+                children: [
+                  Expanded(
+                    child: Stack(
+                      key: const ValueKey('entityGridCardImage'),
+                      fit: StackFit.expand,
+                      children: [
+                        networkImageOrPlaceholder(
+                          imageUrl,
+                          apiClient,
+                          size: double.infinity,
+                          borderRadius: 0,
+                          placeholder: () => Container(
+                            color: AppTheme.background,
+                            child: Icon(
+                              config.placeholderIcon,
+                              size: 40,
+                              color: AppTheme.textTertiary,
+                            ),
+                          ),
+                        ),
+                        if (config.cardActions != null)
+                          Positioned.fill(
+                            child: AnimatedOpacity(
+                              opacity: _isHovered ? 1.0 : 0.0,
+                              duration: const Duration(milliseconds: 200),
+                              child: Container(
+                                color: AppTheme.background.withValues(
+                                  alpha: 0.6,
+                                ),
+                                padding: const EdgeInsets.all(AppSpacing.md),
+                                child: Center(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.center,
+                                    children: [
+                                      ...config.cardActions!(context, item),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
                       ],
                     ),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        title,
-                        style: Theme.of(context).textTheme.titleSmall
-                            ?.copyWith(color: AppTheme.textPrimary),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      if (subtitle != null && subtitle.isNotEmpty) ...[
-                        const SizedBox(height: AppSpacing.xs),
+                  Container(
+                    key: const ValueKey('entityGridCardText'),
+                    width: double.infinity,
+                    color: AppTheme.surfaceContainer,
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
                         Text(
-                          subtitle,
-                          style: Theme.of(context).textTheme.bodySmall
-                              ?.copyWith(color: AppTheme.textSecondary),
+                          title,
+                          style: Theme.of(context).textTheme.titleSmall
+                              ?.copyWith(color: AppTheme.textPrimary),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
+                        if (subtitle != null && subtitle.isNotEmpty) ...[
+                          const SizedBox(height: AppSpacing.xs),
+                          Text(
+                            subtitle,
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(color: AppTheme.textSecondary),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
                       ],
-                    ],
-                  ),
-                ),
-              ),
-              if (config.cardActions != null)
-                Positioned.fill(
-                  child: AnimatedOpacity(
-                    opacity: _isHovered ? 1.0 : 0.0,
-                    duration: const Duration(milliseconds: 200),
-                    child: Container(
-                      color: AppTheme.background.withValues(alpha: 0.6),
-                      padding: const EdgeInsets.all(AppSpacing.md),
-                      child: Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [...config.cardActions!(context, item)],
-                        ),
-                      ),
                     ),
                   ),
-                ),
+                ],
+              ),
               if (status != null)
                 Positioned(
-                  top: 8,
-                  right: 8,
+                  top: AppSpacing.sm,
+                  right: AppSpacing.sm,
                   child: StatusChip(label: status.label, tone: status.tone),
                 ),
             ],

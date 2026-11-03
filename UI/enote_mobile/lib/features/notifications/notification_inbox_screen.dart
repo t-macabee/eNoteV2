@@ -79,20 +79,7 @@ class _NotificationInboxScreenState extends State<NotificationInboxScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Obavještenja'),
-        actions: [
-          Consumer<NotificationController>(
-            builder: (context, controller, _) {
-              if (controller.unreadCount == 0) return const SizedBox.shrink();
-              return TextButton(
-                onPressed: () => _markAllRead(controller),
-                child: const Text('Označi sve kao pročitano'),
-              );
-            },
-          ),
-        ],
-      ),
+      appBar: AppBar(title: const Text('Obavještenja')),
       body: Consumer<NotificationController>(
         builder: (context, controller, _) {
           final notifications = controller.notifications;
@@ -113,32 +100,59 @@ class _NotificationInboxScreenState extends State<NotificationInboxScreen> {
                       ),
                     ],
                   )
-                : ListView.separated(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    itemCount: notifications.length + 1,
-                    separatorBuilder: (_, index) =>
-                        index < notifications.length - 1
-                        ? const Divider(height: 1)
-                        : const SizedBox.shrink(),
-                    itemBuilder: (context, index) {
-                      if (index == notifications.length) {
-                        return LoadMoreFooter(
-                          hasMore: controller.hasMore,
-                          isLoading: _loadingMore,
-                          error: _loadMoreError,
-                          onLoadMore: () => _loadMore(controller),
-                        );
-                      }
-                      final notification = notifications[index];
-                      return NotificationTile(
-                        notification: notification,
-                        onTap: () => _onTap(context, controller, notification),
-                      );
-                    },
-                  ),
+                : _buildList(context, controller, notifications),
           );
         },
       ),
+    );
+  }
+
+  Widget _buildList(
+    BuildContext context,
+    NotificationController controller,
+    List<NotificationDto> notifications,
+  ) {
+    final showMarkAll = controller.unreadCount > 0;
+    final itemCount = notifications.length + 1 + (showMarkAll ? 1 : 0);
+    return ListView.separated(
+      physics: const AlwaysScrollableScrollPhysics(),
+      itemCount: itemCount,
+      separatorBuilder: (_, index) => index < itemCount - 1
+          ? const Divider(height: 1)
+          : const SizedBox.shrink(),
+      itemBuilder: (context, index) {
+        final itemIndex = showMarkAll ? index - 1 : index;
+        if (showMarkAll && index == 0) {
+          return Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.lg,
+              AppSpacing.sm,
+              AppSpacing.lg,
+              0,
+            ),
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: TextButton(
+                onPressed: () => _markAllRead(controller),
+                child: const Text('Označi sve kao pročitano'),
+              ),
+            ),
+          );
+        }
+        if (itemIndex == notifications.length) {
+          return LoadMoreFooter(
+            hasMore: controller.hasMore,
+            isLoading: _loadingMore,
+            error: _loadMoreError,
+            onLoadMore: () => _loadMore(controller),
+          );
+        }
+        final notification = notifications[itemIndex];
+        return NotificationTile(
+          notification: notification,
+          onTap: () => _onTap(context, controller, notification),
+        );
+      },
     );
   }
 }
