@@ -107,7 +107,7 @@ void main() {
     await save();
 
     expect(
-      find.text('Prodavnica je obavezna za StoreEmployee.'),
+      find.text('Prodavnica je obavezna za ulogu Uposlenik prodavnice.'),
       findsOneWidget,
       reason: 'the reset store dropdown must block the second submit',
     );

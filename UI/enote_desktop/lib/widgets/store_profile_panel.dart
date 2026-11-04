@@ -8,16 +8,12 @@ import 'detail_row.dart';
 
 class StoreProfilePanel extends StatelessWidget {
   final MusicStoreDto store;
-  final bool showActions;
-  final VoidCallback? onEdit;
-  final VoidCallback? onDelete;
+  final bool compact;
 
   const StoreProfilePanel({
     super.key,
     required this.store,
-    this.showActions = false,
-    this.onEdit,
-    this.onDelete,
+    this.compact = false,
   });
 
   @override
@@ -46,11 +42,11 @@ class StoreProfilePanel extends StatelessWidget {
 
     return Container(
       color: AppTheme.surfaceContainer,
-      child: SingleChildScrollView(
+      child: ListView(
+        shrinkWrap: true,
         padding: EdgeInsets.all(AppSpacing.lg),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+        children: [
+          if (!compact) ...[
             AspectRatio(
               aspectRatio: 1.2,
               child: ClipRRect(
@@ -74,55 +70,31 @@ class StoreProfilePanel extends StatelessWidget {
               ),
             ),
             const SizedBox(height: AppSpacing.lg),
-            Text(
-              store.storeName,
-              style: Theme.of(context).textTheme.titleLarge
-                  ?.copyWith(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            const Divider(),
-            const SizedBox(height: AppSpacing.sm),
-            DetailRow(
-              icon: Icons.location_on_outlined,
-              label: 'Adresa',
-              value: addressText,
-            ),
-            DetailRow(
-              icon: Icons.phone_outlined,
-              label: 'Telefon',
-              value: phoneText,
-            ),
-            DetailRow(
-              icon: Icons.access_time_outlined,
-              label: 'Radno vrijeme',
-              value: workHoursText,
-            ),
-            if (showActions) ...[
-              const SizedBox(height: AppSpacing.xl),
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: onEdit,
-                  icon: const Icon(Icons.edit_outlined, size: 18),
-                  label: const Text('Uredi'),
-                ),
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: onDelete,
-                  icon: const Icon(Icons.delete_outline, size: 18),
-                  label: const Text('Obriši'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppTheme.error,
-                    side: const BorderSide(color: AppTheme.error),
-                  ),
-                ),
-              ),
-            ],
           ],
-        ),
+          Text(
+            store.storeName,
+            style: Theme.of(context).textTheme.titleLarge
+                ?.copyWith(fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          const Divider(),
+          const SizedBox(height: AppSpacing.sm),
+          DetailRow(
+            icon: Icons.location_on_outlined,
+            label: 'Adresa',
+            value: addressText,
+          ),
+          DetailRow(
+            icon: Icons.phone_outlined,
+            label: 'Telefon',
+            value: phoneText,
+          ),
+          DetailRow(
+            icon: Icons.access_time_outlined,
+            label: 'Radno vrijeme',
+            value: workHoursText,
+          ),
+        ],
       ),
     );
   }

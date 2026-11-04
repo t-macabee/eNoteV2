@@ -14,6 +14,7 @@ import 'package:enote_desktop/features/store_employee/store/shop_store_form_scre
 import 'package:enote_desktop/features/store_employee/store/shop_store_provider.dart';
 import 'package:enote_desktop/features/store_employee/store/shop_store_screen.dart';
 import 'package:enote_desktop/widgets/entity_grid_screen.dart';
+import 'package:enote_desktop/widgets/store_profile_panel.dart';
 
 import '../../../helpers.dart';
 import '../../../store_employee_shell.dart';
@@ -519,5 +520,31 @@ void main() {
       ),
       hasLength(1),
     );
+  });
+
+  testWidgets('no overflow at a window width of 800 px', (
+    WidgetTester tester,
+  ) async {
+    tester.view.physicalSize = const Size(800, 700);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final httpClient = storeEmployeeShellClient();
+    await tester.pumpWidget(
+      buildStoreEmployeeShell(isManager: false, httpClient: httpClient),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Moja prodavnica'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(ShopStoreScreen), findsOneWidget);
+    expect(find.byType(StoreProfilePanel), findsOneWidget);
+    expect(find.text('Stratocaster'), findsOneWidget);
+
+    expect(tester.takeException(), isNull);
   });
 }

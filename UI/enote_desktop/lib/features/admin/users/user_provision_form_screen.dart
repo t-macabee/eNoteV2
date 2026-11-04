@@ -122,7 +122,7 @@ class _UserProvisionFormScreenState extends State<UserProvisionFormScreen> {
                 onChanged: (id, _) =>
                     setState(() => _musicStoreId = id as int?),
                 validator: (value) => value == null
-                    ? 'Prodavnica je obavezna za StoreEmployee.'
+                    ? 'Prodavnica je obavezna za ulogu ${userRoleLabel(UserRole.storeEmployee)}.'
                     : null,
               ),
               Material(

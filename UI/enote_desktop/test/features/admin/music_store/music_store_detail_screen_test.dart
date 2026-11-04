@@ -9,6 +9,7 @@ import 'package:enote_desktop/features/admin/music_store/music_store_detail_scre
 import 'package:enote_desktop/features/admin/music_store/music_store_provider.dart';
 import 'package:enote_desktop/features/admin/music_store/store_instrument_provider.dart';
 import 'package:enote_desktop/widgets/entity_grid_screen.dart';
+import 'package:enote_desktop/widgets/store_profile_panel.dart';
 
 import '../../../helpers.dart';
 
@@ -149,7 +150,7 @@ Future<void> _pumpStore(WidgetTester tester, Map<String, dynamic> store) async {
 
 void main() {
   testWidgets(
-    'MusicStoreDetailScreen shows the overview and the grouped instruments grid',
+    'MusicStoreDetailScreen shows the profile and the grouped instruments grid',
     (WidgetTester tester) async {
       tester.view.physicalSize = const Size(1280, 800);
       tester.view.devicePixelRatio = 1.0;
@@ -175,9 +176,6 @@ void main() {
       expect(find.text('+387 33 555 777'), findsOneWidget);
       expect(find.text('09:00 - 19:00'), findsOneWidget);
       expect(find.widgetWithText(TextButton, 'Uredi'), findsOneWidget);
-
-      await tester.tap(find.text('Instrumenti'));
-      await tester.pumpAndSettle();
 
       expect(find.text('Stratocaster Player'), findsOneWidget);
       expect(find.text('Fender'), findsOneWidget);
@@ -292,9 +290,6 @@ void main() {
 
       await _pumpDialog(tester, apiClient);
 
-      await tester.tap(find.text('Instrumenti'));
-      await tester.pumpAndSettle();
-
       expect(find.text('Neuspjelo učitavanje.'), findsOneWidget);
 
       await tester.tap(find.byTooltip('Pokušaj ponovo'));
@@ -391,9 +386,6 @@ void main() {
 
       await _pumpDialog(tester, apiClient);
 
-      await tester.tap(find.text('Instrumenti'));
-      await tester.pumpAndSettle();
-
       final typeUrls = httpClient.getUrls
           .where((url) => url.contains('admin/instrument-types'))
           .toList();
@@ -438,7 +430,7 @@ void main() {
     );
   });
 
-  testWidgets('overview shows address, phone and hours', (
+  testWidgets('profile shows address, phone and hours', (
     WidgetTester tester,
   ) async {
     await _pumpStore(tester, const {
@@ -455,7 +447,7 @@ void main() {
     expect(find.text('09:00 - 19:00'), findsOneWidget);
   });
 
-  testWidgets('overview shows dashes for empty values', (
+  testWidgets('profile shows dashes for empty values', (
     WidgetTester tester,
   ) async {
     await _pumpStore(tester, const {
@@ -466,77 +458,6 @@ void main() {
 
     expect(find.text('-'), findsNWidgets(3));
   });
-
-  testWidgets('overview image box uses the detail image width', (
-    WidgetTester tester,
-  ) async {
-    await _pumpStore(tester, const {
-      'id': 1,
-      'storeName': 'Muzička Kuća Sarajevo',
-      'businessHours': '09:00 - 19:00',
-      'imagePath': '/uploads/stores/store1.jpg',
-      'addressStreet': 'Titova 10',
-      'addressCity': 'Sarajevo',
-    });
-
-    expect(find.byType(AspectRatio), findsOneWidget);
-
-    final imageBox = tester.widget<SizedBox>(
-      find
-          .ancestor(
-            of: find.byType(AspectRatio),
-            matching: find.byType(SizedBox),
-          )
-          .first,
-    );
-
-    expect(imageBox.width, AppSize.detailImageWidth);
-  });
-
-  testWidgets('overview is not vertically centered', (
-    WidgetTester tester,
-  ) async {
-    tester.view.physicalSize = const Size(1280, 800);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(() {
-      tester.view.resetPhysicalSize();
-      tester.view.resetDevicePixelRatio();
-    });
-
-    final apiClient = ApiClient(
-      baseUrl: 'http://localhost:5059/api/v1/',
-      authState: AuthState(baseUrl: 'http://localhost:5059/api/v1/'),
-      httpClient: _client(),
-    );
-
-    await _pumpDialog(tester, apiClient);
-
-    final top = tester.getTopLeft(find.text('Podaci o prodavnici')).dy;
-    expect(top, lessThan(200));
-  });
-
-  testWidgets(
-    'music store detail screen shows two tabs Pregled and Instrumenti',
-    (WidgetTester tester) async {
-      tester.view.physicalSize = const Size(1280, 800);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(() {
-        tester.view.resetPhysicalSize();
-        tester.view.resetDevicePixelRatio();
-      });
-
-      final apiClient = ApiClient(
-        baseUrl: 'http://localhost:5059/api/v1/',
-        authState: AuthState(baseUrl: 'http://localhost:5059/api/v1/'),
-        httpClient: _client(),
-      );
-
-      await _pumpDialog(tester, apiClient);
-
-      expect(find.text('Pregled'), findsOneWidget);
-      expect(find.text('Instrumenti'), findsOneWidget);
-    },
-  );
 
   testWidgets('delete closes the screen and refreshes the list', (
     WidgetTester tester,
@@ -592,4 +513,35 @@ void main() {
     expect(find.text('Prodavnica je obrisana.'), findsOneWidget);
     expect(find.byType(MusicStoreDetailScreen), findsNothing);
   });
+
+  testWidgets(
+    'shows the profile panel and the instrument grid without a tab bar',
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1280, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      final httpClient = _client();
+      final apiClient = ApiClient(
+        baseUrl: 'http://localhost:5059/api/v1/',
+        authState: AuthState(baseUrl: 'http://localhost:5059/api/v1/'),
+        httpClient: httpClient,
+      );
+
+      await _pumpDialog(tester, apiClient);
+
+      expect(find.byType(TabBar), findsNothing);
+      expect(
+        find.descendant(
+          of: find.byType(StoreProfilePanel),
+          matching: find.text('Muzička Kuća Sarajevo'),
+        ),
+        findsOneWidget,
+      );
+      expect(find.byType(EntityGridScreen<InstrumentDto>), findsOneWidget);
+    },
+  );
 }

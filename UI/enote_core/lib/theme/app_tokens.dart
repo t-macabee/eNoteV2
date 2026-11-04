@@ -45,6 +45,8 @@ final class AppSize {
   static const double heroIcon = 64;
   static const double placeholderIcon = 32;
   static const double avatarRadiusLg = 48;
+  static const double storeProfilePanelWidth = 280;
+  static const double storeProfileStackBreakpoint = 720;
 }
 
 enum StatusTone { neutral, info, success, warning, danger, accent }

@@ -8,7 +8,7 @@ import '../../../widgets/async_dropdown.dart';
 import '../../../widgets/entity_form_scaffold.dart';
 import '../../../widgets/entity_grid_screen.dart';
 import '../../../widgets/reference_data_guard.dart';
-import '../../../widgets/store_profile_panel.dart';
+import '../../../widgets/store_profile_layout.dart';
 import '../instrument/instrument_detail_dialog.dart';
 import '../instrument/instrument_form_screen.dart';
 import '../instrument/instrument_provider.dart';
@@ -95,10 +95,6 @@ class _ShopStoreScreenState extends State<ShopStoreScreen> {
     _gridKey.currentState?.refresh(resetPage: true);
   }
 
-  Widget _buildLeftPanel(MusicStoreDto store) {
-    return StoreProfilePanel(store: store);
-  }
-
   @override
   Widget build(BuildContext context) {
     final storeProvider = context.watch<ShopStoreProvider>();
@@ -133,71 +129,60 @@ class _ShopStoreScreenState extends State<ShopStoreScreen> {
       return const Center(child: Text('Nema podataka o prodavnici.'));
     }
 
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        SizedBox(width: 280, child: _buildLeftPanel(store)),
-        const VerticalDivider(width: 1),
-        Expanded(
-          child: EntityGridScreen<InstrumentDto>(
-            key: _gridKey,
-            config: EntityGridConfig<InstrumentDto>(
-              embedded: true,
-              searchHint: 'Pretraži instrumente...',
-              placeholderIcon: Icons.music_note,
-              titleOf: (i) => i.model,
-              subtitleOf: (i) => i.manufacturer,
-              imageUrlOf: (i) => i.imagePath,
-              showAddButton: true,
-              addLabel: 'Dodaj instrument',
-              onAdd: () => _openInstrumentForm(),
-              onTap: (context, item) async {
-                final changed = await InstrumentDetailDialog.show(
-                  context,
-                  item,
-                );
-                if (changed == true) {
-                  _gridKey.currentState?.refresh();
-                }
-              },
-              filterBar: AsyncDropdown<InstrumentTypeDto>(
-                label: 'Tip instrumenta',
-                width: 220,
-                emptyOptionLabel: 'Svi instrumenti',
-                value: _instrumentTypeId,
-                fetcher: () => fetchAllPages(
-                  (query) =>
-                      context.read<ShopInstrumentTypeProvider>().search(query),
-                ),
-                itemLabel: (type) => type.type,
-                itemId: (type) => type.id,
-                onChanged: (typeId, _) {
-                  _instrumentTypeId = typeId as int?;
-                  _applyFilters();
-                },
-              ),
-              groupKeyOf: _instrumentTypeId == null
-                  ? (i) => i.instrumentType.isNotEmpty
-                        ? i.instrumentType
-                        : 'Ostalo'
-                  : null,
-              fetcher: (page, pageSize, search) =>
-                  context.read<InstrumentProvider>().search(
-                    pagedQuery(
-                      page,
-                      pageSize,
-                      search,
-                      searchField: 'model',
-                      filters: {
-                        if (_instrumentTypeId != null)
-                          'instrumentTypeId': _instrumentTypeId,
-                      },
-                    ),
-                  ),
+    return StoreProfileLayout(
+      store: store,
+      content: EntityGridScreen<InstrumentDto>(
+        key: _gridKey,
+        config: EntityGridConfig<InstrumentDto>(
+          embedded: true,
+          searchHint: 'Pretraži instrumente...',
+          placeholderIcon: Icons.music_note,
+          titleOf: (i) => i.model,
+          subtitleOf: (i) => i.manufacturer,
+          imageUrlOf: (i) => i.imagePath,
+          showAddButton: true,
+          addLabel: 'Dodaj instrument',
+          onAdd: () => _openInstrumentForm(),
+          onTap: (context, item) async {
+            final changed = await InstrumentDetailDialog.show(context, item);
+            if (changed == true) {
+              _gridKey.currentState?.refresh();
+            }
+          },
+          filterBar: AsyncDropdown<InstrumentTypeDto>(
+            label: 'Tip instrumenta',
+            width: 220,
+            emptyOptionLabel: 'Svi instrumenti',
+            value: _instrumentTypeId,
+            fetcher: () => fetchAllPages(
+              (query) =>
+                  context.read<ShopInstrumentTypeProvider>().search(query),
             ),
+            itemLabel: (type) => type.type,
+            itemId: (type) => type.id,
+            onChanged: (typeId, _) {
+              _instrumentTypeId = typeId as int?;
+              _applyFilters();
+            },
           ),
+          groupKeyOf: _instrumentTypeId == null
+              ? (i) => i.instrumentType.isNotEmpty ? i.instrumentType : 'Ostalo'
+              : null,
+          fetcher: (page, pageSize, search) =>
+              context.read<InstrumentProvider>().search(
+                pagedQuery(
+                  page,
+                  pageSize,
+                  search,
+                  searchField: 'model',
+                  filters: {
+                    if (_instrumentTypeId != null)
+                      'instrumentTypeId': _instrumentTypeId,
+                  },
+                ),
+              ),
         ),
-      ],
+      ),
     );
   }
 }
