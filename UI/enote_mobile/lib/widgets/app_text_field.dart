@@ -48,6 +48,7 @@ class _AppTextFieldState extends State<AppTextField> {
       decoration: InputDecoration(
         labelText: widget.label,
         errorText: widget.errorText,
+        errorMaxLines: 3,
         suffixIcon: widget.obscure
             ? IconButton(
                 tooltip: _obscured ? 'Prikaži lozinku' : 'Sakrij lozinku',

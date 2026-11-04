@@ -57,6 +57,7 @@ Widget buildSharedDateField({
       border: const OutlineInputBorder(),
       floatingLabelBehavior: FloatingLabelBehavior.always,
       errorText: state.errorText,
+      errorMaxLines: 3,
       isDense: true,
       contentPadding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.md,

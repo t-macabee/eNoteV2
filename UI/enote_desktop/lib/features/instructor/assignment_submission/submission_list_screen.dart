@@ -85,6 +85,7 @@ class _SubmissionListScreenState extends State<SubmissionListScreen> {
                   decoration: const InputDecoration(
                     labelText: 'Ocjena (0–100)',
                     border: OutlineInputBorder(),
+                    errorMaxLines: 3,
                   ),
                   validator: Validators.grade(0, 100),
                 ),

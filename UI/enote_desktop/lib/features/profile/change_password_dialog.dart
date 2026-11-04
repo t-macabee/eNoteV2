@@ -58,21 +58,30 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
       fieldsBuilder: (context) => [
         TextFormField(
           controller: _currentPasswordController,
-          decoration: const InputDecoration(labelText: 'Trenutna lozinka'),
+          decoration: const InputDecoration(
+            labelText: 'Trenutna lozinka',
+            errorMaxLines: 3,
+          ),
           obscureText: true,
           validator: (v) => v?.isEmpty ?? true ? 'Obavezno polje' : null,
         ),
         const SizedBox(height: AppSpacing.lg),
         TextFormField(
           controller: _newPasswordController,
-          decoration: const InputDecoration(labelText: 'Nova lozinka'),
+          decoration: const InputDecoration(
+            labelText: 'Nova lozinka',
+            errorMaxLines: 3,
+          ),
           obscureText: true,
           validator: Validators.password,
         ),
         const SizedBox(height: AppSpacing.lg),
         TextFormField(
           controller: _confirmPasswordController,
-          decoration: const InputDecoration(labelText: 'Potvrdi novu lozinku'),
+          decoration: const InputDecoration(
+            labelText: 'Potvrdi novu lozinku',
+            errorMaxLines: 3,
+          ),
           obscureText: true,
           validator: Validators.confirmPassword(
             () => _newPasswordController.text,

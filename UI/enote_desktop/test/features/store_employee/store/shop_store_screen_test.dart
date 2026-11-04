@@ -55,6 +55,41 @@ Widget _buildTestApp({
   );
 }
 
+ScriptedClient _clientWithInstrumentTypes(List<Map<String, dynamic>> types) =>
+    ScriptedClient((request) {
+      final url = request.url.toString();
+      if (request.method == 'GET' && url.contains('shop/store')) {
+        return jsonResponse(const {
+          'id': 10,
+          'storeName': 'Muzička Prodavnica',
+          'businessHours': '08:00 - 16:00',
+          'addressCity': 'Sarajevo',
+        }, 200);
+      }
+      if (request.method == 'GET' && url.contains('shop/instrument-types')) {
+        return jsonResponse({
+          'items': types,
+          'page': 1,
+          'pageSize': types.length,
+          'totalCount': types.length,
+        }, 200);
+      }
+      if (request.method == 'GET' && url.contains('shop/instruments')) {
+        return jsonResponse(const {
+          'items': [],
+          'page': 1,
+          'pageSize': 24,
+          'totalCount': 0,
+        }, 200);
+      }
+      return jsonResponse(const {
+        'items': [],
+        'page': 1,
+        'pageSize': 20,
+        'totalCount': 0,
+      }, 200);
+    });
+
 void main() {
   testWidgets(
     'ShopStoreScreen renders read-only left panel for non-managers and instruments grid',
@@ -417,4 +452,72 @@ void main() {
       expect((dropdown.items!.last.child as Text).data, 'Tip 2049');
     },
   );
+
+  testWidgets(
+    'with an empty instrument type list the instrument form does not open and '
+    'the message shows',
+    (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1280, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      final httpClient = _clientWithInstrumentTypes(const []);
+      await tester.pumpWidget(
+        _buildTestApp(isManager: false, httpClient: httpClient),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.widgetWithText(ElevatedButton, 'Dodaj instrument'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text(
+          'Nema tipova instrumenata. Administrator mora prvo dodati tip instrumenta.',
+        ),
+        findsOneWidget,
+      );
+      expect(find.byType(InstrumentFormScreen), findsNothing);
+    },
+  );
+
+  testWidgets('with one instrument type the instrument form opens', (
+    WidgetTester tester,
+  ) async {
+    tester.view.physicalSize = const Size(1280, 800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    final httpClient = _clientWithInstrumentTypes(const [
+      {'id': 1, 'type': 'Gitara', 'monthlyFee': 50.0},
+    ]);
+    await tester.pumpWidget(
+      _buildTestApp(isManager: false, httpClient: httpClient),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Dodaj instrument'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(InstrumentFormScreen), findsOneWidget);
+    expect(
+      find.text(
+        'Nema tipova instrumenata. Administrator mora prvo dodati tip instrumenta.',
+      ),
+      findsNothing,
+    );
+    expect(
+      httpClient.getUrls.where(
+        (url) =>
+            url.contains('shop/instrument-types') &&
+            Uri.parse(url).queryParameters['pageSize'] == '1',
+      ),
+      hasLength(1),
+    );
+  });
 }

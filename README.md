@@ -23,7 +23,7 @@ Ovo je najkraći put i pokreće bazu, RabbitMQ, API i worker odjednom.
 1. Napravite `.env` u korijenu repozitorija.
 
    Za pregled rada: raspakujte `.env-tajne.zip` u korijen repozitorija.
-   Šifra za arhivu je postavljena na DLWMS. Arhiva sadrži gotov `.env` sa
+   Šifra za arhivu je postavljena na fit. Arhiva sadrži gotov `.env` sa
    svim vrijednostima, pa ništa ne treba popunjavati.
 
    Bez arhive, napravite `.env` iz primjera:
@@ -166,7 +166,9 @@ flutter build apk --release --dart-define=API_BASE_URL=http://10.0.2.2:5059/api/
 ```
 
 Link za reset lozinke iz e-maila (Mailhog) se na emulatoru otvara kroz `adb`.
-Token kopirajte iz linka u e-mailu:
+Mail klijenti ne čine `enote://` linkove klikabilnim, pa se link iz e-maila mora
+otvoriti na emulatoru `adb` komandom koja slijedi. Token kopirajte iz linka u
+e-mailu:
 
 ```bash
 adb shell am start -W -a android.intent.action.VIEW -d "enote://reset-password?email=student%40enote.com&token=<token>"

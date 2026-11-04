@@ -34,7 +34,11 @@ class EntityTextField extends StatelessWidget {
   Widget build(BuildContext context) {
     return TextFormField(
       controller: controller,
-      decoration: InputDecoration(labelText: label, hintText: hintText),
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: hintText,
+        errorMaxLines: 3,
+      ),
       validator: validator ?? (required ? Validators.required(label) : null),
       maxLines: maxLines,
       minLines: minLines,

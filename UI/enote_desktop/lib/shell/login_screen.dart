@@ -228,6 +228,7 @@ class _LoginForm extends StatelessWidget {
                   decoration: const InputDecoration(
                     labelText: 'Korisničko ime',
                     prefixIcon: Icon(Icons.person),
+                    errorMaxLines: 3,
                   ),
                   validator: Validators.required('Korisničko ime'),
                 ),
@@ -240,6 +241,7 @@ class _LoginForm extends StatelessWidget {
                   decoration: InputDecoration(
                     labelText: 'Lozinka',
                     prefixIcon: const Icon(Icons.lock),
+                    errorMaxLines: 3,
                     suffixIcon: IconButton(
                       tooltip: obscurePassword
                           ? 'Prikaži lozinku'

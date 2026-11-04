@@ -5,6 +5,8 @@ import 'package:enote_core/enote_core.dart';
 
 import '../../../widgets/entity_form_scaffold.dart';
 import '../../../widgets/entity_list_screen.dart';
+import '../../../widgets/reference_data_guard.dart';
+import '../city/city_provider.dart';
 import 'address_form_screen.dart';
 import 'address_provider.dart';
 
@@ -28,6 +30,16 @@ class _AddressListScreenState extends State<AddressListScreen> {
   final _listKey = GlobalKey<EntityListScreenState<AddressReferenceDto>>();
 
   Future<void> _openForm([AddressReferenceDto? existing]) async {
+    if (existing == null) {
+      final hasCities = await ensureReferenceData(
+        context,
+        fetchFirstPage: () =>
+            context.read<CityProvider>().search(pagedQuery(1, 1, '')),
+        message: 'Prvo dodajte barem jedan grad u dijelu Referentni podaci.',
+      );
+      if (!hasCities) return;
+    }
+    if (!mounted) return;
     await EntityFormScaffold.showAsDialog(
       context,
       builder: (_) => AddressFormScreen(

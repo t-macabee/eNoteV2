@@ -210,6 +210,7 @@ class _LectureFormScreenState extends State<LectureFormScreen>
                   decoration: const InputDecoration(
                     labelText: 'Tip predavanja',
                     border: OutlineInputBorder(),
+                    errorMaxLines: 3,
                   ),
                   items: LectureType.values
                       .map(
@@ -260,6 +261,7 @@ class _LectureFormScreenState extends State<LectureFormScreen>
                       decoration: const InputDecoration(
                         labelText: 'Student',
                         border: OutlineInputBorder(),
+                        errorMaxLines: 3,
                       ),
                       items: [
                         for (final enrollment

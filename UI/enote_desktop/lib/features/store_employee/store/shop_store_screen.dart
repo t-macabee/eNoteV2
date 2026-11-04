@@ -7,6 +7,7 @@ import '../../../theme/app_theme.dart';
 import '../../../widgets/async_dropdown.dart';
 import '../../../widgets/entity_form_scaffold.dart';
 import '../../../widgets/entity_grid_screen.dart';
+import '../../../widgets/reference_data_guard.dart';
 import '../../../widgets/store_profile_panel.dart';
 import '../instrument/instrument_detail_dialog.dart';
 import '../instrument/instrument_form_screen.dart';
@@ -73,6 +74,17 @@ class _ShopStoreScreenState extends State<ShopStoreScreen> {
   }
 
   Future<void> _openInstrumentForm([InstrumentDto? existing]) async {
+    if (existing == null) {
+      final hasTypes = await ensureReferenceData(
+        context,
+        fetchFirstPage: () => context.read<ShopInstrumentTypeProvider>().search(
+          pagedQuery(1, 1, ''),
+        ),
+        message: 'Nema tipova instrumenata. Administrator mora prvo dodati tip instrumenta.',
+      );
+      if (!hasTypes) return;
+    }
+    if (!mounted) return;
     await EntityFormScaffold.showAsDialog(
       context,
       builder: (_) => InstrumentFormScreen(

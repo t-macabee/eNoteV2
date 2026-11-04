@@ -8,7 +8,8 @@ Future<String?> promptForReason(
   return showDialog<String>(
     context: context,
     barrierDismissible: false,
-    builder: (context) => ReasonPromptDialog(title: title, minLength: minLength),
+    builder: (context) =>
+        ReasonPromptDialog(title: title, minLength: minLength),
   );
 }
 
@@ -28,6 +29,7 @@ class ReasonPromptDialog extends StatefulWidget {
 
 class _ReasonPromptDialogState extends State<ReasonPromptDialog> {
   late final TextEditingController _controller;
+  bool _touched = false;
 
   @override
   void initState() {
@@ -64,10 +66,10 @@ class _ReasonPromptDialogState extends State<ReasonPromptDialog> {
         maxLength: 500,
         decoration: InputDecoration(
           labelText: 'Razlog *',
-          errorText: errorText,
+          errorText: _touched ? errorText : null,
           border: const OutlineInputBorder(),
         ),
-        onChanged: (_) => setState(() {}),
+        onChanged: (_) => setState(() => _touched = true),
       ),
       actions: [
         TextButton(

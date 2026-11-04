@@ -158,7 +158,10 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
         ),
         TextFormField(
           controller: _emailController,
-          decoration: const InputDecoration(labelText: 'Email'),
+          decoration: const InputDecoration(
+            labelText: 'Email',
+            errorMaxLines: 3,
+          ),
           validator: Validators.email,
           maxLength: 256,
         ),

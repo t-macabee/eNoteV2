@@ -62,13 +62,17 @@ class UserCredentialFields extends StatelessWidget {
                   controller: controller.usernameController,
                   decoration: const InputDecoration(
                     labelText: 'Korisničko ime',
+                    errorMaxLines: 3,
                   ),
                   validator: Validators.required('Korisničko ime'),
                   maxLength: 256,
                 ),
                 TextFormField(
                   controller: controller.emailController,
-                  decoration: const InputDecoration(labelText: 'Email'),
+                  decoration: const InputDecoration(
+                    labelText: 'Email',
+                    errorMaxLines: 3,
+                  ),
                   keyboardType: TextInputType.emailAddress,
                   validator: Validators.email,
                   maxLength: 256,
@@ -77,7 +81,10 @@ class UserCredentialFields extends StatelessWidget {
             ),
             TextFormField(
               controller: controller.passwordController,
-              decoration: const InputDecoration(labelText: 'Lozinka'),
+              decoration: const InputDecoration(
+                labelText: 'Lozinka',
+                errorMaxLines: 3,
+              ),
               obscureText: true,
               validator: Validators.password,
             ),

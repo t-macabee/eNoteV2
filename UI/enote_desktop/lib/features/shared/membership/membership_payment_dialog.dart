@@ -161,6 +161,7 @@ class _MembershipPaymentDialogState extends State<_MembershipPaymentDialog> {
                   decoration: const InputDecoration(
                     labelText: 'Iznos (KM) *',
                     border: OutlineInputBorder(),
+                    errorMaxLines: 3,
                   ),
                   validator: _validateAmount,
                 ),
@@ -170,6 +171,7 @@ class _MembershipPaymentDialogState extends State<_MembershipPaymentDialog> {
                   decoration: const InputDecoration(
                     labelText: 'Broj potvrde *',
                     border: OutlineInputBorder(),
+                    errorMaxLines: 3,
                   ),
                   validator: _validateReceipt,
                 ),

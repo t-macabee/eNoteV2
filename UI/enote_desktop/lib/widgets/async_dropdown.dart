@@ -120,6 +120,7 @@ class _AsyncDropdownState<T> extends State<AsyncDropdown<T>> {
           decoration: InputDecoration(
             labelText: widget.label,
             border: const OutlineInputBorder(),
+            errorMaxLines: 3,
             helperText: isEmpty ? 'Nema dostupnih opcija' : null,
             suffixIcon: isEmpty
                 ? IconButton(

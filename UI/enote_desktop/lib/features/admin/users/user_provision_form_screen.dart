@@ -6,6 +6,7 @@ import 'package:enote_core/enote_core.dart';
 import '../../../widgets/entity_form_scaffold.dart';
 import '../../../widgets/async_dropdown.dart';
 import '../../../widgets/entity_form_sections.dart';
+import '../../../widgets/reference_data_guard.dart';
 import '../../../widgets/user_credential_fields.dart';
 import '../music_store/music_store_provider.dart';
 import 'admin_user_provider.dart';
@@ -27,6 +28,7 @@ class _UserProvisionFormScreenState extends State<UserProvisionFormScreen> {
   final _credentialController = UserCredentialFieldsController();
 
   UserRole? _role;
+  final _roleFieldKey = GlobalKey<FormFieldState<UserRole>>();
   int? _musicStoreId;
   bool _isManager = false;
 
@@ -67,8 +69,12 @@ class _UserProvisionFormScreenState extends State<UserProvisionFormScreen> {
           title: 'Uloga',
           children: [
             DropdownButtonFormField<UserRole>(
+              key: _roleFieldKey,
               initialValue: _role,
-              decoration: const InputDecoration(labelText: 'Uloga'),
+              decoration: const InputDecoration(
+                labelText: 'Uloga',
+                errorMaxLines: 3,
+              ),
               items: UserRole.values
                   .map(
                     (role) => DropdownMenuItem(
@@ -77,13 +83,31 @@ class _UserProvisionFormScreenState extends State<UserProvisionFormScreen> {
                     ),
                   )
                   .toList(),
-              onChanged: (role) => setState(() {
-                _role = role;
-                if (role != UserRole.storeEmployee) {
-                  _musicStoreId = null;
-                  _isManager = false;
+              onChanged: (role) async {
+                setState(() {
+                  _role = role;
+                  if (role != UserRole.storeEmployee) {
+                    _musicStoreId = null;
+                    _isManager = false;
+                  }
+                });
+                if (role != UserRole.storeEmployee) return;
+                final hasStores = await ensureReferenceData(
+                  context,
+                  fetchFirstPage: () => context
+                      .read<MusicStoreProvider>()
+                      .search(pagedQuery(1, 1, '')),
+                  message: 'Nema prodavnica. Prvo kreirajte prodavnicu u dijelu Trgovina muzičke opreme.',
+                );
+                if (!hasStores && mounted && _role == UserRole.storeEmployee) {
+                  _roleFieldKey.currentState?.didChange(null);
+                  setState(() {
+                    _role = null;
+                    _musicStoreId = null;
+                    _isManager = false;
+                  });
                 }
-              }),
+              },
               validator: (value) => value == null ? 'Uloga je obavezna.' : null,
             ),
             if (_role == UserRole.storeEmployee) ...[

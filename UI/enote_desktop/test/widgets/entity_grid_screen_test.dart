@@ -465,4 +465,107 @@ void main() {
 
     expect(find.byType(EntitySectionLabel), findsNWidgets(2));
   });
+
+  group('embedded toolbar controls', () {
+    Future<void> pumpEmbeddedGrid(WidgetTester tester, double width) async {
+      tester.view.physicalSize = const Size(1280, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final authState = AuthState(baseUrl: 'http://localhost:5059/api/v1/');
+      final apiClient = ApiClient(
+        baseUrl: 'http://localhost:5059/api/v1/',
+        authState: authState,
+        httpClient: ScriptedClient((_) => jsonResponse('', 200)),
+      );
+
+      await tester.pumpWidget(
+        Provider<ApiClient>.value(
+          value: apiClient,
+          child: MaterialApp(
+            home: Scaffold(
+              body: Align(
+                alignment: Alignment.topLeft,
+                child: SizedBox(
+                  width: width,
+                  height: 600,
+                  child: EntityGridScreen<String>(
+                    config: EntityGridConfig<String>(
+                      embedded: true,
+                      addLabel: 'Dodaj instrument',
+                      onAdd: () {},
+                      filterBar: const SizedBox(
+                        key: Key('gridFilterBar'),
+                        width: 384,
+                        child: Text('Filter'),
+                      ),
+                      fetcher: (page, pageSize, search) async =>
+                          PagedResult<String>(items: const [], totalCount: 0),
+                      titleOf: (item) => item,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('no overflow and no overlap at 400 px', (
+      WidgetTester tester,
+    ) async {
+      await pumpEmbeddedGrid(tester, 400);
+
+      expect(tester.takeException(), isNull);
+
+      final search = tester.getRect(find.byType(TextField));
+      final filter = tester.getRect(find.byKey(const Key('gridFilterBar')));
+      final add = tester.getRect(
+        find.widgetWithText(ElevatedButton, 'Dodaj instrument'),
+      );
+
+      expect(search.intersect(filter).isEmpty, isTrue);
+      expect(search.intersect(add).isEmpty, isTrue);
+      expect(filter.intersect(add).isEmpty, isTrue);
+    });
+
+    testWidgets('no overflow and no overlap at 520 px', (
+      WidgetTester tester,
+    ) async {
+      await pumpEmbeddedGrid(tester, 520);
+
+      expect(tester.takeException(), isNull);
+
+      final search = tester.getRect(find.byType(TextField));
+      final filter = tester.getRect(find.byKey(const Key('gridFilterBar')));
+      final add = tester.getRect(
+        find.widgetWithText(ElevatedButton, 'Dodaj instrument'),
+      );
+
+      expect(search.intersect(filter).isEmpty, isTrue);
+      expect(search.intersect(add).isEmpty, isTrue);
+      expect(filter.intersect(add).isEmpty, isTrue);
+    });
+
+    testWidgets('all three controls stay on one row at 1000 px', (
+      WidgetTester tester,
+    ) async {
+      await pumpEmbeddedGrid(tester, 1000);
+
+      final search = tester.getRect(find.byType(TextField));
+      final filter = tester.getRect(find.byKey(const Key('gridFilterBar')));
+      final add = tester.getRect(
+        find.widgetWithText(ElevatedButton, 'Dodaj instrument'),
+      );
+
+      expect(search.intersect(filter).isEmpty, isTrue);
+      expect(search.intersect(add).isEmpty, isTrue);
+      expect(filter.intersect(add).isEmpty, isTrue);
+      expect(search.top, moreOrLessEquals(filter.top));
+      expect(search.top, moreOrLessEquals(add.top));
+    });
+  });
 }
