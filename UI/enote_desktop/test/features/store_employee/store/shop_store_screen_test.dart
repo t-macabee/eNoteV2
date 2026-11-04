@@ -522,10 +522,10 @@ void main() {
     );
   });
 
-  testWidgets('no overflow at a window width of 800 px', (
+  testWidgets('no overflow at a window width of 680 px', (
     WidgetTester tester,
   ) async {
-    tester.view.physicalSize = const Size(800, 700);
+    tester.view.physicalSize = const Size(680, 700);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(() {
       tester.view.resetPhysicalSize();
