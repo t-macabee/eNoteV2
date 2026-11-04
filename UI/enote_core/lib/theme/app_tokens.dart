@@ -28,6 +28,8 @@ final class AppSize {
   const AppSize._();
 
   static const double sidebarWidth = 256;
+  static const double minWindowWidth = 960;
+  static const double minWindowHeight = 600;
   static const double contentMaxWidth = 1100;
   static const double formMaxWidth = 720;
   static const double dialogMaxWidth = 640;

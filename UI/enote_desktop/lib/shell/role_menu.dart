@@ -56,7 +56,7 @@ class RoleMenu extends StatelessWidget {
     final topRole = authState.topRole;
 
     return Container(
-      width: 256,
+      width: AppSize.sidebarWidth,
       decoration: const BoxDecoration(
         color: AppTheme.background,
         border: Border(right: BorderSide(color: AppTheme.outline, width: 1)),
