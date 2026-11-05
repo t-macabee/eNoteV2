@@ -452,6 +452,42 @@ public sealed class RentalPaymentServiceTests
     }
 
     [Fact]
+    public async Task Refund_WithOriginalAndUnresolvedDuplicate_RefundsTheDuplicateFirst()
+    {
+        var (context, student, _) = await CreateStudentContextAsync();
+        var instrument = await RentalTestData.SeedInstrumentAsync(context);
+        var rental = await SeedPaidRentalAsync(context, instrument, student);
+        var duplicate = new RentalPayment(rental.Id, rental.MusicStoreId, "pi_test_2", 5000, "eur", PaymentStatus.Succeeded);
+        context.Set<RentalPayment>().Add(duplicate);
+        await context.SaveChangesAsync();
+        duplicate.CreatedAt = Now.AddMinutes(5);
+        await context.SaveChangesAsync();
+        var gateway = new FakePaymentGateway();
+        var service = CreateService(context, CreateStoreActor(), gateway);
+
+        await service.RefundAsync(rental.Id, null);
+
+        var call = Assert.Single(gateway.RefundCalls);
+        Assert.Equal("pi_test_2", call.PaymentIntentId);
+    }
+
+    [Fact]
+    public async Task Refund_AfterDuplicateRefunded_RefundsTheOriginal()
+    {
+        var (context, student, _) = await CreateStudentContextAsync();
+        var instrument = await RentalTestData.SeedInstrumentAsync(context);
+        var rental = await SeedPaidRentalAsync(context, instrument, student);
+        await SeedRefundedDuplicateAsync(context, rental);
+        var gateway = new FakePaymentGateway();
+        var service = CreateService(context, CreateStoreActor(), gateway);
+
+        await service.RefundAsync(rental.Id, null);
+
+        var call = Assert.Single(gateway.RefundCalls);
+        Assert.Equal("pi_test_1", call.PaymentIntentId);
+    }
+
+    [Fact]
     public async Task GetPaymentStatusForStore_Succeeds_ReturnsLatestPayment()
     {
         var (context, student, _) = await CreateStudentContextAsync();
@@ -498,6 +534,120 @@ public sealed class RentalPaymentServiceTests
         var ex = await Assert.ThrowsAsync<NotFoundException>(() => service.GetPaymentStatusForStoreAsync(rental.Id));
 
         Assert.Equal(Messages.PaymentNotFound, ex.Message);
+    }
+
+    [Fact]
+    public async Task PaymentStatusForStore_AfterDuplicateRefunded_ShowsPayingPayment()
+    {
+        var (context, student, _) = await CreateStudentContextAsync();
+        var instrument = await RentalTestData.SeedInstrumentAsync(context);
+        var rental = await SeedPaidRentalAsync(context, instrument, student);
+        await SeedRefundedDuplicateAsync(context, rental);
+        var service = CreateService(context, CreateStoreActor());
+
+        var dto = await service.GetPaymentStatusForStoreAsync(rental.Id);
+
+        Assert.Equal(PaymentStatus.Succeeded, dto.Status);
+        Assert.Null(dto.RefundedCents);
+    }
+
+    [Fact]
+    public async Task PaymentStatus_AfterDuplicateRefunded_ShowsPayingPayment()
+    {
+        var (context, student, currentUser) = await CreateStudentContextAsync();
+        var instrument = await RentalTestData.SeedInstrumentAsync(context);
+        var rental = await SeedPaidRentalAsync(context, instrument, student);
+        await SeedRefundedDuplicateAsync(context, rental);
+        var service = CreateService(context, currentUser);
+
+        var dto = await service.GetPaymentStatusAsync(rental.Id);
+
+        Assert.Equal(PaymentStatus.Succeeded, dto.Status);
+        Assert.Null(dto.RefundedCents);
+    }
+
+    [Fact]
+    public async Task PaymentStatus_WithOnlyFailedAttempts_ReturnsNewestAttempt()
+    {
+        var (context, student, _) = await CreateStudentContextAsync();
+        var instrument = await RentalTestData.SeedInstrumentAsync(context);
+        var rental = RentalTestData.CreateCompletedRental(instrument, student.Id, Now);
+        context.Set<InstrumentRental>().Add(rental);
+        await context.SaveChangesAsync();
+        var older = new RentalPayment(rental.Id, rental.MusicStoreId, "pi_test_failed_1", 5000, "eur", PaymentStatus.Failed);
+        context.Set<RentalPayment>().Add(older);
+        await context.SaveChangesAsync();
+        var newer = new RentalPayment(rental.Id, rental.MusicStoreId, "pi_test_failed_2", 5000, "eur", PaymentStatus.Failed);
+        context.Set<RentalPayment>().Add(newer);
+        await context.SaveChangesAsync();
+        newer.CreatedAt = Now.AddMinutes(5);
+        await context.SaveChangesAsync();
+        var service = CreateService(context, CreateStoreActor());
+
+        var dto = await service.GetPaymentStatusForStoreAsync(rental.Id);
+
+        Assert.Equal("pi_test_failed_2", dto.PaymentIntentId);
+        Assert.Equal(PaymentStatus.Failed, dto.Status);
+    }
+
+    [Fact]
+    public async Task PaymentStatus_PartiallyRefundedOriginal_AfterDuplicateRefunded_ShowsTheOriginal()
+    {
+        var (context, student, _) = await CreateStudentContextAsync();
+        var instrument = await RentalTestData.SeedInstrumentAsync(context);
+        var rental = await SeedPaidRentalAsync(context, instrument, student);
+        var original = await context.Set<RentalPayment>().SingleAsync(x => x.StripePaymentIntentId == "pi_test_1");
+        original.ApplyRefund(2000, "re_part", Now);
+        await context.SaveChangesAsync();
+        await SeedRefundedDuplicateAsync(context, rental);
+        var service = CreateService(context, CreateStoreActor());
+
+        var dto = await service.GetPaymentStatusForStoreAsync(rental.Id);
+
+        Assert.Equal("pi_test_1", dto.PaymentIntentId);
+        Assert.Equal(PaymentStatus.PartiallyRefunded, dto.Status);
+        Assert.Equal(2000, dto.RefundedCents);
+    }
+
+    [Fact]
+    public async Task PaymentStatus_WithEqualCreatedAt_ReturnsTheHighestId()
+    {
+        var (context, student, _) = await CreateStudentContextAsync();
+        var instrument = await RentalTestData.SeedInstrumentAsync(context);
+        var rental = RentalTestData.CreateCompletedRental(instrument, student.Id, Now);
+        context.Set<InstrumentRental>().Add(rental);
+        await context.SaveChangesAsync();
+        var first = new RentalPayment(rental.Id, rental.MusicStoreId, "pi_test_failed_1", 5000, "eur", PaymentStatus.Failed);
+        context.Set<RentalPayment>().Add(first);
+        await context.SaveChangesAsync();
+        var second = new RentalPayment(rental.Id, rental.MusicStoreId, "pi_test_failed_2", 5000, "eur", PaymentStatus.Failed);
+        context.Set<RentalPayment>().Add(second);
+        await context.SaveChangesAsync();
+        Assert.Equal(first.CreatedAt, second.CreatedAt);
+        var service = CreateService(context, CreateStoreActor());
+
+        var dto = await service.GetPaymentStatusForStoreAsync(rental.Id);
+
+        Assert.Equal("pi_test_failed_2", dto.PaymentIntentId);
+    }
+
+    [Fact]
+    public async Task Refund_SecondPartial_FromFreshContext_CountsTheEarlierRefund()
+    {
+        var databaseName = Guid.NewGuid().ToString();
+        var (context, student, _) = await CreateStudentContextAsync(databaseName: databaseName);
+        var instrument = await RentalTestData.SeedInstrumentAsync(context);
+        var rental = await SeedPaidRentalAsync(context, instrument, student);
+        var gateway = new FakePaymentGateway();
+        await CreateService(context, CreateStoreActor(), gateway).RefundAsync(rental.Id, 2000);
+        var storeActor = CreateStoreActor();
+        await using var freshContext = CreateContext(storeActor, databaseName);
+        var service = CreateService(freshContext, storeActor, gateway);
+
+        var dto = await service.RefundAsync(rental.Id, 1500);
+
+        Assert.Equal(PaymentStatus.PartiallyRefunded, dto.Status);
+        Assert.Equal(3500, dto.RefundedCents);
     }
 
     [Fact]
@@ -638,6 +788,18 @@ public sealed class RentalPaymentServiceTests
         context.Set<RentalPayment>().Add(new RentalPayment(rental.Id, rental.MusicStoreId, "pi_test_1", 5000, "eur", PaymentStatus.Succeeded));
         await context.SaveChangesAsync();
         return rental;
+    }
+
+    private static async Task<RentalPayment> SeedRefundedDuplicateAsync(ENoteContext context, InstrumentRental rental)
+    {
+        var duplicate = new RentalPayment(rental.Id, rental.MusicStoreId, "pi_test_2", 5000, "eur", PaymentStatus.RequiresAction);
+        context.Set<RentalPayment>().Add(duplicate);
+        await context.SaveChangesAsync();
+        duplicate.MarkSucceeded("ch_2", "evt_2", Now);
+        duplicate.ApplyRefund(5000, "re_dup", Now);
+        duplicate.CreatedAt = Now.AddMinutes(5);
+        await context.SaveChangesAsync();
+        return duplicate;
     }
 
     private static StubCurrentActor CreateStoreActor() => new(storeId: 1);

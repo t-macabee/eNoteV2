@@ -79,7 +79,7 @@ public sealed class RentalNotificationDispatcher(
 
     public Task DispatchPaymentRefundedAsync(InstrumentRentalDto rental, long refundedCents, string currency, int actorUserId)
     {
-        var body = $"Za iznajmljivanje instrumenta {rental.InstrumentModel} vraćeno je {CurrencyAmount.Format(refundedCents, currency)}.";
+        var (title, body) = BuildRefundedContent(rental.InstrumentModel, refundedCents, currency);
         var message = new RentalRefunded(
             rental.Id,
             rental.StudentUserId,
@@ -87,12 +87,21 @@ public sealed class RentalNotificationDispatcher(
             refundedCents,
             currency,
             rental.InstrumentModel,
-            "Uplata vraćena",
+            title,
             body,
             clock.UtcNow);
 
         EnqueueRefundOutbox(message);
         return Task.CompletedTask;
+    }
+
+    public async Task DispatchPaymentRefundConfirmedAsync(int rentalId, long refundedCents, string currency, CancellationToken cancellationToken = default)
+    {
+        var rental = await LoadPaymentTargetAsync(rentalId, cancellationToken);
+
+        var (title, body) = BuildRefundedContent(rental.Model, refundedCents, currency);
+        var message = new RentalRefunded(rentalId, rental.StudentUserId, rental.StudentUserId, refundedCents, currency, rental.Model, title, body, clock.UtcNow);
+        EnqueueRefundOutbox(message);
     }
 
     public async Task DispatchPaymentSucceededAsync(int rentalId, long amountCents, string currency, CancellationToken cancellationToken = default)
@@ -122,6 +131,9 @@ public sealed class RentalNotificationDispatcher(
             .SingleAsync(cancellationToken);
 
     private sealed record PaymentTarget(int StudentUserId, string Model, InstrumentRentalStatus RentalStatus);
+
+    private static (string Title, string Body) BuildRefundedContent(string instrumentModel, long refundedCents, string currency) =>
+        ("Uplata vraćena", $"Za iznajmljivanje instrumenta {instrumentModel} vraćeno je {CurrencyAmount.Format(refundedCents, currency)}.");
 
     private static (string Title, string Body) BuildCreatedContent(InstrumentRentalDto rental)
     {

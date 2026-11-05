@@ -8,6 +8,7 @@ public sealed class RecordingNotificationDispatcher : IRentalNotificationDispatc
     public List<(InstrumentRentalDto Rental, int StudentUserId)> CreatedCalls { get; } = [];
     public List<(InstrumentRentalDto Rental, RentalTrigger Trigger, int? ActorUserId)> TransitionCalls { get; } = [];
     public List<(InstrumentRentalDto Rental, long RefundedCents, string Currency, int ActorUserId)> RefundCalls { get; } = [];
+    public List<(int RentalId, long RefundedCents, string Currency)> RefundConfirmedCalls { get; } = [];
     public List<(int RentalId, long AmountCents, string Currency)> DuplicateRefundCalls { get; } = [];
     public List<(int RentalId, long AmountCents, string Currency)> SucceededCalls { get; } = [];
 
@@ -32,6 +33,12 @@ public sealed class RecordingNotificationDispatcher : IRentalNotificationDispatc
     public Task DispatchPaymentSucceededAsync(int rentalId, long amountCents, string currency, CancellationToken cancellationToken = default)
     {
         SucceededCalls.Add((rentalId, amountCents, currency));
+        return Task.CompletedTask;
+    }
+
+    public Task DispatchPaymentRefundConfirmedAsync(int rentalId, long refundedCents, string currency, CancellationToken cancellationToken = default)
+    {
+        RefundConfirmedCalls.Add((rentalId, refundedCents, currency));
         return Task.CompletedTask;
     }
 

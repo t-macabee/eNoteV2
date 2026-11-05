@@ -299,6 +299,49 @@ public sealed class RentalNotificationDispatcherTests
         Assert.Contains("Vaš zahtjev", recipient.Body);
     }
 
+    [Fact]
+    public async Task DispatchPaymentRefundConfirmedAsync_NotifiesTheStudentAsRecipientAndActor()
+    {
+        await using var context = TestDbContextFactory.CreateContext(Now);
+
+        var student = new Student(5, Now.AddMonths(-1));
+        context.Set<Student>().Add(student);
+        await context.SaveChangesAsync();
+
+        var type = new InstrumentType { Type = "Guitar", MonthlyFee = 50m };
+        context.Set<InstrumentType>().Add(type);
+        await context.SaveChangesAsync();
+
+        var store = new MusicStore("Store", "09-17");
+        context.Set<MusicStore>().Add(store);
+        await context.SaveChangesAsync();
+
+        var instrument = new Instrument("Stratocaster", "Fender", null, null, type.Id, store.Id);
+        context.Set<Instrument>().Add(instrument);
+        await context.SaveChangesAsync();
+
+        var rental = new InstrumentRental(instrument.Id, student.Id, store.Id, Now, null);
+        context.Set<InstrumentRental>().Add(rental);
+        await context.SaveChangesAsync();
+
+        var dispatcher = new RentalNotificationDispatcher(context, new FixedClock(Now));
+
+        await dispatcher.DispatchPaymentRefundConfirmedAsync(rental.Id, refundedCents: 5000, currency: "eur");
+        await context.SaveChangesAsync();
+
+        var row = await context.Set<NotificationOutbox>().SingleAsync();
+        var payload = JsonSerializer.Deserialize<RentalRefunded>(row.PayloadJson, new JsonSerializerOptions(JsonSerializerDefaults.Web));
+        Assert.NotNull(payload);
+        Assert.Equal(rental.Id, payload.RentalId);
+        Assert.Equal(5, payload.StudentUserId);
+        Assert.Equal(5, payload.ActorUserId);
+        Assert.Equal(5000, payload.RefundedCents);
+        Assert.Equal("eur", payload.Currency);
+        Assert.Equal("Stratocaster", payload.InstrumentModel);
+        Assert.Equal("Uplata vraćena", payload.Title);
+        Assert.Equal("Za iznajmljivanje instrumenta Stratocaster vraćeno je 50.00 EUR.", payload.Body);
+    }
+
     private static InstrumentRentalDto CreateRentalDto() => new()
     {
         Id = 1,

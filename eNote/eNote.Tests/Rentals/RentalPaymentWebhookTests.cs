@@ -548,6 +548,103 @@ public sealed class RentalPaymentWebhookTests
     }
 
     [Fact]
+    public async Task HandleWebhook_SecondSucceededEvent_OnRefundedPayment_MakesNoRefundCall()
+    {
+        var (context, _, _) = await SeedSucceededPaymentAsync();
+        var gateway = new FakePaymentGateway();
+        gateway.AddRefund("pi_test_1", "re_test_1", 5000);
+        var dispatcher = new RecordingNotificationDispatcher();
+        var service = CreateWebhookService(context, dispatcher, gateway);
+
+        await service.HandleAsync(CreateChargeRefundedEvent("evt_test_refunded_full", "pi_test_1", "ch_test_1", 5000), "{}");
+        await service.HandleAsync(CreatePaymentIntentEvent("evt_test_succeeded_after_refund", "payment_intent.succeeded", "pi_test_1", "succeeded", "ch_test_1"), "{}");
+
+        Assert.Empty(gateway.RefundCalls);
+        Assert.Empty(dispatcher.DuplicateRefundCalls);
+    }
+
+    [Fact]
+    public async Task HandleWebhook_SecondSucceededEvent_OnPartiallyRefundedPayment_MakesNoRefundCall()
+    {
+        var (context, _, payment) = await SeedSucceededPaymentAsync();
+        var gateway = new FakePaymentGateway();
+        gateway.AddRefund("pi_test_1", "re_test_1", 2000);
+        var dispatcher = new RecordingNotificationDispatcher();
+        var service = CreateWebhookService(context, dispatcher, gateway);
+
+        await service.HandleAsync(CreateChargeRefundedEvent("evt_test_refunded_part", "pi_test_1", "ch_test_1", 2000), "{}");
+        await service.HandleAsync(CreatePaymentIntentEvent("evt_test_succeeded_after_part", "payment_intent.succeeded", "pi_test_1", "succeeded", "ch_test_1"), "{}");
+
+        Assert.Empty(gateway.RefundCalls);
+        Assert.Empty(dispatcher.DuplicateRefundCalls);
+        Assert.Equal(PaymentStatus.PartiallyRefunded, payment.Status);
+        Assert.Equal(2000, payment.RefundedCents);
+    }
+
+    [Fact]
+    public async Task HandleWebhook_SecondRefund_InNewRequest_CountsBothRefunds()
+    {
+        var (context, _, payment) = await SeedSucceededPaymentAsync();
+        var service = CreateWebhookService(context);
+        await service.HandleAsync(CreateRefundUpdatedEvent("evt_test_refund_request_1", "pi_test_1", "re_test_1", 2000, "succeeded"), "{}");
+        context.ChangeTracker.Clear();
+
+        await service.HandleAsync(CreateRefundUpdatedEvent("evt_test_refund_request_2", "pi_test_1", "re_test_2", 1500, "succeeded"), "{}");
+
+        var reloaded = await context.Set<RentalPayment>().SingleAsync(p => p.Id == payment.Id);
+        Assert.Equal(PaymentStatus.PartiallyRefunded, reloaded.Status);
+        Assert.Equal(3500, reloaded.RefundedCents);
+    }
+
+    [Fact]
+    public async Task HandleWebhook_RefundUpdated_NewRefund_NotifiesStudentOnce()
+    {
+        var (context, rental, _) = await SeedSucceededPaymentAsync();
+        var gateway = new FakePaymentGateway();
+        gateway.AddRefund("pi_test_1", "re_test_1", 2000);
+        var dispatcher = new RecordingNotificationDispatcher();
+        var service = CreateWebhookService(context, dispatcher, gateway);
+
+        await service.HandleAsync(CreateRefundUpdatedEvent("evt_test_refund_notify_first", "pi_test_1", "re_test_1", 2000, "succeeded"), "{}");
+        await service.HandleAsync(CreateChargeRefundedEvent("evt_test_refund_notify_second", "pi_test_1", "ch_test_1", 2000), "{}");
+
+        var confirmed = Assert.Single(dispatcher.RefundConfirmedCalls);
+        Assert.Equal(rental.Id, confirmed.RentalId);
+        Assert.Equal(2000, confirmed.RefundedCents);
+    }
+
+    [Fact]
+    public async Task HandleWebhook_ChargeRefunded_TwoNewRefunds_NotifiesOnceWithTheSum()
+    {
+        var (context, rental, _) = await SeedSucceededPaymentAsync();
+        var gateway = new FakePaymentGateway();
+        gateway.AddRefund("pi_test_1", "re_test_1", 2000);
+        gateway.AddRefund("pi_test_1", "re_test_2", 1500);
+        var dispatcher = new RecordingNotificationDispatcher();
+        var service = CreateWebhookService(context, dispatcher, gateway);
+
+        await service.HandleAsync(CreateChargeRefundedEvent("evt_test_refund_notify_sum", "pi_test_1", "ch_test_1", 3500), "{}");
+
+        var confirmed = Assert.Single(dispatcher.RefundConfirmedCalls);
+        Assert.Equal(rental.Id, confirmed.RentalId);
+        Assert.Equal(3500, confirmed.RefundedCents);
+    }
+
+    [Fact]
+    public async Task HandleWebhook_RefundUpdated_AlreadyCountedRefund_SendsNoNotification()
+    {
+        var (context, _, payment) = await SeedSucceededPaymentAsync();
+        payment.ApplyRefund(2000, "re_test_1", Now);
+        await context.SaveChangesAsync();
+        var dispatcher = new RecordingNotificationDispatcher();
+        var service = CreateWebhookService(context, dispatcher);
+
+        await service.HandleAsync(CreateRefundUpdatedEvent("evt_test_refund_notify_already_counted", "pi_test_1", "re_test_1", 2000, "succeeded"), "{}");
+
+        Assert.Empty(dispatcher.RefundConfirmedCalls);
+    }
+
+    [Fact]
     public async Task HandleWebhook_Succeeded_WhenRentalAlreadyPaid_RefundsDuplicateAndKeepsPaidAt()
     {
         var (context, rental, _) = await SeedSucceededPaymentAsync();
@@ -607,7 +704,7 @@ public sealed class RentalPaymentWebhookTests
     }
 
     [Fact]
-    public async Task HandleWebhook_Succeeded_WhenRentalAlreadyPaid_RefundsDuplicatePending_SendsNotification()
+    public async Task HandleWebhook_Succeeded_WhenRentalAlreadyPaid_RefundsDuplicatePending_SendsNoNotificationUntilConfirmed()
     {
         var (context, rental, _) = await SeedSucceededPaymentAsync();
         var duplicatePayment = new RentalPayment(rental.Id, rental.MusicStoreId, "pi_test_2", 5000, "eur", PaymentStatus.RequiresAction);
@@ -625,7 +722,15 @@ public sealed class RentalPaymentWebhookTests
         var reloadedPayment = await context.Set<RentalPayment>().SingleAsync(p => p.Id == duplicatePayment.Id);
         Assert.Equal(PaymentStatus.Succeeded, reloadedPayment.Status);
         Assert.Null(reloadedPayment.RefundedCents);
-        Assert.Single(dispatcher.DuplicateRefundCalls);
+        Assert.Empty(dispatcher.DuplicateRefundCalls);
+        Assert.Empty(dispatcher.RefundConfirmedCalls);
+
+        var refundId = Assert.Single(gateway.RefundCalls).RefundId;
+        await service.HandleAsync(CreateRefundUpdatedEvent("evt_test_duplicate_pending_confirmed", "pi_test_2", refundId, 5000, "succeeded"), "{}");
+
+        var confirmed = Assert.Single(dispatcher.RefundConfirmedCalls);
+        Assert.Equal(rental.Id, confirmed.RentalId);
+        Assert.Equal(5000, confirmed.RefundedCents);
     }
 
     [Fact]
@@ -671,6 +776,39 @@ public sealed class RentalPaymentWebhookTests
         var evt = CreatePaymentIntentEvent("evt_test_concurrency_1", "payment_intent.succeeded", "pi_test_1", "succeeded", "ch_test_1");
 
         await Assert.ThrowsAsync<DbUpdateConcurrencyException>(() => service.HandleAsync(evt, "{}"));
+    }
+
+    [Fact]
+    public async Task HandleWebhook_RefundUpdated_BeforeSucceeded_AppliesOnceOnRetry()
+    {
+        var (context, _, _) = await SeedRequiresActionPaymentAsync();
+        var service = CreateWebhookService(context);
+        var refundEvent = CreateRefundUpdatedEvent("evt_test_refund_before_succeeded", "pi_test_1", "re_test_1", 5000, "succeeded");
+
+        await Assert.ThrowsAsync<PaymentNotYetVisibleException>(() => service.HandleAsync(refundEvent, "{}"));
+        await service.HandleAsync(CreatePaymentIntentEvent("evt_test_succeeded_after_refund_retry", "payment_intent.succeeded", "pi_test_1", "succeeded", "ch_test_1"), "{}");
+        await service.HandleAsync(refundEvent, "{}");
+
+        var payment = await context.Set<RentalPayment>().Include(p => p.Refunds).SingleAsync();
+        Assert.Equal(PaymentStatus.Refunded, payment.Status);
+        Assert.Single(payment.Refunds);
+        Assert.Equal(2, await context.Set<StripeWebhookEvent>().CountAsync());
+    }
+
+    [Fact]
+    public async Task HandleWebhook_ChargeRefunded_OnCanceledPayment_RecordsWithoutRetry()
+    {
+        var (context, _, payment) = await SeedRequiresActionPaymentAsync();
+        payment.MarkCanceled();
+        await context.SaveChangesAsync();
+        var service = CreateWebhookService(context);
+        var evt = CreateChargeRefundedEvent("evt_test_refunded_canceled_payment", "pi_test_1", "ch_test_1", 2000);
+
+        await service.HandleAsync(evt, "{}");
+
+        var reloadedPayment = await context.Set<RentalPayment>().SingleAsync();
+        Assert.Equal(PaymentStatus.Canceled, reloadedPayment.Status);
+        Assert.Single(await context.Set<StripeWebhookEvent>().ToListAsync());
     }
 
     private static async Task<(ENoteContext Context, InstrumentRental Rental, RentalPayment Payment)> SeedRequiresActionPaymentAsync()

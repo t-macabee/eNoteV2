@@ -73,6 +73,7 @@ class _RentalDetailDialogState extends State<RentalDetailDialog> {
   Future<void> _onRefund() async {
     final provider = context.read<RentalProvider>();
     final payment = _payment;
+    final refundedCentsBefore = payment?.refundedCents;
     final remainingCents = payment == null
         ? null
         : payment.amountCents - (payment.refundedCents ?? 0);
@@ -92,9 +93,17 @@ class _RentalDetailDialogState extends State<RentalDetailDialog> {
         amountCents: amountCents,
       );
       if (!mounted) return;
+      final refundWasCounted = result.refundedCents != refundedCentsBefore;
       setState(() => _payment = result);
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Povrat obrađen.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            refundWasCounted
+                ? 'Povrat obrađen.'
+                : 'Povrat je pokrenut. Iznos se evidentira kada ga Stripe potvrdi.',
+          ),
+        ),
+      );
     } catch (e) {
       if (mounted) {
         ErrorBanner.show(context, message: userMessage(e));
@@ -399,7 +408,7 @@ class _RentalDetailDialogState extends State<RentalDetailDialog> {
             if (_payment != null && (_payment!.refundedCents ?? 0) > 0) ...[
               const SizedBox(height: AppSpacing.sm),
               _chargeRow(
-                'Povrađeno',
+                'Povraćeno',
                 formatKM(
                   ((_payment!.refundedCents ?? 0) / 100),
                   currency: _payment!.currency,

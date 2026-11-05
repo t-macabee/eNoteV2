@@ -78,10 +78,9 @@ public sealed class RentalPaymentService(
     {
         await EnsureStudentOwnsRentalAsync(rentalId, cancellationToken);
 
-        var payment = await context.Set<RentalPayment>()
-            .AsNoTracking()
-            .Where(p => p.InstrumentRentalId == rentalId)
-            .OrderByDescending(p => p.CreatedAt)
+        var payment = await OrderPayments(context.Set<RentalPayment>()
+                .AsNoTracking()
+                .Where(p => p.InstrumentRentalId == rentalId))
             .FirstOrDefaultAsync(cancellationToken) ?? throw new NotFoundException(Messages.PaymentNotFound);
 
         return mapper.Map<RentalPaymentDto>(payment);
@@ -91,10 +90,9 @@ public sealed class RentalPaymentService(
     {
         await EnsureStoreCanAccessRentalAsync(rentalId, cancellationToken);
 
-        var payment = await context.Set<RentalPayment>()
-            .AsNoTracking()
-            .Where(p => p.InstrumentRentalId == rentalId)
-            .OrderByDescending(p => p.CreatedAt)
+        var payment = await OrderPayments(context.Set<RentalPayment>()
+                .AsNoTracking()
+                .Where(p => p.InstrumentRentalId == rentalId))
             .FirstOrDefaultAsync(cancellationToken) ?? throw new NotFoundException(Messages.PaymentNotFound);
 
         return mapper.Map<RentalPaymentDto>(payment);
@@ -104,10 +102,11 @@ public sealed class RentalPaymentService(
     {
         var rental = await LoadForStoreAsync(rentalId, cancellationToken);
 
-        var payment = await context.Set<RentalPayment>()
-            .Include(p => p.Refunds)
-            .SingleOrDefaultAsync(p => p.InstrumentRentalId == rental.Id && (p.Status == PaymentStatus.Succeeded || p.Status == PaymentStatus.PartiallyRefunded), cancellationToken)
-            ?? throw new NotFoundException(Messages.PaymentNotFound);
+        var payment = await OrderPayments(context.Set<RentalPayment>()
+                .Include(p => p.Refunds)
+                .Where(p => p.InstrumentRentalId == rental.Id
+                    && (p.Status == PaymentStatus.Succeeded || p.Status == PaymentStatus.PartiallyRefunded)))
+            .FirstOrDefaultAsync(cancellationToken) ?? throw new NotFoundException(Messages.PaymentNotFound);
 
         var centsToRefund = amountCents ?? payment.AmountChargedCents;
         var remaining = payment.AmountChargedCents - (payment.RefundedCents ?? 0);
@@ -160,6 +159,12 @@ public sealed class RentalPaymentService(
 
         return mapper.Map<RentalPaymentDto>(payment);
     }
+
+    private static IQueryable<RentalPayment> OrderPayments(IQueryable<RentalPayment> payments) =>
+        payments
+            .OrderByDescending(p => p.Status == PaymentStatus.Succeeded || p.Status == PaymentStatus.PartiallyRefunded)
+            .ThenByDescending(p => p.CreatedAt)
+            .ThenByDescending(p => p.Id);
 
     private async Task EnsureStudentOwnsRentalAsync(int rentalId, CancellationToken cancellationToken)
     {

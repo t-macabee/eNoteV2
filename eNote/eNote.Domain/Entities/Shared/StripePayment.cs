@@ -21,6 +21,8 @@ public abstract class StripePayment : AuditableEntity
 
     public bool IsOpen => OpenStatuses.Contains(Status);
 
+    public bool HasSucceeded => Status is PaymentStatus.Succeeded or PaymentStatus.PartiallyRefunded or PaymentStatus.Refunded;
+
     private readonly List<PaymentRefund> _refunds = [];
     public IReadOnlyCollection<PaymentRefund> Refunds => _refunds.AsReadOnly();
 

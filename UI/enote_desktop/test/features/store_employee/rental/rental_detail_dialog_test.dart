@@ -14,6 +14,7 @@ Future<void> _pumpDialog(
   Map<String, dynamic> rental, {
   void Function(Map<String, dynamic> rental)? onApprove,
   bool paymentFails = false,
+  int refundedCentsAfterRefund = 100,
 }) async {
   tester.view.physicalSize = const Size(1400, 2000);
   tester.view.devicePixelRatio = 1.0;
@@ -23,6 +24,18 @@ Future<void> _pumpDialog(
   final current = Map<String, dynamic>.of(rental);
   final client = ScriptedClient((request) {
     final path = request.url.path;
+    if (request.method == 'POST' && path.endsWith('/payments/refund')) {
+      return jsonResponse({
+        'id': 9,
+        'rentalId': 5,
+        'paymentIntentId': 'pi_1',
+        'amountCents': 1000,
+        'currency': 'bam',
+        'status': 'PartiallyRefunded',
+        'refundedCents': refundedCentsAfterRefund,
+        'refundedAt': null,
+      }, 200);
+    }
     if (path.endsWith('/payments')) {
       if (paymentFails) {
         return jsonResponse({
@@ -253,6 +266,92 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Zahtjev za iznajmljivanje je odobren.'), findsOneWidget);
+  });
+
+  testWidgets('the refunded amount row is labelled Povraćeno', (tester) async {
+    await _pumpDialog(tester, {
+      'id': 5,
+      'instrumentId': 1,
+      'musicStoreId': 1,
+      'studentProfileId': 1,
+      'studentUserId': 1,
+      'instrumentModel': 'Fender',
+      'instrumentType': 'Gitara',
+      'storeName': 'Shop',
+      'rentalStatus': 'Completed',
+      'requestedAt': DateTime.now().toIso8601String(),
+      'fee': 10.0,
+      'isPaid': true,
+      'amountPaid': 10.0,
+      'paidAt': DateTime.now().toIso8601String(),
+    });
+
+    expect(find.text('Povraćeno'), findsOneWidget);
+    expect(find.text('Povrađeno'), findsNothing);
+  });
+
+  testWidgets('a counted refund shows the processed snackbar', (tester) async {
+    await _pumpDialog(
+      tester,
+      {
+        'id': 5,
+        'instrumentId': 1,
+        'musicStoreId': 1,
+        'studentProfileId': 1,
+        'studentUserId': 1,
+        'instrumentModel': 'Fender',
+        'instrumentType': 'Gitara',
+        'storeName': 'Shop',
+        'rentalStatus': 'Completed',
+        'requestedAt': DateTime.now().toIso8601String(),
+        'fee': 10.0,
+        'isPaid': true,
+        'amountPaid': 10.0,
+        'paidAt': DateTime.now().toIso8601String(),
+      },
+      refundedCentsAfterRefund: 300,
+    );
+
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Refundiraj'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Potvrdi'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Povrat obrađen.'), findsOneWidget);
+    expect(
+      find.text('Povrat je pokrenut. Iznos se evidentira kada ga Stripe potvrdi.'),
+      findsNothing,
+    );
+  });
+
+  testWidgets('a pending refund shows the pending snackbar', (tester) async {
+    await _pumpDialog(tester, {
+      'id': 5,
+      'instrumentId': 1,
+      'musicStoreId': 1,
+      'studentProfileId': 1,
+      'studentUserId': 1,
+      'instrumentModel': 'Fender',
+      'instrumentType': 'Gitara',
+      'storeName': 'Shop',
+      'rentalStatus': 'Completed',
+      'requestedAt': DateTime.now().toIso8601String(),
+      'fee': 10.0,
+      'isPaid': true,
+      'amountPaid': 10.0,
+      'paidAt': DateTime.now().toIso8601String(),
+    });
+
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Refundiraj'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(ElevatedButton, 'Potvrdi'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('Povrat je pokrenut. Iznos se evidentira kada ga Stripe potvrdi.'),
+      findsOneWidget,
+    );
+    expect(find.text('Povrat obrađen.'), findsNothing);
   });
 
   testWidgets('overdue rental shows due date, delay and penalty', (

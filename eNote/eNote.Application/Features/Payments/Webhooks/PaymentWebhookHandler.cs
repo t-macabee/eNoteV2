@@ -174,7 +174,7 @@ public sealed class PaymentWebhookHandler(
 
             ThrowIfPaymentOpen(payment, "refund.updated");
 
-            ApplyRefundUpdate(payment, refund);
+            await ApplyRefundUpdateAsync(payment, refund, cancellationToken);
 
             await RecordEventAsync(eventId, eventType, rawJson, cancellationToken);
         }, cancellationToken);
@@ -197,7 +197,7 @@ public sealed class PaymentWebhookHandler(
 
     private async Task HandleRentalSucceededAsync(RentalPayment payment, string? chargeId, string eventId, string eventType, string rawJson, CancellationToken cancellationToken)
     {
-        if (payment.Status != PaymentStatus.Succeeded)
+        if (!payment.HasSucceeded)
         {
             LogMissingChargeId(chargeId, payment.StripePaymentIntentId);
             payment.MarkSucceeded(chargeId, eventId, clock.UtcNow);
@@ -205,9 +205,13 @@ public sealed class PaymentWebhookHandler(
             if (payment.InstrumentRental.IsPaid)
             {
                 var refundStatus = await RefundDuplicatePaymentAsync(payment, cancellationToken);
-                if (refundStatus is RefundStatus.Succeeded or RefundStatus.Pending)
+                if (refundStatus == RefundStatus.Succeeded)
                 {
                     await notifications.DispatchDuplicatePaymentRefundedAsync(payment.InstrumentRentalId, payment.AmountChargedCents, payment.Currency, cancellationToken);
+                }
+                else if (refundStatus == RefundStatus.Pending)
+                {
+                    logger.LogInformation("Duplicate payment refund for {PaymentIntentId} is pending; the refund.updated webhook notifies the student", payment.StripePaymentIntentId);
                 }
                 else
                 {
@@ -226,7 +230,7 @@ public sealed class PaymentWebhookHandler(
 
     private async Task HandleCourseSucceededAsync(CoursePayment payment, string? chargeId, string eventId, string eventType, string rawJson, CancellationToken cancellationToken)
     {
-        if (payment.Status != PaymentStatus.Succeeded)
+        if (!payment.HasSucceeded)
         {
             var now = clock.UtcNow;
             var enrollment = payment.Enrollment;
@@ -243,9 +247,13 @@ public sealed class PaymentWebhookHandler(
                 logger.LogWarning("Tuition payment {PaymentIntentId} cannot grant access; refunding it instead", payment.StripePaymentIntentId);
                 payment.MarkSucceeded(chargeId, eventId, now, periodStart: null, periodEnd: null);
                 var refundStatus = await RefundDuplicatePaymentAsync(payment, cancellationToken);
-                if (refundStatus is RefundStatus.Succeeded or RefundStatus.Pending)
+                if (refundStatus == RefundStatus.Succeeded)
                 {
                     await enrollmentNotifications.DispatchTuitionRefundedAsync(enrollment.Id, enrollment.CourseId, enrollment.Student.AppUserId, enrollment.Course.Name, payment.AmountChargedCents, payment.Currency);
+                }
+                else if (refundStatus == RefundStatus.Pending)
+                {
+                    logger.LogInformation("Duplicate tuition payment refund for {PaymentIntentId} is pending; the refund.updated webhook notifies the student", payment.StripePaymentIntentId);
                 }
                 else
                 {
@@ -274,6 +282,8 @@ public sealed class PaymentWebhookHandler(
         // listed for the PaymentIntent and each one is applied under its own id.
         var refunds = await paymentGateway.ListRefundsAsync(payment.StripePaymentIntentId, cancellationToken);
 
+        long countedCents = 0;
+
         foreach (var refund in refunds)
         {
             if (refund.Status != RefundStatus.Succeeded)
@@ -281,11 +291,19 @@ public sealed class PaymentWebhookHandler(
                 continue;
             }
 
-            payment.ApplyRefund(refund.AmountCents, refund.Id, clock.UtcNow);
+            if (payment.ApplyRefund(refund.AmountCents, refund.Id, clock.UtcNow))
+            {
+                countedCents += refund.AmountCents;
+            }
+        }
+
+        if (countedCents > 0)
+        {
+            await NotifyRefundCountedAsync(payment, countedCents, cancellationToken);
         }
     }
 
-    private void ApplyRefundUpdate(StripePayment payment, RefundData refund)
+    private async Task ApplyRefundUpdateAsync(StripePayment payment, RefundData refund, CancellationToken cancellationToken)
     {
         if (payment.Status is not (PaymentStatus.Succeeded or PaymentStatus.PartiallyRefunded or PaymentStatus.Refunded))
         {
@@ -306,6 +324,8 @@ public sealed class PaymentWebhookHandler(
                 refundedCoursePayment.Enrollment.RevokeRefundedAccessPeriod(refundedCoursePayment);
             }
 
+            await NotifyRefundCountedAsync(payment, refund.AmountCents, cancellationToken);
+
             return;
         }
 
@@ -316,6 +336,7 @@ public sealed class PaymentWebhookHandler(
 
         if (!payment.ReverseRefund(refund.Id))
         {
+            logger.LogWarning("Refund {RefundId} failed for payment {PaymentId} and was not counted; nothing to reverse", refund.Id, payment.Id);
             return;
         }
 
@@ -326,6 +347,14 @@ public sealed class PaymentWebhookHandler(
 
         logger.LogWarning("Refund {RefundId} failed for payment {PaymentId}; the counted refund was reversed", refund.Id, payment.Id);
     }
+
+    private Task NotifyRefundCountedAsync(StripePayment payment, long refundedCents, CancellationToken cancellationToken) =>
+        payment switch
+        {
+            RentalPayment rentalPayment => notifications.DispatchPaymentRefundConfirmedAsync(rentalPayment.InstrumentRentalId, refundedCents, payment.Currency, cancellationToken),
+            CoursePayment coursePayment => enrollmentNotifications.DispatchTuitionRefundedAsync(coursePayment.EnrollmentId, coursePayment.Enrollment.CourseId, coursePayment.Enrollment.Student.AppUserId, coursePayment.Enrollment.Course.Name, refundedCents, payment.Currency),
+            _ => Task.CompletedTask
+        };
 
     private async Task<StripePayment?> LoadPaymentAsync(string paymentIntentId, CancellationToken cancellationToken)
     {
