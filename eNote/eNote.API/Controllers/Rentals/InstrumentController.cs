@@ -56,7 +56,7 @@ public sealed class InstrumentController(
     [Authorize(Roles = AppRoles.StoreEmployee)]
     [HttpPost("~/api/v{version:apiVersion}/shop/instruments")]
     [ProducesResponseType(typeof(InstrumentDto), StatusCodes.Status201Created)]
-    public async Task<ActionResult<InstrumentDto>> Create([FromBody] InstrumentCreateRequest request, CancellationToken cancellationToken)
+    public async Task<ActionResult<InstrumentDto>> Create([FromBody] InstrumentRequest request, CancellationToken cancellationToken)
     {
         var result = await instrumentService.CreateAsync(request, cancellationToken);
         return CreatedAtAction(nameof(GetStoreById), new { id = result.Id }, result);
@@ -65,7 +65,7 @@ public sealed class InstrumentController(
     [Authorize(Roles = AppRoles.StoreEmployee)]
     [HttpPut("~/api/v{version:apiVersion}/shop/instruments/{id:int}")]
     [ProducesResponseType(typeof(InstrumentDto), StatusCodes.Status200OK)]
-    public async Task<ActionResult<InstrumentDto>> Update(int id, [FromBody] InstrumentUpdateRequest request, CancellationToken cancellationToken)
+    public async Task<ActionResult<InstrumentDto>> Update(int id, [FromBody] InstrumentRequest request, CancellationToken cancellationToken)
     {
         var result = await instrumentService.UpdateAsync(id, request, cancellationToken);
         return Ok(result);

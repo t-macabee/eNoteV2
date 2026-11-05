@@ -6,6 +6,7 @@ class InstrumentDto {
   final String? imagePath;
   final int instrumentTypeId;
   final String instrumentType;
+  final double monthlyFee;
   final String musicStore;
   final bool isAvailable;
 
@@ -17,6 +18,7 @@ class InstrumentDto {
     this.imagePath,
     required this.instrumentTypeId,
     required this.instrumentType,
+    required this.monthlyFee,
     required this.musicStore,
     required this.isAvailable,
   });
@@ -30,6 +32,7 @@ class InstrumentDto {
       imagePath: json['imagePath'] as String?,
       instrumentTypeId: json['instrumentTypeId'] as int? ?? 0,
       instrumentType: json['instrumentType'] as String? ?? '',
+      monthlyFee: (json['monthlyFee'] as num?)?.toDouble() ?? 0.0,
       musicStore: json['musicStore'] as String? ?? '',
       isAvailable: json['isAvailable'] as bool? ?? false,
     );
@@ -43,56 +46,35 @@ class InstrumentDto {
     if (imagePath != null) 'imagePath': imagePath,
     'instrumentTypeId': instrumentTypeId,
     'instrumentType': instrumentType,
+    'monthlyFee': monthlyFee,
     'musicStore': musicStore,
     'isAvailable': isAvailable,
   };
 }
 
-class InstrumentCreateRequest {
+class InstrumentRequest {
   final String model;
   final String manufacturer;
   final String? description;
-  final String? imagePath;
   final int instrumentTypeId;
 
-  InstrumentCreateRequest({
+  InstrumentRequest({
     required this.model,
     required this.manufacturer,
     this.description,
-    this.imagePath,
     required this.instrumentTypeId,
   });
 
-  Map<String, dynamic> toJson() => {
-    'model': model,
-    'manufacturer': manufacturer,
-    if (description != null) 'description': description,
-    if (imagePath != null) 'imagePath': imagePath,
-    'instrumentTypeId': instrumentTypeId,
-  };
+  Map<String, dynamic> toJson() {
+    final normalizedDescription = description?.trim();
+    return {
+      'model': model,
+      'manufacturer': manufacturer,
+      'description':
+          normalizedDescription == null || normalizedDescription.isEmpty
+          ? null
+          : normalizedDescription,
+      'instrumentTypeId': instrumentTypeId,
+    };
+  }
 }
-
-class InstrumentUpdateRequest {
-  final String? model;
-  final String? manufacturer;
-  final String? description;
-  final String? imagePath;
-  final int? instrumentTypeId;
-
-  InstrumentUpdateRequest({
-    this.model,
-    this.manufacturer,
-    this.description,
-    this.imagePath,
-    this.instrumentTypeId,
-  });
-
-  Map<String, dynamic> toJson() => {
-    if (model != null) 'model': model,
-    if (manufacturer != null) 'manufacturer': manufacturer,
-    if (description != null) 'description': description,
-    if (imagePath != null) 'imagePath': imagePath,
-    if (instrumentTypeId != null) 'instrumentTypeId': instrumentTypeId,
-  };
-}
-

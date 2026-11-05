@@ -78,7 +78,7 @@ class _InstrumentTypeFormScreenState extends State<InstrumentTypeFormScreen>
                 EntityTextField(
                   controller: _monthlyFeeController,
                   label: 'Mjesečna naknada',
-                  hintText: 'npr. 25.00',
+                  hintText: 'npr. 45.00',
                   keyboardType: const TextInputType.numberWithOptions(
                     decimal: true,
                   ),
@@ -89,7 +89,9 @@ class _InstrumentTypeFormScreenState extends State<InstrumentTypeFormScreen>
                     value,
                     requiredMessage:
                         'Unesite mjesečnu naknadu u KM (npr. 45.00).',
+                    min: 30,
                     max: 99999999.99,
+                    maxDecimals: 2,
                   ),
                 ),
               ],

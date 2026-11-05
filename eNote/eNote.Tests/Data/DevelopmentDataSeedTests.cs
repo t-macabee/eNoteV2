@@ -285,7 +285,7 @@ public sealed class DevelopmentDataSeedTests
 
         var rentals = await ctx.Set<InstrumentRental>().IgnoreQueryFilters().ToListAsync();
 
-        var approvedOrActive = rentals.Where(r => r.RentalStatus.BlocksInstrument()).ToList();
+        var approvedOrActive = rentals.Where(r => InstrumentRentalStatusExtensions.BlockingStatuses.Contains(r.RentalStatus)).ToList();
         var duplicateInstrumentLocks = approvedOrActive
             .GroupBy(r => r.InstrumentId)
             .Where(g => g.Count() > 1)

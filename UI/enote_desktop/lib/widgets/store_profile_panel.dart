@@ -20,16 +20,7 @@ class StoreProfilePanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final apiClient = context.read<ApiClient>();
 
-    String addressText = '-';
-    if (store.addressStreet != null && store.addressStreet!.isNotEmpty) {
-      if (store.addressCity != null && store.addressCity!.isNotEmpty) {
-        addressText = '${store.addressStreet}, ${store.addressCity}';
-      } else {
-        addressText = store.addressStreet!;
-      }
-    } else if (store.addressCity != null && store.addressCity!.isNotEmpty) {
-      addressText = store.addressCity!;
-    }
+    final addressText = store.addressText;
 
     final phoneText =
         (store.phoneNumber != null && store.phoneNumber!.isNotEmpty)

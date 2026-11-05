@@ -1,6 +1,8 @@
 using System.Reflection;
+using eNote.Application.Common.Localization;
 using eNote.Application.Common.Persistence;
 using eNote.Application.Constants;
+using eNote.Application.Features.Rentals.ReferenceData.InstrumentTypes;
 using eNote.Domain.Entities.Assignments;
 using eNote.Infrastructure.Identity;
 using eNote.Tests.TestUtils;
@@ -96,6 +98,37 @@ public sealed class DatabaseConstraintTests(SqlServerFixture fixture)
                 string.Equals(expectedAction, deleteAction, StringComparison.Ordinal),
                 $"{name} ({parentTable} -> {referencedTable}) has delete action {deleteAction}, expected {expectedAction}.");
         }
+    }
+
+    [Fact]
+    public async Task InstrumentType_DuplicateName_IsRejected()
+    {
+        var database = await fixture.CreateDatabaseAsync();
+        await using var context = database.CreateContext();
+        var service = new InstrumentTypeService(context);
+
+        await service.CreateAsync(new InstrumentTypeRequest { Type = " gitara ", MonthlyFee = 45m });
+
+        var ex = await Assert.ThrowsAsync<ConflictException>(() =>
+            service.CreateAsync(new InstrumentTypeRequest { Type = "Gitara", MonthlyFee = 45m }));
+
+        Assert.Equal(Messages.InstrumentTypeAlreadyExists, ex.Message);
+    }
+
+    [Fact]
+    public async Task InstrumentType_UpdateToExistingName_IsRejected()
+    {
+        var database = await fixture.CreateDatabaseAsync();
+        await using var context = database.CreateContext();
+        var service = new InstrumentTypeService(context);
+
+        await service.CreateAsync(new InstrumentTypeRequest { Type = "Gitara", MonthlyFee = 45m });
+        var klavir = await service.CreateAsync(new InstrumentTypeRequest { Type = "Klavir", MonthlyFee = 60m });
+
+        var ex = await Assert.ThrowsAsync<ConflictException>(() =>
+            service.UpdateAsync(klavir.Id, new InstrumentTypeRequest { Type = " gitara ", MonthlyFee = 60m }));
+
+        Assert.Equal(Messages.InstrumentTypeAlreadyExists, ex.Message);
     }
 
     [Fact]

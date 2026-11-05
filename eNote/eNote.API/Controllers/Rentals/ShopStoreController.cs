@@ -2,10 +2,8 @@ using eNote.API.Controllers.Base;
 using eNote.API.Extensions;
 using eNote.Application.Common.Files;
 using eNote.Application.Common.Interfaces;
-using eNote.Application.Common.Paging;
 using eNote.Application.Constants;
 using eNote.Application.Features.Identity.Employees;
-using eNote.Application.Features.ReferenceData.Addresses;
 using eNote.Application.Features.Rentals.ReferenceData.MusicStores;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -18,7 +16,6 @@ namespace eNote.API.Controllers.Rentals;
 public sealed class ShopStoreController(
     MusicStoreService storeService,
     ShopEmployeeService employeeService,
-    AddressService addressService,
     IStoreContext stores) : CoreController
 {
     [HttpGet]
@@ -53,12 +50,4 @@ public sealed class ShopStoreController(
             var storeId = await employeeService.GetCurrentManagerStoreIdAsync(token);
             return await storeService.UploadImageAsync(storeId, stream, contentType, token);
         }, ct);
-
-    [HttpGet("~/api/v{version:apiVersion}/shop/addresses")]
-    [ProducesResponseType(typeof(PagedResult<AddressReferenceDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<PagedResult<AddressReferenceDto>>> GetAddresses(
-        [FromQuery] AddressSearchObject search, CancellationToken cancellationToken)
-    {
-        return Ok(await addressService.GetPagedAsync(search, cancellationToken));
-    }
 }

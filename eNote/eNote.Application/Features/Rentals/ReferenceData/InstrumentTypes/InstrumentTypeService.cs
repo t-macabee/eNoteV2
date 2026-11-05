@@ -1,9 +1,13 @@
 using eNote.Application.Common.Crud;
+using eNote.Application.Constants;
 
 namespace eNote.Application.Features.Rentals.ReferenceData.InstrumentTypes;
 
 public sealed class InstrumentTypeService(IAppDbContext context) : ReferenceDataCrudService<InstrumentType, InstrumentTypeDto, InstrumentTypeRequest, InstrumentTypeSearchObject>(context)
 {
+    protected override (string IndexName, string Message)? UniqueConflict =>
+        (DbConstraintNames.InstrumentTypeTypeUniqueIndex, Messages.InstrumentTypeAlreadyExists);
+
     protected override InstrumentTypeDto Map(InstrumentType entity) => new()
     {
         Id = entity.Id,

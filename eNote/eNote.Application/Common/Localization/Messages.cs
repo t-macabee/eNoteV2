@@ -30,6 +30,7 @@ public static class Messages
     public const string MusicStoreRequiredForEmployee = "Prodavnica je obavezna za uposlenika radnje.";
     public const string MusicStoreSelectionRequired = "Odaberite prodavnicu iz liste.";
     public const string PhoneNumberFormat = "Unesite broj telefona sa 6 do 15 cifara, opcionalno sa + na početku; razmaci su dozvoljeni (npr. +387 61 123 456).";
+    public const string BusinessHoursFormat = "Radno vrijeme unesite u obliku 09:00-17:00.";
     public static readonly string PhoneNumberTooLong = $"Broj telefona ne smije biti duži od {MusicStore.PhoneNumberMaxLength} karaktera.";
 
     public const string StudentProfileNotFound = "Student profil nije pronađen.";
@@ -48,8 +49,9 @@ public static class Messages
     public static string CourseDeleteBlockedByPaidAccess(DateTime paidUntil) =>
         $"Kurs ima studente s plaćenim pristupom do {paidUntil:dd.MM.yyyy}. Uklonite objavu kursa da ga sakrijete iz ponude; brisanje je moguće nakon isteka.";
 
-    public const string InstrumentTypeFeeMustBeNonNegative = "Mjesečna naknada mora biti nenegativan decimalni broj.";
+    public const string InstrumentTypeFeeBelowMinimum = "Mjesečna naknada mora biti najmanje 30 KM.";
     public const string InstrumentTypeFeeExceedsMaximum = "Mjesečna naknada ne smije biti veća od 99999999.99.";
+    public const string InstrumentTypeFeeTooManyDecimals = "Mjesečna naknada može imati najviše dvije decimale.";
 
     public const string LectureNotFound = "Predavanje nije pronađeno.";
     public const string LectureCancelled = "Predavanje je otkazano.";
@@ -68,6 +70,7 @@ public static class Messages
     public const string LectureStudentNotActiveEnrollment = "Učenik nije aktivno upisan na ovaj kurs.";
 
     public const string InstrumentTypeNotFound = "Vrsta instrumenta ne postoji.";
+    public const string InstrumentTypeAlreadyExists = "Tip instrumenta s tim nazivom već postoji.";
     public const string InstrumentNotFound = "Instrument nije pronađen.";
     public const string InstrumentReservedOrRented = "Instrument je rezervisan ili već iznajmljen.";
     public const string InstrumentDeleteBlocked = "Instrument se ne može obrisati jer je trenutno rezervisan ili iznajmljen.";

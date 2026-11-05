@@ -1,3 +1,4 @@
+using eNote.Application.Constants;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -9,5 +10,6 @@ public sealed class InstrumentTypeConfig : IEntityTypeConfiguration<InstrumentTy
     {
         builder.Property(t => t.Type).HasStringConfig(InstrumentType.TypeMaxLength, true);
         builder.Property(t => t.MonthlyFee).HasDecimalPrecision();
+        builder.HasIndex(t => t.Type).IsUnique().HasDatabaseName(DbConstraintNames.InstrumentTypeTypeUniqueIndex);
     }
 }

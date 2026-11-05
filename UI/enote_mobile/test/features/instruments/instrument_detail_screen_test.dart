@@ -42,6 +42,7 @@ ScriptedClient _client({
         'description': 'Klasična gitara za početnike.',
         'instrumentTypeId': 1,
         'instrumentType': 'Klasična gitara',
+        'monthlyFee': 45.0,
         'musicStore': 'Muzika d.o.o.',
         'isAvailable': isAvailable,
       };
@@ -161,6 +162,13 @@ void main() {
     expect(find.text('Dostupno'), findsOneWidget);
     expect(_requestButtonEnabled(tester), isTrue);
     expect(find.text(_debtCopy), findsNothing);
+  });
+
+  testWidgets('shows the monthly fee of the instrument type', (tester) async {
+    await _pumpDetail(tester, _client(membershipPaidUntil: _future()));
+
+    expect(find.text('MJESEČNA NAKNADA'), findsOneWidget);
+    expect(find.text('45.00 KM'), findsOneWidget);
   });
 
   testWidgets('reason 1: unpaid debt wins over every other reason', (

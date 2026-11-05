@@ -54,6 +54,37 @@ public sealed class ShopStoreUpdateRequestValidatorTests
         Assert.Contains(result.Errors, e => e.PropertyName == nameof(ShopStoreUpdateRequest.PhoneNumber) && e.ErrorMessage == Messages.PhoneNumberTooLong);
     }
 
+    [Theory]
+    [InlineData("09:00-17:00")]
+    [InlineData("09:00 - 19:00")]
+    [InlineData("00:00-23:59")]
+    public void Validate_AcceptsValidBusinessHours(string businessHours)
+    {
+        var request = ValidRequest();
+        request.BusinessHours = businessHours;
+
+        var result = _validator.Validate(request);
+
+        Assert.True(result.IsValid);
+        Assert.Empty(result.Errors);
+    }
+
+    [Theory]
+    [InlineData("abc")]
+    [InlineData("09-17")]
+    [InlineData("25:00-26:00")]
+    [InlineData("09:60-10:00")]
+    public void Validate_RejectsInvalidBusinessHoursFormat(string businessHours)
+    {
+        var request = ValidRequest();
+        request.BusinessHours = businessHours;
+
+        var result = _validator.Validate(request);
+
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, e => e.PropertyName == nameof(ShopStoreUpdateRequest.BusinessHours) && e.ErrorMessage == Messages.BusinessHoursFormat);
+    }
+
     private static ShopStoreUpdateRequest ValidRequest() => new()
     {
         BusinessHours = "09:00-17:00",

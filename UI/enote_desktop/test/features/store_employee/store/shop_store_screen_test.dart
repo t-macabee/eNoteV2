@@ -144,7 +144,7 @@ void main() {
   );
 
   testWidgets(
-    'MasterScreen renders Uredi prodavnicu in RoleMenu for managers and saves changes via dialog',
+    'MasterScreen lets a manager edit only the business hours and phone number',
     (WidgetTester tester) async {
       tester.view.physicalSize = const Size(1280, 800);
       tester.view.devicePixelRatio = 1.0;
@@ -167,12 +167,44 @@ void main() {
       await tester.tap(find.text('Uredi prodavnicu'));
       await tester.pumpAndSettle();
 
-      expect(find.byType(ShopStoreFormScreen), findsOneWidget);
-      expect(find.widgetWithText(TextFormField, 'Naziv'), findsOneWidget);
+      final form = find.byType(ShopStoreFormScreen);
+      expect(form, findsOneWidget);
+      expect(
+        find.descendant(
+          of: form,
+          matching: find.widgetWithText(TextFormField, 'Naziv'),
+        ),
+        findsNothing,
+      );
+      expect(
+        find.descendant(
+          of: form,
+          matching: find.widgetWithText(TextFormField, 'Adresa'),
+        ),
+        findsNothing,
+      );
+      expect(
+        find.descendant(of: form, matching: find.text('Muzička Prodavnica')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: form,
+          matching: find.text('Ferhadija 15, Sarajevo'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: form,
+          matching: find.text('Naziv i adresu mijenja administrator.'),
+        ),
+        findsOneWidget,
+      );
 
       await tester.enterText(
-        find.widgetWithText(TextFormField, 'Naziv'),
-        'Ažurirana Prodavnica',
+        find.widgetWithText(TextFormField, 'Radno vrijeme'),
+        '09:00-17:00',
       );
       await tester.tap(find.widgetWithText(FilledButton, 'Sačuvaj'));
       await tester.pumpAndSettle();
@@ -181,7 +213,8 @@ void main() {
       expect(httpClient.putUrls.first, endsWith('shop/store'));
       final body =
           jsonDecode(httpClient.putBodies.first) as Map<String, dynamic>;
-      expect(body['storeName'], equals('Ažurirana Prodavnica'));
+      expect(body.keys, unorderedEquals(['businessHours', 'phoneNumber']));
+      expect(body['businessHours'], equals('09:00-17:00'));
 
       expect(find.byType(ShopStoreFormScreen), findsNothing);
     },

@@ -444,6 +444,27 @@ public sealed class RecommendationServiceTests
         Assert.Contains(result, r => r.Instrument.Id == active.Id);
     }
 
+    [Fact]
+    public async Task GetRecommendedInstrumentsAsync_ReturnsMonthlyFeeOfInstrumentType()
+    {
+        await using var context = RentalTestData.CreateContext(Now);
+        var student = await RentalTestData.SeedStudentAsync(context, Now);
+        var store = await SeedStoreAsync(context);
+        var type = new InstrumentType { Type = "Guitar", MonthlyFee = 45m };
+        context.Set<InstrumentType>().Add(type);
+        await context.SaveChangesAsync();
+        var instrument = new Instrument("Stratocaster", "Fender", null, null, type.Id, store.Id);
+        context.Set<Instrument>().Add(instrument);
+        await context.SaveChangesAsync();
+
+        var service = CreateService(context, student);
+
+        var result = await service.GetRecommendedInstrumentsAsync();
+
+        var recommendation = Assert.Single(result, r => r.Instrument.Id == instrument.Id);
+        Assert.Equal(45m, recommendation.Instrument.MonthlyFee);
+    }
+
     private static InstrumentRental CreateCompletedRental(int instrumentId, int studentProfileId, int storeId, DateTime requestedAt)
     {
         var rental = new InstrumentRental(instrumentId, studentProfileId, storeId, requestedAt, null);

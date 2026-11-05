@@ -17,6 +17,7 @@ const _instrument = {
   'manufacturer': 'Fender',
   'instrumentTypeId': 1,
   'instrumentType': 'Električna gitara',
+  'monthlyFee': 45.0,
   'musicStore': 'Muzika d.o.o.',
   'isAvailable': true,
 };

@@ -1,6 +1,6 @@
 namespace eNote.Application.Features.Rentals.Instruments;
 
-public class InstrumentCreateRequest
+public class InstrumentRequest
 {
     public string Model { get; set; } = null!;
     public string Manufacturer { get; set; } = null!;

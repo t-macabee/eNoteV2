@@ -3,6 +3,7 @@ using eNote.API.Extensions;
 using eNote.Application.Features.Payments;
 using eNote.Infrastructure.Payments.Stripe;
 using eNote.Infrastructure.Identity;
+using eNote.Tests.TestUtils;
 using eNote.Worker.Rentals;
 using System.Reflection;
 using System.Text.RegularExpressions;
@@ -69,7 +70,7 @@ public sealed class EnvExampleTests
             .Concat(ReadCommentedKeys(examplePath))
             .ToHashSet(StringComparer.Ordinal);
 
-        var compose = File.ReadAllText(Path.Combine(FindRepositoryRoot(), ComposeFileName));
+        var compose = File.ReadAllText(Path.Combine(RepositoryRoot.Find(), ComposeFileName));
         var usedKeys = Regex.Matches(compose, @"\$\{([A-Z_][A-Z0-9_]*)")
             .Select(match => match.Groups[1].Value)
             .Distinct();
@@ -79,24 +80,7 @@ public sealed class EnvExampleTests
         Assert.True(missing.Count == 0, $"Variables used by {ComposeFileName} but missing from {ExampleFileName}: {string.Join(", ", missing)}");
     }
 
-    private static string ExamplePath() => Path.Combine(FindRepositoryRoot(), ExampleFileName);
-
-    private static string FindRepositoryRoot()
-    {
-        var directory = new DirectoryInfo(AppContext.BaseDirectory);
-
-        while (directory is not null)
-        {
-            if (File.Exists(Path.Combine(directory.FullName, ExampleFileName)))
-            {
-                return directory.FullName;
-            }
-
-            directory = directory.Parent;
-        }
-
-        throw new InvalidOperationException($"Could not find {ExampleFileName} above {AppContext.BaseDirectory}.");
-    }
+    private static string ExamplePath() => Path.Combine(RepositoryRoot.Find(), ExampleFileName);
 
     private static List<string> ReadActiveKeys(string path)
     {

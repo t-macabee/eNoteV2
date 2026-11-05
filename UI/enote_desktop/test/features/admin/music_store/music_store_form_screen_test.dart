@@ -319,4 +319,55 @@ void main() {
       expect(httpClient.postedBodies, isEmpty);
     },
   );
+
+  testWidgets(
+    'MusicStoreFormScreen shows error message and does not submit when business hours are invalid',
+    (WidgetTester tester) async {
+      final authState = AuthState(baseUrl: 'http://localhost:5059/api/v1/');
+      final httpClient = _client();
+      final apiClient = ApiClient(
+        baseUrl: 'http://localhost:5059/api/v1/',
+        authState: authState,
+        httpClient: httpClient,
+      );
+      final musicStoreProvider = MusicStoreProvider(apiClient: apiClient);
+      final addressProvider = AddressProvider(apiClient: apiClient);
+
+      await tester.pumpWidget(
+        MultiProvider(
+          providers: [
+            Provider<ApiClient>.value(value: apiClient),
+            ChangeNotifierProvider<MusicStoreProvider>.value(
+              value: musicStoreProvider,
+            ),
+            ChangeNotifierProvider<AddressProvider>.value(
+              value: addressProvider,
+            ),
+          ],
+          child: const MaterialApp(home: MusicStoreFormScreen()),
+        ),
+      );
+
+      await tester.pump();
+      await tester.pumpAndSettle();
+
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Naziv'),
+        'Nova Prodavnica',
+      );
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Radno vrijeme'),
+        'abc',
+      );
+
+      await tester.tap(find.widgetWithText(FilledButton, 'Sačuvaj'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('Radno vrijeme unesite u obliku 09:00-17:00.'),
+        findsOneWidget,
+      );
+      expect(httpClient.postedBodies, isEmpty);
+    },
+  );
 }

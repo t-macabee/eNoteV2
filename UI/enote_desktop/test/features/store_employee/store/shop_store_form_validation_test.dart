@@ -3,7 +3,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
-import 'package:enote_desktop/features/store_employee/store/shop_address_provider.dart';
 import 'package:enote_desktop/features/store_employee/store/shop_store_form_screen.dart';
 import 'package:enote_desktop/features/store_employee/store/shop_store_provider.dart';
 
@@ -15,7 +14,7 @@ ScriptedClient _client() => ScriptedClient((request) {
     return jsonResponse(const {
       'id': 10,
       'storeName': 'Shop',
-      'businessHours': '08-16',
+      'businessHours': '08:00-16:00',
       'phoneNumber': '+38761111222',
       'addressId': 2,
       'addressStreet': 'Ferhadija 15',
@@ -56,9 +55,6 @@ Future<ScriptedClient> _pumpForm(WidgetTester tester) async {
         ChangeNotifierProvider<ShopStoreProvider>.value(
           value: ShopStoreProvider(apiClient: apiClient),
         ),
-        ChangeNotifierProvider<ShopAddressProvider>.value(
-          value: ShopAddressProvider(apiClient: apiClient),
-        ),
       ],
       child: MaterialApp(
         home: Scaffold(
@@ -66,7 +62,7 @@ Future<ScriptedClient> _pumpForm(WidgetTester tester) async {
             store: MusicStoreDto.fromJson({
               'id': 10,
               'storeName': 'Shop',
-              'businessHours': '08-16',
+              'businessHours': '08:00-16:00',
               'phoneNumber': '+38761111222',
               'addressId': 2,
               'addressStreet': 'Ferhadija 15',
@@ -122,5 +118,25 @@ void main() {
       findsNothing,
     );
     expect(client.putUrls.length, equals(1));
+  });
+
+  testWidgets('malformed business hours shows the validator text', (
+    tester,
+  ) async {
+    final client = await _pumpForm(tester);
+
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Radno vrijeme'),
+      'abc',
+    );
+    await tester.pump();
+    await tester.tap(find.widgetWithText(FilledButton, 'Sačuvaj'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('Radno vrijeme unesite u obliku 09:00-17:00.'),
+      findsOneWidget,
+    );
+    expect(client.putUrls, isEmpty);
   });
 }

@@ -34,17 +34,12 @@ public sealed class MusicStoreService(IAppDbContext context, IFileStorageService
 
     public override async Task<PagedResult<MusicStoreDto>> GetPagedAsync(MusicStoreSearchObject search, CancellationToken cancellationToken = default)
     {
-        IQueryable<MusicStore> query = Db.Set<MusicStore>().AsNoTracking().Include(x => x.Address).ThenInclude(a => a!.City);
-        query = ApplySearch(query, search);
+        var query = ApplySearch(WithAddress(), search);
         return await query.ToPagedResultAsync(search, Map, ApplyDefaultOrder, ct: cancellationToken);
     }
 
-    public override async Task<MusicStoreDto> GetByIdAsync(int id, CancellationToken cancellationToken = default)
-    {
-        var entity = await Db.Set<MusicStore>().AsNoTracking().Include(x => x.Address).ThenInclude(a => a!.City).FirstOrDefaultAsync(x => x.Id == id, cancellationToken)
-            ?? throw new NotFoundException(NotFoundMessage);
-        return Map(entity);
-    }
+    public override async Task<MusicStoreDto> GetByIdAsync(int id, CancellationToken cancellationToken = default) =>
+        await LoadDtoAsync(id, cancellationToken);
 
     public override async Task<MusicStoreDto> CreateAsync(MusicStoreRequest request, CancellationToken cancellationToken = default)
     {
@@ -52,9 +47,7 @@ public sealed class MusicStoreService(IAppDbContext context, IFileStorageService
         var entity = CreateEntity(request);
         Db.Set<MusicStore>().Add(entity);
         await Db.SaveChangesAsync(cancellationToken);
-        var reloaded = await Db.Set<MusicStore>().AsNoTracking().Include(x => x.Address).ThenInclude(a => a!.City).FirstOrDefaultAsync(x => x.Id == entity.Id, cancellationToken)
-            ?? throw new NotFoundException(NotFoundMessage);
-        return Map(reloaded);
+        return await LoadDtoAsync(entity.Id, cancellationToken);
     }
 
     public override async Task<MusicStoreDto> UpdateAsync(int id, MusicStoreRequest request, CancellationToken cancellationToken = default)
@@ -64,9 +57,7 @@ public sealed class MusicStoreService(IAppDbContext context, IFileStorageService
             ?? throw new NotFoundException(NotFoundMessage);
         UpdateEntity(entity, request);
         await Db.SaveChangesAsync(cancellationToken);
-        var reloaded = await Db.Set<MusicStore>().AsNoTracking().Include(x => x.Address).ThenInclude(a => a!.City).FirstOrDefaultAsync(x => x.Id == id, cancellationToken)
-            ?? throw new NotFoundException(NotFoundMessage);
-        return Map(reloaded);
+        return await LoadDtoAsync(id, cancellationToken);
     }
 
     public async Task<MusicStoreDto> UpdateOperationalDetailsAsync(int id, string businessHours, string? phoneNumber, CancellationToken cancellationToken = default)
@@ -82,10 +73,7 @@ public sealed class MusicStoreService(IAppDbContext context, IFileStorageService
 
         await Db.SaveChangesAsync(cancellationToken);
 
-        var reloaded = await Db.Set<MusicStore>().AsNoTracking().Include(x => x.Address).ThenInclude(a => a!.City).FirstOrDefaultAsync(x => x.Id == id, cancellationToken)
-            ?? throw new NotFoundException(NotFoundMessage);
-
-        return Map(reloaded);
+        return await LoadDtoAsync(id, cancellationToken);
     }
 
     public override async Task DeleteAsync(int id, CancellationToken cancellationToken = default)
@@ -116,10 +104,7 @@ public sealed class MusicStoreService(IAppDbContext context, IFileStorageService
 
         await Db.SaveChangesReplacingFileAsync(fileStorage, path, previousPath, ct);
 
-        var reloaded = await Db.Set<MusicStore>().AsNoTracking().Include(x => x.Address).ThenInclude(a => a!.City).FirstOrDefaultAsync(x => x.Id == id, ct)
-            ?? throw new NotFoundException(NotFoundMessage);
-
-        return Map(reloaded);
+        return await LoadDtoAsync(id, ct);
     }
 
     protected override IQueryable<MusicStore> ApplySearch(IQueryable<MusicStore> query, MusicStoreSearchObject search)
@@ -133,6 +118,17 @@ public sealed class MusicStoreService(IAppDbContext context, IFileStorageService
     }
 
     protected override string NotFoundMessage => Messages.StoreNotFound;
+
+    private IQueryable<MusicStore> WithAddress() =>
+        Db.Set<MusicStore>().AsNoTracking().Include(x => x.Address).ThenInclude(a => a!.City);
+
+    private async Task<MusicStoreDto> LoadDtoAsync(int id, CancellationToken cancellationToken)
+    {
+        var entity = await WithAddress().FirstOrDefaultAsync(x => x.Id == id, cancellationToken)
+            ?? throw new NotFoundException(NotFoundMessage);
+
+        return Map(entity);
+    }
 
     private async Task EnsureAddressExistsAsync(int? addressId, CancellationToken cancellationToken)
     {

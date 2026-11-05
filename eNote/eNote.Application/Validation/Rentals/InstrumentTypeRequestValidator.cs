@@ -9,9 +9,11 @@ public sealed class InstrumentTypeRequestValidator : AbstractValidator<Instrumen
     {
         RuleFor(x => x.Type).NotEmpty().WithMessage("Tip instrumenta je obavezan.").MaximumLength(InstrumentType.TypeMaxLength).WithMessage($"Tip ne smije biti duži od {InstrumentType.TypeMaxLength} karaktera.");
         RuleFor(x => x.MonthlyFee)
-            .GreaterThanOrEqualTo(0)
-            .WithMessage(Messages.InstrumentTypeFeeMustBeNonNegative)
-            .LessThanOrEqualTo(99_999_999.99m)
-            .WithMessage(Messages.InstrumentTypeFeeExceedsMaximum);
+            .GreaterThanOrEqualTo(InstrumentType.MinMonthlyFee)
+            .WithMessage(Messages.InstrumentTypeFeeBelowMinimum)
+            .LessThanOrEqualTo(InstrumentType.MaxMonthlyFee)
+            .WithMessage(Messages.InstrumentTypeFeeExceedsMaximum)
+            .PrecisionScale(18, 2, false)
+            .WithMessage(Messages.InstrumentTypeFeeTooManyDecimals);
     }
 }

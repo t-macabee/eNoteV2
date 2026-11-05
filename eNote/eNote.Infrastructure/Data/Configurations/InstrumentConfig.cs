@@ -20,7 +20,5 @@ public sealed class InstrumentConfig : IEntityTypeConfiguration<Instrument>
         builder.Property(x => x.Model).HasStringConfig(Instrument.ModelMaxLength, true);
         builder.Property(x => x.Manufacturer).HasStringConfig(Instrument.ManufacturerMaxLength, true);
         builder.Property(x => x.Description).HasMaxLength(Instrument.DescriptionMaxLength);
-
-        builder.Ignore(x => x.IsAvailable);
     }
 }

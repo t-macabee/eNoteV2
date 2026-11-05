@@ -3,9 +3,9 @@ using FluentValidation;
 
 namespace eNote.Application.Validation.Rentals;
 
-public sealed class InstrumentCreateRequestValidator : AbstractValidator<InstrumentCreateRequest>
+public sealed class InstrumentRequestValidator : AbstractValidator<InstrumentRequest>
 {
-    public InstrumentCreateRequestValidator()
+    public InstrumentRequestValidator()
     {
         RuleFor(x => x.Model).NotEmpty().MaximumLength(Instrument.ModelMaxLength);
         RuleFor(x => x.Manufacturer).NotEmpty().MaximumLength(Instrument.ManufacturerMaxLength);

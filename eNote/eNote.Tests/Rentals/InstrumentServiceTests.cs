@@ -97,6 +97,29 @@ public sealed class InstrumentServiceTests
 
 
     [Fact]
+    public async Task GetPagedAsync_FiltersByManufacturerAndInstrumentTypeId()
+    {
+        var ctx = CreateContext();
+        var guitar = await SeedInstrumentTypeAsync(ctx, "Guitar");
+        var piano = await SeedInstrumentTypeAsync(ctx, "Piano");
+        var store = await SeedStoreAsync(ctx, "Music Shop Sarajevo");
+
+        await SeedInstrumentAsync(ctx, store.Id, guitar.Id, "Stratocaster", "Fender");
+        await SeedInstrumentAsync(ctx, store.Id, guitar.Id, "Les Paul", "Gibson");
+        await SeedInstrumentAsync(ctx, store.Id, piano.Id, "Yamaha P-125", "Yamaha");
+
+        var service = CreateInstrumentService(ctx);
+
+        var byManufacturer = await service.GetPagedAsync(new InstrumentSearchObject { Manufacturer = "Fender" });
+        var manufacturerItem = Assert.Single(byManufacturer.Items);
+        Assert.Equal("Stratocaster", manufacturerItem.Model);
+
+        var byType = await service.GetPagedAsync(new InstrumentSearchObject { InstrumentTypeId = guitar.Id });
+        Assert.Equal(2, byType.Items.Count);
+        Assert.All(byType.Items, x => Assert.Equal("Guitar", x.InstrumentType));
+    }
+
+    [Fact]
     public async Task GetPagedAsync_OrdersNewestInstrumentFirst()
     {
         var ctx = CreateContext();
@@ -112,6 +135,104 @@ public sealed class InstrumentServiceTests
         var paged = await service.GetPagedAsync(new InstrumentSearchObject());
 
         Assert.Equal([newest.Id, middle.Id, oldest.Id], paged.Items.Select(x => x.Id));
+    }
+
+    [Fact]
+    public async Task MonthlyFee_ComesFromInstrumentType_InDetailAndList()
+    {
+        var ctx = CreateContext();
+        var type = await SeedInstrumentTypeAsync(ctx, "Guitar", 45m);
+        var store = await SeedStoreAsync(ctx, "Music Shop Sarajevo");
+        var instrument = await SeedInstrumentAsync(ctx, store.Id, type.Id, "Stratocaster", "Fender");
+
+        var service = CreateInstrumentService(ctx);
+
+        var detail = await service.GetByIdAsync(instrument.Id);
+        var list = await service.GetPagedAsync(new InstrumentSearchObject());
+
+        Assert.Equal(45m, detail.MonthlyFee);
+        Assert.Equal(45m, Assert.Single(list.Items).MonthlyFee);
+    }
+
+    [Fact]
+    public async Task CreateAsync_StoresEmployeeStoreId_AndTrimsFields()
+    {
+        var ctx = CreateContext();
+        var type = await SeedInstrumentTypeAsync(ctx, "Guitar");
+        var store = await SeedStoreAsync(ctx, "Music Shop Sarajevo");
+        await SeedStoreAsync(ctx, "Music Shop Mostar");
+        var service = CreateStoreInstrumentService(ctx, store.Id, new StubFileStorageService());
+
+        var dto = await service.CreateAsync(new InstrumentRequest
+        {
+            Model = "  Stratocaster  ",
+            Manufacturer = "  Fender  ",
+            Description = "  First guitar  ",
+            InstrumentTypeId = type.Id
+        });
+
+        Assert.Equal("Music Shop Sarajevo", dto.MusicStore);
+        Assert.Equal("Stratocaster", dto.Model);
+        Assert.Equal("Fender", dto.Manufacturer);
+        Assert.Equal("First guitar", dto.Description);
+
+        var stored = await ctx.Set<Instrument>().AsNoTracking().SingleAsync(x => x.Id == dto.Id);
+        Assert.Equal(store.Id, stored.MusicStoreId);
+        Assert.Equal("Stratocaster", stored.Model);
+        Assert.Equal("Fender", stored.Manufacturer);
+        Assert.Equal("First guitar", stored.Description);
+    }
+
+    [Fact]
+    public async Task CreateAsync_UnknownInstrumentType_ThrowsBusinessException()
+    {
+        var ctx = CreateContext();
+        var type = await SeedInstrumentTypeAsync(ctx, "Guitar");
+        var store = await SeedStoreAsync(ctx, "Music Shop Sarajevo");
+        var service = CreateStoreInstrumentService(ctx, store.Id, new StubFileStorageService());
+
+        var ex = await Assert.ThrowsAsync<BusinessException>(() => service.CreateAsync(new InstrumentRequest
+        {
+            Model = "Stratocaster",
+            Manufacturer = "Fender",
+            InstrumentTypeId = type.Id + 1000
+        }));
+
+        Assert.Equal(Messages.InstrumentTypeNotFound, ex.Message);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_ArchivedInstrument_ThrowsNotFoundException()
+    {
+        var ctx = CreateContext();
+        var type = await SeedInstrumentTypeAsync(ctx, "Guitar");
+        var store = await SeedStoreAsync(ctx, "Music Shop Sarajevo");
+        var instrument = await SeedInstrumentAsync(ctx, store.Id, type.Id, "Stratocaster", "Fender");
+        instrument.SoftDelete();
+        await ctx.SaveChangesAsync();
+        var service = CreateStoreInstrumentService(ctx, store.Id, new StubFileStorageService());
+
+        await Assert.ThrowsAsync<NotFoundException>(() => service.UpdateAsync(instrument.Id, new InstrumentRequest
+        {
+            Model = "Les Paul",
+            Manufacturer = "Gibson",
+            InstrumentTypeId = type.Id
+        }));
+    }
+
+    [Fact]
+    public async Task UploadImageAsync_ArchivedInstrument_ThrowsNotFoundException()
+    {
+        var ctx = CreateContext();
+        var type = await SeedInstrumentTypeAsync(ctx, "Guitar");
+        var store = await SeedStoreAsync(ctx, "Music Shop Sarajevo");
+        var instrument = await SeedInstrumentAsync(ctx, store.Id, type.Id, "Stratocaster", "Fender");
+        instrument.SoftDelete();
+        await ctx.SaveChangesAsync();
+        var service = CreateStoreInstrumentService(ctx, store.Id, new RecordingFileStorageService());
+
+        using var stream = new MemoryStream([1, 2, 3]);
+        await Assert.ThrowsAsync<NotFoundException>(() => service.UploadImageAsync(instrument.Id, stream, "image/png"));
     }
 
     [Fact]
@@ -173,6 +294,54 @@ public sealed class InstrumentServiceTests
 
         Assert.True(availDto.IsAvailable);
         Assert.False(rentedDto.IsAvailable);
+    }
+
+    [Fact]
+    public async Task GetPagedAsync_IsAvailable_CountsOnlyApprovedAndActiveAsUnavailable()
+    {
+        var ctx = CreateContext();
+        var type = await SeedInstrumentTypeAsync(ctx, "Guitar");
+        var store = await SeedStoreAsync(ctx, "Music Shop Sarajevo");
+        var statuses = new[]
+        {
+            InstrumentRentalStatus.Pending,
+            InstrumentRentalStatus.Rejected,
+            InstrumentRentalStatus.Canceled,
+            InstrumentRentalStatus.Completed,
+            InstrumentRentalStatus.Approved,
+            InstrumentRentalStatus.Active
+        };
+
+        var idsByStatus = new Dictionary<InstrumentRentalStatus, int>();
+
+        foreach (var status in statuses)
+        {
+            var instrument = await SeedInstrumentAsync(ctx, store.Id, type.Id, $"{status} model", "Maker");
+            idsByStatus[status] = instrument.Id;
+
+            var rental = new InstrumentRental(instrument.Id, 100, store.Id, Now, null);
+            RentalTestData.AdvanceTo(rental, status, Now, approvedAt: Now.AddDays(-31), pickedUpAt: Now.AddDays(-31), finishedAt: Now);
+            ctx.Set<InstrumentRental>().Add(rental);
+        }
+
+        await ctx.SaveChangesAsync();
+        var service = CreateInstrumentService(ctx);
+
+        var available = await service.GetPagedAsync(new InstrumentSearchObject { IsAvailable = true });
+        var unavailable = await service.GetPagedAsync(new InstrumentSearchObject { IsAvailable = false });
+
+        Assert.Equal(
+            new[] { InstrumentRentalStatus.Pending, InstrumentRentalStatus.Rejected, InstrumentRentalStatus.Canceled, InstrumentRentalStatus.Completed }
+                .Select(status => idsByStatus[status])
+                .Order(),
+            available.Items.Select(x => x.Id).Order());
+        Assert.Equal(
+            new[] { InstrumentRentalStatus.Approved, InstrumentRentalStatus.Active }
+                .Select(status => idsByStatus[status])
+                .Order(),
+            unavailable.Items.Select(x => x.Id).Order());
+        Assert.All(available.Items, x => Assert.True(x.IsAvailable));
+        Assert.All(unavailable.Items, x => Assert.False(x.IsAvailable));
     }
 
     [Fact]
@@ -299,7 +468,7 @@ public sealed class InstrumentServiceTests
     }
 
     [Fact]
-    public async Task DeleteAsync_DeletesStoredImage_AfterSoftDelete()
+    public async Task DeleteAsync_KeepsStoredImage_BecauseRentalHistoryUsesIt()
     {
         var ctx = CreateContext();
         var type = await SeedInstrumentTypeAsync(ctx, "Guitar");
@@ -307,13 +476,29 @@ public sealed class InstrumentServiceTests
         var instrument = new Instrument("Stratocaster", "Fender", null, "/api/v1/uploads/instruments/old.png", type.Id, store.Id);
         ctx.Set<Instrument>().Add(instrument);
         await ctx.SaveChangesAsync();
+        var student = new Student(appUserId: 100, enrollmentDate: Now.AddMonths(-1));
+        ctx.Set<Student>().Add(student);
+        await ctx.SaveChangesAsync();
+        var rental = RentalTestData.CreateCompletedRental(instrument, student.Id, Now);
+        ctx.Set<InstrumentRental>().Add(rental);
+        await ctx.SaveChangesAsync();
         var storage = new RecordingFileStorageService();
         var service = CreateStoreInstrumentService(ctx, store.Id, storage);
 
         await service.DeleteAsync(instrument.Id);
 
         Assert.False((await ctx.Set<Instrument>().IgnoreQueryFilters().SingleAsync(x => x.Id == instrument.Id)).IsActive);
-        Assert.Equal(["/api/v1/uploads/instruments/old.png"], storage.DeletedPaths);
+        Assert.Empty(storage.DeletedPaths);
+
+        var queryService = new RentalQueryService(
+            ctx,
+            TestMapper.Create(),
+            new StubCurrentActor(student: student, storeId: store.Id),
+            new FixedClock(Now),
+            new StubDisplayNameService());
+        var dto = await queryService.GetByIdForStudentAsync(rental.Id);
+
+        Assert.Equal("/api/v1/uploads/instruments/old.png", dto.InstrumentImagePath);
     }
 
     [Fact]
@@ -357,6 +542,96 @@ public sealed class InstrumentServiceTests
         Assert.Equal(storage.SavedPaths.Single(), updated.ImagePath);
     }
 
+    [Fact]
+    public async Task UpdateAsync_NullDescription_ClearsStoredDescription()
+    {
+        var ctx = CreateContext();
+        var type = await SeedInstrumentTypeAsync(ctx, "Guitar");
+        var store = await SeedStoreAsync(ctx, "Music Shop Sarajevo");
+        var instrument = new Instrument("Stratocaster", "Fender", "Old text", null, type.Id, store.Id);
+        ctx.Set<Instrument>().Add(instrument);
+        await ctx.SaveChangesAsync();
+        var service = CreateStoreInstrumentService(ctx, store.Id, new StubFileStorageService());
+
+        var updated = await service.UpdateAsync(instrument.Id, new InstrumentRequest
+        {
+            Model = "Stratocaster",
+            Manufacturer = "Fender",
+            Description = null,
+            InstrumentTypeId = type.Id
+        });
+
+        Assert.Null(updated.Description);
+        var stored = await ctx.Set<Instrument>().AsNoTracking().SingleAsync(x => x.Id == instrument.Id);
+        Assert.Null(stored.Description);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_BlankDescription_StoresNull()
+    {
+        var ctx = CreateContext();
+        var type = await SeedInstrumentTypeAsync(ctx, "Guitar");
+        var store = await SeedStoreAsync(ctx, "Music Shop Sarajevo");
+        var instrument = new Instrument("Stratocaster", "Fender", "Old text", null, type.Id, store.Id);
+        ctx.Set<Instrument>().Add(instrument);
+        await ctx.SaveChangesAsync();
+        var service = CreateStoreInstrumentService(ctx, store.Id, new StubFileStorageService());
+
+        var updated = await service.UpdateAsync(instrument.Id, new InstrumentRequest
+        {
+            Model = "Stratocaster",
+            Manufacturer = "Fender",
+            Description = "   ",
+            InstrumentTypeId = type.Id
+        });
+
+        Assert.Null(updated.Description);
+        var stored = await ctx.Set<Instrument>().AsNoTracking().SingleAsync(x => x.Id == instrument.Id);
+        Assert.Null(stored.Description);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_TrimsModelAndManufacturer()
+    {
+        var ctx = CreateContext();
+        var type = await SeedInstrumentTypeAsync(ctx, "Guitar");
+        var store = await SeedStoreAsync(ctx, "Music Shop Sarajevo");
+        var instrument = await SeedInstrumentAsync(ctx, store.Id, type.Id, "Stratocaster", "Fender");
+        var service = CreateStoreInstrumentService(ctx, store.Id, new StubFileStorageService());
+
+        var updated = await service.UpdateAsync(instrument.Id, new InstrumentRequest
+        {
+            Model = "  Les Paul  ",
+            Manufacturer = "  Gibson  ",
+            InstrumentTypeId = type.Id
+        });
+
+        Assert.Equal("Les Paul", updated.Model);
+        Assert.Equal("Gibson", updated.Manufacturer);
+        var stored = await ctx.Set<Instrument>().AsNoTracking().SingleAsync(x => x.Id == instrument.Id);
+        Assert.Equal("Les Paul", stored.Model);
+        Assert.Equal("Gibson", stored.Manufacturer);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_UnknownInstrumentType_ThrowsBusinessException()
+    {
+        var ctx = CreateContext();
+        var type = await SeedInstrumentTypeAsync(ctx, "Guitar");
+        var store = await SeedStoreAsync(ctx, "Music Shop Sarajevo");
+        var instrument = await SeedInstrumentAsync(ctx, store.Id, type.Id, "Stratocaster", "Fender");
+        var service = CreateStoreInstrumentService(ctx, store.Id, new StubFileStorageService());
+
+        var ex = await Assert.ThrowsAsync<BusinessException>(() => service.UpdateAsync(instrument.Id, new InstrumentRequest
+        {
+            Model = "Stratocaster",
+            Manufacturer = "Fender",
+            InstrumentTypeId = type.Id + 1000
+        }));
+
+        Assert.Equal(Messages.InstrumentTypeNotFound, ex.Message);
+    }
+
     private static ENoteContext CreateContext() =>
         new(TestDbContextFactory.CreateOptions(), new FixedClock(Now), new StubCurrentActor());
 
@@ -383,9 +658,9 @@ public sealed class InstrumentServiceTests
         return store;
     }
 
-    private static async Task<InstrumentType> SeedInstrumentTypeAsync(ENoteContext ctx, string typeName)
+    private static async Task<InstrumentType> SeedInstrumentTypeAsync(ENoteContext ctx, string typeName, decimal monthlyFee = 50m)
     {
-        var type = new InstrumentType { Type = typeName, MonthlyFee = 50m };
+        var type = new InstrumentType { Type = typeName, MonthlyFee = monthlyFee };
         ctx.Set<InstrumentType>().Add(type);
         await ctx.SaveChangesAsync();
         return type;

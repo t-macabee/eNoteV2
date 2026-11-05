@@ -470,6 +470,36 @@ public sealed class RentalCommandServiceTests
         Assert.Equal(0.75m, stored.OverduePenaltyMultiplier);
     }
 
+    [Fact]
+    public async Task ApproveAsync_CopiesCurrentTypeFee_AndKeepsItAfterFeeChanges()
+    {
+        await using var context = CreateContext();
+        var student = await SeedStudentAsync(context, hasActiveMembership: true);
+        var instrument = await RentalTestData.SeedInstrumentAsync(context);
+        var first = new InstrumentRental(instrument.Id, student.Id, instrument.MusicStoreId, Now, null);
+        context.Set<InstrumentRental>().Add(first);
+        await context.SaveChangesAsync();
+        var service = CreateStoreService(context, instrument.MusicStoreId);
+
+        await service.ApproveAsync(first.Id, new RentalStatusRequest());
+
+        var type = await context.Set<InstrumentType>().SingleAsync(x => x.Id == instrument.InstrumentTypeId);
+        type.MonthlyFee = 80m;
+        await context.SaveChangesAsync();
+
+        var secondInstrument = await SeedExtraInstrumentAsync(context, instrument);
+        var second = new InstrumentRental(secondInstrument.Id, student.Id, secondInstrument.MusicStoreId, Now, null);
+        context.Set<InstrumentRental>().Add(second);
+        await context.SaveChangesAsync();
+
+        await service.ApproveAsync(second.Id, new RentalStatusRequest());
+
+        var firstStored = await context.Set<InstrumentRental>().AsNoTracking().SingleAsync(x => x.Id == first.Id);
+        var secondStored = await context.Set<InstrumentRental>().AsNoTracking().SingleAsync(x => x.Id == second.Id);
+        Assert.Equal(50m, firstStored.Fee);
+        Assert.Equal(80m, secondStored.Fee);
+    }
+
     private static ENoteContext CreateWorkerContext(string dbName) =>
         new(TestDbContextFactory.CreateOptions(dbName), new FixedClock(Now), new WorkerActor());
 

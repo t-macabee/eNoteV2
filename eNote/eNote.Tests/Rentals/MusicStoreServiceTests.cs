@@ -428,6 +428,68 @@ public sealed class MusicStoreServiceTests
     }
 
     [Fact]
+    public async Task DeleteAsync_Blocked_WhenEmployeeExists_StoreStays()
+    {
+        var ctx = TestDbContextFactory.CreateContext(Now);
+        var service = CreateService(ctx);
+        var created = await service.CreateAsync(new MusicStoreRequest { StoreName = "Shop", BusinessHours = "09-17" });
+        ctx.Set<MusicStoreEmployee>().Add(new MusicStoreEmployee(appUserId: 20, musicStoreId: created.Id, isManager: false));
+        await ctx.SaveChangesAsync();
+
+        var ex = await Assert.ThrowsAsync<BusinessException>(() => service.DeleteAsync(created.Id));
+
+        Assert.Equal(Messages.MusicStoreDeleteBlocked, ex.Message);
+        Assert.NotNull(await ctx.Set<MusicStore>().FindAsync(created.Id));
+    }
+
+    [Fact]
+    public async Task UpdateOperationalDetailsAsync_KeepsNameAndAddress_AndTrimsHoursAndPhone()
+    {
+        var ctx = TestDbContextFactory.CreateContext(Now);
+        var address = await SeedAddressAsync(ctx, "Sarajevo", "Main St");
+        var service = CreateService(ctx);
+        var created = await service.CreateAsync(new MusicStoreRequest
+        {
+            StoreName = "Music Shop",
+            BusinessHours = "09-17",
+            PhoneNumber = "+38761111111",
+            AddressId = address.Id
+        });
+
+        var updated = await service.UpdateOperationalDetailsAsync(created.Id, "  08:00-16:00  ", "  +38762222222  ");
+
+        Assert.Equal("Music Shop", updated.StoreName);
+        Assert.Equal(address.Id, updated.AddressId);
+        Assert.Equal("Main St", updated.AddressStreet);
+        Assert.Equal("Sarajevo", updated.AddressCity);
+        Assert.Equal("08:00-16:00", updated.BusinessHours);
+        Assert.Equal("+38762222222", updated.PhoneNumber);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_UnknownId_ThrowsNotFoundException()
+    {
+        var ctx = TestDbContextFactory.CreateContext(Now);
+        var service = CreateService(ctx);
+
+        var ex = await Assert.ThrowsAsync<NotFoundException>(() =>
+            service.UpdateAsync(999, new MusicStoreRequest { StoreName = "Shop", BusinessHours = "09-17" }));
+
+        Assert.Equal(Messages.StoreNotFound, ex.Message);
+    }
+
+    [Fact]
+    public async Task DeleteAsync_UnknownId_ThrowsNotFoundException()
+    {
+        var ctx = TestDbContextFactory.CreateContext(Now);
+        var service = CreateService(ctx);
+
+        var ex = await Assert.ThrowsAsync<NotFoundException>(() => service.DeleteAsync(999));
+
+        Assert.Equal(Messages.StoreNotFound, ex.Message);
+    }
+
+    [Fact]
     public async Task UploadImageAsync_ThrowsQuotaExceeded_WhenStoreImagesFillQuota()
     {
         var ctx = TestDbContextFactory.CreateContext(Now);

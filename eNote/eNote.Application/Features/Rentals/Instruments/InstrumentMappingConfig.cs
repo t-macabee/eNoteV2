@@ -8,6 +8,7 @@ public sealed class InstrumentMappingConfig : IRegister
     {
         config.NewConfig<Instrument, InstrumentDto>()
             .Map(dest => dest.InstrumentType, src => src.InstrumentType.Type)
+            .Map(dest => dest.MonthlyFee, src => src.InstrumentType.MonthlyFee)
             .Map(dest => dest.MusicStore, src => src.MusicStore.StoreName);
     }
 }

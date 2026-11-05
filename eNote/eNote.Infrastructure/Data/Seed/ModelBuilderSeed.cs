@@ -42,7 +42,7 @@ internal static class ModelBuilderSeed
             new InstrumentType { Id = 2, Type = "Udaraljke", MonthlyFee = 35m },
             new InstrumentType { Id = 3, Type = "Limeni", MonthlyFee = 55m },
             new InstrumentType { Id = 4, Type = "Tipke", MonthlyFee = 65m },
-            new InstrumentType { Id = 5, Type = "Dodatna oprema", MonthlyFee = 15m }
+            new InstrumentType { Id = 5, Type = "Dodatna oprema", MonthlyFee = 30m }
         );
     }
 }

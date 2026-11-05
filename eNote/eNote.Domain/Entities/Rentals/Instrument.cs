@@ -1,5 +1,3 @@
-using eNote.Domain.Enums;
-
 namespace eNote.Domain.Entities.Rentals;
 
 public class Instrument : AuditableEntity, ITenantScoped
@@ -19,9 +17,6 @@ public class Instrument : AuditableEntity, ITenantScoped
     public string? ImagePath { get; private set; }
 
     public bool IsActive { get; private set; } = true;
-
-    public bool IsAvailable =>
-        IsActive && !InstrumentRentals.Any(x => x.RentalStatus.BlocksInstrument());
 
     public ICollection<InstrumentRental> InstrumentRentals { get; private set; } = [];
 

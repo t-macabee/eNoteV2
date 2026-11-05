@@ -14,9 +14,6 @@ public static class InstrumentRentalStatusExtensions
         InstrumentRentalStatus.ReturnedEarly
     ];
 
-    public static bool BlocksInstrument(this InstrumentRentalStatus status) =>
-        BlockingStatuses.Contains(status);
-
     public static bool IsBillingEligible(this InstrumentRentalStatus status) =>
         status is InstrumentRentalStatus.Active
             or InstrumentRentalStatus.Completed

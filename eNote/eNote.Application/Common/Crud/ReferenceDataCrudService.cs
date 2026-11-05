@@ -14,6 +14,8 @@ public abstract class ReferenceDataCrudService<TEntity, TDto, TRequest, TSearch>
 
     protected IAppDbContext Db { get; }
 
+    protected virtual (string IndexName, string Message)? UniqueConflict => null;
+
     public virtual async Task<PagedResult<TDto>> GetPagedAsync(TSearch search, CancellationToken cancellationToken = default)
     {
         var query = Db.Set<TEntity>().AsNoTracking();
@@ -37,7 +39,7 @@ public abstract class ReferenceDataCrudService<TEntity, TDto, TRequest, TSearch>
         var entity = CreateEntity(request);
 
         Db.Set<TEntity>().Add(entity);
-        await Db.SaveChangesAsync(cancellationToken);
+        await SaveAsync(cancellationToken);
 
         return Map(entity);
     }
@@ -49,7 +51,7 @@ public abstract class ReferenceDataCrudService<TEntity, TDto, TRequest, TSearch>
             ?? throw new NotFoundException(NotFoundMessage);
 
         UpdateEntity(entity, request);
-        await Db.SaveChangesAsync(cancellationToken);
+        await SaveAsync(cancellationToken);
 
         return Map(entity);
     }
@@ -79,4 +81,16 @@ public abstract class ReferenceDataCrudService<TEntity, TDto, TRequest, TSearch>
     protected abstract string NotFoundMessage { get; }
 
     protected virtual Task EnsureDeletableAsync(TEntity entity, CancellationToken ct) => Task.CompletedTask;
+
+    private async Task SaveAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            await Db.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException ex) when (UniqueConflict is { } conflict && DbErrors.IsUniqueViolation(ex, conflict.IndexName))
+        {
+            throw new ConflictException(conflict.Message);
+        }
+    }
 }

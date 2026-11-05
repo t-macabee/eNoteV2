@@ -94,7 +94,12 @@ public sealed class TenantIsolationTests
         var instr2 = await SeedInstrumentAsync(context, store2.Id);
         var service = CreateInstrumentService(context, storeId: store1.Id);
 
-        await Assert.ThrowsAsync<NotFoundException>(() => service.UpdateAsync(instr2.Id, new InstrumentUpdateRequest()));
+        await Assert.ThrowsAsync<NotFoundException>(() => service.UpdateAsync(instr2.Id, new InstrumentRequest
+        {
+            Model = "Stratocaster",
+            Manufacturer = "Fender",
+            InstrumentTypeId = 1
+        }));
     }
 
     [Fact]

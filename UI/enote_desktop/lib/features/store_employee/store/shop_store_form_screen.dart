@@ -4,13 +4,11 @@ import 'package:provider/provider.dart';
 
 import 'package:enote_core/enote_core.dart';
 
-import '../../../widgets/async_dropdown.dart';
 import '../../../widgets/entity_form_scaffold.dart';
 import '../../../widgets/entity_form_sections.dart';
 import '../../../widgets/entity_text_field.dart';
 import '../../../widgets/form_controller_lifecycle.dart';
 import '../../../widgets/image_upload_helper.dart';
-import 'shop_address_provider.dart';
 import 'shop_store_provider.dart';
 
 class ShopStoreFormScreen extends StatefulWidget {
@@ -29,20 +27,16 @@ class ShopStoreFormScreen extends StatefulWidget {
 
 class _ShopStoreFormScreenState extends State<ShopStoreFormScreen>
     with FormControllerLifecycle {
-  late final _storeNameController = textController();
   late final _businessHoursController = textController();
   late final _phoneNumberController = textController();
-  int? _selectedAddressId;
   String? _currentImagePath;
 
   @override
   void initState() {
     super.initState();
     final s = widget.store;
-    _storeNameController.text = s.storeName;
     _businessHoursController.text = s.businessHours;
     _phoneNumberController.text = s.phoneNumber ?? '';
-    _selectedAddressId = s.addressId;
     _currentImagePath = s.imagePath;
   }
 
@@ -70,11 +64,9 @@ class _ShopStoreFormScreenState extends State<ShopStoreFormScreen>
   Future<bool> _save() async {
     final provider = context.read<ShopStoreProvider>();
     final phone = _phoneNumberController.text.trim();
-    final request = MusicStoreRequest(
-      storeName: _storeNameController.text.trim(),
+    final request = ShopStoreUpdateRequest(
       businessHours: _businessHoursController.text.trim(),
       phoneNumber: phone.isEmpty ? null : phone,
-      addressId: _selectedAddressId,
     );
 
     await provider.updateOwnStore(request.toJson());
@@ -92,16 +84,20 @@ class _ShopStoreFormScreenState extends State<ShopStoreFormScreen>
         FormSection(
           title: 'Osnovni podaci',
           children: [
-            EntityTextField(
-              controller: _storeNameController,
-              label: 'Naziv',
-              maxLength: 100,
+            InfoRow(label: 'Naziv', value: widget.store.storeName),
+            InfoRow(label: 'Adresa', value: widget.store.addressText),
+            Text(
+              'Naziv i adresu mijenja administrator.',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             ),
             FormFieldRow(
               children: [
                 EntityTextField(
                   controller: _businessHoursController,
                   label: 'Radno vrijeme',
+                  validator: Validators.businessHours,
                   maxLength: 50,
                 ),
                 EntityTextField(
@@ -112,26 +108,6 @@ class _ShopStoreFormScreenState extends State<ShopStoreFormScreen>
                   maxLength: 30,
                 ),
               ],
-            ),
-          ],
-        ),
-        FormSection(
-          title: 'Adresa',
-          children: [
-            AsyncDropdown<AddressReferenceDto>(
-              label: 'Adresa',
-              value: _selectedAddressId,
-              fetcher: () => fetchAllPages(
-                (query) => context.read<ShopAddressProvider>().search(query),
-              ),
-              itemLabel: (item) =>
-                  '${item.street} ${item.number}, ${item.city}',
-              itemId: (item) => item.id,
-              onChanged: (id, item) {
-                setState(() {
-                  _selectedAddressId = id as int?;
-                });
-              },
             ),
           ],
         ),

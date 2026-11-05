@@ -19,6 +19,7 @@ final _instrument = InstrumentDto(
   manufacturer: 'Fender',
   instrumentTypeId: 1,
   instrumentType: 'Električna gitara',
+  monthlyFee: 45,
   musicStore: 'Muzika d.o.o.',
   isAvailable: true,
 );
@@ -74,6 +75,18 @@ void main() {
           .otherPendingRequests,
       3,
     );
+  });
+
+  testWidgets('shows the monthly fee under the instrument name', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(body: RentalRequestSheet(instrument: _instrument)),
+      ),
+    );
+
+    expect(find.text('Fender Stratocaster'), findsOneWidget);
+    expect(find.text('Mjesečna naknada'), findsOneWidget);
+    expect(find.text('45.00 KM'), findsOneWidget);
   });
 
   testWidgets(

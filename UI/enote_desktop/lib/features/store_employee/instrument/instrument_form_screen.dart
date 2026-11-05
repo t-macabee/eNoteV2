@@ -78,24 +78,16 @@ class _InstrumentFormScreenState extends State<InstrumentFormScreen>
   Future<bool> _save() async {
     final provider = context.read<InstrumentProvider>();
     final desc = _descriptionController.text.trim();
+    final request = InstrumentRequest(
+      model: _modelController.text.trim(),
+      manufacturer: _manufacturerController.text.trim(),
+      description: desc.isEmpty ? null : desc,
+      instrumentTypeId: _selectedInstrumentTypeId!,
+    );
 
     if (widget.existing == null) {
-      final request = InstrumentCreateRequest(
-        model: _modelController.text.trim(),
-        manufacturer: _manufacturerController.text.trim(),
-        description: desc.isEmpty ? null : desc,
-        imagePath: _currentImagePath,
-        instrumentTypeId: _selectedInstrumentTypeId!,
-      );
       await provider.insert(request.toJson());
     } else {
-      final request = InstrumentUpdateRequest(
-        model: _modelController.text.trim(),
-        manufacturer: _manufacturerController.text.trim(),
-        description: desc.isEmpty ? null : desc,
-        imagePath: _currentImagePath,
-        instrumentTypeId: _selectedInstrumentTypeId,
-      );
       await provider.update(widget.existing!.id, request.toJson());
     }
     return true;

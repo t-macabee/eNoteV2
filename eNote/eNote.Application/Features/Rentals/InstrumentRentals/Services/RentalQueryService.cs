@@ -57,29 +57,27 @@ public sealed class RentalQueryService(IAppDbContext context, IMapper mapper, IC
     private async Task<PagedResult<InstrumentRentalDto>> GetPagedAsync(IQueryable<InstrumentRental> query, InstrumentRentalSearchObject search, CancellationToken cancellationToken)
     {
         var now = clock.UtcNow;
-        var (page, pageSize) = PagingLimits.Normalize(search.Page, search.PageSize);
-        var filtered = query.ApplySearch(search);
-        var total = search.IncludeTotalCount ? await filtered.CountAsync(cancellationToken) : (int?)null;
 
-        var entities = await query.AsNoTracking().WithRentalDetails().ApplySearch(search)
-            .OrderByDescending(x => x.RequestedAt)
-            .Skip((page - 1) * pageSize).Take(pageSize).ToListAsync(cancellationToken);
+        return await query
+            .AsNoTracking()
+            .WithRentalDetails()
+            .ApplySearch(search)
+            .ToPagedResultAsync(
+                search,
+                async (entities, ct) =>
+                {
+                    var names = await displayNames.GetStudentDisplayNamesAsync(entities.Select(e => e.StudentProfile), ct);
 
-        var names = await displayNames.GetStudentDisplayNamesAsync(entities.Select(e => e.StudentProfile), cancellationToken);
-
-        return new PagedResult<InstrumentRentalDto>
-        {
-            Items = [.. entities.Select(e =>
-            {
-                var dto = mapper.Map<InstrumentRentalDto>(e);
-                dto.ApplyCharges(e, e.CalculateCharges(now));
-                dto.StudentName = names.GetValueOrDefault(e.StudentProfile.Id, Messages.UnknownUserName);
-                return dto;
-            })],
-            Page = page,
-            PageSize = pageSize,
-            TotalCount = total
-        };
+                    return entities.Select(e =>
+                    {
+                        var dto = mapper.Map<InstrumentRentalDto>(e);
+                        dto.ApplyCharges(e, e.CalculateCharges(now));
+                        dto.StudentName = names.GetValueOrDefault(e.StudentProfile.Id, Messages.UnknownUserName);
+                        return dto;
+                    });
+                },
+                q => q.OrderByDescending(x => x.RequestedAt),
+                cancellationToken);
     }
 
     private static async Task<InstrumentRental> FindRentalAsync(IQueryable<InstrumentRental> query, CancellationToken cancellationToken) => await query

@@ -42,6 +42,15 @@ class MusicStoreDto {
     if (addressStreet != null) 'addressStreet': addressStreet,
     if (addressCity != null) 'addressCity': addressCity,
   };
+
+  String get addressText {
+    final street = addressStreet;
+    final city = addressCity;
+    if (street != null && street.isNotEmpty) {
+      return city != null && city.isNotEmpty ? '$street, $city' : street;
+    }
+    return city != null && city.isNotEmpty ? city : '-';
+  }
 }
 
 class MusicStoreRequest {
@@ -65,3 +74,14 @@ class MusicStoreRequest {
   };
 }
 
+class ShopStoreUpdateRequest {
+  final String businessHours;
+  final String? phoneNumber;
+
+  ShopStoreUpdateRequest({required this.businessHours, this.phoneNumber});
+
+  Map<String, dynamic> toJson() => {
+    'businessHours': businessHours,
+    'phoneNumber': phoneNumber,
+  };
+}

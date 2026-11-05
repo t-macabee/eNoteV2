@@ -1,7 +1,6 @@
 using eNote.API.Controllers.Rentals;
 using eNote.Application.Common.Localization;
 using eNote.Application.Features.Identity.Employees;
-using eNote.Application.Features.ReferenceData.Addresses;
 using eNote.Application.Features.Rentals.ReferenceData.MusicStores;
 using eNote.Tests.TestUtils;
 using Microsoft.AspNetCore.Http;
@@ -29,8 +28,7 @@ public sealed class ShopStoreControllerTests
         var employeeService = new ShopEmployeeService(ctx, new StubUserIdentityService(), actor, null!);
         var storeService = new MusicStoreService(ctx, new StubFileStorageService());
         var storeContext = new StubStoreContext(store.Id);
-        var addressService = new AddressService(ctx);
-        var controller = new ShopStoreController(storeService, employeeService, addressService, storeContext);
+        var controller = new ShopStoreController(storeService, employeeService, storeContext);
 
         var result = await controller.GetOwnStore(CancellationToken.None);
 
@@ -44,7 +42,13 @@ public sealed class ShopStoreControllerTests
     public async Task UpdateOwnStore_ReturnsOk_WhenCallerIsManager()
     {
         await using var ctx = TestDbContextFactory.CreateContext(Now);
-        var store = new MusicStore("Store Alpha", "08:00-16:00");
+        var city = new City { Name = "Sarajevo" };
+        ctx.Set<City>().Add(city);
+        await ctx.SaveChangesAsync();
+        var address = new Address { CityId = city.Id, Street = "Ferhadija", Number = "15" };
+        ctx.Set<Address>().Add(address);
+        await ctx.SaveChangesAsync();
+        var store = new MusicStore("Store Alpha", "08:00-16:00", address.Id);
         ctx.Set<MusicStore>().Add(store);
         await ctx.SaveChangesAsync();
 
@@ -56,8 +60,7 @@ public sealed class ShopStoreControllerTests
         var employeeService = new ShopEmployeeService(ctx, new StubUserIdentityService(), actor, null!);
         var storeService = new MusicStoreService(ctx, new StubFileStorageService());
         var storeContext = new StubStoreContext(store.Id);
-        var addressService = new AddressService(ctx);
-        var controller = new ShopStoreController(storeService, employeeService, addressService, storeContext);
+        var controller = new ShopStoreController(storeService, employeeService, storeContext);
 
         var request = new ShopStoreUpdateRequest
         {
@@ -71,6 +74,7 @@ public sealed class ShopStoreControllerTests
         var dto = Assert.IsType<MusicStoreDto>(ok.Value);
         Assert.Equal(store.Id, dto.Id);
         Assert.Equal("Store Alpha", dto.StoreName);
+        Assert.Equal(address.Id, dto.AddressId);
         Assert.Equal("09:00-17:00", dto.BusinessHours);
         Assert.Equal("+38761234567", dto.PhoneNumber);
     }
@@ -91,8 +95,7 @@ public sealed class ShopStoreControllerTests
         var employeeService = new ShopEmployeeService(ctx, new StubUserIdentityService(), actor, null!);
         var storeService = new MusicStoreService(ctx, new StubFileStorageService());
         var storeContext = new StubStoreContext(store.Id);
-        var addressService = new AddressService(ctx);
-        var controller = new ShopStoreController(storeService, employeeService, addressService, storeContext);
+        var controller = new ShopStoreController(storeService, employeeService, storeContext);
 
         var request = new ShopStoreUpdateRequest
         {
@@ -121,8 +124,7 @@ public sealed class ShopStoreControllerTests
         var fileStorage = new StubFileStorageService();
         var storeService = new MusicStoreService(ctx, fileStorage);
         var storeContext = new StubStoreContext(store.Id);
-        var addressService = new AddressService(ctx);
-        var controller = new ShopStoreController(storeService, employeeService, addressService, storeContext);
+        var controller = new ShopStoreController(storeService, employeeService, storeContext);
 
         var fileBytes = new byte[] { 1, 2, 3, 4 };
         var formFile = new FormFile(new MemoryStream(fileBytes), 0, fileBytes.Length, "file", "store.png")
@@ -155,8 +157,7 @@ public sealed class ShopStoreControllerTests
         var employeeService = new ShopEmployeeService(ctx, new StubUserIdentityService(), actor, null!);
         var storeService = new MusicStoreService(ctx, new StubFileStorageService());
         var storeContext = new StubStoreContext(store.Id);
-        var addressService = new AddressService(ctx);
-        var controller = new ShopStoreController(storeService, employeeService, addressService, storeContext);
+        var controller = new ShopStoreController(storeService, employeeService, storeContext);
 
         var fileBytes = new byte[] { 1, 2, 3, 4 };
         var formFile = new FormFile(new MemoryStream(fileBytes), 0, fileBytes.Length, "file", "store.png")
@@ -186,8 +187,7 @@ public sealed class ShopStoreControllerTests
         var employeeService = new ShopEmployeeService(ctx, new StubUserIdentityService(), actor, null!);
         var storeService = new MusicStoreService(ctx, new StubFileStorageService());
         var storeContext = new StubStoreContext(store.Id);
-        var addressService = new AddressService(ctx);
-        var controller = new ShopStoreController(storeService, employeeService, addressService, storeContext);
+        var controller = new ShopStoreController(storeService, employeeService, storeContext);
 
         var exception = await Assert.ThrowsAsync<BusinessException>(() =>
             controller.UploadOwnStoreImage(null, CancellationToken.None));

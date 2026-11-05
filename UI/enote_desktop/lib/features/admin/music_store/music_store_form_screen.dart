@@ -117,6 +117,7 @@ class _MusicStoreFormScreenState extends State<MusicStoreFormScreen>
                 EntityTextField(
                   controller: _businessHoursController,
                   label: 'Radno vrijeme',
+                  validator: Validators.businessHours,
                   maxLength: 50,
                 ),
                 EntityTextField(

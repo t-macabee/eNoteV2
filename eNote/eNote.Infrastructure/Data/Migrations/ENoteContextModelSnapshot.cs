@@ -1322,6 +1322,10 @@ namespace eNote.Infrastructure.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("Type")
+                        .IsUnique()
+                        .HasDatabaseName("UX_InstrumentType_Type");
+
                     b.ToTable("InstrumentType");
 
                     b.HasData(
@@ -1352,7 +1356,7 @@ namespace eNote.Infrastructure.Data.Migrations
                         new
                         {
                             Id = 5,
-                            MonthlyFee = 15m,
+                            MonthlyFee = 30m,
                             Type = "Dodatna oprema"
                         });
                 });

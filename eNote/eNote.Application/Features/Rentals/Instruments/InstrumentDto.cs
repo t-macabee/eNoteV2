@@ -10,6 +10,7 @@ public class InstrumentDto
     public string? ImagePath { get; set; }
     public int InstrumentTypeId { get; set; }
     public string InstrumentType { get; set; } = null!;
+    public decimal MonthlyFee { get; set; }
     public string MusicStore { get; set; } = null!;
 
     public bool IsAvailable { get; set; }

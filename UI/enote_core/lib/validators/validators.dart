@@ -68,23 +68,49 @@ class Validators {
     return null;
   }
 
+  static final RegExp _businessHoursRegex = RegExp(
+    r'^([01]\d|2[0-3]):[0-5]\d\s*-\s*([01]\d|2[0-3]):[0-5]\d$',
+  );
+
+  static String? businessHours(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Radno vrijeme je obavezno (npr. 09:00-17:00).';
+    }
+    if (!_businessHoursRegex.hasMatch(value.trim())) {
+      return 'Radno vrijeme unesite u obliku 09:00-17:00.';
+    }
+    return null;
+  }
+
   static String? nonNegativeDecimal(
     String? value, {
     required String requiredMessage,
+    double? min,
     double? max,
+    int? maxDecimals,
   }) {
     if (value == null || value.trim().isEmpty) {
       return requiredMessage;
     }
-    final parsed = double.tryParse(value.trim().replaceAll(',', '.'));
+    final raw = value.trim().replaceAll(',', '.');
+    final parsed = double.tryParse(raw);
     if (parsed == null) {
       return 'Unesite važeći broj, npr. 25.00.';
     }
     if (parsed < 0) {
       return 'Vrijednost ne smije biti negativna.';
     }
+    if (min != null && parsed < min) {
+      return 'Vrijednost mora biti najmanje ${min.toStringAsFixed(0)}.';
+    }
     if (max != null && parsed > max) {
       return 'Vrijednost ne smije biti veća od ${max.toStringAsFixed(0)}.';
+    }
+    if (maxDecimals != null) {
+      final separator = raw.indexOf('.');
+      if (separator >= 0 && raw.length - separator - 1 > maxDecimals) {
+        return 'Vrijednost može imati najviše $maxDecimals decimale.';
+      }
     }
     return null;
   }

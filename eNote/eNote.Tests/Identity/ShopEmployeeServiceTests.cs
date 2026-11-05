@@ -48,6 +48,67 @@ public sealed class ShopEmployeeServiceTests
     }
 
     [Fact]
+    public async Task GetPagedForCurrentStoreAsync_ListsOnlyColleaguesOfOwnStore_WithoutCaller()
+    {
+        await using var context = TestDbContextFactory.CreateContext(Now);
+
+        var store1 = new MusicStore("Store Alpha", "08:00-16:00");
+        var store2 = new MusicStore("Store Beta", "09:00-17:00");
+        context.Set<MusicStore>().AddRange(store1, store2);
+        await context.SaveChangesAsync();
+
+        context.Set<MusicStoreEmployee>().AddRange(
+            new MusicStoreEmployee(appUserId: 10, musicStoreId: store1.Id, isManager: true),
+            new MusicStoreEmployee(appUserId: 20, musicStoreId: store2.Id, isManager: false),
+            new MusicStoreEmployee(appUserId: 30, musicStoreId: store1.Id, isManager: false));
+        await context.SaveChangesAsync();
+
+        var identity = new StubUserIdentityService(new Dictionary<int, UserIdentityDto>
+        {
+            [10] = StubUserIdentityService.User(10, "manager", "Mia", "Manager"),
+            [20] = StubUserIdentityService.User(20, "other_store", "Otto", "Other"),
+            [30] = StubUserIdentityService.User(30, "colleague", "Cora", "Colleague")
+        });
+
+        var service = new ShopEmployeeService(context, identity, new StubCurrentActor(userId: 10), null!);
+
+        var result = await service.GetPagedForCurrentStoreAsync(new ShopEmployeeSearchObject());
+
+        var dto = Assert.Single(result.Items);
+        Assert.Equal(30, dto.AppUserId);
+        Assert.Equal(store1.Id, dto.MusicStoreId);
+    }
+
+    [Fact]
+    public async Task SetEmployeeActiveByManagerAsync_ActivatesInactiveEmployeeOfOwnStore()
+    {
+        await using var context = TestDbContextFactory.CreateContext(Now);
+
+        var store = new MusicStore("Store Alpha", "08:00-16:00");
+        context.Set<MusicStore>().Add(store);
+        await context.SaveChangesAsync();
+
+        var manager = new MusicStoreEmployee(appUserId: 10, musicStoreId: store.Id, isManager: true);
+        var inactiveEmployee = new MusicStoreEmployee(appUserId: 20, musicStoreId: store.Id, isManager: false);
+        context.Set<MusicStoreEmployee>().AddRange(manager, inactiveEmployee);
+        await context.SaveChangesAsync();
+
+        var identity = new StubUserIdentityService(new Dictionary<int, UserIdentityDto>
+        {
+            [10] = StubUserIdentityService.User(10, "manager", "Mia", "Manager"),
+            [20] = new() { Id = 20, Username = "inactive", FirstName = "Ivan", LastName = "Inactive", IsActive = false }
+        });
+        var actor = new StubCurrentActor(userId: 10);
+        var account = new StubUserAccountService();
+        var provisioning = new UserProvisioningService(context, account, new SystemClock(), new StubFileStorageService(), actor);
+        var service = new ShopEmployeeService(context, identity, actor, provisioning);
+
+        await service.SetEmployeeActiveByManagerAsync(20, true);
+
+        Assert.Equal((20, true), account.SetActiveCall);
+    }
+
+    [Fact]
     public async Task GetPagedAsync_ReturnsEmployeesAcrossAllStores_WithStoreInfo()
     {
         await using var context = TestDbContextFactory.CreateContext(Now);

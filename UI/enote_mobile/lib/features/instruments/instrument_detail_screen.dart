@@ -157,6 +157,10 @@ class _InstrumentDetailScreenState extends State<InstrumentDetailScreen> {
           ),
           if (description != null && description.trim().isNotEmpty)
             DetailSection(title: 'Opis', child: Text(description)),
+          DetailSection(
+            title: 'Mjesečna naknada',
+            child: Text(formatKM(instrument.monthlyFee)),
+          ),
           DetailActions(
             banner: blocked == null
                 ? null

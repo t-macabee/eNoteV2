@@ -100,5 +100,68 @@ void main() {
         equals('Vrijednost ne smije biti negativna.'),
       );
     });
+
+    test('value below min says Vrijednost mora biti najmanje 30.', () {
+      expect(
+        Validators.nonNegativeDecimal(
+          '29.99',
+          requiredMessage: 'Obavezno.',
+          min: 30,
+        ),
+        equals('Vrijednost mora biti najmanje 30.'),
+      );
+      expect(
+        Validators.nonNegativeDecimal(
+          '30',
+          requiredMessage: 'Obavezno.',
+          min: 30,
+        ),
+        isNull,
+      );
+    });
+
+    test('value with more than two decimals is rejected', () {
+      expect(
+        Validators.nonNegativeDecimal(
+          '45.999',
+          requiredMessage: 'Obavezno.',
+          maxDecimals: 2,
+        ),
+        equals('Vrijednost može imati najviše 2 decimale.'),
+      );
+      expect(
+        Validators.nonNegativeDecimal(
+          '45.99',
+          requiredMessage: 'Obavezno.',
+          maxDecimals: 2,
+        ),
+        isNull,
+      );
+      expect(
+        Validators.nonNegativeDecimal(
+          '45',
+          requiredMessage: 'Obavezno.',
+          maxDecimals: 2,
+        ),
+        isNull,
+      );
+    });
+  });
+
+  group('businessHours', () {
+    for (final value in ['09:00-17:00', '09:00 - 19:00', '00:00-23:59']) {
+      test('accepts $value', () {
+        expect(Validators.businessHours(value), isNull);
+      });
+    }
+
+    for (final value in ['abc', '09-17', '25:00-26:00', '09:60-10:00']) {
+      test('rejects $value', () {
+        expect(
+          Validators.businessHours(value),
+          equals('Radno vrijeme unesite u obliku 09:00-17:00.'),
+        );
+      });
+    }
   });
 }

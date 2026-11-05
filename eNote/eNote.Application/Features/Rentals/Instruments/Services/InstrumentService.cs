@@ -19,10 +19,10 @@ public sealed class InstrumentService(
         ImagePath = x.ImagePath,
         InstrumentTypeId = x.InstrumentTypeId,
         InstrumentType = x.InstrumentType.Type,
+        MonthlyFee = x.InstrumentType.MonthlyFee,
         MusicStore = x.MusicStore.StoreName,
         IsAvailable = x.IsActive && !x.InstrumentRentals.Any(r =>
-            r.RentalStatus == InstrumentRentalStatus.Approved ||
-            r.RentalStatus == InstrumentRentalStatus.Active)
+            InstrumentRentalStatusExtensions.BlockingStatuses.Contains(r.RentalStatus))
     };
 
     public async Task<InstrumentDto> GetByIdAsync(int id, CancellationToken cancellationToken = default)
@@ -35,7 +35,7 @@ public sealed class InstrumentService(
             .Where(x => x.Id == id)
             .Select(ProjectToDto)
             .FirstOrDefaultAsync(cancellationToken)
-            ?? throw new NotFoundException(Messages.NotFound);
+            ?? throw new NotFoundException(Messages.InstrumentNotFound);
     }
 
     public async Task<PagedResult<InstrumentDto>> GetPagedAsync(InstrumentSearchObject search, CancellationToken cancellationToken = default)
@@ -65,7 +65,7 @@ public sealed class InstrumentService(
         };
     }
 
-    public async Task<InstrumentDto> CreateAsync(InstrumentCreateRequest request, CancellationToken cancellationToken = default)
+    public async Task<InstrumentDto> CreateAsync(InstrumentRequest request, CancellationToken cancellationToken = default)
     {
         var employee = await EnsureStoreAccessAsync(cancellationToken);
         await EnsureInstrumentTypeExistsAsync(request.InstrumentTypeId, cancellationToken);
@@ -73,7 +73,7 @@ public sealed class InstrumentService(
         var entity = new Instrument(
             request.Model.Trim(),
             request.Manufacturer.Trim(),
-            request.Description?.Trim(),
+            NormalizeDescription(request.Description),
             null,
             request.InstrumentTypeId,
             employee.MusicStoreId);
@@ -84,26 +84,23 @@ public sealed class InstrumentService(
         return await ReloadAsync(entity.Id, cancellationToken);
     }
 
-    public async Task<InstrumentDto> UpdateAsync(int id, InstrumentUpdateRequest request, CancellationToken cancellationToken = default)
+    public async Task<InstrumentDto> UpdateAsync(int id, InstrumentRequest request, CancellationToken cancellationToken = default)
     {
         await EnsureStoreAccessAsync(cancellationToken);
 
         var entity = await context.Set<Instrument>()
             .WhereActive()
             .FirstOrDefaultAsync(x => x.Id == id, cancellationToken)
-            ?? throw new NotFoundException(Messages.NotFound);
+            ?? throw new NotFoundException(Messages.InstrumentNotFound);
 
-        if (request.InstrumentTypeId is { } typeId)
-        {
-            await EnsureInstrumentTypeExistsAsync(typeId, cancellationToken);
-        }
+        await EnsureInstrumentTypeExistsAsync(request.InstrumentTypeId, cancellationToken);
 
         entity.UpdateDetails(
-            request.Model?.Trim() ?? entity.Model,
-            request.Manufacturer?.Trim() ?? entity.Manufacturer,
-            request.Description?.Trim() ?? entity.Description,
+            request.Model.Trim(),
+            request.Manufacturer.Trim(),
+            NormalizeDescription(request.Description),
             entity.ImagePath,
-            request.InstrumentTypeId ?? entity.InstrumentTypeId);
+            request.InstrumentTypeId);
 
         await context.SaveChangesAsync(cancellationToken);
 
@@ -137,7 +134,7 @@ public sealed class InstrumentService(
         var instrument = await context.Set<Instrument>()
             .WhereActive()
             .FirstOrDefaultAsync(x => x.Id == id, cancellationToken)
-            ?? throw new NotFoundException(Messages.NotFound);
+            ?? throw new NotFoundException(Messages.InstrumentNotFound);
 
         await context.ExecuteInTransactionAsync(async () =>
         {
@@ -151,15 +148,13 @@ public sealed class InstrumentService(
             instrument.SoftDelete();
             await context.SaveChangesMappingConflictAsync(Messages.Conflict, cancellationToken);
         }, cancellationToken);
-
-        if (!string.IsNullOrWhiteSpace(instrument.ImagePath))
-        {
-            fileStorage.Delete(instrument.ImagePath);
-        }
     }
 
     private Task<MusicStoreEmployee> EnsureStoreAccessAsync(CancellationToken cancellationToken) =>
         students.GetCurrentEmployeeAsync(cancellationToken);
+
+    private static string? NormalizeDescription(string? description) =>
+        string.IsNullOrWhiteSpace(description) ? null : description.Trim();
 
     private async Task EnsureInstrumentTypeExistsAsync(int instrumentTypeId, CancellationToken cancellationToken)
     {

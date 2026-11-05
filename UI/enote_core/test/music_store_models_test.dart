@@ -54,6 +54,39 @@ void main() {
     });
   });
 
+  group('MusicStoreDto.addressText', () {
+    MusicStoreDto store({String? street, String? city}) => MusicStoreDto(
+      id: 1,
+      storeName: 'Shop',
+      businessHours: '08:00-16:00',
+      addressStreet: street,
+      addressCity: city,
+    );
+
+    test('street and city give a comma separated address', () {
+      expect(
+        store(street: 'Ferhadija 15', city: 'Sarajevo').addressText,
+        'Ferhadija 15, Sarajevo',
+      );
+    });
+
+    test('street only gives the street', () {
+      expect(store(street: 'Ferhadija 15').addressText, 'Ferhadija 15');
+    });
+
+    test('city only gives the city', () {
+      expect(store(city: 'Sarajevo').addressText, 'Sarajevo');
+    });
+
+    test('null values give a dash', () {
+      expect(store().addressText, '-');
+    });
+
+    test('empty strings give a dash', () {
+      expect(store(street: '', city: '').addressText, '-');
+    });
+  });
+
   group('MusicStoreRequest', () {
     test('toJson serializes required and optional fields', () {
       final request = MusicStoreRequest(

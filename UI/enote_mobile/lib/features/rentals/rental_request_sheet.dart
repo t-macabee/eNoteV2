@@ -7,6 +7,7 @@ import '../../shell/routes.dart';
 import '../../widgets/app_sheet_body.dart';
 import '../../widgets/app_text_field.dart';
 import '../../widgets/form_submit_state.dart';
+import '../../widgets/labeled_value.dart';
 import '../../widgets/submit_button.dart';
 import 'rental_provider.dart';
 
@@ -86,6 +87,11 @@ class _RentalRequestSheetState extends State<RentalRequestSheet>
       title: 'Zahtjev za iznajmljivanje',
       subtitle: _instrumentName,
       children: [
+        LabeledValue(
+          label: 'Mjesečna naknada',
+          value: formatKM(widget.instrument.monthlyFee),
+        ),
+        const SizedBox(height: AppSpacing.md),
         AppTextField(
           controller: _note,
           label: 'Napomena',
